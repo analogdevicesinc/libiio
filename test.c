@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "iio.h"
 
 #include <stdio.h>
@@ -6,24 +7,24 @@ int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
 
-	printf("Creating local IIO context\n");
+	INFO("Creating local IIO context\n");
 	ctx= iio_create_local_context();
 	if (!ctx)
 		return EXIT_FAILURE;
 
-	printf("IIO context created: %s\n", iio_context_get_name(ctx));
+	INFO("IIO context created: %s\n", iio_context_get_name(ctx));
 
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
-	printf("IIO context has %u devices:\n", nb_devices);
+	INFO("IIO context has %u devices:\n", nb_devices);
 
 	unsigned int i;
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
 		const char *name = iio_device_get_name(dev);
-		printf("\t%s: %s\n", iio_device_get_id(dev), name ?: "" );
+		INFO("\t%s: %s\n", iio_device_get_id(dev), name ?: "" );
 
 		unsigned int nb_channels = iio_device_get_channels_count(dev);
-		printf("\t\t%u channels found:\n", nb_channels);
+		INFO("\t\t%u channels found:\n", nb_channels);
 
 		unsigned int j;
 		for (j = 0; j < nb_channels; j++) {
@@ -43,7 +44,7 @@ int main(int argc, char **argv)
 			}
 
 			name = iio_channel_get_name(ch);
-			printf("\t\t\t%s: %s (%s)\n",
+			INFO("\t\t\t%s: %s (%s)\n",
 					iio_channel_get_id(ch), name ?: "",
 					type_name);
 
@@ -51,12 +52,12 @@ int main(int argc, char **argv)
 			if (!nb_attrs)
 				continue;
 
-			printf("\t\t\t%u channel-specific attributes found:\n",
+			INFO("\t\t\t%u channel-specific attributes found:\n",
 					nb_attrs);
 
 			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
-				printf("\t\t\t\tattr %u: %s\n", k,
+				INFO("\t\t\t\tattr %u: %s\n", k,
 						iio_channel_get_attr(ch, k));
 			}
 		}
@@ -65,9 +66,9 @@ int main(int argc, char **argv)
 		if (!nb_attrs)
 			continue;
 
-		printf("\t\t%u device-specific attributes found:\n", nb_attrs);
+		INFO("\t\t%u device-specific attributes found:\n", nb_attrs);
 		for (j = 0; j < nb_attrs; j++) {
-			printf("\t\t\tattr %u: %s\n", j,
+			INFO("\t\t\tattr %u: %s\n", j,
 					iio_device_get_attr(dev, j));
 		}
 	}
