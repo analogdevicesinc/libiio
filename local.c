@@ -250,21 +250,18 @@ static char * get_short_attr_name(const char *attr)
 
 static int read_device_name(struct iio_device *dev)
 {
-	/* TODO: set dev->name */
-#if 0
 	char buf[1024];
-	ssize_t ret = iio_device_attr_read(dev, "name",
-			buf, 1024);
-	if (ret < 0) {
-		WARNING("Unable to read name of device\n");
+	ssize_t ret = iio_device_attr_read(dev, "name", buf, 1024);
+	if (ret < 0)
 		return ret;
-	}
+	else if (ret == 0)
+		return -EIO;
 
-	dev->name = malloc(strlen(buf) + 1);
+	dev->name = strdup(buf);
 	if (!dev->name)
 		return -ENOMEM;
-#endif
-	return 0;
+	else
+		return 0;
 }
 
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
