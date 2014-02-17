@@ -43,11 +43,11 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
-	return dev->ctx->ops->read_attr(dev, dev->id, dst, len);
+	return dev->ctx->ops->read_attr(dev, attr, dst, len);
 }
 
 ssize_t iio_device_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src)
 {
-	return dev->ctx->ops->write_attr(dev, dev->id, src);
+	return dev->ctx->ops->write_attr(dev, attr, src);
 }
