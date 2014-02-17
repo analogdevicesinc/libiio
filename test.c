@@ -57,8 +57,17 @@ int main(int argc, char **argv)
 
 			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
-				INFO("\t\t\t\tattr %u: %s\n", k,
-						iio_channel_get_attr(ch, k));
+				const char *attr = iio_channel_get_attr(ch, k);
+				char buf[1024];
+				ssize_t ret = iio_channel_attr_read(ch,
+						attr, buf, 1024);
+				if (ret <= 0)
+					ERROR("Unable to read attribute: %s\n",
+							attr);
+				else
+					INFO("\t\t\t\tattr %u: %s"
+							" value: %s\n", k,
+							attr, buf);
 			}
 		}
 
@@ -68,8 +77,14 @@ int main(int argc, char **argv)
 
 		INFO("\t\t%u device-specific attributes found:\n", nb_attrs);
 		for (j = 0; j < nb_attrs; j++) {
-			INFO("\t\t\tattr %u: %s\n", j,
-					iio_device_get_attr(dev, j));
+			const char *attr = iio_device_get_attr(dev, j);
+			char buf[1024];
+			size_t ret = iio_device_attr_read(dev, attr, buf, 1024);
+			if (ret <= 0)
+				ERROR("Unable to read attribute: %s\n", attr);
+			else
+				INFO("\t\t\t\tattr %u: %s value: %s\n", j,
+						attr, buf);
 		}
 	}
 

@@ -164,13 +164,38 @@ static int set_channel_name(struct iio_channel *chn)
 static ssize_t local_read_attr(const struct iio_device *dev,
 		const char *path, char *dst, size_t len)
 {
-	return 0;
+	FILE *f;
+	char buf[1024];
+	ssize_t ret;
+
+	sprintf(buf, "/sys/bus/iio/devices/%s/%s", dev->id, path);
+	f = fopen(buf, "r");
+	if (!f)
+		return -errno;
+
+	ret = fread(dst, 1, len, f);
+	if (ret > 0)
+		dst[ret - 1] = '\0';
+	fclose(f);
+	return ret;
 }
 
 static ssize_t local_write_attr(const struct iio_device *dev,
 		const char *path, const char *src)
 {
-	return 0;
+	FILE *f;
+	char buf[1024];
+	ssize_t ret;
+	size_t len = strlen(src) + 1;
+
+	sprintf(buf, "/sys/bus/iio/devices/%s/%s", dev->id, path);
+	f = fopen(buf, "w");
+	if (!f)
+		return -errno;
+
+	ret = fwrite(src, 1, len, f);
+	fclose(f);
+	return ret;
 }
 
 static bool is_channel(const char *attr)
