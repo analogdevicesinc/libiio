@@ -34,18 +34,11 @@ static const char * const modifier_names[] = {
 
 static void local_shutdown(struct iio_context *ctx)
 {
-	unsigned int i;
-
 	if (ctx->backend_data) {
 		struct local_pdata *pdata = ctx->backend_data;
 		free(pdata->path);
 		free(pdata);
 	}
-
-	for (i = 0; i < ctx->nb_devices; i++)
-		free_device(ctx->devices[i]);
-	if (ctx->nb_devices)
-		free(ctx->devices);
 }
 
 /** Shrinks the first nb characters of a string 
@@ -511,7 +504,8 @@ struct iio_context * iio_create_local_context(void)
 	ctx->backend_data = malloc(sizeof(struct local_pdata));
 	if (!ctx->backend_data) {
 		ERROR("Unable to allocate memory\n");
-		goto err_free_ctx;
+		free(ctx);
+		return NULL;
 	}
 
 	ctx->ops = &local_ops;
@@ -520,7 +514,7 @@ struct iio_context * iio_create_local_context(void)
 	iio = sysfs_open_bus("iio");
 	if (!iio) {
 		ERROR("Unable to open IIO bus\n");
-		goto err_shutdown_ctx;
+		goto err_destroy_ctx;
 	}
 
 	path = strdup(iio->path);
@@ -552,9 +546,7 @@ struct iio_context * iio_create_local_context(void)
 
 err_close_sysfs_bus:
 	sysfs_close_bus(iio);
-err_shutdown_ctx:
-	local_shutdown(ctx);
-err_free_ctx:
-	free(ctx);
+err_destroy_ctx:
+	iio_context_destroy(ctx);
 	return NULL;
 }
