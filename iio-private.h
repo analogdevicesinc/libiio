@@ -40,10 +40,14 @@ struct iio_backend_ops {
 	struct iio_device * (*get_device)(const struct iio_context *ctx,
 			unsigned int id);
 
-	ssize_t (*read_attr)(const struct iio_device *dev,
-			const char *path, char *dst, size_t len);
-	ssize_t (*write_attr)(const struct iio_device *dev,
-			const char *path, const char *src);
+	ssize_t (*read_device_attr)(const struct iio_device *dev,
+			const char *attr, char *dst, size_t len);
+	ssize_t (*write_device_attr)(const struct iio_device *dev,
+			const char *attr, const char *src);
+	ssize_t (*read_channel_attr)(const struct iio_channel *chn,
+			const char *attr, char *dst, size_t len);
+	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
+			const char *attr, const char *src);
 
 	void (*shutdown)(struct iio_context *ctx);
 };

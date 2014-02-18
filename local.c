@@ -9,8 +9,16 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
+struct fn_map {
+	const struct iio_channel *channel;
+	const char *attr;
+	char *filename;
+};
+
 struct local_pdata {
 	char *path;
+	struct fn_map *maps;
+	size_t nb_maps;
 };
 
 static const char * const device_attrs_blacklist[] = {
@@ -34,11 +42,15 @@ static const char * const modifier_names[] = {
 
 static void local_shutdown(struct iio_context *ctx)
 {
-	if (ctx->backend_data) {
-		struct local_pdata *pdata = ctx->backend_data;
-		free(pdata->path);
-		free(pdata);
-	}
+	struct local_pdata *pdata = ctx->backend_data;
+	unsigned int i;
+
+	for (i = 0; i < pdata->nb_maps; i++)
+		free(pdata->maps[i].filename);
+	if (pdata->nb_maps)
+		free(pdata->maps);
+	free(pdata->path);
+	free(pdata);
 }
 
 /** Shrinks the first nb characters of a string 
@@ -122,15 +134,15 @@ static int set_channel_name(struct iio_channel *chn)
 	return 0;
 }
 
-static ssize_t local_read_attr(const struct iio_device *dev,
-		const char *path, char *dst, size_t len)
+static ssize_t local_read_dev_attr(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len)
 {
 	struct local_pdata *pdata = dev->ctx->backend_data;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 
-	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, path);
+	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, attr);
 	f = fopen(buf, "r");
 	if (!f)
 		return -errno;
@@ -142,8 +154,8 @@ static ssize_t local_read_attr(const struct iio_device *dev,
 	return ret;
 }
 
-static ssize_t local_write_attr(const struct iio_device *dev,
-		const char *path, const char *src)
+static ssize_t local_write_dev_attr(const struct iio_device *dev,
+		const char *attr, const char *src)
 {
 	struct local_pdata *pdata = dev->ctx->backend_data;
 	FILE *f;
@@ -151,7 +163,7 @@ static ssize_t local_write_attr(const struct iio_device *dev,
 	ssize_t ret;
 	size_t len = strlen(src) + 1;
 
-	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, path);
+	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, attr);
 	f = fopen(buf, "w");
 	if (!f)
 		return -errno;
@@ -159,6 +171,32 @@ static ssize_t local_write_attr(const struct iio_device *dev,
 	ret = fwrite(src, 1, len, f);
 	fclose(f);
 	return ret;
+}
+
+static const char * get_filename(const struct iio_channel *chn,
+		const char *attr)
+{
+	struct local_pdata *pdata = chn->dev->ctx->backend_data;
+	struct fn_map *maps = pdata->maps;
+	unsigned int i;
+	for (i = 0; i < pdata->nb_maps; i++)
+		if (!strcmp(attr, maps[i].attr))
+			return maps[i].filename;
+	return attr;
+}
+
+static ssize_t local_read_chn_attr(const struct iio_channel *chn,
+		const char *attr, char *dst, size_t len)
+{
+	attr = get_filename(chn, attr);
+	return local_read_dev_attr(chn->dev, attr, dst, len);
+}
+
+static ssize_t local_write_chn_attr(const struct iio_channel *chn,
+		const char *attr, const char *src)
+{
+	attr = get_filename(chn, attr);
+	return local_write_dev_attr(chn->dev, attr, src);
 }
 
 static bool is_channel(const char *attr)
@@ -258,21 +296,45 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 
 static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
 {
+	struct local_pdata *pdata = chn->dev->ctx->backend_data;
+	struct fn_map *maps;
 	const char **attrs;
-	char *name = get_short_attr_name(attr);
+	char *fn, *name = get_short_attr_name(attr);
 	if (!name)
 		return -ENOMEM;
 
+	fn = strdup(attr);
+	if (!fn)
+		goto err_free_name;
+
 	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) * sizeof(char *));
-	if (!attrs) {
-		free(name);
-		return -ENOMEM;
-	}
+	if (!attrs)
+		goto err_free_fn;
+
+	maps = realloc(pdata->maps,
+			(1 + pdata->nb_maps) * sizeof(struct fn_map));
+	if (!maps)
+		goto err_update_maps;
+
+	maps[pdata->nb_maps].channel = chn;
+	maps[pdata->nb_maps].attr = name;
+	maps[pdata->nb_maps++].filename = fn;
+	pdata->maps = maps;
 
 	attrs[chn->nb_attrs++] = name;
 	chn->attrs = attrs;
 	DEBUG("Added attr \'%s\' to channel \'%s\'\n", name, chn->id);
 	return 0;
+
+err_update_maps:
+	/* the first realloc succeeded so we must update chn->attrs
+	 * even if an error occured later */
+	chn->attrs = attrs;
+err_free_fn:
+	free(fn);
+err_free_name:
+	free(name);
+	return -ENOMEM;
 }
 
 static int add_channel_to_device(struct iio_device *dev,
@@ -483,8 +545,10 @@ static struct iio_device *create_device(struct iio_context *ctx,
 }
 
 static struct iio_backend_ops local_ops = {
-	.read_attr = local_read_attr,
-	.write_attr = local_write_attr,
+	.read_device_attr = local_read_dev_attr,
+	.write_device_attr = local_write_dev_attr,
+	.read_channel_attr = local_read_chn_attr,
+	.write_channel_attr = local_write_chn_attr,
 	.shutdown = local_shutdown,
 };
 
@@ -501,7 +565,7 @@ struct iio_context * iio_create_local_context(void)
 		return NULL;
 	}
 
-	ctx->backend_data = malloc(sizeof(struct local_pdata));
+	ctx->backend_data = calloc(1, sizeof(struct local_pdata));
 	if (!ctx->backend_data) {
 		ERROR("Unable to allocate memory\n");
 		free(ctx);
