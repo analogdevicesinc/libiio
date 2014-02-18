@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from ctypes import POINTER, Structure, cdll, c_char_p, c_uint
+from ctypes import POINTER, Structure, cdll, c_char_p, c_uint, c_int, \
+		create_string_buffer, byref
 from sys import argv
 
 def _checkNull(result, func, arguments):
@@ -8,6 +9,12 @@ def _checkNull(result, func, arguments):
 		return result
 	else:
 		raise IOError("Null pointer")
+
+def _checkRW(result, func, arguments):
+	if result > 0:
+		return result
+	else:
+		raise IOError("I/O error")
 
 def _init():
 	class _Context(Structure):
@@ -73,6 +80,18 @@ def _init():
 	_d_get_attr.archtypes = (DevicePtr, )
 	_d_get_attr.errcheck = _checkNull
 
+	global _d_read_attr
+	_d_read_attr = lib.iio_device_attr_read
+	_d_read_attr.restype = c_int
+	_d_read_attr.archtypes = (DevicePtr, c_char_p, c_char_p, c_uint)
+	_d_read_attr.errcheck = _checkRW
+
+	global _d_write_attr
+	_d_write_attr = lib.iio_device_attr_write
+	_d_write_attr.restype = c_int
+	_d_write_attr.archtypes = (DevicePtr, c_char_p, c_char_p)
+	_d_write_attr.errcheck = _checkRW
+
 	global _channels_count
 	_channels_count = lib.iio_device_get_channels_count
 	_channels_count.restype = c_uint
@@ -111,6 +130,18 @@ def _init():
 	_c_get_attr.archtypes = (ChannelPtr, )
 	_c_get_attr.errcheck = _checkNull
 
+	global _c_read_attr
+	_c_read_attr = lib.iio_channel_attr_read
+	_c_read_attr.restype = c_int
+	_c_read_attr.archtypes = (ChannelPtr, c_char_p, c_char_p, c_uint)
+	_c_read_attr.errcheck = _checkRW
+
+	global _c_write_attr
+	_c_write_attr = lib.iio_channel_attr_write
+	_c_write_attr.restype = c_int
+	_c_write_attr.archtypes = (ChannelPtr, c_char_p, c_char_p)
+	_c_write_attr.errcheck = _checkRW
+
 _init()
 
 class Channel(object):
@@ -122,6 +153,15 @@ class Channel(object):
 		self.name = _c_get_name(self._channel)
 		self.output = _c_get_type(self._channel) == 1
 
+	# TODO(pcercuei): Provide a dict-like interface for the attributes
+	def read_attr(self, attr):
+		buf = create_string_buffer(1024)
+		_c_read_attr(self._channel, attr, buf, 1024)
+		return buf.value
+
+	def write_attr(self, attr, value):
+		_c_write_attr(self._channel, attr, value)
+
 class Device(object):
 	def __init__(self, _device):
 		self._device = _device
@@ -131,6 +171,15 @@ class Device(object):
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
 		self.name = _d_get_name(self._device)
+
+	# TODO(pcercuei): Provide a dict-like interface for the attributes
+	def read_attr(self, attr):
+		buf = create_string_buffer(1024)
+		_d_read_attr(self._device, attr, byref(buf), 1024)
+		return buf.value
+
+	def write_attr(self, attr, value):
+		_d_write_attr(self._device, attr, value)
 
 class LocalContext(object):
 	def __init__(self):
