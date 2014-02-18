@@ -12,7 +12,7 @@ CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
 INSTALL ?= install
 
-CFLAGS := -Wall -fPIC
+CFLAGS := -Wall -fPIC -fvisibility=hidden
 LDFLAGS := -lsysfs #-static
 
 ifdef DEBUG

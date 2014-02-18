@@ -32,38 +32,6 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_LIGHT_BLUE] = "blue",
 };
 
-static void free_channel(struct iio_channel *chn)
-{
-	unsigned int i;
-	for (i = 0; i < chn->nb_attrs; i++)
-		free((char *) chn->attrs[i]);
-	if (chn->nb_attrs)
-		free(chn->attrs);
-	if (chn->name)
-		free((char *) chn->name);
-	if (chn->id)
-		free((char *) chn->id);
-	free(chn);
-}
-
-static void free_device(struct iio_device *dev)
-{
-	unsigned int i;
-	for (i = 0; i < dev->nb_attrs; i++)
-		free((char *) dev->attrs[i]);
-	if (dev->nb_attrs)
-		free(dev->attrs);
-	for (i = 0; i < dev->nb_channels; i++)
-		free_channel(dev->channels[i]);
-	if (dev->nb_channels)
-		free(dev->channels);
-	if (dev->name)
-		free((char *) dev->name);
-	if (dev->id)
-		free((char *) dev->id);
-	free(dev);
-}
-
 static void local_shutdown(struct iio_context *ctx)
 {
 	unsigned int i;

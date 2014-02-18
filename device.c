@@ -51,3 +51,21 @@ ssize_t iio_device_attr_write(const struct iio_device *dev,
 {
 	return dev->ctx->ops->write_attr(dev, attr, src);
 }
+
+void free_device(struct iio_device *dev)
+{
+	unsigned int i;
+	for (i = 0; i < dev->nb_attrs; i++)
+		free((char *) dev->attrs[i]);
+	if (dev->nb_attrs)
+		free(dev->attrs);
+	for (i = 0; i < dev->nb_channels; i++)
+		free_channel(dev->channels[i]);
+	if (dev->nb_channels)
+		free(dev->channels);
+	if (dev->name)
+		free((char *) dev->name);
+	if (dev->id)
+		free((char *) dev->id);
+	free(dev);
+}

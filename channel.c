@@ -72,3 +72,17 @@ ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		sprintf(buf, "%s_%s_%s", type, chn->id, attr);
 	return dev->ctx->ops->write_attr(dev, buf, src);
 }
+
+void free_channel(struct iio_channel *chn)
+{
+	unsigned int i;
+	for (i = 0; i < chn->nb_attrs; i++)
+		free((char *) chn->attrs[i]);
+	if (chn->nb_attrs)
+		free(chn->attrs);
+	if (chn->name)
+		free((char *) chn->name);
+	if (chn->id)
+		free((char *) chn->id);
+	free(chn);
+}

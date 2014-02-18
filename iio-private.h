@@ -1,7 +1,10 @@
 #ifndef __IIO_PRIVATE_H__
 #define __IIO_PRIVATE_H__
 
+/* Include public interface */
+#pragma GCC visibility push(default)
 #include "iio.h"
+#pragma GCC visibility pop
 
 #include <stdbool.h>
 
@@ -89,5 +92,7 @@ struct iio_device {
 };
 
 void iio_msg(enum iio_debug_level level, const char *msg);
+void free_channel(struct iio_channel *chn);
+void free_device(struct iio_device *dev);
 
 #endif /* __IIO_PRIVATE_H__ */
