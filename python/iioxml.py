@@ -2,8 +2,8 @@
 
 from iio import LocalContext
 
-def print_attr(attr, ident):
-	print '%s<attribute name="%s" />' % (ident * '\t', attr)
+def print_attr(attr, ident, value):
+	print '%s<attribute name="%s" value="%s" />' % (ident * '\t', attr, value)
 
 def print_channel(chn, ident):
 	xml = '%s<channel id="%s" type="%s"' % \
@@ -14,7 +14,7 @@ def print_channel(chn, ident):
 	print xml
 
 	for attr in chn.attrs:
-		print_attr(attr, ident + 1)
+		print_attr(attr, ident + 1, chn.read_attr(attr))
 	print '%s</channel>' % (ident * '\t', )
 
 def print_device(dev, ident):
@@ -27,7 +27,7 @@ def print_device(dev, ident):
 	for chn in dev.channels:
 		print_channel(chn, ident + 1)
 	for attr in dev.attrs:
-		print_attr(attr, ident + 1)
+		print_attr(attr, ident + 1, dev.read_attr(attr))
 	print '%s</device>' % (ident * '\t', )
 
 def print_context(ctx, ident):
@@ -46,7 +46,7 @@ def main():
 	print '\t<!ATTLIST context name CDATA #REQUIRED>'
 	print '\t<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>'
 	print '\t<!ATTLIST channel id CDATA #REQUIRED type CDATA #REQUIRED name CDATA #IMPLIED>'
-	print '\t<!ATTLIST attribute name CDATA #REQUIRED>'
+	print '\t<!ATTLIST attribute name CDATA #REQUIRED value CDATA #REQUIRED>'
 	print ']>'
 
 	print_context(LocalContext(), 0)
