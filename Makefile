@@ -12,8 +12,13 @@ CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
 INSTALL ?= install
 
-CFLAGS := -Wall -fPIC -fvisibility=hidden
-LDFLAGS := -lsysfs #-static
+# XXX: xml2-config is not sysroot aware...
+SYSROOT := $(shell $(CC) --print-sysroot)
+XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
+XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
+
+CFLAGS := $(XML2_CFLAGS) -Wall -fPIC -fvisibility=hidden
+LDFLAGS := $(XML2_LIBS) -lsysfs
 
 ifdef DEBUG
 	CFLAGS += -g -ggdb
@@ -30,7 +35,7 @@ else
 	SUM:=@echo
 endif
 
-OBJS := context.o device.o channel.o local.o
+OBJS := context.o device.o channel.o local.o xml.o
 
 .PHONY: all clean analyze install install-lib uninstall uninstall-lib
 
