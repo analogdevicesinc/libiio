@@ -164,11 +164,12 @@ static int set_channel_name(struct iio_channel *chn)
 static ssize_t local_read_attr(const struct iio_device *dev,
 		const char *path, char *dst, size_t len)
 {
+	struct local_pdata *pdata = dev->ctx->backend_data;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 
-	sprintf(buf, "/sys/bus/iio/devices/%s/%s", dev->id, path);
+	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, path);
 	f = fopen(buf, "r");
 	if (!f)
 		return -errno;
@@ -183,12 +184,13 @@ static ssize_t local_read_attr(const struct iio_device *dev,
 static ssize_t local_write_attr(const struct iio_device *dev,
 		const char *path, const char *src)
 {
+	struct local_pdata *pdata = dev->ctx->backend_data;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 	size_t len = strlen(src) + 1;
 
-	sprintf(buf, "/sys/bus/iio/devices/%s/%s", dev->id, path);
+	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, path);
 	f = fopen(buf, "w");
 	if (!f)
 		return -errno;
