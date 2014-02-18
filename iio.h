@@ -28,7 +28,6 @@ struct iio_channel;
 
 /* Top-level functions */
 struct iio_context * iio_create_local_context(void);
-struct iio_context * iio_create_dummy_context(void);
 struct iio_context * iio_create_network_context(void *foo);
 void iio_context_destroy(struct iio_context *ctx);
 
