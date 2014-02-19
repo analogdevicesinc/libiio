@@ -71,5 +71,5 @@ install: install-lib
 uninstall-lib:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
 
-uninstall: uninstall-bin uninstall-lib
+uninstall: uninstall-lib
 	rm -f $(DESTDIR)$(PREFIX)/include/iio.h $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)
