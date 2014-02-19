@@ -36,6 +36,12 @@ def _init():
 	_new_local.archtypes = None
 	_new_local.errcheck = _checkNull
 
+	global _new_xml
+	_new_xml = lib.iio_create_xml_context
+	_new_xml.restype = ContextPtr
+	_new_xml.archtypes = (c_char_p, )
+	_new_xml.errcheck = _checkNull
+
 	global _destroy
 	_destroy = lib.iio_context_destroy
 	_destroy.restype = None
@@ -181,9 +187,9 @@ class Device(object):
 	def write_attr(self, attr, value):
 		_d_write_attr(self._device, attr, value)
 
-class LocalContext(object):
-	def __init__(self):
-		self._context = _new_local()
+class Context(object):
+	def __init__(self, _context):
+		self._context = _context
 		nb_devices = _devices_count(self._context)
 		self.devices = [ Device(_get_device(self._context, x)) \
 				for x in xrange(0, _devices_count(self._context)) ]
@@ -191,3 +197,13 @@ class LocalContext(object):
 
 	def __del__(self):
 		_destroy(self._context)
+
+class LocalContext(Context):
+	def __init__(self):
+		ctx = _new_local()
+		super(LocalContext, self).__init__(ctx)
+
+class XMLContext(Context):
+	def __init__(self, xmlfile):
+		ctx = _new_xml(xmlfile)
+		super(XMLContext, self).__init__(ctx)
