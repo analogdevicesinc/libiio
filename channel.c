@@ -37,13 +37,20 @@ const char * iio_channel_get_attr(const struct iio_channel *chn,
 ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
-	return chn->dev->ctx->ops->read_channel_attr(chn, attr, dst, len);
+	if (chn->dev->ctx->ops->read_channel_attr)
+		return chn->dev->ctx->ops->read_channel_attr(chn,
+				attr, dst, len);
+	else
+		return -ENOSYS;
 }
 
 ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src)
 {
-	return chn->dev->ctx->ops->write_channel_attr(chn, attr, src);
+	if (chn->dev->ctx->ops->write_channel_attr)
+		return chn->dev->ctx->ops->write_channel_attr(chn, attr, src);
+	else
+		return -ENOSYS;
 }
 
 void free_channel(struct iio_channel *chn)

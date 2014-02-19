@@ -1,5 +1,6 @@
 #include "iio-private.h"
 
+#include <errno.h>
 #include <stdio.h>
 
 const char * iio_device_get_id(const struct iio_device *dev)
@@ -43,13 +44,19 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
-	return dev->ctx->ops->read_device_attr(dev, attr, dst, len);
+	if (dev->ctx->ops->read_device_attr)
+		return dev->ctx->ops->read_device_attr(dev, attr, dst, len);
+	else
+		return -ENOSYS;
 }
 
 ssize_t iio_device_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src)
 {
-	return dev->ctx->ops->write_device_attr(dev, attr, src);
+	if (dev->ctx->ops->write_device_attr)
+		return dev->ctx->ops->write_device_attr(dev, attr, src);
+	else
+		return -ENOSYS;
 }
 
 void free_device(struct iio_device *dev)
