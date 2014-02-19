@@ -180,7 +180,7 @@ static const char * get_filename(const struct iio_channel *chn,
 	struct fn_map *maps = pdata->maps;
 	unsigned int i;
 	for (i = 0; i < pdata->nb_maps; i++)
-		if (!strcmp(attr, maps[i].attr))
+		if (maps[i].channel == chn && !strcmp(attr, maps[i].attr))
 			return maps[i].filename;
 	return attr;
 }
