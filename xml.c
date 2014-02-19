@@ -310,8 +310,7 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	ctx->backend_data = calloc(1, sizeof(struct xml_pdata));
 	if (!ctx->backend_data) {
 		ERROR("Unable to allocate memory\n");
-		free(ctx);
-		return NULL;
+		goto err_free_ctx;
 	}
 
 	ctx->name = "xml";
@@ -319,10 +318,10 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 
 	LIBXML_TEST_VERSION;
 
-	doc = xmlReadFile(xml_file, NULL, 0);
+	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		ERROR("Unable to parse XML file\n");
-		goto err_free_ctx;
+		goto err_free_bdata;
 	}
 
 	root = xmlDocGetRootElement(doc);
@@ -359,6 +358,8 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 		ctx->devices = devs;
 	}
 
+	xmlFreeDoc(doc);
+	xmlCleanupParser();
 	return ctx;
 
 err_free_devices:
@@ -369,6 +370,8 @@ err_free_devices:
 err_free_doc:
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
+err_free_bdata:
+	free(ctx->backend_data);
 err_free_ctx:
 	free(ctx);
 	return NULL;
