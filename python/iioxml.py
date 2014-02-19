@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-from iio import LocalContext
+from iio import LocalContext, XMLContext
+from os import getenv
+from sys import argv
 
 def print_attr(attr, ident, value):
 	print '%s<attribute name="%s" value="%s" />' % (ident * '\t', attr, value)
@@ -37,6 +39,14 @@ def print_context(ctx, ident):
 	print '</context>'
 
 def main():
+	if getenv('LIBIIO_BACKEND') == 'xml':
+		if len(argv) < 2:
+			print 'The XML backend requires the XML file to be passed as argument'
+			return 1
+		context = XMLContext(argv[1])
+	else:
+		context = LocalContext()
+
 	print '<?xml version="1.0" encoding="utf-8"?>'
 	print '<!DOCTYPE context ['
 	print '\t<!ELEMENT context (device)*>'
@@ -49,7 +59,7 @@ def main():
 	print '\t<!ATTLIST attribute name CDATA #REQUIRED value CDATA #REQUIRED>'
 	print ']>'
 
-	print_context(LocalContext(), 0)
+	print_context(context, 0)
 
 if __name__ == '__main__':
 	main()
