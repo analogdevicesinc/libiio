@@ -2,13 +2,27 @@
 #include "iio.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
+	char *backend = getenv("LIBIIO_BACKEND");
 
-	INFO("Creating local IIO context\n");
-	ctx= iio_create_local_context();
+	if (backend && !strcmp(backend, "xml")) {
+		if (argc < 2) {
+			ERROR("The XML backend requires the XML file to be "
+					"passed as argument\n");
+			return EXIT_FAILURE;
+		}
+
+		INFO("Creating XML IIO context\n");
+		ctx = iio_create_xml_context(argv[1]);
+	} else {
+		INFO("Creating local IIO context\n");
+		ctx = iio_create_local_context();
+	}
 	if (!ctx)
 		return EXIT_FAILURE;
 
