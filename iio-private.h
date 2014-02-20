@@ -70,7 +70,7 @@ struct iio_data_format {
 };
 
 struct iio_channel {
-	enum iio_channel_type type;
+	bool is_output;
 	enum iio_modifier modifier;
 	struct iio_data_format data_format;
 	struct iio_device *dev;

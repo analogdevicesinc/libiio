@@ -7,6 +7,7 @@
 #define __pure
 #endif
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 enum iio_debug_level {
@@ -14,12 +15,6 @@ enum iio_debug_level {
 	INFO,
 	WARNING,
 	ERROR,
-};
-
-enum iio_channel_type {
-	IIO_CHANNEL_INPUT,
-	IIO_CHANNEL_OUTPUT,
-	IIO_CHANNEL_UNKNOWN,
 };
 
 struct iio_context;
@@ -53,8 +48,7 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 /* Channel functions */
 const char * iio_channel_get_id(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_name(const struct iio_channel *chn) __pure;
-enum iio_channel_type iio_channel_get_type(
-		const struct iio_channel *chn) __pure;
+bool iio_channel_is_output(const struct iio_channel *chn) __pure;
 int iio_channel_enable(struct iio_channel *chn);
 int iio_channel_disable(struct iio_channel *chn);
 unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn) __pure;

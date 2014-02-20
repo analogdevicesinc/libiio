@@ -45,17 +45,10 @@ int main(int argc, char **argv)
 			struct iio_channel *ch = iio_device_get_channel(dev, j);
 			const char *type_name;
 
-			switch (iio_channel_get_type(ch)) {
-			case IIO_CHANNEL_INPUT:
-				type_name = "input";
-				break;
-			case IIO_CHANNEL_OUTPUT:
+			if (iio_channel_is_output(ch))
 				type_name = "output";
-				break;
-			default:
-				type_name = "unknown";
-				break;
-			}
+			else
+				type_name = "input";
 
 			name = iio_channel_get_name(ch);
 			INFO("\t\t\t%s: %s (%s)\n",

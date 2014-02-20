@@ -370,17 +370,11 @@ static bool is_global_attr(struct iio_channel *chn, const char *attr)
 	unsigned int i, len;
 	char *ptr;
 
-	if (!strncmp(attr, "in_", 3)) {
-		if (chn->type != IIO_CHANNEL_INPUT)
-			return false;
-		else
-			attr += 3;
-	} else if (!strncmp(attr, "out_", 4)) {
-		if (chn->type != IIO_CHANNEL_OUTPUT)
-			return false;
-		else
-			attr += 4;
-	} else
+	if (!chn->is_output && !strncmp(attr, "in_", 3))
+		attr += 3;
+	else if (chn->is_output && !strncmp(attr, "out_", 4))
+		attr += 4;
+	else
 		return false;
 
 	ptr = strchr(attr, '_');
@@ -450,12 +444,12 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!chn)
 		return NULL;
 
-	if (!strncmp(attr, "in_", 3))
-		chn->type = IIO_CHANNEL_INPUT;
-	else if (!strncmp(attr, "out_", 4))
-		chn->type = IIO_CHANNEL_OUTPUT;
-	else
-		chn->type = IIO_CHANNEL_UNKNOWN;
+	if (!strncmp(attr, "out_", 4)) {
+		chn->is_output = true;
+	} else if (strncmp(attr, "in_", 3)) {
+		free(chn);
+		return NULL;
+	}
 
 	chn->dev = dev;
 	chn->id = id;

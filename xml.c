@@ -135,26 +135,22 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 		return NULL;
 
 	chn->dev = dev;
-	chn->type = IIO_CHANNEL_UNKNOWN;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "name")) {
-			chn->name = strdup((char *) attr->children->content);
-		} else if (!strcmp((char *) attr->name, "id")) {
-			chn->id = strdup((char *) attr->children->content);
-		} else if (!strcmp((char *) attr->name, "type")) {
-			if (!strcmp((char *) attr->children->content, "input"))
-				chn->type = IIO_CHANNEL_INPUT;
-			else if (!strcmp((char *) attr->children->content,
-						"output")) {
-				chn->type = IIO_CHANNEL_OUTPUT;
-			} else {
-				WARNING("Unknown channel type %s\n", (char *)
-						attr->children->content);
-			}
+		const char *name = (const char *) attr->name,
+		      *content = (const char *) attr->children->content;
+		if (!strcmp(name, "name")) {
+			chn->name = strdup(content);
+		} else if (!strcmp(name, "id")) {
+			chn->id = strdup(content);
+		} else if (!strcmp(name, "type")) {
+			if (!strcmp(content, "output"))
+				chn->is_output = true;
+			else if (strcmp(content, "input"))
+				WARNING("Unknown channel type %s\n", content);
 		} else {
 			WARNING("Unknown attribute \'%s\' in <channel>\n",
-					attr->name);
+					name);
 		}
 	}
 

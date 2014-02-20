@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from ctypes import POINTER, Structure, cdll, c_char_p, c_uint, c_int, \
-		create_string_buffer, byref
+		c_bool, create_string_buffer, byref
 from sys import argv
 
 def _checkNull(result, func, arguments):
@@ -120,10 +120,10 @@ def _init():
 	_c_get_name.restype = c_char_p
 	_c_get_name.archtypes = (ChannelPtr, )
 
-	global _c_get_type
-	_c_get_type = lib.iio_channel_get_type
-	_c_get_type.restype = c_uint
-	_c_get_type.archtypes = (ChannelPtr, )
+	global _c_is_output
+	_c_is_output = lib.iio_channel_is_output
+	_c_is_output.restype = c_bool
+	_c_is_output.archtypes = (ChannelPtr, )
 
 	global _c_attr_count
 	_c_attr_count = lib.iio_channel_get_attrs_count
@@ -157,7 +157,7 @@ class Channel(object):
 				for x in xrange(0, _c_attr_count(self._channel)) ]
 		self.id = _c_get_id(self._channel)
 		self.name = _c_get_name(self._channel)
-		self.output = _c_get_type(self._channel) == 1
+		self.output = _c_is_output(self._channel)
 
 	# TODO(pcercuei): Provide a dict-like interface for the attributes
 	def read_attr(self, attr):

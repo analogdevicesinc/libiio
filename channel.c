@@ -15,9 +15,9 @@ const char * iio_channel_get_name(const struct iio_channel *chn)
 	return chn->name;
 }
 
-enum iio_channel_type iio_channel_get_type(const struct iio_channel *chn)
+bool iio_channel_is_output(const struct iio_channel *chn)
 {
-	return chn->type;
+	return chn->is_output;
 }
 
 unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn)
