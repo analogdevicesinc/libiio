@@ -74,21 +74,19 @@ struct iio_channel {
 	enum iio_modifier modifier;
 	struct iio_data_format data_format;
 	struct iio_device *dev;
-	const char *name;
-	const char *id;
+	char *name, *id;
 	unsigned int index;
 	bool enabled;
 
-	const char **attrs;
+	char **attrs;
 	unsigned int nb_attrs;
 };
 
 struct iio_device {
 	const struct iio_context *ctx;
-	const char *name;
-	const char *id;
+	char *name, *id;
 
-	const char **attrs;
+	char **attrs;
 	unsigned int nb_attrs;
 
 	struct iio_channel **channels;

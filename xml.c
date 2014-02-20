@@ -20,8 +20,7 @@ struct xml_pdata {
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
-	char *name = NULL, *value = NULL;
-	const char **attrs;
+	char **attrs, *name = NULL, *value = NULL;
 	struct xml_pdata *pdata = chn->dev->ctx->backend_data;
 	struct value_map *values;
 
@@ -75,8 +74,7 @@ err_free:
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n)
 {
 	xmlAttr *attr;
-	char *name = NULL, *value = NULL;
-	const char **attrs;
+	char **attrs, *name = NULL, *value = NULL;
 	struct xml_pdata *pdata = dev->ctx->backend_data;
 	struct value_map *values;
 

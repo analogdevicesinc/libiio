@@ -91,7 +91,7 @@ static int set_channel_name(struct iio_channel *chn)
 			sprintf(name, "%s_%.*s", chn->name, len, attr0);
 			DEBUG("Fixing name of channel %s from %s to %s\n",
 					chn->id, chn->name, name);
-			free((char *) chn->name);
+			free(chn->name);
 		} else {
 			name = malloc(len + 2);
 			if (!name)
@@ -104,7 +104,7 @@ static int set_channel_name(struct iio_channel *chn)
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
-			strcut((char *) chn->attrs[i], len + 1);
+			strcut(chn->attrs[i], len + 1);
 	}
 
 	if (chn->name) {
@@ -119,9 +119,9 @@ static int set_channel_name(struct iio_channel *chn)
 			if (!strncmp(chn->name, modifier_names[i], len)) {
 				if (chn->name[len]) {
 					/* Shrink the modifier from the extended name */
-					strcut((char *) chn->name, len + 1);
+					strcut(chn->name, len + 1);
 				} else {
-					free((char *) chn->name);
+					free(chn->name);
 					chn->name = NULL;
 				}
 				chn->modifier = i;
@@ -267,8 +267,7 @@ static int read_device_name(struct iio_device *dev)
 
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
-	const char **attrs;
-	char *name;
+	char **attrs, *name;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(device_attrs_blacklist); i++)
@@ -298,8 +297,7 @@ static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
 {
 	struct local_pdata *pdata = chn->dev->ctx->backend_data;
 	struct fn_map *maps;
-	const char **attrs;
-	char *fn, *name = get_short_attr_name(attr);
+	char **attrs, *fn, *name = get_short_attr_name(attr);
 	if (!name)
 		return -ENOMEM;
 
@@ -404,7 +402,7 @@ static bool is_global_attr(struct iio_channel *chn, const char *attr)
 static int detect_and_move_global_attrs(struct iio_device *dev)
 {
 	unsigned int i;
-	const char **ptr = dev->attrs;
+	char **ptr = dev->attrs;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
 		unsigned int j;
@@ -423,7 +421,7 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 		}
 
 		if (global) {
-			free((char *) dev->attrs[i]);
+			free(dev->attrs[i]);
 			dev->attrs[i] = NULL;
 		}
 	}
