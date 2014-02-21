@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE context [
+	<!ELEMENT context (device)*>
+	<!ELEMENT device (channel | attribute)*>
+	<!ELEMENT channel (attribute)*>
+	<!ELEMENT attribute EMPTY>
+	<!ATTLIST context name CDATA #REQUIRED>
+	<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST channel id CDATA #REQUIRED type CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST attribute name CDATA #REQUIRED>
+]>
+<context name="local">
+	<device id="iio:device0" name="ad5628-1" >
+		<channel id="voltage0" type="output" >
+			<attribute name="powerdown_mode" />
+			<attribute name="powerdown" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage1" type="output" >
+			<attribute name="powerdown_mode" />
+			<attribute name="powerdown" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage2" type="output" >
+			<attribute name="powerdown" />
+			<attribute name="powerdown_mode" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage3" type="output" >
+			<attribute name="powerdown" />
+			<attribute name="powerdown_mode" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage4" type="output" >
+			<attribute name="powerdown_mode" />
+			<attribute name="powerdown" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage5" type="output" >
+			<attribute name="powerdown_mode" />
+			<attribute name="powerdown" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage6" type="output" >
+			<attribute name="powerdown" />
+			<attribute name="powerdown_mode" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+		<channel id="voltage7" type="output" >
+			<attribute name="powerdown" />
+			<attribute name="powerdown_mode" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+			<attribute name="powerdown_mode_available" />
+		</channel>
+	</device>
+</context>

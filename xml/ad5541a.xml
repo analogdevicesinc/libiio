@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE context [
+	<!ELEMENT context (device)*>
+	<!ELEMENT device (channel | attribute)*>
+	<!ELEMENT channel (attribute)*>
+	<!ELEMENT attribute EMPTY>
+	<!ATTLIST context name CDATA #REQUIRED>
+	<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST channel id CDATA #REQUIRED type CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST attribute name CDATA #REQUIRED>
+]>
+<context name="local">
+	<device id="iio:device0" name="ad5541a" >
+		<channel id="voltage0" type="output" >
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+	</device>
+</context>

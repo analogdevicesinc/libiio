@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE context [
+	<!ELEMENT context (device)*>
+	<!ELEMENT device (channel | attribute)*>
+	<!ELEMENT channel (attribute)*>
+	<!ELEMENT attribute EMPTY>
+	<!ATTLIST context name CDATA #REQUIRED>
+	<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST channel id CDATA #REQUIRED type CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST attribute name CDATA #REQUIRED>
+]>
+<context name="local">
+	<device id="iio:device0" name="adis16488" >
+		<channel id="accel_x" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="calibscale" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="accel_y" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="calibscale" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="accel_z" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="calibscale" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="anglvel_x" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="calibscale" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="anglvel_y" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="calibscale" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="anglvel_z" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="calibscale" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="magn_x" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="magn_y" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="magn_z" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="filter_low_pass_3db_frequency" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="pressure0" type="input" >
+			<attribute name="calibbias" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<channel id="temp0" type="input" >
+			<attribute name="offset" />
+			<attribute name="raw" />
+			<attribute name="scale" />
+		</channel>
+		<attribute name="sampling_frequency" />
+	</device>
+</context>
