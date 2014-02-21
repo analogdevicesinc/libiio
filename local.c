@@ -10,15 +10,12 @@
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
 struct fn_map {
-	const struct iio_channel *channel;
 	const char *attr;
 	char *filename;
 };
 
 struct iio_context_pdata {
 	char *path;
-	struct fn_map *maps;
-	size_t nb_maps;
 };
 
 struct iio_device_pdata {
@@ -26,7 +23,8 @@ struct iio_device_pdata {
 };
 
 struct iio_channel_pdata {
-	char __empty;
+	struct fn_map *maps;
+	size_t nb_maps;
 };
 
 static const char * const device_attrs_blacklist[] = {
@@ -61,15 +59,18 @@ static void local_shutdown(struct iio_context *ctx)
 
 		/* Free backend data stored in every channel structure */
 		for (j = 0; j < dev->nb_channels; j++) {
+			unsigned int k;
 			struct iio_channel *chn = dev->channels[j];
-			free(chn->pdata);
+			struct iio_channel_pdata *ch_pdata = chn->pdata;
+
+			for (k = 0; k < ch_pdata->nb_maps; k++)
+				free(ch_pdata->maps[k].filename);
+			if (ch_pdata->nb_maps)
+				free(ch_pdata->maps);
+			free(ch_pdata);
 		}
 	}
 
-	for (i = 0; i < pdata->nb_maps; i++)
-		free(pdata->maps[i].filename);
-	if (pdata->nb_maps)
-		free(pdata->maps);
 	free(pdata->path);
 	free(pdata);
 }
@@ -197,11 +198,11 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 static const char * get_filename(const struct iio_channel *chn,
 		const char *attr)
 {
-	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
+	struct iio_channel_pdata *pdata = chn->pdata;
 	struct fn_map *maps = pdata->maps;
 	unsigned int i;
 	for (i = 0; i < pdata->nb_maps; i++)
-		if (maps[i].channel == chn && !strcmp(attr, maps[i].attr))
+		if (!strcmp(attr, maps[i].attr))
 			return maps[i].filename;
 	return attr;
 }
@@ -316,7 +317,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 
 static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
 {
-	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
+	struct iio_channel_pdata *pdata = chn->pdata;
 	struct fn_map *maps;
 	char **attrs, *fn, *name = get_short_attr_name(attr);
 	if (!name)
@@ -335,7 +336,6 @@ static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
 	if (!maps)
 		goto err_update_maps;
 
-	maps[pdata->nb_maps].channel = chn;
 	maps[pdata->nb_maps].attr = name;
 	maps[pdata->nb_maps++].filename = fn;
 	pdata->maps = maps;
