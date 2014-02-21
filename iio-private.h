@@ -53,6 +53,8 @@ struct iio_backend_ops {
 };
 
 struct iio_context_pdata;
+struct iio_device_pdata;
+struct iio_channel_pdata;
 
 struct iio_context {
 	struct iio_context_pdata *pdata;
@@ -72,10 +74,12 @@ struct iio_data_format {
 };
 
 struct iio_channel {
+	struct iio_device *dev;
+	struct iio_channel_pdata *pdata;
+
 	bool is_output;
 	enum iio_modifier modifier;
 	struct iio_data_format data_format;
-	struct iio_device *dev;
 	char *name, *id;
 	unsigned int index;
 	bool enabled;
@@ -86,6 +90,8 @@ struct iio_channel {
 
 struct iio_device {
 	const struct iio_context *ctx;
+	struct iio_device_pdata *pdata;
+
 	char *name, *id;
 
 	char **attrs;

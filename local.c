@@ -21,6 +21,14 @@ struct iio_context_pdata {
 	size_t nb_maps;
 };
 
+struct iio_device_pdata {
+	char __empty;
+};
+
+struct iio_channel_pdata {
+	char __empty;
+};
+
 static const char * const device_attrs_blacklist[] = {
 	"dev",
 	"uevent",
@@ -44,6 +52,19 @@ static void local_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
 	unsigned int i;
+
+	/* First, free the backend data stored in every device structure */
+	for (i = 0; i < ctx->nb_devices; i++) {
+		unsigned int j;
+		struct iio_device *dev = ctx->devices[i];
+		free(dev->pdata);
+
+		/* Free backend data stored in every channel structure */
+		for (j = 0; j < dev->nb_channels; j++) {
+			struct iio_channel *chn = dev->channels[j];
+			free(chn->pdata);
+		}
+	}
 
 	for (i = 0; i < pdata->nb_maps; i++)
 		free(pdata->maps[i].filename);
@@ -442,22 +463,27 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!chn)
 		return NULL;
 
-	if (!strncmp(attr, "out_", 4)) {
+	chn->pdata = calloc(1, sizeof(*chn->pdata));
+	if (!dev->pdata)
+		goto err_free_chn;
+
+	if (!strncmp(attr, "out_", 4))
 		chn->is_output = true;
-	} else if (strncmp(attr, "in_", 3)) {
-		free(chn);
-		return NULL;
-	}
+	else if (strncmp(attr, "in_", 3))
+		goto err_free_pdata;
 
 	chn->dev = dev;
 	chn->id = id;
 	chn->modifier = IIO_NO_MOD;
 
-	if (add_attr_to_channel(chn, attr)) {
-		free(chn);
-		return NULL;
-	}
-	return chn;
+	if (!add_attr_to_channel(chn, attr))
+		return chn;
+
+err_free_pdata:
+	free(chn->pdata);
+err_free_chn:
+	free(chn);
+	return NULL;
 }
 
 static struct iio_device *create_device(struct iio_context *ctx,
@@ -472,9 +498,16 @@ static struct iio_device *create_device(struct iio_context *ctx,
 	if (!dev)
 		return NULL;
 
+	dev->pdata = calloc(1, sizeof(*dev->pdata));
+	if (!dev->pdata) {
+		free(dev);
+		return NULL;
+	}
+
 	dev->ctx = ctx;
 	dev->id = strdup(device->name);
 	if (!dev->id) {
+		free(dev->pdata);
 		free(dev);
 		return NULL;
 	}
