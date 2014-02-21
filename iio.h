@@ -45,6 +45,9 @@ unsigned int iio_device_get_attrs_count(const struct iio_device *dev) __pure;
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index) __pure;
 
+int iio_device_open(const struct iio_device *dev);
+int iio_device_close(const struct iio_device *dev);
+
 /* Channel functions */
 const char * iio_channel_get_id(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_name(const struct iio_channel *chn) __pure;

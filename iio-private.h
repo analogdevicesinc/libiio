@@ -30,8 +30,11 @@ enum iio_modifier {
 };
 
 struct iio_backend_ops {
-	ssize_t (*read)(struct iio_device *dev, void *dst, size_t len);
-	ssize_t (*write)(struct iio_device *dev, const void *src, size_t len);
+	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len);
+	ssize_t (*write)(const struct iio_device *dev,
+			const void *src, size_t len);
+	int (*open)(const struct iio_device *dev);
+	int (*close)(const struct iio_device *dev);
 
 	int (*channel_enable)(struct iio_channel *channel);
 	int (*channel_disable)(struct iio_channel *channel);

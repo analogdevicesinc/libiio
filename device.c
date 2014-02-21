@@ -41,6 +41,40 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 		return dev->attrs[index];
 }
 
+int iio_device_open(const struct iio_device *dev)
+{
+	if (dev->ctx->ops->open)
+		return dev->ctx->ops->open(dev);
+	else
+		return -ENOSYS;
+}
+
+int iio_device_close(const struct iio_device *dev)
+{
+	if (dev->ctx->ops->close)
+		return dev->ctx->ops->close(dev);
+	else
+		return -ENOSYS;
+}
+
+ssize_t iio_device_read_raw(const struct iio_device *dev,
+		void *dst, size_t len)
+{
+	if (dev->ctx->ops->read)
+		return dev->ctx->ops->read(dev, dst, len);
+	else
+		return -ENOSYS;
+}
+
+ssize_t iio_device_write_raw(const struct iio_device *dev,
+		const void *src, size_t len)
+{
+	if (dev->ctx->ops->write)
+		return dev->ctx->ops->write(dev, src, len);
+	else
+		return -ENOSYS;
+}
+
 ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
