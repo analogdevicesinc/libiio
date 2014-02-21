@@ -19,7 +19,7 @@ struct iio_context_pdata {
 };
 
 struct iio_device_pdata {
-	char __empty;
+	FILE *f;
 };
 
 struct iio_channel_pdata {
@@ -154,6 +154,60 @@ static int set_channel_name(struct iio_channel *chn)
 		}
 	}
 	return 0;
+}
+
+static int local_open(const struct iio_device *dev)
+{
+	char buf[1024];
+	struct iio_device_pdata *pdata = dev->pdata;
+	if (pdata->f)
+		return -EAGAIN;
+
+	sprintf(buf, "/dev/%s", dev->id);
+	pdata->f = fopen(buf, "r+");
+	if (!pdata->f)
+		return -errno;
+	return 0;
+}
+
+static int local_close(const struct iio_device *dev)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int ret = fclose(pdata->f);
+	if (!ret)
+		pdata->f = NULL;
+	return ret;
+}
+
+static ssize_t local_read(const struct iio_device *dev, void *dst, size_t len)
+{
+	ssize_t ret;
+	FILE *f = dev->pdata->f;
+	if (!f)
+		return -EBADF;
+	ret = fread(dst, 1, len, f);
+	if (ret)
+		return ret;
+	else if (feof(f))
+		return 0;
+	else
+		return -EIO;
+}
+
+static ssize_t local_write(const struct iio_device *dev,
+		const void *src, size_t len)
+{
+	ssize_t ret;
+	FILE *f = dev->pdata->f;
+	if (!f)
+		return -EBADF;
+	ret = fwrite(src, 1, len, f);
+	if (ret)
+		return ret;
+	else if (feof(f))
+		return 0;
+	else
+		return -EIO;
 }
 
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
@@ -570,6 +624,10 @@ static struct iio_device *create_device(struct iio_context *ctx,
 }
 
 static struct iio_backend_ops local_ops = {
+	.open = local_open,
+	.close = local_close,
+	.read = local_read,
+	.write = local_write,
 	.read_device_attr = local_read_dev_attr,
 	.write_device_attr = local_write_dev_attr,
 	.read_channel_attr = local_read_chn_attr,
