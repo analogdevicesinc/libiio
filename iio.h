@@ -24,6 +24,7 @@ struct iio_channel;
 /* Top-level functions */
 struct iio_context * iio_create_local_context(void);
 struct iio_context * iio_create_xml_context(const char *xml_file);
+struct iio_context * iio_create_xml_context_mem(const char *xml);
 struct iio_context * iio_create_network_context(void *foo);
 void iio_context_destroy(struct iio_context *ctx);
 

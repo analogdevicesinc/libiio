@@ -185,10 +185,9 @@ err_free_device:
 static struct iio_backend_ops xml_ops = {
 };
 
-struct iio_context * iio_create_xml_context(const char *xml_file)
+static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 {
 	unsigned int i;
-	xmlDoc *doc;
 	xmlNode *root, *n;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
@@ -197,18 +196,10 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	ctx->name = "xml";
 	ctx->ops = &xml_ops;
 
-	LIBXML_TEST_VERSION;
-
-	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
-	if (!doc) {
-		ERROR("Unable to parse XML file\n");
-		goto err_free_ctx;
-	}
-
 	root = xmlDocGetRootElement(doc);
 	if (strcmp((char *) root->name, "context")) {
 		ERROR("Unrecognized XML file\n");
-		goto err_free_doc;
+		goto err_free_ctx;
 	}
 
 	for (n = root->children; n; n = n->next) {
@@ -239,8 +230,6 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 		ctx->devices = devs;
 	}
 
-	xmlFreeDoc(doc);
-	xmlCleanupParser();
 	return ctx;
 
 err_free_devices:
@@ -248,10 +237,45 @@ err_free_devices:
 		free_device(ctx->devices[i]);
 	if (ctx->nb_devices)
 		free(ctx->devices);
-err_free_doc:
-	xmlFreeDoc(doc);
-	xmlCleanupParser();
 err_free_ctx:
 	free(ctx);
 	return NULL;
+}
+
+struct iio_context * iio_create_xml_context(const char *xml_file)
+{
+	struct iio_context *ctx;
+	xmlDoc *doc;
+
+	LIBXML_TEST_VERSION;
+
+	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
+	if (!doc) {
+		ERROR("Unable to parse XML file\n");
+		return NULL;
+	}
+
+	ctx = iio_create_xml_context_helper(doc);
+	xmlFreeDoc(doc);
+	xmlCleanupParser();
+	return ctx;
+}
+
+struct iio_context * iio_create_xml_context_mem(const char *xml)
+{
+	struct iio_context *ctx;
+	xmlDoc *doc;
+
+	LIBXML_TEST_VERSION;
+
+	doc = xmlReadMemory(xml, strlen(xml), NULL, NULL, XML_PARSE_DTDVALID);
+	if (!doc) {
+		ERROR("Unable to parse XML file\n");
+		return NULL;
+	}
+
+	ctx = iio_create_xml_context_helper(doc);
+	xmlFreeDoc(doc);
+	xmlCleanupParser();
+	return ctx;
 }
