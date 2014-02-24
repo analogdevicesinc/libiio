@@ -52,9 +52,11 @@ struct iio_backend_ops {
 	void (*shutdown)(struct iio_context *ctx);
 };
 
+struct iio_context_pdata;
+
 struct iio_context {
+	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
-	void *backend_data;
 	const char *name;
 
 	struct iio_device **devices;

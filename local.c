@@ -15,7 +15,7 @@ struct fn_map {
 	char *filename;
 };
 
-struct local_pdata {
+struct iio_context_pdata {
 	char *path;
 	struct fn_map *maps;
 	size_t nb_maps;
@@ -42,7 +42,7 @@ static const char * const modifier_names[] = {
 
 static void local_shutdown(struct iio_context *ctx)
 {
-	struct local_pdata *pdata = ctx->backend_data;
+	struct iio_context_pdata *pdata = ctx->pdata;
 	unsigned int i;
 
 	for (i = 0; i < pdata->nb_maps; i++)
@@ -137,7 +137,7 @@ static int set_channel_name(struct iio_channel *chn)
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
-	struct local_pdata *pdata = dev->ctx->backend_data;
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
@@ -157,7 +157,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src)
 {
-	struct local_pdata *pdata = dev->ctx->backend_data;
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
@@ -176,7 +176,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 static const char * get_filename(const struct iio_channel *chn,
 		const char *attr)
 {
-	struct local_pdata *pdata = chn->dev->ctx->backend_data;
+	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
 	struct fn_map *maps = pdata->maps;
 	unsigned int i;
 	for (i = 0; i < pdata->nb_maps; i++)
@@ -295,7 +295,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 
 static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
 {
-	struct local_pdata *pdata = chn->dev->ctx->backend_data;
+	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
 	struct fn_map *maps;
 	char **attrs, *fn, *name = get_short_attr_name(attr);
 	if (!name)
@@ -557,8 +557,8 @@ struct iio_context * iio_create_local_context(void)
 		return NULL;
 	}
 
-	ctx->backend_data = calloc(1, sizeof(struct local_pdata));
-	if (!ctx->backend_data) {
+	ctx->pdata = calloc(1, sizeof(*ctx->pdata));
+	if (!ctx->pdata) {
 		ERROR("Unable to allocate memory\n");
 		free(ctx);
 		return NULL;
@@ -579,7 +579,7 @@ struct iio_context * iio_create_local_context(void)
 		goto err_close_sysfs_bus;
 	}
 
-	((struct local_pdata *) ctx->backend_data)->path = path;
+	ctx->pdata->path = path;
 
 	devlist = sysfs_get_bus_devices(iio);
 	dlist_for_each_data(devlist, device, struct sysfs_device) {
