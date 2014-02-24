@@ -108,4 +108,7 @@ void iio_msg(enum iio_debug_level level, const char *msg);
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 
+char *iio_channel_get_xml(const struct iio_channel *chn, size_t *len);
+char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
+
 #endif /* __IIO_PRIVATE_H__ */

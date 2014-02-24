@@ -34,6 +34,7 @@ unsigned int iio_context_get_devices_count(
 		const struct iio_context *ctx) __pure;
 struct iio_device * iio_context_get_device(const struct iio_context *ctx,
 		unsigned int index);
+char * iio_context_get_xml(const struct iio_context *ctx);
 
 /* Device functions */
 const char * iio_device_get_id(const struct iio_device *dev) __pure;

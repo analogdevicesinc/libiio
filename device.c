@@ -1,7 +1,92 @@
+#include "debug.h"
 #include "iio-private.h"
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
+
+static char *get_attr_xml(const char *attr, size_t *length)
+{
+	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr);
+	char *str = malloc(len);
+	if (!str) {
+		ERROR("Unable to allocate memory\n");
+		return NULL;
+	}
+
+	*length = len - 1; /* Skip the \0 */
+	sprintf(str, "<attribute name=\"%s\" />", attr);
+	return str;
+}
+
+/* Returns a string containing the XML representation of this device */
+char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
+{
+	size_t len = sizeof("<device id=\"\" name=\"\" ></device>");
+	char *ptr, *str, *attrs[dev->nb_attrs], *channels[dev->nb_channels];
+	size_t attrs_len[dev->nb_attrs], channels_len[dev->nb_channels];
+	unsigned int i, j;
+
+	for (i = 0; i < dev->nb_attrs; i++) {
+		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i]);
+		if (!xml)
+			goto err_free_attrs;
+		attrs[i] = xml;
+		len += attrs_len[i];
+	}
+
+	for (j = 0; j < dev->nb_channels; j++) {
+		char *xml = iio_channel_get_xml(dev->channels[j],
+				&channels_len[j]);
+		if (!xml)
+			goto err_free_channels;
+		channels[j] = xml;
+		len += channels_len[j];
+	}
+
+	len += strlen(dev->id);
+	if (dev->name)
+		len += strlen(dev->name);
+
+	str = malloc(len);
+	if (!str)
+		goto err_free_channels;
+
+	sprintf(str, "<device id=\"%s\"", dev->id);
+	ptr = strrchr(str, '\0');
+
+	if (dev->name) {
+		sprintf(ptr, " name=\"%s\"", dev->name);
+		ptr = strrchr(ptr, '\0');
+	}
+
+	strcpy(ptr, " >");
+	ptr += 2;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		strcpy(ptr, channels[i]);
+		ptr += channels_len[i];
+		free(channels[i]);
+	}
+
+	for (i = 0; i < dev->nb_attrs; i++) {
+		strcpy(ptr, attrs[i]);
+		ptr += attrs_len[i];
+		free(attrs[i]);
+	}
+
+	strcpy(ptr, "</device>");
+	*length = ptr - str + sizeof("</device>") - 1;
+	return str;
+
+err_free_channels:
+	while (j--)
+		free(channels[j]);
+err_free_attrs:
+	while (i--)
+		free(attrs[i]);
+	return NULL;
+}
 
 const char * iio_device_get_id(const struct iio_device *dev)
 {

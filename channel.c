@@ -5,6 +5,72 @@
 #include <stdio.h>
 #include <string.h>
 
+static char *get_attr_xml(const char *attr, size_t *length)
+{
+	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr);
+	char *str = malloc(len);
+	if (!str) {
+		ERROR("Unable to allocate memory\n");
+		return NULL;
+	}
+
+	*length = len - 1; /* Skip the \0 */
+	sprintf(str, "<attribute name=\"%s\" />", attr);
+	return str;
+}
+
+/* Returns a string containing the XML representation of this channel */
+char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
+{
+	size_t len = sizeof("<channel id=\"\" name=\"\" "
+			"type=\"output\" ></channel>");
+	char *ptr, *str, *attrs[chn->nb_attrs];
+	size_t attrs_len[chn->nb_attrs];
+	unsigned int i;
+
+	for (i = 0; i < chn->nb_attrs; i++) {
+		char *xml = get_attr_xml(chn->attrs[i], &attrs_len[i]);
+		if (!xml)
+			goto err_free_attrs;
+		attrs[i] = xml;
+		len += attrs_len[i];
+	}
+
+	len += strlen(chn->id);
+	if (chn->name)
+		len += strlen(chn->name);
+
+	str = malloc(len);
+	if (!str)
+		goto err_free_attrs;
+
+	sprintf(str, "<channel id=\"%s\"", chn->id);
+	ptr = strrchr(str, '\0');
+
+	if (chn->name) {
+		sprintf(ptr, " name=\"%s\"", chn->name);
+		ptr = strrchr(ptr, '\0');
+	}
+
+	sprintf(ptr, " type=\"%s\" >", chn->is_output ? "output" : "input");
+	ptr = strrchr(ptr, '\0');
+
+	for (i = 0; i < chn->nb_attrs; i++) {
+		strcpy(ptr, attrs[i]);
+		ptr += attrs_len[i];
+		free(attrs[i]);
+	}
+
+	strcpy(ptr, "</channel>");
+	*length = ptr - str + sizeof("</channel>") - 1;
+	return str;
+
+err_free_attrs:
+	while (i--)
+		free(attrs[i]);
+	return NULL;
+}
+
 const char * iio_channel_get_id(const struct iio_channel *chn)
 {
 	return chn->id;
