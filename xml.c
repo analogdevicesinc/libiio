@@ -5,37 +5,21 @@
 #include <libxml/tree.h>
 #include <string.h>
 
-struct value_map {
-	const struct iio_device *dev;
-	const struct iio_channel *chn;
-	const char *attr;
-	char *value;
-};
-
-struct xml_pdata {
-	struct value_map *values;
-	unsigned int nb_values;
-};
-
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
-	char **attrs, *name = NULL, *value = NULL;
-	struct xml_pdata *pdata = chn->dev->ctx->backend_data;
-	struct value_map *values;
+	char **attrs, *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
 			name = strdup((char *) attr->children->content);
-		} else if (!strcmp((char *) attr->name, "value")) {
-			value = strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in channel %s\n",
 					attr->name, chn->id);
 		}
 	}
 
-	if (!name || !value) {
+	if (!name) {
 		ERROR("Incomplete attribute in channel %s\n", chn->id);
 		goto err_free;
 	}
@@ -44,52 +28,31 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	if (!attrs)
 		goto err_free;
 
-	values = realloc(pdata->values,
-			(1 + pdata->nb_values) * sizeof(struct value_map));
-	if (!values)
-		goto err_update_attrs;
-
-	values[pdata->nb_values].dev = NULL;
-	values[pdata->nb_values].chn = chn;
-	values[pdata->nb_values].attr = name;
-	values[pdata->nb_values++].value = value;
-	pdata->values = values;
-
 	attrs[chn->nb_attrs++] = name;
 	chn->attrs = attrs;
 	return 0;
 
-err_update_attrs:
-	/* the first realloc succeeded so we must update chn->attrs
-	 * even if an error occured later */
-	chn->attrs = attrs;
 err_free:
 	if (name)
 		free(name);
-	if (value)
-		free(value);
 	return -1;
 }
 
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n)
 {
 	xmlAttr *attr;
-	char **attrs, *name = NULL, *value = NULL;
-	struct xml_pdata *pdata = dev->ctx->backend_data;
-	struct value_map *values;
+	char **attrs, *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
 			name = strdup((char *) attr->children->content);
-		} else if (!strcmp((char *) attr->name, "value")) {
-			value = strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in device %s\n",
 					attr->name, dev->id);
 		}
 	}
 
-	if (!name || !value) {
+	if (!name) {
 		ERROR("Incomplete attribute in device %s\n", dev->id);
 		goto err_free;
 	}
@@ -98,30 +61,13 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n)
 	if (!attrs)
 		goto err_free;
 
-	values = realloc(pdata->values,
-			(1 + pdata->nb_values) * sizeof(struct value_map));
-	if (!values)
-		goto err_update_attrs;
-
-	values[pdata->nb_values].dev = dev;
-	values[pdata->nb_values].chn = NULL;
-	values[pdata->nb_values].attr = name;
-	values[pdata->nb_values++].value = value;
-	pdata->values = values;
-
 	attrs[dev->nb_attrs++] = name;
 	dev->attrs = attrs;
 	return 0;
 
-err_update_attrs:
-	/* the first realloc succeeded so we must update dev->attrs
-	 * even if an error occured later */
-	dev->attrs = attrs;
 err_free:
 	if (name)
 		free(name);
-	if (value)
-		free(value);
 	return -1;
 }
 
@@ -236,60 +182,7 @@ err_free_device:
 	return NULL;
 }
 
-static ssize_t xml_read_attr_helper(struct xml_pdata *pdata,
-		const struct iio_device *dev,
-		const struct iio_channel *chn,
-		const char *path, char *dst, size_t len)
-{
-	unsigned int i;
-	for (i = 0; i < pdata->nb_values; i++) {
-		struct value_map *map = &pdata->values[i];
-
-		if (dev == map->dev && chn == map->chn
-				&& !strcmp(path, map->attr)) {
-			size_t value_len = strlen(map->value);
-			strncpy(dst, map->value, len);
-			return value_len + 1;
-		}
-	}
-
-	return -ENOENT;
-}
-
-static ssize_t xml_read_dev_attr(const struct iio_device *dev,
-		const char *path, char *dst, size_t len)
-{
-	struct xml_pdata *pdata = dev->ctx->backend_data;
-	return xml_read_attr_helper(pdata, dev, NULL, path, dst, len);
-}
-
-static ssize_t xml_read_chn_attr(const struct iio_channel *chn,
-		const char *path, char *dst, size_t len)
-{
-	struct xml_pdata *pdata = chn->dev->ctx->backend_data;
-	return xml_read_attr_helper(pdata, NULL, chn, path, dst, len);
-}
-
-static void xml_shutdown(struct iio_context *ctx)
-{
-	struct xml_pdata *pdata = ctx->backend_data;
-	unsigned int i;
-	for (i = 0; i < pdata->nb_values; i++) {
-		struct value_map *map = &pdata->values[i];
-
-		/* note: map->attr and map->dev are freed elsewhere */
-		free(map->value);
-	}
-
-	if (pdata->nb_values)
-		free(pdata->values);
-	free(pdata);
-}
-
 static struct iio_backend_ops xml_ops = {
-	.read_device_attr = xml_read_dev_attr,
-	.read_channel_attr = xml_read_chn_attr,
-	.shutdown = xml_shutdown,
 };
 
 struct iio_context * iio_create_xml_context(const char *xml_file)
@@ -301,12 +194,6 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	if (!ctx)
 		return NULL;
 
-	ctx->backend_data = calloc(1, sizeof(struct xml_pdata));
-	if (!ctx->backend_data) {
-		ERROR("Unable to allocate memory\n");
-		goto err_free_ctx;
-	}
-
 	ctx->name = "xml";
 	ctx->ops = &xml_ops;
 
@@ -315,7 +202,7 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		ERROR("Unable to parse XML file\n");
-		goto err_free_bdata;
+		goto err_free_ctx;
 	}
 
 	root = xmlDocGetRootElement(doc);
@@ -364,8 +251,6 @@ err_free_devices:
 err_free_doc:
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
-err_free_bdata:
-	free(ctx->backend_data);
 err_free_ctx:
 	free(ctx);
 	return NULL;
