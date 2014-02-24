@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "iio.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,13 +69,15 @@ int main(int argc, char **argv)
 				char buf[1024];
 				ssize_t ret = iio_channel_attr_read(ch,
 						attr, buf, 1024);
-				if (ret <= 0)
-					ERROR("Unable to read attribute: %s\n",
-							attr);
-				else
+				if (ret > 0)
 					INFO("\t\t\t\tattr %u: %s"
 							" value: %s\n", k,
 							attr, buf);
+				else if (ret == -ENOSYS)
+					INFO("\t\t\t\tattr %u: %s\n", k, attr);
+				else
+					ERROR("Unable to read attribute %s\n",
+							attr);
 			}
 		}
 
@@ -86,12 +89,15 @@ int main(int argc, char **argv)
 		for (j = 0; j < nb_attrs; j++) {
 			const char *attr = iio_device_get_attr(dev, j);
 			char buf[1024];
-			size_t ret = iio_device_attr_read(dev, attr, buf, 1024);
-			if (ret <= 0)
-				ERROR("Unable to read attribute: %s\n", attr);
-			else
+			ssize_t ret = iio_device_attr_read(dev,
+					attr, buf, 1024);
+			if (ret > 0)
 				INFO("\t\t\t\tattr %u: %s value: %s\n", j,
 						attr, buf);
+			else if (ret == -ENOSYS)
+				INFO("\t\t\t\tattr %u: %s\n", j, attr);
+			else
+				ERROR("Unable to read attribute: %s\n", attr);
 		}
 	}
 
