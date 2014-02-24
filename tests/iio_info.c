@@ -1,5 +1,5 @@
-#include "debug.h"
-#include "iio.h"
+#include "../debug.h"
+#include "../iio.h"
 
 #include <errno.h>
 #include <stdio.h>

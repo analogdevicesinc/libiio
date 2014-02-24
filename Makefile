@@ -37,24 +37,26 @@ endif
 
 OBJS := context.o device.o channel.o local.o xml.o
 
-.PHONY: all clean analyze install install-lib uninstall uninstall-lib
+.PHONY: all clean tests analyze install install-lib uninstall uninstall-lib
 
 $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
-all: $(LIBIIO) test
+all: $(LIBIIO) tests
 
-clean:
+clean-tests:
+	$(CMD)$(MAKE) -C tests clean
+
+clean: clean-tests
 	$(SUM) "  CLEAN   ."
-	$(CMD)rm -f $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist) test.o test
+	$(CMD)rm -f $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist)
 
 analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
 
-test: test.o $(LIBIIO)
-	$(SUM) "  LD      $@"
-	$(CMD)$(CC) -o $@ $^ $(LDFLAGS)
+tests: $(LIBIIO)
+	$(CMD)$(MAKE) -C tests
 
 %.o: %.c
 	$(SUM) "  CC      $@"
