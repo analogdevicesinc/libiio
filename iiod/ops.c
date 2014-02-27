@@ -19,8 +19,7 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 	return ptr - src;
 }
 
-static struct iio_device * get_device(struct iio_context *ctx,
-		const char *id, const char *attr)
+static struct iio_device * get_device(struct iio_context *ctx, const char *id)
 {
 	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
 
@@ -37,7 +36,7 @@ static struct iio_device * get_device(struct iio_context *ctx,
 ssize_t read_dev_attr(struct iio_context *ctx,
 		const char *id, const char *attr, FILE *out)
 {
-	struct iio_device *dev = get_device(ctx, id, attr);
+	struct iio_device *dev = get_device(ctx, id);
 	char buf[1024], cr = '\n';
 	ssize_t ret;
 
@@ -66,7 +65,7 @@ ssize_t read_dev_attr(struct iio_context *ctx,
 ssize_t write_dev_attr(struct iio_context *ctx,
 		const char *id, const char *attr, const char *value, FILE *out)
 {
-	struct iio_device *dev = get_device(ctx, id, attr);
+	struct iio_device *dev = get_device(ctx, id);
 	if (!dev) {
 		fprintf(out, "Device with ID or name %s does not exist\n", id);
 		return -ENOENT;
