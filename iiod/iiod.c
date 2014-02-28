@@ -22,6 +22,7 @@
 
 #include <endian.h>
 #include <errno.h>
+#include <getopt.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -31,6 +32,7 @@
 #include <unistd.h>
 
 #define IIOD_VERSION "0.1"
+#define MY_NAME "iiod"
 
 #define IIOD_PORT 30431
 
@@ -49,6 +51,29 @@ static struct sockaddr_in sockaddr = {
 	.sin_port = IIOD_PORT,
 #endif
 };
+
+static const struct option options[] = {
+	  {"help", no_argument, 0, 'h'},
+	  {"version", no_argument, 0, 'V'},
+	  {0, 0, 0, 0},
+};
+
+static const char *options_descriptions[] = {
+	"Show this help and quit.",
+	"Display the version of this program.",
+};
+
+
+static void usage(void)
+{
+	unsigned int i;
+
+	printf("Usage:\n\t" MY_NAME " [OPTIONS ...]\n\nOptions:\n");
+	for (i = 0; options[i].name; i++)
+		printf("\t-%c, --%s\n\t\t\t%s\n",
+					options[i].val, options[i].name,
+					options_descriptions[i]);
+}
 
 static void * client_thd(void *d)
 {
@@ -71,7 +96,28 @@ int main(int argc, char **argv)
 {
 	int fd;
 	struct iio_context *ctx;
+	int c, option_index = 0, arg_index = 0;
 	char *backend = getenv("LIBIIO_BACKEND");
+
+	while ((c = getopt_long(argc, argv, "+hV",
+					options, &option_index)) != -1) {
+		switch (c) {
+		case 'h':
+			usage();
+			return EXIT_SUCCESS;
+		case 'V':
+			puts(IIOD_VERSION);
+			return EXIT_SUCCESS;
+		case '?':
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (arg_index >= argc) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		usage();
+		return EXIT_FAILURE;
+	}
 
 	if (backend && !strcmp(backend, "xml")) {
 		if (argc < 2) {
