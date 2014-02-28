@@ -33,10 +33,11 @@ static struct iio_device * get_device(struct iio_context *ctx, const char *id)
 	return NULL;
 }
 
-ssize_t read_dev_attr(struct iio_context *ctx,
-		const char *id, const char *attr, FILE *out)
+ssize_t read_dev_attr(struct parser_pdata *pdata,
+		const char *id, const char *attr)
 {
-	struct iio_device *dev = get_device(ctx, id);
+	FILE *out = pdata->out;
+	struct iio_device *dev = get_device(pdata->ctx, id);
 	char buf[1024], cr = '\n';
 	ssize_t ret;
 
@@ -62,10 +63,11 @@ ssize_t read_dev_attr(struct iio_context *ctx,
 	return ret;
 }
 
-ssize_t write_dev_attr(struct iio_context *ctx,
-		const char *id, const char *attr, const char *value, FILE *out)
+ssize_t write_dev_attr(struct parser_pdata *pdata,
+		const char *id, const char *attr, const char *value)
 {
-	struct iio_device *dev = get_device(ctx, id);
+	FILE *out = pdata->out;
+	struct iio_device *dev = get_device(pdata->ctx, id);
 	if (!dev) {
 		fprintf(out, "Device with ID or name %s does not exist\n", id);
 		return -ENOENT;
@@ -80,6 +82,8 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out)
 
 	pdata.ctx = ctx;
 	pdata.stop = false;
+	pdata.in = in;
+	pdata.out = out;
 
 	yylex_init_extra(&pdata, &scanner);
 	yyset_out(out, scanner);

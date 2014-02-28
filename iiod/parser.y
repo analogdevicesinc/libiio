@@ -20,7 +20,6 @@ int yylex_destroy(yyscan_t yyscanner);
 void * yyget_extra(yyscan_t scanner);
 void yyset_in(FILE *in, yyscan_t scanner);
 void yyset_out(FILE *out, yyscan_t scanner);
-FILE *yyget_out(yyscan_t scanner);
 
 #define YY_INPUT(buf,result,max_size) { \
 		int c = '*'; \
@@ -68,8 +67,8 @@ Line:
 		YYACCEPT;
 	}
 	| HELP END {
-		FILE *out = yyget_out(scanner);
-		fprintf(out, "Available commands:\n\n"
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		fprintf(pdata->out, "Available commands:\n\n"
 		"\tHELP\n"
 		"\t\tPrint this help message\n"
 		"\tEXIT\n"
@@ -83,19 +82,16 @@ Line:
 		YYACCEPT;
 	}
 	| PRINT END {
-		FILE *out = yyget_out(scanner);
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		char *xml = iio_context_get_xml(pdata->ctx);
-		fprintf(out, "%s\n", xml);
-		fflush(out);
+		fprintf(pdata->out, "%s\n", xml);
 		free(xml);
 		YYACCEPT;
 	}
 	| READ SPACE WORD SPACE WORD END {
 		char *id = $3, *attr = $5;
-		FILE *out = yyget_out(scanner);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev_attr(pdata->ctx, id, attr, out);
+		ssize_t ret = read_dev_attr(pdata, id, attr);
 		free(id);
 		free(attr);
 		if (ret < 0)
@@ -105,9 +101,8 @@ Line:
 	}
 	| WRITE SPACE WORD SPACE WORD SPACE WORD END {
 		char *id = $3, *attr = $5, *value = $7;
-		FILE *out = yyget_out(scanner);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata->ctx, id, attr, value, out);
+		ssize_t ret = write_dev_attr(pdata, id, attr, value);
 		free(id);
 		free(attr);
 		free(value);
@@ -127,7 +122,6 @@ Line:
 
 void yyerror(yyscan_t scanner, const char *msg)
 {
-	FILE *out = yyget_out(scanner);
-	fprintf(out, "Unable to perform operation: %s\n", msg);
-	fflush(out);
+	struct parser_pdata *pdata = yyget_extra(scanner);
+	fprintf(pdata->out, "Unable to perform operation: %s\n", msg);
 }
