@@ -29,6 +29,10 @@
 
 #define IIOD_PORT 30431
 
+struct iio_context_pdata {
+	int fd;
+};
+
 static pthread_mutex_t hostname_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static ssize_t write_all(const void *src, size_t len, int fd)
@@ -57,7 +61,17 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	return ptr - dst;
 }
 
+static void network_shutdown(struct iio_context *ctx)
+{
+	struct iio_context_pdata *pdata = ctx->pdata;
+
+	write_all("\r\nEXIT\r\n", sizeof("\r\nEXIT\r\n") - 1, pdata->fd);
+	close(pdata->fd);
+	free(pdata);
+}
+
 static struct iio_backend_ops network_ops = {
+	.shutdown = network_shutdown,
 };
 
 static struct iio_context * get_context(int fd)
@@ -116,6 +130,7 @@ struct iio_context * iio_create_network_context(const char *host)
 	struct hostent *ent;
 	struct sockaddr_in serv;
 	struct iio_context *ctx;
+	struct iio_context_pdata *pdata;
 	int fd;
 
 	memset(&serv, 0, sizeof(serv));
@@ -152,18 +167,29 @@ struct iio_context * iio_create_network_context(const char *host)
 		goto err_close_socket;
 	}
 
+	pdata = calloc(1, sizeof(*pdata));
+	if (!pdata) {
+		ERROR("Unable to allocate memory\n");
+		goto err_close_socket;
+	}
+
+	pdata->fd = fd;
+
 	DEBUG("Creating context...\n");
 	ctx = get_context(fd);
 	if (!ctx)
-		goto err_close_socket;
+		goto err_free_pdata;
 
 	/* Override the name and low-level functions of the XML context
 	 * with those corresponding to the network context */
 	ctx->name = "network";
 	ctx->ops = &network_ops;
+	ctx->pdata = pdata;
 
 	return ctx;
 
+err_free_pdata:
+	free(pdata);
 err_close_socket:
 	close(fd);
 	return NULL;
