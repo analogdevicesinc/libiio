@@ -43,7 +43,7 @@ struct iio_channel;
 struct iio_context * iio_create_local_context(void);
 struct iio_context * iio_create_xml_context(const char *xml_file);
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len);
-struct iio_context * iio_create_network_context(void *foo);
+struct iio_context * iio_create_network_context(const char *host);
 void iio_context_destroy(struct iio_context *ctx);
 
 /* Context functions */

@@ -50,7 +50,7 @@ else
 	SUM:=@echo
 endif
 
-OBJS := context.o device.o channel.o local.o xml.o
+OBJS := context.o device.o channel.o local.o xml.o network.o
 
 .PHONY: all clean tests analyze install install-lib uninstall uninstall-lib
 
