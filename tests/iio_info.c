@@ -38,6 +38,15 @@ int main(int argc, char **argv)
 
 		INFO("Creating XML IIO context\n");
 		ctx = iio_create_xml_context(argv[1]);
+	} else if (backend && !strcmp(backend, "network")) {
+		if (argc < 2) {
+			ERROR("The XML backend requires the hostname to be "
+					"passed as argument\n");
+			return EXIT_FAILURE;
+		}
+
+		INFO("Creating network IIO context\n");
+		ctx = iio_create_network_context(argv[1]);
 	} else {
 		INFO("Creating local IIO context\n");
 		ctx = iio_create_local_context();
