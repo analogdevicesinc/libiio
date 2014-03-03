@@ -26,11 +26,11 @@
 
 struct parser_pdata {
 	struct iio_context *ctx;
-	bool stop;
+	bool stop, verbose;
 	FILE *in, *out;
 };
 
-void interpreter(struct iio_context *ctx, FILE *in, FILE *out);
+void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
 
 ssize_t read_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr);

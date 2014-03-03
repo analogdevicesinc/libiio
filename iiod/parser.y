@@ -20,6 +20,8 @@
 #include "ops.h"
 #include "parser.h"
 
+#include <string.h>
+
 void yyerror(yyscan_t scanner, const char *msg);
 %}
 
@@ -102,6 +104,8 @@ Line:
 	| PRINT END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		char *xml = iio_context_get_xml(pdata->ctx);
+		if (!pdata->verbose)
+			fprintf(pdata->out, "%lu\n", strlen(xml));
 		fprintf(pdata->out, "%s\n", xml);
 		free(xml);
 		YYACCEPT;

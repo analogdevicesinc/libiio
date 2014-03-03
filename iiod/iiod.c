@@ -38,6 +38,7 @@
 
 struct client_data {
 	int fd;
+	bool debug;
 	struct iio_context *ctx;
 };
 
@@ -55,12 +56,14 @@ static struct sockaddr_in sockaddr = {
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"version", no_argument, 0, 'V'},
+	  {"debug", no_argument, 0, 'd'},
 	  {0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Display the version of this program.",
+	"Use alternative (incompatible) debug interface.",
 };
 
 
@@ -84,7 +87,7 @@ static void * client_thd(void *d)
 		return NULL;
 	}
 
-	interpreter(cdata->ctx, f, f);
+	interpreter(cdata->ctx, f, f, cdata->debug);
 
 	INFO("Client exited\n");
 	fclose(f);
@@ -96,12 +99,17 @@ int main(int argc, char **argv)
 {
 	int fd;
 	struct iio_context *ctx;
-	int c, option_index = 0, arg_index = 0;
 	char *backend = getenv("LIBIIO_BACKEND");
+	bool debug = false, xml_backend = backend && !strcmp(backend, "xml");
+	int c, option_index = 0, arg_index = xml_backend;
 
-	while ((c = getopt_long(argc, argv, "+hV",
+	while ((c = getopt_long(argc, argv, "+hVd",
 					options, &option_index)) != -1) {
 		switch (c) {
+		case 'd':
+			debug = true;
+			arg_index++;
+			break;
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
@@ -119,7 +127,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (backend && !strcmp(backend, "xml")) {
+	if (xml_backend) {
 		if (argc < 2) {
 			ERROR("The XML backend requires the XML file to be "
 					"passed as argument\n");
@@ -127,7 +135,7 @@ int main(int argc, char **argv)
 		}
 
 		DEBUG("Creating XML IIO context\n");
-		ctx = iio_create_xml_context(argv[1]);
+		ctx = iio_create_xml_context(argv[arg_index]);
 	} else {
 		DEBUG("Creating local IIO context\n");
 		ctx = iio_create_local_context();
@@ -176,6 +184,7 @@ int main(int argc, char **argv)
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
+		cdata->debug = debug;
 
 		INFO("New client connected\n");
 		pthread_attr_init(&attr);

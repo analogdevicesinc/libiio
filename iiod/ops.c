@@ -60,21 +60,24 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 	ssize_t ret;
 
 	if (!dev) {
-		fprintf(out, "Device with ID or name %s does not exist\n", id);
-		return -ENOENT;
+		if (pdata->verbose) {
+			strerror_r(ENODEV, buf, 1024);
+			fprintf(out, "ERROR: %s\n", buf);
+		} else {
+			fprintf(out, "%i\n", -ENODEV);
+		}
+		return -ENODEV;
 	}
 
 	ret = iio_device_attr_read(dev, attr, buf, 1024);
-	if (ret < 0) {
-		if (ret == -ENOENT)
-			fprintf(out, "Device with ID %s does not have an "
-					"attribute named %s\n",
-					iio_device_get_id(dev), attr);
-		else
-			fprintf(out, "Unable to read attribute %s: %s\n",
-					attr, strerror(ret));
-		return ret;
+	if (pdata->verbose && ret < 0) {
+		strerror_r(-ret, buf, 1024);
+		fprintf(out, "ERROR: %s\n", buf);
+	} else {
+		fprintf(out, "%li\n", ret);
 	}
+	if (ret < 0)
+		return ret;
 
 	ret = write_all(buf, ret, out);
 	write_all(&cr, 1, out);
@@ -87,13 +90,28 @@ ssize_t write_dev_attr(struct parser_pdata *pdata,
 	FILE *out = pdata->out;
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	if (!dev) {
-		fprintf(out, "Device with ID or name %s does not exist\n", id);
-		return -ENOENT;
+		if (pdata->verbose) {
+			char buf[1024];
+			strerror_r(ENODEV, buf, 1024);
+			fprintf(out, "ERROR: %s\n", buf);
+		} else {
+			fprintf(out, "%i\n", -ENODEV);
+		}
+		return -ENODEV;
+	} else {
+		ssize_t ret = iio_device_attr_write(dev, attr, value);
+		if (pdata->verbose && ret < 0) {
+			char buf[1024];
+			strerror_r(-ret, buf, 1024);
+			fprintf(out, "ERROR: %s\n", buf);
+		} else {
+			fprintf(out, "%li\n", ret);
+		}
+		return ret;
 	}
-	return iio_device_attr_write(dev, attr, value);
 }
 
-void interpreter(struct iio_context *ctx, FILE *in, FILE *out)
+void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
@@ -102,14 +120,17 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out)
 	pdata.stop = false;
 	pdata.in = in;
 	pdata.out = out;
+	pdata.verbose = verbose;
 
 	yylex_init_extra(&pdata, &scanner);
 	yyset_out(out, scanner);
 	yyset_in(in, scanner);
 
 	do {
-		fprintf(out, "iio-daemon > ");
-		fflush(out);
+		if (verbose) {
+			fprintf(out, "iio-daemon > ");
+			fflush(out);
+		}
 		yyparse(scanner);
 		if (pdata.stop)
 			break;
