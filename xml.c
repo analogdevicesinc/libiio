@@ -279,14 +279,14 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	return ctx;
 }
 
-struct iio_context * iio_create_xml_context_mem(const char *xml)
+struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
 
 	LIBXML_TEST_VERSION;
 
-	doc = xmlReadMemory(xml, strlen(xml), NULL, NULL, XML_PARSE_DTDVALID);
+	doc = xmlReadMemory(xml, len, NULL, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		ERROR("Unable to parse XML file\n");
 		return NULL;

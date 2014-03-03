@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
 	iio_context_destroy(ctx);
 
-	ctx = iio_create_xml_context_mem(xml);
+	ctx = iio_create_xml_context_mem(xml, strlen(xml));
 	if (!ctx) {
 		ERROR("Unable to re-generate context\n");
 	} else {
