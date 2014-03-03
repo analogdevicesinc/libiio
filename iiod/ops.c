@@ -29,8 +29,8 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 	const void *ptr = src;
 	while (len) {
 		ssize_t ret = fwrite(ptr, 1, len, out);
-		if (ret < 0)
-			return ret;
+		if (ret == 0)
+			return -EIO;
 		ptr += ret;
 		len -= ret;
 	}
