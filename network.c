@@ -84,7 +84,9 @@ static struct iio_context * get_context(int fd)
 	DEBUG("Writing PRINT command\n");
 	ssize_t ret = write_all("PRINT\r\n", sizeof("PRINT\r\n") - 1, fd);
 	if (ret < 0) {
-		ERROR("Unable to send PRINT command: %s\n", strerror(ret));
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to send PRINT command: %s\n", buf);
 		return NULL;
 	}
 
@@ -92,8 +94,9 @@ static struct iio_context * get_context(int fd)
 	for (i = 0; i < sizeof(buf) - 1; i++) {
 		ssize_t ret = read_all(buf + i, 1, fd);
 		if (ret < 0) {
-			ERROR("Unable to read response to PRINT: %s\n",
-					strerror(ret));
+			char buf[1024];
+			strerror_r(-ret, buf, sizeof(buf));
+			ERROR("Unable to read response to PRINT: %s\n", buf);
 			return NULL;
 		}
 
