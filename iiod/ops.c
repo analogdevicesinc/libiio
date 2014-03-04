@@ -74,7 +74,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 		strerror_r(-ret, buf, 1024);
 		fprintf(out, "ERROR: %s\n", buf);
 	} else {
-		fprintf(out, "%li\n", ret);
+		fprintf(out, "%li\n", (long) ret);
 	}
 	if (ret < 0)
 		return ret;
@@ -105,7 +105,7 @@ ssize_t write_dev_attr(struct parser_pdata *pdata,
 			strerror_r(-ret, buf, 1024);
 			fprintf(out, "ERROR: %s\n", buf);
 		} else {
-			fprintf(out, "%li\n", ret);
+			fprintf(out, "%li\n", (long) ret);
 		}
 		return ret;
 	}
