@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -61,6 +62,33 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	return ptr - dst;
 }
 
+static int read_integer(int fd, long *val)
+{
+	unsigned int i;
+	char buf[1024], *ptr;
+	ssize_t ret;
+	bool found = false;
+
+	for (i = 0; i < sizeof(buf) - 1; i++) {
+		ret = read_all(buf + i, 1, fd);
+		if (ret < 0)
+			return (int) ret;
+
+		/* Skip the eventual first few carriage returns */
+		if (buf[i] != '\n')
+			found = true;
+		else if (found)
+			break;
+	}
+
+	buf[i] = '\0';
+	ret = (ssize_t) strtol(buf, &ptr, 10);
+	if (ptr == buf)
+		return -EINVAL;
+	*val = (long) ret;
+	return 0;
+}
+
 static void network_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
@@ -77,12 +105,12 @@ static struct iio_backend_ops network_ops = {
 static struct iio_context * get_context(int fd)
 {
 	struct iio_context *ctx;
-	unsigned int i;
-	unsigned long xml_len;
-	char *xml, *ptr, buf[1024];
+	long xml_len;
+	char *xml;
+	ssize_t ret;
 
 	DEBUG("Writing PRINT command\n");
-	ssize_t ret = write_all("PRINT\r\n", sizeof("PRINT\r\n") - 1, fd);
+	ret = write_all("PRINT\r\n", sizeof("PRINT\r\n") - 1, fd);
 	if (ret < 0) {
 		char buf[1024];
 		strerror_r(-ret, buf, sizeof(buf));
@@ -91,27 +119,22 @@ static struct iio_context * get_context(int fd)
 	}
 
 	DEBUG("Reading response...\n");
-	for (i = 0; i < sizeof(buf) - 1; i++) {
-		ssize_t ret = read_all(buf + i, 1, fd);
-		if (ret < 0) {
-			char buf[1024];
-			strerror_r(-ret, buf, sizeof(buf));
-			ERROR("Unable to read response to PRINT: %s\n", buf);
-			return NULL;
-		}
-
-		if (buf[i] == '\n')
-			break;
-	}
-
-	buf[i] = '\0';
-	xml_len = strtoul(buf, &ptr, 10);
-	if (ptr == buf) {
-		ERROR("Unrecognized response from server\n");
+	ret = read_integer(fd, &xml_len);
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to read response to PRINT: %s\n", buf);
 		return NULL;
 	}
 
-	DEBUG("Server returned a XML string of length %lu\n", xml_len);
+	if (xml_len < 0) {
+		char buf[1024];
+		strerror_r(-xml_len, buf, sizeof(buf));
+		ERROR("Server returned an error: %s\n", buf);
+		return NULL;
+	}
+
+	DEBUG("Server returned a XML string of length %li\n", xml_len);
 
 	xml = malloc(xml_len);
 	if (!xml) {
