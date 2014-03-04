@@ -89,6 +89,86 @@ static int read_integer(int fd, long *val)
 	return 0;
 }
 
+static ssize_t network_read_dev_attr(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len)
+{
+	int fd = dev->ctx->pdata->fd;
+	long read_len;
+	ssize_t ret;
+	char buf[1024];
+
+	DEBUG("Writing READ command\n");
+	snprintf(buf, sizeof(buf), "READ %s %s\r\n", dev->id, attr);
+	ret = write_all(buf, strlen(buf), fd);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to send READ command: %s\n", buf);
+		return ret;
+	}
+
+	DEBUG("Reading READ response\n");
+	ret = read_integer(fd, &read_len);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to read response to READ: %s\n", buf);
+		return ret;
+	}
+
+	if (read_len < 0) {
+		strerror_r(-read_len, buf, sizeof(buf));
+		ERROR("Server returned an error: %s\n", buf);
+		return read_len;
+	}
+
+	if (read_len > len) {
+		ERROR("Value returned by server is too large\n");
+		return -EIO;
+	}
+
+	ret = read_all(dst, read_len, fd);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to read response to READ: %s\n", buf);
+		return ret;
+	}
+
+	dst[read_len] = '\0';
+	return read_len + 1;
+}
+
+static ssize_t network_write_dev_attr(const struct iio_device *dev,
+		const char *attr, const char *src)
+{
+	int fd = dev->ctx->pdata->fd;
+	long resp;
+	ssize_t ret;
+	char buf[1024];
+
+	DEBUG("Writing WRITE command\n");
+	snprintf(buf, sizeof(buf), "READ %s %s %s\r\n", dev->id, attr, src);
+	ret = write_all(buf, strlen(buf), fd);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to send READ command: %s\n", buf);
+		return ret;
+	}
+
+	DEBUG("Reading WRITE response\n");
+	ret = read_integer(fd, &resp);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to read response to WRITE: %s\n", buf);
+		return ret;
+	}
+
+	if (resp < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Server returned an error: %s\n", buf);
+	}
+
+	return resp;
+}
+
 static void network_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
@@ -99,6 +179,8 @@ static void network_shutdown(struct iio_context *ctx)
 }
 
 static struct iio_backend_ops network_ops = {
+	.read_device_attr = network_read_dev_attr,
+	.write_device_attr = network_write_dev_attr,
 	.shutdown = network_shutdown,
 };
 
