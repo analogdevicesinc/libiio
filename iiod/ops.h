@@ -32,6 +32,9 @@ struct parser_pdata {
 
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
 
+ssize_t read_dev(struct parser_pdata *pdata, const char *id,
+		unsigned int nb, unsigned int samples_size);
+
 ssize_t read_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr);
 ssize_t write_dev_attr(struct parser_pdata *pdata,

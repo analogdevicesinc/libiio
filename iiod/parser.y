@@ -71,7 +71,9 @@ void yyset_out(FILE *out, yyscan_t scanner);
 %token HELP
 %token PRINT
 %token READ
+%token READBUF
 %token WRITE
+
 %token <word> WORD
 
 %start Line
@@ -98,7 +100,9 @@ Line:
 		"\tREAD <device> <attribute>\n"
 		"\t\tRead the value of a device's attribute\n"
 		"\tWRITE <device> <attribute> <value>\n"
-		"\t\tSet the value of a device's attribute\n");
+		"\t\tSet the value of a device's attribute\n"
+		"\tREADBUF <device> <samples_count> <sample_size>\n"
+		"\t\tRead raw data from the specified device\n");
 		YYACCEPT;
 	}
 	| PRINT END {
@@ -116,6 +120,20 @@ Line:
 		ssize_t ret = read_dev_attr(pdata, id, attr);
 		free(id);
 		free(attr);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| READBUF SPACE WORD SPACE WORD SPACE WORD END {
+		char *id = $3, *attr = $5, *val = $7;
+		unsigned long nb = atol(attr), samples_size = atol(val);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = read_dev(pdata, id, nb, samples_size);
+
+		free(id);
+		free(attr);
+		free(val);
 		if (ret < 0)
 			YYABORT;
 		else

@@ -25,6 +25,7 @@
 PRINT PRINT|print
 READ READ|read
 WRITE WRITE|write
+READBUF READBUF|readbuf
 EXIT EXIT|QUIT|exit|quit
 HELP HELP|help
 
@@ -40,6 +41,10 @@ WORD (iio:)?(-|_|[[:alnum:]])+
 
 {READ} {
 	return READ;
+}
+
+{READBUF} {
+	return READBUF;
 }
 
 {WRITE} {
