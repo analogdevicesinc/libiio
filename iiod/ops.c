@@ -86,6 +86,8 @@ static void * read_thd(void *d)
 	/* No more than 1024 bytes per read (arbitrary) */
 	unsigned int max_size = 1024 / sample_size;
 
+	DEBUG("Read thread started\n");
+
 	while (true) {
 		char *buf;
 		unsigned long len, nb_samples = max_size;
@@ -136,6 +138,7 @@ static void * read_thd(void *d)
 				fprintf(thd->fd, "ERROR reading device: %s\n",
 						err_buf);
 			}
+			DEBUG("Integer written: %li\n", (long) ret);
 			if (ret < 0)
 				continue;
 
@@ -225,7 +228,6 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!entry) {
 		int ret;
 
-		DEBUG("Creating entry\n");
 		entry = malloc(sizeof(*entry));
 		if (!entry) {
 			free(thd);
@@ -244,6 +246,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 		entry->dev = dev;
 		entry->sample_size = sample_size;
 		SLIST_INIT(&entry->thdlist_head);
+		pthread_mutex_init(&entry->thdlist_lock, NULL);
 		pthread_attr_init(&entry->attr);
 		pthread_attr_setdetachstate(&entry->attr,
 				PTHREAD_CREATE_DETACHED);
@@ -258,6 +261,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 			return ret;
 		}
 
+		DEBUG("Adding new device thread to device list\n");
 		SLIST_INSERT_HEAD(&devlist_head, entry, next);
 	}
 
