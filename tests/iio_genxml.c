@@ -19,29 +19,91 @@
 #include "../debug.h"
 #include "../iio.h"
 
+#include <getopt.h>
 #include <string.h>
+
+#define MY_NAME "iio_genxml"
+
+enum backend {
+	LOCAL,
+	XML,
+	NETWORK,
+};
+
+static const struct option options[] = {
+	  {"help", no_argument, 0, 'h'},
+	  {"xml", required_argument, 0, 'x'},
+	  {"network", required_argument, 0, 'n'},
+	  {0, 0, 0, 0},
+};
+
+static const char *options_descriptions[] = {
+	"Show this help and quit.",
+	"Use the XML backend with the provided XML file.",
+	"Use the network backend with the provided hostname.",
+};
+
+static void usage(void)
+{
+	unsigned int i;
+
+	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t"
+			MY_NAME " [-n <hostname>]\n\nOptions:\n");
+	for (i = 0; options[i].name; i++)
+		printf("\t-%c, --%s\n\t\t\t%s\n",
+					options[i].val, options[i].name,
+					options_descriptions[i]);
+}
 
 int main(int argc, char **argv)
 {
 	char *xml;
 	struct iio_context *ctx;
-	char *backend = getenv("LIBIIO_BACKEND");
+	int c, option_index = 0, arg_index = 0;
+	enum backend backend = LOCAL;
 
-	if (backend && !strcmp(backend, "xml")) {
-		if (argc < 2) {
-			ERROR("The XML backend requires the XML file to be "
-					"passed as argument\n");
+	while ((c = getopt_long(argc, argv, "+hn:x:",
+					options, &option_index)) != -1) {
+		switch (c) {
+		case 'h':
+			usage();
+			return EXIT_SUCCESS;
+		case 'n':
+			if (backend != LOCAL) {
+				ERROR("-x and -n are mutually exclusive\n");
+				return EXIT_FAILURE;
+			}
+			backend = NETWORK;
+			arg_index += 2;
+			break;
+		case 'x':
+			if (backend != LOCAL) {
+				ERROR("-x and -n are mutually exclusive\n");
+				return EXIT_FAILURE;
+			}
+			backend = XML;
+			arg_index += 2;
+			break;
+		case '?':
 			return EXIT_FAILURE;
 		}
-
-		INFO("Creating XML IIO context\n");
-		ctx = iio_create_xml_context(argv[1]);
-	} else {
-		INFO("Creating local IIO context\n");
-		ctx = iio_create_local_context();
 	}
+
+	if (arg_index >= argc) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		usage();
+		return EXIT_FAILURE;
+	}
+
+	if (backend == XML)
+		ctx = iio_create_xml_context(argv[arg_index]);
+	else if (backend == NETWORK)
+		ctx = iio_create_network_context(argv[arg_index]);
+	else
+		ctx = iio_create_local_context();
+
 	if (!ctx) {
-		ERROR("Unable to create local context\n");
+		ERROR("Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
