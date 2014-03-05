@@ -21,6 +21,9 @@ ANALYZER := clang --analyze
 
 IIO_INFO = iio_info
 IIO_GENXML = iio_genxml
+IIO_READDEV = iio_readdev
+
+TARGETS := $(IIO_INFO) $(IIO_GENXML) $(IIO_READDEV)
 
 CFLAGS = -Wall
 LDFLAGS = $(wildcard ../libiio.so.*)
@@ -42,7 +45,7 @@ endif
 
 .PHONY: all clean
 
-all: $(IIO_INFO) $(IIO_GENXML)
+all: $(TARGETS)
 
 $(IIO_INFO): iio_info.o
 	$(SUM) "  LD      $@"
@@ -52,10 +55,13 @@ $(IIO_GENXML): iio_genxml.o
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -o $@ $^ $(LDFLAGS)
 
+$(IIO_READDEV): iio_readdev.o
+	$(SUM) "  LD      $@"
+	$(CMD)$(CC) -o $@ $^ $(LDFLAGS)
+
 clean:
 	$(SUM) "  CLEAN   ."
-	$(CMD)rm -f $(IIO_INFO) $(IIO_GENXML) \
-		iio_info.o iio_genxml.o $(OBJS:%.o=%.plist)
+	$(CMD)rm -f $(TARGETS) $(TARGETS:%=%.o) $(TARGETS:%=%.plist)
 
 %.o: %.c
 	$(SUM) "  CC      $@"
