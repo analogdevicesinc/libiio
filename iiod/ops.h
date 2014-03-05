@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define TIMEOUT_MS 60000
+
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;

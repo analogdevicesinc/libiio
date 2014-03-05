@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/queue.h>
+#include <time.h>
 
 int yyparse(yyscan_t scanner);
 
@@ -81,6 +82,7 @@ static void * read_thd(void *d)
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd;
 	unsigned int sample_size = entry->sample_size;
+	unsigned int timeout_ms = TIMEOUT_MS;
 	ssize_t ret = 0;
 
 	/* No more than 1024 bytes per read (arbitrary) */
@@ -102,8 +104,23 @@ static void * read_thd(void *d)
 
 		pthread_mutex_lock(&entry->thdlist_lock);
 		if (SLIST_EMPTY(&entry->thdlist_head)) {
-			pthread_mutex_unlock(&entry->thdlist_lock);
-			break;
+			if (!--timeout_ms) {
+				pthread_mutex_unlock(&entry->thdlist_lock);
+				break;
+			} else {
+				struct timespec ts = {
+					.tv_sec = 0,
+					.tv_nsec = 1000000, /* 1 ms */
+				};
+
+				pthread_mutex_unlock(&entry->thdlist_lock);
+				pthread_mutex_unlock(&devlist_lock);
+				nanosleep(&ts, NULL);
+				continue;
+			}
+		} else {
+			/* Reset the timeout */
+			timeout_ms = TIMEOUT_MS;
 		}
 
 		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
