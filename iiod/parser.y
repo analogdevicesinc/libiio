@@ -33,6 +33,8 @@ typedef void *yyscan_t;
 
 #define YYDEBUG 1
 
+#include "../debug.h"
+
 int yylex();
 int yylex_init_extra(void *d, yyscan_t *scanner);
 int yylex_destroy(yyscan_t yyscanner);
@@ -49,11 +51,13 @@ void yyset_out(FILE *out, yyscan_t scanner);
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
 			buf[n++] = (char) c; \
-		if ( c == EOF && ferror( yyin ) ) \
-			YY_FATAL_ERROR( "input in flex scanner failed" ); \
-		result = n; \
+		else if (c == EOF && ferror( yyin ) ) { \
+			ERROR( "input in flex scanner failed\n" ); \
+			n = 1; \
+			buf[0] = '\n'; \
 		} \
-
+		result = n; \
+	}
 }
 
 %define api.pure
