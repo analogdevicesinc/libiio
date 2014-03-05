@@ -89,6 +89,59 @@ static int read_integer(int fd, long *val)
 	return 0;
 }
 
+static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
+{
+	int fd = dev->ctx->pdata->fd;
+	ssize_t ret, read = 0;
+	char buf[1024];
+
+	if (!len)
+		return -EINVAL;
+
+	DEBUG("Writing READBUF command\n");
+	snprintf(buf, sizeof(buf), "READBUF %s %lu %u\r\n", dev->id,
+			(unsigned long) len, 1);
+	ret = write_all(buf, strlen(buf), fd);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to send READBUF command: %s\n", buf);
+		return ret;
+	}
+
+	do {
+		long read_len;
+
+		DEBUG("Reading READ response\n");
+		ret = read_integer(fd, &read_len);
+		if (ret < 0) {
+			strerror_r(-ret, buf, sizeof(buf));
+			ERROR("Unable to read response to READ: %s\n", buf);
+			return read ?: ret;
+		}
+
+		if (read_len < 0) {
+			strerror_r(-read_len, buf, sizeof(buf));
+			ERROR("Server returned an error: %s\n", buf);
+			return read ?: read_len;
+		}
+
+		DEBUG("Bytes to read: %li\n", read_len);
+
+		ret = read_all(dst, read_len, fd);
+		if (ret < 0) {
+			strerror_r(-ret, buf, sizeof(buf));
+			ERROR("Unable to read response to READ: %s\n", buf);
+			return read ?: ret;
+		}
+
+		dst += read_len;
+		read += read_len;
+		len -= read_len;
+	} while (len);
+
+	return read;
+}
+
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
@@ -179,6 +232,7 @@ static void network_shutdown(struct iio_context *ctx)
 }
 
 static struct iio_backend_ops network_ops = {
+	.read = network_read,
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
 	.shutdown = network_shutdown,
