@@ -36,6 +36,7 @@ int yyparse(yyscan_t scanner);
 struct ThdEntry {
 	SLIST_ENTRY(ThdEntry) next;
 	pthread_cond_t cond;
+	pthread_mutex_t cond_lock;
 	unsigned int nb;
 	ssize_t err;
 	FILE *fd;
@@ -184,6 +185,11 @@ static void * read_thd(void *d)
 			if (ret2 < 0 || thd->nb == 0) {
 				SLIST_REMOVE(&entry->thdlist_head, thd,
 						ThdEntry, next);
+
+				/* Ensure that the client thread
+				 * is already waiting */
+				pthread_mutex_lock(&thd->cond_lock);
+				pthread_mutex_unlock(&thd->cond_lock);
 				pthread_cond_signal(&thd->cond);
 			}
 		}
@@ -199,6 +205,11 @@ static void * read_thd(void *d)
 				ThdEntry, next);
 		if (ret < 0)
 			thd->err = ret;
+
+		/* Ensure that the client thread
+		 * is already waiting */
+		pthread_mutex_lock(&thd->cond_lock);
+		pthread_mutex_unlock(&thd->cond_lock);
 		pthread_cond_signal(&thd->cond);
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
@@ -223,7 +234,6 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 {
 	struct DevEntry *e, *entry = NULL;
 	struct ThdEntry *thd;
-	pthread_mutex_t mutex;
 	ssize_t ret;
 
 	pthread_mutex_lock(&devlist_lock);
@@ -294,6 +304,8 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->fd = pdata->out;
 	thd->verbose = pdata->verbose;
 	pthread_cond_init(&thd->cond, NULL);
+	pthread_mutex_init(&thd->cond_lock, NULL);
+	pthread_mutex_lock(&thd->cond_lock);
 
 	DEBUG("Added thread to client list\n");
 	pthread_mutex_lock(&entry->thdlist_lock);
@@ -301,11 +313,8 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_mutex_unlock(&entry->thdlist_lock);
 	pthread_mutex_unlock(&devlist_lock);
 
-	pthread_mutex_init(&mutex, NULL);
-	pthread_mutex_lock(&mutex);
-
 	DEBUG("Waiting for completion...\n");
-	pthread_cond_wait(&thd->cond, &mutex);
+	pthread_cond_wait(&thd->cond, &thd->cond_lock);
 
 	fflush(thd->fd);
 
