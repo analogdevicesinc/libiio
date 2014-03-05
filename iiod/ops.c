@@ -91,6 +91,7 @@ static void * read_thd(void *d)
 	while (true) {
 		char *buf;
 		unsigned long len, nb_samples = max_size;
+		struct ThdEntry *next_thd;
 
 		pthread_mutex_lock(&devlist_lock);
 
@@ -127,8 +128,15 @@ static void * read_thd(void *d)
 		pthread_mutex_lock(&entry->thdlist_lock);
 		nb_samples = ret / sample_size;
 
-		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
+		/* We don't use SLIST_FOREACH here. As soon as a thread is
+		 * signaled, its "thd" structure might be freed;
+		 * SLIST_FOREACH would then cause a segmentation fault, as it
+		 * reads "thd" to get the address of the next element. */
+		for (thd = SLIST_FIRST(&entry->thdlist_head);
+				thd; thd = next_thd) {
 			size_t ret2;
+
+			next_thd = SLIST_NEXT(thd, next);
 
 			if (!thd->verbose) {
 				fprintf(thd->fd, "%li\n", (long) ret);
@@ -285,13 +293,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	fflush(thd->fd);
 
 	ret = thd->err;
-
-	/* The read thread may still want to use thd->next;
-	 * locking the thread list's lock ensures that we will free
-	 * the 'thd' structure when it's not needed anymore */
-	pthread_mutex_lock(&entry->thdlist_lock);
 	free(thd);
-	pthread_mutex_unlock(&entry->thdlist_lock);
 
 	DEBUG("Exiting read_buffer\n");
 
