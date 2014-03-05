@@ -121,6 +121,7 @@ static void * read_thd(void *d)
 
 		DEBUG("Reading %lu bytes from device\n", len);
 		ret = iio_device_read_raw(entry->dev, buf, len);
+
 		pthread_mutex_lock(&entry->thdlist_lock);
 		nb_samples = ret / sample_size;
 
@@ -147,16 +148,14 @@ static void * read_thd(void *d)
 			ret2 = write_all(buf, ret, thd->fd);
 			if (ret2 > 0)
 				thd->nb -= ret2 / sample_size;
-
-			if (ret2 < 0) {
-				SLIST_REMOVE(&entry->thdlist_head, thd,
-						ThdEntry, next);
+			if (ret2 < 0)
 				thd->err = ret2;
-				pthread_cond_signal(&thd->cond);
-			} else if (thd->nb == 0) {
+			else if (thd->nb == 0)
+				thd->err = 0;
+
+			if (ret2 < 0 || thd->nb == 0) {
 				SLIST_REMOVE(&entry->thdlist_head, thd,
 						ThdEntry, next);
-				thd->err = 0;
 				pthread_cond_signal(&thd->cond);
 			}
 		}
@@ -179,9 +178,10 @@ static void * read_thd(void *d)
 	DEBUG("Removing device %s from list\n",
 			iio_device_get_id(entry->dev));
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
-	pthread_mutex_unlock(&devlist_lock);
 
 	iio_device_close(entry->dev);
+	pthread_mutex_unlock(&devlist_lock);
+
 	pthread_mutex_destroy(&entry->thdlist_lock);
 	pthread_attr_destroy(&entry->attr);
 	free(entry);
@@ -199,6 +199,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	ssize_t ret;
 
 	pthread_mutex_lock(&devlist_lock);
+
 	SLIST_FOREACH(e, &devlist_head, next) {
 		if (e->dev == dev) {
 			entry = e;
@@ -280,7 +281,15 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	fflush(thd->fd);
 
 	ret = thd->err;
+
+	/* The read thread may still want to use thd->next;
+	 * locking the thread list's lock ensures that we will free
+	 * the 'thd' structure when it's not needed anymore */
+	pthread_mutex_lock(&entry->thdlist_lock);
 	free(thd);
+	pthread_mutex_unlock(&entry->thdlist_lock);
+
+	DEBUG("Exiting read_buffer\n");
 
 	if (ret < 0)
 		return ret;
