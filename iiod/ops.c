@@ -382,20 +382,12 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 {
 	FILE *out = pdata->out;
 	struct iio_device *dev = get_device(pdata->ctx, id);
-	char buf[1024], cr = '\n';
-	ssize_t ret;
+	char buf[1024];
+	ssize_t ret = -ENODEV;
 
-	if (!dev) {
-		if (pdata->verbose) {
-			strerror_r(ENODEV, buf, sizeof(buf));
-			fprintf(out, "ERROR: %s\n", buf);
-		} else {
-			fprintf(out, "%i\n", -ENODEV);
-		}
-		return -ENODEV;
-	}
+	if (dev)
+		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
 
-	ret = iio_device_attr_read(dev, attr, buf, 1024);
 	if (pdata->verbose && ret < 0) {
 		strerror_r(-ret, buf, sizeof(buf));
 		fprintf(out, "ERROR: %s\n", buf);
@@ -406,7 +398,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 		return ret;
 
 	ret = write_all(buf, ret, out);
-	write_all(&cr, 1, out);
+	fputc('\n', out);
 	return ret;
 }
 
@@ -415,26 +407,19 @@ ssize_t write_dev_attr(struct parser_pdata *pdata,
 {
 	FILE *out = pdata->out;
 	struct iio_device *dev = get_device(pdata->ctx, id);
-	if (!dev) {
-		if (pdata->verbose) {
-			char buf[1024];
-			strerror_r(ENODEV, buf, sizeof(buf));
-			fprintf(out, "ERROR: %s\n", buf);
-		} else {
-			fprintf(out, "%i\n", -ENODEV);
-		}
-		return -ENODEV;
+	size_t ret = -ENODEV;
+
+	if (dev)
+		ret = iio_device_attr_write(dev, attr, value);
+
+	if (pdata->verbose && ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		fprintf(out, "ERROR: %s\n", buf);
 	} else {
-		ssize_t ret = iio_device_attr_write(dev, attr, value);
-		if (pdata->verbose && ret < 0) {
-			char buf[1024];
-			strerror_r(-ret, buf, sizeof(buf));
-			fprintf(out, "ERROR: %s\n", buf);
-		} else {
-			fprintf(out, "%li\n", (long) ret);
-		}
-		return ret;
+		fprintf(out, "%li\n", (long) ret);
 	}
+	return ret;
 }
 
 ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
