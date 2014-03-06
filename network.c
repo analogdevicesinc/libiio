@@ -142,16 +142,18 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 	return read;
 }
 
-static ssize_t network_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len)
+static ssize_t network_read_attr_helper(int fd, const char *id,
+		const char *chn, const char *attr, char *dst, size_t len)
 {
-	int fd = dev->ctx->pdata->fd;
 	long read_len;
 	ssize_t ret;
 	char buf[1024];
 
 	DEBUG("Writing READ command\n");
-	snprintf(buf, sizeof(buf), "READ %s %s\r\n", dev->id, attr);
+	if (chn)
+		snprintf(buf, sizeof(buf), "READ %s %s %s\r\n", id, chn, attr);
+	else
+		snprintf(buf, sizeof(buf), "READ %s %s\r\n", id, attr);
 	ret = write_all(buf, strlen(buf), fd);
 	if (ret < 0) {
 		strerror_r(-ret, buf, sizeof(buf));
@@ -222,6 +224,20 @@ static ssize_t network_write_dev_attr(const struct iio_device *dev,
 	return resp;
 }
 
+static ssize_t network_read_dev_attr(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len)
+{
+	return network_read_attr_helper(dev->ctx->pdata->fd, dev->id,
+			NULL, attr, dst, len);
+}
+
+static ssize_t network_read_chn_attr(const struct iio_channel *chn,
+		const char *attr, char *dst, size_t len)
+{
+	return network_read_attr_helper(chn->dev->ctx->pdata->fd, chn->dev->id,
+			chn->id, attr, dst, len);
+}
+
 static void network_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
@@ -235,6 +251,7 @@ static struct iio_backend_ops network_ops = {
 	.read = network_read,
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
+	.read_channel_attr = network_read_chn_attr,
 	.shutdown = network_shutdown,
 };
 
