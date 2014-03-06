@@ -198,11 +198,11 @@ static ssize_t network_write_dev_attr(const struct iio_device *dev,
 	char buf[1024];
 
 	DEBUG("Writing WRITE command\n");
-	snprintf(buf, sizeof(buf), "READ %s %s %s\r\n", dev->id, attr, src);
+	snprintf(buf, sizeof(buf), "WRITE %s %s %s\r\n", dev->id, attr, src);
 	ret = write_all(buf, strlen(buf), fd);
 	if (ret < 0) {
 		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to send READ command: %s\n", buf);
+		ERROR("Unable to send WRITE command: %s\n", buf);
 		return ret;
 	}
 
