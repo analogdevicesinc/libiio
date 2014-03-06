@@ -101,8 +101,8 @@ Line:
 		"\t\tClose the current session\n"
 		"\tPRINT\n"
 		"\t\tDisplays a XML string corresponding to the current IIO context\n"
-		"\tREAD <device> <attribute>\n"
-		"\t\tRead the value of a device's attribute\n"
+		"\tREAD <device> [<channel>] <attribute>\n"
+		"\t\tRead the value of an attribute\n"
 		"\tWRITE <device> <attribute> <value>\n"
 		"\t\tSet the value of a device's attribute\n"
 		"\tREADBUF <device> <samples_count> <sample_size>\n"
@@ -123,6 +123,18 @@ Line:
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		ssize_t ret = read_dev_attr(pdata, id, attr);
 		free(id);
+		free(attr);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| READ SPACE WORD SPACE WORD SPACE WORD END {
+		char *id = $3, *chn = $5, *attr = $7;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = read_chn_attr(pdata, id, chn, attr);
+		free(id);
+		free(chn);
 		free(attr);
 		if (ret < 0)
 			YYABORT;

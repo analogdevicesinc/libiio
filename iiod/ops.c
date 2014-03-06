@@ -344,6 +344,21 @@ static struct iio_device * get_device(struct iio_context *ctx, const char *id)
 	return NULL;
 }
 
+static struct iio_channel * get_channel(const struct iio_device *dev,
+		const char *id)
+{
+	unsigned i, nb_channels = iio_device_get_channels_count(dev);
+	for (i = 0; i < nb_channels; i++) {
+		struct iio_channel *chn = iio_device_get_channel(dev, i);
+		const char *name = iio_channel_get_name(chn);
+		if (!strcmp(id, iio_channel_get_id(chn))
+				|| (name && !strcmp(id, name)))
+			return chn;
+	}
+
+	return NULL;
+}
+
 ssize_t read_dev(struct parser_pdata *pdata, const char *id,
 		unsigned int nb, unsigned int sample_size)
 {
@@ -420,6 +435,35 @@ ssize_t write_dev_attr(struct parser_pdata *pdata,
 		}
 		return ret;
 	}
+}
+
+ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
+		const char *channel, const char *attr)
+{
+	FILE *out = pdata->out;
+	char buf[1024];
+	ssize_t ret = -ENODEV;
+	struct iio_channel *chn = NULL;
+	struct iio_device *dev = get_device(pdata->ctx, id);
+
+	if (dev)
+		chn = get_channel(dev, channel);
+	if (chn)
+		ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
+
+	if (pdata->verbose && ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		fprintf(out, "ERROR: %s\n", buf);
+	} else {
+		fprintf(out, "%li\n", (long) ret);
+	}
+
+	if (ret < 0)
+		return ret;
+
+	ret = write_all(buf, ret, out);
+	fputc('\n', out);
+	return ret;
 }
 
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)

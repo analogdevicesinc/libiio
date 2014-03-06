@@ -42,4 +42,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 ssize_t write_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr, const char *value);
 
+ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
+		const char *chn, const char *attr);
+
 #endif /* __OPS_H__ */
