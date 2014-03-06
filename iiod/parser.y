@@ -20,6 +20,7 @@
 #include "ops.h"
 #include "parser.h"
 
+#include <errno.h>
 #include <string.h>
 
 void yyerror(yyscan_t scanner, const char *msg);
@@ -192,5 +193,8 @@ Line:
 void yyerror(yyscan_t scanner, const char *msg)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
-	fprintf(pdata->out, "Unable to perform operation: %s\n", msg);
+	if (pdata->verbose)
+		fprintf(pdata->out, "ERROR: %s\n", msg);
+	else
+		fprintf(pdata->out, "%i\n", -EINVAL);
 }
