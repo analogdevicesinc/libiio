@@ -466,6 +466,29 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 	return ret;
 }
 
+ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
+		const char *channel, const char *attr, const char *value)
+{
+	FILE *out = pdata->out;
+	ssize_t ret = -ENODEV;
+	struct iio_channel *chn = NULL;
+	struct iio_device *dev = get_device(pdata->ctx, id);
+
+	if (dev)
+		chn = get_channel(dev, channel);
+	if (chn)
+		ret = iio_channel_attr_write(chn, attr, value);
+
+	if (pdata->verbose && ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		fprintf(out, "ERROR: %s\n", buf);
+	} else {
+		fprintf(out, "%li\n", (long) ret);
+	}
+	return ret;
+}
+
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 {
 	yyscan_t scanner;
