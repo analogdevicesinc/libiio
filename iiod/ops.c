@@ -335,8 +335,9 @@ static struct iio_device * get_device(struct iio_context *ctx, const char *id)
 
 	for (i = 0; i < nb_devices; i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
+		const char *name = iio_device_get_name(dev);
 		if (!strcmp(id, iio_device_get_id(dev))
-				|| !strcmp(id, iio_device_get_name(dev)))
+				|| (name && !strcmp(id, name)))
 			return dev;
 	}
 
