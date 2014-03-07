@@ -55,6 +55,12 @@ def _init():
 	_new_xml.archtypes = (c_char_p, )
 	_new_xml.errcheck = _checkNull
 
+	global _new_network
+	_new_network = lib.iio_create_network_context
+	_new_network.restype = ContextPtr
+	_new_network.archtypes = (c_char_p, )
+	_new_network.errcheck = _checkNull
+
 	global _destroy
 	_destroy = lib.iio_context_destroy
 	_destroy.restype = None
@@ -220,3 +226,8 @@ class XMLContext(Context):
 	def __init__(self, xmlfile):
 		ctx = _new_xml(xmlfile)
 		super(XMLContext, self).__init__(ctx)
+
+class NetworkContext(Context):
+	def __init__(self, hostname):
+		ctx = _new_network(hostname)
+		super(NetworkContext, self).__init__(ctx)
