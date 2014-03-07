@@ -107,6 +107,12 @@ ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src);
 
+/* Functions to set and retrieve a pointer from the device/channel structures */
+void iio_device_set_data(struct iio_device *dev, void *data);
+void * iio_device_get_data(const struct iio_device *dev);
+void iio_channel_set_data(struct iio_channel *chn, void *data);
+void * iio_channel_get_data(const struct iio_channel *chn);
+
 /* Debug functions */
 const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn);

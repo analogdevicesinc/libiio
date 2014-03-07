@@ -97,6 +97,7 @@ struct iio_data_format {
 struct iio_channel {
 	struct iio_device *dev;
 	struct iio_channel_pdata *pdata;
+	void *userdata;
 
 	bool is_output;
 	enum iio_modifier modifier;
@@ -112,6 +113,7 @@ struct iio_channel {
 struct iio_device {
 	const struct iio_context *ctx;
 	struct iio_device_pdata *pdata;
+	void *userdata;
 
 	char *name, *id;
 

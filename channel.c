@@ -137,6 +137,16 @@ ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		return -ENOSYS;
 }
 
+void iio_channel_set_data(struct iio_channel *chn, void *data)
+{
+	chn->userdata = data;
+}
+
+void * iio_channel_get_data(const struct iio_channel *chn)
+{
+	return chn->userdata;
+}
+
 void free_channel(struct iio_channel *chn)
 {
 	unsigned int i;

@@ -196,6 +196,16 @@ ssize_t iio_device_attr_write(const struct iio_device *dev,
 		return -ENOSYS;
 }
 
+void iio_device_set_data(struct iio_device *dev, void *data)
+{
+	dev->userdata = data;
+}
+
+void * iio_device_get_data(const struct iio_device *dev)
+{
+	return dev->userdata;
+}
+
 void free_device(struct iio_device *dev)
 {
 	unsigned int i;
