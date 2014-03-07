@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
@@ -93,6 +94,19 @@ static void * client_thd(void *d)
 	fclose(f);
 	close(cdata->fd);
 	return NULL;
+}
+
+static void set_handler(int signal, void (*handler)(int))
+{
+	struct sigaction sig;
+	sigaction(signal, NULL, &sig);
+	sig.sa_handler = handler;
+	sigaction(signal, &sig, NULL);
+}
+
+void sig_handler(int sig)
+{
+	/* This does nothing, but it permits accept() to exit */
 }
 
 int main(int argc, char **argv)
@@ -164,12 +178,19 @@ int main(int argc, char **argv)
 		goto err_close_socket;
 	}
 
+	set_handler(SIGHUP, sig_handler);
+	set_handler(SIGINT, sig_handler);
+	set_handler(SIGSEGV, sig_handler);
+	set_handler(SIGTERM, sig_handler);
+
 	while (true) {
 		pthread_t thd;
 		pthread_attr_t attr;
 		struct client_data *cdata;
 		int new = accept(fd, NULL, NULL);
 		if (new == -1) {
+			if (errno == EINTR)
+				break;
 			ERROR("Failed to create connection socket: %s\n",
 					strerror(errno));
 			goto err_close_socket;
@@ -192,6 +213,7 @@ int main(int argc, char **argv)
 		pthread_create(&thd, &attr, client_thd, cdata);
 	}
 
+	DEBUG("Cleaning up\n");
 	close(fd);
 	iio_context_destroy(ctx);
 	return EXIT_SUCCESS;
