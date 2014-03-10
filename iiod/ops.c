@@ -39,8 +39,7 @@ struct ThdEntry {
 	pthread_mutex_t cond_lock;
 	unsigned int nb;
 	ssize_t err;
-	FILE *fd;
-	bool verbose;
+	struct parser_pdata *pdata;
 };
 
 /* Corresponds to an opened device */
@@ -76,6 +75,17 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 		len -= ret;
 	}
 	return ptr - src;
+}
+
+static void print_value(struct parser_pdata *pdata, long value)
+{
+	if (pdata->verbose && value < 0) {
+		char buf[1024];
+		strerror_r(-value, buf, sizeof(buf));
+		fprintf(pdata->out, "ERROR: %s\n", buf);
+	} else {
+		fprintf(pdata->out, "%li\n", value);
+	}
 }
 
 static void * read_thd(void *d)
@@ -156,14 +166,7 @@ static void * read_thd(void *d)
 
 			next_thd = SLIST_NEXT(thd, next);
 
-			if (!thd->verbose) {
-				fprintf(thd->fd, "%li\n", (long) ret);
-			} else if (ret < 0) {
-				char err_buf[1024];
-				strerror_r(ret, err_buf, sizeof(err_buf));
-				fprintf(thd->fd, "ERROR reading device: %s\n",
-						err_buf);
-			}
+			print_value(thd->pdata, ret);
 			DEBUG("Integer written: %li\n", (long) ret);
 			if (ret < 0)
 				continue;
@@ -174,7 +177,7 @@ static void * read_thd(void *d)
 			if (nb_samples > thd->nb)
 				continue;
 
-			ret2 = write_all(buf, ret, thd->fd);
+			ret2 = write_all(buf, ret, thd->pdata->out);
 			if (ret2 > 0)
 				thd->nb -= ret2 / sample_size;
 			if (ret2 < 0)
@@ -301,8 +304,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	}
 
 	thd->nb = nb;
-	thd->fd = pdata->out;
-	thd->verbose = pdata->verbose;
+	thd->pdata = pdata;
 	pthread_cond_init(&thd->cond, NULL);
 	pthread_mutex_init(&thd->cond_lock, NULL);
 	pthread_mutex_lock(&thd->cond_lock);
@@ -316,7 +318,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	DEBUG("Waiting for completion...\n");
 	pthread_cond_wait(&thd->cond, &thd->cond_lock);
 
-	fflush(thd->fd);
+	fflush(thd->pdata->out);
 
 	ret = thd->err;
 	free(thd);
@@ -364,13 +366,7 @@ ssize_t read_dev(struct parser_pdata *pdata, const char *id,
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	if (!dev) {
-		if (pdata->verbose) {
-			char buf[1024];
-			strerror_r(ENODEV, buf, sizeof(buf));
-			fprintf(pdata->out, "ERROR: %s\n", buf);
-		} else {
-			fprintf(pdata->out, "%i\n", -ENODEV);
-		}
+		print_value(pdata, -ENODEV);
 		return -ENODEV;
 	}
 
@@ -387,13 +383,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 
 	if (dev)
 		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
-
-	if (pdata->verbose && ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		fprintf(out, "ERROR: %s\n", buf);
-	} else {
-		fprintf(out, "%li\n", (long) ret);
-	}
+	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
 
@@ -405,20 +395,12 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 ssize_t write_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr, const char *value)
 {
-	FILE *out = pdata->out;
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	size_t ret = -ENODEV;
 
 	if (dev)
 		ret = iio_device_attr_write(dev, attr, value);
-
-	if (pdata->verbose && ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		fprintf(out, "ERROR: %s\n", buf);
-	} else {
-		fprintf(out, "%li\n", (long) ret);
-	}
+	print_value(pdata, ret);
 	return ret;
 }
 
@@ -435,14 +417,7 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 		chn = get_channel(dev, channel);
 	if (chn)
 		ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
-
-	if (pdata->verbose && ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		fprintf(out, "ERROR: %s\n", buf);
-	} else {
-		fprintf(out, "%li\n", (long) ret);
-	}
-
+	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
 
@@ -454,7 +429,6 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
 		const char *channel, const char *attr, const char *value)
 {
-	FILE *out = pdata->out;
 	ssize_t ret = -ENODEV;
 	struct iio_channel *chn = NULL;
 	struct iio_device *dev = get_device(pdata->ctx, id);
@@ -463,14 +437,7 @@ ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
 		chn = get_channel(dev, channel);
 	if (chn)
 		ret = iio_channel_attr_write(chn, attr, value);
-
-	if (pdata->verbose && ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		fprintf(out, "ERROR: %s\n", buf);
-	} else {
-		fprintf(out, "%li\n", (long) ret);
-	}
+	print_value(pdata, ret);
 	return ret;
 }
 
