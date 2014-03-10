@@ -218,6 +218,28 @@ bool iio_device_is_trigger(const struct iio_device *dev)
 		!strncmp(id, "trigger", sizeof("trigger") - 1));
 }
 
+int iio_device_get_trigger(const struct iio_device *dev,
+		const struct iio_device **trigger)
+{
+	if (!trigger)
+		return -EINVAL;
+	else if (dev->ctx->ops->get_trigger)
+		return dev->ctx->ops->get_trigger(dev, trigger);
+	else
+		return -ENOSYS;
+}
+
+int iio_device_set_trigger(const struct iio_device *dev,
+		const struct iio_device *trigger)
+{
+	if (trigger && !iio_device_is_trigger(trigger))
+		return -EINVAL;
+	else if (dev->ctx->ops->set_trigger)
+		return dev->ctx->ops->set_trigger(dev, trigger);
+	else
+		return -ENOSYS;
+}
+
 int iio_trigger_get_rate(const struct iio_device *trigger, unsigned long *rate)
 {
 	char buf[1024], *end;

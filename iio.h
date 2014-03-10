@@ -64,6 +64,10 @@ struct iio_channel * iio_device_get_channel(const struct iio_device *dev,
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev) __pure;
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index) __pure;
+int iio_device_get_trigger(const struct iio_device *dev,
+		const struct iio_device **trigger);
+int iio_device_set_trigger(const struct iio_device *dev,
+		const struct iio_device *trigger);
 
 int iio_device_open(const struct iio_device *dev);
 int iio_device_close(const struct iio_device *dev);
