@@ -206,6 +206,55 @@ void * iio_device_get_data(const struct iio_device *dev)
 	return dev->userdata;
 }
 
+bool iio_device_is_trigger(const struct iio_device *dev)
+{
+	/* A trigger has a name, an id which starts by "trigger",
+	 * and zero channels. */
+
+	unsigned int nb = iio_device_get_channels_count(dev);
+	const char *name = iio_device_get_name(dev),
+	      *id = iio_device_get_id(dev);
+	return ((nb == 0) && !!name &&
+		!strncmp(id, "trigger", sizeof("trigger") - 1));
+}
+
+int iio_trigger_get_rate(const struct iio_device *trigger, unsigned long *rate)
+{
+	char buf[1024], *end;
+	ssize_t ret;
+	unsigned long value;
+
+	if (!iio_device_is_trigger(trigger))
+		return -EINVAL;
+
+	ret = iio_device_attr_read(trigger, "frequency", buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	value = strtoul(buf, &end, 10);
+	if (buf == end)
+		return -EBADF;
+
+	*rate = value;
+	return 0;
+}
+
+int iio_trigger_set_rate(const struct iio_device *trigger, unsigned long rate)
+{
+	char buf[1024];
+	ssize_t ret;
+
+	if (!iio_device_is_trigger(trigger))
+		return -EINVAL;
+
+	sprintf(buf, "%lu", rate);
+	ret = iio_device_attr_write(trigger, "frequency", buf);
+	if (ret < 0)
+		return (int) ret;
+	else
+		return 0;
+}
+
 void free_device(struct iio_device *dev)
 {
 	unsigned int i;

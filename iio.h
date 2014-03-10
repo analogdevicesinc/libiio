@@ -78,6 +78,13 @@ unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_attr(const struct iio_channel *chn,
 		unsigned int index) __pure;
 
+/* Trigger functions */
+bool iio_device_is_trigger(const struct iio_device *dev) __pure;
+int iio_trigger_get_rate(const struct iio_device *trigger,
+		unsigned long *rate);
+int iio_trigger_set_rate(const struct iio_device *trigger,
+		unsigned long rate);
+
 /* Functions to read/write the raw stream from the device */
 ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len);
