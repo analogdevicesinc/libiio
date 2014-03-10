@@ -81,6 +81,8 @@ void yyset_out(FILE *out, yyscan_t scanner);
 
 %token <word> WORD
 
+%destructor { DEBUG("Freeing token \"%s\"\n", $$); free($$); } <word>
+
 %start Line
 %%
 
