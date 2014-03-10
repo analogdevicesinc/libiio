@@ -441,6 +441,47 @@ ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
 	return ret;
 }
 
+ssize_t set_trigger(struct parser_pdata *pdata,
+		const char *id, const char *trigger)
+{
+	ssize_t ret = -ENODEV;
+	struct iio_device *dev = get_device(pdata->ctx, id);
+
+	if (dev) {
+		if (!trigger) {
+			ret = iio_device_set_trigger(dev, NULL);
+		} else {
+			struct iio_device *trig;
+			trig = get_device(pdata->ctx, trigger);
+			if (trig)
+				ret = iio_device_set_trigger(dev, trig);
+			else
+				ret = -ENXIO;
+		}
+	}
+	print_value(pdata, ret);
+	return ret;
+}
+
+ssize_t get_trigger(struct parser_pdata *pdata, const char *id)
+{
+	ssize_t ret = -ENODEV;
+	const struct iio_device *trigger, *dev = get_device(pdata->ctx, id);
+
+	if (dev)
+		ret = iio_device_get_trigger(dev, &trigger);
+	if (!ret && trigger) {
+		const char *name = iio_device_get_name(trigger);
+		ret = strlen(name);
+		print_value(pdata, ret);
+		ret = write_all(name, ret, pdata->out);
+		fputc('\n', pdata->out);
+	} else {
+		print_value(pdata, ret);
+	}
+	return ret;
+}
+
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 {
 	yyscan_t scanner;

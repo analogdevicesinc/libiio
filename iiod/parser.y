@@ -78,6 +78,8 @@ void yyset_out(FILE *out, yyscan_t scanner);
 %token READ
 %token READBUF
 %token WRITE
+%token SETTRIG
+%token GETTRIG
 
 %token <word> WORD
 
@@ -109,7 +111,11 @@ Line:
 		"\tWRITE <device> [<channel>] <attribute> <value>\n"
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <samples_count> <sample_size>\n"
-		"\t\tRead raw data from the specified device\n");
+		"\t\tRead raw data from the specified device\n"
+		"\tGETTRIG <device>\n"
+		"\t\tGet the name of the trigger used by the specified device\n"
+		"\tSETTRIG <device> [<trigger>]\n"
+		"\t\tSet the trigger to use for the specified device\n");
 		YYACCEPT;
 	}
 	| PRINT END {
@@ -178,6 +184,37 @@ Line:
 		free(chn);
 		free(attr);
 		free(value);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| SETTRIG SPACE WORD SPACE WORD END {
+		char *id = $3, *trig = $5;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = set_trigger(pdata, id, trig);
+		free(id);
+		free(trig);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| SETTRIG SPACE WORD END {
+		char *id = $3;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = set_trigger(pdata, id, NULL);
+		free(id);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| GETTRIG SPACE WORD END {
+		char *id = $3;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = get_trigger(pdata, id);
+		free(id);
 		if (ret < 0)
 			YYABORT;
 		else

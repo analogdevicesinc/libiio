@@ -47,4 +47,8 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
 		const char *chn, const char *attr, const char *value);
 
+ssize_t get_trigger(struct parser_pdata *pdata, const char *id);
+ssize_t set_trigger(struct parser_pdata *pdata,
+		const char *id, const char *trigger);
+
 #endif /* __OPS_H__ */

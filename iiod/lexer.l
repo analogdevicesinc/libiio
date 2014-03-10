@@ -26,6 +26,8 @@ PRINT PRINT|print
 READ READ|read
 WRITE WRITE|write
 READBUF READBUF|readbuf
+SETTRIG SETTRIG|settrig
+GETTRIG GETTRIG|gettrig
 EXIT EXIT|QUIT|exit|quit
 HELP HELP|help
 
@@ -49,6 +51,14 @@ WORD (iio:)?(-|_|[[:alnum:]])+
 
 {WRITE} {
 	return WRITE;
+}
+
+{SETTRIG} {
+	return SETTRIG;
+}
+
+{GETTRIG} {
+	return GETTRIG;
 }
 
 {EXIT} {
