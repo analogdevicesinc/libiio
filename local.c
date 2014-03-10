@@ -258,7 +258,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	size_t len = strlen(src) + 1;
 
 	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, attr);
-	f = fopen(buf, "w");
+	f = fopen(buf, "r+");
 	if (!f)
 		return -errno;
 
