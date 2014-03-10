@@ -299,6 +299,41 @@ static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 	return local_write_dev_attr(chn->dev, attr, src);
 }
 
+static int local_get_trigger(const struct iio_device *dev,
+		const struct iio_device **trigger)
+{
+	char buf[1024];
+	unsigned int i;
+	ssize_t nb = local_read_dev_attr(dev, "trigger/current_trigger",
+			buf, sizeof(buf));
+	if (nb == 0)
+		*trigger = NULL;
+	if (nb <= 0)
+		return (int) nb;
+
+	nb = dev->ctx->nb_devices;
+	for (i = 0; i < nb; i++) {
+		const struct iio_device *cur = dev->ctx->devices[i];
+		if (cur->name && !strcmp(cur->name, buf)) {
+			*trigger = cur;
+			return 0;
+		}
+	}
+	return -ENXIO;
+}
+
+static int local_set_trigger(const struct iio_device *dev,
+		const struct iio_device *trigger)
+{
+	ssize_t nb;
+	const char *value = trigger ? trigger->name : "";
+	nb = local_write_dev_attr(dev, "trigger/current_trigger", value);
+	if (nb < 0)
+		return (int) nb;
+	else
+		return 0;
+}
+
 static bool is_channel(const char *attr)
 {
 	unsigned int i;
@@ -656,6 +691,8 @@ static struct iio_backend_ops local_ops = {
 	.write_device_attr = local_write_dev_attr,
 	.read_channel_attr = local_read_chn_attr,
 	.write_channel_attr = local_write_chn_attr,
+	.get_trigger = local_get_trigger,
+	.set_trigger = local_set_trigger,
 	.shutdown = local_shutdown,
 };
 
