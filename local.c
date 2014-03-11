@@ -342,6 +342,8 @@ static bool is_channel(const char *attr)
 {
 	unsigned int i;
 	char *ptr = NULL;
+	if (!strncmp(attr, "in_timestamp_", sizeof("in_timestamp_") - 1))
+		return true;
 	if (!strncmp(attr, "in_", 3))
 		ptr = strchr(attr + 3, '_');
 	else if (!strncmp(attr, "out_", 4))
