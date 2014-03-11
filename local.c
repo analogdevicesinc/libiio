@@ -432,7 +432,8 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	return 0;
 }
 
-static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
+static int add_attr_to_channel(struct iio_channel *chn,
+		const char *attr, const char *path)
 {
 	struct iio_channel_pdata *pdata = chn->pdata;
 	struct fn_map *maps;
@@ -440,7 +441,7 @@ static int add_attr_to_channel(struct iio_channel *chn, const char *attr)
 	if (!name)
 		return -ENOMEM;
 
-	fn = strdup(attr);
+	fn = strdup(path);
 	if (!fn)
 		goto err_free_name;
 
@@ -552,7 +553,7 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 			if (is_global_attr(chn, attr)) {
 				int ret;
 				global = true;
-				ret = add_attr_to_channel(chn, attr);
+				ret = add_attr_to_channel(chn, attr, attr);
 				if (ret)
 					return ret;
 			}
@@ -574,7 +575,7 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 }
 
 static struct iio_channel *create_channel(struct iio_device *dev,
-		char *id, const char *attr)
+		char *id, const char *attr, const char *path)
 {
 	struct iio_channel *chn = calloc(1, sizeof(*chn));
 	if (!chn)
@@ -593,7 +594,7 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	chn->id = id;
 	chn->modifier = IIO_NO_MOD;
 
-	if (!add_attr_to_channel(chn, attr))
+	if (!add_attr_to_channel(chn, attr, path))
 		return chn;
 
 err_free_pdata:
@@ -603,14 +604,20 @@ err_free_chn:
 	return NULL;
 }
 
-static int add_attr_or_channel(void *d, const char *path)
+static int add_attr_or_channel_helper(struct iio_device *dev,
+		const char *path, const char *prefix)
 {
 	int ret;
 	unsigned int i;
-	struct iio_device *dev = d;
 	struct iio_channel *chn;
-	char *channel_id;
+	char buf[1024], *channel_id;
 	const char *name = strrchr(path, '/') + 1;
+	if (!prefix) {
+		path = name;
+	} else {
+		snprintf(buf, sizeof(buf), "%s/%s", prefix, name);
+		path = buf;
+	}
 
 	if (!is_channel(name))
 		return add_attr_to_device(dev, name);
@@ -623,11 +630,11 @@ static int add_attr_or_channel(void *d, const char *path)
 		chn = dev->channels[i];
 		if (!strcmp(chn->id, channel_id)) {
 			free(channel_id);
-			return add_attr_to_channel(chn, name);
+			return add_attr_to_channel(chn, name, path);
 		}
 	}
 
-	chn = create_channel(dev, channel_id, name);
+	chn = create_channel(dev, channel_id, name, path);
 	if (!chn) {
 		free(channel_id);
 		return -ENXIO;
@@ -636,6 +643,17 @@ static int add_attr_or_channel(void *d, const char *path)
 	if (ret)
 		free_channel(chn);
 	return ret;
+}
+
+static int add_attr_or_channel(void *d, const char *path)
+{
+	return add_attr_or_channel_helper((struct iio_device *) d, path, NULL);
+}
+
+static int add_scan_element(void *d, const char *path)
+{
+	return add_attr_or_channel_helper((struct iio_device *) d,
+			path, "scan_elements");
 }
 
 static int foreach_in_dir(void *d, const char *path, bool is_dir,
@@ -699,6 +717,21 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 	return 0;
 }
 
+static int add_scan_elements(struct iio_device *dev, const char *devpath)
+{
+	struct stat st;
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "%s/scan_elements", devpath);
+
+	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
+		int ret = foreach_in_dir(dev, buf, false, add_scan_element);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int create_device(void *d, const char *path)
 {
 	unsigned int i;
@@ -723,6 +756,12 @@ static int create_device(void *d, const char *path)
 	}
 
 	ret = foreach_in_dir(dev, path, false, add_attr_or_channel);
+	if (ret < 0) {
+		free_device(dev);
+		return ret;
+	}
+
+	ret = add_scan_elements(dev, path);
 	if (ret < 0) {
 		free_device(dev);
 		return ret;
