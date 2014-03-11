@@ -174,29 +174,6 @@ static int set_channel_name(struct iio_channel *chn)
 	return 0;
 }
 
-static int local_open(const struct iio_device *dev)
-{
-	char buf[1024];
-	struct iio_device_pdata *pdata = dev->pdata;
-	if (pdata->f)
-		return -EAGAIN;
-
-	sprintf(buf, "/dev/%s", dev->id);
-	pdata->f = fopen(buf, "r+");
-	if (!pdata->f)
-		return -errno;
-	return 0;
-}
-
-static int local_close(const struct iio_device *dev)
-{
-	struct iio_device_pdata *pdata = dev->pdata;
-	int ret = fclose(pdata->f);
-	if (!ret)
-		pdata->f = NULL;
-	return ret;
-}
-
 static ssize_t local_read(const struct iio_device *dev, void *dst, size_t len)
 {
 	ssize_t ret;
@@ -271,6 +248,39 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		ret = -EBUSY;
 	fclose(f);
 	return ret;
+}
+
+static int local_open(const struct iio_device *dev)
+{
+	int ret;
+	char buf[1024];
+	struct iio_device_pdata *pdata = dev->pdata;
+	if (pdata->f)
+		return -EBUSY;
+
+	sprintf(buf, "/dev/%s", dev->id);
+	pdata->f = fopen(buf, "r+");
+	if (!pdata->f)
+		return -errno;
+	ret = local_write_dev_attr(dev, "buffer/enable", "1");
+	if (ret < 0 && ret != -ENOENT)
+		return ret;
+	return 0;
+}
+
+static int local_close(const struct iio_device *dev)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int ret = fclose(pdata->f);
+	if (ret)
+		return ret;
+
+	pdata->f = NULL;
+	ret = local_write_dev_attr(dev, "buffer/enable", "0");
+	if (ret < 0 && ret != -ENOENT)
+		return ret;
+	else
+		return 0;
 }
 
 static const char * get_filename(const struct iio_channel *chn,
