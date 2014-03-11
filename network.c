@@ -248,6 +248,58 @@ static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 			chn->id, attr, src);
 }
 
+static int network_get_trigger(const struct iio_device *dev,
+		const struct iio_device **trigger)
+{
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+	unsigned int i;
+	char buf[1024];
+	ssize_t ret;
+	long resp;
+
+	snprintf(buf, sizeof(buf), "GETTRIG %s\r\n", dev->id);
+	resp = exec_command(buf, pdata->fd);
+	if (resp < 0) {
+		return (int) resp;
+	} else if (resp == 0) {
+		*trigger = NULL;
+		return 0;
+	} else if (resp > sizeof(buf)) {
+		ERROR("Value returned by server is too large\n");
+		return -EIO;
+	}
+
+	ret = read_all(buf, resp, pdata->fd);
+	if (ret < 0) {
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to read response to GETTRIG: %s\n", buf);
+		return ret;
+	}
+
+	for (i = 0; i < dev->ctx->nb_devices; i++) {
+		struct iio_device *cur = dev->ctx->devices[i];
+		if (iio_device_is_trigger(cur) &&
+				!strncmp(cur->name, buf, resp)) {
+			*trigger = cur;
+			return 0;
+		}
+	}
+
+	return -ENXIO;
+}
+
+static int network_set_trigger(const struct iio_device *dev,
+		const struct iio_device *trigger)
+{
+	char buf[1024];
+	if (trigger)
+		snprintf(buf, sizeof(buf), "SETTRIG %s %s\r\n",
+				dev->id, trigger->id);
+	else
+		snprintf(buf, sizeof(buf), "SETTRIG %s\r\n", dev->id);
+	return (int) exec_command(buf, dev->ctx->pdata->fd);
+}
+
 static void network_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
@@ -263,6 +315,8 @@ static struct iio_backend_ops network_ops = {
 	.write_device_attr = network_write_dev_attr,
 	.read_channel_attr = network_read_chn_attr,
 	.write_channel_attr = network_write_chn_attr,
+	.get_trigger = network_get_trigger,
+	.set_trigger = network_set_trigger,
 	.shutdown = network_shutdown,
 };
 
