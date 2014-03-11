@@ -116,6 +116,7 @@ int main(int argc, char **argv)
 	char *backend = getenv("LIBIIO_BACKEND");
 	bool debug = false, xml_backend = backend && !strcmp(backend, "xml");
 	int c, option_index = 0, arg_index = xml_backend;
+	int yes = 1;
 
 	while ((c = getopt_long(argc, argv, "+hVd",
 					options, &option_index)) != -1) {
@@ -166,6 +167,8 @@ int main(int argc, char **argv)
 		ERROR("Unable to create socket: %s\n", strerror(errno));
 		goto err_close_ctx;
 	}
+
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
 	if (bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
 		ERROR("Bind failed: %s\n", strerror(errno));
