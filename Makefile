@@ -33,7 +33,7 @@ XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
 XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 
 CFLAGS := $(XML2_CFLAGS) -Wall -fPIC -fvisibility=hidden
-LDFLAGS := $(XML2_LIBS) -lsysfs
+LDFLAGS := $(XML2_LIBS)
 
 ifdef DEBUG
 	CFLAGS += -g -ggdb

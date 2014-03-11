@@ -19,21 +19,21 @@
 #include "debug.h"
 #include "iio-private.h"
 
+#include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <sysfs/libsysfs.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
 struct fn_map {
 	const char *attr;
 	char *filename;
-};
-
-struct iio_context_pdata {
-	char *path;
 };
 
 struct iio_device_pdata {
@@ -66,7 +66,6 @@ static const char * const modifier_names[] = {
 
 static void local_shutdown(struct iio_context *ctx)
 {
-	struct iio_context_pdata *pdata = ctx->pdata;
 	unsigned int i;
 
 	/* First, free the backend data stored in every device structure */
@@ -88,9 +87,6 @@ static void local_shutdown(struct iio_context *ctx)
 			free(ch_pdata);
 		}
 	}
-
-	free(pdata->path);
-	free(pdata);
 }
 
 /** Shrinks the first nb characters of a string 
@@ -208,12 +204,11 @@ static ssize_t local_write(const struct iio_device *dev,
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
-	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 
-	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, attr);
+	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s", dev->id, attr);
 	f = fopen(buf, "r");
 	if (!f)
 		return -errno;
@@ -231,13 +226,12 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src)
 {
-	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 	size_t len = strlen(src) + 1;
 
-	sprintf(buf, "%s/devices/%s/%s", pdata->path, dev->id, attr);
+	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s", dev->id, attr);
 	f = fopen(buf, "r+");
 	if (!f)
 		return -errno;
@@ -609,87 +603,144 @@ err_free_chn:
 	return NULL;
 }
 
-static struct iio_device *create_device(struct iio_context *ctx,
-		struct sysfs_device *device)
+static int add_attr_or_channel(void *d, const char *path)
 {
-	struct iio_device *dev;
-	struct dlist *attrlist;
-	struct sysfs_attribute *attr;
+	int ret;
 	unsigned int i;
+	struct iio_device *dev = d;
+	struct iio_channel *chn;
+	char *channel_id;
+	const char *name = strrchr(path, '/') + 1;
 
-	dev = calloc(1, sizeof(*dev));
+	if (!is_channel(name))
+		return add_attr_to_device(dev, name);
+
+	channel_id = get_channel_id(name);
+	if (!channel_id)
+		return -ENOMEM;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		chn = dev->channels[i];
+		if (!strcmp(chn->id, channel_id)) {
+			free(channel_id);
+			return add_attr_to_channel(chn, name);
+		}
+	}
+
+	chn = create_channel(dev, channel_id, name);
+	if (!chn) {
+		free(channel_id);
+		return -ENXIO;
+	}
+	ret = add_channel_to_device(dev, chn);
+	if (ret)
+		free_channel(chn);
+	return ret;
+}
+
+static int foreach_in_dir(void *d, const char *path, bool is_dir,
+		int (*callback)(void *, const char *))
+{
+	long name_max;
+	struct dirent *entry, *result;
+	DIR *dir = opendir(path);
+	if (!dir)
+		return -errno;
+
+	name_max = pathconf(path, _PC_NAME_MAX);
+	if (name_max == -1)
+		name_max = 255;
+	entry = malloc(offsetof(struct dirent, d_name) + name_max + 1);
+	if (!entry) {
+		closedir(dir);
+		return -ENOMEM;
+	}
+
+	while (true) {
+		struct stat st;
+		char buf[1024];
+		int ret = readdir_r(dir, entry, &result);
+		if (ret) {
+			strerror_r(ret, buf, sizeof(buf));
+			ERROR("Unable to open directory %s: %s\n", path, buf);
+			free(entry);
+			closedir(dir);
+			return ret;
+		}
+		if (!result)
+			break;
+
+		snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
+		if (stat(buf, &st) < 0) {
+			ret = -errno;
+			strerror_r(-errno, buf, sizeof(buf));
+			ERROR("Unable to stat file: %s\n", buf);
+			free(entry);
+			closedir(dir);
+			return ret;
+		}
+
+		if (is_dir && S_ISDIR(st.st_mode) && entry->d_name[0] != '.')
+			ret = callback(d, buf);
+		else if (!is_dir && S_ISREG(st.st_mode))
+			ret = callback(d, buf);
+		else
+			continue;
+
+		if (ret < 0) {
+			free(entry);
+			closedir(dir);
+			return ret;
+		}
+	}
+
+	free(entry);
+	closedir(dir);
+	return 0;
+}
+
+static int create_device(void *d, const char *path)
+{
+	unsigned int i;
+	int ret;
+	struct iio_context *ctx = d;
+	struct iio_device *dev = calloc(1, sizeof(*dev));
 	if (!dev)
-		return NULL;
+		return -ENOMEM;
 
 	dev->pdata = calloc(1, sizeof(*dev->pdata));
 	if (!dev->pdata) {
 		free(dev);
-		return NULL;
+		return -ENOMEM;
 	}
 
 	dev->ctx = ctx;
-	dev->id = strdup(device->name);
+	dev->id = strdup(strrchr(path, '/') + 1);
 	if (!dev->id) {
 		free(dev->pdata);
 		free(dev);
-		return NULL;
+		return -ENOMEM;
 	}
 
-	attrlist = sysfs_get_device_attributes(device);
-	dlist_for_each_data(attrlist, attr, struct sysfs_attribute) {
-		if (is_channel(attr->name)) {
-			unsigned int i;
-			bool new_channel = true;
-			struct iio_channel *chn;
-			char *channel_id = get_channel_id(attr->name);
-			if (!channel_id) {
-				free_device(dev);
-				return NULL;
-			}
-
-			for (i = 0; i < dev->nb_channels; i++) {
-				chn = dev->channels[i];
-				if (strcmp(chn->id, channel_id))
-					continue;
-
-				free(channel_id);
-				new_channel = false;
-				if (add_attr_to_channel(chn, attr->name)) {
-					free_device(dev);
-					return NULL;
-				}
-				break;
-			}
-
-			if (!new_channel)
-				continue;
-
-			chn = create_channel(dev, channel_id, attr->name);
-			if (!chn) {
-				free(channel_id);
-				free_device(dev);
-				return NULL;
-			}
-			if (add_channel_to_device(dev, chn)) {
-				free_channel(chn);
-				free_device(dev);
-				return NULL;
-			}
-		} else if (add_attr_to_device(dev, attr->name)) {
-			free_device(dev);
-			return NULL;
-		}
+	ret = foreach_in_dir(dev, path, false, add_attr_or_channel);
+	if (ret < 0) {
+		free_device(dev);
+		return ret;
 	}
 
 	for (i = 0; i < dev->nb_channels; i++)
 		set_channel_name(dev->channels[i]);
 
-	if (detect_and_move_global_attrs(dev)) {
+	ret = detect_and_move_global_attrs(dev);
+	if (ret < 0) {
 		free_device(dev);
-		return NULL;
+		return ret;
 	}
 
-	return dev;
+	ret = add_device_to_context(ctx, dev);
+	if (ret < 0)
+		free_device(dev);
+	return ret;
 }
 
 static struct iio_backend_ops local_ops = {
@@ -708,63 +759,23 @@ static struct iio_backend_ops local_ops = {
 
 struct iio_context * iio_create_local_context(void)
 {
-	struct sysfs_bus *iio;
-	struct sysfs_device *device;
-	struct dlist *devlist;
-	char *path;
-
+	int ret;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx) {
 		ERROR("Unable to allocate memory\n");
 		return NULL;
 	}
 
-	ctx->pdata = calloc(1, sizeof(*ctx->pdata));
-	if (!ctx->pdata) {
-		ERROR("Unable to allocate memory\n");
-		free(ctx);
-		return NULL;
-	}
-
 	ctx->ops = &local_ops;
 	ctx->name = "local";
 
-	iio = sysfs_open_bus("iio");
-	if (!iio) {
-		ERROR("Unable to open IIO bus\n");
-		goto err_destroy_ctx;
+	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-errno, buf, sizeof(buf));
+		ERROR("Unable to create context: %s\n", buf);
+		iio_context_destroy(ctx);
+		ctx = NULL;
 	}
-
-	path = strdup(iio->path);
-	if (!path) {
-		ERROR("Unable to allocate memory\n");
-		goto err_close_sysfs_bus;
-	}
-
-	ctx->pdata->path = path;
-
-	devlist = sysfs_get_bus_devices(iio);
-	dlist_for_each_data(devlist, device, struct sysfs_device) {
-		struct iio_device *dev = create_device(ctx, device);
-		if (!dev) {
-			ERROR("Unable to create IIO device structure\n");
-			goto err_close_sysfs_bus;
-		}
-
-		if (add_device_to_context(ctx, dev)) {
-			ERROR("Unable to allocate memory\n");
-			free(dev);
-			goto err_close_sysfs_bus;
-		}
-	}
-
-	sysfs_close_bus(iio);
-
 	return ctx;
-
-err_close_sysfs_bus:
-	sysfs_close_bus(iio);
-err_destroy_ctx:
-	iio_context_destroy(ctx);
-	return NULL;
 }
