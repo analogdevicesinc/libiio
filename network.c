@@ -89,6 +89,44 @@ static int read_integer(int fd, long *val)
 	return 0;
 }
 
+static ssize_t write_command(const char *cmd, int fd)
+{
+	ssize_t ret;
+
+	DEBUG("Writing command: %s\n", cmd);
+	ret = write_all(cmd, strlen(cmd), fd);
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to send command: %s\n", buf);
+	}
+	return ret;
+}
+
+static long exec_command(const char *cmd, int fd)
+{
+	long resp;
+	ssize_t ret = write_command(cmd, fd);
+	if (ret < 0)
+		return (long) ret;
+
+	DEBUG("Reading response\n");
+	ret = read_integer(fd, &resp);
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to read response: %s\n", buf);
+		return (long) ret;
+	}
+
+	if (resp < 0) {
+		char buf[1024];
+		strerror_r(-resp, buf, sizeof(buf));
+		ERROR("Server returned an error: %s\n", buf);
+	}
+	return resp;
+}
+
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 {
 	int fd = dev->ctx->pdata->fd;
@@ -98,15 +136,11 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 	if (!len)
 		return -EINVAL;
 
-	DEBUG("Writing READBUF command\n");
 	snprintf(buf, sizeof(buf), "READBUF %s %lu %u\r\n", dev->id,
 			(unsigned long) len, 1);
-	ret = write_all(buf, strlen(buf), fd);
-	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to send READBUF command: %s\n", buf);
+	ret = write_command(buf, fd);
+	if (ret < 0)
 		return ret;
-	}
 
 	do {
 		long read_len;
@@ -149,31 +183,13 @@ static ssize_t network_read_attr_helper(int fd, const char *id,
 	ssize_t ret;
 	char buf[1024];
 
-	DEBUG("Writing READ command\n");
 	if (chn)
 		snprintf(buf, sizeof(buf), "READ %s %s %s\r\n", id, chn, attr);
 	else
 		snprintf(buf, sizeof(buf), "READ %s %s\r\n", id, attr);
-	ret = write_all(buf, strlen(buf), fd);
-	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to send READ command: %s\n", buf);
-		return ret;
-	}
-
-	DEBUG("Reading READ response\n");
-	ret = read_integer(fd, &read_len);
-	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to read response to READ: %s\n", buf);
-		return ret;
-	}
-
-	if (read_len < 0) {
-		strerror_r(-read_len, buf, sizeof(buf));
-		ERROR("Server returned an error: %s\n", buf);
-		return read_len;
-	}
+	read_len = exec_command(buf, fd);
+	if (read_len < 0)
+		return (ssize_t) read_len;
 
 	if (read_len > len) {
 		ERROR("Value returned by server is too large\n");
@@ -194,37 +210,14 @@ static ssize_t network_read_attr_helper(int fd, const char *id,
 static ssize_t network_write_attr_helper(int fd, const char *id,
 		const char *chn, const char *attr, const char *src)
 {
-	long resp;
-	ssize_t ret;
 	char buf[1024];
 
-	DEBUG("Writing WRITE command\n");
 	if (chn)
 		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s\r\n",
 				id, chn, attr, src);
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %s\r\n", id, attr, src);
-	ret = write_all(buf, strlen(buf), fd);
-	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to send WRITE command: %s\n", buf);
-		return ret;
-	}
-
-	DEBUG("Reading WRITE response\n");
-	ret = read_integer(fd, &resp);
-	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to read response to WRITE: %s\n", buf);
-		return ret;
-	}
-
-	if (resp < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Server returned an error: %s\n", buf);
-	}
-
-	return resp;
+	return (ssize_t) exec_command(buf, fd);
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
@@ -259,7 +252,7 @@ static void network_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
 
-	write_all("\r\nEXIT\r\n", sizeof("\r\nEXIT\r\n") - 1, pdata->fd);
+	write_command("\r\nEXIT\r\n", pdata->fd);
 	close(pdata->fd);
 	free(pdata);
 }
@@ -276,37 +269,12 @@ static struct iio_backend_ops network_ops = {
 static struct iio_context * get_context(int fd)
 {
 	struct iio_context *ctx;
-	long xml_len;
 	char *xml;
-	ssize_t ret;
-
-	DEBUG("Writing PRINT command\n");
-	ret = write_all("PRINT\r\n", sizeof("PRINT\r\n") - 1, fd);
-	if (ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to send PRINT command: %s\n", buf);
+	long xml_len = exec_command("PRINT\r\n", fd);
+	if (xml_len < 0)
 		return NULL;
-	}
-
-	DEBUG("Reading response...\n");
-	ret = read_integer(fd, &xml_len);
-	if (ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to read response to PRINT: %s\n", buf);
-		return NULL;
-	}
-
-	if (xml_len < 0) {
-		char buf[1024];
-		strerror_r(-xml_len, buf, sizeof(buf));
-		ERROR("Server returned an error: %s\n", buf);
-		return NULL;
-	}
 
 	DEBUG("Server returned a XML string of length %li\n", xml_len);
-
 	xml = malloc(xml_len);
 	if (!xml) {
 		ERROR("Unable to allocate data\n");
