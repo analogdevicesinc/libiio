@@ -147,6 +147,11 @@ void * iio_channel_get_data(const struct iio_channel *chn)
 	return chn->userdata;
 }
 
+long iio_channel_get_index(const struct iio_channel *chn)
+{
+	return chn->index;
+}
+
 void free_channel(struct iio_channel *chn)
 {
 	unsigned int i;

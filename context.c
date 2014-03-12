@@ -105,3 +105,25 @@ struct iio_device * iio_context_get_device(const struct iio_context *ctx,
 	else
 		return ctx->devices[index];
 }
+
+static void init_index(struct iio_channel *chn)
+{
+	char buf[1024];
+	long ret = (long) iio_channel_attr_read(chn, "index",
+			buf, sizeof(buf));
+	if (ret < 0)
+		chn->index = ret;
+	else
+		chn->index = strtol(buf, NULL, 0);
+}
+
+void iio_context_init_channel_indexes(const struct iio_context *ctx)
+{
+	unsigned int i;
+	for (i = 0; i < ctx->nb_devices; i++) {
+		unsigned int j;
+		struct iio_device *dev = ctx->devices[i];
+		for (j = 0; j < dev->nb_channels; j++)
+			init_index(dev->channels[j]);
+	}
+}

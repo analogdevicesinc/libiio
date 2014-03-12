@@ -405,6 +405,7 @@ struct iio_context * iio_create_network_context(const char *host)
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 
+	iio_context_init_channel_indexes(ctx);
 	return ctx;
 
 err_free_pdata:

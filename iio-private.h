@@ -108,7 +108,7 @@ struct iio_channel {
 	enum iio_modifier modifier;
 	struct iio_data_format data_format;
 	char *name, *id;
-	unsigned int index;
+	long index;
 	bool enabled;
 
 	char **attrs;
@@ -135,5 +135,7 @@ void free_device(struct iio_device *dev);
 
 char *iio_channel_get_xml(const struct iio_channel *chn, size_t *len);
 char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
+
+void iio_context_init_channel_indexes(const struct iio_context *ctx);
 
 #endif /* __IIO_PRIVATE_H__ */
