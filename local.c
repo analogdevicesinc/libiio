@@ -244,39 +244,6 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	return ret;
 }
 
-static int local_open(const struct iio_device *dev)
-{
-	int ret;
-	char buf[1024];
-	struct iio_device_pdata *pdata = dev->pdata;
-	if (pdata->f)
-		return -EBUSY;
-
-	sprintf(buf, "/dev/%s", dev->id);
-	pdata->f = fopen(buf, "r+");
-	if (!pdata->f)
-		return -errno;
-	ret = local_write_dev_attr(dev, "buffer/enable", "1");
-	if (ret < 0 && ret != -ENOENT)
-		return ret;
-	return 0;
-}
-
-static int local_close(const struct iio_device *dev)
-{
-	struct iio_device_pdata *pdata = dev->pdata;
-	int ret = fclose(pdata->f);
-	if (ret)
-		return ret;
-
-	pdata->f = NULL;
-	ret = local_write_dev_attr(dev, "buffer/enable", "0");
-	if (ret < 0 && ret != -ENOENT)
-		return ret;
-	else
-		return 0;
-}
-
 static const char * get_filename(const struct iio_channel *chn,
 		const char *attr)
 {
@@ -301,6 +268,58 @@ static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 {
 	attr = get_filename(chn, attr);
 	return local_write_dev_attr(chn->dev, attr, src);
+}
+
+static int channel_set_state(const struct iio_channel *chn, bool enable)
+{
+	char *en = enable ? "1" : "0";
+	ssize_t ret = local_write_chn_attr(chn, "en", en);
+	if (ret < 0)
+		return (int) ret;
+	else
+		return 0;
+}
+
+static int local_open(const struct iio_device *dev)
+{
+	unsigned int i;
+	int ret;
+	char buf[1024];
+	struct iio_device_pdata *pdata = dev->pdata;
+	if (pdata->f)
+		return -EBUSY;
+
+	sprintf(buf, "/dev/%s", dev->id);
+	pdata->f = fopen(buf, "r+");
+	if (!pdata->f)
+		return -errno;
+
+	/* Enable channels */
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (chn->index >= 0)
+			channel_set_state(chn, true);
+	}
+
+	ret = local_write_dev_attr(dev, "buffer/enable", "1");
+	if (ret < 0 && ret != -ENOENT)
+		return ret;
+	return 0;
+}
+
+static int local_close(const struct iio_device *dev)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int ret = fclose(pdata->f);
+	if (ret)
+		return ret;
+
+	pdata->f = NULL;
+	ret = local_write_dev_attr(dev, "buffer/enable", "0");
+	if (ret < 0 && ret != -ENOENT)
+		return ret;
+	else
+		return 0;
 }
 
 static int local_get_trigger(const struct iio_device *dev,
