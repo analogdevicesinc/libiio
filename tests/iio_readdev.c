@@ -78,8 +78,8 @@ static void set_handler(int signal, void (*handler)(int))
 
 int main(int argc, char **argv)
 {
-	unsigned int i, nb_devices;
-	int c, option_index = 0, arg_index = 0;
+	unsigned int i, nb_devices, nb_channels;
+	int ret, c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
 
 	while ((c = getopt_long(argc, argv, "+hn:x:",
@@ -150,10 +150,22 @@ int main(int argc, char **argv)
 
 	if (i == nb_devices) {
 		ERROR("Device %s not found\n", argv[arg_index + 1]);
-		return 1;
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
 	}
 
-	iio_device_open(dev);
+	nb_channels = iio_device_get_channels_count(dev);
+
+	/* Enable all channels */
+	for (i = 0; i < nb_channels; i++)
+		iio_channel_enable(iio_device_get_channel(dev, i));
+
+	ret = iio_device_open(dev);
+	if (ret < 0) {
+		ERROR("Unable to open device: %s\n", strerror(-ret));
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
 
 	setbuf(stdout, NULL);
 
@@ -166,5 +178,7 @@ int main(int argc, char **argv)
 		}
 		fwrite(buf, 1, sizeof(buf), stdout);
 	}
-	return 0;
+
+	iio_context_destroy(ctx);
+	return EXIT_FAILURE;
 }
