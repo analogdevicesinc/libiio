@@ -76,8 +76,9 @@ int iio_device_close(const struct iio_device *dev);
 const char * iio_channel_get_id(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_name(const struct iio_channel *chn) __pure;
 bool iio_channel_is_output(const struct iio_channel *chn) __pure;
-int iio_channel_enable(struct iio_channel *chn);
-int iio_channel_disable(struct iio_channel *chn);
+bool iio_channel_is_enabled(const struct iio_channel *chn);
+void iio_channel_enable(struct iio_channel *chn);
+void iio_channel_disable(struct iio_channel *chn);
 unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_attr(const struct iio_channel *chn,
 		unsigned int index) __pure;

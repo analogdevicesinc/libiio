@@ -152,6 +152,21 @@ long iio_channel_get_index(const struct iio_channel *chn)
 	return chn->index;
 }
 
+bool iio_channel_is_enabled(const struct iio_channel *chn)
+{
+	return chn->enabled;
+}
+
+void iio_channel_enable(struct iio_channel *chn)
+{
+	chn->enabled = true;
+}
+
+void iio_channel_disable(struct iio_channel *chn)
+{
+	chn->enabled = false;
+}
+
 void free_channel(struct iio_channel *chn)
 {
 	unsigned int i;
