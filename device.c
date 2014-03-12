@@ -144,12 +144,37 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 		return dev->attrs[index];
 }
 
-int iio_device_open(const struct iio_device *dev)
+int iio_device_open_mask(const struct iio_device *dev,
+		uint32_t *mask, size_t words)
 {
 	if (dev->ctx->ops->open)
-		return dev->ctx->ops->open(dev);
+		return dev->ctx->ops->open(dev, mask, words);
 	else
 		return -ENOSYS;
+}
+
+int iio_device_open(const struct iio_device *dev)
+{
+	size_t nb = (dev->nb_channels + 31) / 32;
+	uint32_t *mask = NULL;
+	unsigned int i;
+	int ret;
+
+	if (nb > 0) {
+		mask = calloc(nb, sizeof(*mask));
+		if (!mask)
+			return -ENOMEM;
+	}
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (iio_channel_is_enabled(chn) && chn->index >= 0)
+			SET_BIT(mask, chn->index);
+	}
+
+	ret = iio_device_open_mask(dev, mask, nb);
+	free(mask);
+	return ret;
 }
 
 int iio_device_close(const struct iio_device *dev)

@@ -280,7 +280,7 @@ static int channel_set_state(const struct iio_channel *chn, bool enable)
 		return 0;
 }
 
-static int local_open(const struct iio_device *dev)
+static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 {
 	unsigned int i;
 	int ret;
@@ -288,6 +288,9 @@ static int local_open(const struct iio_device *dev)
 	struct iio_device_pdata *pdata = dev->pdata;
 	if (pdata->f)
 		return -EBUSY;
+
+	if (nb != (dev->nb_channels + 31) / 32)
+		return -EINVAL;
 
 	sprintf(buf, "/dev/%s", dev->id);
 	pdata->f = fopen(buf, "r+");
@@ -297,14 +300,21 @@ static int local_open(const struct iio_device *dev)
 	/* Enable channels */
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
-		if (chn->index >= 0)
-			channel_set_state(chn, true);
+		if (chn->index >= 0) {
+			bool state = TEST_BIT(mask, chn->index);
+			ret = channel_set_state(chn, state);
+			if (ret < 0 && ret != -ENOENT)
+				goto err_close;
+		}
 	}
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "1");
-	if (ret < 0 && ret != -ENOENT)
-		return ret;
-	return 0;
+	if (ret > 0 || ret == -ENOENT)
+		return 0;
+err_close:
+	fclose(pdata->f);
+	pdata->f = NULL;
+	return ret;
 }
 
 static int local_close(const struct iio_device *dev)

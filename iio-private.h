@@ -26,6 +26,15 @@
 
 #include <stdbool.h>
 
+#define BIT_MASK(bit) (1 << ((bit) % 32))
+#define BIT_WORD(bit) ((bit) / 32)
+#define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
+		& BIT_MASK(bit)))
+#define SET_BIT(addr, bit) \
+	*(((uint32_t *) addr) + BIT_WORD(bit)) |= BIT_MASK(bit)
+#define CLEAR_BIT(addr, bit) \
+	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
+
 enum iio_context_type {
 	IIO_LOCAL_CONTEXT,
 	IIO_DUMMY_CONTEXT,
@@ -51,7 +60,7 @@ struct iio_backend_ops {
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len);
 	ssize_t (*write)(const struct iio_device *dev,
 			const void *src, size_t len);
-	int (*open)(const struct iio_device *dev);
+	int (*open)(const struct iio_device *dev, uint32_t *mask, size_t words);
 	int (*close)(const struct iio_device *dev);
 
 	int (*channel_enable)(struct iio_channel *channel);
