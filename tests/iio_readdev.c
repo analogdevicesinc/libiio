@@ -48,8 +48,9 @@ static void usage(void)
 {
 	unsigned int i;
 
-	printf("Usage:\n\t" MY_NAME " [-x <xml_file>] <iio_device>\n\t"
-			MY_NAME " [-n <hostname>] <iio_device>\n\nOptions:\n");
+	printf("Usage:\n\t" MY_NAME " [-x <xml_file>] <iio_device> <trigger>\n"
+			"\t" MY_NAME " [-n <hostname>] <iio_device> <trigger>\n"
+			"\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 					options[i].val, options[i].name,
@@ -76,9 +77,34 @@ static void set_handler(int signal, void (*handler)(int))
 	sigaction(signal, &sig, NULL);
 }
 
+static struct iio_device * get_device(const struct iio_context *ctx,
+		const char *id)
+{
+
+	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
+	struct iio_device *device;
+
+	for (i = 0; i < nb_devices; i++) {
+		const char *name;
+		device = iio_context_get_device(ctx, i);
+		name = iio_device_get_name(device);
+		if (name && !strcmp(name, id))
+			break;
+		if (!strcmp(id, iio_device_get_id(device)))
+			break;
+	}
+
+	if (i < nb_devices)
+		return device;
+
+	ERROR("Device %s not found\n", id);
+	return NULL;
+}
+
 int main(int argc, char **argv)
 {
-	unsigned int i, nb_devices, nb_channels;
+	const struct iio_device *trigger;
+	unsigned int i, nb_channels;
 	int ret, c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
 
@@ -109,7 +135,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (arg_index + 1 >= argc) {
+	if (arg_index + 2 >= argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage();
 		return EXIT_FAILURE;
@@ -133,26 +159,26 @@ int main(int argc, char **argv)
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
 
-	nb_devices = iio_context_get_devices_count(ctx);
-
-	for (i = 0; i < nb_devices; i++) {
-		const char *name, *id;
-
-		dev = iio_context_get_device(ctx, i);
-		name = iio_device_get_name(dev);
-		if (name && !strcmp(name, argv[arg_index + 1]))
-			break;
-
-		id = iio_device_get_id(dev);
-		if (!strcmp(id, argv[1]))
-			break;
-	}
-
-	if (i == nb_devices) {
-		ERROR("Device %s not found\n", argv[arg_index + 1]);
+	dev = get_device(ctx, argv[arg_index + 1]);
+	if (!dev) {
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
+
+	trigger = get_device(ctx, argv[arg_index + 2]);
+	if (!trigger) {
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
+
+	if (!iio_device_is_trigger(trigger)) {
+		ERROR("Specified device is not a trigger\n");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
+
+	iio_trigger_set_rate(trigger, 100); /* Fixed rate for now */
+	iio_device_set_trigger(dev, trigger);
 
 	nb_channels = iio_device_get_channels_count(dev);
 
