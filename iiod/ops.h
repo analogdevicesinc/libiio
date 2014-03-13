@@ -26,12 +26,8 @@
 
 struct parser_pdata {
 	struct iio_context *ctx;
-	bool stop, verbose;
+	bool stop, verbose, opened;
 	FILE *in, *out;
-
-	uint32_t *mask;
-	size_t nb_words;
-	bool opened;
 };
 
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
