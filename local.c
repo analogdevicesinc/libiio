@@ -722,7 +722,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 		snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
-			strerror_r(-errno, buf, sizeof(buf));
+			strerror_r(errno, buf, sizeof(buf));
 			ERROR("Unable to stat file: %s\n", buf);
 			free(entry);
 			closedir(dir);
@@ -842,7 +842,7 @@ struct iio_context * iio_create_local_context(void)
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0) {
 		char buf[1024];
-		strerror_r(-errno, buf, sizeof(buf));
+		strerror_r(errno, buf, sizeof(buf));
 		ERROR("Unable to create context: %s\n", buf);
 		iio_context_destroy(ctx);
 		ctx = NULL;
