@@ -17,6 +17,7 @@ PREFIX ?= /usr/local
 
 COMPILER ?= gcc
 CC := $(CROSS_COMPILE)$(COMPILER)
+ANALYZER := clang --analyze
 INSTALL ?= install
 
 DAEMON = iiod
@@ -39,9 +40,10 @@ else
 	SUM:=@echo
 endif
 
-OBJS = iiod.o lexer.o ops.o parser.o
+C_OBJS = iiod.o ops.o
+OBJS := $(C_OBJS) lexer.o parser.o
 
-.PHONY: all clean install
+.PHONY: all clean analyze install uninstall
 
 all: $(DAEMON)
 
@@ -52,6 +54,9 @@ $(DAEMON): $(OBJS)
 clean:
 	$(SUM) "  CLEAN   ."
 	$(CMD)rm -f $(DAEMON) $(OBJS) lexer.c parser.h parser.c $(OBJS:%.o=%.plist)
+
+analyze:
+	$(ANALYZER) $(CFLAGS) $(C_OBJS:%.o=%.c)
 
 %.o: %.c
 	$(SUM) "  CC      $@"
