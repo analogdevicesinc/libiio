@@ -24,15 +24,20 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define TIMEOUT_MS 60000
-
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;
 	FILE *in, *out;
+
+	uint32_t *mask;
+	size_t nb_words;
+	bool opened;
 };
 
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
+
+int open_dev(struct parser_pdata *pdata, const char *id, const char *mask);
+int close_dev(struct parser_pdata *pdata, const char *id);
 
 ssize_t read_dev(struct parser_pdata *pdata, const char *id,
 		unsigned int nb, unsigned int samples_size);

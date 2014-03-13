@@ -74,6 +74,8 @@ void yyset_out(FILE *out, yyscan_t scanner);
 
 %token EXIT
 %token HELP
+%token OPEN
+%token CLOSE
 %token PRINT
 %token READ
 %token READBUF
@@ -106,6 +108,10 @@ Line:
 		"\t\tClose the current session\n"
 		"\tPRINT\n"
 		"\t\tDisplays a XML string corresponding to the current IIO context\n"
+		"\tOPEN <device> <mask>\n"
+		"\t\tOpen the specified device with the given mask of channels\n"
+		"\tCLOSE <device>\n"
+		"\t\tClose the specified device\n"
 		"\tREAD <device> [<channel>] <attribute>\n"
 		"\t\tRead the value of an attribute\n"
 		"\tWRITE <device> [<channel>] <attribute> <value>\n"
@@ -126,6 +132,27 @@ Line:
 		fprintf(pdata->out, "%s\n", xml);
 		free(xml);
 		YYACCEPT;
+	}
+	| OPEN SPACE WORD SPACE WORD END {
+		char *id = $3, *mask = $5;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		int ret = open_dev(pdata, id, mask);
+		free(id);
+		free(mask);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| CLOSE SPACE WORD END {
+		char *id = $3;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		int ret = close_dev(pdata, id);
+		free(id);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
 	}
 	| READ SPACE WORD SPACE WORD END {
 		char *id = $3, *attr = $5;

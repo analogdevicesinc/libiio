@@ -23,6 +23,8 @@
 %option noyywrap reentrant bison-bridge nounistd
 
 PRINT PRINT|print
+OPEN OPEN|open
+CLOSE CLOSE|close
 READ READ|read
 WRITE WRITE|write
 READBUF READBUF|readbuf
@@ -39,6 +41,14 @@ WORD (iio:)?(-|_|[[:alnum:]])+
 
 {PRINT} {
 	return PRINT;
+}
+
+{OPEN} {
+	return OPEN;
+}
+
+{CLOSE} {
+	return CLOSE;
 }
 
 {READ} {

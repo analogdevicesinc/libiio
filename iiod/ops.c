@@ -47,7 +47,7 @@ struct DevEntry {
 	SLIST_ENTRY(DevEntry) next;
 
 	struct iio_device *dev;
-	unsigned int sample_size;
+	unsigned int sample_size, nb_clients;
 
 	/* Linked list of ThdEntry structures corresponding
 	 * to all the threads trying to read data */
@@ -56,6 +56,9 @@ struct DevEntry {
 
 	pthread_t thd;
 	pthread_attr_t attr;
+
+	uint32_t *mask;
+	size_t nb_words;
 };
 
 /* This is a linked list of DevEntry structures corresponding to
@@ -93,7 +96,6 @@ static void * read_thd(void *d)
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd;
 	unsigned int sample_size = entry->sample_size;
-	unsigned int timeout_ms = TIMEOUT_MS;
 	ssize_t ret = 0;
 
 	/* No more than 1024 bytes per read (arbitrary) */
@@ -114,24 +116,21 @@ static void * read_thd(void *d)
 			break;
 
 		pthread_mutex_lock(&entry->thdlist_lock);
-		if (SLIST_EMPTY(&entry->thdlist_head)) {
-			if (!--timeout_ms) {
-				pthread_mutex_unlock(&entry->thdlist_lock);
-				break;
-			} else {
-				struct timespec ts = {
-					.tv_sec = 0,
-					.tv_nsec = 1000000, /* 1 ms */
-				};
+		if (entry->nb_clients == 0) {
+			pthread_mutex_unlock(&entry->thdlist_lock);
+			break;
+		}
 
-				pthread_mutex_unlock(&entry->thdlist_lock);
-				pthread_mutex_unlock(&devlist_lock);
-				nanosleep(&ts, NULL);
-				continue;
-			}
-		} else {
-			/* Reset the timeout */
-			timeout_ms = TIMEOUT_MS;
+		if (SLIST_EMPTY(&entry->thdlist_head)) {
+			struct timespec ts = {
+				.tv_sec = 0,
+				.tv_nsec = 1000000, /* 1 ms */
+			};
+
+			pthread_mutex_unlock(&entry->thdlist_lock);
+			pthread_mutex_unlock(&devlist_lock);
+			nanosleep(&ts, NULL);
+			continue;
 		}
 
 		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
@@ -150,10 +149,12 @@ static void * read_thd(void *d)
 
 		pthread_mutex_unlock(&devlist_lock);
 
+		/* TODO: Deduce the sample size from the mask */
+
 		DEBUG("Reading %lu bytes from device\n", len);
 		ret = iio_device_read_raw(entry->dev, buf, len);
-
 		pthread_mutex_lock(&entry->thdlist_lock);
+
 		nb_samples = ret / sample_size;
 
 		/* We don't use SLIST_FOREACH here. As soon as a thread is
@@ -162,7 +163,9 @@ static void * read_thd(void *d)
 		 * reads "thd" to get the address of the next element. */
 		for (thd = SLIST_FIRST(&entry->thdlist_head);
 				thd; thd = next_thd) {
+			unsigned int i;
 			size_t ret2;
+			FILE *out = thd->pdata->out;
 
 			next_thd = SLIST_NEXT(thd, next);
 
@@ -177,7 +180,13 @@ static void * read_thd(void *d)
 			if (nb_samples > thd->nb)
 				continue;
 
-			ret2 = write_all(buf, ret, thd->pdata->out);
+			/* Send the current mask */
+			for (i = entry->nb_words; i > 0; i--)
+				fprintf(out, "%08x", entry->mask[i - 1]);
+			fputc('\n', out);
+
+			/* Send the raw data */
+			ret2 = write_all(buf, ret, out);
 			if (ret2 > 0)
 				thd->nb -= ret2 / sample_size;
 			if (ret2 < 0)
@@ -226,6 +235,7 @@ static void * read_thd(void *d)
 
 	pthread_mutex_destroy(&entry->thdlist_lock);
 	pthread_attr_destroy(&entry->attr);
+	free(entry->mask);
 	free(entry);
 
 	DEBUG("Thread terminated\n");
@@ -239,6 +249,9 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	struct ThdEntry *thd;
 	ssize_t ret;
 
+	if (!pdata->opened)
+		return -EBADF;
+
 	pthread_mutex_lock(&devlist_lock);
 
 	SLIST_FOREACH(e, &devlist_head, next) {
@@ -248,9 +261,14 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 		}
 	}
 
+	if (!entry) {
+		pthread_mutex_unlock(&devlist_lock);
+		return -ENXIO;
+	}
+
 	/* Ensure that two threads reading the same device
 	 * use the same sample size */
-	if (entry && (entry->sample_size != sample_size)) {
+	if (entry->sample_size != sample_size) {
 		pthread_mutex_unlock(&devlist_lock);
 		return -EINVAL;
 	}
@@ -259,48 +277,6 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!thd) {
 		pthread_mutex_unlock(&devlist_lock);
 		return -ENOMEM;
-	}
-
-	/* !entry: no DevEntry in the linked list corresponding to the
-	 *         device, so we add one */
-	if (!entry) {
-		int ret;
-
-		entry = malloc(sizeof(*entry));
-		if (!entry) {
-			free(thd);
-			pthread_mutex_unlock(&devlist_lock);
-			return -ENOMEM;
-		}
-
-		ret = iio_device_open(dev);
-		if (ret) {
-			free(entry);
-			free(thd);
-			pthread_mutex_unlock(&devlist_lock);
-			return ret;
-		}
-
-		entry->dev = dev;
-		entry->sample_size = sample_size;
-		SLIST_INIT(&entry->thdlist_head);
-		pthread_mutex_init(&entry->thdlist_lock, NULL);
-		pthread_attr_init(&entry->attr);
-		pthread_attr_setdetachstate(&entry->attr,
-				PTHREAD_CREATE_DETACHED);
-
-		ret = pthread_create(&entry->thd, &entry->attr,
-				read_thd, entry);
-		if (ret) {
-			iio_device_close(dev);
-			free(entry);
-			free(thd);
-			pthread_mutex_unlock(&devlist_lock);
-			return ret;
-		}
-
-		DEBUG("Adding new device thread to device list\n");
-		SLIST_INSERT_HEAD(&devlist_head, entry, next);
 	}
 
 	thd->nb = nb;
@@ -359,6 +335,184 @@ static struct iio_channel * get_channel(const struct iio_device *dev,
 	}
 
 	return NULL;
+}
+
+static uint32_t *get_mask(const char *mask, size_t *len)
+{
+	size_t nb = (*len + 7) / 8;
+	uint32_t *ptr, *words = calloc(nb, sizeof(*words));
+	if (!words)
+		return NULL;
+
+	ptr = words + nb;
+	while (*mask) {
+		char buf[9];
+		sprintf(buf, "%.*s", 8, mask);
+		sscanf(buf, "%08x", --ptr);
+		mask += 8;
+		DEBUG("Mask[%lu]: 0x%08x\n",
+				(unsigned long) (words - ptr) / 4, *ptr);
+	}
+
+	*len = nb;
+	return words;
+}
+
+static int open_dev_helper(struct parser_pdata *pdata,
+		struct iio_device *dev, const char *id, const char *mask)
+{
+	int ret = -ENOMEM;
+	struct DevEntry *e, *entry = NULL;
+	size_t len = strlen(mask);
+	uint32_t *words;
+	unsigned int nb_channels = iio_device_get_channels_count(dev);
+
+	if (pdata->opened)
+		return -EBUSY;
+	else if (len != ((nb_channels + 31) / 32) * 8)
+		return -EINVAL;
+
+	words = get_mask(mask, &len);
+	if (!words)
+		return -ENOMEM;
+
+	if (nb_channels % 32)
+		words[nb_channels / 32] &= (1 << (nb_channels % 32)) - 1;
+
+	pthread_mutex_lock(&devlist_lock);
+	SLIST_FOREACH(e, &devlist_head, next) {
+		if (e->dev == dev) {
+			entry = e;
+			break;
+		}
+	}
+
+	pdata->mask = words;
+	pdata->nb_words = len;
+
+	if (entry) {
+		unsigned int i;
+		bool mask_changed = false;
+		int ret = 0;
+
+		pthread_mutex_lock(&entry->thdlist_lock);
+		for (i = 0; i < len; i++) {
+			mask_changed |= !!(words[i] ^ entry->mask[i]);
+			entry->mask[i] |= words[i];
+			words[i] = entry->mask[i];
+		}
+
+		/* If the channel mask has changed, we reopen
+		 * the IIO device with the new mask */
+		if (mask_changed) {
+			DEBUG("Mask updated\n");
+			ret = iio_device_close(entry->dev);
+			if (!ret)
+				ret = iio_device_open_mask(dev,
+						entry->mask, len);
+		}
+		pthread_mutex_unlock(&entry->thdlist_lock);
+
+		if (!ret) {
+			entry->nb_clients++;
+			pdata->opened = true;
+		} else {
+			ERROR("Unable to re-open device with the new mask\n");
+		}
+
+		pthread_mutex_unlock(&devlist_lock);
+		return ret;
+	}
+
+	entry = malloc(sizeof(*entry));
+	if (!entry)
+		goto err_free_words;
+
+	entry->mask = malloc(len * sizeof(*words));
+	if (!entry->mask)
+		goto err_free_entry;
+
+	memcpy(entry->mask, words, len * sizeof(*words));
+	entry->nb_words = len;
+
+	ret = iio_device_open_mask(dev, words, len);
+	if (ret)
+		goto err_free_entry_mask;
+
+	entry->nb_clients = 1;
+	entry->dev = dev;
+	entry->sample_size = 1;
+	SLIST_INIT(&entry->thdlist_head);
+	pthread_mutex_init(&entry->thdlist_lock, NULL);
+	pthread_attr_init(&entry->attr);
+	pthread_attr_setdetachstate(&entry->attr,
+			PTHREAD_CREATE_DETACHED);
+
+	ret = pthread_create(&entry->thd, &entry->attr,
+			read_thd, entry);
+	if (ret)
+		goto err_iio_close;
+
+	pdata->opened = true;
+
+	DEBUG("Adding new device thread to device list\n");
+	SLIST_INSERT_HEAD(&devlist_head, entry, next);
+	pthread_mutex_unlock(&devlist_lock);
+
+	return 0;
+
+err_iio_close:
+	iio_device_close(dev);
+err_free_entry_mask:
+	free(entry->mask);
+err_free_entry:
+	free(entry);
+err_free_words:
+	free(words);
+	pthread_mutex_unlock(&devlist_lock);
+	return ret;
+}
+
+static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
+{
+	struct DevEntry *e;
+
+	if (!pdata->opened)
+		return -EBADF;
+
+	pthread_mutex_lock(&devlist_lock);
+	SLIST_FOREACH(e, &devlist_head, next) {
+		if (e->dev == dev && e->nb_clients > 0) {
+			e->nb_clients--;
+			pdata->opened = false;
+			free(pdata->mask);
+			pthread_mutex_unlock(&devlist_lock);
+			return 0;
+		}
+	}
+
+	pthread_mutex_unlock(&devlist_lock);
+	return -ENODEV;
+}
+
+int open_dev(struct parser_pdata *pdata, const char *id, const char *mask)
+{
+	int ret = -ENODEV;
+	struct iio_device *dev = get_device(pdata->ctx, id);
+	if (dev)
+		ret = open_dev_helper(pdata, dev, id, mask);
+	print_value(pdata, ret);
+	return ret;
+}
+
+int close_dev(struct parser_pdata *pdata, const char *id)
+{
+	int ret = -ENODEV;
+	struct iio_device *dev = get_device(pdata->ctx, id);
+	if (dev)
+		ret = close_dev_helper(pdata, dev);
+	print_value(pdata, ret);
+	return ret;
 }
 
 ssize_t read_dev(struct parser_pdata *pdata, const char *id,
@@ -492,6 +646,7 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 	pdata.in = in;
 	pdata.out = out;
 	pdata.verbose = verbose;
+	pdata.opened = false;
 
 	yylex_init_extra(&pdata, &scanner);
 	yyset_out(out, scanner);
