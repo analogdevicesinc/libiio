@@ -104,8 +104,8 @@ struct iio_data_format {
 	unsigned int length;
 	unsigned int bits;
 	unsigned int shift;
-	bool with_scale;
-	float scale;
+	bool with_scale, is_signed, is_be;
+	double scale;
 };
 
 struct iio_channel {
@@ -115,7 +115,7 @@ struct iio_channel {
 
 	bool is_output;
 	enum iio_modifier modifier;
-	struct iio_data_format data_format;
+	struct iio_data_format format;
 	char *name, *id;
 	long index;
 	bool enabled;
@@ -145,6 +145,6 @@ void free_device(struct iio_device *dev);
 char *iio_channel_get_xml(const struct iio_channel *chn, size_t *len);
 char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 
-void iio_context_init_channel_indexes(const struct iio_context *ctx);
+void iio_context_init_channels(const struct iio_context *ctx);
 
 #endif /* __IIO_PRIVATE_H__ */

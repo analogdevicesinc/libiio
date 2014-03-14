@@ -109,21 +109,47 @@ struct iio_device * iio_context_get_device(const struct iio_context *ctx,
 static void init_index(struct iio_channel *chn)
 {
 	char buf[1024];
-	long ret = (long) iio_channel_attr_read(chn, "index",
-			buf, sizeof(buf));
+	long ret = (long) iio_channel_attr_read(chn, "index", buf, sizeof(buf));
 	if (ret < 0)
 		chn->index = ret;
 	else
 		chn->index = strtol(buf, NULL, 0);
 }
 
-void iio_context_init_channel_indexes(const struct iio_context *ctx)
+static void init_data_format(struct iio_channel *chn)
+{
+	char buf[1024];
+	int ret = iio_channel_attr_read(chn, "type", buf, sizeof(buf));
+	if (ret < 0) {
+		chn->format.length = 0;
+	} else {
+		char endian, sign;
+		sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
+				&chn->format.bits,
+				&chn->format.length,
+				&chn->format.shift);
+		chn->format.is_signed = sign == 's';
+		chn->format.is_be = endian == 'b';
+	}
+
+	ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
+	if (ret < 0) {
+		chn->format.with_scale = false;
+	} else {
+		chn->format.with_scale = true;
+		chn->format.scale = strtod(buf, NULL);
+	}
+}
+
+void iio_context_init_channels(const struct iio_context *ctx)
 {
 	unsigned int i;
 	for (i = 0; i < ctx->nb_devices; i++) {
 		unsigned int j;
 		struct iio_device *dev = ctx->devices[i];
-		for (j = 0; j < dev->nb_channels; j++)
+		for (j = 0; j < dev->nb_channels; j++) {
 			init_index(dev->channels[j]);
+			init_data_format(dev->channels[j]);
+		}
 	}
 }

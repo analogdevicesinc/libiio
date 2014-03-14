@@ -857,6 +857,6 @@ struct iio_context * iio_create_local_context(void)
 		ctx = NULL;
 	}
 
-	iio_context_init_channel_indexes(ctx);
+	iio_context_init_channels(ctx);
 	return ctx;
 }
