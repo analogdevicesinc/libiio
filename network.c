@@ -127,6 +127,33 @@ static long exec_command(const char *cmd, int fd)
 	return resp;
 }
 
+static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
+{
+	char buf[1024], *ptr;
+	unsigned int i;
+
+	if (nb != (dev->nb_channels + 31) / 32)
+		return -EINVAL;
+
+	snprintf(buf, sizeof(buf), "OPEN %s ", dev->id);
+	ptr = buf + strlen(buf);
+
+	for (i = nb; i > 0; i--) {
+		sprintf(ptr, "%08x", mask[i - 1]);
+		ptr += 8;
+	}
+	strcpy(ptr, "\r\n");
+
+	return (int) exec_command(buf, dev->ctx->pdata->fd);
+}
+
+static int network_close(const struct iio_device *dev)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
+	return (int) exec_command(buf, dev->ctx->pdata->fd);
+}
+
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 {
 	int fd = dev->ctx->pdata->fd;
@@ -310,6 +337,8 @@ static void network_shutdown(struct iio_context *ctx)
 }
 
 static struct iio_backend_ops network_ops = {
+	.open = network_open,
+	.close = network_close,
 	.read = network_read,
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
