@@ -141,6 +141,29 @@ static void init_data_format(struct iio_channel *chn)
 	}
 }
 
+static void reorder_channels(struct iio_device *dev)
+{
+	bool found;
+	unsigned int i;
+
+	/* Reorder channels by index */
+	do {
+		found = false;
+		for (i = 1; i < dev->nb_channels; i++) {
+			struct iio_channel **channels = dev->channels;
+			long ch1 = channels[i - 1]->index;
+			long ch2 = channels[i]->index;
+
+			if (ch2 >= 0 && ((ch1 > ch2) || ch1 < 0)) {
+				struct iio_channel *bak = channels[i];
+				channels[i] = channels[i - 1];
+				channels[i - 1] = bak;
+				found = true;
+			}
+		}
+	} while (found);
+}
+
 void iio_context_init_channels(const struct iio_context *ctx)
 {
 	unsigned int i;
@@ -151,5 +174,7 @@ void iio_context_init_channels(const struct iio_context *ctx)
 			init_index(dev->channels[j]);
 			init_data_format(dev->channels[j]);
 		}
+
+		reorder_channels(dev);
 	}
 }
