@@ -292,6 +292,10 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	if (nb != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
 
+	ret = local_write_dev_attr(dev, "buffer/enable", "0");
+	if (ret < 0 && ret != -ENOENT)
+		return ret;
+
 	sprintf(buf, "/dev/%s", dev->id);
 	pdata->f = fopen(buf, "r+");
 	if (!pdata->f)
