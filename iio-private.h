@@ -100,14 +100,6 @@ struct iio_context {
 	unsigned int nb_devices;
 };
 
-struct iio_data_format {
-	unsigned int length;
-	unsigned int bits;
-	unsigned int shift;
-	bool with_scale, is_signed, is_be;
-	double scale;
-};
-
 struct iio_channel {
 	struct iio_device *dev;
 	struct iio_channel_pdata *pdata;

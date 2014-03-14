@@ -152,6 +152,12 @@ long iio_channel_get_index(const struct iio_channel *chn)
 	return chn->index;
 }
 
+const struct iio_data_format * iio_channel_get_data_format(
+		const struct iio_channel *chn)
+{
+	return &chn->format;
+}
+
 bool iio_channel_is_enabled(const struct iio_channel *chn)
 {
 	return chn->enabled;

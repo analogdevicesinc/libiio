@@ -20,8 +20,10 @@
 #define __IIO_H__
 
 #ifdef __GNUC__
+#define __cnst __attribute__((const))
 #define __pure __attribute__((pure))
 #else
+#define __cnst
 #define __pure
 #endif
 
@@ -34,6 +36,14 @@ enum iio_debug_level {
 	INFO,
 	WARNING,
 	ERROR,
+};
+
+struct iio_data_format {
+	unsigned int length;
+	unsigned int bits;
+	unsigned int shift;
+	bool with_scale, is_signed, is_be;
+	double scale;
 };
 
 struct iio_context;
@@ -86,6 +96,8 @@ unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_attr(const struct iio_channel *chn,
 		unsigned int index) __pure;
 long iio_channel_get_index(const struct iio_channel *chn) __pure;
+const struct iio_data_format * iio_channel_get_data_format(
+		const struct iio_channel *chn) __cnst;
 
 /* Trigger functions */
 bool iio_device_is_trigger(const struct iio_device *dev) __pure;
@@ -128,11 +140,5 @@ void iio_device_set_data(struct iio_device *dev, void *data);
 void * iio_device_get_data(const struct iio_device *dev);
 void iio_channel_set_data(struct iio_channel *chn, void *data);
 void * iio_channel_get_data(const struct iio_channel *chn);
-
-/* Debug functions */
-const struct iio_data_format * iio_channel_get_data_format(
-		const struct iio_channel *chn);
-void iio_channel_force_data_format(struct iio_channel *chn,
-		const struct iio_data_format *format);
 
 #endif /* __IIO_H__ */
