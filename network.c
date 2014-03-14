@@ -157,19 +157,27 @@ static int network_close(const struct iio_device *dev)
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 {
 	int fd = dev->ctx->pdata->fd;
-	ssize_t ret, read = 0;
+	ssize_t ret, read = 0, nb_words = (dev->nb_channels + 31) / 32;
 	char buf[1024];
+	uint32_t *mask;
 
 	if (!len)
 		return -EINVAL;
 
+	mask = malloc(nb_words * sizeof(*mask));
+	if (!mask)
+		return -ENOMEM;
+
 	snprintf(buf, sizeof(buf), "READBUF %s %lu %u\r\n", dev->id,
 			(unsigned long) len, 1);
 	ret = write_command(buf, fd);
-	if (ret < 0)
+	if (ret < 0) {
+		free(mask);
 		return ret;
+	}
 
 	do {
+		unsigned int i;
 		long read_len;
 
 		DEBUG("Reading READ response\n");
@@ -177,21 +185,51 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
+			free(mask);
 			return read ?: ret;
 		}
 
 		if (read_len < 0) {
 			strerror_r(-read_len, buf, sizeof(buf));
 			ERROR("Server returned an error: %s\n", buf);
+			free(mask);
 			return read ?: read_len;
 		}
 
 		DEBUG("Bytes to read: %li\n", read_len);
 
+		DEBUG("Reading mask\n");
+		buf[8] = '\0';
+		for (i = nb_words; i > 0; i--) {
+			ret = read_all(buf, 8, fd);
+			if (ret < 0)
+				break;
+			sscanf(buf, "%08x", &mask[i - 1]);
+		}
+
+		if (ret > 0) {
+			char c;
+			ret = recv(fd, &c, 1, 0);
+			if (ret > 0 && c != '\n')
+				ret = -EIO;
+		}
+
+		if (ret < 0) {
+			strerror_r(-ret, buf, sizeof(buf));
+			ERROR("Unable to read mask: %s\n", buf);
+			free(mask);
+			return read ?: ret;
+		}
+
+		/* TODO(pcercuei): actually use the mask for something and
+		 * demultiplex the received stream to extract the channels
+		 * we're interested in */
+
 		ret = read_all(dst, read_len, fd);
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
+			free(mask);
 			return read ?: ret;
 		}
 
@@ -200,6 +238,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 		len -= read_len;
 	} while (len);
 
+	free(mask);
 	return read;
 }
 
