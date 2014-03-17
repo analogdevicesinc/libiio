@@ -191,7 +191,7 @@ static void * read_thd(void *d)
 		for (thd = SLIST_FIRST(&entry->thdlist_head);
 				thd; thd = next_thd) {
 			unsigned int i;
-			size_t ret2;
+			ssize_t ret2;
 			FILE *out = thd->pdata->out;
 
 			next_thd = SLIST_NEXT(thd, next);
@@ -212,7 +212,7 @@ static void * read_thd(void *d)
 			/* Send the raw data */
 			ret2 = write_all(buf, ret, out);
 			if (ret2 > 0)
-				thd->nb -= ret2 / sample_size;
+				thd->nb -= ret2;
 			if (ret2 < 0)
 				thd->err = ret2;
 			else if (thd->nb == 0)
@@ -263,8 +263,8 @@ static void * read_thd(void *d)
 	return NULL;
 }
 
-static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
-		unsigned int nb, unsigned int sample_size)
+static ssize_t read_buffer(struct parser_pdata *pdata,
+		struct iio_device *dev, unsigned int nb)
 {
 	struct DevEntry *e, *entry = NULL;
 	struct ThdEntry *t, *thd = NULL;
@@ -285,13 +285,6 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!entry) {
 		pthread_mutex_unlock(&devlist_lock);
 		return -ENXIO;
-	}
-
-	/* Ensure that two threads reading the same device
-	 * use the same sample size */
-	if (entry->sample_size != sample_size) {
-		pthread_mutex_unlock(&devlist_lock);
-		return -EINVAL;
 	}
 
 	pthread_mutex_lock(&entry->thdlist_lock);
@@ -331,7 +324,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata, struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 	else
-		return nb * sample_size;
+		return nb;
 }
 
 static struct iio_device * get_device(struct iio_context *ctx, const char *id)
@@ -547,8 +540,7 @@ int close_dev(struct parser_pdata *pdata, const char *id)
 	return ret;
 }
 
-ssize_t read_dev(struct parser_pdata *pdata, const char *id,
-		unsigned int nb, unsigned int sample_size)
+ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb)
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	if (!dev) {
@@ -556,7 +548,7 @@ ssize_t read_dev(struct parser_pdata *pdata, const char *id,
 		return -ENODEV;
 	}
 
-	return read_buffer(pdata, dev, nb, sample_size);
+	return read_buffer(pdata, dev, nb);
 }
 
 ssize_t read_dev_attr(struct parser_pdata *pdata,

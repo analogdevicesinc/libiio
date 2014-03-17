@@ -116,7 +116,7 @@ Line:
 		"\t\tRead the value of an attribute\n"
 		"\tWRITE <device> [<channel>] <attribute> <value>\n"
 		"\t\tSet the value of an attribute\n"
-		"\tREADBUF <device> <samples_count> <sample_size>\n"
+		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
 		"\tGETTRIG <device>\n"
 		"\t\tGet the name of the trigger used by the specified device\n"
@@ -177,15 +177,14 @@ Line:
 		else
 			YYACCEPT;
 	}
-	| READBUF SPACE WORD SPACE WORD SPACE WORD END {
-		char *id = $3, *attr = $5, *val = $7;
-		unsigned long nb = atol(attr), samples_size = atol(val);
+	| READBUF SPACE WORD SPACE WORD END {
+		char *id = $3, *attr = $5;
+		unsigned long nb = atol(attr);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev(pdata, id, nb, samples_size);
+		ssize_t ret = read_dev(pdata, id, nb);
 
 		free(id);
 		free(attr);
-		free(val);
 		if (ret < 0)
 			YYABORT;
 		else
