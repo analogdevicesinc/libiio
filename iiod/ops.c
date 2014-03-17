@@ -118,9 +118,6 @@ static void * read_thd(void *d)
 		pthread_mutex_lock(&devlist_lock);
 		pthread_mutex_lock(&entry->thdlist_lock);
 
-		if (ret < 0)
-			break;
-
 		if (SLIST_EMPTY(&entry->thdlist_head))
 			break;
 
@@ -160,7 +157,7 @@ static void * read_thd(void *d)
 		nb_bytes = sample_size * SAMPLES_PER_READ;
 
 		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
-			thd->reader = thd->nb > 0;
+			thd->reader = !thd->err && thd->nb >= sample_size;
 			has_readers |= thd->reader;
 			if (thd->reader && thd->nb < nb_bytes)
 				nb_bytes =
@@ -193,7 +190,6 @@ static void * read_thd(void *d)
 		for (thd = SLIST_FIRST(&entry->thdlist_head);
 				thd; thd = next_thd) {
 			unsigned int i;
-			ssize_t ret2;
 			FILE *out = thd->pdata->out;
 
 			next_thd = SLIST_NEXT(thd, next);
@@ -201,30 +197,28 @@ static void * read_thd(void *d)
 			if (!thd->reader)
 				continue;
 
-			print_value(thd->pdata, ret);
-			DEBUG("Integer written: %li\n", (long) ret);
-			if (ret < 0)
-				continue;
+			if (ret > 0) {
+				print_value(thd->pdata, ret);
 
-			/* Send the current mask */
-			for (i = nb_words; i > 0; i--)
-				fprintf(out, "%08x", entry->mask[i - 1]);
-			fputc('\n', out);
+				/* Send the current mask */
+				for (i = nb_words; i > 0; i--)
+					fprintf(out, "%08x",
+							entry->mask[i - 1]);
+				fputc('\n', out);
 
-			/* Send the raw data */
-			ret2 = write_all(buf, ret, out);
-			if (ret2 > 0)
-				thd->nb -= ret2;
-			if (ret2 < 0)
-				thd->err = ret2;
-			else if (thd->nb == 0)
-				thd->err = 0;
+				/* Send the raw data */
+				ret = write_all(buf, ret, out);
+				if (ret > 0)
+					thd->nb -= ret;
+			}
 
-			if (ret2 < 0 || thd->nb == 0) {
+			if (ret < 0 || thd->nb < sample_size) {
 				/* Ensure that the client thread
 				 * is already waiting */
 				pthread_mutex_lock(&thd->cond_lock);
 				pthread_mutex_unlock(&thd->cond_lock);
+
+				thd->err = (ret < 0) ? ret : 0;
 				pthread_cond_signal(&thd->cond);
 			}
 		}
@@ -289,6 +283,11 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 		return -ENXIO;
 	}
 
+	if (nb < entry->sample_size) {
+		pthread_mutex_unlock(&devlist_lock);
+		return 0;
+	}
+
 	pthread_mutex_lock(&entry->thdlist_lock);
 	SLIST_FOREACH(t, &entry->thdlist_head, next) {
 		if (t->pdata == pdata) {
@@ -321,6 +320,8 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 	fflush(thd->pdata->out);
 
 	ret = thd->err;
+	nb -= thd->nb;
+	thd->nb = 0;
 
 	DEBUG("Exiting read_buffer with code %li\n", (long) ret);
 	if (ret < 0)
@@ -537,12 +538,17 @@ int close_dev(struct parser_pdata *pdata, const char *id)
 ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb)
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
+	ssize_t ret;
+
 	if (!dev) {
 		print_value(pdata, -ENODEV);
 		return -ENODEV;
 	}
 
-	return read_buffer(pdata, dev, nb);
+	ret = read_buffer(pdata, dev, nb);
+	if (ret <= 0)
+		print_value(pdata, ret);
+	return ret;
 }
 
 ssize_t read_dev_attr(struct parser_pdata *pdata,
