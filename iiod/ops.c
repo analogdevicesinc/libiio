@@ -517,6 +517,7 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 				}
 			}
 
+			pthread_mutex_unlock(&e->thdlist_lock);
 			pthread_mutex_unlock(&devlist_lock);
 			return -ENXIO;
 		}
