@@ -104,11 +104,11 @@ static void * read_thd(void *d)
 	struct ThdEntry *thd;
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
+	char *buf = NULL;
 
 	DEBUG("Read thread started\n");
 
 	while (true) {
-		char *buf;
 		struct ThdEntry *next_thd;
 		bool has_readers = false;
 		unsigned int nb_bytes, sample_size;
@@ -127,6 +127,8 @@ static void * read_thd(void *d)
 		}
 
 		if (entry->update_mask) {
+			char *new_buf;
+
 			memset(entry->mask, 0, nb_words);
 			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 				unsigned int i;
@@ -148,6 +150,15 @@ static void * read_thd(void *d)
 
 			entry->sample_size = iio_device_get_sample_size(
 					entry->dev, entry->mask, nb_words);
+			new_buf = realloc(buf,
+					SAMPLES_PER_READ * entry->sample_size);
+			if (new_buf) {
+				buf = new_buf;
+			} else {
+				ret = -ENOMEM;
+				pthread_mutex_unlock(&entry->thdlist_lock);
+				break;
+			}
 		}
 
 		sample_size = entry->sample_size;
@@ -172,12 +183,6 @@ static void * read_thd(void *d)
 			pthread_mutex_unlock(&devlist_lock);
 			nanosleep(&ts, NULL);
 			continue;
-		}
-
-		buf = malloc(nb_bytes);
-		if (!buf) {
-			ret = -ENOMEM;
-			break;
 		}
 
 		pthread_mutex_unlock(&devlist_lock);
@@ -230,7 +235,6 @@ static void * read_thd(void *d)
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
-		free(buf);
 	}
 
 	/* Signal all remaining threads */
@@ -259,6 +263,8 @@ static void * read_thd(void *d)
 	pthread_mutex_destroy(&entry->thdlist_lock);
 	pthread_attr_destroy(&entry->attr);
 	free(entry->mask);
+	if (buf)
+		free(buf);
 	free(entry);
 
 	DEBUG("Thread terminated\n");
@@ -441,18 +447,8 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	if (!entry->mask)
 		goto err_free_entry;
 
-	entry->sample_size = iio_device_get_sample_size(dev, words, len);
-	if (!entry->sample_size)
-		goto err_free_entry_mask;
-
-	memcpy(entry->mask, words, len * sizeof(*words));
-
-	ret = iio_device_open_mask(dev, words, len);
-	if (ret)
-		goto err_free_entry_mask;
-
 	entry->nb_words = len;
-	entry->update_mask = false;
+	entry->update_mask = true;
 	entry->dev = dev;
 	SLIST_INIT(&entry->thdlist_head);
 	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
@@ -466,7 +462,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	ret = pthread_create(&entry->thd, &entry->attr,
 			read_thd, entry);
 	if (ret)
-		goto err_iio_close;
+		goto err_free_entry_mask;
 
 	pdata->opened = true;
 
@@ -476,8 +472,6 @@ static int open_dev_helper(struct parser_pdata *pdata,
 
 	return 0;
 
-err_iio_close:
-	iio_device_close(dev);
 err_free_entry_mask:
 	free(entry->mask);
 err_free_entry:
