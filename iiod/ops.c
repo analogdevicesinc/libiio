@@ -113,18 +113,16 @@ static void * read_thd(void *d)
 		bool has_readers = false;
 		unsigned int nb_bytes, sample_size;
 
+		/* NOTE: this while loop must exit with
+		 * devlist_lock and thdlist_lock locked. */
 		pthread_mutex_lock(&devlist_lock);
+		pthread_mutex_lock(&entry->thdlist_lock);
 
-		/* We do this check here, because this while loop must exit
-		 * with devlist_lock locked and thdlist_lock unlocked. */
 		if (ret < 0)
 			break;
 
-		pthread_mutex_lock(&entry->thdlist_lock);
-		if (SLIST_EMPTY(&entry->thdlist_head)) {
-			pthread_mutex_unlock(&entry->thdlist_lock);
+		if (SLIST_EMPTY(&entry->thdlist_head))
 			break;
-		}
 
 		if (entry->update_mask) {
 			char *new_buf;
@@ -139,10 +137,8 @@ static void * read_thd(void *d)
 			iio_device_close(entry->dev);
 			ret = iio_device_open_mask(entry->dev,
 					entry->mask, nb_words);
-			if (ret < 0) {
-				pthread_mutex_unlock(&entry->thdlist_lock);
+			if (ret < 0)
 				break;
-			}
 
 			DEBUG("IIO device %s reopened with new mask\n",
 					iio_device_get_id(entry->dev));
@@ -156,7 +152,6 @@ static void * read_thd(void *d)
 				buf = new_buf;
 			} else {
 				ret = -ENOMEM;
-				pthread_mutex_unlock(&entry->thdlist_lock);
 				break;
 			}
 		}
@@ -238,7 +233,6 @@ static void * read_thd(void *d)
 	}
 
 	/* Signal all remaining threads */
-	pthread_mutex_lock(&entry->thdlist_lock);
 	SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 		SLIST_REMOVE(&entry->thdlist_head, thd,
 				ThdEntry, next);
