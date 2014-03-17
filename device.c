@@ -319,3 +319,29 @@ void free_device(struct iio_device *dev)
 		free((char *) dev->id);
 	free(dev);
 }
+
+ssize_t iio_device_get_sample_size(const struct iio_device *dev,
+		uint32_t *mask, size_t words)
+{
+	ssize_t size = 0;
+	unsigned int i;
+
+	if (words != (dev->nb_channels + 31) / 32)
+		return -EINVAL;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		const struct iio_channel *chn = dev->channels[i];
+		unsigned int length = chn->format.length / 8;
+
+		if (chn->index < 0)
+			break;
+		if (!TEST_BIT(mask, chn->index))
+			continue;
+
+		if (size % length)
+			size += 2 * length - (size % length);
+		else
+			size += length;
+	}
+	return size;
+}
