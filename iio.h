@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
 enum iio_debug_level {
 	DEBUG,
