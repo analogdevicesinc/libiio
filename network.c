@@ -34,6 +34,11 @@ struct iio_context_pdata {
 	int fd;
 };
 
+struct iio_device_pdata {
+	uint32_t *mask;
+	size_t nb;
+};
+
 static pthread_mutex_t hostname_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static ssize_t write_all(const void *src, size_t len, int fd)
@@ -129,11 +134,18 @@ static long exec_command(const char *cmd, int fd)
 
 static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	char buf[1024], *ptr;
+	uint32_t *mask_copy;
 	unsigned int i;
+	int ret;
 
 	if (nb != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
+
+	mask_copy = malloc(nb * sizeof(*mask_copy));
+	if (!mask_copy)
+		return -ENOMEM;
 
 	snprintf(buf, sizeof(buf), "OPEN %s ", dev->id);
 	ptr = buf + strlen(buf);
@@ -144,14 +156,31 @@ static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	}
 	strcpy(ptr, "\r\n");
 
-	return (int) exec_command(buf, dev->ctx->pdata->fd);
+	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
+	if (ret < 0) {
+		free(mask_copy);
+		return ret;
+	} else {
+		memcpy(mask_copy, mask, nb);
+		pdata->mask = mask_copy;
+		pdata->nb = nb;
+		return 0;
+	}
 }
 
 static int network_close(const struct iio_device *dev)
 {
 	char buf[1024];
+	int ret;
+
 	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
-	return (int) exec_command(buf, dev->ctx->pdata->fd);
+	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
+	if (ret == 0) {
+		struct iio_device_pdata *pdata = dev->pdata;
+		free(pdata->mask);
+		pdata->mask = NULL;
+	}
+	return ret;
 }
 
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
@@ -369,10 +398,17 @@ static int network_set_trigger(const struct iio_device *dev,
 static void network_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
+	unsigned int i;
 
 	write_command("\r\nEXIT\r\n", pdata->fd);
 	close(pdata->fd);
 	free(pdata);
+
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+		if (dev->pdata)
+			free(dev->pdata);
+	}
 }
 
 static struct iio_backend_ops network_ops = {
@@ -418,6 +454,7 @@ struct iio_context * iio_create_network_context(const char *host)
 	struct sockaddr_in serv;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
+	unsigned int i;
 	int fd;
 
 	memset(&serv, 0, sizeof(serv));
@@ -467,6 +504,15 @@ struct iio_context * iio_create_network_context(const char *host)
 	if (!ctx)
 		goto err_free_pdata;
 
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+		struct iio_device_pdata *d = calloc(1, sizeof(*d));
+		if (!d)
+			goto err_network_shutdown;
+		else
+			dev->pdata = d;
+	}
+
 	/* Override the name and low-level functions of the XML context
 	 * with those corresponding to the network context */
 	ctx->name = "network";
@@ -476,6 +522,9 @@ struct iio_context * iio_create_network_context(const char *host)
 	iio_context_init_channels(ctx);
 	return ctx;
 
+err_network_shutdown:
+	network_shutdown(ctx);
+	iio_context_destroy(ctx);
 err_free_pdata:
 	free(pdata);
 err_close_socket:
