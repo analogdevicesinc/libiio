@@ -30,6 +30,9 @@
 #include <sys/queue.h>
 #include <time.h>
 
+/* No more than 8 samples per read (arbitrary) */
+#define SAMPLES_PER_READ 8
+
 int yyparse(yyscan_t scanner);
 
 /* Corresponds to a thread reading from a device */
@@ -99,20 +102,16 @@ static void * read_thd(void *d)
 {
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd;
-	unsigned int sample_size = entry->sample_size,
-		     nb_words = entry->nb_words;
+	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
-
-	/* No more than 1024 bytes per read (arbitrary) */
-	unsigned int max_size = 1024 / sample_size;
 
 	DEBUG("Read thread started\n");
 
 	while (true) {
 		char *buf;
-		unsigned long len, nb_samples = max_size;
 		struct ThdEntry *next_thd;
 		bool has_readers = false;
+		unsigned int nb_bytes, sample_size;
 
 		pthread_mutex_lock(&devlist_lock);
 
@@ -127,36 +126,42 @@ static void * read_thd(void *d)
 			break;
 		}
 
-		if (entry->update_mask)
+		if (entry->update_mask) {
 			memset(entry->mask, 0, nb_words);
-
-		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
-			thd->reader = thd->nb > 0;
-			has_readers |= thd->reader;
-			if (thd->reader && thd->nb < nb_samples)
-				nb_samples = thd->nb;
-
-			if (entry->update_mask) {
+			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 				unsigned int i;
 				for (i = 0; i < nb_words; i++)
 					entry->mask[i] |= thd->mask[i];
 			}
-		}
 
-		pthread_mutex_unlock(&entry->thdlist_lock);
-
-		if (entry->update_mask) {
-			int ret = iio_device_close(entry->dev);
-			if (!ret)
-				ret = iio_device_open_mask(entry->dev,
-						entry->mask, nb_words);
-			if (ret < 0)
+			iio_device_close(entry->dev);
+			ret = iio_device_open_mask(entry->dev,
+					entry->mask, nb_words);
+			if (ret < 0) {
+				pthread_mutex_unlock(&entry->thdlist_lock);
 				break;
+			}
 
 			DEBUG("IIO device %s reopened with new mask\n",
 					iio_device_get_id(entry->dev));
 			entry->update_mask = false;
+
+			entry->sample_size = iio_device_get_sample_size(
+					entry->dev, entry->mask, nb_words);
 		}
+
+		sample_size = entry->sample_size;
+		nb_bytes = sample_size * SAMPLES_PER_READ;
+
+		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
+			thd->reader = thd->nb > 0;
+			has_readers |= thd->reader;
+			if (thd->reader && thd->nb < nb_bytes)
+				nb_bytes =
+					(thd->nb / sample_size) * sample_size;
+		}
+
+		pthread_mutex_unlock(&entry->thdlist_lock);
 
 		if (!has_readers) {
 			struct timespec ts = {
@@ -169,8 +174,7 @@ static void * read_thd(void *d)
 			continue;
 		}
 
-		len = nb_samples * sample_size;
-		buf = malloc(len);
+		buf = malloc(nb_bytes);
 		if (!buf) {
 			ret = -ENOMEM;
 			break;
@@ -178,10 +182,8 @@ static void * read_thd(void *d)
 
 		pthread_mutex_unlock(&devlist_lock);
 
-		/* TODO: Deduce the sample size from the mask */
-
-		DEBUG("Reading %lu bytes from device\n", len);
-		ret = iio_device_read_raw(entry->dev, buf, len);
+		DEBUG("Reading %u bytes from device\n", nb_bytes);
+		ret = iio_device_read_raw(entry->dev, buf, nb_bytes);
 		pthread_mutex_lock(&entry->thdlist_lock);
 
 		/* We don't use SLIST_FOREACH here. As soon as a thread is
@@ -439,6 +441,10 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	if (!entry->mask)
 		goto err_free_entry;
 
+	entry->sample_size = iio_device_get_sample_size(dev, words, len);
+	if (!entry->sample_size)
+		goto err_free_entry_mask;
+
 	memcpy(entry->mask, words, len * sizeof(*words));
 
 	ret = iio_device_open_mask(dev, words, len);
@@ -448,7 +454,6 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	entry->nb_words = len;
 	entry->update_mask = false;
 	entry->dev = dev;
-	entry->sample_size = 1;
 	SLIST_INIT(&entry->thdlist_head);
 	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
 	DEBUG("Added thread to client list\n");
