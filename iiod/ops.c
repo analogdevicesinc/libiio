@@ -62,6 +62,7 @@ struct DevEntry {
 	pthread_attr_t attr;
 
 	uint32_t *mask;
+	size_t nb_words;
 };
 
 /* This is a linked list of DevEntry structures corresponding to
@@ -99,8 +100,7 @@ static void * read_thd(void *d)
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd;
 	unsigned int sample_size = entry->sample_size,
-		     nb_channels = iio_device_get_channels_count(entry->dev),
-		     nb_words = (nb_channels + 31) / 32;
+		     nb_words = entry->nb_words;
 	ssize_t ret = 0;
 
 	/* No more than 1024 bytes per read (arbitrary) */
@@ -445,6 +445,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	if (ret)
 		goto err_free_entry_mask;
 
+	entry->nb_words = len;
 	entry->update_mask = false;
 	entry->dev = dev;
 	entry->sample_size = 1;
