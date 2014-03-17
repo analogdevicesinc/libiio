@@ -324,7 +324,12 @@ err_close:
 static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
-	int ret = fclose(pdata->f);
+	int ret;
+
+	if (!pdata->f)
+		return -EBADF;
+
+	ret = fclose(pdata->f);
 	if (ret)
 		return ret;
 
