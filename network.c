@@ -197,8 +197,8 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 	if (!mask)
 		return -ENOMEM;
 
-	snprintf(buf, sizeof(buf), "READBUF %s %lu %u\r\n", dev->id,
-			(unsigned long) len, 1);
+	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
+			dev->id, (unsigned long) len);
 	ret = write_command(buf, fd);
 	if (ret < 0) {
 		free(mask);
@@ -223,6 +223,8 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 			ERROR("Server returned an error: %s\n", buf);
 			free(mask);
 			return read ?: read_len;
+		} else if (read_len == 0) {
+			break;
 		}
 
 		DEBUG("Bytes to read: %li\n", read_len);
