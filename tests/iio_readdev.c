@@ -45,8 +45,8 @@ static void usage(void)
 {
 	unsigned int i;
 
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] <iio_device> <trigger>\n"
-			"\nOptions:\n");
+	printf("Usage:\n\t" MY_NAME " [-n <hostname>] <iio_device> <trigger> "
+			"[<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 					options[i].val, options[i].name,
@@ -168,9 +168,22 @@ int main(int argc, char **argv)
 
 	nb_channels = iio_device_get_channels_count(dev);
 
-	/* Enable all channels */
-	for (i = 0; i < nb_channels; i++)
-		iio_channel_enable(iio_device_get_channel(dev, i));
+	if (argc == arg_index + 3) {
+		/* Enable all channels */
+		for (i = 0; i < nb_channels; i++)
+			iio_channel_enable(iio_device_get_channel(dev, i));
+	} else {
+		for (i = 0; i < nb_channels; i++) {
+			unsigned int j;
+			struct iio_channel *ch = iio_device_get_channel(dev, i);
+			for (j = arg_index + 3; j < argc; j++) {
+				const char *n = iio_channel_get_name(ch);
+				if (!strcmp(argv[j], iio_channel_get_id(ch)) ||
+						(n && !strcmp(n, argv[j])))
+					iio_channel_enable(ch);
+			}
+		}
+	}
 
 	ret = iio_device_open(dev);
 	if (ret < 0) {
