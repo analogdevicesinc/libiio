@@ -220,7 +220,8 @@ static void * read_thd(void *d)
 				pthread_mutex_lock(&thd->cond_lock);
 				pthread_mutex_unlock(&thd->cond_lock);
 
-				thd->err = (ret < 0) ? ret : 0;
+				thd->err = (ret < 0) ? ret : thd->nb;
+				thd->nb = 0;
 				pthread_cond_signal(&thd->cond);
 			}
 		}
@@ -322,14 +323,14 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 	fflush(thd->pdata->out);
 
 	ret = thd->err;
-	nb -= thd->nb;
-	thd->nb = 0;
+	if (ret > 0)
+		print_value(thd->pdata, 0);
 
 	DEBUG("Exiting read_buffer with code %li\n", (long) ret);
 	if (ret < 0)
 		return ret;
 	else
-		return nb;
+		return nb - ret;
 }
 
 static struct iio_device * get_device(struct iio_context *ctx, const char *id)
