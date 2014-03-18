@@ -345,3 +345,44 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 	}
 	return size;
 }
+
+ssize_t iio_device_process_samples(const struct iio_device *dev,
+		uint32_t *mask, size_t words, void *buf, size_t len,
+		ssize_t (*cb)(const struct iio_channel *, void *, void *),
+		void *data)
+{
+	const void *end = buf + len;
+	unsigned int i;
+	ssize_t processed = 0,
+		sample_size = iio_device_get_sample_size(dev, mask, words);
+	if (sample_size <= 0)
+		return -EINVAL;
+
+	while (end - buf >= sample_size) {
+		for (i = 0; i < dev->nb_channels; i++) {
+			const struct iio_channel *chn = dev->channels[i];
+			unsigned int length = chn->format.length / 8;
+			ssize_t ret;
+
+			if (chn->index < 0) {
+				ERROR("Channel %s has negative index\n",
+						chn->id);
+				break;
+			}
+
+			if (!TEST_BIT(mask, chn->index))
+				continue;
+
+			if ((uintptr_t) buf % length)
+				buf += length - ((uintptr_t) buf % length);
+
+			ret = cb(chn, buf, data);
+			if (ret < 0)
+				return ret;
+			else
+				processed += ret;
+			buf += length;
+		}
+	}
+	return processed;
+}

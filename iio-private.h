@@ -139,4 +139,9 @@ char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 
 void iio_context_init_channels(const struct iio_context *ctx);
 
+ssize_t iio_device_process_samples(const struct iio_device *dev,
+		uint32_t *mask, size_t words, void *buf, size_t len,
+		ssize_t (*cb)(const struct iio_channel *, void *, void *),
+		void *data);
+
 #endif /* __IIO_PRIVATE_H__ */
