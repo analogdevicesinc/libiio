@@ -33,20 +33,22 @@ enum backend {
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"network", required_argument, 0, 'n'},
+	  {"trigger", required_argument, 0, 't'},
 	  {0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
+	"Use the specified trigger.",
 };
 
 static void usage(void)
 {
 	unsigned int i;
 
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] <iio_device> <trigger> "
-			"[<channel> ...]\n\nOptions:\n");
+	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
+			"<iio_device> [<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 					options[i].val, options[i].name,
@@ -55,6 +57,7 @@ static void usage(void)
 
 static struct iio_context *ctx;
 static const struct iio_device *dev;
+static const char *trigger_name = NULL;
 
 void quit_all(int sig)
 {
@@ -99,12 +102,11 @@ static struct iio_device * get_device(const struct iio_context *ctx,
 
 int main(int argc, char **argv)
 {
-	const struct iio_device *trigger;
 	unsigned int i, nb_channels;
 	int ret, c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
 
-	while ((c = getopt_long(argc, argv, "+hn:",
+	while ((c = getopt_long(argc, argv, "+hn:t:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -118,12 +120,16 @@ int main(int argc, char **argv)
 			backend = NETWORK;
 			arg_index += 2;
 			break;
+		case 't':
+			arg_index += 2;
+			trigger_name = argv[arg_index];
+			break;
 		case '?':
 			return EXIT_FAILURE;
 		}
 	}
 
-	if (arg_index + 2 >= argc) {
+	if (arg_index + 1 >= argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage();
 		return EXIT_FAILURE;
@@ -151,24 +157,26 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	trigger = get_device(ctx, argv[arg_index + 2]);
-	if (!trigger) {
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
-	}
+	if (trigger_name) {
+		struct iio_device *trigger = get_device(ctx, trigger_name);
+		if (!trigger) {
+			iio_context_destroy(ctx);
+			return EXIT_FAILURE;
+		}
 
-	if (!iio_device_is_trigger(trigger)) {
-		ERROR("Specified device is not a trigger\n");
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
-	}
+		if (!iio_device_is_trigger(trigger)) {
+			ERROR("Specified device is not a trigger\n");
+			iio_context_destroy(ctx);
+			return EXIT_FAILURE;
+		}
 
-	iio_trigger_set_rate(trigger, 100); /* Fixed rate for now */
-	iio_device_set_trigger(dev, trigger);
+		iio_trigger_set_rate(trigger, 100); /* Fixed rate for now */
+		iio_device_set_trigger(dev, trigger);
+	}
 
 	nb_channels = iio_device_get_channels_count(dev);
 
-	if (argc == arg_index + 3) {
+	if (argc == arg_index + 2) {
 		/* Enable all channels */
 		for (i = 0; i < nb_channels; i++)
 			iio_channel_enable(iio_device_get_channel(dev, i));
@@ -176,7 +184,7 @@ int main(int argc, char **argv)
 		for (i = 0; i < nb_channels; i++) {
 			unsigned int j;
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
-			for (j = arg_index + 3; j < argc; j++) {
+			for (j = arg_index + 2; j < argc; j++) {
 				const char *n = iio_channel_get_name(ch);
 				if (!strcmp(argv[j], iio_channel_get_id(ch)) ||
 						(n && !strcmp(n, argv[j])))
@@ -201,7 +209,7 @@ int main(int argc, char **argv)
 			ERROR("Unable to read data: %s\n", strerror(-ret));
 			break;
 		}
-		fwrite(buf, 1, sizeof(buf), stdout);
+		fwrite(buf, 1, ret, stdout);
 	}
 
 	iio_context_destroy(ctx);
