@@ -123,10 +123,10 @@ static void * read_thd(void *d)
 
 		if (entry->update_mask) {
 			char *new_buf;
+			unsigned int i;
 
-			memset(entry->mask, 0, nb_words);
+			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
 			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
-				unsigned int i;
 				for (i = 0; i < nb_words; i++)
 					entry->mask[i] |= thd->mask[i];
 			}
@@ -137,8 +137,10 @@ static void * read_thd(void *d)
 			if (ret < 0)
 				break;
 
-			DEBUG("IIO device %s reopened with new mask\n",
+			DEBUG("IIO device %s reopened with new mask:\n",
 					iio_device_get_id(entry->dev));
+			for (i = 0; i < nb_words; i++)
+				DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
 
 			entry->sample_size = iio_device_get_sample_size(
