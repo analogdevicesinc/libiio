@@ -183,8 +183,33 @@ static int network_close(const struct iio_device *dev)
 	return ret;
 }
 
+static ssize_t copy_sample_if_enabled(const struct iio_channel *chn,
+		void *buf, void *d)
+{
+	struct iio_device_pdata *pdata = chn->dev->pdata;
+	unsigned int i, len = chn->format.length / 8;
+	char *dst = *(char **) d, *prev = dst;
+	const char *src = buf;
+
+	if (chn->format.length < 8 || chn->index < 0)
+		return -EINVAL;
+	else if (!TEST_BIT(pdata->mask, chn->index))
+		return 0;
+
+	if ((uintptr_t) dst % len)
+		dst += len - ((uintptr_t) dst % len);
+
+	for (i = 0; i < len; i++)
+		dst[i] = src[i];
+	dst += len;
+
+	*(char **) d = dst;
+	return dst - prev;
+}
+
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	int fd = dev->ctx->pdata->fd;
 	ssize_t ret, read = 0, nb_words = (dev->nb_channels + 31) / 32;
 	char buf[1024];
@@ -208,6 +233,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 	do {
 		unsigned int i;
 		long read_len;
+		bool demux = false;
 
 		DEBUG("Reading READ response\n");
 		ret = read_integer(fd, &read_len);
@@ -236,6 +262,8 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 			if (ret < 0)
 				break;
 			sscanf(buf, "%08x", &mask[i - 1]);
+			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
+			demux |= pdata->mask[i - 1] ^ mask[i - 1];
 		}
 
 		if (ret > 0) {
@@ -264,8 +292,24 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 			return read ?: ret;
 		}
 
-		dst += read_len;
-		read += read_len;
+		if (demux) {
+			void *demux_dst = dst;
+			DEBUG("Demultiplex data (%li bytes)\n", (long) ret);
+			ret = iio_device_process_samples(dev,
+					mask, nb_words, dst, ret,
+					copy_sample_if_enabled, &demux_dst);
+
+			if (ret < 0) {
+				strerror_r(-ret, buf, sizeof(buf));
+				ERROR("Unable to demux channels: %s\n", buf);
+				free(mask);
+				return read ?: ret;
+			}
+			DEBUG("Data demultiplexed: %li bytes\n", (long) ret);
+		}
+
+		dst += ret;
+		read += ret;
 		len -= read_len;
 	} while (len);
 
