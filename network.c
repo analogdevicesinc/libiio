@@ -161,7 +161,7 @@ static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 		free(mask_copy);
 		return ret;
 	} else {
-		memcpy(mask_copy, mask, nb);
+		memcpy(mask_copy, mask, nb * sizeof(*mask));
 		pdata->mask = mask_copy;
 		pdata->nb = nb;
 		return 0;
