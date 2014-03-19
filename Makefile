@@ -32,7 +32,8 @@ SYSROOT := $(shell $(CC) --print-sysroot)
 XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
 XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 
-CFLAGS := $(XML2_CFLAGS) -Wall -fPIC -fvisibility=hidden
+CFLAGS := $(XML2_CFLAGS) -Wall -fPIC -fvisibility=hidden \
+	-ansi -D_POSIX_C_SOURCE=200809L
 LDFLAGS := $(XML2_LIBS)
 
 ifdef DEBUG

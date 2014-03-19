@@ -31,7 +31,7 @@
 #define LOG_LEVEL INFO_L
 #endif
 
-// -------------
+/* -------------------- */
 
 #ifdef WITH_COLOR_DEBUG
 #ifndef COLOR_DEBUG

@@ -22,7 +22,7 @@ INSTALL ?= install
 
 DAEMON = iiod
 
-CFLAGS = -Wall
+CFLAGS = -Wall -ansi -D_POSIX_C_SOURCE=200809L
 LDFLAGS = $(wildcard ../libiio.so.*) -lpthread
 
 ifdef DEBUG
