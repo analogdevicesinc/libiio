@@ -43,6 +43,8 @@ struct client_data {
 	struct iio_context *ctx;
 };
 
+bool server_demux;
+
 static struct sockaddr_in sockaddr = {
 	.sin_family = AF_INET,
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -58,6 +60,7 @@ static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"version", no_argument, 0, 'V'},
 	  {"debug", no_argument, 0, 'd'},
+	  {"demux", no_argument, 0, 'D'},
 	  {0, 0, 0, 0},
 };
 
@@ -65,6 +68,7 @@ static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Display the version of this program.",
 	"Use alternative (incompatible) debug interface.",
+	"Demux channels directly on the server.",
 };
 
 
@@ -118,12 +122,15 @@ int main(int argc, char **argv)
 	int c, option_index = 0, arg_index = xml_backend;
 	int yes = 1;
 
-	while ((c = getopt_long(argc, argv, "+hVd",
+	while ((c = getopt_long(argc, argv, "+hVdD",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
 			debug = true;
 			arg_index++;
+			break;
+		case 'D':
+			server_demux = true;
 			break;
 		case 'h':
 			usage();

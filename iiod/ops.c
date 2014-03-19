@@ -40,7 +40,7 @@ struct ThdEntry {
 	SLIST_ENTRY(ThdEntry) next;
 	pthread_cond_t cond;
 	pthread_mutex_t cond_lock;
-	unsigned int nb;
+	unsigned int nb, sample_size;
 	ssize_t err;
 	struct parser_pdata *pdata;
 
@@ -66,6 +66,12 @@ struct DevEntry {
 
 	uint32_t *mask;
 	size_t nb_words;
+};
+
+struct send_sample_cb_info {
+	FILE *out;
+	unsigned int cpt;
+	uint32_t *mask;
 };
 
 /* This is a linked list of DevEntry structures corresponding to
@@ -95,6 +101,63 @@ static void print_value(struct parser_pdata *pdata, long value)
 		fprintf(pdata->out, "ERROR: %s\n", buf);
 	} else {
 		fprintf(pdata->out, "%li\n", value);
+	}
+}
+
+static ssize_t send_sample(const struct iio_channel *chn, void *src, void *d)
+{
+	unsigned int length = chn->format.length / 8;
+	struct send_sample_cb_info *info = d;
+	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
+		return 0;
+
+	if (info->cpt % length) {
+		unsigned int i, goal = length - info->cpt % length;
+		for (i = 0; i < goal; i++)
+			fputc(0, info->out);
+		info->cpt += goal;
+	}
+
+	info->cpt += length;
+	return write_all(src, length, info->out);
+}
+
+static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd,
+		void *src, size_t len)
+{
+	FILE *out = thd->pdata->out;
+
+	if (server_demux && dev->sample_size != thd->sample_size) {
+		unsigned int i;
+		size_t real_len = (len / dev->sample_size) * thd->sample_size;
+		struct send_sample_cb_info info = {
+			.out = out,
+			.cpt = 0,
+			.mask = thd->mask,
+		};
+
+		print_value(thd->pdata, real_len);
+
+		/* Send the mask */
+		for (i = dev->nb_words; i > 0; i--)
+			fprintf(out, "%08x", thd->mask[i - 1]);
+		fputc('\n', out);
+
+		return iio_device_process_samples(dev->dev, dev->mask,
+				dev->nb_words, src, len,
+				send_sample, &info);
+	} else {
+		unsigned int i;
+
+		print_value(thd->pdata, len);
+
+		/* Send the current mask */
+		for (i = dev->nb_words; i > 0; i--)
+			fprintf(out, "%08x", dev->mask[i - 1]);
+		fputc('\n', out);
+
+		/* Send the raw data */
+		return write_all(src, len, out);
 	}
 }
 
@@ -197,23 +260,12 @@ static void * read_thd(void *d)
 		 * reads "thd" to get the address of the next element. */
 		for (thd = SLIST_FIRST(&entry->thdlist_head);
 				thd; thd = next_thd) {
-			unsigned int i;
-			FILE *out = thd->pdata->out;
-
 			next_thd = SLIST_NEXT(thd, next);
 
 			if (!thd->reader)
 				continue;
 
-			print_value(thd->pdata, nb_bytes);
-
-			/* Send the current mask */
-			for (i = nb_words; i > 0; i--)
-				fprintf(out, "%08x", entry->mask[i - 1]);
-			fputc('\n', out);
-
-			/* Send the raw data */
-			ret = write_all(buf, nb_bytes, out);
+			ret = send_data(entry, thd, buf, nb_bytes);
 			if (ret > 0)
 				thd->nb -= ret;
 
@@ -352,7 +404,6 @@ static struct iio_channel * get_channel(const struct iio_device *dev,
 		const char *id)
 {
 	unsigned int i;
-
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 		if (!strcmp(id, chn->id)
@@ -419,6 +470,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 
 	thd->mask = words;
 	thd->nb = 0;
+	thd->sample_size = iio_device_get_sample_size(dev, words, len);
 	thd->pdata = pdata;
 	pthread_cond_init(&thd->cond, NULL);
 	pthread_mutex_init(&thd->cond_lock, NULL);
