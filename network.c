@@ -21,14 +21,17 @@
 
 #include <errno.h>
 #include <netdb.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define _STRINGIFY(x) #x
+#define STRINGIFY(x) _STRINGIFY(x)
+
 #define IIOD_PORT 30431
+#define IIOD_PORT_STR STRINGIFY(IIOD_PORT)
 
 struct iio_context_pdata {
 	int fd;
@@ -38,8 +41,6 @@ struct iio_device_pdata {
 	uint32_t *mask;
 	size_t nb;
 };
-
-static pthread_mutex_t hostname_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static ssize_t write_all(const void *src, size_t len, int fd)
 {
@@ -496,43 +497,29 @@ static struct iio_context * get_context(int fd)
 
 struct iio_context * iio_create_network_context(const char *host)
 {
-	struct hostent *ent;
-	struct sockaddr_in serv;
+	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
 	unsigned int i;
-	int fd;
+	int fd, ret;
 
-	memset(&serv, 0, sizeof(serv));
-	serv.sin_family = AF_INET;
-	serv.sin_port = htons(IIOD_PORT);
-
-	/* gethostbyname is not reentrant, and gethostbyname_r
-	 * is a GNU extension. So we use a mutex to prevent races */
-	pthread_mutex_lock(&hostname_lock);
-	ent = gethostbyname(host);
-	if (!ent) {
-		ERROR("Unable to create network context: %s\n",
-				strerror(h_errno));
-		pthread_mutex_unlock(&hostname_lock);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	ret = getaddrinfo(host, IIOD_PORT_STR, &hints, &res);
+	if (ret) {
+		ERROR("Unable to find IP address for host %s: %s\n",
+				host, gai_strerror(ret));
 		return NULL;
-	} else if (!ent->h_addr_list[0]) {
-		ERROR("Unable to find an IP for host %s\n", host);
-		pthread_mutex_unlock(&hostname_lock);
-		return NULL;
-	} else {
-		memcpy(&serv.sin_addr.s_addr,
-				ent->h_addr_list[0], ent->h_length);
-		pthread_mutex_unlock(&hostname_lock);
 	}
 
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	fd = socket(res->ai_family, res->ai_socktype, 0);
 	if (fd < 0) {
 		ERROR("Unable to open socket\n");
 		return NULL;
 	}
 
-	if (connect(fd, (struct sockaddr *) &serv, sizeof(serv)) < 0) {
+	if (connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
 		ERROR("Unable to connect\n");
 		goto err_close_socket;
 	}
