@@ -19,7 +19,7 @@
 #include "ops.h"
 #include "parser.h"
 #include "../debug.h"
-#include "../iio.h"
+#include "../iio-private.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -139,7 +139,7 @@ static void * read_thd(void *d)
 				break;
 
 			DEBUG("IIO device %s reopened with new mask:\n",
-					iio_device_get_id(entry->dev));
+					entry->dev->id);
 			for (i = 0; i < nb_words; i++)
 				DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
@@ -247,8 +247,7 @@ static void * read_thd(void *d)
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	DEBUG("Removing device %s from list\n",
-			iio_device_get_id(entry->dev));
+	DEBUG("Removing device %s from list\n", entry->dev->id);
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
 
 	iio_device_close(entry->dev);
@@ -338,31 +337,28 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 
 static struct iio_device * get_device(struct iio_context *ctx, const char *id)
 {
-	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
+	unsigned int i;
 
-	for (i = 0; i < nb_devices; i++) {
-		struct iio_device *dev = iio_context_get_device(ctx, i);
-		const char *name = iio_device_get_name(dev);
-		if (!strcmp(id, iio_device_get_id(dev))
-				|| (name && !strcmp(id, name)))
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+		if (!strcmp(id, dev->id)
+				|| (dev->name && !strcmp(id, dev->name)))
 			return dev;
 	}
-
 	return NULL;
 }
 
 static struct iio_channel * get_channel(const struct iio_device *dev,
 		const char *id)
 {
-	unsigned i, nb_channels = iio_device_get_channels_count(dev);
-	for (i = 0; i < nb_channels; i++) {
-		struct iio_channel *chn = iio_device_get_channel(dev, i);
-		const char *name = iio_channel_get_name(chn);
-		if (!strcmp(id, iio_channel_get_id(chn))
-				|| (name && !strcmp(id, name)))
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (!strcmp(id, chn->id)
+				|| (chn->name && !strcmp(id, chn->name)))
 			return chn;
 	}
-
 	return NULL;
 }
 
@@ -395,7 +391,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	struct ThdEntry *thd;
 	size_t len = strlen(mask);
 	uint32_t *words;
-	unsigned int nb_channels = iio_device_get_channels_count(dev);
+	unsigned int nb_channels = dev->nb_channels;
 
 	if (pdata->opened)
 		return -EBUSY;
@@ -655,10 +651,9 @@ ssize_t get_trigger(struct parser_pdata *pdata, const char *id)
 	if (dev)
 		ret = iio_device_get_trigger(dev, &trigger);
 	if (!ret && trigger) {
-		const char *name = iio_device_get_name(trigger);
-		ret = strlen(name);
+		ret = strlen(trigger->name);
 		print_value(pdata, ret);
-		ret = write_all(name, ret, pdata->out);
+		ret = write_all(trigger->name, ret, pdata->out);
 		fputc('\n', pdata->out);
 	} else {
 		print_value(pdata, ret);
