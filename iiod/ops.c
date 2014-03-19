@@ -111,7 +111,8 @@ static void * read_thd(void *d)
 	while (true) {
 		struct ThdEntry *next_thd;
 		bool has_readers = false;
-		unsigned int nb_bytes, sample_size;
+		unsigned int sample_size;
+		ssize_t nb_bytes;
 
 		/* NOTE: this while loop must exit with
 		 * devlist_lock and thdlist_lock locked. */
@@ -167,6 +168,7 @@ static void * read_thd(void *d)
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
+		pthread_mutex_unlock(&devlist_lock);
 
 		if (!has_readers) {
 			struct timespec ts = {
@@ -174,15 +176,19 @@ static void * read_thd(void *d)
 				.tv_nsec = 1000000, /* 1 ms */
 			};
 
-			pthread_mutex_unlock(&devlist_lock);
 			nanosleep(&ts, NULL);
 			continue;
 		}
 
-		pthread_mutex_unlock(&devlist_lock);
-
 		DEBUG("Reading %u bytes from device\n", nb_bytes);
 		ret = iio_device_read_raw(entry->dev, buf, nb_bytes);
+		if (ret < 0) {
+			ERROR("Reading from device failed: %i\n", (int) ret);
+			pthread_mutex_lock(&devlist_lock);
+			break;
+		}
+
+		nb_bytes = ret;
 		pthread_mutex_lock(&entry->thdlist_lock);
 
 		/* We don't use SLIST_FOREACH here. As soon as a thread is
@@ -199,20 +205,17 @@ static void * read_thd(void *d)
 			if (!thd->reader)
 				continue;
 
-			if (ret > 0) {
-				print_value(thd->pdata, ret);
+			print_value(thd->pdata, nb_bytes);
 
-				/* Send the current mask */
-				for (i = nb_words; i > 0; i--)
-					fprintf(out, "%08x",
-							entry->mask[i - 1]);
-				fputc('\n', out);
+			/* Send the current mask */
+			for (i = nb_words; i > 0; i--)
+				fprintf(out, "%08x", entry->mask[i - 1]);
+			fputc('\n', out);
 
-				/* Send the raw data */
-				ret = write_all(buf, ret, out);
-				if (ret > 0)
-					thd->nb -= ret;
-			}
+			/* Send the raw data */
+			ret = write_all(buf, nb_bytes, out);
+			if (ret > 0)
+				thd->nb -= ret;
 
 			if (ret < 0 || thd->nb < sample_size) {
 				/* Ensure that the client thread
