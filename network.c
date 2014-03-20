@@ -215,6 +215,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 	ssize_t ret, read = 0, nb_words = (dev->nb_channels + 31) / 32;
 	char buf[1024];
 	uint32_t *mask;
+	bool read_mask = true, demux = false;
 
 	if (!len)
 		return -EINVAL;
@@ -234,7 +235,6 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 	do {
 		unsigned int i;
 		long read_len;
-		bool demux = false;
 
 		DEBUG("Reading READ response\n");
 		ret = read_integer(fd, &read_len);
@@ -256,15 +256,18 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 
 		DEBUG("Bytes to read: %li\n", read_len);
 
-		DEBUG("Reading mask\n");
-		buf[8] = '\0';
-		for (i = nb_words; i > 0; i--) {
-			ret = read_all(buf, 8, fd);
-			if (ret < 0)
-				break;
-			sscanf(buf, "%08x", &mask[i - 1]);
-			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
-			demux |= pdata->mask[i - 1] ^ mask[i - 1];
+		if (read_mask) {
+			DEBUG("Reading mask\n");
+			buf[8] = '\0';
+			for (i = nb_words; i > 0; i--) {
+				ret = read_all(buf, 8, fd);
+				if (ret < 0)
+					break;
+				sscanf(buf, "%08x", &mask[i - 1]);
+				DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
+				demux |= pdata->mask[i - 1] ^ mask[i - 1];
+			}
+			read_mask = false;
 		}
 
 		if (ret > 0) {
