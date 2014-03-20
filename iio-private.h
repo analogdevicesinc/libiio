@@ -118,6 +118,16 @@ struct iio_device {
 	unsigned int nb_channels;
 };
 
+struct iio_buffer {
+	const struct iio_device *dev;
+	void *buffer;
+	size_t length, data_length;
+
+	uint32_t *mask, *open_mask;
+	size_t words;
+	unsigned int sample_size;
+};
+
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 

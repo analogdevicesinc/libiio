@@ -43,6 +43,7 @@ struct iio_data_format {
 struct iio_context;
 struct iio_device;
 struct iio_channel;
+struct iio_buffer;
 
 /* Top-level functions */
 struct iio_context * iio_create_local_context(void);
@@ -108,6 +109,17 @@ ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words);
 ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
+
+/* Buffer functions */
+struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
+		size_t length);
+void iio_buffer_destroy(struct iio_buffer *buf);
+
+int iio_buffer_refill(struct iio_buffer *buf);
+
+ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,
+		ssize_t (*callback)(const struct iio_channel *,
+			void *, size_t, void *), void *data);
 
 /* Functions to read/write the raw stream of a channel
  * (after demux/mux process) */
