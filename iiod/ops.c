@@ -161,6 +161,18 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd,
 	}
 }
 
+static void signal_thread(struct ThdEntry *thd, ssize_t ret)
+{
+	/* Ensure that the client thread is already waiting */
+	pthread_mutex_lock(&thd->cond_lock);
+	pthread_mutex_unlock(&thd->cond_lock);
+
+	thd->err = ret;
+	thd->nb = 0;
+	pthread_cond_signal(&thd->cond);
+	thd->reader = false;
+}
+
 static void * read_thd(void *d)
 {
 	struct DevEntry *entry = d;
@@ -173,7 +185,7 @@ static void * read_thd(void *d)
 
 	while (true) {
 		struct ThdEntry *next_thd;
-		bool has_readers = false;
+		bool has_readers = false, mask_updated = false;
 		unsigned int sample_size;
 		ssize_t nb_bytes;
 
@@ -217,6 +229,8 @@ static void * read_thd(void *d)
 				ret = -ENOMEM;
 				break;
 			}
+
+			mask_updated = true;
 		}
 
 		sample_size = entry->sample_size;
@@ -224,6 +238,9 @@ static void * read_thd(void *d)
 
 		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 			thd->reader = !thd->err && thd->nb >= sample_size;
+			if (mask_updated && thd->reader)
+				signal_thread(thd, thd->nb);
+
 			has_readers |= thd->reader;
 			if (thd->reader && thd->nb < nb_bytes)
 				nb_bytes =
@@ -243,7 +260,7 @@ static void * read_thd(void *d)
 			continue;
 		}
 
-		DEBUG("Reading %u bytes from device\n", nb_bytes);
+		DEBUG("Reading %li bytes from device\n", (long) nb_bytes);
 		ret = iio_device_read_raw(entry->dev, buf, nb_bytes);
 		if (ret < 0) {
 			ERROR("Reading from device failed: %i\n", (int) ret);
@@ -269,16 +286,8 @@ static void * read_thd(void *d)
 			if (ret > 0)
 				thd->nb -= ret;
 
-			if (ret < 0 || thd->nb < sample_size) {
-				/* Ensure that the client thread
-				 * is already waiting */
-				pthread_mutex_lock(&thd->cond_lock);
-				pthread_mutex_unlock(&thd->cond_lock);
-
-				thd->err = (ret < 0) ? ret : thd->nb;
-				thd->nb = 0;
-				pthread_cond_signal(&thd->cond);
-			}
+			if (ret < 0 || thd->nb < sample_size)
+				signal_thread(thd, (ret < 0) ? ret : thd->nb);
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
@@ -288,14 +297,7 @@ static void * read_thd(void *d)
 	SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 		SLIST_REMOVE(&entry->thdlist_head, thd,
 				ThdEntry, next);
-		if (ret < 0)
-			thd->err = ret;
-
-		/* Ensure that the client thread
-		 * is already waiting */
-		pthread_mutex_lock(&thd->cond_lock);
-		pthread_mutex_unlock(&thd->cond_lock);
-		pthread_cond_signal(&thd->cond);
+		signal_thread(thd, ret);
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
@@ -377,7 +379,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 	fflush(thd->pdata->out);
 
 	ret = thd->err;
-	if (ret > 0)
+	if (ret > 0 && ret < nb)
 		print_value(thd->pdata, 0);
 
 	DEBUG("Exiting read_buffer with code %li\n", (long) ret);
