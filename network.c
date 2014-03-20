@@ -184,53 +184,22 @@ static int network_close(const struct iio_device *dev)
 	return ret;
 }
 
-static ssize_t copy_sample_if_enabled(const struct iio_channel *chn,
-		void *buf, void *d)
+static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
+		uint32_t *mask, size_t words)
 {
-	struct iio_device_pdata *pdata = chn->dev->pdata;
-	unsigned int i, len = chn->format.length / 8;
-	char *dst = *(char **) d, *prev = dst;
-	const char *src = buf;
-
-	if (chn->format.length < 8 || chn->index < 0)
-		return -EINVAL;
-	else if (!TEST_BIT(pdata->mask, chn->index))
-		return 0;
-
-	if ((uintptr_t) dst % len)
-		dst += len - ((uintptr_t) dst % len);
-
-	for (i = 0; i < len; i++)
-		dst[i] = src[i];
-	dst += len;
-
-	*(char **) d = dst;
-	return dst - prev;
-}
-
-static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
-{
-	struct iio_device_pdata *pdata = dev->pdata;
 	int fd = dev->ctx->pdata->fd;
-	ssize_t ret, read = 0, nb_words = (dev->nb_channels + 31) / 32;
+	ssize_t ret, read = 0;
 	char buf[1024];
-	uint32_t *mask;
-	bool read_mask = true, demux = false;
+	bool read_mask = true;
 
-	if (!len)
+	if (!len || words != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
-
-	mask = malloc(nb_words * sizeof(*mask));
-	if (!mask)
-		return -ENOMEM;
 
 	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
 	ret = write_command(buf, fd);
-	if (ret < 0) {
-		free(mask);
+	if (ret < 0)
 		return ret;
-	}
 
 	do {
 		unsigned int i;
@@ -241,14 +210,12 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
-			free(mask);
 			return read ?: ret;
 		}
 
 		if (read_len < 0) {
 			strerror_r(-read_len, buf, sizeof(buf));
 			ERROR("Server returned an error: %s\n", buf);
-			free(mask);
 			return read ?: read_len;
 		} else if (read_len == 0) {
 			break;
@@ -259,13 +226,12 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 		if (read_mask) {
 			DEBUG("Reading mask\n");
 			buf[8] = '\0';
-			for (i = nb_words; i > 0; i--) {
+			for (i = words; i > 0; i--) {
 				ret = read_all(buf, 8, fd);
 				if (ret < 0)
 					break;
 				sscanf(buf, "%08x", &mask[i - 1]);
 				DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
-				demux |= pdata->mask[i - 1] ^ mask[i - 1];
 			}
 			read_mask = false;
 		}
@@ -280,36 +246,14 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read mask: %s\n", buf);
-			free(mask);
 			return read ?: ret;
 		}
-
-		/* TODO(pcercuei): actually use the mask for something and
-		 * demultiplex the received stream to extract the channels
-		 * we're interested in */
 
 		ret = read_all(dst, read_len, fd);
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
-			free(mask);
 			return read ?: ret;
-		}
-
-		if (demux) {
-			void *demux_dst = dst;
-			DEBUG("Demultiplex data (%li bytes)\n", (long) ret);
-			ret = iio_device_process_samples(dev,
-					mask, nb_words, dst, ret,
-					copy_sample_if_enabled, &demux_dst);
-
-			if (ret < 0) {
-				strerror_r(-ret, buf, sizeof(buf));
-				ERROR("Unable to demux channels: %s\n", buf);
-				free(mask);
-				return read ?: ret;
-			}
-			DEBUG("Data demultiplexed: %li bytes\n", (long) ret);
 		}
 
 		dst += ret;
@@ -317,7 +261,6 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len)
 		len -= read_len;
 	} while (len);
 
-	free(mask);
 	return read;
 }
 

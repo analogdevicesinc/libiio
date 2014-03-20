@@ -186,10 +186,10 @@ int iio_device_close(const struct iio_device *dev)
 }
 
 ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len)
+		void *dst, size_t len, uint32_t *mask, size_t words)
 {
 	if (dev->ctx->ops->read)
-		return dev->ctx->ops->read(dev, dst, len);
+		return dev->ctx->ops->read(dev, dst, len, mask, words);
 	else
 		return -ENOSYS;
 }

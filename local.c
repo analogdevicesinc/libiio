@@ -38,6 +38,8 @@ struct fn_map {
 
 struct iio_device_pdata {
 	FILE *f;
+	uint32_t *mask;
+	size_t words;
 };
 
 struct iio_channel_pdata {
@@ -170,12 +172,18 @@ static int set_channel_name(struct iio_channel *chn)
 	return 0;
 }
 
-static ssize_t local_read(const struct iio_device *dev, void *dst, size_t len)
+static ssize_t local_read(const struct iio_device *dev,
+		void *dst, size_t len, uint32_t *mask, size_t words)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret;
-	FILE *f = dev->pdata->f;
+	FILE *f = pdata->f;
 	if (!f)
 		return -EBADF;
+	if (words != pdata->words)
+		return -EINVAL;
+
+	memcpy(mask, pdata->mask, words);
 	ret = fread(dst, 1, len, f);
 	if (ret)
 		return ret;
@@ -289,7 +297,7 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	if (pdata->f)
 		return -EBUSY;
 
-	if (nb != (dev->nb_channels + 31) / 32)
+	if (nb != dev->pdata->words)
 		return -EINVAL;
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "0");
@@ -313,8 +321,11 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	}
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "1");
-	if (ret > 0 || ret == -ENOENT)
-		return 0;
+	if (ret <= 0 && ret != -ENOENT)
+		goto err_close;
+
+	memcpy(pdata->mask, mask, nb);
+	return 0;
 err_close:
 	fclose(pdata->f);
 	pdata->f = NULL;
@@ -774,6 +785,7 @@ static int add_scan_elements(struct iio_device *dev, const char *devpath)
 
 static int create_device(void *d, const char *path)
 {
+	uint32_t *mask;
 	unsigned int i;
 	int ret;
 	struct iio_context *ctx = d;
@@ -815,6 +827,19 @@ static int create_device(void *d, const char *path)
 		free_device(dev);
 		return ret;
 	}
+
+	dev->pdata->words = (dev->nb_channels + 31) / 32;
+	if (dev->pdata->words) {
+		mask = calloc(dev->pdata->words, sizeof(*mask));
+		if (!mask) {
+			free_device(dev);
+			return ret;
+		}
+	} else {
+		mask = NULL;
+	}
+
+	dev->pdata->mask = mask;
 
 	ret = add_device_to_context(ctx, dev);
 	if (ret < 0)

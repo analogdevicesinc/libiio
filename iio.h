@@ -105,7 +105,7 @@ int iio_trigger_set_rate(const struct iio_device *trigger,
 
 /* Functions to read/write the raw stream from the device */
 ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len);
+		void *dst, size_t len, uint32_t *mask, size_t words);
 ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
 
