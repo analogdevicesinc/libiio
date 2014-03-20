@@ -100,11 +100,19 @@ static struct iio_device * get_device(const struct iio_context *ctx,
 	return NULL;
 }
 
+static ssize_t print_sample(const struct iio_channel *chn,
+		void *buf, size_t len, void *d)
+{
+	fwrite(buf, 1, len, stdout);
+	return len;
+}
+
 int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	int ret, c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
+	struct iio_buffer *buffer;
 
 	while ((c = getopt_long(argc, argv, "+hn:t:",
 					options, &option_index)) != -1) {
@@ -200,18 +208,26 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	buffer = iio_device_create_buffer(dev, 1024);
+	if (!buffer) {
+		ERROR("Unable to allocate buffer\n");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
+
 	setbuf(stdout, NULL);
 
 	while (true) {
-		char buf[128];
-		ssize_t ret = iio_device_read_raw(dev, buf, sizeof(buf));
+		int ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
-			ERROR("Unable to read data: %s\n", strerror(-ret));
+			ERROR("Unable to refill buffer: %s\n", strerror(-ret));
 			break;
 		}
-		fwrite(buf, 1, ret, stdout);
+
+		iio_buffer_foreach_sample(buffer, print_sample, NULL);
 	}
 
+	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
 	return EXIT_FAILURE;
 }
