@@ -35,12 +35,6 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
-enum iio_context_type {
-	IIO_LOCAL_CONTEXT,
-	IIO_DUMMY_CONTEXT,
-	IIO_NETWORK_CONTEXT,
-};
-
 enum iio_modifier {
 	IIO_NO_MOD,
 	IIO_MOD_X,
@@ -62,13 +56,6 @@ struct iio_backend_ops {
 			const void *src, size_t len);
 	int (*open)(const struct iio_device *dev, uint32_t *mask, size_t words);
 	int (*close)(const struct iio_device *dev);
-
-	int (*channel_enable)(struct iio_channel *channel);
-	int (*channel_disable)(struct iio_channel *channel);
-
-	unsigned int (*get_devices_count)(const struct iio_context *ctx);
-	struct iio_device * (*get_device)(const struct iio_context *ctx,
-			unsigned int id);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 			const char *attr, char *dst, size_t len);
@@ -130,7 +117,6 @@ struct iio_device {
 	unsigned int nb_channels;
 };
 
-void iio_msg(enum iio_debug_level level, const char *msg);
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 

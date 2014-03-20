@@ -32,13 +32,6 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-enum iio_debug_level {
-	DEBUG,
-	INFO,
-	WARNING,
-	ERROR,
-};
-
 struct iio_data_format {
 	unsigned int length;
 	unsigned int bits;
