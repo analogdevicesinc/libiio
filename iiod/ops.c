@@ -45,7 +45,7 @@ struct ThdEntry {
 	struct parser_pdata *pdata;
 
 	uint32_t *mask;
-	bool reader;
+	bool reader, send_mask;
 };
 
 /* Corresponds to an opened device */
@@ -138,10 +138,13 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd,
 
 		print_value(thd->pdata, real_len);
 
-		/* Send the mask */
-		for (i = dev->nb_words; i > 0; i--)
-			fprintf(out, "%08x", thd->mask[i - 1]);
-		fputc('\n', out);
+		if (thd->send_mask) {
+			/* Send the mask */
+			for (i = dev->nb_words; i > 0; i--)
+				fprintf(out, "%08x", thd->mask[i - 1]);
+			fputc('\n', out);
+			thd->send_mask = false;
+		}
 
 		return iio_device_process_samples(dev->dev, dev->mask,
 				dev->nb_words, src, len,
@@ -151,10 +154,13 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd,
 
 		print_value(thd->pdata, len);
 
-		/* Send the current mask */
-		for (i = dev->nb_words; i > 0; i--)
-			fprintf(out, "%08x", dev->mask[i - 1]);
-		fputc('\n', out);
+		if (thd->send_mask) {
+			/* Send the current mask */
+			for (i = dev->nb_words; i > 0; i--)
+				fprintf(out, "%08x", dev->mask[i - 1]);
+			fputc('\n', out);
+			thd->send_mask = false;
+		}
 
 		/* Send the raw data */
 		return write_all(src, len, out);
@@ -367,6 +373,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 		return -EBUSY;
 	}
 
+	thd->send_mask = true;
 	thd->nb = nb;
 	thd->err = 0;
 
