@@ -98,6 +98,10 @@ long iio_channel_get_index(const struct iio_channel *chn) __pure;
 const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn) __cnst;
 
+/* Convert the sample pointed by 'src' to 'dst' */
+void iio_channel_convert(const struct iio_channel *chn,
+		void *dst, const void *src);
+
 /* Trigger functions */
 bool iio_device_is_trigger(const struct iio_device *dev) __pure;
 int iio_trigger_get_rate(const struct iio_device *trigger,

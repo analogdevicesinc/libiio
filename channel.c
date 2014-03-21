@@ -19,6 +19,8 @@
 #include "debug.h"
 #include "iio-private.h"
 
+#include <arpa/inet.h>
+#include <endian.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -185,4 +187,90 @@ void free_channel(struct iio_channel *chn)
 	if (chn->id)
 		free((char *) chn->id);
 	free(chn);
+}
+
+static void byte_swap(uint8_t *dst, const uint8_t *src, size_t len)
+{
+	unsigned int i;
+	for (i = 0; i < len; i++)
+		dst[i] = src[len - i - 1];
+}
+
+static void shift_bits(uint8_t *dst, size_t shift, size_t len)
+{
+	unsigned int i;
+	size_t shift_bytes = shift / 8;
+	shift %= 8;
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	if (shift_bytes) {
+		memmove(dst, dst + shift_bytes, len - shift_bytes);
+		memset(dst + len - shift_bytes, 0, shift_bytes);
+	}
+	if (shift) {
+		for (i = 0; i < len; i++) {
+			dst[i] >>= shift;
+			if (i < len - 1)
+				dst[i] |= dst[i + 1] << (8 - shift);
+		}
+	}
+#else
+	/* XXX: untested */
+	if (shift_bytes) {
+		memmove(dst + shift_bytes, dst, len - shift_bytes);
+		memset(dst, 0, shift_bytes);
+	}
+	if (shift) {
+		for (i = len; i > 0; i--) {
+			dst[i - 1] >>= shift;
+			if (i > 1)
+				dst[i - 1] |= dst[i - 2] << (8 - shift);
+		}
+	}
+#endif
+}
+
+static void sign_extend(uint8_t *dst, size_t shift, size_t bits, size_t len)
+{
+	size_t upper_bytes = ((len * 8 - bits) / 8);
+	uint8_t msb, msb_bit = 1 << ((bits - 1) % 8);
+	shift %= 8;
+	printf("MSB bit: 0x%02x\n", msb_bit);
+	printf("Upper bytes: %lu\n", (unsigned long) upper_bytes);
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	msb = dst[len - 1 - upper_bytes] & msb_bit;
+	if (upper_bytes)
+		memset(dst + len - upper_bytes, msb ? 0xff : 0x00, upper_bytes);
+	if (msb)
+		dst[len - 1 - upper_bytes] |= ~(msb_bit - 1);
+#else
+	/* XXX: untested */
+	msb = dst[upper_bytes] & msb_bit;
+	if (upper_bytes)
+		memset(dst, msb ? 0xff : 0x00, upper_bytes);
+	if (msb)
+		dst[upper_bytes] |= ~(msb_bit - 1);
+#endif
+}
+
+void iio_channel_convert(const struct iio_channel *chn,
+		void *dst, const void *src)
+{
+	unsigned int len = chn->format.length / 8;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	bool swap = chn->format.is_be;
+#else
+	bool swap = !chn->format.is_be;
+#endif
+
+	if (len == 1 || !swap)
+		memcpy(dst, src, len);
+	else
+		byte_swap(dst, src, len);
+
+	if (chn->format.shift)
+		shift_bits(dst, chn->format.shift, len);
+	if (chn->format.is_signed)
+		sign_extend(dst, chn->format.shift, chn->format.bits, len);
 }
