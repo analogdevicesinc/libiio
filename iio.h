@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <stddef.h>
 
 struct iio_data_format {
 	unsigned int length;
@@ -120,6 +121,11 @@ int iio_buffer_refill(struct iio_buffer *buf);
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,
 		ssize_t (*callback)(const struct iio_channel *,
 			void *, size_t, void *), void *data);
+void * iio_buffer_first(const struct iio_buffer *buffer,
+		const struct iio_channel *chn);
+ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer,
+		const struct iio_channel *chn);
+void * iio_buffer_end(const struct iio_buffer *buffer);
 
 /* Functions to read/write the raw stream of a channel
  * (after demux/mux process) */

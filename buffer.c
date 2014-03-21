@@ -94,3 +94,44 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 			buffer->mask, buffer->words, buffer->buffer,
 			buffer->data_length, callback_wrapper, &data);
 }
+
+void * iio_buffer_first(const struct iio_buffer *buffer,
+		const struct iio_channel *chn)
+{
+	size_t len;
+	unsigned int i;
+	void *ptr = buffer->buffer;
+
+	if (chn->index < 0 || !TEST_BIT(buffer->open_mask, chn->index))
+		return iio_buffer_end(buffer);
+
+	for (i = 0; i < buffer->dev->nb_channels; i++) {
+		struct iio_channel *cur = buffer->dev->channels[i];
+		len = cur->format.length / 8;
+
+		/* NOTE: dev->channels are ordered by index */
+		if (cur->index < 0 || cur->index == chn->index)
+			break;
+
+		if ((uintptr_t) ptr % len)
+			ptr += len - ((uintptr_t) ptr % len);
+		ptr += len;
+	}
+
+	len = chn->format.length / 8;
+	if ((uintptr_t) ptr % len)
+		ptr += len - ((uintptr_t) ptr % len);
+	return ptr;
+}
+
+ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer,
+		const struct iio_channel *chn)
+{
+	return (ptrdiff_t) iio_device_get_sample_size(buffer->dev,
+			buffer->mask, buffer->words);
+}
+
+void * iio_buffer_end(const struct iio_buffer *buffer)
+{
+	return buffer->buffer + buffer->data_length;
+}
