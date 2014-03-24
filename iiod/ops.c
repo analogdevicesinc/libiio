@@ -215,8 +215,17 @@ static void * read_thd(void *d)
 			}
 
 			iio_device_close(dev);
-			ret = iio_device_open_mask(dev,
-					entry->mask, nb_words);
+
+			for (i = 0; i < dev->nb_channels; i++) {
+				struct iio_channel *chn = dev->channels[i];
+				unsigned int index = chn->index;
+				if (index >= 0 && TEST_BIT(entry->mask, index))
+					iio_channel_enable(chn);
+				else
+					iio_channel_disable(chn);
+			}
+
+			ret = iio_device_open(dev);
 			if (ret < 0)
 				break;
 
