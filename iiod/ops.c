@@ -235,8 +235,7 @@ static void * read_thd(void *d)
 				DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
 
-			entry->sample_size = iio_device_get_sample_size(
-					dev, entry->mask, nb_words);
+			entry->sample_size = iio_device_get_sample_size(dev);
 			new_buf = realloc(buf,
 					SAMPLES_PER_READ * entry->sample_size);
 			if (new_buf) {
@@ -490,7 +489,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 
 	thd->mask = words;
 	thd->nb = 0;
-	thd->sample_size = iio_device_get_sample_size(dev, words, len);
+	thd->sample_size = iio_device_get_sample_size_mask(dev, words, len);
 	thd->pdata = pdata;
 	pthread_cond_init(&thd->cond, NULL);
 	pthread_mutex_init(&thd->cond_lock, NULL);
