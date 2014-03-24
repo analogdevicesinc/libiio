@@ -125,8 +125,7 @@ struct iio_buffer {
 	void *buffer;
 	size_t length, data_length;
 
-	uint32_t *mask, *open_mask;
-	size_t words;
+	uint32_t *mask;
 	unsigned int sample_size;
 };
 
@@ -144,6 +143,9 @@ ssize_t iio_device_process_samples(const struct iio_device *dev,
 		uint32_t *mask, size_t words, void *buf, size_t len,
 		ssize_t (*cb)(const struct iio_channel *, void *, void *),
 		void *data);
+
+ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
+		uint32_t *mask, size_t words);
 #pragma GCC visibility pop
 
 #endif /* __IIO_PRIVATE_H__ */

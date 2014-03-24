@@ -79,8 +79,7 @@ int iio_device_set_trigger(const struct iio_device *dev,
 int iio_device_open(const struct iio_device *dev);
 int iio_device_close(const struct iio_device *dev);
 
-ssize_t iio_device_get_sample_size(const struct iio_device *dev,
-		uint32_t *mask, size_t words);
+ssize_t iio_device_get_sample_size(const struct iio_device *dev);
 
 /* Channel functions */
 const char * iio_channel_get_id(const struct iio_channel *chn) __pure;

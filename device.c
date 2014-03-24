@@ -322,7 +322,7 @@ void free_device(struct iio_device *dev)
 	free(dev);
 }
 
-ssize_t iio_device_get_sample_size(const struct iio_device *dev,
+ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words)
 {
 	ssize_t size = 0;
@@ -348,6 +348,11 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 	return size;
 }
 
+ssize_t iio_device_get_sample_size(const struct iio_device *dev)
+{
+	return iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
+}
+
 ssize_t iio_device_process_samples(const struct iio_device *dev,
 		uint32_t *mask, size_t words, void *buf, size_t len,
 		ssize_t (*cb)(const struct iio_channel *, void *, void *),
@@ -356,7 +361,7 @@ ssize_t iio_device_process_samples(const struct iio_device *dev,
 	const void *end = buf + len;
 	unsigned int i;
 	ssize_t processed = 0,
-		sample_size = iio_device_get_sample_size(dev, mask, words);
+		sample_size = iio_device_get_sample_size_mask(dev, mask, words);
 	if (sample_size <= 0)
 		return -EINVAL;
 
