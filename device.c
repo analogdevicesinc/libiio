@@ -144,7 +144,7 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 		return dev->attrs[index];
 }
 
-int iio_device_open_mask(const struct iio_device *dev,
+static int iio_device_open_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words)
 {
 	if (dev->ctx->ops->open)
