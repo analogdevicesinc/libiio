@@ -183,6 +183,7 @@ static void * read_thd(void *d)
 {
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd;
+	struct iio_device *dev = entry->dev;
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
 	char *buf = NULL;
@@ -213,20 +214,20 @@ static void * read_thd(void *d)
 					entry->mask[i] |= thd->mask[i];
 			}
 
-			iio_device_close(entry->dev);
-			ret = iio_device_open_mask(entry->dev,
+			iio_device_close(dev);
+			ret = iio_device_open_mask(dev,
 					entry->mask, nb_words);
 			if (ret < 0)
 				break;
 
 			DEBUG("IIO device %s reopened with new mask:\n",
-					entry->dev->id);
+					dev->id);
 			for (i = 0; i < nb_words; i++)
 				DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
 
 			entry->sample_size = iio_device_get_sample_size(
-					entry->dev, entry->mask, nb_words);
+					dev, entry->mask, nb_words);
 			new_buf = realloc(buf,
 					SAMPLES_PER_READ * entry->sample_size);
 			if (new_buf) {
@@ -267,7 +268,8 @@ static void * read_thd(void *d)
 		}
 
 		DEBUG("Reading %li bytes from device\n", (long) nb_bytes);
-		ret = iio_device_read_raw(entry->dev, buf, nb_bytes);
+		ret = iio_device_read_raw(dev, buf, nb_bytes,
+				entry->mask, nb_words);
 		if (ret < 0) {
 			ERROR("Reading from device failed: %i\n", (int) ret);
 			pthread_mutex_lock(&devlist_lock);
@@ -307,10 +309,10 @@ static void * read_thd(void *d)
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	DEBUG("Removing device %s from list\n", entry->dev->id);
+	DEBUG("Removing device %s from list\n", dev->id);
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
 
-	iio_device_close(entry->dev);
+	iio_device_close(dev);
 	pthread_mutex_unlock(&devlist_lock);
 
 	pthread_mutex_destroy(&entry->thdlist_lock);
