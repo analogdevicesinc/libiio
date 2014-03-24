@@ -313,6 +313,8 @@ void free_device(struct iio_device *dev)
 		free_channel(dev->channels[i]);
 	if (dev->nb_channels)
 		free(dev->channels);
+	if (dev->mask)
+		free(dev->mask);
 	if (dev->name)
 		free((char *) dev->name);
 	if (dev->id)

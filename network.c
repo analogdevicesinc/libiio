@@ -37,11 +37,6 @@ struct iio_context_pdata {
 	int fd;
 };
 
-struct iio_device_pdata {
-	uint32_t *mask;
-	size_t nb;
-};
-
 static ssize_t write_all(const void *src, size_t len, int fd)
 {
 	const void *ptr = src;
@@ -135,18 +130,12 @@ static long exec_command(const char *cmd, int fd)
 
 static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 {
-	struct iio_device_pdata *pdata = dev->pdata;
 	char buf[1024], *ptr;
-	uint32_t *mask_copy;
 	unsigned int i;
 	int ret;
 
-	if (nb != (dev->nb_channels + 31) / 32)
+	if (nb != dev->words)
 		return -EINVAL;
-
-	mask_copy = malloc(nb * sizeof(*mask_copy));
-	if (!mask_copy)
-		return -ENOMEM;
 
 	snprintf(buf, sizeof(buf), "OPEN %s ", dev->id);
 	ptr = buf + strlen(buf);
@@ -159,12 +148,9 @@ static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 
 	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
 	if (ret < 0) {
-		free(mask_copy);
 		return ret;
 	} else {
-		memcpy(mask_copy, mask, nb * sizeof(*mask));
-		pdata->mask = mask_copy;
-		pdata->nb = nb;
+		memcpy(dev->mask, mask, nb * sizeof(*mask));
 		return 0;
 	}
 }
@@ -172,16 +158,8 @@ static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 static int network_close(const struct iio_device *dev)
 {
 	char buf[1024];
-	int ret;
-
 	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	if (ret == 0) {
-		struct iio_device_pdata *pdata = dev->pdata;
-		free(pdata->mask);
-		pdata->mask = NULL;
-	}
-	return ret;
+	return (int) exec_command(buf, dev->ctx->pdata->fd);
 }
 
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
@@ -485,12 +463,18 @@ struct iio_context * iio_create_network_context(const char *host)
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
-		struct iio_device_pdata *d = calloc(1, sizeof(*d));
-		if (!d)
-			goto err_network_shutdown;
-		else
-			dev->pdata = d;
+		uint32_t *mask = NULL;
+
+		dev->words = (dev->nb_channels + 31) / 32;
+		if (dev->words) {
+			mask = calloc(dev->words, sizeof(*mask));
+			if (!mask)
+				goto err_network_shutdown;
+		}
+
+		dev->mask = mask;
 	}
+
 
 	/* Override the name and low-level functions of the XML context
 	 * with those corresponding to the network context */

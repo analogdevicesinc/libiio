@@ -98,7 +98,6 @@ struct iio_channel {
 	struct iio_data_format format;
 	char *name, *id;
 	long index;
-	bool enabled;
 
 	char **attrs;
 	unsigned int nb_attrs;
@@ -116,6 +115,9 @@ struct iio_device {
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
+
+	uint32_t *mask;
+	size_t words;
 };
 
 struct iio_buffer {
