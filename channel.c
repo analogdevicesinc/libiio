@@ -230,13 +230,10 @@ static void shift_bits(uint8_t *dst, size_t shift, size_t len)
 #endif
 }
 
-static void sign_extend(uint8_t *dst, size_t shift, size_t bits, size_t len)
+static void sign_extend(uint8_t *dst, size_t bits, size_t len)
 {
 	size_t upper_bytes = ((len * 8 - bits) / 8);
 	uint8_t msb, msb_bit = 1 << ((bits - 1) % 8);
-	shift %= 8;
-	printf("MSB bit: 0x%02x\n", msb_bit);
-	printf("Upper bytes: %lu\n", (unsigned long) upper_bytes);
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	msb = dst[len - 1 - upper_bytes] & msb_bit;
@@ -272,5 +269,5 @@ void iio_channel_convert(const struct iio_channel *chn,
 	if (chn->format.shift)
 		shift_bits(dst, chn->format.shift, len);
 	if (chn->format.is_signed)
-		sign_extend(dst, chn->format.shift, chn->format.bits, len);
+		sign_extend(dst, chn->format.bits, len);
 }
