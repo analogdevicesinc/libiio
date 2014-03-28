@@ -106,6 +106,19 @@ struct iio_device * iio_context_get_device(const struct iio_context *ctx,
 		return ctx->devices[index];
 }
 
+struct iio_device * iio_context_find_device(const struct iio_context *ctx,
+		const char *name)
+{
+	unsigned int i;
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+		if (!strcmp(dev->id, name) ||
+				(dev->name && !strcmp(dev->name, name)))
+			return dev;
+	}
+	return NULL;
+}
+
 static void init_index(struct iio_channel *chn)
 {
 	char buf[1024];

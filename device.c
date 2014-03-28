@@ -130,6 +130,19 @@ struct iio_channel * iio_device_get_channel(const struct iio_device *dev,
 		return dev->channels[index];
 }
 
+struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
+		const char *name)
+{
+	unsigned int i;
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (!strcmp(chn->id, name) ||
+				(chn->name && !strcmp(chn->name, name)))
+			return chn;
+	}
+	return NULL;
+}
+
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev)
 {
 	return dev->nb_attrs;

@@ -59,6 +59,8 @@ unsigned int iio_context_get_devices_count(
 		const struct iio_context *ctx) __pure;
 struct iio_device * iio_context_get_device(const struct iio_context *ctx,
 		unsigned int index) __pure;
+struct iio_device * iio_context_find_device(const struct iio_context *ctx,
+		const char *name) __pure;
 char * iio_context_get_xml(const struct iio_context *ctx);
 
 /* Device functions */
@@ -68,6 +70,8 @@ unsigned int iio_device_get_channels_count(
 		const struct iio_device *dev) __pure;
 struct iio_channel * iio_device_get_channel(const struct iio_device *dev,
 		unsigned int index) __pure;
+struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
+		const char *name) __pure;
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev) __pure;
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index) __pure;
