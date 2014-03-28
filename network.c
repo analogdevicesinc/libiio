@@ -120,11 +120,14 @@ static long exec_command(const char *cmd, int fd)
 		return (long) ret;
 	}
 
+#if LOG_LEVEL >= DEBUG_L
 	if (resp < 0) {
 		char buf[1024];
 		strerror_r(-resp, buf, sizeof(buf));
-		ERROR("Server returned an error: %s\n", buf);
+		DEBUG("Server returned an error: %s\n", buf);
 	}
+#endif
+
 	return resp;
 }
 
