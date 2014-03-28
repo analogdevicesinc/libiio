@@ -131,11 +131,14 @@ struct iio_channel * iio_device_get_channel(const struct iio_device *dev,
 }
 
 struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
-		const char *name)
+		const char *name, bool output)
 {
 	unsigned int i;
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
+		if (iio_channel_is_output(chn) != output)
+			continue;
+
 		if (!strcmp(chn->id, name) ||
 				(chn->name && !strcmp(chn->name, name)))
 			return chn;

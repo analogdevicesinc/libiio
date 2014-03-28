@@ -71,7 +71,7 @@ unsigned int iio_device_get_channels_count(
 struct iio_channel * iio_device_get_channel(const struct iio_device *dev,
 		unsigned int index) __pure;
 struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
-		const char *name) __pure;
+		const char *name, bool output) __pure;
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev) __pure;
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index) __pure;
