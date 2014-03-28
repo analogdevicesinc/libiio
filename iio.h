@@ -75,6 +75,8 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev) __pure;
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index) __pure;
+const char * iio_device_find_attr(const struct iio_device *dev,
+		const char *name) __pure;
 int iio_device_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger);
 int iio_device_set_trigger(const struct iio_device *dev,
@@ -95,6 +97,8 @@ void iio_channel_disable(struct iio_channel *chn);
 unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn) __pure;
 const char * iio_channel_get_attr(const struct iio_channel *chn,
 		unsigned int index) __pure;
+const char * iio_channel_find_attr(const struct iio_channel *chn,
+		const char *name) __pure;
 long iio_channel_get_index(const struct iio_channel *chn) __pure;
 const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn) __cnst;

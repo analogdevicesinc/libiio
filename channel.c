@@ -120,6 +120,18 @@ const char * iio_channel_get_attr(const struct iio_channel *chn,
 		return chn->attrs[index];
 }
 
+const char * iio_channel_find_attr(const struct iio_channel *chn,
+		const char *name)
+{
+	unsigned int i;
+	for (i = 0; i < chn->nb_attrs; i++) {
+		const char *attr = chn->attrs[i];
+		if (!strcmp(attr, name))
+			return attr;
+	}
+	return NULL;
+}
+
 ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
