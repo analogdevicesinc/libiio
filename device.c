@@ -175,6 +175,14 @@ const char * iio_device_find_attr(const struct iio_device *dev,
 static int iio_device_open_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words)
 {
+	unsigned int i;
+	bool has_channels = false;
+
+	for (i = 0; !has_channels && i < words; i++)
+		has_channels = !!mask[i];
+	if (!has_channels)
+		return -EINVAL;
+
 	if (dev->ctx->ops->open)
 		return dev->ctx->ops->open(dev, mask, words);
 	else
@@ -188,11 +196,12 @@ int iio_device_open(const struct iio_device *dev)
 	unsigned int i;
 	int ret;
 
-	if (nb > 0) {
-		mask = calloc(nb, sizeof(*mask));
-		if (!mask)
-			return -ENOMEM;
-	}
+	if (nb == 0)
+		return -EINVAL;
+
+	mask = calloc(nb, sizeof(*mask));
+	if (!mask)
+		return -ENOMEM;
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
