@@ -286,3 +286,72 @@ void iio_channel_convert(const struct iio_channel *chn,
 	if (chn->format.is_signed)
 		sign_extend(dst, chn->format.bits, len);
 }
+
+int iio_channel_attr_read_longlong(const struct iio_channel *chn,
+		const char *attr, long long *val)
+{
+	char *end, buf[1024];
+	long long value;
+	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	value = strtoll(buf, &end, 0);
+	if (end == buf)
+		return -EINVAL;
+	*val = value;
+	return 0;
+}
+
+int iio_channel_attr_read_bool(const struct iio_channel *chn,
+		const char *attr, bool *val)
+{
+	long long value;
+	int ret = iio_channel_attr_read_longlong(chn, attr, &value);
+	if (ret < 0)
+		return ret;
+
+	*val = !!value;
+	return 0;
+}
+
+int iio_channel_attr_read_double(const struct iio_channel *chn,
+		const char *attr, double *val)
+{
+	char *end, buf[1024];
+	double value;
+	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	value = strtod(buf, &end);
+	if (end == buf)
+		return -EINVAL;
+	*val = value;
+	return 0;
+}
+
+int iio_channel_attr_write_longlong(const struct iio_channel *chn,
+		const char *attr, long long val)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "%lld", val);
+	return iio_channel_attr_write(chn, attr, buf);
+}
+
+int iio_channel_attr_write_double(const struct iio_channel *chn,
+		const char *attr, double val)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "%lf", val);
+	return iio_channel_attr_write(chn, attr, buf);
+}
+
+int iio_channel_attr_write_bool(const struct iio_channel *chn,
+		const char *attr, bool val)
+{
+	if (val)
+		return iio_channel_attr_write(chn, attr, "1");
+	else
+		return iio_channel_attr_write(chn, attr, "0");
+}

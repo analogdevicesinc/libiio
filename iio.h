@@ -165,4 +165,33 @@ void * iio_device_get_data(const struct iio_device *dev);
 void iio_channel_set_data(struct iio_channel *chn, void *data);
 void * iio_channel_get_data(const struct iio_channel *chn);
 
+/* Top-level functions to read/write attributes */
+int iio_device_attr_read_bool(const struct iio_device *dev,
+		const char *attr, bool *val);
+int iio_device_attr_read_longlong(const struct iio_device *dev,
+		const char *attr, long long *val);
+int iio_device_attr_read_double(const struct iio_device *dev,
+		const char *attr, double *val);
+
+int iio_device_attr_write_bool(const struct iio_device *dev,
+		const char *attr, bool val);
+int iio_device_attr_write_longlong(const struct iio_device *dev,
+		const char *attr, long long val);
+int iio_device_attr_write_double(const struct iio_device *dev,
+		const char *attr, double val);
+
+int iio_channel_attr_read_bool(const struct iio_channel *chn,
+		const char *attr, bool *val);
+int iio_channel_attr_read_longlong(const struct iio_channel *chn,
+		const char *attr, long long *val);
+int iio_channel_attr_read_double(const struct iio_channel *chn,
+		const char *attr, double *val);
+
+int iio_channel_attr_write_bool(const struct iio_channel *chn,
+		const char *attr, bool val);
+int iio_channel_attr_write_longlong(const struct iio_channel *chn,
+		const char *attr, long long val);
+int iio_channel_attr_write_double(const struct iio_channel *chn,
+		const char *attr, double val);
+
 #endif /* __IIO_H__ */
