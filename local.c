@@ -676,7 +676,8 @@ static int add_attr_or_channel_helper(struct iio_device *dev,
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
-		if (!strcmp(chn->id, channel_id)) {
+		if (!strcmp(chn->id, channel_id)
+				&& chn->is_output == (name[0] == 'o')) {
 			free(channel_id);
 			return add_attr_to_channel(chn, name, path);
 		}
