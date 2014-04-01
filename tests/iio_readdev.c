@@ -25,6 +25,8 @@
 
 #define MY_NAME "iio_info"
 
+#define SAMPLES_PER_READ 256
+
 enum backend {
 	LOCAL,
 	NETWORK,
@@ -56,13 +58,13 @@ static void usage(void)
 }
 
 static struct iio_context *ctx;
-static const struct iio_device *dev;
+struct iio_buffer *buffer;
 static const char *trigger_name = NULL;
 
 void quit_all(int sig)
 {
-	if (dev)
-		iio_device_close(dev);
+	if (buffer)
+		iio_buffer_destroy(buffer);
 	if (ctx)
 		iio_context_destroy(ctx);
 	exit(sig);
@@ -110,9 +112,9 @@ static ssize_t print_sample(const struct iio_channel *chn,
 int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
-	int ret, c, option_index = 0, arg_index = 0;
+	int c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
-	struct iio_buffer *buffer;
+	struct iio_device *dev;
 
 	while ((c = getopt_long(argc, argv, "+hn:t:",
 					options, &option_index)) != -1) {
@@ -201,14 +203,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ret = iio_device_open(dev);
-	if (ret < 0) {
-		ERROR("Unable to open device: %s\n", strerror(-ret));
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
-	}
-
-	buffer = iio_device_create_buffer(dev, 1024);
+	buffer = iio_device_create_buffer(dev, SAMPLES_PER_READ, false);
 	if (!buffer) {
 		ERROR("Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
