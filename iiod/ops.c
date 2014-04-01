@@ -53,6 +53,7 @@ struct DevEntry {
 	SLIST_ENTRY(DevEntry) next;
 
 	struct iio_device *dev;
+	struct iio_buffer *buf;
 	unsigned int sample_size, nb_clients;
 	bool update_mask;
 
@@ -104,9 +105,9 @@ static void print_value(struct parser_pdata *pdata, long value)
 	}
 }
 
-static ssize_t send_sample(const struct iio_channel *chn, void *src, void *d)
+static ssize_t send_sample(const struct iio_channel *chn,
+		void *src, size_t length, void *d)
 {
-	unsigned int length = chn->format.length / 8;
 	struct send_sample_cb_info *info = d;
 	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
 		return 0;
@@ -122,48 +123,41 @@ static ssize_t send_sample(const struct iio_channel *chn, void *src, void *d)
 	return write_all(src, length, info->out);
 }
 
-static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd,
-		void *src, size_t len)
+static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 {
 	FILE *out = thd->pdata->out;
+	bool demux = server_demux && dev->sample_size != thd->sample_size;
 
-	if (server_demux && dev->sample_size != thd->sample_size) {
+	if (demux)
+		len = (len / dev->sample_size) * thd->sample_size;
+
+	print_value(thd->pdata, len);
+
+	if (thd->send_mask) {
 		unsigned int i;
-		size_t real_len = (len / dev->sample_size) * thd->sample_size;
+
+		/* Send the current mask */
+		if (demux)
+			for (i = dev->nb_words; i > 0; i--)
+				fprintf(out, "%08x", thd->mask[i - 1]);
+		else
+			for (i = dev->nb_words; i > 0; i--)
+				fprintf(out, "%08x", dev->mask[i - 1]);
+		fputc('\n', out);
+		thd->send_mask = false;
+	}
+
+	if (!demux) {
+		/* Short path */
+		return write_all(dev->buf->buffer, len, out);
+	} else {
 		struct send_sample_cb_info info = {
 			.out = out,
 			.cpt = 0,
 			.mask = thd->mask,
 		};
 
-		print_value(thd->pdata, real_len);
-
-		if (thd->send_mask) {
-			/* Send the mask */
-			for (i = dev->nb_words; i > 0; i--)
-				fprintf(out, "%08x", thd->mask[i - 1]);
-			fputc('\n', out);
-			thd->send_mask = false;
-		}
-
-		return iio_device_process_samples(dev->dev, dev->mask,
-				dev->nb_words, src, len,
-				send_sample, &info);
-	} else {
-		unsigned int i;
-
-		print_value(thd->pdata, len);
-
-		if (thd->send_mask) {
-			/* Send the current mask */
-			for (i = dev->nb_words; i > 0; i--)
-				fprintf(out, "%08x", dev->mask[i - 1]);
-			fputc('\n', out);
-			thd->send_mask = false;
-		}
-
-		/* Send the raw data */
-		return write_all(src, len, out);
+		return iio_buffer_foreach_sample(dev->buf, send_sample, &info);
 	}
 }
 
@@ -186,7 +180,6 @@ static void * read_thd(void *d)
 	struct iio_device *dev = entry->dev;
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
-	char *buf = NULL;
 
 	DEBUG("Read thread started\n");
 
@@ -205,16 +198,17 @@ static void * read_thd(void *d)
 			break;
 
 		if (entry->update_mask) {
-			char *new_buf;
 			unsigned int i;
 
+			ret = -ENOMEM;
 			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
 			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 				for (i = 0; i < nb_words; i++)
 					entry->mask[i] |= thd->mask[i];
 			}
 
-			iio_device_close(dev);
+			if (entry->buf)
+				iio_buffer_destroy(entry->buf);
 
 			for (i = 0; i < dev->nb_channels; i++) {
 				struct iio_channel *chn = dev->channels[i];
@@ -225,9 +219,12 @@ static void * read_thd(void *d)
 					iio_channel_disable(chn);
 			}
 
-			ret = iio_device_open(dev);
-			if (ret < 0)
+			entry->buf = iio_device_create_buffer(dev,
+					SAMPLES_PER_READ, false);
+			if (!entry->buf) {
+				ERROR("Unable to create buffer\n");
 				break;
+			}
 
 			DEBUG("IIO device %s reopened with new mask:\n",
 					dev->id);
@@ -236,20 +233,10 @@ static void * read_thd(void *d)
 			entry->update_mask = false;
 
 			entry->sample_size = iio_device_get_sample_size(dev);
-			new_buf = realloc(buf,
-					SAMPLES_PER_READ * entry->sample_size);
-			if (new_buf) {
-				buf = new_buf;
-			} else {
-				ret = -ENOMEM;
-				break;
-			}
-
 			mask_updated = true;
 		}
 
 		sample_size = entry->sample_size;
-		nb_bytes = sample_size * SAMPLES_PER_READ;
 
 		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 			thd->reader = !thd->err && thd->nb >= sample_size;
@@ -257,9 +244,6 @@ static void * read_thd(void *d)
 				signal_thread(thd, thd->nb);
 
 			has_readers |= thd->reader;
-			if (thd->reader && thd->nb < nb_bytes)
-				nb_bytes =
-					(thd->nb / sample_size) * sample_size;
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
@@ -275,9 +259,7 @@ static void * read_thd(void *d)
 			continue;
 		}
 
-		DEBUG("Reading %li bytes from device\n", (long) nb_bytes);
-		ret = iio_device_read_raw(dev, buf, nb_bytes,
-				entry->mask, nb_words);
+		ret = iio_buffer_refill(entry->buf);
 		if (ret < 0) {
 			ERROR("Reading from device failed: %i\n", (int) ret);
 			pthread_mutex_lock(&devlist_lock);
@@ -298,7 +280,7 @@ static void * read_thd(void *d)
 			if (!thd->reader)
 				continue;
 
-			ret = send_data(entry, thd, buf, nb_bytes);
+			ret = send_data(entry, thd, nb_bytes);
 			if (ret > 0)
 				thd->nb -= ret;
 
@@ -320,14 +302,12 @@ static void * read_thd(void *d)
 	DEBUG("Removing device %s from list\n", dev->id);
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
 
-	iio_device_close(dev);
+	iio_buffer_destroy(entry->buf);
 	pthread_mutex_unlock(&devlist_lock);
-
 	pthread_mutex_destroy(&entry->thdlist_lock);
 	pthread_attr_destroy(&entry->attr);
+
 	free(entry->mask);
-	if (buf)
-		free(buf);
 	free(entry);
 
 	DEBUG("Thread terminated\n");
@@ -518,6 +498,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	entry->nb_words = len;
 	entry->update_mask = true;
 	entry->dev = dev;
+	entry->buf = NULL;
 	SLIST_INIT(&entry->thdlist_head);
 	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
 	DEBUG("Added thread to client list\n");
