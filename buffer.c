@@ -47,16 +47,14 @@ void iio_buffer_destroy(struct iio_buffer *buffer)
 	free(buffer);
 }
 
-int iio_buffer_refill(struct iio_buffer *buffer)
+ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read = iio_device_read_raw(buffer->dev,
 			buffer->buffer, buffer->length,
 			buffer->mask, buffer->dev->words);
-	if (read < 0)
-		return (int) read;
-
-	buffer->data_length = read;
-	return 0;
+	if (read >= 0)
+		buffer->data_length = read;
+	return read;
 }
 
 static ssize_t callback_wrapper(const struct iio_channel *chn,
