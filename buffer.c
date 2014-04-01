@@ -7,22 +7,21 @@ struct callback_wrapper_data {
 };
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t length)
+		size_t samples_count)
 {
 	struct iio_buffer *buf = malloc(sizeof(*buf));
 	if (!buf)
 		return NULL;
 
 	buf->data_length = 0;
-	buf->length = length;
+	buf->sample_size = iio_device_get_sample_size(dev);
+	buf->length = buf->sample_size * samples_count;
 	buf->dev = dev;
 	buf->mask = calloc(dev->words, sizeof(*buf->mask));
 	if (!buf->mask)
 		goto err_free_buf;
 
-	buf->sample_size = iio_device_get_sample_size(dev);
-
-	buf->buffer = malloc(length);
+	buf->buffer = malloc(buf->length);
 	if (buf->buffer)
 		return buf;
 
