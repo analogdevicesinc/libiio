@@ -127,6 +127,7 @@ struct iio_buffer {
 
 	uint32_t *mask;
 	unsigned int sample_size;
+	bool is_output;
 };
 
 void free_channel(struct iio_channel *chn);

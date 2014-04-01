@@ -1,5 +1,7 @@
 #include "iio-private.h"
 
+#include <errno.h>
+
 struct callback_wrapper_data {
 	ssize_t (*callback)(const struct iio_channel *, void *, size_t, void *);
 	void *data;
@@ -7,7 +9,7 @@ struct callback_wrapper_data {
 };
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count)
+		size_t samples_count, bool is_output)
 {
 	struct iio_buffer *buf;
 	unsigned int sample_size = iio_device_get_sample_size(dev);
@@ -18,7 +20,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (!buf)
 		return NULL;
 
-	buf->data_length = 0;
+	buf->is_output = is_output;
 	buf->sample_size = sample_size;
 	buf->length = buf->sample_size * samples_count;
 	buf->dev = dev;
@@ -29,6 +31,11 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	buf->buffer = malloc(buf->length);
 	if (!buf->buffer)
 		goto err_free_mask;
+
+	if (is_output)
+		buf->data_length = buf->length;
+	else
+		buf->data_length = 0;
 
 	if (!iio_device_open(dev))
 		return buf;
@@ -49,7 +56,12 @@ void iio_buffer_destroy(struct iio_buffer *buffer)
 
 ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
-	ssize_t read = iio_device_read_raw(buffer->dev,
+	ssize_t read;
+
+	if (buffer->is_output)
+		return -EINVAL;
+
+	read = iio_device_read_raw(buffer->dev,
 			buffer->buffer, buffer->length,
 			buffer->mask, buffer->dev->words);
 	if (read >= 0)

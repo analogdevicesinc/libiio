@@ -122,7 +122,7 @@ ssize_t iio_device_write_raw(const struct iio_device *dev,
 
 /* Buffer functions */
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count);
+		size_t samples_count, bool is_output);
 void iio_buffer_destroy(struct iio_buffer *buf);
 
 ssize_t iio_buffer_refill(struct iio_buffer *buf);
