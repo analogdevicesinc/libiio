@@ -69,6 +69,15 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 	return read;
 }
 
+int iio_buffer_push(const struct iio_buffer *buffer)
+{
+	if (!buffer->is_output)
+		return -EINVAL;
+
+	return iio_device_write_raw(buffer->dev,
+			buffer->buffer, buffer->length);
+}
+
 static ssize_t callback_wrapper(const struct iio_channel *chn,
 		void *buf, void *d)
 {

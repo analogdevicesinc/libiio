@@ -126,6 +126,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 void iio_buffer_destroy(struct iio_buffer *buf);
 
 ssize_t iio_buffer_refill(struct iio_buffer *buf);
+int iio_buffer_push(const struct iio_buffer *buf);
 
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,
 		ssize_t (*callback)(const struct iio_channel *,
