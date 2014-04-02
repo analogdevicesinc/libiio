@@ -321,9 +321,6 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 	struct ThdEntry *t, *thd = NULL;
 	ssize_t ret;
 
-	if (!pdata->opened)
-		return -EBADF;
-
 	pthread_mutex_lock(&devlist_lock);
 
 	SLIST_FOREACH(e, &devlist_head, next) {
@@ -443,9 +440,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	uint32_t *words;
 	unsigned int nb_channels = dev->nb_channels;
 
-	if (pdata->opened)
-		return -EBUSY;
-	else if (len != ((nb_channels + 31) / 32) * 8)
+	if (len != ((nb_channels + 31) / 32) * 8)
 		return -EINVAL;
 
 	words = get_mask(mask, &len);
@@ -482,7 +477,6 @@ static int open_dev_helper(struct parser_pdata *pdata,
 		pthread_mutex_unlock(&entry->thdlist_lock);
 		DEBUG("Added thread to client list\n");
 
-		pdata->opened = true;
 		pthread_mutex_unlock(&devlist_lock);
 		return 0;
 	}
@@ -513,8 +507,6 @@ static int open_dev_helper(struct parser_pdata *pdata,
 	if (ret)
 		goto err_free_entry_mask;
 
-	pdata->opened = true;
-
 	DEBUG("Adding new device thread to device list\n");
 	SLIST_INSERT_HEAD(&devlist_head, entry, next);
 	pthread_mutex_unlock(&devlist_lock);
@@ -537,9 +529,6 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct DevEntry *e;
 
-	if (!pdata->opened)
-		return -EBADF;
-
 	pthread_mutex_lock(&devlist_lock);
 	SLIST_FOREACH(e, &devlist_head, next) {
 		if (e->dev == dev) {
@@ -554,7 +543,6 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 					free(t);
 					pthread_mutex_unlock(&e->thdlist_lock);
 					pthread_mutex_unlock(&devlist_lock);
-					pdata->opened = false;
 					return 0;
 				}
 			}
@@ -723,7 +711,6 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 	pdata.in = in;
 	pdata.out = out;
 	pdata.verbose = verbose;
-	pdata.opened = false;
 
 	yylex_init_extra(&pdata, &scanner);
 	yyset_out(out, scanner);

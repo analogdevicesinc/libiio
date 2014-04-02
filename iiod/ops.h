@@ -26,7 +26,7 @@
 
 struct parser_pdata {
 	struct iio_context *ctx;
-	bool stop, verbose, opened;
+	bool stop, verbose;
 	FILE *in, *out;
 };
 
