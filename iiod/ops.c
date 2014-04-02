@@ -30,9 +30,6 @@
 #include <sys/queue.h>
 #include <time.h>
 
-/* No more than 8 samples per read (arbitrary) */
-#define SAMPLES_PER_READ 8
-
 int yyparse(yyscan_t scanner);
 
 /* Corresponds to a thread reading from a device */
@@ -40,7 +37,7 @@ struct ThdEntry {
 	SLIST_ENTRY(ThdEntry) next;
 	pthread_cond_t cond;
 	pthread_mutex_t cond_lock;
-	unsigned int nb, sample_size;
+	unsigned int nb, sample_size, samples_count;
 	ssize_t err;
 	struct parser_pdata *pdata;
 
@@ -199,12 +196,16 @@ static void * read_thd(void *d)
 
 		if (entry->update_mask) {
 			unsigned int i;
+			unsigned int samples_count = UINT_MAX;
 
 			ret = -ENOMEM;
 			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
 			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 				for (i = 0; i < nb_words; i++)
 					entry->mask[i] |= thd->mask[i];
+
+				if (thd->samples_count < samples_count)
+					samples_count = thd->samples_count;
 			}
 
 			if (entry->buf)
@@ -220,7 +221,7 @@ static void * read_thd(void *d)
 			}
 
 			entry->buf = iio_device_create_buffer(dev,
-					SAMPLES_PER_READ, false);
+					samples_count, false);
 			if (!entry->buf) {
 				ERROR("Unable to create buffer\n");
 				break;
@@ -430,8 +431,8 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 	return words;
 }
 
-static int open_dev_helper(struct parser_pdata *pdata,
-		struct iio_device *dev, const char *id, const char *mask)
+static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
+		size_t samples_count, const char *mask)
 {
 	int ret = -ENOMEM;
 	struct DevEntry *e, *entry = NULL;
@@ -464,6 +465,7 @@ static int open_dev_helper(struct parser_pdata *pdata,
 
 	thd->mask = words;
 	thd->nb = 0;
+	thd->samples_count = samples_count;
 	thd->sample_size = iio_device_get_sample_size_mask(dev, words, len);
 	thd->pdata = pdata;
 	pthread_cond_init(&thd->cond, NULL);
@@ -557,12 +559,13 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 	return -ENODEV;
 }
 
-int open_dev(struct parser_pdata *pdata, const char *id, const char *mask)
+int open_dev(struct parser_pdata *pdata, const char *id,
+		size_t samples_count, const char *mask)
 {
 	int ret = -ENODEV;
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	if (dev)
-		ret = open_dev_helper(pdata, dev, id, mask);
+		ret = open_dev_helper(pdata, dev, samples_count, mask);
 	print_value(pdata, ret);
 	return ret;
 }

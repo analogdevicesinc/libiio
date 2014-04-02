@@ -108,7 +108,7 @@ Line:
 		"\t\tClose the current session\n"
 		"\tPRINT\n"
 		"\t\tDisplays a XML string corresponding to the current IIO context\n"
-		"\tOPEN <device> <mask>\n"
+		"\tOPEN <device> <samples_count> <mask>\n"
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
 		"\t\tClose the specified device\n"
@@ -133,11 +133,13 @@ Line:
 		free(xml);
 		YYACCEPT;
 	}
-	| OPEN SPACE WORD SPACE WORD END {
-		char *id = $3, *mask = $5;
+	| OPEN SPACE WORD SPACE WORD SPACE WORD END {
+		char *id = $3, *nb = $5, *mask = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		int ret = open_dev(pdata, id, mask);
+		unsigned long samples_count = atol(nb);
+		int ret = open_dev(pdata, id, samples_count, mask);
 		free(id);
+		free(nb);
 		free(mask);
 		if (ret < 0)
 			YYABORT;
