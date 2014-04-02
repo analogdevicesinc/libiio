@@ -225,7 +225,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	if (ferror(f))
 		ret = -EBUSY;
 	fclose(f);
-	return ret;
+	return ret ?: -EIO;
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
@@ -246,7 +246,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	if (ferror(f))
 		ret = -EBUSY;
 	fclose(f);
-	return ret;
+	return ret ?: -EIO;
 }
 
 static const char * get_filename(const struct iio_channel *chn,
@@ -319,7 +319,7 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	}
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "1");
-	if (ret <= 0 && ret != -ENOENT)
+	if (ret < 0 && ret != -ENOENT)
 		goto err_close;
 
 	return 0;
@@ -356,10 +356,10 @@ static int local_get_trigger(const struct iio_device *dev,
 	unsigned int i;
 	ssize_t nb = local_read_dev_attr(dev, "trigger/current_trigger",
 			buf, sizeof(buf));
-	if (nb == 0)
+	if (nb < 0) {
 		*trigger = NULL;
-	if (nb <= 0)
 		return (int) nb;
+	}
 
 	nb = dev->ctx->nb_devices;
 	for (i = 0; i < nb; i++) {
