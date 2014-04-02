@@ -298,7 +298,7 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 		return -EINVAL;
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "0");
-	if (ret < 0 && ret != -ENOENT)
+	if (ret < 0)
 		return ret;
 
 	sprintf(buf, "/dev/%s", dev->id);
@@ -313,13 +313,13 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 		struct iio_channel *chn = dev->channels[i];
 		if (chn->index >= 0) {
 			ret = channel_write_state(chn);
-			if (ret < 0 && ret != -ENOENT)
+			if (ret < 0)
 				goto err_close;
 		}
 	}
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "1");
-	if (ret < 0 && ret != -ENOENT)
+	if (ret < 0)
 		goto err_close;
 
 	return 0;
@@ -343,7 +343,7 @@ static int local_close(const struct iio_device *dev)
 
 	pdata->f = NULL;
 	ret = local_write_dev_attr(dev, "buffer/enable", "0");
-	if (ret < 0 && ret != -ENOENT)
+	if (ret < 0)
 		return ret;
 	else
 		return 0;
