@@ -38,6 +38,7 @@ struct fn_map {
 
 struct iio_device_pdata {
 	FILE *f;
+	unsigned int samples_count;
 };
 
 struct iio_channel_pdata {
@@ -285,7 +286,8 @@ static int channel_write_state(const struct iio_channel *chn)
 		return 0;
 }
 
-static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
+static int local_open(const struct iio_device *dev,
+		size_t samples_count, uint32_t *mask, size_t nb)
 {
 	unsigned int i;
 	int ret;
@@ -300,6 +302,13 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	ret = local_write_dev_attr(dev, "buffer/enable", "0");
 	if (ret < 0)
 		return ret;
+
+	if (samples_count) {
+		sprintf(buf, "%lu", (unsigned long) samples_count);
+		ret = local_write_dev_attr(dev, "buffer/length", buf);
+		if (ret < 0)
+			return ret;
+	}
 
 	sprintf(buf, "/dev/%s", dev->id);
 	pdata->f = fopen(buf, "r+");
@@ -318,7 +327,12 @@ static int local_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 		}
 	}
 
-	ret = local_write_dev_attr(dev, "buffer/enable", "1");
+	pdata->samples_count = samples_count;
+
+	/* If opened with samples_count == 0, we probably want DDS mode;
+	 * then the buffer will only be enabled when closing the device. */
+	if (samples_count > 0)
+		ret = local_write_dev_attr(dev, "buffer/enable", "1");
 	if (ret < 0)
 		goto err_close;
 
@@ -342,7 +356,8 @@ static int local_close(const struct iio_device *dev)
 		return ret;
 
 	pdata->f = NULL;
-	ret = local_write_dev_attr(dev, "buffer/enable", "0");
+	ret = local_write_dev_attr(dev, "buffer/enable",
+			pdata->samples_count ? "0" : "1");
 	if (ret < 0)
 		return ret;
 	else
