@@ -173,7 +173,7 @@ const char * iio_device_find_attr(const struct iio_device *dev,
 }
 
 static int iio_device_open_mask(const struct iio_device *dev,
-		uint32_t *mask, size_t words)
+		size_t samples_count, uint32_t *mask, size_t words)
 {
 	unsigned int i;
 	bool has_channels = false;
@@ -184,12 +184,12 @@ static int iio_device_open_mask(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->open)
-		return dev->ctx->ops->open(dev, mask, words);
+		return dev->ctx->ops->open(dev, samples_count, mask, words);
 	else
 		return -ENOSYS;
 }
 
-int iio_device_open(const struct iio_device *dev)
+int iio_device_open(const struct iio_device *dev, size_t samples_count)
 {
 	size_t nb = (dev->nb_channels + 31) / 32;
 	uint32_t *mask = NULL;
@@ -209,7 +209,7 @@ int iio_device_open(const struct iio_device *dev)
 			SET_BIT(mask, chn->index);
 	}
 
-	ret = iio_device_open_mask(dev, mask, nb);
+	ret = iio_device_open_mask(dev, samples_count, mask, nb);
 	free(mask);
 	return ret;
 }

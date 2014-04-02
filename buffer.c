@@ -37,8 +37,10 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	else
 		buf->data_length = 0;
 
-	if (!iio_device_open(dev))
+	if (!iio_device_open(dev, samples_count))
 		return buf;
+
+	free(buf->buffer);
 err_free_mask:
 	free(buf->mask);
 err_free_buf:

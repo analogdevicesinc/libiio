@@ -55,7 +55,8 @@ struct iio_backend_ops {
 			uint32_t *mask, size_t words);
 	ssize_t (*write)(const struct iio_device *dev,
 			const void *src, size_t len);
-	int (*open)(const struct iio_device *dev, uint32_t *mask, size_t words);
+	int (*open)(const struct iio_device *dev,
+			size_t samples_count, uint32_t *mask, size_t words);
 	int (*close)(const struct iio_device *dev);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
