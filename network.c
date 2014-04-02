@@ -131,7 +131,8 @@ static long exec_command(const char *cmd, int fd)
 	return resp;
 }
 
-static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
+static int network_open(const struct iio_device *dev,
+		size_t samples_count, uint32_t *mask, size_t nb)
 {
 	char buf[1024], *ptr;
 	unsigned int i;
@@ -140,7 +141,8 @@ static int network_open(const struct iio_device *dev, uint32_t *mask, size_t nb)
 	if (nb != dev->words)
 		return -EINVAL;
 
-	snprintf(buf, sizeof(buf), "OPEN %s ", dev->id);
+	snprintf(buf, sizeof(buf), "OPEN %s %lu ",
+			dev->id, (unsigned long) samples_count);
 	ptr = buf + strlen(buf);
 
 	for (i = nb; i > 0; i--) {
