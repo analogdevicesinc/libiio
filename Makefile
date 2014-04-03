@@ -59,38 +59,41 @@ $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
-all: $(LIBIIO) tests examples
+all: $(LIBIIO) iiod tests examples
 
-clean-tests:
-	$(CMD)$(MAKE) -C tests clean
+clean-tests clean-examples clean-iiod:
+	$(CMD)$(MAKE) -C $(@:clean-%=%) clean
 
-clean-examples:
-	$(CMD)$(MAKE) -C examples clean
-
-clean: clean-tests clean-examples
+clean: clean-tests clean-iiod
 	$(SUM) "  CLEAN   ."
 	$(CMD)rm -f $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist)
 
 analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
 
-tests examples: $(LIBIIO)
+tests examples iiod: $(LIBIIO)
 	$(CMD)$(MAKE) -C $@
 
 %.o: %.c
 	$(SUM) "  CC      $@"
 	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+install-tests install-examples install-iiod:
+	$(CMD)$(MAKE) -C $(@:install-%=%) install
+
+uninstall-tests uninstall-examples uninstall-iiod:
+	$(CMD)$(MAKE) -C $(@:uninstall-%=%) uninstall
+
 install-lib: $(LIBIIO)
 	$(INSTALL) -D $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(LIBIIO)
 	ln -sf $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
 
-install: install-lib
+install: install-lib install-iiod install-tests
 	$(INSTALL) -D -m 0644 iio.h $(DESTDIR)$(PREFIX)/include/iio.h
 	ln -sf $(SONAME) $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)
 
 uninstall-lib:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
 
-uninstall: uninstall-lib
+uninstall: uninstall-lib uninstall-iiod uninstall-tests
 	rm -f $(DESTDIR)$(PREFIX)/include/iio.h $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)

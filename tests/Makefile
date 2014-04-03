@@ -18,12 +18,15 @@ PREFIX ?= /usr/local
 COMPILER ?= gcc
 CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
+INSTALL ?= install
 
 IIO_INFO = iio_info
 IIO_GENXML = iio_genxml
 IIO_READDEV = iio_readdev
 
 TARGETS := $(IIO_INFO) $(IIO_GENXML) $(IIO_READDEV)
+INSTALL_TARGETS := $(addprefix install-,$(TARGETS))
+UNINSTALL_TARGETS := $(addprefix uninstall-,$(TARGETS))
 
 CFLAGS = -Wall
 LDFLAGS = $(wildcard ../libiio.so.*)
@@ -43,7 +46,7 @@ else
 	SUM:=@echo
 endif
 
-.PHONY: all clean
+.PHONY: all clean install uninstall $(INSTALL_TARGETS) $(UNINSTALL_TARGETS)
 
 all: $(TARGETS)
 
@@ -66,3 +69,13 @@ clean:
 %.o: %.c
 	$(SUM) "  CC      $@"
 	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+install: $(INSTALL_TARGETS)
+
+uninstall: $(UNINSTALL_TARGETS)
+
+$(INSTALL_TARGETS): $(TARGETS)
+	$(INSTALL) -D -s -m 0755 $(@:install-%=%) $(DESTDIR)$(PREFIX)/bin/$(@:install-%=%)
+
+$(UNINSTALL_TARGETS): $(TARGETS)
+	rm -f $(DESTDIR)$(PREFIX)/bin/$(@:uninstall-%=%)

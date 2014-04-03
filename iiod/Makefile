@@ -75,7 +75,7 @@ lexer.o ops.o: parser.h
 lexer.o: CFLAGS += -Wno-unused-function
 
 install: $(DAEMON)
-	$(INSTALL) -D -m 0755 $(DAEMON) $(DESTDIR)$(PREFIX)/bin/$(DAEMON)
+	$(INSTALL) -D -s -m 0755 $(DAEMON) $(DESTDIR)$(PREFIX)/bin/$(DAEMON)
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(DAEMON)
