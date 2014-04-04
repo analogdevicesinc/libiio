@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
 		const char *name = iio_device_get_name(dev);
-		INFO("\t%s: %s\n", iio_device_get_id(dev), name ?: "" );
+		INFO("\t%s: %s\n", iio_device_get_id(dev), name ? name : "" );
 
 		unsigned int nb_channels = iio_device_get_channels_count(dev);
 		INFO("\t\t%u channels found:\n", nb_channels);
@@ -135,8 +135,8 @@ int main(int argc, char **argv)
 
 			name = iio_channel_get_name(ch);
 			INFO("\t\t\t%s: %s (%s)\n",
-					iio_channel_get_id(ch), name ?: "",
-					type_name);
+					iio_channel_get_id(ch),
+					name ? name : "", type_name);
 
 			unsigned int nb_attrs = iio_channel_get_attrs_count(ch);
 			if (!nb_attrs)
