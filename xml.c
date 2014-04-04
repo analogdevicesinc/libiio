@@ -249,7 +249,8 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		ctx->devices = devs;
 	}
 
-	return ctx;
+	if (!iio_context_init(ctx))
+		return ctx;
 
 err_free_devices:
 	for (i = 0; i < ctx->nb_devices; i++)

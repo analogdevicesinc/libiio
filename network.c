@@ -488,7 +488,15 @@ struct iio_context * iio_create_network_context(const char *host)
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 
-	iio_context_init_channels(ctx);
+	ret = iio_context_init(ctx);
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to initialize context: %s\n", buf);
+		iio_context_destroy(ctx);
+		ctx = NULL;
+	}
+
 	return ctx;
 
 err_network_shutdown:

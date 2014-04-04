@@ -19,6 +19,7 @@
 #include "debug.h"
 #include "iio-private.h"
 
+#include <errno.h>
 #include <string.h>
 
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
@@ -34,7 +35,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "]>";
 
 /* Returns a string containing the XML representation of this context */
-char * iio_context_get_xml(const struct iio_context *ctx)
+static char * context_create_xml(const struct iio_context *ctx)
 {
 	size_t len = strlen(ctx->name) +
 		sizeof(xml_header) - 1 +
@@ -87,6 +88,11 @@ err_free_devices_len:
 	return NULL;
 }
 
+const char * iio_context_get_xml(const struct iio_context *ctx)
+{
+	return ctx->xml;
+}
+
 const char * iio_context_get_name(const struct iio_context *ctx)
 {
 	return ctx->name;
@@ -102,6 +108,8 @@ void iio_context_destroy(struct iio_context *ctx)
 		free_device(ctx->devices[i]);
 	if (ctx->nb_devices)
 		free(ctx->devices);
+	if (ctx->xml)
+		free(ctx->xml);
 	free(ctx);
 }
 
@@ -190,7 +198,7 @@ static void reorder_channels(struct iio_device *dev)
 	} while (found);
 }
 
-void iio_context_init_channels(const struct iio_context *ctx)
+int iio_context_init(struct iio_context *ctx)
 {
 	unsigned int i;
 	for (i = 0; i < ctx->nb_devices; i++) {
@@ -203,4 +211,7 @@ void iio_context_init_channels(const struct iio_context *ctx)
 
 		reorder_channels(dev);
 	}
+
+	ctx->xml = context_create_xml(ctx);
+	return ctx->xml ? 0 : -ENOMEM;
 }

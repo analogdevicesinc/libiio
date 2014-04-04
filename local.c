@@ -887,12 +887,20 @@ struct iio_context * iio_create_local_context(void)
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0) {
 		char buf[1024];
-		strerror_r(errno, buf, sizeof(buf));
+		strerror_r(-ret, buf, sizeof(buf));
 		ERROR("Unable to create context: %s\n", buf);
+		iio_context_destroy(ctx);
+		return NULL;
+	}
+
+	ret = iio_context_init(ctx);
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
+		ERROR("Unable to initialize context: %s\n", buf);
 		iio_context_destroy(ctx);
 		ctx = NULL;
 	}
 
-	iio_context_init_channels(ctx);
 	return ctx;
 }

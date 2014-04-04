@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	xml = iio_context_get_xml(ctx);
+	xml = strdup(iio_context_get_xml(ctx));
 	if (!xml) {
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;

@@ -85,6 +85,8 @@ struct iio_context {
 
 	struct iio_device **devices;
 	unsigned int nb_devices;
+
+	char *xml;
 };
 
 struct iio_channel {
@@ -135,7 +137,7 @@ void free_device(struct iio_device *dev);
 char *iio_channel_get_xml(const struct iio_channel *chn, size_t *len);
 char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 
-void iio_context_init_channels(const struct iio_context *ctx);
+int iio_context_init(struct iio_context *ctx);
 
 /* Those functions are not part of the API, but are used by the IIO daemon */
 __api ssize_t iio_device_process_samples(const struct iio_device *dev,
