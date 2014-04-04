@@ -20,9 +20,7 @@
 #define __IIO_PRIVATE_H__
 
 /* Include public interface */
-#pragma GCC visibility push(default)
 #include "iio.h"
-#pragma GCC visibility pop
 
 #include <stdbool.h>
 
@@ -140,14 +138,12 @@ char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 void iio_context_init_channels(const struct iio_context *ctx);
 
 /* Those functions are not part of the API, but are used by the IIO daemon */
-#pragma GCC visibility push(default)
-ssize_t iio_device_process_samples(const struct iio_device *dev,
+__api ssize_t iio_device_process_samples(const struct iio_device *dev,
 		uint32_t *mask, size_t words, void *buf, size_t len,
 		ssize_t (*cb)(const struct iio_channel *, void *, void *),
 		void *data);
 
-ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
+__api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words);
-#pragma GCC visibility pop
 
 #endif /* __IIO_PRIVATE_H__ */
