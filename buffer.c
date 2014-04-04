@@ -138,8 +138,7 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 	return (void *) ptr;
 }
 
-ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer,
-		const struct iio_channel *chn)
+ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer)
 {
 	return (ptrdiff_t) iio_device_get_sample_size_mask(buffer->dev,
 			buffer->mask, buffer->dev->words);
