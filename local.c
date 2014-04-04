@@ -377,7 +377,7 @@ static int local_get_trigger(const struct iio_device *dev,
 	}
 
 	nb = dev->ctx->nb_devices;
-	for (i = 0; i < nb; i++) {
+	for (i = 0; i < (size_t) nb; i++) {
 		const struct iio_device *cur = dev->ctx->devices[i];
 		if (cur->name && !strcmp(cur->name, buf)) {
 			*trigger = cur;
