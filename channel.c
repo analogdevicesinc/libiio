@@ -42,9 +42,17 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 {
 	size_t len = sizeof("<channel id=\"\" name=\"\" "
 			"type=\"output\" ></channel>");
-	char *ptr, *str, *attrs[chn->nb_attrs];
-	size_t attrs_len[chn->nb_attrs];
+	char *ptr, *str, **attrs;
+	size_t *attrs_len;
 	unsigned int i;
+
+	attrs_len = malloc(chn->nb_attrs * sizeof(*attrs_len));
+	if (!attrs_len)
+		return NULL;
+
+	attrs = malloc(chn->nb_attrs * sizeof(*attrs));
+	if (!attrs)
+		goto err_free_attrs_len;
 
 	for (i = 0; i < chn->nb_attrs; i++) {
 		char *xml = get_attr_xml(chn->attrs[i], &attrs_len[i]);
@@ -79,6 +87,8 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		free(attrs[i]);
 	}
 
+	free(attrs);
+	free(attrs_len);
 	strcpy(ptr, "</channel>");
 	*length = ptr - str + sizeof("</channel>") - 1;
 	return str;
@@ -86,6 +96,9 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 err_free_attrs:
 	while (i--)
 		free(attrs[i]);
+	free(attrs);
+err_free_attrs_len:
+	free(attrs_len);
 	return NULL;
 }
 

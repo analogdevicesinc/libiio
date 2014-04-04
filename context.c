@@ -39,9 +39,17 @@ char * iio_context_get_xml(const struct iio_context *ctx)
 	size_t len = strlen(ctx->name) +
 		sizeof(xml_header) - 1 +
 		sizeof("<context name=\"\" ></context>");
-	char *str, *ptr, *devices[ctx->nb_devices];
-	size_t devices_len[ctx->nb_devices];
+	size_t *devices_len;
+	char *str, *ptr, **devices;
 	unsigned int i;
+
+	devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
+	if (!devices_len)
+		return NULL;
+
+	devices = malloc(ctx->nb_devices * sizeof(*devices));
+	if (!devices)
+		goto err_free_devices_len;
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		char *xml = iio_device_get_xml(ctx->devices[i],
@@ -65,12 +73,17 @@ char * iio_context_get_xml(const struct iio_context *ctx)
 		free(devices[i]);
 	}
 
+	free(devices);
+	free(devices_len);
 	strcpy(ptr, "</context>");
 	return str;
 
 err_free_devices:
 	while (i--)
 		free(devices[i]);
+	free(devices);
+err_free_devices_len:
+	free(devices_len);
 	return NULL;
 }
 

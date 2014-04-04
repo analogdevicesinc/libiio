@@ -41,9 +41,25 @@ static char *get_attr_xml(const char *attr, size_t *length)
 char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 {
 	size_t len = sizeof("<device id=\"\" name=\"\" ></device>");
-	char *ptr, *str, *attrs[dev->nb_attrs], *channels[dev->nb_channels];
-	size_t attrs_len[dev->nb_attrs], channels_len[dev->nb_channels];
-	unsigned int i, j;
+	char *ptr, *str, **attrs, **channels;
+	size_t *attrs_len, *channels_len;
+	unsigned int i = 0, j;
+
+	attrs_len = malloc(dev->nb_attrs * sizeof(*attrs_len));
+	if (!attrs_len)
+		return NULL;
+
+	attrs = malloc(dev->nb_attrs * sizeof(*attrs));
+	if (!attrs)
+		goto err_free_attrs_len;
+
+	channels_len = malloc(dev->nb_channels * sizeof(*channels_len));
+	if (!channels_len)
+		goto err_free_attrs;
+
+	channels = malloc(dev->nb_channels * sizeof(*channels));
+	if (!channels)
+		goto err_free_channels_len;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
 		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i]);
@@ -87,11 +103,17 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		free(channels[i]);
 	}
 
+	free(channels);
+	free(channels_len);
+
 	for (i = 0; i < dev->nb_attrs; i++) {
 		strcpy(ptr, attrs[i]);
 		ptr += attrs_len[i];
 		free(attrs[i]);
 	}
+
+	free(attrs);
+	free(attrs_len);
 
 	strcpy(ptr, "</device>");
 	*length = ptr - str + sizeof("</device>") - 1;
@@ -100,9 +122,15 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 err_free_channels:
 	while (j--)
 		free(channels[j]);
+	free(channels);
+err_free_channels_len:
+	free(channels_len);
 err_free_attrs:
 	while (i--)
 		free(attrs[i]);
+	free(attrs);
+err_free_attrs_len:
+	free(attrs_len);
 	return NULL;
 }
 
