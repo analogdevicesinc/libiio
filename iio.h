@@ -33,6 +33,12 @@
 #include <sys/types.h>
 #include <stddef.h>
 
+#ifdef _MSC_BUILD
+/* Come on Microsoft, time to get some C99... */
+typedef long ssize_t;
+#define snprintf sprintf_s
+#endif
+
 struct iio_data_format {
 	unsigned int length;
 	unsigned int bits;
