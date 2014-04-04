@@ -201,6 +201,7 @@ err_free_device:
 }
 
 static struct iio_backend_ops xml_ops = {
+	.read = NULL, /* ISO C99 forbids empty initializer braces */
 };
 
 static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)

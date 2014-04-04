@@ -114,7 +114,7 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 {
 	size_t len;
 	unsigned int i;
-	void *ptr = buffer->buffer;
+	uintptr_t ptr = (uintptr_t) buffer->buffer;
 
 	if (!iio_channel_is_enabled(chn))
 		return iio_buffer_end(buffer);
@@ -127,15 +127,15 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 		if (cur->index < 0 || cur->index == chn->index)
 			break;
 
-		if ((uintptr_t) ptr % len)
-			ptr += len - ((uintptr_t) ptr % len);
+		if (ptr % len)
+			ptr += len - (ptr % len);
 		ptr += len;
 	}
 
 	len = chn->format.length / 8;
-	if ((uintptr_t) ptr % len)
-		ptr += len - ((uintptr_t) ptr % len);
-	return ptr;
+	if (ptr % len)
+		ptr += len - (ptr % len);
+	return (void *) ptr;
 }
 
 ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer,
@@ -147,5 +147,5 @@ ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer,
 
 void * iio_buffer_end(const struct iio_buffer *buffer)
 {
-	return buffer->buffer + buffer->data_length;
+	return (void *) ((uintptr_t) buffer->buffer + buffer->data_length);
 }

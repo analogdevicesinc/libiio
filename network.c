@@ -39,28 +39,28 @@ struct iio_context_pdata {
 
 static ssize_t write_all(const void *src, size_t len, int fd)
 {
-	const void *ptr = src;
+	uintptr_t ptr = (uintptr_t) src;
 	while (len) {
-		ssize_t ret = send(fd, ptr, len, 0);
+		ssize_t ret = send(fd, (const void *) ptr, len, 0);
 		if (ret < 0)
 			return -errno;
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - src;
+	return ptr - (uintptr_t) src;
 }
 
 static ssize_t read_all(void *dst, size_t len, int fd)
 {
-	void *ptr = dst;
+	uintptr_t ptr = (uintptr_t) dst;
 	while (len) {
-		ssize_t ret = recv(fd, ptr, len, 0);
+		ssize_t ret = recv(fd, (void *) ptr, len, 0);
 		if (ret < 0)
 			return -errno;
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - dst;
+	return ptr - (uintptr_t) dst;
 }
 
 static int read_integer(int fd, long *val)
@@ -170,6 +170,7 @@ static int network_close(const struct iio_device *dev)
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
+	uintptr_t ptr = (uintptr_t) dst;
 	int fd = dev->ctx->pdata->fd;
 	ssize_t ret, read = 0;
 	char buf[1024];
@@ -193,13 +194,13 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
-			return read ?: ret;
+			return read ? read : ret;
 		}
 
 		if (read_len < 0) {
 			strerror_r(-read_len, buf, sizeof(buf));
 			ERROR("Server returned an error: %s\n", buf);
-			return read ?: read_len;
+			return read ? read : read_len;
 		} else if (read_len == 0) {
 			break;
 		}
@@ -229,17 +230,17 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read mask: %s\n", buf);
-			return read ?: ret;
+			return read ? read : ret;
 		}
 
-		ret = read_all(dst, read_len, fd);
+		ret = read_all((void *) ptr, read_len, fd);
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
-			return read ?: ret;
+			return read ? read : ret;
 		}
 
-		dst += ret;
+		ptr += ret;
 		read += ret;
 		len -= read_len;
 	} while (len);
@@ -262,7 +263,7 @@ static ssize_t network_read_attr_helper(int fd, const char *id,
 	if (read_len < 0)
 		return (ssize_t) read_len;
 
-	if (read_len > len) {
+	if ((unsigned long) read_len > len) {
 		ERROR("Value returned by server is too large\n");
 		return -EIO;
 	}
@@ -335,7 +336,7 @@ static int network_get_trigger(const struct iio_device *dev,
 	} else if (resp == 0) {
 		*trigger = NULL;
 		return 0;
-	} else if (resp > sizeof(buf)) {
+	} else if ((unsigned long) resp > sizeof(buf)) {
 		ERROR("Value returned by server is too large\n");
 		return -EIO;
 	}

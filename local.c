@@ -226,7 +226,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	if (ferror(f))
 		ret = -EBUSY;
 	fclose(f);
-	return ret ?: -EIO;
+	return ret ? ret : -EIO;
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
@@ -247,7 +247,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	if (ferror(f))
 		ret = -EBUSY;
 	fclose(f);
-	return ret ?: -EIO;
+	return ret ? ret : -EIO;
 }
 
 static const char * get_filename(const struct iio_channel *chn,
