@@ -28,7 +28,6 @@
 #ifdef _MSC_BUILD
 /* Come on Microsoft, time to get some C99... */
 typedef long ssize_t;
-#define snprintf sprintf_s
 #endif
 
 #ifdef __GNUC__

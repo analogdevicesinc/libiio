@@ -16,16 +16,28 @@
  *
  * */
 
-#include "debug.h"
 #include "iio-private.h"
 
 #include <errno.h>
-#include <netdb.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define close(s) closesocket(s)
+
+/* winsock2.h defines ERROR, we don't want that */
+#undef ERROR
+
+#else /* _WIN32 */
+#include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif /* _WIN32 */
+
+#include "debug.h"
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
@@ -432,6 +444,15 @@ struct iio_context * iio_create_network_context(const char *host)
 	struct iio_context_pdata *pdata;
 	unsigned int i;
 	int fd, ret;
+#ifdef _WIN32
+	WSADATA wsaData;
+
+	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
+	if (ret < 0) {
+		ERROR("WSAStartup failed with error %i\n", ret);
+		return NULL;
+	}
+#endif
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
