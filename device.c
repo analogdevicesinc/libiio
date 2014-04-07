@@ -33,17 +33,18 @@ static char *get_attr_xml(const char *attr, size_t *length)
 	}
 
 	*length = len - 1; /* Skip the \0 */
-	sprintf(str, "<attribute name=\"%s\" />", attr);
+	snprintf(str, len, "<attribute name=\"%s\" />", attr);
 	return str;
 }
 
 /* Returns a string containing the XML representation of this device */
 char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 {
-	size_t len = sizeof("<device id=\"\" name=\"\" ></device>");
+	size_t len = sizeof("<device id=\"\" name=\"\" ></device>")
+		+ strlen(dev->id) + (dev->name ? strlen(dev->name) : 0);
 	char *ptr, *str, **attrs, **channels;
 	size_t *attrs_len, *channels_len;
-	unsigned int i = 0, j;
+	unsigned int i, j;
 
 	attrs_len = malloc(dev->nb_attrs * sizeof(*attrs_len));
 	if (!attrs_len)
@@ -53,14 +54,6 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	if (!attrs)
 		goto err_free_attrs_len;
 
-	channels_len = malloc(dev->nb_channels * sizeof(*channels_len));
-	if (!channels_len)
-		goto err_free_attrs;
-
-	channels = malloc(dev->nb_channels * sizeof(*channels));
-	if (!channels)
-		goto err_free_channels_len;
-
 	for (i = 0; i < dev->nb_attrs; i++) {
 		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i]);
 		if (!xml)
@@ -68,6 +61,14 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		attrs[i] = xml;
 		len += attrs_len[i];
 	}
+
+	channels_len = malloc(dev->nb_channels * sizeof(*channels_len));
+	if (!channels_len)
+		goto err_free_attrs;
+
+	channels = malloc(dev->nb_channels * sizeof(*channels));
+	if (!channels)
+		goto err_free_channels_len;
 
 	for (j = 0; j < dev->nb_channels; j++) {
 		char *xml = iio_channel_get_xml(dev->channels[j],
@@ -78,15 +79,11 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		len += channels_len[j];
 	}
 
-	len += strlen(dev->id);
-	if (dev->name)
-		len += strlen(dev->name);
-
 	str = malloc(len);
 	if (!str)
 		goto err_free_channels;
 
-	sprintf(str, "<device id=\"%s\"", dev->id);
+	snprintf(str, len, "<device id=\"%s\"", dev->id);
 	ptr = strrchr(str, '\0');
 
 	if (dev->name) {
@@ -359,7 +356,7 @@ int iio_trigger_set_rate(const struct iio_device *trigger, unsigned long rate)
 	if (!iio_device_is_trigger(trigger))
 		return -EINVAL;
 
-	sprintf(buf, "%lu", rate);
+	snprintf(buf, sizeof(buf), "%lu", rate);
 	ret = iio_device_attr_write(trigger, "frequency", buf);
 	if (ret < 0)
 		return (int) ret;

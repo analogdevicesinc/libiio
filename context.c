@@ -65,7 +65,7 @@ static char * context_create_xml(const struct iio_context *ctx)
 	if (!str)
 		goto err_free_devices;
 
-	sprintf(str, "%s<context name=\"%s\" >", xml_header, ctx->name);
+	snprintf(str, len, "%s<context name=\"%s\" >", xml_header, ctx->name);
 	ptr = strrchr(str, '\0');
 
 	for (i = 0; i < ctx->nb_devices; i++) {

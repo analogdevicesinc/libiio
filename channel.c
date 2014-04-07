@@ -33,7 +33,7 @@ static char *get_attr_xml(const char *attr, size_t *length)
 	}
 
 	*length = len - 1; /* Skip the \0 */
-	sprintf(str, "<attribute name=\"%s\" />", attr);
+	snprintf(str, len, "<attribute name=\"%s\" />", attr);
 	return str;
 }
 
@@ -41,7 +41,8 @@ static char *get_attr_xml(const char *attr, size_t *length)
 char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 {
 	size_t len = sizeof("<channel id=\"\" name=\"\" "
-			"type=\"output\" ></channel>");
+			"type=\"output\" ></channel>")
+		+ strlen(chn->id) + (chn->name ? strlen(chn->name) : 0);
 	char *ptr, *str, **attrs;
 	size_t *attrs_len;
 	unsigned int i;
@@ -62,15 +63,11 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		len += attrs_len[i];
 	}
 
-	len += strlen(chn->id);
-	if (chn->name)
-		len += strlen(chn->name);
-
 	str = malloc(len);
 	if (!str)
 		goto err_free_attrs;
 
-	sprintf(str, "<channel id=\"%s\"", chn->id);
+	snprintf(str, len, "<channel id=\"%s\"", chn->id);
 	ptr = strrchr(str, '\0');
 
 	if (chn->name) {
@@ -89,6 +86,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 
 	free(attrs);
 	free(attrs_len);
+
 	strcpy(ptr, "</channel>");
 	*length = ptr - str + sizeof("</channel>") - 1;
 	return str;

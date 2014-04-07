@@ -122,10 +122,11 @@ static int set_channel_name(struct iio_channel *chn)
 			break;
 
 		if (chn->name) {
-			name = malloc(strlen(chn->name) + len + 2);
+			size_t nlen = strlen(chn->name) + len + 2;
+			name = malloc(nlen);
 			if (!name)
 				return -ENOMEM;
-			sprintf(name, "%s_%.*s", chn->name, len, attr0);
+			snprintf(name, nlen, "%s_%.*s", chn->name, len, attr0);
 			DEBUG("Fixing name of channel %s from %s to %s\n",
 					chn->id, chn->name, name);
 			free(chn->name);
@@ -133,7 +134,7 @@ static int set_channel_name(struct iio_channel *chn)
 			name = malloc(len + 2);
 			if (!name)
 				return -ENOMEM;
-			sprintf(name, "%.*s", len, attr0);
+			snprintf(name, len + 2, "%.*s", len, attr0);
 			DEBUG("Setting name of channel %s to %s\n",
 					chn->id, name);
 		}
@@ -304,13 +305,14 @@ static int local_open(const struct iio_device *dev,
 		return ret;
 
 	if (samples_count) {
-		sprintf(buf, "%lu", (unsigned long) samples_count);
+		snprintf(buf, sizeof(buf),
+				"%lu", (unsigned long) samples_count);
 		ret = local_write_dev_attr(dev, "buffer/length", buf);
 		if (ret < 0)
 			return ret;
 	}
 
-	sprintf(buf, "/dev/%s", dev->id);
+	snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
 	pdata->f = fopen(buf, "r+");
 	if (!pdata->f)
 		return -errno;
@@ -454,7 +456,7 @@ static char * get_short_attr_name(const char *attr)
 static int read_device_name(struct iio_device *dev)
 {
 	char buf[1024];
-	ssize_t ret = iio_device_attr_read(dev, "name", buf, 1024);
+	ssize_t ret = iio_device_attr_read(dev, "name", buf, sizeof(buf));
 	if (ret < 0)
 		return ret;
 	else if (ret == 0)

@@ -146,7 +146,7 @@ static int network_open(const struct iio_device *dev,
 	ptr = buf + strlen(buf);
 
 	for (i = nb; i > 0; i--) {
-		sprintf(ptr, "%08x", mask[i - 1]);
+		snprintf(ptr, (ptr - buf) + i * 8, "%08x", mask[i - 1]);
 		ptr += 8;
 	}
 	strcpy(ptr, "\r\n");
