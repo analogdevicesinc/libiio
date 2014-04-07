@@ -41,9 +41,9 @@ typedef long ssize_t;
 
 #ifdef _WIN32
 #   ifdef LIBIIO_EXPORTS
-#	define __api __declspec(dllimport)
-#   else
 #	define __api __declspec(dllexport)
+#   else
+#	define __api __declspec(dllimport)
 #   endif
 #elif __GNUC__ >= 4
 #   define __api __attribute__((visibility ("default")))
