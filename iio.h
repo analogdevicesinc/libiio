@@ -123,8 +123,12 @@ __api __pure long iio_channel_get_index(const struct iio_channel *chn);
 __api __cnst const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn);
 
-/* Convert the sample pointed by 'src' to 'dst' */
+/* Convert the sample pointed by 'src' to 'dst' from hardware format to host */
 __api void iio_channel_convert(const struct iio_channel *chn,
+		void *dst, const void *src);
+
+/* Convert the sample pointed by 'src' to 'dst' from host format to hardware */
+__api void iio_channel_convert_inverse(const struct iio_channel *chn,
 		void *dst, const void *src);
 
 /* Trigger functions */

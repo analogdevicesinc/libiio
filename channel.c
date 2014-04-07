@@ -220,38 +220,54 @@ static void byte_swap(uint8_t *dst, const uint8_t *src, size_t len)
 		dst[i] = src[len - i - 1];
 }
 
-static void shift_bits(uint8_t *dst, size_t shift, size_t len)
+static void shift_bits(uint8_t *dst, size_t shift, size_t len, bool left)
 {
 	unsigned int i;
 	size_t shift_bytes = shift / 8;
 	shift %= 8;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	if (shift_bytes) {
-		memmove(dst, dst + shift_bytes, len - shift_bytes);
-		memset(dst + len - shift_bytes, 0, shift_bytes);
-	}
-	if (shift) {
-		for (i = 0; i < len; i++) {
-			dst[i] >>= shift;
-			if (i < len - 1)
-				dst[i] |= dst[i + 1] << (8 - shift);
-		}
-	}
+	if (!left)
 #else
-	/* XXX: untested */
-	if (shift_bytes) {
-		memmove(dst + shift_bytes, dst, len - shift_bytes);
-		memset(dst, 0, shift_bytes);
-	}
-	if (shift) {
-		for (i = len; i > 0; i--) {
-			dst[i - 1] >>= shift;
-			if (i > 1)
-				dst[i - 1] |= dst[i - 2] << (8 - shift);
+	if (left)
+#endif
+	{
+		if (shift_bytes) {
+			memmove(dst, dst + shift_bytes, len - shift_bytes);
+			memset(dst + len - shift_bytes, 0, shift_bytes);
+		}
+		if (shift) {
+			for (i = 0; i < len; i++) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+				dst[i] >>= shift;
+				if (i < len - 1)
+					dst[i] |= dst[i + 1] << (8 - shift);
+#else
+				dst[i] <<= shift;
+				if (i < len - 1)
+					dst[i] |= dst[i + 1] >> (8 - shift);
+#endif
+			}
+		}
+	} else {
+		if (shift_bytes) {
+			memmove(dst + shift_bytes, dst, len - shift_bytes);
+			memset(dst, 0, shift_bytes);
+		}
+		if (shift) {
+			for (i = len; i > 0; i--) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+				dst[i - 1] <<= shift;
+				if (i > 1)
+					dst[i - 1] |= dst[i - 2] >> (8 - shift);
+#else
+				dst[i - 1] >>= shift;
+				if (i > 1)
+					dst[i - 1] |= dst[i - 2] << (8 - shift);
+#endif
+			}
 		}
 	}
-#endif
 }
 
 static void sign_extend(uint8_t *dst, size_t bits, size_t len)
@@ -291,9 +307,45 @@ void iio_channel_convert(const struct iio_channel *chn,
 		byte_swap(dst, src, len);
 
 	if (chn->format.shift)
-		shift_bits(dst, chn->format.shift, len);
+		shift_bits(dst, chn->format.shift, len, false);
 	if (chn->format.is_signed)
 		sign_extend(dst, chn->format.bits, len);
+}
+
+void iio_channel_convert_inverse(const struct iio_channel *chn,
+		void *dst, const void *src)
+{
+	unsigned int len = chn->format.length / 8;
+	unsigned int bits = chn->format.bits;
+	unsigned int i;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	bool swap = chn->format.is_be;
+#else
+	bool swap = !chn->format.is_be;
+#endif
+	uint8_t buf[1024];
+
+	/* Somehow I doubt we will have samples of 8192 bits each. */
+	if (len > sizeof(buf))
+		return;
+
+	memcpy(buf, src, len);
+
+	/* Clear upper bits */
+	if (bits % 8)
+		buf[bits / 8] &= (1 << (bits % 8)) - 1;
+
+	/* Clear upper bytes */
+	for (i = (bits + 7) / 8; i < len; i++)
+		buf[i] = 0;
+
+	if (chn->format.shift)
+		shift_bits(buf, chn->format.shift, len, true);
+
+	if (len == 1 || !swap)
+		memcpy(dst, buf, len);
+	else
+		byte_swap(dst, buf, len);
 }
 
 size_t iio_channel_read_raw(const struct iio_channel *chn,
