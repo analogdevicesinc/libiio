@@ -37,12 +37,19 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 /* Returns a string containing the XML representation of this context */
 static char * context_create_xml(const struct iio_context *ctx)
 {
-	size_t len = strlen(ctx->name) +
-		sizeof(xml_header) - 1 +
+	size_t len = strlen(ctx->name) + sizeof(xml_header) - 1 +
 		sizeof("<context name=\"\" ></context>");
 	size_t *devices_len;
 	char *str, *ptr, **devices;
 	unsigned int i;
+
+	if (!ctx->nb_devices) {
+		str = malloc(len);
+		if (str)
+			snprintf(str, len, "%s<context name=\"%s\" ></context>",
+					xml_header, ctx->name);
+		return str;
+	}
 
 	devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
 	if (!devices_len)
