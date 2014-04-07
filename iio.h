@@ -158,10 +158,10 @@ __api void * iio_buffer_end(const struct iio_buffer *buffer);
 
 /* Functions to read/write the raw stream of a channel
  * (after demux/mux process) */
-__api ssize_t iio_channel_read_raw(const struct iio_channel *chn,
-		void *dst, size_t len);
-__api ssize_t iio_channel_write_raw(const struct iio_channel *chn,
-		const void *src, size_t len);
+__api size_t iio_channel_read_raw(const struct iio_channel *chn,
+		struct iio_buffer *buffer, void *dst, size_t len);
+__api size_t iio_channel_write_raw(const struct iio_channel *chn,
+		struct iio_buffer *buffer, const void *src, size_t len);
 
 /* Functions to read/write a stream of converted values from/to a channel */
 __api ssize_t iio_channel_read(const struct iio_channel *chn,
