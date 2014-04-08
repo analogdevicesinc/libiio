@@ -514,8 +514,7 @@ struct iio_context * iio_create_network_context(const char *host)
 		char buf[1024];
 		strerror_r(-ret, buf, sizeof(buf));
 		ERROR("Unable to initialize context: %s\n", buf);
-		iio_context_destroy(ctx);
-		ctx = NULL;
+		goto err_network_shutdown;
 	}
 
 	return ctx;
