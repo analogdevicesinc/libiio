@@ -19,6 +19,10 @@
 #ifndef __IIO_H__
 #define __IIO_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -315,5 +319,9 @@ __api ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words);
 __api ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __IIO_H__ */
