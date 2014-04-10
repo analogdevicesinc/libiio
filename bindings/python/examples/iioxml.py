@@ -13,7 +13,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-from iio import LocalContext, XMLContext
+from iio import LocalContext, XMLContext, NetworkContext
 from os import getenv
 from sys import argv
 
@@ -57,6 +57,11 @@ def main():
 			print 'The XML backend requires the XML file to be passed as argument'
 			return 1
 		context = XMLContext(argv[1])
+	elif getenv('LIBIIO_BACKEND') == 'network':
+		if len(argv) < 2:
+			print 'The network backend requires the hostname to be passed as argument'
+			return 1
+		context = NetworkContext(argv[1])
 	else:
 		context = LocalContext()
 
