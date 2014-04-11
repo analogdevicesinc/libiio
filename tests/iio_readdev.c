@@ -180,7 +180,8 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		iio_trigger_set_rate(trigger, 100); /* Fixed rate for now */
+		/* Fixed rate for now */
+		iio_device_attr_write_longlong(trigger, "frequency", 100);
 		iio_device_set_trigger(dev, trigger);
 	}
 
