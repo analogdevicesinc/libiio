@@ -388,7 +388,8 @@ size_t iio_channel_write_raw(const struct iio_channel *chn,
 	for (dst_ptr = (uintptr_t) iio_buffer_first(buf, chn);
 			dst_ptr < (uintptr_t) iio_buffer_end(buf) &&
 			src_ptr + length < end;
-			dst_ptr += iio_buffer_step(buf))
+			dst_ptr += iio_buffer_step(buf),
+			src_ptr += length)
 		memcpy((void *) dst_ptr, (const void *) src_ptr, length);
 	return src_ptr - (uintptr_t) src;
 }
@@ -402,7 +403,8 @@ size_t iio_channel_write(const struct iio_channel *chn,
 	for (dst_ptr = (uintptr_t) iio_buffer_first(buf, chn);
 			dst_ptr < (uintptr_t) iio_buffer_end(buf) &&
 			src_ptr + length < end;
-			dst_ptr += iio_buffer_step(buf))
+			dst_ptr += iio_buffer_step(buf),
+			src_ptr += length)
 		iio_channel_convert_inverse(chn,
 				(void *) dst_ptr, (const void *) src_ptr);
 	return src_ptr - (uintptr_t) src;
