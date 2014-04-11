@@ -1,0 +1,5 @@
+var searchData=
+[
+  ['is_5fbe',['is_be',['../structiio__data__format.html#a1c1775c482b9b4c3f1dfa0b67ad6fbaa',1,'iio_data_format']]],
+  ['is_5fsigned',['is_signed',['../structiio__data__format.html#a173f2fb6931c4215e53d934667f0dc3f',1,'iio_data_format']]]
+];
