@@ -2,3 +2,5 @@
 *.o
 *.plist
 test
+html
+Doxyfile

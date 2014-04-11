@@ -16,6 +16,9 @@
  *
  * */
 
+/** @file iio.h
+ * @brief Public interface */
+
 #ifndef __IIO_H__
 #define __IIO_H__
 
@@ -54,261 +57,768 @@ typedef long ssize_t;
 #   define __api
 #endif
 
-struct iio_data_format {
-	unsigned int length;
-	unsigned int bits;
-	unsigned int shift;
-	bool with_scale, is_signed, is_be;
-	double scale;
-};
-
 struct iio_context;
 struct iio_device;
 struct iio_channel;
 struct iio_buffer;
 
 
+/* ---------------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/
+/** @defgroup Context Context
+ * @{
+ * @struct iio_context
+ * @brief Contains the representation of an IIO context */
 
-/* Create a context from local IIO devices (Linux only). */
+
+/** @brief Create a context from local IIO devices (Linux only).
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned */
 __api struct iio_context * iio_create_local_context(void);
 
-/* Create a context from a XML file or XML data in memory.
- * The format of the XML must comply to the one returned by
- * iio_context_get_xml(). */
+
+/** @brief Create a context from a XML file
+ * @param xml_file Path to the XML file to open
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned
+ *
+ * <b>NOTE:</b> The format of the XML must comply to the one returned by
+ * iio_context_get_xml. */
 __api struct iio_context * iio_create_xml_context(const char *xml_file);
+
+
+/** @brief Create a context from XML data in memory
+ * @param xml Pointer to the XML data in memory
+ * @param len Length of the XML string in memory (excluding the final \0)
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned
+ *
+ * <b>NOTE:</b> The format of the XML must comply to the one returned by
+ * iio_context_get_xml */
 __api struct iio_context * iio_create_xml_context_mem(
 		const char *xml, size_t len);
 
-/* Create a context from the network. The "host" parameter corresponds to
- * the hostname, IPv4 or IPv6 address where the IIO Daemon is running. */
+
+/** @brief Create a context from the network
+ * @param host Hostname, IPv4 or IPv6 address where the IIO Daemon is running
+ * @return On success, a pointer to an iio_context structure
+ * @return On failure, NULL is returned */
 __api struct iio_context * iio_create_network_context(const char *host);
 
-/* Destroy the given context.
- * After that function, the iio_context pointer shall be invalid. */
+
+/** @brief Destroy the given context
+ * @param ctx A pointer to an iio_context structure
+ *
+ * <b>NOTE:</b> After that function, the iio_context pointer shall be invalid. */
 __api void iio_context_destroy(struct iio_context *ctx);
 
-/* Returns a XML representation of the current IIO context. */
+
+/** @brief Obtain a XML representation of the given context
+ * @param ctx A pointer to an iio_context structure
+ * @return A pointer to a static NULL-terminated string */
 __api __pure const char * iio_context_get_xml(const struct iio_context *ctx);
 
-/* Returns the name of the context. */
+
+/** @brief Get the name of the given context
+ * @param ctx A pointer to an iio_context structure
+ * @return A pointer to a static NULL-terminated string
+ *
+ * <b>NOTE:</b>The returned string will be <b><i>local</i></b>,
+ * <b><i>xml</i></b> or <b><i>network</i></b> when the context has been
+ * created with the local, xml and network backends respectively.*/
 __api __pure const char * iio_context_get_name(const struct iio_context *ctx);
 
-/* Functions to get the number of devices, and pointers to their structure. */
+
+/** @brief Enumerate the devices found in the given context
+ * @param ctx A pointer to an iio_context structure
+ * @return The number of devices found */
 __api __pure unsigned int iio_context_get_devices_count(
 		const struct iio_context *ctx);
+
+
+/** @brief Get the device present at the given index
+ * @param ctx A pointer to an iio_context structure
+ * @param index The index corresponding to the device
+ * @return On success, a pointer to an iio_device structure
+ * @return If the index is invalid, NULL is returned */
 __api __pure struct iio_device * iio_context_get_device(
 		const struct iio_context *ctx, unsigned int index);
 
-/* Finds a device structure by its name of ID. */
+
+/** @brief Try to find a device structure by its name of ID
+ * @param ctx A pointer to an iio_context structure
+ * @param name A NULL-terminated string corresponding to the name or the ID of
+ * the device to search for
+ * @return On success, a pointer to an iio_device structure
+ * @return If the name or ID does not correspond to any known device, NULL is
+ * returned */
 __api __pure struct iio_device * iio_context_find_device(
 		const struct iio_context *ctx, const char *name);
 
 
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Device functions --------------------------------*/
+/** @defgroup Device Device
+ * @{
+ * @struct iio_device
+ * @brief Represents a device in the IIO context */
 
-/* Retrieve the device's ID (e.g. iio:device0) or name (e.g. xadc).
- * Note that the returned ID will never be NULL, but the name can be. */
+
+/** @brief Retrieve the device ID (e.g. <b><i>iio:device0</i></b>)
+ * @param dev A pointer to an iio_device structure
+ * @return A pointer to a static NULL-terminated string */
 __api __pure const char * iio_device_get_id(const struct iio_device *dev);
+
+
+/** @brief Retrieve the device name (e.g. <b><i>xadc</i></b>)
+ * @param dev A pointer to an iio_device structure
+ * @return A pointer to a static NULL-terminated string
+ *
+ * <b>NOTE:</b> if the device has no name, NULL is returned. */
 __api __pure const char * iio_device_get_name(const struct iio_device *dev);
 
-/* Get the number of channels and attributes. */
+
+/** @brief Enumerate the channels of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of channels found */
 __api __pure unsigned int iio_device_get_channels_count(
 		const struct iio_device *dev);
+
+
+/** @brief Enumerate the device-specific attributes of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of device-specific attributes found */
 __api __pure unsigned int iio_device_get_attrs_count(
 		const struct iio_device *dev);
 
-/* Retrieve a channel structure or device attribute from index. */
+
+/** @brief Get the channel present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the channel
+ * @return On success, a pointer to an iio_channel structure
+ * @return If the index is invalid, NULL is returned */
 __api __pure struct iio_channel * iio_device_get_channel(
 		const struct iio_device *dev, unsigned int index);
+
+
+/** @brief Get the device-specific attribute present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the index is invalid, NULL is returned */
 __api __pure const char * iio_device_get_attr(
 		const struct iio_device *dev, unsigned int index);
 
-/* Find a channel or attribute of a device by name or ID. */
+
+/** @brief Try to find a channel structure by its name of ID
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name or the ID of
+ * the channel to search for
+ * @param output True if the searched channel is output, False otherwise
+ * @return On success, a pointer to an iio_channel structure
+ * @return If the name or ID does not correspond to any known channel of the
+ * given device, NULL is returned */
 __api __pure struct iio_channel * iio_device_find_channel(
 		const struct iio_device *dev, const char *name, bool output);
+
+
+/** @brief Try to find a device-specific attribute by its name
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the name does not correspond to any known attribute of the given
+ * device, NULL is returned
+ *
+ * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
+ * It can also be used to retrieve the name of an attribute as a pointer to a
+ * static string from a dynamically allocated string. */
 __api __pure const char * iio_device_find_attr(
 		const struct iio_device *dev, const char *name);
 
-/* Functions to read the content of a device attribute. */
+
+/** @brief Read the content of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param dst A pointer to the memory area where the NULL-terminated string
+ * corresponding to the value read will be stored
+ * @param len The available length of the memory area, in bytes
+ * @return On success, the number of bytes written to the buffer
+ * @return On error, a negative errno code is returned */
 __api ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
+
+
+/** @brief Read the content of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A pointer to a bool variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_attr_read_bool(const struct iio_device *dev,
 		const char *attr, bool *val);
+
+
+/** @brief Read the content of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A pointer to a long long variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_attr_read_longlong(const struct iio_device *dev,
 		const char *attr, long long *val);
+
+
+/** @brief Read the content of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A pointer to a double variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_attr_read_double(const struct iio_device *dev,
 		const char *attr, double *val);
 
-/* Functions to write the content of a device attribute. */
+
+/** @brief Set the value of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param src A NULL-terminated string to set the attribute to
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
 __api ssize_t iio_device_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
+
+
+/** @brief Set the value of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A bool value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_attr_write_bool(const struct iio_device *dev,
 		const char *attr, bool val);
+
+
+/** @brief Set the value of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A long long value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_attr_write_longlong(const struct iio_device *dev,
 		const char *attr, long long val);
+
+
+/** @brief Set the value of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A double value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_attr_write_double(const struct iio_device *dev,
 		const char *attr, double val);
 
-/* Associate/retrieve a pointer to an iio_device structure. */
+
+/** @brief Associate a pointer to an iio_device structure
+ * @param dev A pointer to an iio_device structure
+ * @param data The pointer to be associated */
 __api void iio_device_set_data(struct iio_device *dev, void *data);
+
+
+/** @brief Retrieve a previously associated pointer of an iio_device structure
+ * @param dev A pointer to an iio_device structure
+ * @return The pointer previously associated if present, or NULL */
 __api void * iio_device_get_data(const struct iio_device *dev);
 
-/* Associate/retrieve a device structure corresponding to the trigger to use. */
+
+/** @brief Retrieve the trigger of a given device
+ * @param dev A pointer to an iio_device structure
+ * @param trigger a pointer to a pointer of an iio_device structure. The pointed
+ * pointer will be set to the address of the iio_device structure corresponding
+ * to the associated trigger device.
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger);
+
+
+/** @brief Associate a trigger to a given device
+ * @param dev A pointer to an iio_device structure
+ * @param trigger a pointer to the iio_device structure corresponding to the
+ * trigger that should be associated.
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_device_set_trigger(const struct iio_device *dev,
 		const struct iio_device *trigger);
 
-/* Returns true if the given device is a trigger, false otherwise. */
+
+/** @brief Return True if the given device is a trigger
+ * @param dev A pointer to an iio_device structure
+ * @return True if the device is a trigger, False otherwise */
 __api __pure bool iio_device_is_trigger(const struct iio_device *dev);
 
 
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Channel functions -------------------------------*/
+/** @defgroup Channel Channel
+ * @{
+ * @struct iio_channel
+ * @brief Represents an input or output channel of a device */
 
-/* Retrieve the channel's ID (e.g. voltage0) or name (e.g. vccint).
- * Note that the returned ID will never be NULL, but the name can be. */
+
+/** @brief Retrieve the channel ID (e.g. <b><i>voltage0</i></b>)
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to a static NULL-terminated string */
 __api __pure const char * iio_channel_get_id(const struct iio_channel *chn);
+
+
+/** @brief Retrieve the channel name (e.g. <b><i>vccint</i></b>)
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to a static NULL-terminated string
+ *
+ * <b>NOTE:</b> if the channel has no name, NULL is returned. */
 __api __pure const char * iio_channel_get_name(const struct iio_channel *chn);
 
-/* Returns true if the channel is an output channel, false otherwise. */
+
+/** @brief Return True if the given channel is an output channel
+ * @param chn A pointer to an iio_channel structure
+ * @return True if the channel is an output channel, False otherwise */
 __api __pure bool iio_channel_is_output(const struct iio_channel *chn);
 
-/* Get the number of attributes. */
+
+/** @brief Enumerate the channel-specific attributes of the given channel
+ * @param chn A pointer to an iio_channel structure
+ * @return The number of channel-specific attributes found */
 __api __pure unsigned int iio_channel_get_attrs_count(
 		const struct iio_channel *chn);
 
-/* Get an attribute by its index. */
+
+/** @brief Get the channel-specific attribute present at the given index
+ * @param chn A pointer to an iio_channel structure
+ * @param index The index corresponding to the attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the index is invalid, NULL is returned */
 __api __pure const char * iio_channel_get_attr(
 		const struct iio_channel *chn, unsigned int index);
 
-/* Search for an attribute by its name. If not found, NULL is returned.
- * Otherwise, a pointer to the attribute string (and not to the "name" string)
- * is returned. */
+
+/** @brief Try to find a channel-specific attribute by its name
+ * @param chn A pointer to an iio_channel structure
+ * @param name A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the name does not correspond to any known attribute of the given
+ * channel, NULL is returned
+ *
+ * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
+ * It can also be used to retrieve the name of an attribute as a pointer to a
+ * static string from a dynamically allocated string. */
 __api __pure const char * iio_channel_find_attr(
 		const struct iio_channel *chn, const char *name);
 
-/* Functions to read the content of a channel attribute. */
+
+/** @brief Read the content of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param dst A pointer to the memory area where the NULL-terminated string
+ * corresponding to the value read will be stored
+ * @param len The available length of the memory area, in bytes
+ * @return On success, the number of bytes written to the buffer
+ * @return On error, a negative errno code is returned */
 __api ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
+
+
+/** @brief Read the content of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A pointer to a bool variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_channel_attr_read_bool(const struct iio_channel *chn,
 		const char *attr, bool *val);
+
+
+/** @brief Read the content of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A pointer to a long long variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_channel_attr_read_longlong(const struct iio_channel *chn,
 		const char *attr, long long *val);
+
+
+/** @brief Read the content of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A pointer to a double variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_channel_attr_read_double(const struct iio_channel *chn,
 		const char *attr, double *val);
 
-/* Functions to write the content of a channel attribute. */
+
+/** @brief Set the value of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param src A NULL-terminated string to set the attribute to
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
 __api ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src);
+
+
+/** @brief Set the value of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A bool value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_channel_attr_write_bool(const struct iio_channel *chn,
 		const char *attr, bool val);
+
+
+/** @brief Set the value of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A long long value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_channel_attr_write_longlong(const struct iio_channel *chn,
 		const char *attr, long long val);
+
+
+/** @brief Set the value of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name or the
+ * attribute
+ * @param val A double value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
 __api int iio_channel_attr_write_double(const struct iio_channel *chn,
 		const char *attr, double val);
 
-/* Enable/disable the given channel. Before creating an input or output buffer,
- * the channels to read or write must be enabled. */
+
+/** @brief Enable the given channel
+ * @param chn A pointer to an iio_channel structure
+ *
+ * <b>NOTE:</b>Before creating an iio_buffer structure with
+ * iio_device_create_buffer, it is required to enable at least one channel of
+ * the device to read from. */
 __api void iio_channel_enable(struct iio_channel *chn);
+
+
+/** @brief Disable the given channel
+ * @param chn A pointer to an iio_channel structure */
 __api void iio_channel_disable(struct iio_channel *chn);
+
+
+/** @brief Returns True if the channel is enabled
+ * @param chn A pointer to an iio_channel structure
+ * @return True if the channel is enabled, False otherwise */
 __api bool iio_channel_is_enabled(const struct iio_channel *chn);
 
-/* Demultiplex the samples corresponding of the given channel from the
- * input buffer, and store them sequentially at the address pointed by "dst".
- * The iio_channel_read function will also convert the samples from hardware
- * format to host format. */
+
+/** Demultiplex the samples of a given channel
+ * @param chn A pointer to an iio_channel structure
+ * @param buffer A pointer to an iio_buffer structure
+ * @param dst A pointer to the memory area where the demultiplexed data will be
+ * stored
+ * @param len The available length of the memory area, in bytes
+ * @return The size of the demultiplexed data, in bytes */
 __api size_t iio_channel_read_raw(const struct iio_channel *chn,
 		struct iio_buffer *buffer, void *dst, size_t len);
+
+
+/** Demultiplex and convert the samples of a given channel
+ * @param chn A pointer to an iio_channel structure
+ * @param buffer A pointer to an iio_buffer structure
+ * @param dst A pointer to the memory area where the converted data will be
+ * stored
+ * @param len The available length of the memory area, in bytes
+ * @return The size of the converted data, in bytes */
 __api size_t iio_channel_read(const struct iio_channel *chn,
 		struct iio_buffer *buffer, void *dst, size_t len);
 
 
-/* Multiplex the samples read at the address pointed by "src" to the output
- * buffer. The iio_channel_write function will also convert the samples from
- * host format to hardware format. */
+/** Multiplex the samples of a given channel
+ * @param chn A pointer to an iio_channel structure
+ * @param buffer A pointer to an iio_buffer structure
+ * @param src A pointer to the memory area where the sequential data will
+ * be read from
+ * @param len The length of the memory area, in bytes
+ * @return The number of bytes actually multiplexed */
 __api size_t iio_channel_write_raw(const struct iio_channel *chn,
 		struct iio_buffer *buffer, const void *src, size_t len);
+
+
+/** Convert and multiplex the samples of a given channel
+ * @param chn A pointer to an iio_channel structure
+ * @param buffer A pointer to an iio_buffer structure
+ * @param src A pointer to the memory area where the sequential data will
+ * be read from
+ * @param len The length of the memory area, in bytes
+ * @return The number of bytes actually converted and multiplexed */
 __api size_t iio_channel_write(const struct iio_channel *chn,
 		struct iio_buffer *buffer, const void *src, size_t len);
 
-/* Associate/retrieve a pointer to an iio_channel structure. */
+
+/** @brief Associate a pointer to an iio_channel structure
+ * @param chn A pointer to an iio_channel structure
+ * @param data The pointer to be associated */
 __api void iio_channel_set_data(struct iio_channel *chn, void *data);
+
+
+/** @brief Retrieve a previously associated pointer of an iio_channel structure
+ * @param chn A pointer to an iio_channel structure
+ * @return The pointer previously associated if present, or NULL */
 __api void * iio_channel_get_data(const struct iio_channel *chn);
 
 
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Buffer functions --------------------------------*/
+/** @defgroup Buffer Buffer
+ * @{
+ * @struct iio_buffer
+ * @brief An input or output buffer, used to read or write samples */
 
-/* Create an input or output buffer from the given device, with the
- * specified size. Channels that have to be read or written must be enabled
+
+/** @brief Create an input or output buffer associated to the given device
+ * @param dev A pointer to an iio_device structure
+ * @param samples_count The number of samples that the buffer should contain
+ * @param is_output A boolean value which should be True if the buffer is an
+ * output buffer (to write samples to the hardware) or False if the buffer is an
+ * input buffer (to read samples from the hardware)
+ * @return On success, a pointer to an iio_buffer structure
+ * @return On error, NULL is returned
+ *
+ * <b>NOTE:</b> Channels that have to be written to / read from must be enabled
  * before creating the buffer. */
 __api struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		size_t samples_count, bool is_output);
 
-/* Destroy the buffer (closes the device, frees the memory).
- * After that function, the iio_buffer pointer shall be invalid. */
+
+/** @brief Destroy the given buffer
+ * @param buf A pointer to an iio_buffer structure
+ *
+ * <b>NOTE:</b> After that function, the iio_buffer pointer shall be invalid. */
 __api void iio_buffer_destroy(struct iio_buffer *buf);
 
-/* Refill the input buffer (fetch more samples from the hardware). */
+
+/** @brief Fetch more samples from the hardware
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, the number of bytes read is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> Only valid for input buffers */
 __api ssize_t iio_buffer_refill(struct iio_buffer *buf);
 
-/* Send the output buffer to the hardware. */
+
+/** @brief Send the samples to the hardware
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, the number of bytes written is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> Only valid for output buffers */
 __api ssize_t iio_buffer_push(const struct iio_buffer *buf);
 
-/* Those three functions can be used to iterate over the samples of one channel
- * in the buffer, doing the following:
- *
- * for (void *ptr = iio_buffer_first(buffer, chn);
- *	    ptr < iio_buffer_end(buffer);
- *	    ptr += iio_buffer_step(buffer)) {
- *	    ....
- * }
- */
-__api void * iio_buffer_first(const struct iio_buffer *buffer,
-		const struct iio_channel *chn);
-__api ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer);
-__api void * iio_buffer_end(const struct iio_buffer *buffer);
 
-/* This function takes a callback as parameter, that will be called for each
- * sample of the given channel present in the buffer. */
+/** @brief Find the first sample of a channel in a buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to the first sample found, or to the end of the buffer if
+ * no sample for the given channel is present in the buffer
+ *
+ * <b>NOTE:</b> This fonction, coupled with iio_buffer_step and iio_buffer_end,
+ * can be used to iterate on all the samples of a given channel present in the
+ * buffer, doing the following:
+ *
+ * @verbatim
+ for (void *ptr = iio_buffer_first(buffer, chn); ptr < iio_buffer_end(buffer); ptr += iio_buffer_step(buffer)) {
+    ....
+ }
+ @endverbatim */
+__api void * iio_buffer_first(const struct iio_buffer *buf,
+		const struct iio_channel *chn);
+
+
+/** @brief Get the step size between two samples of one channel
+ * @param buf A pointer to an iio_buffer structure
+ * @return the difference between the addresses of two consecutive samples of
+ * one same channel */
+__api ptrdiff_t iio_buffer_step(const struct iio_buffer *buf);
+
+
+/** @brief Get the address that follows the last sample in a buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return A pointer corresponding to the address that follows the last sample
+ * present in the buffer */
+__api void * iio_buffer_end(const struct iio_buffer *buf);
+
+
+/** @brief Call the supplied callback for each sample found in a buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @param callback A pointer to a function to call for each sample found
+ * @param data A user-specified pointer that will be passed to the callback
+ *
+ * <b>NOTE:</b> The callback receives four arguments:
+ * * A pointer to the iio_channel structure corresponding to the sample,
+ * * A pointer to the sample itself,
+ * * The length of the sample in bytes,
+ * * The user-specified pointer passed to iio_buffer_foreach_sample. */
 __api ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,
 		ssize_t (*callback)(const struct iio_channel *chn,
 			void *src, size_t bytes, void *d), void *data);
 
 
-
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Low-level functions -----------------------------*/
+/** @defgroup Debug Debug and low-level functions
+ * @{
+ * @struct iio_data_format
+ * @brief Contains the format of a data sample.
+ *
+ * The different fields inform about the correct way to convert one sample from
+ * its raw format (as read from / generated by the hardware) to its real-world
+ * value.
+ */
+struct iio_data_format {
+	/** @brief Total length of the sample, in bits */
+	unsigned int length;
 
-/* Open/close a device. This is not required when using the iio_buffer
- * functions; it is only useful when used with iio_device_read_raw /
- * iio_device_write_raw. */
+	/** @brief Length of valuable data in the sample, in bits */
+	unsigned int bits;
+
+	/** @brief Right-shift to apply when converting sample */
+	unsigned int shift;
+
+	/** @brief Contains True if the sample is signed */
+	bool is_signed;
+
+	/** @brief Contains True if the sample is in big-endian format */
+	bool is_be;
+
+	/** @brief Contains True if the sample should be scaled when converted */
+	bool with_scale;
+
+	/** @brief Contains the scale to apply if with_scale is set */
+	double scale;
+};
+
+
+/** @brief Open the given device
+ * @param dev A pointer to an iio_device structure
+ * @param samples_count The size of the kernel buffer, in samples
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This is not required when using the iio_buffer functions; it is
+ * only useful when used with iio_device_read_raw / iio_device_write_raw. */
 __api int iio_device_open(const struct iio_device *dev, size_t samples_count);
+
+
+/** @brief Close the given device
+ * @param dev A pointer to an iio_device structure
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This is not required when using the iio_buffer functions; it is
+ * only useful when used with iio_device_read_raw / iio_device_write_raw. */
 __api int iio_device_close(const struct iio_device *dev);
 
-/* Returns the current sample size (in bytes). */
+
+/** @brief Get the current sample size
+ * @param dev A pointer to an iio_device structure
+ * @return On success, the sample size in bytes
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> The sample size is not constant and will change when channels
+ * get enabled or disabled. */
 __api ssize_t iio_device_get_sample_size(const struct iio_device *dev);
 
-/* Returns the index of the given channel. */
+
+/** @brief Get the index of the given channel
+ * @param chn A pointer to an iio_channel structure
+ * @return On success, the index of the specified channel
+ * @return On error, a negative errno code is returned */
 __api __pure long iio_channel_get_index(const struct iio_channel *chn);
 
-/* Returns a pointer to a channel's data format structure. */
+
+/** @brief Get a pointer to a channel's data format structure
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to the channel's iio_data_format structure */
 __api __cnst const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn);
 
-/* Convert the sample pointed by 'src' to 'dst' from hardware format to host */
+
+/** @brief Convert the sample from hardware format to host format
+ * @param chn A pointer to an iio_channel structure
+ * @param dst A pointer to the destination buffer where the converted sample
+ * should be written
+ * @param src A pointer to the source buffer containing the sample */
 __api void iio_channel_convert(const struct iio_channel *chn,
 		void *dst, const void *src);
 
-/* Convert the sample pointed by 'src' to 'dst' from host format to hardware */
+
+/** @brief Convert the sample from host format to hardware format
+ * @param chn A pointer to an iio_channel structure
+ * @param dst A pointer to the destination buffer where the converted sample
+ * should be written
+ * @param src A pointer to the source buffer containing the sample */
 __api void iio_channel_convert_inverse(const struct iio_channel *chn,
 		void *dst, const void *src);
 
-/* Functions to read/write the raw stream from the device.
- * The device must be opened first (with iio_device_open). */
+
+/** @brief Read the raw stream from the given device
+ * @param dev A pointer to an iio_device structure
+ * @param dst A pointer to the destination buffer where to write the stream
+ * @param len The length of the destination buffer, in bytes
+ * @param mask A pointer to a memory area where the channel mask will be stored
+ * @param words The number of 32-bit words composing the mask
+ * @return On success, the number of bytes read
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> The device must be opened first (with iio_device_open).
+ *
+ * The "words" param should correspond to (number of channels + 31) / 32.
+ * The area pointed by "mask" will be initialized like this:
+ * @verbatim
+ mask[chn.index / 32][chn.index % 32] = is_enabled
+ @endverbatim
+ * Note that the mask can change anytime between two calls, even if no channel
+ * of the specified device have been enabled or disabled in the meantime. */
 __api ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words);
+
+
+/** @brief Write a raw stream to the given device
+ * @param dev A pointer to an iio_device structure
+ * @param src A pointer to the source buffer where to read the stream from
+ * @param len The length of the input buffer, in bytes
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> The device must be opened first (with iio_device_open). */
 __api ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
+
+/** @} */
 
 #ifdef __cplusplus
 }

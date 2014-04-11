@@ -53,20 +53,24 @@ endif
 
 OBJS := context.o device.o channel.o local.o xml.o network.o buffer.o
 
-.PHONY: all clean tests examples analyze install install-lib uninstall uninstall-lib
+.PHONY: all clean tests examples analyze install install-lib uninstall uninstall-lib html
 
 $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
-all: $(LIBIIO) iiod tests examples
+all: $(LIBIIO) iiod tests examples html
+
+html: Doxyfile
+	$(SUM) "  GEN     $@"
+	$(CMD)doxygen $<
 
 clean-tests clean-examples clean-iiod:
 	$(CMD)$(MAKE) -C $(@:clean-%=%) clean
 
 clean: clean-tests clean-iiod
 	$(SUM) "  CLEAN   ."
-	$(CMD)rm -f $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist)
+	$(CMD)rm -rf $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist) html
 
 analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
