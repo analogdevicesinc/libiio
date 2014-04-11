@@ -71,7 +71,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 	return read;
 }
 
-int iio_buffer_push(const struct iio_buffer *buffer)
+ssize_t iio_buffer_push(const struct iio_buffer *buffer)
 {
 	if (!buffer->is_output)
 		return -EINVAL;

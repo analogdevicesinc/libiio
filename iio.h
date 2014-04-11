@@ -253,7 +253,7 @@ __api void iio_buffer_destroy(struct iio_buffer *buf);
 __api ssize_t iio_buffer_refill(struct iio_buffer *buf);
 
 /* Send the output buffer to the hardware. */
-__api int iio_buffer_push(const struct iio_buffer *buf);
+__api ssize_t iio_buffer_push(const struct iio_buffer *buf);
 
 /* Those three functions can be used to iterate over the samples of one channel
  * in the buffer, doing the following:
