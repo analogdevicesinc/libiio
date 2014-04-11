@@ -154,9 +154,6 @@ __api int iio_device_attr_write_double(const struct iio_device *dev,
 __api void iio_device_set_data(struct iio_device *dev, void *data);
 __api void * iio_device_get_data(const struct iio_device *dev);
 
-
-/* ------------------------- Trigger functions -------------------------------*/
-
 /* Associate/retrieve a device structure corresponding to the trigger to use. */
 __api int iio_device_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger);
@@ -165,13 +162,6 @@ __api int iio_device_set_trigger(const struct iio_device *dev,
 
 /* Returns true if the given device is a trigger, false otherwise. */
 __api __pure bool iio_device_is_trigger(const struct iio_device *dev);
-
-/* Set or get the trigger frequency. The iio_device passed must be a valid
- * trigger, or an error will be thrown. */
-__api int iio_trigger_get_rate(const struct iio_device *trigger,
-		unsigned long *rate);
-__api int iio_trigger_set_rate(const struct iio_device *trigger,
-		unsigned long rate);
 
 
 /* ------------------------- Channel functions -------------------------------*/
