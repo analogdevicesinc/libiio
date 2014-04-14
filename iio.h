@@ -818,6 +818,30 @@ __api ssize_t iio_device_read_raw(const struct iio_device *dev,
 __api ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
 
+
+/** @brief Read the content of the given debug attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * debug attribute
+ * @param dst A pointer to the memory area where the NULL-terminated string
+ * corresponding to the value read will be stored
+ * @param len The available length of the memory area, in bytes
+ * @return On success, the number of bytes written to the buffer
+ * @return On error, a negative errno code is returned */
+__api ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len);
+
+
+/** @brief Set the value of the given debug attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * debug attribute
+ * @param src A NULL-terminated string to set the debug attribute to
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
+__api ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
+		const char *attr, const char *src);
+
 /** @} */
 
 #ifdef __cplusplus

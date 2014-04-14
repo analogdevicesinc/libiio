@@ -489,3 +489,23 @@ int iio_device_attr_write_bool(const struct iio_device *dev,
 	else
 		return iio_device_attr_write(dev, attr, "0");
 }
+
+ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len)
+{
+	if (dev->ctx->ops->read_device_attr)
+		return dev->ctx->ops->read_device_attr(dev,
+				attr, dst, len, true);
+	else
+		return -ENOSYS;
+}
+
+ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
+		const char *attr, const char *src)
+{
+	if (dev->ctx->ops->write_device_attr)
+		return dev->ctx->ops->write_device_attr(dev,
+				attr, src, true);
+	else
+		return -ENOSYS;
+}
