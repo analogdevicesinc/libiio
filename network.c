@@ -305,14 +305,14 @@ static ssize_t network_write_attr_helper(int fd, const char *id,
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len)
+		const char *attr, char *dst, size_t len, bool is_debug)
 {
 	return network_read_attr_helper(dev->ctx->pdata->fd, dev->id,
 			NULL, attr, dst, len);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src)
+		const char *attr, const char *src, bool is_debug)
 {
 	return network_write_attr_helper(dev->ctx->pdata->fd, dev->id,
 			NULL, attr, src);

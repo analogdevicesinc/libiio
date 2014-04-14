@@ -209,13 +209,18 @@ static ssize_t local_write(const struct iio_device *dev,
 }
 
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len)
+		const char *attr, char *dst, size_t len, bool is_debug)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 
-	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s", dev->id, attr);
+	if (is_debug)
+		snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
+				dev->id, attr);
+	else
+		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+				dev->id, attr);
 	f = fopen(buf, "r");
 	if (!f)
 		return -errno;
@@ -231,14 +236,19 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src)
+		const char *attr, const char *src, bool is_debug)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 	size_t len = strlen(src) + 1;
 
-	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s", dev->id, attr);
+	if (is_debug)
+		snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
+				dev->id, attr);
+	else
+		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+				dev->id, attr);
 	f = fopen(buf, "r+");
 	if (!f)
 		return -errno;
@@ -267,14 +277,14 @@ static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
 	attr = get_filename(chn, attr);
-	return local_read_dev_attr(chn->dev, attr, dst, len);
+	return local_read_dev_attr(chn->dev, attr, dst, len, false);
 }
 
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src)
 {
 	attr = get_filename(chn, attr);
-	return local_write_dev_attr(chn->dev, attr, src);
+	return local_write_dev_attr(chn->dev, attr, src, false);
 }
 
 static int channel_write_state(const struct iio_channel *chn)
@@ -300,14 +310,14 @@ static int local_open(const struct iio_device *dev,
 	if (nb != dev->words)
 		return -EINVAL;
 
-	ret = local_write_dev_attr(dev, "buffer/enable", "0");
+	ret = local_write_dev_attr(dev, "buffer/enable", "0", false);
 	if (ret < 0)
 		return ret;
 
 	if (samples_count) {
 		snprintf(buf, sizeof(buf),
 				"%lu", (unsigned long) samples_count);
-		ret = local_write_dev_attr(dev, "buffer/length", buf);
+		ret = local_write_dev_attr(dev, "buffer/length", buf, false);
 		if (ret < 0)
 			return ret;
 	}
@@ -334,7 +344,7 @@ static int local_open(const struct iio_device *dev,
 	/* If opened with samples_count == 0, we probably want DDS mode;
 	 * then the buffer will only be enabled when closing the device. */
 	if (samples_count > 0)
-		ret = local_write_dev_attr(dev, "buffer/enable", "1");
+		ret = local_write_dev_attr(dev, "buffer/enable", "1", false);
 	if (ret < 0)
 		goto err_close;
 
@@ -359,7 +369,7 @@ static int local_close(const struct iio_device *dev)
 
 	pdata->f = NULL;
 	ret = local_write_dev_attr(dev, "buffer/enable",
-			pdata->samples_count ? "0" : "1");
+			pdata->samples_count ? "0" : "1", false);
 	if (ret < 0)
 		return ret;
 	else
@@ -372,7 +382,7 @@ static int local_get_trigger(const struct iio_device *dev,
 	char buf[1024];
 	unsigned int i;
 	ssize_t nb = local_read_dev_attr(dev, "trigger/current_trigger",
-			buf, sizeof(buf));
+			buf, sizeof(buf), false);
 	if (nb < 0) {
 		*trigger = NULL;
 		return (int) nb;
@@ -394,7 +404,7 @@ static int local_set_trigger(const struct iio_device *dev,
 {
 	ssize_t nb;
 	const char *value = trigger ? trigger->name : "";
-	nb = local_write_dev_attr(dev, "trigger/current_trigger", value);
+	nb = local_write_dev_attr(dev, "trigger/current_trigger", value, false);
 	if (nb < 0)
 		return (int) nb;
 	else

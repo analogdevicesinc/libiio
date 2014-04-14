@@ -269,7 +269,8 @@ ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
 	if (dev->ctx->ops->read_device_attr)
-		return dev->ctx->ops->read_device_attr(dev, attr, dst, len);
+		return dev->ctx->ops->read_device_attr(dev,
+				attr, dst, len, false);
 	else
 		return -ENOSYS;
 }
@@ -278,7 +279,8 @@ ssize_t iio_device_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src)
 {
 	if (dev->ctx->ops->write_device_attr)
-		return dev->ctx->ops->write_device_attr(dev, attr, src);
+		return dev->ctx->ops->write_device_attr(dev,
+				attr, src, false);
 	else
 		return -ENOSYS;
 }
