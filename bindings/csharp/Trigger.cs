@@ -9,29 +9,25 @@ namespace iio
 {
     class Trigger : Device
     {
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_trigger_set_rate(IntPtr dev, ulong rate);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_trigger_get_rate(IntPtr dev, IntPtr rate);
-
         public Trigger(Context ctx, IntPtr ptr) : base(ctx, ptr) { }
 
         public void set_rate(ulong rate)
         {
-            int err = iio_trigger_set_rate(this.dev, rate);
-            if (err != 0)
-                throw new Exception("Unable to set rate: error " + err);
+            foreach (Attr each in get_attrs())
+                if (each.name().Equals("frequency"))
+                {
+                    each.write((long) rate);
+                    return;
+                }
+            throw new Exception("Trigger has no frequency?");
         }
 
         public ulong get_rate()
         {
-            IntPtr ptr = (IntPtr) 0;
-            int err = iio_trigger_get_rate(this.dev, ptr);
-            if (err != 0)
-                throw new Exception("Unable to set rate: error " + err);
-
-            return (ulong) Marshal.ReadIntPtr(ptr);
+            foreach (Attr each in get_attrs())
+                if (each.name().Equals("frequency"))
+                    return (ulong) each.read_long();
+            throw new Exception("Trigger has no frequency?");
         }
 
         public new void set_trigger(Trigger trig)
