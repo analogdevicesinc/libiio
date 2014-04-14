@@ -870,6 +870,38 @@ static int create_device(void *d, const char *path)
 	return ret;
 }
 
+static int add_debug_attr(void *d, const char *path)
+{
+	struct iio_device *dev = d;
+	const char *attr = strrchr(path, '/') + 1;
+	char **attrs, *name = strdup(attr);
+	if (!name)
+		return -ENOMEM;
+
+	attrs = realloc(dev->debug_attrs,
+			(1 + dev->nb_debug_attrs) * sizeof(char *));
+	if (!attrs) {
+		free(name);
+		return -ENOMEM;
+	}
+
+	attrs[dev->nb_debug_attrs++] = name;
+	dev->debug_attrs = attrs;
+	DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);
+	return 0;
+}
+
+static int add_debug(void *d, const char *path)
+{
+	struct iio_context *ctx = d;
+	const char *name = strrchr(path, '/') + 1;
+	struct iio_device *dev = iio_context_find_device(ctx, name);
+	if (!dev)
+		return -ENODEV;
+	else
+		return foreach_in_dir(dev, path, false, add_debug_attr);
+}
+
 static struct iio_backend_ops local_ops = {
 	.open = local_open,
 	.close = local_close,
@@ -904,6 +936,8 @@ struct iio_context * iio_create_local_context(void)
 		iio_context_destroy(ctx);
 		return NULL;
 	}
+
+	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
 
 	ret = iio_context_init(ctx);
 	if (ret < 0) {

@@ -333,9 +333,13 @@ void free_device(struct iio_device *dev)
 {
 	unsigned int i;
 	for (i = 0; i < dev->nb_attrs; i++)
-		free((char *) dev->attrs[i]);
+		free(dev->attrs[i]);
 	if (dev->nb_attrs)
 		free(dev->attrs);
+	for (i = 0; i < dev->nb_debug_attrs; i++)
+		free(dev->debug_attrs[i]);
+	if (dev->nb_debug_attrs)
+		free(dev->debug_attrs);
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
 	if (dev->nb_channels)
@@ -343,9 +347,9 @@ void free_device(struct iio_device *dev)
 	if (dev->mask)
 		free(dev->mask);
 	if (dev->name)
-		free((char *) dev->name);
+		free(dev->name);
 	if (dev->id)
-		free((char *) dev->id);
+		free(dev->id);
 	free(dev);
 }
 

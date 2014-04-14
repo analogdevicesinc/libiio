@@ -119,6 +119,9 @@ struct iio_device {
 	char **attrs;
 	unsigned int nb_attrs;
 
+	char **debug_attrs;
+	unsigned int nb_debug_attrs;
+
 	struct iio_channel **channels;
 	unsigned int nb_channels;
 
