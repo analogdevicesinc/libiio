@@ -74,8 +74,25 @@ parser.h: parser.c
 lexer.o ops.o: parser.h
 lexer.o: CFLAGS += -Wno-unused-function
 
+ifeq ($(PREFIX),/usr)
+ifneq ($(shell which update-rc.d),)
+
+# System V init system
+define INSTALL_IIOD_SCRIPT
+	$(INSTALL) -m 0755 iiod.sh $(DESTDIR)/etc/init.d/iiod.sh
+	update-rc.d iiod.sh defaults 99 01
+endef
+define REMOVE_IIOD_SCRIPT
+	rm -f /etc/rc{0..1}.d/K01iiod.sh /etc/rc{2..5}.d/S99iiod.sh \
+		/etc/init.d/iiod.sh
+endef
+endif
+endif
+
 install: $(DAEMON)
 	$(INSTALL) -D -s -m 0755 $(DAEMON) $(DESTDIR)$(PREFIX)/sbin/$(DAEMON)
+	$(INSTALL_IIOD_SCRIPT)
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/sbin/$(DAEMON)
+	$(REMOVE_IIOD_SCRIPT)
