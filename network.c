@@ -260,8 +260,8 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	return read;
 }
 
-static ssize_t network_read_attr_helper(int fd, const char *id,
-		const char *chn, const char *attr, char *dst, size_t len)
+static ssize_t network_read_attr_helper(int fd, const char *id, const char *chn,
+		const char *attr, char *dst, size_t len, bool is_debug)
 {
 	long read_len;
 	ssize_t ret;
@@ -269,6 +269,8 @@ static ssize_t network_read_attr_helper(int fd, const char *id,
 
 	if (chn)
 		snprintf(buf, sizeof(buf), "READ %s %s %s\r\n", id, chn, attr);
+	else if (is_debug)
+		snprintf(buf, sizeof(buf), "READ %s debug %s\r\n", id, attr);
 	else
 		snprintf(buf, sizeof(buf), "READ %s %s\r\n", id, attr);
 	read_len = exec_command(buf, fd);
@@ -292,13 +294,17 @@ static ssize_t network_read_attr_helper(int fd, const char *id,
 }
 
 static ssize_t network_write_attr_helper(int fd, const char *id,
-		const char *chn, const char *attr, const char *src)
+		const char *chn, const char *attr, const char *src,
+		bool is_debug)
 {
 	char buf[1024];
 
 	if (chn)
 		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s\r\n",
 				id, chn, attr, src);
+	else if (is_debug)
+		snprintf(buf, sizeof(buf), "WRITE %s debug %s %s\r\n",
+				id, attr, src);
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %s\r\n", id, attr, src);
 	return (ssize_t) exec_command(buf, fd);
@@ -308,28 +314,28 @@ static ssize_t network_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
 	return network_read_attr_helper(dev->ctx->pdata->fd, dev->id,
-			NULL, attr, dst, len);
+			NULL, attr, dst, len, is_debug);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src, bool is_debug)
 {
 	return network_write_attr_helper(dev->ctx->pdata->fd, dev->id,
-			NULL, attr, src);
+			NULL, attr, src, is_debug);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
 	return network_read_attr_helper(chn->dev->ctx->pdata->fd, chn->dev->id,
-			chn->id, attr, dst, len);
+			chn->id, attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src)
 {
 	return network_write_attr_helper(chn->dev->ctx->pdata->fd, chn->dev->id,
-			chn->id, attr, src);
+			chn->id, attr, src, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
