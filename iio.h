@@ -224,7 +224,7 @@ __api __pure struct iio_channel * iio_device_find_channel(
 
 /** @brief Try to find a device-specific attribute by its name
  * @param dev A pointer to an iio_device structure
- * @param name A NULL-terminated string corresponding to the name or the
+ * @param name A NULL-terminated string corresponding to the name of the
  * attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the name does not correspond to any known attribute of the given
@@ -239,7 +239,7 @@ __api __pure const char * iio_device_find_attr(
 
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param dst A pointer to the memory area where the NULL-terminated string
  * corresponding to the value read will be stored
@@ -252,7 +252,7 @@ __api ssize_t iio_device_attr_read(const struct iio_device *dev,
 
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A pointer to a bool variable where the value should be stored
  * @return On success, 0 is returned
@@ -263,7 +263,7 @@ __api int iio_device_attr_read_bool(const struct iio_device *dev,
 
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A pointer to a long long variable where the value should be stored
  * @return On success, 0 is returned
@@ -274,7 +274,7 @@ __api int iio_device_attr_read_longlong(const struct iio_device *dev,
 
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A pointer to a double variable where the value should be stored
  * @return On success, 0 is returned
@@ -285,7 +285,7 @@ __api int iio_device_attr_read_double(const struct iio_device *dev,
 
 /** @brief Set the value of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
@@ -296,7 +296,7 @@ __api ssize_t iio_device_attr_write(const struct iio_device *dev,
 
 /** @brief Set the value of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A bool value to set the attribute to
  * @return On success, 0 is returned
@@ -307,7 +307,7 @@ __api int iio_device_attr_write_bool(const struct iio_device *dev,
 
 /** @brief Set the value of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A long long value to set the attribute to
  * @return On success, 0 is returned
@@ -318,7 +318,7 @@ __api int iio_device_attr_write_longlong(const struct iio_device *dev,
 
 /** @brief Set the value of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A double value to set the attribute to
  * @return On success, 0 is returned
@@ -412,7 +412,7 @@ __api __pure const char * iio_channel_get_attr(
 
 /** @brief Try to find a channel-specific attribute by its name
  * @param chn A pointer to an iio_channel structure
- * @param name A NULL-terminated string corresponding to the name or the
+ * @param name A NULL-terminated string corresponding to the name of the
  * attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the name does not correspond to any known attribute of the given
@@ -427,7 +427,7 @@ __api __pure const char * iio_channel_find_attr(
 
 /** @brief Read the content of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param dst A pointer to the memory area where the NULL-terminated string
  * corresponding to the value read will be stored
@@ -440,7 +440,7 @@ __api ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 
 /** @brief Read the content of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A pointer to a bool variable where the value should be stored
  * @return On success, 0 is returned
@@ -451,7 +451,7 @@ __api int iio_channel_attr_read_bool(const struct iio_channel *chn,
 
 /** @brief Read the content of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A pointer to a long long variable where the value should be stored
  * @return On success, 0 is returned
@@ -462,7 +462,7 @@ __api int iio_channel_attr_read_longlong(const struct iio_channel *chn,
 
 /** @brief Read the content of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A pointer to a double variable where the value should be stored
  * @return On success, 0 is returned
@@ -473,7 +473,7 @@ __api int iio_channel_attr_read_double(const struct iio_channel *chn,
 
 /** @brief Set the value of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
@@ -484,7 +484,7 @@ __api ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 
 /** @brief Set the value of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A bool value to set the attribute to
  * @return On success, 0 is returned
@@ -495,7 +495,7 @@ __api int iio_channel_attr_write_bool(const struct iio_channel *chn,
 
 /** @brief Set the value of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A long long value to set the attribute to
  * @return On success, 0 is returned
@@ -506,7 +506,7 @@ __api int iio_channel_attr_write_longlong(const struct iio_channel *chn,
 
 /** @brief Set the value of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name or the
+ * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A double value to set the attribute to
  * @return On success, 0 is returned
