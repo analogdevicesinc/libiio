@@ -23,23 +23,23 @@ namespace iio
         public abstract string read();
         public abstract void write(string val);
 
-        bool read_bool()
+        public bool read_bool()
         {
             string val = read();
             return (val.CompareTo("1") == 0) || (val.CompareTo("Y") == 0);
         }
 
-        double read_double()
+        public double read_double()
         {
             return Convert.ToDouble(read());
         }
 
-        long read_long()
+        public long read_long()
         {
             return Convert.ToInt64(read());
         }
 
-        void write(bool val)
+        public void write(bool val)
         {
             if (val)
                 write("1");
@@ -47,12 +47,12 @@ namespace iio
                 write("0");
         }
 
-        void write(long val)
+        public void write(long val)
         {
             write("" + val);
         }
 
-        void write(double val)
+        public void write(double val)
         {
             write("" + val);
         }
