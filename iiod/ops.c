@@ -597,15 +597,20 @@ ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb)
 }
 
 ssize_t read_dev_attr(struct parser_pdata *pdata,
-		const char *id, const char *attr)
+		const char *id, const char *attr, bool is_debug)
 {
 	FILE *out = pdata->out;
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	char buf[1024];
 	ssize_t ret = -ENODEV;
 
-	if (dev)
-		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
+	if (dev) {
+		if (is_debug)
+			ret = iio_device_debug_attr_read(dev,
+					attr, buf, sizeof(buf));
+		else
+			ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
+	}
 	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
@@ -615,14 +620,18 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 	return ret;
 }
 
-ssize_t write_dev_attr(struct parser_pdata *pdata,
-		const char *id, const char *attr, const char *value)
+ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
+		const char *attr, const char *value, bool is_debug)
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	size_t ret = -ENODEV;
 
-	if (dev)
-		ret = iio_device_attr_write(dev, attr, value);
+	if (dev) {
+		if (is_debug)
+			ret = iio_device_debug_attr_write(dev, attr, value);
+		else
+			ret = iio_device_attr_write(dev, attr, value);
+	}
 	print_value(pdata, ret);
 	return ret;
 }

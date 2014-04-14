@@ -41,9 +41,9 @@ int close_dev(struct parser_pdata *pdata, const char *id);
 ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb);
 
 ssize_t read_dev_attr(struct parser_pdata *pdata,
-		const char *id, const char *attr);
-ssize_t write_dev_attr(struct parser_pdata *pdata,
-		const char *id, const char *attr, const char *value);
+		const char *id, const char *attr, bool is_debug);
+ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
+		const char *attr, const char *value, bool is_debug);
 
 ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 		const char *chn, const char *attr);

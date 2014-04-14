@@ -112,9 +112,9 @@ Line:
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
 		"\t\tClose the specified device\n"
-		"\tREAD <device> [<channel>] <attribute>\n"
+		"\tREAD <device> [\"debug\"|<channel>] <attribute>\n"
 		"\t\tRead the value of an attribute\n"
-		"\tWRITE <device> [<channel>] <attribute> <value>\n"
+		"\tWRITE <device> [\"debug\"|<channel>] <attribute> <value>\n"
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
@@ -158,7 +158,7 @@ Line:
 	| READ SPACE WORD SPACE WORD END {
 		char *id = $3, *attr = $5;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev_attr(pdata, id, attr);
+		ssize_t ret = read_dev_attr(pdata, id, attr, false);
 		free(id);
 		free(attr);
 		if (ret < 0)
@@ -169,7 +169,11 @@ Line:
 	| READ SPACE WORD SPACE WORD SPACE WORD END {
 		char *id = $3, *chn = $5, *attr = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_chn_attr(pdata, id, chn, attr);
+		ssize_t ret;
+		if (!strcmp(chn, "debug"))
+			ret = read_dev_attr(pdata, id, attr, true);
+		else
+			ret = read_chn_attr(pdata, id, chn, attr);
 		free(id);
 		free(chn);
 		free(attr);
@@ -194,7 +198,7 @@ Line:
 	| WRITE SPACE WORD SPACE WORD SPACE WORD END {
 		char *id = $3, *attr = $5, *value = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, id, attr, value);
+		ssize_t ret = write_dev_attr(pdata, id, attr, value, false);
 		free(id);
 		free(attr);
 		free(value);
@@ -206,7 +210,11 @@ Line:
 	| WRITE SPACE WORD SPACE WORD SPACE WORD SPACE WORD END {
 		char *id = $3, *chn = $5, *attr = $7, *value = $9;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_chn_attr(pdata, id, chn, attr, value);
+		ssize_t ret;
+		if (!strcmp(chn, "debug"))
+			ret = write_dev_attr(pdata, id, attr, value, true);
+		else
+			ret = write_chn_attr(pdata, id, chn, attr, value);
 		free(id);
 		free(chn);
 		free(attr);
