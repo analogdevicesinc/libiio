@@ -35,7 +35,7 @@ HELP HELP|help
 
 END [ \t]*\n
 SPACE [ \t]+
-WORD (iio:)?(-|_|\.|[[:alnum:]])+
+WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 
 %%
 
