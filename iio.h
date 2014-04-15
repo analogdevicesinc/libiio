@@ -819,6 +819,22 @@ __api ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
 
 
+/** @brief Enumerate the debug attributes of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of debug attributes found */
+__api __pure unsigned int iio_device_get_debug_attrs_count(
+		const struct iio_device *dev);
+
+
+/** @brief Get the debug attribute present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the debug attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the index is invalid, NULL is returned */
+__api __pure const char * iio_device_get_debug_attr(
+		const struct iio_device *dev, unsigned int index);
+
+
 /** @brief Read the content of the given debug attribute
  * @param dev A pointer to an iio_device structure
  * @param attr A NULL-terminated string corresponding to the name of the

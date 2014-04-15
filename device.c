@@ -550,3 +550,17 @@ ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
 	else
 		return -ENOSYS;
 }
+
+unsigned int iio_device_get_debug_attrs_count(const struct iio_device *dev)
+{
+	return dev->nb_debug_attrs;
+}
+
+const char * iio_device_get_debug_attr(const struct iio_device *dev,
+		unsigned int index)
+{
+	if (index >= dev->nb_debug_attrs)
+		return NULL;
+	else
+		return dev->debug_attrs[index];
+}
