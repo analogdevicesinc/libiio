@@ -564,3 +564,72 @@ const char * iio_device_get_debug_attr(const struct iio_device *dev,
 	else
 		return dev->debug_attrs[index];
 }
+
+int iio_device_debug_attr_read_longlong(const struct iio_device *dev,
+		const char *attr, long long *val)
+{
+	char *end, buf[1024];
+	long long value;
+	ssize_t ret = iio_device_debug_attr_read(dev, attr, buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	value = strtoll(buf, &end, 0);
+	if (end == buf)
+		return -EINVAL;
+	*val = value;
+	return 0;
+}
+
+int iio_device_debug_attr_read_bool(const struct iio_device *dev,
+		const char *attr, bool *val)
+{
+	long long value;
+	int ret = iio_device_debug_attr_read_longlong(dev, attr, &value);
+	if (ret < 0)
+		return ret;
+
+	*val = !!value;
+	return 0;
+}
+
+int iio_device_debug_attr_read_double(const struct iio_device *dev,
+		const char *attr, double *val)
+{
+	char *end, buf[1024];
+	double value;
+	ssize_t ret = iio_device_debug_attr_read(dev, attr, buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	value = strtod(buf, &end);
+	if (end == buf)
+		return -EINVAL;
+	*val = value;
+	return 0;
+}
+
+int iio_device_debug_attr_write_longlong(const struct iio_device *dev,
+		const char *attr, long long val)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "%lld", val);
+	return iio_device_debug_attr_write(dev, attr, buf);
+}
+
+int iio_device_debug_attr_write_double(const struct iio_device *dev,
+		const char *attr, double val)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "%lf", val);
+	return iio_device_debug_attr_write(dev, attr, buf);
+}
+
+int iio_device_debug_attr_write_bool(const struct iio_device *dev,
+		const char *attr, bool val)
+{
+	if (val)
+		return iio_device_debug_attr_write(dev, attr, "1");
+	else
+		return iio_device_debug_attr_write(dev, attr, "0");
+}
