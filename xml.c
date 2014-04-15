@@ -56,7 +56,7 @@ err_free:
 	return -1;
 }
 
-static int add_attr_to_device(struct iio_device *dev, xmlNode *n)
+static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 {
 	xmlAttr *attr;
 	char **attrs, *name = NULL;
@@ -75,12 +75,22 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n)
 		goto err_free;
 	}
 
-	attrs = realloc(dev->attrs, (1 + dev->nb_attrs) * sizeof(char *));
+	if (is_debug)
+		attrs = realloc(dev->debug_attrs,
+				(1 + dev->nb_debug_attrs) * sizeof(char *));
+	else
+		attrs = realloc(dev->attrs,
+				(1 + dev->nb_attrs) * sizeof(char *));
 	if (!attrs)
 		goto err_free;
 
-	attrs[dev->nb_attrs++] = name;
-	dev->attrs = attrs;
+	if (is_debug) {
+		attrs[dev->nb_debug_attrs++] = name;
+		dev->debug_attrs = attrs;
+	} else {
+		attrs[dev->nb_attrs++] = name;
+		dev->attrs = attrs;
+	}
 	return 0;
 
 err_free:
@@ -184,7 +194,10 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			chns[dev->nb_channels++] = chn;
 			dev->channels = chns;
 		} else if (!strcmp((char *) n->name, "attribute")) {
-			if (add_attr_to_device(dev, n) < 0)
+			if (add_attr_to_device(dev, n, false) < 0)
+				goto err_free_device;
+		} else if (!strcmp((char *) n->name, "debug-attribute")) {
+			if (add_attr_to_device(dev, n, true) < 0)
 				goto err_free_device;
 		} else if (strcmp((char *) n->name, "text")) {
 			WARNING("Unknown children \'%s\' in <device>\n",
