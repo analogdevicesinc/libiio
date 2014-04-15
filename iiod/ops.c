@@ -624,7 +624,7 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
 		const char *attr, const char *value, bool is_debug)
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
-	size_t ret = -ENODEV;
+	ssize_t ret = -ENODEV;
 
 	if (dev) {
 		if (is_debug)
