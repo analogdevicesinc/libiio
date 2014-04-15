@@ -23,9 +23,10 @@
 #include <stdio.h>
 #include <string.h>
 
-static char *get_attr_xml(const char *attr, size_t *length)
+static char *get_attr_xml(const char *attr, size_t *length, bool is_debug)
 {
-	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr);
+	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr)
+		+ (!is_debug ? 0 : sizeof("debug-") - 1);
 	char *str = malloc(len);
 	if (!str) {
 		ERROR("Unable to allocate memory\n");
@@ -33,7 +34,10 @@ static char *get_attr_xml(const char *attr, size_t *length)
 	}
 
 	*length = len - 1; /* Skip the \0 */
-	snprintf(str, len, "<attribute name=\"%s\" />", attr);
+	if (is_debug)
+		snprintf(str, len, "<debug-attribute name=\"%s\" />", attr);
+	else
+		snprintf(str, len, "<attribute name=\"%s\" />", attr);
 	return str;
 }
 
@@ -42,9 +46,9 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 {
 	size_t len = sizeof("<device id=\"\" name=\"\" ></device>")
 		+ strlen(dev->id) + (dev->name ? strlen(dev->name) : 0);
-	char *ptr, *str, **attrs, **channels;
-	size_t *attrs_len, *channels_len;
-	unsigned int i, j;
+	char *ptr, *str, **attrs, **channels, **debug_attrs;
+	size_t *attrs_len, *channels_len, *debug_attrs_len;
+	unsigned int i, j, k;
 
 	attrs_len = malloc(dev->nb_attrs * sizeof(*attrs_len));
 	if (!attrs_len)
@@ -55,7 +59,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		goto err_free_attrs_len;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i]);
+		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i], false);
 		if (!xml)
 			goto err_free_attrs;
 		attrs[i] = xml;
@@ -79,9 +83,27 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		len += channels_len[j];
 	}
 
+	debug_attrs_len = malloc(dev->nb_debug_attrs *
+			sizeof(*debug_attrs_len));
+	if (!debug_attrs_len)
+		goto err_free_channels;
+
+	debug_attrs = malloc(dev->nb_debug_attrs * sizeof(*debug_attrs));
+	if (!debug_attrs)
+		goto err_free_debug_attrs_len;
+
+	for (k = 0; k < dev->nb_debug_attrs; k++) {
+		char *xml = get_attr_xml(dev->debug_attrs[k],
+				&debug_attrs_len[k], true);
+		if (!xml)
+			goto err_free_debug_attrs;
+		debug_attrs[k] = xml;
+		len += debug_attrs_len[k];
+	}
+
 	str = malloc(len);
 	if (!str)
-		goto err_free_channels;
+		goto err_free_debug_attrs;
 
 	snprintf(str, len, "<device id=\"%s\"", dev->id);
 	ptr = strrchr(str, '\0');
@@ -112,10 +134,25 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(attrs);
 	free(attrs_len);
 
+	for (i = 0; i < dev->nb_debug_attrs; i++) {
+		strcpy(ptr, debug_attrs[i]);
+		ptr += debug_attrs_len[i];
+		free(debug_attrs[i]);
+	}
+
+	free(debug_attrs);
+	free(debug_attrs_len);
+
 	strcpy(ptr, "</device>");
 	*length = ptr - str + sizeof("</device>") - 1;
 	return str;
 
+err_free_debug_attrs:
+	while (k--)
+		free(debug_attrs[k]);
+	free(debug_attrs);
+err_free_debug_attrs_len:
+	free(debug_attrs_len);
 err_free_channels:
 	while (j--)
 		free(channels[j]);

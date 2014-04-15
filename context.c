@@ -25,13 +25,15 @@
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device)*>"
-"<!ELEMENT device (channel | attribute)*>"
+"<!ELEMENT device (channel | attribute | debug-attribute)*>"
 "<!ELEMENT channel (attribute)*>"
 "<!ELEMENT attribute EMPTY>"
+"<!ELEMENT debug-attribute EMPTY>"
 "<!ATTLIST context name CDATA #REQUIRED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST attribute name CDATA #REQUIRED>"
+"<!ATTLIST debug-attribute name CDATA #REQUIRED>"
 "]>";
 
 /* Returns a string containing the XML representation of this context */
