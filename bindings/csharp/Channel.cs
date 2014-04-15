@@ -74,16 +74,16 @@ namespace iio
         private static extern bool iio_channel_is_enabled(IntPtr chn);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_read_raw(IntPtr chn, IntPtr buf, [Out()] MemoryStream dst, uint len);
+        private static extern uint iio_channel_read_raw(IntPtr chn, IntPtr buf, IntPtr dst, uint len);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_write_raw(IntPtr chn, IntPtr buf, [In()] MemoryStream src, uint len);
+        private static extern uint iio_channel_write_raw(IntPtr chn, IntPtr buf, IntPtr src, uint len);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_read(IntPtr chn, IntPtr buf, [Out()] MemoryStream dst, uint len);
+        private static extern uint iio_channel_read(IntPtr chn, IntPtr buf, IntPtr dst, uint len);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_write(IntPtr chn, IntPtr buf, [In()] MemoryStream src, uint len);
+        private static extern uint iio_channel_write(IntPtr chn, IntPtr buf, IntPtr src, uint len);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_data_format(IntPtr chn);
@@ -141,15 +141,18 @@ namespace iio
             if (is_output())
                 throw new Exception("Unable to read from output channel");
 
-            MemoryStream stream = new MemoryStream((int) (buffer.get_samples_count() * sample_size));
-
+            byte[] array = new byte[(int) (buffer.get_samples_count() * sample_size)];
+            MemoryStream stream = new MemoryStream(array, true);
+            IntPtr addr = GCHandle.Alloc(array, GCHandleType.Pinned).AddrOfPinnedObject();
             uint count;
+
             if (raw)
-                count = iio_channel_read_raw(this.chn, buffer.buf, stream, buffer.get_samples_count() * sample_size);
+                count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.get_samples_count() * sample_size);
             else
-                count = iio_channel_read(this.chn, buffer.buf, stream, buffer.get_samples_count() * sample_size);
+                count = iio_channel_read(this.chn, buffer.buf, addr, buffer.get_samples_count() * sample_size);
             stream.SetLength((long) count);
             return stream.ToArray();
+
         }
 
         public uint write(IOBuffer buffer, byte[] array, bool raw = false)
@@ -159,12 +162,11 @@ namespace iio
             if (!is_output())
                 throw new Exception("Unable to write to an input channel");
 
-            MemoryStream stream = new MemoryStream(array);
-
+            IntPtr addr = GCHandle.Alloc(array, GCHandleType.Pinned).AddrOfPinnedObject();
             if (raw)
-                return iio_channel_write_raw(this.chn, buffer.buf, stream, (uint) array.Length);
+                return iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
             else
-                return iio_channel_write(this.chn, buffer.buf, stream, (uint) array.Length);
+                return iio_channel_write(this.chn, buffer.buf, addr, (uint) array.Length);
         }
     }
 }
