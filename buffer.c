@@ -109,6 +109,11 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 			buffer->data_length, callback_wrapper, &data);
 }
 
+void * iio_buffer_start(const struct iio_buffer *buffer)
+{
+	return buffer->buffer;
+}
+
 void * iio_buffer_first(const struct iio_buffer *buffer,
 		const struct iio_channel *chn)
 {

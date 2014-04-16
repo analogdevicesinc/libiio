@@ -639,6 +639,12 @@ __api ssize_t iio_buffer_refill(struct iio_buffer *buf);
 __api ssize_t iio_buffer_push(const struct iio_buffer *buf);
 
 
+/** @brief Get the start address of the buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return A pointer corresponding to the start address of the buffer */
+__api __pure void * iio_buffer_start(const struct iio_buffer *buf);
+
+
 /** @brief Find the first sample of a channel in a buffer
  * @param buf A pointer to an iio_buffer structure
  * @param chn A pointer to an iio_channel structure
