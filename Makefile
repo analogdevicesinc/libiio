@@ -59,7 +59,7 @@ $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
-all: $(LIBIIO) iiod tests examples html
+all: $(LIBIIO) libiio.pc iiod tests examples html
 
 html: Doxyfile
 	$(SUM) "  GEN     $@"
@@ -70,7 +70,7 @@ clean-tests clean-examples clean-iiod:
 
 clean: clean-tests clean-iiod
 	$(SUM) "  CLEAN   ."
-	$(CMD)rm -rf $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist) html
+	$(CMD)rm -rf $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist) libiio.pc html
 
 analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
@@ -82,6 +82,22 @@ tests examples iiod: $(LIBIIO)
 	$(SUM) "  CC      $@"
 	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+libiio.pc:
+	$(SUM) "  GEN     $@"
+	$(CMD)echo 'prefix=$(PREFIX)' > $@
+	$(CMD)echo 'exec_prefix=$${prefix}' >> $@
+	$(CMD)echo 'libdir=$${prefix}/lib' >> $@
+	$(CMD)echo 'sharedlibdir=$${libdir}' >> $@
+	$(CMD)echo 'includedir=$${prefix}/include' >> $@
+	$(CMD)echo '' >> $@
+	$(CMD)echo 'Name: libiio' >> $@
+	$(CMD)echo 'Description: Library for interfacing IIO devices' >> $@
+	$(CMD)echo 'Version: $(VERSION_MAJOR).$(VERSION_MINOR)' >> $@
+	$(CMD)echo '' >> $@
+	$(CMD)echo 'Requires:' >> $@
+	$(CMD)echo 'Libs: -L$${libdir} -L$${sharedlibdir} -liio' >> $@
+	$(CMD)echo 'Cflags: -I$${includedir}' >> $@
+
 install-tests install-examples install-iiod:
 	$(CMD)$(MAKE) -C $(@:install-%=%) install
 
@@ -92,9 +108,10 @@ install-lib: $(LIBIIO)
 	$(INSTALL) -D $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(LIBIIO)
 	ln -sf $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
 
-install: install-lib install-iiod install-tests
+install: install-lib install-iiod install-tests libiio.pc
 	$(INSTALL) -D -m 0644 iio.h $(DESTDIR)$(PREFIX)/include/iio.h
 	ln -sf $(SONAME) $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)
+	$(INSTALL) -D -m 0644 libiio.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig
 
 uninstall-lib:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
