@@ -28,9 +28,15 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (!buf->mask)
 		goto err_free_buf;
 
-	buf->buffer = malloc(buf->length);
-	if (!buf->buffer)
-		goto err_free_mask;
+	if (dev->ctx->ops->get_buffer) {
+		/* We will use the get_buffer backend function is available.
+		 * In that case, we don't need our own buffer. */
+		buf->buffer = NULL;
+	} else {
+		buf->buffer = malloc(buf->length);
+		if (!buf->buffer)
+			goto err_free_mask;
+	}
 
 	if (is_output)
 		buf->data_length = buf->length;
@@ -40,7 +46,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (!iio_device_open(dev, samples_count))
 		return buf;
 
-	free(buf->buffer);
+	if (!dev->ctx->ops->get_buffer)
+		free(buf->buffer);
 err_free_mask:
 	free(buf->mask);
 err_free_buf:
@@ -51,7 +58,8 @@ err_free_buf:
 void iio_buffer_destroy(struct iio_buffer *buffer)
 {
 	iio_device_close(buffer->dev);
-	free(buffer->buffer);
+	if (!buffer->dev->ctx->ops->get_buffer)
+		free(buffer->buffer);
 	free(buffer->mask);
 	free(buffer);
 }
@@ -59,13 +67,22 @@ void iio_buffer_destroy(struct iio_buffer *buffer)
 ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read;
+	const struct iio_device *dev = buffer->dev;
 
 	if (buffer->is_output)
 		return -EINVAL;
 
-	read = iio_device_read_raw(buffer->dev,
-			buffer->buffer, buffer->length,
-			buffer->mask, buffer->dev->words);
+	if (dev->ctx->ops->get_buffer) {
+		void *buf;
+		read = dev->ctx->ops->get_buffer(dev, &buf,
+				buffer->mask, dev->words);
+		if (read >= 0)
+			buffer->buffer = buf;
+	} else {
+		read = iio_device_read_raw(dev, buffer->buffer, buffer->length,
+				buffer->mask, dev->words);
+	}
+
 	if (read >= 0)
 		buffer->data_length = read;
 	return read;
