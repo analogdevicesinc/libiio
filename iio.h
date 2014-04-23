@@ -77,6 +77,16 @@ struct iio_buffer;
 __api struct iio_context * iio_create_local_context(void);
 
 
+/** @brief Create a context from local IIO devices (Linux only).
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned
+ *
+ * <b>NOTE:</b> This backend uses mmap() to access the kernel buffers.
+ * It should be preferred over iio_create_local_context() for high-speed
+ * devices. */
+__api struct iio_context * iio_create_local_mmap_context(void);
+
+
 /** @brief Create a context from a XML file
  * @param xml_file Path to the XML file to open
  * @return On success, A pointer to an iio_context structure
