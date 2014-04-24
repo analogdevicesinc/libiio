@@ -196,7 +196,7 @@ bool iio_channel_is_enabled(const struct iio_channel *chn)
 
 void iio_channel_enable(struct iio_channel *chn)
 {
-	if (chn->index >= 0 && chn->dev->mask)
+	if (chn->is_scan_element && chn->index >= 0 && chn->dev->mask)
 		SET_BIT(chn->dev->mask, chn->index);
 }
 
