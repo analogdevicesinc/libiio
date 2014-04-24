@@ -120,6 +120,8 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 				chn->is_output = true;
 			else if (strcmp(content, "input"))
 				WARNING("Unknown channel type %s\n", content);
+		} else if (!strcmp(name, "scan_element")) {
+			chn->is_scan_element = !strcmp(content, "true");
 		} else {
 			WARNING("Unknown attribute \'%s\' in <channel>\n",
 					name);
