@@ -404,6 +404,16 @@ __api __pure const char * iio_channel_get_name(const struct iio_channel *chn);
 __api __pure bool iio_channel_is_output(const struct iio_channel *chn);
 
 
+/** @brief Return True if the given channel is a scan element
+ * @param chn A pointer to an iio_channel structure
+ * @return True if the channel is a scan element, False otherwise
+ *
+ * <b>NOTE:</b> a channel that is a scan element is a channel that can
+ * generate samples (for an input channel) or receive samples (for an output
+ * channel) after being enabled. */
+__api __pure bool iio_channel_is_scan_element(const struct iio_channel *chn);
+
+
 /** @brief Enumerate the channel-specific attributes of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The number of channel-specific attributes found */

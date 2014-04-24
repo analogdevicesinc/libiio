@@ -103,6 +103,7 @@ struct iio_channel {
 	void *userdata;
 
 	bool is_output;
+	bool is_scan_element;
 	enum iio_modifier modifier;
 	struct iio_data_format format;
 	char *name, *id;
