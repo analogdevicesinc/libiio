@@ -622,16 +622,13 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
 /** @brief Create an input or output buffer associated to the given device
  * @param dev A pointer to an iio_device structure
  * @param samples_count The number of samples that the buffer should contain
- * @param is_output A boolean value which should be True if the buffer is an
- * output buffer (to write samples to the hardware) or False if the buffer is an
- * input buffer (to read samples from the hardware)
  * @return On success, a pointer to an iio_buffer structure
  * @return On error, NULL is returned
  *
  * <b>NOTE:</b> Channels that have to be written to / read from must be enabled
  * before creating the buffer. */
 __api struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count, bool is_output);
+		size_t samples_count);
 
 
 /** @brief Destroy the given buffer

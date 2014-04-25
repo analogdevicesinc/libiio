@@ -9,7 +9,7 @@ struct callback_wrapper_data {
 };
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count, bool is_output)
+		size_t samples_count)
 {
 	struct iio_buffer *buf;
 	unsigned int sample_size = iio_device_get_sample_size(dev);
@@ -20,7 +20,6 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (!buf)
 		return NULL;
 
-	buf->is_output = is_output;
 	buf->sample_size = sample_size;
 	buf->length = buf->sample_size * samples_count;
 	buf->dev = dev;
@@ -38,10 +37,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 			goto err_free_mask;
 	}
 
-	if (is_output)
-		buf->data_length = buf->length;
-	else
-		buf->data_length = 0;
+	buf->data_length = buf->length;
 
 	if (!iio_device_open(dev, samples_count))
 		return buf;
@@ -69,9 +65,6 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 	ssize_t read;
 	const struct iio_device *dev = buffer->dev;
 
-	if (buffer->is_output)
-		return -EINVAL;
-
 	if (dev->ctx->ops->get_buffer) {
 		void *buf;
 		read = dev->ctx->ops->get_buffer(dev, &buf,
@@ -90,11 +83,8 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 ssize_t iio_buffer_push(const struct iio_buffer *buffer)
 {
-	if (!buffer->is_output)
-		return -EINVAL;
-
 	return iio_device_write_raw(buffer->dev,
-			buffer->buffer, buffer->length);
+			buffer->buffer, buffer->data_length);
 }
 
 static ssize_t callback_wrapper(const struct iio_channel *chn,
