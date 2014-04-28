@@ -25,11 +25,38 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+
+#define NB_BLOCKS 4
+
+#define BLOCK_ALLOC_IOCTL   _IOWR('i', 0xa0, struct block_alloc_req)
+#define BLOCK_FREE_IOCTL      _IO('i', 0xa1)
+#define BLOCK_QUERY_IOCTL   _IOWR('i', 0xa2, struct block)
+#define BLOCK_ENQUEUE_IOCTL _IOWR('i', 0xa3, struct block)
+#define BLOCK_DEQUEUE_IOCTL _IOWR('i', 0xa4, struct block)
+
+struct block_alloc_req {
+	uint32_t type,
+		 size,
+		 count,
+		 id;
+};
+
+struct block {
+	uint32_t id,
+		 size,
+		 bytes_used,
+		 type,
+		 flags,
+		 offset;
+	uint64_t timestamp;
+};
 
 struct fn_map {
 	const char *attr;
@@ -39,6 +66,11 @@ struct fn_map {
 struct iio_device_pdata {
 	FILE *f;
 	unsigned int samples_count;
+
+	struct block blocks[NB_BLOCKS];
+	void *addrs[NB_BLOCKS];
+	int last_dequeued;
+	bool is_high_speed;
 };
 
 struct iio_channel_pdata {
@@ -208,6 +240,45 @@ static ssize_t local_write(const struct iio_device *dev,
 		return -EIO;
 }
 
+static ssize_t local_get_buffer(const struct iio_device *dev,
+		void **addr_ptr, uint32_t *mask, size_t words)
+{
+	struct block block;
+	struct iio_device_pdata *pdata = dev->pdata;
+	FILE *f = pdata->f;
+	ssize_t ret;
+
+	if (!pdata->is_high_speed)
+		return -ENOSYS;
+	if (!f)
+		return -EBADF;
+	if (words != dev->words || !addr_ptr)
+		return -EINVAL;
+
+	memcpy(mask, dev->mask, words);
+
+	if (pdata->last_dequeued >= 0) {
+		ret = (ssize_t) ioctl(fileno(f), BLOCK_ENQUEUE_IOCTL,
+				&pdata->blocks[pdata->last_dequeued]);
+		if (ret) {
+			ret = (ssize_t) -errno;
+			ERROR("Unable to enqueue block: %s\n", strerror(errno));
+			return ret;
+		}
+	}
+
+	ret = (ssize_t) ioctl(fileno(f), BLOCK_DEQUEUE_IOCTL, &block);
+	if (ret) {
+		ret = (ssize_t) -errno;
+		ERROR("Unable to dequeue block: %s\n", strerror(errno));
+		return ret;
+	}
+
+	pdata->last_dequeued = block.id;
+	*addr_ptr = pdata->addrs[block.id];
+	return (ssize_t) block.bytes_used;
+}
+
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
@@ -297,6 +368,54 @@ static int channel_write_state(const struct iio_channel *chn)
 		return 0;
 }
 
+static int enable_high_speed(const struct iio_device *dev)
+{
+	struct block_alloc_req req;
+	struct iio_device_pdata *pdata = dev->pdata;
+	unsigned int i;
+	int ret, fd = fileno(pdata->f);
+
+	req.type = 0;
+	req.size = pdata->samples_count *
+		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
+	req.count = NB_BLOCKS;
+
+	ret = ioctl(fd, BLOCK_ALLOC_IOCTL, &req);
+	if (ret < 0)
+		return -errno;
+
+	/* mmap all the blocks */
+	for (i = 0; i < NB_BLOCKS; i++) {
+		pdata->blocks[i].id = i;
+		ret = ioctl(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
+		if (ret) {
+			ret = -errno;
+			goto err_munmap;
+		}
+
+		ret = ioctl(fd, BLOCK_ENQUEUE_IOCTL, &pdata->blocks[i]);
+		if (ret) {
+			ret = -errno;
+			goto err_munmap;
+		}
+
+		pdata->addrs[i] = mmap(0, pdata->blocks[i].size, PROT_READ,
+				MAP_SHARED, fd, pdata->blocks[i].offset);
+		if (pdata->addrs[i] == MAP_FAILED) {
+			ret = -errno;
+			goto err_munmap;
+		}
+	}
+
+	return 0;
+
+err_munmap:
+	for (; i > 0; i--)
+		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
+	ioctl(fd, BLOCK_FREE_IOCTL, 0);
+	return ret;
+}
+
 static int local_open(const struct iio_device *dev,
 		size_t samples_count, uint32_t *mask, size_t nb)
 {
@@ -340,6 +459,7 @@ static int local_open(const struct iio_device *dev,
 	}
 
 	pdata->samples_count = samples_count;
+	pdata->is_high_speed = !!samples_count && !enable_high_speed(dev);
 
 	/* If opened with samples_count == 0, we probably want DDS mode;
 	 * then the buffer will only be enabled when closing the device. */
@@ -362,6 +482,13 @@ static int local_close(const struct iio_device *dev)
 
 	if (!pdata->f)
 		return -EBADF;
+
+	if (pdata->is_high_speed) {
+		unsigned int i;
+		for (i = 0; i < NB_BLOCKS; i++)
+			munmap(pdata->addrs[i], pdata->blocks[i].size);
+		ioctl(fileno(pdata->f), BLOCK_FREE_IOCTL, 0);
+	}
 
 	ret = fclose(pdata->f);
 	if (ret)
@@ -911,6 +1038,7 @@ static struct iio_backend_ops local_ops = {
 	.close = local_close,
 	.read = local_read,
 	.write = local_write,
+	.get_buffer = local_get_buffer,
 	.read_device_attr = local_read_dev_attr,
 	.write_device_attr = local_write_dev_attr,
 	.read_channel_attr = local_read_chn_attr,
