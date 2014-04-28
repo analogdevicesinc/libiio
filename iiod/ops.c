@@ -213,7 +213,7 @@ static void * read_thd(void *d)
 
 			for (i = 0; i < dev->nb_channels; i++) {
 				struct iio_channel *chn = dev->channels[i];
-				unsigned int index = chn->index;
+				long index = chn->index;
 				if (index >= 0 && TEST_BIT(entry->mask, index))
 					iio_channel_enable(chn);
 				else
