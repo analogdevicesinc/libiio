@@ -439,11 +439,8 @@ ssize_t iio_device_process_samples(const struct iio_device *dev,
 			unsigned int length = chn->format.length / 8;
 			ssize_t ret;
 
-			if (chn->index < 0) {
-				ERROR("Channel %s has negative index\n",
-						chn->id);
+			if (chn->index < 0)
 				break;
-			}
 
 			if (!TEST_BIT(mask, chn->index))
 				continue;
