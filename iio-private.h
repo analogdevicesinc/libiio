@@ -140,7 +140,7 @@ struct iio_buffer {
 
 	uint32_t *mask;
 	unsigned int sample_size;
-	bool is_output;
+	bool is_output, dev_is_high_speed;
 };
 
 void free_channel(struct iio_channel *chn);

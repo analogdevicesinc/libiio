@@ -8,6 +8,17 @@ struct callback_wrapper_data {
 	uint32_t *mask;
 };
 
+static bool device_is_high_speed(const struct iio_device *dev)
+{
+	/* Little trick: We call the backend's get_buffer() function, which is
+	 * for now only implemented in the Local backend, with a NULL pointer.
+	 * It will return -ENOSYS if the device is not high speed, and either
+	 * -EBADF or -EINVAL otherwise. */
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+	return !!ops->get_buffer &&
+		(ops->get_buffer(dev, NULL, NULL, 0) != -ENOSYS);
+}
+
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		size_t samples_count)
 {
@@ -27,7 +38,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (!buf->mask)
 		goto err_free_buf;
 
-	if (dev->ctx->ops->get_buffer) {
+	buf->dev_is_high_speed = device_is_high_speed(dev);
+	if (buf->dev_is_high_speed) {
 		/* We will use the get_buffer backend function is available.
 		 * In that case, we don't need our own buffer. */
 		buf->buffer = NULL;
@@ -42,7 +54,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (!iio_device_open(dev, samples_count))
 		return buf;
 
-	if (!dev->ctx->ops->get_buffer)
+	if (!buf->dev_is_high_speed)
 		free(buf->buffer);
 err_free_mask:
 	free(buf->mask);
@@ -54,7 +66,7 @@ err_free_buf:
 void iio_buffer_destroy(struct iio_buffer *buffer)
 {
 	iio_device_close(buffer->dev);
-	if (!buffer->dev->ctx->ops->get_buffer)
+	if (!buffer->dev_is_high_speed)
 		free(buffer->buffer);
 	free(buffer->mask);
 	free(buffer);
@@ -65,7 +77,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 	ssize_t read;
 	const struct iio_device *dev = buffer->dev;
 
-	if (dev->ctx->ops->get_buffer) {
+	if (buffer->dev_is_high_speed) {
 		void *buf;
 		read = dev->ctx->ops->get_buffer(dev, &buf,
 				buffer->mask, dev->words);
