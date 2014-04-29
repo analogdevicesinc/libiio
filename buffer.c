@@ -45,6 +45,9 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	 * iio_buffer_foreach_sample to be used. */
 	memcpy(buf->mask, dev->mask, dev->words * sizeof(*buf->mask));
 
+	if (iio_device_open(dev, samples_count))
+		goto err_free_mask;
+
 	buf->dev_is_high_speed = device_is_high_speed(dev);
 	if (buf->dev_is_high_speed) {
 		/* We will use the get_buffer backend function is available.
@@ -53,16 +56,14 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	} else {
 		buf->buffer = malloc(buf->length);
 		if (!buf->buffer)
-			goto err_free_mask;
+			goto err_close_device;
 	}
 
 	buf->data_length = buf->length;
+	return buf;
 
-	if (!iio_device_open(dev, samples_count))
-		return buf;
-
-	if (!buf->dev_is_high_speed)
-		free(buf->buffer);
+err_close_device:
+	iio_device_close(dev);
 err_free_mask:
 	free(buf->mask);
 err_free_buf:
