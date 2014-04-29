@@ -23,6 +23,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+
+#include <sys/socket.h>
 
 struct parser_pdata {
 	struct iio_context *ctx;
@@ -53,5 +56,10 @@ ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
 ssize_t get_trigger(struct parser_pdata *pdata, const char *id);
 ssize_t set_trigger(struct parser_pdata *pdata,
 		const char *id, const char *trigger);
+
+static __inline__ void output(FILE *f, const char *text)
+{
+	send(fileno(f), text, strlen(text), 0);
+}
 
 #endif /* __OPS_H__ */

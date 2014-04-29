@@ -36,6 +36,8 @@ typedef void *yyscan_t;
 
 #include "../debug.h"
 
+#include <sys/socket.h>
+
 int yylex();
 int yylex_init_extra(void *d, yyscan_t *scanner);
 int yylex_destroy(yyscan_t yyscanner);
@@ -44,11 +46,13 @@ void * yyget_extra(yyscan_t scanner);
 void yyset_in(FILE *in, yyscan_t scanner);
 void yyset_out(FILE *out, yyscan_t scanner);
 
+#define ECHO send(fileno(yyout), yytext, yyleng, 0)
+
 #define YY_INPUT(buf,result,max_size) { \
 		int c = '*'; \
 		size_t n; \
 		for ( n = 0; n < max_size && \
-			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
+			     recv(fileno(yyin), &c, 1, 0) && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
 			buf[n++] = (char) c; \
@@ -101,7 +105,7 @@ Line:
 	}
 	| HELP END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		fprintf(pdata->out, "Available commands:\n\n"
+		output(pdata->out, "Available commands:\n\n"
 		"\tHELP\n"
 		"\t\tPrint this help message\n"
 		"\tEXIT\n"
@@ -127,9 +131,13 @@ Line:
 	| PRINT END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		const char *xml = iio_context_get_xml(pdata->ctx);
-		if (!pdata->verbose)
-			fprintf(pdata->out, "%lu\n", (unsigned long) strlen(xml));
-		fprintf(pdata->out, "%s\n", xml);
+		if (!pdata->verbose) {
+			char buf[128];
+			sprintf(buf, "%lu\n", (unsigned long) strlen(xml));
+			output(pdata->out, buf);
+		}
+		output(pdata->out, xml);
+		output(pdata->out, "\n");
 		YYACCEPT;
 	}
 	| OPEN SPACE WORD SPACE WORD SPACE WORD END {
@@ -267,8 +275,13 @@ Line:
 void yyerror(yyscan_t scanner, const char *msg)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
-	if (pdata->verbose)
-		fprintf(pdata->out, "ERROR: %s\n", msg);
-	else
-		fprintf(pdata->out, "%i\n", -EINVAL);
+	if (pdata->verbose) {
+		output(pdata->out, "ERROR: ");
+		output(pdata->out, msg);
+		output(pdata->out, "\n");
+	} else {
+		char buf[128];
+		sprintf(buf, "%i\n", -EINVAL);
+		output(pdata->out, buf);
+	}
 }

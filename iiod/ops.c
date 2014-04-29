@@ -25,7 +25,6 @@
 #include <limits.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/queue.h>
 #include <time.h>
@@ -82,8 +81,10 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 {
 	const void *ptr = src;
 	while (len) {
-		ssize_t ret = fwrite(ptr, 1, len, out);
-		if (ret == 0)
+		ssize_t ret = send(fileno(out), ptr, len, 0);
+		if (ret < 0)
+			return -errno;
+		if (!ret)
 			return -EIO;
 		ptr += ret;
 		len -= ret;
@@ -96,9 +97,13 @@ static void print_value(struct parser_pdata *pdata, long value)
 	if (pdata->verbose && value < 0) {
 		char buf[1024];
 		strerror_r(-value, buf, sizeof(buf));
-		fprintf(pdata->out, "ERROR: %s\n", buf);
+		output(pdata->out, "ERROR: ");
+		output(pdata->out, buf);
+		output(pdata->out, "\n");
 	} else {
-		fprintf(pdata->out, "%li\n", value);
+		char buf[128];
+		sprintf(buf, "%li\n", value);
+		output(pdata->out, buf);
 	}
 }
 
@@ -111,8 +116,9 @@ static ssize_t send_sample(const struct iio_channel *chn,
 
 	if (info->cpt % length) {
 		unsigned int i, goal = length - info->cpt % length;
+		char zero = 0;
 		for (i = 0; i < goal; i++)
-			fputc(0, info->out);
+			send(fileno(info->out), &zero, 1, 0);
 		info->cpt += goal;
 	}
 
@@ -132,15 +138,20 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	if (thd->send_mask) {
 		unsigned int i;
+		char buf[128];
 
 		/* Send the current mask */
 		if (demux)
-			for (i = dev->nb_words; i > 0; i--)
-				fprintf(out, "%08x", thd->mask[i - 1]);
+			for (i = dev->nb_words; i > 0; i--) {
+				sprintf(buf, "%08x", thd->mask[i - 1]);
+				output(out, buf);
+			}
 		else
-			for (i = dev->nb_words; i > 0; i--)
-				fprintf(out, "%08x", dev->mask[i - 1]);
-		fputc('\n', out);
+			for (i = dev->nb_words; i > 0; i--) {
+				sprintf(buf, "%08x", dev->mask[i - 1]);
+				output(out, buf);
+			}
+		output(out, "\n");
 		thd->send_mask = false;
 	}
 
@@ -616,7 +627,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 		return ret;
 
 	ret = write_all(buf, ret, out);
-	fputc('\n', out);
+	output(out, "\n");
 	return ret;
 }
 
@@ -654,7 +665,7 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 		return ret;
 
 	ret = write_all(buf, ret, out);
-	fputc('\n', out);
+	output(out, "\n");
 	return ret;
 }
 
@@ -706,7 +717,7 @@ ssize_t get_trigger(struct parser_pdata *pdata, const char *id)
 		ret = strlen(trigger->name);
 		print_value(pdata, ret);
 		ret = write_all(trigger->name, ret, pdata->out);
-		fputc('\n', pdata->out);
+		output(pdata->out, "\n");
 	} else {
 		print_value(pdata, ret);
 	}
@@ -730,7 +741,7 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 
 	do {
 		if (verbose) {
-			fprintf(out, "iio-daemon > ");
+			output(out, "iio-daemon > ");
 			fflush(out);
 		}
 		yyparse(scanner);
