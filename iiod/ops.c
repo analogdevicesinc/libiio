@@ -221,7 +221,7 @@ static void * read_thd(void *d)
 			}
 
 			entry->buf = iio_device_create_buffer(dev,
-					samples_count, false);
+					samples_count);
 			if (!entry->buf) {
 				ERROR("Unable to create buffer\n");
 				break;
