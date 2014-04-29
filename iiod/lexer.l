@@ -28,6 +28,7 @@ CLOSE CLOSE|close
 READ READ|read
 WRITE WRITE|write
 READBUF READBUF|readbuf
+WRITEBUF WRITEBUF|writebuf
 SETTRIG SETTRIG|settrig
 GETTRIG GETTRIG|gettrig
 EXIT EXIT|QUIT|exit|quit
@@ -57,6 +58,10 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 
 {READBUF} {
 	return READBUF;
+}
+
+{WRITEBUF} {
+	return WRITEBUF;
 }
 
 {WRITE} {

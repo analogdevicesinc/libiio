@@ -41,7 +41,8 @@ int open_dev(struct parser_pdata *pdata, const char *id,
 		size_t samples_count, const char *mask);
 int close_dev(struct parser_pdata *pdata, const char *id);
 
-ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb);
+ssize_t rw_dev(struct parser_pdata *pdata, const char *id,
+		unsigned int nb, bool is_write);
 
 ssize_t read_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr, bool is_debug);

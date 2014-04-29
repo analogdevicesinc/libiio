@@ -83,6 +83,7 @@ void yyset_out(FILE *out, yyscan_t scanner);
 %token PRINT
 %token READ
 %token READBUF
+%token WRITEBUF
 %token WRITE
 %token SETTRIG
 %token GETTRIG
@@ -122,6 +123,8 @@ Line:
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
+		"\tWRITEBUF <device> <bytes_count>\n"
+		"\t\tWrite raw data to the specified device\n"
 		"\tGETTRIG <device>\n"
 		"\t\tGet the name of the trigger used by the specified device\n"
 		"\tSETTRIG <device> [<trigger>]\n"
@@ -194,7 +197,23 @@ Line:
 		char *id = $3, *attr = $5;
 		unsigned long nb = atol(attr);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev(pdata, id, nb);
+		ssize_t ret = rw_dev(pdata, id, nb, false);
+
+		free(id);
+		free(attr);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| WRITEBUF SPACE WORD SPACE WORD END {
+		char *id = $3, *attr = $5;
+		unsigned long nb = atol(attr);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = rw_dev(pdata, id, nb, true);
+
+		/* Discard additional data */
+		yyclearin;
 
 		free(id);
 		free(attr);

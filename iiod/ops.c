@@ -41,7 +41,7 @@ struct ThdEntry {
 	struct parser_pdata *pdata;
 
 	uint32_t *mask;
-	bool reader, send_mask;
+	bool active, is_writer, new_client;
 };
 
 /* Corresponds to an opened device */
@@ -71,6 +71,12 @@ struct send_sample_cb_info {
 	uint32_t *mask;
 };
 
+struct receive_sample_cb_info {
+	FILE *in;
+	unsigned int nb_bytes, cpt;
+	uint32_t *mask;
+};
+
 /* This is a linked list of DevEntry structures corresponding to
  * all the devices which have threads trying to read them */
 static SLIST_HEAD(DevHead, DevEntry) devlist_head =
@@ -90,6 +96,19 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 		len -= ret;
 	}
 	return ptr - src;
+}
+
+static ssize_t read_all(void *dst, size_t len, FILE *in)
+{
+	void *ptr = dst;
+	while (len) {
+		ssize_t ret = recv(fileno(in), ptr, len, 0);
+		if (ret == 0)
+			return -EIO;
+		ptr += ret;
+		len -= ret;
+	}
+	return ptr - dst;
 }
 
 static void print_value(struct parser_pdata *pdata, long value)
@@ -126,6 +145,28 @@ static ssize_t send_sample(const struct iio_channel *chn,
 	return write_all(src, length, info->out);
 }
 
+static ssize_t receive_sample(const struct iio_channel *chn,
+		void *dst, size_t length, void *d)
+{
+	struct receive_sample_cb_info *info = d;
+	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
+		return 0;
+	if (info->cpt == info->nb_bytes)
+		return 0;
+
+	/* Skip the padding if needed */
+	if (info->cpt % length) {
+		unsigned int i, goal = length - info->cpt % length;
+		char foo;
+		for (i = 0; i < goal; i++)
+			recv(fileno(info->in), &foo, 1, 0);
+		info->cpt += goal;
+	}
+
+	info->cpt += length;
+	return read_all(dst, length, info->in);
+}
+
 static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 {
 	FILE *out = thd->pdata->out;
@@ -136,7 +177,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	print_value(thd->pdata, len);
 
-	if (thd->send_mask) {
+	if (thd->new_client) {
 		unsigned int i;
 		char buf[128];
 
@@ -152,7 +193,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 				output(out, buf);
 			}
 		output(out, "\n");
-		thd->send_mask = false;
+		thd->new_client = false;
 	}
 
 	if (!demux) {
@@ -169,6 +210,24 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 	}
 }
 
+static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
+{
+	struct receive_sample_cb_info info = {
+		.in = thd->pdata->in,
+		.cpt = 0,
+		.nb_bytes = thd->nb,
+		.mask = thd->mask,
+	};
+
+	/* Inform that no error occured, and that we'll start reading data */
+	if (thd->new_client) {
+		print_value(thd->pdata, 0);
+		thd->new_client = false;
+	}
+
+	return iio_buffer_foreach_sample(dev->buf, receive_sample, &info);
+}
+
 static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 {
 	/* Ensure that the client thread is already waiting */
@@ -178,7 +237,7 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 	thd->err = ret;
 	thd->nb = 0;
 	pthread_cond_signal(&thd->cond);
-	thd->reader = false;
+	thd->active = false;
 }
 
 static void * read_thd(void *d)
@@ -193,9 +252,9 @@ static void * read_thd(void *d)
 
 	while (true) {
 		struct ThdEntry *next_thd;
-		bool has_readers = false, mask_updated = false;
+		bool has_readers = false, has_writers = false,
+		     mask_updated = false;
 		unsigned int sample_size;
-		ssize_t nb_bytes;
 
 		/* NOTE: this while loop must exit with
 		 * devlist_lock and thdlist_lock locked. */
@@ -251,17 +310,20 @@ static void * read_thd(void *d)
 		sample_size = entry->sample_size;
 
 		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
-			thd->reader = !thd->err && thd->nb >= sample_size;
-			if (mask_updated && thd->reader)
+			thd->active = !thd->err && thd->nb >= sample_size;
+			if (mask_updated && thd->active)
 				signal_thread(thd, thd->nb);
 
-			has_readers |= thd->reader;
+			if (thd->is_writer)
+				has_writers |= thd->active;
+			else
+				has_readers |= thd->active;
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
 		pthread_mutex_unlock(&devlist_lock);
 
-		if (!has_readers) {
+		if (!has_readers && !has_writers) {
 			struct timespec ts = {
 				.tv_sec = 0,
 				.tv_nsec = 1000000, /* 1 ms */
@@ -271,36 +333,76 @@ static void * read_thd(void *d)
 			continue;
 		}
 
-		ret = iio_buffer_refill(entry->buf);
-		if (ret < 0) {
-			ERROR("Reading from device failed: %i\n", (int) ret);
-			pthread_mutex_lock(&devlist_lock);
-			break;
+		if (has_readers) {
+			ssize_t nb_bytes;
+
+			ret = iio_buffer_refill(entry->buf);
+			if (ret < 0) {
+				ERROR("Reading from device failed: %i\n",
+						(int) ret);
+				pthread_mutex_lock(&devlist_lock);
+				break;
+			}
+
+			nb_bytes = ret;
+			pthread_mutex_lock(&entry->thdlist_lock);
+
+			/* We don't use SLIST_FOREACH here. As soon as a thread is
+			 * signaled, its "thd" structure might be freed;
+			 * SLIST_FOREACH would then cause a segmentation fault, as it
+			 * reads "thd" to get the address of the next element. */
+			for (thd = SLIST_FIRST(&entry->thdlist_head);
+					thd; thd = next_thd) {
+				next_thd = SLIST_NEXT(thd, next);
+
+				if (!thd->active || thd->is_writer)
+					continue;
+
+				ret = send_data(entry, thd, nb_bytes);
+				if (ret > 0)
+					thd->nb -= ret;
+
+				if (ret < 0 || thd->nb < sample_size)
+					signal_thread(thd, (ret < 0) ?
+							ret : thd->nb);
+			}
+
+			pthread_mutex_unlock(&entry->thdlist_lock);
 		}
 
-		nb_bytes = ret;
-		pthread_mutex_lock(&entry->thdlist_lock);
+		if (has_writers) {
+			pthread_mutex_lock(&entry->thdlist_lock);
 
-		/* We don't use SLIST_FOREACH here. As soon as a thread is
-		 * signaled, its "thd" structure might be freed;
-		 * SLIST_FOREACH would then cause a segmentation fault, as it
-		 * reads "thd" to get the address of the next element. */
-		for (thd = SLIST_FIRST(&entry->thdlist_head);
-				thd; thd = next_thd) {
-			next_thd = SLIST_NEXT(thd, next);
+			/* Reset the size of the buffer to its maximum size */
+			entry->buf->data_length = entry->buf->length;
 
-			if (!thd->reader)
-				continue;
+			/* Same comment as above */
+			for (thd = SLIST_FIRST(&entry->thdlist_head);
+					thd; thd = next_thd) {
+				next_thd = SLIST_NEXT(thd, next);
 
-			ret = send_data(entry, thd, nb_bytes);
-			if (ret > 0)
-				thd->nb -= ret;
+				if (!thd->active || !thd->is_writer)
+					continue;
 
-			if (ret < 0 || thd->nb < sample_size)
-				signal_thread(thd, (ret < 0) ? ret : thd->nb);
+				ret = receive_data(entry, thd);
+				if (ret > 0)
+					thd->nb -= ret;
+
+				if (ret < 0 || thd->nb < sample_size)
+					signal_thread(thd, (ret < 0) ?
+							ret : thd->nb);
+			}
+
+			pthread_mutex_unlock(&entry->thdlist_lock);
+
+			ret = iio_buffer_push(entry->buf);
+			if (ret < 0) {
+				ERROR("Writing to device failed: %i\n",
+						(int) ret);
+				pthread_mutex_lock(&devlist_lock);
+				break;
+			}
 		}
-
-		pthread_mutex_unlock(&entry->thdlist_lock);
 	}
 
 	/* Signal all remaining threads */
@@ -326,8 +428,8 @@ static void * read_thd(void *d)
 	return NULL;
 }
 
-static ssize_t read_buffer(struct parser_pdata *pdata,
-		struct iio_device *dev, unsigned int nb)
+static ssize_t rw_buffer(struct parser_pdata *pdata,
+		struct iio_device *dev, unsigned int nb, bool is_write)
 {
 	struct DevEntry *e, *entry = NULL;
 	struct ThdEntry *t, *thd = NULL;
@@ -372,9 +474,10 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 		return -EBUSY;
 	}
 
-	thd->send_mask = true;
+	thd->new_client = true;
 	thd->nb = nb;
 	thd->err = 0;
+	thd->is_writer = is_write;
 
 	pthread_mutex_unlock(&entry->thdlist_lock);
 	pthread_mutex_unlock(&devlist_lock);
@@ -388,7 +491,7 @@ static ssize_t read_buffer(struct parser_pdata *pdata,
 	if (ret > 0 && ret < nb)
 		print_value(thd->pdata, 0);
 
-	DEBUG("Exiting read_buffer with code %li\n", (long) ret);
+	DEBUG("Exiting rw_buffer with code %li\n", (long) ret);
 	if (ret < 0)
 		return ret;
 	else
@@ -591,7 +694,8 @@ int close_dev(struct parser_pdata *pdata, const char *id)
 	return ret;
 }
 
-ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb)
+ssize_t rw_dev(struct parser_pdata *pdata, const char *id,
+		unsigned int nb, bool is_write)
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	ssize_t ret;
@@ -601,8 +705,8 @@ ssize_t read_dev(struct parser_pdata *pdata, const char *id, unsigned int nb)
 		return -ENODEV;
 	}
 
-	ret = read_buffer(pdata, dev, nb);
-	if (ret <= 0)
+	ret = rw_buffer(pdata, dev, nb, is_write);
+	if (ret <= 0 || is_write)
 		print_value(pdata, ret);
 	return ret;
 }
