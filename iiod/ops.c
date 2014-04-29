@@ -832,6 +832,7 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
+	unsigned int i;
 
 	pdata.ctx = ctx;
 	pdata.stop = false;
@@ -849,9 +850,11 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 			fflush(out);
 		}
 		yyparse(scanner);
-		if (pdata.stop)
-			break;
-	} while (!feof(in));
+	} while (!pdata.stop && !feof(in));
 
 	yylex_destroy(scanner);
+
+	/* Close all opened devices */
+	for (i = 0; i < ctx->nb_devices; i++)
+		close_dev_helper(&pdata, ctx->devices[i]);
 }
