@@ -1,6 +1,7 @@
 #include "iio-private.h"
 
 #include <errno.h>
+#include <string.h>
 
 struct callback_wrapper_data {
 	ssize_t (*callback)(const struct iio_channel *, void *, size_t, void *);
@@ -37,6 +38,12 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	buf->mask = calloc(dev->words, sizeof(*buf->mask));
 	if (!buf->mask)
 		goto err_free_buf;
+
+	/* Set the default channel mask to the one used by the device.
+	 * While input buffers will erase this as soon as the refill function
+	 * is used, it is useful for output buffers, as it permits
+	 * iio_buffer_foreach_sample to be used. */
+	memcpy(buf->mask, dev->mask, dev->words * sizeof(*buf->mask));
 
 	buf->dev_is_high_speed = device_is_high_speed(dev);
 	if (buf->dev_is_high_speed) {
