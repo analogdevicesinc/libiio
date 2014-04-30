@@ -41,7 +41,7 @@ struct ThdEntry {
 	struct parser_pdata *pdata;
 
 	uint32_t *mask;
-	bool active, is_writer, new_client;
+	bool active, is_writer, new_client, wait_for_open;
 };
 
 /* Corresponds to an opened device */
@@ -268,7 +268,6 @@ static void * read_thd(void *d)
 			unsigned int i;
 			unsigned int samples_count = UINT_MAX;
 
-			ret = -ENOMEM;
 			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
 			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 				for (i = 0; i < nb_words; i++)
@@ -293,8 +292,17 @@ static void * read_thd(void *d)
 			entry->buf = iio_device_create_buffer(dev,
 					samples_count);
 			if (!entry->buf) {
+				ret = -errno;
 				ERROR("Unable to create buffer\n");
 				break;
+			}
+
+			/* Signal the threads that we opened the device */
+			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
+				if (thd->wait_for_open) {
+					signal_thread(thd, 0);
+					thd->wait_for_open = false;
+				}
 			}
 
 			DEBUG("IIO device %s reopened with new mask:\n",
@@ -577,6 +585,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!thd)
 		goto err_free_words;
 
+	thd->wait_for_open = true;
 	thd->mask = words;
 	thd->nb = 0;
 	thd->samples_count = samples_count;
@@ -594,6 +603,12 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		DEBUG("Added thread to client list\n");
 
 		pthread_mutex_unlock(&devlist_lock);
+
+		/* Wait until the device is opened by the rw thread */
+		pthread_cond_wait(&thd->cond, &thd->cond_lock);
+		ret = (int) thd->err;
+		if (ret < 0)
+			goto err_free_thd;
 		return 0;
 	}
 
@@ -627,7 +642,11 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	SLIST_INSERT_HEAD(&devlist_head, entry, next);
 	pthread_mutex_unlock(&devlist_lock);
 
-	return 0;
+	/* Wait until the device is opened by the rw thread */
+	pthread_cond_wait(&thd->cond, &thd->cond_lock);
+	ret = (int) thd->err;
+	if (!ret)
+		return 0;
 
 err_free_entry_mask:
 	free(entry->mask);
