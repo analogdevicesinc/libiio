@@ -613,7 +613,7 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
  * @param dev A pointer to an iio_device structure
  * @param samples_count The number of samples that the buffer should contain
  * @return On success, a pointer to an iio_buffer structure
- * @return On error, NULL is returned
+ * @return On error, NULL is returned, and errno is set to the error code
  *
  * <b>NOTE:</b> Channels that have to be written to / read from must be enabled
  * before creating the buffer. */

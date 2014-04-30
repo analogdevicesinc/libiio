@@ -23,21 +23,26 @@ static bool device_is_high_speed(const struct iio_device *dev)
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		size_t samples_count)
 {
+	int ret = -EINVAL;
 	struct iio_buffer *buf;
 	unsigned int sample_size = iio_device_get_sample_size(dev);
 	if (!sample_size)
-		return NULL;
+		goto err_set_errno;
 
 	buf = malloc(sizeof(*buf));
-	if (!buf)
-		return NULL;
+	if (!buf) {
+		ret = -ENOMEM;
+		goto err_set_errno;
+	}
 
 	buf->sample_size = sample_size;
 	buf->length = buf->sample_size * samples_count;
 	buf->dev = dev;
 	buf->mask = calloc(dev->words, sizeof(*buf->mask));
-	if (!buf->mask)
+	if (!buf->mask) {
+		ret = -ENOMEM;
 		goto err_free_buf;
+	}
 
 	/* Set the default channel mask to the one used by the device.
 	 * While input buffers will erase this as soon as the refill function
@@ -45,7 +50,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	 * iio_buffer_foreach_sample to be used. */
 	memcpy(buf->mask, dev->mask, dev->words * sizeof(*buf->mask));
 
-	if (iio_device_open(dev, samples_count))
+	ret = iio_device_open(dev, samples_count);
+	if (ret < 0)
 		goto err_free_mask;
 
 	buf->dev_is_high_speed = device_is_high_speed(dev);
@@ -55,8 +61,10 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		buf->buffer = NULL;
 	} else {
 		buf->buffer = malloc(buf->length);
-		if (!buf->buffer)
+		if (!buf->buffer) {
+			ret = -ENOMEM;
 			goto err_close_device;
+		}
 	}
 
 	buf->data_length = buf->length;
@@ -68,6 +76,8 @@ err_free_mask:
 	free(buf->mask);
 err_free_buf:
 	free(buf);
+err_set_errno:
+	errno = -ret;
 	return NULL;
 }
 
