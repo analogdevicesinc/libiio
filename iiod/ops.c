@@ -91,7 +91,7 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 		if (ret < 0)
 			return -errno;
 		if (!ret)
-			return -EIO;
+			return -EPIPE;
 		ptr += ret;
 		len -= ret;
 	}
@@ -103,8 +103,10 @@ static ssize_t read_all(void *dst, size_t len, FILE *in)
 	void *ptr = dst;
 	while (len) {
 		ssize_t ret = recv(fileno(in), ptr, len, 0);
-		if (ret == 0)
-			return -EIO;
+		if (ret < 0)
+			return -errno;
+		if (!ret)
+			return -EPIPE;
 		ptr += ret;
 		len -= ret;
 	}
