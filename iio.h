@@ -45,6 +45,9 @@ typedef long ssize_t;
 #define __pure
 #endif
 
+#define _str(x)  #x
+#define __str(x) _str(x)
+
 #ifdef _WIN32
 #   ifdef LIBIIO_EXPORTS
 #	define __api __declspec(dllexport)
@@ -56,6 +59,12 @@ typedef long ssize_t;
 #else
 #   define __api
 #endif
+
+#define LIBIIO_VERSION_MAJOR 0
+#define LIBIIO_VERSION_MINOR 1
+
+#define LIBIIO_VERSION \
+    __str(LIBIIO_VERSION_MAJOR) "." __str(LIBIIO_VERSION_MINOR)
 
 struct iio_context;
 struct iio_device;
@@ -111,6 +120,16 @@ __api struct iio_context * iio_create_network_context(const char *host);
  *
  * <b>NOTE:</b> After that function, the iio_context pointer shall be invalid. */
 __api void iio_context_destroy(struct iio_context *ctx);
+
+
+/** @brief Get the version of the backend in use
+ * @param ctx A pointer to an iio_context structure
+ * @param major A pointer to an unsigned integer
+ * @param minor A pointer to an unsigned integer
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_context_get_version(const struct iio_context *ctx,
+		unsigned int *major, unsigned int *minor);
 
 
 /** @brief Obtain a XML representation of the given context

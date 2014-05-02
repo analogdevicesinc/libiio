@@ -224,3 +224,13 @@ int iio_context_init(struct iio_context *ctx)
 	ctx->xml = context_create_xml(ctx);
 	return ctx->xml ? 0 : -ENOMEM;
 }
+
+int iio_context_get_version(const struct iio_context *ctx,
+		unsigned int *major, unsigned int *minor)
+{
+	if (ctx->ops->get_version)
+		return ctx->ops->get_version(ctx, major, minor);
+	*major = LIBIIO_VERSION_MAJOR;
+	*minor = LIBIIO_VERSION_MINOR;
+	return 0;
+}
