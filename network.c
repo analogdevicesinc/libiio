@@ -87,8 +87,9 @@ static int read_integer(int fd, long *val)
 		if (ret < 0)
 			return (int) ret;
 
-		/* Skip the eventual first few carriage returns */
-		if (buf[i] != '\n')
+		/* Skip the eventual first few carriage returns.
+		 * Also stop when a dot is found (for parsing floats) */
+		if (buf[i] != '\n' && buf[i] != '.')
 			found = true;
 		else if (found)
 			break;
@@ -430,6 +431,25 @@ static void network_shutdown(struct iio_context *ctx)
 	}
 }
 
+static int network_get_version(const struct iio_context *ctx,
+		unsigned int *major, unsigned int *minor)
+{
+	struct iio_context_pdata *pdata = ctx->pdata;
+	long maj, min;
+	int ret;
+	write_command("VERSION\r\n", pdata->fd);
+	ret = read_integer(pdata->fd, &maj);
+	if (ret < 0)
+		return ret;
+	ret = read_integer(pdata->fd, &min);
+	if (ret < 0)
+		return ret;
+
+	*major = (unsigned int) maj;
+	*minor = (unsigned int) min;
+	return 0;
+}
+
 static struct iio_backend_ops network_ops = {
 	.open = network_open,
 	.close = network_close,
@@ -442,6 +462,7 @@ static struct iio_backend_ops network_ops = {
 	.get_trigger = network_get_trigger,
 	.set_trigger = network_set_trigger,
 	.shutdown = network_shutdown,
+	.get_version = network_get_version,
 };
 
 static struct iio_context * get_context(int fd)
