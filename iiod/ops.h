@@ -21,6 +21,7 @@
 
 #include "../iio.h"
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,9 +59,11 @@ ssize_t get_trigger(struct parser_pdata *pdata, const char *id);
 ssize_t set_trigger(struct parser_pdata *pdata,
 		const char *id, const char *trigger);
 
-static __inline__ void output(FILE *f, const char *text)
+static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
-	send(fileno(f), text, strlen(text), 0);
+	int fd = fileno(pdata->out);
+	if (send(fd, text, strlen(text), MSG_NOSIGNAL) == -EPIPE)
+		pdata->stop = true;
 }
 
 #endif /* __OPS_H__ */

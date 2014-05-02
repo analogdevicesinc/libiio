@@ -87,7 +87,7 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 {
 	const void *ptr = src;
 	while (len) {
-		ssize_t ret = send(fileno(out), ptr, len, 0);
+		ssize_t ret = send(fileno(out), ptr, len, MSG_NOSIGNAL);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -102,7 +102,7 @@ static ssize_t read_all(void *dst, size_t len, FILE *in)
 {
 	void *ptr = dst;
 	while (len) {
-		ssize_t ret = recv(fileno(in), ptr, len, 0);
+		ssize_t ret = recv(fileno(in), ptr, len, MSG_NOSIGNAL);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -118,13 +118,13 @@ static void print_value(struct parser_pdata *pdata, long value)
 	if (pdata->verbose && value < 0) {
 		char buf[1024];
 		strerror_r(-value, buf, sizeof(buf));
-		output(pdata->out, "ERROR: ");
-		output(pdata->out, buf);
-		output(pdata->out, "\n");
+		output(pdata, "ERROR: ");
+		output(pdata, buf);
+		output(pdata, "\n");
 	} else {
 		char buf[128];
 		sprintf(buf, "%li\n", value);
-		output(pdata->out, buf);
+		output(pdata, buf);
 	}
 }
 
@@ -139,7 +139,7 @@ static ssize_t send_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char zero = 0;
 		for (i = 0; i < goal; i++)
-			send(fileno(info->out), &zero, 1, 0);
+			send(fileno(info->out), &zero, 1, MSG_NOSIGNAL);
 		info->cpt += goal;
 	}
 
@@ -161,7 +161,7 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char foo;
 		for (i = 0; i < goal; i++)
-			recv(fileno(info->in), &foo, 1, 0);
+			recv(fileno(info->in), &foo, 1, MSG_NOSIGNAL);
 		info->cpt += goal;
 	}
 
@@ -171,13 +171,13 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 
 static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 {
-	FILE *out = thd->pdata->out;
+	struct parser_pdata *pdata = thd->pdata;
 	bool demux = server_demux && dev->sample_size != thd->sample_size;
 
 	if (demux)
 		len = (len / dev->sample_size) * thd->sample_size;
 
-	print_value(thd->pdata, len);
+	print_value(pdata, len);
 
 	if (thd->new_client) {
 		unsigned int i;
@@ -187,23 +187,23 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 		if (demux)
 			for (i = dev->nb_words; i > 0; i--) {
 				sprintf(buf, "%08x", thd->mask[i - 1]);
-				output(out, buf);
+				output(pdata, buf);
 			}
 		else
 			for (i = dev->nb_words; i > 0; i--) {
 				sprintf(buf, "%08x", dev->mask[i - 1]);
-				output(out, buf);
+				output(pdata, buf);
 			}
-		output(out, "\n");
+		output(pdata, "\n");
 		thd->new_client = false;
 	}
 
 	if (!demux) {
 		/* Short path */
-		return write_all(dev->buf->buffer, len, out);
+		return write_all(dev->buf->buffer, len, pdata->out);
 	} else {
 		struct send_sample_cb_info info = {
-			.out = out,
+			.out = pdata->out,
 			.cpt = 0,
 			.mask = thd->mask,
 		};
@@ -735,7 +735,6 @@ ssize_t rw_dev(struct parser_pdata *pdata, const char *id,
 ssize_t read_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr, bool is_debug)
 {
-	FILE *out = pdata->out;
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	char buf[1024];
 	ssize_t ret = -ENODEV;
@@ -751,8 +750,8 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 	if (ret < 0)
 		return ret;
 
-	ret = write_all(buf, ret, out);
-	output(out, "\n");
+	ret = write_all(buf, ret, pdata->out);
+	output(pdata, "\n");
 	return ret;
 }
 
@@ -775,7 +774,6 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
 ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 		const char *channel, const char *attr)
 {
-	FILE *out = pdata->out;
 	char buf[1024];
 	ssize_t ret = -ENODEV;
 	struct iio_channel *chn = NULL;
@@ -789,8 +787,8 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 	if (ret < 0)
 		return ret;
 
-	ret = write_all(buf, ret, out);
-	output(out, "\n");
+	ret = write_all(buf, ret, pdata->out);
+	output(pdata, "\n");
 	return ret;
 }
 
@@ -842,7 +840,7 @@ ssize_t get_trigger(struct parser_pdata *pdata, const char *id)
 		ret = strlen(trigger->name);
 		print_value(pdata, ret);
 		ret = write_all(trigger->name, ret, pdata->out);
-		output(pdata->out, "\n");
+		output(pdata, "\n");
 	} else {
 		print_value(pdata, ret);
 	}
@@ -867,7 +865,7 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 
 	do {
 		if (verbose) {
-			output(out, "iio-daemon > ");
+			output(&pdata, "iio-daemon > ");
 			fflush(out);
 		}
 		yyparse(scanner);

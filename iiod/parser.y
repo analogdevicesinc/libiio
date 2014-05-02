@@ -46,13 +46,14 @@ void * yyget_extra(yyscan_t scanner);
 void yyset_in(FILE *in, yyscan_t scanner);
 void yyset_out(FILE *out, yyscan_t scanner);
 
-#define ECHO send(fileno(yyout), yytext, yyleng, 0)
+#define ECHO send(fileno(yyout), yytext, yyleng, MSG_NOSIGNAL)
 
 #define YY_INPUT(buf,result,max_size) { \
 		int c = '*'; \
 		size_t n; \
 		for ( n = 0; n < max_size && \
-			     recv(fileno(yyin), &c, 1, 0) && c != '\n'; ++n ) \
+			     recv(fileno(yyin), &c, 1, MSG_NOSIGNAL) > 0 && \
+				 c != '\n'; ++n ) \
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
 			buf[n++] = (char) c; \
@@ -106,7 +107,7 @@ Line:
 	}
 	| HELP END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		output(pdata->out, "Available commands:\n\n"
+		output(pdata, "Available commands:\n\n"
 		"\tHELP\n"
 		"\t\tPrint this help message\n"
 		"\tEXIT\n"
@@ -137,10 +138,10 @@ Line:
 		if (!pdata->verbose) {
 			char buf[128];
 			sprintf(buf, "%lu\n", (unsigned long) strlen(xml));
-			output(pdata->out, buf);
+			output(pdata, buf);
 		}
-		output(pdata->out, xml);
-		output(pdata->out, "\n");
+		output(pdata, xml);
+		output(pdata, "\n");
 		YYACCEPT;
 	}
 	| OPEN SPACE WORD SPACE WORD SPACE WORD END {
@@ -295,12 +296,12 @@ void yyerror(yyscan_t scanner, const char *msg)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
 	if (pdata->verbose) {
-		output(pdata->out, "ERROR: ");
-		output(pdata->out, msg);
-		output(pdata->out, "\n");
+		output(pdata, "ERROR: ");
+		output(pdata, msg);
+		output(pdata, "\n");
 	} else {
 		char buf[128];
 		sprintf(buf, "%i\n", -EINVAL);
-		output(pdata->out, buf);
+		output(pdata, buf);
 	}
 }
