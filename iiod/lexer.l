@@ -24,6 +24,10 @@
 
 %%
 
+VERSION|version {
+	return VERSION;
+}
+
 PRINT|print {
 	return PRINT;
 }

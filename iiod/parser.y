@@ -77,6 +77,7 @@ void yyset_out(FILE *out, yyscan_t scanner);
 %token SPACE
 %token END
 
+%token VERSION
 %token EXIT
 %token HELP
 %token OPEN
@@ -114,6 +115,8 @@ Line:
 		"\t\tClose the current session\n"
 		"\tPRINT\n"
 		"\t\tDisplays a XML string corresponding to the current IIO context\n"
+		"\tVERSION\n"
+		"\t\tGet the version of libiio in use\n"
 		"\tOPEN <device> <samples_count> <mask>\n"
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
@@ -130,6 +133,15 @@ Line:
 		"\t\tGet the name of the trigger used by the specified device\n"
 		"\tSETTRIG <device> [<trigger>]\n"
 		"\t\tSet the trigger to use for the specified device\n");
+		YYACCEPT;
+	}
+	| VERSION END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		unsigned int major, minor;
+		char buf[128];
+		iio_context_get_version(pdata->ctx, &major, &minor);
+		snprintf(buf, sizeof(buf), "%u.%u\n", major, minor);
+		output(pdata, buf);
 		YYACCEPT;
 	}
 	| PRINT END {
