@@ -22,78 +22,62 @@
 
 %option noyywrap reentrant bison-bridge nounistd
 
-PRINT PRINT|print
-OPEN OPEN|open
-CLOSE CLOSE|close
-READ READ|read
-WRITE WRITE|write
-READBUF READBUF|readbuf
-WRITEBUF WRITEBUF|writebuf
-SETTRIG SETTRIG|settrig
-GETTRIG GETTRIG|gettrig
-EXIT EXIT|QUIT|exit|quit
-HELP HELP|help
-
-END [ \t]*\n
-SPACE [ \t]+
-WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
-
 %%
 
-{PRINT} {
+PRINT|print {
 	return PRINT;
 }
 
-{OPEN} {
+OPEN|open {
 	return OPEN;
 }
 
-{CLOSE} {
+CLOSE|close {
 	return CLOSE;
 }
 
-{READ} {
+READ|read {
 	return READ;
 }
 
-{READBUF} {
+READBUF|readbuf {
 	return READBUF;
 }
 
-{WRITEBUF} {
+WRITEBUF|writebuf {
 	return WRITEBUF;
 }
 
-{WRITE} {
+WRITE|write {
 	return WRITE;
 }
 
-{SETTRIG} {
+SETTRIG|settrig {
 	return SETTRIG;
 }
 
-{GETTRIG} {
+GETTRIG|gettrig {
 	return GETTRIG;
 }
 
-{EXIT} {
+EXIT|exit|QUIT|quit {
 	return EXIT;
 }
 
-{HELP} {
+HELP|help {
 	return HELP;
 }
 
-{WORD} {
+(([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+ {
 	yylval->word = strdup(yytext);
 	return WORD;
 }
 
-{SPACE} {
+[ \t]+ {
 	return SPACE;
 }
 
-{END} {
+[ \t]*\n {
 	return END;
 }
 
