@@ -260,6 +260,30 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	return read;
 }
 
+static ssize_t network_write(const struct iio_device *dev,
+		const void *src, size_t len)
+{
+	int fd = dev->ctx->pdata->fd;
+	ssize_t ret;
+	char buf[1024];
+	long resp;
+
+	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+			dev->id, (unsigned long) len);
+	ret = (ssize_t) exec_command(buf, fd);
+	if (ret < 0)
+		return ret;
+
+	ret = write_all(src, len, fd);
+	if (ret < 0)
+		return ret;
+
+	ret = read_integer(fd, &resp);
+	if (ret < 0)
+		return ret;
+	return (ssize_t) resp;
+}
+
 static ssize_t network_read_attr_helper(int fd, const char *id, const char *chn,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
@@ -410,6 +434,7 @@ static struct iio_backend_ops network_ops = {
 	.open = network_open,
 	.close = network_close,
 	.read = network_read,
+	.write = network_write,
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
 	.read_channel_attr = network_read_chn_attr,
