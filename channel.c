@@ -495,3 +495,14 @@ int iio_channel_attr_write_bool(const struct iio_channel *chn,
 	else
 		return iio_channel_attr_write(chn, attr, "0");
 }
+
+const char * iio_channel_attr_get_filename(
+		const struct iio_channel *chn, const char *attr)
+{
+	unsigned int i;
+	for (i = 0; i < chn->nb_attrs; i++) {
+		if (!strcmp(chn->attrs[i].name, attr))
+			return chn->attrs[i].filename;
+	}
+	return NULL;
+}

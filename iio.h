@@ -454,6 +454,16 @@ __api __pure const char * iio_channel_find_attr(
 		const struct iio_channel *chn, const char *name);
 
 
+/** @brief Retrieve the filename of an attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr a NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the attribute name is unknown, NULL is returned */
+__api __pure const char * iio_channel_attr_get_filename(
+		const struct iio_channel *chn, const char *attr);
+
+
 /** @brief Read the content of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
  * @param attr A NULL-terminated string corresponding to the name of the
