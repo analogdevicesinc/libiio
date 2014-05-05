@@ -23,17 +23,25 @@
 #include <stdio.h>
 #include <string.h>
 
-static char *get_attr_xml(const char *attr, size_t *length)
+static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 {
-	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr);
-	char *str = malloc(len);
+	char *str;
+	size_t len = strlen(attr->name) + sizeof("<attribute name=\"\" />");
+	if (attr->filename)
+		len += strlen(attr->filename) + sizeof("filename=\"\"");
+
+	str = malloc(len);
 	if (!str) {
 		ERROR("Unable to allocate memory\n");
 		return NULL;
 	}
 
 	*length = len - 1; /* Skip the \0 */
-	snprintf(str, len, "<attribute name=\"%s\" />", attr);
+	if (attr->filename)
+		snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
+				attr->name, attr->filename);
+	else
+		snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
 	return str;
 }
 
@@ -56,7 +64,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		goto err_free_attrs_len;
 
 	for (i = 0; i < chn->nb_attrs; i++) {
-		char *xml = get_attr_xml(chn->attrs[i].name, &attrs_len[i]);
+		char *xml = get_attr_xml(&chn->attrs[i], &attrs_len[i]);
 		if (!xml)
 			goto err_free_attrs;
 		attrs[i] = xml;
@@ -209,14 +217,16 @@ void iio_channel_disable(struct iio_channel *chn)
 void free_channel(struct iio_channel *chn)
 {
 	unsigned int i;
-	for (i = 0; i < chn->nb_attrs; i++)
-		free((char *) chn->attrs[i].name);
+	for (i = 0; i < chn->nb_attrs; i++) {
+		free(chn->attrs[i].name);
+		free(chn->attrs[i].filename);
+	}
 	if (chn->nb_attrs)
 		free(chn->attrs);
 	if (chn->name)
-		free((char *) chn->name);
+		free(chn->name);
 	if (chn->id)
-		free((char *) chn->id);
+		free(chn->id);
 	free(chn);
 }
 

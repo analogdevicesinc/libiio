@@ -32,7 +32,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST context name CDATA #REQUIRED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED scan_element (true|false) \"false\" name CDATA #IMPLIED>"
-"<!ATTLIST attribute name CDATA #REQUIRED>"
+"<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED>"
 "<!ATTLIST debug-attribute name CDATA #REQUIRED>"
 "]>";
 

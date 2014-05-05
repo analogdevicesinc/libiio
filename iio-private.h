@@ -91,6 +91,7 @@ struct iio_channel_pdata;
 
 struct iio_channel_attr {
 	char *name;
+	char *filename;
 };
 
 struct iio_context {

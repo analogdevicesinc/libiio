@@ -58,11 +58,6 @@ struct block {
 	uint64_t timestamp;
 };
 
-struct fn_map {
-	const char *attr;
-	char *filename;
-};
-
 struct iio_device_pdata {
 	FILE *f;
 	unsigned int samples_count;
@@ -71,11 +66,6 @@ struct iio_device_pdata {
 	void *addrs[NB_BLOCKS];
 	int last_dequeued;
 	bool is_high_speed;
-};
-
-struct iio_channel_pdata {
-	struct fn_map *maps;
-	size_t nb_maps;
 };
 
 static const char * const device_attrs_blacklist[] = {
@@ -99,27 +89,10 @@ static const char * const modifier_names[] = {
 
 static void local_shutdown(struct iio_context *ctx)
 {
+	/* Free the backend data stored in every device structure */
 	unsigned int i;
-
-	/* First, free the backend data stored in every device structure */
-	for (i = 0; i < ctx->nb_devices; i++) {
-		unsigned int j;
-		struct iio_device *dev = ctx->devices[i];
-		free(dev->pdata);
-
-		/* Free backend data stored in every channel structure */
-		for (j = 0; j < dev->nb_channels; j++) {
-			unsigned int k;
-			struct iio_channel *chn = dev->channels[j];
-			struct iio_channel_pdata *ch_pdata = chn->pdata;
-
-			for (k = 0; k < ch_pdata->nb_maps; k++)
-				free(ch_pdata->maps[k].filename);
-			if (ch_pdata->nb_maps)
-				free(ch_pdata->maps);
-			free(ch_pdata);
-		}
-	}
+	for (i = 0; i < ctx->nb_devices; i++)
+		free(ctx->devices[i]->pdata);
 }
 
 /** Shrinks the first nb characters of a string 
@@ -335,12 +308,10 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 static const char * get_filename(const struct iio_channel *chn,
 		const char *attr)
 {
-	struct iio_channel_pdata *pdata = chn->pdata;
-	struct fn_map *maps = pdata->maps;
 	unsigned int i;
-	for (i = 0; i < pdata->nb_maps; i++)
-		if (!strcmp(attr, maps[i].attr))
-			return maps[i].filename;
+	for (i = 0; i < chn->nb_attrs; i++)
+		if (!strcmp(attr, chn->attrs[i].name))
+			return chn->attrs[i].filename;
 	return attr;
 }
 
@@ -636,8 +607,6 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 static int add_attr_to_channel(struct iio_channel *chn,
 		const char *attr, const char *path)
 {
-	struct iio_channel_pdata *pdata = chn->pdata;
-	struct fn_map *maps;
 	struct iio_channel_attr *attrs;
 	char *fn, *name = get_short_attr_name(attr);
 	if (!name)
@@ -652,24 +621,12 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	if (!attrs)
 		goto err_free_fn;
 
-	maps = realloc(pdata->maps,
-			(1 + pdata->nb_maps) * sizeof(struct fn_map));
-	if (!maps)
-		goto err_update_maps;
-
-	maps[pdata->nb_maps].attr = name;
-	maps[pdata->nb_maps++].filename = fn;
-	pdata->maps = maps;
-
+	attrs[chn->nb_attrs].filename = fn;
 	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
 	DEBUG("Added attr \'%s\' to channel \'%s\'\n", name, chn->id);
 	return 0;
 
-err_update_maps:
-	/* the first realloc succeeded so we must update chn->attrs
-	 * even if an error occured later */
-	chn->attrs = attrs;
 err_free_fn:
 	free(fn);
 err_free_name:
@@ -784,14 +741,10 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!chn)
 		return NULL;
 
-	chn->pdata = calloc(1, sizeof(*chn->pdata));
-	if (!dev->pdata)
-		goto err_free_chn;
-
 	if (!strncmp(attr, "out_", 4))
 		chn->is_output = true;
 	else if (strncmp(attr, "in_", 3))
-		goto err_free_pdata;
+		goto err_free_chn;
 
 	chn->dev = dev;
 	chn->id = id;
@@ -800,8 +753,6 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!add_attr_to_channel(chn, attr, path))
 		return chn;
 
-err_free_pdata:
-	free(chn->pdata);
 err_free_chn:
 	free(chn);
 	return NULL;

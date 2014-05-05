@@ -26,19 +26,21 @@
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
-	char *name = NULL;
+	char *name = NULL, *filename = NULL;
 	struct iio_channel_attr *attrs;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
 			name = strdup((char *) attr->children->content);
+		} else if (!strcmp((char *) attr->name, "filename")) {
+			filename = strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in channel %s\n",
 					attr->name, chn->id);
 		}
 	}
 
-	if (!name) {
+	if (!name || !filename) {
 		ERROR("Incomplete attribute in channel %s\n", chn->id);
 		goto err_free;
 	}
@@ -48,6 +50,7 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	if (!attrs)
 		goto err_free;
 
+	attrs[chn->nb_attrs].filename = filename;
 	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
 	return 0;
@@ -55,6 +58,8 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 err_free:
 	if (name)
 		free(name);
+	if (filename)
+		free(filename);
 	return -1;
 }
 
