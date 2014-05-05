@@ -141,14 +141,14 @@ static int set_channel_name(struct iio_channel *chn)
 		bool can_fix = true;
 		unsigned int i, len;
 		char *name;
-		const char *attr0 = chn->attrs[0];
+		const char *attr0 = chn->attrs[0].name;
 		const char *ptr = strchr(attr0, '_');
 		if (!ptr)
 			break;
 
 		len = ptr - attr0;
 		for (i = 1; can_fix && i < chn->nb_attrs; i++)
-			can_fix = !strncmp(attr0, chn->attrs[i], len);
+			can_fix = !strncmp(attr0, chn->attrs[i].name, len);
 
 		if (!can_fix)
 			break;
@@ -174,7 +174,7 @@ static int set_channel_name(struct iio_channel *chn)
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
-			strcut(chn->attrs[i], len + 1);
+			strcut(chn->attrs[i].name, len + 1);
 	}
 
 	if (chn->name) {
@@ -638,7 +638,8 @@ static int add_attr_to_channel(struct iio_channel *chn,
 {
 	struct iio_channel_pdata *pdata = chn->pdata;
 	struct fn_map *maps;
-	char **attrs, *fn, *name = get_short_attr_name(attr);
+	struct iio_channel_attr *attrs;
+	char *fn, *name = get_short_attr_name(attr);
 	if (!name)
 		return -ENOMEM;
 
@@ -646,7 +647,8 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	if (!fn)
 		goto err_free_name;
 
-	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) * sizeof(char *));
+	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
+			sizeof(struct iio_channel_attr));
 	if (!attrs)
 		goto err_free_fn;
 
@@ -659,7 +661,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	maps[pdata->nb_maps++].filename = fn;
 	pdata->maps = maps;
 
-	attrs[chn->nb_attrs++] = name;
+	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
 	DEBUG("Added attr \'%s\' to channel \'%s\'\n", name, chn->id);
 	return 0;

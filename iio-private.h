@@ -89,6 +89,10 @@ struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
 
+struct iio_channel_attr {
+	char *name;
+};
+
 struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
@@ -112,7 +116,7 @@ struct iio_channel {
 	char *name, *id;
 	long index;
 
-	char **attrs;
+	struct iio_channel_attr *attrs;
 	unsigned int nb_attrs;
 };
 

@@ -56,7 +56,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		goto err_free_attrs_len;
 
 	for (i = 0; i < chn->nb_attrs; i++) {
-		char *xml = get_attr_xml(chn->attrs[i], &attrs_len[i]);
+		char *xml = get_attr_xml(chn->attrs[i].name, &attrs_len[i]);
 		if (!xml)
 			goto err_free_attrs;
 		attrs[i] = xml;
@@ -133,7 +133,7 @@ const char * iio_channel_get_attr(const struct iio_channel *chn,
 	if (index >= chn->nb_attrs)
 		return NULL;
 	else
-		return chn->attrs[index];
+		return chn->attrs[index].name;
 }
 
 const char * iio_channel_find_attr(const struct iio_channel *chn,
@@ -141,7 +141,7 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 {
 	unsigned int i;
 	for (i = 0; i < chn->nb_attrs; i++) {
-		const char *attr = chn->attrs[i];
+		const char *attr = chn->attrs[i].name;
 		if (!strcmp(attr, name))
 			return attr;
 	}
@@ -210,7 +210,7 @@ void free_channel(struct iio_channel *chn)
 {
 	unsigned int i;
 	for (i = 0; i < chn->nb_attrs; i++)
-		free((char *) chn->attrs[i]);
+		free((char *) chn->attrs[i].name);
 	if (chn->nb_attrs)
 		free(chn->attrs);
 	if (chn->name)

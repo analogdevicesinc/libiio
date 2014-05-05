@@ -26,7 +26,8 @@
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
-	char **attrs, *name = NULL;
+	char *name = NULL;
+	struct iio_channel_attr *attrs;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
@@ -42,11 +43,12 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 		goto err_free;
 	}
 
-	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) * sizeof(char *));
+	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
+			sizeof(struct iio_channel_attr));
 	if (!attrs)
 		goto err_free;
 
-	attrs[chn->nb_attrs++] = name;
+	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
 	return 0;
 
