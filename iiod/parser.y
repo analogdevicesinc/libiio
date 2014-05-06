@@ -123,7 +123,7 @@ Line:
 		"\t\tClose the specified device\n"
 		"\tREAD <device> [\"debug\"|<channel>] <attribute>\n"
 		"\t\tRead the value of an attribute\n"
-		"\tWRITE <device> [\"debug\"|<channel>] <attribute> <value>\n"
+		"\tWRITE <device> [\"debug\"|<channel>] <attribute> <bytes_count>\n"
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
@@ -237,8 +237,9 @@ Line:
 	}
 	| WRITE SPACE WORD SPACE WORD SPACE WORD END {
 		char *id = $3, *attr = $5, *value = $7;
+		unsigned long nb = atol(value);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, id, attr, value, false);
+		ssize_t ret = write_dev_attr(pdata, id, attr, nb, false);
 		free(id);
 		free(attr);
 		free(value);
@@ -249,12 +250,13 @@ Line:
 	}
 	| WRITE SPACE WORD SPACE WORD SPACE WORD SPACE WORD END {
 		char *id = $3, *chn = $5, *attr = $7, *value = $9;
+		unsigned long nb = atol(value);
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		ssize_t ret;
 		if (!strcmp(chn, "debug"))
-			ret = write_dev_attr(pdata, id, attr, value, true);
+			ret = write_dev_attr(pdata, id, attr, nb, true);
 		else
-			ret = write_chn_attr(pdata, id, chn, attr, value);
+			ret = write_chn_attr(pdata, id, chn, attr, nb);
 		free(id);
 		free(chn);
 		free(attr);

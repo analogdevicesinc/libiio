@@ -48,12 +48,12 @@ ssize_t rw_dev(struct parser_pdata *pdata, const char *id,
 ssize_t read_dev_attr(struct parser_pdata *pdata,
 		const char *id, const char *attr, bool is_debug);
 ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
-		const char *attr, const char *value, bool is_debug);
+		const char *attr, size_t len, bool is_debug);
 
 ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 		const char *chn, const char *attr);
 ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
-		const char *chn, const char *attr, const char *value);
+		const char *chn, const char *attr, size_t len);
 
 ssize_t get_trigger(struct parser_pdata *pdata, const char *id);
 ssize_t set_trigger(struct parser_pdata *pdata,

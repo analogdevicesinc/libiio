@@ -756,17 +756,31 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 }
 
 ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
-		const char *attr, const char *value, bool is_debug)
+		const char *attr, size_t len, bool is_debug)
 {
 	struct iio_device *dev = get_device(pdata->ctx, id);
 	ssize_t ret = -ENODEV;
+	char *buf;
 
-	if (dev) {
-		if (is_debug)
-			ret = iio_device_debug_attr_write(dev, attr, value);
-		else
-			ret = iio_device_attr_write(dev, attr, value);
-	}
+	if (!dev)
+		goto err_print_value;
+
+	buf = malloc(len);
+	if (!buf)
+		goto err_print_value;
+
+	ret = read_all(buf, len, pdata->in);
+	if (ret < 0)
+		goto err_free_buffer;
+
+	if (is_debug)
+		ret = iio_device_debug_attr_write_raw(dev, attr, buf, len);
+	else
+		ret = iio_device_attr_write_raw(dev, attr, buf, len);
+
+err_free_buffer:
+	free(buf);
+err_print_value:
 	print_value(pdata, ret);
 	return ret;
 }
@@ -793,16 +807,32 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 }
 
 ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
-		const char *channel, const char *attr, const char *value)
+		const char *channel, const char *attr, size_t len)
 {
 	ssize_t ret = -ENODEV;
-	struct iio_channel *chn = NULL;
+	struct iio_channel *chn;
 	struct iio_device *dev = get_device(pdata->ctx, id);
+	char *buf;
 
-	if (dev)
-		chn = get_channel(dev, channel);
-	if (chn)
-		ret = iio_channel_attr_write(chn, attr, value);
+	if (!dev)
+		goto err_print_value;
+
+	chn = get_channel(dev, channel);
+	if (!chn)
+		goto err_print_value;
+
+	buf = malloc(len);
+	if (!buf)
+		goto err_print_value;
+
+	ret = read_all(buf, len, pdata->in);
+	if (ret < 0)
+		goto err_free_buffer;
+
+	ret = iio_channel_attr_write_raw(chn, attr, buf, len);
+err_free_buffer:
+	free(buf);
+err_print_value:
 	print_value(pdata, ret);
 	return ret;
 }
