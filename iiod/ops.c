@@ -268,14 +268,14 @@ static void * read_thd(void *d)
 
 		if (entry->update_mask) {
 			unsigned int i;
-			unsigned int samples_count = UINT_MAX;
+			unsigned int samples_count = 0;
 
 			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
 			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
 				for (i = 0; i < nb_words; i++)
 					entry->mask[i] |= thd->mask[i];
 
-				if (thd->samples_count < samples_count)
+				if (thd->samples_count > samples_count)
 					samples_count = thd->samples_count;
 			}
 
