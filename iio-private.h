@@ -68,11 +68,12 @@ struct iio_backend_ops {
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 			const char *attr, char *dst, size_t len, bool is_debug);
 	ssize_t (*write_device_attr)(const struct iio_device *dev,
-			const char *attr, const char *src, bool is_debug);
+			const char *attr, const char *src,
+			size_t len, bool is_debug);
 	ssize_t (*read_channel_attr)(const struct iio_channel *chn,
 			const char *attr, char *dst, size_t len);
 	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
-			const char *attr, const char *src);
+			const char *attr, const char *src, size_t len);
 
 	int (*get_trigger)(const struct iio_device *dev,
 			const struct iio_device **trigger);

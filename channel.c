@@ -166,13 +166,20 @@ ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		return -ENOSYS;
 }
 
+ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
+		const char *attr, const void *src, size_t len)
+{
+	if (chn->dev->ctx->ops->write_channel_attr)
+		return chn->dev->ctx->ops->write_channel_attr(chn,
+				attr, src, len);
+	else
+		return -ENOSYS;
+}
+
 ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src)
 {
-	if (chn->dev->ctx->ops->write_channel_attr)
-		return chn->dev->ctx->ops->write_channel_attr(chn, attr, src);
-	else
-		return -ENOSYS;
+	return iio_channel_attr_write_raw(chn, attr, src, strlen(src) + 1);
 }
 
 void iio_channel_set_data(struct iio_channel *chn, void *data)
@@ -491,9 +498,9 @@ int iio_channel_attr_write_bool(const struct iio_channel *chn,
 		const char *attr, bool val)
 {
 	if (val)
-		return iio_channel_attr_write(chn, attr, "1");
+		return iio_channel_attr_write_raw(chn, attr, "1", 2);
 	else
-		return iio_channel_attr_write(chn, attr, "0");
+		return iio_channel_attr_write_raw(chn, attr, "0", 2);
 }
 
 const char * iio_channel_attr_get_filename(

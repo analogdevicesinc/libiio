@@ -317,6 +317,18 @@ __api ssize_t iio_device_attr_write(const struct iio_device *dev,
  * @param dev A pointer to an iio_device structure
  * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
+ * @param src A pointer to the data to be written
+ * @param len The number of bytes that should be written
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
+__api ssize_t iio_device_attr_write_raw(const struct iio_device *dev,
+		const char *attr, const void *src, size_t len);
+
+
+/** @brief Set the value of the given device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
  * @param val A bool value to set the attribute to
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
@@ -519,6 +531,18 @@ __api int iio_channel_attr_read_double(const struct iio_channel *chn,
  * @return On error, a negative errno code is returned */
 __api ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src);
+
+
+/** @brief Set the value of the given channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param src A pointer to the data to be written
+ * @param len The number of bytes that should be written
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
+__api ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
+		const char *attr, const void *src, size_t len);
 
 
 /** @brief Set the value of the given channel-specific attribute
@@ -899,6 +923,18 @@ __api ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
  * @return On error, a negative errno code is returned */
 __api ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
+
+
+/** @brief Set the value of the given debug attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * debug attribute
+ * @param src A pointer to the data to be written
+ * @param len The number of bytes that should be written
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
+__api ssize_t iio_device_debug_attr_write_raw(const struct iio_device *dev,
+		const char *attr, const void *src, size_t len);
 
 
 /** @brief Read the content of the given debug attribute

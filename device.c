@@ -312,14 +312,20 @@ ssize_t iio_device_attr_read(const struct iio_device *dev,
 		return -ENOSYS;
 }
 
-ssize_t iio_device_attr_write(const struct iio_device *dev,
-		const char *attr, const char *src)
+ssize_t iio_device_attr_write_raw(const struct iio_device *dev,
+		const char *attr, const void *src, size_t len)
 {
 	if (dev->ctx->ops->write_device_attr)
 		return dev->ctx->ops->write_device_attr(dev,
-				attr, src, false);
+				attr, src, len, false);
 	else
 		return -ENOSYS;
+}
+
+ssize_t iio_device_attr_write(const struct iio_device *dev,
+		const char *attr, const char *src)
+{
+	return iio_device_attr_write_raw(dev, attr, src, strlen(src) + 1);
 }
 
 void iio_device_set_data(struct iio_device *dev, void *data)
@@ -538,14 +544,20 @@ ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
 		return -ENOSYS;
 }
 
-ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
-		const char *attr, const char *src)
+ssize_t iio_device_debug_attr_write_raw(const struct iio_device *dev,
+		const char *attr, const void *src, size_t len)
 {
 	if (dev->ctx->ops->write_device_attr)
 		return dev->ctx->ops->write_device_attr(dev,
-				attr, src, true);
+				attr, src, len, true);
 	else
 		return -ENOSYS;
+}
+
+ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
+		const char *attr, const char *src)
+{
+	return iio_device_debug_attr_write_raw(dev, attr, src, strlen(src) + 1);
 }
 
 unsigned int iio_device_get_debug_attrs_count(const struct iio_device *dev)
@@ -626,9 +638,9 @@ int iio_device_debug_attr_write_bool(const struct iio_device *dev,
 		const char *attr, bool val)
 {
 	if (val)
-		return iio_device_debug_attr_write(dev, attr, "1");
+		return iio_device_debug_attr_write_raw(dev, attr, "1", 2);
 	else
-		return iio_device_debug_attr_write(dev, attr, "0");
+		return iio_device_debug_attr_write_raw(dev, attr, "0", 2);
 }
 
 int iio_device_identify_filename(const struct iio_device *dev,

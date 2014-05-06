@@ -281,19 +281,15 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	return read;
 }
 
-static ssize_t network_write(const struct iio_device *dev,
-		const void *src, size_t len)
+static ssize_t do_write(struct iio_context_pdata *pdata,
+		const char *command, const void *src, size_t len)
 {
-	int fd = dev->ctx->pdata->fd;
+	int fd = pdata->fd;
 	ssize_t ret;
-	char buf[1024];
 	long resp;
 
-	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-			dev->id, (unsigned long) len);
-
-	pthread_mutex_lock(&dev->ctx->pdata->lock);
-	ret = (ssize_t) exec_command(buf, fd);
+	pthread_mutex_lock(&pdata->lock);
+	ret = (ssize_t) write_command(command, fd);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -302,15 +298,24 @@ static ssize_t network_write(const struct iio_device *dev,
 		goto err_unlock;
 
 	ret = read_integer(fd, &resp);
-	pthread_mutex_unlock(&dev->ctx->pdata->lock);
+	pthread_mutex_unlock(&pdata->lock);
 
 	if (ret < 0)
 		return ret;
 	return (ssize_t) resp;
 
 err_unlock:
-	pthread_mutex_unlock(&dev->ctx->pdata->lock);
+	pthread_mutex_unlock(&pdata->lock);
 	return ret;
+}
+
+static ssize_t network_write(const struct iio_device *dev,
+		const void *src, size_t len)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+			dev->id, (unsigned long) len);
+	return do_write(dev->ctx->pdata, buf, src, len);
 }
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
@@ -358,26 +363,21 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 
 static ssize_t network_write_attr_helper(const struct iio_device *dev,
 		const char *chn, const char *attr, const char *src,
-		bool is_debug)
+		size_t len, bool is_debug)
 {
 	char buf[1024];
-	ssize_t ret;
-	int fd = dev->ctx->pdata->fd;
 	const char *id = dev->id;
 
 	if (chn)
-		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s\r\n",
-				id, chn, attr, src);
+		snprintf(buf, sizeof(buf), "WRITE %s %s %s %lu\r\n",
+				id, chn, attr, (unsigned long) len);
 	else if (is_debug)
-		snprintf(buf, sizeof(buf), "WRITE %s debug %s %s\r\n",
-				id, attr, src);
+		snprintf(buf, sizeof(buf), "WRITE %s debug %s %lu\r\n",
+				id, attr, (unsigned long) len);
 	else
-		snprintf(buf, sizeof(buf), "WRITE %s %s %s\r\n", id, attr, src);
-
-	pthread_mutex_lock(&dev->ctx->pdata->lock);
-	ret = (ssize_t) exec_command(buf, fd);
-	pthread_mutex_unlock(&dev->ctx->pdata->lock);
-	return ret;
+		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
+				id, attr, (unsigned long) len);
+	return do_write(dev->ctx->pdata, buf, src, len);
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
@@ -387,9 +387,9 @@ static ssize_t network_read_dev_attr(const struct iio_device *dev,
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, bool is_debug)
+		const char *attr, const char *src, size_t len, bool is_debug)
 {
-	return network_write_attr_helper(dev, NULL, attr, src, is_debug);
+	return network_write_attr_helper(dev, NULL, attr, src, len, is_debug);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
@@ -400,9 +400,10 @@ static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
-		const char *attr, const char *src)
+		const char *attr, const char *src, size_t len)
 {
-	return network_write_attr_helper(chn->dev, chn->id, attr, src, false);
+	return network_write_attr_helper(chn->dev, chn->id,
+			attr, src, len, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
