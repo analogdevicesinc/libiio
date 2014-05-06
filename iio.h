@@ -966,6 +966,24 @@ __api int iio_device_debug_attr_write_longlong(const struct iio_device *dev,
 __api int iio_device_debug_attr_write_double(const struct iio_device *dev,
 		const char *attr, double val);
 
+
+/** @brief Identify the channel or debug attribute corresponding to a filename
+ * @param dev A pointer to an iio_device structure
+ * @param filename A NULL-terminated string corresponding to the filename
+ * @param chn A pointer to a pointer of an iio_channel structure. The pointed
+ * pointer will be set to the address of the iio_channel structure if the
+ * filename correspond to the attribute of a channel, or NULL otherwise.
+ * @param attr A pointer to a NULL-terminated string. The pointer
+ * pointer will be set to point to the name of the attribute corresponding to
+ * the filename.
+ * @return On success, 0 is returned, and *chn and *attr are modified.
+ * @return On error, a negative errno code is returned. *chn and *attr are not
+ * modified. */
+__api int iio_device_identify_filename(const struct iio_device *dev,
+		const char *filename, struct iio_channel **chn,
+		const char **attr);
+
+
 /** @} */
 
 #ifdef __cplusplus

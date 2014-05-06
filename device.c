@@ -630,3 +630,42 @@ int iio_device_debug_attr_write_bool(const struct iio_device *dev,
 	else
 		return iio_device_debug_attr_write(dev, attr, "0");
 }
+
+int iio_device_identify_filename(const struct iio_device *dev,
+		const char *filename, struct iio_channel **chn,
+		const char **attr)
+{
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *ch = dev->channels[i];
+		unsigned int j;
+
+		for (j = 0; j < ch->nb_attrs; j++) {
+			if (!strcmp(ch->attrs[j].filename, filename)) {
+				*attr = ch->attrs[j].name;
+				*chn = ch;
+				return 0;
+			}
+		}
+	}
+
+	for (i = 0; i < dev->nb_attrs; i++) {
+		/* Devices attributes are named after their filename */
+		if (!strcmp(dev->attrs[i], filename)) {
+			*attr = dev->attrs[i];
+			*chn = NULL;
+			return 0;
+		}
+	}
+
+	for (i = 0; i < dev->nb_debug_attrs; i++) {
+		if (!strcmp(dev->debug_attrs[i], filename)) {
+			*attr = dev->debug_attrs[i];
+			*chn = NULL;
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
