@@ -106,6 +106,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga75de8dae515c539818e52b408830d3ba"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga75de8dae515c539818e52b408830d3ba">iio_context_destroy</a> (struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga75de8dae515c539818e52b408830d3ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given context.  <a href="#ga75de8dae515c539818e52b408830d3ba">More...</a><br/></td></tr>
 <tr class="separator:ga75de8dae515c539818e52b408830d3ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga74e27674abd69119d308b75edd2130af"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga74e27674abd69119d308b75edd2130af">iio_context_get_version</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, unsigned int *major, unsigned int *minor)</td></tr>
+<tr class="memdesc:ga74e27674abd69119d308b75edd2130af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the version of the backend in use.  <a href="#ga74e27674abd69119d308b75edd2130af">More...</a><br/></td></tr>
+<tr class="separator:ga74e27674abd69119d308b75edd2130af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8fd307456f2667ff0c79dc87d0b6d37f"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga8fd307456f2667ff0c79dc87d0b6d37f">iio_context_get_xml</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga8fd307456f2667ff0c79dc87d0b6d37f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtain a XML representation of the given context.  <a href="#ga8fd307456f2667ff0c79dc87d0b6d37f">More...</a><br/></td></tr>
 <tr class="separator:ga8fd307456f2667ff0c79dc87d0b6d37f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -276,6 +279,51 @@ If the index is invalid, NULL is returned </dd></dl>
 
 </div>
 </div>
+<a class="anchor" id="ga74e27674abd69119d308b75edd2130af"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_context_get_version </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int *&#160;</td>
+          <td class="paramname"><em>major</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int *&#160;</td>
+          <td class="paramname"><em>minor</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the version of the backend in use. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ctx</td><td>A pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </td></tr>
+    <tr><td class="paramname">major</td><td>A pointer to an unsigned integer </td></tr>
+    <tr><td class="paramname">minor</td><td>A pointer to an unsigned integer </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="ga8fd307456f2667ff0c79dc87d0b6d37f"></a>
 <div class="memitem">
 <div class="memproto">
@@ -419,7 +467,7 @@ On failure, NULL is returned</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 11 2014 15:33:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -100,6 +100,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gaee333f1061000b0b71298dff59104513"><td class="memItemLeft" align="right" valign="top">__api __pure bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gaee333f1061000b0b71298dff59104513">iio_channel_is_output</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn)</td></tr>
 <tr class="memdesc:gaee333f1061000b0b71298dff59104513"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return True if the given channel is an output channel.  <a href="#gaee333f1061000b0b71298dff59104513">More...</a><br/></td></tr>
 <tr class="separator:gaee333f1061000b0b71298dff59104513"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad49fb1449e6ed6a42db71696676fd2d3"><td class="memItemLeft" align="right" valign="top">__api __pure bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gad49fb1449e6ed6a42db71696676fd2d3">iio_channel_is_scan_element</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn)</td></tr>
+<tr class="memdesc:gad49fb1449e6ed6a42db71696676fd2d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return True if the given channel is a scan element.  <a href="#gad49fb1449e6ed6a42db71696676fd2d3">More...</a><br/></td></tr>
+<tr class="separator:gad49fb1449e6ed6a42db71696676fd2d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0d9e98519d12fc02a17a3f47011321fb"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga0d9e98519d12fc02a17a3f47011321fb">iio_channel_get_attrs_count</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn)</td></tr>
 <tr class="memdesc:ga0d9e98519d12fc02a17a3f47011321fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the channel-specific attributes of the given channel.  <a href="#ga0d9e98519d12fc02a17a3f47011321fb">More...</a><br/></td></tr>
 <tr class="separator:ga0d9e98519d12fc02a17a3f47011321fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,6 +112,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga64cd8c18fdc14a9a5fb21d955fa99b35"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga64cd8c18fdc14a9a5fb21d955fa99b35">iio_channel_find_attr</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *name)</td></tr>
 <tr class="memdesc:ga64cd8c18fdc14a9a5fb21d955fa99b35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try to find a channel-specific attribute by its name.  <a href="#ga64cd8c18fdc14a9a5fb21d955fa99b35">More...</a><br/></td></tr>
 <tr class="separator:ga64cd8c18fdc14a9a5fb21d955fa99b35"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaaf827107e626bb6677209a6f3192ed37"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gaaf827107e626bb6677209a6f3192ed37">iio_channel_attr_get_filename</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr)</td></tr>
+<tr class="memdesc:gaaf827107e626bb6677209a6f3192ed37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the filename of an attribute.  <a href="#gaaf827107e626bb6677209a6f3192ed37">More...</a><br/></td></tr>
+<tr class="separator:gaaf827107e626bb6677209a6f3192ed37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gacb37ef830dcc100a9908d0592d1ff190"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gacb37ef830dcc100a9908d0592d1ff190">iio_channel_attr_read</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, char *dst, size_t len)</td></tr>
 <tr class="memdesc:gacb37ef830dcc100a9908d0592d1ff190"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given channel-specific attribute.  <a href="#gacb37ef830dcc100a9908d0592d1ff190">More...</a><br/></td></tr>
 <tr class="separator:gacb37ef830dcc100a9908d0592d1ff190"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -159,6 +165,44 @@ Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="gaaf827107e626bb6677209a6f3192ed37"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __pure const char* iio_channel_attr_get_filename </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__channel.html">iio_channel</a> *&#160;</td>
+          <td class="paramname"><em>chn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieve the filename of an attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>a NULL-terminated string corresponding to the name of the attribute </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, a pointer to a static NULL-terminated string </dd>
+<dd>
+If the attribute name is unknown, NULL is returned </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="gacb37ef830dcc100a9908d0592d1ff190"></a>
 <div class="memitem">
 <div class="memproto">
@@ -199,7 +243,7 @@ Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">dst</td><td>A pointer to the memory area where the NULL-terminated string corresponding to the value read will be stored </td></tr>
     <tr><td class="paramname">len</td><td>The available length of the memory area, in bytes </td></tr>
   </table>
@@ -245,7 +289,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">val</td><td>A pointer to a bool variable where the value should be stored </td></tr>
   </table>
   </dd>
@@ -290,7 +334,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">val</td><td>A pointer to a double variable where the value should be stored </td></tr>
   </table>
   </dd>
@@ -335,7 +379,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">val</td><td>A pointer to a long long variable where the value should be stored </td></tr>
   </table>
   </dd>
@@ -380,7 +424,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">src</td><td>A NULL-terminated string to set the attribute to </td></tr>
   </table>
   </dd>
@@ -425,7 +469,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">val</td><td>A bool value to set the attribute to </td></tr>
   </table>
   </dd>
@@ -470,7 +514,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">val</td><td>A double value to set the attribute to </td></tr>
   </table>
   </dd>
@@ -515,7 +559,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
     <tr><td class="paramname">val</td><td>A long long value to set the attribute to </td></tr>
   </table>
   </dd>
@@ -603,7 +647,7 @@ On error, a negative errno code is returned </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
-    <tr><td class="paramname">name</td><td>A NULL-terminated string corresponding to the name or the attribute </td></tr>
+    <tr><td class="paramname">name</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
   </table>
   </dd>
 </dl>
@@ -800,6 +844,32 @@ If the index is invalid, NULL is returned </dd></dl>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the channel is an output channel, False otherwise </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="gad49fb1449e6ed6a42db71696676fd2d3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __pure bool iio_channel_is_scan_element </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__channel.html">iio_channel</a> *&#160;</td>
+          <td class="paramname"><em>chn</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return True if the given channel is a scan element. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>True if the channel is a scan element, False otherwise</dd></dl>
+<p><b>NOTE:</b> a channel that is a scan element is a channel that can generate samples (for an input channel) or receive samples (for an output channel) after being enabled. </p>
 
 </div>
 </div>
@@ -1037,7 +1107,7 @@ If the index is invalid, NULL is returned </dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 11 2014 15:33:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

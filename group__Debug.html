@@ -119,6 +119,36 @@ Functions</h2></td></tr>
 <tr class="memitem:ga44b533706799744ce2ef6618af808f02"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga44b533706799744ce2ef6618af808f02">iio_device_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const void *src, size_t len)</td></tr>
 <tr class="memdesc:ga44b533706799744ce2ef6618af808f02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a raw stream to the given device.  <a href="#ga44b533706799744ce2ef6618af808f02">More...</a><br/></td></tr>
 <tr class="separator:ga44b533706799744ce2ef6618af808f02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7b73b6fa484da3af7735cd80b90f3464"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga7b73b6fa484da3af7735cd80b90f3464">iio_device_get_debug_attrs_count</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
+<tr class="memdesc:ga7b73b6fa484da3af7735cd80b90f3464"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the debug attributes of the given device.  <a href="#ga7b73b6fa484da3af7735cd80b90f3464">More...</a><br/></td></tr>
+<tr class="separator:ga7b73b6fa484da3af7735cd80b90f3464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf64c20583fd66701afcc6c7ba3deb6ea"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaf64c20583fd66701afcc6c7ba3deb6ea">iio_device_get_debug_attr</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, unsigned int index)</td></tr>
+<tr class="memdesc:gaf64c20583fd66701afcc6c7ba3deb6ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the debug attribute present at the given index.  <a href="#gaf64c20583fd66701afcc6c7ba3deb6ea">More...</a><br/></td></tr>
+<tr class="separator:gaf64c20583fd66701afcc6c7ba3deb6ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2ae0fe2e179de9f6de10900f72fc28be"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga2ae0fe2e179de9f6de10900f72fc28be">iio_device_debug_attr_read</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, char *dst, size_t len)</td></tr>
+<tr class="memdesc:ga2ae0fe2e179de9f6de10900f72fc28be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given debug attribute.  <a href="#ga2ae0fe2e179de9f6de10900f72fc28be">More...</a><br/></td></tr>
+<tr class="separator:ga2ae0fe2e179de9f6de10900f72fc28be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga01151f264c7e22fcf8390b5303b51bb3"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3">iio_device_debug_attr_write</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const char *src)</td></tr>
+<tr class="memdesc:ga01151f264c7e22fcf8390b5303b51bb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#ga01151f264c7e22fcf8390b5303b51bb3">More...</a><br/></td></tr>
+<tr class="separator:ga01151f264c7e22fcf8390b5303b51bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac2d887e2f77423596487302d2728c99e"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gac2d887e2f77423596487302d2728c99e">iio_device_debug_attr_read_bool</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, bool *val)</td></tr>
+<tr class="memdesc:gac2d887e2f77423596487302d2728c99e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given debug attribute.  <a href="#gac2d887e2f77423596487302d2728c99e">More...</a><br/></td></tr>
+<tr class="separator:gac2d887e2f77423596487302d2728c99e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac43421333d85b03e7aeb31eb60a676fe"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gac43421333d85b03e7aeb31eb60a676fe">iio_device_debug_attr_read_longlong</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, long long *val)</td></tr>
+<tr class="memdesc:gac43421333d85b03e7aeb31eb60a676fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given debug attribute.  <a href="#gac43421333d85b03e7aeb31eb60a676fe">More...</a><br/></td></tr>
+<tr class="separator:gac43421333d85b03e7aeb31eb60a676fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga01b435571a0bd034bc47987295821573"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga01b435571a0bd034bc47987295821573">iio_device_debug_attr_read_double</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, double *val)</td></tr>
+<tr class="memdesc:ga01b435571a0bd034bc47987295821573"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given debug attribute.  <a href="#ga01b435571a0bd034bc47987295821573">More...</a><br/></td></tr>
+<tr class="separator:ga01b435571a0bd034bc47987295821573"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2013f7206e2dde3aedee31ba01945585"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga2013f7206e2dde3aedee31ba01945585">iio_device_debug_attr_write_bool</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, bool val)</td></tr>
+<tr class="memdesc:ga2013f7206e2dde3aedee31ba01945585"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#ga2013f7206e2dde3aedee31ba01945585">More...</a><br/></td></tr>
+<tr class="separator:ga2013f7206e2dde3aedee31ba01945585"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga83e2e2ef3c9fa91561b41dd32c59194e"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga83e2e2ef3c9fa91561b41dd32c59194e">iio_device_debug_attr_write_longlong</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, long long val)</td></tr>
+<tr class="memdesc:ga83e2e2ef3c9fa91561b41dd32c59194e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#ga83e2e2ef3c9fa91561b41dd32c59194e">More...</a><br/></td></tr>
+<tr class="separator:ga83e2e2ef3c9fa91561b41dd32c59194e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1d105cd9079c1218c363db75cf504e0d"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d">iio_device_debug_attr_write_double</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, double val)</td></tr>
+<tr class="memdesc:ga1d105cd9079c1218c363db75cf504e0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#ga1d105cd9079c1218c363db75cf504e0d">More...</a><br/></td></tr>
+<tr class="separator:ga1d105cd9079c1218c363db75cf504e0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -283,6 +313,436 @@ On error, a negative errno code is returned </dd></dl>
 <dd>
 On error, a negative errno code is returned</dd></dl>
 <p><b>NOTE:</b> This is not required when using the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> functions; it is only useful when used with iio_device_read_raw / iio_device_write_raw. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga2ae0fe2e179de9f6de10900f72fc28be"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api ssize_t iio_device_debug_attr_read </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read the content of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">dst</td><td>A pointer to the memory area where the NULL-terminated string corresponding to the value read will be stored </td></tr>
+    <tr><td class="paramname">len</td><td>The available length of the memory area, in bytes </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written to the buffer </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="gac2d887e2f77423596487302d2728c99e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_debug_attr_read_bool </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read the content of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">val</td><td>A pointer to a bool variable where the value should be stored </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga01b435571a0bd034bc47987295821573"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_debug_attr_read_double </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&#160;</td>
+          <td class="paramname"><em>val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read the content of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">val</td><td>A pointer to a double variable where the value should be stored </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="gac43421333d85b03e7aeb31eb60a676fe"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_debug_attr_read_longlong </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">long long *&#160;</td>
+          <td class="paramname"><em>val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read the content of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">val</td><td>A pointer to a long long variable where the value should be stored </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga01151f264c7e22fcf8390b5303b51bb3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api ssize_t iio_device_debug_attr_write </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">src</td><td>A NULL-terminated string to set the debug attribute to </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga2013f7206e2dde3aedee31ba01945585"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_debug_attr_write_bool </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">val</td><td>A bool value to set the debug attribute to </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga1d105cd9079c1218c363db75cf504e0d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_debug_attr_write_double </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">val</td><td>A double value to set the debug attribute to </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga83e2e2ef3c9fa91561b41dd32c59194e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_debug_attr_write_longlong </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">long long&#160;</td>
+          <td class="paramname"><em>val</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">val</td><td>A long long value to set the debug attribute to </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="gaf64c20583fd66701afcc6c7ba3deb6ea"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __pure const char* iio_device_get_debug_attr </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>index</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the debug attribute present at the given index. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">index</td><td>The index corresponding to the debug attribute </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, a pointer to a static NULL-terminated string </dd>
+<dd>
+If the index is invalid, NULL is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga7b73b6fa484da3af7735cd80b90f3464"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __pure unsigned int iio_device_get_debug_attrs_count </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enumerate the debug attributes of the given device. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The number of debug attributes found </dd></dl>
 
 </div>
 </div>
@@ -465,7 +925,7 @@ On error, a negative errno code is returned</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 11 2014 15:33:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -113,8 +113,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>iio_buffer_refill()
 : <a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516">iio.h</a>
 </li>
+<li>iio_buffer_start()
+: <a class="el" href="group__Buffer.html#gaa4a0f8135ccc592fd9307fabcdb3c06c">iio.h</a>
+</li>
 <li>iio_buffer_step()
 : <a class="el" href="group__Buffer.html#ga18d5cb8d912b5b888b9b54c6d0c7f92c">iio.h</a>
+</li>
+<li>iio_channel_attr_get_filename()
+: <a class="el" href="group__Channel.html#gaaf827107e626bb6677209a6f3192ed37">iio.h</a>
 </li>
 <li>iio_channel_attr_read()
 : <a class="el" href="group__Channel.html#gacb37ef830dcc100a9908d0592d1ff190">iio.h</a>
@@ -182,6 +188,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>iio_channel_is_output()
 : <a class="el" href="group__Channel.html#gaee333f1061000b0b71298dff59104513">iio.h</a>
 </li>
+<li>iio_channel_is_scan_element()
+: <a class="el" href="group__Channel.html#gad49fb1449e6ed6a42db71696676fd2d3">iio.h</a>
+</li>
 <li>iio_channel_read()
 : <a class="el" href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e">iio.h</a>
 </li>
@@ -211,6 +220,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>iio_context_get_name()
 : <a class="el" href="group__Context.html#gaa07d9c8e3730ae646fb54cbbd4368101">iio.h</a>
+</li>
+<li>iio_context_get_version()
+: <a class="el" href="group__Context.html#ga74e27674abd69119d308b75edd2130af">iio.h</a>
 </li>
 <li>iio_context_get_xml()
 : <a class="el" href="group__Context.html#ga8fd307456f2667ff0c79dc87d0b6d37f">iio.h</a>
@@ -255,7 +267,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="group__Debug.html#gad6316440538b35159769f67fddcffad6">iio.h</a>
 </li>
 <li>iio_device_create_buffer()
-: <a class="el" href="group__Buffer.html#ga1d763d5165bf33152abd935000397735">iio.h</a>
+: <a class="el" href="group__Buffer.html#ga81852df8d74592f93178b08961ebebba">iio.h</a>
+</li>
+<li>iio_device_debug_attr_read()
+: <a class="el" href="group__Debug.html#ga2ae0fe2e179de9f6de10900f72fc28be">iio.h</a>
+</li>
+<li>iio_device_debug_attr_read_bool()
+: <a class="el" href="group__Debug.html#gac2d887e2f77423596487302d2728c99e">iio.h</a>
+</li>
+<li>iio_device_debug_attr_read_double()
+: <a class="el" href="group__Debug.html#ga01b435571a0bd034bc47987295821573">iio.h</a>
+</li>
+<li>iio_device_debug_attr_read_longlong()
+: <a class="el" href="group__Debug.html#gac43421333d85b03e7aeb31eb60a676fe">iio.h</a>
+</li>
+<li>iio_device_debug_attr_write()
+: <a class="el" href="group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3">iio.h</a>
+</li>
+<li>iio_device_debug_attr_write_bool()
+: <a class="el" href="group__Debug.html#ga2013f7206e2dde3aedee31ba01945585">iio.h</a>
+</li>
+<li>iio_device_debug_attr_write_double()
+: <a class="el" href="group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d">iio.h</a>
+</li>
+<li>iio_device_debug_attr_write_longlong()
+: <a class="el" href="group__Debug.html#ga83e2e2ef3c9fa91561b41dd32c59194e">iio.h</a>
 </li>
 <li>iio_device_find_attr()
 : <a class="el" href="group__Device.html#gac4b901fc37d404235e2b836d472cd3a4">iio.h</a>
@@ -277,6 +313,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>iio_device_get_data()
 : <a class="el" href="group__Device.html#ga87cff8d90e1a68e73410e4a527cc5334">iio.h</a>
+</li>
+<li>iio_device_get_debug_attr()
+: <a class="el" href="group__Debug.html#gaf64c20583fd66701afcc6c7ba3deb6ea">iio.h</a>
+</li>
+<li>iio_device_get_debug_attrs_count()
+: <a class="el" href="group__Debug.html#ga7b73b6fa484da3af7735cd80b90f3464">iio.h</a>
 </li>
 <li>iio_device_get_id()
 : <a class="el" href="group__Device.html#ga233b868380bca0578907bda28d3a5480">iio.h</a>
@@ -312,7 +354,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 11 2014 15:33:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
