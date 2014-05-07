@@ -508,32 +508,6 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 		return nb - ret;
 }
 
-static struct iio_device * get_device(struct iio_context *ctx, const char *id)
-{
-	unsigned int i;
-
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
-		if (!strcmp(id, dev->id)
-				|| (dev->name && !strcmp(id, dev->name)))
-			return dev;
-	}
-	return NULL;
-}
-
-static struct iio_channel * get_channel(const struct iio_device *dev,
-		const char *id)
-{
-	unsigned int i;
-	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *chn = dev->channels[i];
-		if (!strcmp(id, chn->id)
-				|| (chn->name && !strcmp(id, chn->name)))
-			return chn;
-	}
-	return NULL;
-}
-
 static uint32_t *get_mask(const char *mask, size_t *len)
 {
 	size_t nb = (*len + 7) / 8;
@@ -694,58 +668,40 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 	return -ENODEV;
 }
 
-int open_dev(struct parser_pdata *pdata, const char *id,
+int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask)
 {
-	int ret = -ENODEV;
-	struct iio_device *dev = get_device(pdata->ctx, id);
-	if (dev)
-		ret = open_dev_helper(pdata, dev, samples_count, mask);
+	int ret = open_dev_helper(pdata, dev, samples_count, mask);
 	print_value(pdata, ret);
 	return ret;
 }
 
-int close_dev(struct parser_pdata *pdata, const char *id)
+int close_dev(struct parser_pdata *pdata, struct iio_device *dev)
 {
-	int ret = -ENODEV;
-	struct iio_device *dev = get_device(pdata->ctx, id);
-	if (dev)
-		ret = close_dev_helper(pdata, dev);
+	int ret = close_dev_helper(pdata, dev);
 	print_value(pdata, ret);
 	return ret;
 }
 
-ssize_t rw_dev(struct parser_pdata *pdata, const char *id,
+ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		unsigned int nb, bool is_write)
 {
-	struct iio_device *dev = get_device(pdata->ctx, id);
-	ssize_t ret;
-
-	if (!dev) {
-		print_value(pdata, -ENODEV);
-		return -ENODEV;
-	}
-
-	ret = rw_buffer(pdata, dev, nb, is_write);
+	ssize_t ret = rw_buffer(pdata, dev, nb, is_write);
 	if (ret <= 0 || is_write)
 		print_value(pdata, ret);
 	return ret;
 }
 
-ssize_t read_dev_attr(struct parser_pdata *pdata,
-		const char *id, const char *attr, bool is_debug)
+ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
+		const char *attr, bool is_debug)
 {
-	struct iio_device *dev = get_device(pdata->ctx, id);
 	char buf[1024];
-	ssize_t ret = -ENODEV;
+	ssize_t ret;
 
-	if (dev) {
-		if (is_debug)
-			ret = iio_device_debug_attr_read(dev,
-					attr, buf, sizeof(buf));
-		else
-			ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
-	}
+	if (is_debug)
+		ret = iio_device_debug_attr_read(dev, attr, buf, sizeof(buf));
+	else
+		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
 	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
@@ -755,17 +711,11 @@ ssize_t read_dev_attr(struct parser_pdata *pdata,
 	return ret;
 }
 
-ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
+ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 		const char *attr, size_t len, bool is_debug)
 {
-	struct iio_device *dev = get_device(pdata->ctx, id);
-	ssize_t ret = -ENODEV;
-	char *buf;
-
-	if (!dev)
-		goto err_print_value;
-
-	buf = malloc(len);
+	ssize_t ret = -ENOMEM;
+	char *buf = malloc(len);
 	if (!buf)
 		goto err_print_value;
 
@@ -785,18 +735,11 @@ err_print_value:
 	return ret;
 }
 
-ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
-		const char *channel, const char *attr)
+ssize_t read_chn_attr(struct parser_pdata *pdata,
+		struct iio_channel *chn, const char *attr)
 {
 	char buf[1024];
-	ssize_t ret = -ENODEV;
-	struct iio_channel *chn = NULL;
-	struct iio_device *dev = get_device(pdata->ctx, id);
-
-	if (dev)
-		chn = get_channel(dev, channel);
-	if (chn)
-		ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
+	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
 	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
@@ -806,22 +749,11 @@ ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
 	return ret;
 }
 
-ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
-		const char *channel, const char *attr, size_t len)
+ssize_t write_chn_attr(struct parser_pdata *pdata,
+		struct iio_channel *chn, const char *attr, size_t len)
 {
-	ssize_t ret = -ENODEV;
-	struct iio_channel *chn;
-	struct iio_device *dev = get_device(pdata->ctx, id);
-	char *buf;
-
-	if (!dev)
-		goto err_print_value;
-
-	chn = get_channel(dev, channel);
-	if (!chn)
-		goto err_print_value;
-
-	buf = malloc(len);
+	ssize_t ret = -ENOMEM;
+	char *buf = malloc(len);
 	if (!buf)
 		goto err_print_value;
 
@@ -838,34 +770,27 @@ err_print_value:
 }
 
 ssize_t set_trigger(struct parser_pdata *pdata,
-		const char *id, const char *trigger)
+		struct iio_device *dev, const char *trigger)
 {
+	struct iio_device *trig = NULL;
 	ssize_t ret = -ENODEV;
-	struct iio_device *dev = get_device(pdata->ctx, id);
 
-	if (dev) {
-		if (!trigger) {
-			ret = iio_device_set_trigger(dev, NULL);
-		} else {
-			struct iio_device *trig;
-			trig = get_device(pdata->ctx, trigger);
-			if (trig)
-				ret = iio_device_set_trigger(dev, trig);
-			else
-				ret = -ENXIO;
-		}
+	if (trigger) {
+		trig = iio_context_find_device(pdata->ctx, trigger);
+		if (!trig)
+			goto err_print_value;
 	}
+
+	ret = iio_device_set_trigger(dev, trig);
+err_print_value:
 	print_value(pdata, ret);
 	return ret;
 }
 
-ssize_t get_trigger(struct parser_pdata *pdata, const char *id)
+ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 {
-	ssize_t ret = -ENODEV;
-	const struct iio_device *trigger, *dev = get_device(pdata->ctx, id);
-
-	if (dev)
-		ret = iio_device_get_trigger(dev, &trigger);
+	const struct iio_device *trigger;
+	ssize_t ret = iio_device_get_trigger(dev, &trigger);
 	if (!ret && trigger) {
 		ret = strlen(trigger->name);
 		print_value(pdata, ret);

@@ -32,32 +32,37 @@ struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;
 	FILE *in, *out;
+
+	/* Used as temporaries placements by the lexer */
+	struct iio_device *dev;
+	struct iio_channel *chn;
+	bool channel_is_output;
 };
 
 extern bool server_demux; /* Defined in iiod.c */
 
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
 
-int open_dev(struct parser_pdata *pdata, const char *id,
+int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask);
-int close_dev(struct parser_pdata *pdata, const char *id);
+int close_dev(struct parser_pdata *pdata, struct iio_device *dev);
 
-ssize_t rw_dev(struct parser_pdata *pdata, const char *id,
+ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		unsigned int nb, bool is_write);
 
-ssize_t read_dev_attr(struct parser_pdata *pdata,
-		const char *id, const char *attr, bool is_debug);
-ssize_t write_dev_attr(struct parser_pdata *pdata, const char *id,
+ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
+		const char *attr, bool is_debug);
+ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 		const char *attr, size_t len, bool is_debug);
 
-ssize_t read_chn_attr(struct parser_pdata *pdata, const char *id,
-		const char *chn, const char *attr);
-ssize_t write_chn_attr(struct parser_pdata *pdata, const char *id,
-		const char *chn, const char *attr, size_t len);
+ssize_t read_chn_attr(struct parser_pdata *pdata, struct iio_channel *chn,
+		const char *attr);
+ssize_t write_chn_attr(struct parser_pdata *pdata, struct iio_channel *chn,
+		const char *attr, size_t len);
 
-ssize_t get_trigger(struct parser_pdata *pdata, const char *id);
+ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev);
 ssize_t set_trigger(struct parser_pdata *pdata,
-		const char *id, const char *trigger);
+		struct iio_device *dev, const char *trig);
 
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {

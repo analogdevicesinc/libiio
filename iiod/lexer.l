@@ -18,61 +18,111 @@
  * */
 
 #include "parser.h"
+#include "ops.h"
 %}
 
 %option noyywrap reentrant bison-bridge nounistd
 
+WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
+
+%s WANT_DEVICE
+%s WANT_CHN_OR_ATTR
+%s WANT_CHN
+%s WANT_ATTR
 %%
 
-VERSION|version {
+<INITIAL>VERSION|version {
 	return VERSION;
 }
 
-PRINT|print {
+<INITIAL>PRINT|print {
 	return PRINT;
 }
 
-OPEN|open {
-	return OPEN;
-}
-
-CLOSE|close {
-	return CLOSE;
-}
-
-READ|read {
-	return READ;
-}
-
-READBUF|readbuf {
-	return READBUF;
-}
-
-WRITEBUF|writebuf {
-	return WRITEBUF;
-}
-
-WRITE|write {
-	return WRITE;
-}
-
-SETTRIG|settrig {
-	return SETTRIG;
-}
-
-GETTRIG|gettrig {
-	return GETTRIG;
-}
-
-EXIT|exit|QUIT|quit {
+<INITIAL>EXIT|exit|QUIT|quit {
 	return EXIT;
 }
 
-HELP|help {
+<INITIAL>HELP|help {
 	return HELP;
 }
 
-(([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+ {
+<INITIAL>OPEN|open {
+	BEGIN(WANT_DEVICE);
+	return OPEN;
+}
+
+<INITIAL>CLOSE|close {
+	BEGIN(WANT_DEVICE);
+	return CLOSE;
+}
+
+<INITIAL>READ|read {
+	BEGIN(WANT_DEVICE);
+	return READ;
+}
+
+<INITIAL>READBUF|readbuf {
+	BEGIN(WANT_DEVICE);
+	return READBUF;
+}
+
+<INITIAL>WRITEBUF|writebuf {
+	BEGIN(WANT_DEVICE);
+	return WRITEBUF;
+}
+
+<INITIAL>WRITE|write {
+	BEGIN(WANT_DEVICE);
+	return WRITE;
+}
+
+<INITIAL>SETTRIG|settrig {
+	BEGIN(WANT_DEVICE);
+	return SETTRIG;
+}
+
+<INITIAL>GETTRIG|gettrig {
+	BEGIN(WANT_DEVICE);
+	return GETTRIG;
+}
+
+<WANT_DEVICE>{WORD} {
+	struct parser_pdata *pdata = yyget_extra(yyscanner);
+	struct iio_device *dev = iio_context_find_device(pdata->ctx, yytext);
+	if (dev) {
+		yylval->dev = dev;
+		pdata->dev = dev;
+		BEGIN(WANT_CHN_OR_ATTR);
+		return DEVICE;
+	}
+}
+
+<WANT_CHN_OR_ATTR>DEBUG|debug {
+	BEGIN(WANT_ATTR);
+	return DEBUG_ATTR;
+}
+
+<WANT_CHN_OR_ATTR>INPUT|input|OUTPUT|output {
+	struct parser_pdata *pdata = yyget_extra(yyscanner);
+	pdata->channel_is_output = yytext[0] == 'o' || yytext[0] == 'O';
+	BEGIN(WANT_CHN);
+	return IN_OUT;
+}
+
+<WANT_CHN>{WORD} {
+	struct parser_pdata *pdata = yyget_extra(yyscanner);
+	struct iio_channel *chn = iio_device_find_channel(
+					pdata->dev, yytext, pdata->channel_is_output);
+	if (chn) {
+		yylval->chn = chn;
+		pdata->chn = chn;
+		BEGIN(WANT_ATTR);
+		return CHANNEL;
+	}
+}
+
+{WORD} {
 	yylval->word = strdup(yytext);
 	return WORD;
 }
@@ -82,7 +132,10 @@ HELP|help {
 }
 
 [ \t]*\n {
+	BEGIN(INITIAL);
 	return END;
 }
 
-. ;
+. {
+	BEGIN(INITIAL);
+}

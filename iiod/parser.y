@@ -36,6 +36,7 @@ typedef void *yyscan_t;
 
 #include "../debug.h"
 
+#include <stdbool.h>
 #include <sys/socket.h>
 
 int yylex();
@@ -72,6 +73,8 @@ void yyset_out(FILE *out, yyscan_t scanner);
 
 %union {
 	char *word;
+	struct iio_device *dev;
+	struct iio_channel *chn;
 }
 
 %token SPACE
@@ -89,8 +92,12 @@ void yyset_out(FILE *out, yyscan_t scanner);
 %token WRITE
 %token SETTRIG
 %token GETTRIG
+%token DEBUG_ATTR
+%token IN_OUT
 
 %token <word> WORD
+%token <dev> DEVICE
+%token <chn> CHANNEL
 
 %destructor { DEBUG("Freeing token \"%s\"\n", $$); free($$); } <word>
 
@@ -121,9 +128,9 @@ Line:
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
 		"\t\tClose the specified device\n"
-		"\tREAD <device> [\"debug\"|<channel>] <attribute>\n"
+		"\tREAD <device> DEBUG|[INPUT|OUTPUT <channel>] <attribute>\n"
 		"\t\tRead the value of an attribute\n"
-		"\tWRITE <device> [\"debug\"|<channel>] <attribute> <bytes_count>\n"
+		"\tWRITE <device> DEBUG|[INPUT|OUTPUT <channel>] <attribute> <bytes_count>\n"
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
@@ -156,12 +163,11 @@ Line:
 		output(pdata, "\n");
 		YYACCEPT;
 	}
-	| OPEN SPACE WORD SPACE WORD SPACE WORD END {
-		char *id = $3, *nb = $5, *mask = $7;
+	| OPEN SPACE DEVICE SPACE WORD SPACE WORD END {
+		char *nb = $5, *mask = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		unsigned long samples_count = atol(nb);
-		int ret = open_dev(pdata, id, samples_count, mask);
-		free(id);
+		int ret = open_dev(pdata, $3, samples_count, mask);
 		free(nb);
 		free(mask);
 		if (ret < 0)
@@ -169,130 +175,126 @@ Line:
 		else
 			YYACCEPT;
 	}
-	| CLOSE SPACE WORD END {
-		char *id = $3;
+	| CLOSE SPACE DEVICE END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		int ret = close_dev(pdata, id);
-		free(id);
+		int ret = close_dev(pdata, $3);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| READ SPACE WORD SPACE WORD END {
-		char *id = $3, *attr = $5;
+	| READ SPACE DEVICE SPACE WORD END {
+		char *attr = $5;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev_attr(pdata, id, attr, false);
-		free(id);
+		ssize_t ret = read_dev_attr(pdata, $3, attr, false);
 		free(attr);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| READ SPACE WORD SPACE WORD SPACE WORD END {
-		char *id = $3, *chn = $5, *attr = $7;
+	| READ SPACE DEVICE SPACE DEBUG_ATTR SPACE WORD END {
+		char *attr = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret;
-		if (!strcmp(chn, "debug"))
-			ret = read_dev_attr(pdata, id, attr, true);
-		else
-			ret = read_chn_attr(pdata, id, chn, attr);
-		free(id);
-		free(chn);
+		ssize_t ret = read_dev_attr(pdata, $3, attr, true);
 		free(attr);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| READBUF SPACE WORD SPACE WORD END {
-		char *id = $3, *attr = $5;
-		unsigned long nb = atol(attr);
+	| READ SPACE DEVICE SPACE IN_OUT SPACE CHANNEL SPACE WORD END {
+		char *attr = $9;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = rw_dev(pdata, id, nb, false);
-
-		free(id);
+		ssize_t ret = read_chn_attr(pdata, $7, attr);
 		free(attr);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| WRITEBUF SPACE WORD SPACE WORD END {
-		char *id = $3, *attr = $5;
-		unsigned long nb = atol(attr);
+	| READBUF SPACE DEVICE SPACE WORD END {
+		char *len = $5;
+		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = rw_dev(pdata, id, nb, true);
+		ssize_t ret = rw_dev(pdata, $3, nb, false);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| WRITEBUF SPACE DEVICE SPACE WORD END {
+		char *len = $5;
+		unsigned long nb = atol(len);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = rw_dev(pdata, $3, nb, true);
 
 		/* Discard additional data */
 		yyclearin;
 
-		free(id);
-		free(attr);
+		free(len);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| WRITE SPACE WORD SPACE WORD SPACE WORD END {
-		char *id = $3, *attr = $5, *value = $7;
-		unsigned long nb = atol(value);
+	| WRITE SPACE DEVICE SPACE WORD SPACE WORD END {
+		char *attr = $5, *len = $7;
+		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, id, attr, nb, false);
-		free(id);
+		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, false);
 		free(attr);
-		free(value);
+		free(len);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| WRITE SPACE WORD SPACE WORD SPACE WORD SPACE WORD END {
-		char *id = $3, *chn = $5, *attr = $7, *value = $9;
-		unsigned long nb = atol(value);
+	| WRITE SPACE DEVICE SPACE DEBUG_ATTR SPACE WORD SPACE WORD END {
+		char *attr = $7, *len = $9;
+		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret;
-		if (!strcmp(chn, "debug"))
-			ret = write_dev_attr(pdata, id, attr, nb, true);
-		else
-			ret = write_chn_attr(pdata, id, chn, attr, nb);
-		free(id);
-		free(chn);
+		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, true);
 		free(attr);
-		free(value);
+		free(len);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| SETTRIG SPACE WORD SPACE WORD END {
-		char *id = $3, *trig = $5;
+	| WRITE SPACE DEVICE SPACE IN_OUT SPACE CHANNEL SPACE WORD SPACE WORD END {
+		char *attr = $9, *len = $11;
+		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = set_trigger(pdata, id, trig);
-		free(id);
+		ssize_t ret = write_chn_attr(pdata, $7, attr, nb);
+		free(attr);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| SETTRIG SPACE DEVICE SPACE WORD END {
+		char *trig = $5;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = set_trigger(pdata, $3, trig);
 		free(trig);
 		if (ret < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| SETTRIG SPACE WORD END {
-		char *id = $3;
+	| SETTRIG SPACE DEVICE END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = set_trigger(pdata, id, NULL);
-		free(id);
-		if (ret < 0)
+		if (set_trigger(pdata, $3, NULL) < 0)
 			YYABORT;
 		else
 			YYACCEPT;
 	}
-	| GETTRIG SPACE WORD END {
-		char *id = $3;
+	| GETTRIG SPACE DEVICE END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = get_trigger(pdata, id);
-		free(id);
-		if (ret < 0)
+		if (get_trigger(pdata, $3) < 0)
 			YYABORT;
 		else
 			YYACCEPT;
