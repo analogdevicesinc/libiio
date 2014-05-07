@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class Context
+    class Context : IDisposable
     {
         private IntPtr ctx;
         private List<Device> devices;
@@ -58,7 +58,8 @@ namespace iio
 
         ~Context()
         {
-            iio_context_destroy(ctx);
+            if (ctx != IntPtr.Zero)
+                Dispose(false);
         }
 
         public string name()
@@ -74,6 +75,22 @@ namespace iio
         public List<Device> get_devices()
         {
             return devices;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        private void Dispose(bool clean)
+        {
+            if (ctx != IntPtr.Zero)
+            {
+                if (clean)
+                    GC.SuppressFinalize(this);
+                iio_context_destroy(ctx);
+                ctx = IntPtr.Zero;
+            }
         }
     }
 }

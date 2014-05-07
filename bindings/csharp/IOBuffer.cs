@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class IOBuffer
+    class IOBuffer : IDisposable
     {
         public IntPtr buf;
         private uint samples_count;
@@ -35,7 +35,8 @@ namespace iio
 
         ~IOBuffer()
         {
-            iio_buffer_destroy(buf);
+            if (buf != IntPtr.Zero)
+                Dispose(false);
         }
 
         public void refill()
@@ -55,6 +56,22 @@ namespace iio
         public uint get_samples_count()
         {
             return samples_count;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        private void Dispose(bool clean)
+        {
+            if (buf != IntPtr.Zero)
+            {
+                if (clean)
+                    GC.SuppressFinalize(this);
+                iio_buffer_destroy(buf);
+                buf = IntPtr.Zero;
+            }
         }
     }
 }
