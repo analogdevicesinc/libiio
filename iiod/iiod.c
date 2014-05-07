@@ -32,6 +32,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/* For some reason, <netinet/tcp.h> needs this to define SOL_TCP */
+#define __USE_MISC
+#include <netinet/tcp.h>
+#undef __USE_MISC
+
 #define IIOD_VERSION "0.1"
 #define MY_NAME "iiod"
 
@@ -121,6 +126,9 @@ int main(int argc, char **argv)
 	bool debug = false, xml_backend = backend && !strcmp(backend, "xml");
 	int c, option_index = 0, arg_index = xml_backend;
 	int yes = 1;
+	int keepalive_time = 10,
+	    keepalive_intvl = 10,
+	    keepalive_probes = 6;
 
 	while ((c = getopt_long(argc, argv, "+hVdD",
 					options, &option_index)) != -1) {
@@ -212,6 +220,17 @@ int main(int argc, char **argv)
 			close(new);
 			continue;
 		}
+
+		/* Configure the socket to send keep-alive packets every 10s,
+		 * and disconnect the client if no reply was received for one
+		 * minute. */
+		setsockopt(new, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
+		setsockopt(new, SOL_TCP, TCP_KEEPCNT, &keepalive_probes,
+				sizeof(keepalive_probes));
+		setsockopt(new, SOL_TCP, TCP_KEEPIDLE, &keepalive_time,
+				sizeof(keepalive_time));
+		setsockopt(new, SOL_TCP, TCP_KEEPINTVL, &keepalive_intvl,
+				sizeof(keepalive_intvl));
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
