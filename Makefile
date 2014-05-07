@@ -59,7 +59,9 @@ $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
-all: $(LIBIIO) libiio.pc iiod tests examples html
+libiio: $(LIBIIO) libiio.pc
+
+all: libiio iiod tests examples html
 
 html: Doxyfile
 	$(SUM) "  GEN     $@"
