@@ -67,7 +67,7 @@ ssize_t set_trigger(struct parser_pdata *pdata,
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
 	int fd = fileno(pdata->out);
-	if (send(fd, text, strlen(text), MSG_NOSIGNAL) == -EPIPE)
+	if (send(fd, text, strlen(text), MSG_NOSIGNAL) < 0)
 		pdata->stop = true;
 }
 
