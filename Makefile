@@ -65,7 +65,7 @@ all: libiio iiod tests examples html
 
 html: Doxyfile
 	$(SUM) "  GEN     $@"
-	$(CMD)doxygen $<
+	$(CMD) -doxygen $<
 
 clean-tests clean-examples clean-iiod:
 	$(CMD)$(MAKE) -C $(@:clean-%=%) clean
