@@ -1020,6 +1020,26 @@ __api int iio_device_identify_filename(const struct iio_device *dev,
 		const char **attr);
 
 
+/** @brief Set the value of a hardware register
+ * @param dev A pointer to an iio_device structure
+ * @param address The address of the register
+ * @param value The value to set the register to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_reg_write(struct iio_device *dev,
+		uint32_t address, uint32_t value);
+
+
+/** @brief Get the value of a hardware register
+ * @param dev A pointer to an iio_device structure
+ * @param address The address of the register
+ * @param value A pointer to the variable where the value will be written
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_reg_read(struct iio_device *dev,
+		uint32_t address, uint32_t *value);
+
+
 /** @} */
 
 #ifdef __cplusplus

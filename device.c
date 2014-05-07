@@ -681,3 +681,31 @@ int iio_device_identify_filename(const struct iio_device *dev,
 
 	return -EINVAL;
 }
+
+int iio_device_reg_write(struct iio_device *dev,
+		uint32_t address, uint32_t value)
+{
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "0x%x 0x%x", address, value);
+	return iio_device_debug_attr_write(dev, "direct_reg_access", buf);
+}
+
+int iio_device_reg_read(struct iio_device *dev,
+		uint32_t address, uint32_t *value)
+{
+	/* NOTE: There is a race condition here. But it is extremely unlikely to
+	 * happen, and as this is a debug function, it shouldn't be used for
+	 * something else than debug. */
+
+	long long val;
+	int ret = iio_device_debug_attr_write_longlong(dev,
+			"direct_reg_access", (long long) address);
+	if (ret < 0)
+		return ret;
+
+	ret = iio_device_debug_attr_read_longlong(dev,
+			"direct_reg_access", &val);
+	if (!ret)
+		*value = (uint32_t) val;
+	return ret;
+}
