@@ -319,7 +319,7 @@ static ssize_t network_write(const struct iio_device *dev,
 }
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
-		const char *chn, const char *attr, char *dst,
+		const struct iio_channel *chn, const char *attr, char *dst,
 		size_t len, bool is_debug)
 {
 	long read_len;
@@ -329,7 +329,9 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 	const char *id = dev->id;
 
 	if (chn)
-		snprintf(buf, sizeof(buf), "READ %s %s %s\r\n", id, chn, attr);
+		snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
+				chn->is_output ? "OUTPUT" : "INPUT",
+				chn->id, attr);
 	else if (is_debug)
 		snprintf(buf, sizeof(buf), "READ %s debug %s\r\n", id, attr);
 	else
@@ -362,15 +364,16 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 }
 
 static ssize_t network_write_attr_helper(const struct iio_device *dev,
-		const char *chn, const char *attr, const char *src,
-		size_t len, bool is_debug)
+		const struct iio_channel *chn, const char *attr,
+		const char *src, size_t len, bool is_debug)
 {
 	char buf[1024];
 	const char *id = dev->id;
 
 	if (chn)
-		snprintf(buf, sizeof(buf), "WRITE %s %s %s %lu\r\n",
-				id, chn, attr, (unsigned long) len);
+		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s %lu\r\n",
+				id, chn->is_output ? "OUTPUT" : "INPUT",
+				chn->id, attr, (unsigned long) len);
 	else if (is_debug)
 		snprintf(buf, sizeof(buf), "WRITE %s debug %s %lu\r\n",
 				id, attr, (unsigned long) len);
@@ -395,15 +398,13 @@ static ssize_t network_write_dev_attr(const struct iio_device *dev,
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
-	return network_read_attr_helper(chn->dev,
-			chn->id, attr, dst, len, false);
+	return network_read_attr_helper(chn->dev, chn, attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
-	return network_write_attr_helper(chn->dev, chn->id,
-			attr, src, len, false);
+	return network_write_attr_helper(chn->dev, chn, attr, src, len, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
