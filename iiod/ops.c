@@ -261,6 +261,7 @@ static void * rw_thd(void *d)
 	while (true) {
 		struct ThdEntry *next_thd;
 		bool has_readers = false, has_writers = false,
+		     had_readers = false,
 		     mask_updated = false;
 		unsigned int sample_size;
 
@@ -339,7 +340,7 @@ static void * rw_thd(void *d)
 		pthread_mutex_unlock(&entry->thdlist_lock);
 		pthread_mutex_unlock(&devlist_lock);
 
-		if (!has_readers && !has_writers) {
+		if (!has_readers && !had_readers && !has_writers) {
 			struct timespec ts = {
 				.tv_sec = 0,
 				.tv_nsec = 1000000, /* 1 ms */
@@ -349,7 +350,11 @@ static void * rw_thd(void *d)
 			continue;
 		}
 
-		if (has_readers) {
+		/* had_readers: if no readers were found in this loop, but we
+		 * had readers in the previous iteration, chances are that new
+		 * clients will ask for data soon; so we refill the buffer now,
+		 * to be sure that we don't lose samples. */
+		if (has_readers || had_readers) {
 			ssize_t nb_bytes;
 
 			ret = iio_buffer_refill(entry->buf);
@@ -360,6 +365,7 @@ static void * rw_thd(void *d)
 				break;
 			}
 
+			had_readers = false;
 			nb_bytes = ret;
 			pthread_mutex_lock(&entry->thdlist_lock);
 
@@ -374,6 +380,7 @@ static void * rw_thd(void *d)
 				if (!thd->active || thd->is_writer)
 					continue;
 
+				had_readers = true;
 				ret = send_data(entry, thd, nb_bytes);
 				if (ret > 0)
 					thd->nb -= ret;
