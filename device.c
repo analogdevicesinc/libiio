@@ -427,44 +427,6 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev)
 	return iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
 }
 
-ssize_t iio_device_process_samples(const struct iio_device *dev,
-		uint32_t *mask, size_t words, void *buf, size_t len,
-		ssize_t (*cb)(const struct iio_channel *, void *, void *),
-		void *data)
-{
-	uintptr_t ptr = (uintptr_t) buf, end = ptr + len;
-	unsigned int i;
-	ssize_t processed = 0,
-		sample_size = iio_device_get_sample_size_mask(dev, mask, words);
-	if (sample_size <= 0)
-		return -EINVAL;
-
-	while (end - ptr >= (size_t) sample_size) {
-		for (i = 0; i < dev->nb_channels; i++) {
-			const struct iio_channel *chn = dev->channels[i];
-			unsigned int length = chn->format.length / 8;
-			ssize_t ret;
-
-			if (chn->index < 0)
-				break;
-
-			if (!TEST_BIT(mask, chn->index))
-				continue;
-
-			if (ptr % length)
-				ptr += length - (ptr % length);
-
-			ret = cb(chn, (void *) ptr, data);
-			if (ret < 0)
-				return ret;
-			else
-				processed += ret;
-			ptr += length;
-		}
-	}
-	return processed;
-}
-
 int iio_device_attr_read_longlong(const struct iio_device *dev,
 		const char *attr, long long *val)
 {

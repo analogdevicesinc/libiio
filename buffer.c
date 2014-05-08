@@ -117,33 +117,53 @@ ssize_t iio_buffer_push(const struct iio_buffer *buffer)
 			buffer->buffer, buffer->data_length);
 }
 
-static ssize_t callback_wrapper(const struct iio_channel *chn,
-		void *buf, void *d)
-{
-	struct callback_wrapper_data *data = d;
-	if (chn->index >= 0 && TEST_BIT(data->mask, chn->index))
-		return data->callback(chn, buf,
-				chn->format.length / 8, data->data);
-	else
-		return 0;
-}
-
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 		ssize_t (*callback)(const struct iio_channel *,
 			void *, size_t, void *), void *d)
 {
-	struct callback_wrapper_data data = {
-		.callback = callback,
-		.data = d,
-		.mask = buffer->dev->mask,
-	};
+	uintptr_t ptr = (uintptr_t) buffer->buffer,
+		  end = ptr + buffer->data_length;
+	const struct iio_device *dev = buffer->dev;
+	ssize_t processed = 0,
+		sample_size = iio_device_get_sample_size_mask(dev,
+				buffer->mask, buffer->dev->words);
+	if (sample_size <= 0)
+		return -EINVAL;
 
 	if (buffer->data_length < buffer->sample_size)
 		return 0;
 
-	return iio_device_process_samples(buffer->dev,
-			buffer->mask, buffer->dev->words, buffer->buffer,
-			buffer->data_length, callback_wrapper, &data);
+	while (end - ptr >= (size_t) sample_size) {
+		unsigned int i;
+
+		for (i = 0; i < dev->nb_channels; i++) {
+			const struct iio_channel *chn = dev->channels[i];
+			unsigned int length = chn->format.length / 8;
+
+			if (chn->index < 0)
+				break;
+
+			/* Test if the buffer has samples for this channel */
+			if (!TEST_BIT(buffer->mask, chn->index))
+				continue;
+
+			if (ptr % length)
+				ptr += length - (ptr % length);
+
+			/* Test if the client wants samples from this channel */
+			if (TEST_BIT(dev->mask, chn->index)) {
+				ssize_t ret = callback(chn,
+						(void *) ptr, length, d);
+				if (ret < 0)
+					return ret;
+				else
+					processed += ret;
+			}
+
+			ptr += length;
+		}
+	}
+	return processed;
 }
 
 void * iio_buffer_start(const struct iio_buffer *buffer)

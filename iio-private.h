@@ -160,11 +160,6 @@ char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 
 int iio_context_init(struct iio_context *ctx);
 
-ssize_t iio_device_process_samples(const struct iio_device *dev,
-		uint32_t *mask, size_t words, void *buf, size_t len,
-		ssize_t (*cb)(const struct iio_channel *, void *, void *),
-		void *data);
-
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words);
