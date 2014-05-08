@@ -494,6 +494,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	thd->nb = nb;
 	thd->err = 0;
 	thd->is_writer = is_write;
+	thd->active = true;
 
 	pthread_mutex_unlock(&entry->thdlist_lock);
 	pthread_mutex_unlock(&devlist_lock);
