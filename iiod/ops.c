@@ -67,7 +67,7 @@ struct DevEntry {
 
 struct send_sample_cb_info {
 	FILE *out;
-	unsigned int cpt;
+	unsigned int nb_bytes, cpt;
 	uint32_t *mask;
 };
 
@@ -134,6 +134,8 @@ static ssize_t send_sample(const struct iio_channel *chn,
 	struct send_sample_cb_info *info = d;
 	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
 		return 0;
+	if (info->nb_bytes < length)
+		return 0;
 
 	if (info->cpt % length) {
 		unsigned int i, goal = length - info->cpt % length;
@@ -144,6 +146,7 @@ static ssize_t send_sample(const struct iio_channel *chn,
 	}
 
 	info->cpt += length;
+	info->nb_bytes -= length;
 	return write_all(src, length, info->out);
 }
 
@@ -176,6 +179,8 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	if (demux)
 		len = (len / dev->sample_size) * thd->sample_size;
+	if (len > thd->nb)
+		len = thd->nb;
 
 	print_value(pdata, len);
 
@@ -205,6 +210,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 		struct send_sample_cb_info info = {
 			.out = pdata->out,
 			.cpt = 0,
+			.nb_bytes = len,
 			.mask = thd->mask,
 		};
 
@@ -242,7 +248,7 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 	thd->active = false;
 }
 
-static void * read_thd(void *d)
+static void * rw_thd(void *d)
 {
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd;
@@ -250,7 +256,7 @@ static void * read_thd(void *d)
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
 
-	DEBUG("Read thread started\n");
+	DEBUG("R/W thread started\n");
 
 	while (true) {
 		struct ThdEntry *next_thd;
@@ -609,8 +615,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_attr_setdetachstate(&entry->attr,
 			PTHREAD_CREATE_DETACHED);
 
-	ret = pthread_create(&entry->thd, &entry->attr,
-			read_thd, entry);
+	ret = pthread_create(&entry->thd, &entry->attr, rw_thd, entry);
 	if (ret)
 		goto err_free_entry_mask;
 
