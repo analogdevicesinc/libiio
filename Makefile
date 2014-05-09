@@ -13,7 +13,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-PREFIX ?= /usr/local
+PREFIX ?= /usr
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
@@ -70,7 +70,7 @@ html: Doxyfile
 clean-tests clean-examples clean-iiod:
 	$(CMD)$(MAKE) -C $(@:clean-%=%) clean
 
-clean: clean-tests clean-iiod
+clean: clean-tests clean-examples clean-iiod
 	$(SUM) "  CLEAN   ."
 	$(CMD)rm -rf $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist) libiio.pc html
 
@@ -101,10 +101,10 @@ libiio.pc:
 	$(CMD)echo 'Cflags: -I$${includedir}' >> $@
 
 install-tests install-examples install-iiod:
-	$(CMD)$(MAKE) -C $(@:install-%=%) install
+	$(CMD)PREFIX=$(PREFIX) $(MAKE) -C $(@:install-%=%) install
 
 uninstall-tests uninstall-examples uninstall-iiod:
-	$(CMD)$(MAKE) -C $(@:uninstall-%=%) uninstall
+	$(CMD)PREFIX=$(PREFIX) $(MAKE) -C $(@:uninstall-%=%) uninstall
 
 install-lib: $(LIBIIO)
 	$(INSTALL) -D $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(LIBIIO)
