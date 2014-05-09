@@ -162,17 +162,21 @@ static void init_index(struct iio_channel *chn)
 static void init_data_format(struct iio_channel *chn)
 {
 	char buf[1024];
-	int ret = iio_channel_attr_read(chn, "type", buf, sizeof(buf));
-	if (ret < 0) {
-		chn->format.length = 0;
-	} else {
-		char endian, sign;
-		sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
-				&chn->format.bits,
-				&chn->format.length,
-				&chn->format.shift);
-		chn->format.is_signed = sign == 's';
-		chn->format.is_be = endian == 'b';
+	int ret;
+
+	if (chn->is_scan_element) {
+		ret = iio_channel_attr_read(chn, "type", buf, sizeof(buf));
+		if (ret < 0) {
+			chn->format.length = 0;
+		} else {
+			char endian, sign;
+			sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
+					&chn->format.bits,
+					&chn->format.length,
+					&chn->format.shift);
+			chn->format.is_signed = sign == 's';
+			chn->format.is_be = endian == 'b';
+		}
 	}
 
 	ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
@@ -214,8 +218,12 @@ int iio_context_init(struct iio_context *ctx)
 		unsigned int j;
 		struct iio_device *dev = ctx->devices[i];
 		for (j = 0; j < dev->nb_channels; j++) {
-			init_index(dev->channels[j]);
-			init_data_format(dev->channels[j]);
+			struct iio_channel *chn = dev->channels[j];
+			if (chn->is_scan_element)
+				init_index(chn);
+			else
+				chn->index = -1;
+			init_data_format(chn);
 		}
 
 		reorder_channels(dev);
