@@ -429,6 +429,9 @@ static int local_open(const struct iio_device *dev,
 		}
 	}
 
+	pdata->samples_count = samples_count;
+	pdata->is_high_speed = !!samples_count && !enable_high_speed(dev);
+
 	/* If opened with samples_count == 0, we probably want DDS mode;
 	 * then the buffer will only be enabled when closing the device. */
 	if (samples_count > 0)
@@ -436,8 +439,6 @@ static int local_open(const struct iio_device *dev,
 	if (ret < 0)
 		goto err_close;
 
-	pdata->samples_count = samples_count;
-	pdata->is_high_speed = !!samples_count && !enable_high_speed(dev);
 	return 0;
 err_close:
 	fclose(pdata->f);
