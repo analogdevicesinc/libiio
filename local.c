@@ -369,7 +369,8 @@ static int enable_high_speed(const struct iio_device *dev)
 			goto err_munmap;
 		}
 
-		pdata->addrs[i] = mmap(0, pdata->blocks[i].size, PROT_READ,
+		pdata->addrs[i] = mmap(0, pdata->blocks[i].size,
+				PROT_READ | PROT_WRITE,
 				MAP_SHARED, fd, pdata->blocks[i].offset);
 		if (pdata->addrs[i] == MAP_FAILED) {
 			ret = -errno;
@@ -432,6 +433,9 @@ static int local_open(const struct iio_device *dev,
 
 	pdata->samples_count = samples_count;
 	pdata->is_high_speed = !!samples_count && !enable_high_speed(dev);
+
+	if (!pdata->is_high_speed)
+		WARNING("High-speed mode not enabled\n");
 
 	/* If opened with samples_count == 0, we probably want DDS mode;
 	 * then the buffer will only be enabled when closing the device. */
