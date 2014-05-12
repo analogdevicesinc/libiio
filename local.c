@@ -377,6 +377,7 @@ static int enable_high_speed(const struct iio_device *dev)
 		}
 	}
 
+	pdata->last_dequeued = -1;
 	return 0;
 
 err_munmap:
