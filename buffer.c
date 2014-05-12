@@ -17,7 +17,7 @@ static bool device_is_high_speed(const struct iio_device *dev)
 	 * -EBADF or -EINVAL otherwise. */
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	return !!ops->get_buffer &&
-		(ops->get_buffer(dev, NULL, NULL, 0) != -ENOSYS);
+		(ops->get_buffer(dev, NULL, 0) != -ENOSYS);
 }
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
@@ -97,8 +97,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (buffer->dev_is_high_speed) {
 		void *buf;
-		read = dev->ctx->ops->get_buffer(dev, &buf,
-				buffer->mask, dev->words);
+		read = dev->ctx->ops->get_buffer(dev, &buf, 0);
 		if (read >= 0)
 			buffer->buffer = buf;
 	} else {

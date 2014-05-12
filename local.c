@@ -214,7 +214,7 @@ static ssize_t local_write(const struct iio_device *dev,
 }
 
 static ssize_t local_get_buffer(const struct iio_device *dev,
-		void **addr_ptr, uint32_t *mask, size_t words)
+		void **addr_ptr, size_t bytes_used)
 {
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
@@ -225,14 +225,14 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		return -ENOSYS;
 	if (!f)
 		return -EBADF;
-	if (words != dev->words || !addr_ptr)
+	if (!addr_ptr)
 		return -EINVAL;
 
-	memcpy(mask, dev->mask, words);
-
 	if (pdata->last_dequeued >= 0) {
-		ret = (ssize_t) ioctl(fileno(f), BLOCK_ENQUEUE_IOCTL,
-				&pdata->blocks[pdata->last_dequeued]);
+		struct block *last_block = &pdata->blocks[pdata->last_dequeued];
+		last_block->bytes_used = bytes_used;
+		ret = (ssize_t) ioctl(fileno(f),
+				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
 			ret = (ssize_t) -errno;
 			ERROR("Unable to enqueue block: %s\n", strerror(errno));
