@@ -270,13 +270,13 @@ static void * rw_thd(void *d)
 	struct iio_device *dev = entry->dev;
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
+	bool had_readers = false;
 
 	DEBUG("R/W thread started\n");
 
 	while (true) {
 		struct ThdEntry *next_thd;
 		bool has_readers = false, has_writers = false,
-		     had_readers = false,
 		     mask_updated = false;
 		unsigned int sample_size;
 
