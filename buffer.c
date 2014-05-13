@@ -56,9 +56,11 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 
 	buf->dev_is_high_speed = device_is_high_speed(dev);
 	if (buf->dev_is_high_speed) {
-		/* We will use the get_buffer backend function is available.
-		 * In that case, we don't need our own buffer. */
-		buf->buffer = NULL;
+		/* Dequeue the first buffer, so that buf->buffer is correctly
+		 * initialized */
+		ret = dev->ctx->ops->get_buffer(dev, &buf->buffer, 0);
+		if (ret < 0)
+			goto err_close_device;
 	} else {
 		buf->buffer = malloc(buf->length);
 		if (!buf->buffer) {
