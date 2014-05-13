@@ -112,10 +112,21 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 	return read;
 }
 
-ssize_t iio_buffer_push(const struct iio_buffer *buffer)
+ssize_t iio_buffer_push(struct iio_buffer *buffer)
 {
-	return iio_device_write_raw(buffer->dev,
-			buffer->buffer, buffer->data_length);
+	const struct iio_device *dev = buffer->dev;
+
+	if (buffer->dev_is_high_speed) {
+		void *buf;
+		ssize_t ret = dev->ctx->ops->get_buffer(dev,
+				&buf, buffer->length);
+		if (ret >= 0)
+			buffer->buffer = buf;
+		return ret;
+	} else {
+		return iio_device_write_raw(dev,
+				buffer->buffer, buffer->length);
+	}
 }
 
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,

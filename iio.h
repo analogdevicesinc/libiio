@@ -696,7 +696,7 @@ __api ssize_t iio_buffer_refill(struct iio_buffer *buf);
  * @return On error, a negative errno code is returned
  *
  * <b>NOTE:</b> Only valid for output buffers */
-__api ssize_t iio_buffer_push(const struct iio_buffer *buf);
+__api ssize_t iio_buffer_push(struct iio_buffer *buffer);
 
 
 /** @brief Get the start address of the buffer
