@@ -220,12 +220,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 {
-	struct receive_sample_cb_info info = {
-		.in = thd->pdata->in,
-		.cpt = 0,
-		.nb_bytes = thd->nb,
-		.mask = thd->mask,
-	};
+	struct parser_pdata *pdata = thd->pdata;
 
 	/* Inform that no error occured, and that we'll start reading data */
 	if (thd->new_client) {
@@ -233,7 +228,27 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 		thd->new_client = false;
 	}
 
-	return iio_buffer_foreach_sample(dev->buf, receive_sample, &info);
+	if (dev->sample_size == thd->sample_size) {
+		/* Short path: Receive directly in the buffer */
+
+		size_t len = dev->buf->length;
+		if (thd->nb < len)
+			len = thd->nb;
+
+		return read_all(dev->buf->buffer, len, pdata->in);
+	} else {
+		/* Long path: Mux the samples to the buffer */
+
+		struct receive_sample_cb_info info = {
+			.in = thd->pdata->in,
+			.cpt = 0,
+			.nb_bytes = thd->nb,
+			.mask = thd->mask,
+		};
+
+		return iio_buffer_foreach_sample(dev->buf,
+				receive_sample, &info);
+	}
 }
 
 static void signal_thread(struct ThdEntry *thd, ssize_t ret)
