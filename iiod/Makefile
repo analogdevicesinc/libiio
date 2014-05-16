@@ -20,10 +20,17 @@ CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
 INSTALL ?= install
 
+WITH_AVAHI=yes
+
 DAEMON = iiod
 
 CFLAGS = -Wall -ansi -D_POSIX_C_SOURCE=200809L
 LDFLAGS = $(wildcard ../libiio.so.*) -lpthread
+
+ifeq ($(WITH_AVAHI),yes)
+	CFLAGS += -DHAVE_AVAHI
+	LDFLAGS += -lavahi-client -lavahi-common
+endif
 
 ifdef DEBUG
 	CFLAGS += -g -ggdb

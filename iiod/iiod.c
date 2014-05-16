@@ -37,6 +37,12 @@
 #include <netinet/tcp.h>
 #undef __USE_MISC
 
+#ifdef HAVE_AVAHI
+#include <avahi-common/simple-watch.h>
+#include <avahi-client/client.h>
+#include <avahi-client/publish.h>
+#endif
+
 #define IIOD_VERSION "0.1"
 #define MY_NAME "iiod"
 
@@ -76,6 +82,61 @@ static const char *options_descriptions[] = {
 	"Demux channels directly on the server.",
 };
 
+#ifdef HAVE_AVAHI
+static AvahiSimplePoll *avahi_poll;
+static AvahiClient *avahi_client;
+
+static void __avahi_group_cb(AvahiEntryGroup *group,
+		AvahiEntryGroupState state, void *d)
+{
+}
+
+static void __avahi_client_cb(AvahiClient *client,
+		AvahiClientState state, void *d)
+{
+	AvahiEntryGroup *group;
+
+	if (state != AVAHI_CLIENT_S_RUNNING)
+		return;
+
+	group = avahi_entry_group_new(client, __avahi_group_cb, NULL);
+
+	if (group && !avahi_entry_group_add_service(group,
+			AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
+			0, "iio", "_iio._tcp", NULL, NULL, IIOD_PORT, NULL)) {
+		avahi_entry_group_commit(group);
+		INFO("Registered to ZeroConf server %s\n",
+				avahi_client_get_version_string(client));
+	}
+
+	/* NOTE: group is freed by avahi_client_free */
+}
+
+static int start_avahi(void)
+{
+	int ret = ENOMEM;
+
+	avahi_poll = avahi_simple_poll_new();
+	if (!avahi_poll)
+		return -ENOMEM;
+
+	avahi_client = avahi_client_new(avahi_simple_poll_get(avahi_poll),
+			0, __avahi_client_cb, NULL, &ret);
+	if (!avahi_client) {
+		avahi_simple_poll_free(avahi_poll);
+		return -ret;
+	}
+
+	return 0;
+}
+
+static void stop_avahi(void)
+{
+	avahi_client_free(avahi_client);
+	avahi_simple_poll_free(avahi_poll);
+}
+#endif /* HAVE_AVAHI */
+
 
 static void usage(void)
 {
@@ -113,7 +174,7 @@ static void set_handler(int signal, void (*handler)(int))
 	sigaction(signal, &sig, NULL);
 }
 
-void sig_handler(int sig)
+static void sig_handler(int sig)
 {
 	/* This does nothing, but it permits accept() to exit */
 }
@@ -129,6 +190,9 @@ int main(int argc, char **argv)
 	int keepalive_time = 10,
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
+#ifdef HAVE_AVAHI
+	bool avahi_started;
+#endif
 
 	while ((c = getopt_long(argc, argv, "+hVdD",
 					options, &option_index)) != -1) {
@@ -201,6 +265,10 @@ int main(int argc, char **argv)
 	set_handler(SIGSEGV, sig_handler);
 	set_handler(SIGTERM, sig_handler);
 
+#ifdef HAVE_AVAHI
+	avahi_started = !start_avahi();
+#endif
+
 	while (true) {
 		pthread_t thd;
 		pthread_attr_t attr;
@@ -211,7 +279,7 @@ int main(int argc, char **argv)
 				break;
 			ERROR("Failed to create connection socket: %s\n",
 					strerror(errno));
-			goto err_close_socket;
+			goto err_stop_avahi;
 		}
 
 		cdata = malloc(sizeof(*cdata));
@@ -243,10 +311,19 @@ int main(int argc, char **argv)
 	}
 
 	DEBUG("Cleaning up\n");
+#ifdef HAVE_AVAHI
+	if (avahi_started)
+		stop_avahi();
+#endif
 	close(fd);
 	iio_context_destroy(ctx);
 	return EXIT_SUCCESS;
 
+err_stop_avahi:
+#ifdef HAVE_AVAHI
+	if (avahi_started)
+		stop_avahi();
+#endif
 err_close_socket:
 	close(fd);
 err_close_ctx:
