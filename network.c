@@ -415,7 +415,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	return read;
 }
 
-static ssize_t do_write(struct iio_context_pdata *pdata,
+static ssize_t do_write(struct iio_context_pdata *pdata, bool attr,
 		const char *command, const void *src, size_t len)
 {
 	int fd = pdata->fd;
@@ -423,7 +423,10 @@ static ssize_t do_write(struct iio_context_pdata *pdata,
 	long resp;
 
 	network_lock(pdata);
-	ret = (ssize_t) write_command(command, fd);
+	if (attr)
+		ret = (ssize_t) write_command(command, fd);
+	else
+		ret = (ssize_t) exec_command(command, fd);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -449,7 +452,7 @@ static ssize_t network_write(const struct iio_device *dev,
 	char buf[1024];
 	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
-	return do_write(dev->ctx->pdata, buf, src, len);
+	return do_write(dev->ctx->pdata, false, buf, src, len);
 }
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
@@ -515,7 +518,7 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
 				id, attr, (unsigned long) len);
-	return do_write(dev->ctx->pdata, buf, src, len);
+	return do_write(dev->ctx->pdata, true, buf, src, len);
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
