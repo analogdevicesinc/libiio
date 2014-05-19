@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -37,6 +38,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
+
+#ifdef HAVE_AVAHI
+#include <avahi-client/client.h>
+#include <avahi-common/error.h>
+#include <avahi-client/lookup.h>
+#include <avahi-common/simple-watch.h>
+#endif
 
 #include "debug.h"
 
@@ -56,6 +64,111 @@ struct iio_context_pdata {
 	pthread_mutex_t lock;
 #endif
 };
+
+#ifdef HAVE_AVAHI
+struct avahi_discovery_data {
+	AvahiSimplePoll *poll;
+	AvahiAddress *address;
+	uint16_t *port;
+	bool found, resolved;
+};
+
+static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
+		__notused AvahiIfIndex iface, __notused AvahiProtocol proto,
+		__notused AvahiResolverEvent event, __notused const char *name,
+		__notused const char *type, __notused const char *domain,
+		__notused const char *host_name, const AvahiAddress *address,
+		uint16_t port, __notused AvahiStringList *txt,
+		__notused AvahiLookupResultFlags flags, void *d)
+{
+	struct avahi_discovery_data *ddata = (struct avahi_discovery_data *) d;
+
+	memcpy(ddata->address, address, sizeof(*address));
+	*ddata->port = port;
+	ddata->resolved = true;
+	avahi_service_resolver_free(resolver);
+}
+
+static void __avahi_browser_cb(AvahiServiceBrowser *browser,
+		AvahiIfIndex iface, AvahiProtocol proto,
+		AvahiBrowserEvent event, const char *name,
+		const char *type, const char *domain,
+		__notused AvahiLookupResultFlags flags, void *d)
+{
+	struct avahi_discovery_data *ddata = (struct avahi_discovery_data *) d;
+	struct AvahiClient *client = avahi_service_browser_get_client(browser);
+
+	switch (event) {
+	default:
+	case AVAHI_BROWSER_NEW:
+		ddata->found = !!avahi_service_resolver_new(client, iface,
+				proto, name, type, domain,
+				AVAHI_PROTO_UNSPEC, 0,
+				__avahi_resolver_cb, d);
+		break;
+	case AVAHI_BROWSER_ALL_FOR_NOW:
+		if (ddata->found) {
+			while (!ddata->resolved) {
+				struct timespec ts;
+				ts.tv_sec = 0;
+				ts.tv_nsec = 4000000;
+				nanosleep(&ts, NULL);
+			}
+		}
+	case AVAHI_BROWSER_FAILURE: /* fall-through */
+		avahi_simple_poll_quit(ddata->poll);
+	case AVAHI_BROWSER_CACHE_EXHAUSTED: /* fall-through */
+		break;
+	}
+}
+
+static int discover_host(AvahiAddress *addr, uint16_t *port)
+{
+	struct avahi_discovery_data ddata;
+	int ret = 0;
+	AvahiClient *client;
+	AvahiServiceBrowser *browser;
+	AvahiSimplePoll *poll = avahi_simple_poll_new();
+	if (!poll)
+		return -ENOMEM;
+
+	client = avahi_client_new(avahi_simple_poll_get(poll),
+			0, NULL, NULL, &ret);
+	if (!client) {
+		ERROR("Unable to start ZeroConf client :%s\n",
+				avahi_strerror(ret));
+		goto err_free_poll;
+	}
+
+	memset(&ddata, 0, sizeof(ddata));
+	ddata.poll = poll;
+	ddata.address = addr;
+	ddata.port = port;
+
+	browser = avahi_service_browser_new(client,
+			AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
+			"_iio._tcp", NULL, 0, __avahi_browser_cb, &ddata);
+	if (!browser) {
+		ret = avahi_client_errno(client);
+		ERROR("Unable to create ZeroConf browser: %s\n",
+				avahi_strerror(ret));
+		goto err_free_client;
+	}
+
+	DEBUG("Trying to discover host\n");
+	avahi_simple_poll_loop(poll);
+
+	if (!ddata.found)
+		ret = ENXIO;
+
+	avahi_service_browser_free(browser);
+err_free_client:
+	avahi_client_free(client);
+err_free_poll:
+	avahi_simple_poll_free(poll);
+	return -ret; /* we want a negative error code */
+}
+#endif /* HAVE_AVAHI */
 
 static void network_lock(struct iio_context_pdata *pdata)
 {
@@ -600,10 +713,33 @@ struct iio_context * iio_create_network_context(const char *host)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	ret = getaddrinfo(host, IIOD_PORT_STR, &hints, &res);
+
+#ifdef HAVE_AVAHI
+	if (!host) {
+		char addr_str[AVAHI_ADDRESS_STR_MAX];
+		char port_str[6];
+		AvahiAddress address;
+		uint16_t port;
+
+		memset(&address, 0, sizeof(address));
+
+		ret = discover_host(&address, &port);
+		if (ret < 0) {
+			ERROR("Unable to find host: %s\n", strerror(-ret));
+			return NULL;
+		}
+
+		avahi_address_snprint(addr_str, sizeof(addr_str), &address);
+		snprintf(port_str, sizeof(port_str), "%hu", port);
+		ret = getaddrinfo(addr_str, port_str, &hints, &res);
+	} else
+#endif
+	{
+		ret = getaddrinfo(host, IIOD_PORT_STR, &hints, &res);
+	}
+
 	if (ret) {
-		ERROR("Unable to find IP address for host %s: %s\n",
-				host, gai_strerror(ret));
+		ERROR("Unable to find host: %s\n", gai_strerror(ret));
 		return NULL;
 	}
 

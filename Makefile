@@ -27,6 +27,8 @@ CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
 INSTALL ?= install
 
+WITH_AVAHI=yes
+
 # XXX: xml2-config is not sysroot aware...
 SYSROOT := $(shell $(CC) --print-sysroot)
 XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
@@ -35,6 +37,11 @@ XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 CFLAGS := $(XML2_CFLAGS) -Wall -Wextra -fPIC -fvisibility=hidden \
 	-std=c99 -pedantic -D_POSIX_C_SOURCE=200809L
 LDFLAGS := $(XML2_LIBS)
+
+ifeq ($(WITH_AVAHI),yes)
+	CFLAGS += -DHAVE_AVAHI
+	LDFLAGS += -lavahi-client -lavahi-common
+endif
 
 ifdef DEBUG
 	CFLAGS += -g -ggdb
