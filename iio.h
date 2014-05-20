@@ -117,8 +117,8 @@ __api void iio_context_destroy(struct iio_context *ctx);
 
 /** @brief Get the version of the backend in use
  * @param ctx A pointer to an iio_context structure
- * @param major A pointer to an unsigned integer
- * @param minor A pointer to an unsigned integer
+ * @param major A pointer to an unsigned integer (NULL accepted)
+ * @param minor A pointer to an unsigned integer (NULL accepted)
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 __api int iio_context_get_version(const struct iio_context *ctx,

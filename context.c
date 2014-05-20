@@ -238,7 +238,9 @@ int iio_context_get_version(const struct iio_context *ctx,
 {
 	if (ctx->ops->get_version)
 		return ctx->ops->get_version(ctx, major, minor);
-	*major = LIBIIO_VERSION_MAJOR;
-	*minor = LIBIIO_VERSION_MINOR;
+	if (major)
+		*major = LIBIIO_VERSION_MAJOR;
+	if (minor)
+		*minor = LIBIIO_VERSION_MINOR;
 	return 0;
 }

@@ -648,8 +648,10 @@ static int network_get_version(const struct iio_context *ctx,
 	if (!ret)
 		ret = read_integer(pdata->fd, &min);
 	if (!ret) {
-		*major = (unsigned int) maj;
-		*minor = (unsigned int) min;
+		if (major)
+			*major = (unsigned int) maj;
+		if (minor)
+			*minor = (unsigned int) min;
 	}
 
 err_unlock:
