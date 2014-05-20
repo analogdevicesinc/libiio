@@ -43,7 +43,6 @@
 #include <avahi-client/publish.h>
 #endif
 
-#define IIOD_VERSION "0.1"
 #define MY_NAME "iiod"
 
 #define IIOD_PORT 30431
@@ -208,7 +207,8 @@ int main(int argc, char **argv)
 			usage();
 			return EXIT_SUCCESS;
 		case 'V':
-			puts(IIOD_VERSION);
+			printf("%u.%u\n", LIBIIO_VERSION_MAJOR,
+					LIBIIO_VERSION_MINOR);
 			return EXIT_SUCCESS;
 		case '?':
 			return EXIT_FAILURE;

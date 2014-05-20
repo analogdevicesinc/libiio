@@ -20,11 +20,11 @@ CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
 INSTALL ?= install
 
-WITH_AVAHI=yes
-
 DAEMON = iiod
 
-CFLAGS = -Wall -ansi -D_POSIX_C_SOURCE=200809L
+CFLAGS = -Wall -ansi -D_POSIX_C_SOURCE=200809L \
+	-DLIBIIO_VERSION_MAJOR=$(VERSION_MAJOR) \
+	-DLIBIIO_VERSION_MINOR=$(VERSION_MINOR)
 LDFLAGS = $(wildcard ../libiio.so.*) -lpthread
 
 ifeq ($(WITH_AVAHI),yes)

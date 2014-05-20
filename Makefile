@@ -29,6 +29,9 @@ INSTALL ?= install
 
 WITH_AVAHI=yes
 
+MAKE_ENV := WITH_AVAHI=$(WITH_AVAHI) \
+	VERSION_MAJOR=$(VERSION_MAJOR) VERSION_MINOR=$(VERSION_MINOR)
+
 # XXX: xml2-config is not sysroot aware...
 SYSROOT := $(shell $(CC) --print-sysroot)
 XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
@@ -87,7 +90,7 @@ analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
 
 tests examples iiod: $(LIBIIO)
-	$(CMD)$(MAKE) -C $@
+	$(CMD)$(MAKE_ENV) $(MAKE) -C $@
 
 %.o: %.c
 	$(SUM) "  CC      $@"
