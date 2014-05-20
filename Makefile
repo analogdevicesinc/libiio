@@ -17,6 +17,7 @@ PREFIX ?= /usr
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
+VERSION_GIT := $(shell git rev-parse --short HEAD)
 
 LIBNAME = libiio.so
 SONAME = $(LIBNAME).$(VERSION_MAJOR)
@@ -29,7 +30,7 @@ INSTALL ?= install
 
 WITH_AVAHI=yes
 
-MAKE_ENV := WITH_AVAHI=$(WITH_AVAHI) \
+MAKE_ENV := WITH_AVAHI=$(WITH_AVAHI) VERSION_GIT=$(VERSION_GIT) \
 	VERSION_MAJOR=$(VERSION_MAJOR) VERSION_MINOR=$(VERSION_MINOR)
 
 # XXX: xml2-config is not sysroot aware...
@@ -39,6 +40,7 @@ XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 
 CFLAGS := $(XML2_CFLAGS) -Wall -Wextra -fPIC -fvisibility=hidden \
 	-std=c99 -pedantic -D_POSIX_C_SOURCE=200809L \
+	-DLIBIIO_VERSION_GIT="\"$(VERSION_GIT)\"" \
 	-DLIBIIO_VERSION_MAJOR=$(VERSION_MAJOR) \
 	-DLIBIIO_VERSION_MINOR=$(VERSION_MINOR)
 LDFLAGS := $(XML2_LIBS)

@@ -23,6 +23,7 @@ INSTALL ?= install
 DAEMON = iiod
 
 CFLAGS = -Wall -ansi -D_POSIX_C_SOURCE=200809L \
+	-DLIBIIO_VERSION_GIT="\"$(VERSION_GIT)\"" \
 	-DLIBIIO_VERSION_MAJOR=$(VERSION_MAJOR) \
 	-DLIBIIO_VERSION_MINOR=$(VERSION_MINOR)
 LDFLAGS = $(wildcard ../libiio.so.*) -lpthread
