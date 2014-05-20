@@ -35,7 +35,9 @@ XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
 XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 
 CFLAGS := $(XML2_CFLAGS) -Wall -Wextra -fPIC -fvisibility=hidden \
-	-std=c99 -pedantic -D_POSIX_C_SOURCE=200809L
+	-std=c99 -pedantic -D_POSIX_C_SOURCE=200809L \
+	-DLIBIIO_VERSION_MAJOR=$(VERSION_MAJOR) \
+	-DLIBIIO_VERSION_MINOR=$(VERSION_MINOR)
 LDFLAGS := $(XML2_LIBS)
 
 ifeq ($(WITH_AVAHI),yes)

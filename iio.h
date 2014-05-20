@@ -47,9 +47,6 @@ typedef long ssize_t;
 #define __notused
 #endif
 
-#define _str(x)  #x
-#define __str(x) _str(x)
-
 #ifdef _WIN32
 #   ifdef LIBIIO_EXPORTS
 #	define __api __declspec(dllexport)
@@ -61,12 +58,6 @@ typedef long ssize_t;
 #else
 #   define __api
 #endif
-
-#define LIBIIO_VERSION_MAJOR 0
-#define LIBIIO_VERSION_MINOR 1
-
-#define LIBIIO_VERSION \
-    __str(LIBIIO_VERSION_MAJOR) "." __str(LIBIIO_VERSION_MINOR)
 
 struct iio_context;
 struct iio_device;
