@@ -146,8 +146,9 @@ Line:
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		unsigned int major, minor;
 		char buf[128];
-		iio_context_get_version(pdata->ctx, &major, &minor);
-		snprintf(buf, sizeof(buf), "%u.%u\n", major, minor);
+		char tag[8];
+		iio_context_get_version(pdata->ctx, &major, &minor, tag);
+		snprintf(buf, sizeof(buf), "%u.%u.%s\n", major, minor, tag);
 		output(pdata, buf);
 		YYACCEPT;
 	}

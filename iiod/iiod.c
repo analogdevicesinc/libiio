@@ -239,7 +239,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	DEBUG("Starting IIO Daemon version " IIOD_VERSION "\n");
+	INFO("Starting IIO Daemon version %u.%u\n",
+			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR);
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
