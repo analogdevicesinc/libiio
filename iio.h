@@ -119,10 +119,11 @@ __api void iio_context_destroy(struct iio_context *ctx);
  * @param ctx A pointer to an iio_context structure
  * @param major A pointer to an unsigned integer (NULL accepted)
  * @param minor A pointer to an unsigned integer (NULL accepted)
+ * @param git_tag A pointer to a 8-characters buffer (NULL accepted)
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 __api int iio_context_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor);
+		unsigned int *major, unsigned int *minor, char git_tag[8]);
 
 
 /** @brief Obtain a XML representation of the given context

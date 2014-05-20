@@ -633,7 +633,7 @@ static void network_shutdown(struct iio_context *ctx)
 }
 
 static int network_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor)
+		unsigned int *major, unsigned int *minor, char git_tag[8])
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
 	long maj, min;
@@ -648,10 +648,19 @@ static int network_get_version(const struct iio_context *ctx,
 	if (!ret)
 		ret = read_integer(pdata->fd, &min);
 	if (!ret) {
+		char tag[8];
+		tag[7] = '\0';
+
+		ret = read_all(tag, sizeof(tag) - 1, pdata->fd);
+		if (ret < 0)
+			goto err_unlock;
+
 		if (major)
 			*major = (unsigned int) maj;
 		if (minor)
 			*minor = (unsigned int) min;
+		if (git_tag)
+			strncpy(git_tag, tag, 8);
 	}
 
 err_unlock:
