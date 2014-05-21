@@ -128,7 +128,7 @@ Line:
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
 		"\t\tClose the specified device\n"
-		"\tREAD <device> DEBUG|[INPUT|OUTPUT <channel>] <attribute>\n"
+		"\tREAD <device> DEBUG|[INPUT|OUTPUT <channel>] [<attribute>]\n"
 		"\t\tRead the value of an attribute\n"
 		"\tWRITE <device> DEBUG|[INPUT|OUTPUT <channel>] <attribute> <bytes_count>\n"
 		"\t\tSet the value of an attribute\n"
@@ -182,6 +182,13 @@ Line:
 		else
 			YYACCEPT;
 	}
+	| READ SPACE DEVICE END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		if (read_dev_attr(pdata, $3, NULL, false) < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
 	| READ SPACE DEVICE SPACE WORD END {
 		char *attr = $5;
 		struct parser_pdata *pdata = yyget_extra(scanner);
@@ -192,12 +199,26 @@ Line:
 		else
 			YYACCEPT;
 	}
+	| READ SPACE DEVICE SPACE DEBUG_ATTR END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		if (read_dev_attr(pdata, $3, NULL, true) < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
 	| READ SPACE DEVICE SPACE DEBUG_ATTR SPACE WORD END {
 		char *attr = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		ssize_t ret = read_dev_attr(pdata, $3, attr, true);
 		free(attr);
 		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| READ SPACE DEVICE SPACE IN_OUT SPACE CHANNEL END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		if (read_chn_attr(pdata, $7, NULL) < 0)
 			YYABORT;
 		else
 			YYACCEPT;

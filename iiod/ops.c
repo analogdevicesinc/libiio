@@ -723,7 +723,10 @@ ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
 ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 		const char *attr, bool is_debug)
 {
-	char buf[1024];
+	/* We use a very large buffer here, as if attr is NULL all the
+	 * attributes will be read, which may represents a few kilobytes worth
+	 * of data. */
+	char buf[0x10000];
 	ssize_t ret;
 
 	if (is_debug)
