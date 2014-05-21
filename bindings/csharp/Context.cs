@@ -40,7 +40,7 @@ namespace iio
         public Context(string hostname)
         {
             ctx = iio_create_network_context(hostname);
-            if (ctx == null)
+            if (ctx == IntPtr.Zero)
                 throw new Exception("Unable to create IIO context");
 
             uint nb_devices = iio_context_get_devices_count(ctx);

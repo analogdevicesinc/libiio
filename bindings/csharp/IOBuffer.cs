@@ -29,7 +29,7 @@ namespace iio
             this.samples_count = samples_count;
 
             buf = iio_device_create_buffer(dev.dev, samples_count);
-            if (buf == null)
+            if (buf == IntPtr.Zero)
                 throw new Exception("Unable to create buffer");
         }
 
