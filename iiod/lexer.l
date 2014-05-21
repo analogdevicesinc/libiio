@@ -131,7 +131,7 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	return SPACE;
 }
 
-[ \t]*\n {
+[ \t]*\r?\n {
 	BEGIN(INITIAL);
 	return END;
 }
