@@ -258,8 +258,20 @@ __api __pure const char * iio_device_find_attr(
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
-__api ssize_t iio_device_attr_read(const struct iio_device *dev,
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_attr_read,
+ * it is now possible to read all of the attributes of a device.
+ *
+ * The buffer is filled with one block of data per attribute of the device,
+ * by the order they appear in the iio_device structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, it corresponds to the errno code that were
+ * returned when reading the attribute; if positive, it corresponds to the
+ * length of the data read. In that case, the rest of the block contains
+ * the data. */
+ __api ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
 
@@ -478,7 +490,19 @@ __api __pure const char * iio_channel_attr_get_filename(
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_read,
+ * it is now possible to read all of the attributes of a channel.
+ *
+ * The buffer is filled with one block of data per attribute of the channel,
+ * by the order they appear in the iio_channel structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, it corresponds to the errno code that were
+ * returned when reading the attribute; if positive, it corresponds to the
+ * length of the data read. In that case, the rest of the block contains
+ * the data. */
 __api ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
 
@@ -903,7 +927,20 @@ __api __pure const char * iio_device_get_debug_attr(
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to
+ * iio_device_debug_attr_read, it is now possible to read all of the debug
+ * attributes of a device.
+ *
+ * The buffer is filled with one block of data per debug attribute of the
+ * device, by the order they appear in the iio_device structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, it corresponds to the errno code that were
+ * returned when reading the debug attribute; if positive, it corresponds
+ * to the length of the data read. In that case, the rest of the block contains
+ * the data. */
 __api ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 

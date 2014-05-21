@@ -19,6 +19,7 @@
 #include "debug.h"
 #include "iio-private.h"
 
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -40,6 +41,12 @@
 #define BLOCK_QUERY_IOCTL   _IOWR('i', 0xa2, struct block)
 #define BLOCK_ENQUEUE_IOCTL _IOWR('i', 0xa3, struct block)
 #define BLOCK_DEQUEUE_IOCTL _IOWR('i', 0xa4, struct block)
+
+/* Forward declarations */
+static ssize_t local_read_dev_attr(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len, bool is_debug);
+static ssize_t local_read_chn_attr(const struct iio_channel *chn,
+		const char *attr, char *dst, size_t len);
 
 struct block_alloc_req {
 	uint32_t type,
@@ -252,12 +259,54 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	return (ssize_t) block.bytes_used;
 }
 
+static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
+		char *dst, size_t len, bool is_debug)
+{
+	unsigned int i, nb = is_debug ? dev->nb_debug_attrs : dev->nb_attrs;
+	char **attrs = is_debug ? dev->debug_attrs : dev->attrs;
+	char *ptr = dst;
+
+	for (i = 0; len >= 4 && i < nb; i++) {
+		/* Recursive! */
+		ssize_t ret = local_read_dev_attr(dev, attrs[i],
+				ptr + 4, len - 4, is_debug);
+
+		*(uint32_t *) ptr = htonl(ret);
+		ptr += 4 + (ret < 0 ? 0 : ret);
+		len -= 4 + (ret < 0 ? 0 : ret);
+	}
+
+	return ptr - dst;
+}
+
+static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
+		char *dst, size_t len)
+{
+	unsigned int i;
+	char *ptr = dst;
+
+	for (i = 0; len >= 4 && i < chn->nb_attrs; i++) {
+		/* Recursive! */
+		ssize_t ret = local_read_chn_attr(chn,
+				chn->attrs[i].name, ptr + 4, len - 4);
+
+		*(uint32_t *) ptr = htonl(ret);
+		ptr += 4 + (ret < 0 ? 0 : ret);
+		len -= 4 + (ret < 0 ? 0 : ret);
+	}
+
+	return ptr - dst;
+}
+
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
+
+	if (!attr)
+		return local_read_all_dev_attrs(dev, dst, len, is_debug);
 
 	if (is_debug)
 		snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
@@ -317,6 +366,9 @@ static const char * get_filename(const struct iio_channel *chn,
 static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
+	if (!attr)
+		return local_read_all_chn_attrs(chn, dst, len);
+
 	attr = get_filename(chn, attr);
 	return local_read_dev_attr(chn->dev, attr, dst, len, false);
 }
