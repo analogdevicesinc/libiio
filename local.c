@@ -471,12 +471,12 @@ static int local_close(const struct iio_device *dev)
 		return ret;
 
 	pdata->f = NULL;
-	ret = local_write_dev_attr(dev, "buffer/enable",
-			pdata->samples_count ? "0" : "1", 2, false);
-	if (ret < 0)
-		return ret;
-	else
-		return 0;
+	if (pdata->samples_count) {
+		ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+		if (ret < 0)
+			return ret;
+	}
+	return 0;
 }
 
 static int local_get_trigger(const struct iio_device *dev,
