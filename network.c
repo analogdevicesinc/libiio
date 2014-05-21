@@ -469,11 +469,13 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 	if (chn)
 		snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
 				chn->is_output ? "OUTPUT" : "INPUT",
-				chn->id, attr);
+				chn->id, attr ? attr : "");
 	else if (is_debug)
-		snprintf(buf, sizeof(buf), "READ %s debug %s\r\n", id, attr);
+		snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
+				id, attr ? attr : "");
 	else
-		snprintf(buf, sizeof(buf), "READ %s %s\r\n", id, attr);
+		snprintf(buf, sizeof(buf), "READ %s %s\r\n",
+				id, attr ? attr : "");
 
 	network_lock(pdata);
 	read_len = exec_command(buf, fd);
