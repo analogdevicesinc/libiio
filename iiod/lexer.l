@@ -122,6 +122,10 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	}
 }
 
+CYCLIC|cyclic {
+	return CYCLIC;
+}
+
 {WORD} {
 	yylval->word = strdup(yytext);
 	return WORD;

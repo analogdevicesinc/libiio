@@ -44,7 +44,7 @@ extern bool server_demux; /* Defined in iiod.c */
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
-		size_t samples_count, const char *mask);
+		size_t samples_count, const char *mask, bool cyclic);
 int close_dev(struct parser_pdata *pdata, struct iio_device *dev);
 
 ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
