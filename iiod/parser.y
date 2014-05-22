@@ -130,7 +130,7 @@ Line:
 		"\t\tClose the specified device\n"
 		"\tREAD <device> DEBUG|[INPUT|OUTPUT <channel>] [<attribute>]\n"
 		"\t\tRead the value of an attribute\n"
-		"\tWRITE <device> DEBUG|[INPUT|OUTPUT <channel>] <attribute> <bytes_count>\n"
+		"\tWRITE <device> DEBUG|[INPUT|OUTPUT <channel>] [<attribute>] <bytes_count>\n"
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
@@ -259,6 +259,17 @@ Line:
 		else
 			YYACCEPT;
 	}
+	| WRITE SPACE DEVICE SPACE WORD END {
+		char *len = $5;
+		unsigned long nb = atol(len);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, false);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
 	| WRITE SPACE DEVICE SPACE WORD SPACE WORD END {
 		char *attr = $5, *len = $7;
 		unsigned long nb = atol(len);
@@ -271,12 +282,34 @@ Line:
 		else
 			YYACCEPT;
 	}
+	| WRITE SPACE DEVICE SPACE DEBUG_ATTR SPACE WORD END {
+		char *len = $7;
+		unsigned long nb = atol(len);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, true);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
 	| WRITE SPACE DEVICE SPACE DEBUG_ATTR SPACE WORD SPACE WORD END {
 		char *attr = $7, *len = $9;
 		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, true);
 		free(attr);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| WRITE SPACE DEVICE SPACE IN_OUT SPACE CHANNEL SPACE WORD END {
+		char *len = $9;
+		unsigned long nb = atol(len);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = write_chn_attr(pdata, $7, NULL, nb);
 		free(len);
 		if (ret < 0)
 			YYABORT;
