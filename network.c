@@ -512,13 +512,13 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 	if (chn)
 		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s %lu\r\n",
 				id, chn->is_output ? "OUTPUT" : "INPUT",
-				chn->id, attr, (unsigned long) len);
+				chn->id, attr ? attr : "", (unsigned long) len);
 	else if (is_debug)
-		snprintf(buf, sizeof(buf), "WRITE %s debug %s %lu\r\n",
-				id, attr, (unsigned long) len);
+		snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
+				id, attr ? attr : "", (unsigned long) len);
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
-				id, attr, (unsigned long) len);
+				id, attr ? attr : "", (unsigned long) len);
 	return do_write(dev->ctx->pdata, true, buf, src, len);
 }
 
