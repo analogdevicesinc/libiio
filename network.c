@@ -499,8 +499,7 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 		return ret;
 	}
 
-	dst[read_len] = '\0';
-	return read_len + 1;
+	return read_len;
 }
 
 static ssize_t network_write_attr_helper(const struct iio_device *dev,
