@@ -705,13 +705,14 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
 /** @brief Create an input or output buffer associated to the given device
  * @param dev A pointer to an iio_device structure
  * @param samples_count The number of samples that the buffer should contain
+ * @param cyclic If True, enable cyclic mode
  * @return On success, a pointer to an iio_buffer structure
  * @return On error, NULL is returned, and errno is set to the error code
  *
  * <b>NOTE:</b> Channels that have to be written to / read from must be enabled
  * before creating the buffer. */
 __api struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count);
+		size_t samples_count, bool cyclic);
 
 
 /** @brief Destroy the given buffer

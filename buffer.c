@@ -21,7 +21,7 @@ static bool device_is_high_speed(const struct iio_device *dev)
 }
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count)
+		size_t samples_count, bool cyclic)
 {
 	int ret = -EINVAL;
 	struct iio_buffer *buf;
@@ -50,7 +50,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	 * iio_buffer_foreach_sample to be used. */
 	memcpy(buf->mask, dev->mask, dev->words * sizeof(*buf->mask));
 
-	ret = iio_device_open(dev, samples_count, false);
+	ret = iio_device_open(dev, samples_count, cyclic);
 	if (ret < 0)
 		goto err_free_mask;
 
