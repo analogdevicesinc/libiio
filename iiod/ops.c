@@ -273,7 +273,8 @@ static void * rw_thd(void *d)
 	ssize_t ret = 0;
 	bool had_readers = false;
 
-	DEBUG("R/W thread started\n");
+	INFO("R/W thread started for device %s\n",
+			dev->name ? dev->name : dev->id);
 
 	while (true) {
 		struct ThdEntry *next_thd;
@@ -452,7 +453,8 @@ static void * rw_thd(void *d)
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	DEBUG("Removing device %s from list\n", dev->id);
+	INFO("Stopping R/W thread for device %s\n",
+			dev->name ? dev->name : dev->id);
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
 
 	iio_buffer_destroy(entry->buf);
@@ -462,8 +464,6 @@ static void * rw_thd(void *d)
 
 	free(entry->mask);
 	free(entry);
-
-	DEBUG("Thread terminated\n");
 	return NULL;
 }
 
