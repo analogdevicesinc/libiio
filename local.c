@@ -33,6 +33,7 @@
 #include <unistd.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define BIT(x) (1 << (x))
 
 #define NB_BLOCKS 4
 
@@ -41,6 +42,8 @@
 #define BLOCK_QUERY_IOCTL   _IOWR('i', 0xa2, struct block)
 #define BLOCK_ENQUEUE_IOCTL _IOWR('i', 0xa3, struct block)
 #define BLOCK_DEQUEUE_IOCTL _IOWR('i', 0xa4, struct block)
+
+#define BLOCK_FLAG_CYCLIC BIT(1)
 
 /* Forward declarations */
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
@@ -71,12 +74,12 @@ struct block {
 
 struct iio_device_pdata {
 	FILE *f;
-	unsigned int samples_count;
+	unsigned int samples_count, nb_blocks;
 
 	struct block blocks[NB_BLOCKS];
 	void *addrs[NB_BLOCKS];
 	int last_dequeued;
-	bool is_high_speed;
+	bool is_high_speed, cyclic, cyclic_buffer_enqueued;
 };
 
 static const char * const device_attrs_blacklist[] = {
@@ -241,6 +244,14 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 
 	if (pdata->last_dequeued >= 0) {
 		struct block *last_block = &pdata->blocks[pdata->last_dequeued];
+
+		if (pdata->cyclic) {
+			if (pdata->cyclic_buffer_enqueued)
+				return -EBUSY;
+			pdata->blocks[0].flags |= BLOCK_FLAG_CYCLIC;
+			pdata->cyclic_buffer_enqueued = true;
+		}
+
 		last_block->bytes_used = bytes_used;
 		ret = (ssize_t) ioctl(fileno(f),
 				BLOCK_ENQUEUE_IOCTL, last_block);
@@ -248,6 +259,11 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 			ret = (ssize_t) -errno;
 			ERROR("Unable to enqueue block: %s\n", strerror(errno));
 			return ret;
+		}
+
+		if (pdata->cyclic) {
+			*addr_ptr = pdata->addrs[pdata->last_dequeued];
+			return (ssize_t) last_block->bytes_used;
 		}
 	}
 
@@ -480,17 +496,25 @@ static int enable_high_speed(const struct iio_device *dev)
 	unsigned int i;
 	int ret, fd = fileno(pdata->f);
 
+	if (pdata->cyclic) {
+		pdata->nb_blocks = 1;
+		DEBUG("Enabling cyclic mode\n");
+	} else {
+		pdata->nb_blocks = NB_BLOCKS;
+		DEBUG("Cyclic mode not enabled\n");
+	}
+
 	req.type = 0;
 	req.size = pdata->samples_count *
 		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
-	req.count = NB_BLOCKS;
+	req.count = pdata->nb_blocks;
 
 	ret = ioctl(fd, BLOCK_ALLOC_IOCTL, &req);
 	if (ret < 0)
 		return -errno;
 
 	/* mmap all the blocks */
-	for (i = 0; i < NB_BLOCKS; i++) {
+	for (i = 0; i < pdata->nb_blocks; i++) {
 		pdata->blocks[i].id = i;
 		ret = ioctl(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
 		if (ret) {
@@ -523,8 +547,8 @@ err_munmap:
 	return ret;
 }
 
-static int local_open(const struct iio_device *dev,
-		size_t samples_count, uint32_t *mask, size_t nb)
+static int local_open(const struct iio_device *dev, size_t samples_count,
+		uint32_t *mask, size_t nb, bool cyclic)
 {
 	unsigned int i;
 	int ret;
@@ -540,14 +564,11 @@ static int local_open(const struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	if (samples_count) {
-		snprintf(buf, sizeof(buf),
-				"%lu", (unsigned long) samples_count);
-		ret = local_write_dev_attr(dev, "buffer/length",
-				buf, strlen(buf) + 1, false);
-		if (ret < 0)
-			return ret;
-	}
+	snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
+	ret = local_write_dev_attr(dev, "buffer/length",
+			buf, strlen(buf) + 1, false);
+	if (ret < 0)
+		return ret;
 
 	snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
 	pdata->f = fopen(buf, "r+");
@@ -566,16 +587,15 @@ static int local_open(const struct iio_device *dev,
 		}
 	}
 
+	pdata->cyclic = cyclic;
+	pdata->cyclic_buffer_enqueued = false;
 	pdata->samples_count = samples_count;
-	pdata->is_high_speed = !!samples_count && !enable_high_speed(dev);
+	pdata->is_high_speed = !enable_high_speed(dev);
 
 	if (!pdata->is_high_speed)
 		WARNING("High-speed mode not enabled\n");
 
-	/* If opened with samples_count == 0, we probably want DDS mode;
-	 * then the buffer will only be enabled when closing the device. */
-	if (samples_count > 0)
-		ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
+	ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
 	if (ret < 0)
 		goto err_close;
 
@@ -596,7 +616,7 @@ static int local_close(const struct iio_device *dev)
 
 	if (pdata->is_high_speed) {
 		unsigned int i;
-		for (i = 0; i < NB_BLOCKS; i++)
+		for (i = 0; i < pdata->nb_blocks; i++)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
 		ioctl(fileno(pdata->f), BLOCK_FREE_IOCTL, 0);
 	}
@@ -606,12 +626,8 @@ static int local_close(const struct iio_device *dev)
 		return ret;
 
 	pdata->f = NULL;
-	if (pdata->samples_count) {
-		ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
-		if (ret < 0)
-			return ret;
-	}
-	return 0;
+	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+	return (ret < 0) ? ret : 0;
 }
 
 static int local_get_trigger(const struct iio_device *dev,

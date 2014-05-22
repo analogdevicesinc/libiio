@@ -279,8 +279,8 @@ static long exec_command(const char *cmd, int fd)
 	return resp;
 }
 
-static int network_open(const struct iio_device *dev,
-		size_t samples_count, uint32_t *mask, size_t nb)
+static int network_open(const struct iio_device *dev, size_t samples_count,
+		uint32_t *mask, size_t nb, bool cyclic)
 {
 	char buf[1024], *ptr;
 	unsigned int i;
@@ -297,7 +297,8 @@ static int network_open(const struct iio_device *dev,
 		snprintf(ptr, (ptr - buf) + i * 8, "%08x", mask[i - 1]);
 		ptr += 8;
 	}
-	strcpy(ptr, "\r\n");
+
+	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
 
 	network_lock(dev->ctx->pdata);
 	ret = (int) exec_command(buf, dev->ctx->pdata->fd);

@@ -831,12 +831,14 @@ struct iio_data_format {
 /** @brief Open the given device
  * @param dev A pointer to an iio_device structure
  * @param samples_count The size of the kernel buffer, in samples
+ * @param cyclic If True, enable cyclic mode
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned
  *
  * <b>NOTE:</b> This is not required when using the iio_buffer functions; it is
  * only useful when used with iio_device_read_raw / iio_device_write_raw. */
-__api int iio_device_open(const struct iio_device *dev, size_t samples_count);
+__api int iio_device_open(const struct iio_device *dev,
+		size_t samples_count, bool cyclic);
 
 
 /** @brief Close the given device
