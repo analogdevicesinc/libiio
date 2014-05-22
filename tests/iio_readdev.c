@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	buffer = iio_device_create_buffer(dev, SAMPLES_PER_READ);
+	buffer = iio_device_create_buffer(dev, SAMPLES_PER_READ, false);
 	if (!buffer) {
 		ERROR("Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
