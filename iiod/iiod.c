@@ -20,6 +20,7 @@
 #include "../iio.h"
 #include "ops.h"
 
+#include <arpa/inet.h>
 #include <endian.h>
 #include <errno.h>
 #include <getopt.h>
@@ -274,7 +275,9 @@ int main(int argc, char **argv)
 		pthread_t thd;
 		pthread_attr_t attr;
 		struct client_data *cdata;
-		int new = accept(fd, NULL, NULL);
+		struct sockaddr_in caddr;
+		socklen_t addr_len = sizeof(caddr);
+		int new = accept(fd, (struct sockaddr *) &caddr, &addr_len);
 		if (new == -1) {
 			if (errno == EINTR)
 				break;
@@ -305,7 +308,8 @@ int main(int argc, char **argv)
 		cdata->ctx = ctx;
 		cdata->debug = debug;
 
-		INFO("New client connected\n");
+		INFO("New client connected from %s\n",
+				inet_ntoa(caddr.sin_addr));
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		pthread_create(&thd, &attr, client_thd, cdata);
