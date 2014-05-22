@@ -67,7 +67,7 @@ endif
 
 OBJS := context.o device.o channel.o local.o xml.o network.o buffer.o
 
-.PHONY: all clean tests examples analyze install install-lib uninstall uninstall-lib html
+.PHONY: all clean tests examples analyze install install-lib uninstall uninstall-lib html iiod
 
 $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
