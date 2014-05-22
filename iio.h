@@ -314,7 +314,18 @@ __api int iio_device_attr_read_double(const struct iio_device *dev,
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_attr_write,
+ * it is now possible to write all of the attributes of a device.
+ *
+ * The buffer must contain one block of data per attribute of the device,
+ * by the order they appear in the iio_device structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, the attribute is not written; if positive,
+ * it corresponds to the length of the data to write. In that case, the rest
+ * of the block must contain the data. */
 __api ssize_t iio_device_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
 
@@ -546,7 +557,18 @@ __api int iio_channel_attr_read_double(const struct iio_channel *chn,
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_write,
+ * it is now possible to write all of the attributes of a channel.
+ *
+ * The buffer must contain one block of data per attribute of the channel,
+ * by the order they appear in the iio_channel structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, the attribute is not written; if positive,
+ * it corresponds to the length of the data to write. In that case, the rest
+ * of the block must contain the data. */
 __api ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src);
 
@@ -951,7 +973,19 @@ __api ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
  * debug attribute
  * @param src A NULL-terminated string to set the debug attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to
+ * iio_device_debug_attr_write, it is now possible to write all of the
+ * debug attributes of a device.
+ *
+ * The buffer must contain one block of data per debug attribute of the device,
+ * by the order they appear in the iio_device structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, the debug attribute is not written; if positive,
+ * it corresponds to the length of the data to write. In that case, the rest
+ * of the block must contain the data. */
 __api ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
 

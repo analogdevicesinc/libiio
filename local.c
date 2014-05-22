@@ -47,6 +47,10 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug);
 static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
+static ssize_t local_write_dev_attr(const struct iio_device *dev,
+		const char *attr, const char *src, size_t len, bool is_debug);
+static ssize_t local_write_chn_attr(const struct iio_channel *chn,
+		const char *attr, const char *src, size_t len);
 
 struct block_alloc_req {
 	uint32_t type,
@@ -298,6 +302,79 @@ static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
 	return ptr - dst;
 }
 
+static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
+{
+	while (nb--) {
+		int32_t val;
+
+		if (len < 4)
+			return -EINVAL;
+
+		val = (int32_t) ntohl(*(uint32_t *) src);
+		src += 4;
+		len -= 4;
+
+		if (val > 0) {
+			if ((uint32_t) val > len)
+				return -EINVAL;
+			len -= val;
+			src += val;
+		}
+	}
+
+	/* We should have analyzed the whole buffer by now */
+	return !len ? 0 : -EINVAL;
+}
+
+static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
+		const char *src, size_t len, bool is_debug)
+{
+	unsigned int i, nb = is_debug ? dev->nb_debug_attrs : dev->nb_attrs;
+	char **attrs = is_debug ? dev->debug_attrs : dev->attrs;
+	const char *ptr = src;
+
+	/* First step: Verify that the buffer is in the correct format */
+	if (local_buffer_analyze(nb, src, len))
+		return -EINVAL;
+
+	/* Second step: write the attributes */
+	for (i = 0; i < nb; i++) {
+		int32_t val = (int32_t) ntohl(*(uint32_t *) ptr);
+		ptr += 4;
+
+		if (val > 0) {
+			local_write_dev_attr(dev, attrs[i], ptr, val, is_debug);
+			ptr += val;
+		}
+	}
+
+	return ptr - src;
+}
+
+static ssize_t local_write_all_chn_attrs(const struct iio_channel *chn,
+		const char *src, size_t len)
+{
+	unsigned int i, nb = chn->nb_attrs;
+	const char *ptr = src;
+
+	/* First step: Verify that the buffer is in the correct format */
+	if (local_buffer_analyze(nb, src, len))
+		return -EINVAL;
+
+	/* Second step: write the attributes */
+	for (i = 0; i < nb; i++) {
+		int32_t val = (int32_t) ntohl(*(uint32_t *) ptr);
+		ptr += 4;
+
+		if (val > 0) {
+			local_write_chn_attr(chn, chn->attrs[i].name, ptr, val);
+			ptr += val;
+		}
+	}
+
+	return ptr - src;
+}
+
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
@@ -334,6 +411,9 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
+
+	if (!attr)
+		return local_write_all_dev_attrs(dev, src, len, is_debug);
 
 	if (is_debug)
 		snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
@@ -376,6 +456,9 @@ static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
+	if (!attr)
+		return local_write_all_chn_attrs(chn, src, len);
+
 	attr = get_filename(chn, attr);
 	return local_write_dev_attr(chn->dev, attr, src, len, false);
 }
