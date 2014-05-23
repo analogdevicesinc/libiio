@@ -58,10 +58,11 @@ namespace IIOCSharp
                 {
                     Channel chn = dev.get_channels()[0];
                     chn.enable();
-                    IOBuffer buf = new IOBuffer(dev, 1600);
+                    IOBuffer buf = new IOBuffer(dev, 0x8000);
                     buf.refill();
                     
                     Console.WriteLine("Read " + chn.read(buf).Length + " bytes from hardware");
+                    buf.Dispose();
                 }
 
                 if (dev.get_attrs().Count == 0)
