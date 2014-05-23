@@ -11,9 +11,11 @@ namespace iio
     {
         public IntPtr buf;
         private uint samples_count;
+        private bool circular, circular_buffer_pushed;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_create_buffer(IntPtr dev, uint samples_count);
+        private static extern IntPtr iio_device_create_buffer(IntPtr dev, uint samples_count,
+                                  [MarshalAs(UnmanagedType.I1)] bool circular);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_buffer_destroy(IntPtr buf);
@@ -24,11 +26,13 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_buffer_push(IntPtr buf);
 
-        public IOBuffer(Device dev, uint samples_count)
+        public IOBuffer(Device dev, uint samples_count, bool circular = false)
         {
             this.samples_count = samples_count;
+            this.circular = circular;
+            this.circular_buffer_pushed = false;
 
-            buf = iio_device_create_buffer(dev.dev, samples_count);
+            buf = iio_device_create_buffer(dev.dev, samples_count, circular);
             if (buf == IntPtr.Zero)
                 throw new Exception("Unable to create buffer");
         }
@@ -48,9 +52,13 @@ namespace iio
 
         public void push()
         {
+            if (circular && circular_buffer_pushed)
+                throw new Exception("Circular buffer already pushed\n");
+
             int err = iio_buffer_push(this.buf);
             if (err < 0)
                 throw new Exception("Unable to push buffer: err=" + err);
+            circular_buffer_pushed = true;
         }
 
         public uint get_samples_count()
