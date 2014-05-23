@@ -118,6 +118,9 @@ namespace iio
         {
             IntPtr ptr = (IntPtr)0;
             int err = iio_device_get_trigger(this.dev, ptr);
+            if (err < 0)
+                throw new Exception("Unable to get trigger: err=" + err);
+
             ptr = Marshal.ReadIntPtr(ptr);
 
             foreach (Trigger trig in ctx.get_devices()) {
