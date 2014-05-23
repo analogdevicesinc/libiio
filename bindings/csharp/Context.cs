@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class Context : IDisposable
+    public class Context : IDisposable
     {
         private IntPtr ctx;
         private List<Device> devices;

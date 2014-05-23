@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class Channel
+    public class Channel
     {
         private class ChannelAttr : Attr
         {

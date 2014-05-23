@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class Trigger : Device
+    public class Trigger : Device
     {
         public Trigger(Context ctx, IntPtr ptr) : base(ctx, ptr) { }
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    abstract class Attr
+    public abstract class Attr
     {
         protected string attrname;
 

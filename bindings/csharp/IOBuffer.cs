@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class IOBuffer : IDisposable
+    public class IOBuffer : IDisposable
     {
         public IntPtr buf;
         private uint samples_count;

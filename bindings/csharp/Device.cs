@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iio
 {
-    class Device
+    public class Device
     {
         private class DeviceAttr : Attr
         {
