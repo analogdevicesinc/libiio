@@ -215,9 +215,16 @@ static ssize_t local_write(const struct iio_device *dev,
 		const void *src, size_t len)
 {
 	ssize_t ret;
-	FILE *f = dev->pdata->f;
+	struct iio_device_pdata *pdata = dev->pdata;
+	FILE *f = pdata->f;
 	if (!f)
 		return -EBADF;
+
+	/* Writing is forbidden in non-cyclic mode with devices without the
+	 * high-speed mmap interface */
+	if (!pdata->is_high_speed && !pdata->cyclic)
+		return -EACCES;
+
 	ret = fwrite(src, 1, len, f);
 	if (ret)
 		return ret;
