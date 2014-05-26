@@ -62,6 +62,9 @@ struct DevEntry {
 	pthread_t thd;
 	pthread_attr_t attr;
 
+	pthread_cond_t last_cond;
+	pthread_mutex_t last_lock;
+
 	uint32_t *mask;
 	size_t nb_words;
 };
@@ -459,6 +462,18 @@ static void * rw_thd(void *d)
 
 	iio_buffer_destroy(entry->buf);
 	pthread_mutex_unlock(&devlist_lock);
+
+	/* Signal the last client that the device has been closed */
+	pthread_mutex_lock(&entry->last_lock);
+	pthread_cond_signal(&entry->last_cond);
+
+	/* And wait for the last client to give us back the lock,
+	 * so that we can destroy it... */
+	pthread_cond_wait(&entry->last_cond, &entry->last_lock);
+	pthread_mutex_unlock(&entry->last_lock);
+	pthread_mutex_destroy(&entry->last_lock);
+	pthread_cond_destroy(&entry->last_cond);
+
 	pthread_mutex_destroy(&entry->thdlist_lock);
 	pthread_attr_destroy(&entry->attr);
 
@@ -641,6 +656,8 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
 	DEBUG("Added thread to client list\n");
 
+	pthread_cond_init(&entry->last_cond, NULL);
+	pthread_mutex_init(&entry->last_lock, NULL);
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
 	pthread_attr_init(&entry->attr);
 	pthread_attr_setdetachstate(&entry->attr,
@@ -683,13 +700,37 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 			pthread_mutex_lock(&e->thdlist_lock);
 			SLIST_FOREACH(t, &e->thdlist_head, next) {
 				if (t->pdata == pdata) {
+					bool last;
+					pthread_mutex_t *last_lock =
+						&e->last_lock;
+					pthread_cond_t *last_cond =
+						&e->last_cond;
+
 					e->update_mask = true;
 					SLIST_REMOVE(&e->thdlist_head,
 							t, ThdEntry, next);
+					last = SLIST_EMPTY(&e->thdlist_head);
 					free(t->mask);
 					free(t);
+
+					if (last)
+						pthread_mutex_lock(last_lock);
 					pthread_mutex_unlock(&e->thdlist_lock);
 					pthread_mutex_unlock(&devlist_lock);
+
+					/* If we are the last client for this
+					 * device, we wait until the R/W thread
+					 * closes it. Otherwise, the CLOSE
+					 * command is returned too soon, which
+					 * might cause problems if the client
+					 * sends a command which requires the
+					 * device to be closed. */
+					if (last) {
+						pthread_cond_wait(last_cond,
+								last_lock);
+						pthread_cond_signal(last_cond);
+						pthread_mutex_unlock(last_lock);
+					}
 					return 0;
 				}
 			}
