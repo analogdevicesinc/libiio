@@ -829,29 +829,6 @@ struct iio_data_format {
 };
 
 
-/** @brief Open the given device
- * @param dev A pointer to an iio_device structure
- * @param samples_count The size of the kernel buffer, in samples
- * @param cyclic If True, enable cyclic mode
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This is not required when using the iio_buffer functions; it is
- * only useful when used with iio_device_read_raw / iio_device_write_raw. */
-__api int iio_device_open(const struct iio_device *dev,
-		size_t samples_count, bool cyclic);
-
-
-/** @brief Close the given device
- * @param dev A pointer to an iio_device structure
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This is not required when using the iio_buffer functions; it is
- * only useful when used with iio_device_read_raw / iio_device_write_raw. */
-__api int iio_device_close(const struct iio_device *dev);
-
-
 /** @brief Get the current sample size
  * @param dev A pointer to an iio_device structure
  * @return On success, the sample size in bytes
@@ -892,40 +869,6 @@ __api void iio_channel_convert(const struct iio_channel *chn,
  * @param src A pointer to the source buffer containing the sample */
 __api void iio_channel_convert_inverse(const struct iio_channel *chn,
 		void *dst, const void *src);
-
-
-/** @brief Read the raw stream from the given device
- * @param dev A pointer to an iio_device structure
- * @param dst A pointer to the destination buffer where to write the stream
- * @param len The length of the destination buffer, in bytes
- * @param mask A pointer to a memory area where the channel mask will be stored
- * @param words The number of 32-bit words composing the mask
- * @return On success, the number of bytes read
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> The device must be opened first (with iio_device_open).
- *
- * The "words" param should correspond to (number of channels + 31) / 32.
- * The area pointed by "mask" will be initialized like this:
- * @verbatim
- mask[chn.index / 32][chn.index % 32] = is_enabled
- @endverbatim
- * Note that the mask can change anytime between two calls, even if no channel
- * of the specified device have been enabled or disabled in the meantime. */
-__api ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len, uint32_t *mask, size_t words);
-
-
-/** @brief Write a raw stream to the given device
- * @param dev A pointer to an iio_device structure
- * @param src A pointer to the source buffer where to read the stream from
- * @param len The length of the input buffer, in bytes
- * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> The device must be opened first (with iio_device_open). */
-__api ssize_t iio_device_write_raw(const struct iio_device *dev,
-		const void *src, size_t len);
 
 
 /** @brief Enumerate the debug attributes of the given device
