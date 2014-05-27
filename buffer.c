@@ -222,3 +222,13 @@ void * iio_buffer_end(const struct iio_buffer *buffer)
 {
 	return (void *) ((uintptr_t) buffer->buffer + buffer->data_length);
 }
+
+void iio_buffer_set_data(struct iio_buffer *buf, void *data)
+{
+	buf->userdata = data;
+}
+
+void * iio_buffer_get_data(const struct iio_buffer *buf)
+{
+	return buf->userdata;
+}

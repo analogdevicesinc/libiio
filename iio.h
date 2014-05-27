@@ -794,6 +794,18 @@ __api ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,
 			void *src, size_t bytes, void *d), void *data);
 
 
+/** @brief Associate a pointer to an iio_buffer structure
+ * @param buf A pointer to an iio_buffer structure
+ * @param data The pointer to be associated */
+__api void iio_buffer_set_data(struct iio_buffer *buf, void *data);
+
+
+/** @brief Retrieve a previously associated pointer of an iio_buffer structure
+ * @param buf A pointer to an iio_buffer structure
+ * @return The pointer previously associated if present, or NULL */
+__api void * iio_buffer_get_data(const struct iio_buffer *buf);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Low-level functions -----------------------------*/
 /** @defgroup Debug Debug and low-level functions

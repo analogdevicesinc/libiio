@@ -144,7 +144,7 @@ struct iio_device {
 
 struct iio_buffer {
 	const struct iio_device *dev;
-	void *buffer;
+	void *buffer, *userdata;
 	size_t length, data_length;
 
 	uint32_t *mask;
