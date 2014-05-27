@@ -91,12 +91,6 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ga1a6075bb471295493b3aa825df913261"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga1a6075bb471295493b3aa825df913261">iio_device_open</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, size_t samples_count)</td></tr>
-<tr class="memdesc:ga1a6075bb471295493b3aa825df913261"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open the given device.  <a href="#ga1a6075bb471295493b3aa825df913261">More...</a><br/></td></tr>
-<tr class="separator:ga1a6075bb471295493b3aa825df913261"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad6316440538b35159769f67fddcffad6"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gad6316440538b35159769f67fddcffad6">iio_device_close</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
-<tr class="memdesc:gad6316440538b35159769f67fddcffad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close the given device.  <a href="#gad6316440538b35159769f67fddcffad6">More...</a><br/></td></tr>
-<tr class="separator:gad6316440538b35159769f67fddcffad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6ecca643c857855e8aa27fee21553337"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga6ecca643c857855e8aa27fee21553337">iio_device_get_sample_size</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
 <tr class="memdesc:ga6ecca643c857855e8aa27fee21553337"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current sample size.  <a href="#ga6ecca643c857855e8aa27fee21553337">More...</a><br/></td></tr>
 <tr class="separator:ga6ecca643c857855e8aa27fee21553337"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -113,12 +107,6 @@ Functions</h2></td></tr>
 <tr class="memitem:gaf0a9a659af18b62ffa0520301402eabb"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb">iio_channel_convert_inverse</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, void *dst, const void *src)</td></tr>
 <tr class="memdesc:gaf0a9a659af18b62ffa0520301402eabb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert the sample from host format to hardware format.  <a href="#gaf0a9a659af18b62ffa0520301402eabb">More...</a><br/></td></tr>
 <tr class="separator:gaf0a9a659af18b62ffa0520301402eabb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gafec6392cb26bc2f57419ab8d7c036269"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gafec6392cb26bc2f57419ab8d7c036269">iio_device_read_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, void *dst, size_t len, uint32_t *mask, size_t words)</td></tr>
-<tr class="memdesc:gafec6392cb26bc2f57419ab8d7c036269"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the raw stream from the given device.  <a href="#gafec6392cb26bc2f57419ab8d7c036269">More...</a><br/></td></tr>
-<tr class="separator:gafec6392cb26bc2f57419ab8d7c036269"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga44b533706799744ce2ef6618af808f02"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga44b533706799744ce2ef6618af808f02">iio_device_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const void *src, size_t len)</td></tr>
-<tr class="memdesc:ga44b533706799744ce2ef6618af808f02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a raw stream to the given device.  <a href="#ga44b533706799744ce2ef6618af808f02">More...</a><br/></td></tr>
-<tr class="separator:ga44b533706799744ce2ef6618af808f02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7b73b6fa484da3af7735cd80b90f3464"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga7b73b6fa484da3af7735cd80b90f3464">iio_device_get_debug_attrs_count</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
 <tr class="memdesc:ga7b73b6fa484da3af7735cd80b90f3464"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the debug attributes of the given device.  <a href="#ga7b73b6fa484da3af7735cd80b90f3464">More...</a><br/></td></tr>
 <tr class="separator:ga7b73b6fa484da3af7735cd80b90f3464"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,6 +119,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga01151f264c7e22fcf8390b5303b51bb3"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3">iio_device_debug_attr_write</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const char *src)</td></tr>
 <tr class="memdesc:ga01151f264c7e22fcf8390b5303b51bb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#ga01151f264c7e22fcf8390b5303b51bb3">More...</a><br/></td></tr>
 <tr class="separator:ga01151f264c7e22fcf8390b5303b51bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaabf46f157171dead5bf1f0a3da1aab93"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaabf46f157171dead5bf1f0a3da1aab93">iio_device_debug_attr_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const void *src, size_t len)</td></tr>
+<tr class="memdesc:gaabf46f157171dead5bf1f0a3da1aab93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#gaabf46f157171dead5bf1f0a3da1aab93">More...</a><br/></td></tr>
+<tr class="separator:gaabf46f157171dead5bf1f0a3da1aab93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac2d887e2f77423596487302d2728c99e"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gac2d887e2f77423596487302d2728c99e">iio_device_debug_attr_read_bool</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, bool *val)</td></tr>
 <tr class="memdesc:gac2d887e2f77423596487302d2728c99e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given debug attribute.  <a href="#gac2d887e2f77423596487302d2728c99e">More...</a><br/></td></tr>
 <tr class="separator:gac2d887e2f77423596487302d2728c99e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -149,6 +140,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ga1d105cd9079c1218c363db75cf504e0d"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d">iio_device_debug_attr_write_double</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, double val)</td></tr>
 <tr class="memdesc:ga1d105cd9079c1218c363db75cf504e0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="#ga1d105cd9079c1218c363db75cf504e0d">More...</a><br/></td></tr>
 <tr class="separator:ga1d105cd9079c1218c363db75cf504e0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5b56ddbb739533dccd7054cd8842f7c0"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga5b56ddbb739533dccd7054cd8842f7c0">iio_device_identify_filename</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *filename, struct <a class="el" href="structiio__channel.html">iio_channel</a> **chn, const char **attr)</td></tr>
+<tr class="memdesc:ga5b56ddbb739533dccd7054cd8842f7c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Identify the channel or debug attribute corresponding to a filename.  <a href="#ga5b56ddbb739533dccd7054cd8842f7c0">More...</a><br/></td></tr>
+<tr class="separator:ga5b56ddbb739533dccd7054cd8842f7c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga821ace05c0f77bf4f87be7555ae84d52"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga821ace05c0f77bf4f87be7555ae84d52">iio_device_reg_write</a> (struct <a class="el" href="structiio__device.html">iio_device</a> *dev, uint32_t address, uint32_t value)</td></tr>
+<tr class="memdesc:ga821ace05c0f77bf4f87be7555ae84d52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of a hardware register.  <a href="#ga821ace05c0f77bf4f87be7555ae84d52">More...</a><br/></td></tr>
+<tr class="separator:ga821ace05c0f77bf4f87be7555ae84d52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf549d2113214add88129493697cb3587"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaf549d2113214add88129493697cb3587">iio_device_reg_read</a> (struct <a class="el" href="structiio__device.html">iio_device</a> *dev, uint32_t address, uint32_t *value)</td></tr>
+<tr class="memdesc:gaf549d2113214add88129493697cb3587"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value of a hardware register.  <a href="#gaf549d2113214add88129493697cb3587">More...</a><br/></td></tr>
+<tr class="separator:gaf549d2113214add88129493697cb3587"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -288,34 +288,6 @@ On error, a negative errno code is returned </dd></dl>
 
 </div>
 </div>
-<a class="anchor" id="gad6316440538b35159769f67fddcffad6"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">__api int iio_device_close </td>
-          <td>(</td>
-          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
-          <td class="paramname"><em>dev</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Close the given device. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
-<dd>
-On error, a negative errno code is returned</dd></dl>
-<p><b>NOTE:</b> This is not required when using the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> functions; it is only useful when used with iio_device_read_raw / iio_device_write_raw. </p>
-
-</div>
-</div>
 <a class="anchor" id="ga2ae0fe2e179de9f6de10900f72fc28be"></a>
 <div class="memitem">
 <div class="memproto">
@@ -364,7 +336,10 @@ On error, a negative errno code is returned</dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written to the buffer </dd>
 <dd>
-On error, a negative errno code is returned </dd></dl>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_debug_attr_read, it is now possible to read all of the debug attributes of a device.</p>
+<p>The buffer is filled with one block of data per debug attribute of the device, by the order they appear in the <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure.</p>
+<p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, it corresponds to the errno code that were returned when reading the debug attribute; if positive, it corresponds to the length of the data read. In that case, the rest of the block contains the data. </p>
 
 </div>
 </div>
@@ -544,7 +519,10 @@ On error, a negative errno code is returned </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
 <dd>
-On error, a negative errno code is returned </dd></dl>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_debug_attr_write, it is now possible to write all of the debug attributes of a device.</p>
+<p>The buffer must contain one block of data per debug attribute of the device, by the order they appear in the <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure.</p>
+<p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, the debug attribute is not written; if positive, it corresponds to the length of the data to write. In that case, the rest of the block must contain the data. </p>
 
 </div>
 </div>
@@ -683,6 +661,58 @@ On error, a negative errno code is returned </dd></dl>
 
 </div>
 </div>
+<a class="anchor" id="gaabf46f157171dead5bf1f0a3da1aab93"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api ssize_t iio_device_debug_attr_write_raw </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>src</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given debug attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the debug attribute </td></tr>
+    <tr><td class="paramname">src</td><td>A pointer to the data to be written </td></tr>
+    <tr><td class="paramname">len</td><td>The number of bytes that should be written </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="gaf64c20583fd66701afcc6c7ba3deb6ea"></a>
 <div class="memitem">
 <div class="memproto">
@@ -774,12 +804,12 @@ On error, a negative errno code is returned</dd></dl>
 
 </div>
 </div>
-<a class="anchor" id="ga1a6075bb471295493b3aa825df913261"></a>
+<a class="anchor" id="ga5b56ddbb739533dccd7054cd8842f7c0"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">__api int iio_device_open </td>
+          <td class="memname">__api int iio_device_identify_filename </td>
           <td>(</td>
           <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
           <td class="paramname"><em>dev</em>, </td>
@@ -787,8 +817,20 @@ On error, a negative errno code is returned</dd></dl>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>samples_count</em>&#160;</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">struct <a class="el" href="structiio__channel.html">iio_channel</a> **&#160;</td>
+          <td class="paramname"><em>chn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char **&#160;</td>
+          <td class="paramname"><em>attr</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -798,54 +840,43 @@ On error, a negative errno code is returned</dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p>Open the given device. </p>
+<p>Identify the channel or debug attribute corresponding to a filename. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
-    <tr><td class="paramname">samples_count</td><td>The size of the kernel buffer, in samples </td></tr>
+    <tr><td class="paramname">filename</td><td>A NULL-terminated string corresponding to the filename </td></tr>
+    <tr><td class="paramname">chn</td><td>A pointer to a pointer of an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure. The pointed pointer will be set to the address of the <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure if the filename correspond to the attribute of a channel, or NULL otherwise. </td></tr>
+    <tr><td class="paramname">attr</td><td>A pointer to a NULL-terminated string. The pointer pointer will be set to point to the name of the attribute corresponding to the filename. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned, and *chn and *attr are modified. </dd>
 <dd>
-On error, a negative errno code is returned</dd></dl>
-<p><b>NOTE:</b> This is not required when using the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> functions; it is only useful when used with iio_device_read_raw / iio_device_write_raw. </p>
+On error, a negative errno code is returned. *chn and *attr are not modified. </dd></dl>
 
 </div>
 </div>
-<a class="anchor" id="gafec6392cb26bc2f57419ab8d7c036269"></a>
+<a class="anchor" id="gaf549d2113214add88129493697cb3587"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">__api ssize_t iio_device_read_raw </td>
+          <td class="memname">__api int iio_device_reg_read </td>
           <td>(</td>
-          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
           <td class="paramname"><em>dev</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>dst</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>len</em>, </td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>address</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">uint32_t *&#160;</td>
-          <td class="paramname"><em>mask</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>words</em>&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -855,48 +886,42 @@ On error, a negative errno code is returned</dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p>Read the raw stream from the given device. </p>
+<p>Get the value of a hardware register. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
-    <tr><td class="paramname">dst</td><td>A pointer to the destination buffer where to write the stream </td></tr>
-    <tr><td class="paramname">len</td><td>The length of the destination buffer, in bytes </td></tr>
-    <tr><td class="paramname">mask</td><td>A pointer to a memory area where the channel mask will be stored </td></tr>
-    <tr><td class="paramname">words</td><td>The number of 32-bit words composing the mask </td></tr>
+    <tr><td class="paramname">address</td><td>The address of the register </td></tr>
+    <tr><td class="paramname">value</td><td>A pointer to the variable where the value will be written </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes read </dd>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
 <dd>
-On error, a negative errno code is returned</dd></dl>
-<p><b>NOTE:</b> The device must be opened first (with iio_device_open).</p>
-<p>The "words" param should correspond to (number of channels + 31) / 32. The area pointed by "mask" will be initialized like this: </p>
-<pre class="fragment">mask[chn.index / 32][chn.index % 32] = is_enabled
-</pre><p> Note that the mask can change anytime between two calls, even if no channel of the specified device have been enabled or disabled in the meantime. </p>
+On error, a negative errno code is returned </dd></dl>
 
 </div>
 </div>
-<a class="anchor" id="ga44b533706799744ce2ef6618af808f02"></a>
+<a class="anchor" id="ga821ace05c0f77bf4f87be7555ae84d52"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">__api ssize_t iio_device_write_raw </td>
+          <td class="memname">__api int iio_device_reg_write </td>
           <td>(</td>
-          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
           <td class="paramname"><em>dev</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const void *&#160;</td>
-          <td class="paramname"><em>src</em>, </td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>address</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>len</em>&#160;</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -906,26 +931,25 @@ On error, a negative errno code is returned</dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p>Write a raw stream to the given device. </p>
+<p>Set the value of a hardware register. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
-    <tr><td class="paramname">src</td><td>A pointer to the source buffer where to read the stream from </td></tr>
-    <tr><td class="paramname">len</td><td>The length of the input buffer, in bytes </td></tr>
+    <tr><td class="paramname">address</td><td>The address of the register </td></tr>
+    <tr><td class="paramname">value</td><td>The value to set the register to </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
 <dd>
-On error, a negative errno code is returned</dd></dl>
-<p><b>NOTE:</b> The device must be opened first (with iio_device_open). </p>
+On error, a negative errno code is returned </dd></dl>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

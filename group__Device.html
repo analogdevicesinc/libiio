@@ -130,6 +130,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga3baae3a4b76956f9a7bc31c2ebb5b682"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#ga3baae3a4b76956f9a7bc31c2ebb5b682">iio_device_attr_write</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const char *src)</td></tr>
 <tr class="memdesc:ga3baae3a4b76956f9a7bc31c2ebb5b682"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given device-specific attribute.  <a href="#ga3baae3a4b76956f9a7bc31c2ebb5b682">More...</a><br/></td></tr>
 <tr class="separator:ga3baae3a4b76956f9a7bc31c2ebb5b682"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga68819e214490f2d556599ee64799e267"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#ga68819e214490f2d556599ee64799e267">iio_device_attr_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const void *src, size_t len)</td></tr>
+<tr class="memdesc:ga68819e214490f2d556599ee64799e267"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given device-specific attribute.  <a href="#ga68819e214490f2d556599ee64799e267">More...</a><br/></td></tr>
+<tr class="separator:ga68819e214490f2d556599ee64799e267"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae3a265d5053a2cac254eb59a8eeda9da"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#gae3a265d5053a2cac254eb59a8eeda9da">iio_device_attr_write_bool</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, bool val)</td></tr>
 <tr class="memdesc:gae3a265d5053a2cac254eb59a8eeda9da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given device-specific attribute.  <a href="#gae3a265d5053a2cac254eb59a8eeda9da">More...</a><br/></td></tr>
 <tr class="separator:gae3a265d5053a2cac254eb59a8eeda9da"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -205,7 +208,10 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written to the buffer </dd>
 <dd>
-On error, a negative errno code is returned </dd></dl>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_attr_read, it is now possible to read all of the attributes of a device.</p>
+<p>The buffer is filled with one block of data per attribute of the device, by the order they appear in the <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure.</p>
+<p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, it corresponds to the errno code that were returned when reading the attribute; if positive, it corresponds to the length of the data read. In that case, the rest of the block contains the data. </p>
 
 </div>
 </div>
@@ -385,7 +391,10 @@ On error, a negative errno code is returned </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
 <dd>
-On error, a negative errno code is returned </dd></dl>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_attr_write, it is now possible to write all of the attributes of a device.</p>
+<p>The buffer must contain one block of data per attribute of the device, by the order they appear in the <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure.</p>
+<p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, the attribute is not written; if positive, it corresponds to the length of the data to write. In that case, the rest of the block must contain the data. </p>
 
 </div>
 </div>
@@ -519,6 +528,58 @@ On error, a negative errno code is returned </dd></dl>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga68819e214490f2d556599ee64799e267"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api ssize_t iio_device_attr_write_raw </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>src</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given device-specific attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
+    <tr><td class="paramname">src</td><td>A pointer to the data to be written </td></tr>
+    <tr><td class="paramname">len</td><td>The number of bytes that should be written </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
 <dd>
 On error, a negative errno code is returned </dd></dl>
 
@@ -949,7 +1010,7 @@ On error, a negative errno code is returned </dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

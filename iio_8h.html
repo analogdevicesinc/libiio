@@ -106,33 +106,6 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contains the format of a data sample.  <a href="structiio__data__format.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a6e22df008ac7ee05d4374b71448d3bba"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6e22df008ac7ee05d4374b71448d3bba"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>__cnst</b></td></tr>
-<tr class="separator:a6e22df008ac7ee05d4374b71448d3bba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab8d4aa7e9ca368db7220dc9747189f1c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab8d4aa7e9ca368db7220dc9747189f1c"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>__pure</b></td></tr>
-<tr class="separator:ab8d4aa7e9ca368db7220dc9747189f1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a48022fb9d9279223134c2a62c9fcbb14"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a48022fb9d9279223134c2a62c9fcbb14"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>_str</b>(x)&#160;&#160;&#160;#x</td></tr>
-<tr class="separator:a48022fb9d9279223134c2a62c9fcbb14"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49bad77c916e9418758b69286c943e8c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a49bad77c916e9418758b69286c943e8c"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>__str</b>(x)&#160;&#160;&#160;_str(x)</td></tr>
-<tr class="separator:a49bad77c916e9418758b69286c943e8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0467b67951d14f22da2d1446746d728"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae0467b67951d14f22da2d1446746d728"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>__api</b></td></tr>
-<tr class="separator:ae0467b67951d14f22da2d1446746d728"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a288847835872f2fae57a30d0cca73141"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a288847835872f2fae57a30d0cca73141"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>LIBIIO_VERSION_MAJOR</b>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:a288847835872f2fae57a30d0cca73141"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12124739bb27f593191908b5a6c1eb02"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a12124739bb27f593191908b5a6c1eb02"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>LIBIIO_VERSION_MINOR</b>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a12124739bb27f593191908b5a6c1eb02"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ae8b26a6d35073f97d285a9a02354b7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8ae8b26a6d35073f97d285a9a02354b7"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>LIBIIO_VERSION</b>&#160;&#160;&#160;__str(LIBIIO_VERSION_MAJOR) &quot;.&quot; __str(LIBIIO_VERSION_MINOR)</td></tr>
-<tr class="separator:a8ae8b26a6d35073f97d285a9a02354b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ga4aafea4c127b872d5214d41ccb4ce8c1"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga4aafea4c127b872d5214d41ccb4ce8c1">iio_create_local_context</a> (void)</td></tr>
@@ -150,9 +123,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga75de8dae515c539818e52b408830d3ba"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga75de8dae515c539818e52b408830d3ba">iio_context_destroy</a> (struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga75de8dae515c539818e52b408830d3ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given context.  <a href="group__Context.html#ga75de8dae515c539818e52b408830d3ba">More...</a><br/></td></tr>
 <tr class="separator:ga75de8dae515c539818e52b408830d3ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga74e27674abd69119d308b75edd2130af"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga74e27674abd69119d308b75edd2130af">iio_context_get_version</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, unsigned int *major, unsigned int *minor)</td></tr>
-<tr class="memdesc:ga74e27674abd69119d308b75edd2130af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the version of the backend in use.  <a href="group__Context.html#ga74e27674abd69119d308b75edd2130af">More...</a><br/></td></tr>
-<tr class="separator:ga74e27674abd69119d308b75edd2130af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga04957021a00fb18689b9d9ae6f95a928"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga04957021a00fb18689b9d9ae6f95a928">iio_context_get_version</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, unsigned int *major, unsigned int *minor, char git_tag[8])</td></tr>
+<tr class="memdesc:ga04957021a00fb18689b9d9ae6f95a928"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the version of the backend in use.  <a href="group__Context.html#ga04957021a00fb18689b9d9ae6f95a928">More...</a><br/></td></tr>
+<tr class="separator:ga04957021a00fb18689b9d9ae6f95a928"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8fd307456f2667ff0c79dc87d0b6d37f"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga8fd307456f2667ff0c79dc87d0b6d37f">iio_context_get_xml</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga8fd307456f2667ff0c79dc87d0b6d37f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtain a XML representation of the given context.  <a href="group__Context.html#ga8fd307456f2667ff0c79dc87d0b6d37f">More...</a><br/></td></tr>
 <tr class="separator:ga8fd307456f2667ff0c79dc87d0b6d37f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -207,6 +180,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga3baae3a4b76956f9a7bc31c2ebb5b682"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#ga3baae3a4b76956f9a7bc31c2ebb5b682">iio_device_attr_write</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const char *src)</td></tr>
 <tr class="memdesc:ga3baae3a4b76956f9a7bc31c2ebb5b682"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given device-specific attribute.  <a href="group__Device.html#ga3baae3a4b76956f9a7bc31c2ebb5b682">More...</a><br/></td></tr>
 <tr class="separator:ga3baae3a4b76956f9a7bc31c2ebb5b682"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga68819e214490f2d556599ee64799e267"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#ga68819e214490f2d556599ee64799e267">iio_device_attr_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const void *src, size_t len)</td></tr>
+<tr class="memdesc:ga68819e214490f2d556599ee64799e267"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given device-specific attribute.  <a href="group__Device.html#ga68819e214490f2d556599ee64799e267">More...</a><br/></td></tr>
+<tr class="separator:ga68819e214490f2d556599ee64799e267"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae3a265d5053a2cac254eb59a8eeda9da"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#gae3a265d5053a2cac254eb59a8eeda9da">iio_device_attr_write_bool</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, bool val)</td></tr>
 <tr class="memdesc:gae3a265d5053a2cac254eb59a8eeda9da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given device-specific attribute.  <a href="group__Device.html#gae3a265d5053a2cac254eb59a8eeda9da">More...</a><br/></td></tr>
 <tr class="separator:gae3a265d5053a2cac254eb59a8eeda9da"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -270,6 +246,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga68c8e6c772dbf4bbec921c1dc050ab3e"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga68c8e6c772dbf4bbec921c1dc050ab3e">iio_channel_attr_write</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const char *src)</td></tr>
 <tr class="memdesc:ga68c8e6c772dbf4bbec921c1dc050ab3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="group__Channel.html#ga68c8e6c772dbf4bbec921c1dc050ab3e">More...</a><br/></td></tr>
 <tr class="separator:ga68c8e6c772dbf4bbec921c1dc050ab3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga0073a46392fcf6efaa488b75cf8bcb6c">iio_channel_attr_write_raw</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const void *src, size_t len)</td></tr>
+<tr class="memdesc:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="group__Channel.html#ga0073a46392fcf6efaa488b75cf8bcb6c">More...</a><br/></td></tr>
+<tr class="separator:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gaa08ea63cf2ed45b5d47deb14019e12bf">iio_channel_attr_write_bool</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, bool val)</td></tr>
 <tr class="memdesc:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="group__Channel.html#gaa08ea63cf2ed45b5d47deb14019e12bf">More...</a><br/></td></tr>
 <tr class="separator:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -302,18 +281,18 @@ Functions</h2></td></tr>
 <tr class="memitem:gacbce92eaefb8d61c1e4f0dc042b211e6"><td class="memItemLeft" align="right" valign="top">__api void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gacbce92eaefb8d61c1e4f0dc042b211e6">iio_channel_get_data</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn)</td></tr>
 <tr class="memdesc:gacbce92eaefb8d61c1e4f0dc042b211e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a previously associated pointer of an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure.  <a href="group__Channel.html#gacbce92eaefb8d61c1e4f0dc042b211e6">More...</a><br/></td></tr>
 <tr class="separator:gacbce92eaefb8d61c1e4f0dc042b211e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga81852df8d74592f93178b08961ebebba"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga81852df8d74592f93178b08961ebebba">iio_device_create_buffer</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, size_t samples_count)</td></tr>
-<tr class="memdesc:ga81852df8d74592f93178b08961ebebba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an input or output buffer associated to the given device.  <a href="group__Buffer.html#ga81852df8d74592f93178b08961ebebba">More...</a><br/></td></tr>
-<tr class="separator:ga81852df8d74592f93178b08961ebebba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6caadf077c112ae55a64276aa24ef832"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga6caadf077c112ae55a64276aa24ef832">iio_device_create_buffer</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, size_t samples_count, bool cyclic)</td></tr>
+<tr class="memdesc:ga6caadf077c112ae55a64276aa24ef832"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an input or output buffer associated to the given device.  <a href="group__Buffer.html#ga6caadf077c112ae55a64276aa24ef832">More...</a><br/></td></tr>
+<tr class="separator:ga6caadf077c112ae55a64276aa24ef832"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaba58dc2780be63fead6f09397ce90d10"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#gaba58dc2780be63fead6f09397ce90d10">iio_buffer_destroy</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:gaba58dc2780be63fead6f09397ce90d10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given buffer.  <a href="group__Buffer.html#gaba58dc2780be63fead6f09397ce90d10">More...</a><br/></td></tr>
 <tr class="separator:gaba58dc2780be63fead6f09397ce90d10"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1aaecd70bdb441c8faaf061672060516"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516">iio_buffer_refill</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:ga1aaecd70bdb441c8faaf061672060516"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fetch more samples from the hardware.  <a href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516">More...</a><br/></td></tr>
 <tr class="separator:ga1aaecd70bdb441c8faaf061672060516"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1615472928ffeeff3cac8ab6cc281071"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga1615472928ffeeff3cac8ab6cc281071">iio_buffer_push</a> (const struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
-<tr class="memdesc:ga1615472928ffeeff3cac8ab6cc281071"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send the samples to the hardware.  <a href="group__Buffer.html#ga1615472928ffeeff3cac8ab6cc281071">More...</a><br/></td></tr>
-<tr class="separator:ga1615472928ffeeff3cac8ab6cc281071"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga28c43d91ddaf8856f2d1a79562072280"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280">iio_buffer_push</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
+<tr class="memdesc:ga28c43d91ddaf8856f2d1a79562072280"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send the samples to the hardware.  <a href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280">More...</a><br/></td></tr>
+<tr class="separator:ga28c43d91ddaf8856f2d1a79562072280"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa4a0f8135ccc592fd9307fabcdb3c06c"><td class="memItemLeft" align="right" valign="top">__api __pure void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#gaa4a0f8135ccc592fd9307fabcdb3c06c">iio_buffer_start</a> (const struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:gaa4a0f8135ccc592fd9307fabcdb3c06c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the start address of the buffer.  <a href="group__Buffer.html#gaa4a0f8135ccc592fd9307fabcdb3c06c">More...</a><br/></td></tr>
 <tr class="separator:gaa4a0f8135ccc592fd9307fabcdb3c06c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -329,12 +308,6 @@ Functions</h2></td></tr>
 <tr class="memitem:ga8be1b9fa5383746ff8d76cedf1ff0156"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga8be1b9fa5383746ff8d76cedf1ff0156">iio_buffer_foreach_sample</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf, ssize_t(*callback)(const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, void *src, size_t bytes, void *d), void *data)</td></tr>
 <tr class="memdesc:ga8be1b9fa5383746ff8d76cedf1ff0156"><td class="mdescLeft">&#160;</td><td class="mdescRight">Call the supplied callback for each sample found in a buffer.  <a href="group__Buffer.html#ga8be1b9fa5383746ff8d76cedf1ff0156">More...</a><br/></td></tr>
 <tr class="separator:ga8be1b9fa5383746ff8d76cedf1ff0156"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1a6075bb471295493b3aa825df913261"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga1a6075bb471295493b3aa825df913261">iio_device_open</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, size_t samples_count)</td></tr>
-<tr class="memdesc:ga1a6075bb471295493b3aa825df913261"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open the given device.  <a href="group__Debug.html#ga1a6075bb471295493b3aa825df913261">More...</a><br/></td></tr>
-<tr class="separator:ga1a6075bb471295493b3aa825df913261"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad6316440538b35159769f67fddcffad6"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gad6316440538b35159769f67fddcffad6">iio_device_close</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
-<tr class="memdesc:gad6316440538b35159769f67fddcffad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close the given device.  <a href="group__Debug.html#gad6316440538b35159769f67fddcffad6">More...</a><br/></td></tr>
-<tr class="separator:gad6316440538b35159769f67fddcffad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6ecca643c857855e8aa27fee21553337"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga6ecca643c857855e8aa27fee21553337">iio_device_get_sample_size</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
 <tr class="memdesc:ga6ecca643c857855e8aa27fee21553337"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current sample size.  <a href="group__Debug.html#ga6ecca643c857855e8aa27fee21553337">More...</a><br/></td></tr>
 <tr class="separator:ga6ecca643c857855e8aa27fee21553337"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -351,12 +324,6 @@ Functions</h2></td></tr>
 <tr class="memitem:gaf0a9a659af18b62ffa0520301402eabb"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb">iio_channel_convert_inverse</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, void *dst, const void *src)</td></tr>
 <tr class="memdesc:gaf0a9a659af18b62ffa0520301402eabb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert the sample from host format to hardware format.  <a href="group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb">More...</a><br/></td></tr>
 <tr class="separator:gaf0a9a659af18b62ffa0520301402eabb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gafec6392cb26bc2f57419ab8d7c036269"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gafec6392cb26bc2f57419ab8d7c036269">iio_device_read_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, void *dst, size_t len, uint32_t *mask, size_t words)</td></tr>
-<tr class="memdesc:gafec6392cb26bc2f57419ab8d7c036269"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the raw stream from the given device.  <a href="group__Debug.html#gafec6392cb26bc2f57419ab8d7c036269">More...</a><br/></td></tr>
-<tr class="separator:gafec6392cb26bc2f57419ab8d7c036269"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga44b533706799744ce2ef6618af808f02"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga44b533706799744ce2ef6618af808f02">iio_device_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const void *src, size_t len)</td></tr>
-<tr class="memdesc:ga44b533706799744ce2ef6618af808f02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a raw stream to the given device.  <a href="group__Debug.html#ga44b533706799744ce2ef6618af808f02">More...</a><br/></td></tr>
-<tr class="separator:ga44b533706799744ce2ef6618af808f02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7b73b6fa484da3af7735cd80b90f3464"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga7b73b6fa484da3af7735cd80b90f3464">iio_device_get_debug_attrs_count</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
 <tr class="memdesc:ga7b73b6fa484da3af7735cd80b90f3464"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the debug attributes of the given device.  <a href="group__Debug.html#ga7b73b6fa484da3af7735cd80b90f3464">More...</a><br/></td></tr>
 <tr class="separator:ga7b73b6fa484da3af7735cd80b90f3464"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -369,6 +336,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga01151f264c7e22fcf8390b5303b51bb3"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3">iio_device_debug_attr_write</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const char *src)</td></tr>
 <tr class="memdesc:ga01151f264c7e22fcf8390b5303b51bb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3">More...</a><br/></td></tr>
 <tr class="separator:ga01151f264c7e22fcf8390b5303b51bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaabf46f157171dead5bf1f0a3da1aab93"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaabf46f157171dead5bf1f0a3da1aab93">iio_device_debug_attr_write_raw</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, const void *src, size_t len)</td></tr>
+<tr class="memdesc:gaabf46f157171dead5bf1f0a3da1aab93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="group__Debug.html#gaabf46f157171dead5bf1f0a3da1aab93">More...</a><br/></td></tr>
+<tr class="separator:gaabf46f157171dead5bf1f0a3da1aab93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac2d887e2f77423596487302d2728c99e"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gac2d887e2f77423596487302d2728c99e">iio_device_debug_attr_read_bool</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, bool *val)</td></tr>
 <tr class="memdesc:gac2d887e2f77423596487302d2728c99e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given debug attribute.  <a href="group__Debug.html#gac2d887e2f77423596487302d2728c99e">More...</a><br/></td></tr>
 <tr class="separator:gac2d887e2f77423596487302d2728c99e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -387,13 +357,22 @@ Functions</h2></td></tr>
 <tr class="memitem:ga1d105cd9079c1218c363db75cf504e0d"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d">iio_device_debug_attr_write_double</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *attr, double val)</td></tr>
 <tr class="memdesc:ga1d105cd9079c1218c363db75cf504e0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given debug attribute.  <a href="group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d">More...</a><br/></td></tr>
 <tr class="separator:ga1d105cd9079c1218c363db75cf504e0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5b56ddbb739533dccd7054cd8842f7c0"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga5b56ddbb739533dccd7054cd8842f7c0">iio_device_identify_filename</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, const char *filename, struct <a class="el" href="structiio__channel.html">iio_channel</a> **chn, const char **attr)</td></tr>
+<tr class="memdesc:ga5b56ddbb739533dccd7054cd8842f7c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Identify the channel or debug attribute corresponding to a filename.  <a href="group__Debug.html#ga5b56ddbb739533dccd7054cd8842f7c0">More...</a><br/></td></tr>
+<tr class="separator:ga5b56ddbb739533dccd7054cd8842f7c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga821ace05c0f77bf4f87be7555ae84d52"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#ga821ace05c0f77bf4f87be7555ae84d52">iio_device_reg_write</a> (struct <a class="el" href="structiio__device.html">iio_device</a> *dev, uint32_t address, uint32_t value)</td></tr>
+<tr class="memdesc:ga821ace05c0f77bf4f87be7555ae84d52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of a hardware register.  <a href="group__Debug.html#ga821ace05c0f77bf4f87be7555ae84d52">More...</a><br/></td></tr>
+<tr class="separator:ga821ace05c0f77bf4f87be7555ae84d52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf549d2113214add88129493697cb3587"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Debug.html#gaf549d2113214add88129493697cb3587">iio_device_reg_read</a> (struct <a class="el" href="structiio__device.html">iio_device</a> *dev, uint32_t address, uint32_t *value)</td></tr>
+<tr class="memdesc:gaf549d2113214add88129493697cb3587"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value of a hardware register.  <a href="group__Debug.html#gaf549d2113214add88129493697cb3587">More...</a><br/></td></tr>
+<tr class="separator:gaf549d2113214add88129493697cb3587"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Public interface. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

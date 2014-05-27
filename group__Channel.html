@@ -130,6 +130,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga68c8e6c772dbf4bbec921c1dc050ab3e"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga68c8e6c772dbf4bbec921c1dc050ab3e">iio_channel_attr_write</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const char *src)</td></tr>
 <tr class="memdesc:ga68c8e6c772dbf4bbec921c1dc050ab3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="#ga68c8e6c772dbf4bbec921c1dc050ab3e">More...</a><br/></td></tr>
 <tr class="separator:ga68c8e6c772dbf4bbec921c1dc050ab3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga0073a46392fcf6efaa488b75cf8bcb6c">iio_channel_attr_write_raw</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const void *src, size_t len)</td></tr>
+<tr class="memdesc:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="#ga0073a46392fcf6efaa488b75cf8bcb6c">More...</a><br/></td></tr>
+<tr class="separator:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gaa08ea63cf2ed45b5d47deb14019e12bf">iio_channel_attr_write_bool</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, bool val)</td></tr>
 <tr class="memdesc:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="#gaa08ea63cf2ed45b5d47deb14019e12bf">More...</a><br/></td></tr>
 <tr class="separator:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -251,7 +254,10 @@ If the attribute name is unknown, NULL is returned </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written to the buffer </dd>
 <dd>
-On error, a negative errno code is returned </dd></dl>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_read, it is now possible to read all of the attributes of a channel.</p>
+<p>The buffer is filled with one block of data per attribute of the channel, by the order they appear in the <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure.</p>
+<p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, it corresponds to the errno code that were returned when reading the attribute; if positive, it corresponds to the length of the data read. In that case, the rest of the block contains the data. </p>
 
 </div>
 </div>
@@ -431,7 +437,10 @@ On error, a negative errno code is returned </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
 <dd>
-On error, a negative errno code is returned </dd></dl>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_write, it is now possible to write all of the attributes of a channel.</p>
+<p>The buffer must contain one block of data per attribute of the channel, by the order they appear in the <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure.</p>
+<p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, the attribute is not written; if positive, it corresponds to the length of the data to write. In that case, the rest of the block must contain the data. </p>
 
 </div>
 </div>
@@ -565,6 +574,58 @@ On error, a negative errno code is returned </dd></dl>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga0073a46392fcf6efaa488b75cf8bcb6c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api ssize_t iio_channel_attr_write_raw </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__channel.html">iio_channel</a> *&#160;</td>
+          <td class="paramname"><em>chn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>attr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>src</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the value of the given channel-specific attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
+    <tr><td class="paramname">attr</td><td>A NULL-terminated string corresponding to the name of the attribute </td></tr>
+    <tr><td class="paramname">src</td><td>A pointer to the data to be written </td></tr>
+    <tr><td class="paramname">len</td><td>The number of bytes that should be written </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, the number of bytes written </dd>
 <dd>
 On error, a negative errno code is returned </dd></dl>
 
@@ -1107,7 +1168,7 @@ If the index is invalid, NULL is returned </dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 6 2014 12:47:58 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
