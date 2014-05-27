@@ -93,7 +93,11 @@ namespace iio
 
         public string name()
         {
-            return Marshal.PtrToStringAnsi(iio_device_get_name(dev));
+            IntPtr name = iio_device_get_name(dev);
+            if (name == IntPtr.Zero)
+                return "";
+            else
+                return Marshal.PtrToStringAnsi(name);
         }
 
         public List<Attr> get_attrs()
