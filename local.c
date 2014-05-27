@@ -220,9 +220,12 @@ static ssize_t local_write(const struct iio_device *dev,
 	if (!f)
 		return -EBADF;
 
-	/* Writing is forbidden in non-cyclic mode with devices without the
-	 * high-speed mmap interface */
-	if (!pdata->is_high_speed && !pdata->cyclic)
+	/* Writing is forbidden in cyclic mode with devices without the
+	 * high-speed mmap interface, except for the devices starting with
+	 * "cf-": in this case only cyclic mode is allowed. */
+	if (!pdata->is_high_speed && ((!pdata->cyclic && dev->name
+				&& !strncmp(dev->name, "cf-", 3))
+				|| pdata->cyclic))
 		return -EACCES;
 
 	ret = fwrite(src, 1, len, f);
