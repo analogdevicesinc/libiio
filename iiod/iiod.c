@@ -264,7 +264,6 @@ int main(int argc, char **argv)
 
 	set_handler(SIGHUP, sig_handler);
 	set_handler(SIGINT, sig_handler);
-	set_handler(SIGSEGV, sig_handler);
 	set_handler(SIGTERM, sig_handler);
 
 #ifdef HAVE_AVAHI
