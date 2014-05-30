@@ -90,12 +90,10 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 <WANT_DEVICE>{WORD} {
 	struct parser_pdata *pdata = yyget_extra(yyscanner);
 	struct iio_device *dev = iio_context_find_device(pdata->ctx, yytext);
-	if (dev) {
-		yylval->dev = dev;
-		pdata->dev = dev;
-		BEGIN(WANT_CHN_OR_ATTR);
-		return DEVICE;
-	}
+	yylval->dev = dev;
+	pdata->dev = dev;
+	BEGIN(WANT_CHN_OR_ATTR);
+	return DEVICE;
 }
 
 <WANT_CHN_OR_ATTR>DEBUG|debug {
@@ -112,14 +110,14 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 
 <WANT_CHN>{WORD} {
 	struct parser_pdata *pdata = yyget_extra(yyscanner);
-	struct iio_channel *chn = iio_device_find_channel(
-					pdata->dev, yytext, pdata->channel_is_output);
-	if (chn) {
-		yylval->chn = chn;
-		pdata->chn = chn;
-		BEGIN(WANT_ATTR);
-		return CHANNEL;
-	}
+	struct iio_channel *chn = NULL;
+	if (pdata->dev)
+		chn = iio_device_find_channel(pdata->dev,
+					yytext, pdata->channel_is_output);
+	yylval->chn = chn;
+	pdata->chn = chn;
+	BEGIN(WANT_ATTR);
+	return CHANNEL;
 }
 
 CYCLIC|cyclic {
