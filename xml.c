@@ -23,6 +23,10 @@
 #include <libxml/tree.h>
 #include <string.h>
 
+#ifndef _WIN32
+#define _strdup strdup
+#endif
+
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -31,9 +35,9 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			name = strdup((char *) attr->children->content);
+			name = _strdup((char *) attr->children->content);
 		} else if (!strcmp((char *) attr->name, "filename")) {
-			filename = strdup((char *) attr->children->content);
+			filename = _strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in channel %s\n",
 					attr->name, chn->id);
@@ -70,7 +74,7 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			name = strdup((char *) attr->children->content);
+			name = _strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in device %s\n",
 					attr->name, dev->id);
@@ -119,9 +123,9 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 		const char *name = (const char *) attr->name,
 		      *content = (const char *) attr->children->content;
 		if (!strcmp(name, "name")) {
-			chn->name = strdup(content);
+			chn->name = _strdup(content);
 		} else if (!strcmp(name, "id")) {
-			chn->id = strdup(content);
+			chn->id = _strdup(content);
 		} else if (!strcmp(name, "type")) {
 			if (!strcmp(content, "output"))
 				chn->is_output = true;
@@ -169,9 +173,9 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			dev->name = strdup((char *) attr->children->content);
+			dev->name = _strdup((char *) attr->children->content);
 		} else if (!strcmp((char *) attr->name, "id")) {
-			dev->id = strdup((char *) attr->children->content);
+			dev->id = _strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown attribute \'%s\' in <context>\n",
 					attr->name);
