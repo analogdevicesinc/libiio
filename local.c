@@ -203,12 +203,10 @@ static ssize_t local_read(const struct iio_device *dev,
 
 	memcpy(mask, dev->mask, words);
 	ret = fread(dst, 1, len, f);
-	if (ret)
-		return ret;
-	else if (feof(f))
-		return 0;
-	else
-		return -EIO;
+	fflush(f);
+	if (ferror(f))
+		ret = -errno;
+	return ret ? ret : -EIO;
 }
 
 static ssize_t local_write(const struct iio_device *dev,
@@ -228,12 +226,10 @@ static ssize_t local_write(const struct iio_device *dev,
 		return -EACCES;
 
 	ret = fwrite(src, 1, len, f);
-	if (ret)
-		return ret;
-	else if (feof(f))
-		return 0;
-	else
-		return -EIO;
+	fflush(f);
+	if (ferror(f))
+		ret = -errno;
+	return ret ? ret : -EIO;
 }
 
 static ssize_t local_get_buffer(const struct iio_device *dev,
@@ -425,7 +421,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		dst[ret - 1] = '\0';
 	fflush(f);
 	if (ferror(f))
-		ret = -EBUSY;
+		ret = -errno;
 	fclose(f);
 	return ret ? ret : -EIO;
 }
@@ -453,7 +449,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	ret = fwrite(src, 1, len, f);
 	fflush(f);
 	if (ferror(f))
-		ret = -EBUSY;
+		ret = -errno;
 	fclose(f);
 	return ret ? ret : -EIO;
 }
