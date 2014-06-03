@@ -526,24 +526,38 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
+	if (attr && ((is_debug && !iio_device_find_debug_attr(dev, attr)) ||
+			(!is_debug && !iio_device_find_attr(dev, attr))))
+		return -ENOENT;
+
 	return network_read_attr_helper(dev, NULL, attr, dst, len, is_debug);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src, size_t len, bool is_debug)
 {
+	if (attr && ((is_debug && !iio_device_find_debug_attr(dev, attr)) ||
+			(!is_debug && !iio_device_find_attr(dev, attr))))
+		return -ENOENT;
+
 	return network_write_attr_helper(dev, NULL, attr, src, len, is_debug);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
+	if (attr && !iio_channel_find_attr(chn, attr))
+		return -ENOENT;
+
 	return network_read_attr_helper(chn->dev, chn, attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
+	if (attr && !iio_channel_find_attr(chn, attr))
+		return -ENOENT;
+
 	return network_write_attr_helper(chn->dev, chn, attr, src, len, false);
 }
 
