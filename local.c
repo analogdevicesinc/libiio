@@ -79,7 +79,7 @@ struct iio_device_pdata {
 	struct block blocks[NB_BLOCKS];
 	void *addrs[NB_BLOCKS];
 	int last_dequeued;
-	bool is_high_speed, cyclic, cyclic_buffer_enqueued;
+	bool is_high_speed, cyclic, cyclic_buffer_enqueued, buffer_enabled;
 };
 
 static const char * const device_attrs_blacklist[] = {
@@ -195,11 +195,21 @@ static ssize_t local_read(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
 {
 	ssize_t ret;
-	FILE *f = dev->pdata->f;
+	struct iio_device_pdata *pdata = dev->pdata;
+	FILE *f = pdata->f;
 	if (!f)
 		return -EBADF;
 	if (words != dev->words)
 		return -EINVAL;
+
+	if (!pdata->buffer_enabled) {
+		ret = local_write_dev_attr(dev,
+				"buffer/enable", "1", 2, false);
+		if (ret < 0)
+			return ret;
+		else
+			pdata->buffer_enabled = true;
+	}
 
 	memcpy(mask, dev->mask, words);
 	ret = fread(dst, 1, len, f);
@@ -227,8 +237,16 @@ static ssize_t local_write(const struct iio_device *dev,
 
 	ret = fwrite(src, 1, len, f);
 	fflush(f);
-	if (ferror(f))
+	if (ferror(f)) {
 		ret = -errno;
+	} else if (!pdata->buffer_enabled) {
+		ssize_t err = local_write_dev_attr(dev,
+				"buffer/enable", "1", 2, false);
+		if (err < 0)
+			return err;
+		else
+			pdata->buffer_enabled = true;
+	}
 	return ret ? ret : -EIO;
 }
 
@@ -594,15 +612,20 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 
 	pdata->cyclic = cyclic;
 	pdata->cyclic_buffer_enqueued = false;
+	pdata->buffer_enabled = false;
 	pdata->samples_count = samples_count;
 	pdata->is_high_speed = !enable_high_speed(dev);
 
-	if (!pdata->is_high_speed)
+	if (!pdata->is_high_speed) {
 		WARNING("High-speed mode not enabled\n");
-
-	ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
-	if (ret < 0)
-		goto err_close;
+	} else {
+		/* NOTE: The low-speed interface will enable the buffer after
+		 * the first samples are written */
+		ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
+		if (ret < 0)
+			goto err_close;
+		pdata->buffer_enabled = true;
+	}
 
 	return 0;
 err_close:
