@@ -899,6 +899,22 @@ __api __pure const char * iio_device_get_debug_attr(
 		const struct iio_device *dev, unsigned int index);
 
 
+/** @brief Try to find a debug attribute by its name
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * debug attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the name does not correspond to any known debug attribute of the
+ * given device, NULL is returned
+ *
+ * <b>NOTE:</b> This function is useful to detect the presence of a debug
+ * attribute.
+ * It can also be used to retrieve the name of a debug attribute as a pointer
+ * to a static string from a dynamically allocated string. */
+__api __pure const char * iio_device_find_debug_attr(
+		const struct iio_device *dev, const char *name);
+
+
 /** @brief Read the content of the given debug attribute
  * @param dev A pointer to an iio_device structure
  * @param attr A NULL-terminated string corresponding to the name of the

@@ -234,6 +234,18 @@ const char * iio_device_find_attr(const struct iio_device *dev,
 	return NULL;
 }
 
+const char * iio_device_find_debug_attr(const struct iio_device *dev,
+		const char *name)
+{
+	unsigned int i;
+	for (i = 0; i < dev->nb_debug_attrs; i++) {
+		const char *attr = dev->debug_attrs[i];
+		if (!strcmp(attr, name))
+			return attr;
+	}
+	return NULL;
+}
+
 static int iio_device_open_mask(const struct iio_device *dev,
 		size_t samples_count, uint32_t *mask, size_t words, bool cyclic)
 {
