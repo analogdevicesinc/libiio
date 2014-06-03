@@ -257,14 +257,15 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 
 static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 {
-	/* Ensure that the client thread is already waiting */
-	pthread_mutex_lock(&thd->cond_lock);
-	pthread_mutex_unlock(&thd->cond_lock);
 
 	thd->err = ret;
 	thd->nb = 0;
-	pthread_cond_signal(&thd->cond);
 	thd->active = false;
+
+	/* Ensure that the client thread is already waiting */
+	pthread_mutex_lock(&thd->cond_lock);
+	pthread_cond_signal(&thd->cond);
+	pthread_mutex_unlock(&thd->cond_lock);
 }
 
 static void * rw_thd(void *d)
@@ -431,12 +432,9 @@ static void * rw_thd(void *d)
 				if (ret > 0)
 					thd->nb -= ret;
 
-				if (ret < 0 || thd->nb < sample_size)
-					signal_thread(thd, (ret < 0) ?
-							ret : thd->nb);
+				if (ret < 0)
+					signal_thread(thd, ret);
 			}
-
-			pthread_mutex_unlock(&entry->thdlist_lock);
 
 			ret = iio_buffer_push(entry->buf);
 			if (ret < 0) {
@@ -445,6 +443,17 @@ static void * rw_thd(void *d)
 				pthread_mutex_lock(&devlist_lock);
 				break;
 			}
+
+			/* Signal threads which completed their RW command */
+			for (thd = SLIST_FIRST(&entry->thdlist_head);
+					thd; thd = next_thd) {
+				next_thd = SLIST_NEXT(thd, next);
+				if (thd->active && thd->is_writer &&
+						thd->nb < sample_size)
+					signal_thread(thd, thd->nb);
+			}
+
+			pthread_mutex_unlock(&entry->thdlist_lock);
 		}
 	}
 
@@ -542,10 +551,11 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 
 	DEBUG("Waiting for completion...\n");
 	pthread_cond_wait(&thd->cond, &thd->cond_lock);
+	ret = thd->err;
+	pthread_mutex_unlock(&thd->cond_lock);
 
 	fflush(thd->pdata->out);
 
-	ret = thd->err;
 	if (ret > 0 && ret < nb)
 		print_value(thd->pdata, 0);
 
@@ -640,6 +650,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 
 		/* Wait until the device is opened by the rw thread */
 		pthread_cond_wait(&thd->cond, &thd->cond_lock);
+		pthread_mutex_unlock(&thd->cond_lock);
 		ret = (int) thd->err;
 		if (ret < 0)
 			goto err_free_thd;
@@ -680,6 +691,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 
 	/* Wait until the device is opened by the rw thread */
 	pthread_cond_wait(&thd->cond, &thd->cond_lock);
+	pthread_mutex_unlock(&thd->cond_lock);
 	ret = (int) thd->err;
 	if (!ret)
 		return 0;
