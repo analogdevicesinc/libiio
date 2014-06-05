@@ -23,6 +23,13 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Include <winsock2.h> or <arpa/inet.h> for ntohl() */
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 {
 	char *str;
@@ -518,4 +525,88 @@ const char * iio_channel_attr_get_filename(
 			return chn->attrs[i].filename;
 	}
 	return NULL;
+}
+
+int iio_channel_attr_read_all(struct iio_channel *chn,
+		int (*cb)(struct iio_channel *chn,
+			const char *attr, const char *val, size_t len, void *d),
+		void *data)
+{
+	int ret;
+	char *buf, *ptr;
+	unsigned int i;
+
+	/* We need a big buffer here; 1 MiB should be enough */
+	buf = malloc(0x100000);
+	if (!buf)
+		return -ENOMEM;
+
+	ret = (int) iio_channel_attr_read(chn, NULL, buf, 0x100000);
+	if (ret < 0)
+		goto err_free_buf;
+
+	ptr = buf;
+
+	for (i = 0; i < iio_channel_get_attrs_count(chn); i++) {
+		const char *attr = iio_channel_get_attr(chn, i);
+		int32_t len = (int32_t) ntohl(*(uint32_t *) ptr);
+
+		ptr += 4;
+		if (len > 0) {
+			ret = cb(chn, attr, ptr, (size_t) len, data);
+			if (ret < 0)
+				goto err_free_buf;
+
+			if (len & 0x3)
+				len = ((len >> 2) + 1) << 2;
+			ptr += len;
+		}
+	}
+
+err_free_buf:
+	free(buf);
+	return ret < 0 ? ret : 0;
+}
+
+int iio_channel_attr_write_all(struct iio_channel *chn,
+		ssize_t (*cb)(struct iio_channel *chn,
+			const char *attr, void *buf, size_t len, void *d),
+		void *data)
+{
+	char *buf, *ptr;
+	unsigned int i;
+	size_t len = 0x100000;
+	int ret;
+
+	/* We need a big buffer here; 1 MiB should be enough */
+	buf = malloc(len);
+	if (!buf)
+		return -ENOMEM;
+
+	ptr = buf;
+
+	for (i = 0; i < iio_channel_get_attrs_count(chn); i++) {
+		const char *attr = iio_channel_get_attr(chn, i);
+
+		ret = (int) cb(chn, attr, ptr + 4, len - 4, data);
+		if (ret < 0)
+			goto err_free_buf;
+
+		*(int32_t *) ptr = (int32_t) htonl((uint32_t) ret);
+		ptr += 4;
+		len -= 4;
+
+		if (ret > 0) {
+			if (ret & 0x3)
+				ret = ((ret >> 2) + 1) << 2;
+			ptr += ret;
+			len -= ret;
+		}
+	}
+
+	ret = (int) iio_channel_attr_write_raw(chn, NULL, buf, ptr - buf);
+
+err_free_buf:
+	free(buf);
+	return ret < 0 ? ret : 0;
 }

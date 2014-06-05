@@ -550,6 +550,22 @@ __api ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
 
 
+/** @brief Read the content of all channel-specific attributes
+ * @param chn A pointer to an iio_channel structure
+ * @param cb A pointer to a callback function
+ * @param data A pointer that will be passed to the callback function
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This function is especially useful when used with the network
+ * backend, as all the channel-specific attributes are read in one single
+ * command. */
+__api int iio_channel_attr_read_all(struct iio_channel *chn,
+		int (*cb)(struct iio_channel *chn,
+			const char *attr, const char *val, size_t len, void *d),
+		void *data);
+
+
 /** @brief Read the content of the given channel-specific attribute
  * @param chn A pointer to an iio_channel structure
  * @param attr A NULL-terminated string corresponding to the name of the
@@ -615,6 +631,22 @@ __api ssize_t iio_channel_attr_write(const struct iio_channel *chn,
  * @return On error, a negative errno code is returned */
 __api ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 		const char *attr, const void *src, size_t len);
+
+
+/** @brief Set the values of all channel-specific attributes
+ * @param chn A pointer to an iio_channel structure
+ * @param cb A pointer to a callback function
+ * @param data A pointer that will be passed to the callback function
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This function is especially useful when used with the network
+ * backend, as all the channel-specific attributes are written in one single
+ * command. */
+__api int iio_channel_attr_write_all(struct iio_channel *chn,
+		ssize_t (*cb)(struct iio_channel *chn,
+			const char *attr, void *buf, size_t len, void *d),
+		void *data);
 
 
 /** @brief Set the value of the given channel-specific attribute
