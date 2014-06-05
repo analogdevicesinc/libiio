@@ -749,7 +749,7 @@ struct iio_context * iio_create_network_context(const char *host)
 		char addr_str[AVAHI_ADDRESS_STR_MAX];
 		char port_str[6];
 		AvahiAddress address;
-		uint16_t port;
+		uint16_t port = IIOD_PORT;
 
 		memset(&address, 0, sizeof(address));
 
