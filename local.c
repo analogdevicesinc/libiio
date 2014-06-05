@@ -313,8 +313,11 @@ static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 		/* Recursive! */
 		ssize_t ret = local_read_dev_attr(dev, attrs[i],
 				ptr + 4, len - 4, is_debug);
-
 		*(uint32_t *) ptr = htonl(ret);
+
+		/* Align the length to 4 bytes */
+		if (ret > 0 && ret & 3)
+			ret = ((ret >> 2) + 1) << 2;
 		ptr += 4 + (ret < 0 ? 0 : ret);
 		len -= 4 + (ret < 0 ? 0 : ret);
 	}
@@ -332,8 +335,11 @@ static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
 		/* Recursive! */
 		ssize_t ret = local_read_chn_attr(chn,
 				chn->attrs[i].name, ptr + 4, len - 4);
-
 		*(uint32_t *) ptr = htonl(ret);
+
+		/* Align the length to 4 bytes */
+		if (ret > 0 && ret & 3)
+			ret = ((ret >> 2) + 1) << 2;
 		ptr += 4 + (ret < 0 ? 0 : ret);
 		len -= 4 + (ret < 0 ? 0 : ret);
 	}
@@ -383,6 +389,10 @@ static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 
 		if (val > 0) {
 			local_write_dev_attr(dev, attrs[i], ptr, val, is_debug);
+
+			/* Align the length to 4 bytes */
+			if (val & 3)
+				val = ((val >> 2) + 1) << 2;
 			ptr += val;
 		}
 	}
@@ -407,6 +417,10 @@ static ssize_t local_write_all_chn_attrs(const struct iio_channel *chn,
 
 		if (val > 0) {
 			local_write_chn_attr(chn, chn->attrs[i].name, ptr, val);
+
+			/* Align the length to 4 bytes */
+			if (val & 3)
+				val = ((val >> 2) + 1) << 2;
 			ptr += val;
 		}
 	}
