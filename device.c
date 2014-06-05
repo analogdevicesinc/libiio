@@ -23,6 +23,13 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Include <winsock2.h> or <arpa/inet.h> for ntohl() */
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 static char *get_attr_xml(const char *attr, size_t *length, bool is_debug)
 {
 	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr)
@@ -684,4 +691,148 @@ int iio_device_reg_read(struct iio_device *dev,
 	if (!ret)
 		*value = (uint32_t) val;
 	return ret;
+}
+
+static int read_each_attr(struct iio_device *dev, bool is_debug,
+		int (*cb)(struct iio_device *dev,
+			const char *attr, const char *val, size_t len, void *d),
+		void *data)
+{
+	int ret;
+	char *buf, *ptr;
+	unsigned int i, count;
+
+	/* We need a big buffer here; 1 MiB should be enough */
+	buf = malloc(0x100000);
+	if (!buf)
+		return -ENOMEM;
+
+	if (is_debug) {
+		count = iio_device_get_debug_attrs_count(dev);
+		ret = (int) iio_device_debug_attr_read(dev,
+				NULL, buf, 0x100000);
+	} else {
+		count = iio_device_get_attrs_count(dev);
+		ret = (int) iio_device_attr_read(dev, NULL, buf, 0x100000);
+	}
+
+	if (ret < 0)
+		goto err_free_buf;
+
+	ptr = buf;
+
+	for (i = 0; i < count; i++) {
+		const char *attr;
+		int32_t len = (int32_t) ntohl(*(uint32_t *) ptr);
+
+		if (is_debug)
+			attr = iio_device_get_debug_attr(dev, i);
+		else
+			attr = iio_device_get_attr(dev, i);
+
+		ptr += 4;
+		if (len > 0) {
+			ret = cb(dev, attr, ptr, (size_t) len, data);
+			if (ret < 0)
+				goto err_free_buf;
+
+			if (len & 0x3)
+				len = ((len >> 2) + 1) << 2;
+			ptr += len;
+		}
+	}
+
+err_free_buf:
+	free(buf);
+	return ret < 0 ? ret : 0;
+}
+
+static int write_each_attr(struct iio_device *dev, bool is_debug,
+		ssize_t (*cb)(struct iio_device *dev,
+			const char *attr, void *buf, size_t len, void *d),
+		void *data)
+{
+	char *buf, *ptr;
+	unsigned int i, count;
+	size_t len = 0x100000;
+	int ret;
+
+	/* We need a big buffer here; 1 MiB should be enough */
+	buf = malloc(len);
+	if (!buf)
+		return -ENOMEM;
+
+	ptr = buf;
+
+	if (is_debug)
+		count = iio_device_get_debug_attrs_count(dev);
+	else
+		count = iio_device_get_attrs_count(dev);
+
+	for (i = 0; i < count; i++) {
+		const char *attr;
+
+		if (is_debug)
+			attr = iio_device_get_debug_attr(dev, i);
+		else
+			attr = iio_device_get_attr(dev, i);
+
+		ret = (int) cb(dev, attr, ptr + 4, len - 4, data);
+		if (ret < 0)
+			goto err_free_buf;
+
+		*(int32_t *) ptr = (int32_t) htonl((uint32_t) ret);
+		ptr += 4;
+		len -= 4;
+
+		if (ret > 0) {
+			if (ret & 0x3)
+				ret = ((ret >> 2) + 1) << 2;
+			ptr += ret;
+			len -= ret;
+		}
+	}
+
+	if (is_debug)
+		ret = (int) iio_device_debug_attr_write_raw(dev,
+				NULL, buf, ptr - buf);
+	else
+		ret = (int) iio_device_attr_write_raw(dev,
+				NULL, buf, ptr - buf);
+
+err_free_buf:
+	free(buf);
+	return ret < 0 ? ret : 0;
+}
+
+int iio_device_debug_attr_read_all(struct iio_device *dev,
+		int (*cb)(struct iio_device *dev,
+			const char *attr, const char *val, size_t len, void *d),
+		void *data)
+{
+	return read_each_attr(dev, true, cb, data);
+}
+
+int iio_device_attr_read_all(struct iio_device *dev,
+		int (*cb)(struct iio_device *dev,
+			const char *attr, const char *val, size_t len, void *d),
+		void *data)
+{
+	return read_each_attr(dev, false, cb, data);
+}
+
+int iio_device_debug_attr_write_all(struct iio_device *dev,
+		ssize_t (*cb)(struct iio_device *dev,
+			const char *attr, void *buf, size_t len, void *d),
+		void *data)
+{
+	return write_each_attr(dev, true, cb, data);
+}
+
+int iio_device_attr_write_all(struct iio_device *dev,
+		ssize_t (*cb)(struct iio_device *dev,
+			const char *attr, void *buf, size_t len, void *d),
+		void *data)
+{
+	return write_each_attr(dev, false, cb, data);
 }
