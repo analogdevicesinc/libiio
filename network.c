@@ -48,6 +48,8 @@
 
 #include "debug.h"
 
+#define DEFAULT_TIMEOUT_MS 5000
+
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
@@ -684,6 +686,37 @@ err_unlock:
 	return ret;
 }
 
+static unsigned int calculate_remote_timeout(unsigned int timeout)
+{
+	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
+	 * by the remote. Is there something better to do here? */
+	return timeout / 2;
+}
+
+static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
+{
+	int ret = 0, fd = ctx->pdata->fd;
+	char buf[1024];
+
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
+				&timeout, sizeof(timeout)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				&timeout, sizeof(timeout)) < 0) {
+		ret = -errno;
+		strerror_r(errno, buf, sizeof(buf));
+		WARNING("Unable to set R/W timeout: %s\n", buf);
+	} else {
+		snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n",
+				calculate_remote_timeout(timeout));
+		network_lock(ctx->pdata);
+		ret = (int) exec_command(buf, ctx->pdata->fd);
+		network_unlock(ctx->pdata);
+
+		ctx->rw_timeout_ms = timeout;
+	}
+	return ret;
+}
+
 static struct iio_backend_ops network_ops = {
 	.open = network_open,
 	.close = network_close,
@@ -697,6 +730,7 @@ static struct iio_backend_ops network_ops = {
 	.set_trigger = network_set_trigger,
 	.shutdown = network_shutdown,
 	.get_version = network_get_version,
+	.set_timeout = network_set_timeout,
 };
 
 static struct iio_context * get_context(int fd)
@@ -835,6 +869,8 @@ struct iio_context * iio_create_network_context(const char *host)
 		goto err_network_shutdown;
 	}
 #endif
+
+	network_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	return ctx;
 
