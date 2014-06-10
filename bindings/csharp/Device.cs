@@ -70,6 +70,9 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_set_trigger(IntPtr dev, IntPtr trigger);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_device_get_sample_size(IntPtr dev);
+
         public Device(Context ctx, IntPtr dev)
         {
             this.ctx = ctx;
@@ -144,6 +147,14 @@ namespace iio
             }
 
             return null;
+        }
+
+        public uint get_sample_size()
+        {
+            int ret = iio_device_get_sample_size(dev);
+            if (ret < 0)
+                throw new Exception("Unable to get sample size: err=" + ret);
+            return (uint) ret;
         }
     }
 }
