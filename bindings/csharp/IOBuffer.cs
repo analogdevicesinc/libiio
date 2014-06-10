@@ -26,6 +26,12 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_buffer_push(IntPtr buf);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_buffer_start(IntPtr buf);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_buffer_end(IntPtr buf);
+
         public IOBuffer(Device dev, uint samples_count, bool circular = false)
         {
             this.samples_count = samples_count;
@@ -80,6 +86,14 @@ namespace iio
                 iio_buffer_destroy(buf);
                 buf = IntPtr.Zero;
             }
+        }
+
+        public void fill(byte[] array)
+        {
+            int length = (int) iio_buffer_end(buf) - (int) iio_buffer_start(buf);
+            if (length > array.Length)
+                length = array.Length;
+            Marshal.Copy(array, 0, iio_buffer_start(buf), length);
         }
     }
 }
