@@ -47,6 +47,10 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	return HELP;
 }
 
+<INITIAL>TIMEOUT|timeout {
+	return TIMEOUT;
+}
+
 <INITIAL>OPEN|open {
 	BEGIN(WANT_DEVICE);
 	return OPEN;

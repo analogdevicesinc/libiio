@@ -64,6 +64,8 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev);
 ssize_t set_trigger(struct parser_pdata *pdata,
 		struct iio_device *dev, const char *trig);
 
+int set_timeout(struct parser_pdata *pdata, unsigned int timeout);
+
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
 	int fd = fileno(pdata->out);

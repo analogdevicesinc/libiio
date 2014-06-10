@@ -92,6 +92,7 @@ void yyset_out(FILE *out, yyscan_t scanner);
 %token WRITE
 %token SETTRIG
 %token GETTRIG
+%token TIMEOUT
 %token DEBUG_ATTR
 %token IN_OUT
 %token CYCLIC
@@ -125,6 +126,8 @@ Line:
 		"\t\tDisplays a XML string corresponding to the current IIO context\n"
 		"\tVERSION\n"
 		"\t\tGet the version of libiio in use\n"
+		"\tTIMEOUT <timeout_ms>\n"
+		"\t\tSet the timeout (in ms) for I/O operations\n"
 		"\tOPEN <device> <samples_count> <mask> [CYCLIC]\n"
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
@@ -162,6 +165,17 @@ Line:
 		output(pdata, xml);
 		output(pdata, "\n");
 		YYACCEPT;
+	}
+	| TIMEOUT SPACE WORD END {
+		char *word = $3;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		unsigned int timeout = (unsigned int) atoi(word);
+		int ret = set_timeout(pdata, timeout);
+		free(word);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
 	}
 	| OPEN SPACE DEVICE SPACE WORD SPACE WORD SPACE CYCLIC END {
 		char *nb = $5, *mask = $7;

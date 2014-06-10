@@ -938,6 +938,13 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 	return ret;
 }
 
+int set_timeout(struct parser_pdata *pdata, unsigned int timeout)
+{
+	int ret = iio_context_set_timeout(pdata->ctx, timeout);
+	print_value(pdata, ret);
+	return ret;
+}
+
 void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 {
 	yyscan_t scanner;
