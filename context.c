@@ -248,3 +248,11 @@ int iio_context_get_version(const struct iio_context *ctx,
 	}
 	return 0;
 }
+
+int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
+{
+	if (ctx->ops->set_timeout)
+		return ctx->ops->set_timeout(ctx, timeout);
+	else
+		return -ENOSYS;
+}
