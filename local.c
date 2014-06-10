@@ -362,6 +362,10 @@ static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
 		if (val > 0) {
 			if ((uint32_t) val > len)
 				return -EINVAL;
+
+			/* Align the length to 4 bytes */
+			if (val & 3)
+				val = ((val >> 2) + 1) << 2;
 			len -= val;
 			src += val;
 		}
