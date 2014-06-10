@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
+#include <poll.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -31,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#define DEFAULT_TIMEOUT_MS 1000
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 #define BIT(x) (1 << (x))
@@ -191,6 +194,24 @@ static int set_channel_name(struct iio_channel *chn)
 	return 0;
 }
 
+static int device_check_ready(const struct iio_device *dev, bool do_write)
+{
+	struct pollfd pollfd = {
+		.fd = fileno(dev->pdata->f),
+		.events = do_write ? POLLOUT : POLLIN,
+	};
+	int ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
+	if (ret < 0)
+		return -errno;
+	if (!ret)
+		return -ETIMEDOUT;
+	if (pollfd.revents & POLLNVAL)
+		return -EBADF;
+	if (!(pollfd.revents & (do_write ? POLLOUT : POLLIN)))
+		return -EIO;
+	return 0;
+}
+
 static ssize_t local_read(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
 {
@@ -201,6 +222,10 @@ static ssize_t local_read(const struct iio_device *dev,
 		return -EBADF;
 	if (words != dev->words)
 		return -EINVAL;
+
+	ret = device_check_ready(dev, false);
+	if (ret < 0)
+		return ret;
 
 	if (!pdata->buffer_enabled) {
 		ret = local_write_dev_attr(dev,
@@ -234,6 +259,10 @@ static ssize_t local_write(const struct iio_device *dev,
 	if (!pdata->is_high_speed && pdata->cyclic !=
 			(dev->name && !strncmp(dev->name, "cf-", 3)))
 		return -EACCES;
+
+	ret = device_check_ready(dev, true);
+	if (ret < 0)
+		return ret;
 
 	ret = fwrite(src, 1, len, f);
 	fflush(f);
@@ -1189,6 +1218,12 @@ static int add_debug(void *d, const char *path)
 		return foreach_in_dir(dev, path, false, add_debug_attr);
 }
 
+static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
+{
+	ctx->rw_timeout_ms = timeout;
+	return 0;
+}
+
 static struct iio_backend_ops local_ops = {
 	.open = local_open,
 	.close = local_close,
@@ -1202,6 +1237,7 @@ static struct iio_backend_ops local_ops = {
 	.get_trigger = local_get_trigger,
 	.set_trigger = local_set_trigger,
 	.shutdown = local_shutdown,
+	.set_timeout = local_set_timeout,
 };
 
 struct iio_context * iio_create_local_context(void)
@@ -1215,6 +1251,7 @@ struct iio_context * iio_create_local_context(void)
 
 	ctx->ops = &local_ops;
 	ctx->name = "local";
+	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0) {
