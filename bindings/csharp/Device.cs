@@ -110,6 +110,17 @@ namespace iio
             return channels;
         }
 
+        public Channel get_channel(string name)
+        {
+            foreach (Channel each in channels) {
+                if (each.name().CompareTo(name) == 0 ||
+                            each.id().CompareTo(name) == 0)
+                    return each;
+            }
+
+            throw new Exception("Channel " + name + " not found");
+        }
+
         public void set_trigger(Trigger trig)
         {
             IntPtr ptr = (IntPtr) 0;

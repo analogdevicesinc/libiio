@@ -77,6 +77,17 @@ namespace iio
             return devices;
         }
 
+        public Device get_device(string name)
+        {
+            foreach (Device each in devices) {
+                if (each.name().CompareTo(name) == 0 ||
+                            each.id().CompareTo(name) == 0)
+                    return each;
+            }
+
+            throw new Exception("Device " + name + " not found");
+        }
+
         public void Dispose()
         {
             Dispose(true);
