@@ -1240,6 +1240,61 @@ static struct iio_backend_ops local_ops = {
 	.set_timeout = local_set_timeout,
 };
 
+static void init_index(struct iio_channel *chn)
+{
+	char buf[1024];
+	ssize_t ret = local_read_chn_attr(chn, "index", buf, sizeof(buf));
+	if (ret < 0)
+		chn->index = ret;
+	else
+		chn->index = atol(buf);
+}
+
+static void init_data_format(struct iio_channel *chn)
+{
+	char buf[1024];
+	ssize_t ret;
+
+	if (chn->is_scan_element) {
+		ret = local_read_chn_attr(chn, "type", buf, sizeof(buf));
+		if (ret < 0) {
+			chn->format.length = 0;
+		} else {
+			char endian, sign;
+
+			sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
+					&chn->format.bits, &chn->format.length,
+					&chn->format.shift);
+			chn->format.is_signed = sign == 's';
+			chn->format.is_be = endian == 'b';
+		}
+	}
+
+	ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
+	if (ret < 0) {
+		chn->format.with_scale = false;
+	} else {
+		chn->format.with_scale = true;
+		chn->format.scale = atof(buf);
+	}
+}
+
+static void init_scan_elements(struct iio_context *ctx)
+{
+	unsigned int i, j;
+
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+
+		for (j = 0; j < dev->nb_channels; j++) {
+			struct iio_channel *chn = dev->channels[j];
+			if (chn->is_scan_element)
+				init_index(chn);
+			init_data_format(chn);
+		}
+	}
+}
+
 struct iio_context * iio_create_local_context(void)
 {
 	int ret;
@@ -1263,6 +1318,7 @@ struct iio_context * iio_create_local_context(void)
 	}
 
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
+	init_scan_elements(ctx);
 
 	ret = iio_context_init(ctx);
 	if (ret < 0) {
