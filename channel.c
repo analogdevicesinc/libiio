@@ -56,7 +56,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 {
 	char buf[1024], *str;
 	snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
-			"format=\"%ce:%c%u/%u>>%u\" />",
+			"format=\"%ce:%c%u/%u&gt;&gt;%u\" />",
 			chn->index, chn->format.is_be ? 'b' : 'l',
 			chn->format.is_signed ? 's' : 'u',
 			chn->format.bits, chn->format.length,
