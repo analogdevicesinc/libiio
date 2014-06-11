@@ -1318,12 +1318,14 @@ struct iio_context * iio_create_local_context(void)
 	}
 
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
+
+	iio_context_init(ctx);
 	init_scan_elements(ctx);
 
-	ret = iio_context_init(ctx);
-	if (ret < 0) {
+	ctx->xml = iio_context_create_xml(ctx);
+	if (!ctx->xml) {
 		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
+		strerror_r(ENOMEM, buf, sizeof(buf));
 		ERROR("Unable to initialize context: %s\n", buf);
 		iio_context_destroy(ctx);
 		ctx = NULL;

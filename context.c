@@ -39,7 +39,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "]>";
 
 /* Returns a string containing the XML representation of this context */
-static char * context_create_xml(const struct iio_context *ctx)
+char * iio_context_create_xml(const struct iio_context *ctx)
 {
 	size_t len = strlen(ctx->name) + sizeof(xml_header) - 1 +
 		sizeof("<context name=\"\" ></context>");
@@ -174,14 +174,11 @@ static void reorder_channels(struct iio_device *dev)
 	} while (found);
 }
 
-int iio_context_init(struct iio_context *ctx)
+void iio_context_init(struct iio_context *ctx)
 {
 	unsigned int i;
 	for (i = 0; i < ctx->nb_devices; i++)
 		reorder_channels(ctx->devices[i]);
-
-	ctx->xml = context_create_xml(ctx);
-	return ctx->xml ? 0 : -ENOMEM;
 }
 
 int iio_context_get_version(const struct iio_context *ctx,

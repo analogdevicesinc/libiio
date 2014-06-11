@@ -769,7 +769,11 @@ static struct iio_context * get_context(int fd)
 
 	DEBUG("Creating context from XML...\n");
 	ctx = iio_create_xml_context_mem(xml, xml_len);
-	free(xml);
+
+	if (ctx)
+		ctx->xml = xml;
+	else
+		free(xml);
 	return ctx;
 }
 
@@ -870,13 +874,7 @@ struct iio_context * iio_create_network_context(const char *host)
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 
-	ret = iio_context_init(ctx);
-	if (ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to initialize context: %s\n", buf);
-		goto err_network_shutdown;
-	}
+	iio_context_init(ctx);
 
 #if HAVE_PTHREAD
 	ret = pthread_mutex_init(&pdata->lock, NULL);
