@@ -693,25 +693,41 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
-static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
+static int set_socket_timeout(int fd, unsigned int timeout)
 {
-	int ret = 0, fd = ctx->pdata->fd;
-	char buf[1024];
-
 	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
 				&timeout, sizeof(timeout)) < 0 ||
 			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				&timeout, sizeof(timeout)) < 0) {
-		ret = -errno;
-		strerror_r(errno, buf, sizeof(buf));
+				&timeout, sizeof(timeout)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+
+static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
+{
+	char buf[1024];
+	int ret;
+
+	snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", timeout);
+	network_lock(ctx->pdata);
+	ret = (int) exec_command(buf, ctx->pdata->fd);
+	network_unlock(ctx->pdata);
+	return ret;
+}
+
+static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
+{
+	int ret = set_socket_timeout(ctx->pdata->fd, timeout);
+	if (!ret) {
+		timeout = calculate_remote_timeout(timeout);
+		ret = set_remote_timeout(ctx, timeout);
+	}
+	if (ret < 0) {
+		char buf[1024];
+		strerror_r(-ret, buf, sizeof(buf));
 		WARNING("Unable to set R/W timeout: %s\n", buf);
 	} else {
-		snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n",
-				calculate_remote_timeout(timeout));
-		network_lock(ctx->pdata);
-		ret = (int) exec_command(buf, ctx->pdata->fd);
-		network_unlock(ctx->pdata);
-
 		ctx->rw_timeout_ms = timeout;
 	}
 	return ret;
@@ -818,6 +834,8 @@ struct iio_context * iio_create_network_context(const char *host)
 		goto err_close_socket;
 	}
 
+	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
+
 	pdata = calloc(1, sizeof(*pdata));
 	if (!pdata) {
 		ERROR("Unable to allocate memory\n");
@@ -870,8 +888,7 @@ struct iio_context * iio_create_network_context(const char *host)
 	}
 #endif
 
-	network_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
-
+	set_remote_timeout(ctx, calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
 	return ctx;
 
 err_network_shutdown:
