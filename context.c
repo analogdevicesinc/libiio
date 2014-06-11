@@ -26,12 +26,14 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device)*>"
 "<!ELEMENT device (channel | attribute | debug-attribute)*>"
-"<!ELEMENT channel (attribute)*>"
+"<!ELEMENT channel (scan-element?, attribute*)>"
 "<!ELEMENT attribute EMPTY>"
+"<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
 "<!ATTLIST context name CDATA #REQUIRED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
-"<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED scan_element (true|false) \"false\" name CDATA #IMPLIED>"
+"<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
+"<!ATTLIST scan-element index CDATA #REQUIRED format CDATA #REQUIRED scale CDATA #IMPLIED>"
 "<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED>"
 "<!ATTLIST debug-attribute name CDATA #REQUIRED>"
 "]>";
@@ -149,45 +151,6 @@ struct iio_device * iio_context_find_device(const struct iio_context *ctx,
 	return NULL;
 }
 
-static void init_index(struct iio_channel *chn)
-{
-	char buf[1024];
-	long ret = (long) iio_channel_attr_read(chn, "index", buf, sizeof(buf));
-	if (ret < 0)
-		chn->index = ret;
-	else
-		chn->index = strtol(buf, NULL, 0);
-}
-
-static void init_data_format(struct iio_channel *chn)
-{
-	char buf[1024];
-	int ret;
-
-	if (chn->is_scan_element) {
-		ret = iio_channel_attr_read(chn, "type", buf, sizeof(buf));
-		if (ret < 0) {
-			chn->format.length = 0;
-		} else {
-			char endian, sign;
-			sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
-					&chn->format.bits,
-					&chn->format.length,
-					&chn->format.shift);
-			chn->format.is_signed = sign == 's';
-			chn->format.is_be = endian == 'b';
-		}
-	}
-
-	ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
-	if (ret < 0) {
-		chn->format.with_scale = false;
-	} else {
-		chn->format.with_scale = true;
-		chn->format.scale = strtod(buf, NULL);
-	}
-}
-
 static void reorder_channels(struct iio_device *dev)
 {
 	bool found;
@@ -214,20 +177,8 @@ static void reorder_channels(struct iio_device *dev)
 int iio_context_init(struct iio_context *ctx)
 {
 	unsigned int i;
-	for (i = 0; i < ctx->nb_devices; i++) {
-		unsigned int j;
-		struct iio_device *dev = ctx->devices[i];
-		for (j = 0; j < dev->nb_channels; j++) {
-			struct iio_channel *chn = dev->channels[j];
-			if (chn->is_scan_element)
-				init_index(chn);
-			else
-				chn->index = -1;
-			init_data_format(chn);
-		}
-
-		reorder_channels(dev);
-	}
+	for (i = 0; i < ctx->nb_devices; i++)
+		reorder_channels(ctx->devices[i]);
 
 	ctx->xml = context_create_xml(ctx);
 	return ctx->xml ? 0 : -ENOMEM;

@@ -110,6 +110,33 @@ err_free:
 	return -1;
 }
 
+static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
+{
+	xmlAttr *attr;
+
+	for (attr = n->properties; attr; attr = attr->next) {
+		const char *name = (const char *) attr->name,
+		      *content = (const char *) attr->children->content;
+		if (!strcmp(name, "index")) {
+			chn->index = atol(content);
+		} else if (!strcmp(name, "format")) {
+			char e, s;
+			sscanf(content, "%ce:%c%u/%u>>%u", &e, &s,
+					&chn->format.bits,
+					&chn->format.length,
+					&chn->format.shift);
+			chn->format.is_be = e == 'b';
+			chn->format.is_signed = s == 's';
+		} else if (!strcmp(name, "scale")) {
+			chn->format.with_scale = true;
+			chn->format.scale = atof(content);
+		} else {
+			WARNING("Unknown attribute \'%s\' in <scan-element>\n",
+					name);
+		}
+	}
+}
+
 static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -131,8 +158,6 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 				chn->is_output = true;
 			else if (strcmp(content, "input"))
 				WARNING("Unknown channel type %s\n", content);
-		} else if (!strcmp(name, "scan_element")) {
-			chn->is_scan_element = !strcmp(content, "true");
 		} else {
 			WARNING("Unknown attribute \'%s\' in <channel>\n",
 					name);
@@ -148,6 +173,9 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 		if (!strcmp((char *) n->name, "attribute")) {
 			if (add_attr_to_channel(chn, n) < 0)
 				goto err_free_channel;
+		} else if (!strcmp((char *) n->name, "scan-element")) {
+			chn->is_scan_element = true;
+			setup_scan_element(chn, n);
 		} else if (strcmp((char *) n->name, "text")) {
 			WARNING("Unknown children \'%s\' in <device>\n",
 					n->name);

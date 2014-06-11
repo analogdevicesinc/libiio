@@ -52,19 +52,50 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 	return str;
 }
 
+static char * get_scan_element(const struct iio_channel *chn, size_t *length)
+{
+	char buf[1024], *str;
+	snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
+			"format=\"%ce:%c%u/%u>>%u\" />",
+			chn->index, chn->format.is_be ? 'b' : 'l',
+			chn->format.is_signed ? 's' : 'u',
+			chn->format.bits, chn->format.length,
+			chn->format.shift);
+
+	if (chn->format.with_scale) {
+		char *ptr = strrchr(buf, '\0');
+		snprintf(ptr - 2, buf + sizeof(buf) - ptr + 2,
+				"scale=%lf />", chn->format.scale);
+	}
+
+	str = strdup(buf);
+	if (!str)
+		ERROR("Unable to allocate memory\n");
+	else
+		*length = strlen(str);
+	return str;
+}
+
 /* Returns a string containing the XML representation of this channel */
 char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 {
 	size_t len = sizeof("<channel id=\"\" name=\"\" "
-			"type=\"output\" scan_element=\"false\" ></channel>")
+			"type=\"output\" ></channel>")
 		+ strlen(chn->id) + (chn->name ? strlen(chn->name) : 0);
-	char *ptr, *str, **attrs;
-	size_t *attrs_len;
+	char *ptr, *str, **attrs, *scan_element = NULL;
+	size_t *attrs_len, scan_element_len = 0;
 	unsigned int i;
+
+	if (chn->is_scan_element) {
+		scan_element = get_scan_element(chn, &scan_element_len);
+		len += scan_element_len;
+		if (!scan_element)
+			return NULL;
+	}
 
 	attrs_len = malloc(chn->nb_attrs * sizeof(*attrs_len));
 	if (!attrs_len)
-		return NULL;
+		goto err_free_scan_element;
 
 	attrs = malloc(chn->nb_attrs * sizeof(*attrs));
 	if (!attrs)
@@ -90,10 +121,13 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		ptr = strrchr(ptr, '\0');
 	}
 
-	sprintf(ptr, " type=\"%s\" scan_element=\"%s\" >",
-			chn->is_output ? "output" : "input",
-			chn->is_scan_element ? "true" : "false");
+	sprintf(ptr, " type=\"%s\" >", chn->is_output ? "output" : "input");
 	ptr = strrchr(ptr, '\0');
+
+	if (chn->is_scan_element) {
+		strcpy(ptr, scan_element);
+		ptr += scan_element_len;
+	}
 
 	for (i = 0; i < chn->nb_attrs; i++) {
 		strcpy(ptr, attrs[i]);
@@ -101,6 +135,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		free(attrs[i]);
 	}
 
+	free(scan_element);
 	free(attrs);
 	free(attrs_len);
 
@@ -114,6 +149,9 @@ err_free_attrs:
 	free(attrs);
 err_free_attrs_len:
 	free(attrs_len);
+err_free_scan_element:
+	if (chn->is_scan_element)
+		free(scan_element);
 	return NULL;
 }
 
