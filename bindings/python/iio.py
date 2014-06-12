@@ -72,6 +72,12 @@ def _init():
 	_get_name.archtypes = (ContextPtr, )
 	_get_name.errcheck = _checkNull
 
+	global _get_version
+	_get_version = lib.iio_context_get_version
+	_get_version.restype = c_int
+	_get_version.archtypes = (ContextPtr, c_uint, c_uint, c_char_p, )
+	_get_version.errcheck = _checkNegative
+
 	global _devices_count
 	_devices_count = lib.iio_context_get_devices_count
 	_devices_count.restype = c_uint
@@ -209,10 +215,15 @@ class Device(object):
 class Context(object):
 	def __init__(self, _context):
 		self._context = _context
-		nb_devices = _devices_count(self._context)
 		self.devices = [ Device(_get_device(self._context, x)) \
 				for x in xrange(0, _devices_count(self._context)) ]
 		self.name = _get_name(self._context)
+
+		major = c_uint()
+		minor = c_uint()
+		buf = create_string_buffer(8)
+		_get_version(self._context, byref(major), byref(minor), buf)
+		self.version = (major.value, minor.value, buf.value )
 
 	def __del__(self):
 		_destroy(self._context)
