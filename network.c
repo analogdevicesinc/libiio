@@ -681,6 +681,7 @@ static int network_get_version(const struct iio_context *ctx,
 			strncpy(git_tag, tag, 8);
 	}
 
+	ret = 0;
 err_unlock:
 	network_unlock(pdata);
 	return ret;
