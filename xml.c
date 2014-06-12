@@ -146,6 +146,9 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 
 	chn->dev = dev;
 
+	/* Set the default index value < 0 (== no index) */
+	chn->index = -ENOENT;
+
 	for (attr = n->properties; attr; attr = attr->next) {
 		const char *name = (const char *) attr->name,
 		      *content = (const char *) attr->children->content;
