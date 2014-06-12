@@ -15,19 +15,19 @@
 
 from ctypes import POINTER, Structure, cdll, c_char_p, c_uint, c_int, \
 		c_bool, create_string_buffer, byref
-from sys import argv
+from os import strerror
 
 def _checkNull(result, func, arguments):
 	if result:
 		return result
 	else:
-		raise IOError("Null pointer")
+		raise Exception("Null pointer")
 
-def _checkRW(result, func, arguments):
-	if result > 0:
+def _checkNegative(result, func, arguments):
+	if result >= 0:
 		return result
 	else:
-		raise IOError("I/O error")
+		raise Exception("Error: " + strerror(-result))
 
 def _init():
 	class _Context(Structure):
@@ -109,13 +109,13 @@ def _init():
 	_d_read_attr = lib.iio_device_attr_read
 	_d_read_attr.restype = c_int
 	_d_read_attr.archtypes = (DevicePtr, c_char_p, c_char_p, c_uint)
-	_d_read_attr.errcheck = _checkRW
+	_d_read_attr.errcheck = _checkNegative
 
 	global _d_write_attr
 	_d_write_attr = lib.iio_device_attr_write
 	_d_write_attr.restype = c_int
 	_d_write_attr.archtypes = (DevicePtr, c_char_p, c_char_p)
-	_d_write_attr.errcheck = _checkRW
+	_d_write_attr.errcheck = _checkNegative
 
 	global _channels_count
 	_channels_count = lib.iio_device_get_channels_count
@@ -159,13 +159,13 @@ def _init():
 	_c_read_attr = lib.iio_channel_attr_read
 	_c_read_attr.restype = c_int
 	_c_read_attr.archtypes = (ChannelPtr, c_char_p, c_char_p, c_uint)
-	_c_read_attr.errcheck = _checkRW
+	_c_read_attr.errcheck = _checkNegative
 
 	global _c_write_attr
 	_c_write_attr = lib.iio_channel_attr_write
 	_c_write_attr.restype = c_int
 	_c_write_attr.archtypes = (ChannelPtr, c_char_p, c_char_p)
-	_c_write_attr.errcheck = _checkRW
+	_c_write_attr.errcheck = _checkNegative
 
 _init()
 
