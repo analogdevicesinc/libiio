@@ -1243,11 +1243,14 @@ static struct iio_backend_ops local_ops = {
 static void init_index(struct iio_channel *chn)
 {
 	char buf[1024];
-	ssize_t ret = local_read_chn_attr(chn, "index", buf, sizeof(buf));
-	if (ret < 0)
-		chn->index = ret;
-	else
-		chn->index = atol(buf);
+	long id = -ENOENT;
+
+	if (chn->is_scan_element) {
+		id = (long) local_read_chn_attr(chn, "index", buf, sizeof(buf));
+		if (id > 0)
+			id = atol(buf);
+	}
+	chn->index = id;
 }
 
 static void init_data_format(struct iio_channel *chn)
@@ -1288,8 +1291,7 @@ static void init_scan_elements(struct iio_context *ctx)
 
 		for (j = 0; j < dev->nb_channels; j++) {
 			struct iio_channel *chn = dev->channels[j];
-			if (chn->is_scan_element)
-				init_index(chn);
+			init_index(chn);
 			init_data_format(chn);
 		}
 	}
@@ -1319,8 +1321,8 @@ struct iio_context * iio_create_local_context(void)
 
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
 
-	iio_context_init(ctx);
 	init_scan_elements(ctx);
+	iio_context_init(ctx);
 
 	ctx->xml = iio_context_create_xml(ctx);
 	if (!ctx->xml) {
