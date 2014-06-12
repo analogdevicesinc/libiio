@@ -65,7 +65,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 	if (chn->format.with_scale) {
 		char *ptr = strrchr(buf, '\0');
 		snprintf(ptr - 2, buf + sizeof(buf) - ptr + 2,
-				"scale=%lf />", chn->format.scale);
+				"scale=\"%lf\" />", chn->format.scale);
 	}
 
 	str = strdup(buf);
