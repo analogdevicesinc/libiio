@@ -469,7 +469,8 @@ static void * rw_thd(void *d)
 			dev->name ? dev->name : dev->id);
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
 
-	iio_buffer_destroy(entry->buf);
+	if (entry->buf)
+		iio_buffer_destroy(entry->buf);
 	pthread_mutex_unlock(&devlist_lock);
 
 	/* Signal the last client that the device has been closed */
