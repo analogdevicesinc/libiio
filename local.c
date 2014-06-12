@@ -264,9 +264,12 @@ static ssize_t local_write(const struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	ret = fwrite(src, 1, len, f);
-	fflush(f);
-	if (ferror(f)) {
+	/* We use write() instead of fwrite() here, to avoid the internal
+	 * buffering of the FILE API. This ensures that a waveform written in
+	 * cyclic mode will be written in only one system call, as the kernel
+	 * sizes the buffer according to the length of the first write. */
+	ret = write(fileno(f), src, len);
+	if (ret < 0) {
 		ret = -errno;
 	} else if (!pdata->buffer_enabled) {
 		ssize_t err = local_write_dev_attr(dev,
