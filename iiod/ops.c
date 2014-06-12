@@ -271,7 +271,7 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 static void * rw_thd(void *d)
 {
 	struct DevEntry *entry = d;
-	struct ThdEntry *thd;
+	struct ThdEntry *thd, *next_thd;
 	struct iio_device *dev = entry->dev;
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
@@ -281,7 +281,6 @@ static void * rw_thd(void *d)
 			dev->name ? dev->name : dev->id);
 
 	while (true) {
-		struct ThdEntry *next_thd;
 		bool has_readers = false, has_writers = false,
 		     mask_updated = false;
 		unsigned int sample_size;
@@ -458,9 +457,9 @@ static void * rw_thd(void *d)
 	}
 
 	/* Signal all remaining threads */
-	SLIST_FOREACH(thd, &entry->thdlist_head, next) {
-		SLIST_REMOVE(&entry->thdlist_head, thd,
-				ThdEntry, next);
+	for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
+		next_thd = SLIST_NEXT(thd, next);
+		SLIST_REMOVE(&entry->thdlist_head, thd, ThdEntry, next);
 		signal_thread(thd, ret);
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
