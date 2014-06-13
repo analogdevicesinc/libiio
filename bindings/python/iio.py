@@ -211,6 +211,16 @@ def _init():
 	_c_read_raw.restype = c_uint
 	_c_read_raw.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
 
+	global _c_write
+	_c_write = lib.iio_channel_write
+	_c_write.restype = c_uint
+	_c_write.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+
+	global _c_write_raw
+	_c_write_raw = lib.iio_channel_write_raw
+	_c_write_raw.restype = c_uint
+	_c_write_raw.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+
 	global _create_buffer
 	_create_buffer = lib.iio_device_create_buffer
 	_create_buffer.restype = BufferPtr
@@ -276,6 +286,14 @@ class Channel(object):
 			length = _c_read(self._channel, buf._buffer, c_array, len(array))
 		return array[:length]
 
+	def write(self, buf, array, raw = False):
+		mytype = c_char * len(array)
+		c_array = mytype.from_buffer(array)
+		if raw:
+			return _c_write_raw(self._channel, buf._buffer, c_array, len(array))
+		else:
+			return _c_write(self._channel, buf._buffer, c_array, len(array))
+
 	def __enable(self, en):
 		if en:
 			_c_enable(self._channel)
@@ -319,6 +337,17 @@ class Device(object):
 		c_array = mytype.from_buffer(array)
 		memmove(c_array, start, len(array))
 		return array
+
+	def write(self, buf, array):
+		start = _buffer_start(buf._buffer)
+		end = _buffer_end(buf._buffer)
+		length = end - start
+		if length > len(array):
+			length = len(array)
+		mytype = c_char * len(array)
+		c_array = mytype.from_buffer(array)
+		memmove(start, c_array, length)
+		return length
 
 	# TODO(pcercuei): Provide a dict-like interface for the attributes
 	def read_attr(self, attr):
