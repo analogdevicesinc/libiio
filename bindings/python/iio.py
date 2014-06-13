@@ -179,6 +179,19 @@ def _init():
 	_c_write_attr.archtypes = (ChannelPtr, c_char_p, c_char_p)
 	_c_write_attr.errcheck = _checkNegative
 
+	global _c_enable
+	_c_enable = lib.iio_channel_enable
+	_c_enable.archtypes = (ChannelPtr, )
+
+	global _c_disable
+	_c_disable = lib.iio_channel_disable
+	_c_disable.archtypes = (ChannelPtr, )
+
+	global _c_is_enabled
+	_c_is_enabled = lib.iio_channel_is_enabled
+	_c_is_enabled.restype = c_bool
+	_c_is_enabled.archtypes = (ChannelPtr, )
+
 _init()
 
 class Channel(object):
@@ -201,6 +214,17 @@ class Channel(object):
 
 	def get_filename(self, attr):
 		return _c_get_filename(self._channel, attr)
+
+	def __enable(self, en):
+		if en:
+			_c_enable(self._channel)
+		else:
+			_c_disable(self._channel)
+
+	def __is_enabled(self):
+		return _c_is_enabled(self._channel)
+
+	enabled = property(__is_enabled, __enable)
 
 class Device(object):
 	def __init__(self, _device):
