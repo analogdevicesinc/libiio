@@ -239,6 +239,6 @@ class XMLContext(Context):
 		super(XMLContext, self).__init__(ctx)
 
 class NetworkContext(Context):
-	def __init__(self, hostname):
+	def __init__(self, hostname = None):
 		ctx = _new_network(hostname)
 		super(NetworkContext, self).__init__(ctx)
