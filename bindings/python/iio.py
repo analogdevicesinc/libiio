@@ -14,7 +14,7 @@
 # Lesser General Public License for more details.
 
 from ctypes import POINTER, Structure, cdll, c_char_p, c_uint, c_int, \
-		c_bool, create_string_buffer, byref
+		c_char, c_void_p, c_bool, create_string_buffer, byref
 from os import strerror
 
 def _checkNull(result, func, arguments):
@@ -36,10 +36,13 @@ def _init():
 		pass
 	class _Channel(Structure):
 		pass
+	class _Buffer(Structure):
+		pass
 
 	ContextPtr = POINTER(_Context)
 	DevicePtr = POINTER(_Device)
 	ChannelPtr = POINTER(_Channel)
+	BufferPtr = POINTER(_Buffer)
 
 	lib = cdll.LoadLibrary('libiio.so.0')
 
@@ -198,6 +201,38 @@ def _init():
 	_c_is_enabled.restype = c_bool
 	_c_is_enabled.archtypes = (ChannelPtr, )
 
+	global _c_read
+	_c_read = lib.iio_channel_read
+	_c_read.restype = c_uint
+	_c_read.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+
+	global _c_read_raw
+	_c_read_raw = lib.iio_channel_read_raw
+	_c_read_raw.restype = c_uint
+	_c_read_raw.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+
+	global _create_buffer
+	_create_buffer = lib.iio_device_create_buffer
+	_create_buffer.restype = BufferPtr
+	_create_buffer.archtypes = (DevicePtr, c_uint, c_bool, )
+	_create_buffer.errcheck = _checkNull
+
+	global _buffer_destroy
+	_buffer_destroy = lib.iio_buffer_destroy
+	_buffer_destroy.archtypes = (BufferPtr, )
+
+	global _buffer_refill
+	_buffer_refill = lib.iio_buffer_refill
+	_buffer_refill.restype = c_int
+	_buffer_refill.archtypes = (BufferPtr, )
+	_buffer_refill.errcheck = _checkNegative
+
+	global _buffer_push
+	_buffer_push = lib.iio_buffer_push
+	_buffer_push.restype = c_int
+	_buffer_push.archtypes = (BufferPtr, )
+	_buffer_push.errcheck = _checkNegative
+
 _init()
 
 class Channel(object):
@@ -221,6 +256,16 @@ class Channel(object):
 	def get_filename(self, attr):
 		return _c_get_filename(self._channel, attr)
 
+	def read(self, buf, raw = False):
+		array = bytearray(buf.length)
+		mytype = c_char * len(array)
+		c_array = mytype.from_buffer(array)
+		if raw:
+			length = _c_read_raw(self._channel, buf._buffer, c_array, len(array))
+		else:
+			length = _c_read(self._channel, buf._buffer, c_array, len(array))
+		return array[:length]
+
 	def __enable(self, en):
 		if en:
 			_c_enable(self._channel)
@@ -231,6 +276,20 @@ class Channel(object):
 		return _c_is_enabled(self._channel)
 
 	enabled = property(__is_enabled, __enable)
+
+class Buffer(object):
+	def __init__(self, device, samples_count, cyclic = False):
+		self._buffer = _create_buffer(device._device, samples_count, cyclic)
+		self.length = samples_count * device.sample_size
+
+	def __del__(self):
+		_buffer_destroy(self._buffer)
+
+	def refill(self):
+		_buffer_refill(self._buffer)
+
+	def push(self):
+		_buffer_push(self._buffer)
 
 class Device(object):
 	def __init__(self, _device):
