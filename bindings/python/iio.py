@@ -161,6 +161,12 @@ def _init():
 	_c_get_attr.archtypes = (ChannelPtr, )
 	_c_get_attr.errcheck = _checkNull
 
+	global _c_get_filename
+	_c_get_filename = lib.iio_channel_attr_get_filename
+	_c_get_filename.restype = c_char_p
+	_c_get_filename.archtypes = (ChannelPtr, c_char_p, )
+	_c_get_filename.errcheck = _checkNull
+
 	global _c_read_attr
 	_c_read_attr = lib.iio_channel_attr_read
 	_c_read_attr.restype = c_int
@@ -192,6 +198,9 @@ class Channel(object):
 
 	def write_attr(self, attr, value):
 		_c_write_attr(self._channel, attr, value)
+
+	def get_filename(self, attr):
+		return _c_get_filename(self._channel, attr)
 
 class Device(object):
 	def __init__(self, _device):
