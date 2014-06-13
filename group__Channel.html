@@ -118,6 +118,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gacb37ef830dcc100a9908d0592d1ff190"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gacb37ef830dcc100a9908d0592d1ff190">iio_channel_attr_read</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, char *dst, size_t len)</td></tr>
 <tr class="memdesc:gacb37ef830dcc100a9908d0592d1ff190"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given channel-specific attribute.  <a href="#gacb37ef830dcc100a9908d0592d1ff190">More...</a><br/></td></tr>
 <tr class="separator:gacb37ef830dcc100a9908d0592d1ff190"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga66bdc45f6b55cd28e76945ead18686ca"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga66bdc45f6b55cd28e76945ead18686ca">iio_channel_attr_read_all</a> (struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, int(*cb)(struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const char *val, size_t len, void *d), void *data)</td></tr>
+<tr class="memdesc:ga66bdc45f6b55cd28e76945ead18686ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of all channel-specific attributes.  <a href="#ga66bdc45f6b55cd28e76945ead18686ca">More...</a><br/></td></tr>
+<tr class="separator:ga66bdc45f6b55cd28e76945ead18686ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabcd0cd25e203976bdc525790b6fe4e23"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gabcd0cd25e203976bdc525790b6fe4e23">iio_channel_attr_read_bool</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, bool *val)</td></tr>
 <tr class="memdesc:gabcd0cd25e203976bdc525790b6fe4e23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of the given channel-specific attribute.  <a href="#gabcd0cd25e203976bdc525790b6fe4e23">More...</a><br/></td></tr>
 <tr class="separator:gabcd0cd25e203976bdc525790b6fe4e23"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,6 +136,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga0073a46392fcf6efaa488b75cf8bcb6c">iio_channel_attr_write_raw</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const void *src, size_t len)</td></tr>
 <tr class="memdesc:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="#ga0073a46392fcf6efaa488b75cf8bcb6c">More...</a><br/></td></tr>
 <tr class="separator:ga0073a46392fcf6efaa488b75cf8bcb6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0430f53a97a6fe7474416d7e2b228421"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga0430f53a97a6fe7474416d7e2b228421">iio_channel_attr_write_all</a> (struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, ssize_t(*cb)(struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, void *buf, size_t len, void *d), void *data)</td></tr>
+<tr class="memdesc:ga0430f53a97a6fe7474416d7e2b228421"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the values of all channel-specific attributes.  <a href="#ga0430f53a97a6fe7474416d7e2b228421">More...</a><br/></td></tr>
+<tr class="separator:ga0430f53a97a6fe7474416d7e2b228421"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gaa08ea63cf2ed45b5d47deb14019e12bf">iio_channel_attr_write_bool</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, bool val)</td></tr>
 <tr class="memdesc:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the value of the given channel-specific attribute.  <a href="#gaa08ea63cf2ed45b5d47deb14019e12bf">More...</a><br/></td></tr>
 <tr class="separator:gaa08ea63cf2ed45b5d47deb14019e12bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -258,6 +264,52 @@ On error, a negative errno code is returned</dd></dl>
 <p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_read, it is now possible to read all of the attributes of a channel.</p>
 <p>The buffer is filled with one block of data per attribute of the channel, by the order they appear in the <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure.</p>
 <p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, it corresponds to the errno code that were returned when reading the attribute; if positive, it corresponds to the length of the data read. In that case, the rest of the block contains the data. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga66bdc45f6b55cd28e76945ead18686ca"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_channel_attr_read_all </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structiio__channel.html">iio_channel</a> *&#160;</td>
+          <td class="paramname"><em>chn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int(*)(struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, const char *val, size_t len, void *d)&#160;</td>
+          <td class="paramname"><em>cb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read the content of all channel-specific attributes. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
+    <tr><td class="paramname">cb</td><td>A pointer to a callback function </td></tr>
+    <tr><td class="paramname">data</td><td>A pointer that will be passed to the callback function </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b> This function is especially useful when used with the network backend, as all the channel-specific attributes are read in one single command. </p>
 
 </div>
 </div>
@@ -441,6 +493,52 @@ On error, a negative errno code is returned</dd></dl>
 <p><b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_write, it is now possible to write all of the attributes of a channel.</p>
 <p>The buffer must contain one block of data per attribute of the channel, by the order they appear in the <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure.</p>
 <p>The first four bytes of one block correspond to a 32-bit signed value in network order. If negative, the attribute is not written; if positive, it corresponds to the length of the data to write. In that case, the rest of the block must contain the data. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga0430f53a97a6fe7474416d7e2b228421"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_channel_attr_write_all </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structiio__channel.html">iio_channel</a> *&#160;</td>
+          <td class="paramname"><em>chn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ssize_t(*)(struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, const char *attr, void *buf, size_t len, void *d)&#160;</td>
+          <td class="paramname"><em>cb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the values of all channel-specific attributes. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">chn</td><td>A pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure </td></tr>
+    <tr><td class="paramname">cb</td><td>A pointer to a callback function </td></tr>
+    <tr><td class="paramname">data</td><td>A pointer that will be passed to the callback function </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned</dd></dl>
+<p><b>NOTE:</b> This function is especially useful when used with the network backend, as all the channel-specific attributes are written in one single command. </p>
 
 </div>
 </div>
@@ -1168,7 +1266,7 @@ If the index is invalid, NULL is returned </dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 13 2014 16:22:48 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

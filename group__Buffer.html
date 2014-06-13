@@ -118,6 +118,12 @@ Functions</h2></td></tr>
 <tr class="memitem:ga8be1b9fa5383746ff8d76cedf1ff0156"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga8be1b9fa5383746ff8d76cedf1ff0156">iio_buffer_foreach_sample</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf, ssize_t(*callback)(const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, void *src, size_t bytes, void *d), void *data)</td></tr>
 <tr class="memdesc:ga8be1b9fa5383746ff8d76cedf1ff0156"><td class="mdescLeft">&#160;</td><td class="mdescRight">Call the supplied callback for each sample found in a buffer.  <a href="#ga8be1b9fa5383746ff8d76cedf1ff0156">More...</a><br/></td></tr>
 <tr class="separator:ga8be1b9fa5383746ff8d76cedf1ff0156"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga07f485e4e2de57c8c1cd0141611187dc"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga07f485e4e2de57c8c1cd0141611187dc">iio_buffer_set_data</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf, void *data)</td></tr>
+<tr class="memdesc:ga07f485e4e2de57c8c1cd0141611187dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associate a pointer to an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure.  <a href="#ga07f485e4e2de57c8c1cd0141611187dc">More...</a><br/></td></tr>
+<tr class="separator:ga07f485e4e2de57c8c1cd0141611187dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac110da795a50dc45fe998cace656329b"><td class="memItemLeft" align="right" valign="top">__api void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#gac110da795a50dc45fe998cace656329b">iio_buffer_get_data</a> (const struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
+<tr class="memdesc:gac110da795a50dc45fe998cace656329b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a previously associated pointer of an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure.  <a href="#gac110da795a50dc45fe998cace656329b">More...</a><br/></td></tr>
+<tr class="separator:gac110da795a50dc45fe998cace656329b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -260,6 +266,31 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="gac110da795a50dc45fe998cace656329b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api void* iio_buffer_get_data </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *&#160;</td>
+          <td class="paramname"><em>buf</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieve a previously associated pointer of an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">buf</td><td>A pointer to an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The pointer previously associated if present, or NULL </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="ga28c43d91ddaf8856f2d1a79562072280"></a>
 <div class="memitem">
 <div class="memproto">
@@ -313,6 +344,41 @@ On error, a negative errno code is returned</dd></dl>
 <dd>
 On error, a negative errno code is returned</dd></dl>
 <p><b>NOTE:</b> Only valid for input buffers </p>
+
+</div>
+</div>
+<a class="anchor" id="ga07f485e4e2de57c8c1cd0141611187dc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api void iio_buffer_set_data </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Associate a pointer to an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">buf</td><td>A pointer to an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure </td></tr>
+    <tr><td class="paramname">data</td><td>The pointer to be associated </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -415,7 +481,7 @@ On error, NULL is returned, and errno is set to the error code</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 13 2014 16:22:48 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

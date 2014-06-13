@@ -124,6 +124,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gae5807303b638869679ece67270e72e77"><td class="memItemLeft" align="right" valign="top">__api __pure struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gae5807303b638869679ece67270e72e77">iio_context_find_device</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, const char *name)</td></tr>
 <tr class="memdesc:gae5807303b638869679ece67270e72e77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try to find a device structure by its name of ID.  <a href="#gae5807303b638869679ece67270e72e77">More...</a><br/></td></tr>
 <tr class="separator:gae5807303b638869679ece67270e72e77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabc9a33ab04950491c6c19d7da1138b39"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gabc9a33ab04950491c6c19d7da1138b39">iio_context_set_timeout</a> (struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, unsigned int timeout_ms)</td></tr>
+<tr class="memdesc:gabc9a33ab04950491c6c19d7da1138b39"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a timeout for I/O operations.  <a href="#gabc9a33ab04950491c6c19d7da1138b39">More...</a><br/></td></tr>
+<tr class="separator:gabc9a33ab04950491c6c19d7da1138b39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -356,6 +359,44 @@ On error, a negative errno code is returned </dd></dl>
 
 </div>
 </div>
+<a class="anchor" id="gabc9a33ab04950491c6c19d7da1138b39"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_context_set_timeout </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>timeout_ms</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set a timeout for I/O operations. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ctx</td><td>A pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </td></tr>
+    <tr><td class="paramname">timeout_ms</td><td>A positive integer representing the time in milliseconds after which a timeout occurs </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="ga4aafea4c127b872d5214d41ccb4ce8c1"></a>
 <div class="memitem">
 <div class="memproto">
@@ -474,7 +515,7 @@ On failure, NULL is returned</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 27 2014 10:09:42 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 13 2014 16:22:48 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
