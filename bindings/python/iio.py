@@ -14,7 +14,7 @@
 # Lesser General Public License for more details.
 
 from ctypes import POINTER, Structure, cdll, c_char_p, c_uint, c_int, \
-		c_char, c_void_p, c_bool, create_string_buffer, byref
+		c_char, c_void_p, c_bool, create_string_buffer, byref, memmove
 from os import strerror
 
 def _checkNull(result, func, arguments):
@@ -233,6 +233,16 @@ def _init():
 	_buffer_push.archtypes = (BufferPtr, )
 	_buffer_push.errcheck = _checkNegative
 
+	global _buffer_start
+	_buffer_start = lib.iio_buffer_start
+	_buffer_start.restype = c_void_p
+	_buffer_start.archtypes = (BufferPtr, )
+
+	global _buffer_end
+	_buffer_end = lib.iio_buffer_end
+	_buffer_end.restype = c_void_p
+	_buffer_end.archtypes = (BufferPtr, )
+
 _init()
 
 class Channel(object):
@@ -300,6 +310,15 @@ class Device(object):
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
 		self.name = _d_get_name(self._device)
+
+	def read(self, buf):
+		start = _buffer_start(buf._buffer)
+		end = _buffer_end(buf._buffer)
+		array = bytearray(end - start)
+		mytype = c_char * len(array)
+		c_array = mytype.from_buffer(array)
+		memmove(c_array, start, len(array))
+		return array
 
 	# TODO(pcercuei): Provide a dict-like interface for the attributes
 	def read_attr(self, attr):
