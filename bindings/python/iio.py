@@ -134,6 +134,12 @@ def _init():
 	_get_channel.archtypes = (DevicePtr, c_uint)
 	_get_channel.errcheck = _checkNull
 
+	global _get_sample_size
+	_get_sample_size = lib.iio_device_get_sample_size
+	_get_sample_size.restype = c_int
+	_get_sample_size.archtypes = (DevicePtr, )
+	_get_sample_size.errcheck = _checkNegative
+
 	global _c_get_id
 	_c_get_id = lib.iio_channel_get_id
 	_c_get_id.restype = c_char_p
@@ -244,6 +250,10 @@ class Device(object):
 
 	def write_attr(self, attr, value):
 		_d_write_attr(self._device, attr, value)
+
+	@property
+	def sample_size(self):
+		return _get_sample_size(self._device)
 
 class Context(object):
 	def __init__(self, _context):
