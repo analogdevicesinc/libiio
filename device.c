@@ -16,7 +16,6 @@
  *
  * */
 
-#include "debug.h"
 #include "iio-private.h"
 
 #include <errno.h>
@@ -29,6 +28,11 @@
 #else
 #include <arpa/inet.h>
 #endif
+
+/* winsock2.h defines ERROR, we don't want that */
+#undef ERROR
+
+#include "debug.h"
 
 static char *get_attr_xml(const char *attr, size_t *length, bool is_debug)
 {

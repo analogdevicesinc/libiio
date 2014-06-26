@@ -16,7 +16,6 @@
  *
  * */
 
-#include "debug.h"
 #include "iio-private.h"
 
 #include <errno.h>
@@ -28,6 +27,15 @@
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>
+#endif
+
+/* winsock2.h defines ERROR, we don't want that */
+#undef ERROR
+
+#include "debug.h"
+
+#ifndef _WIN32
+#define _strdup strdup
 #endif
 
 static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
@@ -68,7 +76,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 				"scale=\"%lf\" />", chn->format.scale);
 	}
 
-	str = strdup(buf);
+	str = _strdup(buf);
 	if (!str)
 		ERROR("Unable to allocate memory\n");
 	else
@@ -88,9 +96,10 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 
 	if (chn->is_scan_element) {
 		scan_element = get_scan_element(chn, &scan_element_len);
-		len += scan_element_len;
 		if (!scan_element)
 			return NULL;
+		else
+			len += scan_element_len;
 	}
 
 	attrs_len = malloc(chn->nb_attrs * sizeof(*attrs_len));
