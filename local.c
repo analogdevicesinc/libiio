@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/utsname.h>
 
 #define DEFAULT_TIMEOUT_MS 1000
 
@@ -627,6 +628,8 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 	int ret;
 	char buf[1024];
 	struct iio_device_pdata *pdata = dev->pdata;
+	bool write_scan_elements = true;
+
 	if (pdata->f)
 		return -EBUSY;
 
@@ -650,13 +653,28 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 
 	memcpy(dev->mask, mask, nb);
 
-	/* Enable channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *chn = dev->channels[i];
-		if (chn->index >= 0) {
-			ret = channel_write_state(chn);
-			if (ret < 0)
-				goto err_close;
+	/* There was a bug in older kernel versions that cause the kernel to
+  	 * crash if the scan_elements _en file for a channel was set to 1, so
+ 	 * try to avoid that */
+	if (cyclic) {
+		unsigned int major, minor;
+		struct utsname uts;
+		uname(&uts);
+		sscanf(uts.release, "%u.%u", &major, &minor);
+		if (major < 2 || (major == 3 && minor < 14))
+			write_scan_elements = false;
+	}
+
+
+	if (write_scan_elements) {
+		/* Enable channels */
+		for (i = 0; i < dev->nb_channels; i++) {
+			struct iio_channel *chn = dev->channels[i];
+			if (chn->index >= 0) {
+				ret = channel_write_state(chn);
+				if (ret < 0)
+					goto err_close;
+			}
 		}
 	}
 
