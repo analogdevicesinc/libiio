@@ -587,6 +587,9 @@ static int enable_high_speed(const struct iio_device *dev)
 	if (ret < 0)
 		return -errno;
 
+	/* We might get less blocks than what we asked for */
+	pdata->nb_blocks = req.count;
+
 	/* mmap all the blocks */
 	for (i = 0; i < pdata->nb_blocks; i++) {
 		pdata->blocks[i].id = i;
