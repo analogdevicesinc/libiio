@@ -141,7 +141,7 @@ namespace iio
         public byte[] read(IOBuffer buffer, bool raw = false)
         {
             if (!is_enabled())
-                throw new Exception("Channel must be enabled before the IOBuffer is instantied");
+                throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
             if (is_output())
                 throw new Exception("Unable to read from output channel");
 
@@ -164,14 +164,14 @@ namespace iio
         public uint write(IOBuffer buffer, byte[] array, bool raw = false)
         {
             if (!is_enabled())
-                throw new Exception("Channel must be enabled before the IOBuffer is instantied");
+                throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
             if (!is_output())
                 throw new Exception("Unable to write to an input channel");
 
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
-            
+
             if (raw)
                 count = iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
             else
