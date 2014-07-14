@@ -224,10 +224,6 @@ static ssize_t local_read(const struct iio_device *dev,
 	if (words != dev->words)
 		return -EINVAL;
 
-	ret = device_check_ready(dev, false);
-	if (ret < 0)
-		return ret;
-
 	if (!pdata->buffer_enabled) {
 		ret = local_write_dev_attr(dev,
 				"buffer/enable", "1", 2, false);
@@ -236,6 +232,10 @@ static ssize_t local_read(const struct iio_device *dev,
 		else
 			pdata->buffer_enabled = true;
 	}
+
+	ret = device_check_ready(dev, false);
+	if (ret < 0)
+		return ret;
 
 	memcpy(mask, dev->mask, words);
 	ret = fread(dst, 1, len, f);
