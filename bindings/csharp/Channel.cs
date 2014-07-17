@@ -141,19 +141,21 @@ namespace iio
         public byte[] read(IOBuffer buffer, bool raw = false)
         {
             if (!is_enabled())
-                throw new Exception("Channel must be enabled before the IOBuffer is instancied");
+                throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
             if (is_output())
                 throw new Exception("Unable to read from output channel");
 
             byte[] array = new byte[(int) (buffer.get_samples_count() * sample_size)];
             MemoryStream stream = new MemoryStream(array, true);
-            IntPtr addr = GCHandle.Alloc(array, GCHandleType.Pinned).AddrOfPinnedObject();
+            GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+            IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
 
             if (raw)
                 count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.get_samples_count() * sample_size);
             else
                 count = iio_channel_read(this.chn, buffer.buf, addr, buffer.get_samples_count() * sample_size);
+            handle.Free();
             stream.SetLength((long) count);
             return stream.ToArray();
 
@@ -162,15 +164,21 @@ namespace iio
         public uint write(IOBuffer buffer, byte[] array, bool raw = false)
         {
             if (!is_enabled())
-                throw new Exception("Channel must be enabled before the IOBuffer is instancied");
+                throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
             if (!is_output())
                 throw new Exception("Unable to write to an input channel");
 
-            IntPtr addr = GCHandle.Alloc(array, GCHandleType.Pinned).AddrOfPinnedObject();
+            GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+            IntPtr addr = handle.AddrOfPinnedObject();
+            uint count;
+
             if (raw)
-                return iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
+                count = iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
             else
-                return iio_channel_write(this.chn, buffer.buf, addr, (uint) array.Length);
+                count = iio_channel_write(this.chn, buffer.buf, addr, (uint) array.Length);
+            handle.Free();
+
+            return count;
         }
     }
 }

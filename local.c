@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/utsname.h>
 
 #define DEFAULT_TIMEOUT_MS 1000
@@ -624,6 +625,17 @@ err_munmap:
 	return ret;
 }
 
+/* Some broken drivers expect length in bytes rather than samples */
+static bool local_length_in_bytes(const struct iio_device *dev)
+{
+	const char *name = iio_device_get_name(dev);
+
+	if (!strncmp("ad-mc-", name, 5))
+		return true;
+
+	return false;
+}
+
 static int local_open(const struct iio_device *dev, size_t samples_count,
 		uint32_t *mask, size_t nb, bool cyclic)
 {
@@ -643,7 +655,11 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 	if (ret < 0)
 		return ret;
 
-	snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
+	if (local_length_in_bytes(dev))
+		snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count *
+				iio_device_get_sample_size_mask(dev, mask, nb));
+	else
+		snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
 	ret = local_write_dev_attr(dev, "buffer/length",
 			buf, strlen(buf) + 1, false);
 	if (ret < 0)
