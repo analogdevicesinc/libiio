@@ -114,6 +114,10 @@ __api struct iio_context * iio_create_network_context(const char *host);
  * <b>NOTE:</b> After that function, the iio_context pointer shall be invalid. */
 __api void iio_context_destroy(struct iio_context *ctx);
 
+/** @brief Check if the given context is valid
+ * @param ctx A pointer to an iio_context structure
+ * @return if the context is not valid a negative error code is returned */
+__api int iio_context_valid(struct iio_context *ctx);
 
 /** @brief Get the version of the backend in use
  * @param ctx A pointer to an iio_context structure

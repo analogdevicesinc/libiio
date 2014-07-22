@@ -124,6 +124,11 @@ void iio_context_destroy(struct iio_context *ctx)
 	free(ctx);
 }
 
+int iio_context_valid(struct iio_context *ctx)
+{
+	return ctx == NULL ? -1 : 1;
+}
+
 unsigned int iio_context_get_devices_count(const struct iio_context *ctx)
 {
 	return ctx->nb_devices;
