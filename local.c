@@ -512,7 +512,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
-	f = fopen(buf, "r+");
+	f = fopen(buf, "w");
 	if (!f)
 		return -errno;
 
