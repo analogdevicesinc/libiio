@@ -696,9 +696,13 @@ int iio_device_identify_filename(const struct iio_device *dev,
 int iio_device_reg_write(struct iio_device *dev,
 		uint32_t address, uint32_t value)
 {
+	ssize_t ret;
+
 	char buf[1024];
 	snprintf(buf, sizeof(buf), "0x%x 0x%x", address, value);
-	return iio_device_debug_attr_write(dev, "direct_reg_access", buf);
+	ret = iio_device_debug_attr_write(dev, "direct_reg_access", buf);
+
+	return ret < 0 ? ret : 0;
 }
 
 int iio_device_reg_read(struct iio_device *dev,
