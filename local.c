@@ -829,7 +829,18 @@ static char * get_channel_id(const char *attr)
 static char * get_short_attr_name(const char *attr)
 {
 	char *ptr = strchr(attr, '_') + 1;
+	unsigned int i;
+
 	ptr = strchr(ptr, '_') + 1;
+	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
+		if (modifier_names[i] &&
+				!strncmp(ptr, modifier_names[i],
+					strlen(modifier_names[i]))) {
+			ptr = strchr(ptr, '_') + 1;
+			break;
+		}
+	}
+
 	return strdup(ptr);
 }
 
