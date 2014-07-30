@@ -359,6 +359,8 @@ static void sign_extend(uint8_t *dst, size_t bits, size_t len)
 		memset(dst + len - upper_bytes, msb ? 0xff : 0x00, upper_bytes);
 	if (msb)
 		dst[len - 1 - upper_bytes] |= ~(msb_bit - 1);
+	else
+		dst[len - 1 - upper_bytes] &= (msb_bit - 1);
 #else
 	/* XXX: untested */
 	msb = dst[upper_bytes] & msb_bit;
@@ -368,6 +370,17 @@ static void sign_extend(uint8_t *dst, size_t bits, size_t len)
 		dst[upper_bytes] |= ~(msb_bit - 1);
 #endif
 }
+
+static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
+{
+	size_t upper_bytes = ((len * 8 - bits) / 8);
+	uint8_t msb_bit = 1 << ((bits - 1) % 8);
+
+	if (upper_bytes)
+		memset(dst + len - upper_bytes, 0x00, upper_bytes);
+	dst[len - 1 - upper_bytes] &= (msb_bit - 1);
+}
+
 
 void iio_channel_convert(const struct iio_channel *chn,
 		void *dst, const void *src)
@@ -388,6 +401,8 @@ void iio_channel_convert(const struct iio_channel *chn,
 		shift_bits(dst, chn->format.shift, len, false);
 	if (chn->format.is_signed)
 		sign_extend(dst, chn->format.bits, len);
+	else
+		mask_upper_bits(dst, chn->format.bits, len);
 }
 
 void iio_channel_convert_inverse(const struct iio_channel *chn,
