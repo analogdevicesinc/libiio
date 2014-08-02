@@ -25,6 +25,12 @@
 #include <stdbool.h>
 
 #ifdef _MSC_BUILD
+#define LIBIIO_VERSION_MAJOR 0
+#define LIBIIO_VERSION_MINOR 1
+#define LIBIIO_VERSION_GIT "git"
+#endif
+
+#ifdef _MSC_BUILD
 #define snprintf sprintf_s
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
