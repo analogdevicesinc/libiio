@@ -21,7 +21,7 @@ ANALYZER := clang --analyze
 
 IIO_MONITOR = iio-monitor
 
-TARGETS := $(IIO_MONITOR)
+TARGETS := ad9361-iiostream $(IIO_MONITOR)
 
 CFLAGS = -Wall
 LDFLAGS = $(wildcard ../libiio.so.*)
@@ -48,6 +48,10 @@ all: $(TARGETS)
 $(IIO_MONITOR): iio-monitor.o
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -o $@ $^ $(LDFLAGS) -lpthread -lncurses -lcdk
+
+ad9361-iiostream : ad9361-iiostream.o
+	$(SUM) "  LD      $@"
+	$(CMD)$(CC) -o $@ $^ $(LDFLAGS) -liio
 
 clean:
 	$(SUM) "  CLEAN   ."
