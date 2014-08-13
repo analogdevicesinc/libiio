@@ -63,10 +63,12 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 {
 	char buf[1024], *str;
+	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
+
 	snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
 			"format=\"%ce:%c%u/%u&gt;&gt;%u\" />",
 			chn->index, chn->format.is_be ? 'b' : 'l',
-			chn->format.is_signed ? 's' : 'u',
+			chn->format.is_signed ? 's' + processed : 'u' + processed,
 			chn->format.bits, chn->format.length,
 			chn->format.shift);
 
@@ -399,10 +401,13 @@ void iio_channel_convert(const struct iio_channel *chn,
 
 	if (chn->format.shift)
 		shift_bits(dst, chn->format.shift, len, false);
-	if (chn->format.is_signed)
-		sign_extend(dst, chn->format.bits, len);
-	else
-		mask_upper_bits(dst, chn->format.bits, len);
+
+	if (!chn->format.is_fully_defined) {
+		if (chn->format.is_signed)
+			sign_extend(dst, chn->format.bits, len);
+		else
+			mask_upper_bits(dst, chn->format.bits, len);
+	}
 }
 
 void iio_channel_convert_inverse(const struct iio_channel *chn,

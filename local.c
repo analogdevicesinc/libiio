@@ -1319,7 +1319,10 @@ static void init_data_format(struct iio_channel *chn)
 			sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
 					&chn->format.bits, &chn->format.length,
 					&chn->format.shift);
-			chn->format.is_signed = sign == 's';
+			chn->format.is_signed = (sign == 's' || sign == 'S');
+			chn->format.is_fully_defined =
+					(sign == 'S' || sign == 'U'||
+					chn->format.bits == chn->format.length);
 			chn->format.is_be = endian == 'b';
 		}
 	}
