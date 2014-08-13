@@ -904,6 +904,9 @@ struct iio_data_format {
 	/** @brief Contains True if the sample is signed */
 	bool is_signed;
 
+	/** @brief Contains True if the sample is fully defined, sign extended, etc. */
+	bool is_fully_defined;
+
 	/** @brief Contains True if the sample is in big-endian format */
 	bool is_be;
 

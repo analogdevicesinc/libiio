@@ -126,7 +126,9 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 					&chn->format.length,
 					&chn->format.shift);
 			chn->format.is_be = e == 'b';
-			chn->format.is_signed = s == 's';
+			chn->format.is_signed = (s == 's' || s == 'S');
+			chn->format.is_fully_defined = (s == 'S' || s == 'U' ||
+				chn->format.bits == chn->format.length);
 		} else if (!strcmp(name, "scale")) {
 			chn->format.with_scale = true;
 			chn->format.scale = atof(content);
