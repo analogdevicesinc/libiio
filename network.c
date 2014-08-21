@@ -598,6 +598,11 @@ static int network_get_trigger(const struct iio_device *dev,
 		return ret;
 	}
 
+	if (buf[0] == '\0') {
+		*trigger = NULL;
+		return 0;
+	}
+
 	for (i = 0; i < dev->ctx->nb_devices; i++) {
 		struct iio_device *cur = dev->ctx->devices[i];
 		if (iio_device_is_trigger(cur) &&
