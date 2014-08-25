@@ -127,7 +127,7 @@ install-lib: $(LIBIIO)
 install: install-lib install-iiod install-tests libiio.pc
 	$(INSTALL) -D -m 0644 iio.h $(DESTDIR)$(PREFIX)/include/iio.h
 	ln -sf $(SONAME) $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)
-	$(INSTALL) -D -m 0644 libiio.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig
+	$(INSTALL) -D -m 0644 libiio.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/libiio.pc
 
 uninstall-lib:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
