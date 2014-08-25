@@ -831,7 +831,7 @@ static char * get_channel_id(const char *attr)
 	return res;
 }
 
-static char * get_short_attr_name(const char *attr)
+static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
 	char *ptr = strchr(attr, '_') + 1;
 	unsigned int i;
@@ -844,6 +844,12 @@ static char * get_short_attr_name(const char *attr)
 			ptr = strchr(ptr, '_') + 1;
 			break;
 		}
+	}
+
+	if (chn->name) {
+		size_t len = strlen(chn->name);
+		if  (strncmp(chn->name, ptr, len) == 0 && ptr[len] == '_')
+			ptr += len + 1;
 	}
 
 	return strdup(ptr);
@@ -897,7 +903,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 		const char *attr, const char *path)
 {
 	struct iio_channel_attr *attrs;
-	char *fn, *name = get_short_attr_name(attr);
+	char *fn, *name = get_short_attr_name(chn, attr);
 	if (!name)
 		return -ENOMEM;
 
@@ -951,7 +957,13 @@ static int add_device_to_context(struct iio_context *ctx,
 	return 0;
 }
 
-static bool is_global_attr(struct iio_channel *chn, const char *attr)
+/*
+ * Possible return values:
+ * 0 = Attribute should not be moved to the channel
+ * 1 = Attribute should be moved to the channel and it is a shared attribute
+ * 2 = Attribute should be moved to the channel and it is a private attribute
+ */
+static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 {
 	unsigned int i, len;
 	char *ptr;
@@ -961,30 +973,57 @@ static bool is_global_attr(struct iio_channel *chn, const char *attr)
 	else if (chn->is_output && !strncmp(attr, "out_", 4))
 		attr += 4;
 	else
-		return false;
+		return 0;
 
 	ptr = strchr(attr, '_');
 	if (!ptr)
-		return false;
+		return 0;
 
 	len = ptr - attr;
 
 	if (strncmp(chn->id, attr, len))
-		return false;
+		return 0;
 
 	DEBUG("Found match: %s and %s\n", chn->id, attr);
-	if (chn->id[len] >= '0' && chn->id[len] <= '9')
-		return true;
-	else if (chn->id[len] != '_')
-		return false;
+	if (chn->id[len] >= '0' && chn->id[len] <= '9') {
+		if (chn->name) {
+			size_t name_len = strlen(chn->name);
+			if (strncmp(chn->name, attr + len + 1, name_len) == 0 &&
+				attr[len + 1 + name_len] == '_')
+				return 2;
+		}
+		return 1;
+	} else if (chn->id[len] != '_') {
+		return 0;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(modifier_names); i++)
 		if (modifier_names[i] &&
 				!strncmp(chn->id + len + 1, modifier_names[i],
 					strlen(modifier_names[i])))
-			return true;
+			return 1;
 
-	return false;
+	return 0;
+}
+
+static int detect_global_attr(struct iio_device *dev, const char *attr,
+	unsigned int level, bool *match)
+{
+	unsigned int i;
+
+	*match = false;
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (is_global_attr(chn, attr) == level) {
+			int ret;
+			*match = true;
+			ret = add_attr_to_channel(chn, attr, attr);
+			if (ret)
+				return ret;
+		}
+	}
+
+	return 0;
 }
 
 static int detect_and_move_global_attrs(struct iio_device *dev)
@@ -993,22 +1032,21 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 	char **ptr = dev->attrs;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		unsigned int j;
-		bool global = false;
 		const char *attr = dev->attrs[i];
+		bool match;
+		int ret;
 
-		for (j = 0; j < dev->nb_channels; j++) {
-			struct iio_channel *chn = dev->channels[j];
-			if (is_global_attr(chn, attr)) {
-				int ret;
-				global = true;
-				ret = add_attr_to_channel(chn, attr, attr);
-				if (ret)
-					return ret;
-			}
+		ret = detect_global_attr(dev, attr, 2, &match);
+		if (ret)
+			return ret;
+
+		if (!match) {
+			ret = detect_global_attr(dev, attr, 1, &match);
+			if (ret)
+				return ret;
 		}
 
-		if (global) {
+		if (match) {
 			free(dev->attrs[i]);
 			dev->attrs[i] = NULL;
 		}
