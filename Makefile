@@ -28,7 +28,9 @@ CC := $(CROSS_COMPILE)$(COMPILER)
 ANALYZER := clang --analyze
 INSTALL ?= install
 
-WITH_AVAHI=yes
+WITH_LOCAL_BACKEND ?= yes
+WITH_NETWORK_BACKEND ?= yes
+WITH_AVAHI ?= yes
 
 MAKE_ENV := WITH_AVAHI=$(WITH_AVAHI) VERSION_GIT=$(VERSION_GIT) \
 	VERSION_MAJOR=$(VERSION_MAJOR) VERSION_MINOR=$(VERSION_MINOR)
@@ -65,7 +67,14 @@ else
 	SUM:=@echo
 endif
 
-OBJS := context.o device.o channel.o local.o xml.o network.o buffer.o
+OBJS := context.o device.o channel.o buffer.o
+
+ifeq ($(WITH_LOCAL_BACKEND),yes)
+	OBJS += local.o
+endif
+ifeq ($(WITH_NETWORK_BACKEND),yes)
+	OBJS += network.o xml.o
+endif
 
 .PHONY: all clean tests examples analyze install install-lib uninstall uninstall-lib html iiod
 
