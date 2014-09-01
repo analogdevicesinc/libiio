@@ -183,9 +183,8 @@ int main(int argc, char **argv)
 {
 	int fd;
 	struct iio_context *ctx;
-	char *backend = getenv("LIBIIO_BACKEND");
-	bool debug = false, xml_backend = backend && !strcmp(backend, "xml");
-	int c, option_index = 0, arg_index = xml_backend;
+	bool debug = false;
+	int c, option_index = 0, arg_index = 0;
 	int yes = 1;
 	int keepalive_time = 10,
 	    keepalive_intvl = 10,
@@ -222,19 +221,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (xml_backend) {
-		if (argc < 2) {
-			ERROR("The XML backend requires the XML file to be "
-					"passed as argument\n");
-			return EXIT_FAILURE;
-		}
-
-		DEBUG("Creating XML IIO context\n");
-		ctx = iio_create_xml_context(argv[arg_index]);
-	} else {
-		DEBUG("Creating local IIO context\n");
-		ctx = iio_create_local_context();
-	}
+	ctx = iio_create_local_context();
 	if (!ctx) {
 		ERROR("Unable to create local context\n");
 		return EXIT_FAILURE;
