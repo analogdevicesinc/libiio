@@ -23,6 +23,7 @@ IIO_MONITOR = iio-monitor
 
 TARGETS := ad9361-iiostream $(IIO_MONITOR)
 
+CPPFLAGS = -I..
 CFLAGS = -Wall
 LDFLAGS = $(wildcard ../libiio.so.*)
 
@@ -51,7 +52,7 @@ $(IIO_MONITOR): iio-monitor.o
 
 ad9361-iiostream : ad9361-iiostream.o
 	$(SUM) "  LD      $@"
-	$(CMD)$(CC) -o $@ $^ $(LDFLAGS) -liio
+	$(CMD)$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
 	$(SUM) "  CLEAN   ."
