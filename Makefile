@@ -107,21 +107,9 @@ tests examples iiod: $(LIBIIO)
 	$(SUM) "  CC      $@"
 	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-libiio.pc:
+libiio.pc: libiio.pc.in
 	$(SUM) "  GEN     $@"
-	$(CMD)echo 'prefix=$(PREFIX)' > $@
-	$(CMD)echo 'exec_prefix=$${prefix}' >> $@
-	$(CMD)echo 'libdir=$${prefix}/lib' >> $@
-	$(CMD)echo 'sharedlibdir=$${libdir}' >> $@
-	$(CMD)echo 'includedir=$${prefix}/include' >> $@
-	$(CMD)echo '' >> $@
-	$(CMD)echo 'Name: libiio' >> $@
-	$(CMD)echo 'Description: Library for interfacing IIO devices' >> $@
-	$(CMD)echo 'Version: $(VERSION_MAJOR).$(VERSION_MINOR)' >> $@
-	$(CMD)echo '' >> $@
-	$(CMD)echo 'Requires:' >> $@
-	$(CMD)echo 'Libs: -L$${libdir} -L$${sharedlibdir} -liio' >> $@
-	$(CMD)echo 'Cflags: -I$${includedir}' >> $@
+	$(CMD)sed 's/_PREFIX/$(subst /,\/,$(PREFIX))/;s/_VERSION/$(VERSION_MAJOR).$(VERSION_MINOR)/' $< > $@
 
 install-tests install-examples install-iiod:
 	$(CMD)PREFIX=$(PREFIX) $(MAKE) -C $(@:install-%=%) install
