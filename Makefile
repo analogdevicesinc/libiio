@@ -40,15 +40,17 @@ SYSROOT := $(shell $(CC) --print-sysroot)
 XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
 XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 
-CFLAGS := $(XML2_CFLAGS) -Wall -Wextra -fPIC -fvisibility=hidden \
-	-std=c99 -pedantic -D_POSIX_C_SOURCE=200809L \
+CPPFLAGS := -D_POSIX_C_SOURCE=200809L \
 	-DLIBIIO_VERSION_GIT="\"$(VERSION_GIT)\"" \
 	-DLIBIIO_VERSION_MAJOR=$(VERSION_MAJOR) \
 	-DLIBIIO_VERSION_MINOR=$(VERSION_MINOR)
+
+CFLAGS := $(XML2_CFLAGS) -Wall -Wextra -fPIC -fvisibility=hidden \
+	-std=c99 -pedantic
 LDFLAGS := $(XML2_LIBS)
 
 ifeq ($(WITH_AVAHI),yes)
-	CFLAGS += -DHAVE_AVAHI
+	CPPFLAGS += -DHAVE_AVAHI
 	LDFLAGS += -lavahi-client -lavahi-common
 endif
 
@@ -76,7 +78,9 @@ ifeq ($(WITH_NETWORK_BACKEND),yes)
 	OBJS += network.o xml.o
 endif
 
-.PHONY: all clean tests examples analyze install install-lib uninstall uninstall-lib html iiod
+.PHONY: all clean tests examples analyze install \
+	install-lib uninstall uninstall-lib html iiod \
+	install-sysroot uninstall-sysroot
 
 $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
@@ -121,13 +125,18 @@ install-lib: $(LIBIIO)
 	$(INSTALL) -D $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(LIBIIO)
 	ln -sf $(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
 
-install: install-lib install-iiod install-tests libiio.pc
+install-sysroot: install-lib libiio.pc
 	$(INSTALL) -D -m 0644 iio.h $(DESTDIR)$(PREFIX)/include/iio.h
 	ln -sf $(SONAME) $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)
 	$(INSTALL) -D -m 0644 libiio.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/libiio.pc
 
+install: install-lib install-iiod install-tests install-sysroot
+
 uninstall-lib:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(LIBIIO) $(DESTDIR)$(PREFIX)/lib/$(SONAME)
 
-uninstall: uninstall-lib uninstall-iiod uninstall-tests
+uninstall-sysroot:
 	rm -f $(DESTDIR)$(PREFIX)/include/iio.h $(DESTDIR)$(PREFIX)/lib/$(LIBNAME)
+	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/libiio.pc
+
+uninstall: uninstall-lib uninstall-iiod uninstall-tests uninstall-sysroot
