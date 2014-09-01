@@ -1,0 +1,13 @@
+prefix=_PREFIX
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+sharedlibdir=${libdir}
+includedir=${prefix}/include
+
+Name: libiio
+Description: Library for interfacing IIO devices
+Version: _VERSION
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -liio
+Cflags: -I${includedir}
