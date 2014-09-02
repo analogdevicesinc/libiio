@@ -18,6 +18,10 @@
 
 #include "iio-private.h"
 
+#ifndef HAVE_PTHREAD
+#define HAVE_PTHREAD 1
+#endif
+
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
@@ -34,7 +38,9 @@
 
 #else /* _WIN32 */
 #include <netdb.h>
+#if HAVE_PTHREAD
 #include <pthread.h>
+#endif
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
@@ -55,10 +61,6 @@
 
 #define IIOD_PORT 30431
 #define IIOD_PORT_STR STRINGIFY(IIOD_PORT)
-
-#ifndef HAVE_PTHREAD
-#define HAVE_PTHREAD defined(_PTHREAD_H)
-#endif
 
 struct iio_context_pdata {
 	int fd;
