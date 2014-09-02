@@ -270,10 +270,13 @@ static ssize_t local_write(const struct iio_device *dev,
 	 * buffering of the FILE API. This ensures that a waveform written in
 	 * cyclic mode will be written in only one system call, as the kernel
 	 * sizes the buffer according to the length of the first write. */
-	ret = write(fileno(f), src, len);
-	if (ret < 0) {
-		ret = -errno;
-	} else if (!pdata->buffer_enabled) {
+	if (pdata->cyclic) {
+		ret = write(fileno(f), src, len);
+		if (ret < 0)
+			return -errno;
+	}
+
+	if (!pdata->buffer_enabled) {
 		ssize_t err = local_write_dev_attr(dev,
 				"buffer/enable", "1", 2, false);
 		if (err < 0)
@@ -281,6 +284,12 @@ static ssize_t local_write(const struct iio_device *dev,
 		else
 			pdata->buffer_enabled = true;
 	}
+
+	/* In cyclic mode, the buffer must be enabled after writing the samples.
+	 * In non-cyclic mode, it must be enabled before writing the samples. */
+	if (!pdata->cyclic)
+		ret = write(fileno(f), src, len);
+
 	return ret ? ret : -EIO;
 }
 
