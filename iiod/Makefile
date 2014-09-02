@@ -66,7 +66,8 @@ endif
 endif
 
 install: $(DAEMON)
-	$(INSTALL) -D -s -m 0755 $(DAEMON) $(DESTDIR)$(PREFIX)/sbin/$(DAEMON)
+	$(INSTALL) --strip-program=$(CROSS_COMPILE)strip -D -s -m 0755 \
+		$(DAEMON) $(DESTDIR)$(PREFIX)/sbin/$(DAEMON)
 	$(INSTALL_IIOD_SCRIPT)
 
 uninstall:
