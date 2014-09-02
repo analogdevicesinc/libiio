@@ -124,8 +124,21 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 			buffer->buffer = buf;
 		return ret;
 	} else {
-		return iio_device_write_raw(dev,
-				buffer->buffer, buffer->length);
+		size_t length = buffer->length;
+		void *ptr = buffer->buffer;
+
+		/* iio_device_write_raw doesn't guarantee that all bytes are
+		 * written */
+		while (length) {
+			ssize_t ret = iio_device_write_raw(dev, ptr, length);
+			if (ret < 0)
+				return ret;
+
+			length -= ret;
+			ptr = (void *) ((uintptr_t) ptr + ret);
+		}
+
+		return buffer->length;
 	}
 }
 
