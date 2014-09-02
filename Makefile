@@ -13,30 +13,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-PREFIX ?= /usr
-
-VERSION_MAJOR = 0
-VERSION_MINOR = 1
-VERSION_GIT := $(shell git rev-parse --short HEAD)
+include makefile.inc
 
 LIBNAME = libiio.so
 SONAME = $(LIBNAME).$(VERSION_MAJOR)
 LIBIIO = $(SONAME).$(VERSION_MINOR)
 
-COMPILER ?= gcc
-CC := $(CROSS_COMPILE)$(COMPILER)
-ANALYZER := clang --analyze
-INSTALL ?= install
-
-WITH_LOCAL_BACKEND ?= yes
-WITH_NETWORK_BACKEND ?= yes
-WITH_AVAHI ?= yes
-
-MAKE_ENV := WITH_AVAHI=$(WITH_AVAHI) VERSION_GIT=$(VERSION_GIT) \
-	VERSION_MAJOR=$(VERSION_MAJOR) VERSION_MINOR=$(VERSION_MINOR)
-
 # XXX: xml2-config is not sysroot aware...
-SYSROOT := $(shell $(CC) --print-sysroot)
 XML2_CFLAGS := $(shell $(SYSROOT)/usr/bin/xml2-config --cflags)
 XML2_LIBS := $(shell $(SYSROOT)/usr/bin/xml2-config --libs)
 
@@ -52,21 +35,6 @@ LDFLAGS := $(XML2_LIBS)
 ifeq ($(WITH_AVAHI),yes)
 	CPPFLAGS += -DHAVE_AVAHI
 	LDFLAGS += -lavahi-client -lavahi-common
-endif
-
-ifdef DEBUG
-	CFLAGS += -g -ggdb
-	CPPFLAGS += -DLOG_LEVEL=4 #-DWITH_COLOR_DEBUG
-else
-	CFLAGS += -O2
-endif
-
-ifdef V
-	CMD:=
-	SUM:=@\#
-else
-	CMD:=@
-	SUM:=@echo
 endif
 
 OBJS := context.o device.o channel.o buffer.o
@@ -105,11 +73,7 @@ analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
 
 tests examples iiod: $(LIBIIO)
-	$(CMD)$(MAKE_ENV) $(MAKE) -C $@
-
-%.o: %.c
-	$(SUM) "  CC      $@"
-	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CMD)$(MAKE) -C $@
 
 libiio.pc: libiio.pc.in
 	$(SUM) "  GEN     $@"
