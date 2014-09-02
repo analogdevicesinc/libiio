@@ -37,6 +37,12 @@ ifeq ($(WITH_AVAHI),yes)
 	LDFLAGS += -lavahi-client -lavahi-common
 endif
 
+ifeq ($(WITH_PTHREAD),yes)
+	LDFLAGS += -lpthread
+else
+	CPPFLAGS += -DHAVE_PTHREAD=0
+endif
+
 OBJS := context.o device.o channel.o buffer.o
 
 ifeq ($(WITH_LOCAL_BACKEND),yes)
