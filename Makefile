@@ -56,13 +56,13 @@ endif
 	install-lib uninstall uninstall-lib html iiod \
 	install-sysroot uninstall-sysroot
 
+all: libiio iiod tests
+
 $(LIBIIO): $(OBJS)
 	$(SUM) "  LD      $@"
 	$(CMD)$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
 libiio: $(LIBIIO) libiio.pc
-
-all: libiio iiod tests examples html
 
 html: Doxyfile
 	$(SUM) "  GEN     $@"
