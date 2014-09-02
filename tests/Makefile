@@ -13,12 +13,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-PREFIX ?= /usr/local
-
-COMPILER ?= gcc
-CC := $(CROSS_COMPILE)$(COMPILER)
-ANALYZER := clang --analyze
-INSTALL ?= install
+include ../makefile.inc
 
 IIO_INFO = iio_info
 IIO_GENXML = iio_genxml
@@ -30,21 +25,6 @@ UNINSTALL_TARGETS := $(addprefix uninstall-,$(TARGETS))
 
 CFLAGS = -Wall
 LDFLAGS = $(wildcard ../libiio.so.*)
-
-ifdef DEBUG
-	CFLAGS += -g -ggdb
-	CPPFLAGS += -DLOG_LEVEL=4 #-DWITH_COLOR_DEBUG
-else
-	CFLAGS += -O2
-endif
-
-ifdef V
-	CMD:=
-	SUM:=@\#
-else
-	CMD:=@
-	SUM:=@echo
-endif
 
 .PHONY: all clean install uninstall $(INSTALL_TARGETS) $(UNINSTALL_TARGETS)
 
@@ -65,10 +45,6 @@ $(IIO_READDEV): iio_readdev.o
 clean:
 	$(SUM) "  CLEAN   ."
 	$(CMD)rm -f $(TARGETS) $(TARGETS:%=%.o) $(TARGETS:%=%.plist)
-
-%.o: %.c
-	$(SUM) "  CC      $@"
-	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 install: $(INSTALL_TARGETS)
 
