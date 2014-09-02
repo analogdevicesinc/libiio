@@ -51,7 +51,8 @@ install: $(INSTALL_TARGETS)
 uninstall: $(UNINSTALL_TARGETS)
 
 $(INSTALL_TARGETS): $(TARGETS)
-	$(INSTALL) -D -s -m 0755 $(@:install-%=%) $(DESTDIR)$(PREFIX)/bin/$(@:install-%=%)
+	$(INSTALL) --strip-program=$(CROSS_COMPILE)strip -D -s -m 0755 \
+		$(@:install-%=%) $(DESTDIR)$(PREFIX)/bin/$(@:install-%=%)
 
 $(UNINSTALL_TARGETS): $(TARGETS)
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(@:uninstall-%=%)
