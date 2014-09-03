@@ -121,7 +121,7 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			chn->index = atol(content);
 		} else if (!strcmp(name, "format")) {
 			char e, s;
-			sscanf(content, "%ce:%c%u/%u&gt;&gt;%u", &e, &s,
+			sscanf(content, "%ce:%c%u/%u>>%u", &e, &s,
 					&chn->format.bits,
 					&chn->format.length,
 					&chn->format.shift);
