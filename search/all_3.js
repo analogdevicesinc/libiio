@@ -104,5 +104,6 @@ var searchData=
   ['iio_5fdevice_5fset_5fdata',['iio_device_set_data',['../group__Device.html#gab566248f50503d8975cf258a1f218275',1,'iio_device_set_data(struct iio_device *dev, void *data):&#160;device.c'],['../group__Device.html#gab566248f50503d8975cf258a1f218275',1,'iio_device_set_data(struct iio_device *dev, void *data):&#160;device.c']]],
   ['iio_5fdevice_5fset_5ftrigger',['iio_device_set_trigger',['../group__Device.html#ga30151c105a19b3fc3ad6376046d60bf9',1,'iio_device_set_trigger(const struct iio_device *dev, const struct iio_device *trigger):&#160;device.c'],['../group__Device.html#ga30151c105a19b3fc3ad6376046d60bf9',1,'iio_device_set_trigger(const struct iio_device *dev, const struct iio_device *trigger):&#160;device.c']]],
   ['is_5fbe',['is_be',['../structiio__data__format.html#a1c1775c482b9b4c3f1dfa0b67ad6fbaa',1,'iio_data_format']]],
+  ['is_5ffully_5fdefined',['is_fully_defined',['../structiio__data__format.html#a86c382f0ff1dcf40f68f261d2d81caf5',1,'iio_data_format']]],
   ['is_5fsigned',['is_signed',['../structiio__data__format.html#a173f2fb6931c4215e53d934667f0dc3f',1,'iio_data_format']]]
 ];
