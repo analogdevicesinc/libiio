@@ -67,6 +67,7 @@ libiio: $(LIBIIO) libiio.pc
 html: Doxyfile
 	$(SUM) "  GEN     $@"
 	$(CMD) -doxygen $<
+	$(CMD)cp -r doc $@
 
 clean-tests clean-examples clean-iiod:
 	$(CMD)$(MAKE) -C $(@:clean-%=%) clean
