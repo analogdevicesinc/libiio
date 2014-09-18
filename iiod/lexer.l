@@ -19,6 +19,9 @@
 
 #include "parser.h"
 #include "ops.h"
+
+#include <string.h>
+#include <unistd.h>
 %}
 
 %option noyywrap reentrant bison-bridge nounistd
