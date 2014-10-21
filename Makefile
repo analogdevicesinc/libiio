@@ -43,7 +43,7 @@ else
 	CPPFLAGS += -DHAVE_PTHREAD=0
 endif
 
-OBJS := context.o device.o channel.o buffer.o
+OBJS := context.o device.o channel.o buffer.o utilities.o
 
 ifeq ($(WITH_LOCAL_BACKEND),yes)
 	OBJS += local.o

@@ -173,6 +173,9 @@ ssize_t iio_device_read_raw(const struct iio_device *dev,
 ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
 
+int read_double(const char *str, double *val);
+void write_double(char *buf, size_t len, double val);
+
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words);
