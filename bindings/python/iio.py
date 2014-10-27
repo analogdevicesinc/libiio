@@ -126,6 +126,16 @@ def _init():
 	_d_write_attr.archtypes = (DevicePtr, c_char_p, c_char_p)
 	_d_write_attr.errcheck = _checkNegative
 
+	global _d_reg_write
+	_d_reg_write = lib.iio_device_reg_write
+	_d_reg_write.restype = c_int
+	_d_reg_write.archtypes = (DevicePtr, c_uint, c_uint)
+
+	global _d_reg_read
+	_d_reg_read = lib.iio_device_reg_read
+	_d_reg_read.restype = c_int
+	_d_reg_read.archtypes = (DevicePtr, c_uint, c_uint)
+
 	global _channels_count
 	_channels_count = lib.iio_device_get_channels_count
 	_channels_count.restype = c_uint
@@ -357,6 +367,14 @@ class Device(object):
 
 	def write_attr(self, attr, value):
 		_d_write_attr(self._device, attr, value)
+
+	def reg_write(self, reg, value):
+		_d_reg_write(self._device, reg, value)
+
+	def reg_read(self, reg):
+		value = c_uint()
+		_d_reg_read(self._device, reg, byref(value))
+		return value.value
 
 	@property
 	def sample_size(self):
