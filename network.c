@@ -64,6 +64,7 @@
 
 struct iio_context_pdata {
 	int fd;
+	char *host;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -648,6 +649,8 @@ static void network_shutdown(struct iio_context *ctx)
 	/* XXX(pcercuei): is this safe? */
 	pthread_mutex_destroy(&pdata->lock);
 #endif
+	if (pdata->host)
+		free(pdata->host);
 	free(pdata);
 
 	for (i = 0; i < ctx->nb_devices; i++) {
@@ -741,7 +744,13 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return ret;
 }
 
+static struct iio_context * network_clone(const struct iio_context *ctx)
+{
+	return iio_create_network_context(ctx->pdata->host);
+}
+
 static struct iio_backend_ops network_ops = {
+	.clone = network_clone,
 	.open = network_open,
 	.close = network_close,
 	.read = network_read,
@@ -854,12 +863,20 @@ struct iio_context * iio_create_network_context(const char *host)
 		goto err_close_socket;
 	}
 
+	if (host) {
+		pdata->host = strdup(host);
+		if (!pdata->host) {
+			ERROR("Unable to allocate memory\n");
+			goto err_free_pdata;
+		}
+	}
+
 	pdata->fd = fd;
 
 	DEBUG("Creating context...\n");
 	ctx = get_context(fd);
 	if (!ctx)
-		goto err_free_pdata;
+		goto err_free_pdata_host;
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
@@ -900,6 +917,9 @@ struct iio_context * iio_create_network_context(const char *host)
 err_network_shutdown:
 	network_shutdown(ctx);
 	iio_context_destroy(ctx);
+err_free_pdata_host:
+	if (pdata->host)
+		free(pdata->host);
 err_free_pdata:
 	free(pdata);
 err_close_socket:
