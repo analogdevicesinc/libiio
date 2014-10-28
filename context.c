@@ -204,3 +204,11 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	else
 		return -ENOSYS;
 }
+
+struct iio_context * iio_context_clone(const struct iio_context *ctx)
+{
+	if (ctx->ops->clone)
+		return ctx->ops->clone(ctx);
+	else
+		return NULL;
+}

@@ -108,6 +108,13 @@ __api struct iio_context * iio_create_xml_context_mem(
 __api struct iio_context * iio_create_network_context(const char *host);
 
 
+/** @brief Duplicate a pre-existing IIO context
+ * @param ctx A pointer to an iio_context structure
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned */
+__api struct iio_context * iio_context_clone(const struct iio_context *ctx);
+
+
 /** @brief Destroy the given context
  * @param ctx A pointer to an iio_context structure
  *

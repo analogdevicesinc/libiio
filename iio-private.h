@@ -54,6 +54,7 @@ enum iio_modifier {
 };
 
 struct iio_backend_ops {
+	struct iio_context * (*clone)(const struct iio_context *ctx);
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
 			uint32_t *mask, size_t words);
 	ssize_t (*write)(const struct iio_device *dev,
