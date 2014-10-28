@@ -1332,7 +1332,14 @@ static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return 0;
 }
 
+static struct iio_context * local_clone(
+		const struct iio_context *ctx __attribute__((unused)))
+{
+	return iio_create_local_context();
+}
+
 static struct iio_backend_ops local_ops = {
+	.clone = local_clone,
 	.open = local_open,
 	.close = local_close,
 	.read = local_read,
