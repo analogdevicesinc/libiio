@@ -878,6 +878,12 @@ struct iio_context * iio_create_network_context(const char *host)
 	if (!ctx)
 		goto err_free_pdata_host;
 
+	/* Override the name and low-level functions of the XML context
+	 * with those corresponding to the network context */
+	ctx->name = "network";
+	ctx->ops = &network_ops;
+	ctx->pdata = pdata;
+
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 		uint32_t *mask = NULL;
@@ -885,19 +891,14 @@ struct iio_context * iio_create_network_context(const char *host)
 		dev->words = (dev->nb_channels + 31) / 32;
 		if (dev->words) {
 			mask = calloc(dev->words, sizeof(*mask));
-			if (!mask)
+			if (!mask) {
+				ERROR("Unable to allocate memory\n");
 				goto err_network_shutdown;
+			}
 		}
 
 		dev->mask = mask;
 	}
-
-
-	/* Override the name and low-level functions of the XML context
-	 * with those corresponding to the network context */
-	ctx->name = "network";
-	ctx->ops = &network_ops;
-	ctx->pdata = pdata;
 
 	iio_context_init(ctx);
 
@@ -915,8 +916,9 @@ struct iio_context * iio_create_network_context(const char *host)
 	return ctx;
 
 err_network_shutdown:
-	network_shutdown(ctx);
 	iio_context_destroy(ctx);
+	return NULL;
+
 err_free_pdata_host:
 	if (pdata->host)
 		free(pdata->host);
