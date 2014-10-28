@@ -259,8 +259,13 @@ err_free_device:
 	return NULL;
 }
 
+static struct iio_context * xml_clone(const struct iio_context *ctx)
+{
+	return iio_create_xml_context_mem(ctx->xml, strlen(ctx->xml));
+}
+
 static struct iio_backend_ops xml_ops = {
-	.read = NULL, /* ISO C99 forbids empty initializer braces */
+	.clone = xml_clone,
 };
 
 static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
