@@ -46,9 +46,11 @@ endif
 OBJS := context.o device.o channel.o buffer.o utilities.o
 
 ifeq ($(WITH_LOCAL_BACKEND),yes)
+	CPPFLAGS += -DLOCAL_BACKEND=1
 	OBJS += local.o
 endif
 ifeq ($(WITH_NETWORK_BACKEND),yes)
+	CPPFLAGS += -DNETWORK_BACKEND=1
 	OBJS += network.o xml.o
 endif
 

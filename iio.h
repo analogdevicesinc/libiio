@@ -73,7 +73,19 @@ struct iio_buffer;
  * @brief Contains the representation of an IIO context */
 
 
-/** @brief Create a context from local IIO devices (Linux only).
+/** @brief Create a context from local or remote IIO devices
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned
+ *
+ * <b>NOTE:</b> This function will create a network context if the IIOD_REMOTE
+ * environment variable is set to the hostname where the IIOD server runs. If
+ * set to an empty string, the server will be discovered using ZeroConf.
+ * If the environment variable is not set, a local context will be created
+ * instead. */
+__api struct iio_context * iio_create_default_context(void);
+
+
+/** @brief Create a context from local IIO devices (Linux only)
  * @return On success, A pointer to an iio_context structure
  * @return On failure, NULL is returned */
 __api struct iio_context * iio_create_local_context(void);

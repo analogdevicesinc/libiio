@@ -22,6 +22,11 @@
 #include <errno.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define LOCAL_BACKEND 0
+#define NETWORK_BACKEND 1
+#endif
+
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device)*>"
@@ -211,4 +216,25 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 		return ctx->ops->clone(ctx);
 	else
 		return NULL;
+}
+
+struct iio_context * iio_create_default_context(void)
+{
+#if NETWORK_BACKEND
+	char *hostname = getenv("IIOD_REMOTE");
+
+	if (hostname) {
+		/* If the environment variable is an empty string, we will
+		 * discover the server using ZeroConf */
+		if (strlen(hostname) == 0)
+			hostname = NULL;
+
+		return iio_create_network_context(hostname);
+	}
+#endif
+#if LOCAL_BACKEND
+	return iio_create_local_context();
+#else
+	return NULL;
+#endif
 }
