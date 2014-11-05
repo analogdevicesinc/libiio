@@ -272,7 +272,8 @@ def _init():
 _init()
 
 class Channel(object):
-	def __init__(self, _channel):
+	def __init__(self, dev, _channel):
+		self.dev = dev
 		self._channel = _channel
 		self.attrs = [ _c_get_attr(self._channel, x) \
 				for x in xrange(0, _c_attr_count(self._channel)) ]
@@ -323,6 +324,7 @@ class Channel(object):
 
 class Buffer(object):
 	def __init__(self, device, samples_count, cyclic = False):
+		self.dev = device
 		self._buffer = _create_buffer(device._device, samples_count, cyclic)
 		self.length = samples_count * device.sample_size
 
@@ -336,11 +338,12 @@ class Buffer(object):
 		_buffer_push(self._buffer)
 
 class Device(object):
-	def __init__(self, _device):
+	def __init__(self, ctx, _device):
+		self.ctx = ctx
 		self._device = _device
 		self.attrs = [ _d_get_attr(self._device, x) \
 				for x in xrange(0, _d_attr_count(self._device)) ]
-		self.channels = [ Channel(_get_channel(self._device, x)) \
+		self.channels = [ Channel(self, _get_channel(self._device, x)) \
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
 		self.name = _d_get_name(self._device)
@@ -389,7 +392,7 @@ class Device(object):
 class Context(object):
 	def __init__(self, _context = _new_default()):
 		self._context = _context
-		self.devices = [ Device(_get_device(self._context, x)) \
+		self.devices = [ Device(self, _get_device(self._context, x)) \
 				for x in xrange(0, _devices_count(self._context)) ]
 		self.name = _get_name(self._context)
 
