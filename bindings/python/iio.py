@@ -337,6 +337,26 @@ class Buffer(object):
 	def push(self):
 		_buffer_push(self._buffer)
 
+	def read(self):
+		start = _buffer_start(_buffer)
+		end = _buffer_end(_buffer)
+		array = bytearray(end - start)
+		mytype = c_char * len(array)
+		c_array = mytype.from_buffer(array)
+		memmove(c_array, start, len(array))
+		return array
+
+	def write(self, array):
+		start = _buffer_start(_buffer)
+		end = _buffer_end(_buffer)
+		length = end - start
+		if length > len(array):
+			length = len(array)
+		mytype = c_char * len(array)
+		c_array = mytype.from_buffer(array)
+		memmove(start, c_array, length)
+		return length
+
 class Device(object):
 	def __init__(self, ctx, _device):
 		self.ctx = ctx
@@ -347,26 +367,6 @@ class Device(object):
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
 		self.name = _d_get_name(self._device)
-
-	def read(self, buf):
-		start = _buffer_start(buf._buffer)
-		end = _buffer_end(buf._buffer)
-		array = bytearray(end - start)
-		mytype = c_char * len(array)
-		c_array = mytype.from_buffer(array)
-		memmove(c_array, start, len(array))
-		return array
-
-	def write(self, buf, array):
-		start = _buffer_start(buf._buffer)
-		end = _buffer_end(buf._buffer)
-		length = end - start
-		if length > len(array):
-			length = len(array)
-		mytype = c_char * len(array)
-		c_array = mytype.from_buffer(array)
-		memmove(start, c_array, length)
-		return length
 
 	# TODO(pcercuei): Provide a dict-like interface for the attributes
 	def read_attr(self, attr):
