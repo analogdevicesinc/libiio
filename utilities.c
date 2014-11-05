@@ -23,10 +23,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define LOCALE_SUPPORT defined(_WIN32) || (defined(__USE_XOPEN2K8) && \
+		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
+
 int read_double(const char *str, double *val)
 {
 	double value;
 	char *end;
+#if LOCALE_SUPPORT == 1
 #ifdef _WIN32
 	int config;
 	_locale_t old_locale;
@@ -40,15 +44,18 @@ int read_double(const char *str, double *val)
 	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
 	old_locale = uselocale(new_locale);
 #endif
+#endif
 
 	value = strtod(str, &end);
 
+#if LOCALE_SUPPORT == 1
 #ifdef _WIN32
 	setlocale(old_locale);
 	_configurethreadlocale(config);
 #else
 	uselocale(old_locale);
 	freelocale(new_locale);
+#endif
 #endif
 
 	if (end == str)
@@ -60,6 +67,7 @@ int read_double(const char *str, double *val)
 
 void write_double(char *buf, size_t len, double val)
 {
+#if LOCALE_SUPPORT == 1
 #ifdef _WIN32
 	int config;
 	_locale_t old_locale;
@@ -73,14 +81,17 @@ void write_double(char *buf, size_t len, double val)
 	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
 	old_locale = uselocale(new_locale);
 #endif
+#endif
 
 	snprintf(buf, len, "%lf", val);
 
+#if LOCALE_SUPPORT == 1
 #ifdef _WIN32
 	setlocale(old_locale);
 	_configurethreadlocale(config);
 #else
 	uselocale(old_locale);
 	freelocale(new_locale);
+#endif
 #endif
 }
