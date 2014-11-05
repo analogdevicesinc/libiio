@@ -64,6 +64,12 @@ def _init():
 	_new_network.archtypes = (c_char_p, )
 	_new_network.errcheck = _checkNull
 
+	global _new_default
+	_new_default = lib.iio_create_default_context
+	_new_default.restype = ContextPtr
+	_new_default.archtypes = None
+	_new_default.errcheck = _checkNull
+
 	global _destroy
 	_destroy = lib.iio_context_destroy
 	_destroy.restype = None
@@ -381,7 +387,7 @@ class Device(object):
 		return _get_sample_size(self._device)
 
 class Context(object):
-	def __init__(self, _context):
+	def __init__(self, _context = _new_default()):
 		self._context = _context
 		self.devices = [ Device(_get_device(self._context, x)) \
 				for x in xrange(0, _devices_count(self._context)) ]
