@@ -33,16 +33,17 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-/* For some reason, <netinet/tcp.h> needs this to define SOL_TCP */
-#define __USE_MISC
-#include <netinet/tcp.h>
-#undef __USE_MISC
-
 #ifdef HAVE_AVAHI
 #include <avahi-common/simple-watch.h>
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
 #endif
+
+/* For some reason, <netinet/tcp.h> needs this to define SOL_TCP */
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
+#include <netinet/tcp.h>
 
 #define MY_NAME "iiod"
 
