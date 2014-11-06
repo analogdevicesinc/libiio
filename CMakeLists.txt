@@ -17,12 +17,21 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 	CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
+option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
+
 if (NOT MSVC)
 	option(WITH_TESTS "Build the test programs" ON)
 	option(WITH_IIOD "Build the IIO Daemon" ON)
 	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
+
+	if (WITH_TESTS AND NOT (WITH_LOCAL_BACKEND AND WITH_NETWORK_BACKEND))
+		message(SEND_ERROR "Test programs can only enabled if the local and network backends are both enabled")
+	endif()
+
+	if (WITH_IIOD AND NOT WITH_LOCAL_BACKEND)
+		message(SEND_ERROR "IIOD can only be enabled if the local backend is enabled")
+	endif()
 endif()
-option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 
 find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 find_library(AVAHI_COMMON_LIBRARIES avahi-common)
@@ -77,7 +86,7 @@ if(WITH_NETWORK_BACKEND)
 	set(LIBIIO_CFILES ${LIBIIO_CFILES} network.c xml.c)
 	set(LIBS_TO_LINK ${LIBXML2_LIBRARIES})
 
-	if(DEFINED AVAHI_CLIENT_LIBRARIES AND DEFINED AVAHI_COMMON_LIBRARIES)
+	if(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
 		add_definitions(-DHAVE_AVAHI=1)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${AVAHI_LIBRARIES})
