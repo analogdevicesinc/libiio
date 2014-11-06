@@ -114,7 +114,7 @@ static void local_shutdown(struct iio_context *ctx)
 		free(ctx->devices[i]->pdata);
 }
 
-/** Shrinks the first nb characters of a string 
+/** Shrinks the first nb characters of a string
  * e.g. strcut("foobar", 4) replaces the content with "ar". */
 static void strcut(char *str, int nb)
 {
