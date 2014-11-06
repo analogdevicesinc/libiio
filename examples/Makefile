@@ -13,33 +13,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-PREFIX ?= /usr/local
-
-COMPILER ?= gcc
-CC := $(CROSS_COMPILE)$(COMPILER)
-ANALYZER := clang --analyze
+include ../makefile.inc
 
 IIO_MONITOR = iio-monitor
 
 TARGETS := ad9361-iiostream $(IIO_MONITOR)
 
+CPPFLAGS = -I..
 CFLAGS = -Wall
 LDFLAGS = $(wildcard ../libiio.so.*)
-
-ifdef DEBUG
-	CFLAGS += -g -ggdb
-	CPPFLAGS += -DLOG_LEVEL=4 #-DWITH_COLOR_DEBUG
-else
-	CFLAGS += -O2
-endif
-
-ifdef V
-	CMD:=
-	SUM:=@\#
-else
-	CMD:=@
-	SUM:=@echo
-endif
 
 .PHONY: all clean
 
@@ -51,12 +33,8 @@ $(IIO_MONITOR): iio-monitor.o
 
 ad9361-iiostream : ad9361-iiostream.o
 	$(SUM) "  LD      $@"
-	$(CMD)$(CC) -o $@ $^ $(LDFLAGS) -liio
+	$(CMD)$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
 	$(SUM) "  CLEAN   ."
 	$(CMD)rm -f $(TARGETS) $(TARGETS:%=%.o) $(TARGETS:%=%.plist)
-
-%.o: %.c
-	$(SUM) "  CC      $@"
-	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

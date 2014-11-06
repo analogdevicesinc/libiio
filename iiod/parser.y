@@ -32,8 +32,6 @@ void yyerror(yyscan_t scanner, const char *msg);
 typedef void *yyscan_t;
 #endif
 
-#define YYDEBUG 1
-
 #include "../debug.h"
 
 #include <stdbool.h>

@@ -13,12 +13,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-PREFIX ?= /usr/local
-
-COMPILER ?= gcc
-CC := $(CROSS_COMPILE)$(COMPILER)
-ANALYZER := clang --analyze
-INSTALL ?= install
+include ../makefile.inc
 
 DAEMON = iiod
 
@@ -31,21 +26,6 @@ LDFLAGS = $(wildcard ../libiio.so.*) -lpthread
 ifeq ($(WITH_AVAHI),yes)
 	CFLAGS += -DHAVE_AVAHI
 	LDFLAGS += -lavahi-client -lavahi-common
-endif
-
-ifdef DEBUG
-	CFLAGS += -g -ggdb
-	CPPFLAGS += -DLOG_LEVEL=4 #-DWITH_COLOR_DEBUG
-else
-	CFLAGS += -O2
-endif
-
-ifdef V
-	CMD:=
-	SUM:=@\#
-else
-	CMD:=@
-	SUM:=@echo
 endif
 
 C_OBJS = iiod.o ops.o
@@ -65,18 +45,6 @@ clean:
 
 analyze:
 	$(ANALYZER) $(CFLAGS) $(C_OBJS:%.o=%.c)
-
-%.o: %.c
-	$(SUM) "  CC      $@"
-	$(CMD)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-%.c: %.l
-	$(SUM) "  LEX     $@"
-	$(CMD)flex -o $@ $<
-
-%.c: %.y
-	$(SUM) "  YACC    $@"
-	$(CMD)yacc --defines=$(@:%.c=%.h) --output=$@ $<
 
 parser.h: parser.c
 lexer.o ops.o: parser.h
@@ -98,7 +66,8 @@ endif
 endif
 
 install: $(DAEMON)
-	$(INSTALL) -D -s -m 0755 $(DAEMON) $(DESTDIR)$(PREFIX)/sbin/$(DAEMON)
+	$(INSTALL) --strip-program=$(CROSS_COMPILE)strip -D -s -m 0755 \
+		$(DAEMON) $(DESTDIR)$(PREFIX)/sbin/$(DAEMON)
 	$(INSTALL_IIOD_SCRIPT)
 
 uninstall:

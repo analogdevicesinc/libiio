@@ -375,12 +375,15 @@ static void sign_extend(uint8_t *dst, size_t bits, size_t len)
 
 static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
 {
-	size_t upper_bytes = ((len * 8 - bits) / 8);
-	uint8_t msb_bit = 1 << ((bits - 1) % 8);
+	unsigned int i;
 
-	if (upper_bytes)
-		memset(dst + len - upper_bytes, 0x00, upper_bytes);
-	dst[len - 1 - upper_bytes] &= (msb_bit - 1);
+	/* Clear upper bits */
+	if (bits % 8)
+		dst[bits / 8] &= (1 << (bits % 8)) - 1;
+
+	/* Clear upper bytes */
+	for (i = (bits + 7) / 8; i < len; i++)
+		dst[i] = 0;
 }
 
 
@@ -414,8 +417,6 @@ void iio_channel_convert_inverse(const struct iio_channel *chn,
 		void *dst, const void *src)
 {
 	unsigned int len = chn->format.length / 8;
-	unsigned int bits = chn->format.bits;
-	unsigned int i;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	bool swap = chn->format.is_be;
 #else
@@ -428,14 +429,7 @@ void iio_channel_convert_inverse(const struct iio_channel *chn,
 		return;
 
 	memcpy(buf, src, len);
-
-	/* Clear upper bits */
-	if (bits % 8)
-		buf[bits / 8] &= (1 << (bits % 8)) - 1;
-
-	/* Clear upper bytes */
-	for (i = (bits + 7) / 8; i < len; i++)
-		buf[i] = 0;
+	mask_upper_bits(buf, chn->format.bits, len);
 
 	if (chn->format.shift)
 		shift_bits(buf, chn->format.shift, len, true);
@@ -539,17 +533,12 @@ int iio_channel_attr_read_bool(const struct iio_channel *chn,
 int iio_channel_attr_read_double(const struct iio_channel *chn,
 		const char *attr, double *val)
 {
-	char *end, buf[1024];
-	double value;
+	char buf[1024];
 	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
 	if (ret < 0)
 		return (int) ret;
-
-	value = strtod(buf, &end);
-	if (end == buf)
-		return -EINVAL;
-	*val = value;
-	return 0;
+	else
+		return read_double(buf, val);
 }
 
 int iio_channel_attr_write_longlong(const struct iio_channel *chn,
@@ -567,7 +556,7 @@ int iio_channel_attr_write_double(const struct iio_channel *chn,
 {
 	ssize_t ret;
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "%lf", val);
+	write_double(buf, sizeof(buf), val);
 	ret = iio_channel_attr_write(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
