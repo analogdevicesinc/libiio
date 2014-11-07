@@ -1265,13 +1265,13 @@ static int create_device(void *d, const char *path)
 	for (i = 0; i < dev->nb_channels; i++)
 		set_channel_name(dev->channels[i]);
 
-	ret = detect_and_move_global_attrs(dev);
+	ret = add_scan_elements(dev, path);
 	if (ret < 0) {
 		free_device(dev);
 		return ret;
 	}
 
-	ret = add_scan_elements(dev, path);
+	ret = detect_and_move_global_attrs(dev);
 	if (ret < 0) {
 		free_device(dev);
 		return ret;
