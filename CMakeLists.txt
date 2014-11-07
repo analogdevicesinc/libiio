@@ -20,6 +20,8 @@ set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 
 if (NOT MSVC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+
 	option(WITH_TESTS "Build the test programs" ON)
 	option(WITH_IIOD "Build the IIO Daemon" ON)
 	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
@@ -40,6 +42,8 @@ include(FindLibXml2)
 
 set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
 set(LIBIIO_HEADERS iio.h)
+
+add_definitions(-D_POSIX_C_SOURCE=200809L)
 
 # Get the GIT hash of the latest commit
 include(FindGit OPTIONAL)
