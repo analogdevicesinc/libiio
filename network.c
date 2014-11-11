@@ -23,6 +23,7 @@
 #endif
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
@@ -796,11 +797,68 @@ static struct iio_context * get_context(int fd)
 	return ctx;
 }
 
+/* The purpose of this function is to provide a version of connect()
+ * that does not ignore timeouts... */
+static int do_connect(int fd, const struct sockaddr *addr,
+		socklen_t addrlen, struct timeval *timeout)
+{
+	int ret, flags, error;
+	socklen_t len;
+	fd_set set;
+
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+
+	ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return -errno;
+
+	flags = ret;
+
+	ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	if (ret < 0)
+		return -errno;
+
+	ret = connect(fd, addr, addrlen);
+	if (ret < 0 && errno != EINPROGRESS) {
+		ret = -errno;
+		goto end;
+	}
+
+	ret = select(fd + 1, &set, &set, NULL, timeout);
+	if (ret < 0) {
+		ret = -errno;
+		goto end;
+	}
+	if (ret == 0) {
+		ret = -ETIMEDOUT;
+		goto end;
+	}
+
+	/* Verify that we don't have an error */
+	len = sizeof(error);
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
+	if(ret < 0) {
+		ret = -errno;
+		goto end;
+	}
+	if (error) {
+		ret = -error;
+		goto end;
+	}
+
+end:
+	/* Restore blocking mode */
+	fcntl(fd, F_SETFL, flags);
+	return ret;
+}
+
 struct iio_context * iio_create_network_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
+	struct timeval timeout;
 	unsigned int i;
 	int fd, ret;
 #ifdef _WIN32
@@ -852,7 +910,9 @@ struct iio_context * iio_create_network_context(const char *host)
 		return NULL;
 	}
 
-	if (connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
+	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
+	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
+	if (do_connect(fd, res->ai_addr, res->ai_addrlen, &timeout) < 0) {
 		ERROR("Unable to connect\n");
 		goto err_close_socket;
 	}
