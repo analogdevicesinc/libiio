@@ -209,6 +209,8 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 		ssize_t ret = recv(fd, (void *) ptr, len, 0);
 		if (ret < 0)
 			return -errno;
+		if (ret == 0)
+			return -EPIPE;
 		ptr += ret;
 		len -= ret;
 	}
