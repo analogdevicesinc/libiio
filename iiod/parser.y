@@ -147,7 +147,7 @@ Line:
 	| VERSION END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		char buf[128];
-		snprintf(buf, sizeof(buf), "%u.%u.%s\n", LIBIIO_VERSION_MAJOR,
+		snprintf(buf, sizeof(buf), "%u.%u.%-7.7s\n", LIBIIO_VERSION_MAJOR,
 						LIBIIO_VERSION_MINOR, LIBIIO_VERSION_GIT);
 		output(pdata, buf);
 		YYACCEPT;
