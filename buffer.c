@@ -35,8 +35,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		goto err_set_errno;
 	}
 
-	buf->sample_size = sample_size;
-	buf->length = buf->sample_size * samples_count;
+	buf->dev_sample_size = sample_size;
+	buf->length = sample_size * samples_count;
 	buf->dev = dev;
 	buf->mask = calloc(dev->words, sizeof(*buf->mask));
 	if (!buf->mask) {
@@ -69,6 +69,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		}
 	}
 
+	buf->sample_size = iio_device_get_sample_size_mask(dev,
+			buf->mask, dev->words);
 	buf->data_length = buf->length;
 	return buf;
 
@@ -107,8 +109,11 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 				buffer->mask, dev->words);
 	}
 
-	if (read >= 0)
+	if (read >= 0) {
 		buffer->data_length = read;
+		buffer->sample_size = iio_device_get_sample_size_mask(dev,
+				buffer->mask, dev->words);
+	}
 	return read;
 }
 
@@ -149,16 +154,15 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 	uintptr_t ptr = (uintptr_t) buffer->buffer,
 		  end = ptr + buffer->data_length;
 	const struct iio_device *dev = buffer->dev;
-	ssize_t processed = 0,
-		sample_size = iio_device_get_sample_size_mask(dev,
-				buffer->mask, buffer->dev->words);
-	if (sample_size <= 0)
+	ssize_t processed = 0;
+
+	if (buffer->sample_size <= 0)
 		return -EINVAL;
 
-	if (buffer->data_length < buffer->sample_size)
+	if (buffer->data_length < buffer->dev_sample_size)
 		return 0;
 
-	while (end - ptr >= (size_t) sample_size) {
+	while (end - ptr >= (size_t) buffer->sample_size) {
 		unsigned int i;
 
 		for (i = 0; i < dev->nb_channels; i++) {
@@ -227,8 +231,7 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 
 ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer)
 {
-	return (ptrdiff_t) iio_device_get_sample_size_mask(buffer->dev,
-			buffer->mask, buffer->dev->words);
+	return (ptrdiff_t) buffer->sample_size;
 }
 
 void * iio_buffer_end(const struct iio_buffer *buffer)

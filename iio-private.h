@@ -153,6 +153,7 @@ struct iio_buffer {
 	size_t length, data_length;
 
 	uint32_t *mask;
+	unsigned int dev_sample_size;
 	unsigned int sample_size;
 	bool is_output, dev_is_high_speed;
 };
