@@ -22,6 +22,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define LOCALE_SUPPORT defined(_WIN32) || (defined(__USE_XOPEN2K8) && \
 		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
@@ -94,4 +95,17 @@ void write_double(char *buf, size_t len, double val)
 	freelocale(new_locale);
 #endif
 #endif
+}
+
+void iio_library_get_version(unsigned int *major,
+		unsigned int *minor, char git_tag[8])
+{
+	if (major)
+		*major = LIBIIO_VERSION_MAJOR;
+	if (minor)
+		*minor = LIBIIO_VERSION_MINOR;
+	if (git_tag) {
+		strncpy(git_tag, LIBIIO_VERSION_GIT, 8);
+		git_tag[7] = '\0';
+	}
 }

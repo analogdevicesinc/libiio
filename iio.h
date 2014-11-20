@@ -66,6 +66,20 @@ struct iio_buffer;
 
 
 /* ---------------------------------------------------------------------------*/
+/* ------------------------- Top-level functions -----------------------------*/
+/** @defgroup TopLevel Top-level functions
+ * @{ */
+
+
+/** @brief Get the version of the libiio library
+ * @param major A pointer to an unsigned integer (NULL accepted)
+ * @param minor A pointer to an unsigned integer (NULL accepted)
+ * @param git_tag A pointer to a 8-characters buffer (NULL accepted) */
+__api void iio_library_get_version(unsigned int *major,
+		unsigned int *minor, char git_tag[8]);
+
+
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/
 /** @defgroup Context Context
  * @{
