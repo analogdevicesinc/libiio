@@ -21,7 +21,7 @@ WITH_AVAHI ?= yes
 WITH_PTHREAD ?= yes
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 VERSION_GIT := $(shell git rev-parse --short HEAD)
 
 COMPILER ?= gcc
