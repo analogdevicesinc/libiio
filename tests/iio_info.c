@@ -63,6 +63,9 @@ int main(int argc, char **argv)
 	struct iio_context *ctx;
 	int c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
+	unsigned int major, minor;
+	char git_tag[8];
+	int ret;
 
 	while ((c = getopt_long(argc, argv, "+hn:x:",
 					options, &option_index)) != -1) {
@@ -97,6 +100,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	iio_library_get_version(&major, &minor, git_tag);
+	INFO("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
+
 	if (backend == XML)
 		ctx = iio_create_xml_context(argv[arg_index]);
 	else if (backend == NETWORK)
@@ -109,7 +115,15 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	INFO("IIO context created: %s\n", iio_context_get_name(ctx));
+	INFO("IIO context created with %s backend.\n",
+			iio_context_get_name(ctx));
+
+	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
+	if (!ret)
+		INFO("Backend version: %u.%u (git tag: %s)\n",
+				major, minor, git_tag);
+	else
+		ERROR("Unable to get backend version: %i\n", ret);
 
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
 	INFO("IIO context has %u devices:\n", nb_devices);
@@ -149,7 +163,7 @@ int main(int argc, char **argv)
 			for (k = 0; k < nb_attrs; k++) {
 				const char *attr = iio_channel_get_attr(ch, k);
 				char buf[1024];
-				ssize_t ret = iio_channel_attr_read(ch,
+				ret = (int) iio_channel_attr_read(ch,
 						attr, buf, 1024);
 				if (ret > 0)
 					INFO("\t\t\t\tattr %u: %s"
@@ -171,7 +185,7 @@ int main(int argc, char **argv)
 		for (j = 0; j < nb_attrs; j++) {
 			const char *attr = iio_device_get_attr(dev, j);
 			char buf[1024];
-			ssize_t ret = iio_device_attr_read(dev,
+			ret = (int) iio_device_attr_read(dev,
 					attr, buf, 1024);
 			if (ret > 0)
 				INFO("\t\t\t\tattr %u: %s value: %s\n", j,
