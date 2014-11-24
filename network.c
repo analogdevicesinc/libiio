@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/types.h>
 #include <time.h>
 
@@ -43,6 +42,7 @@
 #if HAVE_PTHREAD
 #include <pthread.h>
 #endif
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
@@ -798,6 +798,7 @@ static struct iio_context * get_context(int fd)
 	return ctx;
 }
 
+#ifndef _WIN32
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
 static int do_connect(int fd, const struct sockaddr *addr,
@@ -853,6 +854,7 @@ end:
 	fcntl(fd, F_SETFL, flags);
 	return ret;
 }
+#endif
 
 struct iio_context * iio_create_network_context(const char *host)
 {
@@ -913,7 +915,13 @@ struct iio_context * iio_create_network_context(const char *host)
 
 	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
 	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
-	if (do_connect(fd, res->ai_addr, res->ai_addrlen, &timeout) < 0) {
+
+#ifndef _WIN32
+	ret = do_connect(fd, res->ai_addr, res->ai_addrlen, &timeout);
+#else
+	ret = connect(fd, res->ai_addr, res->ai_addrlen);
+#endif
+	if (ret < 0) {
 		ERROR("Unable to connect\n");
 		goto err_close_socket;
 	}
