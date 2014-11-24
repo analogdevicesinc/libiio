@@ -43,7 +43,7 @@ include(FindLibXml2)
 set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
 set(LIBIIO_HEADERS iio.h)
 
-add_definitions(-D_POSIX_C_SOURCE=200809L)
+add_definitions(-D_POSIX_C_SOURCE=200809L -DLIBIIO_EXPORTS=1)
 
 # Get the GIT hash of the latest commit
 include(FindGit OPTIONAL)
@@ -85,10 +85,14 @@ if(WITH_NETWORK_BACKEND)
 		message(SEND_ERROR "The network backend requires libxml2 to be installed")
 	endif()
 
+	if (MSVC)
+		set(LIBS_TO_LINK ${LIBS_TO_LINK} wsock32 ws2_32)
+	endif()
+
 	add_definitions(-DNETWORK_BACKEND=1 ${LIBXML2_DEFINITIONS})
 	include_directories(${LIBXML2_INCLUDE_DIR})
 	set(LIBIIO_CFILES ${LIBIIO_CFILES} network.c xml.c)
-	set(LIBS_TO_LINK ${LIBXML2_LIBRARIES})
+	set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBXML2_LIBRARIES})
 
 	if(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
 		add_definitions(-DHAVE_AVAHI=1)
@@ -96,7 +100,7 @@ if(WITH_NETWORK_BACKEND)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${AVAHI_LIBRARIES})
 	endif()
 
-	if(DEFINED PTHREAD_LIBRARIES)
+	if(PTHREAD_LIBRARIES)
 		add_definitions(-DHAVE_PTHREAD=1)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${PTHREAD_LIBRARIES})
 	else()
