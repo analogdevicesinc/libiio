@@ -76,7 +76,7 @@ clean-tests clean-examples clean-iiod:
 
 clean: clean-tests clean-examples clean-iiod
 	$(SUM) "  CLEAN   ."
-	$(CMD)rm -rf $(LIBIIO) $(OBJS) $(OBJS:%.o=%.plist) libiio.pc html
+	$(CMD)rm -rf $(LIBNAME)* $(OBJS) $(OBJS:%.o=%.plist) libiio.pc html
 
 analyze:
 	$(ANALYZER) $(CFLAGS) $(OBJS:%.o=%.c)
