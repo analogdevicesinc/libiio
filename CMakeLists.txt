@@ -129,6 +129,19 @@ if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
 		LIBRARY DESTINATION "${INSTALL_LIB_DIR}")
 endif()
 
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+	configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
+	file(COPY ${CMAKE_SOURCE_DIR}/doc DESTINATION ${CMAKE_BINARY_DIR}/html)
+	add_custom_target(doc
+		${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		COMMENT "Generating API documentation with Doxygen" VERBATIM
+		)
+else()
+	message(STATUS "Doxygen not found, API documentation won't be generated")
+endif()
+
 if(WITH_IIOD)
 	add_subdirectory(iiod)
 endif()
