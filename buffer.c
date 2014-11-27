@@ -58,7 +58,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	if (buf->dev_is_high_speed) {
 		/* Dequeue the first buffer, so that buf->buffer is correctly
 		 * initialized */
-		ret = dev->ctx->ops->get_buffer(dev, &buf->buffer, 0);
+		ret = dev->ctx->ops->get_buffer(dev, &buf->buffer, buf->length);
 		if (ret < 0)
 			goto err_close_device;
 	} else {
