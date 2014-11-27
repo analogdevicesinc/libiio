@@ -116,7 +116,7 @@ install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
 
 add_library(iio SHARED ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
-set_target_properties(iio PROPERTIES VERSION ${VERSION})
+set_target_properties(iio PROPERTIES VERSION ${VERSION} SOVERSION ${LIBIIO_VERSION_MAJOR})
 target_link_libraries(iio ${LIBS_TO_LINK})
 
 if (NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL)
