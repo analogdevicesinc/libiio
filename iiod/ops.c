@@ -472,17 +472,19 @@ static void * rw_thd(void *d)
 		iio_buffer_destroy(entry->buf);
 	pthread_mutex_unlock(&devlist_lock);
 
-	/* Signal the last client that the device has been closed */
-	pthread_mutex_lock(&entry->last_lock);
-	pthread_cond_signal(&entry->last_cond);
+	if (ret >= 0) {
+		/* Signal the last client that the device has been closed */
+		pthread_mutex_lock(&entry->last_lock);
+		pthread_cond_signal(&entry->last_cond);
 
-	/* And wait for the last client to give us back the lock,
-	 * so that we can destroy it... */
-	pthread_cond_wait(&entry->last_cond, &entry->last_lock);
-	pthread_mutex_unlock(&entry->last_lock);
+		/* And wait for the last client to give us back the lock,
+		 * so that we can destroy it... */
+		pthread_cond_wait(&entry->last_cond, &entry->last_lock);
+		pthread_mutex_unlock(&entry->last_lock);
+	}
+
 	pthread_mutex_destroy(&entry->last_lock);
 	pthread_cond_destroy(&entry->last_cond);
-
 	pthread_mutex_destroy(&entry->thdlist_lock);
 	pthread_attr_destroy(&entry->attr);
 
@@ -651,10 +653,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		/* Wait until the device is opened by the rw thread */
 		pthread_cond_wait(&thd->cond, &thd->cond_lock);
 		pthread_mutex_unlock(&thd->cond_lock);
-		ret = (int) thd->err;
-		if (ret < 0)
-			goto err_free_thd;
-		return 0;
+		return (int) thd->err;
 	}
 
 	entry = malloc(sizeof(*entry));
@@ -692,9 +691,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	/* Wait until the device is opened by the rw thread */
 	pthread_cond_wait(&thd->cond, &thd->cond_lock);
 	pthread_mutex_unlock(&thd->cond_lock);
-	ret = (int) thd->err;
-	if (!ret)
-		return 0;
+	return (int) thd->err;
 
 err_free_entry_mask:
 	free(entry->mask);
