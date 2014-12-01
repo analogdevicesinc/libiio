@@ -1,0 +1,51 @@
+Source: libiio
+Section: libs
+Priority: optional
+Maintainer: Paul Cercueil <paul.cercueil@analog.com>
+Uploaders: Paul Cercueil <paul.cercueil@analog.com>
+Build-Depends: cmake (>= 2.8), debhelper (>= 9)
+Standards-Version: 3.9.4
+Homepage: http://github.com/analogdevicesinc/libiio
+Vcs-Git: git://github.com/analogdevicesinc/libiio
+
+Package: libiio0
+Architecture: any
+Multi-Arch: same
+Depends: libavahi-client3
+Build-Depends: libavahi-client-dev
+Suggests: avahi-daemon
+Description: Library for interfacing with IIO devices
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
+ .
+ This package contains the shared library.
+
+Package: libiio-dev
+Architecture: all
+Description: libiio development files
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
+ .
+ This package contains the development files.
+
+Package: iiod
+Architecture: any
+Multi-Arch: same
+Depends: libiio0 (>= 0.2)
+Build-Depends: libavahi-client-dev
+Suggests: avahi-daemon
+Description: Daemon to share IIO devices on the network
+ IIOD is a network daemon that communicates with the network backend of libiio.
+ It can be used, for instance, to stream the flow of data samples from one weak
+ system to a more powerful one, where the samples will be processed.
+
+Package: libiio-utils
+Architecture: any
+Multi-Arch: same
+Depends: libiio0 (>= 0.2)
+Description: Miscellaneous libiio utilities
+ This package contains several basic utilities for testing libiio.
+
+#TODO: libiio-doc, python-libiio, libiio-cil

@@ -1,0 +1,5 @@
+libiio (0.2-0) unstable; urgency=low
+
+  * Initial release.
+
+ -- Paul Cercueil <paul.cercueil@analog.com>  Fri, 28 Nov 2014 14:51:18 +0200

@@ -1,0 +1,3 @@
+usr/include
+usr/lib/*/libiio.so
+usr/lib/*/pkgconfig

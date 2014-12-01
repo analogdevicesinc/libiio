@@ -1,0 +1,3 @@
+usr/bin/iio_info
+usr/bin/iio_readdev
+usr/bin/iio_genxml

@@ -1,0 +1,8 @@
+*.debhelper.log
+*.substvars
+files
+tmp
+libiio0
+libiio-dev
+libiio-utils
+iiod
