@@ -13,28 +13,20 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-include ../makefile.inc
 
-IIO_MONITOR = iio-monitor
+TARGETS := ad9361-iiostream iio-monitor
 
-TARGETS := ad9361-iiostream $(IIO_MONITOR)
-
-CPPFLAGS = -I..
 CFLAGS = -Wall
-LDFLAGS = $(wildcard ../libiio.so.*)
 
 .PHONY: all clean
 
 all: $(TARGETS)
 
-$(IIO_MONITOR): iio-monitor.o
-	$(SUM) "  LD      $@"
-	$(CMD)$(CC) -o $@ $^ $(LDFLAGS) -lpthread -lncurses -lcdk
+iio-monitor: iio-monitor.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lpthread -lncurses -lcdk -liio
 
 ad9361-iiostream : ad9361-iiostream.o
-	$(SUM) "  LD      $@"
-	$(CMD)$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -liio
 
 clean:
-	$(SUM) "  CLEAN   ."
-	$(CMD)rm -f $(TARGETS) $(TARGETS:%=%.o) $(TARGETS:%=%.plist)
+	rm -f $(TARGETS) $(TARGETS:%=%.o)
