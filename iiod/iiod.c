@@ -68,6 +68,18 @@ static struct sockaddr_in sockaddr = {
 #endif
 };
 
+#ifdef HAVE_IPV6
+static struct sockaddr_in6 sockaddr6 = {
+	.sin6_family = AF_INET6,
+	.sin6_addr = IN6ADDR_ANY_INIT,
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	.sin6_port = __bswap_constant_16(IIOD_PORT),
+#else
+	.sin6_port = IIOD_PORT,
+#endif
+};
+#endif /* HAVE_IPV6 */
+
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"version", no_argument, 0, 'V'},
@@ -182,12 +194,11 @@ static void sig_handler(int sig)
 
 int main(int argc, char **argv)
 {
-	int fd;
 	struct iio_context *ctx;
-	bool debug = false;
+	bool debug = false, ipv6;
 	int c, option_index = 0, arg_index = 0;
-	int yes = 1;
-	int keepalive_time = 10,
+	int ret, fd = -1, yes = 1,
+	    keepalive_time = 10,
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
 #ifdef HAVE_AVAHI
@@ -231,7 +242,12 @@ int main(int argc, char **argv)
 	INFO("Starting IIO Daemon version %u.%u\n",
 			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR);
 
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+#ifdef HAVE_IPV6
+	fd = socket(AF_INET6, SOCK_STREAM, 0);
+#endif
+	ipv6 = (fd >= 0);
+	if (!ipv6)
+		fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
 		ERROR("Unable to create socket: %s\n", strerror(errno));
 		goto err_close_ctx;
@@ -239,10 +255,20 @@ int main(int argc, char **argv)
 
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
-	if (bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
+#ifdef HAVE_IPV6
+	if (ipv6)
+		ret = bind(fd, (struct sockaddr *) &sockaddr6,
+				sizeof(sockaddr6));
+#endif
+	if (!ipv6)
+		ret = bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
+	if (ret < 0) {
 		ERROR("Bind failed: %s\n", strerror(errno));
 		goto err_close_socket;
 	}
+
+	if (ipv6)
+		INFO("IPv6 support enabled\n");
 
 	if (listen(fd, 16) < 0) {
 		ERROR("Unable to mark as passive socket: %s\n",

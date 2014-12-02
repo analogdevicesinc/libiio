@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(iiod C)
 
+option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
+
+include(CheckSymbolExists)
+check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
+
+if (ENABLE_IPV6)
+	if (NOT HAVE_IPV6)
+		message(WARNING "IPv6 is not available in your system.")
+	else()
+		add_definitions(-DHAVE_IPV6=1)
+	endif()
+endif()
+
 include(FindBISON)
 include(FindFLEX)
 
