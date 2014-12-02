@@ -1,29 +1,12 @@
 #!/usr/bin/make -f
 
-TARGETS := libiio0 libiio-utils libiio-dev iiod
-VERSION := 0.2-0
-
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
-DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 
-all: $(TARGETS)
-
-#%:
-#	dh $@ --parallel
-
-.PHONY: build install
-clean build install:
-	fakeroot dh $@ --parallel
-
-.PHONY: gencontrol installdeb
-gencontrol installdeb: build install
-	fakeroot dh_$@
+%:
+	dh $@ --parallel
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DINSTALL_LIB_DIR=/usr/lib/$(DEB_HOST_MULTIARCH)
 
 override_dh_compress:
 	dh_compress -X.c -X.C
-
-$(TARGETS): build install gencontrol installdeb
-	dpkg-deb --build debian/$@ $@_$(VERSION)_$(DEB_HOST_ARCH).deb
