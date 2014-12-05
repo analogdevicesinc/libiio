@@ -36,6 +36,7 @@ static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"network", required_argument, 0, 'n'},
 	  {"trigger", required_argument, 0, 't'},
+	  {"buffer-size", required_argument, 0, 'b'},
 	  {0, 0, 0, 0},
 };
 
@@ -43,6 +44,7 @@ static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
 	"Use the specified trigger.",
+	"Size of the capture buffer. Default is 256.",
 };
 
 static void usage(void)
@@ -112,6 +114,7 @@ static ssize_t print_sample(const struct iio_channel *chn,
 int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
+	unsigned int buffer_size = SAMPLES_PER_READ;
 	int c, option_index = 0, arg_index = 0;
 	enum backend backend = LOCAL;
 	struct iio_device *dev;
@@ -133,6 +136,10 @@ int main(int argc, char **argv)
 		case 't':
 			arg_index += 2;
 			trigger_name = argv[arg_index];
+			break;
+		case 'b':
+			arg_index += 2;
+			buffer_size = atoi(argv[arg_index]);
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -204,7 +211,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	buffer = iio_device_create_buffer(dev, SAMPLES_PER_READ, false);
+	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
 		ERROR("Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
