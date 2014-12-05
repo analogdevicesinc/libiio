@@ -61,13 +61,13 @@ static struct iio_context *ctx;
 struct iio_buffer *buffer;
 static const char *trigger_name = NULL;
 
+static bool app_running = true;
+static int exit_code = EXIT_SUCCESS;
+
 void quit_all(int sig)
 {
-	if (buffer)
-		iio_buffer_destroy(buffer);
-	if (ctx)
-		iio_context_destroy(ctx);
-	exit(sig);
+	exit_code = sig;
+	app_running = false;
 }
 
 static void set_handler(int signal, void (*handler)(int))
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 
 	setbuf(stdout, NULL);
 
-	while (true) {
+	while (app_running) {
 		int ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
 			ERROR("Unable to refill buffer: %s\n", strerror(-ret));
@@ -225,5 +225,5 @@ int main(int argc, char **argv)
 
 	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
-	return EXIT_FAILURE;
+	return exit_code;
 }
