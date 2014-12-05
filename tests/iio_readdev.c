@@ -211,8 +211,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	setbuf(stdout, NULL);
-
 	while (app_running) {
 		int ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
@@ -221,6 +219,7 @@ int main(int argc, char **argv)
 		}
 
 		iio_buffer_foreach_sample(buffer, print_sample, NULL);
+		fflush(stdout);
 	}
 
 	iio_buffer_destroy(buffer);
