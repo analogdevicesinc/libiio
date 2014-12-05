@@ -37,6 +37,7 @@ static const struct option options[] = {
 	  {"network", required_argument, 0, 'n'},
 	  {"trigger", required_argument, 0, 't'},
 	  {"buffer-size", required_argument, 0, 'b'},
+	  {"samples", required_argument, 0, 's' },
 	  {0, 0, 0, 0},
 };
 
@@ -45,6 +46,7 @@ static const char *options_descriptions[] = {
 	"Use the network backend with the provided hostname.",
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
+	"Number of samples to capture, 0 = infinite. Default is 0."
 };
 
 static void usage(void)
@@ -62,6 +64,7 @@ static void usage(void)
 static struct iio_context *ctx;
 struct iio_buffer *buffer;
 static const char *trigger_name = NULL;
+unsigned int num_samples;
 
 static bool app_running = true;
 static int exit_code = EXIT_SUCCESS;
@@ -108,6 +111,13 @@ static ssize_t print_sample(const struct iio_channel *chn,
 		void *buf, size_t len, void *d)
 {
 	fwrite(buf, 1, len, stdout);
+	if (num_samples != 0) {
+		num_samples--;
+		if (num_samples == 0) {
+			quit_all(EXIT_SUCCESS);
+			return -1;
+		}
+	}
 	return len;
 }
 
@@ -140,6 +150,10 @@ int main(int argc, char **argv)
 		case 'b':
 			arg_index += 2;
 			buffer_size = atoi(argv[arg_index]);
+			break;
+		case 's':
+			arg_index += 2;
+			num_samples = atoi(argv[arg_index]);
 			break;
 		case '?':
 			return EXIT_FAILURE;
