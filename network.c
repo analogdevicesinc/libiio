@@ -196,8 +196,12 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	uintptr_t ptr = (uintptr_t) src;
 	while (len) {
 		ssize_t ret = send(fd, (const void *) ptr, len, 0);
-		if (ret < 0)
+		if (ret < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
 			return -errno;
+		}
 		ptr += ret;
 		len -= ret;
 	}
@@ -209,8 +213,11 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	uintptr_t ptr = (uintptr_t) dst;
 	while (len) {
 		ssize_t ret = recv(fd, (void *) ptr, len, 0);
-		if (ret < 0)
+		if (ret < 0) {
+			if (errno == EINTR)
+				continue;
 			return -errno;
+		}
 		if (ret == 0)
 			return -EPIPE;
 		ptr += ret;
@@ -396,7 +403,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 
 		if (ret > 0) {
 			char c;
-			ret = recv(fd, &c, 1, 0);
+			ret = read_all(&c, 1, fd);
 			if (ret > 0 && c != '\n')
 				ret = -EIO;
 		}
