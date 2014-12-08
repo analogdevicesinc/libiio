@@ -23,7 +23,7 @@
 #include <string.h>
 #include <signal.h>
 
-#define MY_NAME "iio_info"
+#define MY_NAME "iio_readdev"
 
 #define SAMPLES_PER_READ 256
 
