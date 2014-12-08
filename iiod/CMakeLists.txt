@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.7)
 project(iiod C)
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
