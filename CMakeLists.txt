@@ -6,7 +6,7 @@ set(LIBIIO_VERSION_MINOR 2)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
 
 # Set the default install path to /usr
-if (NOT MSVC AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
 endif()
 
@@ -19,7 +19,7 @@ set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 
-if (NOT MSVC)
+if (NOT WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 
 	option(WITH_TESTS "Build the test programs" ON)
@@ -85,7 +85,7 @@ if(WITH_NETWORK_BACKEND)
 		message(SEND_ERROR "The network backend requires libxml2 to be installed")
 	endif()
 
-	if (MSVC)
+	if (WIN32)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} wsock32 ws2_32)
 	endif()
 

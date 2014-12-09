@@ -39,13 +39,14 @@
 
 #else /* _WIN32 */
 #include <netdb.h>
-#if HAVE_PTHREAD
-#include <pthread.h>
-#endif
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
+
+#if HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 #ifdef HAVE_AVAHI
 #include <avahi-client/client.h>

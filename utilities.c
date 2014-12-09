@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOCALE_SUPPORT defined(_WIN32) || (defined(__USE_XOPEN2K8) && \
+#define LOCALE_SUPPORT defined(_MSC_BUILD) || (defined(__USE_XOPEN2K8) && \
 		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
 
 int read_double(const char *str, double *val)
@@ -32,7 +32,7 @@ int read_double(const char *str, double *val)
 	double value;
 	char *end;
 #if LOCALE_SUPPORT == 1
-#ifdef _WIN32
+#ifdef _MSC_BUILD
 	int config;
 	_locale_t old_locale;
 
@@ -50,7 +50,7 @@ int read_double(const char *str, double *val)
 	value = strtod(str, &end);
 
 #if LOCALE_SUPPORT == 1
-#ifdef _WIN32
+#ifdef _MSC_BUILD
 	setlocale(old_locale);
 	_configurethreadlocale(config);
 #else
@@ -69,7 +69,7 @@ int read_double(const char *str, double *val)
 void write_double(char *buf, size_t len, double val)
 {
 #if LOCALE_SUPPORT == 1
-#ifdef _WIN32
+#ifdef _MSC_BUILD
 	int config;
 	_locale_t old_locale;
 
@@ -87,7 +87,7 @@ void write_double(char *buf, size_t len, double val)
 	snprintf(buf, len, "%lf", val);
 
 #if LOCALE_SUPPORT == 1
-#ifdef _WIN32
+#ifdef _MSC_BUILD
 	setlocale(old_locale);
 	_configurethreadlocale(config);
 #else
