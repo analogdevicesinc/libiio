@@ -864,7 +864,7 @@ end:
 }
 #endif
 
-struct iio_context * iio_create_network_context(const char *host)
+struct iio_context * network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;

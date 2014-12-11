@@ -226,8 +226,40 @@ struct iio_context * iio_create_default_context(void)
 		return iio_create_network_context(hostname);
 	}
 #endif
-#if LOCAL_BACKEND
 	return iio_create_local_context();
+}
+
+struct iio_context * iio_create_local_context(void)
+{
+#if LOCAL_BACKEND
+	return local_create_context();
+#else
+	return NULL;
+#endif
+}
+
+struct iio_context * iio_create_network_context(const char *hostname)
+{
+#if NETWORK_BACKEND
+	return network_create_context(hostname);
+#else
+	return NULL;
+#endif
+}
+
+struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
+{
+#if NETWORK_BACKEND
+	return xml_create_context_mem(xml, len);
+#else
+	return NULL;
+#endif
+}
+
+struct iio_context * iio_create_xml_context(const char *xml_file)
+{
+#if NETWORK_BACKEND
+	return xml_create_context(xml_file);
 #else
 	return NULL;
 #endif

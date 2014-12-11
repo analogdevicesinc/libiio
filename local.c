@@ -1339,7 +1339,7 @@ static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
 static struct iio_context * local_clone(
 		const struct iio_context *ctx __attribute__((unused)))
 {
-	return iio_create_local_context();
+	return local_create_context();
 }
 
 static struct iio_backend_ops local_ops = {
@@ -1419,7 +1419,7 @@ static void init_scan_elements(struct iio_context *ctx)
 	}
 }
 
-struct iio_context * iio_create_local_context(void)
+struct iio_context * local_create_context(void)
 {
 	int ret;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
