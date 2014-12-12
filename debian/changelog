@@ -1,3 +1,13 @@
+libiio (0.3-0) unstable; urgency=low
+
+  * Improved error handling
+  * IPv6 support in both libiio and iiod
+  * Enhanced CMake build scripts (now builds under MinGW and Windows)
+  * Old Makefile-based build system has been dropped
+  * Scripts to create Debian packages
+
+ -- Paul Cercueil <paul.cercueil@analog.com>  Fri, 12 Dec 2014 17:14:59 +0200
+
 libiio (0.2-0) unstable; urgency=low
 
   * Initial release.
