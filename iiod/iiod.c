@@ -316,6 +316,7 @@ int main(int argc, char **argv)
 				sizeof(keepalive_time));
 		setsockopt(new, SOL_TCP, TCP_KEEPINTVL, &keepalive_intvl,
 				sizeof(keepalive_intvl));
+		setsockopt(new, SOL_TCP, TCP_NODELAY, &yes, sizeof(yes));
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
