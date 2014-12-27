@@ -115,7 +115,7 @@ install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
 
-add_library(iio SHARED ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
+add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
 set_target_properties(iio PROPERTIES VERSION ${VERSION} SOVERSION ${LIBIIO_VERSION_MAJOR})
 target_link_libraries(iio LINK_PRIVATE ${LIBS_TO_LINK})
 
