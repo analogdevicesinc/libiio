@@ -179,7 +179,19 @@ if(WITH_NETWORK_BACKEND)
 	set(NEED_LIBXML2 1)
 endif()
 
-include(FindLibXml2)
+# Since libxml2-2.9.2, libxml2 provides its own LibXml2-config.cmake, with all
+# variables correctly set.
+# So, try first to find the CMake module provided by libxml2 package, then fallback
+# on the CMake's FindLibXml2.cmake module (which can lack some definition, especially
+# in static build case).
+find_package(LibXml2 QUIET NO_MODULE)
+if(DEFINED LIBXML2_VERSION_STRING)
+	set(LIBXML2_FOUND ON)
+	set(LIBXML2_INCLUDE_DIR ${LIBXML2_INCLUDE_DIRS})
+else()
+	include(FindLibXml2)
+endif()
+
 if (LIBXML2_FOUND)
 	option(WITH_XML_BACKEND "Enable the serial backend" ON)
 
