@@ -1422,6 +1422,8 @@ static void init_scan_elements(struct iio_context *ctx)
 struct iio_context * local_create_context(void)
 {
 	int ret;
+	unsigned int len;
+	struct utsname uts;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx) {
 		ERROR("Unable to allocate memory\n");
@@ -1431,6 +1433,19 @@ struct iio_context * local_create_context(void)
 	ctx->ops = &local_ops;
 	ctx->name = "local";
 	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
+
+	uname(&uts);
+	len = strlen(uts.sysname) + strlen(uts.nodename) + strlen(uts.release)
+		+ strlen(uts.version) + strlen(uts.machine);
+	ctx->description = malloc(len + 5); /* 4 spaces + EOF */
+	if (!ctx->description) {
+		ERROR("Unable to allocate memory\n");
+		free(ctx);
+		return NULL;
+	}
+
+	snprintf(ctx->description, len + 5, "%s %s %s %s %s", uts.sysname,
+			uts.nodename, uts.release, uts.version, uts.machine);
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0) {
