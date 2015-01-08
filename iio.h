@@ -175,6 +175,16 @@ __api __pure const char * iio_context_get_xml(const struct iio_context *ctx);
 __api __pure const char * iio_context_get_name(const struct iio_context *ctx);
 
 
+/** @brief Get a description of the given context
+ * @param ctx A pointer to an iio_context structure
+ * @return A pointer to a static NULL-terminated string
+ *
+ * <b>NOTE:</b>The returned string will contain human-readable information about
+ * the current context. */
+__api __pure const char * iio_context_get_description(
+		const struct iio_context *ctx);
+
+
 /** @brief Enumerate the devices found in the given context
  * @param ctx A pointer to an iio_context structure
  * @return The number of devices found */

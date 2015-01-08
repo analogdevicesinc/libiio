@@ -114,6 +114,14 @@ const char * iio_context_get_name(const struct iio_context *ctx)
 	return ctx->name;
 }
 
+const char * iio_context_get_description(const struct iio_context *ctx)
+{
+	if (ctx->description)
+		return ctx->description;
+	else
+		return "";
+}
+
 void iio_context_destroy(struct iio_context *ctx)
 {
 	unsigned int i;
@@ -126,6 +134,8 @@ void iio_context_destroy(struct iio_context *ctx)
 		free(ctx->devices);
 	if (ctx->xml)
 		free(ctx->xml);
+	if (ctx->description)
+		free(ctx->description);
 	free(ctx);
 }
 

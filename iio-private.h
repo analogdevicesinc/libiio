@@ -102,6 +102,7 @@ struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
 	const char *name;
+	char *description;
 
 	struct iio_device **devices;
 	unsigned int nb_devices;
