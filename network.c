@@ -30,6 +30,11 @@
 #include <time.h>
 
 #ifdef _WIN32
+/* Override the default version of Windows supported by MinGW.
+ * This is required to use the function inet_ntop. */
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #define close(s) closesocket(s)
@@ -38,6 +43,7 @@
 #undef ERROR
 
 #else /* _WIN32 */
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -870,7 +876,7 @@ struct iio_context * network_create_context(const char *host)
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
 	struct timeval timeout;
-	unsigned int i;
+	unsigned int i, len;
 	int fd, ret;
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -962,6 +968,32 @@ struct iio_context * network_create_context(const char *host)
 	ctx->name = "network";
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
+
+#ifdef HAVE_IPV6
+	len = INET6_ADDRSTRLEN + 1;
+#else
+	len = INET_ADDRSTRLEN + 1;
+#endif
+	ctx->description = malloc(len);
+	if (!ctx->description) {
+		ERROR("Unable to allocate memory\n");
+		goto err_network_shutdown;
+	}
+
+	ctx->description[0] = '\0';
+
+#ifdef HAVE_IPV6
+	if (res->ai_family == AF_INET6) {
+		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
+		inet_ntop(AF_INET6, &in->sin6_addr,
+				ctx->description, INET6_ADDRSTRLEN);
+	}
+#endif
+	if (res->ai_family == AF_INET) {
+		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
+		inet_ntop(AF_INET, &in->sin_addr,
+				ctx->description, INET_ADDRSTRLEN);
+	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
