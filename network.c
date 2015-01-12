@@ -45,6 +45,7 @@
 #else /* _WIN32 */
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <net/if.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -959,7 +960,7 @@ struct iio_context * network_create_context(const char *host)
 	ctx->pdata = pdata;
 
 #ifdef HAVE_IPV6
-	len = INET6_ADDRSTRLEN + 1;
+	len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
 #else
 	len = INET_ADDRSTRLEN + 1;
 #endif
@@ -974,8 +975,18 @@ struct iio_context * network_create_context(const char *host)
 #ifdef HAVE_IPV6
 	if (res->ai_family == AF_INET6) {
 		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
+		char *ptr;
 		inet_ntop(AF_INET6, &in->sin6_addr,
 				ctx->description, INET6_ADDRSTRLEN);
+
+		ptr = if_indextoname(in->sin6_scope_id, ctx->description +
+				strlen(ctx->description) + 1);
+		if (!ptr) {
+			ERROR("Unable to lookup interface of IPv6 address\n");
+			goto err_network_shutdown;
+		}
+
+		*(ptr - 1) = '%';
 	}
 #endif
 	if (res->ai_family == AF_INET) {
