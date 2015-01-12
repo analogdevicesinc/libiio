@@ -37,6 +37,19 @@ if (NOT WIN32)
 	endif()
 endif()
 
+option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
+
+include(CheckSymbolExists)
+check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
+
+if (ENABLE_IPV6)
+	if (NOT HAVE_IPV6)
+		message(WARNING "IPv6 is not available in your system.")
+	else()
+		add_definitions(-DHAVE_IPV6=1)
+	endif()
+endif()
+
 find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 find_library(AVAHI_COMMON_LIBRARIES avahi-common)
 find_library(PTHREAD_LIBRARIES pthread)
