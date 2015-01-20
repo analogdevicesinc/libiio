@@ -720,6 +720,7 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
+#ifdef _WIN32
 static int set_socket_timeout(int fd, unsigned int timeout)
 {
 	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
@@ -730,6 +731,21 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 	else
 		return 0;
 }
+#else
+static int set_socket_timeout(int fd, unsigned int timeout)
+{
+	struct timeval tv;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				&tv, sizeof(tv)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+#endif /* _WIN32 */
 
 static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
 {
