@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 2.8.7)
 project(libiio C)
 
 set(LIBIIO_VERSION_MAJOR 0)
-set(LIBIIO_VERSION_MINOR 2)
+set(LIBIIO_VERSION_MINOR 3)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
 
 # Set the default install path to /usr
-if (NOT MSVC AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
 endif()
 
@@ -17,9 +17,11 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 	CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 
-if (NOT MSVC)
+if (NOT WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 
 	option(WITH_TESTS "Build the test programs" ON)
@@ -32,6 +34,19 @@ if (NOT MSVC)
 
 	if (WITH_IIOD AND NOT WITH_LOCAL_BACKEND)
 		message(SEND_ERROR "IIOD can only be enabled if the local backend is enabled")
+	endif()
+endif()
+
+option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
+
+include(CheckSymbolExists)
+check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
+
+if (ENABLE_IPV6)
+	if (NOT HAVE_IPV6)
+		message(WARNING "IPv6 is not available in your system.")
+	else()
+		add_definitions(-DHAVE_IPV6=1)
 	endif()
 endif()
 
@@ -85,7 +100,7 @@ if(WITH_NETWORK_BACKEND)
 		message(SEND_ERROR "The network backend requires libxml2 to be installed")
 	endif()
 
-	if (MSVC)
+	if (WIN32)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} wsock32 ws2_32)
 	endif()
 
@@ -115,7 +130,7 @@ install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
 
-add_library(iio SHARED ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
+add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
 set_target_properties(iio PROPERTIES VERSION ${VERSION} SOVERSION ${LIBIIO_VERSION_MAJOR})
 target_link_libraries(iio LINK_PRIVATE ${LIBS_TO_LINK})
 

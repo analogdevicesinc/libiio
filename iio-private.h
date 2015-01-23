@@ -24,7 +24,7 @@
 
 #include <stdbool.h>
 
-#ifdef _MSC_BUILD
+#ifdef _WIN32
 #define snprintf sprintf_s
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
@@ -102,6 +102,7 @@ struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
 	const char *name;
+	char *description;
 
 	struct iio_device **devices;
 	unsigned int nb_devices;
@@ -177,6 +178,11 @@ ssize_t iio_device_write_raw(const struct iio_device *dev,
 
 int read_double(const char *str, double *val);
 void write_double(char *buf, size_t len, double val);
+
+struct iio_context * local_create_context(void);
+struct iio_context * network_create_context(const char *hostname);
+struct iio_context * xml_create_context_mem(const char *xml, size_t len);
+struct iio_context * xml_create_context(const char *xml_file);
 
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,

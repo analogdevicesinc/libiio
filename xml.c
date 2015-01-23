@@ -261,7 +261,7 @@ err_free_device:
 
 static struct iio_context * xml_clone(const struct iio_context *ctx)
 {
-	return iio_create_xml_context_mem(ctx->xml, strlen(ctx->xml));
+	return xml_create_context_mem(ctx->xml, strlen(ctx->xml));
 }
 
 static struct iio_backend_ops xml_ops = {
@@ -326,7 +326,7 @@ err_free_ctx:
 	return NULL;
 }
 
-struct iio_context * iio_create_xml_context(const char *xml_file)
+struct iio_context * xml_create_context(const char *xml_file)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
@@ -345,7 +345,7 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	return ctx;
 }
 
-struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
+struct iio_context * xml_create_context_mem(const char *xml, size_t len)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;

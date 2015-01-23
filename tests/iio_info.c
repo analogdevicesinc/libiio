@@ -125,6 +125,9 @@ int main(int argc, char **argv)
 	else
 		ERROR("Unable to get backend version: %i\n", ret);
 
+	INFO("Backend description string: %s\n",
+			iio_context_get_description(ctx));
+
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
 	INFO("IIO context has %u devices:\n", nb_devices);
 

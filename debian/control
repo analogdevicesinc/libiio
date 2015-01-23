@@ -22,7 +22,7 @@ Description: Library for interfacing with IIO devices
  This package contains the shared library.
 
 Package: libiio-dev
-Architecture: all
+Architecture: any
 Depends: libiio0 (>= ${binary:Version}), ${misc:Depends}
 Description: libiio development files
  Libiio is a library that has been conceived to ease the development of

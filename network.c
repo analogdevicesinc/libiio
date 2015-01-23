@@ -30,6 +30,11 @@
 #include <time.h>
 
 #ifdef _WIN32
+/* Override the default version of Windows supported by MinGW.
+ * This is required to use the function inet_ntop. */
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #define close(s) closesocket(s)
@@ -38,14 +43,17 @@
 #undef ERROR
 
 #else /* _WIN32 */
+#include <arpa/inet.h>
 #include <netdb.h>
-#if HAVE_PTHREAD
-#include <pthread.h>
-#endif
+#include <net/if.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
+
+#if HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 #ifdef HAVE_AVAHI
 #include <avahi-client/client.h>
@@ -66,7 +74,6 @@
 
 struct iio_context_pdata {
 	int fd;
-	char *host;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -660,8 +667,6 @@ static void network_shutdown(struct iio_context *ctx)
 	/* XXX(pcercuei): is this safe? */
 	pthread_mutex_destroy(&pdata->lock);
 #endif
-	if (pdata->host)
-		free(pdata->host);
 	free(pdata);
 
 	for (i = 0; i < ctx->nb_devices; i++) {
@@ -715,6 +720,7 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
+#ifdef _WIN32
 static int set_socket_timeout(int fd, unsigned int timeout)
 {
 	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
@@ -725,6 +731,21 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 	else
 		return 0;
 }
+#else
+static int set_socket_timeout(int fd, unsigned int timeout)
+{
+	struct timeval tv;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				&tv, sizeof(tv)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+#endif /* _WIN32 */
 
 static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
 {
@@ -757,7 +778,7 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 static struct iio_context * network_clone(const struct iio_context *ctx)
 {
-	return iio_create_network_context(ctx->pdata->host);
+	return iio_create_network_context(ctx->description);
 }
 
 static struct iio_backend_ops network_ops = {
@@ -863,13 +884,13 @@ end:
 }
 #endif
 
-struct iio_context * iio_create_network_context(const char *host)
+struct iio_context * network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
 	struct timeval timeout;
-	unsigned int i;
+	unsigned int i, len;
 	int fd, ret;
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -941,26 +962,54 @@ struct iio_context * iio_create_network_context(const char *host)
 		goto err_close_socket;
 	}
 
-	if (host) {
-		pdata->host = strdup(host);
-		if (!pdata->host) {
-			ERROR("Unable to allocate memory\n");
-			goto err_free_pdata;
-		}
-	}
-
 	pdata->fd = fd;
 
 	DEBUG("Creating context...\n");
 	ctx = get_context(fd);
 	if (!ctx)
-		goto err_free_pdata_host;
+		goto err_free_pdata;
 
 	/* Override the name and low-level functions of the XML context
 	 * with those corresponding to the network context */
 	ctx->name = "network";
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
+
+#ifdef HAVE_IPV6
+	len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
+#else
+	len = INET_ADDRSTRLEN + 1;
+#endif
+	ctx->description = malloc(len);
+	if (!ctx->description) {
+		ERROR("Unable to allocate memory\n");
+		goto err_network_shutdown;
+	}
+
+	ctx->description[0] = '\0';
+
+#ifdef HAVE_IPV6
+	if (res->ai_family == AF_INET6) {
+		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
+		char *ptr;
+		inet_ntop(AF_INET6, &in->sin6_addr,
+				ctx->description, INET6_ADDRSTRLEN);
+
+		ptr = if_indextoname(in->sin6_scope_id, ctx->description +
+				strlen(ctx->description) + 1);
+		if (!ptr) {
+			ERROR("Unable to lookup interface of IPv6 address\n");
+			goto err_network_shutdown;
+		}
+
+		*(ptr - 1) = '%';
+	}
+#endif
+	if (res->ai_family == AF_INET) {
+		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
+		inet_ntop(AF_INET, &in->sin_addr,
+				ctx->description, INET_ADDRSTRLEN);
+	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
@@ -996,10 +1045,6 @@ struct iio_context * iio_create_network_context(const char *host)
 err_network_shutdown:
 	iio_context_destroy(ctx);
 	return NULL;
-
-err_free_pdata_host:
-	if (pdata->host)
-		free(pdata->host);
 err_free_pdata:
 	free(pdata);
 err_close_socket:
