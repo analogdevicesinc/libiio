@@ -725,9 +725,9 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 static int set_socket_timeout(int fd, unsigned int timeout)
 {
 	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-				&timeout, sizeof(timeout)) < 0 ||
+				(const char *) &timeout, sizeof(timeout)) < 0 ||
 			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				&timeout, sizeof(timeout)) < 0)
+				(const char *) &timeout, sizeof(timeout)) < 0)
 		return -errno;
 	else
 		return 0;
@@ -956,7 +956,8 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+			(const char *) &yes, sizeof(yes));
 
 	pdata = calloc(1, sizeof(*pdata));
 	if (!pdata) {
