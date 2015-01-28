@@ -45,6 +45,7 @@
 #else /* _WIN32 */
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
 #include <net/if.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -891,7 +892,7 @@ struct iio_context * network_create_context(const char *host)
 	struct iio_context_pdata *pdata;
 	struct timeval timeout;
 	unsigned int i, len;
-	int fd, ret;
+	int fd, ret, yes = 1;
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -955,6 +956,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
 
 	pdata = calloc(1, sizeof(*pdata));
 	if (!pdata) {
