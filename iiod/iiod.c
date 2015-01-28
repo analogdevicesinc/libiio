@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -38,12 +39,6 @@
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
 #endif
-
-/* For some reason, <netinet/tcp.h> needs this to define SOL_TCP */
-#ifndef __USE_MISC
-#define __USE_MISC
-#endif
-#include <netinet/tcp.h>
 
 #define MY_NAME "iiod"
 
@@ -310,13 +305,13 @@ int main(int argc, char **argv)
 		 * and disconnect the client if no reply was received for one
 		 * minute. */
 		setsockopt(new, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
-		setsockopt(new, SOL_TCP, TCP_KEEPCNT, &keepalive_probes,
+		setsockopt(new, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_probes,
 				sizeof(keepalive_probes));
-		setsockopt(new, SOL_TCP, TCP_KEEPIDLE, &keepalive_time,
+		setsockopt(new, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_time,
 				sizeof(keepalive_time));
-		setsockopt(new, SOL_TCP, TCP_KEEPINTVL, &keepalive_intvl,
+		setsockopt(new, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_intvl,
 				sizeof(keepalive_intvl));
-		setsockopt(new, SOL_TCP, TCP_NODELAY, &yes, sizeof(yes));
+		setsockopt(new, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
