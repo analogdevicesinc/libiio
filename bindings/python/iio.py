@@ -338,8 +338,8 @@ class Buffer(object):
 		_buffer_push(self._buffer)
 
 	def read(self):
-		start = _buffer_start(_buffer)
-		end = _buffer_end(_buffer)
+		start = _buffer_start(self._buffer)
+		end = _buffer_end(self._buffer)
 		array = bytearray(end - start)
 		mytype = c_char * len(array)
 		c_array = mytype.from_buffer(array)
@@ -347,8 +347,8 @@ class Buffer(object):
 		return array
 
 	def write(self, array):
-		start = _buffer_start(_buffer)
-		end = _buffer_end(_buffer)
+		start = _buffer_start(self._buffer)
+		end = _buffer_end(self._buffer)
 		length = end - start
 		if length > len(array):
 			length = len(array)
