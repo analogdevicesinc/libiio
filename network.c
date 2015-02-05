@@ -45,6 +45,7 @@
 #else /* _WIN32 */
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <net/if.h>
 #include <sys/select.h>
