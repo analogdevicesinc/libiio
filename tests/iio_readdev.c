@@ -69,18 +69,22 @@ unsigned int num_samples;
 static bool app_running = true;
 static int exit_code = EXIT_SUCCESS;
 
-void quit_all(int sig)
+static void quit_all(int sig)
 {
 	exit_code = sig;
 	app_running = false;
 }
 
-static void set_handler(int signal, void (*handler)(int))
+static void set_handler(int signal_nb, void (*handler)(int))
 {
+#ifdef _WIN32
+	signal(signal_nb, handler);
+#else
 	struct sigaction sig;
-	sigaction(signal, NULL, &sig);
+	sigaction(signal_nb, NULL, &sig);
 	sig.sa_handler = handler;
-	sigaction(signal, &sig, NULL);
+	sigaction(signal_nb, &sig, NULL);
+#endif
 }
 
 static struct iio_device * get_device(const struct iio_context *ctx,
@@ -177,7 +181,9 @@ int main(int argc, char **argv)
 	}
 
 
+#ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
+#endif
 	set_handler(SIGINT, &quit_all);
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
