@@ -1,3 +1,11 @@
+libiio (0.4-0) unstable; urgency=low
+
+  * Boost communication speed of the network backend
+  * Fix socket I/O timeout on UNIX systems
+  * New API function: iio_context_get_description
+
+ -- Paul Cercueil <paul.cercueil@analog.com>  Fri, 6 Feb 2015 11:42:01 +0200
+
 libiio (0.3-0) unstable; urgency=low
 
   * Improved error handling

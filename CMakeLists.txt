@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project(libiio C)
 
 set(LIBIIO_VERSION_MAJOR 0)
-set(LIBIIO_VERSION_MINOR 3)
+set(LIBIIO_VERSION_MINOR 4)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
 
 # Set the default install path to /usr
@@ -10,6 +10,8 @@ if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
 endif()
 
+set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin"
+	CACHE PATH "Installation directory for binaries")
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib"
 	CACHE PATH "Installation directory for libraries")
 set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
@@ -21,16 +23,17 @@ set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 
+if (NOT MSVC)
+	option(WITH_TESTS "Build the test programs" ON)
+endif()
+
 if (NOT WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+endif()
 
-	option(WITH_TESTS "Build the test programs" ON)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(WITH_IIOD "Build the IIO Daemon" ON)
 	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
-
-	if (WITH_TESTS AND NOT (WITH_LOCAL_BACKEND AND WITH_NETWORK_BACKEND))
-		message(SEND_ERROR "Test programs can only enabled if the local and network backends are both enabled")
-	endif()
 
 	if (WITH_IIOD AND NOT WITH_LOCAL_BACKEND)
 		message(SEND_ERROR "IIOD can only be enabled if the local backend is enabled")
@@ -141,7 +144,8 @@ endif()
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
 	install(TARGETS iio
 		ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-		LIBRARY DESTINATION "${INSTALL_LIB_DIR}")
+		LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
+		RUNTIME DESTINATION "${INSTALL_BIN_DIR}")
 endif()
 
 find_package(Doxygen)
