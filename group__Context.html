@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.2</span>
+   &#160;<span id="projectnumber">0.4</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -122,6 +122,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gaa07d9c8e3730ae646fb54cbbd4368101"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gaa07d9c8e3730ae646fb54cbbd4368101">iio_context_get_name</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:gaa07d9c8e3730ae646fb54cbbd4368101"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the name of the given context.  <a href="#gaa07d9c8e3730ae646fb54cbbd4368101">More...</a><br /></td></tr>
 <tr class="separator:gaa07d9c8e3730ae646fb54cbbd4368101"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga5adbbac8ca9f6e6798f8904cfe6d7a1c">iio_context_get_description</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
+<tr class="memdesc:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a description of the given context.  <a href="#ga5adbbac8ca9f6e6798f8904cfe6d7a1c">More...</a><br /></td></tr>
+<tr class="separator:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2acae321e081d85d61b6960f11c99573"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga2acae321e081d85d61b6960f11c99573">iio_context_get_devices_count</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga2acae321e081d85d61b6960f11c99573"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the devices found in the given context.  <a href="#ga2acae321e081d85d61b6960f11c99573">More...</a><br /></td></tr>
 <tr class="separator:ga2acae321e081d85d61b6960f11c99573"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -224,6 +227,32 @@ On failure, NULL is returned </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, a pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </dd>
 <dd>
 If the name or ID does not correspond to any known device, NULL is returned </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga5adbbac8ca9f6e6798f8904cfe6d7a1c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __pure const char* iio_context_get_description </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get a description of the given context. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ctx</td><td>A pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a static NULL-terminated string</dd></dl>
+<p><b>NOTE:</b>The returned string will contain human-readable information about the current context. </p>
 
 </div>
 </div>
@@ -571,7 +600,7 @@ On failure, NULL is returned</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Nov 27 2014 16:14:39 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 6 2015 12:19:53 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.8
 </small></address>
