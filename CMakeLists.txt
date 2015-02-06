@@ -22,7 +22,10 @@ set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
-option(WITH_TESTS "Build the test programs" ON)
+
+if (NOT MSVC)
+	option(WITH_TESTS "Build the test programs" ON)
+endif()
 
 if (NOT WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
