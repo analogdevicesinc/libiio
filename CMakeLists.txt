@@ -126,6 +126,10 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 endif()
 
+if (MINGW)
+	set(LIBS_TO_LINK ${LIBS_TO_LINK} msvcr110)
+endif()
+
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
 configure_file(libiio.pc.cmakein ${LIBIIO_PC} @ONLY)
 install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
