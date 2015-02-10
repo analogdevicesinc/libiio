@@ -51,7 +51,7 @@ static void write_double_locale(char *buf, size_t len, double val)
 {
 	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
 
-	_snprintf_l(buf, len, "%lf", locale);
+	_snprintf_l(buf, len, "%lf", locale, val);
 	_free_locale(locale);
 }
 #else
