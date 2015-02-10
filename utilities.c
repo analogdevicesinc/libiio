@@ -24,40 +24,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOCALE_SUPPORT defined(_MSC_BUILD) || (defined(__USE_XOPEN2K8) && \
+#if defined(_WIN32) || (defined(__USE_XOPEN2K8) && \
 		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
+#define LOCALE_SUPPORT
+#endif
 
-int read_double(const char *str, double *val)
+#ifdef LOCALE_SUPPORT
+#ifdef _WIN32
+static int read_double_locale(const char *str, double *val)
 {
-	double value;
 	char *end;
-#if LOCALE_SUPPORT == 1
-#ifdef _MSC_BUILD
-	int config;
-	_locale_t old_locale;
+	double value;
+	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
 
-	config = _configurethreadlocale(_ENABLE_PER_THREAD_LOCALE);
-	old_locale = _get_current_locale();
-	setlocale(LC_NUMERIC, "POSIX");
-#else
-	locale_t old_locale, new_locale;
-
-	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
-	old_locale = uselocale(new_locale);
-#endif
-#endif
-
-	value = strtod(str, &end);
-
-#if LOCALE_SUPPORT == 1
-#ifdef _MSC_BUILD
-	setlocale(old_locale);
-	_configurethreadlocale(config);
-#else
-	uselocale(old_locale);
-	freelocale(new_locale);
-#endif
-#endif
+	value = _strtod_l(str, &end, locale);
+	_free_locale(locale);
 
 	if (end == str)
 		return -EINVAL;
@@ -66,34 +47,71 @@ int read_double(const char *str, double *val)
 	return 0;
 }
 
-void write_double(char *buf, size_t len, double val)
+static void write_double_locale(char *buf, size_t len, double val)
 {
-#if LOCALE_SUPPORT == 1
-#ifdef _MSC_BUILD
-	int config;
-	_locale_t old_locale;
+	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
 
-	config = _configurethreadlocale(_ENABLE_PER_THREAD_LOCALE);
-	old_locale = _get_current_locale();
-	setlocale(LC_NUMERIC, "POSIX");
+	_snprintf_l(buf, len, "%lf", locale, val);
+	_free_locale(locale);
+}
 #else
+static int read_double_locale(const char *str, double *val)
+{
+	char *end;
+	double value;
 	locale_t old_locale, new_locale;
 
 	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
 	old_locale = uselocale(new_locale);
-#endif
-#endif
+
+	value = strtod(str, &end);
+	uselocale(old_locale);
+	freelocale(new_locale);
+
+	if (end == str)
+		return -EINVAL;
+
+	*val = value;
+	return 0;
+}
+
+static void write_double_locale(char *buf, size_t len, double val)
+{
+	locale_t old_locale, new_locale;
+
+	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
+	old_locale = uselocale(new_locale);
 
 	snprintf(buf, len, "%lf", val);
 
-#if LOCALE_SUPPORT == 1
-#ifdef _MSC_BUILD
-	setlocale(old_locale);
-	_configurethreadlocale(config);
-#else
 	uselocale(old_locale);
 	freelocale(new_locale);
+}
 #endif
+#endif
+
+int read_double(const char *str, double *val)
+{
+#ifdef LOCALE_SUPPORT
+	return read_double_locale(str, val);
+#else
+	char *end;
+	double value = strtod(str, &end);
+
+	if (end == str)
+		return -EINVAL;
+
+	*val = value;
+	return 0;
+#endif
+}
+
+void write_double(char *buf, size_t len, double val)
+{
+#ifdef LOCALE_SUPPORT
+	write_double_locale(buf, len, val);
+#else
+	snprintf(buf, len, "%lf", val);
 #endif
 }
 
