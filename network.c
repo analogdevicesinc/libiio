@@ -305,6 +305,129 @@ static long exec_command(const char *cmd, int fd)
 	return resp;
 }
 
+#ifndef _WIN32
+static int set_blocking_mode(int fd, bool blocking)
+{
+	int ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return -errno;
+
+	if (blocking)
+		ret &= ~O_NONBLOCK;
+	else
+		ret |= O_NONBLOCK;
+
+	ret = fcntl(fd, F_SETFL, ret);
+	return ret < 0 ? -errno : 0;
+}
+
+/* The purpose of this function is to provide a version of connect()
+ * that does not ignore timeouts... */
+static int do_connect(int fd, const struct sockaddr *addr,
+		socklen_t addrlen, struct timeval *timeout)
+{
+	int ret, error;
+	socklen_t len;
+	fd_set set;
+
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+
+	ret = set_blocking_mode(fd, false);
+	if (ret < 0)
+		return ret;
+
+	ret = connect(fd, addr, addrlen);
+	if (ret < 0 && errno != EINPROGRESS) {
+		ret = -errno;
+		goto end;
+	}
+
+	ret = select(fd + 1, &set, &set, NULL, timeout);
+	if (ret < 0) {
+		ret = -errno;
+		goto end;
+	}
+	if (ret == 0) {
+		ret = -ETIMEDOUT;
+		goto end;
+	}
+
+	/* Verify that we don't have an error */
+	len = sizeof(error);
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
+	if(ret < 0) {
+		ret = -errno;
+		goto end;
+	}
+	if (error) {
+		ret = -error;
+		goto end;
+	}
+
+end:
+	/* Restore blocking mode */
+	set_blocking_mode(fd, true);
+	return ret;
+}
+
+static int set_socket_timeout(int fd, unsigned int timeout)
+{
+	struct timeval tv;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				&tv, sizeof(tv)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+#else
+static int set_socket_timeout(int fd, unsigned int timeout)
+{
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
+				(const char *) &timeout, sizeof(timeout)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				(const char *) &timeout, sizeof(timeout)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+#endif /* !_WIN32 */
+
+static int create_socket(const struct addrinfo *addrinfo)
+{
+	struct timeval timeout;
+	int ret, fd, yes = 1;
+
+	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	if (fd < 0) {
+		ERROR("Unable to open socket\n");
+		return fd;
+	}
+
+	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
+	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
+
+#ifndef _WIN32
+	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
+#else
+	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
+#endif
+	if (ret < 0) {
+		ERROR("Unable to connect\n");
+		close(fd);
+		return ret;
+	}
+
+	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+			(const char *) &yes, sizeof(yes));
+	return fd;
+}
+
 static int network_open(const struct iio_device *dev, size_t samples_count,
 		uint32_t *mask, size_t nb, bool cyclic)
 {
@@ -724,33 +847,6 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
-#ifdef _WIN32
-static int set_socket_timeout(int fd, unsigned int timeout)
-{
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0)
-		return -errno;
-	else
-		return 0;
-}
-#else
-static int set_socket_timeout(int fd, unsigned int timeout)
-{
-	struct timeval tv;
-
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				&tv, sizeof(tv)) < 0)
-		return -errno;
-	else
-		return 0;
-}
-#endif /* _WIN32 */
-
 static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	char buf[1024];
@@ -830,72 +926,13 @@ static struct iio_context * get_context(int fd)
 	return ctx;
 }
 
-#ifndef _WIN32
-/* The purpose of this function is to provide a version of connect()
- * that does not ignore timeouts... */
-static int do_connect(int fd, const struct sockaddr *addr,
-		socklen_t addrlen, struct timeval *timeout)
-{
-	int ret, flags, error;
-	socklen_t len;
-	fd_set set;
-
-	FD_ZERO(&set);
-	FD_SET(fd, &set);
-
-	ret = fcntl(fd, F_GETFL, 0);
-	if (ret < 0)
-		return -errno;
-
-	flags = ret;
-
-	ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-	if (ret < 0)
-		return -errno;
-
-	ret = connect(fd, addr, addrlen);
-	if (ret < 0 && errno != EINPROGRESS) {
-		ret = -errno;
-		goto end;
-	}
-
-	ret = select(fd + 1, &set, &set, NULL, timeout);
-	if (ret < 0) {
-		ret = -errno;
-		goto end;
-	}
-	if (ret == 0) {
-		ret = -ETIMEDOUT;
-		goto end;
-	}
-
-	/* Verify that we don't have an error */
-	len = sizeof(error);
-	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
-	if(ret < 0) {
-		ret = -errno;
-		goto end;
-	}
-	if (error) {
-		ret = -error;
-		goto end;
-	}
-
-end:
-	/* Restore blocking mode */
-	fcntl(fd, F_SETFL, flags);
-	return ret;
-}
-#endif
-
 struct iio_context * network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
-	struct timeval timeout;
 	unsigned int i, len;
-	int fd, ret, yes = 1;
+	int fd, ret;
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -939,28 +976,9 @@ struct iio_context * network_create_context(const char *host)
 		return NULL;
 	}
 
-	fd = socket(res->ai_family, res->ai_socktype, 0);
-	if (fd < 0) {
-		ERROR("Unable to open socket\n");
+	fd = create_socket(res);
+	if (fd < 0)
 		goto err_free_addrinfo;
-	}
-
-	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
-	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
-
-#ifndef _WIN32
-	ret = do_connect(fd, res->ai_addr, res->ai_addrlen, &timeout);
-#else
-	ret = connect(fd, res->ai_addr, res->ai_addrlen);
-#endif
-	if (ret < 0) {
-		ERROR("Unable to connect\n");
-		goto err_close_socket;
-	}
-
-	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-			(const char *) &yes, sizeof(yes));
 
 	pdata = calloc(1, sizeof(*pdata));
 	if (!pdata) {
