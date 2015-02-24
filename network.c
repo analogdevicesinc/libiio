@@ -84,6 +84,7 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	int fd;
+	bool wait_for_err_code;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -487,8 +488,39 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 	}
 
 	dev->pdata->fd = fd;
+	dev->pdata->wait_for_err_code = false;
 	memcpy(dev->mask, mask, nb * sizeof(*mask));
 	return 0;
+}
+
+static ssize_t read_error_code(int fd)
+{
+	/*
+	 * The server returns two integer codes.
+	 * The first one is returned right after the WRITEBUF command is issued,
+	 * and corresponds to the error code returned when the server attempted
+	 * to open the device.
+	 * If zero, a second error code is returned, that corresponds (if positive)
+	 * to the number of bytes written.
+	 *
+	 * To speed up things, we delay error reporting. We just send out the
+	 * data without reading the error code that the server gives us, because
+	 * the answer will take too much time. If an error occured, it will be
+	 * reported by the next call to iio_buffer_push().
+	 */
+
+	unsigned int i;
+	long resp = 0;
+
+	for (i = 0; i < 2; i++) {
+		ssize_t ret = read_integer(fd, &resp);
+		if (ret < 0)
+			return ret;
+		if (resp < 0)
+			return (ssize_t) resp;
+	}
+
+	return resp;
 }
 
 static int network_close(const struct iio_device *dev)
@@ -500,6 +532,9 @@ static int network_close(const struct iio_device *dev)
 	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
 	network_lock_dev(pdata);
+	if (pdata->wait_for_err_code)
+		read_error_code(pdata->fd);
+
 	ret = (int) exec_command(buf, pdata->fd);
 
 	close(pdata->fd);
@@ -525,6 +560,15 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 			dev->id, (unsigned long) len);
 
 	network_lock_dev(pdata);
+	if (pdata->wait_for_err_code) {
+		pdata->wait_for_err_code = false;
+		ret = read_error_code(fd);
+		if (ret < 0) {
+			network_unlock_dev(pdata);
+			return ret;
+		}
+	}
+
 	ret = write_command(buf, fd);
 	if (ret < 0) {
 		network_unlock_dev(pdata);
@@ -613,7 +657,15 @@ static ssize_t network_write(const struct iio_device *dev,
 
 	network_lock_dev(pdata);
 	fd = pdata->fd;
-	ret = (ssize_t) exec_command(buf, fd);
+
+	if (pdata->wait_for_err_code) {
+		pdata->wait_for_err_code = false;
+		ret = read_error_code(fd);
+		if (ret < 0)
+			goto err_unlock;
+	}
+
+	ret = (ssize_t) write_command(buf, fd);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -621,12 +673,12 @@ static ssize_t network_write(const struct iio_device *dev,
 	if (ret < 0)
 		goto err_unlock;
 
-	ret = read_integer(fd, &resp);
+	pdata->wait_for_err_code = true;
 	network_unlock_dev(pdata);
 
-	if (ret < 0)
-		return ret;
-	return (ssize_t) resp;
+	/* We assume that the whole buffer was submitted.
+	 * The error code will be returned by the next call to this function. */
+	return (ssize_t) len;
 
 err_unlock:
 	network_unlock_dev(pdata);
