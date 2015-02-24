@@ -24,6 +24,7 @@
 #include <math.h>
 #include <errno.h>
 #include <pthread.h>
+#include <unistd.h>
 
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
