@@ -582,22 +582,21 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	return read;
 }
 
-static ssize_t do_write(const struct iio_device *dev, bool attr,
-		const char *command, const void *src, size_t len)
+static ssize_t network_write(const struct iio_device *dev,
+		const void *src, size_t len)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	int fd;
 	ssize_t ret;
 	long resp;
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+			dev->id, (unsigned long) len);
 
 	network_lock(pdata);
-	if (attr) {
-		fd = pdata->fd;
-		ret = (ssize_t) write_command(command, fd);
-	} else {
-		fd = dev->pdata->fd;
-		ret = (ssize_t) exec_command(command, fd);
-	}
+	fd = dev->pdata->fd;
+	ret = (ssize_t) exec_command(buf, fd);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -615,15 +614,6 @@ static ssize_t do_write(const struct iio_device *dev, bool attr,
 err_unlock:
 	network_unlock(pdata);
 	return ret;
-}
-
-static ssize_t network_write(const struct iio_device *dev,
-		const void *src, size_t len)
-{
-	char buf[1024];
-	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-			dev->id, (unsigned long) len);
-	return do_write(dev, false, buf, src, len);
 }
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
@@ -677,6 +667,10 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 		const struct iio_channel *chn, const char *attr,
 		const char *src, size_t len, bool is_debug)
 {
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+	int fd;
+	ssize_t ret;
+	long resp;
 	char buf[1024];
 	const char *id = dev->id;
 
@@ -690,7 +684,27 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
 				id, attr ? attr : "", (unsigned long) len);
-	return do_write(dev, true, buf, src, len);
+
+	network_lock(pdata);
+	fd = pdata->fd;
+	ret = (ssize_t) write_command(buf, fd);
+	if (ret < 0)
+		goto err_unlock;
+
+	ret = write_all(src, len, fd);
+	if (ret < 0)
+		goto err_unlock;
+
+	ret = read_integer(fd, &resp);
+	network_unlock(pdata);
+
+	if (ret < 0)
+		return ret;
+	return (ssize_t) resp;
+
+err_unlock:
+	network_unlock(pdata);
+	return ret;
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
