@@ -82,6 +82,10 @@ struct iio_context_pdata {
 #endif
 };
 
+struct iio_device_pdata {
+	int fd;
+};
+
 #ifdef HAVE_AVAHI
 struct avahi_discovery_data {
 	AvahiSimplePoll *poll;
@@ -431,12 +435,19 @@ static int create_socket(const struct addrinfo *addrinfo)
 static int network_open(const struct iio_device *dev, size_t samples_count,
 		uint32_t *mask, size_t nb, bool cyclic)
 {
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	char buf[1024], *ptr;
 	unsigned int i;
-	int ret;
+	int ret, fd;
 
 	if (nb != dev->words)
 		return -EINVAL;
+	if (dev->pdata->fd >= 0)
+		return -EBUSY;
+
+	fd = create_socket(pdata->addrinfo);
+	if (fd < 0)
+		return fd;
 
 	snprintf(buf, sizeof(buf), "OPEN %s %lu ",
 			dev->id, (unsigned long) samples_count);
@@ -450,27 +461,33 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
 
 	network_lock(dev->ctx->pdata);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
+	ret = (int) exec_command(buf, fd);
 	network_unlock(dev->ctx->pdata);
 
 	if (ret < 0) {
+		close(fd);
 		return ret;
-	} else {
-		memcpy(dev->mask, mask, nb * sizeof(*mask));
-		return 0;
 	}
+
+	dev->pdata->fd = fd;
+	memcpy(dev->mask, mask, nb * sizeof(*mask));
+	return 0;
 }
 
 static int network_close(const struct iio_device *dev)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	int ret;
 	char buf[1024];
+
 	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
 	network_lock(dev->ctx->pdata);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
+	ret = (int) exec_command(buf, pdata->fd);
 	network_unlock(dev->ctx->pdata);
 
+	close(pdata->fd);
+	pdata->fd = -1;
 	return ret;
 }
 
@@ -479,7 +496,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 {
 	uintptr_t ptr = (uintptr_t) dst;
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
-	int fd = pdata->fd;
+	int fd = dev->pdata->fd;
 	ssize_t ret, read = 0;
 	char buf[1024];
 	bool read_mask = true;
@@ -565,18 +582,22 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	return read;
 }
 
-static ssize_t do_write(struct iio_context_pdata *pdata, bool attr,
+static ssize_t do_write(const struct iio_device *dev, bool attr,
 		const char *command, const void *src, size_t len)
 {
-	int fd = pdata->fd;
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+	int fd;
 	ssize_t ret;
 	long resp;
 
 	network_lock(pdata);
-	if (attr)
+	if (attr) {
+		fd = pdata->fd;
 		ret = (ssize_t) write_command(command, fd);
-	else
+	} else {
+		fd = dev->pdata->fd;
 		ret = (ssize_t) exec_command(command, fd);
+	}
 	if (ret < 0)
 		goto err_unlock;
 
@@ -602,7 +623,7 @@ static ssize_t network_write(const struct iio_device *dev,
 	char buf[1024];
 	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
-	return do_write(dev->ctx->pdata, false, buf, src, len);
+	return do_write(dev, false, buf, src, len);
 }
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
@@ -669,7 +690,7 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
 				id, attr ? attr : "", (unsigned long) len);
-	return do_write(dev->ctx->pdata, true, buf, src, len);
+	return do_write(dev, true, buf, src, len);
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
@@ -789,18 +810,26 @@ static void network_shutdown(struct iio_context *ctx)
 	close(pdata->fd);
 	network_unlock(pdata);
 
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+
+		if (dev->pdata) {
+			if (dev->pdata->fd >= 0) {
+				network_lock(pdata);
+				write_command("\r\nEXIT\r\n", dev->pdata->fd);
+				close(dev->pdata->fd);
+				network_unlock(pdata);
+			}
+
+			free(dev->pdata);
+		}
+	}
+
 #if HAVE_PTHREAD
-	/* XXX(pcercuei): is this safe? */
 	pthread_mutex_destroy(&pdata->lock);
 #endif
 	freeaddrinfo(pdata->addrinfo);
 	free(pdata);
-
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
-		if (dev->pdata)
-			free(dev->pdata);
-	}
 }
 
 static int network_get_version(const struct iio_context *ctx,
@@ -1038,18 +1067,23 @@ struct iio_context * network_create_context(const char *host)
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
-		uint32_t *mask = NULL;
 
 		dev->words = (dev->nb_channels + 31) / 32;
 		if (dev->words) {
-			mask = calloc(dev->words, sizeof(*mask));
-			if (!mask) {
+			dev->mask = calloc(dev->words, sizeof(*dev->mask));
+			if (!dev->mask) {
 				ERROR("Unable to allocate memory\n");
 				goto err_network_shutdown;
 			}
 		}
 
-		dev->mask = mask;
+		dev->pdata = calloc(1, sizeof(*dev->pdata));
+		if (!dev->pdata) {
+			ERROR("Unable to allocate memory\n");
+			goto err_network_shutdown;
+		}
+
+		dev->pdata->fd = -1;
 	}
 
 	iio_context_init(ctx);
