@@ -30,7 +30,45 @@
 #endif
 
 #ifdef LOCALE_SUPPORT
-#ifdef _WIN32
+#if defined(__MINGW32__)
+static int read_double_locale(const char *str, double *val)
+{
+	char *end, *old_locale;
+	double value;
+
+	/* XXX: This is not thread-safe, but it's the only way we have to
+	 * support locales under MinGW without linking with Visual Studio
+	 * libraries. */
+	old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	if (!old_locale)
+		return -ENOMEM;
+
+	setlocale(LC_NUMERIC, "C");
+	value = strtod(str, &end);
+	setlocale(LC_NUMERIC, old_locale);
+	free(old_locale);
+
+	if (end == str)
+		return -EINVAL;
+
+	*val = value;
+	return 0;
+}
+
+static int write_double_locale(char *buf, size_t len, double val)
+{
+	/* XXX: Not thread-safe, see above */
+	char *old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	if (!old_locale)
+		return -ENOMEM;
+
+	setlocale(LC_NUMERIC, "C");
+	snprintf(buf, len, "%lf", val);
+	setlocale(LC_NUMERIC, old_locale);
+	free(old_locale);
+	return 0;
+}
+#elif defined(_WIN32)
 static int read_double_locale(const char *str, double *val)
 {
 	char *end;
