@@ -36,6 +36,8 @@ static int read_double_locale(const char *str, double *val)
 	char *end;
 	double value;
 	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
+	if (!locale)
+		return -ENOMEM;
 
 	value = _strtod_l(str, &end, locale);
 	_free_locale(locale);
@@ -47,12 +49,15 @@ static int read_double_locale(const char *str, double *val)
 	return 0;
 }
 
-static void write_double_locale(char *buf, size_t len, double val)
+static int write_double_locale(char *buf, size_t len, double val)
 {
 	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
+	if (!locale)
+		return -ENOMEM;
 
 	_snprintf_l(buf, len, "%lf", locale, val);
 	_free_locale(locale);
+	return 0;
 }
 #else
 static int read_double_locale(const char *str, double *val)
@@ -62,6 +67,9 @@ static int read_double_locale(const char *str, double *val)
 	locale_t old_locale, new_locale;
 
 	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
+	if (!new_locale)
+		return -errno;
+
 	old_locale = uselocale(new_locale);
 
 	value = strtod(str, &end);
@@ -75,17 +83,21 @@ static int read_double_locale(const char *str, double *val)
 	return 0;
 }
 
-static void write_double_locale(char *buf, size_t len, double val)
+static int write_double_locale(char *buf, size_t len, double val)
 {
 	locale_t old_locale, new_locale;
 
 	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
+	if (!new_locale)
+		return -errno;
+
 	old_locale = uselocale(new_locale);
 
 	snprintf(buf, len, "%lf", val);
 
 	uselocale(old_locale);
 	freelocale(new_locale);
+	return 0;
 }
 #endif
 #endif
@@ -106,12 +118,13 @@ int read_double(const char *str, double *val)
 #endif
 }
 
-void write_double(char *buf, size_t len, double val)
+int write_double(char *buf, size_t len, double val)
 {
 #ifdef LOCALE_SUPPORT
-	write_double_locale(buf, len, val);
+	return write_double_locale(buf, len, val);
 #else
 	snprintf(buf, len, "%lf", val);
+	return 0;
 #endif
 }
 

@@ -556,8 +556,10 @@ int iio_channel_attr_write_double(const struct iio_channel *chn,
 {
 	ssize_t ret;
 	char buf[1024];
-	write_double(buf, sizeof(buf), val);
-	ret = iio_channel_attr_write(chn, attr, buf);
+
+	ret = (ssize_t) write_double(buf, sizeof(buf), val);
+	if (!ret)
+		ret = iio_channel_attr_write(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 

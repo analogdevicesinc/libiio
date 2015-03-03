@@ -509,9 +509,9 @@ int iio_device_attr_write_double(const struct iio_device *dev,
 	ssize_t ret;
 	char buf[1024];
 
-	write_double(buf, sizeof(buf), val);
-	ret = iio_device_attr_write(dev, attr, buf);
-
+	ret = (ssize_t) write_double(buf, sizeof(buf), val);
+	if (!ret)
+		ret = iio_device_attr_write(dev, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
@@ -625,9 +625,9 @@ int iio_device_debug_attr_write_double(const struct iio_device *dev,
 	ssize_t ret;
 	char buf[1024];
 
-	write_double(buf, sizeof(buf), val);
-	ret = iio_device_debug_attr_write(dev, attr, buf);
-
+	ret = (ssize_t) write_double(buf, sizeof(buf), val);
+	if (!ret)
+		ret = iio_device_debug_attr_write(dev, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
