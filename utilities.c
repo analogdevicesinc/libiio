@@ -35,7 +35,7 @@ static int read_double_locale(const char *str, double *val)
 {
 	char *end;
 	double value;
-	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
+	_locale_t locale = _create_locale(LC_NUMERIC, "C");
 	if (!locale)
 		return -ENOMEM;
 
@@ -51,7 +51,7 @@ static int read_double_locale(const char *str, double *val)
 
 static int write_double_locale(char *buf, size_t len, double val)
 {
-	_locale_t locale = _create_locale(LC_NUMERIC, "POSIX");
+	_locale_t locale = _create_locale(LC_NUMERIC, "C");
 	if (!locale)
 		return -ENOMEM;
 
@@ -66,7 +66,7 @@ static int read_double_locale(const char *str, double *val)
 	double value;
 	locale_t old_locale, new_locale;
 
-	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
+	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
 	if (!new_locale)
 		return -errno;
 
@@ -87,7 +87,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 {
 	locale_t old_locale, new_locale;
 
-	new_locale = newlocale(LC_NUMERIC_MASK, "POSIX", (locale_t) 0);
+	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
 	if (!new_locale)
 		return -errno;
 
