@@ -76,6 +76,7 @@
 
 struct iio_context_pdata {
 	int fd;
+	struct addrinfo *addrinfo;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -669,6 +670,7 @@ static void network_shutdown(struct iio_context *ctx)
 	/* XXX(pcercuei): is this safe? */
 	pthread_mutex_destroy(&pdata->lock);
 #endif
+	freeaddrinfo(pdata->addrinfo);
 	free(pdata);
 
 	for (i = 0; i < ctx->nb_devices; i++) {
@@ -940,7 +942,7 @@ struct iio_context * network_create_context(const char *host)
 	fd = socket(res->ai_family, res->ai_socktype, 0);
 	if (fd < 0) {
 		ERROR("Unable to open socket\n");
-		return NULL;
+		goto err_free_addrinfo;
 	}
 
 	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
@@ -967,6 +969,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	pdata->fd = fd;
+	pdata->addrinfo = res;
 
 	DEBUG("Creating context...\n");
 	ctx = get_context(fd);
@@ -1053,5 +1056,7 @@ err_free_pdata:
 	free(pdata);
 err_close_socket:
 	close(fd);
+err_free_addrinfo:
+	freeaddrinfo(res);
 	return NULL;
 }

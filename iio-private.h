@@ -177,7 +177,7 @@ ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
 
 int read_double(const char *str, double *val);
-void write_double(char *buf, size_t len, double val);
+int write_double(char *buf, size_t len, double val);
 
 struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);

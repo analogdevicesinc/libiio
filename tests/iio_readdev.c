@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 	enum backend backend = LOCAL;
 	struct iio_device *dev;
 
-	while ((c = getopt_long(argc, argv, "+hn:t:",
+	while ((c = getopt_long(argc, argv, "+hn:t:b:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
