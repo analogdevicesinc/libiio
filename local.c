@@ -704,10 +704,19 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 
 
 	if (write_scan_elements) {
+		/* Disable channels */
+		for (i = 0; i < dev->nb_channels; i++) {
+			struct iio_channel *chn = dev->channels[i];
+			if (chn->index >= 0 && !iio_channel_is_enabled(chn)) {
+				ret = channel_write_state(chn);
+				if (ret < 0)
+					goto err_close;
+			}
+		}
 		/* Enable channels */
 		for (i = 0; i < dev->nb_channels; i++) {
 			struct iio_channel *chn = dev->channels[i];
-			if (chn->index >= 0) {
+			if (chn->index >= 0 && iio_channel_is_enabled(chn)) {
 				ret = channel_write_state(chn);
 				if (ret < 0)
 					goto err_close;
