@@ -89,8 +89,11 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	int fd;
+#ifdef __linux__
 	int memfd;
+	void *mmap_addr;
 	size_t mmap_len;
+#endif
 	bool wait_for_err_code, is_cyclic, is_tx;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
@@ -564,6 +567,17 @@ static int network_close(const struct iio_device *dev)
 	close(pdata->fd);
 	pdata->fd = -1;
 	network_unlock_dev(pdata);
+
+#ifdef __linux__
+	if (pdata->memfd >= 0)
+		close(pdata->memfd);
+	pdata->memfd = -1;
+
+	if (pdata->mmap_addr) {
+		munmap(pdata->mmap_addr, pdata->mmap_len);
+		pdata->mmap_addr = NULL;
+	}
+#endif
 	return ret;
 }
 
@@ -756,17 +770,16 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret;
 	bool tx;
-	void *ptr;
 
 	if (!pdata->is_tx || pdata->is_cyclic)
 		return -ENOSYS;
 	if (!addr_ptr)
 		return -EINVAL;
 
-	if (*addr_ptr)
-		munmap(*addr_ptr, pdata->mmap_len);
+	if (pdata->mmap_addr)
+		munmap(pdata->mmap_addr, pdata->mmap_len);
 
-	if (*addr_ptr && pdata->is_tx) {
+	if (pdata->mmap_addr && pdata->is_tx) {
 		long resp;
 		char buf[1024];
 		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
@@ -813,15 +826,16 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 	/* TODO: READBUF */
 
-	ptr = mmap(NULL, pdata->mmap_len,
+	pdata->mmap_addr = mmap(NULL, pdata->mmap_len,
 			PROT_READ | PROT_WRITE, MAP_SHARED, pdata->memfd, 0);
-	if (ptr == MAP_FAILED) {
+	if (pdata->mmap_addr == MAP_FAILED) {
+		pdata->mmap_addr = NULL;
 		ret = -errno;
 		ERROR("Unable to mmap: %i\n", -ret);
 		return ret;
 	}
 
-	*addr_ptr = ptr;
+	*addr_ptr = pdata->mmap_addr;
 	return bytes_used;
 
 err_unlock:
@@ -1313,7 +1327,9 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		dev->pdata->fd = -1;
+#ifdef __linux__
 		dev->pdata->memfd = -1;
+#endif
 
 #if HAVE_PTHREAD
 		ret = pthread_mutex_init(&dev->pdata->lock, NULL);
