@@ -24,6 +24,7 @@
 #include <math.h>
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <unistd.h>
 
 static const struct option options[] = {
@@ -184,7 +185,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+#ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
+#endif
 	set_handler(SIGINT, &quit_all);
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
