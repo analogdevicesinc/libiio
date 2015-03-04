@@ -16,6 +16,10 @@
  *
  * */
 
+#ifdef __linux__
+#define _GNU_SOURCE 1 /* Required for splice() */
+#endif
+
 #include "iio-private.h"
 
 #ifndef HAVE_PTHREAD
@@ -48,6 +52,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <net/if.h>
+#include <sys/mman.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -84,7 +89,9 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	int fd;
-	bool wait_for_err_code, is_cyclic;
+	int memfd;
+	size_t mmap_len;
+	bool wait_for_err_code, is_cyclic, is_tx;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -450,6 +457,19 @@ static int create_socket(const struct addrinfo *addrinfo)
 	return fd;
 }
 
+static bool is_tx(const struct iio_device *dev)
+{
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *ch = dev->channels[i];
+		if (iio_channel_is_output(ch) && iio_channel_is_enabled(ch))
+			return true;
+	}
+
+	return false;
+}
+
 static int network_open(const struct iio_device *dev, size_t samples_count,
 		uint32_t *mask, size_t nb, bool cyclic)
 {
@@ -487,6 +507,7 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 		return ret;
 	}
 
+	dev->pdata->is_tx = is_tx(dev);
 	dev->pdata->is_cyclic = cyclic;
 	dev->pdata->fd = fd;
 	dev->pdata->wait_for_err_code = false;
@@ -698,6 +719,114 @@ err_unlock:
 	network_unlock_dev(pdata);
 	return ret;
 }
+
+#ifdef __linux__
+static int network_do_splice(int fd_out, int fd_in, size_t len)
+{
+	int pipefd[2];
+	ssize_t ret;
+
+	ret = (ssize_t) pipe(pipefd);
+	if (ret < 0)
+		return -errno;
+
+	do {
+		ret = splice(fd_in, NULL, pipefd[1], NULL, len, SPLICE_F_MOVE);
+		if (ret < 0)
+			goto err_close_pipe;
+
+		ret = splice(pipefd[0], NULL, fd_out, NULL, len, SPLICE_F_MOVE);
+		if (ret < 0)
+			goto err_close_pipe;
+
+		len -= ret;
+	} while (len);
+
+err_close_pipe:
+	close(pipefd[0]);
+	close(pipefd[1]);
+	return (int) ret;
+}
+
+static ssize_t network_get_buffer(const struct iio_device *dev,
+		void **addr_ptr, size_t bytes_used)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int ret;
+	bool tx;
+	void *ptr;
+
+	if (!pdata->is_tx || pdata->is_cyclic)
+		return -ENOSYS;
+	if (!addr_ptr)
+		return -EINVAL;
+
+	if (*addr_ptr)
+		munmap(*addr_ptr, pdata->mmap_len);
+
+	if (*addr_ptr && pdata->is_tx) {
+		long resp;
+		char buf[1024];
+		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+				dev->id, (unsigned long) pdata->mmap_len);
+
+		network_lock_dev(pdata);
+
+		if (pdata->wait_for_err_code) {
+			pdata->wait_for_err_code = false;
+			ret = read_error_code(pdata->fd);
+			if (ret < 0)
+				goto err_unlock;
+		}
+
+		ret = (ssize_t) write_command(buf, pdata->fd);
+		if (ret < 0)
+			goto err_unlock;
+
+		ret = network_do_splice(pdata->fd,
+				pdata->memfd, pdata->mmap_len);
+		if (ret < 0)
+			goto err_unlock;
+
+		pdata->wait_for_err_code = true;
+		network_unlock_dev(pdata);
+	}
+
+	if (pdata->memfd >= 0)
+		close(pdata->memfd);
+
+	if (bytes_used)
+		pdata->mmap_len = bytes_used;
+
+	/* O_TMPFILE -> Linux 3.11.
+	 * TODO: use memfd_create (Linux 3.17) */
+	pdata->memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
+	if (pdata->memfd < 0) {
+		ret = -errno;
+		ERROR("Unable to create temp file: %i\n", -ret);
+		return ret;
+	}
+
+	ftruncate(pdata->memfd, pdata->mmap_len);
+
+	/* TODO: READBUF */
+
+	ptr = mmap(NULL, pdata->mmap_len,
+			PROT_READ | PROT_WRITE, MAP_SHARED, pdata->memfd, 0);
+	if (ptr == MAP_FAILED) {
+		ret = -errno;
+		ERROR("Unable to mmap: %i\n", -ret);
+		return ret;
+	}
+
+	*addr_ptr = ptr;
+	return bytes_used;
+
+err_unlock:
+	network_unlock_dev(pdata);
+	return ret;
+}
+#endif
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
 		const struct iio_channel *chn, const char *attr, char *dst,
@@ -1017,6 +1146,9 @@ static struct iio_backend_ops network_ops = {
 	.close = network_close,
 	.read = network_read,
 	.write = network_write,
+#ifdef __linux__
+	.get_buffer = network_get_buffer,
+#endif
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
 	.read_channel_attr = network_read_chn_attr,
@@ -1185,6 +1317,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		dev->pdata->fd = -1;
+		dev->pdata->memfd = -1;
 
 #if HAVE_PTHREAD
 		ret = pthread_mutex_init(&dev->pdata->lock, NULL);
