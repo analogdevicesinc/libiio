@@ -84,7 +84,7 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	int fd;
-	bool wait_for_err_code;
+	bool wait_for_err_code, is_cyclic;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -487,6 +487,7 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 		return ret;
 	}
 
+	dev->pdata->is_cyclic = cyclic;
 	dev->pdata->fd = fd;
 	dev->pdata->wait_for_err_code = false;
 	memcpy(dev->mask, mask, nb * sizeof(*mask));
@@ -665,7 +666,10 @@ static ssize_t network_write(const struct iio_device *dev,
 			goto err_unlock;
 	}
 
-	ret = (ssize_t) write_command(buf, fd);
+	if (pdata->is_cyclic)
+		ret = (ssize_t) exec_command(buf, fd);
+	else
+		ret = (ssize_t) write_command(buf, fd);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -673,7 +677,17 @@ static ssize_t network_write(const struct iio_device *dev,
 	if (ret < 0)
 		goto err_unlock;
 
-	pdata->wait_for_err_code = true;
+	if (pdata->is_cyclic) {
+		ret = read_integer(fd, &resp);
+		if (ret < 0)
+			goto err_unlock;
+		if (resp < 0) {
+			ret = (ssize_t) resp;
+			goto err_unlock;
+		}
+	} else {
+		pdata->wait_for_err_code = true;
+	}
 	network_unlock_dev(pdata);
 
 	/* We assume that the whole buffer was submitted.
