@@ -559,6 +559,8 @@ static int network_close(const struct iio_device *dev)
 
 	ret = (int) exec_command(buf, pdata->fd);
 
+	write_command("\r\nEXIT\r\n", pdata->fd);
+
 	close(pdata->fd);
 	pdata->fd = -1;
 	network_unlock_dev(pdata);
@@ -1041,16 +1043,10 @@ static void network_shutdown(struct iio_context *ctx)
 		struct iio_device_pdata *dpdata = dev->pdata;
 
 		if (dpdata) {
-			if (dpdata->fd >= 0) {
-				network_lock_dev(dpdata);
-				write_command("\r\nEXIT\r\n", dpdata->fd);
-				close(dpdata->fd);
-				network_unlock_dev(dpdata);
+			network_close(dev);
 #if HAVE_PTHREAD
-				pthread_mutex_destroy(&dpdata->lock);
+			pthread_mutex_destroy(&dpdata->lock);
 #endif
-			}
-
 			free(dpdata);
 		}
 	}
