@@ -20,7 +20,6 @@
 
 #include <getopt.h>
 #include <string.h>
-#include <signal.h>
 #include <math.h>
 #include <errno.h>
 #include <pthread.h>
@@ -57,12 +56,16 @@ static void quit_all(int sig)
 	app_running = false;
 }
 
-static void set_handler(int signal, void (*handler)(int))
+static void set_handler(int signal_nb, void (*handler)(int))
 {
+#ifdef _WIN32
+	signal(signal_nb, handler);
+#else
 	struct sigaction sig;
-	sigaction(signal, NULL, &sig);
+	sigaction(signal_nb, NULL, &sig);
 	sig.sa_handler = handler;
-	sigaction(signal, &sig, NULL);
+	sigaction(signal_nb, &sig, NULL);
+#endif
 }
 
 static struct iio_device *get_device(const struct iio_context *ctx,
