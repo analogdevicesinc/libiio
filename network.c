@@ -571,16 +571,18 @@ static int network_close(const struct iio_device *dev)
 	int ret;
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
+	if (pdata->fd >= 0) {
+		snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
-	network_lock_dev(pdata);
-	ret = (int) write_rwbuf_command(dev, buf, true);
+		network_lock_dev(pdata);
+		ret = (int) write_rwbuf_command(dev, buf, true);
 
-	write_command("\r\nEXIT\r\n", pdata->fd);
+		write_command("\r\nEXIT\r\n", pdata->fd);
 
-	close(pdata->fd);
-	pdata->fd = -1;
-	network_unlock_dev(pdata);
+		close(pdata->fd);
+		pdata->fd = -1;
+		network_unlock_dev(pdata);
+	}
 
 #ifdef __linux__
 	if (pdata->memfd >= 0)
