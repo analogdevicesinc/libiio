@@ -548,6 +548,23 @@ static ssize_t read_error_code(int fd)
 	return (ssize_t) resp;
 }
 
+static ssize_t write_rwbuf_command(const struct iio_device *dev,
+		const char *cmd, bool do_exec)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int fd = pdata->fd;
+
+	if (pdata->wait_for_err_code) {
+		ssize_t ret = read_error_code(fd);
+
+		pdata->wait_for_err_code = false;
+		if (ret < 0)
+			return ret;
+	}
+
+	return do_exec ? exec_command(cmd, fd) : write_command(cmd, fd);
+}
+
 static int network_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
@@ -557,10 +574,7 @@ static int network_close(const struct iio_device *dev)
 	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
 	network_lock_dev(pdata);
-	if (pdata->wait_for_err_code)
-		read_error_code(pdata->fd);
-
-	ret = (int) exec_command(buf, pdata->fd);
+	ret = (int) write_rwbuf_command(dev, buf, true);
 
 	write_command("\r\nEXIT\r\n", pdata->fd);
 
@@ -633,16 +647,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 			dev->id, (unsigned long) len);
 
 	network_lock_dev(pdata);
-	if (pdata->wait_for_err_code) {
-		pdata->wait_for_err_code = false;
-		ret = read_error_code(fd);
-		if (ret < 0) {
-			network_unlock_dev(pdata);
-			return ret;
-		}
-	}
-
-	ret = write_command(buf, fd);
+	ret = write_rwbuf_command(dev, buf, false);
 	if (ret < 0) {
 		network_unlock_dev(pdata);
 		return ret;
@@ -693,17 +698,7 @@ static ssize_t network_write(const struct iio_device *dev,
 	network_lock_dev(pdata);
 	fd = pdata->fd;
 
-	if (pdata->wait_for_err_code) {
-		pdata->wait_for_err_code = false;
-		ret = read_error_code(fd);
-		if (ret < 0)
-			goto err_unlock;
-	}
-
-	if (pdata->is_cyclic)
-		ret = (ssize_t) exec_command(buf, fd);
-	else
-		ret = (ssize_t) write_command(buf, fd);
+	ret = write_rwbuf_command(dev, buf, pdata->is_cyclic);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -784,14 +779,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 		network_lock_dev(pdata);
 
-		if (pdata->wait_for_err_code) {
-			pdata->wait_for_err_code = false;
-			ret = read_error_code(pdata->fd);
-			if (ret < 0)
-				goto err_unlock;
-		}
-
-		ret = write_command(buf, pdata->fd);
+		ret = write_rwbuf_command(dev, buf, false);
 		if (ret < 0)
 			goto err_unlock;
 
