@@ -545,7 +545,7 @@ static ssize_t read_error_code(int fd)
 			return (ssize_t) resp;
 	}
 
-	return resp;
+	return (ssize_t) resp;
 }
 
 static int network_close(const struct iio_device *dev)
@@ -581,6 +581,42 @@ static int network_close(const struct iio_device *dev)
 	return ret;
 }
 
+static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
+{
+	long read_len;
+	ssize_t ret;
+
+	ret = read_integer(fd, &read_len);
+	if (ret < 0)
+		return ret;
+
+	if (read_len > 0 && mask) {
+		unsigned int i;
+		char buf[9];
+
+		buf[8] = '\0';
+		DEBUG("Reading mask\n");
+
+		for (i = words; i > 0; i--) {
+			ret = read_all(buf, 8, fd);
+			if (ret < 0)
+				return ret;
+
+			sscanf(buf, "%08x", &mask[i - 1]);
+			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
+		}
+	}
+
+	if (read_len > 0) {
+		char c;
+		ssize_t nb = read_all(&c, 1, fd);
+		if (nb > 0 && c != '\n')
+			read_len = -EIO;
+	}
+
+	return (ssize_t) read_len;
+}
+
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
@@ -589,7 +625,6 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	int fd = pdata->fd;
 	ssize_t ret, read = 0;
 	char buf[1024];
-	bool read_mask = true;
 
 	if (!len || words != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
@@ -614,49 +649,9 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	}
 
 	do {
-		unsigned int i;
-		long read_len;
-
-		DEBUG("Reading READ response\n");
-		ret = read_integer(fd, &read_len);
-		if (ret < 0) {
-			strerror_r(-ret, buf, sizeof(buf));
-			ERROR("Unable to read response to READ: %s\n", buf);
-			network_unlock_dev(pdata);
-			return read ? read : ret;
-		}
-
-		if (read_len < 0) {
-			strerror_r(-read_len, buf, sizeof(buf));
-			ERROR("Server returned an error: %s\n", buf);
-			network_unlock_dev(pdata);
-			return read ? read : read_len;
-		} else if (read_len == 0) {
+		ret = network_read_mask(fd, mask, words);
+		if (!ret)
 			break;
-		}
-
-		DEBUG("Bytes to read: %li\n", read_len);
-
-		if (read_mask) {
-			DEBUG("Reading mask\n");
-			buf[8] = '\0';
-			for (i = words; i > 0; i--) {
-				ret = read_all(buf, 8, fd);
-				if (ret < 0)
-					break;
-				sscanf(buf, "%08x", &mask[i - 1]);
-				DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
-			}
-			read_mask = false;
-		}
-
-		if (ret > 0) {
-			char c;
-			ret = read_all(&c, 1, fd);
-			if (ret > 0 && c != '\n')
-				ret = -EIO;
-		}
-
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read mask: %s\n", buf);
@@ -664,7 +659,9 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 			return read ? read : ret;
 		}
 
-		ret = read_all((void *) ptr, read_len, fd);
+		mask = NULL; /* We read the mask only once */
+
+		ret = read_all((void *) ptr, ret, fd);
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
@@ -674,7 +671,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 
 		ptr += ret;
 		read += ret;
-		len -= read_len;
+		len -= ret;
 	} while (len);
 
 	network_unlock_dev(pdata);
@@ -737,7 +734,7 @@ err_unlock:
 }
 
 #ifdef __linux__
-static int network_do_splice(int fd_out, int fd_in, size_t len)
+static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 {
 	int pipefd[2];
 	ssize_t ret;
@@ -761,14 +758,14 @@ static int network_do_splice(int fd_out, int fd_in, size_t len)
 err_close_pipe:
 	close(pipefd[0]);
 	close(pipefd[1]);
-	return (int) ret;
+	return ret;
 }
 
 static ssize_t network_get_buffer(const struct iio_device *dev,
 		void **addr_ptr, size_t bytes_used)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
-	int ret;
+	ssize_t ret;
 	bool tx;
 
 	if (!pdata->is_tx || pdata->is_cyclic)
@@ -780,7 +777,6 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		munmap(pdata->mmap_addr, pdata->mmap_len);
 
 	if (pdata->mmap_addr && pdata->is_tx) {
-		long resp;
 		char buf[1024];
 		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 				dev->id, (unsigned long) pdata->mmap_len);
@@ -794,7 +790,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 				goto err_unlock;
 		}
 
-		ret = (ssize_t) write_command(buf, pdata->fd);
+		ret = write_command(buf, pdata->fd);
 		if (ret < 0)
 			goto err_unlock;
 
@@ -818,7 +814,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	pdata->memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
 	if (pdata->memfd < 0) {
 		ret = -errno;
-		ERROR("Unable to create temp file: %i\n", -ret);
+		ERROR("Unable to create temp file: %zi\n", -ret);
 		return ret;
 	}
 
@@ -831,7 +827,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (pdata->mmap_addr == MAP_FAILED) {
 		pdata->mmap_addr = NULL;
 		ret = -errno;
-		ERROR("Unable to mmap: %i\n", -ret);
+		ERROR("Unable to mmap: %zi\n", -ret);
 		return ret;
 	}
 
