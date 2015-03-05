@@ -739,11 +739,23 @@ static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 		return -errno;
 
 	do {
-		ret = splice(fd_in, NULL, pipefd[1], NULL, len, SPLICE_F_MOVE);
+		/*
+		 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
+		 * splicing from a socket. As the socket is not in
+		 * non-blocking mode, it should never return -EAGAIN.
+		 * TODO(pcercuei): Find why it locks...
+		 * */
+		ret = splice(fd_in, NULL, pipefd[1], NULL, len,
+				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+		if (!ret)
+			ret = -EIO;
 		if (ret < 0)
 			goto err_close_pipe;
 
-		ret = splice(pipefd[0], NULL, fd_out, NULL, len, SPLICE_F_MOVE);
+		ret = splice(pipefd[0], NULL, fd_out, NULL, ret,
+				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+		if (!ret)
+			ret = -EIO;
 		if (ret < 0)
 			goto err_close_pipe;
 
