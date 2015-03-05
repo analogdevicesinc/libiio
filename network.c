@@ -732,7 +732,7 @@ err_unlock:
 static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 {
 	int pipefd[2];
-	ssize_t ret;
+	ssize_t ret, read_len = len;
 
 	ret = (ssize_t) pipe(pipefd);
 	if (ret < 0)
@@ -765,7 +765,7 @@ static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 err_close_pipe:
 	close(pipefd[0]);
 	close(pipefd[1]);
-	return ret;
+	return ret < 0 ? ret : read_len;
 }
 
 static ssize_t network_get_buffer(const struct iio_device *dev,
@@ -773,10 +773,10 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		uint32_t *mask, size_t words)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
-	ssize_t ret;
+	ssize_t ret, read = 0;
 	bool tx;
 
-	if (!pdata->is_tx || pdata->is_cyclic)
+	if (pdata->is_cyclic)
 		return -ENOSYS;
 	if (!addr_ptr || words != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
@@ -826,7 +826,37 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		return ret;
 	}
 
-	/* TODO: READBUF */
+	if (!pdata->is_tx) {
+		char buf[1024];
+		size_t len = pdata->mmap_len;
+
+		snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
+				dev->id, (unsigned long) len);
+
+		network_lock_dev(pdata);
+		ret = write_rwbuf_command(dev, buf, false);
+		if (ret < 0)
+			goto err_unlock;
+
+		do {
+			ret = network_read_mask(pdata->fd, mask, words);
+			if (!ret)
+				break;
+			if (ret < 0)
+				goto err_unlock;
+
+			mask = NULL; /* We read the mask only once */
+
+			ret = network_do_splice(pdata->memfd, pdata->fd, ret);
+			if (ret < 0)
+				goto err_unlock;
+
+			read += ret;
+			len -= ret;
+		} while (len);
+
+		network_unlock_dev(pdata);
+	}
 
 	pdata->mmap_addr = mmap(NULL, pdata->mmap_len,
 			PROT_READ | PROT_WRITE, MAP_SHARED, pdata->memfd, 0);
@@ -838,7 +868,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	}
 
 	*addr_ptr = pdata->mmap_addr;
-	return bytes_used;
+	return read ? read : bytes_used;
 
 err_unlock:
 	network_unlock_dev(pdata);
