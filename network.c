@@ -819,7 +819,12 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		return ret;
 	}
 
-	ftruncate(pdata->memfd, pdata->mmap_len);
+	ret = (ssize_t) ftruncate(pdata->memfd, pdata->mmap_len);
+	if (ret < 0) {
+		ret = -errno;
+		ERROR("Unable to truncate temp file: %zi\n", -ret);
+		return ret;
+	}
 
 	/* TODO: READBUF */
 
