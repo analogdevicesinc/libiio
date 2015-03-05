@@ -762,7 +762,8 @@ err_close_pipe:
 }
 
 static ssize_t network_get_buffer(const struct iio_device *dev,
-		void **addr_ptr, size_t bytes_used)
+		void **addr_ptr, size_t bytes_used,
+		uint32_t *mask, size_t words)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret;
@@ -770,7 +771,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 	if (!pdata->is_tx || pdata->is_cyclic)
 		return -ENOSYS;
-	if (!addr_ptr)
+	if (!addr_ptr || words != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
 
 	if (pdata->mmap_addr)

@@ -17,7 +17,7 @@ static bool device_is_high_speed(const struct iio_device *dev)
 	 * -EBADF or -EINVAL otherwise. */
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	return !!ops->get_buffer &&
-		(ops->get_buffer(dev, NULL, 0) != -ENOSYS);
+		(ops->get_buffer(dev, NULL, 0, NULL, 0) != -ENOSYS);
 }
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
@@ -59,7 +59,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		/* Dequeue the first buffer, so that buf->buffer is correctly
 		 * initialized */
 		buf->buffer = NULL;
-		ret = dev->ctx->ops->get_buffer(dev, &buf->buffer, buf->length);
+		ret = dev->ctx->ops->get_buffer(dev, &buf->buffer,
+				buf->length, buf->mask, dev->words);
 		if (ret < 0)
 			goto err_close_device;
 	} else {
@@ -102,7 +103,8 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (buffer->dev_is_high_speed) {
 		void *buf;
-		read = dev->ctx->ops->get_buffer(dev, &buf, 0);
+		read = dev->ctx->ops->get_buffer(dev, &buf, 0,
+				buffer->mask, dev->words);
 		if (read >= 0)
 			buffer->buffer = buf;
 	} else {
@@ -125,7 +127,7 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 	if (buffer->dev_is_high_speed) {
 		void *buf;
 		ssize_t ret = dev->ctx->ops->get_buffer(dev,
-				&buf, buffer->length);
+				&buf, buffer->length, buffer->mask, dev->words);
 		if (ret >= 0)
 			buffer->buffer = buf;
 		return ret;
