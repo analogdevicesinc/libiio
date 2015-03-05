@@ -64,7 +64,8 @@ struct iio_backend_ops {
 	int (*close)(const struct iio_device *dev);
 
 	ssize_t (*get_buffer)(const struct iio_device *dev,
-			void **addr_ptr, size_t bytes_used);
+			void **addr_ptr, size_t bytes_used,
+			uint32_t *mask, size_t words);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 			const char *attr, char *dst, size_t len, bool is_debug);

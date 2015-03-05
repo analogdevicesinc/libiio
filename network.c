@@ -16,6 +16,10 @@
  *
  * */
 
+#ifdef __linux__
+#define _GNU_SOURCE 1 /* Required for splice() */
+#endif
+
 #include "iio-private.h"
 
 #ifndef HAVE_PTHREAD
@@ -48,6 +52,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <net/if.h>
+#include <sys/mman.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -77,6 +82,19 @@
 struct iio_context_pdata {
 	int fd;
 	struct addrinfo *addrinfo;
+#if HAVE_PTHREAD
+	pthread_mutex_t lock;
+#endif
+};
+
+struct iio_device_pdata {
+	int fd;
+#ifdef __linux__
+	int memfd;
+	void *mmap_addr;
+	size_t mmap_len;
+#endif
+	bool wait_for_err_code, is_cyclic, is_tx;
 #if HAVE_PTHREAD
 	pthread_mutex_t lock;
 #endif
@@ -201,6 +219,20 @@ static void network_unlock(struct iio_context_pdata *pdata)
 #endif
 }
 
+static void network_lock_dev(struct iio_device_pdata *pdata)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_lock(&pdata->lock);
+#endif
+}
+
+static void network_unlock_dev(struct iio_device_pdata *pdata)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_unlock(&pdata->lock);
+#endif
+}
+
 static ssize_t write_all(const void *src, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) src;
@@ -305,15 +337,158 @@ static long exec_command(const char *cmd, int fd)
 	return resp;
 }
 
+#ifndef _WIN32
+static int set_blocking_mode(int fd, bool blocking)
+{
+	int ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return -errno;
+
+	if (blocking)
+		ret &= ~O_NONBLOCK;
+	else
+		ret |= O_NONBLOCK;
+
+	ret = fcntl(fd, F_SETFL, ret);
+	return ret < 0 ? -errno : 0;
+}
+
+/* The purpose of this function is to provide a version of connect()
+ * that does not ignore timeouts... */
+static int do_connect(int fd, const struct sockaddr *addr,
+		socklen_t addrlen, struct timeval *timeout)
+{
+	int ret, error;
+	socklen_t len;
+	fd_set set;
+
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+
+	ret = set_blocking_mode(fd, false);
+	if (ret < 0)
+		return ret;
+
+	ret = connect(fd, addr, addrlen);
+	if (ret < 0 && errno != EINPROGRESS) {
+		ret = -errno;
+		goto end;
+	}
+
+	ret = select(fd + 1, &set, &set, NULL, timeout);
+	if (ret < 0) {
+		ret = -errno;
+		goto end;
+	}
+	if (ret == 0) {
+		ret = -ETIMEDOUT;
+		goto end;
+	}
+
+	/* Verify that we don't have an error */
+	len = sizeof(error);
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
+	if(ret < 0) {
+		ret = -errno;
+		goto end;
+	}
+	if (error) {
+		ret = -error;
+		goto end;
+	}
+
+end:
+	/* Restore blocking mode */
+	set_blocking_mode(fd, true);
+	return ret;
+}
+
+static int set_socket_timeout(int fd, unsigned int timeout)
+{
+	struct timeval tv;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				&tv, sizeof(tv)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+#else
+static int set_socket_timeout(int fd, unsigned int timeout)
+{
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
+				(const char *) &timeout, sizeof(timeout)) < 0 ||
+			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+				(const char *) &timeout, sizeof(timeout)) < 0)
+		return -errno;
+	else
+		return 0;
+}
+#endif /* !_WIN32 */
+
+static int create_socket(const struct addrinfo *addrinfo)
+{
+	struct timeval timeout;
+	int ret, fd, yes = 1;
+
+	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	if (fd < 0) {
+		ERROR("Unable to open socket\n");
+		return fd;
+	}
+
+	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
+	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
+
+#ifndef _WIN32
+	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
+#else
+	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
+#endif
+	if (ret < 0) {
+		ERROR("Unable to connect\n");
+		close(fd);
+		return ret;
+	}
+
+	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+			(const char *) &yes, sizeof(yes));
+	return fd;
+}
+
+static bool is_tx(const struct iio_device *dev)
+{
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *ch = dev->channels[i];
+		if (iio_channel_is_output(ch) && iio_channel_is_enabled(ch))
+			return true;
+	}
+
+	return false;
+}
+
 static int network_open(const struct iio_device *dev, size_t samples_count,
 		uint32_t *mask, size_t nb, bool cyclic)
 {
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	char buf[1024], *ptr;
 	unsigned int i;
-	int ret;
+	int ret, fd;
 
 	if (nb != dev->words)
 		return -EINVAL;
+	if (dev->pdata->fd >= 0)
+		return -EBUSY;
+
+	fd = create_socket(pdata->addrinfo);
+	if (fd < 0)
+		return fd;
 
 	snprintf(buf, sizeof(buf), "OPEN %s %lu ",
 			dev->id, (unsigned long) samples_count);
@@ -326,40 +501,146 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 
 	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
 
-	network_lock(dev->ctx->pdata);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	network_unlock(dev->ctx->pdata);
+	network_lock_dev(dev->pdata);
+	ret = (int) exec_command(buf, fd);
+	network_unlock_dev(dev->pdata);
 
 	if (ret < 0) {
+		close(fd);
 		return ret;
-	} else {
-		memcpy(dev->mask, mask, nb * sizeof(*mask));
-		return 0;
 	}
+
+	dev->pdata->is_tx = is_tx(dev);
+	dev->pdata->is_cyclic = cyclic;
+	dev->pdata->fd = fd;
+	dev->pdata->wait_for_err_code = false;
+	memcpy(dev->mask, mask, nb * sizeof(*mask));
+	return 0;
+}
+
+static ssize_t read_error_code(int fd)
+{
+	/*
+	 * The server returns two integer codes.
+	 * The first one is returned right after the WRITEBUF command is issued,
+	 * and corresponds to the error code returned when the server attempted
+	 * to open the device.
+	 * If zero, a second error code is returned, that corresponds (if positive)
+	 * to the number of bytes written.
+	 *
+	 * To speed up things, we delay error reporting. We just send out the
+	 * data without reading the error code that the server gives us, because
+	 * the answer will take too much time. If an error occured, it will be
+	 * reported by the next call to iio_buffer_push().
+	 */
+
+	unsigned int i;
+	long resp = 0;
+
+	for (i = 0; i < 2; i++) {
+		ssize_t ret = read_integer(fd, &resp);
+		if (ret < 0)
+			return ret;
+		if (resp < 0)
+			return (ssize_t) resp;
+	}
+
+	return (ssize_t) resp;
+}
+
+static ssize_t write_rwbuf_command(const struct iio_device *dev,
+		const char *cmd, bool do_exec)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int fd = pdata->fd;
+
+	if (pdata->wait_for_err_code) {
+		ssize_t ret = read_error_code(fd);
+
+		pdata->wait_for_err_code = false;
+		if (ret < 0)
+			return ret;
+	}
+
+	return do_exec ? exec_command(cmd, fd) : write_command(cmd, fd);
 }
 
 static int network_close(const struct iio_device *dev)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	int ret;
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
-	network_lock(dev->ctx->pdata);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	network_unlock(dev->ctx->pdata);
+	if (pdata->fd >= 0) {
+		snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
+		network_lock_dev(pdata);
+		ret = (int) write_rwbuf_command(dev, buf, true);
+
+		write_command("\r\nEXIT\r\n", pdata->fd);
+
+		close(pdata->fd);
+		pdata->fd = -1;
+		network_unlock_dev(pdata);
+	}
+
+#ifdef __linux__
+	if (pdata->memfd >= 0)
+		close(pdata->memfd);
+	pdata->memfd = -1;
+
+	if (pdata->mmap_addr) {
+		munmap(pdata->mmap_addr, pdata->mmap_len);
+		pdata->mmap_addr = NULL;
+	}
+#endif
 	return ret;
+}
+
+static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
+{
+	long read_len;
+	ssize_t ret;
+
+	ret = read_integer(fd, &read_len);
+	if (ret < 0)
+		return ret;
+
+	if (read_len > 0 && mask) {
+		unsigned int i;
+		char buf[9];
+
+		buf[8] = '\0';
+		DEBUG("Reading mask\n");
+
+		for (i = words; i > 0; i--) {
+			ret = read_all(buf, 8, fd);
+			if (ret < 0)
+				return ret;
+
+			sscanf(buf, "%08x", &mask[i - 1]);
+			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
+		}
+	}
+
+	if (read_len > 0) {
+		char c;
+		ssize_t nb = read_all(&c, 1, fd);
+		if (nb > 0 && c != '\n')
+			read_len = -EIO;
+	}
+
+	return (ssize_t) read_len;
 }
 
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
 	uintptr_t ptr = (uintptr_t) dst;
-	struct iio_context_pdata *pdata = dev->ctx->pdata;
+	struct iio_device_pdata *pdata = dev->pdata;
 	int fd = pdata->fd;
 	ssize_t ret, read = 0;
 	char buf[1024];
-	bool read_mask = true;
 
 	if (!len || words != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
@@ -367,93 +648,59 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
 
-	network_lock(pdata);
-	ret = write_command(buf, fd);
+	network_lock_dev(pdata);
+	ret = write_rwbuf_command(dev, buf, false);
 	if (ret < 0) {
-		network_unlock(pdata);
+		network_unlock_dev(pdata);
 		return ret;
 	}
 
 	do {
-		unsigned int i;
-		long read_len;
-
-		DEBUG("Reading READ response\n");
-		ret = read_integer(fd, &read_len);
-		if (ret < 0) {
-			strerror_r(-ret, buf, sizeof(buf));
-			ERROR("Unable to read response to READ: %s\n", buf);
-			network_unlock(pdata);
-			return read ? read : ret;
-		}
-
-		if (read_len < 0) {
-			strerror_r(-read_len, buf, sizeof(buf));
-			ERROR("Server returned an error: %s\n", buf);
-			network_unlock(pdata);
-			return read ? read : read_len;
-		} else if (read_len == 0) {
+		ret = network_read_mask(fd, mask, words);
+		if (!ret)
 			break;
-		}
-
-		DEBUG("Bytes to read: %li\n", read_len);
-
-		if (read_mask) {
-			DEBUG("Reading mask\n");
-			buf[8] = '\0';
-			for (i = words; i > 0; i--) {
-				ret = read_all(buf, 8, fd);
-				if (ret < 0)
-					break;
-				sscanf(buf, "%08x", &mask[i - 1]);
-				DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
-			}
-			read_mask = false;
-		}
-
-		if (ret > 0) {
-			char c;
-			ret = read_all(&c, 1, fd);
-			if (ret > 0 && c != '\n')
-				ret = -EIO;
-		}
-
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read mask: %s\n", buf);
-			network_unlock(pdata);
+			network_unlock_dev(pdata);
 			return read ? read : ret;
 		}
 
-		ret = read_all((void *) ptr, read_len, fd);
+		mask = NULL; /* We read the mask only once */
+
+		ret = read_all((void *) ptr, ret, fd);
 		if (ret < 0) {
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
-			network_unlock(pdata);
+			network_unlock_dev(pdata);
 			return read ? read : ret;
 		}
 
 		ptr += ret;
 		read += ret;
-		len -= read_len;
+		len -= ret;
 	} while (len);
 
-	network_unlock(pdata);
+	network_unlock_dev(pdata);
 	return read;
 }
 
-static ssize_t do_write(struct iio_context_pdata *pdata, bool attr,
-		const char *command, const void *src, size_t len)
+static ssize_t network_write(const struct iio_device *dev,
+		const void *src, size_t len)
 {
-	int fd = pdata->fd;
+	struct iio_device_pdata *pdata = dev->pdata;
+	int fd;
 	ssize_t ret;
 	long resp;
+	char buf[1024];
 
-	network_lock(pdata);
-	if (attr)
-		ret = (ssize_t) write_command(command, fd);
-	else
-		ret = (ssize_t) exec_command(command, fd);
+	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+			dev->id, (unsigned long) len);
+
+	network_lock_dev(pdata);
+	fd = pdata->fd;
+
+	ret = write_rwbuf_command(dev, buf, pdata->is_cyclic);
 	if (ret < 0)
 		goto err_unlock;
 
@@ -461,26 +708,175 @@ static ssize_t do_write(struct iio_context_pdata *pdata, bool attr,
 	if (ret < 0)
 		goto err_unlock;
 
-	ret = read_integer(fd, &resp);
-	network_unlock(pdata);
+	if (pdata->is_cyclic) {
+		ret = read_integer(fd, &resp);
+		if (ret < 0)
+			goto err_unlock;
+		if (resp < 0) {
+			ret = (ssize_t) resp;
+			goto err_unlock;
+		}
+	} else {
+		pdata->wait_for_err_code = true;
+	}
+	network_unlock_dev(pdata);
 
-	if (ret < 0)
-		return ret;
-	return (ssize_t) resp;
+	/* We assume that the whole buffer was submitted.
+	 * The error code will be returned by the next call to this function. */
+	return (ssize_t) len;
 
 err_unlock:
-	network_unlock(pdata);
+	network_unlock_dev(pdata);
 	return ret;
 }
 
-static ssize_t network_write(const struct iio_device *dev,
-		const void *src, size_t len)
+#ifdef __linux__
+static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 {
-	char buf[1024];
-	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-			dev->id, (unsigned long) len);
-	return do_write(dev->ctx->pdata, false, buf, src, len);
+	int pipefd[2];
+	ssize_t ret, read_len = len;
+
+	ret = (ssize_t) pipe(pipefd);
+	if (ret < 0)
+		return -errno;
+
+	do {
+		/*
+		 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
+		 * splicing from a socket. As the socket is not in
+		 * non-blocking mode, it should never return -EAGAIN.
+		 * TODO(pcercuei): Find why it locks...
+		 * */
+		ret = splice(fd_in, NULL, pipefd[1], NULL, len,
+				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+		if (!ret)
+			ret = -EIO;
+		if (ret < 0)
+			goto err_close_pipe;
+
+		ret = splice(pipefd[0], NULL, fd_out, NULL, ret,
+				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+		if (!ret)
+			ret = -EIO;
+		if (ret < 0)
+			goto err_close_pipe;
+
+		len -= ret;
+	} while (len);
+
+err_close_pipe:
+	close(pipefd[0]);
+	close(pipefd[1]);
+	return ret < 0 ? ret : read_len;
 }
+
+static ssize_t network_get_buffer(const struct iio_device *dev,
+		void **addr_ptr, size_t bytes_used,
+		uint32_t *mask, size_t words)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret, read = 0;
+	bool tx;
+
+	if (pdata->is_cyclic)
+		return -ENOSYS;
+	if (!addr_ptr || words != (dev->nb_channels + 31) / 32)
+		return -EINVAL;
+
+	if (pdata->mmap_addr)
+		munmap(pdata->mmap_addr, pdata->mmap_len);
+
+	if (pdata->mmap_addr && pdata->is_tx) {
+		char buf[1024];
+		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+				dev->id, (unsigned long) pdata->mmap_len);
+
+		network_lock_dev(pdata);
+
+		ret = write_rwbuf_command(dev, buf, false);
+		if (ret < 0)
+			goto err_unlock;
+
+		ret = network_do_splice(pdata->fd,
+				pdata->memfd, pdata->mmap_len);
+		if (ret < 0)
+			goto err_unlock;
+
+		pdata->wait_for_err_code = true;
+		network_unlock_dev(pdata);
+	}
+
+	if (pdata->memfd >= 0)
+		close(pdata->memfd);
+
+	if (bytes_used)
+		pdata->mmap_len = bytes_used;
+
+	/* O_TMPFILE -> Linux 3.11.
+	 * TODO: use memfd_create (Linux 3.17) */
+	pdata->memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
+	if (pdata->memfd < 0) {
+		ret = -errno;
+		ERROR("Unable to create temp file: %zi\n", -ret);
+		return ret;
+	}
+
+	ret = (ssize_t) ftruncate(pdata->memfd, pdata->mmap_len);
+	if (ret < 0) {
+		ret = -errno;
+		ERROR("Unable to truncate temp file: %zi\n", -ret);
+		return ret;
+	}
+
+	if (!pdata->is_tx) {
+		char buf[1024];
+		size_t len = pdata->mmap_len;
+
+		snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
+				dev->id, (unsigned long) len);
+
+		network_lock_dev(pdata);
+		ret = write_rwbuf_command(dev, buf, false);
+		if (ret < 0)
+			goto err_unlock;
+
+		do {
+			ret = network_read_mask(pdata->fd, mask, words);
+			if (!ret)
+				break;
+			if (ret < 0)
+				goto err_unlock;
+
+			mask = NULL; /* We read the mask only once */
+
+			ret = network_do_splice(pdata->memfd, pdata->fd, ret);
+			if (ret < 0)
+				goto err_unlock;
+
+			read += ret;
+			len -= ret;
+		} while (len);
+
+		network_unlock_dev(pdata);
+	}
+
+	pdata->mmap_addr = mmap(NULL, pdata->mmap_len,
+			PROT_READ | PROT_WRITE, MAP_SHARED, pdata->memfd, 0);
+	if (pdata->mmap_addr == MAP_FAILED) {
+		pdata->mmap_addr = NULL;
+		ret = -errno;
+		ERROR("Unable to mmap: %zi\n", -ret);
+		return ret;
+	}
+
+	*addr_ptr = pdata->mmap_addr;
+	return read ? read : bytes_used;
+
+err_unlock:
+	network_unlock_dev(pdata);
+	return ret;
+}
+#endif
 
 static ssize_t network_read_attr_helper(const struct iio_device *dev,
 		const struct iio_channel *chn, const char *attr, char *dst,
@@ -533,6 +929,10 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 		const struct iio_channel *chn, const char *attr,
 		const char *src, size_t len, bool is_debug)
 {
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+	int fd;
+	ssize_t ret;
+	long resp;
 	char buf[1024];
 	const char *id = dev->id;
 
@@ -546,7 +946,27 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
 				id, attr ? attr : "", (unsigned long) len);
-	return do_write(dev->ctx->pdata, true, buf, src, len);
+
+	network_lock(pdata);
+	fd = pdata->fd;
+	ret = (ssize_t) write_command(buf, fd);
+	if (ret < 0)
+		goto err_unlock;
+
+	ret = write_all(src, len, fd);
+	if (ret < 0)
+		goto err_unlock;
+
+	ret = read_integer(fd, &resp);
+	network_unlock(pdata);
+
+	if (ret < 0)
+		return ret;
+	return (ssize_t) resp;
+
+err_unlock:
+	network_unlock(pdata);
+	return ret;
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
@@ -666,18 +1086,24 @@ static void network_shutdown(struct iio_context *ctx)
 	close(pdata->fd);
 	network_unlock(pdata);
 
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+		struct iio_device_pdata *dpdata = dev->pdata;
+
+		if (dpdata) {
+			network_close(dev);
 #if HAVE_PTHREAD
-	/* XXX(pcercuei): is this safe? */
+			pthread_mutex_destroy(&dpdata->lock);
+#endif
+			free(dpdata);
+		}
+	}
+
+#if HAVE_PTHREAD
 	pthread_mutex_destroy(&pdata->lock);
 #endif
 	freeaddrinfo(pdata->addrinfo);
 	free(pdata);
-
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
-		if (dev->pdata)
-			free(dev->pdata);
-	}
 }
 
 static int network_get_version(const struct iio_context *ctx,
@@ -724,33 +1150,6 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
-#ifdef _WIN32
-static int set_socket_timeout(int fd, unsigned int timeout)
-{
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0)
-		return -errno;
-	else
-		return 0;
-}
-#else
-static int set_socket_timeout(int fd, unsigned int timeout)
-{
-	struct timeval tv;
-
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				&tv, sizeof(tv)) < 0)
-		return -errno;
-	else
-		return 0;
-}
-#endif /* _WIN32 */
-
 static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	char buf[1024];
@@ -791,6 +1190,9 @@ static struct iio_backend_ops network_ops = {
 	.close = network_close,
 	.read = network_read,
 	.write = network_write,
+#ifdef __linux__
+	.get_buffer = network_get_buffer,
+#endif
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
 	.read_channel_attr = network_read_chn_attr,
@@ -830,72 +1232,13 @@ static struct iio_context * get_context(int fd)
 	return ctx;
 }
 
-#ifndef _WIN32
-/* The purpose of this function is to provide a version of connect()
- * that does not ignore timeouts... */
-static int do_connect(int fd, const struct sockaddr *addr,
-		socklen_t addrlen, struct timeval *timeout)
-{
-	int ret, flags, error;
-	socklen_t len;
-	fd_set set;
-
-	FD_ZERO(&set);
-	FD_SET(fd, &set);
-
-	ret = fcntl(fd, F_GETFL, 0);
-	if (ret < 0)
-		return -errno;
-
-	flags = ret;
-
-	ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-	if (ret < 0)
-		return -errno;
-
-	ret = connect(fd, addr, addrlen);
-	if (ret < 0 && errno != EINPROGRESS) {
-		ret = -errno;
-		goto end;
-	}
-
-	ret = select(fd + 1, &set, &set, NULL, timeout);
-	if (ret < 0) {
-		ret = -errno;
-		goto end;
-	}
-	if (ret == 0) {
-		ret = -ETIMEDOUT;
-		goto end;
-	}
-
-	/* Verify that we don't have an error */
-	len = sizeof(error);
-	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
-	if(ret < 0) {
-		ret = -errno;
-		goto end;
-	}
-	if (error) {
-		ret = -error;
-		goto end;
-	}
-
-end:
-	/* Restore blocking mode */
-	fcntl(fd, F_SETFL, flags);
-	return ret;
-}
-#endif
-
 struct iio_context * network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
-	struct timeval timeout;
 	unsigned int i, len;
-	int fd, ret, yes = 1;
+	int fd, ret;
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -939,28 +1282,9 @@ struct iio_context * network_create_context(const char *host)
 		return NULL;
 	}
 
-	fd = socket(res->ai_family, res->ai_socktype, 0);
-	if (fd < 0) {
-		ERROR("Unable to open socket\n");
+	fd = create_socket(res);
+	if (fd < 0)
 		goto err_free_addrinfo;
-	}
-
-	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
-	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
-
-#ifndef _WIN32
-	ret = do_connect(fd, res->ai_addr, res->ai_addrlen, &timeout);
-#else
-	ret = connect(fd, res->ai_addr, res->ai_addrlen);
-#endif
-	if (ret < 0) {
-		ERROR("Unable to connect\n");
-		goto err_close_socket;
-	}
-
-	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-			(const char *) &yes, sizeof(yes));
 
 	pdata = calloc(1, sizeof(*pdata));
 	if (!pdata) {
@@ -1020,18 +1344,36 @@ struct iio_context * network_create_context(const char *host)
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
-		uint32_t *mask = NULL;
 
 		dev->words = (dev->nb_channels + 31) / 32;
 		if (dev->words) {
-			mask = calloc(dev->words, sizeof(*mask));
-			if (!mask) {
+			dev->mask = calloc(dev->words, sizeof(*dev->mask));
+			if (!dev->mask) {
 				ERROR("Unable to allocate memory\n");
 				goto err_network_shutdown;
 			}
 		}
 
-		dev->mask = mask;
+		dev->pdata = calloc(1, sizeof(*dev->pdata));
+		if (!dev->pdata) {
+			ERROR("Unable to allocate memory\n");
+			goto err_network_shutdown;
+		}
+
+		dev->pdata->fd = -1;
+#ifdef __linux__
+		dev->pdata->memfd = -1;
+#endif
+
+#if HAVE_PTHREAD
+		ret = pthread_mutex_init(&dev->pdata->lock, NULL);
+		if (ret < 0) {
+			char buf[1024];
+			strerror_r(-ret, buf, sizeof(buf));
+			ERROR("Unable to initialize mutex: %s\n", buf);
+			goto err_network_shutdown;
+		}
+#endif
 	}
 
 	iio_context_init(ctx);
