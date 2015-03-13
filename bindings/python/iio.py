@@ -390,8 +390,11 @@ class Device(object):
 		return _get_sample_size(self._device)
 
 class Context(object):
-	def __init__(self, _context = _new_default()):
-		self._context = _context
+	def __init__(self, _context=None):
+		if(_context is None):
+			self._context = _new_default()
+		else:
+			self._context = _context
 		self.devices = [ Device(self, _get_device(self._context, x)) \
 				for x in xrange(0, _devices_count(self._context)) ]
 		self.name = _get_name(self._context)
@@ -403,7 +406,8 @@ class Context(object):
 		self.version = (major.value, minor.value, buf.value )
 
 	def __del__(self):
-		_destroy(self._context)
+		if(self._context is not None):
+			_destroy(self._context)
 
 class LocalContext(Context):
 	def __init__(self):
