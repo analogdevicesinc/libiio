@@ -29,247 +29,203 @@ def _checkNegative(result, func, arguments):
 	else:
 		raise Exception("Error: " + strerror(-result))
 
-def _init():
-	class _Context(Structure):
-		pass
-	class _Device(Structure):
-		pass
-	class _Channel(Structure):
-		pass
-	class _Buffer(Structure):
-		pass
+class _Context(Structure):
+	pass
+class _Device(Structure):
+	pass
+class _Channel(Structure):
+	pass
+class _Buffer(Structure):
+	pass
 
-	ContextPtr = POINTER(_Context)
-	DevicePtr = POINTER(_Device)
-	ChannelPtr = POINTER(_Channel)
-	BufferPtr = POINTER(_Buffer)
+_ContextPtr = POINTER(_Context)
+_DevicePtr = POINTER(_Device)
+_ChannelPtr = POINTER(_Channel)
+_BufferPtr = POINTER(_Buffer)
 
-	lib = cdll.LoadLibrary('libiio.so.0')
+lib = cdll.LoadLibrary('libiio.so.0')
 
-	global _new_local
-	_new_local = lib.iio_create_local_context
-	_new_local.restype = ContextPtr
-	_new_local.archtypes = None
-	_new_local.errcheck = _checkNull
+_new_local = lib.iio_create_local_context
+_new_local.restype = _ContextPtr
+_new_local.archtypes = None
+_new_local.errcheck = _checkNull
 
-	global _new_xml
-	_new_xml = lib.iio_create_xml_context
-	_new_xml.restype = ContextPtr
-	_new_xml.archtypes = (c_char_p, )
-	_new_xml.errcheck = _checkNull
+_new_xml = lib.iio_create_xml_context
+_new_xml.restype = _ContextPtr
+_new_xml.archtypes = (c_char_p, )
+_new_xml.errcheck = _checkNull
 
-	global _new_network
-	_new_network = lib.iio_create_network_context
-	_new_network.restype = ContextPtr
-	_new_network.archtypes = (c_char_p, )
-	_new_network.errcheck = _checkNull
+_new_network = lib.iio_create_network_context
+_new_network.restype = _ContextPtr
+_new_network.archtypes = (c_char_p, )
+_new_network.errcheck = _checkNull
 
-	global _new_default
-	_new_default = lib.iio_create_default_context
-	_new_default.restype = ContextPtr
-	_new_default.archtypes = None
-	_new_default.errcheck = _checkNull
+_new_default = lib.iio_create_default_context
+_new_default.restype = _ContextPtr
+_new_default.archtypes = None
+_new_default.errcheck = _checkNull
 
-	global _destroy
-	_destroy = lib.iio_context_destroy
-	_destroy.restype = None
-	_destroy.archtypes = (ContextPtr, )
+_destroy = lib.iio_context_destroy
+_destroy.restype = None
+_destroy.archtypes = (_ContextPtr, )
 
-	global _get_name
-	_get_name = lib.iio_context_get_name
-	_get_name.restype = c_char_p
-	_get_name.archtypes = (ContextPtr, )
-	_get_name.errcheck = _checkNull
+_get_name = lib.iio_context_get_name
+_get_name.restype = c_char_p
+_get_name.archtypes = (_ContextPtr, )
+_get_name.errcheck = _checkNull
 
-	global _get_version
-	_get_version = lib.iio_context_get_version
-	_get_version.restype = c_int
-	_get_version.archtypes = (ContextPtr, c_uint, c_uint, c_char_p, )
-	_get_version.errcheck = _checkNegative
+_get_version = lib.iio_context_get_version
+_get_version.restype = c_int
+_get_version.archtypes = (_ContextPtr, c_uint, c_uint, c_char_p, )
+_get_version.errcheck = _checkNegative
 
-	global _devices_count
-	_devices_count = lib.iio_context_get_devices_count
-	_devices_count.restype = c_uint
-	_devices_count.archtypes = (ContextPtr, )
+_devices_count = lib.iio_context_get_devices_count
+_devices_count.restype = c_uint
+_devices_count.archtypes = (_ContextPtr, )
 
-	global _get_device
-	_get_device = lib.iio_context_get_device
-	_get_device.restype = DevicePtr
-	_get_device.archtypes = (ContextPtr, c_uint)
-	_get_device.errcheck = _checkNull
+_get_device = lib.iio_context_get_device
+_get_device.restype = _DevicePtr
+_get_device.archtypes = (_ContextPtr, c_uint)
+_get_device.errcheck = _checkNull
 
-	global _d_get_id
-	_d_get_id = lib.iio_device_get_id
-	_d_get_id.restype = c_char_p
-	_d_get_id.archtypes = (DevicePtr, )
-	_d_get_id.errcheck = _checkNull
+_d_get_id = lib.iio_device_get_id
+_d_get_id.restype = c_char_p
+_d_get_id.archtypes = (_DevicePtr, )
+_d_get_id.errcheck = _checkNull
 
-	global _d_get_name
-	_d_get_name = lib.iio_device_get_name
-	_d_get_name.restype = c_char_p
-	_d_get_name.archtypes = (DevicePtr, )
+_d_get_name = lib.iio_device_get_name
+_d_get_name.restype = c_char_p
+_d_get_name.archtypes = (_DevicePtr, )
 
-	global _d_attr_count
-	_d_attr_count = lib.iio_device_get_attrs_count
-	_d_attr_count.restype = c_uint
-	_d_attr_count.archtypes = (DevicePtr, )
+_d_attr_count = lib.iio_device_get_attrs_count
+_d_attr_count.restype = c_uint
+_d_attr_count.archtypes = (_DevicePtr, )
 
-	global _d_get_attr
-	_d_get_attr = lib.iio_device_get_attr
-	_d_get_attr.restype = c_char_p
-	_d_get_attr.archtypes = (DevicePtr, )
-	_d_get_attr.errcheck = _checkNull
+_d_get_attr = lib.iio_device_get_attr
+_d_get_attr.restype = c_char_p
+_d_get_attr.archtypes = (_DevicePtr, )
+_d_get_attr.errcheck = _checkNull
 
-	global _d_read_attr
-	_d_read_attr = lib.iio_device_attr_read
-	_d_read_attr.restype = c_int
-	_d_read_attr.archtypes = (DevicePtr, c_char_p, c_char_p, c_uint)
-	_d_read_attr.errcheck = _checkNegative
+_d_read_attr = lib.iio_device_attr_read
+_d_read_attr.restype = c_int
+_d_read_attr.archtypes = (_DevicePtr, c_char_p, c_char_p, c_uint)
+_d_read_attr.errcheck = _checkNegative
 
-	global _d_write_attr
-	_d_write_attr = lib.iio_device_attr_write
-	_d_write_attr.restype = c_int
-	_d_write_attr.archtypes = (DevicePtr, c_char_p, c_char_p)
-	_d_write_attr.errcheck = _checkNegative
+_d_write_attr = lib.iio_device_attr_write
+_d_write_attr.restype = c_int
+_d_write_attr.archtypes = (_DevicePtr, c_char_p, c_char_p)
+_d_write_attr.errcheck = _checkNegative
 
-	global _d_reg_write
-	_d_reg_write = lib.iio_device_reg_write
-	_d_reg_write.restype = c_int
-	_d_reg_write.archtypes = (DevicePtr, c_uint, c_uint)
+_d_reg_write = lib.iio_device_reg_write
+_d_reg_write.restype = c_int
+_d_reg_write.archtypes = (_DevicePtr, c_uint, c_uint)
 
-	global _d_reg_read
-	_d_reg_read = lib.iio_device_reg_read
-	_d_reg_read.restype = c_int
-	_d_reg_read.archtypes = (DevicePtr, c_uint, c_uint)
+_d_reg_read = lib.iio_device_reg_read
+_d_reg_read.restype = c_int
+_d_reg_read.archtypes = (_DevicePtr, c_uint, c_uint)
 
-	global _channels_count
-	_channels_count = lib.iio_device_get_channels_count
-	_channels_count.restype = c_uint
-	_channels_count.archtypes = (DevicePtr, )
+_channels_count = lib.iio_device_get_channels_count
+_channels_count.restype = c_uint
+_channels_count.archtypes = (_DevicePtr, )
 
-	global _get_channel
-	_get_channel = lib.iio_device_get_channel
-	_get_channel.restype = ChannelPtr
-	_get_channel.archtypes = (DevicePtr, c_uint)
-	_get_channel.errcheck = _checkNull
+_get_channel = lib.iio_device_get_channel
+_get_channel.restype = _ChannelPtr
+_get_channel.archtypes = (_DevicePtr, c_uint)
+_get_channel.errcheck = _checkNull
 
-	global _get_sample_size
-	_get_sample_size = lib.iio_device_get_sample_size
-	_get_sample_size.restype = c_int
-	_get_sample_size.archtypes = (DevicePtr, )
-	_get_sample_size.errcheck = _checkNegative
+_get_sample_size = lib.iio_device_get_sample_size
+_get_sample_size.restype = c_int
+_get_sample_size.archtypes = (_DevicePtr, )
+_get_sample_size.errcheck = _checkNegative
 
-	global _c_get_id
-	_c_get_id = lib.iio_channel_get_id
-	_c_get_id.restype = c_char_p
-	_c_get_id.archtypes = (ChannelPtr, )
-	_c_get_id.errcheck = _checkNull
+_c_get_id = lib.iio_channel_get_id
+_c_get_id.restype = c_char_p
+_c_get_id.archtypes = (_ChannelPtr, )
+_c_get_id.errcheck = _checkNull
 
-	global _c_get_name
-	_c_get_name = lib.iio_channel_get_name
-	_c_get_name.restype = c_char_p
-	_c_get_name.archtypes = (ChannelPtr, )
+_c_get_name = lib.iio_channel_get_name
+_c_get_name.restype = c_char_p
+_c_get_name.archtypes = (_ChannelPtr, )
 
-	global _c_is_output
-	_c_is_output = lib.iio_channel_is_output
-	_c_is_output.restype = c_bool
-	_c_is_output.archtypes = (ChannelPtr, )
+_c_is_output = lib.iio_channel_is_output
+_c_is_output.restype = c_bool
+_c_is_output.archtypes = (_ChannelPtr, )
 
-	global _c_attr_count
-	_c_attr_count = lib.iio_channel_get_attrs_count
-	_c_attr_count.restype = c_uint
-	_c_attr_count.archtypes = (ChannelPtr, )
+_c_attr_count = lib.iio_channel_get_attrs_count
+_c_attr_count.restype = c_uint
+_c_attr_count.archtypes = (_ChannelPtr, )
 
-	global _c_get_attr
-	_c_get_attr = lib.iio_channel_get_attr
-	_c_get_attr.restype = c_char_p
-	_c_get_attr.archtypes = (ChannelPtr, )
-	_c_get_attr.errcheck = _checkNull
+_c_get_attr = lib.iio_channel_get_attr
+_c_get_attr.restype = c_char_p
+_c_get_attr.archtypes = (_ChannelPtr, )
+_c_get_attr.errcheck = _checkNull
 
-	global _c_get_filename
-	_c_get_filename = lib.iio_channel_attr_get_filename
-	_c_get_filename.restype = c_char_p
-	_c_get_filename.archtypes = (ChannelPtr, c_char_p, )
-	_c_get_filename.errcheck = _checkNull
+_c_get_filename = lib.iio_channel_attr_get_filename
+_c_get_filename.restype = c_char_p
+_c_get_filename.archtypes = (_ChannelPtr, c_char_p, )
+_c_get_filename.errcheck = _checkNull
 
-	global _c_read_attr
-	_c_read_attr = lib.iio_channel_attr_read
-	_c_read_attr.restype = c_int
-	_c_read_attr.archtypes = (ChannelPtr, c_char_p, c_char_p, c_uint)
-	_c_read_attr.errcheck = _checkNegative
+_c_read_attr = lib.iio_channel_attr_read
+_c_read_attr.restype = c_int
+_c_read_attr.archtypes = (_ChannelPtr, c_char_p, c_char_p, c_uint)
+_c_read_attr.errcheck = _checkNegative
 
-	global _c_write_attr
-	_c_write_attr = lib.iio_channel_attr_write
-	_c_write_attr.restype = c_int
-	_c_write_attr.archtypes = (ChannelPtr, c_char_p, c_char_p)
-	_c_write_attr.errcheck = _checkNegative
+_c_write_attr = lib.iio_channel_attr_write
+_c_write_attr.restype = c_int
+_c_write_attr.archtypes = (_ChannelPtr, c_char_p, c_char_p)
+_c_write_attr.errcheck = _checkNegative
 
-	global _c_enable
-	_c_enable = lib.iio_channel_enable
-	_c_enable.archtypes = (ChannelPtr, )
+_c_enable = lib.iio_channel_enable
+_c_enable.archtypes = (_ChannelPtr, )
 
-	global _c_disable
-	_c_disable = lib.iio_channel_disable
-	_c_disable.archtypes = (ChannelPtr, )
+_c_disable = lib.iio_channel_disable
+_c_disable.archtypes = (_ChannelPtr, )
 
-	global _c_is_enabled
-	_c_is_enabled = lib.iio_channel_is_enabled
-	_c_is_enabled.restype = c_bool
-	_c_is_enabled.archtypes = (ChannelPtr, )
+_c_is_enabled = lib.iio_channel_is_enabled
+_c_is_enabled.restype = c_bool
+_c_is_enabled.archtypes = (_ChannelPtr, )
 
-	global _c_read
-	_c_read = lib.iio_channel_read
-	_c_read.restype = c_uint
-	_c_read.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+_c_read = lib.iio_channel_read
+_c_read.restype = c_uint
+_c_read.archtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
 
-	global _c_read_raw
-	_c_read_raw = lib.iio_channel_read_raw
-	_c_read_raw.restype = c_uint
-	_c_read_raw.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+_c_read_raw = lib.iio_channel_read_raw
+_c_read_raw.restype = c_uint
+_c_read_raw.archtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
 
-	global _c_write
-	_c_write = lib.iio_channel_write
-	_c_write.restype = c_uint
-	_c_write.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+_c_write = lib.iio_channel_write
+_c_write.restype = c_uint
+_c_write.archtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
 
-	global _c_write_raw
-	_c_write_raw = lib.iio_channel_write_raw
-	_c_write_raw.restype = c_uint
-	_c_write_raw.archtypes = (ChannelPtr, BufferPtr, c_void_p, c_uint, )
+_c_write_raw = lib.iio_channel_write_raw
+_c_write_raw.restype = c_uint
+_c_write_raw.archtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
 
-	global _create_buffer
-	_create_buffer = lib.iio_device_create_buffer
-	_create_buffer.restype = BufferPtr
-	_create_buffer.archtypes = (DevicePtr, c_uint, c_bool, )
-	_create_buffer.errcheck = _checkNull
+_create_buffer = lib.iio_device_create_buffer
+_create_buffer.restype = _BufferPtr
+_create_buffer.archtypes = (_DevicePtr, c_uint, c_bool, )
+_create_buffer.errcheck = _checkNull
 
-	global _buffer_destroy
-	_buffer_destroy = lib.iio_buffer_destroy
-	_buffer_destroy.archtypes = (BufferPtr, )
+_buffer_destroy = lib.iio_buffer_destroy
+_buffer_destroy.archtypes = (_BufferPtr, )
 
-	global _buffer_refill
-	_buffer_refill = lib.iio_buffer_refill
-	_buffer_refill.restype = c_int
-	_buffer_refill.archtypes = (BufferPtr, )
-	_buffer_refill.errcheck = _checkNegative
+_buffer_refill = lib.iio_buffer_refill
+_buffer_refill.restype = c_int
+_buffer_refill.archtypes = (_BufferPtr, )
+_buffer_refill.errcheck = _checkNegative
 
-	global _buffer_push
-	_buffer_push = lib.iio_buffer_push
-	_buffer_push.restype = c_int
-	_buffer_push.archtypes = (BufferPtr, )
-	_buffer_push.errcheck = _checkNegative
+_buffer_push = lib.iio_buffer_push
+_buffer_push.restype = c_int
+_buffer_push.archtypes = (_BufferPtr, )
+_buffer_push.errcheck = _checkNegative
 
-	global _buffer_start
-	_buffer_start = lib.iio_buffer_start
-	_buffer_start.restype = c_void_p
-	_buffer_start.archtypes = (BufferPtr, )
+_buffer_start = lib.iio_buffer_start
+_buffer_start.restype = c_void_p
+_buffer_start.archtypes = (_BufferPtr, )
 
-	global _buffer_end
-	_buffer_end = lib.iio_buffer_end
-	_buffer_end.restype = c_void_p
-	_buffer_end.archtypes = (BufferPtr, )
-
-_init()
+_buffer_end = lib.iio_buffer_end
+_buffer_end.restype = c_void_p
+_buffer_end.archtypes = (_BufferPtr, )
 
 class Channel(object):
 	def __init__(self, dev, _channel):
