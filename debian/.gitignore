@@ -7,3 +7,4 @@ libiio0
 libiio-dev
 libiio-utils
 iiod
+python-libiio

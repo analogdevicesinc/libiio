@@ -48,4 +48,10 @@ Depends: libiio0 (>= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
 Description: Miscellaneous libiio utilities
  This package contains several basic utilities for testing libiio.
 
-#TODO: libiio-doc, python-libiio, libiio-cil
+Package: python-libiio
+Architecture: all
+Depends: libiio0 (>= ${binary:Version}), python (>= 2.7.8)
+Description: Python bindings for libiio
+ This package contains the Python bindings for libiio.
+
+#TODO: libiio-doc, libiio-cil
