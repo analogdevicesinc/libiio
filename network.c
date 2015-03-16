@@ -1249,6 +1249,7 @@ struct iio_context * network_create_context(const char *host)
 	struct iio_context_pdata *pdata;
 	unsigned int i, len;
 	int fd, ret;
+	char *description;
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -1321,26 +1322,27 @@ struct iio_context * network_create_context(const char *host)
 #else
 	len = INET_ADDRSTRLEN + 1;
 #endif
-	ctx->description = malloc(len);
-	if (!ctx->description) {
+
+	description = malloc(len);
+	if (!description) {
 		ERROR("Unable to allocate memory\n");
 		goto err_network_shutdown;
 	}
 
-	ctx->description[0] = '\0';
+	description[0] = '\0';
 
 #ifdef HAVE_IPV6
 	if (res->ai_family == AF_INET6) {
 		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
 		char *ptr;
 		inet_ntop(AF_INET6, &in->sin6_addr,
-				ctx->description, INET6_ADDRSTRLEN);
+				description, INET6_ADDRSTRLEN);
 
-		ptr = if_indextoname(in->sin6_scope_id, ctx->description +
-				strlen(ctx->description) + 1);
+		ptr = if_indextoname(in->sin6_scope_id, description +
+				strlen(description) + 1);
 		if (!ptr) {
 			ERROR("Unable to lookup interface of IPv6 address\n");
-			goto err_network_shutdown;
+			goto err_free_description;
 		}
 
 		*(ptr - 1) = '%';
@@ -1348,8 +1350,7 @@ struct iio_context * network_create_context(const char *host)
 #endif
 	if (res->ai_family == AF_INET) {
 		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
-		inet_ntop(AF_INET, &in->sin_addr,
-				ctx->description, INET_ADDRSTRLEN);
+		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
@@ -1360,14 +1361,14 @@ struct iio_context * network_create_context(const char *host)
 			dev->mask = calloc(dev->words, sizeof(*dev->mask));
 			if (!dev->mask) {
 				ERROR("Unable to allocate memory\n");
-				goto err_network_shutdown;
+				goto err_free_description;
 			}
 		}
 
 		dev->pdata = calloc(1, sizeof(*dev->pdata));
 		if (!dev->pdata) {
 			ERROR("Unable to allocate memory\n");
-			goto err_network_shutdown;
+			goto err_free_description;
 		}
 
 		dev->pdata->fd = -1;
@@ -1381,7 +1382,7 @@ struct iio_context * network_create_context(const char *host)
 			char buf[1024];
 			strerror_r(-ret, buf, sizeof(buf));
 			ERROR("Unable to initialize mutex: %s\n", buf);
-			goto err_network_shutdown;
+			goto err_free_description;
 		}
 #endif
 	}
@@ -1394,13 +1395,30 @@ struct iio_context * network_create_context(const char *host)
 		char buf[1024];
 		strerror_r(-ret, buf, sizeof(buf));
 		ERROR("Unable to initialize mutex: %s\n", buf);
-		goto err_network_shutdown;
+		goto err_free_description;
 	}
 #endif
+
+	if (ctx->description) {
+		size_t new_size = len + strlen(ctx->description) + 1;
+		char *ptr, *new_description = realloc(description, new_size);
+		if (!new_description)
+			goto err_free_description;
+
+		ptr = strrchr(new_description, '\0');
+		snprintf(ptr, new_size - len, " %s", ctx->description);
+		free(ctx->description);
+
+		ctx->description = new_description;
+	} else {
+		ctx->description = description;
+	}
 
 	set_remote_timeout(ctx, calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
 	return ctx;
 
+err_free_description:
+	free(description);
 err_network_shutdown:
 	iio_context_destroy(ctx);
 	return NULL;
