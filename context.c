@@ -35,7 +35,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ELEMENT attribute EMPTY>"
 "<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
-"<!ATTLIST context name CDATA #REQUIRED>"
+"<!ATTLIST context name CDATA #REQUIRED description CDATA #IMPLIED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST scan-element index CDATA #REQUIRED format CDATA #REQUIRED scale CDATA #IMPLIED>"
@@ -46,15 +46,27 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)
 {
-	size_t len = strlen(ctx->name) + sizeof(xml_header) - 1 +
-		sizeof("<context name=\"\" ></context>");
-	size_t *devices_len;
+	size_t len, *devices_len;
 	char *str, *ptr, **devices;
 	unsigned int i;
 
+	len = strlen(ctx->name) + sizeof(xml_header) - 1 +
+		sizeof("<context name=\"\" ></context>");
+	if (ctx->description)
+		len += strlen(ctx->description) +
+			sizeof(" description=\"\"") - 1;
+
 	if (!ctx->nb_devices) {
 		str = malloc(len);
-		if (str)
+		if (!str)
+			return NULL;
+
+		if (ctx->description)
+			snprintf(str, len, "%s<context name=\"%s\" "
+					"description=\"%s\" ></context>",
+					xml_header, ctx->name,
+					ctx->description);
+		else
 			snprintf(str, len, "%s<context name=\"%s\" ></context>",
 					xml_header, ctx->name);
 		return str;
@@ -81,7 +93,13 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	if (!str)
 		goto err_free_devices;
 
-	snprintf(str, len, "%s<context name=\"%s\" >", xml_header, ctx->name);
+	if (ctx->description)
+		snprintf(str, len, "%s<context name=\"%s\" "
+				"description=\"%s\" >",
+				xml_header, ctx->name, ctx->description);
+	else
+		snprintf(str, len, "%s<context name=\"%s\" >",
+				xml_header, ctx->name);
 	ptr = strrchr(str, '\0');
 
 	for (i = 0; i < ctx->nb_devices; i++) {
