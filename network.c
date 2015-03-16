@@ -432,8 +432,8 @@ static int create_socket(const struct addrinfo *addrinfo)
 
 	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
 	if (fd < 0) {
-		ERROR("Unable to open socket\n");
-		return fd;
+		ret = -errno;
+		return ret;
 	}
 
 	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
@@ -445,7 +445,7 @@ static int create_socket(const struct addrinfo *addrinfo)
 	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 #endif
 	if (ret < 0) {
-		ERROR("Unable to connect\n");
+		ret = -errno;
 		close(fd);
 		return ret;
 	}
@@ -1219,13 +1219,15 @@ static struct iio_context * get_context(int fd)
 	struct iio_context *ctx;
 	char *xml;
 	long xml_len = exec_command("PRINT\r\n", fd);
-	if (xml_len < 0)
+	if (xml_len < 0) {
+		errno = (int) -xml_len;
 		return NULL;
+	}
 
 	DEBUG("Server returned a XML string of length %li\n", xml_len);
 	xml = malloc(xml_len);
 	if (!xml) {
-		ERROR("Unable to allocate data\n");
+		errno = ENOMEM;
 		return NULL;
 	}
 
@@ -1256,6 +1258,7 @@ struct iio_context * network_create_context(const char *host)
 	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
 	if (ret < 0) {
 		ERROR("WSAStartup failed with error %i\n", ret);
+		errno = -ret;
 		return NULL;
 	}
 #endif
@@ -1275,7 +1278,8 @@ struct iio_context * network_create_context(const char *host)
 
 		ret = discover_host(&address, &port);
 		if (ret < 0) {
-			ERROR("Unable to find host: %s\n", strerror(-ret));
+			DEBUG("Unable to find host: %s\n", strerror(-ret));
+			errno = -ret;
 			return NULL;
 		}
 
@@ -1290,16 +1294,20 @@ struct iio_context * network_create_context(const char *host)
 
 	if (ret) {
 		ERROR("Unable to find host: %s\n", gai_strerror(ret));
+		if (ret != EAI_SYSTEM)
+			errno = ret;
 		return NULL;
 	}
 
 	fd = create_socket(res);
-	if (fd < 0)
+	if (fd < 0) {
+		errno = fd;
 		goto err_free_addrinfo;
+	}
 
 	pdata = calloc(1, sizeof(*pdata));
 	if (!pdata) {
-		ERROR("Unable to allocate memory\n");
+		errno = ENOMEM;
 		goto err_close_socket;
 	}
 
@@ -1325,7 +1333,7 @@ struct iio_context * network_create_context(const char *host)
 
 	description = malloc(len);
 	if (!description) {
-		ERROR("Unable to allocate memory\n");
+		ret = -ENOMEM;
 		goto err_network_shutdown;
 	}
 
@@ -1341,6 +1349,7 @@ struct iio_context * network_create_context(const char *host)
 		ptr = if_indextoname(in->sin6_scope_id, description +
 				strlen(description) + 1);
 		if (!ptr) {
+			ret = -errno;
 			ERROR("Unable to lookup interface of IPv6 address\n");
 			goto err_free_description;
 		}
@@ -1360,14 +1369,14 @@ struct iio_context * network_create_context(const char *host)
 		if (dev->words) {
 			dev->mask = calloc(dev->words, sizeof(*dev->mask));
 			if (!dev->mask) {
-				ERROR("Unable to allocate memory\n");
+				ret = -ENOMEM;
 				goto err_free_description;
 			}
 		}
 
 		dev->pdata = calloc(1, sizeof(*dev->pdata));
 		if (!dev->pdata) {
-			ERROR("Unable to allocate memory\n");
+			ret = -ENOMEM;
 			goto err_free_description;
 		}
 
@@ -1378,12 +1387,8 @@ struct iio_context * network_create_context(const char *host)
 
 #if HAVE_PTHREAD
 		ret = pthread_mutex_init(&dev->pdata->lock, NULL);
-		if (ret < 0) {
-			char buf[1024];
-			strerror_r(-ret, buf, sizeof(buf));
-			ERROR("Unable to initialize mutex: %s\n", buf);
+		if (ret < 0)
 			goto err_free_description;
-		}
 #endif
 	}
 
@@ -1391,19 +1396,17 @@ struct iio_context * network_create_context(const char *host)
 
 #if HAVE_PTHREAD
 	ret = pthread_mutex_init(&pdata->lock, NULL);
-	if (ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to initialize mutex: %s\n", buf);
+	if (ret < 0)
 		goto err_free_description;
-	}
 #endif
 
 	if (ctx->description) {
 		size_t new_size = len + strlen(ctx->description) + 1;
 		char *ptr, *new_description = realloc(description, new_size);
-		if (!new_description)
+		if (!new_description) {
+			ret = -ENOMEM;
 			goto err_free_description;
+		}
 
 		ptr = strrchr(new_description, '\0');
 		snprintf(ptr, new_size - len, " %s", ctx->description);
@@ -1421,6 +1424,7 @@ err_free_description:
 	free(description);
 err_network_shutdown:
 	iio_context_destroy(ctx);
+	errno = -ret;
 	return NULL;
 err_free_pdata:
 	free(pdata);
