@@ -58,8 +58,10 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 
 	if (!ctx->nb_devices) {
 		str = malloc(len);
-		if (!str)
+		if (!str) {
+			errno = ENOMEM;
 			return NULL;
+		}
 
 		if (ctx->description)
 			snprintf(str, len, "%s<context name=\"%s\" "
@@ -73,8 +75,10 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
-	if (!devices_len)
+	if (!devices_len) {
+		errno = ENOMEM;
 		return NULL;
+	}
 
 	devices = malloc(ctx->nb_devices * sizeof(*devices));
 	if (!devices)
@@ -90,8 +94,10 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	str = malloc(len);
-	if (!str)
+	if (!str) {
+		errno = ENOMEM;
 		goto err_free_devices;
+	}
 
 	if (ctx->description)
 		snprintf(str, len, "%s<context name=\"%s\" "
@@ -234,10 +240,12 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 struct iio_context * iio_context_clone(const struct iio_context *ctx)
 {
-	if (ctx->ops->clone)
+	if (ctx->ops->clone) {
 		return ctx->ops->clone(ctx);
-	else
+	} else {
+		errno = ENOSYS;
 		return NULL;
+	}
 }
 
 struct iio_context * iio_create_default_context(void)
@@ -262,6 +270,7 @@ struct iio_context * iio_create_local_context(void)
 #if LOCAL_BACKEND
 	return local_create_context();
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }
@@ -271,6 +280,7 @@ struct iio_context * iio_create_network_context(const char *hostname)
 #if NETWORK_BACKEND
 	return network_create_context(hostname);
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }
@@ -280,6 +290,7 @@ struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 #if NETWORK_BACKEND
 	return xml_create_context_mem(xml, len);
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }
@@ -289,6 +300,7 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 #if NETWORK_BACKEND
 	return xml_create_context(xml_file);
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }

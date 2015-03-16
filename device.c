@@ -39,10 +39,8 @@ static char *get_attr_xml(const char *attr, size_t *length, bool is_debug)
 	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr)
 		+ (!is_debug ? 0 : sizeof("debug-") - 1);
 	char *str = malloc(len);
-	if (!str) {
-		ERROR("Unable to allocate memory\n");
+	if (!str)
 		return NULL;
-	}
 
 	*length = len - 1; /* Skip the \0 */
 	if (is_debug)
