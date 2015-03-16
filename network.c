@@ -16,10 +16,6 @@
  *
  * */
 
-#ifdef __linux__
-#define _GNU_SOURCE 1 /* Required for splice() */
-#endif
-
 #include "iio-private.h"
 
 #ifndef HAVE_PTHREAD
@@ -89,7 +85,7 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	int fd;
-#ifdef __linux__
+#ifdef WITH_NETWORK_GET_BUFFER
 	int memfd;
 	void *mmap_addr;
 	size_t mmap_len;
@@ -584,7 +580,7 @@ static int network_close(const struct iio_device *dev)
 		network_unlock_dev(pdata);
 	}
 
-#ifdef __linux__
+#ifdef WITH_NETWORK_GET_BUFFER
 	if (pdata->memfd >= 0)
 		close(pdata->memfd);
 	pdata->memfd = -1;
@@ -730,7 +726,7 @@ err_unlock:
 	return ret;
 }
 
-#ifdef __linux__
+#ifdef WITH_NETWORK_GET_BUFFER
 static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 {
 	int pipefd[2];
@@ -1190,7 +1186,7 @@ static struct iio_backend_ops network_ops = {
 	.close = network_close,
 	.read = network_read,
 	.write = network_write,
-#ifdef __linux__
+#ifdef WITH_NETWORK_GET_BUFFER
 	.get_buffer = network_get_buffer,
 #endif
 	.read_device_attr = network_read_dev_attr,
@@ -1361,7 +1357,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		dev->pdata->fd = -1;
-#ifdef __linux__
+#ifdef WITH_NETWORK_GET_BUFFER
 		dev->pdata->memfd = -1;
 #endif
 

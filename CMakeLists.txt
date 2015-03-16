@@ -107,6 +107,16 @@ if(WITH_NETWORK_BACKEND)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} wsock32 ws2_32)
 	endif()
 
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		include(CheckCSourceCompiles)
+		set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
+		check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
+
+		if (HAS_O_TMPFILE)
+			add_definitions(-D_GNU_SOURCE=1 -DWITH_NETWORK_GET_BUFFER=1)
+		endif()
+	endif()
+
 	add_definitions(-DNETWORK_BACKEND=1 ${LIBXML2_DEFINITIONS})
 	include_directories(${LIBXML2_INCLUDE_DIR})
 	set(LIBIIO_CFILES ${LIBIIO_CFILES} network.c xml.c)
