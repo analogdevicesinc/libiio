@@ -272,6 +272,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 {
 	unsigned int i;
 	xmlNode *root, *n;
+	xmlAttr *attr;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
 		return NULL;
@@ -283,6 +284,15 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	if (strcmp((char *) root->name, "context")) {
 		ERROR("Unrecognized XML file\n");
 		goto err_free_ctx;
+	}
+
+	for (attr = root->properties; attr; attr = attr->next) {
+		if (!strcmp((char *) attr->name, "description"))
+			ctx->description = _strdup(
+					(char *) attr->children->content);
+		else if (strcmp((char *) attr->name, "name"))
+			WARNING("Unknown parameter \'%s\' in <context>\n",
+					(char *) attr->children->content);
 	}
 
 	for (n = root->children; n; n = n->next) {
