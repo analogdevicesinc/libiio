@@ -1197,7 +1197,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 			ERROR("Unable to open directory %s: %s\n", path, buf);
 			free(entry);
 			closedir(dir);
-			return ret;
+			return -ret;
 		}
 		if (!result)
 			break;
