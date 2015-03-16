@@ -12,6 +12,6 @@ if (PYTHONINTERP_FOUND)
 
 		configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
-		install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --root=$DESTDIR --prefix=${CMAKE_INSTALL_PREFIX})")
+		install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX})")
 	endif()
 endif()
