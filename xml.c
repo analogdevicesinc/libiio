@@ -273,9 +273,10 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	unsigned int i;
 	xmlNode *root, *n;
 	xmlAttr *attr;
+	int err = ENOMEM;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
-		return NULL;
+		goto err_set_errno;
 
 	ctx->name = "xml";
 	ctx->ops = &xml_ops;
@@ -283,6 +284,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	root = xmlDocGetRootElement(doc);
 	if (strcmp((char *) root->name, "context")) {
 		ERROR("Unrecognized XML file\n");
+		err = EINVAL;
 		goto err_free_ctx;
 	}
 
@@ -333,6 +335,8 @@ err_free_devices:
 		free(ctx->devices);
 err_free_ctx:
 	free(ctx);
+err_set_errno:
+	errno = err;
 	return NULL;
 }
 
