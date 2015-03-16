@@ -1177,6 +1177,20 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 static struct iio_context * network_clone(const struct iio_context *ctx)
 {
+	if (ctx->description) {
+		char *ptr = strchr(ctx->description, ' ');
+		if (ptr) {
+#ifdef HAVE_IPV6
+			char buf[INET6_ADDRSTRLEN + IF_NAMESIZE + 2];
+#else
+			char buf[INET_ADDRSTRLEN + 1];
+#endif
+			strncpy(buf, ctx->description, sizeof(buf) - 1);
+			buf[ptr - ctx->description] = '\0';
+			return iio_create_network_context(buf);
+		}
+	}
+
 	return iio_create_network_context(ctx->description);
 }
 
