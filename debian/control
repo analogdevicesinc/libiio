@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Paul Cercueil <paul.cercueil@analog.com>
 Uploaders: Paul Cercueil <paul.cercueil@analog.com>
-Build-Depends: cmake (>= 2.8), debhelper (>= 9)
+Build-Depends: cmake (>= 2.8), debhelper (>= 9), cli-common-dev (>= 0.9~)
 Standards-Version: 3.9.4
 Homepage: http://github.com/analogdevicesinc/libiio
 Vcs-Git: git://github.com/analogdevicesinc/libiio
@@ -54,4 +54,19 @@ Depends: libiio0 (>= ${binary:Version}), python (>= 2.7.8)
 Description: Python bindings for libiio
  This package contains the Python bindings for libiio.
 
-#TODO: libiio-doc, libiio-cil
+Package: libiio0-cil
+Architecture: all
+Depends: libiio0 (>= ${binary:Version}), ${cli:Depends}
+Description: CLI bindings for libiio
+ This package contains the CLI bindings for libiio.
+
+Package: libiio-cil-dev
+Architecture: all
+Depends: libiio0-cil (= ${binary:Version})
+Description: CLI bindings for libiio
+ This package contains the CLI bindings for libiio.
+ .
+ This package contains development files for the libiio0-cil library, and should
+ be used for compilation.
+
+#TODO: libiio-doc

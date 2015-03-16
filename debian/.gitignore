@@ -4,6 +4,8 @@
 files
 tmp
 libiio0
+libiio0-cil
+libiio-cil-dev
 libiio-dev
 libiio-utils
 iiod
