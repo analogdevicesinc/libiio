@@ -10,9 +10,11 @@ namespace iio
     public abstract class Attr
     {
         public readonly string name;
+        public readonly string filename;
 
-        protected Attr(string name)
+        protected Attr(string name, string filename = null)
         {
+            this.filename = filename == null ? name : filename;
             this.name = name;
         }
 

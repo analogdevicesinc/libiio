@@ -20,7 +20,10 @@ namespace iio
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_channel_attr_write(IntPtr chn, [In()] string name, string val);
 
-            public ChannelAttr(IntPtr chn, string name) : base(name)
+            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr iio_channel_attr_get_filename(IntPtr chn, [In()] string attr);
+
+            public ChannelAttr(IntPtr chn, string name) : base(name, Marshal.PtrToStringAnsi(iio_channel_attr_get_filename(chn, name)))
             {
                 this.chn = chn;
             }
