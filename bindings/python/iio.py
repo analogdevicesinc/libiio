@@ -88,6 +88,11 @@ _get_device.restype = _DevicePtr
 _get_device.archtypes = (_ContextPtr, c_uint)
 _get_device.errcheck = _checkNull
 
+_set_timeout = lib.iio_context_set_timeout
+_set_timeout.restype = c_int
+_set_timeout.archtypes = (_ContextPtr, c_uint, )
+_set_timeout.errcheck = _checkNegative
+
 _d_get_id = lib.iio_device_get_id
 _d_get_id.restype = c_char_p
 _d_get_id.archtypes = (_DevicePtr, )
@@ -364,6 +369,9 @@ class Context(object):
 	def __del__(self):
 		if(self._context is not None):
 			_destroy(self._context)
+
+	def set_timeout(self, timeout):
+		_set_timeout(self._context, timeout)
 
 class LocalContext(Context):
 	def __init__(self):
