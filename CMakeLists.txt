@@ -18,11 +18,14 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
 	CACHE PATH "Installation directory for headers")
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 	CACHE PATH "Installation directory for pkgconfig (.pc) files")
+set(INSTALL_DATA_DIR "${CMAKE_INSTALL_PREFIX}/share"
+	CACHE PATH "Installation directory for data")
 
 mark_as_advanced(INSTALL_BIN_DIR)
 mark_as_advanced(INSTALL_LIB_DIR)
 mark_as_advanced(INSTALL_INC_DIR)
 mark_as_advanced(INSTALL_PKGCONFIG_DIR)
+mark_as_advanced(INSTALL_DATA_DIR)
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
@@ -177,6 +180,9 @@ if(DOXYGEN_FOUND)
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 			COMMENT "Generating API documentation with Doxygen" VERBATIM
 			)
+
+		install(DIRECTORY ${HTML_DEST_DIR}
+			DESTINATION ${INSTALL_DATA_DIR}/doc/libiio${LIBIIO_VERSION_MAJOR}-doc)
 	endif()
 else()
 	message(STATUS "Doxygen not found, API documentation won't be generated")
