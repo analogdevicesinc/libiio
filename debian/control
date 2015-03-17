@@ -69,4 +69,12 @@ Description: CLI bindings for libiio
  This package contains development files for the libiio0-cil library, and should
  be used for compilation.
 
-#TODO: libiio-doc
+Package: libiio0-doc
+Architecture: all
+Depends:
+Description: libiio documentation
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
+ .
+ This package contains the documentation in HTML format.
