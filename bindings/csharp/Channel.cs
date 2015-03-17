@@ -63,6 +63,10 @@ namespace iio
         private static extern bool iio_channel_is_output(IntPtr chn);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool iio_channel_is_scan_element(IntPtr chn);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_channel_enable(IntPtr chn);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -89,7 +93,7 @@ namespace iio
 
         public readonly string name;
         public readonly string id;
-        public readonly bool output;
+        public readonly bool output, scan_element;
         public readonly List<Attr> attrs;
 
         public Channel(IntPtr chn)
@@ -110,6 +114,7 @@ namespace iio
 
             id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));
             output = iio_channel_is_output(this.chn);
+            scan_element = iio_channel_is_scan_element(this.chn);
         }
 
         public void enable()
