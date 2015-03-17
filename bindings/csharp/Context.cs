@@ -23,6 +23,9 @@ namespace iio
         private static extern IntPtr iio_context_get_name(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_context_get_description(IntPtr ctx);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_context_get_xml(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -37,6 +40,7 @@ namespace iio
 
         public readonly string xml;
         public readonly string name;
+        public readonly string description;
         public readonly List<Device> devices;
 
         public Context(string hostname)
@@ -59,6 +63,7 @@ namespace iio
 
             xml = Marshal.PtrToStringAnsi(iio_context_get_xml(ctx));
             name = Marshal.PtrToStringAnsi(iio_context_get_name(ctx));
+            description = Marshal.PtrToStringAnsi(iio_context_get_description(ctx));
         }
 
         ~Context()
