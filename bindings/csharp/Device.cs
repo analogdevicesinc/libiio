@@ -108,6 +108,12 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_get_sample_size(IntPtr dev);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_device_reg_write(IntPtr dev, uint addr, uint value);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_device_reg_read(IntPtr dev, uint addr, ref uint value);
+
         internal IntPtr dev;
         public readonly string id;
         public readonly string name;
@@ -185,6 +191,22 @@ namespace iio
             if (ret < 0)
                 throw new Exception("Unable to get sample size: err=" + ret);
             return (uint) ret;
+        }
+
+        public void reg_write(uint addr, uint value)
+        {
+            int err = iio_device_reg_write(dev, addr, value);
+            if (err < 0)
+                throw new Exception("Unable to write register");
+        }
+
+        public uint reg_read(uint addr)
+        {
+            uint value = 0;
+            int err = iio_device_reg_read(dev, addr, ref value);
+            if (err < 0)
+                throw new Exception("Unable to read register");
+            return value;
         }
     }
 }
