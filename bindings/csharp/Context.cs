@@ -10,7 +10,6 @@ namespace iio
     public class Context : IDisposable
     {
         private IntPtr ctx;
-        private List<Device> devices;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_create_network_context(
@@ -36,6 +35,9 @@ namespace iio
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool iio_device_is_trigger(IntPtr dev);
 
+        public readonly string xml;
+        public readonly string name;
+        public readonly List<Device> devices;
 
         public Context(string hostname)
         {
@@ -54,6 +56,9 @@ namespace iio
                 else
                     devices.Add(new Device(this, ptr));
             }
+
+            xml = Marshal.PtrToStringAnsi(iio_context_get_xml(ctx));
+            name = Marshal.PtrToStringAnsi(iio_context_get_name(ctx));
         }
 
         ~Context()
@@ -62,26 +67,11 @@ namespace iio
                 Dispose(false);
         }
 
-        public string name()
-        {
-            return Marshal.PtrToStringAnsi(iio_context_get_name(ctx));
-        }
-
-        public string to_xml()
-        {
-            return Marshal.PtrToStringAnsi(iio_context_get_xml(ctx));
-        }
-
-        public List<Device> get_devices()
-        {
-            return devices;
-        }
-
         public Device get_device(string name)
         {
             foreach (Device each in devices) {
-                if (each.name().CompareTo(name) == 0 ||
-                            each.id().CompareTo(name) == 0)
+                if (each.name.CompareTo(name) == 0 ||
+                            each.id.CompareTo(name) == 0)
                     return each;
             }
 

@@ -42,8 +42,6 @@ namespace iio
         }
 
         private Context ctx;
-        private List<Channel> channels;
-        private List<Attr> attrs;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_id(IntPtr dev);
@@ -73,6 +71,10 @@ namespace iio
         private static extern int iio_device_get_sample_size(IntPtr dev);
 
         internal IntPtr dev;
+        public readonly string id;
+        public readonly string name;
+        public readonly List<Attr> attrs;
+        public readonly List<Channel> channels;
 
         public Device(Context ctx, IntPtr dev)
         {
@@ -88,37 +90,21 @@ namespace iio
 
             for (uint i = 0; i < nb_attrs; i++)
                 attrs.Add(new DeviceAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_attr(dev, i))));
-        }
 
-        public string id()
-        {
-            return Marshal.PtrToStringAnsi(iio_device_get_id(dev));
-        }
+            id = Marshal.PtrToStringAnsi(iio_device_get_id(dev));
 
-        public string name()
-        {
-            IntPtr name = iio_device_get_name(dev);
-            if (name == IntPtr.Zero)
-                return "";
+            IntPtr name_ptr = iio_device_get_name(dev);
+            if (name_ptr == IntPtr.Zero)
+                name = "";
             else
-                return Marshal.PtrToStringAnsi(name);
-        }
-
-        public List<Attr> get_attrs()
-        {
-            return attrs.ToList<Attr>();
-        }
-
-        public List<Channel> get_channels()
-        {
-            return channels;
+                name = Marshal.PtrToStringAnsi(name_ptr);
         }
 
         public Channel get_channel(string name)
         {
             foreach (Channel each in channels) {
-                if (each.name().CompareTo(name) == 0 ||
-                            each.id().CompareTo(name) == 0)
+                if (each.name.CompareTo(name) == 0 ||
+                            each.id.CompareTo(name) == 0)
                     return each;
             }
 
@@ -142,7 +128,7 @@ namespace iio
 
             ptr = Marshal.ReadIntPtr(ptr);
 
-            foreach (Trigger trig in ctx.get_devices()) {
+            foreach (Trigger trig in ctx.devices) {
                 if (trig.dev == ptr)
                     return trig;
             }

@@ -44,7 +44,6 @@ namespace iio
 
 
         private IntPtr chn;
-        private List<Attr> attrs;
         private uint sample_size;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -88,6 +87,11 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_data_format(IntPtr chn);
 
+        public readonly string name;
+        public readonly string id;
+        public readonly bool output;
+        public readonly List<Attr> attrs;
+
         public Channel(IntPtr chn)
         {
             this.chn = chn;
@@ -97,25 +101,15 @@ namespace iio
 
             for (uint i = 0; i < nb_attrs; i++)
                 attrs.Add(new ChannelAttr(this.chn, Marshal.PtrToStringAnsi(iio_channel_get_attr(chn, i))));
-        }
 
-        public string id()
-        {
-            return Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));
-        }
-
-        public string name()
-        {
-            IntPtr name = iio_channel_get_name(this.chn);
-            if (name == IntPtr.Zero)
-                return "";
+            IntPtr name_ptr = iio_channel_get_name(this.chn);
+            if (name_ptr == IntPtr.Zero)
+                name = "";
             else
-                return Marshal.PtrToStringAnsi(name);
-        }
+                name = Marshal.PtrToStringAnsi(name_ptr);
 
-        public bool is_output()
-        {
-            return iio_channel_is_output(this.chn);
+            id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));
+            output = iio_channel_is_output(this.chn);
         }
 
         public void enable()
@@ -133,16 +127,11 @@ namespace iio
             return iio_channel_is_enabled(this.chn);
         }
 
-        public List<Attr> get_attrs()
-        {
-            return attrs.ToList<Attr>();
-        }
-
         public byte[] read(IOBuffer buffer, bool raw = false)
         {
             if (!is_enabled())
                 throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
-            if (is_output())
+            if (this.output)
                 throw new Exception("Unable to read from output channel");
 
             byte[] array = new byte[(int) (buffer.get_samples_count() * sample_size)];
@@ -165,7 +154,7 @@ namespace iio
         {
             if (!is_enabled())
                 throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
-            if (!is_output())
+            if (!this.output)
                 throw new Exception("Unable to write to an input channel");
 
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
