@@ -58,6 +58,9 @@ namespace iio
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool iio_device_is_trigger(IntPtr dev);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_context_set_timeout(IntPtr ctx, uint timeout_ms);
+
         public readonly string xml;
         public readonly string name;
         public readonly string description;
@@ -118,6 +121,13 @@ namespace iio
             }
 
             throw new Exception("Device " + name + " not found");
+        }
+
+        public void set_timeout(uint timeout)
+        {
+            int ret = iio_context_set_timeout(ctx, timeout);
+            if (ret < 0)
+                throw new Exception("Unable to set timeout");
         }
 
         public void Dispose()
