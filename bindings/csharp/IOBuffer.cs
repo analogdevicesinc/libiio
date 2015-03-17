@@ -9,9 +9,7 @@ namespace iio
 {
     public class IOBuffer : IDisposable
     {
-        public IntPtr buf;
-        private uint samples_count;
-        private bool circular, circular_buffer_pushed;
+        private bool circular_buffer_pushed;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_create_buffer(IntPtr dev, uint samples_count,
@@ -31,6 +29,10 @@ namespace iio
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_buffer_end(IntPtr buf);
+
+        internal IntPtr buf;
+        public readonly uint samples_count;
+        public readonly bool circular;
 
         public IOBuffer(Device dev, uint samples_count, bool circular = false)
         {

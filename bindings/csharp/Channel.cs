@@ -44,7 +44,7 @@ namespace iio
 
 
         private IntPtr chn;
-        private List<ChannelAttr> attrs;
+        private List<Attr> attrs;
         private uint sample_size;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -91,7 +91,7 @@ namespace iio
         public Channel(IntPtr chn)
         {
             this.chn = chn;
-            attrs = new List<ChannelAttr>();
+            attrs = new List<Attr>();
             sample_size = (uint)Marshal.ReadInt32(iio_channel_get_data_format(this.chn)) / 8;
             uint nb_attrs = iio_channel_get_attrs_count(chn);
 
