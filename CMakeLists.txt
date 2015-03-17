@@ -165,13 +165,19 @@ endif()
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-	configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
-	file(COPY ${CMAKE_SOURCE_DIR}/doc DESTINATION ${CMAKE_BINARY_DIR}/html)
-	add_custom_target(doc
-		${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-		COMMENT "Generating API documentation with Doxygen" VERBATIM
-		)
+	option(WITH_DOC "Generate documentation with Doxygen" ON)
+
+	if (WITH_DOC)
+		configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
+		set(HTML_DEST_DIR ${CMAKE_BINARY_DIR}/html)
+		file(COPY ${CMAKE_SOURCE_DIR}/doc DESTINATION ${HTML_DEST_DIR})
+
+		add_custom_command(TARGET iio POST_BUILD
+			COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+			COMMENT "Generating API documentation with Doxygen" VERBATIM
+			)
+	endif()
 else()
 	message(STATUS "Doxygen not found, API documentation won't be generated")
 endif()
