@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,12 +32,12 @@ namespace iio
 
         public double read_double()
         {
-            return Convert.ToDouble(read());
+            return double.Parse(read(), CultureInfo.InvariantCulture);
         }
 
         public long read_long()
         {
-            return Convert.ToInt64(read());
+            return long.Parse(read(), CultureInfo.InvariantCulture);
         }
 
         public void write(bool val)
@@ -49,12 +50,12 @@ namespace iio
 
         public void write(long val)
         {
-            write("" + val);
+            write(val.ToString(CultureInfo.InvariantCulture));
         }
 
         public void write(double val)
         {
-            write("" + val);
+            write(val.ToString(CultureInfo.InvariantCulture));
         }
     }
 }
