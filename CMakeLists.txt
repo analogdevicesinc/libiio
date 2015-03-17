@@ -19,6 +19,11 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 	CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
+mark_as_advanced(INSTALL_BIN_DIR)
+mark_as_advanced(INSTALL_LIB_DIR)
+mark_as_advanced(INSTALL_INC_DIR)
+mark_as_advanced(INSTALL_PKGCONFIG_DIR)
+
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
