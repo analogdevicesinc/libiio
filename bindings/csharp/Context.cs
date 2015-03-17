@@ -64,6 +64,9 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_context_set_timeout(IntPtr ctx, uint timeout_ms);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_context_clone(IntPtr ctx);
+
         public readonly string xml;
         public readonly string name;
         public readonly string description;
@@ -117,6 +120,11 @@ namespace iio
         {
             if (ctx != IntPtr.Zero)
                 Dispose(false);
+        }
+
+        public Context clone()
+        {
+            return new Context(iio_context_clone(this.ctx));
         }
 
         public Device get_device(string name)
