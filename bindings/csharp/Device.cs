@@ -27,7 +27,7 @@ namespace iio
             public override string read()
             {
                 StringBuilder builder = new StringBuilder(1024);
-                int err = iio_device_attr_read(dev, attrname, builder, 1024);
+                int err = iio_device_attr_read(dev, name, builder, 1024);
                 if (err < 0)
                     throw new Exception("Unable to read device attribute " + err);
                 return builder.ToString();
@@ -35,7 +35,7 @@ namespace iio
 
             public override void write(string str)
             {
-                int err = iio_device_attr_write(dev, attrname, str);
+                int err = iio_device_attr_write(dev, name, str);
                 if (err < 0)
                     throw new Exception("Unable to write device attribute " + err);
             }

@@ -9,16 +9,11 @@ namespace iio
 {
     public abstract class Attr
     {
-        protected string attrname;
+        public readonly string name;
 
         protected Attr(string name)
         {
-            this.attrname = name;
-        }
-
-        public string name()
-        {
-            return attrname;
+            this.name = name;
         }
 
         public abstract string read();

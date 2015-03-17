@@ -28,7 +28,7 @@ namespace iio
             public override string read()
             {
                 StringBuilder builder = new StringBuilder(1024);
-                int err = iio_channel_attr_read(chn, attrname, builder, (uint) builder.Capacity);
+                int err = iio_channel_attr_read(chn, name, builder, (uint) builder.Capacity);
                 if (err < 0)
                     throw new Exception("Unable to read channel attribute " + err);
                 return builder.ToString();
@@ -36,7 +36,7 @@ namespace iio
 
             public override void write(string str)
             {
-                int err = iio_channel_attr_write(chn, attrname, str);
+                int err = iio_channel_attr_write(chn, name, str);
                 if (err < 0)
                     throw new Exception("Unable to write channel attribute " + err);
             }

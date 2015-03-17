@@ -14,7 +14,7 @@ namespace iio
         public void set_rate(ulong rate)
         {
             foreach (Attr each in get_attrs())
-                if (each.name().Equals("frequency"))
+                if (each.name.Equals("frequency"))
                 {
                     each.write((long) rate);
                     return;
@@ -25,7 +25,7 @@ namespace iio
         public ulong get_rate()
         {
             foreach (Attr each in get_attrs())
-                if (each.name().Equals("frequency"))
+                if (each.name.Equals("frequency"))
                     return (ulong) each.read_long();
             throw new Exception("Trigger has no frequency?");
         }
