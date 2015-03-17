@@ -46,28 +46,42 @@ Architecture: any
 Multi-Arch: same
 Depends: libiio0 (>= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
 Description: Miscellaneous libiio utilities
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
+ .
  This package contains several basic utilities for testing libiio.
 
 Package: python-libiio
 Architecture: all
 Depends: libiio0 (>= ${binary:Version}), python (>= 2.7.8)
 Description: Python bindings for libiio
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
+ .
  This package contains the Python bindings for libiio.
 
 Package: libiio0-cil
 Architecture: all
 Depends: libiio0 (>= ${binary:Version}), ${cli:Depends}
 Description: CLI bindings for libiio
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
+ .
  This package contains the CLI bindings for libiio.
 
 Package: libiio-cil-dev
 Architecture: all
 Depends: libiio0-cil (= ${binary:Version})
 Description: CLI bindings for libiio
- This package contains the CLI bindings for libiio.
+ Libiio is a library that has been conceived to ease the development of
+ applications interfacing Industrial Input/Output (IIO) devices through
+ the IIO subsystem of the Linux kernel.
  .
- This package contains development files for the libiio0-cil library, and should
- be used for compilation.
+ This package contains development files for the CLI bindings of libiio,
+ and should be used for compilation.
 
 Package: libiio0-doc
 Architecture: all
