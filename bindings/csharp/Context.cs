@@ -7,6 +7,20 @@ using System.Threading.Tasks;
 
 namespace iio
 {
+    public class Version
+    {
+        public readonly uint major;
+        public readonly uint minor;
+        public readonly string git_tag;
+
+        internal Version(uint major, uint minor, string git_tag)
+        {
+            this.major = major;
+            this.minor = minor;
+            this.git_tag = git_tag;
+        }
+    }
+
     public class Context : IDisposable
     {
         private IntPtr ctx;
@@ -29,6 +43,12 @@ namespace iio
         private static extern IntPtr iio_context_get_xml(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_library_get_version(ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_context_get_version(IntPtr ctx, ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_devices_count(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -41,6 +61,7 @@ namespace iio
         public readonly string xml;
         public readonly string name;
         public readonly string description;
+        public readonly Version library_version, backend_version;
         public readonly List<Device> devices;
 
         public Context(string hostname)
@@ -64,6 +85,22 @@ namespace iio
             xml = Marshal.PtrToStringAnsi(iio_context_get_xml(ctx));
             name = Marshal.PtrToStringAnsi(iio_context_get_name(ctx));
             description = Marshal.PtrToStringAnsi(iio_context_get_description(ctx));
+
+            uint major = 0;
+            uint minor = 0;
+            StringBuilder builder = new StringBuilder(8);
+            int err = iio_library_get_version(ref major, ref minor, builder);
+            if (err < 0)
+                throw new Exception("Unable to read library version");
+            library_version = new Version(major, minor, builder.ToString());
+
+            major = 0;
+            minor = 0;
+            builder.Clear();
+            err = iio_context_get_version(ctx, ref major, ref minor, builder);
+            if (err < 0)
+                throw new Exception("Unable to read backend version");
+            backend_version = new Version(major, minor, builder.ToString());
         }
 
         ~Context()
