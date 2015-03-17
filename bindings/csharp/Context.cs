@@ -31,6 +31,9 @@ namespace iio
         );
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_create_default_context();
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_context_destroy(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -67,9 +70,13 @@ namespace iio
         public readonly Version library_version, backend_version;
         public readonly List<Device> devices;
 
-        public Context(string hostname)
+        public Context(string hostname) : this(iio_create_network_context(hostname)) {}
+        public Context() : this(iio_create_default_context()) {}
+
+        private Context(IntPtr ctx)
         {
-            ctx = iio_create_network_context(hostname);
+            this.ctx = ctx;
+
             if (ctx == IntPtr.Zero)
                 throw new Exception("Unable to create IIO context");
 
