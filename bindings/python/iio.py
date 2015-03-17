@@ -93,6 +93,11 @@ _set_timeout.restype = c_int
 _set_timeout.archtypes = (_ContextPtr, c_uint, )
 _set_timeout.errcheck = _checkNegative
 
+_clone = lib.iio_context_clone
+_clone.restype = _ContextPtr
+_clone.archtypes = (_ContextPtr, )
+_clone.errcheck = _checkNull
+
 _d_get_id = lib.iio_device_get_id
 _d_get_id.restype = c_char_p
 _d_get_id.archtypes = (_DevicePtr, )
@@ -372,6 +377,9 @@ class Context(object):
 
 	def set_timeout(self, timeout):
 		_set_timeout(self._context, timeout)
+
+	def clone(self):
+		return Context(_clone(self._context))
 
 class LocalContext(Context):
 	def __init__(self):
