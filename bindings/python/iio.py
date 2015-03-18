@@ -74,6 +74,10 @@ _get_name.restype = c_char_p
 _get_name.archtypes = (_ContextPtr, )
 _get_name.errcheck = _checkNull
 
+_get_description = lib.iio_context_get_description
+_get_description.restype = c_char_p
+_get_description.archtypes = (_ContextPtr, )
+
 _get_version = lib.iio_context_get_version
 _get_version.restype = c_int
 _get_version.archtypes = (_ContextPtr, c_uint, c_uint, c_char_p, )
@@ -364,6 +368,7 @@ class Context(object):
 		self.devices = [ Device(self, _get_device(self._context, x)) \
 				for x in xrange(0, _devices_count(self._context)) ]
 		self.name = _get_name(self._context)
+		self.description = _get_description(self._context)
 
 		major = c_uint()
 		minor = c_uint()
