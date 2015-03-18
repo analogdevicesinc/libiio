@@ -78,6 +78,10 @@ _get_description = lib.iio_context_get_description
 _get_description.restype = c_char_p
 _get_description.archtypes = (_ContextPtr, )
 
+_get_xml = lib.iio_context_get_xml
+_get_xml.restype = c_char_p
+_get_xml.archtypes = (_ContextPtr, )
+
 _get_library_version = lib.iio_library_get_version
 _get_library_version.restype = c_int
 _get_library_version.archtypes = (c_uint, c_uint, c_char_p, )
@@ -390,6 +394,7 @@ class Context(object):
 				for x in xrange(0, _devices_count(self._context)) ]
 		self.name = _get_name(self._context)
 		self.description = _get_description(self._context)
+		self.xml = _get_xml(self._context)
 
 		major = c_uint()
 		minor = c_uint()
