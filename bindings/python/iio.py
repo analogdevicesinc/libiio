@@ -305,16 +305,8 @@ class Channel(object):
 		else:
 			return _c_write(self._channel, buf._buffer, c_array, len(array))
 
-	def __enable(self, en):
-		if en:
-			_c_enable(self._channel)
-		else:
-			_c_disable(self._channel)
-
-	def __is_enabled(self):
-		return _c_is_enabled(self._channel)
-
-	enabled = property(__is_enabled, __enable)
+	enabled = property(lambda self: _c_is_enabled(self._channel), \
+			lambda self, x: _c_enable(self._channel) if x else _c_disable(self._channel))
 
 class Buffer(object):
 	def __init__(self, device, samples_count, cyclic = False):
