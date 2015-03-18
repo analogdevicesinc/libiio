@@ -241,27 +241,51 @@ _buffer_end = lib.iio_buffer_end
 _buffer_end.restype = c_void_p
 _buffer_end.archtypes = (_BufferPtr, )
 
+class Attr(object):
+	def __init__(self, name, filename = None):
+		self.name = name
+		self.filename = name if filename is None else filename
+
+	def __str__(self):
+		return self.name
+
+	value = property(lambda self: self.__read(), lambda self, x: self.__write(x))
+
+class ChannelAttr(Attr):
+	def __init__(self, channel, name):
+		super(ChannelAttr, self).__init__(name, _c_get_filename(channel, name))
+		self._channel = channel
+
+	def _Attr__read(self):
+		buf = create_string_buffer(1024)
+		_c_read_attr(self._channel, self.name, byref(buf), 1024)
+		return buf.value
+
+	def _Attr__write(self, value):
+		_c_write_attr(self._channel, self.name, value)
+
+class DeviceAttr(Attr):
+	def __init__(self, device, name):
+		super(DeviceAttr, self).__init__(name)
+		self._device = device
+
+	def _Attr__read(self):
+		buf = create_string_buffer(1024)
+		_d_read_attr(self._device, self.name, byref(buf), 1024)
+		return buf.value
+
+	def _Attr__write(self, value):
+		_d_write_attr(self._device, self.name, value)
+
 class Channel(object):
 	def __init__(self, dev, _channel):
 		self.dev = dev
 		self._channel = _channel
-		self.attrs = [ _c_get_attr(self._channel, x) \
-				for x in xrange(0, _c_attr_count(self._channel)) ]
+		self.attrs = { name : ChannelAttr(_channel, name) for name in \
+				[_c_get_attr(_channel, x) for x in xrange(0, _c_attr_count(_channel))] }
 		self.id = _c_get_id(self._channel)
 		self.name = _c_get_name(self._channel)
 		self.output = _c_is_output(self._channel)
-
-	# TODO(pcercuei): Provide a dict-like interface for the attributes
-	def read_attr(self, attr):
-		buf = create_string_buffer(1024)
-		_c_read_attr(self._channel, attr, buf, 1024)
-		return buf.value
-
-	def write_attr(self, attr, value):
-		_c_write_attr(self._channel, attr, value)
-
-	def get_filename(self, attr):
-		return _c_get_filename(self._channel, attr)
 
 	def read(self, buf, raw = False):
 		array = bytearray(buf.length)
@@ -331,21 +355,12 @@ class Device(object):
 	def __init__(self, ctx, _device):
 		self.ctx = ctx
 		self._device = _device
-		self.attrs = [ _d_get_attr(self._device, x) \
-				for x in xrange(0, _d_attr_count(self._device)) ]
+		self.attrs = { name : DeviceAttr(_device, name) for name in \
+				[_d_get_attr(_device, x) for x in xrange(0, _d_attr_count(_device))] }
 		self.channels = [ Channel(self, _get_channel(self._device, x)) \
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
 		self.name = _d_get_name(self._device)
-
-	# TODO(pcercuei): Provide a dict-like interface for the attributes
-	def read_attr(self, attr):
-		buf = create_string_buffer(1024)
-		_d_read_attr(self._device, attr, byref(buf), 1024)
-		return buf.value
-
-	def write_attr(self, attr, value):
-		_d_write_attr(self._device, attr, value)
 
 	def reg_write(self, reg, value):
 		_d_reg_write(self._device, reg, value)
