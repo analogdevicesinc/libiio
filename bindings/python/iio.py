@@ -139,6 +139,25 @@ _d_write_attr.restype = c_int
 _d_write_attr.archtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_attr.errcheck = _checkNegative
 
+_d_debug_attr_count = lib.iio_device_get_debug_attrs_count
+_d_debug_attr_count.restype = c_uint
+_d_debug_attr_count.archtypes = (_DevicePtr, )
+
+_d_get_debug_attr = lib.iio_device_get_debug_attr
+_d_get_debug_attr.restype = c_char_p
+_d_get_debug_attr.archtypes = (_DevicePtr, )
+_d_get_debug_attr.errcheck = _checkNull
+
+_d_read_debug_attr = lib.iio_device_debug_attr_read
+_d_read_debug_attr.restype = c_int
+_d_read_debug_attr.archtypes = (_DevicePtr, c_char_p, c_char_p, c_uint)
+_d_read_debug_attr.errcheck = _checkNegative
+
+_d_write_debug_attr = lib.iio_device_debug_attr_write
+_d_write_debug_attr.restype = c_int
+_d_write_debug_attr.archtypes = (_DevicePtr, c_char_p, c_char_p)
+_d_write_debug_attr.errcheck = _checkNegative
+
 _d_reg_write = lib.iio_device_reg_write
 _d_reg_write.restype = c_int
 _d_reg_write.archtypes = (_DevicePtr, c_uint, c_uint)
@@ -295,6 +314,18 @@ class DeviceAttr(Attr):
 	def _Attr__write(self, value):
 		_d_write_attr(self._device, self.name, value)
 
+class DeviceDebugAttr(DeviceAttr):
+	def __init__(self, device, name):
+		super(DeviceDebugAttr, self).__init__(device, name)
+
+	def _Attr__read(self):
+		buf = create_string_buffer(1024)
+		_d_read_debug_attr(self._device, self.name, byref(buf), 1024)
+		return buf.value
+
+	def _Attr__write(self, value):
+		_d_write_debug_attr(self._device, self.name, value)
+
 class Channel(object):
 	def __init__(self, dev, _channel):
 		self.dev = dev
@@ -367,6 +398,8 @@ class Device(object):
 		self._device = _device
 		self.attrs = { name : DeviceAttr(_device, name) for name in \
 				[_d_get_attr(_device, x) for x in xrange(0, _d_attr_count(_device))] }
+		self.debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
+				[_d_get_debug_attr(_device, x) for x in xrange(0, _d_debug_attr_count(_device))] }
 		self.channels = [ Channel(self, _get_channel(self._device, x)) \
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
