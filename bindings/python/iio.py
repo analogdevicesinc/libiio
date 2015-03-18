@@ -180,6 +180,20 @@ _get_sample_size.restype = c_int
 _get_sample_size.archtypes = (_DevicePtr, )
 _get_sample_size.errcheck = _checkNegative
 
+_d_is_trigger = lib.iio_device_is_trigger
+_d_is_trigger.restype = c_bool
+_d_is_trigger.archtypes = (_DevicePtr, )
+
+_d_get_trigger = lib.iio_device_get_trigger
+_d_get_trigger.restype = c_int
+_d_get_trigger.archtypes = (_DevicePtr, _DevicePtr, )
+_d_get_trigger.errcheck = _checkNegative
+
+_d_set_trigger = lib.iio_device_set_trigger
+_d_set_trigger.restype = c_int
+_d_set_trigger.archtypes = (_DevicePtr, _DevicePtr, )
+_d_set_trigger.errcheck = _checkNegative
+
 _c_get_id = lib.iio_channel_get_id
 _c_get_id.restype = c_char_p
 _c_get_id.archtypes = (_ChannelPtr, )
@@ -397,7 +411,7 @@ class Buffer(object):
 		memmove(start, c_array, length)
 		return length
 
-class Device(object):
+class Trigger(object):
 	def __init__(self, ctx, _device):
 		self.ctx = ctx
 		self._device = _device
@@ -405,6 +419,8 @@ class Device(object):
 				[_d_get_attr(_device, x) for x in xrange(0, _d_attr_count(_device))] }
 		self.debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
 				[_d_get_debug_attr(_device, x) for x in xrange(0, _d_debug_attr_count(_device))] }
+
+		# TODO(pcercuei): Use a dictionary for the channels.
 		self.channels = [ Channel(self, _get_channel(self._device, x)) \
 				for x in xrange(0, _channels_count(self._device)) ]
 		self.id = _d_get_id(self._device)
@@ -422,14 +438,34 @@ class Device(object):
 	def sample_size(self):
 		return _get_sample_size(self._device)
 
+class Device(Trigger):
+	def __init__(self, ctx, _device):
+		super(Device, self).__init__(ctx, _device)
+
+	def _set_trigger(self, trigger):
+		_d_set_trigger(self._device, trigger._device if trigger else None)
+
+	def _get_trigger(self):
+		value = _Device()
+		_d_get_trigger(self._device, byref(value))
+
+		for dev in self.ctx.devices:
+			if value == dev._device:
+				return dev
+		return None
+
+	trigger = property(_get_trigger, _set_trigger)
+
 class Context(object):
 	def __init__(self, _context=None):
 		if(_context is None):
 			self._context = _new_default()
 		else:
 			self._context = _context
-		self.devices = [ Device(self, _get_device(self._context, x)) \
-				for x in xrange(0, _devices_count(self._context)) ]
+
+		# TODO(pcercuei): Use a dictionary for the devices.
+		self.devices = [ Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
+				[ _get_device(self._context, x) for x in xrange(0, _devices_count(self._context)) ]]
 		self.name = _get_name(self._context)
 		self.description = _get_description(self._context)
 		self.xml = _get_xml(self._context)
