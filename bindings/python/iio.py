@@ -78,6 +78,11 @@ _get_description = lib.iio_context_get_description
 _get_description.restype = c_char_p
 _get_description.archtypes = (_ContextPtr, )
 
+_get_library_version = lib.iio_library_get_version
+_get_library_version.restype = c_int
+_get_library_version.archtypes = (c_uint, c_uint, c_char_p, )
+_get_library_version.errcheck = _checkNegative
+
 _get_version = lib.iio_context_get_version
 _get_version.restype = c_int
 _get_version.archtypes = (_ContextPtr, c_uint, c_uint, c_char_p, )
@@ -240,6 +245,15 @@ _buffer_start.archtypes = (_BufferPtr, )
 _buffer_end = lib.iio_buffer_end
 _buffer_end.restype = c_void_p
 _buffer_end.archtypes = (_BufferPtr, )
+
+def _get_lib_version():
+	major = c_uint()
+	minor = c_uint()
+	buf = create_string_buffer(8)
+	_get_library_version(byref(major), byref(minor), buf)
+	return (major.value, minor.value, buf.value )
+
+version = _get_lib_version()
 
 class Attr(object):
 	def __init__(self, name, filename = None):
