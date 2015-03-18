@@ -193,6 +193,10 @@ _c_is_output = lib.iio_channel_is_output
 _c_is_output.restype = c_bool
 _c_is_output.archtypes = (_ChannelPtr, )
 
+_c_is_scan_element = lib.iio_channel_is_scan_element
+_c_is_scan_element.restype = c_bool
+_c_is_scan_element.archtypes = (_ChannelPtr, )
+
 _c_attr_count = lib.iio_channel_get_attrs_count
 _c_attr_count.restype = c_uint
 _c_attr_count.archtypes = (_ChannelPtr, )
@@ -335,6 +339,7 @@ class Channel(object):
 		self.id = _c_get_id(self._channel)
 		self.name = _c_get_name(self._channel)
 		self.output = _c_is_output(self._channel)
+		self.scan_element = _c_is_scan_element(self._channel)
 
 	def read(self, buf, raw = False):
 		array = bytearray(buf.length)
