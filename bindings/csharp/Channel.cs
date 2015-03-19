@@ -142,16 +142,16 @@ namespace iio
             if (this.output)
                 throw new Exception("Unable to read from output channel");
 
-            byte[] array = new byte[(int) (buffer.get_samples_count() * sample_size)];
+            byte[] array = new byte[(int) (buffer.samples_count * sample_size)];
             MemoryStream stream = new MemoryStream(array, true);
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
 
             if (raw)
-                count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.get_samples_count() * sample_size);
+                count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
             else
-                count = iio_channel_read(this.chn, buffer.buf, addr, buffer.get_samples_count() * sample_size);
+                count = iio_channel_read(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
             handle.Free();
             stream.SetLength((long) count);
             return stream.ToArray();

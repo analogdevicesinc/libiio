@@ -69,11 +69,6 @@ namespace iio
             circular_buffer_pushed = true;
         }
 
-        public uint get_samples_count()
-        {
-            return samples_count;
-        }
-
         public void Dispose()
         {
             Dispose(true);
