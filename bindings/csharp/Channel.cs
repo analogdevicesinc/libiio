@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace iio
 {
+    /// <summary><see cref="iio.Channel"/> class:
+    /// Contains the representation of an input or output channel.</summary>
     public class Channel
     {
         private class ChannelAttr : Attr
@@ -94,9 +96,25 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_data_format(IntPtr chn);
 
+        /// <summary>The name of this channel.</summary>
         public readonly string name;
+
+        /// <summary>An identifier of this channel.</summary>
+        /// <remarks>It is possible that two channels have the same ID,
+        /// if one is an input channel and the other is an output channel.</remarks>
         public readonly string id;
-        public readonly bool output, scan_element;
+
+        /// <summary>Contains <c>true</c> if the channel is an output channel,
+        /// <c>false</c> otherwise.</summary>
+        public readonly bool output;
+
+        /// <summary>Contains <c>true</c> if the channel is a scan element,
+        /// <c>false</c> otherwise.</summary>
+        /// <remarks>If a channel is a scan element, then it is possible to enable it
+        /// and use it for I/O operations.</remarks>
+        public readonly bool scan_element;
+
+        /// <summary>A <c>list</c> of all the attributes that this channel has.</summary>
         public readonly List<Attr> attrs;
 
         internal Channel(IntPtr chn)
@@ -120,21 +138,31 @@ namespace iio
             scan_element = iio_channel_is_scan_element(this.chn);
         }
 
+        /// <summary>Enable the current channel, so that it can be used for I/O operations.</summary>
         public void enable()
         {
             iio_channel_enable(this.chn);
         }
 
+        /// <summary>Disable the current channel.</summary>
         public void disable()
         {
             iio_channel_disable(this.chn);
         }
 
+        /// <summary>Returns whether or not the channel has been enabled.</summary>
         public bool is_enabled()
         {
             return iio_channel_is_enabled(this.chn);
         }
 
+        /// <summary>Extract the samples corresponding to this channel from the
+        /// given <see cref="iio.IOBuffer"/> object.</summary>
+        /// <param name="buffer">A valid instance of the <see cref="iio.IOBuffer"/> class.</param>
+        /// <param name="raw">If set to <c>true</c>, the samples are not converted from their
+        /// hardware format to their host format.</param>
+        /// <returns>A <c>byte</c> array containing the extracted samples.</returns>
+        /// <exception cref="System.Exception">The samples could not be read.</exception>
         public byte[] read(IOBuffer buffer, bool raw = false)
         {
             if (!is_enabled())
@@ -158,6 +186,15 @@ namespace iio
 
         }
 
+        /// <summary>
+        /// Write the specified array of samples corresponding to this channel into the
+        /// given <see cref="iio.IOBuffer"/> object.</summary>
+        /// <param name="buffer">A valid instance of the <see cref="iio.IOBuffer"/> class.</param>
+        /// <param name="array">A <c>byte</c> array containing the samples to write.</param>
+        /// <param name="raw">If set to <c>true</c>, the samples are not converted from their
+        /// host format to their native format.</param>
+        /// <returns>The number of bytes written.</returns>
+        /// <exception cref="System.Exception">The samples could not be written.</exception>
         public uint write(IOBuffer buffer, byte[] array, bool raw = false)
         {
             if (!is_enabled())

@@ -21,6 +21,8 @@ namespace iio
         }
     }
 
+    /// <summary><see cref="iio.Context"/> class:
+    /// Contains the representation of an IIO context.</summary>
     public class Context : IDisposable
     {
         private IntPtr ctx;
@@ -67,13 +69,34 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_context_clone(IntPtr ctx);
 
+        /// <summary>A XML representation of the current context.</summary>
         public readonly string xml;
+
+        /// <summary>The name of the current context.</summary>
         public readonly string name;
+
+        /// <summary>Retrieve a human-readable information string about the current context.</summary>
         public readonly string description;
         public readonly Version library_version, backend_version;
+
+        /// <summary>A <c>List</c> of all the IIO devices present on the current context.</summary>
         public readonly List<Device> devices;
 
+        /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
+        /// using the network backend of the IIO library.</summary>
+        /// <param name="hostname">Hostname, IPv4 or IPv6 address where the IIO Daemon is running</param>
+        /// <returns>an instance of the <see cref="iio.Context"/> class</returns>
+        /// <exception cref="System.Exception">The IIO context could not be created.</exception>
         public Context(string hostname) : this(iio_create_network_context(hostname)) {}
+
+        /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
+        /// using the local or the network backend of the IIO library.</summary>
+        /// <remarks>This function will create a network context if the IIOD_REMOTE
+        /// environment variable is set to the hostname where the IIOD server runs.
+        /// If set to an empty string, the server will be discovered using ZeroConf.
+        /// If the environment variable is not set, a local context will be created
+        /// instead.</remarks>
+        /// <exception cref="System.Exception">The IIO context could not be created.</exception>
         public Context() : this(iio_create_default_context()) {}
 
         private Context(IntPtr ctx)
@@ -120,11 +143,16 @@ namespace iio
                 Dispose(false);
         }
 
+        /// <summary>Clone this instance.</summary>
         public Context clone()
         {
             return new Context(iio_context_clone(this.ctx));
         }
 
+        /// <summary>Get the <see cref="iio.Device"/> object of the specified name.</summary>
+        /// <param name="name">Name or ID of the device to look for</param>
+        /// <exception cref="System.Exception">The IIO device with the specified
+        /// name or ID could not be found in the current context.</exception>
         public Device get_device(string name)
         {
             foreach (Device each in devices) {
@@ -136,6 +164,9 @@ namespace iio
             throw new Exception("Device " + name + " not found");
         }
 
+        /// <summary>Set a timeout for I/O operations.</summary>
+        /// <param name="timeout">The timeout value, in milliseconds</param>
+        /// <exception cref="System.Exception">The timeout could not be applied.</exception>
         public void set_timeout(uint timeout)
         {
             int ret = iio_context_set_timeout(ctx, timeout);
@@ -143,6 +174,11 @@ namespace iio
                 throw new Exception("Unable to set timeout");
         }
 
+        /// <summary>Releases all resource used by the <see cref="iio.Context"/> object.</summary>
+        /// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="iio.Context"/>. The
+        /// <see cref="Dispose"/> method leaves the <see cref="iio.Context"/> in an unusable state. After calling
+        /// <see cref="Dispose"/>, you must release all references to the <see cref="iio.Context"/> so the garbage
+        /// collector can reclaim the memory that the <see cref="iio.Context"/> was occupying.</remarks>
         public void Dispose()
         {
             Dispose(true);

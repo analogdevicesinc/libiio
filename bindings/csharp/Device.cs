@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace iio
 {
+    /// <summary><see cref="iio.Device"/> class:
+    /// Contains the representation of an IIO device.</summary>
     public class Device
     {
         private class DeviceAttr : Attr
@@ -115,9 +117,21 @@ namespace iio
         private static extern int iio_device_reg_read(IntPtr dev, uint addr, ref uint value);
 
         internal IntPtr dev;
+
+        /// <summary>An identifier of this device.</summary>
+        /// <remarks>The identifier is only valid in this IIO context</remarks>
         public readonly string id;
+
+        /// <summary>The name of this device.</summary>
         public readonly string name;
-        public readonly List<Attr> attrs, debug_attrs;
+
+        /// <summary>A <c>list</c> of all the attributes that this device has.</summary>
+        public readonly List<Attr> attrs;
+
+        /// <summary>A <c>list</c> of all the debug attributes that this device has.</summary>
+        public readonly List<Attr> debug_attrs;
+
+        /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
         public readonly List<Channel> channels;
 
         internal Device(Context ctx, IntPtr dev)
@@ -149,6 +163,10 @@ namespace iio
                 name = Marshal.PtrToStringAnsi(name_ptr);
         }
 
+        /// <summary>Get the <see cref="iio.Channel"/> object of the specified name.</summary>
+        /// <param name="name">Name or ID of the channel to look for</param>
+        /// <exception cref="System.Exception">The IIO device with the specified
+        /// name or ID could not be found in the current context.</exception>
         public Channel get_channel(string name)
         {
             foreach (Channel each in channels) {
@@ -160,6 +178,9 @@ namespace iio
             throw new Exception("Channel " + name + " not found");
         }
 
+        /// <summary>Affect a trigger to this device.</summary>
+        /// <param name="trig">A valid instance of the <see cref="iio.Trigger"/> class.</param>
+        /// <exception cref="System.Exception">The trigger could not be set.</exception>
         public void set_trigger(Trigger trig)
         {
             int err = iio_device_set_trigger(this.dev, trig == null ? IntPtr.Zero : trig.dev);
@@ -167,6 +188,9 @@ namespace iio
                 throw new Exception("Unable to set trigger: err=" + err);
         }
 
+        /// <summary>Get the current trigger affected to this device.</summary>
+        /// <returns>An instance of the <see cref="iio.Trigger"/> class.</returns>
+        /// <exception cref="System.Exception">The instance could not be retrieved.</exception>
         public Trigger get_trigger()
         {
             IntPtr ptr = (IntPtr)0;
@@ -184,14 +208,20 @@ namespace iio
             return null;
         }
 
+        /// <summary>Get the current sample size of the device.</summary>
+        /// <remarks>The sample size varies each time channels get enabled or disabled.</remarks>
+        /// <exception cref="System.Exception">Internal error. Please report any bug.</exception>
         public uint get_sample_size()
         {
             int ret = iio_device_get_sample_size(dev);
             if (ret < 0)
-                throw new Exception("Unable to get sample size: err=" + ret);
+                throw new Exception("Internal error. Please report any bug.");
             return (uint) ret;
         }
-
+        /// <summary>Set a value to one register of this device.</summary>
+        /// <param name="addr">The address of the register concerned.</param>
+        /// <param name="value">The value that will be used for this register.</param>
+        /// <exception cref="System.Exception">The register could not be written.</exception>
         public void reg_write(uint addr, uint value)
         {
             int err = iio_device_reg_write(dev, addr, value);
@@ -199,6 +229,9 @@ namespace iio
                 throw new Exception("Unable to write register");
         }
 
+        /// <summary>Read the content of a register of this device.</summary>
+        /// <param name="addr">The address of the register concerned.</param>
+        /// <exception cref="System.Exception">The register could not be read.</exception>
         public uint reg_read(uint addr)
         {
             uint value = 0;
