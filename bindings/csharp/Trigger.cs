@@ -9,7 +9,7 @@ namespace iio
 {
     public class Trigger : Device
     {
-        public Trigger(Context ctx, IntPtr ptr) : base(ctx, ptr) { }
+        internal Trigger(Context ctx, IntPtr ptr) : base(ctx, ptr) { }
 
         public void set_rate(ulong rate)
         {

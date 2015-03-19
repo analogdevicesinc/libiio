@@ -99,7 +99,7 @@ namespace iio
         public readonly bool output, scan_element;
         public readonly List<Attr> attrs;
 
-        public Channel(IntPtr chn)
+        internal Channel(IntPtr chn)
         {
             this.chn = chn;
             attrs = new List<Attr>();

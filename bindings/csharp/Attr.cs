@@ -12,7 +12,7 @@ namespace iio
         public readonly string name;
         public readonly string filename;
 
-        protected Attr(string name, string filename = null)
+        internal Attr(string name, string filename = null)
         {
             this.filename = filename == null ? name : filename;
             this.name = name;

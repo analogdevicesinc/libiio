@@ -120,7 +120,7 @@ namespace iio
         public readonly List<Attr> attrs, debug_attrs;
         public readonly List<Channel> channels;
 
-        public Device(Context ctx, IntPtr dev)
+        internal Device(Context ctx, IntPtr dev)
         {
             this.ctx = ctx;
             this.dev = dev;
