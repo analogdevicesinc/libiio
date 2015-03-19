@@ -1,4 +1,4 @@
-libiio (0.4-0) unstable; urgency=low
+libiio (0.4) unstable; urgency=low
 
   * Boost communication speed of the network backend
   * Fix socket I/O timeout on UNIX systems
@@ -6,7 +6,7 @@ libiio (0.4-0) unstable; urgency=low
 
  -- Paul Cercueil <paul.cercueil@analog.com>  Fri, 6 Feb 2015 11:42:01 +0200
 
-libiio (0.3-0) unstable; urgency=low
+libiio (0.3) unstable; urgency=low
 
   * Improved error handling
   * IPv6 support in both libiio and iiod
@@ -16,7 +16,7 @@ libiio (0.3-0) unstable; urgency=low
 
  -- Paul Cercueil <paul.cercueil@analog.com>  Fri, 12 Dec 2014 17:14:59 +0200
 
-libiio (0.2-0) unstable; urgency=low
+libiio (0.2) unstable; urgency=low
 
   * Initial release.
 
