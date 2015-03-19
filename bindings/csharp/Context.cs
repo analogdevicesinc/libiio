@@ -46,7 +46,7 @@ namespace iio
         private static extern IntPtr iio_context_get_xml(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_library_get_version(ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
+        private static extern void iio_library_get_version(ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_context_get_version(IntPtr ctx, ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
@@ -102,15 +102,13 @@ namespace iio
             uint major = 0;
             uint minor = 0;
             StringBuilder builder = new StringBuilder(8);
-            int err = iio_library_get_version(ref major, ref minor, builder);
-            if (err < 0)
-                throw new Exception("Unable to read library version");
+            iio_library_get_version(ref major, ref minor, builder);
             library_version = new Version(major, minor, builder.ToString());
 
             major = 0;
             minor = 0;
             builder.Clear();
-            err = iio_context_get_version(ctx, ref major, ref minor, builder);
+            int err = iio_context_get_version(ctx, ref major, ref minor, builder);
             if (err < 0)
                 throw new Exception("Unable to read backend version");
             backend_version = new Version(major, minor, builder.ToString());
