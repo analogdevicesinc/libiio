@@ -83,9 +83,7 @@ _get_xml.restype = c_char_p
 _get_xml.archtypes = (_ContextPtr, )
 
 _get_library_version = lib.iio_library_get_version
-_get_library_version.restype = c_int
 _get_library_version.archtypes = (c_uint, c_uint, c_char_p, )
-_get_library_version.errcheck = _checkNegative
 
 _get_version = lib.iio_context_get_version
 _get_version.restype = c_int
