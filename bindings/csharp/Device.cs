@@ -162,8 +162,7 @@ namespace iio
 
         public void set_trigger(Trigger trig)
         {
-            IntPtr ptr = (IntPtr) 0;
-            int err = iio_device_set_trigger(trig.dev, ptr);
+            int err = iio_device_set_trigger(this.dev, trig == null ? IntPtr.Zero : trig.dev);
             if (err < 0)
                 throw new Exception("Unable to set trigger: err=" + err);
         }
