@@ -307,6 +307,8 @@ class Attr(object):
 			None, "Current value of this attribute.\n\ttype=str")
 
 class ChannelAttr(Attr):
+	"""Represents an attribute of a channel."""
+
 	def __init__(self, channel, name):
 		super(ChannelAttr, self).__init__(name, _c_get_filename(channel, name))
 		self._channel = channel
@@ -320,6 +322,8 @@ class ChannelAttr(Attr):
 		_c_write_attr(self._channel, self.name, value)
 
 class DeviceAttr(Attr):
+	"""Represents an attribute of an IIO device."""
+
 	def __init__(self, device, name):
 		super(DeviceAttr, self).__init__(name)
 		self._device = device
@@ -333,6 +337,8 @@ class DeviceAttr(Attr):
 		_d_write_attr(self._device, self.name, value)
 
 class DeviceDebugAttr(DeviceAttr):
+	"""Represents a debug attribute of an IIO device."""
+
 	def __init__(self, device, name):
 		super(DeviceDebugAttr, self).__init__(device, name)
 
@@ -356,6 +362,19 @@ class Channel(object):
 		self._scan_element = _c_is_scan_element(self._channel)
 
 	def read(self, buf, raw = False):
+		"""
+		Extract the samples corresponding to this channel from the given iio.Buffer object.
+
+		parameters:
+			buf: type=iio.Buffer
+				A valid instance of the iio.Buffer class
+			raw: type=bool
+				If set to True, the samples are not converted from their
+				native format to their host format
+
+		returns: type=bytearray
+			An array containing the samples for this channel
+		"""
 		array = bytearray(buf._length)
 		mytype = c_char * len(array)
 		c_array = mytype.from_buffer(array)
@@ -366,6 +385,21 @@ class Channel(object):
 		return array[:length]
 
 	def write(self, buf, array, raw = False):
+		"""
+		Write the specified array of samples corresponding to this channel into the given iio.Buffer object.
+
+		parameters:
+			buf: type=iio.Buffer
+				A valid instance of the iio.Buffer class
+			array: type=bytearray
+				The array containing the samples to copy
+			raw: type=bool
+				If set to True, the samples are not converted from their
+				host format to their native format
+
+		returns: type=int
+			The number of bytes written
+		"""
 		mytype = c_char * len(array)
 		c_array = mytype.from_buffer(array)
 		if raw:
@@ -388,7 +422,24 @@ class Channel(object):
 			None, "Configured state of the channel\n\ttype=bool")
 
 class Buffer(object):
+	"""The class used for all I/O operations."""
+
 	def __init__(self, device, samples_count, cyclic = False):
+		"""
+		Initializes a new instance of the Buffer class.
+
+		parameters:
+			device: type=iio.Device
+				The iio.Device object that represents the device where the I/O
+				operations will be performed
+			samples_count: type=int
+				The size of the buffer, in samples
+			circular: type=bool
+				If set to True, the buffer is circular
+
+		returns: type=iio.Buffer
+			An new instance of this class
+		"""
 		self.dev = device
 		self._buffer = _create_buffer(device._device, samples_count, cyclic)
 		self._length = samples_count * device.sample_size
@@ -397,15 +448,25 @@ class Buffer(object):
 		_buffer_destroy(self._buffer)
 
 	def __len__(self):
+		"""The size of this buffer, in bytes."""
 		return self._length
 
 	def refill(self):
+		"""Fetch a new set of samples from the hardware."""
 		_buffer_refill(self._buffer)
 
 	def push(self):
+		"""Submit the samples contained in this buffer to the hardware."""
 		_buffer_push(self._buffer)
 
 	def read(self):
+		"""
+		Retrieve the samples contained inside the Buffer object.
+
+		returns: type=bytearray
+			An array containing the samples
+		"""
+
 		start = _buffer_start(self._buffer)
 		end = _buffer_end(self._buffer)
 		array = bytearray(end - start)
@@ -415,6 +476,16 @@ class Buffer(object):
 		return array
 
 	def write(self, array):
+		"""
+		Copy the given array of samples inside the Buffer object.
+
+		parameters:
+			array: type=bytearray
+				The array containing the samples to copy
+
+		returns: type=int
+			The number of bytes written into the buffer
+		"""
 		start = _buffer_start(self._buffer)
 		end = _buffer_end(self._buffer)
 		length = end - start
@@ -441,15 +512,39 @@ class _DeviceOrTrigger(object):
 		self._name = _d_get_name(self._device)
 
 	def reg_write(self, reg, value):
+		"""
+		Set a value to one register of this device.
+
+		parameters:
+			reg: type=int
+				The register address
+			value: type=int
+				The value that will be used for this register
+		"""
 		_d_reg_write(self._device, reg, value)
 
 	def reg_read(self, reg):
+		"""
+		Read the content of a register of this device.
+
+		parameters:
+			reg: type=int
+				The register address
+
+		returns: type=int
+			The value of the register
+		"""
 		value = c_uint()
 		_d_reg_read(self._device, reg, byref(value))
 		return value.value
 
 	@property
 	def sample_size(self):
+		"""
+		Current sample size of this device.
+		type: int
+
+		The sample size varies each time channels get enabled or disabled."""
 		return _get_sample_size(self._device)
 
 	id = property(lambda self: self._id, None, None,
@@ -464,6 +559,8 @@ class _DeviceOrTrigger(object):
 			"List of channels available with this IIO device.\n\ttype=list of iio.Channel objects")
 
 class Trigger(_DeviceOrTrigger):
+	"""Contains the representation of an IIO device that can act as a trigger."""
+
 	def __init__(self, ctx, _device):
 		super(Trigger, self).__init__(ctx, _device)
 
@@ -477,6 +574,8 @@ class Trigger(_DeviceOrTrigger):
 			"Configured frequency (in Hz) of this trigger\n\ttype=int")
 
 class Device(_DeviceOrTrigger):
+	"""Contains the representation of an IIO device."""
+
 	def __init__(self, ctx, _device):
 		super(Device, self).__init__(ctx, _device)
 
@@ -496,7 +595,20 @@ class Device(_DeviceOrTrigger):
 			"Contains the configured trigger for this IIO device.\n\ttype=iio.Trigger")
 
 class Context(object):
+	"""Contains the representation of an IIO context."""
+
 	def __init__(self, _context=None):
+		"""
+		Initializes a new instance of the Context class, using the local or the network backend of the IIO library.
+
+		returns: type=iio.Context
+			An new instance of this class
+
+		This function will create a network context if the IIOD_REMOTE
+		environment variable is set to the hostname where the IIOD server runs.
+		If set to an empty string, the server will be discovered using ZeroConf.
+		If the environment variable is not set, a local context will be created instead.
+		"""
 		if(_context is None):
 			self._context = _new_default()
 		else:
@@ -520,9 +632,22 @@ class Context(object):
 			_destroy(self._context)
 
 	def set_timeout(self, timeout):
+		"""
+		Set a timeout for I/O operations.
+
+		parameters:
+			timeout: type=int
+				The timeout value, in milliseconds
+		"""
 		_set_timeout(self._context, timeout)
 
 	def clone(self):
+		"""
+		Clone this instance.
+
+		returns: type=iio.LocalContext
+			An new instance of this class
+		"""
 		return Context(_clone(self._context))
 
 	name = property(lambda self: self._name, None, None, \
@@ -538,15 +663,41 @@ class Context(object):
 
 class LocalContext(Context):
 	def __init__(self):
+		"""
+		Initializes a new instance of the Context class, using the local backend of the IIO library.
+
+		returns: type=iio.LocalContext
+			An new instance of this class
+		"""
 		ctx = _new_local()
 		super(LocalContext, self).__init__(ctx)
 
 class XMLContext(Context):
 	def __init__(self, xmlfile):
+		"""
+		Initializes a new instance of the Context class, using the XML backend of the IIO library.
+
+		parameters:
+			xmlfile: type=str
+				Filename of the XML file to build the context from
+
+		returns: type=iio.XMLContext
+			An new instance of this class
+		"""
 		ctx = _new_xml(xmlfile)
 		super(XMLContext, self).__init__(ctx)
 
 class NetworkContext(Context):
 	def __init__(self, hostname = None):
+		"""
+		Initializes a new instance of the Context class, using the network backend of the IIO library.
+
+		parameters:
+			hostname: type=str
+				Hostname, IPv4 or IPv6 address where the IIO Daemon is running
+
+		returns: type=iio.NetworkContext
+			An new instance of this class
+		"""
 		ctx = _new_network(hostname)
 		super(NetworkContext, self).__init__(ctx)
