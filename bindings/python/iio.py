@@ -406,7 +406,7 @@ class Buffer(object):
 		memmove(start, c_array, length)
 		return length
 
-class Trigger(object):
+class _DeviceOrTrigger(object):
 	def __init__(self, ctx, _device):
 		self.ctx = ctx
 		self._device = _device
@@ -433,7 +433,19 @@ class Trigger(object):
 	def sample_size(self):
 		return _get_sample_size(self._device)
 
-class Device(Trigger):
+class Trigger(_DeviceOrTrigger):
+	def __init__(self, ctx, _device):
+		super(Trigger, self).__init__(ctx, _device)
+
+	def _get_rate(self):
+		return int(self.attrs['frequency'].value)
+
+	def _set_rate(self, value):
+		self.attrs['frequency'].value = str(value)
+
+	frequency = property(_get_rate, _set_rate)
+
+class Device(_DeviceOrTrigger):
 	def __init__(self, ctx, _device):
 		super(Device, self).__init__(ctx, _device)
 
