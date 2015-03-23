@@ -293,13 +293,18 @@ version = _get_lib_version()
 
 class Attr(object):
 	def __init__(self, name, filename = None):
-		self.name = name
-		self.filename = name if filename is None else filename
+		self._name = name
+		self._filename = name if filename is None else filename
 
 	def __str__(self):
-		return self.name
+		return self._name
 
-	value = property(lambda self: self.__read(), lambda self, x: self.__write(x))
+	name = property(lambda self: self._name, None, None,
+			"The name of this attribute.\n\ttype=str")
+	filename = property(lambda self: self._filename, None, None,
+			"The filename in sysfs to which this attribute is bound.\n\ttype=str")
+	value = property(lambda self: self.__read(), lambda self, x: self.__write(x),
+			None, "Current value of this attribute.\n\ttype=str")
 
 class ChannelAttr(Attr):
 	def __init__(self, channel, name):
@@ -343,12 +348,12 @@ class Channel(object):
 	def __init__(self, dev, _channel):
 		self.dev = dev
 		self._channel = _channel
-		self.attrs = { name : ChannelAttr(_channel, name) for name in \
+		self._attrs = { name : ChannelAttr(_channel, name) for name in \
 				[_c_get_attr(_channel, x) for x in xrange(0, _c_attr_count(_channel))] }
-		self.id = _c_get_id(self._channel)
-		self.name = _c_get_name(self._channel)
-		self.output = _c_is_output(self._channel)
-		self.scan_element = _c_is_scan_element(self._channel)
+		self._id = _c_get_id(self._channel)
+		self._name = _c_get_name(self._channel)
+		self._output = _c_is_output(self._channel)
+		self._scan_element = _c_is_scan_element(self._channel)
 
 	def read(self, buf, raw = False):
 		array = bytearray(buf.length)
@@ -368,8 +373,19 @@ class Channel(object):
 		else:
 			return _c_write(self._channel, buf._buffer, c_array, len(array))
 
+	id = property(lambda self: self._id, None, None,
+			"An identifier of this channel.\n\tNote that it is possible that two channels have the same ID, if one is an input channel and the other is an output channel.\n\ttype=str")
+	name = property(lambda self: self._name, None, None,
+			"The name of this channel.\n\ttype=str")
+	attrs = property(lambda self: self._attrs, None, None,
+			"List of attributes for this channel.\n\ttype=dict of iio.ChannelAttr")
+	output = property(lambda self: self._output, None, None,
+			"Contains True if the channel is an output channel, False otherwise.\n\ttype=bool")
+	scan_element = property(lambda self: self._scan_element, None, None,
+			"Contains True if the channel is a scan element, False otherwise.\n\tIf a channel is a scan element, then it is possible to enable it and use it for I/O operations.\n\ttype=bool")
 	enabled = property(lambda self: _c_is_enabled(self._channel), \
-			lambda self, x: _c_enable(self._channel) if x else _c_disable(self._channel))
+			lambda self, x: _c_enable(self._channel) if x else _c_disable(self._channel),
+			None, "Configured state of the channel\n\ttype=bool")
 
 class Buffer(object):
 	def __init__(self, device, samples_count, cyclic = False):
@@ -410,16 +426,16 @@ class _DeviceOrTrigger(object):
 	def __init__(self, ctx, _device):
 		self.ctx = ctx
 		self._device = _device
-		self.attrs = { name : DeviceAttr(_device, name) for name in \
+		self._attrs = { name : DeviceAttr(_device, name) for name in \
 				[_d_get_attr(_device, x) for x in xrange(0, _d_attr_count(_device))] }
-		self.debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
+		self._debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
 				[_d_get_debug_attr(_device, x) for x in xrange(0, _d_debug_attr_count(_device))] }
 
 		# TODO(pcercuei): Use a dictionary for the channels.
-		self.channels = [ Channel(self, _get_channel(self._device, x)) \
+		self._channels = [ Channel(self, _get_channel(self._device, x)) \
 				for x in xrange(0, _channels_count(self._device)) ]
-		self.id = _d_get_id(self._device)
-		self.name = _d_get_name(self._device)
+		self._id = _d_get_id(self._device)
+		self._name = _d_get_name(self._device)
 
 	def reg_write(self, reg, value):
 		_d_reg_write(self._device, reg, value)
@@ -433,17 +449,29 @@ class _DeviceOrTrigger(object):
 	def sample_size(self):
 		return _get_sample_size(self._device)
 
+	id = property(lambda self: self._id, None, None,
+			"An identifier of this device, only valid in this IIO context.\n\ttype=str")
+	name = property(lambda self: self._name, None, None,
+			"The name of this device.\n\ttype=str")
+	attrs = property(lambda self: self._attrs, None, None,
+			"List of attributes for this IIO device.\n\ttype=dict of iio.DeviceAttr")
+	debug_attrs = property(lambda self: self._debug_attrs, None, None,
+			"List of debug attributes for this IIO device.\n\ttype=dict of iio.DeviceDebugAttr")
+	channels = property(lambda self: self._channels, None, None,
+			"List of channels available with this IIO device.\n\ttype=list of iio.Channel objects")
+
 class Trigger(_DeviceOrTrigger):
 	def __init__(self, ctx, _device):
 		super(Trigger, self).__init__(ctx, _device)
 
 	def _get_rate(self):
-		return int(self.attrs['frequency'].value)
+		return int(self._attrs['frequency'].value)
 
 	def _set_rate(self, value):
-		self.attrs['frequency'].value = str(value)
+		self._attrs['frequency'].value = str(value)
 
-	frequency = property(_get_rate, _set_rate)
+	frequency = property(_get_rate, _set_rate, None,
+			"Configured frequency (in Hz) of this trigger\n\ttype=int")
 
 class Device(_DeviceOrTrigger):
 	def __init__(self, ctx, _device):
@@ -456,12 +484,13 @@ class Device(_DeviceOrTrigger):
 		value = _Device()
 		_d_get_trigger(self._device, byref(value))
 
-		for dev in self.ctx.devices:
+		for dev in self.ctx._devices:
 			if value == dev._device:
 				return dev
 		return None
 
-	trigger = property(_get_trigger, _set_trigger)
+	trigger = property(_get_trigger, _set_trigger, None, \
+			"Contains the configured trigger for this IIO device.\n\ttype=iio.Trigger")
 
 class Context(object):
 	def __init__(self, _context=None):
@@ -471,17 +500,17 @@ class Context(object):
 			self._context = _context
 
 		# TODO(pcercuei): Use a dictionary for the devices.
-		self.devices = [ Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
+		self._devices = [ Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
 				[ _get_device(self._context, x) for x in xrange(0, _devices_count(self._context)) ]]
-		self.name = _get_name(self._context)
-		self.description = _get_description(self._context)
-		self.xml = _get_xml(self._context)
+		self._name = _get_name(self._context)
+		self._description = _get_description(self._context)
+		self._xml = _get_xml(self._context)
 
 		major = c_uint()
 		minor = c_uint()
 		buf = create_string_buffer(8)
 		_get_version(self._context, byref(major), byref(minor), buf)
-		self.version = (major.value, minor.value, buf.value )
+		self._version = (major.value, minor.value, buf.value )
 
 	def __del__(self):
 		if(self._context is not None):
@@ -492,6 +521,17 @@ class Context(object):
 
 	def clone(self):
 		return Context(_clone(self._context))
+
+	name = property(lambda self: self._name, None, None, \
+			"Name of this IIO context.\n\ttype=str")
+	description = property(lambda self: self._description, None, None, \
+			"Description of this IIO context.\n\ttype=str")
+	xml = property(lambda self: self._xml, None, None, \
+			"XML representation of the current context.\n\ttype=str")
+	version = property(lambda self: self._version, None, None, \
+			"Version of the backend.\n\ttype=(int, int, str)")
+	devices = property(lambda self: self._devices, None, None, \
+			"List of devices contained in this context.\n\ttype=list of iio.Device and iio.Trigger objects")
 
 class LocalContext(Context):
 	def __init__(self):
