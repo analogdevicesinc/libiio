@@ -64,19 +64,7 @@ endif()
 find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 find_library(AVAHI_COMMON_LIBRARIES avahi-common)
 find_library(PTHREAD_LIBRARIES pthread)
-
-# Since libxml2-2.9.2, libxml2 provides its own LibXml2-config.cmake, with all
-# variables correctly set.
-# So, try first to find the CMake module provided by libxml2 package, then fallback
-# on the CMake's FindLibXml2.cmake module (which can lack some definition, especially
-# in static build case).
-find_package(LibXml2 QUIET NO_MODULE)
-if(DEFINED LIBXML2_VERSION_STRING)
-  set(LIBXML2_FOUND ON)
-  set(LIBXML2_INCLUDE_DIR ${LIBXML2_INCLUDE_DIRS})
-else()
-  include(FindLibXml2)
-endif()
+include(FindLibXml2)
 
 set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
 set(LIBIIO_HEADERS iio.h)
