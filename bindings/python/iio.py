@@ -356,7 +356,7 @@ class Channel(object):
 		self._scan_element = _c_is_scan_element(self._channel)
 
 	def read(self, buf, raw = False):
-		array = bytearray(buf.length)
+		array = bytearray(buf._length)
 		mytype = c_char * len(array)
 		c_array = mytype.from_buffer(array)
 		if raw:
@@ -391,10 +391,13 @@ class Buffer(object):
 	def __init__(self, device, samples_count, cyclic = False):
 		self.dev = device
 		self._buffer = _create_buffer(device._device, samples_count, cyclic)
-		self.length = samples_count * device.sample_size
+		self._length = samples_count * device.sample_size
 
 	def __del__(self):
 		_buffer_destroy(self._buffer)
+
+	def __len__(self):
+		return self._length
 
 	def refill(self):
 		_buffer_refill(self._buffer)
