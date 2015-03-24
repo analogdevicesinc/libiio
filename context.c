@@ -35,7 +35,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ELEMENT attribute EMPTY>"
 "<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
-"<!ATTLIST context name CDATA #REQUIRED>"
+"<!ATTLIST context name CDATA #REQUIRED description CDATA #IMPLIED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST scan-element index CDATA #REQUIRED format CDATA #REQUIRED scale CDATA #IMPLIED>"
@@ -46,23 +46,39 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)
 {
-	size_t len = strlen(ctx->name) + sizeof(xml_header) - 1 +
-		sizeof("<context name=\"\" ></context>");
-	size_t *devices_len;
+	size_t len, *devices_len;
 	char *str, *ptr, **devices;
 	unsigned int i;
 
+	len = strlen(ctx->name) + sizeof(xml_header) - 1 +
+		sizeof("<context name=\"\" ></context>");
+	if (ctx->description)
+		len += strlen(ctx->description) +
+			sizeof(" description=\"\"") - 1;
+
 	if (!ctx->nb_devices) {
 		str = malloc(len);
-		if (str)
+		if (!str) {
+			errno = ENOMEM;
+			return NULL;
+		}
+
+		if (ctx->description)
+			snprintf(str, len, "%s<context name=\"%s\" "
+					"description=\"%s\" ></context>",
+					xml_header, ctx->name,
+					ctx->description);
+		else
 			snprintf(str, len, "%s<context name=\"%s\" ></context>",
 					xml_header, ctx->name);
 		return str;
 	}
 
 	devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
-	if (!devices_len)
+	if (!devices_len) {
+		errno = ENOMEM;
 		return NULL;
+	}
 
 	devices = malloc(ctx->nb_devices * sizeof(*devices));
 	if (!devices)
@@ -78,10 +94,18 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	str = malloc(len);
-	if (!str)
+	if (!str) {
+		errno = ENOMEM;
 		goto err_free_devices;
+	}
 
-	snprintf(str, len, "%s<context name=\"%s\" >", xml_header, ctx->name);
+	if (ctx->description)
+		snprintf(str, len, "%s<context name=\"%s\" "
+				"description=\"%s\" >",
+				xml_header, ctx->name, ctx->description);
+	else
+		snprintf(str, len, "%s<context name=\"%s\" >",
+				xml_header, ctx->name);
 	ptr = strrchr(str, '\0');
 
 	for (i = 0; i < ctx->nb_devices; i++) {
@@ -216,10 +240,12 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 struct iio_context * iio_context_clone(const struct iio_context *ctx)
 {
-	if (ctx->ops->clone)
+	if (ctx->ops->clone) {
 		return ctx->ops->clone(ctx);
-	else
+	} else {
+		errno = ENOSYS;
 		return NULL;
+	}
 }
 
 struct iio_context * iio_create_default_context(void)
@@ -244,6 +270,7 @@ struct iio_context * iio_create_local_context(void)
 #if LOCAL_BACKEND
 	return local_create_context();
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }
@@ -253,6 +280,7 @@ struct iio_context * iio_create_network_context(const char *hostname)
 #if NETWORK_BACKEND
 	return network_create_context(hostname);
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }
@@ -262,6 +290,7 @@ struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 #if NETWORK_BACKEND
 	return xml_create_context_mem(xml, len);
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }
@@ -271,6 +300,7 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 #if NETWORK_BACKEND
 	return xml_create_context(xml_file);
 #else
+	errno = ENOSYS;
 	return NULL;
 #endif
 }

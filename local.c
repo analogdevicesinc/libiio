@@ -299,7 +299,8 @@ static ssize_t local_write(const struct iio_device *dev,
 }
 
 static ssize_t local_get_buffer(const struct iio_device *dev,
-		void **addr_ptr, size_t bytes_used)
+		void **addr_ptr, size_t bytes_used,
+		uint32_t *mask, size_t words)
 {
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
@@ -1196,7 +1197,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 			ERROR("Unable to open directory %s: %s\n", path, buf);
 			free(entry);
 			closedir(dir);
-			return ret;
+			return -ret;
 		}
 		if (!result)
 			break;
@@ -1434,10 +1435,8 @@ struct iio_context * local_create_context(void)
 	unsigned int len;
 	struct utsname uts;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
-	if (!ctx) {
-		ERROR("Unable to allocate memory\n");
-		return NULL;
-	}
+	if (!ctx)
+		goto err_set_errno_enomem;
 
 	ctx->ops = &local_ops;
 	ctx->name = "local";
@@ -1448,9 +1447,8 @@ struct iio_context * local_create_context(void)
 		+ strlen(uts.version) + strlen(uts.machine);
 	ctx->description = malloc(len + 5); /* 4 spaces + EOF */
 	if (!ctx->description) {
-		ERROR("Unable to allocate memory\n");
 		free(ctx);
-		return NULL;
+		goto err_set_errno_enomem;
 	}
 
 	snprintf(ctx->description, len + 5, "%s %s %s %s %s", uts.sysname,
@@ -1458,10 +1456,8 @@ struct iio_context * local_create_context(void)
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0) {
-		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
-		ERROR("Unable to create context: %s\n", buf);
 		iio_context_destroy(ctx);
+		errno = -ret;
 		return NULL;
 	}
 
@@ -1472,12 +1468,13 @@ struct iio_context * local_create_context(void)
 
 	ctx->xml = iio_context_create_xml(ctx);
 	if (!ctx->xml) {
-		char buf[1024];
-		strerror_r(ENOMEM, buf, sizeof(buf));
-		ERROR("Unable to initialize context: %s\n", buf);
 		iio_context_destroy(ctx);
-		ctx = NULL;
+		goto err_set_errno_enomem;
 	}
 
 	return ctx;
+
+err_set_errno_enomem:
+	errno = ENOMEM;
+	return NULL;
 }

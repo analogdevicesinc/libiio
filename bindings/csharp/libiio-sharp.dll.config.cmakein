@@ -1,0 +1,3 @@
+<configuration>
+  <dllmap dll="libiio.dll" target="libiio.so.@LIBIIO_VERSION_MAJOR@"/>
+</configuration>

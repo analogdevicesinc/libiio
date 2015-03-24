@@ -3,10 +3,13 @@
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 %:
-	dh $@ --parallel
+	dh $@ --parallel --with=cli
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DINSTALL_LIB_DIR=/usr/lib/$(DEB_HOST_MULTIARCH)
 
 override_dh_compress:
 	dh_compress -X.c -X.C
+
+override_dh_clistrip:
+	dh_clistrip --exclude=mdb

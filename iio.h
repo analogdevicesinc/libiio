@@ -89,7 +89,7 @@ __api void iio_library_get_version(unsigned int *major,
 
 /** @brief Create a context from local or remote IIO devices
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned
+ * @return On failure, NULL is returned and errno is set appropriately
  *
  * <b>NOTE:</b> This function will create a network context if the IIOD_REMOTE
  * environment variable is set to the hostname where the IIOD server runs. If
@@ -101,14 +101,14 @@ __api struct iio_context * iio_create_default_context(void);
 
 /** @brief Create a context from local IIO devices (Linux only)
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned */
+ * @return On failure, NULL is returned and errno is set appropriately */
 __api struct iio_context * iio_create_local_context(void);
 
 
 /** @brief Create a context from a XML file
  * @param xml_file Path to the XML file to open
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned
+ * @return On failure, NULL is returned and errno is set appropriately
  *
  * <b>NOTE:</b> The format of the XML must comply to the one returned by
  * iio_context_get_xml. */
@@ -119,7 +119,7 @@ __api struct iio_context * iio_create_xml_context(const char *xml_file);
  * @param xml Pointer to the XML data in memory
  * @param len Length of the XML string in memory (excluding the final \0)
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned
+ * @return On failure, NULL is returned and errno is set appropriately
  *
  * <b>NOTE:</b> The format of the XML must comply to the one returned by
  * iio_context_get_xml */
@@ -130,14 +130,14 @@ __api struct iio_context * iio_create_xml_context_mem(
 /** @brief Create a context from the network
  * @param host Hostname, IPv4 or IPv6 address where the IIO Daemon is running
  * @return On success, a pointer to an iio_context structure
- * @return On failure, NULL is returned */
+ * @return On failure, NULL is returned and errno is set appropriately */
 __api struct iio_context * iio_create_network_context(const char *host);
 
 
 /** @brief Duplicate a pre-existing IIO context
  * @param ctx A pointer to an iio_context structure
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned */
+ * @return On failure, NULL is returned and errno is set appropriately */
 __api struct iio_context * iio_context_clone(const struct iio_context *ctx);
 
 
@@ -860,7 +860,7 @@ __api ssize_t iio_buffer_push(struct iio_buffer *buf);
 /** @brief Get the start address of the buffer
  * @param buf A pointer to an iio_buffer structure
  * @return A pointer corresponding to the start address of the buffer */
-__api __pure void * iio_buffer_start(const struct iio_buffer *buf);
+__api void * iio_buffer_start(const struct iio_buffer *buf);
 
 
 /** @brief Find the first sample of a channel in a buffer

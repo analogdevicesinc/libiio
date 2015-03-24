@@ -46,10 +46,8 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 		len += strlen(attr->filename) + sizeof("filename=\"\"");
 
 	str = malloc(len);
-	if (!str) {
-		ERROR("Unable to allocate memory\n");
+	if (!str)
 		return NULL;
-	}
 
 	*length = len - 1; /* Skip the \0 */
 	if (attr->filename)
@@ -79,9 +77,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 	}
 
 	str = _strdup(buf);
-	if (!str)
-		ERROR("Unable to allocate memory\n");
-	else
+	if (str)
 		*length = strlen(str);
 	return str;
 }

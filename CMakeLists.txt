@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project(libiio C)
 
 set(LIBIIO_VERSION_MAJOR 0)
-set(LIBIIO_VERSION_MINOR 4)
+set(LIBIIO_VERSION_MINOR 5)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
 
 # Set the default install path to /usr
@@ -18,6 +18,14 @@ set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
 	CACHE PATH "Installation directory for headers")
 set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
 	CACHE PATH "Installation directory for pkgconfig (.pc) files")
+set(INSTALL_DATA_DIR "${CMAKE_INSTALL_PREFIX}/share"
+	CACHE PATH "Installation directory for data")
+
+mark_as_advanced(INSTALL_BIN_DIR)
+mark_as_advanced(INSTALL_LIB_DIR)
+mark_as_advanced(INSTALL_INC_DIR)
+mark_as_advanced(INSTALL_PKGCONFIG_DIR)
+mark_as_advanced(INSTALL_DATA_DIR)
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
@@ -107,6 +115,16 @@ if(WITH_NETWORK_BACKEND)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} wsock32 ws2_32)
 	endif()
 
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		include(CheckCSourceCompiles)
+		set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
+		check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
+
+		if (HAS_O_TMPFILE)
+			add_definitions(-D_GNU_SOURCE=1 -DWITH_NETWORK_GET_BUFFER=1)
+		endif()
+	endif()
+
 	add_definitions(-DNETWORK_BACKEND=1 ${LIBXML2_DEFINITIONS})
 	include_directories(${LIBXML2_INCLUDE_DIR})
 	set(LIBIIO_CFILES ${LIBIIO_CFILES} network.c xml.c)
@@ -150,13 +168,22 @@ endif()
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-	configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
-	file(COPY ${CMAKE_SOURCE_DIR}/doc DESTINATION ${CMAKE_BINARY_DIR}/html)
-	add_custom_target(doc
-		${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-		COMMENT "Generating API documentation with Doxygen" VERBATIM
-		)
+	option(WITH_DOC "Generate documentation with Doxygen" ON)
+
+	if (WITH_DOC)
+		configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
+		set(HTML_DEST_DIR ${CMAKE_BINARY_DIR}/html)
+		file(COPY ${CMAKE_SOURCE_DIR}/doc DESTINATION ${HTML_DEST_DIR})
+
+		add_custom_command(TARGET iio POST_BUILD
+			COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+			COMMENT "Generating API documentation with Doxygen" VERBATIM
+			)
+
+		install(DIRECTORY ${HTML_DEST_DIR}
+			DESTINATION ${INSTALL_DATA_DIR}/doc/libiio${LIBIIO_VERSION_MAJOR}-doc)
+	endif()
 else()
 	message(STATUS "Doxygen not found, API documentation won't be generated")
 endif()
@@ -168,3 +195,5 @@ endif()
 if(WITH_TESTS)
 	add_subdirectory(tests)
 endif()
+
+add_subdirectory(bindings)
