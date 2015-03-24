@@ -1,3 +1,15 @@
+libiio (0.5) unstable; urgency=low
+
+  * Fix locales support on Windows and MinGW
+  * Add iio_adi_xflow_check tool
+  * Boost client->server transfers using delayed error reporting
+  * Enable support for zero-copy transfers in the network backend
+  * Created packages for the Python and C# bindings
+  * Lots of improvements on the Python and C# bindings
+  * Enhanced error reporting
+
+ -- Paul Cercueil <paul.cercueil@analog.com>  Tue, 24 Mar 2015 13:19:22 +0200
+
 libiio (0.4) unstable; urgency=low
 
   * Boost communication speed of the network backend
