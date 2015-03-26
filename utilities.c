@@ -63,7 +63,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 		return -ENOMEM;
 
 	setlocale(LC_NUMERIC, "C");
-	snprintf(buf, len, "%lf", val);
+	snprintf(buf, len, "%f", val);
 	setlocale(LC_NUMERIC, old_locale);
 	free(old_locale);
 	return 0;
@@ -93,7 +93,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 	if (!locale)
 		return -ENOMEM;
 
-	_snprintf_l(buf, len, "%lf", locale, val);
+	_snprintf_l(buf, len, "%f", locale, val);
 	_free_locale(locale);
 	return 0;
 }
@@ -131,7 +131,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 
 	old_locale = uselocale(new_locale);
 
-	snprintf(buf, len, "%lf", val);
+	snprintf(buf, len, "%f", val);
 
 	uselocale(old_locale);
 	freelocale(new_locale);
@@ -161,7 +161,7 @@ int write_double(char *buf, size_t len, double val)
 #ifdef LOCALE_SUPPORT
 	return write_double_locale(buf, len, val);
 #else
-	snprintf(buf, len, "%lf", val);
+	snprintf(buf, len, "%f", val);
 	return 0;
 #endif
 }
