@@ -106,6 +106,31 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_LIGHT_BLUE] = "blue",
 };
 
+/*
+ * Looks for a IIO channel modifier at the beginning of the string s. If a
+ * modifier was found the symbolic constant (IIO_MOD_*) is returned, otherwise
+ * IIO_NO_MOD is returned. If a modifier was found len_p will be update with the
+ * length of the modifier.
+ */
+static unsigned int find_modifier(const char *s, size_t *len_p)
+{
+	unsigned int i;
+	size_t len;
+
+	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
+		if (!modifier_names[i])
+			continue;
+		len = strlen(modifier_names[i]);
+		if (strncmp(s, modifier_names[i], len) == 0) {
+			if (len_p)
+				*len_p = len;
+			return i;
+		}
+	}
+
+	return IIO_NO_MOD;
+}
+
 static void local_shutdown(struct iio_context *ctx)
 {
 	/* Free the backend data stored in every device structure */
@@ -170,27 +195,20 @@ static int set_channel_name(struct iio_channel *chn)
 	}
 
 	if (chn->name) {
-		unsigned int i;
-		for (i = 0; i <	ARRAY_SIZE(modifier_names); i++) {
-			unsigned int len;
+		size_t len;
 
-			if (!modifier_names[i])
-				continue;
-
-			len = strlen(modifier_names[i]);
-			if (!strncmp(chn->name, modifier_names[i], len)) {
-				if (chn->name[len]) {
-					/* Shrink the modifier from the extended name */
-					strcut(chn->name, len + 1);
-				} else {
-					free(chn->name);
-					chn->name = NULL;
-				}
-				chn->modifier = i;
-				DEBUG("Detected modifier for channel %s: %s\n",
-						chn->id, modifier_names[i]);
-				break;
+		chn->modifier = find_modifier(chn->name, &len);
+		if (chn->modifier != IIO_NO_MOD) {
+			if (chn->name[len]) {
+				/* Shrink the modifier from the extended name */
+				strcut(chn->name, len + 1);
+			} else {
+				free(chn->name);
+				chn->name = NULL;
 			}
+
+			DEBUG("Detected modifier for channel %s: %s\n",
+						chn->id, modifier_names[chn->modifier]);
 		}
 	}
 	return 0;
@@ -828,27 +846,21 @@ static bool is_channel(const char *attr)
 		return false;
 	if (*(ptr - 1) >= '0' && *(ptr - 1) <= '9')
 		return true;
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++)
-		if (modifier_names[i] && !strncmp(ptr + 1, modifier_names[i],
-					strlen(modifier_names[i])))
-			return true;
+
+	if (find_modifier(ptr + 1, NULL) != IIO_NO_MOD)
+		return true;
 	return false;
 }
 
 static char * get_channel_id(const char *attr)
 {
 	char *res, *ptr;
-	unsigned int i;
+	size_t len;
 
 	attr = strchr(attr, '_') + 1;
 	ptr = strchr(attr, '_');
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
-		if (modifier_names[i] && !strncmp(ptr + 1, modifier_names[i],
-					strlen(modifier_names[i]))) {
-			ptr = strchr(ptr + 1, '_');
-			break;
-		}
-	}
+	if (find_modifier(ptr + 1, &len) != IIO_NO_MOD)
+		ptr += len + 1;
 
 	res = malloc(ptr - attr + 1);
 	if (!res)
@@ -862,17 +874,11 @@ static char * get_channel_id(const char *attr)
 static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
 	char *ptr = strchr(attr, '_') + 1;
-	unsigned int i;
+	size_t len;
 
 	ptr = strchr(ptr, '_') + 1;
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
-		if (modifier_names[i] &&
-				!strncmp(ptr, modifier_names[i],
-					strlen(modifier_names[i]))) {
-			ptr = strchr(ptr, '_') + 1;
-			break;
-		}
-	}
+	if (find_modifier(ptr, &len) != IIO_NO_MOD)
+		ptr += len + 1;
 
 	if (chn->name) {
 		size_t len = strlen(chn->name);
@@ -1025,11 +1031,8 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		return 0;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++)
-		if (modifier_names[i] &&
-				!strncmp(chn->id + len + 1, modifier_names[i],
-					strlen(modifier_names[i])))
-			return 1;
+	if (find_modifier(chn->id + len + 1, NULL) != IIO_NO_MOD)
+		return 1;
 
 	return 0;
 }
