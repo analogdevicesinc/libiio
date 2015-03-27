@@ -104,6 +104,8 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_LIGHT_RED] = "red",
 	[IIO_MOD_LIGHT_GREEN] = "green",
 	[IIO_MOD_LIGHT_BLUE] = "blue",
+	[IIO_MOD_I] = "i",
+	[IIO_MOD_Q] = "q",
 };
 
 /*
