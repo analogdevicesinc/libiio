@@ -196,23 +196,6 @@ static int set_channel_name(struct iio_channel *chn)
 			strcut(chn->attrs[i].name, len + 1);
 	}
 
-	if (chn->name) {
-		size_t len;
-
-		chn->modifier = find_modifier(chn->name, &len);
-		if (chn->modifier != IIO_NO_MOD) {
-			if (chn->name[len]) {
-				/* Shrink the modifier from the extended name */
-				strcut(chn->name, len + 1);
-			} else {
-				free(chn->name);
-				chn->name = NULL;
-			}
-
-			DEBUG("Detected modifier for channel %s: %s\n",
-						chn->id, modifier_names[chn->modifier]);
-		}
-	}
 	return 0;
 }
 
@@ -1108,7 +1091,6 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 
 	chn->dev = dev;
 	chn->id = id;
-	chn->modifier = IIO_NO_MOD;
 
 	if (!add_attr_to_channel(chn, attr, path))
 		return chn;

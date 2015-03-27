@@ -122,7 +122,6 @@ struct iio_channel {
 
 	bool is_output;
 	bool is_scan_element;
-	enum iio_modifier modifier;
 	struct iio_data_format format;
 	char *name, *id;
 	long index;
