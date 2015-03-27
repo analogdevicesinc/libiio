@@ -121,7 +121,7 @@ static unsigned int find_modifier(const char *s, size_t *len_p)
 		if (!modifier_names[i])
 			continue;
 		len = strlen(modifier_names[i]);
-		if (strncmp(s, modifier_names[i], len) == 0) {
+		if (strncmp(s, modifier_names[i], len) == 0 && s[len] == '_') {
 			if (len_p)
 				*len_p = len;
 			return i;
