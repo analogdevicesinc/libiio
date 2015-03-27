@@ -153,15 +153,21 @@ static void strcut(char *str, int nb)
 
 static int set_channel_name(struct iio_channel *chn)
 {
+	size_t prefix_len = 0;
+	const char *attr0;
+	const char *ptr;
+	unsigned int i;
+
 	if (chn->nb_attrs < 2)
 		return 0;
 
+	attr0 = ptr = chn->attrs[0].name;
+
 	while (true) {
 		bool can_fix = true;
-		unsigned int i, len;
-		char *name;
-		const char *attr0 = chn->attrs[0].name;
-		const char *ptr = strchr(attr0, '_');
+		size_t len;
+
+		ptr = strchr(ptr, '_');
 		if (!ptr)
 			break;
 
@@ -172,28 +178,24 @@ static int set_channel_name(struct iio_channel *chn)
 		if (!can_fix)
 			break;
 
-		if (chn->name) {
-			size_t nlen = strlen(chn->name) + len + 2;
-			name = malloc(nlen);
-			if (!name)
-				return -ENOMEM;
-			snprintf(name, nlen, "%s_%.*s", chn->name, len, attr0);
-			DEBUG("Fixing name of channel %s from %s to %s\n",
-					chn->id, chn->name, name);
-			free(chn->name);
-		} else {
-			name = malloc(len + 2);
-			if (!name)
-				return -ENOMEM;
-			snprintf(name, len + 2, "%.*s", len, attr0);
-			DEBUG("Setting name of channel %s to %s\n",
-					chn->id, name);
-		}
+		prefix_len = len;
+		ptr = ptr + 1;
+	}
+
+	if (prefix_len) {
+		char *name;
+
+		name = malloc(prefix_len + 1);
+		if (!name)
+			return -ENOMEM;
+		strncpy(name, attr0, prefix_len);
+		name[prefix_len] = '\0';
+		DEBUG("Setting name of channel %s to %s\n", chn->id, name);
 		chn->name = name;
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
-			strcut(chn->attrs[i].name, len + 1);
+			strcut(chn->attrs[i].name, prefix_len + 1);
 	}
 
 	return 0;
