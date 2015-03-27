@@ -59,10 +59,12 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		/* Dequeue the first buffer, so that buf->buffer is correctly
 		 * initialized */
 		buf->buffer = NULL;
-		ret = dev->ctx->ops->get_buffer(dev, &buf->buffer,
-				buf->length, buf->mask, dev->words);
-		if (ret < 0)
-			goto err_close_device;
+		if (iio_device_is_tx(dev)) {
+			ret = dev->ctx->ops->get_buffer(dev, &buf->buffer,
+					buf->length, buf->mask, dev->words);
+			if (ret < 0)
+				goto err_close_device;
+		}
 	} else {
 		buf->buffer = malloc(buf->length);
 		if (!buf->buffer) {
@@ -103,7 +105,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (buffer->dev_is_high_speed) {
 		void *buf;
-		read = dev->ctx->ops->get_buffer(dev, &buf, 0,
+		read = dev->ctx->ops->get_buffer(dev, &buf, buffer->length,
 				buffer->mask, dev->words);
 		if (read >= 0)
 			buffer->buffer = buf;

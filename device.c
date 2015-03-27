@@ -255,6 +255,19 @@ const char * iio_device_find_debug_attr(const struct iio_device *dev,
 	return NULL;
 }
 
+bool iio_device_is_tx(const struct iio_device *dev)
+{
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *ch = dev->channels[i];
+		if (iio_channel_is_output(ch) && iio_channel_is_enabled(ch))
+			return true;
+	}
+
+	return false;
+}
+
 static int iio_device_open_mask(const struct iio_device *dev,
 		size_t samples_count, uint32_t *mask, size_t words, bool cyclic)
 {

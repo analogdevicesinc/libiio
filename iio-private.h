@@ -170,6 +170,7 @@ char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 char *iio_context_create_xml(const struct iio_context *ctx);
 void iio_context_init(struct iio_context *ctx);
 
+bool iio_device_is_tx(const struct iio_device *dev);
 int iio_device_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic);
 int iio_device_close(const struct iio_device *dev);
