@@ -78,6 +78,22 @@ struct iio_buffer;
 __api void iio_library_get_version(unsigned int *major,
 		unsigned int *minor, char git_tag[8]);
 
+/** @} *//* ------------------------------------------------------------------*/
+/* ------------------------- Plugins functions -------------------------------*/
+/** @defgroup Plugins Plugins
+ * @{ */
+
+/** @brief Finds and initializes the libiio plugins.
+ *
+ * Each shared object in the PLUGINS_DEFAULT_DIR (defaulting to
+ * /usr/lib/libiio-plugins/), will be loaded, provided it's path matches the
+ * PLUGINS_MATCHING_PATTERN (defaulting to libiio-*.so).
+ */
+__api void iio_init_plugins(void);
+
+/** @brief Cleans up what has been performed in iio_init_plugins()
+ */
+__api void iio_cleanup_plugins(void);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/

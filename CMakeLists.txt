@@ -66,7 +66,7 @@ find_library(AVAHI_COMMON_LIBRARIES avahi-common)
 find_library(PTHREAD_LIBRARIES pthread)
 include(FindLibXml2)
 
-set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
+set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c plugins.c)
 set(LIBIIO_HEADERS iio.h)
 
 add_definitions(-D_POSIX_C_SOURCE=200809L -DLIBIIO_EXPORTS=1)
