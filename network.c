@@ -16,6 +16,8 @@
  *
  * */
 
+#if NETWORK_BACKEND
+
 #include "iio-private.h"
 
 #ifndef HAVE_PTHREAD
@@ -67,6 +69,8 @@
 
 #include "debug.h"
 
+#define CONTEXT_NAME "network"
+
 #define DEFAULT_TIMEOUT_MS 5000
 
 #define _STRINGIFY(x) #x
@@ -95,6 +99,31 @@ struct iio_device_pdata {
 	pthread_mutex_t lock;
 #endif
 };
+
+static struct iio_context * network_create_context(void);
+
+static struct iio_context_factory network_factory = {
+		.name = CONTEXT_NAME,
+		.create_context = network_create_context,
+};
+
+static __attribute__ ((constructor)) void network_init(void)
+{
+	int ret;
+
+	ret = iio_context_factory_register(&network_factory);
+	if (ret < 0)
+		ERROR("iio_context_factory_register: %s\n", strerror(-ret));
+}
+
+static __attribute__((destructor)) void network_cleanup(void)
+{
+	int ret;
+
+	ret = iio_context_factory_unregister(CONTEXT_NAME);
+	if (ret < 0)
+		ERROR("iio_context_factory_unregister: %s\n", strerror(-ret));
+}
 
 #ifdef HAVE_AVAHI
 struct avahi_discovery_data {
@@ -1231,7 +1260,7 @@ static struct iio_context * get_context(int fd)
 	return ctx;
 }
 
-struct iio_context * network_create_context(const char *host)
+static struct iio_context * network_create_context(void)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
@@ -1239,6 +1268,7 @@ struct iio_context * network_create_context(const char *host)
 	unsigned int i, len;
 	int fd, ret;
 	char *description;
+	const char *host;
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -1250,6 +1280,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 #endif
 
+	host = iio_context_factory_get_property(&network_factory, "hostname");
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -1423,3 +1454,5 @@ err_free_addrinfo:
 	freeaddrinfo(res);
 	return NULL;
 }
+
+#endif /* NETWORK_BACKEND */

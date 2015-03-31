@@ -424,12 +424,21 @@ struct iio_context * iio_create_local_context(void)
 
 struct iio_context * iio_create_network_context(const char *hostname)
 {
-#if NETWORK_BACKEND
-	return network_create_context(hostname);
-#else
-	errno = ENOSYS;
-	return NULL;
-#endif
+	int ret;
+	struct iio_context_factory *factory;
+
+	factory = get_context_factory("network");
+	if (!factory)
+		return NULL;
+
+	ret = factory_set_property(factory, "hostname", hostname);
+	if (ret < 0) {
+		errno = -ret;
+
+		return 0;
+	}
+
+	return factory->create_context();
 }
 
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)

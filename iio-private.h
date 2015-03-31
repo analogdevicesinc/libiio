@@ -190,7 +190,6 @@ ssize_t iio_device_write_raw(const struct iio_device *dev,
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
 
-struct iio_context * network_create_context(const char *hostname);
 struct iio_context * xml_create_context_mem(const char *xml, size_t len);
 struct iio_context * xml_create_context(const char *xml_file);
 
