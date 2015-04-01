@@ -161,6 +161,11 @@ struct iio_buffer {
 	bool is_output, dev_is_high_speed;
 };
 
+struct iio_context_factory {
+	const char *name;
+	struct iio_context * (*create_context)(void);
+};
+
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 
@@ -190,5 +195,9 @@ struct iio_context * xml_create_context(const char *xml_file);
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words);
+
+int iio_context_factory_register(struct iio_context_factory *factory);
+int iio_context_factory_unregister(const char *name);
+void iio_context_dump_factories(void);
 
 #endif /* __IIO_PRIVATE_H__ */

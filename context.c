@@ -27,6 +27,61 @@
 #define NETWORK_BACKEND 1
 #endif
 
+# ifndef MAX_FACTORIES
+#define MAX_FACTORIES 10
+#endif /* MAX_FACTORIES */
+
+static struct iio_context_factory *context_factories[MAX_FACTORIES];
+static unsigned factories_nb;
+
+int iio_context_factory_register(struct iio_context_factory *factory)
+{
+	if (!factory || !factory->create_context || !factory->name)
+		return -EINVAL;
+
+	DEBUG("%s \"%s\"\n", __func__, factory->name);
+
+	if (factories_nb == MAX_FACTORIES)
+		return -ENOMEM;
+	context_factories[factories_nb] = factory;
+	factories_nb++;
+
+	return 0;
+}
+
+int iio_context_factory_unregister(const char *name)
+{
+	unsigned i;
+
+	if (!name)
+		return -EINVAL;
+
+	DEBUG("%s \"%s\"\n", __func__, name);
+
+	for (i = 0; i < MAX_FACTORIES; i++)
+		if (!strcmp(context_factories[i]->name, name))
+			break;
+	if (i == MAX_FACTORIES)
+		return -ENOENT;
+	factories_nb--;
+	for (; i + 1 < MAX_FACTORIES; i++)
+		context_factories[i] = context_factories[i + 1];
+	memset(context_factories + i, 0, sizeof(*context_factories));
+
+	return 0;
+}
+
+void iio_context_dump_factories(void)
+{
+	unsigned i;
+
+	DEBUG("List of registered context factories:\n");
+
+	for (i = 0; i < factories_nb; i++)
+		DEBUG("\t\"%s\" %p\n", context_factories[i]->name,
+				context_factories[i]->create_context);
+}
+
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device)*>"
