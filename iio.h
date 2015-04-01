@@ -111,6 +111,21 @@ struct iio_property {
 	char *value;	/**< value of the property */
 };
 
+/** @brief Create a context knowing it's name
+ * @param name Name of the context to create
+ * @param properties Properties for configuring the creation of the context.
+ * Depends on the properties of influence for the given context. For example,
+ * the network context supports the "hostname" property, while the local context
+ * supports none. The array must be NULL-terminated, that is, the last property
+ * must have a NULL name. NULL must be passed if there are no properties.
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * If an additional libiio backends has been registered by a plugin, one will be
+ * able to create a corresponding context with this function, by passing the
+ * plugin's name. */
+__api struct iio_context * iio_create_context(const char *name,
+		const struct iio_property *properties);
 
 /** @brief Create a context from local or remote IIO devices
  * @return On success, A pointer to an iio_context structure
@@ -126,7 +141,9 @@ __api struct iio_context * iio_create_default_context(void);
 
 /** @brief Create a context from local IIO devices (Linux only)
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately */
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * @note this function is a shortcut for iio_create_context("local", NULL); */
 __api struct iio_context * iio_create_local_context(void);
 
 

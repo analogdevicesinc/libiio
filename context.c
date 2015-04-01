@@ -70,6 +70,27 @@ static int factory_set_property(struct iio_context_factory *factory,
 	return 0;
 }
 
+static int factory_set_properties(struct iio_context_factory *factory,
+		const struct iio_property *properties)
+{
+	int ret;
+	const struct iio_property *p;
+
+	if (!factory|| !properties || !properties[0].key)
+		return -EINVAL;
+
+	for (p = properties; p->key; p++) {
+		ret = factory_set_property(factory, p->key, p->value);
+		if (ret < 0) {
+			ERROR("%s factory_set_property: %s\n", __func__,
+					strerror(-ret));
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static struct iio_context_factory * get_context_factory(const char *name)
 {
 	unsigned i;
@@ -81,6 +102,32 @@ static struct iio_context_factory * get_context_factory(const char *name)
 	errno = ENOSYS;
 
 	return NULL;
+}
+
+struct iio_context * iio_create_context(const char *name,
+		const struct iio_property *properties)
+{
+	int ret;
+	struct iio_context_factory *factory;
+
+	if (!name|| !*name) {
+		errno = -EINVAL;
+		return NULL;
+	}
+
+	factory = get_context_factory(name);
+	if (!factory)
+		return NULL;
+
+	if (properties) {
+		ret = factory_set_properties(factory, properties);
+		if (ret < 0) {
+			errno = -ret;
+			return NULL;
+		}
+	}
+
+	return factory->create_context();
 }
 
 int iio_context_factory_register(struct iio_context_factory *factory)
