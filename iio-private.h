@@ -169,14 +169,14 @@ struct iio_context_factory {
 	struct iio_property properties[MAX_FACTORY_PROPERTIES];
 };
 
-void free_channel(struct iio_channel *chn);
-void free_device(struct iio_device *dev);
+__api void free_channel(struct iio_channel *chn);
+__api void free_device(struct iio_device *dev);
 
 char *iio_channel_get_xml(const struct iio_channel *chn, size_t *len);
 char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 
-char *iio_context_create_xml(const struct iio_context *ctx);
-void iio_context_init(struct iio_context *ctx);
+__api char *iio_context_create_xml(const struct iio_context *ctx);
+__api void iio_context_init(struct iio_context *ctx);
 
 bool iio_device_is_tx(const struct iio_device *dev);
 int iio_device_open(const struct iio_device *dev,
@@ -197,10 +197,10 @@ struct iio_context * xml_create_context(const char *xml_file);
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		uint32_t *mask, size_t words);
 
-int iio_context_factory_register(struct iio_context_factory *factory);
-int iio_context_factory_unregister(const char *name);
-const char * iio_context_factory_get_property(
+__api int iio_context_factory_register(struct iio_context_factory *factory);
+__api int iio_context_factory_unregister(const char *name);
+__api const char * iio_context_factory_get_property(
 		struct iio_context_factory *factory, const char *key);
-void iio_context_dump_factories(void);
+__api void iio_context_dump_factories(void);
 
 #endif /* __IIO_PRIVATE_H__ */
