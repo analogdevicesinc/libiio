@@ -198,6 +198,18 @@ int main(int argc, char **argv)
 			else
 				ERROR("Unable to read attribute: %s\n", attr);
 		}
+
+		const struct iio_device *trig;
+		ret = iio_device_get_trigger(dev, &trig);
+		if (ret == 0) {
+			if (trig == NULL) {
+				INFO("\t\tNo trigger assigned to device\n");
+			} else {
+				const char *trig_name = iio_device_get_name(trig);
+				INFO("\t\tCurrent trigger: %s(%s)\n", iio_device_get_id(trig),
+					trig_name ? trig_name : "");
+			}
+		}
 	}
 
 	iio_context_destroy(ctx);
