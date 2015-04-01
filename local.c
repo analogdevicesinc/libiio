@@ -16,6 +16,8 @@
  *
  * */
 
+#if LOCAL_BACKEND
+
 #include "debug.h"
 #include "iio-private.h"
 
@@ -34,6 +36,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/utsname.h>
+
+#define CONTEXT_NAME "local"
 
 #define DEFAULT_TIMEOUT_MS 1000
 
@@ -131,6 +135,31 @@ static unsigned int find_modifier(const char *s, size_t *len_p)
 	}
 
 	return IIO_NO_MOD;
+}
+
+static struct iio_context * local_create_context(void);
+
+static struct iio_context_factory local_factory = {
+		.name = CONTEXT_NAME,
+		.create_context = local_create_context,
+};
+
+static __attribute__ ((constructor)) void local_init(void)
+{
+	int ret;
+
+	ret = iio_context_factory_register(&local_factory);
+	if (ret < 0)
+		ERROR("iio_context_factory_register: %s\n", strerror(-ret));
+}
+
+static __attribute__((destructor)) void local_cleanup(void)
+{
+	int ret;
+
+	ret = iio_context_factory_unregister(CONTEXT_NAME);
+	if (ret < 0)
+		ERROR("iio_context_factory_unregister: %s\n", strerror(-ret));
 }
 
 static void local_shutdown(struct iio_context *ctx)
@@ -1418,7 +1447,7 @@ static void init_scan_elements(struct iio_context *ctx)
 	}
 }
 
-struct iio_context * local_create_context(void)
+static struct iio_context * local_create_context(void)
 {
 	int ret;
 	unsigned int len;
@@ -1428,7 +1457,7 @@ struct iio_context * local_create_context(void)
 		goto err_set_errno_enomem;
 
 	ctx->ops = &local_ops;
-	ctx->name = "local";
+	ctx->name = CONTEXT_NAME;
 	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	uname(&uts);
@@ -1467,3 +1496,5 @@ err_set_errno_enomem:
 	errno = ENOMEM;
 	return NULL;
 }
+
+#endif /* LOCAL_BACKEND */

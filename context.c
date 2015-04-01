@@ -34,6 +34,19 @@
 static struct iio_context_factory *context_factories[MAX_FACTORIES];
 static unsigned factories_nb;
 
+static struct iio_context_factory * get_context_factory(const char *name)
+{
+	unsigned i;
+
+	for (i = 0; i < MAX_FACTORIES; i++)
+		if (!strcmp(context_factories[i]->name, name))
+			return context_factories[i];
+
+	errno = ENOSYS;
+
+	return NULL;
+}
+
 int iio_context_factory_register(struct iio_context_factory *factory)
 {
 	if (!factory || !factory->create_context || !factory->name)
@@ -322,12 +335,13 @@ struct iio_context * iio_create_default_context(void)
 
 struct iio_context * iio_create_local_context(void)
 {
-#if LOCAL_BACKEND
-	return local_create_context();
-#else
-	errno = ENOSYS;
-	return NULL;
-#endif
+	const struct iio_context_factory *factory;
+
+	factory = get_context_factory("local");
+	if (!factory)
+		return NULL;
+
+	return factory->create_context();
 }
 
 struct iio_context * iio_create_network_context(const char *hostname)
