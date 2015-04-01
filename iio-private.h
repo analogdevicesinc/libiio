@@ -29,6 +29,8 @@
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
 
+#define MAX_FACTORY_PROPERTIES 10
+
 #define BIT_MASK(bit) (1 << ((bit) % 32))
 #define BIT_WORD(bit) ((bit) / 32)
 #define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
@@ -164,6 +166,7 @@ struct iio_buffer {
 struct iio_context_factory {
 	const char *name;
 	struct iio_context * (*create_context)(void);
+	struct iio_property properties[MAX_FACTORY_PROPERTIES];
 };
 
 void free_channel(struct iio_channel *chn);
@@ -197,6 +200,8 @@ __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 
 int iio_context_factory_register(struct iio_context_factory *factory);
 int iio_context_factory_unregister(const char *name);
+const char * iio_context_factory_get_property(
+		struct iio_context_factory *factory, const char *key);
 void iio_context_dump_factories(void);
 
 #endif /* __IIO_PRIVATE_H__ */

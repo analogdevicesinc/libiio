@@ -34,6 +34,42 @@
 static struct iio_context_factory *context_factories[MAX_FACTORIES];
 static unsigned factories_nb;
 
+static int factory_set_property(struct iio_context_factory *factory,
+		const char *key, const char *value)
+{
+	unsigned i;
+	struct iio_property *p;
+
+	if (!factory || !key || !*key || !value)
+		return -EINVAL;
+
+	for (i = 0; i < MAX_FACTORY_PROPERTIES; i++)
+		if (!factory->properties[i].key)
+			break;
+		else if (!strcmp(factory->properties[i].key, key))
+			return -EBADSLT;
+
+	if (i > MAX_FACTORY_PROPERTIES) {
+		ERROR("no room left for storing more factory properties");
+		return -ENOMEM;
+	}
+	p = factory->properties + i;
+
+	p->key = strdup(key);
+	if (!p->key)
+		return -ENOMEM;
+
+	p->value = strdup(value);
+	if (!p->value) {
+		free(p->key);
+		p->key = NULL;
+
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 static struct iio_context_factory * get_context_factory(const char *name)
 {
 	unsigned i;
@@ -62,6 +98,23 @@ int iio_context_factory_register(struct iio_context_factory *factory)
 	return 0;
 }
 
+/* cleanup all the properties registered in a context factory */
+static void cleanup_properties(struct iio_context_factory *factory)
+{
+	unsigned j;
+	struct iio_property *p;
+
+	/* cleanup all the properties registered in the factory */
+	for (j = 0; j < MAX_FACTORY_PROPERTIES; j++) {
+		p = factory->properties + j;
+		if (p->key)
+			free(p->key);
+		if (p->value)
+			free(p->value);
+		memset(p, 0, sizeof(*p));
+	}
+}
+
 int iio_context_factory_unregister(const char *name)
 {
 	unsigned i;
@@ -76,12 +129,37 @@ int iio_context_factory_unregister(const char *name)
 			break;
 	if (i == MAX_FACTORIES)
 		return -ENOENT;
+
+	cleanup_properties(context_factories[i]);
+
 	factories_nb--;
 	for (; i + 1 < MAX_FACTORIES; i++)
 		context_factories[i] = context_factories[i + 1];
 	memset(context_factories + i, 0, sizeof(*context_factories));
 
 	return 0;
+}
+
+const char * iio_context_factory_get_property(
+		struct iio_context_factory *factory, const char *key)
+{
+	unsigned i;
+
+	if (!factory || !key || !*key) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	for (i = 0; i < MAX_FACTORY_PROPERTIES; i++)
+		if (!factory->properties[i].key)
+			break;
+		else
+			if (!strcmp(key, factory->properties[i].key))
+				return factory->properties[i].value;
+
+	errno = ENOENT;
+
+	return NULL;
 }
 
 void iio_context_dump_factories(void)
