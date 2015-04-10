@@ -27,11 +27,6 @@
 
 #define SAMPLES_PER_READ 256
 
-enum backend {
-	LOCAL,
-	NETWORK,
-};
-
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"network", required_argument, 0, 'n'},
@@ -54,6 +49,7 @@ static void usage(void)
 	unsigned int i;
 
 	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
+			"[-b <buffer-size>] [-s <samples>] "
 			"<iio_device> [<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
@@ -129,23 +125,18 @@ int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	int c, option_index = 0, arg_index = 0;
-	enum backend backend = LOCAL;
+	int c, option_index = 0, arg_index = 0, ip_index = 0;
 	struct iio_device *dev;
 
-	while ((c = getopt_long(argc, argv, "+hn:t:b:",
+	while ((c = getopt_long(argc, argv, "+hn:t:b:s:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
 		case 'n':
-			if (backend != LOCAL) {
-				ERROR("-x and -n are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = NETWORK;
 			arg_index += 2;
+			ip_index = arg_index;
 			break;
 		case 't':
 			arg_index += 2;
@@ -170,10 +161,10 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (backend == NETWORK)
-		ctx = iio_create_network_context(argv[arg_index]);
+	if (ip_index)
+		ctx = iio_create_network_context(argv[ip_index]);
 	else
-		ctx = iio_create_local_context();
+		ctx = iio_create_default_context();
 
 	if (!ctx) {
 		ERROR("Unable to create IIO context\n");

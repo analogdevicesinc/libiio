@@ -61,7 +61,7 @@ static void usage(void)
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
-	int c, option_index = 0, arg_index = 0;
+	int c, option_index = 0, arg_index = 0, xml_index = 0, ip_index = 0;
 	enum backend backend = LOCAL;
 	unsigned int major, minor;
 	char git_tag[8];
@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 			}
 			backend = NETWORK;
 			arg_index += 2;
+			ip_index = arg_index;
 			break;
 		case 'x':
 			if (backend != LOCAL) {
@@ -88,6 +89,7 @@ int main(int argc, char **argv)
 			}
 			backend = XML;
 			arg_index += 2;
+			xml_index = arg_index;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -104,11 +106,11 @@ int main(int argc, char **argv)
 	INFO("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
 
 	if (backend == XML)
-		ctx = iio_create_xml_context(argv[arg_index]);
+		ctx = iio_create_xml_context(argv[xml_index]);
 	else if (backend == NETWORK)
-		ctx = iio_create_network_context(argv[arg_index]);
+		ctx = iio_create_network_context(argv[ip_index]);
 	else
-		ctx = iio_create_local_context();
+		ctx = iio_create_default_context();
 
 	if (!ctx) {
 		ERROR("Unable to create IIO context\n");
