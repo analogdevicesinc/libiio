@@ -253,3 +253,8 @@ void * iio_buffer_get_data(const struct iio_buffer *buf)
 {
 	return buf->userdata;
 }
+
+const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
+{
+	return buf->dev;
+}

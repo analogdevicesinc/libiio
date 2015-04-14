@@ -869,3 +869,8 @@ int iio_device_attr_write_all(struct iio_device *dev,
 {
 	return write_each_attr(dev, false, cb, data);
 }
+
+const struct iio_context * iio_device_get_context(const struct iio_device *dev)
+{
+	return dev->ctx;
+}

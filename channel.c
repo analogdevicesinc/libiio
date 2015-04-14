@@ -664,3 +664,8 @@ err_free_buf:
 	free(buf);
 	return ret < 0 ? ret : 0;
 }
+
+const struct iio_device * iio_channel_get_device(const struct iio_channel *chn)
+{
+	return chn->dev;
+}
