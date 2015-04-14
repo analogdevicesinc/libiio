@@ -44,9 +44,15 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 		}
 	}
 
-	if (!name || !filename) {
+	if (!name) {
 		ERROR("Incomplete attribute in channel %s\n", chn->id);
 		goto err_free;
+	}
+
+	if (!filename) {
+		filename = _strdup(name);
+		if (!filename)
+			goto err_free;
 	}
 
 	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
