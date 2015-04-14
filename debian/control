@@ -2,9 +2,8 @@ Source: libiio
 Section: libs
 Priority: optional
 Maintainer: Paul Cercueil <paul.cercueil@analog.com>
-Uploaders: Paul Cercueil <paul.cercueil@analog.com>
-Build-Depends: cmake (>= 2.8), debhelper (>= 9), cli-common-dev (>= 0.9~)
-Standards-Version: 3.9.4
+Build-Depends: cmake (>= 2.8), debhelper (>= 9), cli-common-dev (>= 0.9~), doxygen, python
+Standards-Version: 3.9.6
 Homepage: http://github.com/analogdevicesinc/libiio
 Vcs-Git: git://github.com/analogdevicesinc/libiio
 
@@ -22,8 +21,9 @@ Description: Library for interfacing with IIO devices
  This package contains the shared library.
 
 Package: libiio-dev
+Section: libdevel
 Architecture: any
-Depends: libiio0 (>= ${binary:Version}), ${misc:Depends}
+Depends: libiio0 (= ${binary:Version}), ${misc:Depends}
 Description: libiio development files
  Libiio is a library that has been conceived to ease the development of
  applications interfacing Industrial Input/Output (IIO) devices through
@@ -33,7 +33,7 @@ Description: libiio development files
 
 Package: iiod
 Architecture: any
-Multi-Arch: same
+Multi-Arch: no
 Depends: libiio0 (>= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
 Suggests: avahi-daemon
 Description: Daemon to share IIO devices on the network
@@ -43,7 +43,7 @@ Description: Daemon to share IIO devices on the network
 
 Package: libiio-utils
 Architecture: any
-Multi-Arch: same
+Multi-Arch: no
 Depends: libiio0 (>= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
 Description: Miscellaneous libiio utilities
  Libiio is a library that has been conceived to ease the development of
@@ -53,8 +53,9 @@ Description: Miscellaneous libiio utilities
  This package contains several basic utilities for testing libiio.
 
 Package: python-libiio
+Section: python
 Architecture: all
-Depends: libiio0 (>= ${binary:Version}), python (>= 2.7.8)
+Depends: libiio0 (>= ${binary:Version}), ${python:Depends}, ${misc:Depends}
 Description: Python bindings for libiio
  Libiio is a library that has been conceived to ease the development of
  applications interfacing Industrial Input/Output (IIO) devices through
@@ -63,8 +64,9 @@ Description: Python bindings for libiio
  This package contains the Python bindings for libiio.
 
 Package: libiio0-cil
+Section: cli-mono
 Architecture: all
-Depends: libiio0 (>= ${binary:Version}), ${cli:Depends}
+Depends: libiio0 (>= ${binary:Version}), ${cli:Depends}, ${misc:Depends}
 Description: CLI bindings for libiio
  Libiio is a library that has been conceived to ease the development of
  applications interfacing Industrial Input/Output (IIO) devices through
@@ -73,8 +75,9 @@ Description: CLI bindings for libiio
  This package contains the CLI bindings for libiio.
 
 Package: libiio-cil-dev
+Section: cli-mono
 Architecture: all
-Depends: libiio0-cil (= ${binary:Version})
+Depends: libiio0-cil (= ${binary:Version}), ${misc:Depends}
 Description: CLI bindings for libiio
  Libiio is a library that has been conceived to ease the development of
  applications interfacing Industrial Input/Output (IIO) devices through
@@ -84,8 +87,9 @@ Description: CLI bindings for libiio
  and should be used for compilation.
 
 Package: libiio0-doc
+Section: doc
 Architecture: all
-Depends:
+Depends: ${misc:Depends}
 Description: libiio documentation
  Libiio is a library that has been conceived to ease the development of
  applications interfacing Industrial Input/Output (IIO) devices through

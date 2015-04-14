@@ -1,1 +1,2 @@
-usr/lib/python2.7/site-packages/* usr/lib/python2.7/dist-packages
+usr/lib/python2.7/site-packages/*.py usr/lib/python2.7/dist-packages
+usr/lib/python2.7/site-packages/*.egg-info usr/lib/python2.7/dist-packages

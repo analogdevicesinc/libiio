@@ -3,7 +3,7 @@
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 %:
-	dh $@ --parallel --with=cli
+	dh $@ --parallel --with=cli,python2
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DINSTALL_LIB_DIR=/usr/lib/$(DEB_HOST_MULTIARCH)
