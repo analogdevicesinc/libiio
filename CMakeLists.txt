@@ -104,6 +104,17 @@ if(WITH_LOCAL_BACKEND)
 	set(LIBIIO_CFILES ${LIBIIO_CFILES} local.c)
 endif()
 
+find_library(LIBUSB_LIBRARIES usb-1.0)
+if (LIBUSB_LIBRARIES)
+	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
+
+	if(WITH_USB_BACKEND)
+		add_definitions(-DUSB_BACKEND=1 -DENABLE_USB_M1K=1)
+		set(LIBIIO_CFILES ${LIBIIO_CFILES} usb.c usb_m1k.c)
+		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBUSB_LIBRARIES})
+	endif()
+endif()
+
 include_directories(${CMAKE_SOURCE_DIR})
 
 if(WITH_NETWORK_BACKEND)
