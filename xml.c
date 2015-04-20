@@ -258,6 +258,15 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 		}
 	}
 
+	dev->words = (dev->nb_channels + 31) / 32;
+	if (dev->words) {
+		dev->mask = calloc(dev->words, sizeof(*dev->mask));
+		if (!dev->mask) {
+			errno = ENOMEM;
+			goto err_free_device;
+		}
+	}
+
 	return dev;
 
 err_free_device:

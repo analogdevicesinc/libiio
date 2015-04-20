@@ -1354,15 +1354,6 @@ struct iio_context * network_create_context(const char *host)
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 
-		dev->words = (dev->nb_channels + 31) / 32;
-		if (dev->words) {
-			dev->mask = calloc(dev->words, sizeof(*dev->mask));
-			if (!dev->mask) {
-				ret = -ENOMEM;
-				goto err_free_description;
-			}
-		}
-
 		dev->pdata = calloc(1, sizeof(*dev->pdata));
 		if (!dev->pdata) {
 			ret = -ENOMEM;
