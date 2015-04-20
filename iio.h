@@ -142,6 +142,15 @@ __api struct iio_context * iio_create_xml_context_mem(
 __api struct iio_context * iio_create_network_context(const char *host);
 
 
+/** @brief Create a context from USB devices
+ * @param vid Vendor identification number
+ * @param pid Product identification number
+ * @return On success, a pointer to an iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately */
+__api struct iio_context * iio_create_usb_context(
+		unsigned short vid, unsigned short pid);
+
+
 /** @brief Duplicate a pre-existing IIO context
  * @param ctx A pointer to an iio_context structure
  * @return On success, A pointer to an iio_context structure

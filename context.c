@@ -313,3 +313,14 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	return NULL;
 #endif
 }
+
+struct iio_context * iio_create_usb_context(
+		unsigned short vid, unsigned short pid)
+{
+#if USB_BACKEND
+	return usb_create_context(vid, pid);
+#else
+	errno = ENOSYS;
+	return NULL;
+#endif
+}

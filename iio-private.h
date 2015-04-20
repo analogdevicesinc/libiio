@@ -195,6 +195,7 @@ struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);
 struct iio_context * xml_create_context_mem(const char *xml, size_t len);
 struct iio_context * xml_create_context(const char *xml_file);
+struct iio_context * usb_create_context(unsigned short vid, unsigned short pid);
 
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
