@@ -456,16 +456,14 @@ static int create_socket(const struct addrinfo *addrinfo)
 	return fd;
 }
 
-static int network_open(const struct iio_device *dev, size_t samples_count,
-		uint32_t *mask, size_t nb, bool cyclic)
+static int network_open(const struct iio_device *dev,
+		size_t samples_count, bool cyclic)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	char buf[1024], *ptr;
 	unsigned int i;
 	int ret, fd;
 
-	if (nb != dev->words)
-		return -EINVAL;
 	if (dev->pdata->fd >= 0)
 		return -EBUSY;
 
@@ -477,8 +475,8 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 			dev->id, (unsigned long) samples_count);
 	ptr = buf + strlen(buf);
 
-	for (i = nb; i > 0; i--) {
-		snprintf(ptr, (ptr - buf) + i * 8, "%08x", mask[i - 1]);
+	for (i = dev->words; i > 0; i--) {
+		snprintf(ptr, (ptr - buf) + i * 8, "%08x", dev->mask[i - 1]);
 		ptr += 8;
 	}
 
@@ -497,7 +495,6 @@ static int network_open(const struct iio_device *dev, size_t samples_count,
 	dev->pdata->is_cyclic = cyclic;
 	dev->pdata->fd = fd;
 	dev->pdata->wait_for_err_code = false;
-	memcpy(dev->mask, mask, nb * sizeof(*mask));
 	return 0;
 }
 

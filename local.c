@@ -660,8 +660,8 @@ static bool local_length_in_bytes(const struct iio_device *dev)
 	return false;
 }
 
-static int local_open(const struct iio_device *dev, size_t samples_count,
-		uint32_t *mask, size_t nb, bool cyclic)
+static int local_open(const struct iio_device *dev,
+		size_t samples_count, bool cyclic)
 {
 	unsigned int i;
 	int ret;
@@ -672,18 +672,15 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 	if (pdata->f)
 		return -EBUSY;
 
-	if (nb != dev->words)
-		return -EINVAL;
-
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
 	if (ret < 0)
 		return ret;
 
 	if (local_length_in_bytes(dev))
-		snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count *
-				iio_device_get_sample_size_mask(dev, mask, nb));
+		snprintf(buf, sizeof(buf), "%zu", samples_count *
+				iio_device_get_sample_size(dev));
 	else
-		snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
+		snprintf(buf, sizeof(buf), "%zu", samples_count);
 	ret = local_write_dev_attr(dev, "buffer/length",
 			buf, strlen(buf) + 1, false);
 	if (ret < 0)
@@ -693,8 +690,6 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 	pdata->f = fopen(buf, "r+");
 	if (!pdata->f)
 		return -errno;
-
-	memcpy(dev->mask, mask, nb);
 
 	/* There was a bug in older kernel versions that cause the kernel to
   	 * crash if the scan_elements _en file for a channel was set to 1, so
