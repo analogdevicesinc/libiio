@@ -29,7 +29,9 @@
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
 
-#define BIT_MASK(bit) (1 << ((bit) % 32))
+#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define BIT(x) (1 << (x))
+#define BIT_MASK(bit) BIT((bit) % 32)
 #define BIT_WORD(bit) ((bit) / 32)
 #define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
 		& BIT_MASK(bit)))

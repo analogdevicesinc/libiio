@@ -37,9 +37,6 @@
 
 #define DEFAULT_TIMEOUT_MS 1000
 
-#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
-#define BIT(x) (1 << (x))
-
 #define NB_BLOCKS 4
 
 #define BLOCK_ALLOC_IOCTL   _IOWR('i', 0xa0, struct block_alloc_req)
