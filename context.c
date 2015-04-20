@@ -27,7 +27,7 @@
 #define NETWORK_BACKEND 1
 #endif
 
-static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device)*>"
 "<!ELEMENT device (channel | attribute | debug-attribute)*>"
@@ -42,6 +42,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED>"
 "<!ATTLIST debug-attribute name CDATA #REQUIRED>"
 "]>";
+unsigned int xml_header_len = sizeof(xml_header) - 1;
 
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)

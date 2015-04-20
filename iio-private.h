@@ -193,4 +193,7 @@ struct iio_context * xml_create_context(const char *xml_file);
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
 
+extern const char xml_header[];
+extern unsigned int xml_header_len;
+
 #endif /* __IIO_PRIVATE_H__ */
