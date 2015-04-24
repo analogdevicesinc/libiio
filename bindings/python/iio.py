@@ -17,6 +17,7 @@ from ctypes import Structure, c_char_p, c_uint, c_int, \
 		c_char, c_void_p, c_bool, create_string_buffer, \
 		POINTER as _POINTER, cdll as _cdll, memmove as _memmove, byref as _byref
 from os import strerror as _strerror
+from platform import system as _system
 
 def _checkNull(result, func, arguments):
 	if result:
@@ -44,7 +45,7 @@ _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _BufferPtr = _POINTER(_Buffer)
 
-_lib = _cdll.LoadLibrary('libiio.so.0')
+_lib = _cdll.LoadLibrary('libiio.dll' if 'Windows' in _system() else 'libiio.so.0')
 
 _new_local = _lib.iio_create_local_context
 _new_local.restype = _ContextPtr
