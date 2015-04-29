@@ -16,12 +16,11 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-
 #include <getopt.h>
-#include <string.h>
+#include <iio.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MY_NAME "iio_readdev"
 
@@ -103,7 +102,7 @@ static struct iio_device * get_device(const struct iio_context *ctx,
 	if (i < nb_devices)
 		return device;
 
-	ERROR("Device %s not found\n", id);
+	fprintf(stderr, "Device %s not found\n", id);
 	return NULL;
 }
 
@@ -167,7 +166,7 @@ int main(int argc, char **argv)
 		ctx = iio_create_default_context();
 
 	if (!ctx) {
-		ERROR("Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
@@ -193,7 +192,7 @@ int main(int argc, char **argv)
 		}
 
 		if (!iio_device_is_trigger(trigger)) {
-			ERROR("Specified device is not a trigger\n");
+			fprintf(stderr, "Specified device is not a trigger\n");
 			iio_context_destroy(ctx);
 			return EXIT_FAILURE;
 		}
@@ -224,7 +223,7 @@ int main(int argc, char **argv)
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
-		ERROR("Unable to allocate buffer\n");
+		fprintf(stderr, "Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -232,7 +231,8 @@ int main(int argc, char **argv)
 	while (app_running) {
 		int ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
-			ERROR("Unable to refill buffer: %s\n", strerror(-ret));
+			fprintf(stderr, "Unable to refill buffer: %s\n",
+					strerror(-ret));
 			break;
 		}
 

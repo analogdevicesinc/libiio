@@ -15,15 +15,14 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-
-#include <getopt.h>
-#include <string.h>
-#include <math.h>
 #include <errno.h>
+#include <getopt.h>
+#include <iio.h>
+#include <math.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 static const struct option options[] = {
@@ -88,7 +87,7 @@ static struct iio_device *get_device(const struct iio_context *ctx,
 	if (i < nb_devices)
 		return device;
 
-	ERROR("Device %s not found\n", id);
+	fprintf(stderr, "Device %s not found\n", id);
 	return NULL;
 }
 
@@ -102,13 +101,13 @@ static void *monitor_thread_fn(void *device_name)
 
 	ctx = iio_create_default_context();
 	if (!ctx) {
-		ERROR("Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context\n");
 		return (void *)-1;
 	}
 
 	dev = get_device(ctx, device_name);
 	if (!dev) {
-		ERROR("Unable to find IIO device\n");
+		fprintf(stderr, "Unable to find IIO device\n");
 		iio_context_destroy(ctx);
 		return (void *)-1;
 	}
@@ -122,16 +121,17 @@ static void *monitor_thread_fn(void *device_name)
 	while (app_running) {
 		ret = iio_device_reg_read(dev, 0x80000088, &val);
 		if (ret) {
-			ERROR("Failed to read status register: %s\n", strerror(-ret));
+			fprintf(stderr, "Failed to read status register: %s\n",
+					strerror(-ret));
 			continue;
 		}
 
 		if (device_is_tx) {
 			if (val & 1)
-				ERROR("Underflow detected\n");
+				fprintf(stderr, "Underflow detected\n");
 		} else {
 			if (val & 4)
-				ERROR("Overflow detected\n");
+				fprintf(stderr, "Overflow detected\n");
 		}
 
 		/* Clear bits */
@@ -197,7 +197,7 @@ int main(int argc, char **argv)
 
 	ctx = iio_create_default_context();
 	if (!ctx) {
-		ERROR("Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
-		ERROR("Unable to allocate buffer\n");
+		fprintf(stderr, "Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -239,21 +239,24 @@ int main(int argc, char **argv)
 	ret = pthread_create(&monitor_thread, NULL, monitor_thread_fn,
 		(void *)device_name);
 	if (ret) {
-		ERROR("Failed to create monitor thread: %s\n", strerror(-ret));
+		fprintf(stderr, "Failed to create monitor thread: %s\n",
+				strerror(-ret));
 	}
 
 	while (app_running) {
 		if (device_is_tx) {
 			ret = iio_buffer_push(buffer);
 			if (ret < 0) {
-				ERROR("Unable to push buffer: %s\n", strerror(-ret));
+				fprintf(stderr, "Unable to push buffer: %s\n",
+						strerror(-ret));
 				app_running = false;
 				break;
 			}
 		} else {
 			ret = iio_buffer_refill(buffer);
 			if (ret < 0) {
-				ERROR("Unable to refill buffer: %s\n", strerror(-ret));
+				fprintf(stderr, "Unable to refill buffer: %s\n",
+						strerror(-ret));
 				app_running = false;
 				break;
 			}

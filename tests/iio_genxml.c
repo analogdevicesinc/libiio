@@ -16,10 +16,9 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-
 #include <getopt.h>
+#include <iio.h>
+#include <stdio.h>
 #include <string.h>
 
 #define MY_NAME "iio_genxml"
@@ -70,7 +69,7 @@ int main(int argc, char **argv)
 			return EXIT_SUCCESS;
 		case 'n':
 			if (backend != LOCAL) {
-				ERROR("-x and -n are mutually exclusive\n");
+				fprintf(stderr, "-x and -n are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = NETWORK;
@@ -79,7 +78,7 @@ int main(int argc, char **argv)
 			break;
 		case 'x':
 			if (backend != LOCAL) {
-				ERROR("-x and -n are mutually exclusive\n");
+				fprintf(stderr, "-x and -n are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = XML;
@@ -105,7 +104,7 @@ int main(int argc, char **argv)
 		ctx = iio_create_default_context();
 
 	if (!ctx) {
-		ERROR("Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
@@ -115,15 +114,15 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	INFO("XML generated:\n\n%s\n\n", xml);
+	printf("XML generated:\n\n%s\n\n", xml);
 
 	iio_context_destroy(ctx);
 
 	ctx = iio_create_xml_context_mem(xml, strlen(xml));
 	if (!ctx) {
-		ERROR("Unable to re-generate context\n");
+		fprintf(stderr, "Unable to re-generate context\n");
 	} else {
-		INFO("Context re-creation from generated XML suceeded!\n");
+		printf("Context re-creation from generated XML suceeded!\n");
 		iio_context_destroy(ctx);
 	}
 	free(xml);
