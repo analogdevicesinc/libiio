@@ -447,7 +447,8 @@ class Buffer(object):
 		self._length = samples_count * device.sample_size
 
 	def __del__(self):
-		_buffer_destroy(self._buffer)
+		if self._buffer is not None:
+			_buffer_destroy(self._buffer)
 
 	def __len__(self):
 		"""The size of this buffer, in bytes."""
