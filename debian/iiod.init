@@ -38,6 +38,11 @@ case "$1" in
 		fi
 		;;
 
+	restart|force-reload)
+		$0 stop
+		$0 start
+		;;
+
 	status)
 		if [ -f /var/run/iiod.pid ] ; then
 			status_of_proc -p /var/run/iiod.pid /usr/sbin/iiod iiod && exit 0 || exit $?
@@ -47,7 +52,7 @@ case "$1" in
 		;;
 
 	*)
-		log_action_msg "Usage: /etc/init.d/iiod.sh {start|stop|status}" || true
+		log_action_msg "Usage: /etc/init.d/iiod.sh {start|stop|restart|status}" || true
 		exit 1
 esac
 

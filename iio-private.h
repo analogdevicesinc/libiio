@@ -29,7 +29,9 @@
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
 
-#define BIT_MASK(bit) (1 << ((bit) % 32))
+#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define BIT(x) (1 << (x))
+#define BIT_MASK(bit) BIT((bit) % 32)
 #define BIT_WORD(bit) ((bit) / 32)
 #define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
 		& BIT_MASK(bit)))
@@ -51,6 +53,8 @@ enum iio_modifier {
 	IIO_MOD_LIGHT_RED,
 	IIO_MOD_LIGHT_GREEN,
 	IIO_MOD_LIGHT_BLUE,
+	IIO_MOD_I,
+	IIO_MOD_Q,
 };
 
 struct iio_backend_ops {
@@ -59,8 +63,8 @@ struct iio_backend_ops {
 			uint32_t *mask, size_t words);
 	ssize_t (*write)(const struct iio_device *dev,
 			const void *src, size_t len);
-	int (*open)(const struct iio_device *dev, size_t samples_count,
-			uint32_t *mask, size_t words, bool cyclic);
+	int (*open)(const struct iio_device *dev,
+			size_t samples_count, bool cyclic);
 	int (*close)(const struct iio_device *dev);
 
 	ssize_t (*get_buffer)(const struct iio_device *dev,
@@ -120,7 +124,6 @@ struct iio_channel {
 
 	bool is_output;
 	bool is_scan_element;
-	enum iio_modifier modifier;
 	struct iio_data_format format;
 	char *name, *id;
 	long index;
@@ -169,6 +172,7 @@ char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
 char *iio_context_create_xml(const struct iio_context *ctx);
 void iio_context_init(struct iio_context *ctx);
 
+bool iio_device_is_tx(const struct iio_device *dev);
 int iio_device_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic);
 int iio_device_close(const struct iio_device *dev);
@@ -187,6 +191,6 @@ struct iio_context * xml_create_context(const char *xml_file);
 
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
-		uint32_t *mask, size_t words);
+		const uint32_t *mask, size_t words);
 
 #endif /* __IIO_PRIVATE_H__ */

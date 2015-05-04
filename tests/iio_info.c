@@ -16,11 +16,9 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-
 #include <errno.h>
 #include <getopt.h>
+#include <iio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +59,7 @@ static void usage(void)
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
-	int c, option_index = 0, arg_index = 0;
+	int c, option_index = 0, arg_index = 0, xml_index = 0, ip_index = 0;
 	enum backend backend = LOCAL;
 	unsigned int major, minor;
 	char git_tag[8];
@@ -75,19 +73,21 @@ int main(int argc, char **argv)
 			return EXIT_SUCCESS;
 		case 'n':
 			if (backend != LOCAL) {
-				ERROR("-x and -n are mutually exclusive\n");
+				fprintf(stderr, "-x and -n are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = NETWORK;
 			arg_index += 2;
+			ip_index = arg_index;
 			break;
 		case 'x':
 			if (backend != LOCAL) {
-				ERROR("-x and -n are mutually exclusive\n");
+				fprintf(stderr, "-x and -n are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = XML;
 			arg_index += 2;
+			xml_index = arg_index;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -101,44 +101,44 @@ int main(int argc, char **argv)
 	}
 
 	iio_library_get_version(&major, &minor, git_tag);
-	INFO("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
+	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
 
 	if (backend == XML)
-		ctx = iio_create_xml_context(argv[arg_index]);
+		ctx = iio_create_xml_context(argv[xml_index]);
 	else if (backend == NETWORK)
-		ctx = iio_create_network_context(argv[arg_index]);
+		ctx = iio_create_network_context(argv[ip_index]);
 	else
-		ctx = iio_create_local_context();
+		ctx = iio_create_default_context();
 
 	if (!ctx) {
-		ERROR("Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
-	INFO("IIO context created with %s backend.\n",
+	printf("IIO context created with %s backend.\n",
 			iio_context_get_name(ctx));
 
 	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
 	if (!ret)
-		INFO("Backend version: %u.%u (git tag: %s)\n",
+		printf("Backend version: %u.%u (git tag: %s)\n",
 				major, minor, git_tag);
 	else
-		ERROR("Unable to get backend version: %i\n", ret);
+		fprintf(stderr, "Unable to get backend version: %i\n", ret);
 
-	INFO("Backend description string: %s\n",
+	printf("Backend description string: %s\n",
 			iio_context_get_description(ctx));
 
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
-	INFO("IIO context has %u devices:\n", nb_devices);
+	printf("IIO context has %u devices:\n", nb_devices);
 
 	unsigned int i;
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
 		const char *name = iio_device_get_name(dev);
-		INFO("\t%s: %s\n", iio_device_get_id(dev), name ? name : "" );
+		printf("\t%s: %s\n", iio_device_get_id(dev), name ? name : "" );
 
 		unsigned int nb_channels = iio_device_get_channels_count(dev);
-		INFO("\t\t%u channels found:\n", nb_channels);
+		printf("\t\t%u channels found:\n", nb_channels);
 
 		unsigned int j;
 		for (j = 0; j < nb_channels; j++) {
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 				type_name = "input";
 
 			name = iio_channel_get_name(ch);
-			INFO("\t\t\t%s: %s (%s)\n",
+			printf("\t\t\t%s: %s (%s)\n",
 					iio_channel_get_id(ch),
 					name ? name : "", type_name);
 
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 			if (!nb_attrs)
 				continue;
 
-			INFO("\t\t\t%u channel-specific attributes found:\n",
+			printf("\t\t\t%u channel-specific attributes found:\n",
 					nb_attrs);
 
 			unsigned int k;
@@ -169,13 +169,14 @@ int main(int argc, char **argv)
 				ret = (int) iio_channel_attr_read(ch,
 						attr, buf, 1024);
 				if (ret > 0)
-					INFO("\t\t\t\tattr %u: %s"
+					printf("\t\t\t\tattr %u: %s"
 							" value: %s\n", k,
 							attr, buf);
 				else if (ret == -ENOSYS)
-					INFO("\t\t\t\tattr %u: %s\n", k, attr);
+					printf("\t\t\t\tattr %u: %s\n",
+							k, attr);
 				else
-					ERROR("Unable to read attribute %s\n",
+					fprintf(stderr, "Unable to read attribute %s\n",
 							attr);
 			}
 		}
@@ -184,19 +185,33 @@ int main(int argc, char **argv)
 		if (!nb_attrs)
 			continue;
 
-		INFO("\t\t%u device-specific attributes found:\n", nb_attrs);
+		printf("\t\t%u device-specific attributes found:\n", nb_attrs);
 		for (j = 0; j < nb_attrs; j++) {
 			const char *attr = iio_device_get_attr(dev, j);
 			char buf[1024];
 			ret = (int) iio_device_attr_read(dev,
 					attr, buf, 1024);
 			if (ret > 0)
-				INFO("\t\t\t\tattr %u: %s value: %s\n", j,
+				printf("\t\t\t\tattr %u: %s value: %s\n", j,
 						attr, buf);
 			else if (ret == -ENOSYS)
-				INFO("\t\t\t\tattr %u: %s\n", j, attr);
+				printf("\t\t\t\tattr %u: %s\n", j, attr);
 			else
-				ERROR("Unable to read attribute: %s\n", attr);
+				fprintf(stderr, "Unable to read attribute:"
+						" %s\n", attr);
+		}
+
+		const struct iio_device *trig;
+		ret = iio_device_get_trigger(dev, &trig);
+		if (ret == 0) {
+			if (trig == NULL) {
+				printf("\t\tNo trigger assigned to device\n");
+			} else {
+				name = iio_device_get_name(trig);
+				printf("\t\tCurrent trigger: %s(%s)\n",
+						iio_device_get_id(trig),
+						name ? name : "");
+			}
 		}
 	}
 

@@ -37,9 +37,6 @@
 
 #define DEFAULT_TIMEOUT_MS 1000
 
-#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
-#define BIT(x) (1 << (x))
-
 #define NB_BLOCKS 4
 
 #define BLOCK_ALLOC_IOCTL   _IOWR('i', 0xa0, struct block_alloc_req)
@@ -104,7 +101,34 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_LIGHT_RED] = "red",
 	[IIO_MOD_LIGHT_GREEN] = "green",
 	[IIO_MOD_LIGHT_BLUE] = "blue",
+	[IIO_MOD_I] = "i",
+	[IIO_MOD_Q] = "q",
 };
+
+/*
+ * Looks for a IIO channel modifier at the beginning of the string s. If a
+ * modifier was found the symbolic constant (IIO_MOD_*) is returned, otherwise
+ * IIO_NO_MOD is returned. If a modifier was found len_p will be update with the
+ * length of the modifier.
+ */
+static unsigned int find_modifier(const char *s, size_t *len_p)
+{
+	unsigned int i;
+	size_t len;
+
+	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
+		if (!modifier_names[i])
+			continue;
+		len = strlen(modifier_names[i]);
+		if (strncmp(s, modifier_names[i], len) == 0 && s[len] == '_') {
+			if (len_p)
+				*len_p = len;
+			return i;
+		}
+	}
+
+	return IIO_NO_MOD;
+}
 
 static void local_shutdown(struct iio_context *ctx)
 {
@@ -126,15 +150,21 @@ static void strcut(char *str, int nb)
 
 static int set_channel_name(struct iio_channel *chn)
 {
+	size_t prefix_len = 0;
+	const char *attr0;
+	const char *ptr;
+	unsigned int i;
+
 	if (chn->nb_attrs < 2)
 		return 0;
 
+	attr0 = ptr = chn->attrs[0].name;
+
 	while (true) {
 		bool can_fix = true;
-		unsigned int i, len;
-		char *name;
-		const char *attr0 = chn->attrs[0].name;
-		const char *ptr = strchr(attr0, '_');
+		size_t len;
+
+		ptr = strchr(ptr, '_');
 		if (!ptr)
 			break;
 
@@ -145,54 +175,26 @@ static int set_channel_name(struct iio_channel *chn)
 		if (!can_fix)
 			break;
 
-		if (chn->name) {
-			size_t nlen = strlen(chn->name) + len + 2;
-			name = malloc(nlen);
-			if (!name)
-				return -ENOMEM;
-			snprintf(name, nlen, "%s_%.*s", chn->name, len, attr0);
-			DEBUG("Fixing name of channel %s from %s to %s\n",
-					chn->id, chn->name, name);
-			free(chn->name);
-		} else {
-			name = malloc(len + 2);
-			if (!name)
-				return -ENOMEM;
-			snprintf(name, len + 2, "%.*s", len, attr0);
-			DEBUG("Setting name of channel %s to %s\n",
-					chn->id, name);
-		}
+		prefix_len = len;
+		ptr = ptr + 1;
+	}
+
+	if (prefix_len) {
+		char *name;
+
+		name = malloc(prefix_len + 1);
+		if (!name)
+			return -ENOMEM;
+		strncpy(name, attr0, prefix_len);
+		name[prefix_len] = '\0';
+		DEBUG("Setting name of channel %s to %s\n", chn->id, name);
 		chn->name = name;
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
-			strcut(chn->attrs[i].name, len + 1);
+			strcut(chn->attrs[i].name, prefix_len + 1);
 	}
 
-	if (chn->name) {
-		unsigned int i;
-		for (i = 0; i <	ARRAY_SIZE(modifier_names); i++) {
-			unsigned int len;
-
-			if (!modifier_names[i])
-				continue;
-
-			len = strlen(modifier_names[i]);
-			if (!strncmp(chn->name, modifier_names[i], len)) {
-				if (chn->name[len]) {
-					/* Shrink the modifier from the extended name */
-					strcut(chn->name, len + 1);
-				} else {
-					free(chn->name);
-					chn->name = NULL;
-				}
-				chn->modifier = i;
-				DEBUG("Detected modifier for channel %s: %s\n",
-						chn->id, modifier_names[i]);
-				break;
-			}
-		}
-	}
 	return 0;
 }
 
@@ -598,6 +600,7 @@ static int enable_high_speed(const struct iio_device *dev)
 		DEBUG("Cyclic mode not enabled\n");
 	}
 
+	req.id = 0;
 	req.type = 0;
 	req.size = pdata->samples_count *
 		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
@@ -655,8 +658,8 @@ static bool local_length_in_bytes(const struct iio_device *dev)
 	return false;
 }
 
-static int local_open(const struct iio_device *dev, size_t samples_count,
-		uint32_t *mask, size_t nb, bool cyclic)
+static int local_open(const struct iio_device *dev,
+		size_t samples_count, bool cyclic)
 {
 	unsigned int i;
 	int ret;
@@ -667,18 +670,15 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 	if (pdata->f)
 		return -EBUSY;
 
-	if (nb != dev->words)
-		return -EINVAL;
-
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
 	if (ret < 0)
 		return ret;
 
 	if (local_length_in_bytes(dev))
-		snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count *
-				iio_device_get_sample_size_mask(dev, mask, nb));
+		snprintf(buf, sizeof(buf), "%zu", samples_count *
+				iio_device_get_sample_size(dev));
 	else
-		snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
+		snprintf(buf, sizeof(buf), "%zu", samples_count);
 	ret = local_write_dev_attr(dev, "buffer/length",
 			buf, strlen(buf) + 1, false);
 	if (ret < 0)
@@ -688,8 +688,6 @@ static int local_open(const struct iio_device *dev, size_t samples_count,
 	pdata->f = fopen(buf, "r+");
 	if (!pdata->f)
 		return -errno;
-
-	memcpy(dev->mask, mask, nb);
 
 	/* There was a bug in older kernel versions that cause the kernel to
   	 * crash if the scan_elements _en file for a channel was set to 1, so
@@ -828,27 +826,21 @@ static bool is_channel(const char *attr)
 		return false;
 	if (*(ptr - 1) >= '0' && *(ptr - 1) <= '9')
 		return true;
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++)
-		if (modifier_names[i] && !strncmp(ptr + 1, modifier_names[i],
-					strlen(modifier_names[i])))
-			return true;
+
+	if (find_modifier(ptr + 1, NULL) != IIO_NO_MOD)
+		return true;
 	return false;
 }
 
 static char * get_channel_id(const char *attr)
 {
 	char *res, *ptr;
-	unsigned int i;
+	size_t len;
 
 	attr = strchr(attr, '_') + 1;
 	ptr = strchr(attr, '_');
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
-		if (modifier_names[i] && !strncmp(ptr + 1, modifier_names[i],
-					strlen(modifier_names[i]))) {
-			ptr = strchr(ptr + 1, '_');
-			break;
-		}
-	}
+	if (find_modifier(ptr + 1, &len) != IIO_NO_MOD)
+		ptr += len + 1;
 
 	res = malloc(ptr - attr + 1);
 	if (!res)
@@ -862,17 +854,11 @@ static char * get_channel_id(const char *attr)
 static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
 	char *ptr = strchr(attr, '_') + 1;
-	unsigned int i;
+	size_t len;
 
 	ptr = strchr(ptr, '_') + 1;
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
-		if (modifier_names[i] &&
-				!strncmp(ptr, modifier_names[i],
-					strlen(modifier_names[i]))) {
-			ptr = strchr(ptr, '_') + 1;
-			break;
-		}
-	}
+	if (find_modifier(ptr, &len) != IIO_NO_MOD)
+		ptr += len + 1;
 
 	if (chn->name) {
 		size_t len = strlen(chn->name);
@@ -1025,11 +1011,8 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		return 0;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++)
-		if (modifier_names[i] &&
-				!strncmp(chn->id + len + 1, modifier_names[i],
-					strlen(modifier_names[i])))
-			return 1;
+	if (find_modifier(chn->id + len + 1, NULL) != IIO_NO_MOD)
+		return 1;
 
 	return 0;
 }
@@ -1103,7 +1086,6 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 
 	chn->dev = dev;
 	chn->id = id;
-	chn->modifier = IIO_NO_MOD;
 
 	if (!add_attr_to_channel(chn, attr, path))
 		return chn;

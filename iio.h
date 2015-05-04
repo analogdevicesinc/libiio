@@ -230,6 +230,13 @@ __api int iio_context_set_timeout(
  * @brief Represents a device in the IIO context */
 
 
+/** @brief Retrieve a pointer to the iio_context structure
+ * @param dev A pointer to an iio_device structure
+ * @return A pointer to an iio_context structure */
+__api __pure const struct iio_context * iio_device_get_context(
+		const struct iio_device *dev);
+
+
 /** @brief Retrieve the device ID (e.g. <b><i>iio:device0</i></b>)
  * @param dev A pointer to an iio_device structure
  * @return A pointer to a static NULL-terminated string */
@@ -505,6 +512,13 @@ __api __pure bool iio_device_is_trigger(const struct iio_device *dev);
  * @{
  * @struct iio_channel
  * @brief Represents an input or output channel of a device */
+
+
+/** @brief Retrieve a pointer to the iio_device structure
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to an iio_device structure */
+__api __pure const struct iio_device * iio_channel_get_device(
+		const struct iio_channel *chn);
 
 
 /** @brief Retrieve the channel ID (e.g. <b><i>voltage0</i></b>)
@@ -817,6 +831,13 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
  * @{
  * @struct iio_buffer
  * @brief An input or output buffer, used to read or write samples */
+
+
+/** @brief Retrieve a pointer to the iio_device structure
+ * @param buf A pointer to an iio_buffer structure
+ * @return A pointer to an iio_device structure */
+__api __pure const struct iio_device * iio_buffer_get_device(
+		const struct iio_buffer *buf);
 
 
 /** @brief Create an input or output buffer associated to the given device

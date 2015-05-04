@@ -255,48 +255,34 @@ const char * iio_device_find_debug_attr(const struct iio_device *dev,
 	return NULL;
 }
 
-static int iio_device_open_mask(const struct iio_device *dev,
-		size_t samples_count, uint32_t *mask, size_t words, bool cyclic)
+bool iio_device_is_tx(const struct iio_device *dev)
 {
 	unsigned int i;
-	bool has_channels = false;
 
-	for (i = 0; !has_channels && i < words; i++)
-		has_channels = !!mask[i];
-	if (!has_channels)
-		return -EINVAL;
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *ch = dev->channels[i];
+		if (iio_channel_is_output(ch) && iio_channel_is_enabled(ch))
+			return true;
+	}
 
-	if (dev->ctx->ops->open)
-		return dev->ctx->ops->open(dev,
-				samples_count, mask, words, cyclic);
-	else
-		return -ENOSYS;
+	return false;
 }
 
 int iio_device_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
-	size_t nb = (dev->nb_channels + 31) / 32;
-	uint32_t *mask = NULL;
 	unsigned int i;
-	int ret;
+	bool has_channels = false;
 
-	if (nb == 0)
+	for (i = 0; !has_channels && i < dev->words; i++)
+		has_channels = !!dev->mask[i];
+	if (!has_channels)
 		return -EINVAL;
 
-	mask = calloc(nb, sizeof(*mask));
-	if (!mask)
-		return -ENOMEM;
-
-	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *chn = dev->channels[i];
-		if (iio_channel_is_enabled(chn) && chn->index >= 0)
-			SET_BIT(mask, chn->index);
-	}
-
-	ret = iio_device_open_mask(dev, samples_count, mask, nb, cyclic);
-	free(mask);
-	return ret;
+	if (dev->ctx->ops->open)
+		return dev->ctx->ops->open(dev, samples_count, cyclic);
+	else
+		return -ENOSYS;
 }
 
 int iio_device_close(const struct iio_device *dev)
@@ -420,7 +406,7 @@ void free_device(struct iio_device *dev)
 }
 
 ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
-		uint32_t *mask, size_t words)
+		const uint32_t *mask, size_t words)
 {
 	ssize_t size = 0;
 	unsigned int i;
@@ -855,4 +841,9 @@ int iio_device_attr_write_all(struct iio_device *dev,
 		void *data)
 {
 	return write_each_attr(dev, false, cb, data);
+}
+
+const struct iio_context * iio_device_get_context(const struct iio_device *dev)
+{
+	return dev->ctx;
 }

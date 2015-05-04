@@ -16,21 +16,15 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-
 #include <getopt.h>
-#include <string.h>
+#include <iio.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MY_NAME "iio_readdev"
 
 #define SAMPLES_PER_READ 256
-
-enum backend {
-	LOCAL,
-	NETWORK,
-};
 
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
@@ -54,6 +48,7 @@ static void usage(void)
 	unsigned int i;
 
 	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
+			"[-b <buffer-size>] [-s <samples>] "
 			"<iio_device> [<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
@@ -107,7 +102,7 @@ static struct iio_device * get_device(const struct iio_context *ctx,
 	if (i < nb_devices)
 		return device;
 
-	ERROR("Device %s not found\n", id);
+	fprintf(stderr, "Device %s not found\n", id);
 	return NULL;
 }
 
@@ -129,23 +124,18 @@ int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	int c, option_index = 0, arg_index = 0;
-	enum backend backend = LOCAL;
+	int c, option_index = 0, arg_index = 0, ip_index = 0;
 	struct iio_device *dev;
 
-	while ((c = getopt_long(argc, argv, "+hn:t:b:",
+	while ((c = getopt_long(argc, argv, "+hn:t:b:s:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
 		case 'n':
-			if (backend != LOCAL) {
-				ERROR("-x and -n are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = NETWORK;
 			arg_index += 2;
+			ip_index = arg_index;
 			break;
 		case 't':
 			arg_index += 2;
@@ -170,13 +160,13 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (backend == NETWORK)
-		ctx = iio_create_network_context(argv[arg_index]);
+	if (ip_index)
+		ctx = iio_create_network_context(argv[ip_index]);
 	else
-		ctx = iio_create_local_context();
+		ctx = iio_create_default_context();
 
 	if (!ctx) {
-		ERROR("Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
@@ -202,7 +192,7 @@ int main(int argc, char **argv)
 		}
 
 		if (!iio_device_is_trigger(trigger)) {
-			ERROR("Specified device is not a trigger\n");
+			fprintf(stderr, "Specified device is not a trigger\n");
 			iio_context_destroy(ctx);
 			return EXIT_FAILURE;
 		}
@@ -233,7 +223,7 @@ int main(int argc, char **argv)
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
-		ERROR("Unable to allocate buffer\n");
+		fprintf(stderr, "Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -241,7 +231,8 @@ int main(int argc, char **argv)
 	while (app_running) {
 		int ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
-			ERROR("Unable to refill buffer: %s\n", strerror(-ret));
+			fprintf(stderr, "Unable to refill buffer: %s\n",
+					strerror(-ret));
 			break;
 		}
 

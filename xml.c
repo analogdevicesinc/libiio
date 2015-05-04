@@ -44,9 +44,15 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 		}
 	}
 
-	if (!name || !filename) {
+	if (!name) {
 		ERROR("Incomplete attribute in channel %s\n", chn->id);
 		goto err_free;
+	}
+
+	if (!filename) {
+		filename = _strdup(name);
+		if (!filename)
+			goto err_free;
 	}
 
 	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
@@ -182,7 +188,7 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 			chn->is_scan_element = true;
 			setup_scan_element(chn, n);
 		} else if (strcmp((char *) n->name, "text")) {
-			WARNING("Unknown children \'%s\' in <device>\n",
+			WARNING("Unknown children \'%s\' in <channel>\n",
 					n->name);
 			continue;
 		}
@@ -210,7 +216,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 		} else if (!strcmp((char *) attr->name, "id")) {
 			dev->id = _strdup((char *) attr->children->content);
 		} else {
-			WARNING("Unknown attribute \'%s\' in <context>\n",
+			WARNING("Unknown attribute \'%s\' in <device>\n",
 					attr->name);
 		}
 	}
@@ -249,6 +255,15 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			WARNING("Unknown children \'%s\' in <device>\n",
 					n->name);
 			continue;
+		}
+	}
+
+	dev->words = (dev->nb_channels + 31) / 32;
+	if (dev->words) {
+		dev->mask = calloc(dev->words, sizeof(*dev->mask));
+		if (!dev->mask) {
+			errno = ENOMEM;
+			goto err_free_device;
 		}
 	}
 
