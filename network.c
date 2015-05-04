@@ -756,12 +756,26 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret, read = 0;
+	int memfd;
 	bool tx;
 
 	if (pdata->is_cyclic)
 		return -ENOSYS;
-	if (!addr_ptr || words != (dev->nb_channels + 31) / 32)
+
+	/* We check early that the temporary file can be created, so that we can
+	 * return -ENOSYS in case it fails, which will indicate that the
+	 * high-speed interface is not available.
+	 *
+	 * O_TMPFILE -> Linux 3.11.
+	 * TODO: use memfd_create (Linux 3.17) */
+	memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
+	if (memfd < 0)
+		return -ENOSYS;
+
+	if (!addr_ptr || words != (dev->nb_channels + 31) / 32) {
+		close(memfd);
 		return -EINVAL;
+	}
 
 	if (pdata->mmap_addr)
 		munmap(pdata->mmap_addr, pdata->mmap_len);
@@ -775,12 +789,12 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 		ret = write_rwbuf_command(dev, buf, false);
 		if (ret < 0)
-			goto err_unlock;
+			goto err_close_memfd;
 
 		ret = network_do_splice(pdata->fd,
 				pdata->memfd, pdata->mmap_len);
 		if (ret < 0)
-			goto err_unlock;
+			goto err_close_memfd;
 
 		pdata->wait_for_err_code = true;
 		network_unlock_dev(pdata);
@@ -792,14 +806,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (bytes_used)
 		pdata->mmap_len = bytes_used;
 
-	/* O_TMPFILE -> Linux 3.11.
-	 * TODO: use memfd_create (Linux 3.17) */
-	pdata->memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
-	if (pdata->memfd < 0) {
-		ret = -errno;
-		ERROR("Unable to create temp file: %zi\n", -ret);
-		return ret;
-	}
+	pdata->memfd = memfd;
 
 	ret = (ssize_t) ftruncate(pdata->memfd, pdata->mmap_len);
 	if (ret < 0) {
@@ -852,6 +859,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	*addr_ptr = pdata->mmap_addr;
 	return read ? read : bytes_used;
 
+err_close_memfd:
+	close(memfd);
 err_unlock:
 	network_unlock_dev(pdata);
 	return ret;
