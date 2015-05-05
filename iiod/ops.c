@@ -610,9 +610,6 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!words)
 		return -ENOMEM;
 
-	if (nb_channels % 32)
-		words[nb_channels / 32] &= (1 << (nb_channels % 32)) - 1;
-
 	pthread_mutex_lock(&devlist_lock);
 	SLIST_FOREACH(e, &devlist_head, next) {
 		if (e->dev == dev) {
