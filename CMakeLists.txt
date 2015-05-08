@@ -147,6 +147,8 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 endif()
 
+configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
+
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
 configure_file(libiio.pc.cmakein ${LIBIIO_PC} @ONLY)
 install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
