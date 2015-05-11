@@ -145,7 +145,7 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 			ptr = (void *) ((uintptr_t) ptr + ret);
 		}
 
-		return buffer->length;
+		return (ssize_t) buffer->length;
 	}
 }
 

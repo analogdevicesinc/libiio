@@ -381,7 +381,7 @@ struct iio_context * xml_create_context_mem(const char *xml, size_t len)
 
 	LIBXML_TEST_VERSION;
 
-	doc = xmlReadMemory(xml, len, NULL, NULL, XML_PARSE_DTDVALID);
+	doc = xmlReadMemory(xml, (int) len, NULL, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		ERROR("Unable to parse XML file\n");
 		return NULL;

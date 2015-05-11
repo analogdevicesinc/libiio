@@ -233,7 +233,7 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) src;
 	while (len) {
-		ssize_t ret = send(fd, (const void *) ptr, len, 0);
+		ssize_t ret = send(fd, (const void *) ptr, (int) len, 0);
 		if (ret < 0) {
 			if (errno == EINTR) {
 				continue;
@@ -243,14 +243,14 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - (uintptr_t) src;
+	return (ssize_t)(ptr - (uintptr_t) src);
 }
 
 static ssize_t read_all(void *dst, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) dst;
 	while (len) {
-		ssize_t ret = recv(fd, (void *) ptr, len, 0);
+		ssize_t ret = recv(fd, (void *) ptr, (int) len, 0);
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
@@ -261,7 +261,7 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - (uintptr_t) dst;
+	return (ssize_t)(ptr - (uintptr_t) dst);
 }
 
 static int read_integer(int fd, long *val)
@@ -430,7 +430,12 @@ static int create_socket(const struct addrinfo *addrinfo)
 	struct timeval timeout;
 	int ret, fd, yes = 1;
 
+#ifdef _WIN32
+	SOCKET s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	fd = (s == INVALID_SOCKET) ? -1 : (int) s;
+#else
 	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+#endif
 	if (fd < 0) {
 		ret = -errno;
 		return ret;
@@ -442,7 +447,7 @@ static int create_socket(const struct addrinfo *addrinfo)
 #ifndef _WIN32
 	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
 #else
-	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
+	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
 #endif
 	if (ret < 0) {
 		ret = -errno;
@@ -461,7 +466,7 @@ static int network_open(const struct iio_device *dev,
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	char buf[1024], *ptr;
-	unsigned int i;
+	size_t i;
 	int ret, fd;
 
 	if (dev->pdata->fd >= 0)
@@ -587,7 +592,7 @@ static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
 		return ret;
 
 	if (read_len > 0 && mask) {
-		unsigned int i;
+		size_t i;
 		char buf[9];
 
 		buf[8] = '\0';
@@ -756,12 +761,26 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret, read = 0;
+	int memfd;
 	bool tx;
 
 	if (pdata->is_cyclic)
 		return -ENOSYS;
-	if (!addr_ptr || words != (dev->nb_channels + 31) / 32)
+
+	/* We check early that the temporary file can be created, so that we can
+	 * return -ENOSYS in case it fails, which will indicate that the
+	 * high-speed interface is not available.
+	 *
+	 * O_TMPFILE -> Linux 3.11.
+	 * TODO: use memfd_create (Linux 3.17) */
+	memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
+	if (memfd < 0)
+		return -ENOSYS;
+
+	if (!addr_ptr || words != (dev->nb_channels + 31) / 32) {
+		close(memfd);
 		return -EINVAL;
+	}
 
 	if (pdata->mmap_addr)
 		munmap(pdata->mmap_addr, pdata->mmap_len);
@@ -775,12 +794,12 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 		ret = write_rwbuf_command(dev, buf, false);
 		if (ret < 0)
-			goto err_unlock;
+			goto err_close_memfd;
 
 		ret = network_do_splice(pdata->fd,
 				pdata->memfd, pdata->mmap_len);
 		if (ret < 0)
-			goto err_unlock;
+			goto err_close_memfd;
 
 		pdata->wait_for_err_code = true;
 		network_unlock_dev(pdata);
@@ -792,14 +811,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (bytes_used)
 		pdata->mmap_len = bytes_used;
 
-	/* O_TMPFILE -> Linux 3.11.
-	 * TODO: use memfd_create (Linux 3.17) */
-	pdata->memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
-	if (pdata->memfd < 0) {
-		ret = -errno;
-		ERROR("Unable to create temp file: %zi\n", -ret);
-		return ret;
-	}
+	pdata->memfd = memfd;
 
 	ret = (ssize_t) ftruncate(pdata->memfd, pdata->mmap_len);
 	if (ret < 0) {
@@ -852,6 +864,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	*addr_ptr = pdata->mmap_addr;
 	return read ? read : bytes_used;
 
+err_close_memfd:
+	close(memfd);
 err_unlock:
 	network_unlock_dev(pdata);
 	return ret;
