@@ -275,7 +275,7 @@ void iio_channel_disable(struct iio_channel *chn)
 
 void free_channel(struct iio_channel *chn)
 {
-	unsigned int i;
+	size_t i;
 	for (i = 0; i < chn->nb_attrs; i++) {
 		free(chn->attrs[i].name);
 		free(chn->attrs[i].filename);
@@ -291,15 +291,14 @@ void free_channel(struct iio_channel *chn)
 
 static void byte_swap(uint8_t *dst, const uint8_t *src, size_t len)
 {
-	unsigned int i;
+	size_t i;
 	for (i = 0; i < len; i++)
 		dst[i] = src[len - i - 1];
 }
 
 static void shift_bits(uint8_t *dst, size_t shift, size_t len, bool left)
 {
-	unsigned int i;
-	size_t shift_bytes = shift / 8;
+	size_t i, shift_bytes = shift / 8;
 	shift %= 8;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -371,7 +370,7 @@ static void sign_extend(uint8_t *dst, size_t bits, size_t len)
 
 static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
 {
-	unsigned int i;
+	size_t i;
 
 	/* Clear upper bits */
 	if (bits % 8)

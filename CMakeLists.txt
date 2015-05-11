@@ -33,6 +33,9 @@ option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 
 if (NOT MSVC)
 	option(WITH_TESTS "Build the test programs" ON)
+else()
+	# Avoid annoying warnings from Visual Studio
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 endif()
 
 if (NOT WIN32)

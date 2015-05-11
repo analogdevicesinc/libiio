@@ -233,7 +233,7 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) src;
 	while (len) {
-		ssize_t ret = send(fd, (const void *) ptr, len, 0);
+		ssize_t ret = send(fd, (const void *) ptr, (int) len, 0);
 		if (ret < 0) {
 			if (errno == EINTR) {
 				continue;
@@ -243,14 +243,14 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - (uintptr_t) src;
+	return (ssize_t)(ptr - (uintptr_t) src);
 }
 
 static ssize_t read_all(void *dst, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) dst;
 	while (len) {
-		ssize_t ret = recv(fd, (void *) ptr, len, 0);
+		ssize_t ret = recv(fd, (void *) ptr, (int) len, 0);
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
@@ -261,7 +261,7 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - (uintptr_t) dst;
+	return (ssize_t)(ptr - (uintptr_t) dst);
 }
 
 static int read_integer(int fd, long *val)
@@ -430,7 +430,12 @@ static int create_socket(const struct addrinfo *addrinfo)
 	struct timeval timeout;
 	int ret, fd, yes = 1;
 
+#ifdef _WIN32
+	SOCKET s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	fd = (s == INVALID_SOCKET) ? -1 : (int) s;
+#else
 	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+#endif
 	if (fd < 0) {
 		ret = -errno;
 		return ret;
@@ -442,7 +447,7 @@ static int create_socket(const struct addrinfo *addrinfo)
 #ifndef _WIN32
 	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
 #else
-	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
+	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
 #endif
 	if (ret < 0) {
 		ret = -errno;
@@ -461,7 +466,7 @@ static int network_open(const struct iio_device *dev,
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	char buf[1024], *ptr;
-	unsigned int i;
+	size_t i;
 	int ret, fd;
 
 	if (dev->pdata->fd >= 0)
@@ -587,7 +592,7 @@ static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
 		return ret;
 
 	if (read_len > 0 && mask) {
-		unsigned int i;
+		size_t i;
 		char buf[9];
 
 		buf[8] = '\0';
