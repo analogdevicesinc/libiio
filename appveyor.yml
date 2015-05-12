@@ -26,7 +26,7 @@ build_script:
     - appveyor PushArtifact C:\libiio-setup.exe
 
 deploy:
-    tag: 2014_R2_latest
+    release: Libiio release 2014.2.$(appveyor_build_version)
     artifact: libiio-setup.exe
     provider: GitHub
     auth_token:
@@ -34,3 +34,4 @@ deploy:
     prerelease: true
     on:
         branch: 2014_R2
+        appveyor_repo_tag: true
