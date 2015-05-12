@@ -160,6 +160,10 @@ add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
 set_target_properties(iio PROPERTIES VERSION ${VERSION} SOVERSION ${LIBIIO_VERSION_MAJOR})
 target_link_libraries(iio LINK_PRIVATE ${LIBS_TO_LINK})
 
+if (MSVC)
+	set_target_properties(iio PROPERTIES OUTPUT_NAME libiio)
+endif()
+
 if (NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL)
 	install(FILES ${LIBIIO_HEADERS} DESTINATION "${INSTALL_INC_DIR}")
 endif()
