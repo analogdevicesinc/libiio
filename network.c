@@ -1247,7 +1247,7 @@ struct iio_context * network_create_context(const char *host)
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
-	unsigned int i, len;
+	size_t i, len;
 	int fd, ret;
 	char *description;
 #ifdef _WIN32
@@ -1392,7 +1392,8 @@ struct iio_context * network_create_context(const char *host)
 #endif
 
 	if (ctx->description) {
-		size_t new_size = len + strlen(ctx->description) + 1;
+		size_t desc_len = strlen(description);
+		size_t new_size = desc_len + strlen(ctx->description) + 2;
 		char *ptr, *new_description = realloc(description, new_size);
 		if (!new_description) {
 			ret = -ENOMEM;
@@ -1400,7 +1401,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		ptr = strrchr(new_description, '\0');
-		snprintf(ptr, new_size - len, " %s", ctx->description);
+		snprintf(ptr, new_size - desc_len, " %s", ctx->description);
 		free(ctx->description);
 
 		ctx->description = new_description;
