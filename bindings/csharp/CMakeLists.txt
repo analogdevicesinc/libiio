@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8.7)
 project(libiio-sharp)
 
 find_program(MCS_EXECUTABLE
-	NAMES mcs
+	NAMES mcs csc
+	PATHS ENV MCS_EXECUTABLE_PATH
 	DOC "C# compiler")
 mark_as_advanced(MCS_EXECUTABLE)
 
@@ -36,8 +37,16 @@ if (MCS_EXECUTABLE)
 			${LIBIIO_CS_INFO}
 			)
 
+		foreach(SRC ${LIBIIO_CS_SOURCES})
+			file(TO_NATIVE_PATH ${SRC} TMP)
+			set(LIBIIO_CS_SOURCES_REALPATH ${LIBIIO_CS_SOURCES_REALPATH} ${TMP})
+		endforeach(SRC)
+
+		file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/key.snk SIGN_KEY)
+		file(TO_NATIVE_PATH ${LIBIIO_CS_DLL} LIBIIO_CS_DLL_OUT)
+
 		add_custom_command(OUTPUT ${LIBIIO_CS_DLL}
-			COMMAND ${MCS_EXECUTABLE} /target:library /out:${LIBIIO_CS_DLL} /debug /keyfile:${CMAKE_CURRENT_SOURCE_DIR}/key.snk ${LIBIIO_CS_SOURCES}
+			COMMAND ${MCS_EXECUTABLE} /target:library /out:${LIBIIO_CS_DLL_OUT} /debug /keyfile:${SIGN_KEY} ${LIBIIO_CS_SOURCES_REALPATH}
 			DEPENDS ${LIBIIO_CS_SOURCES}
 			)
 
