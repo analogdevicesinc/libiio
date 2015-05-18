@@ -16,12 +16,13 @@ build_script:
     - echo "Running cmake for Win32..."
     - mkdir c:\projects\libiio\build-win32
     - cd c:\projects\libiio\build-win32
+    - set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319"
     - cmake -G "Visual Studio 12" -DENABLE_IPV6:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBXML2_INCLUDE_DIR="C:\\include\\libxml2" -DCMAKE_CONFIGURATION_TYPES=Release ..
     - msbuild /m /p:Configuration=Release /p:Platform="Win32" libiio.sln
     - echo "Running cmake for Win64..."
     - mkdir c:\projects\libiio\build-win64
     - cd c:\projects\libiio\build-win64
-    - cmake -G "Visual Studio 12 Win64" -DENABLE_IPV6:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBXML2_INCLUDE_DIR="C:\\include\\libxml2" -DCMAKE_CONFIGURATION_TYPES=Release ..
+    - cmake -G "Visual Studio 12 Win64" -DENABLE_IPV6:BOOL=OFF -DCSHARP_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBXML2_INCLUDE_DIR="C:\\include\\libxml2" -DCMAKE_CONFIGURATION_TYPES=Release ..
     - msbuild /m /p:Configuration=Release /p:Platform="x64" libiio.sln
     - ISCC C:\projects\libiio\build-win32\libiio.iss
     - appveyor PushArtifact C:\libiio-setup.exe
