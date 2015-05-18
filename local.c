@@ -341,7 +341,6 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		}
 	}
 
-	memset(&block, 0, sizeof(block));
 	ret = (ssize_t) ioctl(fileno(f), BLOCK_DEQUEUE_IOCTL, &block);
 	if (ret) {
 		ret = (ssize_t) -errno;
