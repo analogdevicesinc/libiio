@@ -1176,7 +1176,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 		char buf[1024];
 		int ret = readdir_r(dir, entry, &result);
 		if (ret) {
-			strerror_r(ret, buf, sizeof(buf));
+			iio_strerror(ret, buf, sizeof(buf));
 			ERROR("Unable to open directory %s: %s\n", path, buf);
 			free(entry);
 			closedir(dir);
@@ -1188,7 +1188,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 		snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
-			strerror_r(errno, buf, sizeof(buf));
+			iio_strerror(errno, buf, sizeof(buf));
 			ERROR("Unable to stat file: %s\n", buf);
 			free(entry);
 			closedir(dir);
