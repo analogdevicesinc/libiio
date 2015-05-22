@@ -79,6 +79,14 @@ __api void iio_library_get_version(unsigned int *major,
 		unsigned int *minor, char git_tag[8]);
 
 
+/** @brief Get a string description of an error code
+ * @param err The error code
+ * @param dst A pointer to the memory area where the NULL-terminated string
+ * corresponding to the error message will be stored
+ * @param len The available length of the memory area, in bytes */
+__api void iio_strerror(int err, char *dst, size_t len);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/
 /** @defgroup Context Context

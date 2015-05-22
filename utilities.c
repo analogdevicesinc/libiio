@@ -178,3 +178,16 @@ void iio_library_get_version(unsigned int *major,
 		git_tag[7] = '\0';
 	}
 }
+
+void iio_strerror(int err, char *buf, size_t len)
+{
+#ifdef _WIN32
+	int ret = strerror_s(buf, len, err);
+#elif (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
+	int ret = strerror_r(err, buf, len);
+#else
+	int ret = !strerror_r(err, buf, len);
+#endif
+	if (ret != 0)
+		snprintf(buf, len, "Unknown error %i", err);
+}
