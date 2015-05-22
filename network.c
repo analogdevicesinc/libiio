@@ -300,7 +300,7 @@ static ssize_t write_command(const char *cmd, int fd)
 	ret = write_all(cmd, strlen(cmd), fd);
 	if (ret < 0) {
 		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
+		iio_strerror(-ret, buf, sizeof(buf));
 		ERROR("Unable to send command: %s\n", buf);
 	}
 	return ret;
@@ -317,7 +317,7 @@ static long exec_command(const char *cmd, int fd)
 	ret = read_integer(fd, &resp);
 	if (ret < 0) {
 		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
+		iio_strerror(-ret, buf, sizeof(buf));
 		ERROR("Unable to read response: %s\n", buf);
 		return (long) ret;
 	}
@@ -325,7 +325,7 @@ static long exec_command(const char *cmd, int fd)
 #if LOG_LEVEL >= DEBUG_L
 	if (resp < 0) {
 		char buf[1024];
-		strerror_r(-resp, buf, sizeof(buf));
+		iio_strerror(-resp, buf, sizeof(buf));
 		DEBUG("Server returned an error: %s\n", buf);
 	}
 #endif
@@ -645,7 +645,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		if (!ret)
 			break;
 		if (ret < 0) {
-			strerror_r(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, sizeof(buf));
 			ERROR("Unable to read mask: %s\n", buf);
 			network_unlock_dev(pdata);
 			return read ? read : ret;
@@ -655,7 +655,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 
 		ret = read_all((void *) ptr, ret, fd);
 		if (ret < 0) {
-			strerror_r(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
 			network_unlock_dev(pdata);
 			return read ? read : ret;
@@ -911,7 +911,7 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 	network_unlock(pdata);
 
 	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
+		iio_strerror(-ret, buf, sizeof(buf));
 		ERROR("Unable to read response to READ: %s\n", buf);
 		return ret;
 	}
@@ -1031,7 +1031,7 @@ static int network_get_trigger(const struct iio_device *dev,
 	network_unlock(pdata);
 
 	if (ret < 0) {
-		strerror_r(-ret, buf, sizeof(buf));
+		iio_strerror(-ret, buf, sizeof(buf));
 		ERROR("Unable to read response to GETTRIG: %s\n", buf);
 		return ret;
 	}
@@ -1165,7 +1165,7 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	}
 	if (ret < 0) {
 		char buf[1024];
-		strerror_r(-ret, buf, sizeof(buf));
+		iio_strerror(-ret, buf, sizeof(buf));
 		WARNING("Unable to set R/W timeout: %s\n", buf);
 	} else {
 		ctx->rw_timeout_ms = timeout;
