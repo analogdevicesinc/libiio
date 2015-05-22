@@ -121,7 +121,7 @@ static void print_value(struct parser_pdata *pdata, long value)
 {
 	if (pdata->verbose && value < 0) {
 		char buf[1024];
-		strerror_r(-value, buf, sizeof(buf));
+		iio_strerror(-value, buf, sizeof(buf));
 		output(pdata, "ERROR: ");
 		output(pdata, buf);
 		output(pdata, "\n");
