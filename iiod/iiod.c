@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <endian.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -80,6 +81,7 @@ static const struct option options[] = {
 	  {"version", no_argument, 0, 'V'},
 	  {"debug", no_argument, 0, 'd'},
 	  {"demux", no_argument, 0, 'D'},
+	  {"interactive", no_argument, 0, 'i'},
 	  {0, 0, 0, 0},
 };
 
@@ -88,6 +90,7 @@ static const char *options_descriptions[] = {
 	"Display the version of this program.",
 	"Use alternative (incompatible) debug interface.",
 	"Demux channels directly on the server.",
+	"Run " MY_NAME " in the controlling terminal.",
 };
 
 #ifdef HAVE_AVAHI
@@ -187,10 +190,29 @@ static void sig_handler(int sig)
 	/* This does nothing, but it permits accept() to exit */
 }
 
+static int main_interactive(struct iio_context *ctx, bool verbose)
+{
+	/* Reopen in binary mode if needed */
+	if (!isatty(STDIN_FILENO))
+		freopen(NULL, "rb", stdin);
+	if (!isatty(STDOUT_FILENO))
+		freopen(NULL, "wb", stdout);
+
+	/* Specify that we will read sequentially the input FD */
+	posix_fadvise(STDIN_FILENO, 0, 0, POSIX_FADV_SEQUENTIAL);
+
+	/* Disable buffering on stdin / stdout */
+	setvbuf(stdin, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+	interpreter(ctx, stdin, stdout, verbose);
+	return EXIT_SUCCESS;
+}
+
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
-	bool debug = false, ipv6;
+	bool debug = false, interactive = false, ipv6;
 	int c, option_index = 0;
 	int ret, fd = -1, yes = 1,
 	    keepalive_time = 10,
@@ -200,7 +222,7 @@ int main(int argc, char **argv)
 	bool avahi_started;
 #endif
 
-	while ((c = getopt_long(argc, argv, "+hVdD",
+	while ((c = getopt_long(argc, argv, "+hVdDi",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -208,6 +230,9 @@ int main(int argc, char **argv)
 			break;
 		case 'D':
 			server_demux = true;
+			break;
+		case 'i':
+			interactive = true;
 			break;
 		case 'h':
 			usage();
@@ -226,6 +251,9 @@ int main(int argc, char **argv)
 		ERROR("Unable to create local context\n");
 		return EXIT_FAILURE;
 	}
+
+	if (interactive)
+		return main_interactive(ctx, debug);
 
 	INFO("Starting IIO Daemon version %u.%u\n",
 			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR);
