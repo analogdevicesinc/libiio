@@ -91,7 +91,7 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 {
 	const void *ptr = src;
 	while (len) {
-		ssize_t ret = send(fileno(out), ptr, len, MSG_NOSIGNAL);
+		ssize_t ret = writefd(fileno(out), ptr, len);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -106,7 +106,7 @@ static ssize_t read_all(void *dst, size_t len, FILE *in)
 {
 	void *ptr = dst;
 	while (len) {
-		ssize_t ret = recv(fileno(in), ptr, len, MSG_NOSIGNAL);
+		ssize_t ret = readfd(fileno(in), ptr, len);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -145,7 +145,7 @@ static ssize_t send_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char zero = 0;
 		for (i = 0; i < goal; i++)
-			send(fileno(info->out), &zero, 1, MSG_NOSIGNAL);
+			writefd(fileno(info->out), &zero, 1);
 		info->cpt += goal;
 	}
 
@@ -168,7 +168,7 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char foo;
 		for (i = 0; i < goal; i++)
-			recv(fileno(info->in), &foo, 1, MSG_NOSIGNAL);
+			readfd(fileno(info->in), &foo, 1);
 		info->cpt += goal;
 	}
 

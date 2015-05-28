@@ -25,8 +25,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <sys/socket.h>
+#include <unistd.h>
 
 struct parser_pdata {
 	struct iio_context *ctx;
@@ -66,11 +66,27 @@ ssize_t set_trigger(struct parser_pdata *pdata,
 
 int set_timeout(struct parser_pdata *pdata, unsigned int timeout);
 
+static __inline__ ssize_t writefd(int fd, const void *buf, size_t len)
+{
+	ssize_t ret = send(fd, buf, len, MSG_NOSIGNAL);
+	if (ret < 0 && errno == ENOTSOCK)
+		ret = write(fd, buf, len);
+	return ret;
+}
+
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
 	int fd = fileno(pdata->out);
-	if (send(fd, text, strlen(text), MSG_NOSIGNAL) < 0)
+	if (writefd(fd, text, strlen(text)) < 0)
 		pdata->stop = true;
+}
+
+static __inline__ ssize_t readfd(int fd, void *buf, size_t len)
+{
+	ssize_t ret = recv(fd, buf, len, MSG_NOSIGNAL);
+	if (ret < 0 && errno == ENOTSOCK)
+		ret = read(fd, buf, len);
+	return ret;
 }
 
 #endif /* __OPS_H__ */

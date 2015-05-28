@@ -45,13 +45,13 @@ void * yyget_extra(yyscan_t scanner);
 void yyset_in(FILE *in, yyscan_t scanner);
 void yyset_out(FILE *out, yyscan_t scanner);
 
-#define ECHO send(fileno(yyout), yytext, yyleng, MSG_NOSIGNAL)
+#define ECHO writefd(fileno(yyout), yytext, yyleng)
 
 #define YY_INPUT(buf,result,max_size) { \
 		int c = '*'; \
 		size_t n; \
 		for ( n = 0; n < max_size && \
-			     recv(fileno(yyin), &c, 1, MSG_NOSIGNAL) > 0 && \
+			     readfd(fileno(yyin), &c, 1) > 0 && \
 				 c != '\n'; ++n ) \
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
