@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
 	bool debug = false, ipv6;
-	int c, option_index = 0, arg_index = 0;
+	int c, option_index = 0;
 	int ret, fd = -1, yes = 1,
 	    keepalive_time = 10,
 	    keepalive_intvl = 10,
@@ -205,7 +205,6 @@ int main(int argc, char **argv)
 		switch (c) {
 		case 'd':
 			debug = true;
-			arg_index++;
 			break;
 		case 'D':
 			server_demux = true;
@@ -220,12 +219,6 @@ int main(int argc, char **argv)
 		case '?':
 			return EXIT_FAILURE;
 		}
-	}
-
-	if (arg_index >= argc) {
-		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage();
-		return EXIT_FAILURE;
 	}
 
 	ctx = iio_create_local_context();
