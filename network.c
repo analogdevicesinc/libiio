@@ -553,7 +553,7 @@ static ssize_t write_rwbuf_command(const struct iio_device *dev,
 static int network_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
-	int ret;
+	int ret = -EBADF;
 	char buf[1024];
 
 	if (pdata->fd >= 0) {
