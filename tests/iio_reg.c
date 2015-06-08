@@ -93,7 +93,6 @@ err_destroy_context:
 
 int main(int argc, char **argv)
 {
-	struct iio_context *ctx;
 	unsigned long addr;
 
 	if (argc < 3 || argc > 4) {
