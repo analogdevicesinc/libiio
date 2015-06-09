@@ -1,8 +1,8 @@
-version: 2014.2.{build}
+version: 2015.1.{build}
 clone_depth: 1
 branches:
     only:
-        - 2014_R2
+        - 2015_R1
         - master
 
 install:
@@ -29,12 +29,12 @@ build_script:
 
 deploy:
     tag: $(appveyor_repo_tag_name)
-    release: Libiio release 2014.2-$(appveyor_build_number)
+    release: Libiio release 2015.1-$(appveyor_build_number)
     artifact: libiio-setup.exe
     provider: GitHub
     auth_token:
         secure: kN/6ER7Noz0gJB9Cb9jkWhn4lDwp+g3hFLeJsRmknhZihyCkqpqfghf//NZrtHbQ
     prerelease: true
     on:
-        branch: 2014_R2
+        branch: 2015_R1
         appveyor_repo_tag: true
