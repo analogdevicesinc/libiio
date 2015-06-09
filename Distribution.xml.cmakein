@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<installer-gui-script minSpecVersion="1" >
+	<title>Libiio</title>
+	<options customize="never" rootVolumeOnly="true" />
+	<allowed-os-versions>
+		<os-version min="10.6.6" />
+	</allowed-os-versions>
+	<license file="@CMAKE_CURRENT_SOURCE_DIR@/COPYING.txt" mime-type="text/plain" />
+	<product id="libiio" version="@VERSION@" />
+	<choices-outline>
+		<line choice="default" >
+			<line choice="libiio" />
+		</line>
+	</choices-outline>
+	<choice id="default" />
+	<choice id="libiio" visible="false" >
+		<pkg-ref id="libiio" />
+	</choice>
+	<pkg-ref id="libiio" version="@VERSION@" onConclusion="none" >@LIBIIO_TEMP_PKG@</pkg-ref>
+</installer-gui-script>
