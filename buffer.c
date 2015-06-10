@@ -220,6 +220,10 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 		if (cur->index < 0 || cur->index == chn->index)
 			break;
 
+		/* Test if the buffer has samples for this channel */
+		if (!TEST_BIT(buffer->mask, cur->index))
+			continue;
+
 		if (ptr % len)
 			ptr += len - (ptr % len);
 		ptr += len;
