@@ -1241,53 +1241,60 @@ static int create_device(void *d, const char *path)
 
 	dev->pdata = calloc(1, sizeof(*dev->pdata));
 	if (!dev->pdata) {
-		free(dev);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto err_free_device;
 	}
 
 	dev->ctx = ctx;
 	dev->id = strdup(strrchr(path, '/') + 1);
 	if (!dev->id) {
-		free(dev->pdata);
-		free(dev);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto err_free_pdata;
 	}
 
 	ret = foreach_in_dir(dev, path, false, add_attr_or_channel);
-	if (ret < 0) {
-		free_device(dev);
-		return ret;
-	}
+	if (ret < 0)
+		goto err_free_id;
 
 	for (i = 0; i < dev->nb_channels; i++)
 		set_channel_name(dev->channels[i]);
 
 	ret = add_scan_elements(dev, path);
-	if (ret < 0) {
-		free_device(dev);
-		return ret;
-	}
+	if (ret < 0)
+		goto err_free_id;
 
 	ret = detect_and_move_global_attrs(dev);
-	if (ret < 0) {
-		free_device(dev);
-		return ret;
-	}
+	if (ret < 0)
+		goto err_free_id;
 
 	dev->words = (dev->nb_channels + 31) / 32;
 	if (dev->words) {
 		mask = calloc(dev->words, sizeof(*mask));
-		if (!mask) {
-			free_device(dev);
-			return ret;
-		}
+		if (!mask)
+			goto err_free_id;
 	}
 
 	dev->mask = mask;
 
 	ret = add_device_to_context(ctx, dev);
 	if (ret < 0)
-		free_device(dev);
+		goto err_free_mask;
+
+	return ret;
+
+err_free_mask:
+	if (dev->mask) {
+		free(dev->mask);
+		dev->mask = NULL;
+	}
+err_free_id:
+	free(dev->id);
+	dev->id = NULL;
+err_free_pdata:
+	free(dev->pdata);
+	dev->pdata = NULL;
+err_free_device:
+	free_device(dev);
 	return ret;
 }
 
