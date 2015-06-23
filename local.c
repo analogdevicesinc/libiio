@@ -648,17 +648,6 @@ err_munmap:
 	return ret;
 }
 
-/* Some broken drivers expect length in bytes rather than samples */
-static bool local_length_in_bytes(const struct iio_device *dev)
-{
-	const char *name = iio_device_get_name(dev);
-
-	if (!strncmp("ad-mc-", name, 5))
-		return true;
-
-	return false;
-}
-
 static int local_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
@@ -666,7 +655,6 @@ static int local_open(const struct iio_device *dev,
 	int ret;
 	char buf[1024];
 	struct iio_device_pdata *pdata = dev->pdata;
-	bool write_scan_elements = true;
 
 	if (pdata->f)
 		return -EBUSY;
@@ -675,11 +663,7 @@ static int local_open(const struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	if (local_length_in_bytes(dev))
-		snprintf(buf, sizeof(buf), "%zu", samples_count *
-				iio_device_get_sample_size(dev));
-	else
-		snprintf(buf, sizeof(buf), "%zu", samples_count);
+	snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
 	ret = local_write_dev_attr(dev, "buffer/length",
 			buf, strlen(buf) + 1, false);
 	if (ret < 0)
@@ -690,37 +674,22 @@ static int local_open(const struct iio_device *dev,
 	if (!pdata->f)
 		return -errno;
 
-	/* There was a bug in older kernel versions that cause the kernel to
-  	 * crash if the scan_elements _en file for a channel was set to 1, so
- 	 * try to avoid that */
-	if (cyclic) {
-		unsigned int major, minor;
-		struct utsname uts;
-		uname(&uts);
-		sscanf(uts.release, "%u.%u", &major, &minor);
-		if (major < 2 || (major == 3 && minor < 14))
-			write_scan_elements = false;
-	}
-
-
-	if (write_scan_elements) {
-		/* Disable channels */
-		for (i = 0; i < dev->nb_channels; i++) {
-			struct iio_channel *chn = dev->channels[i];
-			if (chn->index >= 0 && !iio_channel_is_enabled(chn)) {
-				ret = channel_write_state(chn);
-				if (ret < 0)
-					goto err_close;
-			}
+	/* Disable channels */
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (chn->index >= 0 && !iio_channel_is_enabled(chn)) {
+			ret = channel_write_state(chn);
+			if (ret < 0)
+				goto err_close;
 		}
-		/* Enable channels */
-		for (i = 0; i < dev->nb_channels; i++) {
-			struct iio_channel *chn = dev->channels[i];
-			if (chn->index >= 0 && iio_channel_is_enabled(chn)) {
-				ret = channel_write_state(chn);
-				if (ret < 0)
-					goto err_close;
-			}
+	}
+	/* Enable channels */
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		if (chn->index >= 0 && iio_channel_is_enabled(chn)) {
+			ret = channel_write_state(chn);
+			if (ret < 0)
+				goto err_close;
 		}
 	}
 
