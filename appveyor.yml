@@ -1,9 +1,5 @@
 version: 2015.1.{build}
 clone_depth: 1
-branches:
-    only:
-        - 2015_R1
-        - master
 
 install:
     - echo "Downloading deps..."
