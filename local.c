@@ -701,9 +701,20 @@ static int local_open(const struct iio_device *dev,
 
 	if (!pdata->is_high_speed) {
 		WARNING("High-speed mode not enabled\n");
-	} else {
+
+		/* Increase the size of the kernel buffer, when using the
+		 * low-speed interface. This avoids losing samples when
+		 * refilling the iio_buffer. */
+		snprintf(buf, sizeof(buf), "%lu",
+				(unsigned long) samples_count * NB_BLOCKS);
+		ret = local_write_dev_attr(dev, "buffer/length",
+				buf, strlen(buf) + 1, false);
+		if (ret < 0)
+			goto err_close;
+
 		/* NOTE: The low-speed interface will enable the buffer after
 		 * the first samples are written */
+	} else {
 		ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
 		if (ret < 0)
 			goto err_close;
