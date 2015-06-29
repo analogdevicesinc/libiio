@@ -183,11 +183,15 @@ void iio_strerror(int err, char *buf, size_t len)
 {
 #ifdef _WIN32
 	int ret = strerror_s(buf, len, err);
-#elif (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
-	int ret = strerror_r(err, buf, len);
-#else
-	int ret = !strerror_r(err, buf, len);
-#endif
 	if (ret != 0)
 		snprintf(buf, len, "Unknown error %i", err);
+#elif (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
+	int ret = strerror_r(err, buf, len);
+	if (ret != 0)
+		snprintf(buf, len, "Unknown error %i", err);
+#else
+	char *str = strerror_r(err, buf, len);
+	if (str != buf)
+		strncpy(buf, str, len);
+#endif
 }
