@@ -81,8 +81,8 @@ struct iio_device_pdata {
 	bool blocking;
 	unsigned int samples_count, nb_blocks;
 
-	struct block blocks[NB_BLOCKS];
-	void *addrs[NB_BLOCKS];
+	struct block *blocks;
+	void **addrs;
 	int last_dequeued;
 	bool is_high_speed, cyclic, cyclic_buffer_enqueued, buffer_enabled;
 };
@@ -133,12 +133,22 @@ static unsigned int find_modifier(const char *s, size_t *len_p)
 	return IIO_NO_MOD;
 }
 
+static void local_free_pdata(struct iio_device *device)
+{
+	if (device && device->pdata) {
+		free(device->pdata->blocks);
+		free(device->pdata->addrs);
+		free(device->pdata);
+	}
+}
+
 static void local_shutdown(struct iio_context *ctx)
 {
 	/* Free the backend data stored in every device structure */
 	unsigned int i;
-	for (i = 0; i < ctx->nb_devices; i++)
-		free(ctx->devices[i]->pdata);
+	for (i = 0; i < ctx->nb_devices; i++) {
+		local_free_pdata(ctx->devices[i]);
+	}
 }
 
 /** Shrinks the first nb characters of a string
@@ -363,6 +373,19 @@ static ssize_t local_write(const struct iio_device *dev,
 	}
 
 	return ret ? ret : -EIO;
+}
+
+static int local_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_blocks)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+
+	if (pdata->fd != -1)
+		return -EBUSY;
+
+	pdata->nb_blocks = nb_blocks;
+
+	return 0;
 }
 
 static ssize_t local_get_buffer(const struct iio_device *dev,
@@ -662,8 +685,20 @@ static int enable_high_speed(const struct iio_device *dev)
 		pdata->nb_blocks = 1;
 		DEBUG("Enabling cyclic mode\n");
 	} else {
-		pdata->nb_blocks = NB_BLOCKS;
 		DEBUG("Cyclic mode not enabled\n");
+	}
+
+	pdata->blocks = calloc(pdata->nb_blocks, sizeof(*pdata->blocks));
+	if (!pdata->blocks) {
+		pdata->nb_blocks = 0;
+		return -ENOMEM;
+	}
+
+	pdata->addrs = calloc(pdata->nb_blocks, sizeof(*pdata->addrs));
+	if (!pdata->addrs) {
+		free(pdata->blocks);
+		pdata->blocks = NULL;
+		return -ENOMEM;
 	}
 
 	req.id = 0;
@@ -673,8 +708,10 @@ static int enable_high_speed(const struct iio_device *dev)
 	req.count = pdata->nb_blocks;
 
 	ret = ioctl(fd, BLOCK_ALLOC_IOCTL, &req);
-	if (ret < 0)
-		return -errno;
+	if (ret < 0) {
+		ret = -errno;
+		goto err_freemem;
+	}
 
 	/* We might get less blocks than what we asked for */
 	pdata->nb_blocks = req.count;
@@ -710,6 +747,11 @@ err_munmap:
 	for (; i > 0; i--)
 		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
 	ioctl(fd, BLOCK_FREE_IOCTL, 0);
+err_freemem:
+	free(pdata->addrs);
+	pdata->addrs = NULL;
+	free(pdata->blocks);
+	pdata->blocks = NULL;
 	return ret;
 }
 
@@ -765,13 +807,13 @@ static int local_open(const struct iio_device *dev,
 	pdata->is_high_speed = !enable_high_speed(dev);
 
 	if (!pdata->is_high_speed) {
+		unsigned long size = samples_count * pdata->nb_blocks;
 		WARNING("High-speed mode not enabled\n");
 
 		/* Increase the size of the kernel buffer, when using the
 		 * low-speed interface. This avoids losing samples when
 		 * refilling the iio_buffer. */
-		snprintf(buf, sizeof(buf), "%lu",
-				(unsigned long) samples_count * NB_BLOCKS);
+		snprintf(buf, sizeof(buf), "%lu", size);
 		ret = local_write_dev_attr(dev, "buffer/length",
 				buf, strlen(buf) + 1, false);
 		if (ret < 0)
@@ -806,6 +848,10 @@ static int local_close(const struct iio_device *dev)
 		for (i = 0; i < pdata->nb_blocks; i++)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
 		ioctl(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		free(pdata->addrs);
+		pdata->addrs = NULL;
+		free(pdata->blocks);
+		pdata->blocks = NULL;
 	}
 
 	ret = close(pdata->fd);
@@ -1323,11 +1369,12 @@ static int create_device(void *d, const char *path)
 
 	dev->pdata->fd = -1;
 	dev->pdata->blocking = true;
+	dev->pdata->nb_blocks = NB_BLOCKS;
 
 	dev->ctx = ctx;
 	dev->id = strdup(strrchr(path, '/') + 1);
 	if (!dev->id) {
-		free(dev->pdata);
+		local_free_pdata(dev);
 		free(dev);
 		return -ENOMEM;
 	}
@@ -1422,6 +1469,7 @@ static struct iio_backend_ops local_ops = {
 	.set_blocking_mode = local_set_blocking_mode,
 	.read = local_read,
 	.write = local_write,
+	.set_kernel_buffers_count = local_set_kernel_buffers_count,
 	.get_buffer = local_get_buffer,
 	.read_device_attr = local_read_dev_attr,
 	.write_device_attr = local_write_dev_attr,
