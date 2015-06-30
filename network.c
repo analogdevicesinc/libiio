@@ -1,7 +1,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014 Analog Devices, Inc.
+ * Copyright (C) 2014-2015 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -235,10 +235,14 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	while (len) {
 		ssize_t ret = send(fd, (const void *) ptr, (int) len, 0);
 		if (ret < 0) {
-			if (errno == EINTR) {
+#ifdef _WIN32
+			int err = WSAGetLastError();
+#else
+			int err = errno;
+#endif
+			if (err = EINTR)
 				continue;
-			}
-			return -errno;
+			return (ssize_t) -err;
 		}
 		ptr += ret;
 		len -= ret;
@@ -252,9 +256,14 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	while (len) {
 		ssize_t ret = recv(fd, (void *) ptr, (int) len, 0);
 		if (ret < 0) {
-			if (errno == EINTR)
+#ifdef _WIN32
+			int err = WSAGetLastError();
+#else
+			int err = errno;
+#endif
+			if (err = EINTR)
 				continue;
-			return -errno;
+			return (ssize_t) -err;
 		}
 		if (ret == 0)
 			return -EPIPE;
@@ -419,7 +428,7 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 				(const char *) &timeout, sizeof(timeout)) < 0 ||
 			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
 				(const char *) &timeout, sizeof(timeout)) < 0)
-		return -errno;
+		return -WSAGetLastError();
 	else
 		return 0;
 }
@@ -433,24 +442,27 @@ static int create_socket(const struct addrinfo *addrinfo)
 #ifdef _WIN32
 	SOCKET s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
 	fd = (s == INVALID_SOCKET) ? -1 : (int) s;
+	if (fd < 0)
+		return -WSAGetLastError();
 #else
 	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	if (fd < 0)
+		return -errno;
 #endif
-	if (fd < 0) {
-		ret = -errno;
-		return ret;
-	}
 
 	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
 	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
 
 #ifndef _WIN32
 	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
+	if (ret < 0)
+		ret = -errno;
 #else
 	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
+	if (ret == SOCKET_ERROR)
+		ret = -WSAGetLastError();
 #endif
 	if (ret < 0) {
-		ret = -errno;
 		close(fd);
 		return ret;
 	}
