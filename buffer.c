@@ -98,6 +98,11 @@ void iio_buffer_destroy(struct iio_buffer *buffer)
 	free(buffer);
 }
 
+int iio_buffer_get_poll_fd(struct iio_buffer *buffer)
+{
+	return iio_device_get_poll_fd(buffer->dev);
+}
+
 ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read;

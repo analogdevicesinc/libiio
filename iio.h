@@ -867,6 +867,15 @@ __api struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
  * <b>NOTE:</b> After that function, the iio_buffer pointer shall be invalid. */
 __api void iio_buffer_destroy(struct iio_buffer *buf);
 
+/** @brief Get a pollable file descriptor
+ *
+ * Can be used to know when iio_buffer_refill() or iio_buffer_push() can be
+ * called
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, valid file descriptor
+ * @return On error, a negative errno code is returned
+ */
+__api int iio_buffer_get_poll_fd(struct iio_buffer *buf);
 
 /** @brief Fetch more samples from the hardware
  * @param buf A pointer to an iio_buffer structure

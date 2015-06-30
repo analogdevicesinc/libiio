@@ -293,6 +293,14 @@ int iio_device_close(const struct iio_device *dev)
 		return -ENOSYS;
 }
 
+int iio_device_get_poll_fd(const struct iio_device *dev)
+{
+	if (dev->ctx->ops->get_fd)
+		return dev->ctx->ops->get_fd(dev);
+	else
+		return -ENOSYS;
+}
+
 ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
 {
