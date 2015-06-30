@@ -301,6 +301,14 @@ int iio_device_get_poll_fd(const struct iio_device *dev)
 		return -ENOSYS;
 }
 
+int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking)
+{
+	if (dev->ctx->ops->set_blocking_mode)
+		return dev->ctx->ops->set_blocking_mode(dev, blocking);
+	else
+		return -ENOSYS;
+}
+
 ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
 {

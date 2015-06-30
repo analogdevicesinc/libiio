@@ -877,6 +877,20 @@ __api void iio_buffer_destroy(struct iio_buffer *buf);
  */
 __api int iio_buffer_get_poll_fd(struct iio_buffer *buf);
 
+/** @brief Make iio_buffer_refill() and iio_buffer_push() blocking or not
+ *
+ * After this function has been called this blocking == true,
+ * iio_buffer_refill() and iio_buffer_push() will return -EAGAIN if no data is
+ * ready.
+ * A device is blocking by default.
+ * @param buf A pointer to an iio_buffer structure
+ * @param blocking true if the buffer API should be blocking, else false
+ * @return On success, 0
+ * @return On error, a negative errno code is returned
+ */
+__api int iio_buffer_set_blocking_mode(struct iio_buffer *buf, bool blocking);
+
+
 /** @brief Fetch more samples from the hardware
  * @param buf A pointer to an iio_buffer structure
  * @return On success, the number of bytes read is returned
