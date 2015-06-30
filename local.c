@@ -808,6 +808,11 @@ static int local_close(const struct iio_device *dev)
 	return (ret < 0) ? ret : 0;
 }
 
+static int local_get_fd(const struct iio_device *dev)
+{
+	return dev->pdata->fd;
+}
+
 static int local_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger)
 {
@@ -1377,6 +1382,7 @@ static struct iio_backend_ops local_ops = {
 	.clone = local_clone,
 	.open = local_open,
 	.close = local_close,
+	.get_fd = local_get_fd,
 	.read = local_read,
 	.write = local_write,
 	.get_buffer = local_get_buffer,
