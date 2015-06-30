@@ -178,6 +178,7 @@ bool iio_device_is_tx(const struct iio_device *dev);
 int iio_device_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic);
 int iio_device_close(const struct iio_device *dev);
+int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking);
 ssize_t iio_device_read_raw(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words);
 ssize_t iio_device_write_raw(const struct iio_device *dev,
@@ -186,6 +187,7 @@ int iio_device_get_poll_fd(const struct iio_device *dev);
 
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
+int set_blocking_mode(int fd, bool blocking);
 
 struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);

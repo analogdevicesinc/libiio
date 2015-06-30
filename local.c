@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 #define DEFAULT_TIMEOUT_MS 1000
@@ -77,6 +78,7 @@ struct block {
 
 struct iio_device_pdata {
 	int fd;
+	bool blocking;
 	unsigned int samples_count, nb_blocks;
 
 	struct block blocks[NB_BLOCKS];
@@ -207,6 +209,9 @@ static int device_check_ready(const struct iio_device *dev, bool do_write)
 	};
 	int ret;
 
+	if (!dev->pdata->blocking)
+		return 0;
+
 	ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
 	if (ret < 0)
 		return -errno;
@@ -243,7 +248,7 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	}
 
 	readsize = (ssize_t)(ptr - (uintptr_t) dst);
-	if (ret > 0 && readsize > 0)
+	if ((ret > 0 || ret == -EAGAIN) && (readsize > 0))
 		return readsize;
 	else
 		return ret;
@@ -273,12 +278,26 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	}
 
 	writtensize = (ssize_t)(ptr - (uintptr_t) src);
-	if (ret > 0 && writtensize > 0)
+	if ((ret > 0 || ret == -EAGAIN) && (writtensize > 0))
 		return writtensize;
 	else
 		return ret;
 }
 
+static ssize_t local_enable_buffer(const struct iio_device *dev)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret = 0;
+
+	if (!pdata->buffer_enabled) {
+		ret = local_write_dev_attr(dev,
+				"buffer/enable", "1", 2, false);
+		if (ret >= 0)
+			pdata->buffer_enabled = true;
+	}
+
+	return 0;
+}
 
 static ssize_t local_read(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
@@ -290,14 +309,9 @@ static ssize_t local_read(const struct iio_device *dev,
 	if (words != dev->words)
 		return -EINVAL;
 
-	if (!pdata->buffer_enabled) {
-		ret = local_write_dev_attr(dev,
-				"buffer/enable", "1", 2, false);
-		if (ret < 0)
-			return ret;
-		else
-			pdata->buffer_enabled = true;
-	}
+	ret = local_enable_buffer(dev);
+	if (ret < 0)
+		return ret;
 
 	ret = device_check_ready(dev, false);
 	if (ret < 0)
@@ -334,14 +348,9 @@ static ssize_t local_write(const struct iio_device *dev,
 			return -errno;
 	}
 
-	if (!pdata->buffer_enabled) {
-		ssize_t err = local_write_dev_attr(dev,
-				"buffer/enable", "1", 2, false);
-		if (err < 0)
-			return err;
-		else
-			pdata->buffer_enabled = true;
-	}
+	ret = local_enable_buffer(dev);
+	if (ret < 0)
+		return ret;
 
 	/* In cyclic mode, the buffer must be enabled after writing the samples.
 	 * In non-cyclic mode, it must be enabled before writing the samples. */
@@ -769,12 +778,12 @@ static int local_open(const struct iio_device *dev,
 			goto err_close;
 
 		/* NOTE: The low-speed interface will enable the buffer after
-		 * the first samples are written */
+		 * the first samples are written, or if the device is set
+		 * to non blocking-mode */
 	} else {
-		ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
+		ret = local_enable_buffer(dev);
 		if (ret < 0)
 			goto err_close;
-		pdata->buffer_enabled = true;
 	}
 
 	return 0;
@@ -811,6 +820,32 @@ static int local_close(const struct iio_device *dev)
 static int local_get_fd(const struct iio_device *dev)
 {
 	return dev->pdata->fd;
+}
+
+static int local_set_blocking_mode(const struct iio_device *dev, bool blocking)
+{
+	int ret;
+
+	if (dev->pdata->fd == -1)
+		return -EBADF;
+
+	if (dev->pdata->cyclic)
+		return -EPERM;
+
+	ret = set_blocking_mode(dev->pdata->fd, blocking);
+	if (ret == 0) {
+		dev->pdata->blocking = blocking;
+
+		/* When a device is opened, it is configured in blocking mode.
+		 * If the user wants to use the non blocking API, and poll the
+		 * device to know when to make the first read, it is required to
+		 * activate to buffer automatically when the device is switched
+		 * in non-blocking mode. */
+		if (!blocking)
+			ret = local_enable_buffer(dev);
+	}
+
+	return ret;
 }
 
 static int local_get_trigger(const struct iio_device *dev,
@@ -1287,6 +1322,7 @@ static int create_device(void *d, const char *path)
 	}
 
 	dev->pdata->fd = -1;
+	dev->pdata->blocking = true;
 
 	dev->ctx = ctx;
 	dev->id = strdup(strrchr(path, '/') + 1);
@@ -1383,6 +1419,7 @@ static struct iio_backend_ops local_ops = {
 	.open = local_open,
 	.close = local_close,
 	.get_fd = local_get_fd,
+	.set_blocking_mode = local_set_blocking_mode,
 	.read = local_read,
 	.write = local_write,
 	.get_buffer = local_get_buffer,
