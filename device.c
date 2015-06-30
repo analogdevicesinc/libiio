@@ -375,6 +375,17 @@ bool iio_device_is_trigger(const struct iio_device *dev)
 		!strncmp(id, "trigger", sizeof("trigger") - 1));
 }
 
+int iio_device_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_buffers)
+{
+	if (nb_buffers == 0)
+		return -EINVAL;
+	else if (dev->ctx->ops->set_kernel_buffers_count)
+		return dev->ctx->ops->set_kernel_buffers_count(dev, nb_buffers);
+	else
+		return -ENOSYS;
+}
+
 int iio_device_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger)
 {

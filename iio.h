@@ -513,6 +513,16 @@ __api int iio_device_set_trigger(const struct iio_device *dev,
  * @return True if the device is a trigger, False otherwise */
 __api __pure bool iio_device_is_trigger(const struct iio_device *dev);
 
+/**
+ * @brief Configure the number of kernel buffers for a device
+ *
+ * This function allows to change the number of buffers on kernel side.
+ * @param dev A pointer to an iio_device structure
+ * @param nb_buffers The number of buffers
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_buffers);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Channel functions -------------------------------*/
