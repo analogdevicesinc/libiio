@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/utsname.h>
+#include <fcntl.h>
 
 #define DEFAULT_TIMEOUT_MS 1000
 
@@ -75,7 +76,7 @@ struct block {
 };
 
 struct iio_device_pdata {
-	FILE *f;
+	int fd;
 	unsigned int samples_count, nb_blocks;
 
 	struct block blocks[NB_BLOCKS];
@@ -201,10 +202,12 @@ static int set_channel_name(struct iio_channel *chn)
 static int device_check_ready(const struct iio_device *dev, bool do_write)
 {
 	struct pollfd pollfd = {
-		.fd = fileno(dev->pdata->f),
+		.fd = dev->pdata->fd,
 		.events = do_write ? POLLOUT : POLLIN,
 	};
-	int ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
+	int ret;
+
+	ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
 	if (ret < 0)
 		return -errno;
 	if (!ret)
@@ -216,13 +219,73 @@ static int device_check_ready(const struct iio_device *dev, bool do_write)
 	return 0;
 }
 
+static ssize_t read_all(void *dst, size_t len, int fd)
+{
+	uintptr_t ptr = (uintptr_t) dst;
+	ssize_t readsize;
+	int ret;
+
+	while (len > 0) {
+		do {
+			ret = read(fd, (void *) ptr, len);
+		} while (ret == -1 && errno == EINTR);
+
+		if (ret == -1) {
+			ret = -errno;
+			break;
+		} else if (ret == 0) {
+			ret = -EIO;
+			break;
+		}
+
+		ptr += ret;
+		len -= ret;
+	}
+
+	readsize = (ssize_t)(ptr - (uintptr_t) dst);
+	if (ret > 0 && readsize > 0)
+		return readsize;
+	else
+		return ret;
+}
+
+static ssize_t write_all(const void *src, size_t len, int fd)
+{
+	uintptr_t ptr = (uintptr_t) src;
+	ssize_t writtensize;
+	int ret;
+
+	while (len > 0) {
+		do {
+			ret = write(fd, (void *) ptr, len);
+		} while (ret == -1 && errno == EINTR);
+
+		if (ret == -1) {
+			ret = -errno;
+			break;
+		} else if (ret == 0) {
+			ret = -EIO;
+			break;
+		}
+
+		ptr += ret;
+		len -= ret;
+	}
+
+	writtensize = (ssize_t)(ptr - (uintptr_t) src);
+	if (ret > 0 && writtensize > 0)
+		return writtensize;
+	else
+		return ret;
+}
+
+
 static ssize_t local_read(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
 {
 	ssize_t ret;
 	struct iio_device_pdata *pdata = dev->pdata;
-	FILE *f = pdata->f;
-	if (!f)
+	if (pdata->fd == -1)
 		return -EBADF;
 	if (words != dev->words)
 		return -EINVAL;
@@ -241,10 +304,8 @@ static ssize_t local_read(const struct iio_device *dev,
 		return ret;
 
 	memcpy(mask, dev->mask, words);
-	ret = fread(dst, 1, len, f);
-	fflush(f);
-	if (ferror(f))
-		ret = -errno;
+	ret = read_all(dst, len, pdata->fd);
+
 	return ret ? ret : -EIO;
 }
 
@@ -253,8 +314,7 @@ static ssize_t local_write(const struct iio_device *dev,
 {
 	ssize_t ret;
 	struct iio_device_pdata *pdata = dev->pdata;
-	FILE *f = pdata->f;
-	if (!f)
+	if (pdata->fd == -1)
 		return -EBADF;
 
 	/* Writing is forbidden in cyclic mode with devices without the
@@ -264,16 +324,12 @@ static ssize_t local_write(const struct iio_device *dev,
 			(dev->name && !strncmp(dev->name, "cf-", 3)))
 		return -EACCES;
 
-	/* We use write() instead of fwrite() here, to avoid the internal
-	 * buffering of the FILE API. This ensures that a waveform written in
-	 * cyclic mode will be written in only one system call, as the kernel
-	 * sizes the buffer according to the length of the first write. */
 	if (pdata->cyclic) {
 		ret = device_check_ready(dev, true);
 		if (ret < 0)
 			return ret;
 
-		ret = write(fileno(f), src, len);
+		ret = write(pdata->fd, src, len);
 		if (ret < 0)
 			return -errno;
 	}
@@ -294,7 +350,7 @@ static ssize_t local_write(const struct iio_device *dev,
 		if (ret < 0)
 			return ret;
 
-		ret = write(fileno(f), src, len);
+		ret = write_all(src, len, pdata->fd);
 	}
 
 	return ret ? ret : -EIO;
@@ -306,12 +362,12 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 {
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
-	FILE *f = pdata->f;
+	int f = pdata->fd;
 	ssize_t ret;
 
 	if (!pdata->is_high_speed)
 		return -ENOSYS;
-	if (!f)
+	if (f == -1)
 		return -EBADF;
 	if (!addr_ptr)
 		return -EINVAL;
@@ -327,7 +383,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		}
 
 		last_block->bytes_used = bytes_used;
-		ret = (ssize_t) ioctl(fileno(f),
+		ret = (ssize_t) ioctl(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
 			ret = (ssize_t) -errno;
@@ -342,7 +398,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	}
 
 	memset(&block, 0, sizeof(block));
-	ret = (ssize_t) ioctl(fileno(f), BLOCK_DEQUEUE_IOCTL, &block);
+	ret = (ssize_t) ioctl(f, BLOCK_DEQUEUE_IOCTL, &block);
 	if (ret) {
 		ret = (ssize_t) -errno;
 		ERROR("Unable to dequeue block: %s\n", strerror(errno));
@@ -591,7 +647,7 @@ static int enable_high_speed(const struct iio_device *dev)
 	struct block_alloc_req req;
 	struct iio_device_pdata *pdata = dev->pdata;
 	unsigned int i;
-	int ret, fd = fileno(pdata->f);
+	int ret, fd = pdata->fd;
 
 	if (pdata->cyclic) {
 		pdata->nb_blocks = 1;
@@ -656,7 +712,7 @@ static int local_open(const struct iio_device *dev,
 	char buf[1024];
 	struct iio_device_pdata *pdata = dev->pdata;
 
-	if (pdata->f)
+	if (pdata->fd != -1)
 		return -EBUSY;
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
@@ -670,8 +726,8 @@ static int local_open(const struct iio_device *dev,
 		return ret;
 
 	snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
-	pdata->f = fopen(buf, "r+");
-	if (!pdata->f)
+	pdata->fd = open(buf, O_RDWR);
+	if (pdata->fd == -1)
 		return -errno;
 
 	/* Disable channels */
@@ -723,8 +779,8 @@ static int local_open(const struct iio_device *dev,
 
 	return 0;
 err_close:
-	fclose(pdata->f);
-	pdata->f = NULL;
+	close(pdata->fd);
+	pdata->fd = -1;
 	return ret;
 }
 
@@ -733,21 +789,21 @@ static int local_close(const struct iio_device *dev)
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret;
 
-	if (!pdata->f)
+	if (pdata->fd == 1)
 		return -EBADF;
 
 	if (pdata->is_high_speed) {
 		unsigned int i;
 		for (i = 0; i < pdata->nb_blocks; i++)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
-		ioctl(fileno(pdata->f), BLOCK_FREE_IOCTL, 0);
+		ioctl(pdata->fd, BLOCK_FREE_IOCTL, 0);
 	}
 
-	ret = fclose(pdata->f);
+	ret = close(pdata->fd);
 	if (ret)
 		return ret;
 
-	pdata->f = NULL;
+	pdata->fd = -1;
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
 	return (ret < 0) ? ret : 0;
 }
@@ -1224,6 +1280,8 @@ static int create_device(void *d, const char *path)
 		free(dev);
 		return -ENOMEM;
 	}
+
+	dev->pdata->fd = -1;
 
 	dev->ctx = ctx;
 	dev->id = strdup(strrchr(path, '/') + 1);
