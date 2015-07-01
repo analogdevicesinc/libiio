@@ -19,6 +19,7 @@
 #include "iio-private.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -193,5 +194,24 @@ void iio_strerror(int err, char *buf, size_t len)
 	char *str = strerror_r(err, buf, len);
 	if (str != buf)
 		strncpy(buf, str, len);
+#endif
+}
+
+int set_blocking_mode(int fd, bool blocking)
+{
+#ifndef _WIN32
+	int ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return -errno;
+
+	if (blocking)
+		ret &= ~O_NONBLOCK;
+	else
+		ret |= O_NONBLOCK;
+
+	ret = fcntl(fd, F_SETFL, ret);
+	return ret < 0 ? -errno : 0;
+#else
+	return -ENOSYS;
 #endif
 }

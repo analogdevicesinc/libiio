@@ -34,6 +34,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/utsname.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define DEFAULT_TIMEOUT_MS 1000
 
@@ -75,11 +77,12 @@ struct block {
 };
 
 struct iio_device_pdata {
-	FILE *f;
+	int fd;
+	bool blocking;
 	unsigned int samples_count, nb_blocks;
 
-	struct block blocks[NB_BLOCKS];
-	void *addrs[NB_BLOCKS];
+	struct block *blocks;
+	void **addrs;
 	int last_dequeued;
 	bool is_high_speed, cyclic, cyclic_buffer_enqueued, buffer_enabled;
 };
@@ -130,12 +133,22 @@ static unsigned int find_modifier(const char *s, size_t *len_p)
 	return IIO_NO_MOD;
 }
 
+static void local_free_pdata(struct iio_device *device)
+{
+	if (device && device->pdata) {
+		free(device->pdata->blocks);
+		free(device->pdata->addrs);
+		free(device->pdata);
+	}
+}
+
 static void local_shutdown(struct iio_context *ctx)
 {
 	/* Free the backend data stored in every device structure */
 	unsigned int i;
-	for (i = 0; i < ctx->nb_devices; i++)
-		free(ctx->devices[i]->pdata);
+	for (i = 0; i < ctx->nb_devices; i++) {
+		local_free_pdata(ctx->devices[i]);
+	}
 }
 
 /** Shrinks the first nb characters of a string
@@ -201,10 +214,15 @@ static int set_channel_name(struct iio_channel *chn)
 static int device_check_ready(const struct iio_device *dev, bool do_write)
 {
 	struct pollfd pollfd = {
-		.fd = fileno(dev->pdata->f),
+		.fd = dev->pdata->fd,
 		.events = do_write ? POLLOUT : POLLIN,
 	};
-	int ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
+	int ret;
+
+	if (!dev->pdata->blocking)
+		return 0;
+
+	ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
 	if (ret < 0)
 		return -errno;
 	if (!ret)
@@ -216,35 +234,102 @@ static int device_check_ready(const struct iio_device *dev, bool do_write)
 	return 0;
 }
 
+static ssize_t read_all(void *dst, size_t len, int fd)
+{
+	uintptr_t ptr = (uintptr_t) dst;
+	ssize_t readsize;
+	int ret;
+
+	while (len > 0) {
+		do {
+			ret = read(fd, (void *) ptr, len);
+		} while (ret == -1 && errno == EINTR);
+
+		if (ret == -1) {
+			ret = -errno;
+			break;
+		} else if (ret == 0) {
+			ret = -EIO;
+			break;
+		}
+
+		ptr += ret;
+		len -= ret;
+	}
+
+	readsize = (ssize_t)(ptr - (uintptr_t) dst);
+	if ((ret > 0 || ret == -EAGAIN) && (readsize > 0))
+		return readsize;
+	else
+		return ret;
+}
+
+static ssize_t write_all(const void *src, size_t len, int fd)
+{
+	uintptr_t ptr = (uintptr_t) src;
+	ssize_t writtensize;
+	int ret;
+
+	while (len > 0) {
+		do {
+			ret = write(fd, (void *) ptr, len);
+		} while (ret == -1 && errno == EINTR);
+
+		if (ret == -1) {
+			ret = -errno;
+			break;
+		} else if (ret == 0) {
+			ret = -EIO;
+			break;
+		}
+
+		ptr += ret;
+		len -= ret;
+	}
+
+	writtensize = (ssize_t)(ptr - (uintptr_t) src);
+	if ((ret > 0 || ret == -EAGAIN) && (writtensize > 0))
+		return writtensize;
+	else
+		return ret;
+}
+
+static ssize_t local_enable_buffer(const struct iio_device *dev)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret = 0;
+
+	if (!pdata->buffer_enabled) {
+		ret = local_write_dev_attr(dev,
+				"buffer/enable", "1", 2, false);
+		if (ret >= 0)
+			pdata->buffer_enabled = true;
+	}
+
+	return 0;
+}
+
 static ssize_t local_read(const struct iio_device *dev,
 		void *dst, size_t len, uint32_t *mask, size_t words)
 {
 	ssize_t ret;
 	struct iio_device_pdata *pdata = dev->pdata;
-	FILE *f = pdata->f;
-	if (!f)
+	if (pdata->fd == -1)
 		return -EBADF;
 	if (words != dev->words)
 		return -EINVAL;
 
-	if (!pdata->buffer_enabled) {
-		ret = local_write_dev_attr(dev,
-				"buffer/enable", "1", 2, false);
-		if (ret < 0)
-			return ret;
-		else
-			pdata->buffer_enabled = true;
-	}
+	ret = local_enable_buffer(dev);
+	if (ret < 0)
+		return ret;
 
 	ret = device_check_ready(dev, false);
 	if (ret < 0)
 		return ret;
 
 	memcpy(mask, dev->mask, words);
-	ret = fread(dst, 1, len, f);
-	fflush(f);
-	if (ferror(f))
-		ret = -errno;
+	ret = read_all(dst, len, pdata->fd);
+
 	return ret ? ret : -EIO;
 }
 
@@ -253,8 +338,7 @@ static ssize_t local_write(const struct iio_device *dev,
 {
 	ssize_t ret;
 	struct iio_device_pdata *pdata = dev->pdata;
-	FILE *f = pdata->f;
-	if (!f)
+	if (pdata->fd == -1)
 		return -EBADF;
 
 	/* Writing is forbidden in cyclic mode with devices without the
@@ -264,28 +348,19 @@ static ssize_t local_write(const struct iio_device *dev,
 			(dev->name && !strncmp(dev->name, "cf-", 3)))
 		return -EACCES;
 
-	/* We use write() instead of fwrite() here, to avoid the internal
-	 * buffering of the FILE API. This ensures that a waveform written in
-	 * cyclic mode will be written in only one system call, as the kernel
-	 * sizes the buffer according to the length of the first write. */
 	if (pdata->cyclic) {
 		ret = device_check_ready(dev, true);
 		if (ret < 0)
 			return ret;
 
-		ret = write(fileno(f), src, len);
+		ret = write(pdata->fd, src, len);
 		if (ret < 0)
 			return -errno;
 	}
 
-	if (!pdata->buffer_enabled) {
-		ssize_t err = local_write_dev_attr(dev,
-				"buffer/enable", "1", 2, false);
-		if (err < 0)
-			return err;
-		else
-			pdata->buffer_enabled = true;
-	}
+	ret = local_enable_buffer(dev);
+	if (ret < 0)
+		return ret;
 
 	/* In cyclic mode, the buffer must be enabled after writing the samples.
 	 * In non-cyclic mode, it must be enabled before writing the samples. */
@@ -294,10 +369,23 @@ static ssize_t local_write(const struct iio_device *dev,
 		if (ret < 0)
 			return ret;
 
-		ret = write(fileno(f), src, len);
+		ret = write_all(src, len, pdata->fd);
 	}
 
 	return ret ? ret : -EIO;
+}
+
+static int local_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_blocks)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+
+	if (pdata->fd != -1)
+		return -EBUSY;
+
+	pdata->nb_blocks = nb_blocks;
+
+	return 0;
 }
 
 static ssize_t local_get_buffer(const struct iio_device *dev,
@@ -306,12 +394,12 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 {
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
-	FILE *f = pdata->f;
+	int f = pdata->fd;
 	ssize_t ret;
 
 	if (!pdata->is_high_speed)
 		return -ENOSYS;
-	if (!f)
+	if (f == -1)
 		return -EBADF;
 	if (!addr_ptr)
 		return -EINVAL;
@@ -327,7 +415,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		}
 
 		last_block->bytes_used = bytes_used;
-		ret = (ssize_t) ioctl(fileno(f),
+		ret = (ssize_t) ioctl(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
 			ret = (ssize_t) -errno;
@@ -342,7 +430,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	}
 
 	memset(&block, 0, sizeof(block));
-	ret = (ssize_t) ioctl(fileno(f), BLOCK_DEQUEUE_IOCTL, &block);
+	ret = (ssize_t) ioctl(f, BLOCK_DEQUEUE_IOCTL, &block);
 	if (ret) {
 		ret = (ssize_t) -errno;
 		ERROR("Unable to dequeue block: %s\n", strerror(errno));
@@ -591,14 +679,26 @@ static int enable_high_speed(const struct iio_device *dev)
 	struct block_alloc_req req;
 	struct iio_device_pdata *pdata = dev->pdata;
 	unsigned int i;
-	int ret, fd = fileno(pdata->f);
+	int ret, fd = pdata->fd;
 
 	if (pdata->cyclic) {
 		pdata->nb_blocks = 1;
 		DEBUG("Enabling cyclic mode\n");
 	} else {
-		pdata->nb_blocks = NB_BLOCKS;
 		DEBUG("Cyclic mode not enabled\n");
+	}
+
+	pdata->blocks = calloc(pdata->nb_blocks, sizeof(*pdata->blocks));
+	if (!pdata->blocks) {
+		pdata->nb_blocks = 0;
+		return -ENOMEM;
+	}
+
+	pdata->addrs = calloc(pdata->nb_blocks, sizeof(*pdata->addrs));
+	if (!pdata->addrs) {
+		free(pdata->blocks);
+		pdata->blocks = NULL;
+		return -ENOMEM;
 	}
 
 	req.id = 0;
@@ -608,8 +708,10 @@ static int enable_high_speed(const struct iio_device *dev)
 	req.count = pdata->nb_blocks;
 
 	ret = ioctl(fd, BLOCK_ALLOC_IOCTL, &req);
-	if (ret < 0)
-		return -errno;
+	if (ret < 0) {
+		ret = -errno;
+		goto err_freemem;
+	}
 
 	/* We might get less blocks than what we asked for */
 	pdata->nb_blocks = req.count;
@@ -645,6 +747,11 @@ err_munmap:
 	for (; i > 0; i--)
 		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
 	ioctl(fd, BLOCK_FREE_IOCTL, 0);
+err_freemem:
+	free(pdata->addrs);
+	pdata->addrs = NULL;
+	free(pdata->blocks);
+	pdata->blocks = NULL;
 	return ret;
 }
 
@@ -656,7 +763,7 @@ static int local_open(const struct iio_device *dev,
 	char buf[1024];
 	struct iio_device_pdata *pdata = dev->pdata;
 
-	if (pdata->f)
+	if (pdata->fd != -1)
 		return -EBUSY;
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
@@ -670,8 +777,8 @@ static int local_open(const struct iio_device *dev,
 		return ret;
 
 	snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
-	pdata->f = fopen(buf, "r+");
-	if (!pdata->f)
+	pdata->fd = open(buf, O_RDWR);
+	if (pdata->fd == -1)
 		return -errno;
 
 	/* Disable channels */
@@ -700,31 +807,31 @@ static int local_open(const struct iio_device *dev,
 	pdata->is_high_speed = !enable_high_speed(dev);
 
 	if (!pdata->is_high_speed) {
+		unsigned long size = samples_count * pdata->nb_blocks;
 		WARNING("High-speed mode not enabled\n");
 
 		/* Increase the size of the kernel buffer, when using the
 		 * low-speed interface. This avoids losing samples when
 		 * refilling the iio_buffer. */
-		snprintf(buf, sizeof(buf), "%lu",
-				(unsigned long) samples_count * NB_BLOCKS);
+		snprintf(buf, sizeof(buf), "%lu", size);
 		ret = local_write_dev_attr(dev, "buffer/length",
 				buf, strlen(buf) + 1, false);
 		if (ret < 0)
 			goto err_close;
 
 		/* NOTE: The low-speed interface will enable the buffer after
-		 * the first samples are written */
+		 * the first samples are written, or if the device is set
+		 * to non blocking-mode */
 	} else {
-		ret = local_write_dev_attr(dev, "buffer/enable", "1", 2, false);
+		ret = local_enable_buffer(dev);
 		if (ret < 0)
 			goto err_close;
-		pdata->buffer_enabled = true;
 	}
 
 	return 0;
 err_close:
-	fclose(pdata->f);
-	pdata->f = NULL;
+	close(pdata->fd);
+	pdata->fd = -1;
 	return ret;
 }
 
@@ -733,23 +840,58 @@ static int local_close(const struct iio_device *dev)
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret;
 
-	if (!pdata->f)
+	if (pdata->fd == 1)
 		return -EBADF;
 
 	if (pdata->is_high_speed) {
 		unsigned int i;
 		for (i = 0; i < pdata->nb_blocks; i++)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
-		ioctl(fileno(pdata->f), BLOCK_FREE_IOCTL, 0);
+		ioctl(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		free(pdata->addrs);
+		pdata->addrs = NULL;
+		free(pdata->blocks);
+		pdata->blocks = NULL;
 	}
 
-	ret = fclose(pdata->f);
+	ret = close(pdata->fd);
 	if (ret)
 		return ret;
 
-	pdata->f = NULL;
+	pdata->fd = -1;
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
 	return (ret < 0) ? ret : 0;
+}
+
+static int local_get_fd(const struct iio_device *dev)
+{
+	return dev->pdata->fd;
+}
+
+static int local_set_blocking_mode(const struct iio_device *dev, bool blocking)
+{
+	int ret;
+
+	if (dev->pdata->fd == -1)
+		return -EBADF;
+
+	if (dev->pdata->cyclic)
+		return -EPERM;
+
+	ret = set_blocking_mode(dev->pdata->fd, blocking);
+	if (ret == 0) {
+		dev->pdata->blocking = blocking;
+
+		/* When a device is opened, it is configured in blocking mode.
+		 * If the user wants to use the non blocking API, and poll the
+		 * device to know when to make the first read, it is required to
+		 * activate to buffer automatically when the device is switched
+		 * in non-blocking mode. */
+		if (!blocking)
+			ret = local_enable_buffer(dev);
+	}
+
+	return ret;
 }
 
 static int local_get_trigger(const struct iio_device *dev,
@@ -1225,10 +1367,14 @@ static int create_device(void *d, const char *path)
 		return -ENOMEM;
 	}
 
+	dev->pdata->fd = -1;
+	dev->pdata->blocking = true;
+	dev->pdata->nb_blocks = NB_BLOCKS;
+
 	dev->ctx = ctx;
 	dev->id = strdup(strrchr(path, '/') + 1);
 	if (!dev->id) {
-		free(dev->pdata);
+		local_free_pdata(dev);
 		free(dev);
 		return -ENOMEM;
 	}
@@ -1319,8 +1465,11 @@ static struct iio_backend_ops local_ops = {
 	.clone = local_clone,
 	.open = local_open,
 	.close = local_close,
+	.get_fd = local_get_fd,
+	.set_blocking_mode = local_set_blocking_mode,
 	.read = local_read,
 	.write = local_write,
+	.set_kernel_buffers_count = local_set_kernel_buffers_count,
 	.get_buffer = local_get_buffer,
 	.read_device_attr = local_read_dev_attr,
 	.write_device_attr = local_write_dev_attr,

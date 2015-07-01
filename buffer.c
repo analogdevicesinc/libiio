@@ -116,6 +116,16 @@ void iio_buffer_destroy(struct iio_buffer *buffer)
 	free(buffer);
 }
 
+int iio_buffer_get_poll_fd(struct iio_buffer *buffer)
+{
+	return iio_device_get_poll_fd(buffer->dev);
+}
+
+int iio_buffer_set_blocking_mode(struct iio_buffer *buffer, bool blocking)
+{
+	return iio_device_set_blocking_mode(buffer->dev, blocking);
+}
+
 ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read;

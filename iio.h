@@ -513,6 +513,16 @@ __api int iio_device_set_trigger(const struct iio_device *dev,
  * @return True if the device is a trigger, False otherwise */
 __api __pure bool iio_device_is_trigger(const struct iio_device *dev);
 
+/**
+ * @brief Configure the number of kernel buffers for a device
+ *
+ * This function allows to change the number of buffers on kernel side.
+ * @param dev A pointer to an iio_device structure
+ * @param nb_buffers The number of buffers
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_buffers);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Channel functions -------------------------------*/
@@ -866,6 +876,29 @@ __api struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
  *
  * <b>NOTE:</b> After that function, the iio_buffer pointer shall be invalid. */
 __api void iio_buffer_destroy(struct iio_buffer *buf);
+
+/** @brief Get a pollable file descriptor
+ *
+ * Can be used to know when iio_buffer_refill() or iio_buffer_push() can be
+ * called
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, valid file descriptor
+ * @return On error, a negative errno code is returned
+ */
+__api int iio_buffer_get_poll_fd(struct iio_buffer *buf);
+
+/** @brief Make iio_buffer_refill() and iio_buffer_push() blocking or not
+ *
+ * After this function has been called this blocking == true,
+ * iio_buffer_refill() and iio_buffer_push() will return -EAGAIN if no data is
+ * ready.
+ * A device is blocking by default.
+ * @param buf A pointer to an iio_buffer structure
+ * @param blocking true if the buffer API should be blocking, else false
+ * @return On success, 0
+ * @return On error, a negative errno code is returned
+ */
+__api int iio_buffer_set_blocking_mode(struct iio_buffer *buf, bool blocking);
 
 
 /** @brief Fetch more samples from the hardware

@@ -343,21 +343,6 @@ static long exec_command(const char *cmd, int fd)
 }
 
 #ifndef _WIN32
-static int set_blocking_mode(int fd, bool blocking)
-{
-	int ret = fcntl(fd, F_GETFL, 0);
-	if (ret < 0)
-		return -errno;
-
-	if (blocking)
-		ret &= ~O_NONBLOCK;
-	else
-		ret |= O_NONBLOCK;
-
-	ret = fcntl(fd, F_SETFL, ret);
-	return ret < 0 ? -errno : 0;
-}
-
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
 static int do_connect(int fd, const struct sockaddr *addr,
