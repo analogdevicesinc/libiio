@@ -865,7 +865,10 @@ static int local_close(const struct iio_device *dev)
 
 static int local_get_fd(const struct iio_device *dev)
 {
-	return dev->pdata->fd;
+	if (dev->pdata->fd == -1)
+		return -EBADF;
+	else
+		return dev->pdata->fd;
 }
 
 static int local_set_blocking_mode(const struct iio_device *dev, bool blocking)
