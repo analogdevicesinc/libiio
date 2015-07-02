@@ -240,7 +240,7 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 #else
 			int err = errno;
 #endif
-			if (err = EINTR)
+			if (err == EINTR)
 				continue;
 			return (ssize_t) -err;
 		}
@@ -261,7 +261,7 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 #else
 			int err = errno;
 #endif
-			if (err = EINTR)
+			if (err == EINTR)
 				continue;
 			return (ssize_t) -err;
 		}
