@@ -840,7 +840,7 @@ static int local_close(const struct iio_device *dev)
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret;
 
-	if (pdata->fd == 1)
+	if (pdata->fd == -1)
 		return -EBADF;
 
 	if (pdata->is_high_speed) {
