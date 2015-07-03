@@ -40,23 +40,6 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
-enum iio_modifier {
-	IIO_NO_MOD,
-	IIO_MOD_X,
-	IIO_MOD_Y,
-	IIO_MOD_Z,
-	IIO_MOD_LIGHT_BOTH,
-	IIO_MOD_LIGHT_IR,
-	IIO_MOD_ROOT_SUM_SQUARED_X_Y,
-	IIO_MOD_SUM_SQUARED_X_Y_Z,
-	IIO_MOD_LIGHT_CLEAR,
-	IIO_MOD_LIGHT_RED,
-	IIO_MOD_LIGHT_GREEN,
-	IIO_MOD_LIGHT_BLUE,
-	IIO_MOD_I,
-	IIO_MOD_Q,
-};
-
 struct iio_backend_ops {
 	struct iio_context * (*clone)(const struct iio_context *ctx);
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
