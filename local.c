@@ -92,45 +92,24 @@ static const char * const device_attrs_blacklist[] = {
 	"uevent",
 };
 
-static const char * const modifier_names[] = {
-	[IIO_MOD_X] = "x",
-	[IIO_MOD_Y] = "y",
-	[IIO_MOD_Z] = "z",
-	[IIO_MOD_ROOT_SUM_SQUARED_X_Y] = "sqrt(x^2+y^2)",
-	[IIO_MOD_SUM_SQUARED_X_Y_Z] = "x^2+y^2+z^2",
-	[IIO_MOD_LIGHT_BOTH] = "both",
-	[IIO_MOD_LIGHT_IR] = "ir",
-	[IIO_MOD_LIGHT_CLEAR] = "clear",
-	[IIO_MOD_LIGHT_RED] = "red",
-	[IIO_MOD_LIGHT_GREEN] = "green",
-	[IIO_MOD_LIGHT_BLUE] = "blue",
-	[IIO_MOD_I] = "i",
-	[IIO_MOD_Q] = "q",
-};
-
 /*
  * Looks for a IIO channel modifier at the beginning of the string s. If a
  * modifier was found the symbolic constant (IIO_MOD_*) is returned, otherwise
  * IIO_NO_MOD is returned. If a modifier was found len_p will be update with the
  * length of the modifier.
  */
-static unsigned int find_modifier(const char *s, size_t *len_p)
+static int has_modifier(const char *s, size_t *len_p)
 {
 	unsigned int i;
 	size_t len;
+	char *ptr = NULL;
 
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
-		if (!modifier_names[i])
-			continue;
-		len = strlen(modifier_names[i]);
-		if (strncmp(s, modifier_names[i], len) == 0 && s[len] == '_') {
-			if (len_p)
-				*len_p = len;
-			return i;
-		}
-	}
+	ptr = strchr(s, '_');
 
-	return IIO_NO_MOD;
+	if (ptr && len_p)
+		*len_p = ptr - s;
+
+	return (ptr != NULL);
 }
 
 static void local_free_pdata(struct iio_device *device)
@@ -953,7 +932,7 @@ static bool is_channel(const char *attr)
 	if (*(ptr - 1) >= '0' && *(ptr - 1) <= '9')
 		return true;
 
-	if (find_modifier(ptr + 1, NULL) != IIO_NO_MOD)
+	if (has_modifier(ptr + 1, NULL))
 		return true;
 	return false;
 }
@@ -965,7 +944,7 @@ static char * get_channel_id(const char *attr)
 
 	attr = strchr(attr, '_') + 1;
 	ptr = strchr(attr, '_');
-	if (find_modifier(ptr + 1, &len) != IIO_NO_MOD)
+	if (has_modifier(ptr + 1, &len))
 		ptr += len + 1;
 
 	res = malloc(ptr - attr + 1);
@@ -983,7 +962,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 	size_t len;
 
 	ptr = strchr(ptr, '_') + 1;
-	if (find_modifier(ptr, &len) != IIO_NO_MOD)
+	if (has_modifier(ptr, &len))
 		ptr += len + 1;
 
 	if (chn->name) {
@@ -1137,7 +1116,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		return 0;
 	}
 
-	if (find_modifier(chn->id + len + 1, NULL) != IIO_NO_MOD)
+	if (has_modifier(chn->id + len + 1, NULL))
 		return 1;
 
 	return 0;
