@@ -30,11 +30,6 @@
 #include <time.h>
 
 #ifdef _WIN32
-/* Override the default version of Windows supported by MinGW.
- * This is required to use the function inet_ntop. */
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #define close(s) closesocket(s)
@@ -1356,7 +1351,12 @@ struct iio_context * network_create_context(const char *host)
 #endif
 	if (res->ai_family == AF_INET) {
 		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
+#if (!_WIN32 || _WIN32_WINNT >= 0x600)
 		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
+#else
+		char *tmp = inet_ntoa(in->sin_addr);
+		strncpy(description, tmp, len);
+#endif
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
