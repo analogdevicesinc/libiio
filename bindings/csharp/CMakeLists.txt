@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.7)
-project(libiio-sharp)
+project(libiio-sharp LANGUAGES NONE)
 
 find_program(MCS_EXECUTABLE
 	NAMES mcs csc
