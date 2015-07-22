@@ -508,9 +508,10 @@ class _DeviceOrTrigger(object):
 		self._debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
 				[_d_get_debug_attr(_device, x) for x in xrange(0, _d_debug_attr_count(_device))] }
 
-		# TODO(pcercuei): Use a dictionary for the channels.
-		self._channels = [ Channel(self, _get_channel(self._device, x)) \
-				for x in xrange(0, _channels_count(self._device)) ]
+		# Use a dictionary for the channels.
+		chans = [ Channel(self, _get_channel(self._device, x)) 
+        		for x in xrange(0, _channels_count(self._device)) ]
+		self._channels = dict([(c.id, c) for c in chans])
 		self._id = _d_get_id(self._device)
 		self._name = _d_get_name(self._device)
 
