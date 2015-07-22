@@ -541,6 +541,23 @@ class _DeviceOrTrigger(object):
 		_d_reg_read(self._device, reg, _byref(value))
 		return value.value
 
+	def find_channel(self, name_or_id, is_output = False):
+		"""
+
+		Find a IIO channel by its name or ID.
+
+		parameters:
+			name_or_id: type=str
+				The name or ID of the channel to find
+			is_output: type=bool
+				Set to True to search for an output channel
+
+		returns: type=iio.Device or type=iio.Trigger
+			The IIO Device
+		"""
+		return (filter(lambda x: (name_or_id == x.name or name_or_id == x.id) \
+				and x.output == is_output, self.channels) or [None])[0]
+
 	@property
 	def sample_size(self):
 		"""
@@ -652,6 +669,20 @@ class Context(object):
 			An new instance of this class
 		"""
 		return Context(_clone(self._context))
+
+	def find_device(self, name_or_id):
+		"""
+
+		Find a IIO device by its name or ID.
+
+		parameters:
+			name_or_id: type=str
+				The name or ID of the device to find
+
+		returns: type=iio.Device or type=iio.Trigger
+			The IIO Device
+		"""
+		return (filter(lambda x: name_or_id == x.name or name_or_id == x.id, self.devices) or [None])[0]
 
 	name = property(lambda self: self._name, None, None, \
 			"Name of this IIO context.\n\ttype=str")
