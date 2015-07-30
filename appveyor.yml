@@ -5,7 +5,7 @@ install:
     - echo "Downloading deps..."
     - ps: (new-object System.Net.WebClient).Downloadfile("http://swdownloads.analog.com/cse/build/libiio-win-deps.zip", "c:\libiio-win-deps.zip")
     - 7z x -y "c:\libiio-win-deps.zip" -o"C:\" > nul
-    - choco -y install InnoSetup
+    - choco install InnoSetup
     - set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
 
 build_script:
