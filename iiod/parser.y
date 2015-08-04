@@ -42,21 +42,23 @@ int yylex_init_extra(void *d, yyscan_t *scanner);
 int yylex_destroy(yyscan_t yyscanner);
 
 void * yyget_extra(yyscan_t scanner);
-void yyset_in(FILE *in, yyscan_t scanner);
-void yyset_out(FILE *out, yyscan_t scanner);
 
-#define ECHO writefd(fileno(yyout), yytext, yyleng)
+#define ECHO do { \
+		struct parser_pdata *pdata = yyget_extra(yyscanner); \
+		writefd(pdata->fd_out, yytext, yyleng); \
+	} while (0)
 
 #define YY_INPUT(buf,result,max_size) { \
+		struct parser_pdata *pdata = yyget_extra(yyscanner); \
 		int c = '*'; \
 		size_t n; \
 		for ( n = 0; n < max_size && \
-			     readfd(fileno(yyin), &c, 1) > 0 && \
+			     readfd(pdata->fd_in, &c, 1) > 0 && \
 				 c != '\n'; ++n ) \
 			buf[n] = (char) c; \
-		if ( c == '\n' ) \
+		if ( c == '\n' ) { \
 			buf[n++] = (char) c; \
-		else if (c == EOF && ferror( yyin ) ) { \
+		} else if ( c == EOF ) { \
 			ERROR( "input in flex scanner failed\n" ); \
 			n = 1; \
 			buf[0] = '\n'; \

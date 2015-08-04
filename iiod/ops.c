@@ -69,14 +69,8 @@ struct DevEntry {
 	size_t nb_words;
 };
 
-struct send_sample_cb_info {
-	FILE *out;
-	unsigned int nb_bytes, cpt;
-	uint32_t *mask;
-};
-
-struct receive_sample_cb_info {
-	FILE *in;
+struct sample_cb_info {
+	int fd;
 	unsigned int nb_bytes, cpt;
 	uint32_t *mask;
 };
@@ -87,11 +81,11 @@ static SLIST_HEAD(DevHead, DevEntry) devlist_head =
 	    SLIST_HEAD_INITIALIZER(DevHead);
 static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static ssize_t write_all(const void *src, size_t len, FILE *out)
+static ssize_t write_all(const void *src, size_t len, int fd)
 {
 	const void *ptr = src;
 	while (len) {
-		ssize_t ret = writefd(fileno(out), ptr, len);
+		ssize_t ret = writefd(fd, ptr, len);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -102,11 +96,11 @@ static ssize_t write_all(const void *src, size_t len, FILE *out)
 	return ptr - src;
 }
 
-static ssize_t read_all(void *dst, size_t len, FILE *in)
+static ssize_t read_all(void *dst, size_t len, int fd)
 {
 	void *ptr = dst;
 	while (len) {
-		ssize_t ret = readfd(fileno(in), ptr, len);
+		ssize_t ret = readfd(fd, ptr, len);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -135,7 +129,7 @@ static void print_value(struct parser_pdata *pdata, long value)
 static ssize_t send_sample(const struct iio_channel *chn,
 		void *src, size_t length, void *d)
 {
-	struct send_sample_cb_info *info = d;
+	struct sample_cb_info *info = d;
 	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
 		return 0;
 	if (info->nb_bytes < length)
@@ -145,19 +139,19 @@ static ssize_t send_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char zero = 0;
 		for (i = 0; i < goal; i++)
-			writefd(fileno(info->out), &zero, 1);
+			writefd(info->fd, &zero, 1);
 		info->cpt += goal;
 	}
 
 	info->cpt += length;
 	info->nb_bytes -= length;
-	return write_all(src, length, info->out);
+	return write_all(src, length, info->fd);
 }
 
 static ssize_t receive_sample(const struct iio_channel *chn,
 		void *dst, size_t length, void *d)
 {
-	struct receive_sample_cb_info *info = d;
+	struct sample_cb_info *info = d;
 	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
 		return 0;
 	if (info->cpt == info->nb_bytes)
@@ -168,12 +162,12 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char foo;
 		for (i = 0; i < goal; i++)
-			readfd(fileno(info->in), &foo, 1);
+			readfd(info->fd, &foo, 1);
 		info->cpt += goal;
 	}
 
 	info->cpt += length;
-	return read_all(dst, length, info->in);
+	return read_all(dst, length, info->fd);
 }
 
 static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
@@ -209,10 +203,10 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	if (!demux) {
 		/* Short path */
-		return write_all(dev->buf->buffer, len, pdata->out);
+		return write_all(dev->buf->buffer, len, pdata->fd_out);
 	} else {
-		struct send_sample_cb_info info = {
-			.out = pdata->out,
+		struct sample_cb_info info = {
+			.fd = pdata->fd_out,
 			.cpt = 0,
 			.nb_bytes = len,
 			.mask = thd->mask,
@@ -239,12 +233,12 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 		if (thd->nb < len)
 			len = thd->nb;
 
-		return read_all(dev->buf->buffer, len, pdata->in);
+		return read_all(dev->buf->buffer, len, pdata->fd_in);
 	} else {
 		/* Long path: Mux the samples to the buffer */
 
-		struct receive_sample_cb_info info = {
-			.in = thd->pdata->in,
+		struct sample_cb_info info = {
+			.fd = thd->pdata->fd_in,
 			.cpt = 0,
 			.nb_bytes = thd->nb,
 			.mask = thd->mask,
@@ -562,8 +556,6 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	ret = thd->err;
 	pthread_mutex_unlock(&thd->cond_lock);
 
-	fflush(thd->pdata->out);
-
 	if (ret > 0 && ret < nb)
 		print_value(thd->pdata, 0);
 
@@ -813,7 +805,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	ret = write_all(buf, ret, pdata->out);
+	ret = write_all(buf, ret, pdata->fd_out);
 	output(pdata, "\n");
 	return ret;
 }
@@ -833,7 +825,7 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!buf)
 		goto err_print_value;
 
-	ret = read_all(buf, len, pdata->in);
+	ret = read_all(buf, len, pdata->fd_in);
 	if (ret < 0)
 		goto err_free_buffer;
 
@@ -863,7 +855,7 @@ ssize_t read_chn_attr(struct parser_pdata *pdata,
 	if (ret < 0)
 		return ret;
 
-	ret = write_all(buf, ret, pdata->out);
+	ret = write_all(buf, ret, pdata->fd_out);
 	output(pdata, "\n");
 	return ret;
 }
@@ -876,7 +868,7 @@ ssize_t write_chn_attr(struct parser_pdata *pdata,
 	if (!buf)
 		goto err_print_value;
 
-	ret = read_all(buf, len, pdata->in);
+	ret = read_all(buf, len, pdata->fd_in);
 	if (ret < 0)
 		goto err_free_buffer;
 
@@ -930,7 +922,7 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 	if (!ret && trigger) {
 		ret = strlen(trigger->name);
 		print_value(pdata, ret);
-		ret = write_all(trigger->name, ret, pdata->out);
+		ret = write_all(trigger->name, ret, pdata->fd_out);
 		output(pdata, "\n");
 	} else {
 		print_value(pdata, ret);
@@ -945,7 +937,7 @@ int set_timeout(struct parser_pdata *pdata, unsigned int timeout)
 	return ret;
 }
 
-void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
@@ -953,21 +945,17 @@ void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose)
 
 	pdata.ctx = ctx;
 	pdata.stop = false;
-	pdata.in = in;
-	pdata.out = out;
+	pdata.fd_in = fd_in;
+	pdata.fd_out = fd_out;
 	pdata.verbose = verbose;
 
 	yylex_init_extra(&pdata, &scanner);
-	yyset_out(out, scanner);
-	yyset_in(in, scanner);
 
 	do {
-		if (verbose) {
+		if (verbose)
 			output(&pdata, "iio-daemon > ");
-			fflush(out);
-		}
 		yyparse(scanner);
-	} while (!pdata.stop && !feof(in));
+	} while (!pdata.stop);
 
 	yylex_destroy(scanner);
 

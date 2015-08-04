@@ -31,7 +31,7 @@
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;
-	FILE *in, *out;
+	int fd_in, fd_out;
 
 	/* Used as temporaries placements by the lexer */
 	struct iio_device *dev;
@@ -41,7 +41,7 @@ struct parser_pdata {
 
 extern bool server_demux; /* Defined in iiod.c */
 
-void interpreter(struct iio_context *ctx, FILE *in, FILE *out, bool verbose);
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
@@ -76,8 +76,7 @@ static __inline__ ssize_t writefd(int fd, const void *buf, size_t len)
 
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
-	int fd = fileno(pdata->out);
-	if (writefd(fd, text, strlen(text)) < 0)
+	if (writefd(pdata->fd_out, text, strlen(text)) <= 0)
 		pdata->stop = true;
 }
 

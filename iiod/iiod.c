@@ -163,16 +163,10 @@ static void usage(void)
 static void * client_thd(void *d)
 {
 	struct client_data *cdata = d;
-	FILE *f = fdopen(cdata->fd, "r+b");
-	if (!f) {
-		ERROR("Unable to reopen socket\n");
-		return NULL;
-	}
 
-	interpreter(cdata->ctx, f, f, cdata->debug);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug);
 
 	INFO("Client exited\n");
-	fclose(f);
 	close(cdata->fd);
 	return NULL;
 }
@@ -192,20 +186,10 @@ static void sig_handler(int sig)
 
 static int main_interactive(struct iio_context *ctx, bool verbose)
 {
-	/* Reopen in binary mode if needed */
-	if (!isatty(STDIN_FILENO))
-		freopen(NULL, "rb", stdin);
-	if (!isatty(STDOUT_FILENO))
-		freopen(NULL, "wb", stdout);
-
 	/* Specify that we will read sequentially the input FD */
 	posix_fadvise(STDIN_FILENO, 0, 0, POSIX_FADV_SEQUENTIAL);
 
-	/* Disable buffering on stdin / stdout */
-	setvbuf(stdin, NULL, _IONBF, 0);
-	setvbuf(stdout, NULL, _IONBF, 0);
-
-	interpreter(ctx, stdin, stdout, verbose);
+	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose);
 	return EXIT_SUCCESS;
 }
 
