@@ -492,6 +492,9 @@ static int network_open(const struct iio_device *dev,
 	dev->pdata->is_cyclic = cyclic;
 	dev->pdata->fd = fd;
 	dev->pdata->wait_for_err_code = false;
+#ifdef WITH_NETWORK_GET_BUFFER
+	dev->pdata->mmap_len = samples_count * iio_device_get_sample_size(dev);
+#endif
 	return 0;
 }
 
@@ -780,7 +783,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (pdata->mmap_addr && pdata->is_tx) {
 		char buf[1024];
 		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-				dev->id, (unsigned long) pdata->mmap_len);
+				dev->id, (unsigned long) bytes_used);
 
 		network_lock_dev(pdata);
 
@@ -788,8 +791,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		if (ret < 0)
 			goto err_close_memfd;
 
-		ret = network_do_splice(pdata->fd,
-				pdata->memfd, pdata->mmap_len);
+		ret = network_do_splice(pdata->fd, pdata->memfd, bytes_used);
 		if (ret < 0)
 			goto err_close_memfd;
 
@@ -799,9 +801,6 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 	if (pdata->memfd >= 0)
 		close(pdata->memfd);
-
-	if (bytes_used)
-		pdata->mmap_len = bytes_used;
 
 	pdata->memfd = memfd;
 
