@@ -919,6 +919,17 @@ __api ssize_t iio_buffer_refill(struct iio_buffer *buf);
 __api ssize_t iio_buffer_push(struct iio_buffer *buf);
 
 
+/** @brief Send a given number of samples to the hardware
+ * @param buf A pointer to an iio_buffer structure
+ * @param samples_count The number of samples to submit
+ * @return On success, the number of bytes written is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> Only valid for output buffers */
+__api ssize_t iio_buffer_push_partial(struct iio_buffer *buf,
+		size_t samples_count);
+
+
 /** @brief Get the start address of the buffer
  * @param buf A pointer to an iio_buffer structure
  * @return A pointer corresponding to the start address of the buffer */

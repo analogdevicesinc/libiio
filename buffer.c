@@ -150,31 +150,46 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 ssize_t iio_buffer_push(struct iio_buffer *buffer)
 {
 	const struct iio_device *dev = buffer->dev;
+	ssize_t ret;
 
 	if (buffer->dev_is_high_speed) {
 		void *buf;
-		ssize_t ret = dev->ctx->ops->get_buffer(dev,
-				&buf, buffer->length, buffer->mask, dev->words);
+		ret = dev->ctx->ops->get_buffer(dev, &buf,
+				buffer->data_length, buffer->mask, dev->words);
 		if (ret >= 0)
 			buffer->buffer = buf;
-		return ret;
 	} else {
-		size_t length = buffer->length;
 		void *ptr = buffer->buffer;
+		size_t tmp_len;
 
 		/* iio_device_write_raw doesn't guarantee that all bytes are
 		 * written */
-		while (length) {
-			ssize_t ret = iio_device_write_raw(dev, ptr, length);
+		for (tmp_len = buffer->data_length; tmp_len; ) {
+			ret = iio_device_write_raw(dev, ptr, tmp_len);
 			if (ret < 0)
-				return ret;
+				goto out_reset_data_length;
 
-			length -= ret;
+			tmp_len -= ret;
 			ptr = (void *) ((uintptr_t) ptr + ret);
 		}
 
-		return (ssize_t) buffer->length;
+		ret = (ssize_t) buffer->data_length;
 	}
+
+out_reset_data_length:
+	buffer->data_length = buffer->length;
+	return ret;
+}
+
+ssize_t iio_buffer_push_partial(struct iio_buffer *buffer, size_t samples_count)
+{
+	size_t new_len = samples_count * buffer->dev_sample_size;
+
+	if (new_len == 0 || new_len > buffer->length)
+		return -EINVAL;
+
+	buffer->data_length = new_len;
+	return iio_buffer_push(buffer);
 }
 
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
