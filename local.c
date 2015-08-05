@@ -1546,12 +1546,12 @@ static void init_scan_elements(struct iio_context *ctx)
 
 struct iio_context * local_create_context(void)
 {
-	int ret;
+	int ret = -ENOMEM;
 	unsigned int len;
 	struct utsname uts;
 	struct iio_context *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
-		goto err_set_errno_enomem;
+		goto err_set_errno;
 
 	ctx->ops = &local_ops;
 	ctx->name = "local";
@@ -1563,33 +1563,28 @@ struct iio_context * local_create_context(void)
 	ctx->description = malloc(len + 5); /* 4 spaces + EOF */
 	if (!ctx->description) {
 		free(ctx);
-		goto err_set_errno_enomem;
+		goto err_set_errno;
 	}
 
 	snprintf(ctx->description, len + 5, "%s %s %s %s %s", uts.sysname,
 			uts.nodename, uts.release, uts.version, uts.machine);
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
-	if (ret < 0) {
-		iio_context_destroy(ctx);
-		errno = -ret;
-		return NULL;
-	}
+	if (ret < 0)
+		goto err_context_destroy;
 
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
 
 	init_scan_elements(ctx);
-	iio_context_init(ctx);
-
-	ctx->xml = iio_context_create_xml(ctx);
-	if (!ctx->xml) {
-		iio_context_destroy(ctx);
-		goto err_set_errno_enomem;
-	}
+	ret = iio_context_init(ctx);
+	if (ret < 0)
+		goto err_context_destroy;
 
 	return ctx;
 
-err_set_errno_enomem:
-	errno = ENOMEM;
+err_context_destroy:
+	iio_context_destroy(ctx);
+err_set_errno:
+	errno = -ret;
 	return NULL;
 }

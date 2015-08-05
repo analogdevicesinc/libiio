@@ -213,11 +213,20 @@ static void reorder_channels(struct iio_device *dev)
 	} while (found);
 }
 
-void iio_context_init(struct iio_context *ctx)
+int iio_context_init(struct iio_context *ctx)
 {
 	unsigned int i;
+
 	for (i = 0; i < ctx->nb_devices; i++)
 		reorder_channels(ctx->devices[i]);
+
+	if (!ctx->xml) {
+		ctx->xml = iio_context_create_xml(ctx);
+		if (!ctx->xml)
+			return -ENOMEM;
+	}
+
+	return 0;
 }
 
 int iio_context_get_version(const struct iio_context *ctx,

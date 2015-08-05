@@ -340,7 +340,10 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		ctx->devices = devs;
 	}
 
-	iio_context_init(ctx);
+	err = iio_context_init(ctx);
+	if (err)
+		goto err_free_devices;
+
 	return ctx;
 
 err_free_devices:

@@ -1226,11 +1226,7 @@ static struct iio_context * get_context(int fd)
 
 	DEBUG("Creating context from XML...\n");
 	ctx = iio_create_xml_context_mem(xml, xml_len);
-
-	if (ctx)
-		ctx->xml = xml;
-	else
-		free(xml);
+	free(xml);
 	return ctx;
 }
 
@@ -1380,7 +1376,9 @@ struct iio_context * network_create_context(const char *host)
 #endif
 	}
 
-	iio_context_init(ctx);
+	ret = iio_context_init(ctx);
+	if (ret < 0)
+		goto err_free_description;
 
 #if HAVE_PTHREAD
 	ret = pthread_mutex_init(&pdata->lock, NULL);
