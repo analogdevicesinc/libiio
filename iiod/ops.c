@@ -414,6 +414,8 @@ static void * rw_thd(void *d)
 		}
 
 		if (has_writers) {
+			ssize_t nb_bytes = 0;
+
 			pthread_mutex_lock(&entry->thdlist_lock);
 
 			/* Reset the size of the buffer to its maximum size */
@@ -428,14 +430,18 @@ static void * rw_thd(void *d)
 					continue;
 
 				ret = receive_data(entry, thd);
-				if (ret > 0)
+				if (ret > 0) {
 					thd->nb -= ret;
+					if (ret > nb_bytes)
+						nb_bytes = ret;
+				}
 
 				if (ret < 0)
 					signal_thread(thd, ret);
 			}
 
-			ret = iio_buffer_push(entry->buf);
+			ret = iio_buffer_push_partial(entry->buf,
+					nb_bytes / sample_size);
 			if (ret < 0) {
 				ERROR("Writing to device failed: %i\n",
 						(int) ret);
