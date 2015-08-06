@@ -42,7 +42,7 @@ namespace iio
         private static extern int iio_buffer_refill(IntPtr buf);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_buffer_push(IntPtr buf);
+        private static extern int iio_buffer_push_partial(IntPtr buf, uint samples_count);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_buffer_start(IntPtr buf);
@@ -92,12 +92,12 @@ namespace iio
 
         /// <summary>Submit the samples contained in this buffer to the hardware.</summary>
         /// <exception cref="System.Exception">The buffer could not be pushed.</exception>
-        public void push()
+        public void push(uint samples_count = this.samples_count)
         {
             if (circular && circular_buffer_pushed)
                 throw new Exception("Circular buffer already pushed\n");
 
-            int err = iio_buffer_push(this.buf);
+            int err = iio_buffer_push_partial(this.buf, samples_count);
             if (err < 0)
                 throw new Exception("Unable to push buffer: err=" + err);
             circular_buffer_pushed = true;
