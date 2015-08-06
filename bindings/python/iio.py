@@ -271,10 +271,10 @@ _buffer_refill.restype = c_int
 _buffer_refill.argtypes = (_BufferPtr, )
 _buffer_refill.errcheck = _checkNegative
 
-_buffer_push = _lib.iio_buffer_push
-_buffer_push.restype = c_int
-_buffer_push.argtypes = (_BufferPtr, )
-_buffer_push.errcheck = _checkNegative
+_buffer_push_partial = _lib.iio_buffer_push_partial
+_buffer_push_partial.restype = c_int
+_buffer_push_partial.argtypes = (_BufferPtr, c_uint, )
+_buffer_push_partial.errcheck = _checkNegative
 
 _buffer_start = _lib.iio_buffer_start
 _buffer_start.restype = c_void_p
@@ -445,6 +445,7 @@ class Buffer(object):
 		self.dev = device
 		self._buffer = _create_buffer(device._device, samples_count, cyclic)
 		self._length = samples_count * device.sample_size
+		self._samples_count = samples_count
 
 	def __del__(self):
 		if self._buffer is not None:
@@ -458,9 +459,15 @@ class Buffer(object):
 		"""Fetch a new set of samples from the hardware."""
 		_buffer_refill(self._buffer)
 
-	def push(self):
-		"""Submit the samples contained in this buffer to the hardware."""
-		_buffer_push(self._buffer)
+	def push(self, samples_count = None):
+		"""
+		Submit the samples contained in this buffer to the hardware.
+
+		parameters:
+			samples_count: type=int
+				The number of samples to submit, default = full buffer
+		"""
+		_buffer_push_partial(self._buffer, samples_count or self._samples_count)
 
 	def read(self):
 		"""
