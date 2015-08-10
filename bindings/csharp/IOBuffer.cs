@@ -92,7 +92,7 @@ namespace iio
 
         /// <summary>Submit the samples contained in this buffer to the hardware.</summary>
         /// <exception cref="System.Exception">The buffer could not be pushed.</exception>
-        public void push(uint samples_count = this.samples_count)
+        public void push(uint samples_count)
         {
             if (circular && circular_buffer_pushed)
                 throw new Exception("Circular buffer already pushed\n");
@@ -101,6 +101,11 @@ namespace iio
             if (err < 0)
                 throw new Exception("Unable to push buffer: err=" + err);
             circular_buffer_pushed = true;
+        }
+
+        public void push()
+        {
+            push(this.samples_count);
         }
 
         /// <summary>Releases all resource used by the <see cref="iio.IOBuffer"/> object.</summary>
