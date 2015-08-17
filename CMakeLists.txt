@@ -27,6 +27,13 @@ mark_as_advanced(INSTALL_INC_DIR)
 mark_as_advanced(INSTALL_PKGCONFIG_DIR)
 mark_as_advanced(INSTALL_DATA_DIR)
 
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
+		"Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel."
+		FORCE)
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWithDebInfo MinSizeRel)
+endif()
+
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
