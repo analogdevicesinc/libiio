@@ -45,7 +45,7 @@ void * yyget_extra(yyscan_t scanner);
 
 #define ECHO do { \
 		struct parser_pdata *pdata = yyget_extra(yyscanner); \
-		writefd(pdata->fd_out, yytext, yyleng); \
+		writefd(pdata, yytext, yyleng); \
 	} while (0)
 
 #define YY_INPUT(buf,result,max_size) { \
@@ -53,7 +53,7 @@ void * yyget_extra(yyscan_t scanner);
 		int c = '*'; \
 		size_t n; \
 		for ( n = 0; n < max_size && \
-			     readfd(pdata->fd_in, &c, 1) > 0 && \
+			     readfd(pdata, &c, 1) > 0 && \
 				 c != '\n'; ++n ) \
 			buf[n] = (char) c; \
 		if ( c == '\n' ) { \

@@ -37,6 +37,7 @@ struct parser_pdata {
 	struct iio_device *dev;
 	struct iio_channel *chn;
 	bool channel_is_output;
+	bool fd_in_is_socket, fd_out_is_socket;
 };
 
 extern bool server_demux; /* Defined in iiod.c */
@@ -66,25 +67,43 @@ ssize_t set_trigger(struct parser_pdata *pdata,
 
 int set_timeout(struct parser_pdata *pdata, unsigned int timeout);
 
-static __inline__ ssize_t writefd(int fd, const void *buf, size_t len)
+static __inline__ ssize_t writefd(struct parser_pdata *pdata,
+		const void *buf, size_t len)
 {
-	ssize_t ret = send(fd, buf, len, MSG_NOSIGNAL);
-	if (ret < 0 && errno == ENOTSOCK)
-		ret = write(fd, buf, len);
+	ssize_t ret;
+
+	if (pdata->fd_out_is_socket) {
+		ret = send(pdata->fd_out, buf, len, MSG_NOSIGNAL);
+		if (ret < 0 && errno == ENOTSOCK)
+			pdata->fd_out_is_socket = false;
+	}
+
+	if (!pdata->fd_out_is_socket)
+		ret = write(pdata->fd_out, buf, len);
+
 	return ret;
 }
 
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
-	if (writefd(pdata->fd_out, text, strlen(text)) <= 0)
+	if (writefd(pdata, text, strlen(text)) <= 0)
 		pdata->stop = true;
 }
 
-static __inline__ ssize_t readfd(int fd, void *buf, size_t len)
+static __inline__ ssize_t readfd(struct parser_pdata *pdata,
+		void *buf, size_t len)
 {
-	ssize_t ret = recv(fd, buf, len, MSG_NOSIGNAL);
-	if (ret < 0 && errno == ENOTSOCK)
-		ret = read(fd, buf, len);
+	ssize_t ret;
+
+	if (pdata->fd_in_is_socket) {
+		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL);
+		if (ret < 0 && errno == ENOTSOCK)
+			pdata->fd_in_is_socket = false;
+	}
+
+	if (!pdata->fd_in_is_socket)
+		ret = read(pdata->fd_in, buf, len);
+
 	return ret;
 }
 
