@@ -126,6 +126,7 @@ int main(int argc, char **argv)
 	unsigned int buffer_size = SAMPLES_PER_READ;
 	int c, option_index = 0, arg_index = 0, ip_index = 0;
 	struct iio_device *dev;
+	size_t sample_size;
 
 	while ((c = getopt_long(argc, argv, "+hn:t:b:s:",
 					options, &option_index)) != -1) {
@@ -221,6 +222,8 @@ int main(int argc, char **argv)
 		}
 	}
 
+	sample_size = iio_device_get_sample_size(dev);
+
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
 		fprintf(stderr, "Unable to allocate buffer\n");
@@ -236,10 +239,39 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		iio_buffer_foreach_sample(buffer, print_sample, NULL);
-		fflush(stdout);
+		/* If there are only the samples we requested, we don't need to
+		 * demux */
+		if (iio_buffer_step(buffer) == sample_size) {
+			void *start = iio_buffer_start(buffer);
+			ptrdiff_t len = (intptr_t) iio_buffer_end(buffer) -
+				(intptr_t) start;
+			size_t read_len;
+
+			if (num_samples && len > num_samples * sample_size)
+				len = num_samples * sample_size;
+
+			for (read_len = len; len; ) {
+				ssize_t nb = fwrite(start, 1, len, stdout);
+				if (nb < 0) {
+					fprintf(stderr, "Unable to write data!\n");
+					goto err_destroy_buffer;
+				}
+
+				len -= nb;
+				start = (void *)((intptr_t) start + nb);
+			}
+
+			if (num_samples) {
+				num_samples -= read_len / sample_size;
+				if (!num_samples)
+					quit_all(EXIT_SUCCESS);
+			}
+		} else {
+			iio_buffer_foreach_sample(buffer, print_sample, NULL);
+		}
 	}
 
+err_destroy_buffer:
 	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
 	return exit_code;
