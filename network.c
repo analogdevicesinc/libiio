@@ -1164,6 +1164,21 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return ret;
 }
 
+static int network_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_blocks)
+{
+	int ret;
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "SET %s BUFFERS_COUNT %u\r\n",
+			dev->id, nb_blocks);
+
+	network_lock(dev->ctx->pdata);
+	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
+	network_unlock(dev->ctx->pdata);
+	return ret;
+}
+
 static struct iio_context * network_clone(const struct iio_context *ctx)
 {
 	if (ctx->description) {
@@ -1201,6 +1216,7 @@ static struct iio_backend_ops network_ops = {
 	.shutdown = network_shutdown,
 	.get_version = network_get_version,
 	.set_timeout = network_set_timeout,
+	.set_kernel_buffers_count = network_set_kernel_buffers_count,
 };
 
 static struct iio_context * get_context(int fd)
