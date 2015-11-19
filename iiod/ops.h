@@ -66,6 +66,8 @@ ssize_t set_trigger(struct parser_pdata *pdata,
 		struct iio_device *dev, const char *trig);
 
 int set_timeout(struct parser_pdata *pdata, unsigned int timeout);
+int set_buffers_count(struct parser_pdata *pdata,
+		struct iio_device *dev, long value);
 
 static __inline__ ssize_t writefd(struct parser_pdata *pdata,
 		const void *buf, size_t len)

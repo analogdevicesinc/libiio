@@ -75,6 +75,7 @@ void * yyget_extra(yyscan_t scanner);
 	char *word;
 	struct iio_device *dev;
 	struct iio_channel *chn;
+	long value;
 }
 
 %token SPACE
@@ -96,10 +97,13 @@ void * yyget_extra(yyscan_t scanner);
 %token DEBUG_ATTR
 %token IN_OUT
 %token CYCLIC
+%token SET
+%token BUFFERS_COUNT
 
 %token <word> WORD
 %token <dev> DEVICE
 %token <chn> CHANNEL
+%token <value> VALUE;
 
 %destructor { DEBUG("Freeing token \"%s\"\n", $$); free($$); } <word>
 
@@ -143,7 +147,9 @@ Line:
 		"\tGETTRIG <device>\n"
 		"\t\tGet the name of the trigger used by the specified device\n"
 		"\tSETTRIG <device> [<trigger>]\n"
-		"\t\tSet the trigger to use for the specified device\n");
+		"\t\tSet the trigger to use for the specified device\n"
+		"\tSET <device> BUFFERS_COUNT <count>\n"
+		"\t\tSet the number of kernel buffers for the specified device\n");
 		YYACCEPT;
 	}
 	| VERSION END {
@@ -375,6 +381,13 @@ Line:
 	| GETTRIG SPACE DEVICE END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		if (get_trigger(pdata, $3) < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| SET SPACE DEVICE SPACE BUFFERS_COUNT SPACE VALUE END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		if (set_buffers_count(pdata, $3, $7) < 0)
 			YYABORT;
 		else
 			YYACCEPT;

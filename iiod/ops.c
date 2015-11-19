@@ -939,6 +939,19 @@ int set_timeout(struct parser_pdata *pdata, unsigned int timeout)
 	return ret;
 }
 
+int set_buffers_count(struct parser_pdata *pdata,
+		struct iio_device *dev, long value)
+{
+	int ret = -EINVAL;
+
+	if (value >= 1)
+		ret = iio_device_set_kernel_buffers_count(
+				dev, (unsigned int) value);
+
+	print_value(pdata, ret);
+	return ret;
+}
+
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose)
 {
 	yyscan_t scanner;

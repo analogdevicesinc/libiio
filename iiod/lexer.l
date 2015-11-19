@@ -32,6 +32,7 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 %s WANT_CHN_OR_ATTR
 %s WANT_CHN
 %s WANT_ATTR
+%s WANT_VALUE
 %%
 
 <INITIAL>VERSION|version {
@@ -94,6 +95,11 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	return GETTRIG;
 }
 
+<INITIAL>SET|set {
+	BEGIN(WANT_DEVICE);
+	return SET;
+}
+
 <WANT_DEVICE>{WORD} {
 	struct parser_pdata *pdata = yyget_extra(yyscanner);
 	struct iio_device *dev = iio_context_find_device(pdata->ctx, yytext);
@@ -101,6 +107,11 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	pdata->dev = dev;
 	BEGIN(WANT_CHN_OR_ATTR);
 	return DEVICE;
+}
+
+<WANT_CHN_OR_ATTR>BUFFERS_COUNT|buffers_count {
+	BEGIN(WANT_VALUE);
+	return BUFFERS_COUNT;
 }
 
 <WANT_CHN_OR_ATTR>DEBUG|debug {
@@ -125,6 +136,11 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	pdata->chn = chn;
 	BEGIN(WANT_ATTR);
 	return CHANNEL;
+}
+
+<WANT_VALUE>{WORD} {
+	yylval->value = strtol(yytext, NULL, 10);
+	return VALUE;
 }
 
 CYCLIC|cyclic {
