@@ -84,6 +84,42 @@ static int usb_get_version(const struct iio_context *ctx,
 			EP_OPS, major, minor, git_tag);
 }
 
+static ssize_t usb_read_dev_attr(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len, bool is_debug)
+{
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+
+	return iiod_client_read_attr(pdata->iiod_client, EP_OPS, dev,
+			NULL, attr, dst, len, is_debug);
+}
+
+static ssize_t usb_write_dev_attr(const struct iio_device *dev,
+		const char *attr, const char *src, size_t len, bool is_debug)
+{
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+
+	return iiod_client_write_attr(pdata->iiod_client, EP_OPS, dev,
+			NULL, attr, src, len, is_debug);
+}
+
+static ssize_t usb_read_chn_attr(const struct iio_channel *chn,
+		const char *attr, char *dst, size_t len)
+{
+	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
+
+	return iiod_client_read_attr(pdata->iiod_client, EP_OPS, chn->dev,
+			chn, attr, dst, len, false);
+}
+
+static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
+		const char *attr, const char *src, size_t len)
+{
+	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
+
+	return iiod_client_write_attr(pdata->iiod_client, EP_OPS, chn->dev,
+			chn, attr, src, len, false);
+}
+
 static void usb_shutdown(struct iio_context *ctx)
 {
 	iio_mutex_destroy(ctx->pdata->lock);
@@ -96,6 +132,10 @@ static void usb_shutdown(struct iio_context *ctx)
 
 static const struct iio_backend_ops usb_ops = {
 	.get_version = usb_get_version,
+	.read_device_attr = usb_read_dev_attr,
+	.read_channel_attr = usb_read_chn_attr,
+	.write_device_attr = usb_write_dev_attr,
+	.write_channel_attr = usb_write_chn_attr,
 	.shutdown = usb_shutdown,
 };
 
