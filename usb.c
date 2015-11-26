@@ -77,6 +77,13 @@ static unsigned int libusb_to_errno(int error)
 	}
 }
 
+static int usb_get_version(const struct iio_context *ctx,
+		unsigned int *major, unsigned int *minor, char git_tag[8])
+{
+	return iiod_client_get_version(ctx->pdata->iiod_client,
+			EP_OPS, major, minor, git_tag);
+}
+
 static void usb_shutdown(struct iio_context *ctx)
 {
 	iio_mutex_destroy(ctx->pdata->lock);
@@ -88,6 +95,7 @@ static void usb_shutdown(struct iio_context *ctx)
 }
 
 static const struct iio_backend_ops usb_ops = {
+	.get_version = usb_get_version,
 	.shutdown = usb_shutdown,
 };
 
