@@ -42,29 +42,17 @@ int yylex_init_extra(void *d, yyscan_t *scanner);
 int yylex_destroy(yyscan_t yyscanner);
 
 void * yyget_extra(yyscan_t scanner);
+int yy_input(yyscan_t scanner, char *buf, size_t max_size);
 
 #define ECHO do { \
 		struct parser_pdata *pdata = yyget_extra(yyscanner); \
 		writefd(pdata, yytext, yyleng); \
 	} while (0)
 
-#define YY_INPUT(buf,result,max_size) { \
-		struct parser_pdata *pdata = yyget_extra(yyscanner); \
-		int c = '*'; \
-		size_t n; \
-		for ( n = 0; n < max_size && \
-			     readfd(pdata, &c, 1) > 0 && \
-				 c != '\n'; ++n ) \
-			buf[n] = (char) c; \
-		if ( c == '\n' ) { \
-			buf[n++] = (char) c; \
-		} else if ( c == EOF ) { \
-			ERROR( "input in flex scanner failed\n" ); \
-			n = 1; \
-			buf[0] = '\n'; \
-		} \
-		result = n; \
-	}
+#define YY_INPUT(buf,result,max_size) do { \
+		int res = yy_input(yyscanner, buf, max_size); \
+		result = res <= 0 ? YY_NULL : res; \
+	} while (0)
 }
 
 %define api.pure
@@ -413,4 +401,21 @@ void yyerror(yyscan_t scanner, const char *msg)
 		sprintf(buf, "%i\n", -EINVAL);
 		output(pdata, buf);
 	}
+}
+
+int yy_input(yyscan_t scanner, char *buf, size_t max_size)
+{
+	struct parser_pdata *pdata = yyget_extra(scanner);
+	int i, ret;
+
+	ret = readfd(pdata, buf, max_size);
+	if (ret < 0)
+		return -errno;
+	if (ret == 0)
+		return -EIO;
+
+	if (ret == max_size)
+		buf[max_size - 1] = '\0';
+
+	return ret;
 }
