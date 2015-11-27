@@ -17,10 +17,7 @@
  * */
 
 #include "iio-private.h"
-
-#ifndef HAVE_PTHREAD
-#define HAVE_PTHREAD 1
-#endif
+#include "iio-lock.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -49,10 +46,6 @@
 #include <unistd.h>
 #endif /* _WIN32 */
 
-#if HAVE_PTHREAD
-#include <pthread.h>
-#endif
-
 #ifdef HAVE_AVAHI
 #include <avahi-client/client.h>
 #include <avahi-common/error.h>
@@ -73,9 +66,7 @@
 struct iio_context_pdata {
 	int fd;
 	struct addrinfo *addrinfo;
-#if HAVE_PTHREAD
-	pthread_mutex_t lock;
-#endif
+	struct iio_mutex *lock;
 };
 
 struct iio_device_pdata {
@@ -86,9 +77,7 @@ struct iio_device_pdata {
 	size_t mmap_len;
 #endif
 	bool wait_for_err_code, is_cyclic, is_tx;
-#if HAVE_PTHREAD
-	pthread_mutex_t lock;
-#endif
+	struct iio_mutex *lock;
 };
 
 #ifdef HAVE_AVAHI
@@ -195,34 +184,6 @@ err_free_poll:
 	return -ret; /* we want a negative error code */
 }
 #endif /* HAVE_AVAHI */
-
-static void network_lock(struct iio_context_pdata *pdata)
-{
-#if HAVE_PTHREAD
-	pthread_mutex_lock(&pdata->lock);
-#endif
-}
-
-static void network_unlock(struct iio_context_pdata *pdata)
-{
-#if HAVE_PTHREAD
-	pthread_mutex_unlock(&pdata->lock);
-#endif
-}
-
-static void network_lock_dev(struct iio_device_pdata *pdata)
-{
-#if HAVE_PTHREAD
-	pthread_mutex_lock(&pdata->lock);
-#endif
-}
-
-static void network_unlock_dev(struct iio_device_pdata *pdata)
-{
-#if HAVE_PTHREAD
-	pthread_mutex_unlock(&pdata->lock);
-#endif
-}
 
 static ssize_t write_all(const void *src, size_t len, int fd)
 {
@@ -479,9 +440,9 @@ static int network_open(const struct iio_device *dev,
 
 	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
 
-	network_lock_dev(dev->pdata);
+	iio_mutex_lock(dev->pdata->lock);
 	ret = (int) exec_command(buf, fd);
-	network_unlock_dev(dev->pdata);
+	iio_mutex_unlock(dev->pdata->lock);
 
 	if (ret < 0) {
 		close(fd);
@@ -554,14 +515,14 @@ static int network_close(const struct iio_device *dev)
 	if (pdata->fd >= 0) {
 		snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
 
-		network_lock_dev(pdata);
+		iio_mutex_lock(pdata->lock);
 		ret = (int) write_rwbuf_command(dev, buf, true);
 
 		write_command("\r\nEXIT\r\n", pdata->fd);
 
 		close(pdata->fd);
 		pdata->fd = -1;
-		network_unlock_dev(pdata);
+		iio_mutex_unlock(pdata->lock);
 	}
 
 #ifdef WITH_NETWORK_GET_BUFFER
@@ -628,10 +589,10 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
 
-	network_lock_dev(pdata);
+	iio_mutex_lock(pdata->lock);
 	ret = write_rwbuf_command(dev, buf, false);
 	if (ret < 0) {
-		network_unlock_dev(pdata);
+		iio_mutex_unlock(pdata->lock);
 		return ret;
 	}
 
@@ -642,7 +603,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		if (ret < 0) {
 			iio_strerror(-ret, buf, sizeof(buf));
 			ERROR("Unable to read mask: %s\n", buf);
-			network_unlock_dev(pdata);
+			iio_mutex_unlock(pdata->lock);
 			return read ? read : ret;
 		}
 
@@ -652,7 +613,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		if (ret < 0) {
 			iio_strerror(-ret, buf, sizeof(buf));
 			ERROR("Unable to read response to READ: %s\n", buf);
-			network_unlock_dev(pdata);
+			iio_mutex_unlock(pdata->lock);
 			return read ? read : ret;
 		}
 
@@ -661,7 +622,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		len -= ret;
 	} while (len);
 
-	network_unlock_dev(pdata);
+	iio_mutex_unlock(pdata->lock);
 	return read;
 }
 
@@ -677,7 +638,7 @@ static ssize_t network_write(const struct iio_device *dev,
 	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
 
-	network_lock_dev(pdata);
+	iio_mutex_lock(pdata->lock);
 	fd = pdata->fd;
 
 	ret = write_rwbuf_command(dev, buf, pdata->is_cyclic);
@@ -699,14 +660,14 @@ static ssize_t network_write(const struct iio_device *dev,
 	} else {
 		pdata->wait_for_err_code = true;
 	}
-	network_unlock_dev(pdata);
+	iio_mutex_unlock(pdata->lock);
 
 	/* We assume that the whole buffer was submitted.
 	 * The error code will be returned by the next call to this function. */
 	return (ssize_t) len;
 
 err_unlock:
-	network_unlock_dev(pdata);
+	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
 
@@ -785,7 +746,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 				dev->id, (unsigned long) bytes_used);
 
-		network_lock_dev(pdata);
+		iio_mutex_lock(pdata->lock);
 
 		ret = write_rwbuf_command(dev, buf, false);
 		if (ret < 0)
@@ -796,7 +757,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 			goto err_close_memfd;
 
 		pdata->wait_for_err_code = true;
-		network_unlock_dev(pdata);
+		iio_mutex_unlock(pdata->lock);
 	}
 
 	if (pdata->memfd >= 0)
@@ -818,7 +779,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
 				dev->id, (unsigned long) len);
 
-		network_lock_dev(pdata);
+		iio_mutex_lock(pdata->lock);
 		ret = write_rwbuf_command(dev, buf, false);
 		if (ret < 0)
 			goto err_unlock;
@@ -840,7 +801,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 			len -= ret;
 		} while (len);
 
-		network_unlock_dev(pdata);
+		iio_mutex_unlock(pdata->lock);
 	}
 
 	pdata->mmap_addr = mmap(NULL, pdata->mmap_len,
@@ -858,7 +819,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 err_close_memfd:
 	close(memfd);
 err_unlock:
-	network_unlock_dev(pdata);
+	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
 #endif
@@ -885,21 +846,21 @@ static ssize_t network_read_attr_helper(const struct iio_device *dev,
 		snprintf(buf, sizeof(buf), "READ %s %s\r\n",
 				id, attr ? attr : "");
 
-	network_lock(pdata);
+	iio_mutex_lock(pdata->lock);
 	read_len = exec_command(buf, fd);
 	if (read_len < 0) {
-		network_unlock(pdata);
+		iio_mutex_unlock(pdata->lock);
 		return (ssize_t) read_len;
 	}
 
 	if ((unsigned long) read_len > len) {
 		ERROR("Value returned by server is too large\n");
-		network_unlock(pdata);
+		iio_mutex_unlock(pdata->lock);
 		return -EIO;
 	}
 
 	ret = read_all(dst, read_len, fd);
-	network_unlock(pdata);
+	iio_mutex_unlock(pdata->lock);
 
 	if (ret < 0) {
 		iio_strerror(-ret, buf, sizeof(buf));
@@ -932,7 +893,7 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
 				id, attr ? attr : "", (unsigned long) len);
 
-	network_lock(pdata);
+	iio_mutex_lock(pdata->lock);
 	fd = pdata->fd;
 	ret = (ssize_t) write_command(buf, fd);
 	if (ret < 0)
@@ -943,14 +904,14 @@ static ssize_t network_write_attr_helper(const struct iio_device *dev,
 		goto err_unlock;
 
 	ret = read_integer(fd, &resp);
-	network_unlock(pdata);
+	iio_mutex_unlock(pdata->lock);
 
 	if (ret < 0)
 		return ret;
 	return (ssize_t) resp;
 
 err_unlock:
-	network_unlock(pdata);
+	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
 
@@ -1003,23 +964,23 @@ static int network_get_trigger(const struct iio_device *dev,
 
 	snprintf(buf, sizeof(buf), "GETTRIG %s\r\n", dev->id);
 
-	network_lock(dev->ctx->pdata);
+	iio_mutex_lock(dev->ctx->pdata->lock);
 	resp = exec_command(buf, pdata->fd);
 	if (resp < 0) {
-		network_unlock(pdata);
+		iio_mutex_unlock(pdata->lock);
 		return (int) resp;
 	} else if (resp == 0) {
 		*trigger = NULL;
-		network_unlock(pdata);
+		iio_mutex_unlock(pdata->lock);
 		return 0;
 	} else if ((unsigned long) resp > sizeof(buf)) {
 		ERROR("Value returned by server is too large\n");
-		network_unlock(pdata);
+		iio_mutex_unlock(pdata->lock);
 		return -EIO;
 	}
 
 	ret = read_all(buf, resp, pdata->fd);
-	network_unlock(pdata);
+	iio_mutex_unlock(pdata->lock);
 
 	if (ret < 0) {
 		iio_strerror(-ret, buf, sizeof(buf));
@@ -1055,9 +1016,9 @@ static int network_set_trigger(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "SETTRIG %s\r\n", dev->id);
 
-	network_lock(dev->ctx->pdata);
+	iio_mutex_lock(dev->ctx->pdata->lock);
 	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	network_unlock(dev->ctx->pdata);
+	iio_mutex_unlock(dev->ctx->pdata->lock);
 	return ret;
 }
 
@@ -1066,10 +1027,10 @@ static void network_shutdown(struct iio_context *ctx)
 	struct iio_context_pdata *pdata = ctx->pdata;
 	unsigned int i;
 
-	network_lock(pdata);
+	iio_mutex_lock(pdata->lock);
 	write_command("\r\nEXIT\r\n", pdata->fd);
 	close(pdata->fd);
-	network_unlock(pdata);
+	iio_mutex_unlock(pdata->lock);
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
@@ -1077,16 +1038,12 @@ static void network_shutdown(struct iio_context *ctx)
 
 		if (dpdata) {
 			network_close(dev);
-#if HAVE_PTHREAD
-			pthread_mutex_destroy(&dpdata->lock);
-#endif
+			iio_mutex_destroy(dpdata->lock);
 			free(dpdata);
 		}
 	}
 
-#if HAVE_PTHREAD
-	pthread_mutex_destroy(&pdata->lock);
-#endif
+	iio_mutex_destroy(pdata->lock);
 	freeaddrinfo(pdata->addrinfo);
 	free(pdata);
 }
@@ -1098,7 +1055,7 @@ static int network_get_version(const struct iio_context *ctx,
 	long maj, min;
 	int ret;
 
-	network_lock(pdata);
+	iio_mutex_lock(pdata->lock);
 	ret = (int) write_command("VERSION\r\n", pdata->fd);
 	if (ret < 0)
 		goto err_unlock;
@@ -1124,7 +1081,7 @@ static int network_get_version(const struct iio_context *ctx,
 
 	ret = 0;
 err_unlock:
-	network_unlock(pdata);
+	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
 
@@ -1141,9 +1098,9 @@ static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
 	int ret;
 
 	snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", timeout);
-	network_lock(ctx->pdata);
+	iio_mutex_lock(ctx->pdata->lock);
 	ret = (int) exec_command(buf, ctx->pdata->fd);
-	network_unlock(ctx->pdata);
+	iio_mutex_unlock(ctx->pdata->lock);
 	return ret;
 }
 
@@ -1173,9 +1130,9 @@ static int network_set_kernel_buffers_count(const struct iio_device *dev,
 	snprintf(buf, sizeof(buf), "SET %s BUFFERS_COUNT %u\r\n",
 			dev->id, nb_blocks);
 
-	network_lock(dev->ctx->pdata);
+	iio_mutex_lock(dev->ctx->pdata->lock);
 	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	network_unlock(dev->ctx->pdata);
+	iio_mutex_unlock(dev->ctx->pdata->lock);
 	return ret;
 }
 
@@ -1384,22 +1341,22 @@ struct iio_context * network_create_context(const char *host)
 		dev->pdata->memfd = -1;
 #endif
 
-#if HAVE_PTHREAD
-		ret = pthread_mutex_init(&dev->pdata->lock, NULL);
-		if (ret < 0)
+		dev->pdata->lock = iio_mutex_create();
+		if (!dev->pdata->lock) {
+			ret = -ENOMEM;
 			goto err_free_description;
-#endif
+		}
 	}
 
 	ret = iio_context_init(ctx);
 	if (ret < 0)
 		goto err_free_description;
 
-#if HAVE_PTHREAD
-	ret = pthread_mutex_init(&pdata->lock, NULL);
-	if (ret < 0)
+	pdata->lock = iio_mutex_create();
+	if (!pdata->lock) {
+		ret = -ENOMEM;
 		goto err_free_description;
-#endif
+	}
 
 	if (ctx->description) {
 		size_t desc_len = strlen(description);

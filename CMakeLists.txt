@@ -73,7 +73,6 @@ endif()
 
 find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 find_library(AVAHI_COMMON_LIBRARIES avahi-common)
-find_library(PTHREAD_LIBRARIES pthread)
 include(FindLibXml2)
 
 set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
@@ -146,11 +145,21 @@ if(WITH_NETWORK_BACKEND)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${AVAHI_LIBRARIES})
 	endif()
 
-	if(PTHREAD_LIBRARIES)
-		add_definitions(-DHAVE_PTHREAD=1)
-		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${PTHREAD_LIBRARIES})
+	set(NEED_THREADS 1)
+endif()
+
+if (NEED_THREADS)
+	if (NOT WIN32)
+		find_library(PTHREAD_LIBRARIES pthread)
+
+		if (PTHREAD_LIBRARIES)
+			set(LIBS_TO_LINK ${LIBS_TO_LINK} ${PTHREAD_LIBRARIES})
+			set(LIBIIO_CFILES ${LIBIIO_CFILES} lock.c)
+		else()
+			message(SEND_ERROR "The pthread library is a requirement for the selected backends")
+		endif()
 	else()
-		add_definitions(-DHAVE_PTHREAD=0)
+		set(LIBIIO_CFILES ${LIBIIO_CFILES} lock.c)
 	endif()
 endif()
 
