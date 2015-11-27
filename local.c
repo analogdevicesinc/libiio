@@ -347,7 +347,7 @@ static ssize_t local_write(const struct iio_device *dev,
 	 * "cf-": in this case only cyclic mode is allowed. */
 	if (!pdata->is_high_speed && pdata->cyclic !=
 			(dev->name && !strncmp(dev->name, "cf-", 3)))
-		return -EACCES;
+		return -EPERM;
 
 	if (pdata->cyclic) {
 		ret = device_check_ready(dev, true);
