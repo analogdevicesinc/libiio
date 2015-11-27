@@ -120,6 +120,15 @@ static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
 			chn, attr, src, len, false);
 }
 
+static int usb_set_kernel_buffers_count(const struct iio_device *dev,
+		unsigned int nb_blocks)
+{
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
+
+	return iiod_client_set_kernel_buffers_count(pdata->iiod_client,
+			EP_OPS, dev, nb_blocks);
+}
+
 static void usb_shutdown(struct iio_context *ctx)
 {
 	iio_mutex_destroy(ctx->pdata->lock);
@@ -136,6 +145,7 @@ static const struct iio_backend_ops usb_ops = {
 	.read_channel_attr = usb_read_chn_attr,
 	.write_device_attr = usb_write_dev_attr,
 	.write_channel_attr = usb_write_chn_attr,
+	.set_kernel_buffers_count = usb_set_kernel_buffers_count,
 	.shutdown = usb_shutdown,
 };
 
