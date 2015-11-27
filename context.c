@@ -296,7 +296,7 @@ struct iio_context * iio_create_network_context(const char *hostname)
 
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
-#if NETWORK_BACKEND
+#if XML_BACKEND
 	return xml_create_context_mem(xml, len);
 #else
 	errno = ENOSYS;

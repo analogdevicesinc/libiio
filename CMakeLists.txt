@@ -71,10 +71,6 @@ if (ENABLE_IPV6)
 	endif()
 endif()
 
-find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
-find_library(AVAHI_COMMON_LIBRARIES avahi-common)
-include(FindLibXml2)
-
 set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
 set(LIBIIO_HEADERS iio.h)
 
@@ -116,10 +112,6 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WITH_NETWORK_BACKEND)
-	if (NOT LIBXML2_FOUND)
-		message(SEND_ERROR "The network backend requires libxml2 to be installed")
-	endif()
-
 	if (WIN32)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} wsock32 ws2_32)
 	endif()
@@ -134,11 +126,11 @@ if(WITH_NETWORK_BACKEND)
 		endif()
 	endif()
 
-	add_definitions(-DNETWORK_BACKEND=1 ${LIBXML2_DEFINITIONS})
-	include_directories(${LIBXML2_INCLUDE_DIR})
-	set(LIBIIO_CFILES ${LIBIIO_CFILES} network.c xml.c)
-	set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBXML2_LIBRARIES})
+	add_definitions(-DNETWORK_BACKEND=1)
+	set(LIBIIO_CFILES ${LIBIIO_CFILES} network.c)
 
+	find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
+	find_library(AVAHI_COMMON_LIBRARIES avahi-common)
 	if(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
 		add_definitions(-DHAVE_AVAHI=1)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
@@ -147,6 +139,20 @@ if(WITH_NETWORK_BACKEND)
 
 	set(NEED_THREADS 1)
 	set(IIOD_CLIENT 1)
+	set(NEED_LIBXML2 1)
+endif()
+
+if (NEED_LIBXML2)
+	include(FindLibXml2)
+
+	if (NOT LIBXML2_FOUND)
+		message(SEND_ERROR "The selected backends require libxml2 to be installed")
+	else()
+		set(LIBIIO_CFILES ${LIBIIO_CFILES} xml.c)
+		add_definitions(${LIBXML2_DEFINITIONS} -DXML_BACKEND=1)
+		include_directories(${LIBXML2_INCLUDE_DIR})
+		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBXML2_LIBRARIES})
+	endif()
 endif()
 
 if (NEED_THREADS)
