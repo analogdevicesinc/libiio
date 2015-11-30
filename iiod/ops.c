@@ -186,20 +186,20 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	if (thd->new_client) {
 		unsigned int i;
-		char buf[128];
+		char buf[129], *ptr = buf;
+		uint32_t *mask = demux ? thd->mask : dev->mask;
+		ssize_t ret;
 
 		/* Send the current mask */
-		if (demux)
-			for (i = dev->nb_words; i > 0; i--) {
-				sprintf(buf, "%08x", thd->mask[i - 1]);
-				output(pdata, buf);
-			}
-		else
-			for (i = dev->nb_words; i > 0; i--) {
-				sprintf(buf, "%08x", dev->mask[i - 1]);
-				output(pdata, buf);
-			}
-		output(pdata, "\n");
+		for (i = dev->nb_words; i > 0 && ptr < buf + sizeof(buf);
+				i--, ptr += 8)
+			sprintf(ptr, "%08x", mask[i - 1]);
+
+		*ptr = '\n';
+		ret = write_all(pdata, buf, ptr + 1 - buf);
+		if (ret < 0)
+			return ret;
+
 		thd->new_client = false;
 	}
 
