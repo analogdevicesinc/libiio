@@ -959,69 +959,18 @@ static int network_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
-	unsigned int i;
-	char buf[1024];
-	ssize_t ret;
-	long resp;
 
-	snprintf(buf, sizeof(buf), "GETTRIG %s\r\n", dev->id);
-
-	iio_mutex_lock(dev->ctx->pdata->lock);
-	resp = exec_command(buf, pdata->fd);
-	if (resp < 0) {
-		iio_mutex_unlock(pdata->lock);
-		return (int) resp;
-	} else if (resp == 0) {
-		*trigger = NULL;
-		iio_mutex_unlock(pdata->lock);
-		return 0;
-	} else if ((unsigned long) resp > sizeof(buf)) {
-		ERROR("Value returned by server is too large\n");
-		iio_mutex_unlock(pdata->lock);
-		return -EIO;
-	}
-
-	ret = read_all(buf, resp, pdata->fd);
-	iio_mutex_unlock(pdata->lock);
-
-	if (ret < 0) {
-		iio_strerror(-ret, buf, sizeof(buf));
-		ERROR("Unable to read response to GETTRIG: %s\n", buf);
-		return ret;
-	}
-
-	if (buf[0] == '\0') {
-		*trigger = NULL;
-		return 0;
-	}
-
-	for (i = 0; i < dev->ctx->nb_devices; i++) {
-		struct iio_device *cur = dev->ctx->devices[i];
-		if (iio_device_is_trigger(cur) &&
-				!strncmp(cur->name, buf, resp)) {
-			*trigger = cur;
-			return 0;
-		}
-	}
-
-	return -ENXIO;
+	return iiod_client_get_trigger(pdata->iiod_client,
+			pdata->fd, dev, trigger);
 }
 
 static int network_set_trigger(const struct iio_device *dev,
 		const struct iio_device *trigger)
 {
-	int ret;
-	char buf[1024];
-	if (trigger)
-		snprintf(buf, sizeof(buf), "SETTRIG %s %s\r\n",
-				dev->id, trigger->id);
-	else
-		snprintf(buf, sizeof(buf), "SETTRIG %s\r\n", dev->id);
+	struct iio_context_pdata *pdata;
 
-	iio_mutex_lock(dev->ctx->pdata->lock);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	iio_mutex_unlock(dev->ctx->pdata->lock);
-	return ret;
+	return iiod_client_set_trigger(pdata->iiod_client,
+			pdata->fd, dev, trigger);
 }
 
 static void network_shutdown(struct iio_context *ctx)
