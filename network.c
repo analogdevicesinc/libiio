@@ -826,133 +826,40 @@ err_unlock:
 }
 #endif
 
-static ssize_t network_read_attr_helper(const struct iio_device *dev,
-		const struct iio_channel *chn, const char *attr, char *dst,
-		size_t len, bool is_debug)
-{
-	long read_len;
-	ssize_t ret;
-	char buf[1024];
-	struct iio_context_pdata *pdata = dev->ctx->pdata;
-	int fd = pdata->fd;
-	const char *id = dev->id;
-
-	if (chn)
-		snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
-				chn->is_output ? "OUTPUT" : "INPUT",
-				chn->id, attr ? attr : "");
-	else if (is_debug)
-		snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
-				id, attr ? attr : "");
-	else
-		snprintf(buf, sizeof(buf), "READ %s %s\r\n",
-				id, attr ? attr : "");
-
-	iio_mutex_lock(pdata->lock);
-	read_len = exec_command(buf, fd);
-	if (read_len < 0) {
-		iio_mutex_unlock(pdata->lock);
-		return (ssize_t) read_len;
-	}
-
-	if ((unsigned long) read_len > len) {
-		ERROR("Value returned by server is too large\n");
-		iio_mutex_unlock(pdata->lock);
-		return -EIO;
-	}
-
-	ret = read_all(dst, read_len, fd);
-	iio_mutex_unlock(pdata->lock);
-
-	if (ret < 0) {
-		iio_strerror(-ret, buf, sizeof(buf));
-		ERROR("Unable to read response to READ: %s\n", buf);
-		return ret;
-	}
-
-	return read_len;
-}
-
-static ssize_t network_write_attr_helper(const struct iio_device *dev,
-		const struct iio_channel *chn, const char *attr,
-		const char *src, size_t len, bool is_debug)
-{
-	struct iio_context_pdata *pdata = dev->ctx->pdata;
-	int fd;
-	ssize_t ret;
-	long resp;
-	char buf[1024];
-	const char *id = dev->id;
-
-	if (chn)
-		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s %lu\r\n",
-				id, chn->is_output ? "OUTPUT" : "INPUT",
-				chn->id, attr ? attr : "", (unsigned long) len);
-	else if (is_debug)
-		snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
-				id, attr ? attr : "", (unsigned long) len);
-	else
-		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
-				id, attr ? attr : "", (unsigned long) len);
-
-	iio_mutex_lock(pdata->lock);
-	fd = pdata->fd;
-	ret = (ssize_t) write_command(buf, fd);
-	if (ret < 0)
-		goto err_unlock;
-
-	ret = write_all(src, len, fd);
-	if (ret < 0)
-		goto err_unlock;
-
-	ret = read_integer(fd, &resp);
-	iio_mutex_unlock(pdata->lock);
-
-	if (ret < 0)
-		return ret;
-	return (ssize_t) resp;
-
-err_unlock:
-	iio_mutex_unlock(pdata->lock);
-	return ret;
-}
-
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
-	if (attr && ((is_debug && !iio_device_find_debug_attr(dev, attr)) ||
-			(!is_debug && !iio_device_find_attr(dev, attr))))
-		return -ENOENT;
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return network_read_attr_helper(dev, NULL, attr, dst, len, is_debug);
+	return iiod_client_read_attr(pdata->iiod_client, pdata->fd,
+			dev, NULL, attr, dst, len, is_debug);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src, size_t len, bool is_debug)
 {
-	if (attr && ((is_debug && !iio_device_find_debug_attr(dev, attr)) ||
-			(!is_debug && !iio_device_find_attr(dev, attr))))
-		return -ENOENT;
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return network_write_attr_helper(dev, NULL, attr, src, len, is_debug);
+	return iiod_client_write_attr(pdata->iiod_client, pdata->fd,
+			dev, NULL, attr, src, len, is_debug);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
-	if (attr && !iio_channel_find_attr(chn, attr))
-		return -ENOENT;
+	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
 
-	return network_read_attr_helper(chn->dev, chn, attr, dst, len, false);
+	return iiod_client_read_attr(pdata->iiod_client, pdata->fd,
+			chn->dev, chn, attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
-	if (attr && !iio_channel_find_attr(chn, attr))
-		return -ENOENT;
+	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
 
-	return network_write_attr_helper(chn->dev, chn, attr, src, len, false);
+	return iiod_client_write_attr(pdata->iiod_client, pdata->fd,
+			chn->dev, chn, attr, src, len, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
