@@ -1046,16 +1046,10 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 static int network_set_kernel_buffers_count(const struct iio_device *dev,
 		unsigned int nb_blocks)
 {
-	int ret;
-	char buf[1024];
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	snprintf(buf, sizeof(buf), "SET %s BUFFERS_COUNT %u\r\n",
-			dev->id, nb_blocks);
-
-	iio_mutex_lock(dev->ctx->pdata->lock);
-	ret = (int) exec_command(buf, dev->ctx->pdata->fd);
-	iio_mutex_unlock(dev->ctx->pdata->lock);
-	return ret;
+	return iiod_client_set_kernel_buffers_count(pdata->iiod_client,
+			pdata->fd, dev, nb_blocks);
 }
 
 static struct iio_context * network_clone(const struct iio_context *ctx)
