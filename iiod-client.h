@@ -40,5 +40,10 @@ void iiod_client_destroy(struct iiod_client *client);
 
 int iiod_client_get_version(struct iiod_client *client, int desc,
 		unsigned int *major, unsigned int *minor, char *git_tag);
+int iiod_client_get_trigger(struct iiod_client *client, int desc,
+		const struct iio_device *dev,
+		const struct iio_device **trigger);
+int iiod_client_set_trigger(struct iiod_client *client, int desc,
+		const struct iio_device *dev, const struct iio_device *trigger);
 
 #endif /* _IIOD_CLIENT_H */
