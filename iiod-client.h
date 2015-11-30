@@ -47,5 +47,11 @@ int iiod_client_set_trigger(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const struct iio_device *trigger);
 int iiod_client_set_kernel_buffers_count(struct iiod_client *client, int desc,
 		const struct iio_device *dev, unsigned int nb_blocks);
+ssize_t iiod_client_read_attr(struct iiod_client *client, int desc,
+		const struct iio_device *dev, const struct iio_channel *chn,
+		const char *attr, char *dest, size_t len, bool is_debug);
+ssize_t iiod_client_write_attr(struct iiod_client *client, int desc,
+		const struct iio_device *dev, const struct iio_channel *chn,
+		const char *attr, const char *src, size_t len, bool is_debug);
 
 #endif /* _IIOD_CLIENT_H */
