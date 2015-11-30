@@ -273,7 +273,7 @@ static void * rw_thd(void *d)
 	ssize_t ret = 0;
 	bool had_readers = false;
 
-	INFO("R/W thread started for device %s\n",
+	DEBUG("R/W thread started for device %s\n",
 			dev->name ? dev->name : dev->id);
 
 	while (true) {
@@ -466,7 +466,7 @@ static void * rw_thd(void *d)
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	INFO("Stopping R/W thread for device %s\n",
+	DEBUG("Stopping R/W thread for device %s\n",
 			dev->name ? dev->name : dev->id);
 	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
 
