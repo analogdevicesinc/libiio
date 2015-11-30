@@ -18,6 +18,7 @@
 
 #include "iio-private.h"
 #include "iio-lock.h"
+#include "iiod-client.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -67,6 +68,7 @@ struct iio_context_pdata {
 	int fd;
 	struct addrinfo *addrinfo;
 	struct iio_mutex *lock;
+	struct iiod_client *iiod_client;
 };
 
 struct iio_device_pdata {
@@ -1043,6 +1045,7 @@ static void network_shutdown(struct iio_context *ctx)
 		}
 	}
 
+	iiod_client_destroy(pdata->iiod_client);
 	iio_mutex_destroy(pdata->lock);
 	freeaddrinfo(pdata->addrinfo);
 	free(pdata);
@@ -1176,6 +1179,72 @@ static struct iio_backend_ops network_ops = {
 	.set_kernel_buffers_count = network_set_kernel_buffers_count,
 };
 
+static ssize_t network_write_data(struct iio_context_pdata *pdata,
+		int desc, const char *src, size_t len)
+{
+	ssize_t ret;
+
+	ret = send(desc, src, (int) len, 0);
+	if (ret < 0) {
+#ifdef _WIN32
+		return (ssize_t) -WSAGetLastError();
+#else
+		return (ssize_t) -errno;
+#endif
+	} else if (ret == 0) {
+		return -EPIPE;
+	} else {
+		return ret;
+	}
+}
+
+static ssize_t network_read_data(struct iio_context_pdata *pdata,
+		int desc, char *dst, size_t len)
+{
+	ssize_t ret;
+
+	ret = recv(desc, dst, (int) len, 0);
+	if (ret < 0) {
+#ifdef _WIN32
+		return (ssize_t) -WSAGetLastError();
+#else
+		return (ssize_t) -errno;
+#endif
+	} else if (ret == 0) {
+		return -EPIPE;
+	} else {
+		return ret;
+	}
+}
+
+static ssize_t network_read_line(struct iio_context_pdata *pdata,
+		int desc, char *dst, size_t len)
+{
+	size_t i;
+	bool found = false;
+
+	for (i = 0; i < len - 1; i++) {
+		ssize_t ret = network_read_data(pdata, desc, dst + i, 1);
+
+		if (ret < 0)
+			return ret;
+
+		if (dst[i] != '\n')
+			found = true;
+		else if (found)
+			break;
+	}
+
+	dst[i] = '\0';
+	return (ssize_t) i;
+}
+
+static struct iiod_client_ops network_iiod_client_ops = {
+	.write = network_write_data,
+	.read = network_read_data,
+	.read_line = network_read_line,
+};
+
 static struct iio_context * get_context(int fd)
 {
 	struct iio_context *ctx;
@@ -1274,10 +1343,21 @@ struct iio_context * network_create_context(const char *host)
 	pdata->fd = fd;
 	pdata->addrinfo = res;
 
+	pdata->lock = iio_mutex_create();
+	if (!pdata->lock) {
+		errno = ENOMEM;
+		goto err_free_pdata;
+	}
+
+	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
+			&network_iiod_client_ops);
+	if (!pdata->iiod_client)
+		goto err_destroy_mutex;
+
 	DEBUG("Creating context...\n");
 	ctx = get_context(fd);
 	if (!ctx)
-		goto err_free_pdata;
+		goto err_destroy_iiod_client;
 
 	/* Override the name and low-level functions of the XML context
 	 * with those corresponding to the network context */
@@ -1352,12 +1432,6 @@ struct iio_context * network_create_context(const char *host)
 	if (ret < 0)
 		goto err_free_description;
 
-	pdata->lock = iio_mutex_create();
-	if (!pdata->lock) {
-		ret = -ENOMEM;
-		goto err_free_description;
-	}
-
 	if (ctx->description) {
 		size_t desc_len = strlen(description);
 		size_t new_size = desc_len + strlen(ctx->description) + 2;
@@ -1385,6 +1459,11 @@ err_network_shutdown:
 	iio_context_destroy(ctx);
 	errno = -ret;
 	return NULL;
+
+err_destroy_iiod_client:
+	iiod_client_destroy(pdata->iiod_client);
+err_destroy_mutex:
+	iio_mutex_destroy(pdata->lock);
 err_free_pdata:
 	free(pdata);
 err_close_socket:

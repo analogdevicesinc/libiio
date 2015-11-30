@@ -146,6 +146,7 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	set(NEED_THREADS 1)
+	set(IIOD_CLIENT 1)
 endif()
 
 if (NEED_THREADS)
