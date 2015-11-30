@@ -204,3 +204,18 @@ int iiod_client_set_trigger(struct iiod_client *client, int desc,
 	iio_mutex_unlock(client->lock);
 	return ret;
 }
+
+int iiod_client_set_kernel_buffers_count(struct iiod_client *client, int desc,
+		const struct iio_device *dev, unsigned int nb_blocks)
+{
+	int ret;
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "SET %s BUFFERS_COUNT %u\r\n",
+			iio_device_get_id(dev), nb_blocks);
+
+	iio_mutex_lock(client->lock);
+	ret = iiod_client_exec_command(client, desc, buf);
+	iio_mutex_unlock(client->lock);
+	return ret;
+}

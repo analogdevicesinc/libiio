@@ -45,5 +45,7 @@ int iiod_client_get_trigger(struct iiod_client *client, int desc,
 		const struct iio_device **trigger);
 int iiod_client_set_trigger(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const struct iio_device *trigger);
+int iiod_client_set_kernel_buffers_count(struct iiod_client *client, int desc,
+		const struct iio_device *dev, unsigned int nb_blocks);
 
 #endif /* _IIOD_CLIENT_H */
