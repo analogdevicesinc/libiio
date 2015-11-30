@@ -163,6 +163,10 @@ if (NEED_THREADS)
 	endif()
 endif()
 
+if (IIOD_CLIENT)
+	set(LIBIIO_CFILES ${LIBIIO_CFILES} iiod-client.c)
+endif()
+
 configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
