@@ -1065,32 +1065,6 @@ static struct iiod_client_ops network_iiod_client_ops = {
 	.read_line = network_read_line,
 };
 
-static struct iio_context * get_context(int fd)
-{
-	struct iio_context *ctx;
-	char *xml;
-	long xml_len = exec_command("PRINT\r\n", fd);
-	if (xml_len < 0) {
-		errno = (int) -xml_len;
-		return NULL;
-	}
-
-	DEBUG("Server returned a XML string of length %li\n", xml_len);
-	xml = malloc(xml_len);
-	if (!xml) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	DEBUG("Reading XML string...\n");
-	read_all(xml, xml_len, fd);
-
-	DEBUG("Creating context from XML...\n");
-	ctx = iio_create_xml_context_mem(xml, xml_len);
-	free(xml);
-	return ctx;
-}
-
 struct iio_context * network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
@@ -1175,7 +1149,7 @@ struct iio_context * network_create_context(const char *host)
 		goto err_destroy_mutex;
 
 	DEBUG("Creating context...\n");
-	ctx = get_context(fd);
+	ctx = iiod_client_create_context(pdata->iiod_client, fd);
 	if (!ctx)
 		goto err_destroy_iiod_client;
 
