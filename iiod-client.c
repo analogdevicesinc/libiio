@@ -382,3 +382,43 @@ out_unlock:
 	iio_mutex_unlock(client->lock);
 	return ret;
 }
+
+struct iio_context * iiod_client_create_context(
+		struct iiod_client *client, int desc)
+{
+	struct iio_context *ctx = NULL;
+	size_t xml_len;
+	char *xml, c;
+	int ret;
+
+	iio_mutex_lock(client->lock);
+	ret = iiod_client_exec_command(client, desc, "PRINT\r\n");
+	if (ret < 0)
+		goto out_unlock;
+
+	xml_len = (size_t) ret;
+	xml = malloc(xml_len);
+	if (!xml) {
+		ret = -ENOMEM;
+		goto out_unlock;
+	}
+
+	ret = (int) iiod_client_read_all(client, desc, xml, xml_len);
+	if (ret < 0)
+		goto out_free_xml;
+
+	/* Discard \n character */
+	client->ops->read(client->pdata, desc, &c, 1);
+
+	ctx = iio_create_xml_context_mem(xml, xml_len);
+	if (!ctx)
+		ret = -errno;
+
+out_free_xml:
+	free(xml);
+out_unlock:
+	iio_mutex_unlock(client->lock);
+	if (!ctx)
+		errno = -ret;
+	return ctx;
+}
