@@ -420,45 +420,37 @@ static int network_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
-	char buf[1024], *ptr;
-	size_t i;
-	int ret, fd;
+	struct iio_device_pdata *ppdata = dev->pdata;
+	int fd, ret = -EBUSY;
 
-	if (dev->pdata->fd >= 0)
-		return -EBUSY;
+	iio_mutex_lock(ppdata->lock);
+	if (ppdata->fd >= 0)
+		goto out_mutex_unlock;
 
-	fd = create_socket(pdata->addrinfo);
-	if (fd < 0)
-		return fd;
+	ret = create_socket(pdata->addrinfo);
+	if (ret < 0)
+		goto out_mutex_unlock;
 
-	snprintf(buf, sizeof(buf), "OPEN %s %lu ",
-			dev->id, (unsigned long) samples_count);
-	ptr = buf + strlen(buf);
+	fd = ret;
 
-	for (i = dev->words; i > 0; i--) {
-		snprintf(ptr, (ptr - buf) + i * 8, "%08x", dev->mask[i - 1]);
-		ptr += 8;
-	}
-
-	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
-
-	iio_mutex_lock(dev->pdata->lock);
-	ret = (int) exec_command(buf, fd);
-	iio_mutex_unlock(dev->pdata->lock);
-
+	ret = iiod_client_open_unlocked(pdata->iiod_client, fd,
+			dev, samples_count, cyclic);
 	if (ret < 0) {
 		close(fd);
-		return ret;
+		goto out_mutex_unlock;
 	}
 
-	dev->pdata->is_tx = iio_device_is_tx(dev);
-	dev->pdata->is_cyclic = cyclic;
-	dev->pdata->fd = fd;
-	dev->pdata->wait_for_err_code = false;
+	ppdata->is_tx = iio_device_is_tx(dev);
+	ppdata->is_cyclic = cyclic;
+	ppdata->fd = fd;
+	ppdata->wait_for_err_code = false;
 #ifdef WITH_NETWORK_GET_BUFFER
-	dev->pdata->mmap_len = samples_count * iio_device_get_sample_size(dev);
+	ppdata->mmap_len = samples_count * iio_device_get_sample_size(dev);
 #endif
-	return 0;
+
+out_mutex_unlock:
+	iio_mutex_unlock(ppdata->lock);
+	return ret;
 }
 
 static ssize_t read_error_code(int fd)
@@ -512,19 +504,17 @@ static int network_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret = -EBADF;
-	char buf[1024];
+
+	iio_mutex_lock(pdata->lock);
 
 	if (pdata->fd >= 0) {
-		snprintf(buf, sizeof(buf), "CLOSE %s\r\n", dev->id);
-
-		iio_mutex_lock(pdata->lock);
-		ret = (int) write_rwbuf_command(dev, buf, true);
+		ret = iiod_client_close_unlocked(dev->ctx->pdata->iiod_client,
+				pdata->fd, dev);
 
 		write_command("\r\nEXIT\r\n", pdata->fd);
 
 		close(pdata->fd);
 		pdata->fd = -1;
-		iio_mutex_unlock(pdata->lock);
 	}
 
 #ifdef WITH_NETWORK_GET_BUFFER
@@ -537,6 +527,8 @@ static int network_close(const struct iio_device *dev)
 		pdata->mmap_addr = NULL;
 	}
 #endif
+
+	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
 
