@@ -1,5 +1,6 @@
 #include "iiod-client.h"
 #include "iio-lock.h"
+#include "iio-private.h"
 
 #include <errno.h>
 #include <string.h>
@@ -421,4 +422,31 @@ out_unlock:
 	if (!ctx)
 		errno = -ret;
 	return ctx;
+}
+
+int iiod_client_open_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev, size_t samples_count, bool cyclic)
+{
+	char buf[1024], *ptr;
+	size_t i;
+
+	snprintf(buf, sizeof(buf), "OPEN %s %lu ",
+			iio_device_get_id(dev), (unsigned long) samples_count);
+	ptr = buf + strlen(buf);
+
+	for (i = dev->words; i > 0; i--, ptr += 8)
+		snprintf(ptr, (ptr - buf) + i * 8, "%08x", dev->mask[i - 1]);
+
+	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
+
+	return iiod_client_exec_command(client, desc, buf);
+}
+
+int iiod_client_close_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev)
+{
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", iio_device_get_id(dev));
+	return iiod_client_exec_command(client, desc, buf);
 }

@@ -53,6 +53,11 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, int desc,
 ssize_t iiod_client_write_attr(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len, bool is_debug);
+int iiod_client_open_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev, size_t samples_count,
+		bool cyclic);
+int iiod_client_close_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev);
 struct iio_context * iiod_client_create_context(
 		struct iiod_client *client, int desc);
 
