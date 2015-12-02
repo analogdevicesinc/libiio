@@ -531,3 +531,37 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, int desc,
 
 	return read;
 }
+
+ssize_t iiod_client_write_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev, const void *src, size_t len)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret;
+	char buf[1024];
+	int val;
+
+	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+			dev->id, (unsigned long) len);
+
+	ret = iiod_client_write_all(client, desc, buf, strlen(buf));
+	if (ret < 0)
+		return ret;
+
+	ret = iiod_client_read_integer(client, desc, &val);
+	if (ret < 0)
+		return ret;
+	if (val < 0)
+		return (ssize_t) val;
+
+	ret = iiod_client_write_all(client, desc, src, len);
+	if (ret < 0)
+		return ret;
+
+	ret = iiod_client_read_integer(client, desc, &val);
+	if (ret < 0)
+		return ret;
+	if (val < 0)
+		return (ssize_t) val;
+
+	return (ssize_t) len;
+}

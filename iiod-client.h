@@ -61,6 +61,8 @@ int iiod_client_close_unlocked(struct iiod_client *client, int desc,
 ssize_t iiod_client_read_unlocked(struct iiod_client *client, int desc,
 		const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words);
+ssize_t iiod_client_write_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev, const void *src, size_t len);
 struct iio_context * iiod_client_create_context(
 		struct iiod_client *client, int desc);
 
