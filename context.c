@@ -257,20 +257,50 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 	}
 }
 
+#if USB_BACKEND
+static struct iio_context * iio_create_usb_context_from_string(const char *dev)
+{
+	char *end;
+	long vid, pid;
+
+	vid = strtol(dev, &end, 0);
+	if (dev == end || *end != ':') {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	dev = end + 1;
+	pid = strtol(dev, &end, 0);
+	if (dev == end) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	return usb_create_context((unsigned short) vid, (unsigned short) pid);
+}
+#endif
+
 struct iio_context * iio_create_default_context(void)
 {
-#if NETWORK_BACKEND
 	char *hostname = getenv("IIOD_REMOTE");
 
 	if (hostname) {
+#if USB_BACKEND
+		/* If it contains a colon, create a USB context */
+		if (strchr(hostname, ':'))
+			return iio_create_usb_context_from_string(hostname);
+#endif
+
+#if NETWORK_BACKEND
 		/* If the environment variable is an empty string, we will
 		 * discover the server using ZeroConf */
 		if (strlen(hostname) == 0)
 			hostname = NULL;
 
 		return iio_create_network_context(hostname);
-	}
 #endif
+	}
+
 	return iio_create_local_context();
 }
 
