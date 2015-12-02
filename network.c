@@ -571,53 +571,15 @@ static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
-	uintptr_t ptr = (uintptr_t) dst;
 	struct iio_device_pdata *pdata = dev->pdata;
-	int fd = pdata->fd;
-	ssize_t ret, read = 0;
-	char buf[1024];
-
-	if (!len || words != (dev->nb_channels + 31) / 32)
-		return -EINVAL;
-
-	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
-			dev->id, (unsigned long) len);
+	ssize_t ret;
 
 	iio_mutex_lock(pdata->lock);
-	ret = write_rwbuf_command(dev, buf, false);
-	if (ret < 0) {
-		iio_mutex_unlock(pdata->lock);
-		return ret;
-	}
-
-	do {
-		ret = network_read_mask(fd, mask, words);
-		if (!ret)
-			break;
-		if (ret < 0) {
-			iio_strerror(-ret, buf, sizeof(buf));
-			ERROR("Unable to read mask: %s\n", buf);
-			iio_mutex_unlock(pdata->lock);
-			return read ? read : ret;
-		}
-
-		mask = NULL; /* We read the mask only once */
-
-		ret = read_all((void *) ptr, ret, fd);
-		if (ret < 0) {
-			iio_strerror(-ret, buf, sizeof(buf));
-			ERROR("Unable to read response to READ: %s\n", buf);
-			iio_mutex_unlock(pdata->lock);
-			return read ? read : ret;
-		}
-
-		ptr += ret;
-		read += ret;
-		len -= ret;
-	} while (len);
-
+	ret = iiod_client_read_unlocked(dev->ctx->pdata->iiod_client,
+			pdata->fd, dev, dst, len, mask, words);
 	iio_mutex_unlock(pdata->lock);
-	return read;
+
+	return ret;
 }
 
 static ssize_t network_write(const struct iio_device *dev,
