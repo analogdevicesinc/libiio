@@ -586,44 +586,13 @@ static ssize_t network_write(const struct iio_device *dev,
 		const void *src, size_t len)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
-	int fd;
 	ssize_t ret;
-	long resp;
-	char buf[1024];
-
-	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-			dev->id, (unsigned long) len);
 
 	iio_mutex_lock(pdata->lock);
-	fd = pdata->fd;
-
-	ret = write_rwbuf_command(dev, buf, pdata->is_cyclic);
-	if (ret < 0)
-		goto err_unlock;
-
-	ret = write_all(src, len, fd);
-	if (ret < 0)
-		goto err_unlock;
-
-	if (pdata->is_cyclic) {
-		ret = read_integer(fd, &resp);
-		if (ret < 0)
-			goto err_unlock;
-		if (resp < 0) {
-			ret = (ssize_t) resp;
-			goto err_unlock;
-		}
-	} else {
-		pdata->wait_for_err_code = true;
-	}
+	ret = iiod_client_write_unlocked(dev->ctx->pdata->iiod_client,
+			pdata->fd, dev, src, len);
 	iio_mutex_unlock(pdata->lock);
 
-	/* We assume that the whole buffer was submitted.
-	 * The error code will be returned by the next call to this function. */
-	return (ssize_t) len;
-
-err_unlock:
-	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
 
