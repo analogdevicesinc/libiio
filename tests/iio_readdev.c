@@ -29,6 +29,7 @@
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"network", required_argument, 0, 'n'},
+	  {"usb", required_argument, 0, 'u'},
 	  {"trigger", required_argument, 0, 't'},
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
@@ -38,6 +39,7 @@ static const struct option options[] = {
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
+	"Use the USB backend with the device that matches the given VID/PID.",
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
 	"Number of samples to capture, 0 = infinite. Default is 0."
@@ -47,8 +49,8 @@ static void usage(void)
 {
 	unsigned int i;
 
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
-			"[-b <buffer-size>] [-s <samples>] "
+	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-u <vid>:<pid>] "
+			"[-t <trigger>] [-b <buffer-size>] [-s <samples>] "
 			"<iio_device> [<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
@@ -124,11 +126,11 @@ int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	int c, option_index = 0, arg_index = 0, ip_index = 0;
+	int c, option_index = 0, arg_index = 0, ip_index = 0, device_index = 0;
 	struct iio_device *dev;
 	size_t sample_size;
 
-	while ((c = getopt_long(argc, argv, "+hn:t:b:s:",
+	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -137,6 +139,10 @@ int main(int argc, char **argv)
 		case 'n':
 			arg_index += 2;
 			ip_index = arg_index;
+			break;
+		case 'u':
+			arg_index += 2;
+			device_index = arg_index;
 			break;
 		case 't':
 			arg_index += 2;
@@ -161,10 +167,30 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (ip_index)
+	if (ip_index) {
 		ctx = iio_create_network_context(argv[ip_index]);
-	else
+	} else if (device_index) {
+		char *ptr = argv[device_index], *end;
+		long vid, pid;
+
+		vid = strtol(ptr, &end, 0);
+		if (ptr == end || *end != ':') {
+			fprintf(stderr, "Invalid VID/PID\n");
+			return EXIT_FAILURE;
+		}
+
+		ptr = end + 1;
+		pid = strtol(ptr, &end, 0);
+		if (ptr == end) {
+			fprintf(stderr, "Invalid VID/PID\n");
+			return EXIT_FAILURE;
+		}
+
+		ctx = iio_create_usb_context(
+				(unsigned short) vid, (unsigned short) pid);
+	} else {
 		ctx = iio_create_default_context();
+	}
 
 	if (!ctx) {
 		fprintf(stderr, "Unable to create IIO context\n");
