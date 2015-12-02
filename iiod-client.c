@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "iiod-client.h"
 #include "iio-lock.h"
 #include "iio-private.h"
@@ -449,4 +450,84 @@ int iiod_client_close_unlocked(struct iiod_client *client, int desc,
 
 	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", iio_device_get_id(dev));
 	return iiod_client_exec_command(client, desc, buf);
+}
+
+static int iiod_client_read_mask(struct iiod_client *client,
+		int desc, uint32_t *mask, size_t words)
+{
+	size_t i;
+	ssize_t ret;
+	char *buf, *ptr;
+
+	buf = malloc(words * 8 + 1);
+	if (!buf)
+		return -ENOMEM;
+
+	ret = iiod_client_read_all(client, desc, buf, words * 8 + 1);
+	if (ret < 0)
+		goto out_buf_free;
+	else
+		ret = 0;
+
+	DEBUG("Reading mask\n");
+
+	for (i = words, ptr = buf; i > 0; i--) {
+		sscanf(ptr, "%08x", &mask[i - 1]);
+		DEBUG("mask[%i] = 0x%08x\n", i - 1, mask[i - 1]);
+
+		ptr = (char *) ((uintptr_t) ptr + 8);
+	}
+
+out_buf_free:
+	free(buf);
+	return (int) ret;
+}
+
+ssize_t iiod_client_read_unlocked(struct iiod_client *client, int desc,
+		const struct iio_device *dev, void *dst, size_t len,
+		uint32_t *mask, size_t words)
+{
+	unsigned int nb_channels = iio_device_get_channels_count(dev);
+	uintptr_t ptr = (uintptr_t) dst;
+	struct iio_device_pdata *pdata = dev->pdata;
+	char buf[1024];
+	ssize_t ret, read = 0;
+
+	if (!len || words != (nb_channels + 31) / 32)
+		return -EINVAL;
+
+	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
+			iio_device_get_id(dev), (unsigned long) len);
+
+	ret = iiod_client_write_all(client, desc, buf, strlen(buf));
+	if (ret < 0)
+		return ret;
+
+	do {
+		int to_read;
+
+		ret = iiod_client_read_integer(client, desc, &to_read);
+		if (ret < 0)
+			return ret;
+		if (!to_read)
+			break;
+
+		if (mask) {
+			ret = iiod_client_read_mask(client, desc, mask, words);
+			if (ret < 0)
+				return ret;
+
+			mask = NULL; /* We read the mask only once */
+		}
+
+		ret = iiod_client_read_all(client, desc, (char *) ptr, to_read);
+		if (ret < 0)
+			return ret;
+
+		ptr += ret;
+		read += ret;
+		len -= ret;
+	} while (len);
+
+	return read;
 }
