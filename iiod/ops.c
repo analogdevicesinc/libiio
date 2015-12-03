@@ -374,16 +374,20 @@ static void * rw_thd(void *d)
 			ssize_t nb_bytes;
 
 			ret = iio_buffer_refill(entry->buf);
+
+			pthread_mutex_lock(&devlist_lock);
+			pthread_mutex_lock(&entry->thdlist_lock);
+
 			if (ret < 0) {
 				ERROR("Reading from device failed: %i\n",
 						(int) ret);
-				pthread_mutex_lock(&devlist_lock);
 				break;
 			}
 
+			pthread_mutex_unlock(&devlist_lock);
+
 			had_readers = false;
 			nb_bytes = ret;
-			pthread_mutex_lock(&entry->thdlist_lock);
 
 			/* We don't use SLIST_FOREACH here. As soon as a thread is
 			 * signaled, its "thd" structure might be freed;
@@ -438,10 +442,18 @@ static void * rw_thd(void *d)
 
 			ret = iio_buffer_push_partial(entry->buf,
 					nb_bytes / sample_size);
+
 			if (ret < 0) {
 				ERROR("Writing to device failed: %i\n",
 						(int) ret);
+
+				/* We have to exit the loop with both mutexes
+				 * locked. thdlist_lock is already locked, but
+				 * it must be unlocked before we can lock
+				 * devlist_lock, to avoid deadlocks. */
+				pthread_mutex_unlock(&entry->thdlist_lock);
 				pthread_mutex_lock(&devlist_lock);
+				pthread_mutex_lock(&entry->thdlist_lock);
 				break;
 			}
 
