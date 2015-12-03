@@ -844,24 +844,15 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
-static int set_remote_timeout(struct iio_context *ctx, unsigned int timeout)
-{
-	char buf[1024];
-	int ret;
-
-	snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", timeout);
-	iio_mutex_lock(ctx->pdata->lock);
-	ret = (int) exec_command(buf, ctx->pdata->fd);
-	iio_mutex_unlock(ctx->pdata->lock);
-	return ret;
-}
-
 static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
-	int ret = set_socket_timeout(ctx->pdata->fd, timeout);
+	struct iio_context_pdata *pdata = ctx->pdata;
+	int ret, fd = pdata->fd;
+
+	ret = set_socket_timeout(fd, timeout);
 	if (!ret) {
 		timeout = calculate_remote_timeout(timeout);
-		ret = set_remote_timeout(ctx, timeout);
+		ret = iiod_client_set_timeout(pdata->iiod_client, fd, timeout);
 	}
 	if (ret < 0) {
 		char buf[1024];
@@ -1167,7 +1158,8 @@ struct iio_context * network_create_context(const char *host)
 		ctx->description = description;
 	}
 
-	set_remote_timeout(ctx, calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
+	iiod_client_set_timeout(pdata->iiod_client, fd,
+			calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
 	return ctx;
 
 err_free_description:
