@@ -48,6 +48,8 @@ struct iio_context_pdata {
 
 	/* Locks for input/output devices */
 	struct iio_mutex *i_lock, *o_lock;
+
+	unsigned int timeout_ms;
 };
 
 struct iio_device_pdata {
@@ -194,6 +196,49 @@ static int usb_set_kernel_buffers_count(const struct iio_device *dev,
 			EP_OPS, dev, nb_blocks);
 }
 
+static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
+{
+	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
+	 * by the remote. Is there something better to do here? */
+	return timeout / 2;
+}
+
+static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
+{
+	struct iio_context_pdata *pdata = ctx->pdata;
+	unsigned int remote_timeout = usb_calculate_remote_timeout(timeout);
+	int ret;
+
+	ret = iiod_client_set_timeout(pdata->iiod_client,
+			EP_OPS, remote_timeout);
+	if (ret < 0)
+		return ret;
+
+	iio_mutex_lock(pdata->i_lock);
+	ret = iiod_client_set_timeout(pdata->iiod_client, EP_INPUT,
+			remote_timeout);
+	iio_mutex_unlock(pdata->i_lock);
+	if (ret < 0)
+		goto err_restore_old_timeout_ep_ops;
+
+	iio_mutex_lock(pdata->i_lock);
+	ret = iiod_client_set_timeout(pdata->iiod_client, EP_OUTPUT,
+			remote_timeout);
+	iio_mutex_unlock(pdata->o_lock);
+	if (ret < 0)
+		goto err_restore_old_timeout_ep_input;
+
+	pdata->timeout_ms = timeout;
+	return 0;
+
+err_restore_old_timeout_ep_input:
+	iiod_client_set_timeout(pdata->iiod_client,
+			EP_INPUT, pdata->timeout_ms);
+err_restore_old_timeout_ep_ops:
+	iiod_client_set_timeout(pdata->iiod_client, EP_OPS, pdata->timeout_ms);
+	return ret;
+}
+
 static void usb_shutdown(struct iio_context *ctx)
 {
 	iio_mutex_destroy(ctx->pdata->lock);
@@ -216,6 +261,7 @@ static const struct iio_backend_ops usb_ops = {
 	.write_device_attr = usb_write_dev_attr,
 	.write_channel_attr = usb_write_chn_attr,
 	.set_kernel_buffers_count = usb_set_kernel_buffers_count,
+	.set_timeout = usb_set_timeout,
 	.shutdown = usb_shutdown,
 };
 
@@ -321,6 +367,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 
 	pdata->ctx = usb_ctx;
 	pdata->hdl = hdl;
+	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 
 	ctx = iiod_client_create_context(pdata->iiod_client, EP_OPS);
 	if (!ctx)
