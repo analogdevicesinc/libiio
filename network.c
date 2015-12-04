@@ -797,7 +797,7 @@ static int network_get_trigger(const struct iio_device *dev,
 static int network_set_trigger(const struct iio_device *dev,
 		const struct iio_device *trigger)
 {
-	struct iio_context_pdata *pdata;
+	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
 	return iiod_client_set_trigger(pdata->iiod_client,
 			pdata->fd, dev, trigger);
