@@ -51,6 +51,9 @@ namespace iio
         );
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_create_usb_context(ushort vid, ushort pid);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_create_default_context();
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -106,6 +109,14 @@ namespace iio
         /// <returns>an instance of the <see cref="iio.Context"/> class</returns>
         /// <exception cref="System.Exception">The IIO context could not be created.</exception>
         public Context(string hostname) : this(iio_create_network_context(hostname)) {}
+
+        /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
+        /// using the USB backend of the IIO library.</summary>
+        /// <param name="vid">The Vendor ID corresponding to the USB device.</param>
+        /// <param name="pid">The Product ID corresponding to the USB device.</param>
+        /// <returns>an instance of the <see cref="iio.Context"/> class</returns>
+        /// <exception cref="System.Exception">The IIO context could not be created.</exception>
+        public Context(ushort vid, ushort pid) : this(iio_create_usb_context(vid, pid)) {}
 
         /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
         /// using the local or the network backend of the IIO library.</summary>
