@@ -966,6 +966,42 @@ int set_buffers_count(struct parser_pdata *pdata,
 	return ret;
 }
 
+ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
+{
+	ssize_t ret;
+
+	if (pdata->fd_in_is_socket) {
+		/* First read from the socket, without advancing the
+		 * read offset */
+		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL | MSG_PEEK);
+		if (ret < 0) {
+			if (errno == ENOTSOCK)
+				pdata->fd_in_is_socket = false;
+		} else {
+			size_t i;
+
+			/* Lookup for the trailing \n */
+			for (i = 0; i < (size_t) ret && buf[i] != '\n'; i++);
+
+			/* No \n found? Just garbage data */
+			if (i == (size_t) ret) {
+				errno = EIO;
+				return -1;
+			}
+
+			/* Advance the read offset to the byte following
+			 * the \n */
+			ret = recv(pdata->fd_in, buf, i + 1,
+					MSG_NOSIGNAL | MSG_TRUNC);
+		}
+	}
+
+	if (!pdata->fd_in_is_socket)
+		ret = read(pdata->fd_in, buf, len);
+
+	return ret;
+}
+
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose)
 {
 	yyscan_t scanner;

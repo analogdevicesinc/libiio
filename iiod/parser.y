@@ -408,7 +408,7 @@ int yy_input(yyscan_t scanner, char *buf, size_t max_size)
 	struct parser_pdata *pdata = yyget_extra(scanner);
 	int i, ret;
 
-	ret = readfd(pdata, buf, max_size);
+	ret = read_line(pdata, buf, max_size);
 	if (ret < 0)
 		return -errno;
 	if (ret == 0)
