@@ -273,7 +273,7 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 	ret = libusb_bulk_transfer(pdata->hdl, ep | LIBUSB_ENDPOINT_OUT,
 			(char *) data, len, &transferred, DEFAULT_TIMEOUT_MS);
 	if (ret)
-		return -libusb_to_errno(ret);
+		return -(int) libusb_to_errno(ret);
 	else
 		return transferred != len ? -EIO : len;
 }
@@ -286,7 +286,7 @@ static ssize_t read_data_sync(struct iio_context_pdata *pdata,
 	ret = libusb_bulk_transfer(pdata->hdl, ep | LIBUSB_ENDPOINT_IN,
 			buf, len, &transferred, DEFAULT_TIMEOUT_MS);
 	if (ret)
-		return -libusb_to_errno(ret);
+		return -(int) libusb_to_errno(ret);
 	else
 		return transferred;
 }
@@ -344,7 +344,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 
 	ret = libusb_init(&usb_ctx);
 	if (ret) {
-		ret = -libusb_to_errno(ret);
+		ret = -(int) libusb_to_errno(ret);
 		ERROR("Unable to init libusb: %i\n", ret);
 		goto err_destroy_iiod_client;
 	}
@@ -360,7 +360,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 
 	ret = libusb_claim_interface(hdl, 0);
 	if (ret) {
-		ret = -libusb_to_errno(ret);
+		ret = -(int) libusb_to_errno(ret);
 		ERROR("Unable to claim interface 0: %i\n", ret);
 		goto err_libusb_close;
 	}
