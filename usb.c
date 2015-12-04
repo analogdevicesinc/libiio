@@ -16,7 +16,6 @@
  *
  * */
 
-#include "debug.h"
 #include "iio-lock.h"
 #include "iio-private.h"
 #include "iiod-client.h"
@@ -25,6 +24,12 @@
 #include <libusb-1.0/libusb.h>
 #include <stdbool.h>
 #include <string.h>
+
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#include "debug.h"
 
 #define DEFAULT_TIMEOUT_MS 5000
 
