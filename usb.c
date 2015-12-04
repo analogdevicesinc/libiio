@@ -156,6 +156,20 @@ static ssize_t usb_read(const struct iio_device *dev, void *dst, size_t len,
 	return ret;
 }
 
+static ssize_t usb_write(const struct iio_device *dev,
+		const void *src, size_t len)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret;
+
+	iio_mutex_lock(pdata->lock);
+	ret = iiod_client_write_unlocked(dev->ctx->pdata->iiod_client,
+			pdata->ep, dev, src, len);
+	iio_mutex_unlock(pdata->lock);
+
+	return ret;
+}
+
 static ssize_t usb_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, bool is_debug)
 {
@@ -261,6 +275,7 @@ static const struct iio_backend_ops usb_ops = {
 	.open = usb_open,
 	.close = usb_close,
 	.read = usb_read,
+	.write = usb_write,
 	.read_device_attr = usb_read_dev_attr,
 	.read_channel_attr = usb_read_chn_attr,
 	.write_device_attr = usb_write_dev_attr,
