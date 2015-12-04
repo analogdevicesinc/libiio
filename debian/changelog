@@ -1,3 +1,14 @@
+libiio (0.6) unstable; urgency=low
+  * Improved parsing of sysfs files
+  * Added iio_reg test program
+  * Revert to regular I/O in the network backend if zerocopy is not available
+  * Fix bugs reported by Valgrind
+  * IIOD can now run interactively from the terminal
+  * Improved I/O handling in IIOD
+  * New API functions
+
+ -- Paul Cercueil <paul.cercueil@analog.com>  Tue, 4 Dec 2015 12:58:52 +0200
+
 libiio (0.5) unstable; urgency=low
 
   * Fix locales support on Windows and MinGW
