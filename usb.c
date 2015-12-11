@@ -291,11 +291,12 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 	int transferred, ret;
 
 	ret = libusb_bulk_transfer(pdata->hdl, ep | LIBUSB_ENDPOINT_OUT,
-			(char *) data, len, &transferred, DEFAULT_TIMEOUT_MS);
+			(char *) data, (int) len,
+			&transferred, DEFAULT_TIMEOUT_MS);
 	if (ret)
 		return -(int) libusb_to_errno(ret);
 	else
-		return transferred != len ? -EIO : len;
+		return transferred != len ? -EIO : (ssize_t) len;
 }
 
 static ssize_t read_data_sync(struct iio_context_pdata *pdata,
@@ -304,7 +305,7 @@ static ssize_t read_data_sync(struct iio_context_pdata *pdata,
 	int transferred, ret;
 
 	ret = libusb_bulk_transfer(pdata->hdl, ep | LIBUSB_ENDPOINT_IN,
-			buf, len, &transferred, DEFAULT_TIMEOUT_MS);
+			buf, (int) len, &transferred, DEFAULT_TIMEOUT_MS);
 	if (ret)
 		return -(int) libusb_to_errno(ret);
 	else
