@@ -35,6 +35,7 @@ extern "C" {
 #ifdef _MSC_BUILD
 /* Come on Microsoft, time to get some C99... */
 typedef long ssize_t;
+#define _SSIZE_T_DEFINED
 #endif
 
 #ifdef __GNUC__

@@ -298,7 +298,7 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, int desc,
 	const struct iiod_client_ops *ops = client->ops;
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
-	size_t ret;
+	ssize_t ret;
 
 	if (attr) {
 		if (chn) {
@@ -351,7 +351,7 @@ ssize_t iiod_client_write_attr(struct iiod_client *client, int desc,
 	const struct iiod_client_ops *ops = client->ops;
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
-	size_t ret;
+	ssize_t ret;
 	int resp;
 
 	if (attr) {
