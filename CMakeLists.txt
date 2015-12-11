@@ -110,7 +110,8 @@ if(WITH_LOCAL_BACKEND)
 endif()
 
 find_library(LIBUSB_LIBRARIES usb-1.0)
-if (LIBUSB_LIBRARIES)
+find_path(LIBUSB_INCLUDE_DIR libusb-1.0/libusb.h)
+if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
 	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 
 	if(WITH_USB_BACKEND)
@@ -119,6 +120,8 @@ if (LIBUSB_LIBRARIES)
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBUSB_LIBRARIES})
 		set(IIOD_CLIENT 1)
 		set(NEED_LIBXML2 1)
+
+		include_directories(${LIBUSB_INCLUDE_DIR})
 	endif()
 endif()
 
