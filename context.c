@@ -260,23 +260,15 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 #if USB_BACKEND
 static struct iio_context * iio_create_usb_context_from_string(const char *dev)
 {
-	char *end;
-	long vid, pid;
+	unsigned short vid, pid;
 
-	vid = strtol(dev, &end, 0);
-	if (dev == end || *end != ':') {
+	if ((sscanf(dev, "0x%04hx:0x%04hx", &vid, &pid) != 2) ||
+			sscanf(dev, "%04hx:%04hx", &vid, &pid) != 2) {
 		errno = EINVAL;
 		return NULL;
 	}
 
-	dev = end + 1;
-	pid = strtol(dev, &end, 0);
-	if (dev == end) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	return usb_create_context((unsigned short) vid, (unsigned short) pid);
+	return usb_create_context(vid, pid);
 }
 #endif
 
