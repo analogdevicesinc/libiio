@@ -262,7 +262,7 @@ static struct iio_context * iio_create_usb_context_from_string(const char *dev)
 {
 	unsigned short vid, pid;
 
-	if ((sscanf(dev, "0x%04hx:0x%04hx", &vid, &pid) != 2) ||
+	if ((sscanf(dev, "0x%04hx:0x%04hx", &vid, &pid) != 2) &&
 			sscanf(dev, "%04hx:%04hx", &vid, &pid) != 2) {
 		errno = EINVAL;
 		return NULL;
