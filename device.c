@@ -440,6 +440,8 @@ ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 			break;
 		if (!TEST_BIT(mask, chn->index))
 			continue;
+		if (i > 0 && chn->index == dev->channels[i - 1]->index)
+			continue;
 
 		if (size % length)
 			size += 2 * length - (size % length);
