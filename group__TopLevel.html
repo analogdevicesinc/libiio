@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.5</span>
+   &#160;<span id="projectnumber">0.6</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -90,6 +90,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gaaa29e5bac86d00a1cef6e2d00b0ea24c"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c">iio_library_get_version</a> (unsigned int *major, unsigned int *minor, char git_tag[8])</td></tr>
 <tr class="memdesc:gaaa29e5bac86d00a1cef6e2d00b0ea24c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the version of the libiio library.  <a href="#gaaa29e5bac86d00a1cef6e2d00b0ea24c">More...</a><br /></td></tr>
 <tr class="separator:gaaa29e5bac86d00a1cef6e2d00b0ea24c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga4a117b0ac02e97aeda92e33c063f7cf0">iio_strerror</a> (int err, char *dst, size_t len)</td></tr>
+<tr class="memdesc:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of an error code.  <a href="#ga4a117b0ac02e97aeda92e33c063f7cf0">More...</a><br /></td></tr>
+<tr class="separator:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -135,10 +138,52 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ga4a117b0ac02e97aeda92e33c063f7cf0"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api void iio_strerror </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>err</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get a string description of an error code. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">err</td><td>The error code </td></tr>
+    <tr><td class="paramname">dst</td><td>A pointer to the memory area where the NULL-terminated string corresponding to the error message will be stored </td></tr>
+    <tr><td class="paramname">len</td><td>The available length of the memory area, in bytes </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 6 2015 10:43:01 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 17 2015 17:35:29 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>

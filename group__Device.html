@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.5</span>
+   &#160;<span id="projectnumber">0.6</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -169,6 +169,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga41582140b8e1fe98148e51ae1350b816"><td class="memItemLeft" align="right" valign="top">__api __pure bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#ga41582140b8e1fe98148e51ae1350b816">iio_device_is_trigger</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
 <tr class="memdesc:ga41582140b8e1fe98148e51ae1350b816"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return True if the given device is a trigger.  <a href="#ga41582140b8e1fe98148e51ae1350b816">More...</a><br /></td></tr>
 <tr class="separator:ga41582140b8e1fe98148e51ae1350b816"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabda6d5a2ce3500204a022702c3c925fe"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#gabda6d5a2ce3500204a022702c3c925fe">iio_device_set_kernel_buffers_count</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, unsigned int nb_buffers)</td></tr>
+<tr class="memdesc:gabda6d5a2ce3500204a022702c3c925fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configure the number of kernel buffers for a device.  <a href="#gabda6d5a2ce3500204a022702c3c925fe">More...</a><br /></td></tr>
+<tr class="separator:gabda6d5a2ce3500204a022702c3c925fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -1098,6 +1101,44 @@ On error, a negative errno code is returned </dd></dl>
 
 </div>
 </div>
+<a class="anchor" id="gabda6d5a2ce3500204a022702c3c925fe"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_device_set_kernel_buffers_count </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>nb_buffers</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Configure the number of kernel buffers for a device. </p>
+<p>This function allows to change the number of buffers on kernel side. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dev</td><td>A pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </td></tr>
+    <tr><td class="paramname">nb_buffers</td><td>The number of buffers </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="ga30151c105a19b3fc3ad6376046d60bf9"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1139,7 +1180,7 @@ On error, a negative errno code is returned </dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 6 2015 10:43:01 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 17 2015 17:35:29 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>

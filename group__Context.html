@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.5</span>
+   &#160;<span id="projectnumber">0.6</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -109,6 +109,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gabb89575442d19f28b6557eee97f8fafd"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gabb89575442d19f28b6557eee97f8fafd">iio_create_network_context</a> (const char *host)</td></tr>
 <tr class="memdesc:gabb89575442d19f28b6557eee97f8fafd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a context from the network.  <a href="#gabb89575442d19f28b6557eee97f8fafd">More...</a><br /></td></tr>
 <tr class="separator:gabb89575442d19f28b6557eee97f8fafd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9cd2105dc316f1c299841185589e652b"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga9cd2105dc316f1c299841185589e652b">iio_create_usb_context</a> (unsigned short vid, unsigned short pid)</td></tr>
+<tr class="memdesc:ga9cd2105dc316f1c299841185589e652b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a context from USB devices.  <a href="#ga9cd2105dc316f1c299841185589e652b">More...</a><br /></td></tr>
+<tr class="separator:ga9cd2105dc316f1c299841185589e652b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafa20455bf17c9fccf9f83bcec3605f37"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gafa20455bf17c9fccf9f83bcec3605f37">iio_context_clone</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:gafa20455bf17c9fccf9f83bcec3605f37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Duplicate a pre-existing IIO context.  <a href="#gafa20455bf17c9fccf9f83bcec3605f37">More...</a><br /></td></tr>
 <tr class="separator:gafa20455bf17c9fccf9f83bcec3605f37"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -532,6 +535,44 @@ On failure, NULL is returned and errno is set appropriately </dd></dl>
 
 </div>
 </div>
+<a class="anchor" id="ga9cd2105dc316f1c299841185589e652b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api struct <a class="el" href="structiio__context.html">iio_context</a>* iio_create_usb_context </td>
+          <td>(</td>
+          <td class="paramtype">unsigned short&#160;</td>
+          <td class="paramname"><em>vid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned short&#160;</td>
+          <td class="paramname"><em>pid</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a context from USB devices. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">vid</td><td>Vendor identification number </td></tr>
+    <tr><td class="paramname">pid</td><td>Product identification number </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, a pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </dd>
+<dd>
+On failure, NULL is returned and errno is set appropriately </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="ga5f1aef2258268209b6486e788a1967ec"></a>
 <div class="memitem">
 <div class="memproto">
@@ -602,7 +643,7 @@ On failure, NULL is returned and errno is set appropriately</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 6 2015 10:43:01 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 17 2015 17:35:29 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>

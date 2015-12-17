@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.5</span>
+   &#160;<span id="projectnumber">0.6</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -114,6 +114,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gaaa29e5bac86d00a1cef6e2d00b0ea24c"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c">iio_library_get_version</a> (unsigned int *major, unsigned int *minor, char git_tag[8])</td></tr>
 <tr class="memdesc:gaaa29e5bac86d00a1cef6e2d00b0ea24c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the version of the libiio library.  <a href="group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c">More...</a><br /></td></tr>
 <tr class="separator:gaaa29e5bac86d00a1cef6e2d00b0ea24c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga4a117b0ac02e97aeda92e33c063f7cf0">iio_strerror</a> (int err, char *dst, size_t len)</td></tr>
+<tr class="memdesc:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of an error code.  <a href="group__TopLevel.html#ga4a117b0ac02e97aeda92e33c063f7cf0">More...</a><br /></td></tr>
+<tr class="separator:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5f18bbe6c9e1993f26480f73f92e1ad5"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga5f18bbe6c9e1993f26480f73f92e1ad5">iio_create_default_context</a> (void)</td></tr>
 <tr class="memdesc:ga5f18bbe6c9e1993f26480f73f92e1ad5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a context from local or remote IIO devices.  <a href="group__Context.html#ga5f18bbe6c9e1993f26480f73f92e1ad5">More...</a><br /></td></tr>
 <tr class="separator:ga5f18bbe6c9e1993f26480f73f92e1ad5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -129,6 +132,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gabb89575442d19f28b6557eee97f8fafd"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gabb89575442d19f28b6557eee97f8fafd">iio_create_network_context</a> (const char *host)</td></tr>
 <tr class="memdesc:gabb89575442d19f28b6557eee97f8fafd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a context from the network.  <a href="group__Context.html#gabb89575442d19f28b6557eee97f8fafd">More...</a><br /></td></tr>
 <tr class="separator:gabb89575442d19f28b6557eee97f8fafd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9cd2105dc316f1c299841185589e652b"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga9cd2105dc316f1c299841185589e652b">iio_create_usb_context</a> (unsigned short vid, unsigned short pid)</td></tr>
+<tr class="memdesc:ga9cd2105dc316f1c299841185589e652b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a context from USB devices.  <a href="group__Context.html#ga9cd2105dc316f1c299841185589e652b">More...</a><br /></td></tr>
+<tr class="separator:ga9cd2105dc316f1c299841185589e652b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafa20455bf17c9fccf9f83bcec3605f37"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#gafa20455bf17c9fccf9f83bcec3605f37">iio_context_clone</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:gafa20455bf17c9fccf9f83bcec3605f37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Duplicate a pre-existing IIO context.  <a href="group__Context.html#gafa20455bf17c9fccf9f83bcec3605f37">More...</a><br /></td></tr>
 <tr class="separator:gafa20455bf17c9fccf9f83bcec3605f37"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -234,6 +240,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga41582140b8e1fe98148e51ae1350b816"><td class="memItemLeft" align="right" valign="top">__api __pure bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#ga41582140b8e1fe98148e51ae1350b816">iio_device_is_trigger</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev)</td></tr>
 <tr class="memdesc:ga41582140b8e1fe98148e51ae1350b816"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return True if the given device is a trigger.  <a href="group__Device.html#ga41582140b8e1fe98148e51ae1350b816">More...</a><br /></td></tr>
 <tr class="separator:ga41582140b8e1fe98148e51ae1350b816"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabda6d5a2ce3500204a022702c3c925fe"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Device.html#gabda6d5a2ce3500204a022702c3c925fe">iio_device_set_kernel_buffers_count</a> (const struct <a class="el" href="structiio__device.html">iio_device</a> *dev, unsigned int nb_buffers)</td></tr>
+<tr class="memdesc:gabda6d5a2ce3500204a022702c3c925fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configure the number of kernel buffers for a device.  <a href="group__Device.html#gabda6d5a2ce3500204a022702c3c925fe">More...</a><br /></td></tr>
+<tr class="separator:gabda6d5a2ce3500204a022702c3c925fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad51a5fa60f6bf19e4fed777ab76944b9"><td class="memItemLeft" align="right" valign="top">__api __pure const struct <a class="el" href="structiio__device.html">iio_device</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gad51a5fa60f6bf19e4fed777ab76944b9">iio_channel_get_device</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn)</td></tr>
 <tr class="memdesc:gad51a5fa60f6bf19e4fed777ab76944b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a pointer to the <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure.  <a href="group__Channel.html#gad51a5fa60f6bf19e4fed777ab76944b9">More...</a><br /></td></tr>
 <tr class="separator:gad51a5fa60f6bf19e4fed777ab76944b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -326,12 +335,21 @@ Functions</h2></td></tr>
 <tr class="memitem:gaba58dc2780be63fead6f09397ce90d10"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#gaba58dc2780be63fead6f09397ce90d10">iio_buffer_destroy</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:gaba58dc2780be63fead6f09397ce90d10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given buffer.  <a href="group__Buffer.html#gaba58dc2780be63fead6f09397ce90d10">More...</a><br /></td></tr>
 <tr class="separator:gaba58dc2780be63fead6f09397ce90d10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2a6445a0776a43ffee1fd07ae45b7a58"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga2a6445a0776a43ffee1fd07ae45b7a58">iio_buffer_get_poll_fd</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
+<tr class="memdesc:ga2a6445a0776a43ffee1fd07ae45b7a58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a pollable file descriptor.  <a href="group__Buffer.html#ga2a6445a0776a43ffee1fd07ae45b7a58">More...</a><br /></td></tr>
+<tr class="separator:ga2a6445a0776a43ffee1fd07ae45b7a58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8306f2992b49b99b6456907b65ece5aa"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga8306f2992b49b99b6456907b65ece5aa">iio_buffer_set_blocking_mode</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf, bool blocking)</td></tr>
+<tr class="memdesc:ga8306f2992b49b99b6456907b65ece5aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make <a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516" title="Fetch more samples from the hardware. ">iio_buffer_refill()</a> and <a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280" title="Send the samples to the hardware. ">iio_buffer_push()</a> blocking or not.  <a href="group__Buffer.html#ga8306f2992b49b99b6456907b65ece5aa">More...</a><br /></td></tr>
+<tr class="separator:ga8306f2992b49b99b6456907b65ece5aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1aaecd70bdb441c8faaf061672060516"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516">iio_buffer_refill</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:ga1aaecd70bdb441c8faaf061672060516"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fetch more samples from the hardware.  <a href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516">More...</a><br /></td></tr>
 <tr class="separator:ga1aaecd70bdb441c8faaf061672060516"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga28c43d91ddaf8856f2d1a79562072280"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280">iio_buffer_push</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:ga28c43d91ddaf8856f2d1a79562072280"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send the samples to the hardware.  <a href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280">More...</a><br /></td></tr>
 <tr class="separator:ga28c43d91ddaf8856f2d1a79562072280"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga705f8f74e26d872dbec6cf718671c830"><td class="memItemLeft" align="right" valign="top">__api ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga705f8f74e26d872dbec6cf718671c830">iio_buffer_push_partial</a> (struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf, size_t samples_count)</td></tr>
+<tr class="memdesc:ga705f8f74e26d872dbec6cf718671c830"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a given number of samples to the hardware.  <a href="group__Buffer.html#ga705f8f74e26d872dbec6cf718671c830">More...</a><br /></td></tr>
+<tr class="separator:ga705f8f74e26d872dbec6cf718671c830"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7fdacbfda79aa5120f34ea73ae2ea5ab"><td class="memItemLeft" align="right" valign="top">__api void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Buffer.html#ga7fdacbfda79aa5120f34ea73ae2ea5ab">iio_buffer_start</a> (const struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buf)</td></tr>
 <tr class="memdesc:ga7fdacbfda79aa5120f34ea73ae2ea5ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the start address of the buffer.  <a href="group__Buffer.html#ga7fdacbfda79aa5120f34ea73ae2ea5ab">More...</a><br /></td></tr>
 <tr class="separator:ga7fdacbfda79aa5120f34ea73ae2ea5ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -425,7 +443,7 @@ Functions</h2></td></tr>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 6 2015 10:43:01 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 17 2015 17:35:29 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>
