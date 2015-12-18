@@ -338,6 +338,14 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, int desc,
 	/* +1: Also read the trailing \n */
 	ret = iiod_client_read_all(client, desc, dest, ret + 1);
 
+	if (ret > 0) {
+		/* Discard the trailing \n */
+		ret--;
+
+		/* Replace it with a \0 just in case */
+		dest[ret] = '\0';
+	}
+
 out_unlock:
 	iio_mutex_unlock(client->lock);
 	return ret;
