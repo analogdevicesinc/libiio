@@ -25,6 +25,7 @@
 #define MY_NAME "iio_readdev"
 
 #define SAMPLES_PER_READ 256
+#define DEFAULT_FREQ_HZ  100
 
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
@@ -198,8 +199,15 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		/* Fixed rate for now */
-		iio_device_attr_write_longlong(trigger, "frequency", 100);
+		/*
+		 * Fixed rate for now. Try new ABI first,
+		 * fail gracefully to remain compatible.
+		 */
+		if (iio_device_attr_write_longlong(trigger,
+				"sampling_frequency", DEFAULT_FREQ_HZ) < 0)
+			iio_device_attr_write_longlong(trigger,
+				"frequency", DEFAULT_FREQ_HZ);
+
 		iio_device_set_trigger(dev, trigger);
 	}
 
