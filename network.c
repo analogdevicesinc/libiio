@@ -955,6 +955,24 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		int desc, char *dst, size_t len)
 {
 	size_t i;
+#ifdef __linux__
+	ssize_t ret;
+
+	/* First read from the socket without advancing the read offset */
+	ret = recv(desc, dst, len, MSG_PEEK);
+	if (ret < 0)
+		return ret;
+
+	/* Lookup for the trailing \n */
+	for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
+
+	/* No \n found? Just garbage data */
+	if (i == (size_t) ret)
+		return -EIO;
+
+	/* Advance the read offset to the byte following the \n */
+	return recv(desc, dst, i + 1, MSG_TRUNC);
+#else
 	bool found = false;
 
 	for (i = 0; i < len - 1; i++) {
@@ -971,6 +989,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 
 	dst[i] = '\0';
 	return (ssize_t) i;
+#endif
 }
 
 static struct iiod_client_ops network_iiod_client_ops = {
