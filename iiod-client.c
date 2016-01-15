@@ -230,7 +230,8 @@ int iiod_client_get_trigger(struct iiod_client *client, int desc,
 
 			if (!strncmp(name, buf, name_len)) {
 				*trigger = cur;
-				return 0;
+				ret = 0;
+				goto out_unlock;
 			}
 		}
 	}
