@@ -182,7 +182,7 @@ static int set_channel_name(struct iio_channel *chn)
 		if (!ptr)
 			break;
 
-		len = ptr - attr0;
+		len = ptr - attr0 + 1;
 		for (i = 1; can_fix && i < chn->nb_attrs; i++)
 			can_fix = !strncmp(attr0, chn->attrs[i].name, len);
 
@@ -196,17 +196,17 @@ static int set_channel_name(struct iio_channel *chn)
 	if (prefix_len) {
 		char *name;
 
-		name = malloc(prefix_len + 1);
+		name = malloc(prefix_len);
 		if (!name)
 			return -ENOMEM;
-		strncpy(name, attr0, prefix_len);
-		name[prefix_len] = '\0';
+		strncpy(name, attr0, prefix_len - 1);
+		name[prefix_len - 1] = '\0';
 		DEBUG("Setting name of channel %s to %s\n", chn->id, name);
 		chn->name = name;
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
-			strcut(chn->attrs[i].name, prefix_len + 1);
+			strcut(chn->attrs[i].name, prefix_len);
 	}
 
 	return 0;
