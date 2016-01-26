@@ -443,7 +443,11 @@ class Buffer(object):
 			An new instance of this class
 		"""
 		self.dev = device
-		self._buffer = _create_buffer(device._device, samples_count, cyclic)
+		try:
+			self._buffer = _create_buffer(device._device, samples_count, cyclic)
+		except:
+			self._buffer = None
+			raise
 		self._length = samples_count * device.sample_size
 		self._samples_count = samples_count
 
