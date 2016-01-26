@@ -531,8 +531,8 @@ class _DeviceOrTrigger(object):
 
 		# TODO(pcercuei): Use a dictionary for the channels.
 		chans = [ Channel(self, _get_channel(self._device, x)) 
-        		for x in xrange(0, _channels_count(self._device)) ]
-        	self._channels = sorted(chans, key=lambda c: c.id)
+			for x in xrange(0, _channels_count(self._device)) ]
+		self._channels = sorted(chans, key=lambda c: c.id)
 		self._id = _d_get_id(self._device)
 		self._name = _d_get_name(self._device)
 
