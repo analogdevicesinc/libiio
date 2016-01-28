@@ -213,7 +213,7 @@ int iiod_client_get_trigger(struct iiod_client *client, int desc,
 
 	name_len = ret;
 
-	ret = (int) client->ops->read(pdata, desc, buf, name_len);
+	ret = (int) client->ops->read(pdata, desc, buf, name_len + 1);
 	if (ret < 0)
 		goto out_unlock;
 
