@@ -206,7 +206,7 @@ int iiod_client_get_trigger(struct iiod_client *client, int desc,
 	if (ret <= 0)
 		goto out_unlock;
 
-	if ((unsigned int) ret > sizeof(buf)) {
+	if ((unsigned int) ret > sizeof(buf) - 1) {
 		ret = -EIO;
 		goto out_unlock;
 	}
