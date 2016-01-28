@@ -206,14 +206,14 @@ int iiod_client_get_trigger(struct iiod_client *client, int desc,
 	if (ret <= 0)
 		goto out_unlock;
 
-	if ((unsigned int) ret > sizeof(buf)) {
+	if ((unsigned int) ret > sizeof(buf) - 1) {
 		ret = -EIO;
 		goto out_unlock;
 	}
 
 	name_len = ret;
 
-	ret = (int) client->ops->read(pdata, desc, buf, name_len);
+	ret = (int) client->ops->read(pdata, desc, buf, name_len + 1);
 	if (ret < 0)
 		goto out_unlock;
 
