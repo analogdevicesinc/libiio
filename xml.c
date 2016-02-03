@@ -279,7 +279,7 @@ static struct iio_context * xml_clone(const struct iio_context *ctx)
 	return xml_create_context_mem(ctx->xml, strlen(ctx->xml));
 }
 
-static struct iio_backend_ops xml_ops = {
+static const struct iio_backend_ops xml_ops = {
 	.clone = xml_clone,
 };
 

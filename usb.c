@@ -312,7 +312,7 @@ static ssize_t read_data_sync(struct iio_context_pdata *pdata,
 		return transferred;
 }
 
-static struct iiod_client_ops usb_iiod_client_ops = {
+static const struct iiod_client_ops usb_iiod_client_ops = {
 	.write = write_data_sync,
 	.read = read_data_sync,
 	.read_line = read_data_sync,

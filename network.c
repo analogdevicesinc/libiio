@@ -892,7 +892,7 @@ static struct iio_context * network_clone(const struct iio_context *ctx)
 	return iio_create_network_context(ctx->description);
 }
 
-static struct iio_backend_ops network_ops = {
+static const struct iio_backend_ops network_ops = {
 	.clone = network_clone,
 	.open = network_open,
 	.close = network_close,
@@ -992,7 +992,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 #endif
 }
 
-static struct iiod_client_ops network_iiod_client_ops = {
+static const struct iiod_client_ops network_iiod_client_ops = {
 	.write = network_write_data,
 	.read = network_read_data,
 	.read_line = network_read_line,

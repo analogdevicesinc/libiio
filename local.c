@@ -1494,7 +1494,7 @@ static struct iio_context * local_clone(
 	return local_create_context();
 }
 
-static struct iio_backend_ops local_ops = {
+static const struct iio_backend_ops local_ops = {
 	.clone = local_clone,
 	.open = local_open,
 	.close = local_close,
