@@ -212,11 +212,11 @@ static int set_channel_name(struct iio_channel *chn)
 	return 0;
 }
 
-static int device_check_ready(const struct iio_device *dev, bool do_write)
+static int device_check_ready(const struct iio_device *dev, short events)
 {
 	struct pollfd pollfd = {
 		.fd = dev->pdata->fd,
-		.events = do_write ? POLLOUT : POLLIN,
+		.events = events,
 	};
 	int ret;
 
@@ -230,7 +230,7 @@ static int device_check_ready(const struct iio_device *dev, bool do_write)
 		return -ETIMEDOUT;
 	if (pollfd.revents & POLLNVAL)
 		return -EBADF;
-	if (!(pollfd.revents & (do_write ? POLLOUT : POLLIN)))
+	if (!(pollfd.revents & events))
 		return -EIO;
 	return 0;
 }
@@ -324,7 +324,7 @@ static ssize_t local_read(const struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	ret = device_check_ready(dev, false);
+	ret = device_check_ready(dev, POLLIN);
 	if (ret < 0)
 		return ret;
 
@@ -350,7 +350,7 @@ static ssize_t local_write(const struct iio_device *dev,
 		return -EPERM;
 
 	if (pdata->cyclic) {
-		ret = device_check_ready(dev, true);
+		ret = device_check_ready(dev, POLLOUT);
 		if (ret < 0)
 			return ret;
 
@@ -366,7 +366,7 @@ static ssize_t local_write(const struct iio_device *dev,
 	/* In cyclic mode, the buffer must be enabled after writing the samples.
 	 * In non-cyclic mode, it must be enabled before writing the samples. */
 	if (!pdata->cyclic) {
-		ret = device_check_ready(dev, true);
+		ret = device_check_ready(dev, POLLOUT);
 		if (ret < 0)
 			return ret;
 
@@ -404,6 +404,10 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		return -EBADF;
 	if (!addr_ptr)
 		return -EINVAL;
+
+	ret = (ssize_t) device_check_ready(dev, POLLIN | POLLOUT);
+	if (ret < 0)
+		return ret;
 
 	if (pdata->last_dequeued >= 0) {
 		struct block *last_block = &pdata->blocks[pdata->last_dequeued];
