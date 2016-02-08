@@ -51,8 +51,10 @@ static struct iio_channel *tx0_q = NULL;
 static struct iio_buffer  *rxbuf = NULL;
 static struct iio_buffer  *txbuf = NULL;
 
+static bool stop;
+
 /* cleanup and exit */
-void shutdown(int s)
+static void shutdown()
 {
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
@@ -69,9 +71,15 @@ void shutdown(int s)
 	exit(0);
 }
 
+static void handle_sig(int sig)
+{
+	printf("Waiting for process to finish...\n");
+	stop = true;
+}
+
 /* check return value of attr_write function */
 static void errchk(int v, const char* what) {
-	 if (v < 0) { fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n", v, what); shutdown(0); }
+	 if (v < 0) { fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n", v, what); shutdown(); }
 }
 
 /* write attribute: long long int */
@@ -176,7 +184,7 @@ int main (int argc, char **argv)
 	struct stream_cfg txcfg;
 
 	// Listen to ctrl+c and assert
-	signal(SIGINT, shutdown);
+	signal(SIGINT, handle_sig);
 
 	// RX stream config
 	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
@@ -219,7 +227,7 @@ int main (int argc, char **argv)
 	txbuf = iio_device_create_buffer(tx, 1024*1024, false);
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
-	while (1)
+	while (!stop)
 	{
 		ssize_t nbytes_rx, nbytes_tx;
 		void *p_dat, *p_end;
@@ -227,11 +235,11 @@ int main (int argc, char **argv)
 
 		// Schedule TX buffer
 		nbytes_tx = iio_buffer_push(txbuf);
-		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(0); }
+		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(); }
 
 		// Refill RX buffer
 		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) { printf("Error refilling buf %d\n",(int) nbytes_rx); shutdown(0); }
+		if (nbytes_rx < 0) { printf("Error refilling buf %d\n",(int) nbytes_rx); shutdown(); }
 
 		// READ: Get pointers to RX buf and read IQ from RX buf port 0
 		p_inc = iio_buffer_step(rxbuf);
