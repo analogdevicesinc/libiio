@@ -944,8 +944,6 @@ static ssize_t network_read_data(struct iio_context_pdata *pdata,
 #else
 		return (ssize_t) -errno;
 #endif
-	} else if (ret == 0) {
-		return -EPIPE;
 	} else {
 		return ret;
 	}
