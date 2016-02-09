@@ -24,8 +24,10 @@
 
 #include <stdbool.h>
 
-#ifdef _WIN32
+#ifdef _MSC_BUILD
 #define snprintf sprintf_s
+#endif
+#ifdef _WIN32
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
 
