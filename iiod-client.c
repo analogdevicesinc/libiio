@@ -413,7 +413,7 @@ struct iio_context * iiod_client_create_context(
 {
 	struct iio_context *ctx = NULL;
 	size_t xml_len;
-	char *xml, c;
+	char *xml;
 	int ret;
 
 	iio_mutex_lock(client->lock);
@@ -422,18 +422,16 @@ struct iio_context * iiod_client_create_context(
 		goto out_unlock;
 
 	xml_len = (size_t) ret;
-	xml = malloc(xml_len);
+	xml = malloc(xml_len + 1);
 	if (!xml) {
 		ret = -ENOMEM;
 		goto out_unlock;
 	}
 
-	ret = (int) iiod_client_read_all(client, desc, xml, xml_len);
+	/* +1: Also read the trailing \n */
+	ret = (int) iiod_client_read_all(client, desc, xml, xml_len + 1);
 	if (ret < 0)
 		goto out_free_xml;
-
-	/* Discard \n character */
-	client->ops->read(client->pdata, desc, &c, 1);
 
 	ctx = iio_create_xml_context_mem(xml, xml_len);
 	if (!ctx)
