@@ -108,20 +108,39 @@ static int usb_get_version(const struct iio_context *ctx,
 			EP_OPS, major, minor, git_tag);
 }
 
+static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
+{
+	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
+	 * by the remote. Is there something better to do here? */
+	return timeout / 2;
+}
+
 static int usb_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
+	struct iio_context_pdata *ctx_pdata = dev->ctx->pdata;
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret = -EBUSY;
 
 	iio_mutex_lock(pdata->lock);
 
-	if (!pdata->opened) {
-		ret = iiod_client_open_unlocked(dev->ctx->pdata->iiod_client,
-				pdata->ep, dev, samples_count, cyclic);
-		pdata->opened = !ret;
+	if (pdata->opened)
+		goto out_unlock;
+
+	ret = iiod_client_open_unlocked(ctx_pdata->iiod_client,
+			pdata->ep, dev, samples_count, cyclic);
+
+	if (!ret) {
+		unsigned int remote_timeout =
+			usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
+
+		ret = iiod_client_set_timeout(ctx_pdata->iiod_client,
+				pdata->ep, remote_timeout);
 	}
 
+	pdata->opened = !ret;
+
+out_unlock:
 	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
@@ -215,13 +234,6 @@ static int usb_set_kernel_buffers_count(const struct iio_device *dev,
 			EP_OPS, dev, nb_blocks);
 }
 
-static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
-{
-	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
-	 * by the remote. Is there something better to do here? */
-	return timeout / 2;
-}
-
 static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = ctx->pdata;
@@ -230,31 +242,9 @@ static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 	ret = iiod_client_set_timeout(pdata->iiod_client,
 			EP_OPS, remote_timeout);
-	if (ret < 0)
-		return ret;
+	if (!ret)
+		pdata->timeout_ms = timeout;
 
-	iio_mutex_lock(pdata->i_lock);
-	ret = iiod_client_set_timeout(pdata->iiod_client, EP_INPUT,
-			remote_timeout);
-	iio_mutex_unlock(pdata->i_lock);
-	if (ret < 0)
-		goto err_restore_old_timeout_ep_ops;
-
-	iio_mutex_lock(pdata->i_lock);
-	ret = iiod_client_set_timeout(pdata->iiod_client, EP_OUTPUT,
-			remote_timeout);
-	iio_mutex_unlock(pdata->o_lock);
-	if (ret < 0)
-		goto err_restore_old_timeout_ep_input;
-
-	pdata->timeout_ms = timeout;
-	return 0;
-
-err_restore_old_timeout_ep_input:
-	iiod_client_set_timeout(pdata->iiod_client,
-			EP_INPUT, pdata->timeout_ms);
-err_restore_old_timeout_ep_ops:
-	iiod_client_set_timeout(pdata->iiod_client, EP_OPS, pdata->timeout_ms);
 	return ret;
 }
 
