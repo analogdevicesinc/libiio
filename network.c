@@ -82,6 +82,18 @@ struct iio_device_pdata {
 	struct iio_mutex *lock;
 };
 
+#ifdef _WIN32
+static int network_get_error(void)
+{
+	return -WSAGetLastError();
+}
+#else
+static int network_get_error(void)
+{
+	return -errno;
+}
+#endif
+
 #ifdef HAVE_AVAHI
 struct avahi_discovery_data {
 	AvahiSimplePoll *poll;
@@ -193,14 +205,10 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	while (len) {
 		ssize_t ret = send(fd, (const void *) ptr, (int) len, 0);
 		if (ret < 0) {
-#ifdef _WIN32
-			int err = WSAGetLastError();
-#else
-			int err = errno;
-#endif
-			if (err == EINTR)
+			int err = network_get_error();
+			if (err == -EINTR)
 				continue;
-			return (ssize_t) -err;
+			return (ssize_t) err;
 		}
 		ptr += ret;
 		len -= ret;
@@ -214,14 +222,10 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	while (len) {
 		ssize_t ret = recv(fd, (void *) ptr, (int) len, 0);
 		if (ret < 0) {
-#ifdef _WIN32
-			int err = WSAGetLastError();
-#else
-			int err = errno;
-#endif
-			if (err == EINTR)
+			int err = network_get_error();
+			if (err == -EINTR)
 				continue;
-			return (ssize_t) -err;
+			return (ssize_t) err;
 		}
 		if (ret == 0)
 			return -EPIPE;
@@ -385,13 +389,11 @@ static int create_socket(const struct addrinfo *addrinfo)
 #ifdef _WIN32
 	SOCKET s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
 	fd = (s == INVALID_SOCKET) ? -1 : (int) s;
-	if (fd < 0)
-		return -WSAGetLastError();
 #else
 	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
-	if (fd < 0)
-		return -errno;
 #endif
+	if (fd < 0)
+		return network_get_error();
 
 	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
 	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
@@ -920,11 +922,7 @@ static ssize_t network_write_data(struct iio_context_pdata *pdata,
 
 	ret = send(desc, src, (int) len, 0);
 	if (ret < 0) {
-#ifdef _WIN32
-		return (ssize_t) -WSAGetLastError();
-#else
-		return (ssize_t) -errno;
-#endif
+		return (ssize_t) network_get_error();
 	} else if (ret == 0) {
 		return -EPIPE;
 	} else {
@@ -939,11 +937,7 @@ static ssize_t network_read_data(struct iio_context_pdata *pdata,
 
 	ret = recv(desc, dst, (int) len, 0);
 	if (ret < 0) {
-#ifdef _WIN32
-		return (ssize_t) -WSAGetLastError();
-#else
-		return (ssize_t) -errno;
-#endif
+		return (ssize_t) network_get_error();
 	} else {
 		return ret;
 	}
