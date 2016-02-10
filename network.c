@@ -307,12 +307,17 @@ static long exec_command(const char *cmd, int fd)
 #ifndef _WIN32
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
-static int do_connect(int fd, const struct sockaddr *addr,
-		socklen_t addrlen, struct timeval *timeout)
+static int do_connect(const struct addrinfo *addrinfo,
+	struct timeval *timeout)
 {
 	int ret, error;
 	socklen_t len;
 	fd_set set;
+	int fd;
+
+	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	if (fd < 0)
+		return -errno;
 
 	FD_ZERO(&set);
 	FD_SET(fd, &set);
@@ -321,7 +326,7 @@ static int do_connect(int fd, const struct sockaddr *addr,
 	if (ret < 0)
 		return ret;
 
-	ret = connect(fd, addr, addrlen);
+	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 	if (ret < 0 && errno != EINPROGRESS) {
 		ret = -errno;
 		goto end;
@@ -352,6 +357,8 @@ static int do_connect(int fd, const struct sockaddr *addr,
 end:
 	/* Restore blocking mode */
 	set_blocking_mode(fd, true);
+	if (ret < 0)
+		close(fd);
 	return ret;
 }
 
@@ -369,6 +376,26 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 		return 0;
 }
 #else
+
+static int do_connect(const struct addrinfo *addrinfo,
+	struct timeval *timeout)
+{
+	int ret;
+	SOCKET s;
+
+	s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	if (s == INVALID_SOCKET)
+		return -WSAGetLastError();
+
+	ret = connect(s, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
+	if (ret == SOCKET_ERROR) {
+		close(s);
+		return -WSAGetLastError();
+	}
+
+	return (int) s;
+}
+
 static int set_socket_timeout(int fd, unsigned int timeout)
 {
 	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
@@ -384,31 +411,14 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 static int create_socket(const struct addrinfo *addrinfo)
 {
 	struct timeval timeout;
-	int ret, fd, yes = 1;
-
-#ifdef _WIN32
-	SOCKET s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
-	fd = (s == INVALID_SOCKET) ? -1 : (int) s;
-#else
-	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
-#endif
-	if (fd < 0)
-		return network_get_error();
+	int fd, yes = 1;
 
 	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
 	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
 
-#ifndef _WIN32
-	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
-#else
-	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
-	if (ret == SOCKET_ERROR)
-		ret = -WSAGetLastError();
-#endif
-	if (ret < 0) {
-		close(fd);
-		return ret;
-	}
+	fd = do_connect(addrinfo, &timeout);
+	if (fd < 0)
+		return fd;
 
 	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
 	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
