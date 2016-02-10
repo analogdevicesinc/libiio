@@ -400,8 +400,6 @@ static int create_socket(const struct addrinfo *addrinfo)
 
 #ifndef _WIN32
 	ret = do_connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen, &timeout);
-	if (ret < 0)
-		ret = -errno;
 #else
 	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
 	if (ret == SOCKET_ERROR)
