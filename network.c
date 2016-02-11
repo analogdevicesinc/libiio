@@ -278,6 +278,12 @@ static ssize_t write_command(const char *cmd, int fd)
 }
 
 #ifndef _WIN32
+
+/* Use it if available */
+#ifndef SOCK_CLOSEXEC
+#define SOCK_CLOSEXEC 0
+#endif
+
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
 static int do_connect(const struct addrinfo *addrinfo,
@@ -288,7 +294,7 @@ static int do_connect(const struct addrinfo *addrinfo,
 	fd_set set;
 	int fd;
 
-	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype | SOCK_CLOEXEC, 0);
 	if (fd < 0)
 		return -errno;
 
@@ -355,13 +361,19 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 }
 #else
 
+/* Use it if available */
+#ifndef WSA_FLAG_NO_HANDLE_INHERIT
+#define WSA_FLAG_NO_HANDLE_INHERIT 0
+#endif
+
 static int do_connect(const struct addrinfo *addrinfo,
 	struct timeval *timeout)
 {
 	int ret;
 	SOCKET s;
 
-	s = socket(addrinfo->ai_family, addrinfo->ai_socktype, 0);
+	s = WSASocket(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
+		WSA_FLAG_NO_HANDLE_INHERIT);
 	if (s == INVALID_SOCKET)
 		return -WSAGetLastError();
 
@@ -590,7 +602,7 @@ static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 	int pipefd[2];
 	ssize_t ret, read_len = len;
 
-	ret = (ssize_t) pipe(pipefd);
+	ret = (ssize_t) pipe2(pipefd, O_CLOEXEC);
 	if (ret < 0)
 		return -errno;
 
@@ -642,7 +654,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	 *
 	 * O_TMPFILE -> Linux 3.11.
 	 * TODO: use memfd_create (Linux 3.17) */
-	memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL, S_IRWXU);
+	memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL | O_CLOEXEC, S_IRWXU);
 	if (memfd < 0)
 		return -ENOSYS;
 
