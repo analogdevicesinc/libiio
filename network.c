@@ -277,33 +277,6 @@ static ssize_t write_command(const char *cmd, int fd)
 	return ret;
 }
 
-static long exec_command(const char *cmd, int fd)
-{
-	long resp;
-	ssize_t ret = write_command(cmd, fd);
-	if (ret < 0)
-		return (long) ret;
-
-	DEBUG("Reading response\n");
-	ret = read_integer(fd, &resp);
-	if (ret < 0) {
-		char buf[1024];
-		iio_strerror(-ret, buf, sizeof(buf));
-		ERROR("Unable to read response: %s\n", buf);
-		return (long) ret;
-	}
-
-#if LOG_LEVEL >= DEBUG_L
-	if (resp < 0) {
-		char buf[1024];
-		iio_strerror(-resp, buf, sizeof(buf));
-		DEBUG("Server returned an error: %s\n", buf);
-	}
-#endif
-
-	return resp;
-}
-
 #ifndef _WIN32
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
@@ -507,7 +480,7 @@ static ssize_t write_rwbuf_command(const struct iio_device *dev,
 			return ret;
 	}
 
-	return do_exec ? exec_command(cmd, fd) : write_command(cmd, fd);
+	return write_command(cmd, fd);
 }
 
 static int network_close(const struct iio_device *dev)
@@ -683,7 +656,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 		iio_mutex_lock(pdata->lock);
 
-		ret = write_rwbuf_command(dev, buf, false);
+		ret = write_rwbuf_command(dev, buf);
 		if (ret < 0)
 			goto err_close_memfd;
 
@@ -715,7 +688,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 				dev->id, (unsigned long) len);
 
 		iio_mutex_lock(pdata->lock);
-		ret = write_rwbuf_command(dev, buf, false);
+		ret = write_rwbuf_command(dev, buf);
 		if (ret < 0)
 			goto err_unlock;
 
