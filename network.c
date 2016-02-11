@@ -472,7 +472,7 @@ static ssize_t read_error_code(int fd)
 }
 
 static ssize_t write_rwbuf_command(const struct iio_device *dev,
-		const char *cmd, bool do_exec)
+		const char *cmd)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	int fd = pdata->fd;
