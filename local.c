@@ -597,7 +597,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
-	f = fopen(buf, "r");
+	f = fopen(buf, "re");
 	if (!f)
 		return -errno;
 
@@ -627,7 +627,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	else
 		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
-	f = fopen(buf, "w");
+	f = fopen(buf, "we");
 	if (!f)
 		return -errno;
 
@@ -782,7 +782,7 @@ static int local_open(const struct iio_device *dev,
 		return ret;
 
 	snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
-	pdata->fd = open(buf, O_RDWR);
+	pdata->fd = open(buf, O_RDWR | O_CLOEXEC);
 	if (pdata->fd == -1)
 		return -errno;
 
