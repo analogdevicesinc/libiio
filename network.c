@@ -296,8 +296,10 @@ static int do_connect(const struct addrinfo *addrinfo,
 	FD_SET(fd, &set);
 
 	ret = set_blocking_mode(fd, false);
-	if (ret < 0)
+	if (ret < 0) {
+		close(fd);
 		return ret;
+	}
 
 	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 	if (ret < 0 && errno != EINPROGRESS) {
@@ -330,9 +332,12 @@ static int do_connect(const struct addrinfo *addrinfo,
 end:
 	/* Restore blocking mode */
 	set_blocking_mode(fd, true);
-	if (ret < 0)
+	if (ret < 0) {
 		close(fd);
-	return ret;
+		return ret;
+	}
+
+	return fd;
 }
 
 static int set_socket_timeout(int fd, unsigned int timeout)
