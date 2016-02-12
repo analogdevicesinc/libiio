@@ -199,17 +199,50 @@ err_free_poll:
 }
 #endif /* HAVE_AVAHI */
 
+static ssize_t network_recv(int fd, void *data, size_t len, int flags)
+{
+	ssize_t ret;
+	int err;
+
+	while (1) {
+		ret = recv(fd, data, (int) len, flags);
+		if (ret == 0)
+			return -EPIPE;
+		else if (ret > 0)
+			break;
+
+		err = network_get_error();
+		if (err != -EINTR)
+			return (ssize_t) err;
+	}
+	return ret;
+}
+
+static ssize_t network_send(int fd, const void *data, size_t len, int flags)
+{
+	ssize_t ret;
+	int err;
+
+	while (1) {
+		ret = send(fd, data, (int) len, flags);
+		if (ret == 0)
+			return -EPIPE;
+		else if (ret > 0)
+			break;
+
+		err = network_get_error();
+		if (err != -EINTR)
+			return (ssize_t) err;
+	}
+
+	return ret;
+}
+
 static ssize_t write_all(const void *src, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) src;
 	while (len) {
-		ssize_t ret = send(fd, (const void *) ptr, (int) len, 0);
-		if (ret < 0) {
-			int err = network_get_error();
-			if (err == -EINTR)
-				continue;
-			return (ssize_t) err;
-		}
+		ssize_t ret = network_send(fd, (const void *) ptr, len, 0);
 		ptr += ret;
 		len -= ret;
 	}
@@ -220,15 +253,9 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 {
 	uintptr_t ptr = (uintptr_t) dst;
 	while (len) {
-		ssize_t ret = recv(fd, (void *) ptr, (int) len, 0);
-		if (ret < 0) {
-			int err = network_get_error();
-			if (err == -EINTR)
-				continue;
-			return (ssize_t) err;
-		}
-		if (ret == 0)
-			return -EPIPE;
+		ssize_t ret = network_recv(fd, (void *) ptr, len, 0);
+		if (ret < 0)
+			return ret;
 		ptr += ret;
 		len -= ret;
 	}
@@ -915,37 +942,13 @@ static const struct iio_backend_ops network_ops = {
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
 		int desc, const char *src, size_t len)
 {
-	ssize_t ret;
-
-	while (1) {
-		ret = send(desc, src, (int) len, 0);
-		if (ret < 0) {
-			ret = (ssize_t) network_get_error();
-			if (ret != -EINTR)
-				return ret;
-		} else if (ret == 0) {
-			return -EPIPE;
-		} else {
-			return ret;
-		}
-	}
+	return network_send(desc, src, len, 0);
 }
 
 static ssize_t network_read_data(struct iio_context_pdata *pdata,
 		int desc, char *dst, size_t len)
 {
-	ssize_t ret;
-
-	while (1) {
-		ret = recv(desc, dst, (int) len, 0);
-		if (ret < 0) {
-			ret = (ssize_t) network_get_error();
-			if (ret != -EINTR)
-				return ret;
-		} else {
-			return ret;
-		}
-	}
+	return network_recv(desc, dst, len, 0);
 }
 
 static ssize_t network_read_line(struct iio_context_pdata *pdata,
@@ -955,13 +958,9 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 #ifdef __linux__
 	ssize_t ret;
 
-	/* First read from the socket without advancing the read offset */
-	do {
-		ret = recv(desc, dst, len, MSG_PEEK);
-	} while (ret == -1 && errno == EINTR);
-
+	ret = network_recv(desc, dst, len, MSG_PEEK);
 	if (ret < 0)
-		return -errno;
+		return ret;
 
 	/* Lookup for the trailing \n */
 	for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
@@ -971,12 +970,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		return -EIO;
 
 	/* Advance the read offset to the byte following the \n */
-	do {
-		ret = recv(desc, dst, i + 1, MSG_TRUNC);
-	} while (ret == -1 && errno == EINTR);
-	if (ret < 0)
-		return -errno;
-	return ret;
+	return network_recv(desc, dst, i + 1, MSG_TRUNC);
 #else
 	bool found = false;
 
