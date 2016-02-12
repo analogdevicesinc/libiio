@@ -917,13 +917,17 @@ static ssize_t network_write_data(struct iio_context_pdata *pdata,
 {
 	ssize_t ret;
 
-	ret = send(desc, src, (int) len, 0);
-	if (ret < 0) {
-		return (ssize_t) network_get_error();
-	} else if (ret == 0) {
-		return -EPIPE;
-	} else {
-		return ret;
+	while (1) {
+		ret = send(desc, src, (int) len, 0);
+		if (ret < 0) {
+			ret = (ssize_t) network_get_error();
+			if (ret != -EINTR)
+				return ret;
+		} else if (ret == 0) {
+			return -EPIPE;
+		} else {
+			return ret;
+		}
 	}
 }
 
@@ -932,11 +936,15 @@ static ssize_t network_read_data(struct iio_context_pdata *pdata,
 {
 	ssize_t ret;
 
-	ret = recv(desc, dst, (int) len, 0);
-	if (ret < 0) {
-		return (ssize_t) network_get_error();
-	} else {
-		return ret;
+	while (1) {
+		ret = recv(desc, dst, (int) len, 0);
+		if (ret < 0) {
+			ret = (ssize_t) network_get_error();
+			if (ret != -EINTR)
+				return ret;
+		} else {
+			return ret;
+		}
 	}
 }
 
@@ -948,7 +956,10 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 	ssize_t ret;
 
 	/* First read from the socket without advancing the read offset */
-	ret = recv(desc, dst, len, MSG_PEEK);
+	do {
+		ret = recv(desc, dst, len, MSG_PEEK);
+	} while (ret == -1 && errno == EINTR);
+
 	if (ret < 0)
 		return -errno;
 
@@ -960,7 +971,9 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		return -EIO;
 
 	/* Advance the read offset to the byte following the \n */
-	ret = recv(desc, dst, i + 1, MSG_TRUNC);
+	do {
+		ret = recv(desc, dst, i + 1, MSG_TRUNC);
+	} while (ret == -1 && errno == EINTR);
 	if (ret < 0)
 		return -errno;
 	return ret;
