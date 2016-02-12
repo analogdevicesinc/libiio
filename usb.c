@@ -389,13 +389,13 @@ static int usb_count_io_eps(const struct libusb_interface_descriptor *iface)
 
 		for (i = 0; !found_in && i < eps; i++)
 			found_in = iface->endpoint[i].bEndpointAddress ==
-				LIBUSB_ENDPOINT_IN | curr;
+				(LIBUSB_ENDPOINT_IN | curr);
 		if (!found_in)
 			return -EINVAL;
 
 		for (i = 0; !found_out && i < eps; i++)
 			found_out = iface->endpoint[i].bEndpointAddress ==
-				LIBUSB_ENDPOINT_OUT | curr;
+				(LIBUSB_ENDPOINT_OUT | curr);
 		if (!found_out)
 			return -EINVAL;
 	}
