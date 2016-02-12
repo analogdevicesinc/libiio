@@ -939,7 +939,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 	/* First read from the socket without advancing the read offset */
 	ret = recv(desc, dst, len, MSG_PEEK);
 	if (ret < 0)
-		return ret;
+		return -errno;
 
 	/* Lookup for the trailing \n */
 	for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
@@ -949,7 +949,10 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		return -EIO;
 
 	/* Advance the read offset to the byte following the \n */
-	return recv(desc, dst, i + 1, MSG_TRUNC);
+	ret = recv(desc, dst, i + 1, MSG_TRUNC);
+	if (ret < 0)
+		return -errno;
+	return ret;
 #else
 	bool found = false;
 
