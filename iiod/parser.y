@@ -406,7 +406,7 @@ void yyerror(yyscan_t scanner, const char *msg)
 int yy_input(yyscan_t scanner, char *buf, size_t max_size)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
-	int i, ret;
+	int ret;
 
 	ret = read_line(pdata, buf, max_size);
 	if (ret < 0)

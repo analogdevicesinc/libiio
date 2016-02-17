@@ -16,7 +16,6 @@ struct iiod_client {
 static ssize_t iiod_client_read_integer(struct iiod_client *client,
 		int desc, int *val)
 {
-	const struct iiod_client_ops *ops = client->ops;
 	unsigned int i;
 	char buf[1024], *ptr = NULL, *end;
 	ssize_t ret;
@@ -189,7 +188,6 @@ int iiod_client_get_version(struct iiod_client *client, int desc,
 int iiod_client_get_trigger(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const struct iio_device **trigger)
 {
-	struct iio_context_pdata *pdata = client->pdata;
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
 	char buf[1024];
@@ -244,7 +242,6 @@ out_unlock:
 int iiod_client_set_trigger(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const struct iio_device *trigger)
 {
-	const struct iiod_client_ops *ops = client->ops;
 	char buf[1024];
 	int ret;
 
@@ -295,8 +292,6 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, char *dest, size_t len, bool is_debug)
 {
-	struct iio_context_pdata *pdata = client->pdata;
-	const struct iiod_client_ops *ops = client->ops;
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
 	ssize_t ret;
@@ -510,7 +505,6 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, int desc,
 {
 	unsigned int nb_channels = iio_device_get_channels_count(dev);
 	uintptr_t ptr = (uintptr_t) dst;
-	struct iio_device_pdata *pdata = dev->pdata;
 	char buf[1024];
 	ssize_t ret, read = 0;
 
@@ -556,7 +550,6 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, int desc,
 ssize_t iiod_client_write_unlocked(struct iiod_client *client, int desc,
 		const struct iio_device *dev, const void *src, size_t len)
 {
-	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret;
 	char buf[1024];
 	int val;

@@ -643,7 +643,6 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret, read = 0;
 	int memfd;
-	bool tx;
 
 	if (pdata->is_cyclic)
 		return -ENOSYS;

@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 			return EXIT_SUCCESS;
 		case 's':
 			arg_index += 2;
-			ret = sscanf(argv[arg_index], "%d%c", &buffer_size, &unit);
+			ret = sscanf(argv[arg_index], "%u%c", &buffer_size, &unit);
 			if (ret == 0)
 				return EXIT_FAILURE;
 			if (ret == 2) {

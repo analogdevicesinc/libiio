@@ -241,6 +241,9 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 	ssize_t readsize;
 	int ret;
 
+	if (len == 0)
+		return 0;
+
 	while (len > 0) {
 		do {
 			ret = read(fd, (void *) ptr, len);
@@ -270,6 +273,9 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	uintptr_t ptr = (uintptr_t) src;
 	ssize_t writtensize;
 	int ret;
+
+	if (len == 0)
+		return 0;
 
 	while (len > 0) {
 		do {
@@ -945,7 +951,6 @@ static int local_set_trigger(const struct iio_device *dev,
 
 static bool is_channel(const char *attr, bool strict)
 {
-	unsigned int i;
 	char *ptr = NULL;
 	if (!strncmp(attr, "in_timestamp_", sizeof("in_timestamp_") - 1))
 		return true;
@@ -1171,7 +1176,7 @@ static int add_channel(struct iio_device *dev, const char *name,
  */
 static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 {
-	unsigned int i, len;
+	unsigned int len;
 	char *ptr;
 
 	if (!chn->is_output && !strncmp(attr, "in_", 3))
@@ -1258,7 +1263,6 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 	/* Find channels without an index */
 	for (i = 0; i < dev->nb_attrs; i++) {
 		const char *attr = dev->attrs[i];
-		bool match;
 		int ret;
 
 		if (!dev->attrs[i])
@@ -1286,7 +1290,6 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 static int add_attr_or_channel_helper(struct iio_device *dev,
 		const char *path, bool dir_is_scan_elements)
 {
-	int ret;
 	char buf[1024];
 	const char *name = strrchr(path, '/') + 1;
 
