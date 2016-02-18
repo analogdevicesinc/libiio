@@ -414,7 +414,7 @@ int yy_input(yyscan_t scanner, char *buf, size_t max_size)
 	if (ret == 0)
 		return -EIO;
 
-	if (ret == max_size)
+	if ((size_t) ret == max_size)
 		buf[max_size - 1] = '\0';
 
 	return ret;
