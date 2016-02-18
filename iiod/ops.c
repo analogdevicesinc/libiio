@@ -84,9 +84,10 @@ static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 static ssize_t write_all(struct parser_pdata *pdata,
 		const void *src, size_t len)
 {
-	const void *ptr = src;
+	uintptr_t ptr = (uintptr_t) src;
+
 	while (len) {
-		ssize_t ret = writefd(pdata, ptr, len);
+		ssize_t ret = writefd(pdata, (void *) ptr, len);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -94,15 +95,17 @@ static ssize_t write_all(struct parser_pdata *pdata,
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - src;
+
+	return ptr - (uintptr_t) src;
 }
 
 static ssize_t read_all(struct parser_pdata *pdata,
 		void *dst, size_t len)
 {
-	void *ptr = dst;
+	uintptr_t ptr = (uintptr_t) dst;
+
 	while (len) {
-		ssize_t ret = readfd(pdata, ptr, len);
+		ssize_t ret = readfd(pdata, (void *) ptr, len);
 		if (ret < 0)
 			return -errno;
 		if (!ret)
@@ -110,7 +113,8 @@ static ssize_t read_all(struct parser_pdata *pdata,
 		ptr += ret;
 		len -= ret;
 	}
-	return ptr - dst;
+
+	return ptr - (uintptr_t) dst;
 }
 
 static void print_value(struct parser_pdata *pdata, long value)
