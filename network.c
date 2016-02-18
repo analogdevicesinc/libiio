@@ -765,7 +765,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	}
 
 	*addr_ptr = pdata->mmap_addr;
-	return read ? read : bytes_used;
+	return read ? read : (ssize_t) bytes_used;
 
 err_close_memfd:
 	close(memfd);
