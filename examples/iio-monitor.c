@@ -156,16 +156,60 @@ static void * read_thd(void *d)
 	return NULL;
 }
 
+static void show_main_screen(struct iio_context *ctx)
+{
+	unsigned int i, nb_devices;
+	CDKSCREEN *screen;
+	char **dev_names;
+	CDKSCROLL *list;
+	pthread_t thd;
+
+	screen = initCDKScreen(left);
+
+	pthread_create(&thd, NULL, read_thd, ctx);
+
+	nb_devices = iio_context_get_devices_count(ctx);
+	dev_names = malloc(nb_devices * sizeof(char *));
+
+	for (i = 0; i < nb_devices; i++) {
+		char buf[1024];
+		struct iio_device *dev = iio_context_get_device(ctx, i);
+		const char *name = iio_device_get_name(dev);
+		if (!name)
+			name = iio_device_get_id(dev);
+		sprintf(buf, "</B> %s", name);
+		dev_names[i] = strdup(buf);
+	}
+
+	boxWindow(right, 0);
+	list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
+			"\n List of available IIO devices:\n",
+			dev_names, nb_devices, FALSE,
+			A_BOLD | A_REVERSE, TRUE, FALSE);
+
+	drawCDKScroll(list, TRUE);
+
+	while (!stop) {
+		int ret = activateCDKScroll(list, NULL);
+		stop = ret < 0;
+		selected = ret;
+		usleep(100000);
+	}
+
+	pthread_join(thd, NULL);
+
+	destroyCDKScroll(list);
+	for (i = 0; i < nb_devices; i++)
+		free(dev_names[i]);
+	free(dev_names);
+	destroyCDKScreen(screen);
+}
+
 int main(void)
 {
 	struct iio_context *ctx;
 	CDKSCREEN *screen;
-	CDKSCROLL *list;
 	int row, col;
-	unsigned int i, nb_devices;
-	pthread_t thd;
-
-	char **dev_names;
 
 	ctx = iio_create_local_context();
 
@@ -201,53 +245,15 @@ int main(void)
 				"Hostname:  ", "localhost");
 		ctx = iio_create_network_context(hostname);
 		freeChar(hostname);
-		if (!ctx)
-			goto err_destroy_cdk;
 	}
 
 	destroyCDKScreen(screen);
-	screen = initCDKScreen(left);
 
-	pthread_create(&thd, NULL, read_thd, ctx);
-
-	nb_devices = iio_context_get_devices_count(ctx);
-	dev_names = malloc(nb_devices * sizeof(char *));
-
-	for (i = 0; i < nb_devices; i++) {
-		char buf[1024];
-		struct iio_device *dev = iio_context_get_device(ctx, i);
-		const char *name = iio_device_get_name(dev);
-		if (!name)
-			name = iio_device_get_id(dev);
-		sprintf(buf, "</B> %s", name);
-		dev_names[i] = strdup(buf);
+	if (ctx) {
+		show_main_screen(ctx);
+		iio_context_destroy(ctx);
 	}
 
-	boxWindow(right, 0);
-	list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
-			"\n List of available IIO devices:\n",
-			dev_names, nb_devices, FALSE,
-			A_BOLD | A_REVERSE, TRUE, FALSE);
-
-	drawCDKScroll(list, TRUE);
-
-	while (!stop) {
-		int ret = activateCDKScroll(list, NULL);
-		stop = ret < 0;
-		selected = ret;
-		usleep(100000);
-	}
-
-	pthread_join(thd, NULL);
-
-	iio_context_destroy(ctx);
-
-	destroyCDKScroll(list);
-	for (i = 0; i < nb_devices; i++)
-		free(dev_names[i]);
-	free(dev_names);
-err_destroy_cdk:
-	destroyCDKScreen(screen);
 	endCDK();
 	delwin(left);
 	delwin(right);
