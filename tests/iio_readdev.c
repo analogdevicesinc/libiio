@@ -30,6 +30,7 @@
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"network", required_argument, 0, 'n'},
+	  {"uri", required_argument, 0, 'u'},
 	  {"trigger", required_argument, 0, 't'},
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
@@ -39,6 +40,7 @@ static const struct option options[] = {
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
+	"Use the context with the provided URI.",
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
 	"Number of samples to capture, 0 = infinite. Default is 0."
@@ -125,11 +127,11 @@ int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	int c, option_index = 0, arg_index = 0, ip_index = 0;
+	int c, option_index = 0, arg_index = 0, ip_index = 0, uri_index = 0;
 	struct iio_device *dev;
 	size_t sample_size;
 
-	while ((c = getopt_long(argc, argv, "+hn:t:b:s:",
+	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -138,6 +140,10 @@ int main(int argc, char **argv)
 		case 'n':
 			arg_index += 2;
 			ip_index = arg_index;
+			break;
+		case 'u':
+			arg_index += 2;
+			uri_index = arg_index;
 			break;
 		case 't':
 			arg_index += 2;
@@ -162,7 +168,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (ip_index)
+	if (uri_index)
+		ctx = iio_create_context_from_uri(argv[uri_index]);
+	else if (ip_index)
 		ctx = iio_create_network_context(argv[ip_index]);
 	else
 		ctx = iio_create_default_context();
