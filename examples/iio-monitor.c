@@ -17,6 +17,7 @@
  * */
 
 #define _BSD_SOURCE
+#define _GNU_SOURCE
 
 #include <cdk/cdk.h>
 #include <iio.h>
@@ -156,6 +157,91 @@ static void * read_thd(void *d)
 	return NULL;
 }
 
+static struct iio_context *show_contexts_screen(void)
+{
+	struct iio_context *ctx = NULL;
+	struct iio_scan_context *scan_ctx;
+	struct iio_context_info **info;
+	unsigned int num_contexts;
+	CDKSCREEN *screen;
+	CDKSCROLL *list;
+	const char *uri;
+	unsigned int i;
+	bool free_uri;
+	char **items;
+	int ret;
+
+	scan_ctx = iio_create_scan_context(NULL, 0);
+	if (!scan_ctx)
+		return NULL;
+
+	screen = initCDKScreen(win);
+
+	do {
+		ret = iio_scan_context_get_info_list(scan_ctx, &info);
+		if (ret < 0)
+			break;
+
+		num_contexts = ret;
+
+		items = calloc(num_contexts + 1, sizeof(*items));
+
+		for (i = 0; i < num_contexts; i++) {
+			 asprintf(&items[i], "</%d>%s<!%d> </%d>[%s]<!%d>", YELLOW,
+				iio_context_info_get_description(info[i]),
+				YELLOW, BLUE,
+				iio_context_info_get_uri(info[i]),
+				BLUE);
+		}
+
+		items[i] = "Enter location";
+
+		list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
+				"\n Select a IIO context to use:\n",
+				items, num_contexts + 1, TRUE,
+				A_BOLD | A_REVERSE, TRUE, FALSE);
+
+		drawCDKScroll(list, TRUE);
+
+		ret = activateCDKScroll(list, NULL);
+		if (ret < num_contexts) {
+			uri = iio_context_info_get_uri(info[ret]);
+			free_uri = FALSE;
+		} else if (ret == num_contexts) {
+			uri = getString(screen,
+					"Please enter the location of the server",
+					"Location:  ", "ip:localhost");
+			free_uri = TRUE;
+		} else {
+			uri = NULL;
+		}
+
+		if (uri) {
+			ctx = iio_create_context_from_uri(uri);
+			if (ctx == NULL) {
+				char *msg[] = { "</16>Failed to create IIO context.<!16>" };
+				popupLabel(screen, msg, 1);
+			}
+
+			if (free_uri)
+				freeChar((char *)uri);
+		}
+
+		destroyCDKScroll(list);
+		iio_context_info_list_free(info);
+		for (i = 0; i < num_contexts; i++)
+			free(items[i]);
+		free(items);
+
+	} while (!ctx && ret >= 0);
+
+	destroyCDKScreen(screen);
+
+	iio_scan_context_destroy(scan_ctx);
+
+	return ctx;
+}
+
 static void show_main_screen(struct iio_context *ctx)
 {
 	unsigned int i, nb_devices;
@@ -164,6 +250,7 @@ static void show_main_screen(struct iio_context *ctx)
 	CDKSCROLL *list;
 	pthread_t thd;
 
+	stop = FALSE;
 	screen = initCDKScreen(left);
 
 	pthread_create(&thd, NULL, read_thd, ctx);
@@ -208,48 +295,22 @@ static void show_main_screen(struct iio_context *ctx)
 int main(void)
 {
 	struct iio_context *ctx;
-	CDKSCREEN *screen;
 	int row, col;
-
-	ctx = iio_create_local_context();
 
 	win = initscr();
 	noecho();
 	keypad(win, TRUE);
 	getmaxyx(win, row, col);
 	initCDKColor();
-	screen = initCDKScreen(win);
 
 	left = newwin(row, col / 2, 0, 0);
 	right = newwin(row, col / 2, 0, col / 2);
 
-	if (ctx) {
-		char *title[] = {
-			"Do you want to connect to a remote IIOD server?",
-		};
-		char *buttons[] = {
-			"No",
-			"Yes",
-		};
-		int ret = popupDialog(screen, title, ARRAY_SIZE(title),
-				buttons, ARRAY_SIZE(buttons));
-		if (ret == 1) {
-			iio_context_destroy(ctx);
-			ctx = NULL;
-		}
-	}
+	while (TRUE) {
+		ctx = show_contexts_screen();
+		if (!ctx)
+			break;
 
-	if (!ctx) {
-		char *uri = getString(screen,
-				"Please enter the URI (e.g. ip:192.168.1.1, usb:3.10) of the server",
-				"URI:  ", "ip:localhost");
-		ctx = iio_create_context_from_uri(uri);
-		freeChar(uri);
-	}
-
-	destroyCDKScreen(screen);
-
-	if (ctx) {
 		show_main_screen(ctx);
 		iio_context_destroy(ctx);
 	}
