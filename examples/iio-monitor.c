@@ -32,7 +32,6 @@
 #define BLUE	050
 
 static int selected = -1;
-static pthread_t thd;
 
 static WINDOW *win, *left, *right;
 static bool stop;
@@ -164,6 +163,7 @@ int main(void)
 	CDKSCROLL *list;
 	int row, col;
 	unsigned int i, nb_devices;
+	pthread_t thd;
 
 	char **dev_names;
 
