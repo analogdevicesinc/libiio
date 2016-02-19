@@ -35,7 +35,6 @@ static int selected = -1;
 static pthread_t thd;
 
 static WINDOW *win, *left, *right;
-struct iio_context *ctx;
 static bool stop;
 
 static bool channel_has_attr(struct iio_channel *chn, const char *attr)
@@ -82,6 +81,8 @@ static double get_channel_value(struct iio_channel *chn)
 
 static void * read_thd(void *d)
 {
+	struct iio_context *ctx = d;
+
 	while (!stop) {
 		struct iio_device *dev;
 		const char *name;
@@ -158,6 +159,7 @@ static void * read_thd(void *d)
 
 int main(void)
 {
+	struct iio_context *ctx;
 	CDKSCREEN *screen;
 	CDKSCROLL *list;
 	int row, col;
@@ -206,7 +208,7 @@ int main(void)
 	destroyCDKScreen(screen);
 	screen = initCDKScreen(left);
 
-	pthread_create(&thd, NULL, read_thd, NULL);
+	pthread_create(&thd, NULL, read_thd, ctx);
 
 	nb_devices = iio_context_get_devices_count(ctx);
 	dev_names = malloc(nb_devices * sizeof(char *));
