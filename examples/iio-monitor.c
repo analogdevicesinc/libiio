@@ -240,11 +240,11 @@ int main(void)
 	}
 
 	if (!ctx) {
-		char *hostname = getString(screen,
-				"Please enter the IP or hostname of the server",
-				"Hostname:  ", "localhost");
-		ctx = iio_create_network_context(hostname);
-		freeChar(hostname);
+		char *uri = getString(screen,
+				"Please enter the URI (e.g. ip:192.168.1.1, usb:3.10) of the server",
+				"URI:  ", "ip:localhost");
+		ctx = iio_create_context_from_uri(uri);
+		freeChar(uri);
 	}
 
 	destroyCDKScreen(screen);
