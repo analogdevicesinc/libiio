@@ -77,8 +77,7 @@ static double get_channel_value(struct iio_channel *chn)
 		}
 	}
 
-	val = (double) ((unsigned long) val) / 1000.0;
-	return val;
+	return val / 1000.0;
 }
 
 static void * read_thd(void *d)
