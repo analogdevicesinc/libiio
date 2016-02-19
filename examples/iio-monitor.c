@@ -108,6 +108,7 @@ static void * read_thd(void *d)
 				RED, name, RED);
 		str = char2Chtype(buf, &len, &align);
 		writeChtype(right, 2, line, str, HORIZONTAL, 0, len);
+		freeChtype(str);
 		line += 2;
 
 		nb_channels = iio_device_get_channels_count(dev);
@@ -131,6 +132,7 @@ static void * read_thd(void *d)
 			str = char2Chtype(buf, &len, &align);
 			writeChtype(right, 2, line, str,
 					HORIZONTAL, 0, len);
+			freeChtype(str);
 
 			sprintf(buf, "</%u></B>%.3lf %s<!B><!%u>",
 					YELLOW, get_channel_value(chn),
@@ -138,6 +140,7 @@ static void * read_thd(void *d)
 			str = char2Chtype(buf, &len, &align);
 			writeChtype(right, col / 2, line++,
 					str, HORIZONTAL, 0, len);
+			freeChtype(str);
 		}
 
 		if (nb == 0) {
@@ -193,6 +196,7 @@ int main()
 				"Please enter the IP or hostname of the server",
 				"Hostname:  ", "localhost");
 		ctx = iio_create_network_context(hostname);
+		freeChar(hostname);
 		if (!ctx)
 			goto err_destroy_cdk;
 	}
