@@ -262,32 +262,11 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 	}
 }
 
-#if USB_BACKEND
-static struct iio_context * iio_create_usb_context_from_string(const char *dev)
-{
-	unsigned short vid, pid;
-
-	if ((sscanf(dev, "0x%04hx:0x%04hx", &vid, &pid) != 2) &&
-			sscanf(dev, "%04hx:%04hx", &vid, &pid) != 2) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	return usb_create_context(vid, pid);
-}
-#endif
-
 struct iio_context * iio_create_default_context(void)
 {
 	char *hostname = getenv("IIOD_REMOTE");
 
 	if (hostname) {
-#if USB_BACKEND
-		/* If it contains a colon, create a USB context */
-		if (strchr(hostname, ':'))
-			return iio_create_usb_context_from_string(hostname);
-#endif
-
 #if NETWORK_BACKEND
 		/* If the environment variable is an empty string, we will
 		 * discover the server using ZeroConf */
