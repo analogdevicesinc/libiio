@@ -105,8 +105,7 @@ static void * read_thd(void *d)
 
 		getmaxyx(right, row, col);
 
-		eraseCursesWindow(right);
-		boxWindow(right, 0);
+		werase(right);
 
 		sprintf(buf, "</B>Device selected: </%u>%s<!%u><!B>",
 				RED, name, RED);
@@ -153,7 +152,7 @@ static void * read_thd(void *d)
 					HORIZONTAL, 0, sizeof(msg) - 1);
 		}
 
-		wrefresh(right);
+		boxWindow(right, 0);
 	}
 	return NULL;
 }
