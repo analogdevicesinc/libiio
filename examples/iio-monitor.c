@@ -158,7 +158,7 @@ static void * read_thd(void *d)
 	return NULL;
 }
 
-int main()
+int main(void)
 {
 	CDKSCREEN *screen;
 	CDKSCROLL *list;
