@@ -29,12 +29,14 @@ enum backend {
 	LOCAL,
 	XML,
 	NETWORK,
+	AUTO,
 };
 
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
 	  {"xml", required_argument, 0, 'x'},
 	  {"network", required_argument, 0, 'n'},
+	  {"uri", required_argument, 0, 'u'},
 	  {0, 0, 0, 0},
 };
 
@@ -42,6 +44,7 @@ static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
 	"Use the network backend with the provided hostname.",
+	"Use the context at the provided URI.",
 };
 
 static void usage(void)
@@ -49,7 +52,8 @@ static void usage(void)
 	unsigned int i;
 
 	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t"
-			MY_NAME " [-n <hostname>]\n\nOptions:\n");
+			MY_NAME " [-n <hostname>]\n\t"
+			MY_NAME " [-u <uri>]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 					options[i].val, options[i].name,
@@ -59,13 +63,14 @@ static void usage(void)
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
-	int c, option_index = 0, arg_index = 0, xml_index = 0, ip_index = 0;
+	int c, option_index = 0, arg_index = 0, xml_index = 0, ip_index = 0,
+	    uri_index = 0;
 	enum backend backend = LOCAL;
 	unsigned int major, minor;
 	char git_tag[8];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:x:",
+	while ((c = getopt_long(argc, argv, "+hn:x:u:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -73,7 +78,7 @@ int main(int argc, char **argv)
 			return EXIT_SUCCESS;
 		case 'n':
 			if (backend != LOCAL) {
-				fprintf(stderr, "-x and -n are mutually exclusive\n");
+				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = NETWORK;
@@ -82,12 +87,21 @@ int main(int argc, char **argv)
 			break;
 		case 'x':
 			if (backend != LOCAL) {
-				fprintf(stderr, "-x and -n are mutually exclusive\n");
+				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = XML;
 			arg_index += 2;
 			xml_index = arg_index;
+			break;
+		case 'u':
+			if (backend != LOCAL) {
+				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
+				return EXIT_FAILURE;
+			}
+			backend = AUTO;
+			arg_index += 2;
+			uri_index = arg_index;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -107,6 +121,8 @@ int main(int argc, char **argv)
 		ctx = iio_create_xml_context(argv[xml_index]);
 	else if (backend == NETWORK)
 		ctx = iio_create_network_context(argv[ip_index]);
+	else if (backend == AUTO)
+		ctx = iio_create_context_from_uri(argv[uri_index]);
 	else
 		ctx = iio_create_default_context();
 
