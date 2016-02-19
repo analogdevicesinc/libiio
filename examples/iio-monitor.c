@@ -47,7 +47,7 @@ static bool is_valid_channel(struct iio_channel *chn)
 {
 	return !iio_channel_is_output(chn) &&
 		(channel_has_attr(chn, "raw") ||
-		 channel_has_attr(chn, "processed"));
+		 channel_has_attr(chn, "input"));
 }
 
 static double get_channel_value(struct iio_channel *chn)
@@ -55,8 +55,8 @@ static double get_channel_value(struct iio_channel *chn)
 	char buf[1024];
 	double val;
 
-	if (channel_has_attr(chn, "processed")) {
-		iio_channel_attr_read(chn, "processed", buf, sizeof(buf));
+	if (channel_has_attr(chn, "input")) {
+		iio_channel_attr_read(chn, "input", buf, sizeof(buf));
 		val = strtod(buf, NULL);
 	} else {
 		iio_channel_attr_read(chn, "raw", buf, sizeof(buf));
