@@ -317,10 +317,17 @@ static void usb_shutdown(struct iio_context *ctx)
 	if (ctx->pdata->io_endpoints)
 		free(ctx->pdata->io_endpoints);
 
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+
+		free(dev->pdata);
+	}
+
 	iiod_client_destroy(ctx->pdata->iiod_client);
 
 	libusb_close(ctx->pdata->hdl);
 	libusb_exit(ctx->pdata->ctx);
+	free(ctx->pdata);
 }
 
 static const struct iio_backend_ops usb_ops = {
