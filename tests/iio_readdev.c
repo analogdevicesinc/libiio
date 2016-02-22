@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 		for (i = 0; i < nb_channels; i++) {
 			unsigned int j;
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
-			for (j = arg_index + 2; j < argc; j++) {
+			for (j = arg_index + 2; j < (unsigned int) argc; j++) {
 				const char *n = iio_channel_get_name(ch);
 				if (!strcmp(argv[j], iio_channel_get_id(ch)) ||
 						(n && !strcmp(n, argv[j])))
