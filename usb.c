@@ -470,13 +470,15 @@ static int usb_count_io_eps(const struct libusb_interface_descriptor *iface)
 	return (int) curr - 1;
 }
 
-struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
+struct iio_context * usb_create_context(unsigned int bus,
+		unsigned int address, unsigned int interface)
 {
 	libusb_context *usb_ctx;
-	libusb_device *usb_dev;
 	libusb_device_handle *hdl;
 	const struct libusb_interface_descriptor *iface;
+	libusb_device *dev, *usb_dev;
 	struct libusb_config_descriptor *conf_desc;
+	libusb_device **device_list;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
 	char err_str[1024];
@@ -519,23 +521,42 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 		goto err_destroy_iiod_client;
 	}
 
-	hdl = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
-	if (!hdl) {
-		ERROR("Unable to find device 0x%04hx:0x%04hx\n", vid, pid);
-		ret = -ENODEV;
+	libusb_get_device_list(usb_ctx, &device_list);
+
+	usb_dev = NULL;
+
+	for (i = 0; device_list[i]; i++) {
+		dev = device_list[i];
+
+		if (bus == libusb_get_bus_number(dev) &&
+			address == libusb_get_device_address(dev)) {
+			usb_dev = dev;
+			libusb_ref_device(usb_dev);
+			break;
+		}
+	}
+
+	libusb_free_device_list(device_list, true);
+
+	if (!usb_dev)
+		goto err_libusb_exit;
+
+	ret = libusb_open(usb_dev, &hdl);
+	libusb_unref_device(usb_dev); /* Open gets us a extra ref */
+	if (ret) {
+		ret = -(int) libusb_to_errno(ret);
+		ERROR("Unable to open device\n");
 		goto err_libusb_exit;
 	}
 
 	libusb_set_auto_detach_kernel_driver(hdl, true);
 
-	ret = libusb_claim_interface(hdl, 0);
+	ret = libusb_claim_interface(hdl, interface);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		ERROR("Unable to claim interface 0: %i\n", ret);
+		ERROR("Unable to claim interface %u: %i\n", interface, ret);
 		goto err_libusb_close;
 	}
-
-	usb_dev = libusb_get_device(hdl);
 
 	ret = libusb_get_active_config_descriptor(usb_dev, &conf_desc);
 	if (ret) {
@@ -544,7 +565,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 		goto err_libusb_close;
 	}
 
-	iface = &conf_desc->interface[0].altsetting[0];
+	iface = &conf_desc->interface[interface].altsetting[0];
 
 	ret = usb_count_io_eps(iface);
 	if (ret < 0) {
