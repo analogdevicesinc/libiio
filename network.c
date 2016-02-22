@@ -249,47 +249,6 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	return (ssize_t)(ptr - (uintptr_t) src);
 }
 
-static ssize_t read_all(void *dst, size_t len, int fd)
-{
-	uintptr_t ptr = (uintptr_t) dst;
-	while (len) {
-		ssize_t ret = network_recv(fd, (void *) ptr, len, 0);
-		if (ret < 0)
-			return ret;
-		ptr += ret;
-		len -= ret;
-	}
-	return (ssize_t)(ptr - (uintptr_t) dst);
-}
-
-static int read_integer(int fd, long *val)
-{
-	unsigned int i;
-	char buf[1024], *ptr;
-	ssize_t ret;
-	bool found = false;
-
-	for (i = 0; i < sizeof(buf) - 1; i++) {
-		ret = read_all(buf + i, 1, fd);
-		if (ret < 0)
-			return (int) ret;
-
-		/* Skip the eventual first few carriage returns.
-		 * Also stop when a dot is found (for parsing floats) */
-		if (buf[i] != '\n' && buf[i] != '.')
-			found = true;
-		else if (found)
-			break;
-	}
-
-	buf[i] = '\0';
-	ret = (ssize_t) strtol(buf, &ptr, 10);
-	if (ptr == buf)
-		return -EINVAL;
-	*val = (long) ret;
-	return 0;
-}
-
 static ssize_t write_command(const char *cmd, int fd)
 {
 	ssize_t ret;
@@ -480,6 +439,145 @@ out_mutex_unlock:
 	return ret;
 }
 
+static int network_close(const struct iio_device *dev)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int ret = -EBADF;
+
+	iio_mutex_lock(pdata->lock);
+
+	if (pdata->fd >= 0) {
+		ret = iiod_client_close_unlocked(dev->ctx->pdata->iiod_client,
+				pdata->fd, dev);
+
+		write_command("\r\nEXIT\r\n", pdata->fd);
+
+		close(pdata->fd);
+		pdata->fd = -1;
+	}
+
+#ifdef WITH_NETWORK_GET_BUFFER
+	if (pdata->memfd >= 0)
+		close(pdata->memfd);
+	pdata->memfd = -1;
+
+	if (pdata->mmap_addr) {
+		munmap(pdata->mmap_addr, pdata->mmap_len);
+		pdata->mmap_addr = NULL;
+	}
+#endif
+
+	iio_mutex_unlock(pdata->lock);
+	return ret;
+}
+
+static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
+		uint32_t *mask, size_t words)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret;
+
+	iio_mutex_lock(pdata->lock);
+	ret = iiod_client_read_unlocked(dev->ctx->pdata->iiod_client,
+			pdata->fd, dev, dst, len, mask, words);
+	iio_mutex_unlock(pdata->lock);
+
+	return ret;
+}
+
+static ssize_t network_write(const struct iio_device *dev,
+		const void *src, size_t len)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	ssize_t ret;
+
+	iio_mutex_lock(pdata->lock);
+	ret = iiod_client_write_unlocked(dev->ctx->pdata->iiod_client,
+			pdata->fd, dev, src, len);
+	iio_mutex_unlock(pdata->lock);
+
+	return ret;
+}
+
+#ifdef WITH_NETWORK_GET_BUFFER
+
+static ssize_t read_all(void *dst, size_t len, int fd)
+{
+	uintptr_t ptr = (uintptr_t) dst;
+	while (len) {
+		ssize_t ret = network_recv(fd, (void *) ptr, len, 0);
+		if (ret < 0)
+			return ret;
+		ptr += ret;
+		len -= ret;
+	}
+	return (ssize_t)(ptr - (uintptr_t) dst);
+}
+
+static int read_integer(int fd, long *val)
+{
+	unsigned int i;
+	char buf[1024], *ptr;
+	ssize_t ret;
+	bool found = false;
+
+	for (i = 0; i < sizeof(buf) - 1; i++) {
+		ret = read_all(buf + i, 1, fd);
+		if (ret < 0)
+			return (int) ret;
+
+		/* Skip the eventual first few carriage returns.
+		 * Also stop when a dot is found (for parsing floats) */
+		if (buf[i] != '\n' && buf[i] != '.')
+			found = true;
+		else if (found)
+			break;
+	}
+
+	buf[i] = '\0';
+	ret = (ssize_t) strtol(buf, &ptr, 10);
+	if (ptr == buf)
+		return -EINVAL;
+	*val = (long) ret;
+	return 0;
+}
+
+static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
+{
+	long read_len;
+	ssize_t ret;
+
+	ret = read_integer(fd, &read_len);
+	if (ret < 0)
+		return ret;
+
+	if (read_len > 0 && mask) {
+		size_t i;
+		char buf[9];
+
+		buf[8] = '\0';
+		DEBUG("Reading mask\n");
+
+		for (i = words; i > 0; i--) {
+			ret = read_all(buf, 8, fd);
+			if (ret < 0)
+				return ret;
+
+			sscanf(buf, "%08x", &mask[i - 1]);
+			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
+		}
+	}
+
+	if (read_len > 0) {
+		char c;
+		ssize_t nb = read_all(&c, 1, fd);
+		if (nb > 0 && c != '\n')
+			read_len = -EIO;
+	}
+
+	return (ssize_t) read_len;
+}
+
 static ssize_t read_error_code(int fd)
 {
 	/*
@@ -527,103 +625,6 @@ static ssize_t write_rwbuf_command(const struct iio_device *dev,
 	return write_command(cmd, fd);
 }
 
-static int network_close(const struct iio_device *dev)
-{
-	struct iio_device_pdata *pdata = dev->pdata;
-	int ret = -EBADF;
-
-	iio_mutex_lock(pdata->lock);
-
-	if (pdata->fd >= 0) {
-		ret = iiod_client_close_unlocked(dev->ctx->pdata->iiod_client,
-				pdata->fd, dev);
-
-		write_command("\r\nEXIT\r\n", pdata->fd);
-
-		close(pdata->fd);
-		pdata->fd = -1;
-	}
-
-#ifdef WITH_NETWORK_GET_BUFFER
-	if (pdata->memfd >= 0)
-		close(pdata->memfd);
-	pdata->memfd = -1;
-
-	if (pdata->mmap_addr) {
-		munmap(pdata->mmap_addr, pdata->mmap_len);
-		pdata->mmap_addr = NULL;
-	}
-#endif
-
-	iio_mutex_unlock(pdata->lock);
-	return ret;
-}
-
-static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
-{
-	long read_len;
-	ssize_t ret;
-
-	ret = read_integer(fd, &read_len);
-	if (ret < 0)
-		return ret;
-
-	if (read_len > 0 && mask) {
-		size_t i;
-		char buf[9];
-
-		buf[8] = '\0';
-		DEBUG("Reading mask\n");
-
-		for (i = words; i > 0; i--) {
-			ret = read_all(buf, 8, fd);
-			if (ret < 0)
-				return ret;
-
-			sscanf(buf, "%08x", &mask[i - 1]);
-			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
-		}
-	}
-
-	if (read_len > 0) {
-		char c;
-		ssize_t nb = read_all(&c, 1, fd);
-		if (nb > 0 && c != '\n')
-			read_len = -EIO;
-	}
-
-	return (ssize_t) read_len;
-}
-
-static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
-		uint32_t *mask, size_t words)
-{
-	struct iio_device_pdata *pdata = dev->pdata;
-	ssize_t ret;
-
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_read_unlocked(dev->ctx->pdata->iiod_client,
-			pdata->fd, dev, dst, len, mask, words);
-	iio_mutex_unlock(pdata->lock);
-
-	return ret;
-}
-
-static ssize_t network_write(const struct iio_device *dev,
-		const void *src, size_t len)
-{
-	struct iio_device_pdata *pdata = dev->pdata;
-	ssize_t ret;
-
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_write_unlocked(dev->ctx->pdata->iiod_client,
-			pdata->fd, dev, src, len);
-	iio_mutex_unlock(pdata->lock);
-
-	return ret;
-}
-
-#ifdef WITH_NETWORK_GET_BUFFER
 static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 {
 	int pipefd[2];
