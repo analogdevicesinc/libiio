@@ -210,6 +210,8 @@ static int usb_close(const struct iio_device *dev)
 			pdata->ep, dev);
 	pdata->opened = false;
 
+	iio_mutex_unlock(pdata->lock);
+
 	usb_free_ep_unlocked(dev);
 
 out_unlock:
