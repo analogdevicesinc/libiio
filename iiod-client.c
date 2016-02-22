@@ -492,6 +492,8 @@ static int iiod_client_read_mask(struct iiod_client *client,
 	else
 		ret = 0;
 
+	buf[words*8] = '\0';
+
 	DEBUG("Reading mask\n");
 
 	for (i = words, ptr = buf; i > 0; i--) {
