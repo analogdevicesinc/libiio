@@ -147,6 +147,13 @@ __api struct iio_context * iio_create_xml_context_mem(
 __api struct iio_context * iio_create_network_context(const char *host);
 
 
+/** @brief Create a context from a URI description
+ * @param uri A URI describing the context location
+ * @return On success, a pointer to a iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately */
+__api struct iio_context * iio_create_context_from_uri(const char *uri);
+
+
 /** @brief Duplicate a pre-existing IIO context
  * @param ctx A pointer to an iio_context structure
  * @return On success, A pointer to an iio_context structure

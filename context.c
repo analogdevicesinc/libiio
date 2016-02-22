@@ -262,11 +262,38 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 	}
 }
 
+struct iio_context * iio_create_context_from_uri(const char *uri)
+{
+	if (strcmp(uri, "local:") == 0) /* No address part */
+		return iio_create_local_context();
+
+	if (strncmp(uri, "xml:", sizeof("xml:") - 1) == 0)
+		return iio_create_xml_context(uri + sizeof("xml:") - 1);
+
+	if (strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
+		return iio_create_network_context(uri+3);
+
+	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
+#if USB_BACKEND
+		return usb_create_context_from_uri(uri);
+#else
+		return NULL;
+#endif
+
+	return NULL;
+}
+
 struct iio_context * iio_create_default_context(void)
 {
 	char *hostname = getenv("IIOD_REMOTE");
 
 	if (hostname) {
+		struct iio_context *ctx;
+
+		ctx = iio_create_context_from_uri(hostname);
+		if (ctx)
+			return ctx;
+
 #if NETWORK_BACKEND
 		/* If the environment variable is an empty string, we will
 		 * discover the server using ZeroConf */
