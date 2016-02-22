@@ -234,6 +234,19 @@ struct iio_buffer {
 	bool is_output, dev_is_high_speed;
 };
 
+struct iio_context_info {
+	char *description;
+	char *uri;
+};
+
+struct iio_scan_result {
+	size_t size;
+	struct iio_context_info **info;
+};
+
+struct iio_context_info ** iio_scan_result_add(
+	struct iio_scan_result *scan_result, size_t num);
+
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 

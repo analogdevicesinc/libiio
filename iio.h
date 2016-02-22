@@ -69,8 +69,73 @@ struct iio_device;
 struct iio_channel;
 struct iio_buffer;
 
+struct iio_context_info;
+struct iio_scan_context;
+
 
 /* ---------------------------------------------------------------------------*/
+/* ------------------------- Scan functions ----------------------------------*/
+/** @defgroup Scan Functions for scanning available contexts
+ * @{
+ * @struct iio_scan_context
+ * @brief The scanning context
+ *
+ * @struct iio_context_info
+ * @brief The information related to a discovered context
+ */
+
+
+/** @brief Create a scan context
+ * @param backend A NULL-terminated string containing the backend to use for
+ * scanning. If NULL, all the available backends are used.
+ * @param flags Unused for now. Set to 0.
+ * @return on success, a pointer to a iio_scan_context structure
+ * @return On failure, NULL is returned and errno is set appropriately */
+__api struct iio_scan_context * iio_create_scan_context(
+		const char *backend, unsigned int flags);
+
+
+/** @brief Destroy the given scan context
+ * @param ctx A pointer to an iio_scan_context structure
+ *
+ * <b>NOTE:</b> After that function, the iio_scan_context pointer shall be invalid. */
+__api void iio_scan_context_destroy(struct iio_scan_context *ctx);
+
+
+/** @brief Enumerate available contexts
+ * @param ctx A pointer to an iio_scan_context structure
+ * @param info A pointer to a 'const struct iio_context_info **' typed variable.
+ * The pointed variable will be initialized on success.
+ * @returns On success, the number of contexts found.
+ * @returns On failure, a negative error number.
+ */
+__api ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
+		struct iio_context_info ***info);
+
+
+/** @brief Free a context info list
+ * @param info A pointer to a 'const struct iio_context_info *' typed variable
+ */
+__api void iio_context_info_list_free(struct iio_context_info **info);
+
+
+/** @brief Get a description of a discovered context
+ * @param info A pointer to an iio_context_info structure
+ * @return A pointer to a static NULL-terminated string
+ */
+__api __pure const char * iio_context_info_get_description(
+		const struct iio_context_info *info);
+
+
+/** @brief Get the URI of a discovered context
+ * @param info A pointer to an iio_context_info structure
+ * @return A pointer to a static NULL-terminated string
+ */
+__api __pure const char * iio_context_info_get_uri(
+		const struct iio_context_info *info);
+
+
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Top-level functions -----------------------------*/
 /** @defgroup TopLevel Top-level functions
  * @{ */
