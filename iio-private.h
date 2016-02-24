@@ -26,6 +26,7 @@
 
 #ifdef _MSC_BUILD
 #define snprintf sprintf_s
+#define inline __inline
 #endif
 #ifdef _WIN32
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
@@ -41,6 +42,12 @@
 	*(((uint32_t *) addr) + BIT_WORD(bit)) |= BIT_MASK(bit)
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
+
+/* Allocate zeroed out memory */
+static inline void *zalloc(size_t size)
+{
+	return calloc(1, size);
+}
 
 enum iio_modifier {
 	IIO_NO_MOD,

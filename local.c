@@ -1112,7 +1112,7 @@ static int add_device_to_context(struct iio_context *ctx,
 static struct iio_channel *create_channel(struct iio_device *dev,
 		char *id, const char *attr, const char *path)
 {
-	struct iio_channel *chn = calloc(1, sizeof(*chn));
+	struct iio_channel *chn = zalloc(sizeof(*chn));
 	if (!chn)
 		return NULL;
 
@@ -1397,11 +1397,11 @@ static int create_device(void *d, const char *path)
 	unsigned int i;
 	int ret;
 	struct iio_context *ctx = d;
-	struct iio_device *dev = calloc(1, sizeof(*dev));
+	struct iio_device *dev = zalloc(sizeof(*dev));
 	if (!dev)
 		return -ENOMEM;
 
-	dev->pdata = calloc(1, sizeof(*dev->pdata));
+	dev->pdata = zalloc(sizeof(*dev->pdata));
 	if (!dev->pdata) {
 		free(dev);
 		return -ENOMEM;
@@ -1586,7 +1586,7 @@ struct iio_context * local_create_context(void)
 	int ret = -ENOMEM;
 	unsigned int len;
 	struct utsname uts;
-	struct iio_context *ctx = calloc(1, sizeof(*ctx));
+	struct iio_context *ctx = zalloc(sizeof(*ctx));
 	if (!ctx)
 		goto err_set_errno;
 

@@ -425,7 +425,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 	unsigned int i;
 	int ret;
 
-	pdata = calloc(1, sizeof(*pdata));
+	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
 		ERROR("Unable to allocate pdata\n");
 		ret = -ENOMEM;
@@ -546,7 +546,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 
-		dev->pdata = calloc(1, sizeof(*dev->pdata));
+		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
 			ERROR("Unable to allocate memory\n");
 			ret = -ENOMEM;

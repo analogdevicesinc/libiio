@@ -148,7 +148,7 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 {
 	xmlAttr *attr;
-	struct iio_channel *chn = calloc(1, sizeof(*chn));
+	struct iio_channel *chn = zalloc(sizeof(*chn));
 	if (!chn)
 		return NULL;
 
@@ -204,7 +204,7 @@ err_free_channel:
 static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 {
 	xmlAttr *attr;
-	struct iio_device *dev = calloc(1, sizeof(*dev));
+	struct iio_device *dev = zalloc(sizeof(*dev));
 	if (!dev)
 		return NULL;
 
@@ -289,7 +289,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	xmlNode *root, *n;
 	xmlAttr *attr;
 	int err = ENOMEM;
-	struct iio_context *ctx = calloc(1, sizeof(*ctx));
+	struct iio_context *ctx = zalloc(sizeof(*ctx));
 	if (!ctx)
 		goto err_set_errno;
 

@@ -1061,7 +1061,7 @@ struct iio_context * network_create_context(const char *host)
 		goto err_free_addrinfo;
 	}
 
-	pdata = calloc(1, sizeof(*pdata));
+	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
 		errno = ENOMEM;
 		goto err_close_socket;
@@ -1137,7 +1137,7 @@ struct iio_context * network_create_context(const char *host)
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 
-		dev->pdata = calloc(1, sizeof(*dev->pdata));
+		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
 			ret = -ENOMEM;
 			goto err_free_description;
