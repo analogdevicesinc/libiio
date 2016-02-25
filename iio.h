@@ -1318,4 +1318,6 @@ __api int iio_device_reg_read(struct iio_device *dev,
 }
 #endif
 
+#undef __api
+
 #endif /* __IIO_H__ */
