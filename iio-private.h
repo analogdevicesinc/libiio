@@ -32,6 +32,18 @@
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
 #endif
 
+#ifdef _WIN32
+#   ifdef LIBIIO_EXPORTS
+#	define __api __declspec(dllexport)
+#   else
+#	define __api __declspec(dllimport)
+#   endif
+#elif __GNUC__ >= 4
+#   define __api __attribute__((visibility ("default")))
+#else
+#   define __api
+#endif
+
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 #define BIT(x) (1 << (x))
 #define BIT_MASK(bit) BIT((bit) % 32)
@@ -209,5 +221,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid);
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
+
+#undef __api
 
 #endif /* __IIO_PRIVATE_H__ */
