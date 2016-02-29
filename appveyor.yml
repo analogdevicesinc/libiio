@@ -3,8 +3,9 @@ clone_depth: 1
 
 install:
     - echo "Downloading deps..."
-    - ps: (new-object System.Net.WebClient).Downloadfile("http://swdownloads.analog.com/cse/build/libiio-win-deps.zip", "c:\libiio-win-deps.zip")
-    - 7z x -y "c:\libiio-win-deps.zip" -o"C:\" > nul
+    - cd c:\
+    - appveyor DownloadFile http://swdownloads.analog.com/cse/build/libiio-win-deps.zip
+    - 7z x -y "c:\libiio-win-deps.zip" > nul
     - choco install InnoSetup
     - set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
 
@@ -13,13 +14,23 @@ build_script:
     - mkdir c:\projects\libiio\build-win32
     - cd c:\projects\libiio\build-win32
     - set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319"
-    - cmake -G "Visual Studio 12" -DENABLE_IPV6:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DCMAKE_CONFIGURATION_TYPES=Release ..
-    - msbuild /m /p:Configuration=Release /p:Platform="Win32" libiio.sln
+    - cmake -G "Visual Studio 12" -DCMAKE_BUILD_TYPE:STRING=Release \
+        -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" \
+        -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" \
+        -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" \
+        ..
+    - cmake --build . --config Release
+
     - echo "Running cmake for Win64..."
     - mkdir c:\projects\libiio\build-win64
     - cd c:\projects\libiio\build-win64
-    - cmake -G "Visual Studio 12 Win64" -DENABLE_IPV6:BOOL=OFF -DCSHARP_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DCMAKE_CONFIGURATION_TYPES=Release ..
-    - msbuild /m /p:Configuration=Release /p:Platform="x64" libiio.sln
+    - cmake -G "Visual Studio 12 Win64" -DCMAKE_BUILD_TYPE:STRING=Release \
+        -DENABLE_IPV6:BOOL=OFF -DCSHARP_BINDINGS:BOOL=OFF \
+        -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" \
+        -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" \
+        -DCMAKE_SYSTEM_PREFIX_PATH="C:" \
+        ..
+    - cmake --build . --config Release
     - ISCC C:\projects\libiio\build-win32\libiio.iss
     - appveyor PushArtifact C:\libiio-setup.exe
 
