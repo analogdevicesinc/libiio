@@ -201,11 +201,11 @@ int main(int argc, char **argv)
 
 #ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
+	set_handler(SIGPIPE, &quit_all);
 #endif
 	set_handler(SIGINT, &quit_all);
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
-	set_handler(SIGPIPE, &quit_all);
 
 	dev = get_device(ctx, argv[arg_index + 1]);
 	if (!dev) {
