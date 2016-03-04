@@ -37,10 +37,9 @@ endif()
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
+option(WITH_TESTS "Build the test programs" ON)
 
-if (NOT MSVC)
-	option(WITH_TESTS "Build the test programs" ON)
-else()
+if (MSVC)
 	# Avoid annoying warnings from Visual Studio
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 endif()
