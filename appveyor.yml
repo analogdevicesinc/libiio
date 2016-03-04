@@ -2,6 +2,8 @@ version: 2015.1.{build}
 clone_depth: 1
 
 install:
+    - echo "Checking out sub-modules..."
+    - git submodule update --init
     - echo "Downloading deps..."
     - cd c:\
     - appveyor DownloadFile http://swdownloads.analog.com/cse/build/libiio-win-deps.zip
@@ -39,6 +41,7 @@ build_script:
     - mkdir c:\libiio-win32
     - copy iio.h c:\libiio-win32\
     - copy build-win32\Release\libiio.* c:\libiio-win32\
+    - copy build-win32\tests\Release\*.exe c:\libiio-win32\
     - copy c:\libs\32\libxml2.dll c:\libiio-win32\
     - copy c:\libs\32\libusb-1.0.dll c:\libiio-win32\
     - 7z a "c:\libiio-win32.zip" c:\libiio-win32
@@ -47,6 +50,7 @@ build_script:
     - mkdir c:\libiio-win64
     - copy iio.h c:\libiio-win64\
     - copy build-win64\Release\libiio.* c:\libiio-win64\
+    - copy build-win64\tests\Release\*.exe c:\libiio-win64\
     - copy c:\libs\64\libxml2.dll c:\libiio-win64\
     - copy c:\libs\64\libusb-1.0.dll c:\libiio-win64\
     - 7z a "c:\libiio-win64.zip" c:\libiio-win64
