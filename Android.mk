@@ -6,6 +6,10 @@ LOCAL_MODULE := libiio
 LOCAL_SRC_FILES := channel.c device.c context.c buffer.c utilities.c
 LOCAL_CFLAGS += -Wall -Wextra
 
+# LOG_LEVEL 0=off, 1=error, 2=warning, 3=info, 4=debug
+LOCAL_CFLAGS += -DLOG_LEVEL=4 -DLOG_TAG=\"libiio\"
+LOCAL_SHARED_LIBRARIES += liblog
+
 LOCAL_CFLAGS += -fvisibility=hidden
 LOCAL_CFLAGS += -DHAVE_IPV6=1
 LOCAL_CFLAGS += -D_GNU_SOURCE=1
