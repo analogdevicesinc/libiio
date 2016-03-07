@@ -276,13 +276,13 @@ int main(int argc, char **argv)
 
 		/* If there are only the samples we requested, we don't need to
 		 * demux */
-		if (iio_buffer_step(buffer) == sample_size) {
+		if ((size_t)iio_buffer_step(buffer) == sample_size) {
 			void *start = iio_buffer_start(buffer);
 			ptrdiff_t len = (intptr_t) iio_buffer_end(buffer) -
 				(intptr_t) start;
 			size_t read_len;
 
-			if (num_samples && len > num_samples * sample_size)
+			if (num_samples && (size_t)len > num_samples * sample_size)
 				len = num_samples * sample_size;
 
 			for (read_len = len; len; ) {

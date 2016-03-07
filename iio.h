@@ -40,7 +40,9 @@ typedef long ssize_t;
 
 #ifdef __GNUC__
 #define __cnst __attribute__((const))
-#define __pure __attribute__((pure))
+#ifndef __pure
+#   define __pure __attribute__((pure))
+#endif
 #define __notused __attribute__((unused))
 #else
 #define __cnst
@@ -798,6 +800,10 @@ __api bool iio_channel_is_enabled(const struct iio_channel *chn);
 
 
 /** Demultiplex the samples of a given channel
+ *
+ * Unlike the iio_channel_read() function, this one does not perform any
+ * conversion.
+ *
  * @param chn A pointer to an iio_channel structure
  * @param buffer A pointer to an iio_buffer structure
  * @param dst A pointer to the memory area where the demultiplexed data will be
@@ -808,7 +814,11 @@ __api size_t iio_channel_read_raw(const struct iio_channel *chn,
 		struct iio_buffer *buffer, void *dst, size_t len);
 
 
-/** Demultiplex and convert the samples of a given channel
+/** Demultiplex and convert the samples of a given channel.
+ *
+ * The conversion includes endian byte swap, bit shifting, and sign extending
+ * the data. It does not include any scaling or offset.
+ *
  * @param chn A pointer to an iio_channel structure
  * @param buffer A pointer to an iio_buffer structure
  * @param dst A pointer to the memory area where the converted data will be
@@ -968,7 +978,7 @@ __api void * iio_buffer_first(const struct iio_buffer *buf,
 /** @brief Get the step size between two samples of one channel
  * @param buf A pointer to an iio_buffer structure
  * @return the difference between the addresses of two consecutive samples of
- * one same channel */
+ * the same channel */
 __api ptrdiff_t iio_buffer_step(const struct iio_buffer *buf);
 
 
