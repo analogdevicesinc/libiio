@@ -118,6 +118,48 @@ static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
+#define USB_PIPE_CTRL_TIMEOUT 200 /* These should not take long */
+
+#define IIO_USD_CMD_RESET_PIPES 0
+#define IIO_USD_CMD_OPEN_PIPE 1
+#define IIO_USD_CMD_CLOSE_PIPE 2
+
+static int usb_reset_pipes(libusb_device_handle *hdl)
+{
+	int ret;
+
+	ret = libusb_control_transfer(hdl, LIBUSB_REQUEST_TYPE_VENDOR |
+		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_RESET_PIPES,
+		0, 0, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
+	if (ret < 0)
+		return -libusb_to_errno(ret);
+	return 0;
+}
+
+static int usb_open_pipe(libusb_device_handle *hdl, unsigned int ep)
+{
+	int ret;
+
+	ret = libusb_control_transfer(hdl, LIBUSB_REQUEST_TYPE_VENDOR |
+		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_OPEN_PIPE,
+		ep - 1, 0, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
+	if (ret < 0)
+		return -libusb_to_errno(ret);
+	return 0;
+}
+
+static int usb_close_pipe(libusb_device_handle *hdl, unsigned int ep)
+{
+	int ret;
+
+	ret = libusb_control_transfer(hdl, LIBUSB_REQUEST_TYPE_VENDOR |
+		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_CLOSE_PIPE,
+		ep - 1, 0, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
+	if (ret < 0)
+		return -libusb_to_errno(ret);
+	return 0;
+}
+
 static int usb_reserve_ep_unlocked(const struct iio_device *dev)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
@@ -169,6 +211,16 @@ static int usb_open(const struct iio_device *dev,
 	if (ret)
 		goto out_unlock;
 
+	ret = usb_open_pipe(ctx_pdata->hdl, pdata->ep);
+	if (ret) {
+		char err_str[1024];
+
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		ERROR("Failed to open pipe: %s\n", err_str);
+		usb_free_ep_unlocked(dev);
+		goto out_unlock;
+	}
+
 	iio_mutex_lock(pdata->lock);
 
 	ret = iiod_client_open_unlocked(ctx_pdata->iiod_client,
@@ -186,8 +238,10 @@ static int usb_open(const struct iio_device *dev,
 
 	iio_mutex_unlock(pdata->lock);
 
-	if (ret)
+	if (ret) {
+		usb_close_pipe(ctx_pdata->hdl, pdata->ep);
 		usb_free_ep_unlocked(dev);
+	}
 
 out_unlock:
 	iio_mutex_unlock(ctx_pdata->ep_lock);
@@ -210,6 +264,8 @@ static int usb_close(const struct iio_device *dev)
 	pdata->opened = false;
 
 	iio_mutex_unlock(pdata->lock);
+
+	usb_close_pipe(ctx_pdata->hdl, pdata->ep);
 
 	usb_free_ep_unlocked(dev);
 
@@ -326,6 +382,8 @@ static void usb_shutdown(struct iio_context *ctx)
 
 	iiod_client_destroy(ctx->pdata->iiod_client);
 
+	usb_reset_pipes(ctx->pdata->hdl); /* Close everything */
+
 	libusb_close(ctx->pdata->hdl);
 	libusb_exit(ctx->pdata->ctx);
 	free(ctx->pdata);
@@ -421,6 +479,7 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 	struct libusb_config_descriptor *conf_desc;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
+	char err_str[1024];
 	unsigned int i;
 	int ret;
 
@@ -527,9 +586,23 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 	pdata->hdl = hdl;
 	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 
+	ret = usb_reset_pipes(hdl);
+	if (ret) {
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		ERROR("Failed to reset pipes: %s\n", err_str);
+		return NULL;
+	}
+
+	ret = usb_open_pipe(hdl, EP_OPS);
+	if (ret) {
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		ERROR("Failed to open control pipe: %s\n", err_str);
+		return NULL;
+	}
+
 	ctx = iiod_client_create_context(pdata->iiod_client, EP_OPS);
 	if (!ctx)
-		goto err_free_endpoints;
+		goto err_reset_pipes;
 
 	libusb_free_config_descriptor(conf_desc);
 
@@ -555,6 +628,8 @@ err_context_destroy:
 	errno = -ret;
 	return NULL;
 
+err_reset_pipes:
+	usb_reset_pipes(hdl); /* Close everything */
 err_free_endpoints:
 	for (i = 0; i < pdata->nb_io_endpoints; i++)
 		if (pdata->io_endpoints[i].lock)
