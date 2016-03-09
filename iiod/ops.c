@@ -978,10 +978,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		/* First read from the socket, without advancing the
 		 * read offset */
 		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL | MSG_PEEK);
-		if (ret < 0) {
-			if (errno == ENOTSOCK)
-				pdata->fd_in_is_socket = false;
-		} else {
+		if (ret > 0) {
 			size_t i;
 
 			/* Lookup for the trailing \n */
@@ -998,15 +995,15 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 			ret = recv(pdata->fd_in, buf, i + 1,
 					MSG_NOSIGNAL | MSG_TRUNC);
 		}
-	}
-
-	if (!pdata->fd_in_is_socket)
+	} else {
 		ret = read(pdata->fd_in, buf, len);
+	}
 
 	return ret;
 }
 
-void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose)
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
+	bool is_socket)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
@@ -1018,11 +1015,8 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose)
 	pdata.fd_out = fd_out;
 	pdata.verbose = verbose;
 
-	/* Consider that the input/output FDs are sockets by default.
-	 * Then, if we get an error with errno == ENOTSOCK, we know that we have
-	 * to use regular I/O calls. */
-	pdata.fd_in_is_socket = true;
-	pdata.fd_out_is_socket = true;
+	pdata.fd_in_is_socket = is_socket;
+	pdata.fd_out_is_socket = is_socket;
 
 	yylex_init_extra(&pdata, &scanner);
 

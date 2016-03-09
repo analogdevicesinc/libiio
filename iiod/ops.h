@@ -42,7 +42,8 @@ struct parser_pdata {
 
 extern bool server_demux; /* Defined in iiod.c */
 
-void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose);
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
+	bool is_socket);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
@@ -76,13 +77,9 @@ static __inline__ ssize_t writefd(struct parser_pdata *pdata,
 {
 	ssize_t ret;
 
-	if (pdata->fd_out_is_socket) {
+	if (pdata->fd_out_is_socket)
 		ret = send(pdata->fd_out, buf, len, MSG_NOSIGNAL);
-		if (ret < 0 && errno == ENOTSOCK)
-			pdata->fd_out_is_socket = false;
-	}
-
-	if (!pdata->fd_out_is_socket)
+	else if (!pdata->fd_out_is_socket)
 		ret = write(pdata->fd_out, buf, len);
 
 	return ret;
@@ -99,13 +96,9 @@ static __inline__ ssize_t readfd(struct parser_pdata *pdata,
 {
 	ssize_t ret;
 
-	if (pdata->fd_in_is_socket) {
+	if (pdata->fd_in_is_socket)
 		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL);
-		if (ret < 0 && errno == ENOTSOCK)
-			pdata->fd_in_is_socket = false;
-	}
-
-	if (!pdata->fd_in_is_socket)
+	else if (!pdata->fd_in_is_socket)
 		ret = read(pdata->fd_in, buf, len);
 
 	return ret;

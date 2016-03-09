@@ -164,7 +164,7 @@ static void * client_thd(void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug, true);
 
 	INFO("Client exited\n");
 	close(cdata->fd);
@@ -189,7 +189,7 @@ static int main_interactive(struct iio_context *ctx, bool verbose)
 	/* Specify that we will read sequentially the input FD */
 	posix_fadvise(STDIN_FILENO, 0, 0, POSIX_FADV_SEQUENTIAL);
 
-	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose);
+	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose, false);
 	return EXIT_SUCCESS;
 }
 
