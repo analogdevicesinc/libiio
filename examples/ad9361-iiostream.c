@@ -274,5 +274,8 @@ int main (int argc, char **argv)
 		ntx += nbytes_tx / iio_device_get_sample_size(tx);
 		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
 	}
+
+	shutdown();
+
 	return 0;
 } 
