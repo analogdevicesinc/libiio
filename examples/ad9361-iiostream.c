@@ -223,8 +223,16 @@ int main (int argc, char **argv)
 	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
-	txbuf = iio_device_create_buffer(tx, 1024*1024, false);
+	rxbuf = iio_device_create_buffer(rx, 1024*1024*4, false);
+	if (!rxbuf) {
+		perror("Could not create RX buffer");
+		shutdown();
+	}
+	txbuf = iio_device_create_buffer(tx, 1024*1024*4, false);
+	if (!txbuf) {
+		perror("Could not create TX buffer");
+		shutdown();
+	}
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
 	while (!stop)
