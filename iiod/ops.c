@@ -718,6 +718,34 @@ err_free_words:
 	return ret;
 }
 
+static void close_dev_entry(struct DevEntry *e, struct ThdEntry *t)
+{
+	bool last;
+	pthread_mutex_t *last_lock = &e->last_lock;
+	pthread_cond_t *last_cond = &e->last_cond;
+
+	e->update_mask = true;
+	SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, next);
+	last = SLIST_EMPTY(&e->thdlist_head);
+	free(t->mask);
+	free(t);
+
+	if (last)
+		pthread_mutex_lock(last_lock);
+	pthread_mutex_unlock(&e->thdlist_lock);
+	pthread_mutex_unlock(&devlist_lock);
+
+	/* If we are the last client for this device, we wait until the R/W
+	 * thread closes it. Otherwise, the CLOSE command is returned too soon,
+	 * which might cause problems if the client sends a command which
+	 * requires the device to be closed. */
+	if (last) {
+		pthread_cond_wait(last_cond, last_lock);
+		pthread_cond_signal(last_cond);
+		pthread_mutex_unlock(last_lock);
+	}
+}
+
 static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct DevEntry *e;
@@ -732,37 +760,7 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 			pthread_mutex_lock(&e->thdlist_lock);
 			SLIST_FOREACH(t, &e->thdlist_head, next) {
 				if (t->pdata == pdata) {
-					bool last;
-					pthread_mutex_t *last_lock =
-						&e->last_lock;
-					pthread_cond_t *last_cond =
-						&e->last_cond;
-
-					e->update_mask = true;
-					SLIST_REMOVE(&e->thdlist_head,
-							t, ThdEntry, next);
-					last = SLIST_EMPTY(&e->thdlist_head);
-					free(t->mask);
-					free(t);
-
-					if (last)
-						pthread_mutex_lock(last_lock);
-					pthread_mutex_unlock(&e->thdlist_lock);
-					pthread_mutex_unlock(&devlist_lock);
-
-					/* If we are the last client for this
-					 * device, we wait until the R/W thread
-					 * closes it. Otherwise, the CLOSE
-					 * command is returned too soon, which
-					 * might cause problems if the client
-					 * sends a command which requires the
-					 * device to be closed. */
-					if (last) {
-						pthread_cond_wait(last_cond,
-								last_lock);
-						pthread_cond_signal(last_cond);
-						pthread_mutex_unlock(last_lock);
-					}
+					close_dev_entry(e, t);
 					return 0;
 				}
 			}
