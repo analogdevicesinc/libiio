@@ -410,7 +410,7 @@ int yy_input(yyscan_t scanner, char *buf, size_t max_size)
 
 	ret = read_line(pdata, buf, max_size);
 	if (ret < 0)
-		return -errno;
+		return ret;
 	if (ret == 0)
 		return -EIO;
 

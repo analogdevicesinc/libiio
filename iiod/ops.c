@@ -89,7 +89,7 @@ static ssize_t write_all(struct parser_pdata *pdata,
 	while (len) {
 		ssize_t ret = writefd(pdata, (void *) ptr, len);
 		if (ret < 0)
-			return -errno;
+			return ret;
 		if (!ret)
 			return -EPIPE;
 		ptr += ret;
@@ -107,7 +107,7 @@ static ssize_t read_all(struct parser_pdata *pdata,
 	while (len) {
 		ssize_t ret = readfd(pdata, (void *) ptr, len);
 		if (ret < 0)
-			return -errno;
+			return ret;
 		if (!ret)
 			return -EPIPE;
 		ptr += ret;
@@ -971,10 +971,8 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 			for (i = 0; i < (size_t) ret && buf[i] != '\n'; i++);
 
 			/* No \n found? Just garbage data */
-			if (i == (size_t) ret) {
-				errno = EIO;
-				return -1;
-			}
+			if (i == (size_t) ret)
+				return -EIO;
 
 			/* Advance the read offset to the byte following
 			 * the \n */

@@ -85,6 +85,8 @@ static __inline__ ssize_t writefd(struct parser_pdata *pdata,
 	else if (!pdata->fd_out_is_socket)
 		ret = write(pdata->fd_out, buf, len);
 
+	if (ret < 0)
+		return -errno;
 	return ret;
 }
 
@@ -104,6 +106,8 @@ static __inline__ ssize_t readfd(struct parser_pdata *pdata,
 	else if (!pdata->fd_in_is_socket)
 		ret = read(pdata->fd_in, buf, len);
 
+	if (ret < 0)
+		return -errno;
 	return ret;
 }
 
