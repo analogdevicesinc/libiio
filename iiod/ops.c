@@ -516,7 +516,6 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	struct iio_device *dev = entry->dev;
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
-	bool had_readers = false;
 
 	DEBUG("R/W thread started for device %s\n",
 			dev->name ? dev->name : dev->id);
@@ -599,7 +598,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
 
-		if (!has_readers && !had_readers && !has_writers) {
+		if (!has_readers && !has_writers) {
 			struct timespec ts = {
 				.tv_sec = 0,
 				.tv_nsec = 1000000, /* 1 ms */
@@ -609,11 +608,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			continue;
 		}
 
-		/* had_readers: if no readers were found in this loop, but we
-		 * had readers in the previous iteration, chances are that new
-		 * clients will ask for data soon; so we refill the buffer now,
-		 * to be sure that we don't lose samples. */
-		if (has_readers || had_readers) {
+		if (has_readers) {
 			ssize_t nb_bytes;
 
 			ret = iio_buffer_refill(entry->buf);
@@ -639,7 +634,6 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				break;
 			}
 
-			had_readers = false;
 			nb_bytes = ret;
 
 			/* We don't use SLIST_FOREACH here. As soon as a thread is
@@ -653,7 +647,6 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				if (!thd->active || thd->is_writer)
 					continue;
 
-				had_readers = true;
 				ret = send_data(entry, thd, nb_bytes);
 				if (ret > 0)
 					thd->nb -= ret;
