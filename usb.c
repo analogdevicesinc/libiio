@@ -62,7 +62,6 @@ struct iio_context_pdata {
 };
 
 struct iio_device_pdata {
-	bool is_tx;
 	struct iio_mutex *lock;
 
 	bool opened;
@@ -552,8 +551,6 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 			ret = -ENOMEM;
 			goto err_context_destroy;
 		}
-
-		dev->pdata->is_tx = iio_device_is_tx(dev);
 	}
 
 	return ctx;
