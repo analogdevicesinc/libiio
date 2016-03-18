@@ -570,6 +570,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	pthread_mutex_unlock(&devlist_lock);
 
 	DEBUG("Waiting for completion...\n");
+	pthread_mutex_lock(&thd->cond_lock);
 	pthread_cond_wait(&thd->cond, &thd->cond_lock);
 	ret = thd->err;
 	pthread_mutex_unlock(&thd->cond_lock);
