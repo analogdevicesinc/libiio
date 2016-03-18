@@ -52,11 +52,14 @@ struct ThdEntry {
 
 /* Corresponds to an opened device */
 struct DevEntry {
+	unsigned int ref_count;
+
 	struct iio_device *dev;
 	struct iio_buffer *buf;
 	unsigned int sample_size, nb_clients;
 	bool update_mask;
 	bool cyclic;
+	bool closed;
 
 	/* Linked list of ThdEntry structures corresponding
 	 * to all the threads who opened the device */
@@ -253,6 +256,24 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 	}
 }
 
+static void dev_entry_put(struct DevEntry *entry)
+{
+	bool free_entry = false;
+
+	pthread_mutex_lock(&entry->thdlist_lock);
+	entry->ref_count--;
+	if (entry->ref_count == 0)
+		free_entry = true;
+	pthread_mutex_unlock(&entry->thdlist_lock);
+
+	if (free_entry) {
+		pthread_mutex_destroy(&entry->thdlist_lock);
+
+		free(entry->mask);
+		free(entry);
+	}
+}
+
 static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 {
 
@@ -283,9 +304,7 @@ static void * rw_thd(void *d)
 		     mask_updated = false;
 		unsigned int sample_size;
 
-		/* NOTE: this while loop must exit with
-		 * devlist_lock and thdlist_lock locked. */
-		pthread_mutex_lock(&devlist_lock);
+		/* NOTE: this while loop must exit with thdlist_lock locked. */
 		pthread_mutex_lock(&entry->thdlist_lock);
 
 		if (SLIST_EMPTY(&entry->thdlist_head))
@@ -356,7 +375,6 @@ static void * rw_thd(void *d)
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
-		pthread_mutex_unlock(&devlist_lock);
 
 		if (!has_readers && !had_readers && !has_writers) {
 			struct timespec ts = {
@@ -377,7 +395,6 @@ static void * rw_thd(void *d)
 
 			ret = iio_buffer_refill(entry->buf);
 
-			pthread_mutex_lock(&devlist_lock);
 			pthread_mutex_lock(&entry->thdlist_lock);
 
 			if (ret < 0) {
@@ -385,8 +402,6 @@ static void * rw_thd(void *d)
 						(int) ret);
 				break;
 			}
-
-			pthread_mutex_unlock(&devlist_lock);
 
 			had_readers = false;
 			nb_bytes = ret;
@@ -448,14 +463,6 @@ static void * rw_thd(void *d)
 			if (ret < 0) {
 				ERROR("Writing to device failed: %i\n",
 						(int) ret);
-
-				/* We have to exit the loop with both mutexes
-				 * locked. thdlist_lock is already locked, but
-				 * it must be unlocked before we can lock
-				 * devlist_lock, to avoid deadlocks. */
-				pthread_mutex_unlock(&entry->thdlist_lock);
-				pthread_mutex_lock(&devlist_lock);
-				pthread_mutex_lock(&entry->thdlist_lock);
 				break;
 			}
 
@@ -476,23 +483,25 @@ static void * rw_thd(void *d)
 	for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
 		next_thd = SLIST_NEXT(thd, dev_list_entry);
 		SLIST_REMOVE(&entry->thdlist_head, thd, ThdEntry, dev_list_entry);
-		thd->entry = NULL;
 		signal_thread(thd, ret);
 	}
+	if (entry->buf)
+		iio_buffer_destroy(entry->buf);
+	entry->closed = true;
 	pthread_mutex_unlock(&entry->thdlist_lock);
+
+	pthread_mutex_lock(&devlist_lock);
+	/* It is possible that a new thread has already started, make sure to
+	 * not overwrite it. */
+	if (iio_device_get_data(dev) == entry)
+		iio_device_set_data(dev, NULL);
+	pthread_mutex_unlock(&devlist_lock);
 
 	DEBUG("Stopping R/W thread for device %s\n",
 			dev->name ? dev->name : dev->id);
-	iio_device_set_data(dev, NULL);
 
-	if (entry->buf)
-		iio_buffer_destroy(entry->buf);
-	pthread_mutex_unlock(&devlist_lock);
+	dev_entry_put(entry);
 
-	pthread_mutex_destroy(&entry->thdlist_lock);
-
-	free(entry->mask);
-	free(entry);
 	return NULL;
 }
 
@@ -523,28 +532,19 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	if (!thd)
 		return -ENXIO;
 
-	pthread_mutex_lock(&devlist_lock);
-	entry = iio_device_get_data(dev);
-	if (!entry) {
-		pthread_mutex_unlock(&devlist_lock);
-		return -ENXIO;
-	}
+	entry = thd->entry;
 
-	if (nb < entry->sample_size) {
-		pthread_mutex_unlock(&devlist_lock);
+	if (nb < entry->sample_size)
 		return 0;
-	}
 
 	pthread_mutex_lock(&entry->thdlist_lock);
-	if (thd->entry != entry) {
+	if (thd->entry->closed) {
 		pthread_mutex_unlock(&entry->thdlist_lock);
-		pthread_mutex_unlock(&devlist_lock);
 		return -ENXIO;
 	}
 
 	if (thd->nb) {
 		pthread_mutex_unlock(&entry->thdlist_lock);
-		pthread_mutex_unlock(&devlist_lock);
 		return -EBUSY;
 	}
 
@@ -555,7 +555,6 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	thd->active = true;
 
 	pthread_mutex_unlock(&entry->thdlist_lock);
-	pthread_mutex_unlock(&devlist_lock);
 
 	DEBUG("Waiting for completion...\n");
 	pthread_mutex_lock(&thd->cond_lock);
@@ -602,19 +601,17 @@ static void free_thd_entry(struct ThdEntry *t)
 	free(t);
 }
 
-static void remove_thd_entry(struct iio_device *dev, struct ThdEntry *t)
+static void remove_thd_entry(struct ThdEntry *t)
 {
-	struct DevEntry *entry;
+	struct DevEntry *entry = t->entry;
 
-	pthread_mutex_lock(&devlist_lock);
-	entry = iio_device_get_data(dev);
-	if (entry) {
-		pthread_mutex_lock(&entry->thdlist_lock);
+	pthread_mutex_lock(&entry->thdlist_lock);
+	if (!entry->closed) {
 		entry->update_mask = true;
 		SLIST_REMOVE(&entry->thdlist_head, t, ThdEntry, dev_list_entry);
-		pthread_mutex_unlock(&entry->thdlist_lock);
 	}
-	pthread_mutex_unlock(&devlist_lock);
+	pthread_mutex_unlock(&entry->thdlist_lock);
+	dev_entry_put(entry);
 
 	free_thd_entry(t);
 }
@@ -656,43 +653,58 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_mutex_init(&thd->cond_lock, NULL);
 	pthread_mutex_lock(&thd->cond_lock);
 
+	/* Atomically look up the thread and make sure that it is still active
+	 * or allocate new one. */
 	pthread_mutex_lock(&devlist_lock);
 	entry = iio_device_get_data(dev);
 	if (entry) {
-		if (cyclic || entry->cyclic) {
-			/* Only one client allowed in cyclic mode */
-			ret = -EBUSY;
-			goto err_free_thd;
-		}
-
 		pthread_mutex_lock(&entry->thdlist_lock);
-		SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
-		thd->entry = entry;
-		entry->update_mask = true;
-		pthread_mutex_unlock(&entry->thdlist_lock);
-		DEBUG("Added thread to client list\n");
+		if (!entry->closed) {
+			pthread_mutex_unlock(&devlist_lock);
 
-		pthread_mutex_unlock(&devlist_lock);
+			if (cyclic || entry->cyclic) {
+				pthread_mutex_unlock(&entry->thdlist_lock);
+				/* Only one client allowed in cyclic mode */
+				ret = -EBUSY;
+				goto err_free_thd;
+			}
 
-		/* Wait until the device is opened by the rw thread */
-		pthread_cond_wait(&thd->cond, &thd->cond_lock);
-		pthread_mutex_unlock(&thd->cond_lock);
+			entry->ref_count++;
 
-		ret = (int) thd->err;
-		if (ret < 0)
-			remove_thd_entry(dev, thd);
-		else
-			SLIST_INSERT_HEAD(&pdata->thdlist_head, thd, parser_list_entry);
-		return ret;
+			SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
+			thd->entry = entry;
+			entry->update_mask = true;
+			pthread_mutex_unlock(&entry->thdlist_lock);
+			DEBUG("Added thread to client list\n");
+
+			/* Wait until the device is opened by the rw thread */
+			pthread_cond_wait(&thd->cond, &thd->cond_lock);
+			pthread_mutex_unlock(&thd->cond_lock);
+
+			ret = (int) thd->err;
+			if (ret < 0)
+				remove_thd_entry(thd);
+			else
+				SLIST_INSERT_HEAD(&pdata->thdlist_head, thd, parser_list_entry);
+			return ret;
+		} else {
+			pthread_mutex_unlock(&entry->thdlist_lock);
+		}
 	}
 
 	entry = zalloc(sizeof(*entry));
-	if (!entry)
+	if (!entry) {
+		pthread_mutex_unlock(&devlist_lock);
 		goto err_free_thd;
+	}
+
+	entry->ref_count = 2; /* One for thread, one for the client */
 
 	entry->mask = malloc(len * sizeof(*words));
-	if (!entry->mask)
+	if (!entry->mask) {
+		pthread_mutex_unlock(&devlist_lock);
 		goto err_free_entry;
+	}
 
 	entry->cyclic = cyclic;
 	entry->nb_words = len;
@@ -710,8 +722,10 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 
 	ret = pthread_create(&entry->thd, &attr, rw_thd, entry);
 	pthread_attr_destroy(&attr);
-	if (ret)
+	if (ret) {
+		pthread_mutex_unlock(&devlist_lock);
 		goto err_free_entry_mask;
+	}
 
 	DEBUG("Adding new device thread to device list\n");
 	iio_device_set_data(dev, entry);
@@ -722,7 +736,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_mutex_unlock(&thd->cond_lock);
 	ret = (int) thd->err;
 	if (ret < 0)
-		remove_thd_entry(dev, thd);
+		remove_thd_entry(thd);
 	else
 		SLIST_INSERT_HEAD(&pdata->thdlist_head, thd, parser_list_entry);
 	return ret;
@@ -735,7 +749,6 @@ err_free_thd:
 	pthread_cond_destroy(&thd->cond);
 	pthread_mutex_destroy(&thd->cond_lock);
 	free(thd);
-	pthread_mutex_unlock(&devlist_lock);
 err_free_words:
 	free(words);
 	return ret;
@@ -743,7 +756,6 @@ err_free_words:
 
 static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 {
-	struct DevEntry *e;
 	struct ThdEntry *t;
 
 	if (!dev)
@@ -753,18 +765,8 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 	if (!t)
 		return -ENXIO;
 
-	pthread_mutex_lock(&devlist_lock);
-	e = iio_device_get_data(dev);
-	if (e && t->entry == e) {
-		pthread_mutex_lock(&e->thdlist_lock);
-		e->update_mask = true;
-		SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, dev_list_entry);
-		pthread_mutex_unlock(&e->thdlist_lock);
-	}
-	pthread_mutex_unlock(&devlist_lock);
-
 	SLIST_REMOVE(&pdata->thdlist_head, t, ThdEntry, parser_list_entry);
-	free_thd_entry(t);
+	remove_thd_entry(t);
 
 	return 0;
 }
