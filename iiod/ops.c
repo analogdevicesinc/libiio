@@ -641,7 +641,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		goto err_free_words;
 	}
 
-	thd = malloc(sizeof(*thd));
+	thd = zalloc(sizeof(*thd));
 	if (!thd)
 		goto err_free_words;
 
@@ -670,7 +670,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		return (int) thd->err;
 	}
 
-	entry = malloc(sizeof(*entry));
+	entry = zalloc(sizeof(*entry));
 	if (!entry)
 		goto err_free_thd;
 
