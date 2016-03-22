@@ -60,7 +60,6 @@ struct DevEntry {
 	pthread_mutex_t thdlist_lock;
 
 	pthread_t thd;
-	pthread_attr_t attr;
 
 	pthread_cond_t last_cond;
 	pthread_mutex_t last_lock;
@@ -504,7 +503,6 @@ static void * rw_thd(void *d)
 	pthread_mutex_destroy(&entry->last_lock);
 	pthread_cond_destroy(&entry->last_cond);
 	pthread_mutex_destroy(&entry->thdlist_lock);
-	pthread_attr_destroy(&entry->attr);
 
 	free(entry->mask);
 	free(entry);
@@ -609,6 +607,7 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic)
 {
+	pthread_attr_t attr;
 	int ret = -ENOMEM;
 	struct DevEntry *e, *entry = NULL;
 	struct ThdEntry *thd;
@@ -690,11 +689,11 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_cond_init(&entry->last_cond, NULL);
 	pthread_mutex_init(&entry->last_lock, NULL);
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
-	pthread_attr_init(&entry->attr);
-	pthread_attr_setdetachstate(&entry->attr,
-			PTHREAD_CREATE_DETACHED);
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-	ret = pthread_create(&entry->thd, &entry->attr, rw_thd, entry);
+	ret = pthread_create(&entry->thd, &attr, rw_thd, entry);
+	pthread_attr_destroy(&attr);
 	if (ret)
 		goto err_free_entry_mask;
 
