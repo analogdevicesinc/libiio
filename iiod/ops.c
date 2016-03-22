@@ -577,6 +577,30 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 	return words;
 }
 
+static void free_thd_entry(struct ThdEntry *t)
+{
+	pthread_cond_destroy(&t->cond);
+	pthread_mutex_destroy(&t->cond_lock);
+	free(t->mask);
+	free(t);
+}
+
+static void remove_thd_entry(struct iio_device *dev, struct ThdEntry *t)
+{
+	struct DevEntry *entry;
+
+	pthread_mutex_lock(&devlist_lock);
+	entry = iio_device_get_data(dev);
+	if (entry) {
+		pthread_mutex_lock(&entry->thdlist_lock);
+		SLIST_REMOVE(&entry->thdlist_head, t, ThdEntry, next);
+		pthread_mutex_unlock(&entry->thdlist_lock);
+	}
+	pthread_mutex_unlock(&devlist_lock);
+
+	free_thd_entry(t);
+}
+
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic)
 {
@@ -633,7 +657,12 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		/* Wait until the device is opened by the rw thread */
 		pthread_cond_wait(&thd->cond, &thd->cond_lock);
 		pthread_mutex_unlock(&thd->cond_lock);
-		return (int) thd->err;
+
+		ret = (int) thd->err;
+		if (ret < 0)
+			remove_thd_entry(dev, thd);
+
+		return ret;
 	}
 
 	entry = zalloc(sizeof(*entry));
@@ -669,7 +698,10 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	/* Wait until the device is opened by the rw thread */
 	pthread_cond_wait(&thd->cond, &thd->cond_lock);
 	pthread_mutex_unlock(&thd->cond_lock);
-	return (int) thd->err;
+	ret = (int) thd->err;
+	if (ret < 0)
+		remove_thd_entry(dev, thd);
+	return ret;
 
 err_free_entry_mask:
 	free(entry->mask);
@@ -685,23 +717,11 @@ err_free_words:
 	return ret;
 }
 
-static void close_dev_entry(struct DevEntry *e, struct ThdEntry *t)
-{
-	e->update_mask = true;
-	SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, next);
-	pthread_cond_destroy(&t->cond);
-	pthread_mutex_destroy(&t->cond_lock);
-	free(t->mask);
-	free(t);
-
-	pthread_mutex_unlock(&e->thdlist_lock);
-	pthread_mutex_unlock(&devlist_lock);
-}
-
 static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct DevEntry *e;
 	struct ThdEntry *t;
+	int ret = -ENXIO;
 
 	if (!dev)
 		return -ENODEV;
@@ -716,13 +736,16 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 	pthread_mutex_lock(&e->thdlist_lock);
 	SLIST_FOREACH(t, &e->thdlist_head, next) {
 		if (t->pdata == pdata) {
-			close_dev_entry(e, t);
-			return 0;
+			e->update_mask = true;
+			SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, next);
+			free_thd_entry(t);
+			ret = 0;
+			break;
 		}
 	}
 	pthread_mutex_unlock(&e->thdlist_lock);
 	pthread_mutex_unlock(&devlist_lock);
-	return -ENXIO;
+	return ret;
 }
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
