@@ -128,6 +128,22 @@ if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
 	endif()
 endif()
 
+find_library(LIBSERIALPORT_LIBRARIES serialport)
+find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
+if (LIBSERIALPORT_LIBRARIES AND LIBSERIALPORT_INCLUDE_DIR)
+	option(WITH_SERIAL_BACKEND "Enable the serial backend" ON)
+
+	if (WITH_SERIAL_BACKEND)
+		add_definitions(-DSERIAL_BACKEND=1)
+		set(LIBIIO_CFILES ${LIBIIO_CFILES} serial.c)
+		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBSERIALPORT_LIBRARIES})
+		set(IIOD_CLIENT 1)
+		set(NEED_LIBXML2 1)
+
+		include_directories(${LIBSERIALPORT_INCLUDE_DIR})
+	endif()
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WITH_NETWORK_BACKEND)

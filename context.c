@@ -284,6 +284,11 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 		return usb_create_context_from_uri(uri);
 #endif
 
+#if SERIAL_BACKEND
+	if (strncmp(uri, "serial:", sizeof("serial:") - 1) == 0)
+		return serial_create_context_from_uri(uri);
+#endif
+
 	errno = ENOSYS;
 	return NULL;
 }

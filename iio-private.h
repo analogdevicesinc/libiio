@@ -265,6 +265,7 @@ struct iio_context * xml_create_context(const char *xml_file);
 struct iio_context * usb_create_context(unsigned int bus, unsigned int address,
 		unsigned int interface);
 struct iio_context * usb_create_context_from_uri(const char *uri);
+struct iio_context * serial_create_context_from_uri(const char *uri);
 
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
