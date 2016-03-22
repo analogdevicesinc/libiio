@@ -168,6 +168,7 @@ static void * client_thd(void *d)
 
 	INFO("Client exited\n");
 	close(cdata->fd);
+	free(cdata);
 	return NULL;
 }
 
