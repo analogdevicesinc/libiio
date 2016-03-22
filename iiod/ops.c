@@ -676,6 +676,8 @@ err_free_entry_mask:
 err_free_entry:
 	free(entry);
 err_free_thd:
+	pthread_cond_destroy(&thd->cond);
+	pthread_mutex_destroy(&thd->cond_lock);
 	free(thd);
 err_free_words:
 	free(words);
@@ -687,6 +689,8 @@ static void close_dev_entry(struct DevEntry *e, struct ThdEntry *t)
 {
 	e->update_mask = true;
 	SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, next);
+	pthread_cond_destroy(&t->cond);
+	pthread_mutex_destroy(&t->cond_lock);
 	free(t->mask);
 	free(t);
 
