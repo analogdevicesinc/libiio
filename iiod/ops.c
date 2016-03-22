@@ -46,8 +46,6 @@ struct ThdEntry {
 
 /* Corresponds to an opened device */
 struct DevEntry {
-	SLIST_ENTRY(DevEntry) next;
-
 	struct iio_device *dev;
 	struct iio_buffer *buf;
 	unsigned int sample_size, nb_clients;
@@ -71,10 +69,8 @@ struct sample_cb_info {
 	uint32_t *mask;
 };
 
-/* This is a linked list of DevEntry structures corresponding to
- * all the devices which have threads trying to read them */
-static SLIST_HEAD(DevHead, DevEntry) devlist_head =
-	    SLIST_HEAD_INITIALIZER(DevHead);
+/* Protects iio_device_{set,get}_data() from concurrent access from multiple
+ * clients */
 static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static ssize_t write_all(struct parser_pdata *pdata,
@@ -480,7 +476,7 @@ static void * rw_thd(void *d)
 
 	DEBUG("Stopping R/W thread for device %s\n",
 			dev->name ? dev->name : dev->id);
-	SLIST_REMOVE(&devlist_head, entry, DevEntry, next);
+	iio_device_set_data(dev, NULL);
 
 	if (entry->buf)
 		iio_buffer_destroy(entry->buf);
@@ -496,7 +492,7 @@ static void * rw_thd(void *d)
 static ssize_t rw_buffer(struct parser_pdata *pdata,
 		struct iio_device *dev, unsigned int nb, bool is_write)
 {
-	struct DevEntry *e, *entry = NULL;
+	struct DevEntry *entry;
 	struct ThdEntry *t, *thd = NULL;
 	ssize_t ret;
 
@@ -504,14 +500,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 		return -ENODEV;
 
 	pthread_mutex_lock(&devlist_lock);
-
-	SLIST_FOREACH(e, &devlist_head, next) {
-		if (e->dev == dev) {
-			entry = e;
-			break;
-		}
-	}
-
+	entry = iio_device_get_data(dev);
 	if (!entry) {
 		pthread_mutex_unlock(&devlist_lock);
 		return -ENXIO;
@@ -593,7 +582,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 {
 	pthread_attr_t attr;
 	int ret = -ENOMEM;
-	struct DevEntry *e, *entry = NULL;
+	struct DevEntry *entry;
 	struct ThdEntry *thd;
 	size_t len = strlen(mask);
 	uint32_t *words;
@@ -611,13 +600,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		return -ENOMEM;
 
 	pthread_mutex_lock(&devlist_lock);
-	SLIST_FOREACH(e, &devlist_head, next) {
-		if (e->dev == dev) {
-			entry = e;
-			break;
-		}
-	}
-
+	entry = iio_device_get_data(dev);
 	if (entry && (cyclic || entry->cyclic)) {
 		/* Only one client allowed in cyclic mode */
 		ret = -EBUSY;
@@ -680,7 +663,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		goto err_free_entry_mask;
 
 	DEBUG("Adding new device thread to device list\n");
-	SLIST_INSERT_HEAD(&devlist_head, entry, next);
+	iio_device_set_data(dev, entry);
 	pthread_mutex_unlock(&devlist_lock);
 
 	/* Wait until the device is opened by the rw thread */
@@ -714,30 +697,28 @@ static void close_dev_entry(struct DevEntry *e, struct ThdEntry *t)
 static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct DevEntry *e;
+	struct ThdEntry *t;
 
 	if (!dev)
 		return -ENODEV;
 
 	pthread_mutex_lock(&devlist_lock);
-	SLIST_FOREACH(e, &devlist_head, next) {
-		if (e->dev == dev) {
-			struct ThdEntry *t;
-			pthread_mutex_lock(&e->thdlist_lock);
-			SLIST_FOREACH(t, &e->thdlist_head, next) {
-				if (t->pdata == pdata) {
-					close_dev_entry(e, t);
-					return 0;
-				}
-			}
-
-			pthread_mutex_unlock(&e->thdlist_lock);
-			pthread_mutex_unlock(&devlist_lock);
-			return -ENXIO;
-		}
+	e = iio_device_get_data(dev);
+	if (!e) {
+		pthread_mutex_unlock(&devlist_lock);
+		return -EBADF;
 	}
 
+	pthread_mutex_lock(&e->thdlist_lock);
+	SLIST_FOREACH(t, &e->thdlist_head, next) {
+		if (t->pdata == pdata) {
+			close_dev_entry(e, t);
+			return 0;
+		}
+	}
+	pthread_mutex_unlock(&e->thdlist_lock);
 	pthread_mutex_unlock(&devlist_lock);
-	return -EBADF;
+	return -ENXIO;
 }
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
