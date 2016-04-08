@@ -987,8 +987,10 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 			break;
 	}
 
-	dst[i] = '\0';
-	return (ssize_t) i;
+	if (!found || i == len - 1)
+		return -EIO;
+
+	return (ssize_t) i + 1;
 #endif
 }
 
