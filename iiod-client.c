@@ -154,7 +154,7 @@ int iiod_client_get_version(struct iiod_client *client, int desc,
 		return ret;
 	}
 
-	ret = ops->read(pdata, desc, buf, sizeof(buf));
+	ret = ops->read_line(pdata, desc, buf, sizeof(buf));
 	iio_mutex_unlock(client->lock);
 
 	if (ret < 0)
