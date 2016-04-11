@@ -333,7 +333,7 @@ struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 
 struct iio_context * iio_create_xml_context(const char *xml_file)
 {
-#if NETWORK_BACKEND
+#if XML_BACKEND
 	return xml_create_context(xml_file);
 #else
 	errno = ENOSYS;
