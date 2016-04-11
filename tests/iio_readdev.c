@@ -269,8 +269,10 @@ int main(int argc, char **argv)
 	while (app_running) {
 		int ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
-			fprintf(stderr, "Unable to refill buffer: %s\n",
-					strerror(-ret));
+			char buf[256];
+
+			iio_strerror(-ret, buf, sizeof(buf));
+			fprintf(stderr, "Unable to refill buffer: %s\n", buf);
 			break;
 		}
 
@@ -288,7 +290,11 @@ int main(int argc, char **argv)
 			for (read_len = len; len; ) {
 				ssize_t nb = fwrite(start, 1, len, stdout);
 				if (nb < 0) {
-					fprintf(stderr, "Unable to write data!\n");
+					char buf[256];
+
+					iio_strerror(-nb, buf, sizeof(buf));
+					fprintf(stderr, "Unable to write data: %s\n",
+							buf);
 					goto err_destroy_buffer;
 				}
 
