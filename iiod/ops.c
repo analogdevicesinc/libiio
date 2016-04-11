@@ -623,14 +623,6 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!words)
 		return -ENOMEM;
 
-	pthread_mutex_lock(&devlist_lock);
-	entry = iio_device_get_data(dev);
-	if (entry && (cyclic || entry->cyclic)) {
-		/* Only one client allowed in cyclic mode */
-		ret = -EBUSY;
-		goto err_free_words;
-	}
-
 	thd = zalloc(sizeof(*thd));
 	if (!thd)
 		goto err_free_words;
@@ -645,7 +637,15 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_mutex_init(&thd->cond_lock, NULL);
 	pthread_mutex_lock(&thd->cond_lock);
 
+	pthread_mutex_lock(&devlist_lock);
+	entry = iio_device_get_data(dev);
 	if (entry) {
+		if (cyclic || entry->cyclic) {
+			/* Only one client allowed in cyclic mode */
+			ret = -EBUSY;
+			goto err_free_thd;
+		}
+
 		pthread_mutex_lock(&entry->thdlist_lock);
 		SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
 		entry->update_mask = true;
@@ -711,9 +711,9 @@ err_free_thd:
 	pthread_cond_destroy(&thd->cond);
 	pthread_mutex_destroy(&thd->cond_lock);
 	free(thd);
+	pthread_mutex_unlock(&devlist_lock);
 err_free_words:
 	free(words);
-	pthread_mutex_unlock(&devlist_lock);
 	return ret;
 }
 
