@@ -201,17 +201,20 @@ int main(int argc, char **argv)
 				const char *attr = iio_channel_get_attr(ch, k);
 				char buf[1024];
 				ret = (int) iio_channel_attr_read(ch,
-						attr, buf, 1024);
-				if (ret > 0)
+						attr, buf, sizeof(buf));
+				if (ret > 0) {
 					printf("\t\t\t\tattr %u: %s"
 							" value: %s\n", k,
 							attr, buf);
-				else if (ret == -ENOSYS)
+				} else if (ret == -ENOSYS) {
 					printf("\t\t\t\tattr %u: %s\n",
 							k, attr);
-				else
-					fprintf(stderr, "Unable to read attribute %s\n",
-							attr);
+				} else {
+					iio_strerror(-ret, buf, sizeof(buf));
+
+					fprintf(stderr, "Unable to read attribute %s: %s\n",
+							attr, buf);
+				}
 			}
 		}
 
@@ -224,15 +227,18 @@ int main(int argc, char **argv)
 			const char *attr = iio_device_get_attr(dev, j);
 			char buf[1024];
 			ret = (int) iio_device_attr_read(dev,
-					attr, buf, 1024);
-			if (ret > 0)
+					attr, buf, sizeof(buf));
+			if (ret > 0) {
 				printf("\t\t\t\tattr %u: %s value: %s\n", j,
 						attr, buf);
-			else if (ret == -ENOSYS)
+			} else if (ret == -ENOSYS) {
 				printf("\t\t\t\tattr %u: %s\n", j, attr);
-			else
-				fprintf(stderr, "Unable to read attribute:"
-						" %s\n", attr);
+			} else {
+				iio_strerror(-ret, buf, sizeof(buf));
+
+				fprintf(stderr, "Unable to read attribute %s: %s\n",
+						attr, buf);
+			}
 		}
 
 		const struct iio_device *trig;
