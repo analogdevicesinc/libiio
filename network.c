@@ -1155,10 +1155,6 @@ struct iio_context * network_create_context(const char *host)
 		}
 	}
 
-	ret = iio_context_init(ctx);
-	if (ret < 0)
-		goto err_free_description;
-
 	if (ctx->description) {
 		size_t desc_len = strlen(description);
 		size_t new_size = desc_len + strlen(ctx->description) + 2;
