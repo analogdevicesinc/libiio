@@ -31,14 +31,20 @@
 
 int yyparse(yyscan_t scanner);
 
+struct DevEntry *entry;
+
 /* Corresponds to a thread reading from a device */
 struct ThdEntry {
-	SLIST_ENTRY(ThdEntry) next;
+	SLIST_ENTRY(ThdEntry) parser_list_entry;
+	SLIST_ENTRY(ThdEntry) dev_list_entry;
 	pthread_cond_t cond;
 	pthread_mutex_t cond_lock;
 	unsigned int nb, sample_size, samples_count;
 	ssize_t err;
+
 	struct parser_pdata *pdata;
+	struct iio_device *dev;
+	struct DevEntry *entry;
 
 	uint32_t *mask;
 	bool active, is_writer, new_client, wait_for_open;
@@ -290,7 +296,7 @@ static void * rw_thd(void *d)
 			unsigned int samples_count = 0;
 
 			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
-			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
+			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
 				for (i = 0; i < nb_words; i++)
 					entry->mask[i] |= thd->mask[i];
 
@@ -319,7 +325,7 @@ static void * rw_thd(void *d)
 			}
 
 			/* Signal the threads that we opened the device */
-			SLIST_FOREACH(thd, &entry->thdlist_head, next) {
+			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
 				if (thd->wait_for_open) {
 					signal_thread(thd, 0);
 					thd->wait_for_open = false;
@@ -338,7 +344,7 @@ static void * rw_thd(void *d)
 
 		sample_size = entry->sample_size;
 
-		SLIST_FOREACH(thd, &entry->thdlist_head, next) {
+		SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
 			thd->active = !thd->err && thd->nb >= sample_size;
 			if (mask_updated && thd->active)
 				signal_thread(thd, thd->nb);
@@ -391,7 +397,7 @@ static void * rw_thd(void *d)
 			 * reads "thd" to get the address of the next element. */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
 					thd; thd = next_thd) {
-				next_thd = SLIST_NEXT(thd, next);
+				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
 				if (!thd->active || thd->is_writer)
 					continue;
@@ -420,7 +426,7 @@ static void * rw_thd(void *d)
 			/* Same comment as above */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
 					thd; thd = next_thd) {
-				next_thd = SLIST_NEXT(thd, next);
+				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
 				if (!thd->active || !thd->is_writer)
 					continue;
@@ -456,7 +462,7 @@ static void * rw_thd(void *d)
 			/* Signal threads which completed their RW command */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
 					thd; thd = next_thd) {
-				next_thd = SLIST_NEXT(thd, next);
+				next_thd = SLIST_NEXT(thd, dev_list_entry);
 				if (thd->active && thd->is_writer &&
 						thd->nb < sample_size)
 					signal_thread(thd, thd->nb);
@@ -468,8 +474,9 @@ static void * rw_thd(void *d)
 
 	/* Signal all remaining threads */
 	for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
-		next_thd = SLIST_NEXT(thd, next);
-		SLIST_REMOVE(&entry->thdlist_head, thd, ThdEntry, next);
+		next_thd = SLIST_NEXT(thd, dev_list_entry);
+		SLIST_REMOVE(&entry->thdlist_head, thd, ThdEntry, dev_list_entry);
+		thd->entry = NULL;
 		signal_thread(thd, ret);
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
@@ -489,15 +496,32 @@ static void * rw_thd(void *d)
 	return NULL;
 }
 
+static struct ThdEntry *parser_lookup_thd_entry(struct parser_pdata *pdata,
+	struct iio_device *dev)
+{
+	struct ThdEntry *t;
+
+	SLIST_FOREACH(t, &pdata->thdlist_head, parser_list_entry) {
+		if (t->dev == dev)
+			return t;
+	}
+
+	return NULL;
+}
+
 static ssize_t rw_buffer(struct parser_pdata *pdata,
 		struct iio_device *dev, unsigned int nb, bool is_write)
 {
 	struct DevEntry *entry;
-	struct ThdEntry *t, *thd = NULL;
+	struct ThdEntry *thd;
 	ssize_t ret;
 
 	if (!dev)
 		return -ENODEV;
+
+	thd = parser_lookup_thd_entry(pdata, dev);
+	if (!thd)
+		return -ENXIO;
 
 	pthread_mutex_lock(&devlist_lock);
 	entry = iio_device_get_data(dev);
@@ -512,14 +536,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	}
 
 	pthread_mutex_lock(&entry->thdlist_lock);
-	SLIST_FOREACH(t, &entry->thdlist_head, next) {
-		if (t->pdata == pdata) {
-			thd = t;
-			break;
-		}
-	}
-
-	if (!thd) {
+	if (thd->entry != entry) {
 		pthread_mutex_unlock(&entry->thdlist_lock);
 		pthread_mutex_unlock(&devlist_lock);
 		return -ENXIO;
@@ -593,7 +610,8 @@ static void remove_thd_entry(struct iio_device *dev, struct ThdEntry *t)
 	entry = iio_device_get_data(dev);
 	if (entry) {
 		pthread_mutex_lock(&entry->thdlist_lock);
-		SLIST_REMOVE(&entry->thdlist_head, t, ThdEntry, next);
+		entry->update_mask = true;
+		SLIST_REMOVE(&entry->thdlist_head, t, ThdEntry, dev_list_entry);
 		pthread_mutex_unlock(&entry->thdlist_lock);
 	}
 	pthread_mutex_unlock(&devlist_lock);
@@ -633,6 +651,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->samples_count = samples_count;
 	thd->sample_size = iio_device_get_sample_size_mask(dev, words, len);
 	thd->pdata = pdata;
+	thd->dev = dev;
 	pthread_cond_init(&thd->cond, NULL);
 	pthread_mutex_init(&thd->cond_lock, NULL);
 	pthread_mutex_lock(&thd->cond_lock);
@@ -647,7 +666,8 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		}
 
 		pthread_mutex_lock(&entry->thdlist_lock);
-		SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
+		SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
+		thd->entry = entry;
 		entry->update_mask = true;
 		pthread_mutex_unlock(&entry->thdlist_lock);
 		DEBUG("Added thread to client list\n");
@@ -661,7 +681,8 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		ret = (int) thd->err;
 		if (ret < 0)
 			remove_thd_entry(dev, thd);
-
+		else
+			SLIST_INSERT_HEAD(&pdata->thdlist_head, thd, parser_list_entry);
 		return ret;
 	}
 
@@ -679,7 +700,8 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	entry->dev = dev;
 	entry->buf = NULL;
 	SLIST_INIT(&entry->thdlist_head);
-	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, next);
+	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
+	thd->entry = entry;
 	DEBUG("Added thread to client list\n");
 
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
@@ -701,6 +723,8 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	ret = (int) thd->err;
 	if (ret < 0)
 		remove_thd_entry(dev, thd);
+	else
+		SLIST_INSERT_HEAD(&pdata->thdlist_head, thd, parser_list_entry);
 	return ret;
 
 err_free_entry_mask:
@@ -721,31 +745,28 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct DevEntry *e;
 	struct ThdEntry *t;
-	int ret = -ENXIO;
 
 	if (!dev)
 		return -ENODEV;
 
+	t = parser_lookup_thd_entry(pdata, dev);
+	if (!t)
+		return -ENXIO;
+
 	pthread_mutex_lock(&devlist_lock);
 	e = iio_device_get_data(dev);
-	if (!e) {
-		pthread_mutex_unlock(&devlist_lock);
-		return -EBADF;
+	if (e && t->entry == e) {
+		pthread_mutex_lock(&e->thdlist_lock);
+		e->update_mask = true;
+		SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, dev_list_entry);
+		pthread_mutex_unlock(&e->thdlist_lock);
 	}
-
-	pthread_mutex_lock(&e->thdlist_lock);
-	SLIST_FOREACH(t, &e->thdlist_head, next) {
-		if (t->pdata == pdata) {
-			e->update_mask = true;
-			SLIST_REMOVE(&e->thdlist_head, t, ThdEntry, next);
-			free_thd_entry(t);
-			ret = 0;
-			break;
-		}
-	}
-	pthread_mutex_unlock(&e->thdlist_lock);
 	pthread_mutex_unlock(&devlist_lock);
-	return ret;
+
+	SLIST_REMOVE(&pdata->thdlist_head, t, ThdEntry, parser_list_entry);
+	free_thd_entry(t);
+
+	return 0;
 }
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
@@ -988,6 +1009,8 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 
 	pdata.fd_in_is_socket = is_socket;
 	pdata.fd_out_is_socket = is_socket;
+
+	SLIST_INIT(&pdata.thdlist_head);
 
 	yylex_init_extra(&pdata, &scanner);
 

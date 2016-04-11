@@ -26,12 +26,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/queue.h>
 #include <unistd.h>
 
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;
 	int fd_in, fd_out;
+
+	SLIST_HEAD(ParserDataThdHead, ThdEntry) thdlist_head;
 
 	/* Used as temporaries placements by the lexer */
 	struct iio_device *dev;
