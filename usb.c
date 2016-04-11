@@ -537,11 +537,6 @@ struct iio_context * usb_create_context(unsigned short vid, unsigned short pid)
 	ctx->ops = &usb_ops;
 	ctx->pdata = pdata;
 
-	DEBUG("Initializing context...\n");
-	ret = iio_context_init(ctx);
-	if (ret < 0)
-		goto err_context_destroy;
-
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 
