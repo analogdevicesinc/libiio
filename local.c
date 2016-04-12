@@ -76,6 +76,10 @@ struct block {
 	uint64_t timestamp;
 };
 
+struct iio_context_pdata {
+	unsigned long rw_timeout_ms;
+};
+
 struct iio_device_pdata {
 	int fd;
 	bool blocking;
@@ -147,9 +151,11 @@ static void local_shutdown(struct iio_context *ctx)
 {
 	/* Free the backend data stored in every device structure */
 	unsigned int i;
-	for (i = 0; i < ctx->nb_devices; i++) {
+
+	for (i = 0; i < ctx->nb_devices; i++)
 		local_free_pdata(ctx->devices[i]);
-	}
+
+	free(ctx->pdata);
 }
 
 /** Shrinks the first nb characters of a string
@@ -223,7 +229,7 @@ static int device_check_ready(const struct iio_device *dev, short events)
 	if (!dev->pdata->blocking)
 		return 0;
 
-	ret = poll(&pollfd, 1, dev->ctx->rw_timeout_ms);
+	ret = poll(&pollfd, 1, dev->ctx->pdata->rw_timeout_ms);
 	if (ret < 0)
 		return -errno;
 	if (!ret)
@@ -1491,7 +1497,7 @@ static int add_debug(void *d, const char *path)
 
 static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
-	ctx->rw_timeout_ms = timeout;
+	ctx->pdata->rw_timeout_ms = timeout;
 	return 0;
 }
 
@@ -1592,6 +1598,13 @@ struct iio_context * local_create_context(void)
 
 	ctx->ops = &local_ops;
 	ctx->name = "local";
+
+	ctx->pdata = zalloc(sizeof(*ctx->pdata));
+	if (!ctx->pdata) {
+		free(ctx);
+		goto err_set_errno;
+	}
+
 	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	uname(&uts);
@@ -1599,6 +1612,7 @@ struct iio_context * local_create_context(void)
 		+ strlen(uts.version) + strlen(uts.machine);
 	ctx->description = malloc(len + 5); /* 4 spaces + EOF */
 	if (!ctx->description) {
+		free(ctx->pdata);
 		free(ctx);
 		goto err_set_errno;
 	}
