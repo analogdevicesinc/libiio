@@ -48,6 +48,10 @@ if (NOT WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 endif()
 
+if (CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-sign-compare")
+endif()
+
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(WITH_IIOD "Build the IIO Daemon" ON)
 	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
