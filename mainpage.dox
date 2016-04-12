@@ -101,11 +101,11 @@ Write channel-specific attributes with those functions:
 - iio_channel_attr_write_double()
 
 Write debug attributes with those functions:
-- iio_device_attr_write()
-- iio_device_attr_write_all()
-- iio_device_attr_write_bool()
-- iio_device_attr_write_longlong()
-- iio_device_attr_write_double()
+- iio_device_debug_attr_write()
+- iio_device_debug_attr_write_all()
+- iio_device_debug_attr_write_bool()
+- iio_device_debug_attr_write_longlong()
+- iio_device_debug_attr_write_double()
 
 @section trigger Triggers
 Some devices, mostly low-speed ADCs and DACs, require a trigger to be set for the capture or upload process to work.
