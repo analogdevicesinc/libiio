@@ -138,8 +138,6 @@ struct iio_context {
 	unsigned int nb_devices;
 
 	char *xml;
-
-	unsigned int rw_timeout_ms;
 };
 
 struct iio_channel {
