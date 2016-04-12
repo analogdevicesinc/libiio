@@ -373,7 +373,6 @@ struct iio_context * xml_create_context(const char *xml_file)
 
 	ctx = iio_create_xml_context_helper(doc);
 	xmlFreeDoc(doc);
-	xmlCleanupParser();
 	return ctx;
 }
 
@@ -392,6 +391,5 @@ struct iio_context * xml_create_context_mem(const char *xml, size_t len)
 
 	ctx = iio_create_xml_context_helper(doc);
 	xmlFreeDoc(doc);
-	xmlCleanupParser();
 	return ctx;
 }
