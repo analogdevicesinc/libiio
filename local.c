@@ -1290,6 +1290,11 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 	}
 
 	dev->nb_attrs = ptr - dev->attrs;
+	if (!dev->nb_attrs) {
+		free(dev->attrs);
+		dev->attrs = NULL;
+	}
+
 	return 0;
 }
 
