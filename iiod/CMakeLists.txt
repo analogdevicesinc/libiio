@@ -15,6 +15,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(IIOD_CFILES iiod.c ops.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
 
 add_executable(iiod ${IIOD_CFILES})
+set_target_properties(iiod PROPERTIES
+	C_STANDARD 99
+	C_STANDARD_REQUIRED ON
+	C_EXTENSIONS OFF
+)
 target_link_libraries(iiod iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
 
 if(NOT SKIP_INSTALL_ALL)
