@@ -885,8 +885,6 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 		char buf[1024];
 		iio_strerror(-ret, buf, sizeof(buf));
 		WARNING("Unable to set R/W timeout: %s\n", buf);
-	} else {
-		ctx->rw_timeout_ms = timeout;
 	}
 	return ret;
 }
