@@ -526,6 +526,8 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, int desc,
 		ret = iiod_client_read_integer(client, desc, &to_read);
 		if (ret < 0)
 			return ret;
+		if (to_read < 0)
+			return (ssize_t) to_read;
 		if (!to_read)
 			break;
 
