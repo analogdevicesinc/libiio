@@ -243,6 +243,8 @@ static ssize_t write_all(const void *src, size_t len, int fd)
 	uintptr_t ptr = (uintptr_t) src;
 	while (len) {
 		ssize_t ret = network_send(fd, (const void *) ptr, len, 0);
+		if (ret < 0)
+			return ret;
 		ptr += ret;
 		len -= ret;
 	}
