@@ -203,6 +203,7 @@ int main(int argc, char **argv)
 	    keepalive_time = 10,
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
+	pthread_attr_t attr;
 #ifdef HAVE_AVAHI
 	bool avahi_started;
 #endif
@@ -285,9 +286,11 @@ int main(int argc, char **argv)
 	avahi_started = !start_avahi();
 #endif
 
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
 	while (true) {
 		pthread_t thd;
-		pthread_attr_t attr;
 		struct client_data *cdata;
 		struct sockaddr_in caddr;
 		socklen_t addr_len = sizeof(caddr);
@@ -325,8 +328,6 @@ int main(int argc, char **argv)
 
 		INFO("New client connected from %s\n",
 				inet_ntoa(caddr.sin_addr));
-		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		ret = pthread_create(&thd, &attr, client_thd, cdata);
 		if (ret) {
 			ERROR("Failed to create new client thread: %s\n", strerror(ret));
@@ -334,6 +335,8 @@ int main(int argc, char **argv)
 			free(cdata);
 		}
 	}
+
+	pthread_attr_destroy(&attr);
 
 	DEBUG("Cleaning up\n");
 #ifdef HAVE_AVAHI
