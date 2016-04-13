@@ -327,7 +327,12 @@ int main(int argc, char **argv)
 				inet_ntoa(caddr.sin_addr));
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-		pthread_create(&thd, &attr, client_thd, cdata);
+		ret = pthread_create(&thd, &attr, client_thd, cdata);
+		if (ret) {
+			ERROR("Failed to create new client thread: %s\n", strerror(ret));
+			close(new);
+			free(cdata);
+		}
 	}
 
 	DEBUG("Cleaning up\n");
