@@ -241,6 +241,25 @@ int main(int argc, char **argv)
 			}
 		}
 
+		nb_attrs = iio_device_get_debug_attrs_count(dev);
+		if (nb_attrs) {
+			printf("\t\t%u debug attributes found:\n", nb_attrs);
+			for (j = 0; j < nb_attrs; j++) {
+				const char *attr =
+					iio_device_get_debug_attr(dev, j);
+				char buf[1024];
+
+				ret = (int) iio_device_debug_attr_read(dev,
+						attr, buf, sizeof(buf));
+				if (ret > 0)
+					printf("\t\t\t\tdebug attr %u: %s value: %s\n",
+							j, attr, buf);
+				else if (ret == -ENOSYS)
+					printf("\t\t\t\tdebug attr %u: %s\n", j,
+							attr);
+			}
+		}
+
 		const struct iio_device *trig;
 		ret = iio_device_get_trigger(dev, &trig);
 		if (ret == 0) {
