@@ -163,10 +163,12 @@ _d_write_debug_attr.errcheck = _checkNegative
 _d_reg_write = _lib.iio_device_reg_write
 _d_reg_write.restype = c_int
 _d_reg_write.argtypes = (_DevicePtr, c_uint, c_uint)
+_d_reg_write.errcheck = _checkNegative
 
 _d_reg_read = _lib.iio_device_reg_read
 _d_reg_read.restype = c_int
 _d_reg_read.argtypes = (_DevicePtr, c_uint, _POINTER(c_uint))
+_d_reg_read.errcheck = _checkNegative
 
 _channels_count = _lib.iio_device_get_channels_count
 _channels_count.restype = c_uint
