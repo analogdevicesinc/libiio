@@ -194,53 +194,18 @@ static int main_interactive(struct iio_context *ctx, bool verbose)
 	return EXIT_SUCCESS;
 }
 
-int main(int argc, char **argv)
+static int main_server(struct iio_context *ctx, bool debug)
 {
-	struct iio_context *ctx;
-	bool debug = false, interactive = false, ipv6;
-	int c, option_index = 0;
 	int ret, fd = -1, yes = 1,
 	    keepalive_time = 10,
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
 	pthread_attr_t attr;
 	char err_str[1024];
+	bool ipv6;
 #ifdef HAVE_AVAHI
 	bool avahi_started;
 #endif
-
-	while ((c = getopt_long(argc, argv, "+hVdDi",
-					options, &option_index)) != -1) {
-		switch (c) {
-		case 'd':
-			debug = true;
-			break;
-		case 'D':
-			server_demux = true;
-			break;
-		case 'i':
-			interactive = true;
-			break;
-		case 'h':
-			usage();
-			return EXIT_SUCCESS;
-		case 'V':
-			printf("%u.%u\n", LIBIIO_VERSION_MAJOR,
-					LIBIIO_VERSION_MINOR);
-			return EXIT_SUCCESS;
-		case '?':
-			return EXIT_FAILURE;
-		}
-	}
-
-	ctx = iio_create_local_context();
-	if (!ctx) {
-		ERROR("Unable to create local context\n");
-		return EXIT_FAILURE;
-	}
-
-	if (interactive)
-		return main_interactive(ctx, debug);
 
 	INFO("Starting IIO Daemon version %u.%u\n",
 			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR);
@@ -254,7 +219,7 @@ int main(int argc, char **argv)
 	if (fd < 0) {
 		iio_strerror(errno, err_str, sizeof(err_str));
 		ERROR("Unable to create socket: %s\n", err_str);
-		goto err_close_ctx;
+		return EXIT_FAILURE;
 	}
 
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
@@ -350,7 +315,6 @@ int main(int argc, char **argv)
 		stop_avahi();
 #endif
 	close(fd);
-	iio_context_destroy(ctx);
 	return EXIT_SUCCESS;
 
 err_stop_avahi:
@@ -360,7 +324,51 @@ err_stop_avahi:
 #endif
 err_close_socket:
 	close(fd);
-err_close_ctx:
-	iio_context_destroy(ctx);
 	return EXIT_FAILURE;
+}
+
+int main(int argc, char **argv)
+{
+	bool debug = false, interactive = false;
+	struct iio_context *ctx;
+	int c, option_index = 0;
+	int ret;
+
+	while ((c = getopt_long(argc, argv, "+hVdDi",
+					options, &option_index)) != -1) {
+		switch (c) {
+		case 'd':
+			debug = true;
+			break;
+		case 'D':
+			server_demux = true;
+			break;
+		case 'i':
+			interactive = true;
+			break;
+		case 'h':
+			usage();
+			return EXIT_SUCCESS;
+		case 'V':
+			printf("%u.%u\n", LIBIIO_VERSION_MAJOR,
+					LIBIIO_VERSION_MINOR);
+			return EXIT_SUCCESS;
+		case '?':
+			return EXIT_FAILURE;
+		}
+	}
+
+	ctx = iio_create_local_context();
+	if (!ctx) {
+		ERROR("Unable to create local context\n");
+		return EXIT_FAILURE;
+	}
+
+	if (interactive)
+		ret = main_interactive(ctx, debug);
+	else
+		ret = main_server(ctx, debug);
+
+	iio_context_destroy(ctx);
+	return ret;
 }
