@@ -525,7 +525,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 
 	thd = parser_lookup_thd_entry(pdata, dev);
 	if (!thd)
-		return -ENXIO;
+		return -EBADF;
 
 	entry = thd->entry;
 
@@ -535,7 +535,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	pthread_mutex_lock(&entry->thdlist_lock);
 	if (entry->closed) {
 		pthread_mutex_unlock(&entry->thdlist_lock);
-		return -ENXIO;
+		return -EBADF;
 	}
 
 	if (thd->nb) {
