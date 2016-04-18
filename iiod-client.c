@@ -491,7 +491,8 @@ static int iiod_client_read_mask(struct iiod_client *client,
 
 	for (i = words, ptr = buf; i > 0; i--) {
 		sscanf(ptr, "%08x", &mask[i - 1]);
-		DEBUG("mask[%i] = 0x%08x\n", i - 1, mask[i - 1]);
+		DEBUG("mask[%lu] = 0x%08x\n",
+				(unsigned long)(i - 1), mask[i - 1]);
 
 		ptr = (char *) ((uintptr_t) ptr + 8);
 	}
