@@ -360,7 +360,7 @@ static int do_connect(const struct addrinfo *addrinfo,
 	int ret;
 	SOCKET s;
 
-	s = WSASocket(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
+	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
 		WSA_FLAG_NO_HANDLE_INHERIT);
 	if (s == INVALID_SOCKET)
 		return -WSAGetLastError();
