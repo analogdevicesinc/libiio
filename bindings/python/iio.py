@@ -65,6 +65,10 @@ _new_default = _lib.iio_create_default_context
 _new_default.restype = _ContextPtr
 _new_default.errcheck = _checkNull
 
+_new_uri = _lib.iio_create_context_from_uri
+_new_uri.restype = _ContextPtr
+_new_uri.errcheck = _checkNull
+
 _destroy = _lib.iio_context_destroy
 _destroy.argtypes = (_ContextPtr, )
 
@@ -662,6 +666,8 @@ class Context(object):
 		"""
 		if(_context is None):
 			self._context = _new_default()
+		elif type(_context) is str:
+			self._context = _new_uri(_context)
 		else:
 			self._context = _context
 
