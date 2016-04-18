@@ -81,6 +81,34 @@ struct sample_cb_info {
  * clients */
 static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 
+static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
+{
+	ssize_t ret;
+
+	if (pdata->fd_in_is_socket)
+		ret = recv(pdata->fd_in, dest, len, MSG_NOSIGNAL);
+	else if (!pdata->fd_in_is_socket)
+		ret = read(pdata->fd_in, dest, len);
+
+	if (ret < 0)
+		return -errno;
+	return ret;
+}
+
+static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t len)
+{
+	ssize_t ret;
+
+	if (pdata->fd_out_is_socket)
+		ret = send(pdata->fd_out, src, len, MSG_NOSIGNAL);
+	else if (!pdata->fd_out_is_socket)
+		ret = write(pdata->fd_out, src, len);
+
+	if (ret < 0)
+		return -errno;
+	return ret;
+}
+
 static ssize_t write_all(struct parser_pdata *pdata,
 		const void *src, size_t len)
 {
@@ -1001,6 +1029,9 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 
 	pdata.fd_in_is_socket = is_socket;
 	pdata.fd_out_is_socket = is_socket;
+
+	pdata.readfd = readfd_io;
+	pdata.writefd = writefd_io;
 
 	SLIST_INIT(&pdata.thdlist_head);
 

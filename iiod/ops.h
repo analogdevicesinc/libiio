@@ -41,6 +41,8 @@ struct parser_pdata {
 	struct iio_channel *chn;
 	bool channel_is_output;
 	bool fd_in_is_socket, fd_out_is_socket;
+	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf, size_t len);
+	ssize_t (*readfd)(struct parser_pdata *pdata, void *buf, size_t len);
 };
 
 extern bool server_demux; /* Defined in iiod.c */
@@ -78,16 +80,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
 static __inline__ ssize_t writefd(struct parser_pdata *pdata,
 		const void *buf, size_t len)
 {
-	ssize_t ret;
-
-	if (pdata->fd_out_is_socket)
-		ret = send(pdata->fd_out, buf, len, MSG_NOSIGNAL);
-	else if (!pdata->fd_out_is_socket)
-		ret = write(pdata->fd_out, buf, len);
-
-	if (ret < 0)
-		return -errno;
-	return ret;
+	return pdata->writefd(pdata, buf, len);
 }
 
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
@@ -99,16 +92,7 @@ static __inline__ void output(struct parser_pdata *pdata, const char *text)
 static __inline__ ssize_t readfd(struct parser_pdata *pdata,
 		void *buf, size_t len)
 {
-	ssize_t ret;
-
-	if (pdata->fd_in_is_socket)
-		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL);
-	else if (!pdata->fd_in_is_socket)
-		ret = read(pdata->fd_in, buf, len);
-
-	if (ret < 0)
-		return -errno;
-	return ret;
+	return pdata->readfd(pdata, buf, len);
 }
 
 #endif /* __OPS_H__ */
