@@ -204,6 +204,7 @@ int main(int argc, char **argv)
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
 	pthread_attr_t attr;
+	char err_str[1024];
 #ifdef HAVE_AVAHI
 	bool avahi_started;
 #endif
@@ -251,7 +252,8 @@ int main(int argc, char **argv)
 	if (!ipv6)
 		fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
-		ERROR("Unable to create socket: %s\n", strerror(errno));
+		iio_strerror(errno, err_str, sizeof(err_str));
+		ERROR("Unable to create socket: %s\n", err_str);
 		goto err_close_ctx;
 	}
 
@@ -265,7 +267,8 @@ int main(int argc, char **argv)
 	if (!ipv6)
 		ret = bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
 	if (ret < 0) {
-		ERROR("Bind failed: %s\n", strerror(errno));
+		iio_strerror(errno, err_str, sizeof(err_str));
+		ERROR("Bind failed: %s\n", err_str);
 		goto err_close_socket;
 	}
 
@@ -273,8 +276,8 @@ int main(int argc, char **argv)
 		INFO("IPv6 support enabled\n");
 
 	if (listen(fd, 16) < 0) {
-		ERROR("Unable to mark as passive socket: %s\n",
-				strerror(errno));
+		iio_strerror(errno, err_str, sizeof(err_str));
+		ERROR("Unable to mark as passive socket: %s\n", err_str);
 		goto err_close_socket;
 	}
 
@@ -298,8 +301,9 @@ int main(int argc, char **argv)
 		if (new == -1) {
 			if (errno == EINTR)
 				break;
+			iio_strerror(errno, err_str, sizeof(err_str));
 			ERROR("Failed to create connection socket: %s\n",
-					strerror(errno));
+				err_str);
 			goto err_stop_avahi;
 		}
 
@@ -330,7 +334,9 @@ int main(int argc, char **argv)
 				inet_ntoa(caddr.sin_addr));
 		ret = pthread_create(&thd, &attr, client_thd, cdata);
 		if (ret) {
-			ERROR("Failed to create new client thread: %s\n", strerror(ret));
+			iio_strerror(ret, err_str, sizeof(err_str));
+			ERROR("Failed to create new client thread: %s\n",
+				err_str);
 			close(new);
 			free(cdata);
 		}

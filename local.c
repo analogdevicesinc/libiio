@@ -407,6 +407,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 {
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
+	char err_str[1024];
 	int f = pdata->fd;
 	ssize_t ret;
 
@@ -436,7 +437,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
 			ret = (ssize_t) -errno;
-			ERROR("Unable to enqueue block: %s\n", strerror(errno));
+			iio_strerror(errno, err_str, sizeof(err_str));
+			ERROR("Unable to enqueue block: %s\n", err_str);
 			return ret;
 		}
 
@@ -450,7 +452,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	ret = (ssize_t) ioctl(f, BLOCK_DEQUEUE_IOCTL, &block);
 	if (ret) {
 		ret = (ssize_t) -errno;
-		ERROR("Unable to dequeue block: %s\n", strerror(errno));
+		iio_strerror(errno, err_str, sizeof(err_str));
+		ERROR("Unable to dequeue block: %s\n", err_str);
 		return ret;
 	}
 

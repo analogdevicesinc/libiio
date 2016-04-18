@@ -1035,7 +1035,9 @@ struct iio_context * network_create_context(const char *host)
 
 		ret = discover_host(&address, &port);
 		if (ret < 0) {
-			DEBUG("Unable to find host: %s\n", strerror(-ret));
+			char buf[1024];
+			iio_strerror(-ret, buf, sizeof(buf));
+			DEBUG("Unable to find host: %s\n", buf);
 			errno = -ret;
 			return NULL;
 		}
