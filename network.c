@@ -566,7 +566,8 @@ static ssize_t network_read_mask(int fd, uint32_t *mask, size_t words)
 				return ret;
 
 			sscanf(buf, "%08x", &mask[i - 1]);
-			DEBUG("mask[%i] = 0x%x\n", i - 1, mask[i - 1]);
+			DEBUG("mask[%lu] = 0x%x\n",
+					(unsigned long)(i - 1), mask[i - 1]);
 		}
 	}
 
