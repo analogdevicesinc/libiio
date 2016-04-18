@@ -22,6 +22,8 @@ set_target_properties(iiod PROPERTIES
 )
 target_link_libraries(iiod iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
 
+add_definitions(-D_GNU_SOURCE=1)
+
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iiod RUNTIME DESTINATION sbin)
 endif()

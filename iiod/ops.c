@@ -24,10 +24,14 @@
 #include <errno.h>
 #include <limits.h>
 #include <pthread.h>
+#include <poll.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/queue.h>
+#include <sys/eventfd.h>
 #include <time.h>
+#include <fcntl.h>
+#include <signal.h>
 
 int yyparse(yyscan_t scanner);
 
@@ -55,6 +59,7 @@ struct DevEntry {
 
 	struct iio_device *dev;
 	struct iio_buffer *buf;
+	int buf_fd;
 	unsigned int sample_size, nb_clients;
 	bool update_mask;
 	bool cyclic;
@@ -84,28 +89,75 @@ static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 {
 	ssize_t ret;
+	struct pollfd pfd[2];
 
-	if (pdata->fd_in_is_socket)
-		ret = recv(pdata->fd_in, dest, len, MSG_NOSIGNAL);
-	else if (!pdata->fd_in_is_socket)
-		ret = read(pdata->fd_in, dest, len);
+	pfd[0].fd = pdata->fd_out;
+	pfd[0].events = POLLIN;
+	pfd[0].revents = 0;
+	pfd[1].fd = stop_fd;
+	pfd[1].events = POLLIN;
+	pfd[1].revents = 0;
 
-	if (ret < 0)
+	do {
+		do {
+			ret = poll(pfd, 2, -1);
+		} while (ret == -1 && errno == EINTR);
+
+		/* Got STOP event, treat it as EOF */
+		if (pfd[1].revents & POLLIN)
+			return 0;
+		if (!(pfd[0].revents & POLLIN))
+			continue;
+
+		do {
+			if (pdata->fd_in_is_socket)
+				ret = recv(pdata->fd_in, dest, len, MSG_NOSIGNAL);
+			else
+				ret = read(pdata->fd_in, dest, len);
+		} while (ret == -1 && errno == EINTR);
+	} while (ret == -1 && errno == EAGAIN);
+
+	if (ret == -1)
 		return -errno;
+
 	return ret;
 }
 
 static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t len)
 {
 	ssize_t ret;
+	struct pollfd pfd[2];
 
-	if (pdata->fd_out_is_socket)
-		ret = send(pdata->fd_out, src, len, MSG_NOSIGNAL);
-	else if (!pdata->fd_out_is_socket)
-		ret = write(pdata->fd_out, src, len);
+	pfd[0].fd = pdata->fd_out;
+	pfd[0].events = POLLOUT;
+	pfd[0].revents = 0;
+	pfd[1].fd = stop_fd;
+	pfd[1].events = POLLIN;
+	pfd[1].revents = 0;
 
-	if (ret < 0)
+	do {
+		do {
+			ret = poll(pfd, 2, -1);
+		} while (ret == -1 && errno == EINTR);
+
+		/* Got STOP event, treat as EOF */
+		if (pfd[1].revents & POLLIN)
+			return 0;
+		if (!(pfd[0].revents & POLLOUT))
+			continue;
+
+		do {
+			if (pdata->fd_out_is_socket)
+				ret = send(pdata->fd_out, src, len, MSG_NOSIGNAL);
+			else
+				ret = write(pdata->fd_out, src, len);
+		} while (ret == -1 && errno == EINTR);
+
+	} while (ret == -1 && errno == EAGAIN);
+
+	if (ret == -1)
 		return -errno;
+
 	return ret;
 }
 
@@ -365,6 +417,9 @@ static void * rw_thd(void *d)
 				break;
 			}
 
+			iio_buffer_set_blocking_mode(entry->buf, false);
+			entry->buf_fd = iio_buffer_get_poll_fd(entry->buf);
+
 			/* Signal the threads that we opened the device */
 			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
 				if (thd->wait_for_open) {
@@ -414,16 +469,30 @@ static void * rw_thd(void *d)
 		 * to be sure that we don't lose samples. */
 		if (has_readers || had_readers) {
 			ssize_t nb_bytes;
+			struct pollfd pfd[2];
 
-			ret = iio_buffer_refill(entry->buf);
+			pfd[0].events = POLLIN;
+			pfd[0].fd = entry->buf_fd;
+			pfd[1].events = POLLIN;
+			pfd[1].fd = stop_fd;
+
+			do {
+				ret = poll(pfd, 2, -1);
+			} while (ret == -1 && errno == EINTR);
+
+			if ((pfd[1].revents & POLLIN) == 0) {
+				ret = iio_buffer_refill(entry->buf);
+				if (ret < 0)
+					ERROR("Reading from device failed: %i\n",
+							(int) ret);
+			} else {
+				ret = -EINTR;
+			}
 
 			pthread_mutex_lock(&entry->thdlist_lock);
 
-			if (ret < 0) {
-				ERROR("Reading from device failed: %i\n",
-						(int) ret);
+			if (ret < 0)
 				break;
-			}
 
 			had_readers = false;
 			nb_bytes = ret;
@@ -454,6 +523,7 @@ static void * rw_thd(void *d)
 
 		if (has_writers) {
 			ssize_t nb_bytes = 0;
+			struct pollfd pfd[2];
 
 			pthread_mutex_lock(&entry->thdlist_lock);
 
@@ -479,14 +549,27 @@ static void * rw_thd(void *d)
 					signal_thread(thd, ret);
 			}
 
-			ret = iio_buffer_push_partial(entry->buf,
-					nb_bytes / sample_size);
+			pfd[0].events = POLLOUT;
+			pfd[0].fd = entry->buf_fd;
+			pfd[1].events = POLLIN;
+			pfd[1].fd = stop_fd;
 
-			if (ret < 0) {
-				ERROR("Writing to device failed: %i\n",
-						(int) ret);
-				break;
+			do {
+				ret = poll(pfd, 2, -1);
+			} while (ret == -1 && errno == EINTR);
+
+			if ((pfd[1].revents & POLLIN) == 0) {
+				ret = iio_buffer_push_partial(entry->buf,
+					nb_bytes / sample_size);
+				if (ret < 0)
+					ERROR("Writing to device failed: %i\n",
+							(int) ret);
+			} else {
+				ret = -EINTR;
 			}
+
+			if (ret < 0)
+				break;
 
 			/* Signal threads which completed their RW command */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
@@ -524,6 +607,7 @@ static void * rw_thd(void *d)
 			dev->name ? dev->name : dev->id);
 
 	dev_entry_put(entry);
+	thread_stopped();
 
 	return NULL;
 }
@@ -646,6 +730,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	size_t len = strlen(mask);
 	uint32_t *words;
 	unsigned int nb_channels;
+	sigset_t sigmask, oldsigmask;
 
 	if (!dev)
 		return -ENODEV;
@@ -738,10 +823,15 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
+	sigfillset(&sigmask);
+	pthread_sigmask(SIG_BLOCK, &sigmask, &oldsigmask);
+	thread_started();
 	ret = pthread_create(&entry->thd, &attr, rw_thd, entry);
+	pthread_sigmask(SIG_SETMASK, &oldsigmask, NULL);
 	pthread_attr_destroy(&attr);
 	if (ret) {
 		pthread_mutex_unlock(&devlist_lock);
+		thread_stopped();
 		goto err_free_entry_mask;
 	}
 
@@ -989,6 +1079,22 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 	ssize_t ret;
 
 	if (pdata->fd_in_is_socket) {
+		struct pollfd pfd[2];
+
+		pfd[0].fd = pdata->fd_in;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0;
+		pfd[1].fd = stop_fd;
+		pfd[1].events = POLLIN;
+		pfd[1].revents = 0;
+
+		do {
+			ret = poll(pfd, 2, -1);
+		} while (ret == -1 && errno == EINTR);
+
+		if (pfd[1].revents & POLLIN)
+			return 0;
+
 		/* First read from the socket, without advancing the
 		 * read offset */
 		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL | MSG_PEEK);
@@ -1008,7 +1114,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 					MSG_NOSIGNAL | MSG_TRUNC);
 		}
 	} else {
-		ret = read(pdata->fd_in, buf, len);
+		ret = readfd(pdata, buf, len);
 	}
 
 	return ret;
@@ -1020,6 +1126,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	yyscan_t scanner;
 	struct parser_pdata pdata;
 	unsigned int i;
+	int ret;
 
 	pdata.ctx = ctx;
 	pdata.stop = false;
@@ -1040,8 +1147,8 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	do {
 		if (verbose)
 			output(&pdata, "iio-daemon > ");
-		yyparse(scanner);
-	} while (!pdata.stop);
+		ret = yyparse(scanner);
+	} while (!pdata.stop && ret >= 0);
 
 	yylex_destroy(scanner);
 

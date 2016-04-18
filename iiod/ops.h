@@ -46,6 +46,10 @@ struct parser_pdata {
 };
 
 extern bool server_demux; /* Defined in iiod.c */
+extern int stop_fd;
+
+void thread_started(void);
+void thread_stopped(void);
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	bool is_socket);
