@@ -24,6 +24,19 @@ target_link_libraries(iiod iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
 
 add_definitions(-D_GNU_SOURCE=1)
 
+find_library(LIBAIO_LIBRARIES aio)
+find_path(LIBAIO_INCLUDE_DIR aio.h)
+
+if (LIBAIO_LIBRARIES AND LIBAIO_INCLUDE_DIR)
+	option(ENABLE_AIO "Build IIOD with async. I/O support" ON)
+
+	if (ENABLE_AIO)
+		add_definitions(-DWITH_AIO=1)
+		include_directories(${LIBAIO_INCLUDE_DIR})
+		target_link_libraries(iiod ${LIBAIO_LIBRARIES})
+	endif ()
+endif ()
+
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iiod RUNTIME DESTINATION sbin)
 endif()

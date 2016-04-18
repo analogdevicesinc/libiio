@@ -129,6 +129,7 @@ static const struct option options[] = {
 	  {"debug", no_argument, 0, 'd'},
 	  {"demux", no_argument, 0, 'D'},
 	  {"interactive", no_argument, 0, 'i'},
+	  {"aio", no_argument, 0, 'a'},
 	  {0, 0, 0, 0},
 };
 
@@ -138,6 +139,7 @@ static const char *options_descriptions[] = {
 	"Use alternative (incompatible) debug interface.",
 	"Demux channels directly on the server.",
 	"Run " MY_NAME " in the controlling terminal.",
+	"Use asynchronous I/O.",
 };
 
 #ifdef HAVE_AVAHI
@@ -211,7 +213,7 @@ static void * client_thd(void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug, true);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug, true, false);
 
 	INFO("Client exited\n");
 	close(cdata->fd);
@@ -241,19 +243,21 @@ static void sig_handler(int sig)
 	}
 }
 
-static int main_interactive(struct iio_context *ctx, bool verbose)
+static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 {
 	int flags;
 
 	/* Specify that we will read sequentially the input FD */
 	posix_fadvise(STDIN_FILENO, 0, 0, POSIX_FADV_SEQUENTIAL);
 
-	flags = fcntl(STDIN_FILENO, F_GETFL);
-	fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-	flags = fcntl(STDOUT_FILENO, F_GETFL);
-	fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
+	if (!use_aio) {
+		flags = fcntl(STDIN_FILENO, F_GETFL);
+		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+		flags = fcntl(STDOUT_FILENO, F_GETFL);
+		fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
+	}
 
-	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose, false);
+	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose, false, use_aio);
 	return EXIT_SUCCESS;
 }
 
@@ -407,7 +411,7 @@ err_close_socket:
 
 int main(int argc, char **argv)
 {
-	bool debug = false, interactive = false;
+	bool debug = false, interactive = false, use_aio = false;
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	char err_str[1024];
@@ -425,6 +429,14 @@ int main(int argc, char **argv)
 		case 'i':
 			interactive = true;
 			break;
+		case 'a':
+#ifdef WITH_AIO
+			use_aio = true;
+			break;
+#else
+			ERROR("IIOD was not compiled with AIO support.\n");
+			return EXIT_FAILURE;
+#endif
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
@@ -457,7 +469,7 @@ int main(int argc, char **argv)
 	}
 
 	if (interactive)
-		ret = main_interactive(ctx, debug);
+		ret = main_interactive(ctx, debug, use_aio);
 	else
 		ret = main_server(ctx, debug);
 

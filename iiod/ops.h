@@ -29,6 +29,10 @@
 #include <sys/queue.h>
 #include <unistd.h>
 
+#if WITH_AIO
+#include <libaio.h>
+#endif
+
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;
@@ -41,6 +45,11 @@ struct parser_pdata {
 	struct iio_channel *chn;
 	bool channel_is_output;
 	bool fd_in_is_socket, fd_out_is_socket;
+#if WITH_AIO
+	io_context_t aio_ctx;
+	int aio_eventfd;
+#endif
+
 	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf, size_t len);
 	ssize_t (*readfd)(struct parser_pdata *pdata, void *buf, size_t len);
 };
@@ -52,7 +61,7 @@ void thread_started(void);
 void thread_stopped(void);
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-	bool is_socket);
+	bool is_socket, bool use_aio);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
