@@ -31,7 +31,7 @@
 
 int yyparse(yyscan_t scanner);
 
-struct DevEntry *entry;
+struct DevEntry;
 
 /* Corresponds to a thread reading from a device */
 struct ThdEntry {
