@@ -417,7 +417,7 @@ int main(int argc, char **argv)
 	char err_str[1024];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDi",
+	while ((c = getopt_long(argc, argv, "+hVdDia",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
