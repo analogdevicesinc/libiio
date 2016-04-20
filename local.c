@@ -344,10 +344,6 @@ static ssize_t local_read(const struct iio_device *dev,
 	if (words != dev->words)
 		return -EINVAL;
 
-	ret = local_enable_buffer(dev);
-	if (ret < 0)
-		return ret;
-
 	ret = device_check_ready(dev, POLLIN);
 	if (ret < 0)
 		return ret;
@@ -365,10 +361,6 @@ static ssize_t local_write(const struct iio_device *dev,
 	struct iio_device_pdata *pdata = dev->pdata;
 	if (pdata->fd == -1)
 		return -EBADF;
-
-	ret = local_enable_buffer(dev);
-	if (ret < 0)
-		return ret;
 
 	ret = device_check_ready(dev, POLLOUT);
 	if (ret < 0)
@@ -833,15 +825,11 @@ static int local_open(const struct iio_device *dev,
 				buf, strlen(buf) + 1, false);
 		if (ret < 0)
 			goto err_close;
-
-		/* NOTE: The low-speed interface will enable the buffer after
-		 * the first samples are written, or if the device is set
-		 * to non blocking-mode */
-	} else {
-		ret = local_enable_buffer(dev);
-		if (ret < 0)
-			goto err_close;
 	}
+
+	ret = local_enable_buffer(dev);
+	if (ret < 0)
+		goto err_close;
 
 	return 0;
 err_close:
@@ -897,17 +885,8 @@ static int local_set_blocking_mode(const struct iio_device *dev, bool blocking)
 		return -EPERM;
 
 	ret = set_blocking_mode(dev->pdata->fd, blocking);
-	if (ret == 0) {
+	if (ret == 0)
 		dev->pdata->blocking = blocking;
-
-		/* When a device is opened, it is configured in blocking mode.
-		 * If the user wants to use the non blocking API, and poll the
-		 * device to know when to make the first read, it is required to
-		 * activate to buffer automatically when the device is switched
-		 * in non-blocking mode. */
-		if (!blocking)
-			ret = local_enable_buffer(dev);
-	}
 
 	return ret;
 }
