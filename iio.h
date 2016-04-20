@@ -1105,6 +1105,31 @@ __api ssize_t iio_buffer_push(struct iio_buffer *buf);
 __api ssize_t iio_buffer_push_partial(struct iio_buffer *buf,
 		size_t samples_count);
 
+/** @brief Cancel all buffer operations
+ * @param buf The buffer for which operations should be canceled
+ *
+ * This function cancels all outstanding buffer operations previously scheduled.
+ * This means any pending iio_buffer_push() or iio_buffer_refill() operation
+ * will abort and return immediately, any further invocations of these functions
+ * on the same buffer will return immediately with an error.
+ *
+ * Usually iio_buffer_push() and iio_buffer_refill() will block until either all
+ * data has been transferred or a timeout occurs. This can depending on the
+ * configuration take a significant amount of time. iio_buffer_cancel() is
+ * useful to bypass these conditions if the buffer operation is supposed to be
+ * stopped in response to an external event (e.g. user input).
+ *
+ * To be able to capture additional data after calling this function the buffer
+ * should be destroyed and then re-created.
+ *
+ * This function can be called multiple times for the same buffer, but all but
+ * the first invocation will be without additional effect.
+ *
+ * This function is thread-safe, but not signal-safe, i.e. it must not be called
+ * from a signal handler.
+ */
+__api void iio_buffer_cancel(struct iio_buffer *buf);
+
 
 /** @brief Get the start address of the buffer
  * @param buf A pointer to an iio_buffer structure

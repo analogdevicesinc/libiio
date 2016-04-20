@@ -101,6 +101,8 @@ struct iio_backend_ops {
 	int (*get_fd)(const struct iio_device *dev);
 	int (*set_blocking_mode)(const struct iio_device *dev, bool blocking);
 
+	void (*cancel)(const struct iio_device *dev);
+
 	int (*set_kernel_buffers_count)(const struct iio_device *dev,
 			unsigned int nb_blocks);
 	ssize_t (*get_buffer)(const struct iio_device *dev,

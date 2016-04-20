@@ -304,3 +304,11 @@ const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
 {
 	return buf->dev;
 }
+
+void iio_buffer_cancel(struct iio_buffer *buf)
+{
+	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
+
+	if (ops->cancel)
+		ops->cancel(buf->dev);
+}
