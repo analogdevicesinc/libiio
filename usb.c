@@ -699,16 +699,22 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 		goto err_bad_uri;
 
 	address = strtol(ptr, &end, 10);
-	if (ptr == end || *end != '.')
+	if (ptr == end)
 		goto err_bad_uri;
 
-	ptr = (const char *) ((uintptr_t) end + 1);
-	if (!isdigit(*ptr))
-		goto err_bad_uri;
+	if (*end == '\0') {
+		interface = 0;
+	} else if (*end == '.') {
+		ptr = (const char *) ((uintptr_t) end + 1);
+		if (!isdigit(*ptr))
+			goto err_bad_uri;
 
-	interface = strtol(ptr, &end, 10);
-	if (ptr == end || *end != '\0')
+		interface = strtol(ptr, &end, 10);
+		if (ptr == end || *end != '\0')
+			goto err_bad_uri;
+	} else {
 		goto err_bad_uri;
+	}
 
 	if (bus < 0 || address < 0 || interface < 0)
 		goto err_bad_uri;
