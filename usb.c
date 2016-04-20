@@ -20,6 +20,7 @@
 #include "iio-private.h"
 #include "iiod-client.h"
 
+#include <ctype.h>
 #include <errno.h>
 #include <libusb-1.0/libusb.h>
 #include <stdbool.h>
@@ -678,12 +679,45 @@ err_set_errno:
 
 struct iio_context * usb_create_context_from_uri(const char *uri)
 {
-	unsigned int bus, address, interface;
+	long bus, address, interface;
+	char *end;
+	const char *ptr;
 
 	if (strncmp(uri, "usb:", sizeof("usb:") - 1) != 0)
-		return NULL;
+		goto err_bad_uri;
 
-	sscanf(uri+4, "%u.%u.%u", &bus, &address, &interface);
+	ptr = (const char *) ((uintptr_t) uri + sizeof("usb:") - 1);
+	if (!isdigit(*ptr))
+		goto err_bad_uri;
 
-	return usb_create_context(bus, address, interface);
+	bus = strtol(ptr, &end, 10);
+	if (ptr == end || *end != '.')
+		goto err_bad_uri;
+
+	ptr = (const char *) ((uintptr_t) end + 1);
+	if (!isdigit(*ptr))
+		goto err_bad_uri;
+
+	address = strtol(ptr, &end, 10);
+	if (ptr == end || *end != '.')
+		goto err_bad_uri;
+
+	ptr = (const char *) ((uintptr_t) end + 1);
+	if (!isdigit(*ptr))
+		goto err_bad_uri;
+
+	interface = strtol(ptr, &end, 10);
+	if (ptr == end || *end != '\0')
+		goto err_bad_uri;
+
+	if (bus < 0 || address < 0 || interface < 0)
+		goto err_bad_uri;
+
+	return usb_create_context((unsigned int) bus,
+			(unsigned int) address, (unsigned int) interface);
+
+err_bad_uri:
+	ERROR("Bad URI: \'%s\'\n", uri);
+	errno = -EINVAL;
+	return NULL;
 }
