@@ -366,11 +366,6 @@ static ssize_t local_write(const struct iio_device *dev,
 	if (pdata->fd == -1)
 		return -EBADF;
 
-	/* Writing is forbidden in cyclic mode. Cyclic buffers are managed using
-	 * the IOCTL API. */
-	if (pdata->cyclic)
-		return -EPERM;
-
 	ret = local_enable_buffer(dev);
 	if (ret < 0)
 		return ret;
@@ -825,6 +820,10 @@ static int local_open(const struct iio_device *dev,
 	if (!pdata->is_high_speed) {
 		unsigned long size = samples_count * pdata->nb_blocks;
 		WARNING("High-speed mode not enabled\n");
+
+		/* Cyclic mode is only supported in high-speed mode */
+		if (cyclic)
+			return -EPERM;
 
 		/* Increase the size of the kernel buffer, when using the
 		 * low-speed interface. This avoids losing samples when
