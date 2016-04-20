@@ -366,36 +366,20 @@ static ssize_t local_write(const struct iio_device *dev,
 	if (pdata->fd == -1)
 		return -EBADF;
 
-	/* Writing is forbidden in cyclic mode with devices without the
-	 * high-speed mmap interface, except for the devices starting with
-	 * "cf-": in this case only cyclic mode is allowed. */
-	if (!pdata->is_high_speed && pdata->cyclic !=
-			(dev->name && !strncmp(dev->name, "cf-", 3)))
+	/* Writing is forbidden in cyclic mode. Cyclic buffers are managed using
+	 * the IOCTL API. */
+	if (pdata->cyclic)
 		return -EPERM;
-
-	if (pdata->cyclic) {
-		ret = device_check_ready(dev, POLLOUT);
-		if (ret < 0)
-			return ret;
-
-		ret = write(pdata->fd, src, len);
-		if (ret < 0)
-			return -errno;
-	}
 
 	ret = local_enable_buffer(dev);
 	if (ret < 0)
 		return ret;
 
-	/* In cyclic mode, the buffer must be enabled after writing the samples.
-	 * In non-cyclic mode, it must be enabled before writing the samples. */
-	if (!pdata->cyclic) {
-		ret = device_check_ready(dev, POLLOUT);
-		if (ret < 0)
-			return ret;
+	ret = device_check_ready(dev, POLLOUT);
+	if (ret < 0)
+		return ret;
 
-		ret = write_all(src, len, pdata->fd);
-	}
+	ret = write_all(src, len, pdata->fd);
 
 	return ret ? ret : -EIO;
 }
