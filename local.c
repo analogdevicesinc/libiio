@@ -1202,6 +1202,9 @@ static int add_channel(struct iio_device *dev, const char *name,
 		free(channel_id);
 		return -ENXIO;
 	}
+
+	iio_channel_init_finalize(chn);
+
 	ret = add_channel_to_device(dev, chn);
 	if (ret)
 		free_channel(chn);

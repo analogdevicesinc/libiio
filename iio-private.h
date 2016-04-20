@@ -199,6 +199,7 @@ struct iio_channel {
 	struct iio_data_format format;
 	char *name, *id;
 	long index;
+	enum iio_chan_type type;
 
 	struct iio_channel_attr *attrs;
 	unsigned int nb_attrs;
@@ -292,6 +293,8 @@ int usb_context_scan(struct iio_scan_backend_context *ctx,
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
+
+void iio_channel_init_finalize(struct iio_channel *chn);
 
 #undef __api
 
