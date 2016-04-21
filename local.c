@@ -151,6 +151,17 @@ static unsigned int find_modifier(const char *s, size_t *len_p)
 	return IIO_NO_MOD;
 }
 
+static int ioctl_nointr(int fd, unsigned long request, void *data)
+{
+	int ret;
+
+	do {
+		ret = ioctl(fd, request, data);
+	} while (ret == -1 && errno == EINTR);
+
+	return ret;
+}
+
 static void local_free_pdata(struct iio_device *device)
 {
 	if (device && device->pdata) {
@@ -422,7 +433,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		}
 
 		last_block->bytes_used = bytes_used;
-		ret = (ssize_t) ioctl(f,
+		ret = (ssize_t) ioctl_nointr(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
 			ret = (ssize_t) -errno;
@@ -442,7 +453,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		return ret;
 
 	memset(&block, 0, sizeof(block));
-	ret = (ssize_t) ioctl(f, BLOCK_DEQUEUE_IOCTL, &block);
+	ret = (ssize_t) ioctl_nointr(f, BLOCK_DEQUEUE_IOCTL, &block);
 	if (ret) {
 		ret = (ssize_t) -errno;
 		iio_strerror(errno, err_str, sizeof(err_str));
@@ -720,7 +731,7 @@ static int enable_high_speed(const struct iio_device *dev)
 		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
 	req.count = pdata->nb_blocks;
 
-	ret = ioctl(fd, BLOCK_ALLOC_IOCTL, &req);
+	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
 	if (ret < 0) {
 		ret = -errno;
 		goto err_freemem;
@@ -732,13 +743,13 @@ static int enable_high_speed(const struct iio_device *dev)
 	/* mmap all the blocks */
 	for (i = 0; i < pdata->nb_blocks; i++) {
 		pdata->blocks[i].id = i;
-		ret = ioctl(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
+		ret = ioctl_nointr(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
 		if (ret) {
 			ret = -errno;
 			goto err_munmap;
 		}
 
-		ret = ioctl(fd, BLOCK_ENQUEUE_IOCTL, &pdata->blocks[i]);
+		ret = ioctl_nointr(fd, BLOCK_ENQUEUE_IOCTL, &pdata->blocks[i]);
 		if (ret) {
 			ret = -errno;
 			goto err_munmap;
@@ -759,7 +770,7 @@ static int enable_high_speed(const struct iio_device *dev)
 err_munmap:
 	for (; i > 0; i--)
 		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
-	ioctl(fd, BLOCK_FREE_IOCTL, 0);
+	ioctl_nointr(fd, BLOCK_FREE_IOCTL, 0);
 err_freemem:
 	free(pdata->addrs);
 	pdata->addrs = NULL;
@@ -860,7 +871,7 @@ static int local_close(const struct iio_device *dev)
 		unsigned int i;
 		for (i = 0; i < pdata->nb_blocks; i++)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
-		ioctl(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
 		free(pdata->addrs);
 		pdata->addrs = NULL;
 		free(pdata->blocks);
