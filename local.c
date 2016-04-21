@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/utsname.h>
+#include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -242,27 +243,64 @@ static int set_channel_name(struct iio_channel *chn)
 	return 0;
 }
 
+/*
+ * Used to generate the timeout parameter for operations like poll. Returns the
+ * number of ms until it is timeout_rel ms after the time specified in start. If
+ * timeout_rel is 0 returns -1 to indicate no timeout.
+ *
+ * The timeout that is specified for IIO operations is the maximum time a buffer
+ * push() or refill() operation should take before returning. poll() is used to
+ * wait for either data activity or for the timeout to elapse. poll() might get
+ * interrupted in which case it is called again. Passing the same timeout as
+ * before would increase the total timeout and if repeated interruptions occur
+ * (e.g. by a timer signal) the operation might never time out or with
+ * significant delay. Hence before each poll() invocation the timeout is
+ * recalculated relative to the start of refill() or push() operation.
+ */
+static int get_rel_timeout_ms(struct timespec *start, unsigned int timeout_rel)
+{
+	struct timespec now;
+	int diff_ms;
+
+	if (timeout_rel == 0) /* No timeout */
+		return -1;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	diff_ms = (now.tv_sec - start->tv_sec) * 1000;
+	diff_ms += (now.tv_nsec - start->tv_nsec) / 1000000;
+
+	if (diff_ms >= timeout_rel) /* Expired */
+		return 0;
+	if (diff_ms > 0) /* Should never be false, but lets be safe */
+		timeout_rel -= diff_ms;
+	if (timeout_rel > INT_MAX)
+		return INT_MAX;
+
+	return (int) timeout_rel;
+}
+
 static int device_check_ready(const struct iio_device *dev, short events)
 {
 	struct pollfd pollfd = {
 		.fd = dev->pdata->fd,
 		.events = events,
 	};
-	unsigned long rw_timeout_ms = dev->ctx->pdata->rw_timeout_ms;
-	int poll_timeout;
+	unsigned int rw_timeout_ms = dev->ctx->pdata->rw_timeout_ms;
+	struct timespec start;
+	int timeout_rel;
 	int ret;
 
 	if (!dev->pdata->blocking)
 		return 0;
 
-	if (rw_timeout_ms == 0)
-		poll_timeout = -1;
-	else if (rw_timeout_ms > INT_MAX)
-		poll_timeout = INT_MAX;
-	else
-		poll_timeout = (int) rw_timeout_ms;
+	clock_gettime(CLOCK_MONOTONIC, &start);
 
-	ret = poll(&pollfd, 1, poll_timeout);
+	do {
+		timeout_rel = get_rel_timeout_ms(&start, rw_timeout_ms);
+		ret = poll(&pollfd, 1, timeout_rel);
+	} while (ret == -1 && errno == EINTR);
+
 	if (ret < 0)
 		return -errno;
 	if (!ret)
