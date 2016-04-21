@@ -233,7 +233,8 @@ __api __pure struct iio_device * iio_context_find_device(
 /** @brief Set a timeout for I/O operations
  * @param ctx A pointer to an iio_context structure
  * @param timeout_ms A positive integer representing the time in milliseconds
- * after which a timeout occurs
+ * after which a timeout occurs. A value of 0 is used to specify that no
+ * timeout should occur.
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 __api int iio_context_set_timeout(
