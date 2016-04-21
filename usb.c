@@ -132,7 +132,7 @@ static int usb_reset_pipes(libusb_device_handle *hdl)
 		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_RESET_PIPES,
 		0, 0, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
-		return -libusb_to_errno(ret);
+		return -(int) libusb_to_errno(ret);
 	return 0;
 }
 
@@ -144,7 +144,7 @@ static int usb_open_pipe(libusb_device_handle *hdl, unsigned int ep)
 		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_OPEN_PIPE,
 		ep - 1, 0, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
-		return -libusb_to_errno(ret);
+		return -(int) libusb_to_errno(ret);
 	return 0;
 }
 
@@ -156,7 +156,7 @@ static int usb_close_pipe(libusb_device_handle *hdl, unsigned int ep)
 		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_CLOSE_PIPE,
 		ep - 1, 0, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
-		return -libusb_to_errno(ret);
+		return -(int) libusb_to_errno(ret);
 	return 0;
 }
 
