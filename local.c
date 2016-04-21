@@ -287,14 +287,14 @@ static ssize_t local_read(const struct iio_device *dev,
 	if (words != dev->words)
 		return -EINVAL;
 
-	ret = device_check_ready(dev, POLLIN);
-	if (ret < 0)
-		return ret;
-
 	memcpy(mask, dev->mask, words);
 
 	if (len == 0)
 		return 0;
+
+	ret = device_check_ready(dev, POLLIN);
+	if (ret < 0)
+		return ret;
 
 	while (len > 0) {
 		do {
@@ -331,12 +331,12 @@ static ssize_t local_write(const struct iio_device *dev,
 	if (pdata->fd == -1)
 		return -EBADF;
 
+	if (len == 0)
+		return 0;
+
 	ret = device_check_ready(dev, POLLOUT);
 	if (ret < 0)
 		return ret;
-
-	if (len == 0)
-		return 0;
 
 	while (len > 0) {
 		do {
