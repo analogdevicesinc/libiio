@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include <poll.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -236,12 +237,21 @@ static int device_check_ready(const struct iio_device *dev, short events)
 		.fd = dev->pdata->fd,
 		.events = events,
 	};
+	unsigned long rw_timeout_ms = dev->ctx->pdata->rw_timeout_ms;
+	int poll_timeout;
 	int ret;
 
 	if (!dev->pdata->blocking)
 		return 0;
 
-	ret = poll(&pollfd, 1, dev->ctx->pdata->rw_timeout_ms);
+	if (rw_timeout_ms == 0)
+		poll_timeout = -1;
+	else if (rw_timeout_ms > INT_MAX)
+		poll_timeout = INT_MAX;
+	else
+		poll_timeout = (int) rw_timeout_ms;
+
+	ret = poll(&pollfd, 1, poll_timeout);
 	if (ret < 0)
 		return -errno;
 	if (!ret)
