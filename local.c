@@ -274,22 +274,35 @@ static int device_check_ready(const struct iio_device *dev, short events)
 	return 0;
 }
 
-static ssize_t read_all(void *dst, size_t len, int fd)
+static ssize_t local_read(const struct iio_device *dev,
+		void *dst, size_t len, uint32_t *mask, size_t words)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	uintptr_t ptr = (uintptr_t) dst;
 	ssize_t readsize;
-	int ret;
+	ssize_t ret;
+
+	if (pdata->fd == -1)
+		return -EBADF;
+	if (words != dev->words)
+		return -EINVAL;
+
+	ret = device_check_ready(dev, POLLIN);
+	if (ret < 0)
+		return ret;
+
+	memcpy(mask, dev->mask, words);
 
 	if (len == 0)
 		return 0;
 
 	while (len > 0) {
 		do {
-			ret = read(fd, (void *) ptr, len);
+			ret = read(pdata->fd, (void *) ptr, len);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1) {
-			ret = -errno;
+			ret = -EIO;
 			break;
 		} else if (ret == 0) {
 			ret = -EIO;
@@ -307,22 +320,31 @@ static ssize_t read_all(void *dst, size_t len, int fd)
 		return ret;
 }
 
-static ssize_t write_all(const void *src, size_t len, int fd)
+static ssize_t local_write(const struct iio_device *dev,
+		const void *src, size_t len)
 {
+	struct iio_device_pdata *pdata = dev->pdata;
 	uintptr_t ptr = (uintptr_t) src;
 	ssize_t writtensize;
-	int ret;
+	ssize_t ret;
+
+	if (pdata->fd == -1)
+		return -EBADF;
+
+	ret = device_check_ready(dev, POLLOUT);
+	if (ret < 0)
+		return ret;
 
 	if (len == 0)
 		return 0;
 
 	while (len > 0) {
 		do {
-			ret = write(fd, (void *) ptr, len);
+			ret = write(pdata->fd, (void *) ptr, len);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1) {
-			ret = -errno;
+			ret = -EIO;
 			break;
 		} else if (ret == 0) {
 			ret = -EIO;
@@ -353,43 +375,6 @@ static ssize_t local_enable_buffer(const struct iio_device *dev)
 	}
 
 	return 0;
-}
-
-static ssize_t local_read(const struct iio_device *dev,
-		void *dst, size_t len, uint32_t *mask, size_t words)
-{
-	ssize_t ret;
-	struct iio_device_pdata *pdata = dev->pdata;
-	if (pdata->fd == -1)
-		return -EBADF;
-	if (words != dev->words)
-		return -EINVAL;
-
-	ret = device_check_ready(dev, POLLIN);
-	if (ret < 0)
-		return ret;
-
-	memcpy(mask, dev->mask, words);
-	ret = read_all(dst, len, pdata->fd);
-
-	return ret ? ret : -EIO;
-}
-
-static ssize_t local_write(const struct iio_device *dev,
-		const void *src, size_t len)
-{
-	ssize_t ret;
-	struct iio_device_pdata *pdata = dev->pdata;
-	if (pdata->fd == -1)
-		return -EBADF;
-
-	ret = device_check_ready(dev, POLLOUT);
-	if (ret < 0)
-		return ret;
-
-	ret = write_all(src, len, pdata->fd);
-
-	return ret ? ret : -EIO;
 }
 
 static int local_set_kernel_buffers_count(const struct iio_device *dev,
