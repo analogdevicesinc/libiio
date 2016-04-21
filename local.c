@@ -430,10 +430,6 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	if (!addr_ptr)
 		return -EINVAL;
 
-	ret = (ssize_t) device_check_ready(dev, POLLIN | POLLOUT);
-	if (ret < 0)
-		return ret;
-
 	if (pdata->last_dequeued >= 0) {
 		struct block *last_block = &pdata->blocks[pdata->last_dequeued];
 
@@ -459,6 +455,10 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 			return (ssize_t) last_block->bytes_used;
 		}
 	}
+
+	ret = (ssize_t) device_check_ready(dev, POLLIN | POLLOUT);
+	if (ret < 0)
+		return ret;
 
 	memset(&block, 0, sizeof(block));
 	ret = (ssize_t) ioctl(f, BLOCK_DEQUEUE_IOCTL, &block);
