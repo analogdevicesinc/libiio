@@ -56,4 +56,7 @@ Source: "C:\libs\64\libxml2.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; F
 Source: "C:\libs\32\libusb-1.0.dll"; DestDir: "{sys}"; Check: not Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "C:\libs\64\libusb-1.0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 
+Source: "C:\libs\32\libserialport-0.dll"; DestDir: "{sys}"; Check: not Is64BitInstallMode; Flags: onlyifdoesntexist
+Source: "C:\libs\64\libserialport-0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+
 Source: "C:\projects\libiio\build-win32\bindings\csharp\libiio-sharp.dll"; DestDir: "{cf}\libiio"
