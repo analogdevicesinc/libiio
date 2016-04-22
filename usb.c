@@ -477,14 +477,81 @@ static const struct iio_backend_ops usb_ops = {
 	.shutdown = usb_shutdown,
 };
 
+static void LIBUSB_CALL sync_transfer_cb(struct libusb_transfer *transfer)
+{
+	int *completed = transfer->user_data;
+	*completed = 1;
+}
+
+static int usb_sync_transfer(struct iio_context_pdata *pdata,
+	struct iio_usb_io_context *io_ctx, unsigned int ep_type,
+	char *data, size_t len, int *transferred)
+{
+	struct libusb_transfer *transfer;
+	int completed = 0;
+	int ret;
+
+	transfer = libusb_alloc_transfer(0);
+	if (!transfer)
+		return -ENOMEM;
+
+	transfer->user_data = &completed;
+
+	libusb_fill_bulk_transfer(transfer, pdata->hdl, io_ctx->ep | ep_type,
+			(unsigned char *) data, (int) len, sync_transfer_cb,
+			&completed, pdata->timeout_ms);
+	transfer->type = LIBUSB_TRANSFER_TYPE_BULK;
+
+	ret = libusb_submit_transfer(transfer);
+	if (ret < 0) {
+		libusb_free_transfer(transfer);
+		return ret;
+	}
+
+	while (!completed) {
+		ret = libusb_handle_events_completed(pdata->ctx, &completed);
+		if (ret < 0) {
+			if (ret == LIBUSB_ERROR_INTERRUPTED)
+				continue;
+			libusb_cancel_transfer(transfer);
+			continue;
+		}
+	}
+
+	switch (transfer->status) {
+	case LIBUSB_TRANSFER_COMPLETED:
+		*transferred = transfer->actual_length;
+		ret = 0;
+		break;
+	case LIBUSB_TRANSFER_TIMED_OUT:
+		ret = -ETIMEDOUT;
+		break;
+	case LIBUSB_TRANSFER_STALL:
+		ret = -EPIPE;
+		break;
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		ret = -ENODEV;
+		break;
+	case LIBUSB_TRANSFER_CANCELLED:
+		ret = -EBADF;
+		break;
+	default:
+		ret = -EIO;
+		break;
+	}
+
+	libusb_free_transfer(transfer);
+
+	return ret;
+}
+
 static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 		uintptr_t ep, const char *data, size_t len)
 {
 	int transferred, ret;
 
-	ret = libusb_bulk_transfer(pdata->hdl, ep | LIBUSB_ENDPOINT_OUT,
-			(unsigned char *) data, (int) len,
-			&transferred, pdata->timeout_ms);
+	ret = usb_sync_transfer(pdata, (void *) ep, LIBUSB_ENDPOINT_OUT,
+			(char *) data, len, &transferred);
 	if (ret)
 		return -(int) libusb_to_errno(ret);
 	else
@@ -496,8 +563,8 @@ static ssize_t read_data_sync(struct iio_context_pdata *pdata,
 {
 	int transferred, ret;
 
-	ret = libusb_bulk_transfer(pdata->hdl, ep | LIBUSB_ENDPOINT_IN,
-			(unsigned char *) buf, (int) len, &transferred, pdata->timeout_ms);
+	ret = usb_sync_transfer(pdata, (void *) ep, LIBUSB_ENDPOINT_IN, buf,
+			len, &transferred);
 	if (ret)
 		return -(int) libusb_to_errno(ret);
 	else
