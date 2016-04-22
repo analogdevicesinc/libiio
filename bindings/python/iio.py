@@ -193,6 +193,11 @@ _d_set_trigger.restype = c_int
 _d_set_trigger.argtypes = (_DevicePtr, _DevicePtr, )
 _d_set_trigger.errcheck = _checkNegative
 
+_d_set_buffers_count = _lib.iio_device_set_kernel_buffers_count
+_d_set_buffers_count.restype = c_int
+_d_set_buffers_count.argtypes = (_DevicePtr, c_uint)
+_d_set_buffers_count.errcheck = _checkNegative
+
 _c_get_id = _lib.iio_channel_get_id
 _c_get_id.restype = c_char_p
 _c_get_id.argtypes = (_ChannelPtr, )
@@ -571,6 +576,18 @@ class _DeviceOrTrigger(object):
 		"""
 		return (filter(lambda x: (name_or_id == x.name or name_or_id == x.id) \
 				and x.output == is_output, self.channels) or [None])[0]
+
+	def set_kernel_buffers_count(self, count):
+		"""
+
+		Set the number of kernel buffers to use with the specified device.
+
+		parameters:
+			count: type=int
+				The number of kernel buffers
+
+		"""
+		return _d_set_buffers_count(self._device, count)
 
 	@property
 	def sample_size(self):
