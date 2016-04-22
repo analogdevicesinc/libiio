@@ -78,7 +78,7 @@ struct block {
 };
 
 struct iio_context_pdata {
-	unsigned long rw_timeout_ms;
+	unsigned int rw_timeout_ms;
 };
 
 struct iio_device_pdata {
