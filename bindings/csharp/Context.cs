@@ -51,6 +51,11 @@ namespace iio
         );
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_create_context_from_uri(
+            [In()][MarshalAs(UnmanagedType.LPStr)] string uri
+        );
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_create_default_context();
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -101,11 +106,13 @@ namespace iio
         public readonly List<Device> devices;
 
         /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
-        /// using the network backend of the IIO library.</summary>
-        /// <param name="hostname">Hostname, IPv4 or IPv6 address where the IIO Daemon is running</param>
+        /// using the provided URI. For compatibility with existing code, providing
+        /// an IP address or a hostname here will automatically create a network
+        /// context.</summary>
+        /// <param name="uri">URI to use for the IIO context creation</param>
         /// <returns>an instance of the <see cref="iio.Context"/> class</returns>
         /// <exception cref="System.Exception">The IIO context could not be created.</exception>
-        public Context(string hostname) : this(iio_create_network_context(hostname)) {}
+        public Context(string uri) : this(getContextFromString(uri)) {}
 
         /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
         /// using the local or the network backend of the IIO library.</summary>
@@ -116,6 +123,14 @@ namespace iio
         /// instead.</remarks>
         /// <exception cref="System.Exception">The IIO context could not be created.</exception>
         public Context() : this(iio_create_default_context()) {}
+
+        private static IntPtr getContextFromString(string str)
+        {
+            IntPtr ptr = iio_create_context_from_uri(str);
+            if (ptr == IntPtr.Zero)
+                ptr = iio_create_network_context(str);
+            return ptr;
+        }
 
         private Context(IntPtr ctx)
         {
