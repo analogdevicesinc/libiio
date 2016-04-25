@@ -37,6 +37,8 @@
 /* Endpoint for non-streaming operations */
 #define EP_OPS		1
 
+#define IIO_INTERFACE_NAME	"IIO"
+
 struct iio_usb_io_endpoint {
 	unsigned char address;
 	bool in_use;
@@ -390,6 +392,66 @@ static void usb_shutdown(struct iio_context *ctx)
 	free(ctx->pdata);
 }
 
+static int iio_usb_match_interface(const struct libusb_config_descriptor *desc,
+		struct libusb_device_handle *hdl, unsigned int interface)
+{
+	const struct libusb_interface *iface;
+	unsigned int i;
+
+	if (interface >= desc->bNumInterfaces)
+		return -EINVAL;
+
+	iface = &desc->interface[interface];
+
+	for (i = 0; i < (unsigned int) iface->num_altsetting; i++) {
+		const struct libusb_interface_descriptor *idesc =
+			&iface->altsetting[i];
+		char name[64];
+		int ret;
+
+		if (idesc->iInterface == 0)
+			continue;
+
+		ret = libusb_get_string_descriptor_ascii(hdl, idesc->iInterface,
+				(unsigned char *) name, sizeof(name));
+		if (ret < 0)
+			return ret;
+
+		if (!strcmp(name, IIO_INTERFACE_NAME))
+			return (int) i;
+	}
+
+	return -EPERM;
+}
+
+static int iio_usb_match_device(struct libusb_device *dev,
+		struct libusb_device_handle *hdl,
+		unsigned int *interface)
+{
+	struct libusb_config_descriptor *desc;
+	unsigned int i;
+	int ret;
+
+	ret = libusb_get_active_config_descriptor(dev, &desc);
+	if (ret)
+		return -(int) libusb_to_errno(ret);
+
+	for (i = 0, ret = -EPERM; ret == -EPERM &&
+			i < desc->bNumInterfaces; i++)
+		ret = iio_usb_match_interface(desc, hdl, i);
+
+	libusb_free_config_descriptor(desc);
+	if (ret < 0)
+		return ret;
+
+	DEBUG("Found IIO interface on device %u:%u using interface %u\n",
+			libusb_get_bus_number(dev),
+			libusb_get_device_address(dev), i - 1);
+
+	*interface = i - 1;
+	return ret;
+}
+
 static const struct iio_backend_ops usb_ops = {
 	.get_version = usb_get_version,
 	.open = usb_open,
@@ -726,4 +788,130 @@ err_bad_uri:
 	ERROR("Bad URI: \'%s\'\n", uri);
 	errno = -EINVAL;
 	return NULL;
+}
+
+static int usb_fill_context_info(struct iio_context_info *info,
+		struct libusb_device *dev, struct libusb_device_handle *hdl,
+		unsigned int interface)
+{
+	struct libusb_device_descriptor desc;
+	char manufacturer[64], product[64];
+	char uri[sizeof("usb:127.255.255")];
+	char description[sizeof(manufacturer) + sizeof(product) +
+		sizeof("0000:0000 ( )")];
+	int ret;
+
+	libusb_get_device_descriptor(dev, &desc);
+
+	snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
+		libusb_get_bus_number(dev), libusb_get_device_address(dev),
+		interface);
+
+	if (desc.iManufacturer == 0) {
+		manufacturer[0] = '\0';
+	} else {
+		ret = libusb_get_string_descriptor_ascii(hdl,
+			desc.iManufacturer,
+			(unsigned char *) manufacturer,
+			sizeof(manufacturer));
+		if (ret < 0)
+			manufacturer[0] = '\0';
+	}
+
+	if (desc.iProduct == 0) {
+		product[0] = '\0';
+	} else {
+		ret = libusb_get_string_descriptor_ascii(hdl,
+			desc.iProduct, (unsigned char *) product,
+			sizeof(product));
+		if (ret < 0)
+			product[0] = '\0';
+	}
+
+	snprintf(description, sizeof(description),
+		"%04x:%04x (%s %s)", desc.idVendor,
+		desc.idProduct, manufacturer, product);
+
+	info->uri = _strdup(uri);
+	if (!info->uri)
+		return -ENOMEM;
+
+	info->description = _strdup(description);
+	if (!info->description)
+		return -ENOMEM;
+
+	return 0;
+}
+
+struct iio_scan_backend_context {
+	libusb_context *ctx;
+};
+
+struct iio_scan_backend_context * usb_context_scan_init(void)
+{
+	struct iio_scan_backend_context *ctx;
+	int ret;
+
+	ctx = malloc(sizeof(*ctx));
+	if (!ctx) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	ret = libusb_init(&ctx->ctx);
+	if (ret) {
+		free(ctx);
+		errno = (int) libusb_to_errno(ret);
+		return NULL;
+	}
+
+	return ctx;
+}
+
+void usb_context_scan_free(struct iio_scan_backend_context *ctx)
+{
+	libusb_exit(ctx->ctx);
+	free(ctx);
+}
+
+int usb_context_scan(struct iio_scan_backend_context *ctx,
+		struct iio_scan_result *scan_result)
+{
+	struct iio_context_info **info;
+	libusb_device **device_list;
+	unsigned int i;
+	int ret;
+
+	ret = libusb_get_device_list(ctx->ctx, &device_list);
+	if (ret < 0)
+		return -(int) libusb_to_errno(ret);
+
+	for (i = 0; device_list[i]; i++) {
+		struct libusb_device_handle *hdl;
+		struct libusb_device *dev = device_list[i];
+		unsigned int interface = 0;
+
+		ret = libusb_open(dev, &hdl);
+		if (ret)
+			continue;
+
+		if (!iio_usb_match_device(dev, hdl, &interface)) {
+			info = iio_scan_result_add(scan_result, 1);
+			if (!info)
+				ret = -ENOMEM;
+			else
+				ret = usb_fill_context_info(*info, dev, hdl,
+						interface);
+		}
+
+		libusb_close(hdl);
+		if (ret < 0)
+			goto cleanup_free_device_list;
+	}
+
+	ret = 0;
+
+cleanup_free_device_list:
+	libusb_free_device_list(device_list, true);
+	return ret;
 }
