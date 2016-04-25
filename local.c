@@ -1679,3 +1679,30 @@ err_set_errno:
 	errno = -ret;
 	return NULL;
 }
+
+static int check_device(void *d, const char *path)
+{
+	*(bool *)d = true;
+	return 0;
+}
+
+int local_context_scan(struct iio_scan_result *scan_result)
+{
+	struct iio_context_info **info;
+	bool exists = false;
+	int ret;
+
+	ret = foreach_in_dir(&exists, "/sys/bus/iio/devices",
+			true, check_device);
+	if (ret < 0 || !exists)
+		return 0;
+
+	info = iio_scan_result_add(scan_result, 1);
+	if (!info)
+		return -ENOMEM;
+
+	info[0]->description = "Local devices";
+	info[0]->uri = "local:";
+
+	return 0;
+}

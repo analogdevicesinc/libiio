@@ -40,7 +40,16 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 {
 	struct iio_scan_result scan_result = { 0, NULL };
 
-	/* TODO: backends should call iio_scan_result_add() here */
+#if LOCAL_BACKEND
+	{
+		int ret = local_context_scan(&scan_result);
+		if (ret < 0) {
+			if (scan_result.info)
+				iio_context_info_list_free(scan_result.info);
+			return ret;
+		}
+	}
+#endif
 
 	*info = scan_result.info;
 
