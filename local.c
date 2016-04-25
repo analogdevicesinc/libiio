@@ -19,7 +19,6 @@
 #include "debug.h"
 #include "iio-private.h"
 
-#include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
@@ -523,7 +522,7 @@ static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 		/* Recursive! */
 		ssize_t ret = local_read_dev_attr(dev, attrs[i],
 				ptr + 4, len - 4, is_debug);
-		*(uint32_t *) ptr = htonl(ret);
+		*(uint32_t *) ptr = iio_htobe32(ret);
 
 		/* Align the length to 4 bytes */
 		if (ret > 0 && ret & 3)
@@ -545,7 +544,7 @@ static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
 		/* Recursive! */
 		ssize_t ret = local_read_chn_attr(chn,
 				chn->attrs[i].name, ptr + 4, len - 4);
-		*(uint32_t *) ptr = htonl(ret);
+		*(uint32_t *) ptr = iio_htobe32(ret);
 
 		/* Align the length to 4 bytes */
 		if (ret > 0 && ret & 3)
@@ -565,7 +564,7 @@ static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
 		if (len < 4)
 			return -EINVAL;
 
-		val = (int32_t) ntohl(*(uint32_t *) src);
+		val = (int32_t) iio_be32toh(*(uint32_t *) src);
 		src += 4;
 		len -= 4;
 
@@ -598,7 +597,7 @@ static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 
 	/* Second step: write the attributes */
 	for (i = 0; i < nb; i++) {
-		int32_t val = (int32_t) ntohl(*(uint32_t *) ptr);
+		int32_t val = (int32_t) iio_be32toh(*(uint32_t *) ptr);
 		ptr += 4;
 
 		if (val > 0) {
@@ -626,7 +625,7 @@ static ssize_t local_write_all_chn_attrs(const struct iio_channel *chn,
 
 	/* Second step: write the attributes */
 	for (i = 0; i < nb; i++) {
-		int32_t val = (int32_t) ntohl(*(uint32_t *) ptr);
+		int32_t val = (int32_t) iio_be32toh(*(uint32_t *) ptr);
 		ptr += 4;
 
 		if (val > 0) {

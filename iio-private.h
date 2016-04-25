@@ -55,6 +55,29 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
+
+/* ntohl/htonl are a nightmare to use in cross-platform applications,
+ * since they are defined in different headers on different platforms.
+ * iio_be32toh/iio_htobe32 are just clones of ntohl/htonl. */
+static inline uint32_t iio_be32toh(uint32_t word)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef __GNUC__
+	return __builtin_bswap32(word);
+#else
+	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) |
+		((word >> 8) & 0xff00) | ((word >> 24) & 0xff);
+#endif
+#else
+	return word;
+#endif
+}
+
+static inline uint32_t iio_htobe32(uint32_t word)
+{
+	return iio_be32toh(word);
+}
+
 /* Allocate zeroed out memory */
 static inline void *zalloc(size_t size)
 {

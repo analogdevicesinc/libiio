@@ -16,23 +16,12 @@
  *
  * */
 
+#include "debug.h"
 #include "iio-private.h"
 
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-
-/* Include <winsock2.h> or <arpa/inet.h> for ntohl() */
-#ifdef _WIN32
-#include <winsock2.h>
-#else
-#include <arpa/inet.h>
-#endif
-
-/* winsock2.h defines ERROR, we don't want that */
-#undef ERROR
-
-#include "debug.h"
 
 #ifndef _WIN32
 #define _strdup strdup
@@ -602,7 +591,7 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 
 	for (i = 0; i < iio_channel_get_attrs_count(chn); i++) {
 		const char *attr = iio_channel_get_attr(chn, i);
-		int32_t len = (int32_t) ntohl(*(uint32_t *) ptr);
+		int32_t len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
 
 		ptr += 4;
 		if (len > 0) {
@@ -645,7 +634,7 @@ int iio_channel_attr_write_all(struct iio_channel *chn,
 		if (ret < 0)
 			goto err_free_buf;
 
-		*(int32_t *) ptr = (int32_t) htonl((uint32_t) ret);
+		*(int32_t *) ptr = (int32_t) iio_htobe32((uint32_t) ret);
 		ptr += 4;
 		len -= 4;
 
