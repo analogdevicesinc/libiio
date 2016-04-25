@@ -441,8 +441,10 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	ret = (ssize_t) ioctl_nointr(f, BLOCK_DEQUEUE_IOCTL, &block);
 	if (ret) {
 		ret = (ssize_t) -errno;
-		iio_strerror(errno, err_str, sizeof(err_str));
-		ERROR("Unable to dequeue block: %s\n", err_str);
+		if (!pdata->blocking && ret != -EAGAIN) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			ERROR("Unable to dequeue block: %s\n", err_str);
+		}
 		return ret;
 	}
 
