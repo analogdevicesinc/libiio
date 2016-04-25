@@ -39,8 +39,12 @@ typedef long ssize_t;
 #endif
 
 #ifdef __GNUC__
+#ifndef __cnst
 #define __cnst __attribute__((const))
+#endif
+#ifndef __pure
 #define __pure __attribute__((pure))
+#endif
 #define __notused __attribute__((unused))
 #else
 #define __cnst
