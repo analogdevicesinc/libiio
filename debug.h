@@ -20,6 +20,9 @@
 #define DEBUG_H
 
 #include <stdio.h>
+#ifdef ANDROID
+#include <cutils/log.h>
+#endif
 
 #define NODEBUG_L 0
 #define ERROR_L 1
@@ -48,48 +51,64 @@
 #endif
 
 #if (LOG_LEVEL >= DEBUG_L)
-# ifdef COLOR_DEBUG
-#  define DEBUG(str, ...) \
-    fprintf(stdout, COLOR_DEBUG "DEBUG: " str COLOR_END, ##__VA_ARGS__)
+# ifdef ANDROID
+#  define DEBUG(...) ALOGD(__VA_ARGS__)
 # else
-#  define DEBUG(...) \
-    fprintf(stdout, "DEBUG: " __VA_ARGS__)
+#  ifdef COLOR_DEBUG
+#   define DEBUG(str, ...) \
+     fprintf(stdout, COLOR_DEBUG "DEBUG: " str COLOR_END, ##__VA_ARGS__)
+#  else
+#   define DEBUG(...) \
+     fprintf(stdout, "DEBUG: " __VA_ARGS__)
+#  endif
 # endif
 #else
 #define DEBUG(...)
 #endif
 
 #if (LOG_LEVEL >= INFO_L)
-# ifdef COLOR_INFO
-#  define INFO(str, ...) \
-    fprintf(stdout, COLOR_INFO str COLOR_END, ##__VA_ARGS__)
+# ifdef ANDROID
+#  define INFO(...) ALOGI(__VA_ARGS__)
 # else
-#  define INFO(...) \
-    fprintf(stdout, __VA_ARGS__)
+#  ifdef COLOR_INFO
+#   define INFO(str, ...) \
+     fprintf(stdout, COLOR_INFO str COLOR_END, ##__VA_ARGS__)
+#  else
+#   define INFO(...) \
+     fprintf(stdout, __VA_ARGS__)
+#  endif
 # endif
 #else
 #define INFO(...)
 #endif
 
 #if (LOG_LEVEL >= WARNING_L)
-# ifdef COLOR_WARNING
-#  define WARNING(str, ...) \
-    fprintf(stderr, COLOR_WARNING "WARNING: " str COLOR_END, ##__VA_ARGS__)
+# ifdef ANDROID
+#  define WARNING(...) ALOGW(__VA_ARGS__)
 # else
-#  define WARNING(...) \
-    fprintf(stderr, "WARNING: " __VA_ARGS__)
+#  ifdef COLOR_WARNING
+#   define WARNING(str, ...) \
+     fprintf(stderr, COLOR_WARNING "WARNING: " str COLOR_END, ##__VA_ARGS__)
+#  else
+#   define WARNING(...) \
+     fprintf(stderr, "WARNING: " __VA_ARGS__)
+#  endif
 # endif
 #else
 #define WARNING(...)
 #endif
 
 #if (LOG_LEVEL >= ERROR_L)
-# ifdef COLOR_ERROR
-#  define ERROR(str, ...) \
-    fprintf(stderr, COLOR_ERROR "ERROR: " str COLOR_END, ##__VA_ARGS__)
+# ifdef ANDROID
+#  define ERROR(...) ALOGE(__VA_ARGS__)
 # else
-#  define ERROR(...) \
-    fprintf(stderr, "ERROR: " __VA_ARGS__)
+#  ifdef COLOR_ERROR
+#   define ERROR(str, ...) \
+     fprintf(stderr, COLOR_ERROR "ERROR: " str COLOR_END, ##__VA_ARGS__)
+#  else
+#   define ERROR(...) \
+     fprintf(stderr, "ERROR: " __VA_ARGS__)
+#  endif
 # endif
 #else
 #define ERROR(...)
