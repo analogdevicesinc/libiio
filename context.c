@@ -273,13 +273,13 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 	if (strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
 		return iio_create_network_context(uri+3);
 
-	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
+	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0) {
 #if USB_BACKEND
 		return usb_create_context_from_uri(uri);
-#else
-		return NULL;
 #endif
+	}
 
+	errno = ENOSYS;
 	return NULL;
 }
 
