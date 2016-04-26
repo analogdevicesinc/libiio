@@ -264,20 +264,25 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 
 struct iio_context * iio_create_context_from_uri(const char *uri)
 {
+#if LOCAL_BACKEND
 	if (strcmp(uri, "local:") == 0) /* No address part */
 		return iio_create_local_context();
+#endif
 
+#if XML_BACKEND
 	if (strncmp(uri, "xml:", sizeof("xml:") - 1) == 0)
 		return iio_create_xml_context(uri + sizeof("xml:") - 1);
+#endif
 
+#if NETWORK_BACKEND
 	if (strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
 		return iio_create_network_context(uri+3);
+#endif
 
-	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0) {
 #if USB_BACKEND
+	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
 		return usb_create_context_from_uri(uri);
 #endif
-	}
 
 	errno = ENOSYS;
 	return NULL;
