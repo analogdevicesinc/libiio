@@ -23,10 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef _WIN32
-#define _strdup strdup
-#endif
-
 static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 {
 	char *str;

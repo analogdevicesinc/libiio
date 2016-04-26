@@ -30,6 +30,11 @@
 #endif
 #ifdef _WIN32
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
+#else
+/* Visual Studio is unhappy with strdup(); so we make libiio use the C++
+ * compliant _strdup() on Windows, and revert to the POSIX strdup() everywhere
+ * else.*/
+#define _strdup strdup
 #endif
 
 #ifdef _WIN32

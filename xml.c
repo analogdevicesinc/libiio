@@ -23,10 +23,6 @@
 #include <libxml/tree.h>
 #include <string.h>
 
-#ifndef _WIN32
-#define _strdup strdup
-#endif
-
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
