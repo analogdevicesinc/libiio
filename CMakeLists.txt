@@ -77,7 +77,7 @@ endif()
 set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c)
 set(LIBIIO_HEADERS iio.h)
 
-add_definitions(-D_POSIX_C_SOURCE=200809L -DLIBIIO_EXPORTS=1)
+add_definitions(-D_POSIX_C_SOURCE=200809L -D__XSI_VISIBLE=500 -DLIBIIO_EXPORTS=1)
 
 # Get the GIT hash of the latest commit
 include(FindGit OPTIONAL)
