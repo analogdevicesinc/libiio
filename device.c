@@ -19,6 +19,7 @@
 #include "debug.h"
 #include "iio-private.h"
 
+#include <inttypes.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -689,7 +690,7 @@ int iio_device_reg_write(struct iio_device *dev,
 	ssize_t ret;
 
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "0x%x 0x%x", address, value);
+	snprintf(buf, sizeof(buf), "0x%" PRIx32 " 0x%" PRIx32, address, value);
 	ret = iio_device_debug_attr_write(dev, "direct_reg_access", buf);
 
 	return ret < 0 ? ret : 0;
