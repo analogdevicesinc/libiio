@@ -4,6 +4,7 @@
 #include "iio-private.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -452,7 +453,8 @@ int iiod_client_open_unlocked(struct iiod_client *client, int desc,
 	ptr = buf + strlen(buf);
 
 	for (i = dev->words; i > 0; i--, ptr += 8)
-		snprintf(ptr, (ptr - buf) + i * 8, "%08x", dev->mask[i - 1]);
+		snprintf(ptr, (ptr - buf) + i * 8, "%08" PRIx32,
+				dev->mask[i - 1]);
 
 	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
 
@@ -490,8 +492,8 @@ static int iiod_client_read_mask(struct iiod_client *client,
 	DEBUG("Reading mask\n");
 
 	for (i = words, ptr = buf; i > 0; i--) {
-		sscanf(ptr, "%08x", &mask[i - 1]);
-		DEBUG("mask[%lu] = 0x%08x\n",
+		sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
+		DEBUG("mask[%lu] = 0x%08" PRIx32 "\n",
 				(unsigned long)(i - 1), mask[i - 1]);
 
 		ptr = (char *) ((uintptr_t) ptr + 8);
