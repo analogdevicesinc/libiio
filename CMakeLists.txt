@@ -201,13 +201,14 @@ if (NEED_THREADS)
 
 		if (PTHREAD_LIBRARIES)
 			set(LIBS_TO_LINK ${LIBS_TO_LINK} ${PTHREAD_LIBRARIES})
-			set(LIBIIO_CFILES ${LIBIIO_CFILES} lock.c)
 		else()
-			message(SEND_ERROR "The pthread library is a requirement for the selected backends")
+			message(SEND_MESSAGE "pthread library not found; support for threads will be disabled")
+			add_definitions(-DNO_THREADS=1)
 		endif()
 	else()
-		set(LIBIIO_CFILES ${LIBIIO_CFILES} lock.c)
 	endif()
+
+	set(LIBIIO_CFILES ${LIBIIO_CFILES} lock.c)
 endif()
 
 if (IIOD_CLIENT)

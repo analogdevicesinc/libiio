@@ -25,10 +25,14 @@
 #include <stdlib.h>
 
 struct iio_mutex {
+#if NO_THREADS
+	int foo; /* avoid complaints about empty structure */
+#else
 #ifdef _WIN32
 	CRITICAL_SECTION lock;
 #else
 	pthread_mutex_t lock;
+#endif
 #endif
 };
 
@@ -39,38 +43,46 @@ struct iio_mutex * iio_mutex_create(void)
 	if (!lock)
 		return NULL;
 
+#if !NO_THREADS
 #ifdef _WIN32
 	InitializeCriticalSection(&lock->lock);
 #else
 	pthread_mutex_init(&lock->lock, NULL);
+#endif
 #endif
 	return lock;
 }
 
 void iio_mutex_destroy(struct iio_mutex *lock)
 {
+#if !NO_THREADS
 #ifdef _WIN32
 	DeleteCriticalSection(&lock->lock);
 #else
 	pthread_mutex_destroy(&lock->lock);
+#endif
 #endif
 	free(lock);
 }
 
 void iio_mutex_lock(struct iio_mutex *lock)
 {
+#if !NO_THREADS
 #ifdef _WIN32
 	EnterCriticalSection(&lock->lock);
 #else
 	pthread_mutex_lock(&lock->lock);
 #endif
+#endif
 }
 
 void iio_mutex_unlock(struct iio_mutex *lock)
 {
+#if !NO_THREADS
 #ifdef _WIN32
 	LeaveCriticalSection(&lock->lock);
 #else
 	pthread_mutex_unlock(&lock->lock);
+#endif
 #endif
 }
