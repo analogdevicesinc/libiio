@@ -36,11 +36,5 @@ set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
 )
 
 if(NOT SKIP_INSTALL_ALL)
-	install(TARGETS iio_genxml  RUNTIME DESTINATION bin)
-	install(TARGETS iio_info    RUNTIME DESTINATION bin)
-	install(TARGETS iio_readdev RUNTIME DESTINATION bin)
-	if(PTHREAD_LIBRARIES)
-		install(TARGETS iio_adi_xflow_check RUNTIME DESTINATION bin)
-	endif()
-	install(TARGETS iio_reg     RUNTIME DESTINATION bin)
+	install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()

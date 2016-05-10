@@ -10,22 +10,13 @@ if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
 endif()
 
-set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin"
-	CACHE PATH "Installation directory for binaries")
-set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib"
-	CACHE PATH "Installation directory for libraries")
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include"
-	CACHE PATH "Installation directory for headers")
-set(INSTALL_PKGCONFIG_DIR "${INSTALL_LIB_DIR}/pkgconfig"
-	CACHE PATH "Installation directory for pkgconfig (.pc) files")
-set(INSTALL_DATA_DIR "${CMAKE_INSTALL_PREFIX}/share"
-	CACHE PATH "Installation directory for data")
+set(CMAKE_INSTALL_DOCDIR "" CACHE PATH "documentation root (DATAROOTDIR/doc/${PROJECT_NAME}${LIBIIO_VERSION_MAJOR}-doc)")
+include(GNUInstallDirs)
+set(CMAKE_INSTALL_DOCDIR "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}${LIBIIO_VERSION_MAJOR}-doc")
 
-mark_as_advanced(INSTALL_BIN_DIR)
-mark_as_advanced(INSTALL_LIB_DIR)
-mark_as_advanced(INSTALL_INC_DIR)
+set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+	CACHE PATH "Installation directory for pkgconfig (.pc) files")
 mark_as_advanced(INSTALL_PKGCONFIG_DIR)
-mark_as_advanced(INSTALL_DATA_DIR)
 
 if (NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
@@ -242,11 +233,11 @@ endif()
 
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iio
-		ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-		LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
-		RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-		FRAMEWORK DESTINATION "${INSTALL_LIB_DIR}"
-		PUBLIC_HEADER DESTINATION "${INSTALL_INC_DIR}")
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
 find_package(Doxygen)
@@ -264,8 +255,7 @@ if(DOXYGEN_FOUND)
 			COMMENT "Generating API documentation with Doxygen" VERBATIM
 			)
 
-		install(DIRECTORY ${HTML_DEST_DIR}
-			DESTINATION ${INSTALL_DATA_DIR}/doc/libiio${LIBIIO_VERSION_MAJOR}-doc)
+		install(DIRECTORY ${HTML_DEST_DIR} DESTINATION ${CMAKE_INSTALL_DOCDIR})
 	endif()
 else()
 	message(STATUS "Doxygen not found, API documentation won't be generated")
