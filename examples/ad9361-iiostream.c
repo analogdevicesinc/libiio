@@ -188,13 +188,13 @@ int main (int argc, char **argv)
 
 	// RX stream config
 	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(2);   // 2 MS/s rx sample rate
+	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
 	rxcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
 	// TX stream config
 	txcfg.bw_hz = MHZ(1.5); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(2);   // 2 MS/s tx sample rate
+	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
 	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
