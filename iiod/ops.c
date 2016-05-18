@@ -1244,7 +1244,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		ret = io_setup(1, &pdata.aio_ctx);
 		if (ret < 0) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
-			ERROR("Failed to create AIO eventfd: %s\n", err_str);
+			ERROR("Failed to create AIO context: %s\n", err_str);
 			close(pdata.aio_eventfd);
 			return;
 		}
