@@ -18,13 +18,14 @@
 #include "iio-private.h"
 
 #include <errno.h>
+#include <stdbool.h>
+#include <string.h>
 
 struct iio_scan_context {
 #if USB_BACKEND
 	struct iio_scan_backend_context *usb_ctx;
-#else
-	int foo; /* avoid complaints about empty structure */
 #endif
+	bool scan_local;
 };
 
 const char * iio_context_info_get_description(
@@ -45,7 +46,7 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 	struct iio_scan_result scan_result = { 0, NULL };
 
 #if LOCAL_BACKEND
-	{
+	if (ctx->scan_local) {
 		int ret = local_context_scan(&scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
@@ -134,14 +135,18 @@ struct iio_scan_context * iio_create_scan_context(
 		return NULL;
 	}
 
-	ctx = malloc(sizeof(*ctx));
+	ctx = calloc(1, sizeof(*ctx));
 	if (!ctx) {
 		errno = ENOMEM;
 		return NULL;
 	}
 
+	if (!backend || !strcmp(backend, "local"))
+		ctx->scan_local = true;
+
 #if USB_BACKEND
-	ctx->usb_ctx = usb_context_scan_init();
+	if (!backend || !strcmp(backend, "usb"))
+		ctx->usb_ctx = usb_context_scan_init();
 #endif
 
 	return ctx;
