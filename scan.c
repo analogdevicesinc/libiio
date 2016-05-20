@@ -85,7 +85,8 @@ void iio_context_info_list_free(struct iio_context_info **list)
 		free(info);
 	}
 
-	free(list);
+	if (list)
+		free(list);
 }
 
 struct iio_context_info ** iio_scan_result_add(
