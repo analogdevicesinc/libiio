@@ -495,7 +495,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 
 	if (ret) {
 		ret = (ssize_t) -errno;
-		if (!pdata->blocking && ret != -EAGAIN) {
+		if ((!pdata->blocking && ret != -EAGAIN) ||
+				(pdata->blocking && ret != -ETIMEDOUT)) {
 			iio_strerror(errno, err_str, sizeof(err_str));
 			ERROR("Unable to dequeue block: %s\n", err_str);
 		}
