@@ -1174,7 +1174,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		struct pollfd pfd[2];
 
 		pfd[0].fd = pdata->fd_in;
-		pfd[0].events = POLLIN;
+		pfd[0].events = POLLIN | POLLRDHUP;
 		pfd[0].revents = 0;
 		pfd[1].fd = stop_fd;
 		pfd[1].events = POLLIN;
@@ -1184,7 +1184,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 			ret = poll(pfd, 2, -1);
 		} while (ret == -1 && errno == EINTR);
 
-		if (pfd[1].revents & POLLIN)
+		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP)
 			return 0;
 
 		/* First read from the socket, without advancing the
