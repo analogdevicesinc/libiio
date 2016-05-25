@@ -853,16 +853,15 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_mutex_lock(&devlist_lock);
 	entry = iio_device_get_data(dev);
 	if (entry) {
+		if (cyclic || entry->cyclic) {
+			/* Only one client allowed in cyclic mode */
+			ret = -EBUSY;
+			goto err_free_thd;
+		}
+
 		pthread_mutex_lock(&entry->thdlist_lock);
 		if (!entry->closed) {
 			pthread_mutex_unlock(&devlist_lock);
-
-			if (cyclic || entry->cyclic) {
-				pthread_mutex_unlock(&entry->thdlist_lock);
-				/* Only one client allowed in cyclic mode */
-				ret = -EBUSY;
-				goto err_free_thd;
-			}
 
 			entry->ref_count++;
 
