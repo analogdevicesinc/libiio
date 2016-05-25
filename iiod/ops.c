@@ -191,9 +191,11 @@ static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 			ret = poll(pfd, 2, -1);
 		} while (ret == -1 && errno == EINTR);
 
-		/* Got STOP event, treat it as EOF */
-		if (pfd[1].revents & POLLIN)
+		/* Got STOP event, or client closed the socket: treat it as EOF */
+		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP)
 			return 0;
+		if (pfd[0].revents & POLLERR)
+			return -EIO;
 		if (!(pfd[0].revents & POLLIN))
 			continue;
 
@@ -228,9 +230,11 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 			ret = poll(pfd, 2, -1);
 		} while (ret == -1 && errno == EINTR);
 
-		/* Got STOP event, treat as EOF */
-		if (pfd[1].revents & POLLIN)
+		/* Got STOP event, or client closed the socket: treat it as EOF */
+		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLHUP)
 			return 0;
+		if (pfd[0].revents & POLLERR)
+			return -EIO;
 		if (!(pfd[0].revents & POLLOUT))
 			continue;
 
