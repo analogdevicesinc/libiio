@@ -179,7 +179,7 @@ static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 	ssize_t ret;
 	struct pollfd pfd[2];
 
-	pfd[0].fd = pdata->fd_out;
+	pfd[0].fd = pdata->fd_in;
 	pfd[0].events = POLLIN | POLLRDHUP;
 	pfd[0].revents = 0;
 	pfd[1].fd = stop_fd;
