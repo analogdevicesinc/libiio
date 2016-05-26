@@ -88,7 +88,7 @@ static void scan(void)
 
 	printf("Available contexts:\n");
 
-	for (i = 0; i < ret; i++) {
+	for (i = 0; i < (size_t) ret; i++) {
 		printf("\t%d: %s [%s]\n", i,
 			iio_context_info_get_description(info[i]),
 			iio_context_info_get_uri(info[i]));
