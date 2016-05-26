@@ -60,9 +60,9 @@ static void usage(void)
 }
 
 static struct iio_context *ctx;
-struct iio_buffer *buffer;
+static struct iio_buffer *buffer;
 static const char *trigger_name = NULL;
-unsigned int num_samples;
+static size_t num_samples;
 
 static bool app_running = true;
 static int exit_code = EXIT_SUCCESS;
@@ -120,7 +120,7 @@ static ssize_t print_sample(const struct iio_channel *chn,
 			return -1;
 		}
 	}
-	return len;
+	return (ssize_t) len;
 }
 
 int main(int argc, char **argv)
@@ -262,9 +262,8 @@ int main(int argc, char **argv)
 		 * demux */
 		if (iio_buffer_step(buffer) == sample_size) {
 			void *start = iio_buffer_start(buffer);
-			ptrdiff_t len = (intptr_t) iio_buffer_end(buffer) -
-				(intptr_t) start;
-			size_t read_len;
+			size_t read_len, len = (intptr_t) iio_buffer_end(buffer)
+				- (intptr_t) start;
 
 			if (num_samples && len > num_samples * sample_size)
 				len = num_samples * sample_size;
