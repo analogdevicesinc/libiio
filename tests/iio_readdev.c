@@ -269,15 +269,9 @@ int main(int argc, char **argv)
 				len = num_samples * sample_size;
 
 			for (read_len = len; len; ) {
-				ssize_t nb = fwrite(start, 1, len, stdout);
-				if (nb < 0) {
-					char buf[256];
-
-					iio_strerror(-nb, buf, sizeof(buf));
-					fprintf(stderr, "Unable to write data: %s\n",
-							buf);
+				size_t nb = fwrite(start, 1, len, stdout);
+				if (!nb)
 					goto err_destroy_buffer;
-				}
 
 				len -= nb;
 				start = (void *)((intptr_t) start + nb);
