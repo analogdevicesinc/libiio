@@ -348,9 +348,7 @@ static int main_server(struct iio_context *ctx, bool debug)
 		socklen_t addr_len = sizeof(caddr);
 		int new;
 
-		do {
-			ret = poll(pfd, 2, -1);
-		} while (ret == -1 && errno == EINTR);
+		poll_nointr(pfd, 2);
 
 		if (pfd[1].revents & POLLIN) /* STOP event */
 			break;

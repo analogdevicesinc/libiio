@@ -120,9 +120,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	num_pfds = 2;
 
 	do {
-		do {
-			ret = poll(pfd, num_pfds, -1);
-		} while (ret == -1 && errno == EINTR);
+		poll_nointr(pfd, num_pfds);
 
 		if (pfd[0].revents & POLLIN) {
 			uint64_t event;
@@ -186,9 +184,7 @@ static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 	pfd[1].revents = 0;
 
 	do {
-		do {
-			ret = poll(pfd, 2, -1);
-		} while (ret == -1 && errno == EINTR);
+		poll_nointr(pfd, 2);
 
 		/* Got STOP event, or client closed the socket: treat it as EOF */
 		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP)
@@ -225,9 +221,7 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 	pfd[1].revents = 0;
 
 	do {
-		do {
-			ret = poll(pfd, 2, -1);
-		} while (ret == -1 && errno == EINTR);
+		poll_nointr(pfd, 2);
 
 		/* Got STOP event, or client closed the socket: treat it as EOF */
 		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLHUP)
@@ -1170,9 +1164,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		pfd[1].events = POLLIN;
 		pfd[1].revents = 0;
 
-		do {
-			ret = poll(pfd, 2, -1);
-		} while (ret == -1 && errno == EINTR);
+		poll_nointr(pfd, 2);
 
 		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP)
 			return 0;
