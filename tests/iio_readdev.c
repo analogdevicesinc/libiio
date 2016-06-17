@@ -34,6 +34,7 @@ static const struct option options[] = {
 	  {"trigger", required_argument, 0, 't'},
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
+	  {"timeout", required_argument, 0, 'T'},
 	  {0, 0, 0, 0},
 };
 
@@ -43,7 +44,8 @@ static const char *options_descriptions[] = {
 	"Use the context with the provided URI.",
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
-	"Number of samples to capture, 0 = infinite. Default is 0."
+	"Number of samples to capture, 0 = infinite. Default is 0.",
+	"Buffer timeout in milliseconds. 0 = no timeout"
 };
 
 static void usage(void)
@@ -130,8 +132,9 @@ int main(int argc, char **argv)
 	int c, option_index = 0, arg_index = 0, ip_index = 0, uri_index = 0;
 	struct iio_device *dev;
 	size_t sample_size;
+	int timeout = -1;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:",
+	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -157,6 +160,10 @@ int main(int argc, char **argv)
 			arg_index += 2;
 			num_samples = atoi(argv[arg_index]);
 			break;
+		case 'T':
+			arg_index += 2;
+			timeout = atoi(argv[arg_index]);
+			break;
 		case '?':
 			return EXIT_FAILURE;
 		}
@@ -174,6 +181,9 @@ int main(int argc, char **argv)
 		ctx = iio_create_network_context(argv[ip_index]);
 	else
 		ctx = iio_create_default_context();
+
+	if (timeout >= 0)
+		iio_context_set_timeout(ctx, timeout);
 
 	if (!ctx) {
 		fprintf(stderr, "Unable to create IIO context\n");
