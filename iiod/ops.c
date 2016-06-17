@@ -40,9 +40,10 @@ struct DevEntry;
 struct ThdEntry {
 	SLIST_ENTRY(ThdEntry) parser_list_entry;
 	SLIST_ENTRY(ThdEntry) dev_list_entry;
-	pthread_cond_t cond;
 	unsigned int nb, sample_size, samples_count;
 	ssize_t err;
+
+	int eventfd;
 
 	struct parser_pdata *pdata;
 	struct iio_device *dev;
@@ -51,6 +52,38 @@ struct ThdEntry {
 	uint32_t *mask;
 	bool active, is_writer, new_client, wait_for_open;
 };
+
+static void thd_entry_event_signal(struct ThdEntry *thd)
+{
+	uint64_t e = 1;
+	int ret;
+
+	do {
+		ret = write(thd->eventfd, &e, sizeof(e));
+	} while (ret == -1 && errno == EINTR);
+}
+
+static void thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex)
+{
+	struct pollfd pfd[1];
+	uint64_t e;
+	int ret;
+
+	pthread_mutex_unlock(mutex);
+
+	pfd[0].fd = thd->eventfd;
+	pfd[0].events = POLLIN;
+
+	do {
+		poll_nointr(pfd, 1);
+
+		do {
+			ret = read(thd->eventfd, &e, sizeof(e));
+		} while (ret == -1 && errno == EINTR);
+	} while (ret == -1 && errno == EAGAIN);
+
+	pthread_mutex_lock(mutex);
+}
 
 /* Corresponds to an opened device */
 struct DevEntry {
@@ -443,7 +476,7 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 	thd->err = ret;
 	thd->nb = 0;
 	thd->active = false;
-	pthread_cond_signal(&thd->cond);
+	thd_entry_event_signal(thd);
 }
 
 static void * rw_thd(void *d)
@@ -736,7 +769,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 
 	DEBUG("Waiting for completion...\n");
 	while (thd->active)
-		pthread_cond_wait(&thd->cond, &entry->thdlist_lock);
+		thd_entry_event_wait(thd, &entry->thdlist_lock);
 	ret = thd->err;
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
@@ -773,7 +806,7 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 
 static void free_thd_entry(struct ThdEntry *t)
 {
-	pthread_cond_destroy(&t->cond);
+	close(t->eventfd);
 	free(t->mask);
 	free(t);
 }
@@ -831,7 +864,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->sample_size = iio_device_get_sample_size_mask(dev, words, len);
 	thd->pdata = pdata;
 	thd->dev = dev;
-	pthread_cond_init(&thd->cond, NULL);
+	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 
 	/* Atomically look up the thread and make sure that it is still active
 	 * or allocate new one. */
@@ -857,7 +890,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 
 			/* Wait until the device is opened by the rw thread */
 			while (thd->wait_for_open)
-				pthread_cond_wait(&thd->cond, &entry->thdlist_lock);
+				thd_entry_event_wait(thd, &entry->thdlist_lock);
 			pthread_mutex_unlock(&entry->thdlist_lock);
 
 			ret = (int) thd->err;
@@ -918,7 +951,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	pthread_mutex_lock(&entry->thdlist_lock);
 	/* Wait until the device is opened by the rw thread */
 	while (thd->wait_for_open)
-		pthread_cond_wait(&thd->cond, &entry->thdlist_lock);
+		thd_entry_event_wait(thd, &entry->thdlist_lock);
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
 	ret = (int) thd->err;
@@ -933,7 +966,7 @@ err_free_entry_mask:
 err_free_entry:
 	free(entry);
 err_free_thd:
-	pthread_cond_destroy(&thd->cond);
+	close(thd->eventfd);
 	free(thd);
 err_free_words:
 	free(words);
