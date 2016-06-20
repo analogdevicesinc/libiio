@@ -63,9 +63,10 @@ static void thd_entry_event_signal(struct ThdEntry *thd)
 	} while (ret == -1 && errno == EINTR);
 }
 
-static void thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex)
+static int thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex,
+	int fd_in)
 {
-	struct pollfd pfd[1];
+	struct pollfd pfd[3];
 	uint64_t e;
 	int ret;
 
@@ -73,9 +74,18 @@ static void thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex)
 
 	pfd[0].fd = thd->eventfd;
 	pfd[0].events = POLLIN;
+	pfd[1].fd = fd_in;
+	pfd[1].events = POLLRDHUP;
+	pfd[2].fd = stop_fd;
+	pfd[2].events = POLLIN;
 
 	do {
-		poll_nointr(pfd, 1);
+		poll_nointr(pfd, 3);
+
+		if ((pfd[1].revents & POLLRDHUP) || (pfd[2].revents & POLLIN)) {
+			pthread_mutex_lock(mutex);
+			return -EPIPE;
+		}
 
 		do {
 			ret = read(thd->eventfd, &e, sizeof(e));
@@ -83,6 +93,8 @@ static void thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex)
 	} while (ret == -1 && errno == EAGAIN);
 
 	pthread_mutex_lock(mutex);
+
+	return 0;
 }
 
 /* Corresponds to an opened device */
@@ -768,9 +780,13 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	thd->active = true;
 
 	DEBUG("Waiting for completion...\n");
-	while (thd->active)
-		thd_entry_event_wait(thd, &entry->thdlist_lock);
-	ret = thd->err;
+	while (thd->active) {
+		ret = thd_entry_event_wait(thd, &entry->thdlist_lock, pdata->fd_in);
+		if (ret)
+			break;
+	}
+	if (ret == 0)
+		ret = thd->err;
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
 	if (ret > 0 && ret < nb)
@@ -889,11 +905,15 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 			DEBUG("Added thread to client list\n");
 
 			/* Wait until the device is opened by the rw thread */
-			while (thd->wait_for_open)
-				thd_entry_event_wait(thd, &entry->thdlist_lock);
+			while (thd->wait_for_open) {
+				ret = thd_entry_event_wait(thd, &entry->thdlist_lock, pdata->fd_in);
+				if (ret)
+					break;
+			}
 			pthread_mutex_unlock(&entry->thdlist_lock);
 
-			ret = (int) thd->err;
+			if (ret == 0)
+				ret = (int) thd->err;
 			if (ret < 0)
 				remove_thd_entry(thd);
 			else
@@ -950,11 +970,15 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 
 	pthread_mutex_lock(&entry->thdlist_lock);
 	/* Wait until the device is opened by the rw thread */
-	while (thd->wait_for_open)
-		thd_entry_event_wait(thd, &entry->thdlist_lock);
+	while (thd->wait_for_open) {
+		ret = thd_entry_event_wait(thd, &entry->thdlist_lock, pdata->fd_in);
+		if (ret)
+			break;
+	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	ret = (int) thd->err;
+	if (ret == 0)
+		ret = (int) thd->err;
 	if (ret < 0)
 		remove_thd_entry(thd);
 	else
