@@ -89,43 +89,6 @@ static inline void *zalloc(size_t size)
 	return calloc(1, size);
 }
 
-enum iio_modifier {
-	IIO_NO_MOD,
-	IIO_MOD_X,
-	IIO_MOD_Y,
-	IIO_MOD_Z,
-	IIO_MOD_X_AND_Y,
-	IIO_MOD_X_AND_Z,
-	IIO_MOD_Y_AND_Z,
-	IIO_MOD_X_AND_Y_AND_Z,
-	IIO_MOD_X_OR_Y,
-	IIO_MOD_X_OR_Z,
-	IIO_MOD_Y_OR_Z,
-	IIO_MOD_X_OR_Y_OR_Z,
-	IIO_MOD_LIGHT_BOTH,
-	IIO_MOD_LIGHT_IR,
-	IIO_MOD_ROOT_SUM_SQUARED_X_Y,
-	IIO_MOD_SUM_SQUARED_X_Y_Z,
-	IIO_MOD_LIGHT_CLEAR,
-	IIO_MOD_LIGHT_RED,
-	IIO_MOD_LIGHT_GREEN,
-	IIO_MOD_LIGHT_BLUE,
-	IIO_MOD_QUATERNION,
-	IIO_MOD_TEMP_AMBIENT,
-	IIO_MOD_TEMP_OBJECT,
-	IIO_MOD_NORTH_MAGN,
-	IIO_MOD_NORTH_TRUE,
-	IIO_MOD_NORTH_MAGN_TILT_COMP,
-	IIO_MOD_NORTH_TRUE_TILT_COMP,
-	IIO_MOD_RUNNING,
-	IIO_MOD_JOGGING,
-	IIO_MOD_WALKING,
-	IIO_MOD_STILL,
-	IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z,
-	IIO_MOD_I,
-	IIO_MOD_Q,
-};
-
 struct iio_backend_ops {
 	struct iio_context * (*clone)(const struct iio_context *ctx);
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
@@ -199,6 +162,7 @@ struct iio_channel {
 	struct iio_data_format format;
 	char *name, *id;
 	long index;
+	enum iio_modifier modifier;
 	enum iio_chan_type type;
 
 	struct iio_channel_attr *attrs;
@@ -295,6 +259,7 @@ __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
 
 void iio_channel_init_finalize(struct iio_channel *chn);
+unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 #undef __api
 
