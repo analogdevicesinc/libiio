@@ -189,7 +189,7 @@ static int serial_set_kernel_buffers_count(const struct iio_device *dev,
 }
 
 static ssize_t serial_write_data(struct iio_context_pdata *pdata,
-		int fd, const char *data, size_t len)
+		uintptr_t desc, const char *data, size_t len)
 {
 	ssize_t ret = (ssize_t) libserialport_to_errno(sp_blocking_write(
 				pdata->port, data, len, pdata->timeout_ms));
@@ -199,7 +199,7 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 }
 
 static ssize_t serial_read_data(struct iio_context_pdata *pdata,
-		int fd, char *buf, size_t len)
+		uintptr_t desc, char *buf, size_t len)
 {
 	ssize_t ret = (ssize_t) libserialport_to_errno(sp_blocking_read_next(
 				pdata->port, buf, len, pdata->timeout_ms));
@@ -209,7 +209,7 @@ static ssize_t serial_read_data(struct iio_context_pdata *pdata,
 }
 
 static ssize_t serial_read_line(struct iio_context_pdata *pdata,
-		int fd, char *buf, size_t len)
+		uintptr_t desc, char *buf, size_t len)
 {
 	size_t i;
 	bool found = false;

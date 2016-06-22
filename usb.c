@@ -468,7 +468,7 @@ static const struct iio_backend_ops usb_ops = {
 };
 
 static ssize_t write_data_sync(struct iio_context_pdata *pdata,
-		int ep, const char *data, size_t len)
+		uintptr_t ep, const char *data, size_t len)
 {
 	int transferred, ret;
 
@@ -482,7 +482,7 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 }
 
 static ssize_t read_data_sync(struct iio_context_pdata *pdata,
-		int ep, char *buf, size_t len)
+		uintptr_t ep, char *buf, size_t len)
 {
 	int transferred, ret;
 

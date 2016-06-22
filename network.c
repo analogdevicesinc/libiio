@@ -942,19 +942,19 @@ static const struct iio_backend_ops network_ops = {
 };
 
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
-		int desc, const char *src, size_t len)
+		uintptr_t desc, const char *src, size_t len)
 {
 	return network_send(desc, src, len, 0);
 }
 
 static ssize_t network_read_data(struct iio_context_pdata *pdata,
-		int desc, char *dst, size_t len)
+		uintptr_t desc, char *dst, size_t len)
 {
 	return network_recv(desc, dst, len, 0);
 }
 
 static ssize_t network_read_line(struct iio_context_pdata *pdata,
-		int desc, char *dst, size_t len)
+		uintptr_t desc, char *dst, size_t len)
 {
 	size_t i;
 #ifdef __linux__
