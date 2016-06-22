@@ -182,14 +182,13 @@ int main(int argc, char **argv)
 	else
 		ctx = iio_create_default_context();
 
-	if (timeout >= 0)
-		iio_context_set_timeout(ctx, timeout);
-
 	if (!ctx) {
 		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
 	}
 
+	if (timeout >= 0)
+		iio_context_set_timeout(ctx, timeout);
 
 #ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
