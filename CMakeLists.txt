@@ -161,8 +161,12 @@ if(WITH_NETWORK_BACKEND)
 		check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
 
 		if (HAS_O_TMPFILE)
-			add_definitions(-DWITH_NETWORK_GET_BUFFER=1)
-		endif()
+			option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
+
+			if (WITH_NETWORK_GET_BUFFER)
+				add_definitions(-DWITH_NETWORK_GET_BUFFER=1)
+			endif(WITH_NETWORK_GET_BUFFER)
+		endif(HAS_O_TMPFILE)
 	endif()
 
 	add_definitions(-DNETWORK_BACKEND=1)
