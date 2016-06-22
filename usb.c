@@ -41,6 +41,10 @@
 
 struct iio_usb_io_context {
 	unsigned int ep;
+
+	struct iio_mutex *lock;
+	bool cancelled;
+	struct libusb_transfer *transfer;
 };
 
 struct iio_usb_io_endpoint {
@@ -110,6 +114,23 @@ static unsigned int libusb_to_errno(int error)
 	case LIBUSB_ERROR_OVERFLOW:
 	default:
 		return EIO;
+	}
+}
+
+static int usb_io_context_init(struct iio_usb_io_context *io_ctx)
+{
+	io_ctx->lock = iio_mutex_create();
+	if (!io_ctx->lock)
+		return -ENOMEM;
+
+	return 0;
+}
+
+static void usb_io_context_exit(struct iio_usb_io_context *io_ctx)
+{
+	if (io_ctx->lock) {
+		iio_mutex_destroy(io_ctx->lock);
+		io_ctx->lock = NULL;
 	}
 }
 
@@ -212,6 +233,8 @@ static int usb_open(const struct iio_device *dev,
 	int ret = -EBUSY;
 
 	iio_mutex_lock(ctx_pdata->ep_lock);
+
+	pdata->io_ctx.cancelled = false;
 
 	if (pdata->opened)
 		goto out_unlock;
@@ -378,6 +401,7 @@ static void usb_shutdown(struct iio_context *ctx)
 {
 	unsigned int i;
 
+	usb_io_context_exit(&ctx->pdata->io_ctx);
 	iio_mutex_destroy(ctx->pdata->lock);
 	iio_mutex_destroy(ctx->pdata->ep_lock);
 
@@ -390,6 +414,7 @@ static void usb_shutdown(struct iio_context *ctx)
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 
+		usb_io_context_exit(&dev->pdata->io_ctx);
 		free(dev->pdata);
 	}
 
@@ -462,6 +487,17 @@ static int iio_usb_match_device(struct libusb_device *dev,
 	return ret;
 }
 
+static void usb_cancel(const struct iio_device *dev)
+{
+	struct iio_device_pdata *ppdata = dev->pdata;
+
+	iio_mutex_lock(ppdata->io_ctx.lock);
+	if (ppdata->io_ctx.transfer && !ppdata->io_ctx.cancelled)
+		libusb_cancel_transfer(ppdata->io_ctx.transfer);
+	ppdata->io_ctx.cancelled = true;
+	iio_mutex_unlock(ppdata->io_ctx.lock);
+}
+
 static const struct iio_backend_ops usb_ops = {
 	.get_version = usb_get_version,
 	.open = usb_open,
@@ -475,6 +511,8 @@ static const struct iio_backend_ops usb_ops = {
 	.set_kernel_buffers_count = usb_set_kernel_buffers_count,
 	.set_timeout = usb_set_timeout,
 	.shutdown = usb_shutdown,
+
+	.cancel = usb_cancel,
 };
 
 static void LIBUSB_CALL sync_transfer_cb(struct libusb_transfer *transfer)
@@ -491,9 +529,23 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 	int completed = 0;
 	int ret;
 
+	/*
+	 * For cancellation support the check whether the buffer has already been
+	 * cancelled and the allocation as well as the assignment of the new
+	 * transfer needs to happen in one atomic step. Otherwise it is possible
+	 * that the cancellation is missed and transfer is not aborted.
+	 */
+	iio_mutex_lock(io_ctx->lock);
+	if (io_ctx->cancelled) {
+		ret = -EBADF;
+		goto unlock;
+	}
+
 	transfer = libusb_alloc_transfer(0);
-	if (!transfer)
-		return -ENOMEM;
+	if (!transfer) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
 
 	transfer->user_data = &completed;
 
@@ -505,8 +557,14 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 	ret = libusb_submit_transfer(transfer);
 	if (ret < 0) {
 		libusb_free_transfer(transfer);
-		return ret;
+		goto unlock;
 	}
+
+	io_ctx->transfer = transfer;
+unlock:
+	iio_mutex_unlock(io_ctx->lock);
+	if (ret)
+		return ret;
 
 	while (!completed) {
 		ret = libusb_handle_events_completed(pdata->ctx, &completed);
@@ -539,6 +597,11 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 		ret = -EIO;
 		break;
 	}
+
+	/* Same as above. This needs to be atomic in regards to usb_cancel(). */
+	iio_mutex_lock(io_ctx->lock);
+	io_ctx->transfer = NULL;
+	iio_mutex_unlock(io_ctx->lock);
 
 	libusb_free_transfer(transfer);
 
@@ -747,20 +810,24 @@ struct iio_context * usb_create_context(unsigned int bus,
 	pdata->hdl = hdl;
 	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 
+	ret = usb_io_context_init(&pdata->io_ctx);
+	if (ret)
+		goto err_free_endpoints;
+
 	pdata->io_ctx.ep = EP_OPS;
 
 	ret = usb_reset_pipes(hdl);
 	if (ret) {
 		iio_strerror(-ret, err_str, sizeof(err_str));
 		ERROR("Failed to reset pipes: %s\n", err_str);
-		goto err_free_endpoints;
+		goto err_io_context_exit;
 	}
 
 	ret = usb_open_pipe(hdl, EP_OPS);
 	if (ret) {
 		iio_strerror(-ret, err_str, sizeof(err_str));
 		ERROR("Failed to open control pipe: %s\n", err_str);
-		goto err_free_endpoints;
+		goto err_io_context_exit;
 	}
 
 	ctx = iiod_client_create_context(pdata->iiod_client,
@@ -783,6 +850,10 @@ struct iio_context * usb_create_context(unsigned int bus,
 			ret = -ENOMEM;
 			goto err_context_destroy;
 		}
+
+		ret = usb_io_context_init(&dev->pdata->io_ctx);
+		if (ret)
+			goto err_context_destroy;
 	}
 
 	return ctx;
@@ -794,6 +865,8 @@ err_context_destroy:
 
 err_reset_pipes:
 	usb_reset_pipes(hdl); /* Close everything */
+err_io_context_exit:
+	usb_io_context_exit(&pdata->io_ctx);
 err_free_endpoints:
 	for (i = 0; i < pdata->nb_io_endpoints; i++)
 		if (pdata->io_endpoints[i].lock)
