@@ -148,6 +148,8 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 	mod++;
 
 	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
+		if (!modifier_names[i])
+			continue;
 		len = strlen(modifier_names[i]);
 		if (strncmp(modifier_names[i], mod, len) != 0)
 			continue;
