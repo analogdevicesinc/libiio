@@ -15,7 +15,7 @@ struct iiod_client {
 };
 
 static ssize_t iiod_client_read_integer(struct iiod_client *client,
-		uintptr_t desc, int *val)
+		void *desc, int *val)
 {
 	unsigned int i;
 	char buf[1024], *ptr = NULL, *end;
@@ -49,7 +49,7 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client,
 }
 
 static int iiod_client_exec_command(struct iiod_client *client,
-		uintptr_t desc, const char *cmd)
+		void *desc, const char *cmd)
 {
 	int resp;
 	ssize_t ret;
@@ -63,7 +63,7 @@ static int iiod_client_exec_command(struct iiod_client *client,
 }
 
 static ssize_t iiod_client_write_all(struct iiod_client *client,
-		uintptr_t desc, const void *src, size_t len)
+		void *desc, const void *src, size_t len)
 {
 	struct iio_context_pdata *pdata = client->pdata;
 	const struct iiod_client_ops *ops = client->ops;
@@ -90,7 +90,7 @@ static ssize_t iiod_client_write_all(struct iiod_client *client,
 }
 
 static ssize_t iiod_client_read_all(struct iiod_client *client,
-		uintptr_t desc, void *dst, size_t len)
+		void *desc, void *dst, size_t len)
 {
 	struct iio_context_pdata *pdata = client->pdata;
 	const struct iiod_client_ops *ops = client->ops;
@@ -138,7 +138,7 @@ void iiod_client_destroy(struct iiod_client *client)
 	free(client);
 }
 
-int iiod_client_get_version(struct iiod_client *client, uintptr_t desc,
+int iiod_client_get_version(struct iiod_client *client, void *desc,
 		unsigned int *major, unsigned int *minor, char *git_tag)
 {
 	struct iio_context_pdata *pdata = client->pdata;
@@ -186,7 +186,7 @@ int iiod_client_get_version(struct iiod_client *client, uintptr_t desc,
 	return 0;
 }
 
-int iiod_client_get_trigger(struct iiod_client *client, uintptr_t desc,
+int iiod_client_get_trigger(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_device **trigger)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -240,7 +240,7 @@ out_unlock:
 	return ret;
 }
 
-int iiod_client_set_trigger(struct iiod_client *client, uintptr_t desc,
+int iiod_client_set_trigger(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_device *trigger)
 {
 	char buf[1024];
@@ -260,7 +260,7 @@ int iiod_client_set_trigger(struct iiod_client *client, uintptr_t desc,
 	return ret;
 }
 
-int iiod_client_set_kernel_buffers_count(struct iiod_client *client, uintptr_t desc,
+int iiod_client_set_kernel_buffers_count(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, unsigned int nb_blocks)
 {
 	int ret;
@@ -276,7 +276,7 @@ int iiod_client_set_kernel_buffers_count(struct iiod_client *client, uintptr_t d
 }
 
 int iiod_client_set_timeout(struct iiod_client *client,
-		uintptr_t desc, unsigned int timeout)
+		void *desc, unsigned int timeout)
 {
 	int ret;
 	char buf[1024];
@@ -289,7 +289,7 @@ int iiod_client_set_timeout(struct iiod_client *client,
 	return ret;
 }
 
-ssize_t iiod_client_read_attr(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, char *dest, size_t len, bool is_debug)
 {
@@ -348,7 +348,7 @@ out_unlock:
 	return ret;
 }
 
-ssize_t iiod_client_write_attr(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len, bool is_debug)
 {
@@ -405,7 +405,7 @@ out_unlock:
 }
 
 struct iio_context * iiod_client_create_context(
-		struct iiod_client *client, uintptr_t desc)
+		struct iiod_client *client, void *desc)
 {
 	struct iio_context *ctx = NULL;
 	size_t xml_len;
@@ -442,7 +442,7 @@ out_unlock:
 	return ctx;
 }
 
-int iiod_client_open_unlocked(struct iiod_client *client, uintptr_t desc,
+int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, size_t samples_count, bool cyclic)
 {
 	char buf[1024], *ptr;
@@ -461,7 +461,7 @@ int iiod_client_open_unlocked(struct iiod_client *client, uintptr_t desc,
 	return iiod_client_exec_command(client, desc, buf);
 }
 
-int iiod_client_close_unlocked(struct iiod_client *client, uintptr_t desc,
+int iiod_client_close_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev)
 {
 	char buf[1024];
@@ -471,7 +471,7 @@ int iiod_client_close_unlocked(struct iiod_client *client, uintptr_t desc,
 }
 
 static int iiod_client_read_mask(struct iiod_client *client,
-		uintptr_t desc, uint32_t *mask, size_t words)
+		void *desc, uint32_t *mask, size_t words)
 {
 	size_t i;
 	ssize_t ret;
@@ -504,7 +504,7 @@ out_buf_free:
 	return (int) ret;
 }
 
-ssize_t iiod_client_read_unlocked(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_read_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
@@ -554,7 +554,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, uintptr_t desc,
 	return read;
 }
 
-ssize_t iiod_client_write_unlocked(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_write_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const void *src, size_t len)
 {
 	ssize_t ret;

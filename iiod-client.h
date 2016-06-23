@@ -27,45 +27,45 @@ struct iio_context_pdata;
 
 struct iiod_client_ops {
 	ssize_t (*write)(struct iio_context_pdata *pdata,
-			uintptr_t desc, const char *src, size_t len);
+			void *desc, const char *src, size_t len);
 	ssize_t (*read)(struct iio_context_pdata *pdata,
-			uintptr_t desc, char *dst, size_t len);
+			void *desc, char *dst, size_t len);
 	ssize_t (*read_line)(struct iio_context_pdata *pdata,
-			uintptr_t desc, char *dst, size_t len);
+			void *desc, char *dst, size_t len);
 };
 
 struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
 		struct iio_mutex *lock, const struct iiod_client_ops *ops);
 void iiod_client_destroy(struct iiod_client *client);
 
-int iiod_client_get_version(struct iiod_client *client, uintptr_t desc,
+int iiod_client_get_version(struct iiod_client *client, void *desc,
 		unsigned int *major, unsigned int *minor, char *git_tag);
-int iiod_client_get_trigger(struct iiod_client *client, uintptr_t desc,
+int iiod_client_get_trigger(struct iiod_client *client, void *desc,
 		const struct iio_device *dev,
 		const struct iio_device **trigger);
-int iiod_client_set_trigger(struct iiod_client *client, uintptr_t desc,
+int iiod_client_set_trigger(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_device *trigger);
 int iiod_client_set_kernel_buffers_count(struct iiod_client *client,
-		uintptr_t desc, const struct iio_device *dev, unsigned int nb_blocks);
+		void *desc, const struct iio_device *dev, unsigned int nb_blocks);
 int iiod_client_set_timeout(struct iiod_client *client,
-		uintptr_t desc, unsigned int timeout);
-ssize_t iiod_client_read_attr(struct iiod_client *client, uintptr_t desc,
+		void *desc, unsigned int timeout);
+ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, char *dest, size_t len, bool is_debug);
-ssize_t iiod_client_write_attr(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len, bool is_debug);
-int iiod_client_open_unlocked(struct iiod_client *client, uintptr_t desc,
+int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, size_t samples_count,
 		bool cyclic);
-int iiod_client_close_unlocked(struct iiod_client *client, uintptr_t desc,
+int iiod_client_close_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev);
-ssize_t iiod_client_read_unlocked(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_read_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words);
-ssize_t iiod_client_write_unlocked(struct iiod_client *client, uintptr_t desc,
+ssize_t iiod_client_write_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const void *src, size_t len);
 struct iio_context * iiod_client_create_context(
-		struct iiod_client *client, uintptr_t desc);
+		struct iiod_client *client, void *desc);
 
 #endif /* _IIOD_CLIENT_H */
