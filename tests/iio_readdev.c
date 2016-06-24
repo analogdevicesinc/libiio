@@ -16,6 +16,7 @@
  *
  * */
 
+#include <errno.h>
 #include <getopt.h>
 #include <iio.h>
 #include <signal.h>
@@ -252,7 +253,9 @@ int main(int argc, char **argv)
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
-		fprintf(stderr, "Unable to allocate buffer\n");
+		char buf[256];
+		iio_strerror(errno, buf, sizeof(buf));
+		fprintf(stderr, "Unable to allocate buffer: %s\n", buf);
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
