@@ -194,9 +194,9 @@ void iio_strerror(int err, char *buf, size_t len)
 		snprintf(buf, len, "Unknown error %i", err);
 }
 
+#ifndef _WIN32
 int set_blocking_mode(int fd, bool blocking)
 {
-#ifndef _WIN32
 	int ret = fcntl(fd, F_GETFL, 0);
 	if (ret < 0)
 		return -errno;
@@ -208,7 +208,5 @@ int set_blocking_mode(int fd, bool blocking)
 
 	ret = fcntl(fd, F_SETFL, ret);
 	return ret < 0 ? -errno : 0;
-#else
-	return -ENOSYS;
-#endif
 }
+#endif
