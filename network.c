@@ -268,8 +268,8 @@ static ssize_t write_command(const char *cmd, int fd)
 #ifndef _WIN32
 
 /* Use it if available */
-#ifndef SOCK_CLOSEXEC
-#define SOCK_CLOSEXEC 0
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC 0
 #endif
 
 /* The purpose of this function is to provide a version of connect()
