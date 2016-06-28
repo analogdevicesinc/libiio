@@ -40,7 +40,13 @@ if (NOT WIN32)
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCC)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-sign-compare")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare")
+
+	include(CheckCCompilerFlag)
+	check_c_compiler_flag(-Wpedantic HAS_WPEDANTIC)
+	if (HAS_WPEDANTIC)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic")
+	endif()
 endif()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
