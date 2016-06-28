@@ -158,7 +158,7 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 				buffer->data_length, buffer->mask, dev->words);
 		if (ret >= 0) {
 			buffer->buffer = buf;
-			ret = buffer->data_length;
+			ret = (ssize_t) buffer->data_length;
 		}
 	} else {
 		void *ptr = buffer->buffer;
