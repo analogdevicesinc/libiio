@@ -674,14 +674,14 @@ struct iio_context * usb_create_context(unsigned int bus,
 	if (ret) {
 		iio_strerror(-ret, err_str, sizeof(err_str));
 		ERROR("Failed to reset pipes: %s\n", err_str);
-		return NULL;
+		goto err_free_endpoints;
 	}
 
 	ret = usb_open_pipe(hdl, EP_OPS);
 	if (ret) {
 		iio_strerror(-ret, err_str, sizeof(err_str));
 		ERROR("Failed to open control pipe: %s\n", err_str);
-		return NULL;
+		goto err_free_endpoints;
 	}
 
 	ctx = iiod_client_create_context(pdata->iiod_client, EP_OPS);
