@@ -20,13 +20,13 @@
 #define __OPS_H__
 
 #include "../iio.h"
+#include "queue.h"
 
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/queue.h>
 #include <unistd.h>
 
 #if WITH_AIO

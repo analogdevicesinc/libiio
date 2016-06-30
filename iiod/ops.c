@@ -27,7 +27,6 @@
 #include <poll.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/queue.h>
 #include <sys/eventfd.h>
 #include <time.h>
 #include <fcntl.h>
