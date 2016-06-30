@@ -16,6 +16,9 @@
  *
  * */
 
+/* Force the XSI version of strerror_r */
+#undef _GNU_SOURCE
+
 #include "iio-private.h"
 
 #include <errno.h>
@@ -184,17 +187,11 @@ void iio_strerror(int err, char *buf, size_t len)
 {
 #ifdef _WIN32
 	int ret = strerror_s(buf, len, err);
-	if (ret != 0)
-		snprintf(buf, len, "Unknown error %i", err);
-#elif (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
-	int ret = strerror_r(err, buf, len);
-	if (ret != 0)
-		snprintf(buf, len, "Unknown error %i", err);
 #else
-	char *str = strerror_r(err, buf, len);
-	if (str != buf)
-		strncpy(buf, str, len);
+	int ret = strerror_r(err, buf, len);
 #endif
+	if (ret != 0)
+		snprintf(buf, len, "Unknown error %i", err);
 }
 
 int set_blocking_mode(int fd, bool blocking)
