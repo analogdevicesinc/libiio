@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 	if (!ctx) {
 		fprintf(stderr, "Unable to re-generate context\n");
 	} else {
-		printf("Context re-creation from generated XML suceeded!\n");
+		printf("Context re-creation from generated XML succeeded!\n");
 		iio_context_destroy(ctx);
 	}
 	free(xml);
