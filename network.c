@@ -66,6 +66,17 @@
 
 struct iio_network_io_context {
 	int fd;
+
+	/* Only buffer IO contexts can be cancelled. */
+	bool cancellable;
+	bool cancelled;
+#if defined(_WIN32)
+	WSAEVENT events[2];
+#elif defined(WITH_NETWORK_EVENTFD)
+	int cancel_fd[1]; /* eventfd */
+#else
+	int cancel_fd[2]; /* pipe */
+#endif
 };
 
 struct iio_context_pdata {
@@ -87,15 +98,198 @@ struct iio_device_pdata {
 };
 
 #ifdef _WIN32
+
+static int setup_cancel(struct iio_network_io_context *io_ctx)
+{
+	io_ctx->events[0] = WSACreateEvent();
+	if (io_ctx->events[0] == WSA_INVALID_EVENT)
+		return -ENOMEM; /* Pretty much the only error that can happen */
+
+	io_ctx->events[1] = WSACreateEvent();
+	if (io_ctx->events[1] == WSA_INVALID_EVENT) {
+		WSACloseEvent(io_ctx->events[0]);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static void cleanup_cancel(struct iio_network_io_context *io_ctx)
+{
+	WSACloseEvent(io_ctx->events[0]);
+	WSACloseEvent(io_ctx->events[1]);
+}
+
+static void do_cancel(struct iio_network_io_context *io_ctx)
+{
+	WSASetEvent(io_ctx->events[1]);
+}
+
+static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
+{
+	long wsa_events = FD_CLOSE;
+	DWORD ret;
+
+	if (!io_ctx->cancellable)
+		return 0;
+
+	if (read)
+		wsa_events |= FD_READ;
+	else
+		wsa_events |= FD_WRITE;
+
+	WSAEventSelect(io_ctx->fd, NULL, 0);
+	WSAResetEvent(io_ctx->events[0]);
+	WSAEventSelect(io_ctx->fd, io_ctx->events[0], wsa_events);
+
+	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
+		WSA_INFINITE, FALSE);
+
+	if (ret == WSA_WAIT_EVENT_0 + 1)
+		return -EBADF;
+
+	return 0;
+}
+
 static int network_get_error(void)
 {
 	return -WSAGetLastError();
 }
+
+static bool network_should_retry(int err)
+{
+	return err == -WSAEWOULDBLOCK;
+}
+
 #else
+
+#include <poll.h>
+
+#if defined(WITH_NETWORK_EVENTFD)
+
+#include <sys/eventfd.h>
+
+static int create_cancel_fd(struct iio_network_io_context *io_ctx)
+{
+	io_ctx->cancel_fd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+	if (io_ctx->cancel_fd[0] < 0)
+		return -errno;
+	return 0;
+}
+
+static void cleanup_cancel(struct iio_network_io_context *io_ctx)
+{
+	close(io_ctx->cancel_fd[0]);
+}
+
+#define CANCEL_WR_FD 0
+
+#else
+
+static int create_cancel_fd(struct iio_network_io_context *io_ctx)
+{
+	int ret;
+
+#ifdef HAS_PIPE2
+	ret = pipe2(io_ctx->cancel_fd, O_CLOEXEC | O_NONBLOCK);
+	if (ret < 0 && errno != ENOSYS) /* If ENOSYS try pipe() */
+		return -errno;
+#endif
+	ret = pipe(io_ctx->cancel_fd);
+	if (ret < 0)
+		return -errno;
+	ret = set_blocking_mode(io_ctx->cancel_fd[0], false);
+	if (ret < 0)
+		goto err_close;
+	ret = set_blocking_mode(io_ctx->cancel_fd[1], false);
+	if (ret < 0)
+		goto err_close;
+
+	return 0;
+err_close:
+	close(io_ctx->cancel_fd[0]);
+	close(io_ctx->cancel_fd[1]);
+	return ret;
+}
+
+static void cleanup_cancel(struct iio_network_io_context *io_ctx)
+{
+	close(io_ctx->cancel_fd[0]);
+	close(io_ctx->cancel_fd[1]);
+}
+
+#define CANCEL_WR_FD 1
+
+#endif
+
+static int setup_cancel(struct iio_network_io_context *io_ctx)
+{
+	int ret;
+
+	ret = set_blocking_mode(io_ctx->fd, false);
+	if (ret)
+		return ret;
+
+	return create_cancel_fd(io_ctx);
+}
+
+static void do_cancel(struct iio_network_io_context *io_ctx)
+{
+	uint64_t event = 1;
+	int ret;
+
+	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
+	if (ret == -1) {
+		/* If this happens something went very seriously wrong */
+		char err_str[1024];
+		iio_strerror(errno, err_str, sizeof(err_str));
+		ERROR("Unable to signal cancellation event: %s\n", err_str);
+	}
+}
+
+static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
+{
+	struct pollfd pfd[2];
+	int ret;
+
+	if (!io_ctx->cancellable)
+		return 0;
+
+	memset(pfd, 0, sizeof(pfd));
+
+	pfd[0].fd = io_ctx->fd;
+	if (read)
+		pfd[0].events = POLLIN;
+	else
+		pfd[0].events = POLLOUT;
+	pfd[1].fd = io_ctx->cancel_fd[0];
+	pfd[1].events = POLLIN;
+
+	do {
+		do {
+			ret = poll(pfd, 2, -1);
+		} while (ret == -1 && errno == EINTR);
+
+		if (ret == -1)
+			return -errno;
+
+		if (pfd[1].revents & POLLIN)
+			return -EBADF;
+	} while (!(pfd[0].revents & (pfd[0].events | POLLERR | POLLHUP)));
+
+	return 0;
+}
+
 static int network_get_error(void)
 {
 	return -errno;
 }
+
+static bool network_should_retry(int err)
+{
+	return err == -EINTR || err == -EAGAIN;
+}
+
 #endif
 
 #ifdef HAVE_AVAHI
@@ -210,6 +404,10 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 	int err;
 
 	while (1) {
+		ret = wait_cancellable(io_ctx, true);
+		if (ret < 0)
+			return ret;
+
 		ret = recv(io_ctx->fd, data, (int) len, flags);
 		if (ret == 0)
 			return -EPIPE;
@@ -217,7 +415,7 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (err != -EINTR)
+		if (network_should_retry(err))
 			return (ssize_t) err;
 	}
 	return ret;
@@ -230,6 +428,10 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 	int err;
 
 	while (1) {
+		ret = wait_cancellable(io_ctx, false);
+		if (ret < 0)
+			return ret;
+
 		ret = send(io_ctx->fd, data, (int) len, flags);
 		if (ret == 0)
 			return -EPIPE;
@@ -237,7 +439,7 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (err != -EINTR)
+		if (network_should_retry(err))
 			return (ssize_t) err;
 	}
 
@@ -271,6 +473,15 @@ static ssize_t write_command(struct iio_network_io_context *io_ctx,
 		ERROR("Unable to send command: %s\n", buf);
 	}
 	return ret;
+}
+
+static void network_cancel(const struct iio_device *dev)
+{
+	struct iio_device_pdata *ppdata = dev->pdata;
+
+	do_cancel(&ppdata->io_ctx);
+
+	ppdata->io_ctx.cancelled = true;
 }
 
 #ifndef _WIN32
@@ -428,14 +639,17 @@ static int network_open(const struct iio_device *dev,
 		goto out_mutex_unlock;
 
 	ppdata->io_ctx.fd = ret;
+	ppdata->io_ctx.cancelled = false;
+	ppdata->io_ctx.cancellable = true;
+
+	ret = setup_cancel(&ppdata->io_ctx);
+	if (ret < 0)
+		goto err_close_socket;
 
 	ret = iiod_client_open_unlocked(pdata->iiod_client,
 			(uintptr_t) &ppdata->io_ctx, dev, samples_count, cyclic);
-	if (ret < 0) {
-		ppdata->io_ctx.fd = -1;
-		close(ppdata->io_ctx.fd);
-		goto out_mutex_unlock;
-	}
+	if (ret < 0)
+		goto err_cleanup_cancel;
 
 	ppdata->is_tx = iio_device_is_tx(dev);
 	ppdata->is_cyclic = cyclic;
@@ -444,6 +658,15 @@ static int network_open(const struct iio_device *dev,
 	ppdata->mmap_len = samples_count * iio_device_get_sample_size(dev);
 #endif
 
+	iio_mutex_unlock(ppdata->lock);
+
+	return 0;
+
+err_cleanup_cancel:
+	cleanup_cancel(&ppdata->io_ctx);
+err_close_socket:
+	close(ppdata->io_ctx.fd);
+	ppdata->io_ctx.fd = -1;
 out_mutex_unlock:
 	iio_mutex_unlock(ppdata->lock);
 	return ret;
@@ -457,11 +680,17 @@ static int network_close(const struct iio_device *dev)
 	iio_mutex_lock(pdata->lock);
 
 	if (pdata->io_ctx.fd >= 0) {
-		ret = iiod_client_close_unlocked(dev->ctx->pdata->iiod_client,
-				(uintptr_t) &pdata->io_ctx, dev);
+		if (!pdata->io_ctx.cancelled) {
+			ret = iiod_client_close_unlocked(
+					dev->ctx->pdata->iiod_client,
+					(uintptr_t) &pdata->io_ctx, dev);
 
-		write_command(&pdata->io_ctx, "\r\nEXIT\r\n");
+			write_command(&pdata->io_ctx, "\r\nEXIT\r\n");
+		} else {
+			ret = 0;
+		}
 
+		cleanup_cancel(&pdata->io_ctx);
 		close(pdata->io_ctx.fd);
 		pdata->io_ctx.fd = -1;
 	}
@@ -637,16 +866,30 @@ static ssize_t write_rwbuf_command(const struct iio_device *dev,
 	return write_command(&pdata->io_ctx, cmd);
 }
 
-static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
+static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
+		bool read)
 {
 	int pipefd[2];
+	int fd_in, fd_out;
 	ssize_t ret, read_len = len;
 
 	ret = (ssize_t) pipe2(pipefd, O_CLOEXEC);
 	if (ret < 0)
 		return -errno;
 
+	if (read) {
+	    fd_in = pdata->io_ctx.fd;
+	    fd_out = pdata->memfd;
+	} else {
+	    fd_in = pdata->memfd;
+	    fd_out = pdata->io_ctx.fd;
+	}
+
 	do {
+		ret = wait_cancellable(&pdata->io_ctx, read);
+		if (ret < 0)
+			goto err_close_pipe;
+
 		/*
 		 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
 		 * splicing from a socket. As the socket is not in
@@ -655,6 +898,8 @@ static ssize_t network_do_splice(int fd_out, int fd_in, size_t len)
 		 * */
 		ret = splice(fd_in, NULL, pipefd[1], NULL, len,
 				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+		if (ret < 0 && errno == EAGAIN)
+			continue;
 		if (!ret)
 			ret = -EIO;
 		if (ret < 0)
@@ -716,7 +961,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		if (ret < 0)
 			goto err_close_memfd;
 
-		ret = network_do_splice(pdata->io_ctx.fd, pdata->memfd, bytes_used);
+		ret = network_do_splice(pdata, bytes_used, false);
 		if (ret < 0)
 			goto err_close_memfd;
 
@@ -757,7 +1002,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 			mask = NULL; /* We read the mask only once */
 
-			ret = network_do_splice(pdata->memfd, pdata->io_ctx.fd, ret);
+			ret = network_do_splice(pdata, ret, true);
 			if (ret < 0)
 				goto err_unlock;
 
@@ -953,6 +1198,8 @@ static const struct iio_backend_ops network_ops = {
 	.get_version = network_get_version,
 	.set_timeout = network_set_timeout,
 	.set_kernel_buffers_count = network_set_kernel_buffers_count,
+
+	.cancel = network_cancel,
 };
 
 static ssize_t network_write_data(struct iio_context_pdata *pdata,

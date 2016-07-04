@@ -167,6 +167,21 @@ if(WITH_NETWORK_BACKEND)
 				add_definitions(-DWITH_NETWORK_GET_BUFFER=1)
 			endif(WITH_NETWORK_GET_BUFFER)
 		endif(HAS_O_TMPFILE)
+
+		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }" HAS_EVENTFD)
+
+		if (HAS_EVENTFD)
+			add_definitions(-DWITH_NETWORK_EVENTFD=1)
+		endif(HAS_EVENTFD)
+	endif()
+
+	if(NOT WIN32)
+		include(CheckCSourceCompiles)
+		check_c_source_compiles("#include <unistd.h>\n#include <fcntl.h>\nint main(void) { int fd[2]; return pipe2(fd, O_CLOEXEC | O_NONBLOCK); }" HAS_PIPE2)
+
+		if (HAS_PIPE2)
+			add_definitions(-DHAS_PIPE2=1)
+		endif(HAS_PIPE2)
 	endif()
 
 	add_definitions(-DNETWORK_BACKEND=1)
