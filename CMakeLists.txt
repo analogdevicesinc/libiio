@@ -59,6 +59,9 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	if (WITH_IIOD)
 		set(NEED_THREADS 1)
 	endif()
+
+	set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
+	add_definitions(-D_GNU_SOURCE=1)
 endif()
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
@@ -155,11 +158,10 @@ if(WITH_NETWORK_BACKEND)
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		include(CheckCSourceCompiles)
-		set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
 		check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
 
 		if (HAS_O_TMPFILE)
-			add_definitions(-D_GNU_SOURCE=1 -DWITH_NETWORK_GET_BUFFER=1)
+			add_definitions(-DWITH_NETWORK_GET_BUFFER=1)
 		endif()
 	endif()
 
