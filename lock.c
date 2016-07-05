@@ -18,7 +18,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#else
+#elif !defined(NO_THREADS)
 #include <pthread.h>
 #endif
 
