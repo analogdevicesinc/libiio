@@ -364,8 +364,7 @@ class DeviceDebugAttr(DeviceAttr):
 		_d_write_debug_attr(self._device, self.name, value)
 
 class Channel(object):
-	def __init__(self, dev, _channel):
-		self.dev = dev
+	def __init__(self, _channel):
 		self._channel = _channel
 		self._attrs = { name : ChannelAttr(_channel, name) for name in \
 				[_c_get_attr(_channel, x) for x in xrange(0, _c_attr_count(_channel))] }
@@ -453,7 +452,6 @@ class Buffer(object):
 		returns: type=iio.Buffer
 			An new instance of this class
 		"""
-		self.dev = device
 		try:
 			self._buffer = _create_buffer(device._device, samples_count, cyclic)
 		except:
@@ -522,8 +520,7 @@ class Buffer(object):
 		return length
 
 class _DeviceOrTrigger(object):
-	def __init__(self, ctx, _device):
-		self.ctx = ctx
+	def __init__(self, _device):
 		self._device = _device
 		self._attrs = { name : DeviceAttr(_device, name) for name in \
 				[_d_get_attr(_device, x) for x in xrange(0, _d_attr_count(_device))] }
@@ -531,7 +528,7 @@ class _DeviceOrTrigger(object):
 				[_d_get_debug_attr(_device, x) for x in xrange(0, _d_debug_attr_count(_device))] }
 
 		# TODO(pcercuei): Use a dictionary for the channels.
-		chans = [ Channel(self, _get_channel(self._device, x)) 
+		chans = [ Channel(_get_channel(self._device, x))
 			for x in xrange(0, _channels_count(self._device)) ]
 		self._channels = sorted(chans, key=lambda c: c.id)
 		self._id = _d_get_id(self._device)
@@ -616,8 +613,8 @@ class _DeviceOrTrigger(object):
 class Trigger(_DeviceOrTrigger):
 	"""Contains the representation of an IIO device that can act as a trigger."""
 
-	def __init__(self, ctx, _device):
-		super(Trigger, self).__init__(ctx, _device)
+	def __init__(self, _device):
+		super(Trigger, self).__init__(_device)
 
 	def _get_rate(self):
 		return int(self._attrs['frequency'].value)
@@ -632,7 +629,8 @@ class Device(_DeviceOrTrigger):
 	"""Contains the representation of an IIO device."""
 
 	def __init__(self, ctx, _device):
-		super(Device, self).__init__(ctx, _device)
+		super(Device, self).__init__(_device)
+		self.ctx = ctx
 
 	def _set_trigger(self, trigger):
 		_d_set_trigger(self._device, trigger._device if trigger else None)
@@ -672,7 +670,7 @@ class Context(object):
 			self._context = _context
 
 		# TODO(pcercuei): Use a dictionary for the devices.
-		self._devices = [ Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
+		self._devices = [ Trigger(dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
 				[ _get_device(self._context, x) for x in xrange(0, _devices_count(self._context)) ]]
 		self._name = _get_name(self._context)
 		self._description = _get_description(self._context)
