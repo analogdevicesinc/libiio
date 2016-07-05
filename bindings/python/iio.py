@@ -18,6 +18,7 @@ from ctypes import Structure, c_char_p, c_uint, c_int, \
 		POINTER as _POINTER, cdll as _cdll, memmove as _memmove, byref as _byref
 from os import strerror as _strerror
 from platform import system as _system
+import weakref
 
 def _checkNull(result, func, arguments):
 	if result:
@@ -630,7 +631,7 @@ class Device(_DeviceOrTrigger):
 
 	def __init__(self, ctx, _device):
 		super(Device, self).__init__(_device)
-		self.ctx = ctx
+		self.ctx = weakref.ref(ctx)
 
 	def _set_trigger(self, trigger):
 		_d_set_trigger(self._device, trigger._device if trigger else None)
@@ -639,7 +640,7 @@ class Device(_DeviceOrTrigger):
 		value = _Device()
 		_d_get_trigger(self._device, _byref(value))
 
-		for dev in self.ctx._devices:
+		for dev in self.ctx()._devices:
 			if value == dev._device:
 				return dev
 		return None
