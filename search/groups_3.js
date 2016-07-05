@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['top_2dlevel_20functions',['Top-level functions',['../group__TopLevel.html',1,'']]]
+  ['functions_20for_20scanning_20available_20contexts',['Functions for scanning available contexts',['../group__Scan.html',1,'']]]
 ];
