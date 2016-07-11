@@ -33,7 +33,7 @@ static const struct option options[] = {
 
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
-	"Size of the buffer. Default is 1Mbyte",
+	"Size of the buffer in sample sets. Default is 1Msample",
 };
 
 static void usage(char *argv[])
