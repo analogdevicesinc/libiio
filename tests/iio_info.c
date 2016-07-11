@@ -251,25 +251,26 @@ int main(int argc, char **argv)
 		}
 
 		unsigned int nb_attrs = iio_device_get_attrs_count(dev);
-		if (!nb_attrs)
-			continue;
+		if (nb_attrs) {
+			printf("\t\t%u device-specific attributes found:\n",
+					nb_attrs);
+			for (j = 0; j < nb_attrs; j++) {
+				const char *attr = iio_device_get_attr(dev, j);
+				char buf[1024];
+				ret = (int) iio_device_attr_read(dev,
+						attr, buf, sizeof(buf));
+				if (ret > 0) {
+					printf("\t\t\t\tattr %u: %s value: %s"
+							"\n", j, attr, buf);
+				} else if (ret == -ENOSYS) {
+					printf("\t\t\t\tattr %u: %s\n",
+							j, attr);
+				} else {
+					iio_strerror(-ret, buf, sizeof(buf));
 
-		printf("\t\t%u device-specific attributes found:\n", nb_attrs);
-		for (j = 0; j < nb_attrs; j++) {
-			const char *attr = iio_device_get_attr(dev, j);
-			char buf[1024];
-			ret = (int) iio_device_attr_read(dev,
-					attr, buf, sizeof(buf));
-			if (ret > 0) {
-				printf("\t\t\t\tattr %u: %s value: %s\n", j,
-						attr, buf);
-			} else if (ret == -ENOSYS) {
-				printf("\t\t\t\tattr %u: %s\n", j, attr);
-			} else {
-				iio_strerror(-ret, buf, sizeof(buf));
-
-				fprintf(stderr, "Unable to read attribute %s: %s\n",
-						attr, buf);
+					fprintf(stderr, "Unable to read attribute %s: %s\n",
+							attr, buf);
+				}
 			}
 		}
 
