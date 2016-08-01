@@ -402,6 +402,10 @@ static void usb_shutdown(struct iio_context *ctx)
 	unsigned int i;
 
 	usb_io_context_exit(&ctx->pdata->io_ctx);
+
+	for (i = 0; i < ctx->nb_devices; i++)
+		usb_close(ctx->devices[i]);
+
 	iio_mutex_destroy(ctx->pdata->lock);
 	iio_mutex_destroy(ctx->pdata->ep_lock);
 
