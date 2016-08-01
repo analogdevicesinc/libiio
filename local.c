@@ -125,8 +125,12 @@ static void local_shutdown(struct iio_context *ctx)
 	/* Free the backend data stored in every device structure */
 	unsigned int i;
 
-	for (i = 0; i < ctx->nb_devices; i++)
-		local_free_pdata(ctx->devices[i]);
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+
+		iio_device_close(dev);
+		local_free_pdata(dev);
+	}
 
 	free(ctx->pdata);
 }
