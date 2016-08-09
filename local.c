@@ -95,6 +95,10 @@ struct iio_device_pdata {
 	int cancel_fd;
 };
 
+struct iio_channel_pdata {
+	int foo;
+};
+
 static const char * const device_attrs_blacklist[] = {
 	"dev",
 	"uevent",
@@ -111,9 +115,20 @@ static int ioctl_nointr(int fd, unsigned long request, void *data)
 	return ret;
 }
 
+static void local_free_channel_pdata(struct iio_channel *chn)
+{
+	if (chn->pdata)
+		free(chn->pdata);
+}
+
 static void local_free_pdata(struct iio_device *device)
 {
-	if (device && device->pdata) {
+	unsigned int i;
+
+	for (i = 0; i < device->nb_channels; i++)
+		local_free_channel_pdata(device->channels[i]);
+
+	if (device->pdata) {
 		free(device->pdata->blocks);
 		free(device->pdata->addrs);
 		free(device->pdata);
@@ -1132,10 +1147,14 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!chn)
 		return NULL;
 
+	chn->pdata = zalloc(sizeof(*chn->pdata));
+	if (!chn->pdata)
+		goto err_free_chn;
+
 	if (!strncmp(attr, "out_", 4))
 		chn->is_output = true;
 	else if (strncmp(attr, "in_", 3))
-		goto err_free_chn;
+		goto err_free_chn_pdata;
 
 	chn->dev = dev;
 	chn->id = id;
@@ -1143,6 +1162,9 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!add_attr_to_channel(chn, attr, path))
 		return chn;
 
+err_free_chn_pdata:
+	free(chn->pdata->enable_fn);
+	free(chn->pdata);
 err_free_chn:
 	free(chn);
 	return NULL;
@@ -1180,10 +1202,13 @@ static int add_channel(struct iio_device *dev, const char *name,
 	iio_channel_init_finalize(chn);
 
 	ret = add_channel_to_device(dev, chn);
-	if (ret)
+	if (ret) {
+		free(chn->pdata->enable_fn);
+		free(chn->pdata);
 		free_channel(chn);
-	else
+	} else {
 		chn->is_scan_element = dir_is_scan_elements;
+	}
 	return ret;
 }
 
