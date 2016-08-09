@@ -1444,40 +1444,38 @@ static int create_device(void *d, const char *path)
 	}
 
 	ret = foreach_in_dir(dev, path, false, add_attr_or_channel);
-	if (ret < 0) {
-		free_device(dev);
-		return ret;
-	}
+	if (ret < 0)
+		goto err_free_device;
 
 	ret = add_scan_elements(dev, path);
-	if (ret < 0) {
-		free_device(dev);
-		return ret;
-	}
+	if (ret < 0)
+		goto err_free_device;
 
 	for (i = 0; i < dev->nb_channels; i++)
 		set_channel_name(dev->channels[i]);
 
 	ret = detect_and_move_global_attrs(dev);
-	if (ret < 0) {
-		free_device(dev);
-		return ret;
-	}
+	if (ret < 0)
+		goto err_free_device;
 
 	dev->words = (dev->nb_channels + 31) / 32;
 	if (dev->words) {
 		mask = calloc(dev->words, sizeof(*mask));
 		if (!mask) {
-			free_device(dev);
-			return ret;
+			ret = -ENOMEM;
+			goto err_free_device;
 		}
 	}
 
 	dev->mask = mask;
 
 	ret = add_device_to_context(ctx, dev);
-	if (ret < 0)
-		free_device(dev);
+	if (!ret)
+		return 0;
+
+err_free_device:
+	local_free_pdata(dev);
+	free_device(dev);
 	return ret;
 }
 
