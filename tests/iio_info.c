@@ -236,9 +236,26 @@ int main(int argc, char **argv)
 				type_name = "input";
 
 			name = iio_channel_get_name(ch);
-			printf("\t\t\t%s: %s (%s)\n",
+			printf("\t\t\t%s: %s (%s",
 					iio_channel_get_id(ch),
 					name ? name : "", type_name);
+
+			if (iio_channel_is_scan_element(ch)) {
+				const struct iio_data_format *format =
+					iio_channel_get_data_format(ch);
+				char sign = format->is_signed ? 's' : 'u';
+
+				if (format->is_fully_defined)
+					sign += 'A' - 'a';
+
+				printf(", index: %lu, format: %ce:%c%u/%u>>%u)\n",
+						iio_channel_get_index(ch),
+						format->is_be ? 'b' : 'l',
+						sign, format->bits,
+						format->length, format->shift);
+			} else {
+				printf(")\n");
+			}
 
 			unsigned int nb_attrs = iio_channel_get_attrs_count(ch);
 			if (!nb_attrs)
