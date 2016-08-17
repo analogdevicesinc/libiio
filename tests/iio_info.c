@@ -100,6 +100,20 @@ err_free_ctx:
 	iio_scan_context_destroy(ctx);
 }
 
+static int dev_is_buffer_capable(const struct iio_device *dev)
+{
+	unsigned int i;
+
+	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
+		struct iio_channel *chn = iio_device_get_channel(dev, i);
+
+		if (iio_channel_is_scan_element(chn))
+			return true;
+	}
+
+	return false;
+}
+
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
@@ -201,7 +215,12 @@ int main(int argc, char **argv)
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
 		const char *name = iio_device_get_name(dev);
-		printf("\t%s: %s\n", iio_device_get_id(dev), name ? name : "" );
+		printf("\t%s:", iio_device_get_id(dev));
+		if (name)
+			printf(" %s", name);
+		if (dev_is_buffer_capable(dev))
+			printf(" (buffer capable)");
+		printf("\n");
 
 		unsigned int nb_channels = iio_device_get_channels_count(dev);
 		printf("\t\t%u channels found:\n", nb_channels);
