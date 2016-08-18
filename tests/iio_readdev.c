@@ -81,7 +81,7 @@ static void quit_all(int sig)
 
 #ifdef _WIN32
 
-#include <Windows.h>
+#include <windows.h>
 
 BOOL WINAPI sig_handler_fn(DWORD dwCtrlType)
 {
