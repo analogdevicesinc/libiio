@@ -97,7 +97,7 @@ BOOL WINAPI sig_handler_fn(DWORD dwCtrlType)
 	}
 }
 
-static setup_sig_handler(void)
+static void setup_sig_handler(void)
 {
 	SetConsoleCtrlHandler(sig_handler_fn, TRUE);
 }
