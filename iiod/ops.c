@@ -291,8 +291,7 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 	return ret;
 }
 
-static ssize_t write_all(struct parser_pdata *pdata,
-		const void *src, size_t len)
+ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len)
 {
 	uintptr_t ptr = (uintptr_t) src;
 

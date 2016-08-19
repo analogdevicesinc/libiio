@@ -90,6 +90,7 @@ int set_buffers_count(struct parser_pdata *pdata,
 		struct iio_device *dev, long value);
 
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
+ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len);
 
 static __inline__ ssize_t writefd(struct parser_pdata *pdata,
 		const void *buf, size_t len)
@@ -99,7 +100,7 @@ static __inline__ ssize_t writefd(struct parser_pdata *pdata,
 
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
-	if (writefd(pdata, text, strlen(text)) <= 0)
+	if (write_all(pdata, text, strlen(text)) <= 0)
 		pdata->stop = true;
 }
 

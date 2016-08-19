@@ -46,7 +46,7 @@ int yy_input(yyscan_t scanner, char *buf, size_t max_size);
 
 #define ECHO do { \
 		struct parser_pdata *pdata = yyget_extra(yyscanner); \
-		writefd(pdata, yytext, yyleng); \
+		write_all(pdata, yytext, yyleng); \
 	} while (0)
 
 #define YY_INPUT(buf,result,max_size) do { \
