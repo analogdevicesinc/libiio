@@ -113,6 +113,10 @@ add_definitions(-DLIBIIO_VERSION_GIT="${LIBIIO_VERSION_GIT}")
 if(WITH_LOCAL_BACKEND)
 	add_definitions(-DLOCAL_BACKEND=1)
 	set(LIBIIO_CFILES ${LIBIIO_CFILES} local.c)
+
+	# Link with librt if present
+	find_library(LIBRT_LIBRARIES rt)
+	set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBRT_LIBRARIES})
 endif()
 
 find_library(LIBUSB_LIBRARIES usb-1.0)
