@@ -92,22 +92,10 @@ int set_buffers_count(struct parser_pdata *pdata,
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
 ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len);
 
-static __inline__ ssize_t writefd(struct parser_pdata *pdata,
-		const void *buf, size_t len)
-{
-	return pdata->writefd(pdata, buf, len);
-}
-
 static __inline__ void output(struct parser_pdata *pdata, const char *text)
 {
 	if (write_all(pdata, text, strlen(text)) <= 0)
 		pdata->stop = true;
-}
-
-static __inline__ ssize_t readfd(struct parser_pdata *pdata,
-		void *buf, size_t len)
-{
-	return pdata->readfd(pdata, buf, len);
 }
 
 static __inline__ int poll_nointr(struct pollfd *pfd, unsigned int num_pfd)
