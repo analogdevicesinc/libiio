@@ -163,6 +163,21 @@ static bool network_should_retry(int err)
 
 #else
 
+static int set_blocking_mode(int fd, bool blocking)
+{
+	int ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return -errno;
+
+	if (blocking)
+		ret &= ~O_NONBLOCK;
+	else
+		ret |= O_NONBLOCK;
+
+	ret = fcntl(fd, F_SETFL, ret);
+	return ret < 0 ? -errno : 0;
+}
+
 #include <poll.h>
 
 #if defined(WITH_NETWORK_EVENTFD)

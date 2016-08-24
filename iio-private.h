@@ -237,9 +237,6 @@ int iio_device_get_poll_fd(const struct iio_device *dev);
 
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
-#ifndef _WIN32
-int set_blocking_mode(int fd, bool blocking);
-#endif
 
 struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);

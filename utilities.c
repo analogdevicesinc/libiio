@@ -22,7 +22,6 @@
 #include "iio-private.h"
 
 #include <errno.h>
-#include <fcntl.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -193,20 +192,3 @@ void iio_strerror(int err, char *buf, size_t len)
 	if (ret != 0)
 		snprintf(buf, len, "Unknown error %i", err);
 }
-
-#ifndef _WIN32
-int set_blocking_mode(int fd, bool blocking)
-{
-	int ret = fcntl(fd, F_GETFL, 0);
-	if (ret < 0)
-		return -errno;
-
-	if (blocking)
-		ret &= ~O_NONBLOCK;
-	else
-		ret |= O_NONBLOCK;
-
-	ret = fcntl(fd, F_SETFL, ret);
-	return ret < 0 ? -errno : 0;
-}
-#endif
