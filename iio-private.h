@@ -30,11 +30,6 @@
 #endif
 #ifdef _WIN32
 #define strerror_r(err, buf, len) strerror_s(buf, len, err)
-#else
-/* Visual Studio is unhappy with strdup(); so we make libiio use the C++
- * compliant _strdup() on Windows, and revert to the POSIX strdup() everywhere
- * else.*/
-#define _strdup strdup
 #endif
 
 #ifdef _WIN32
@@ -261,6 +256,8 @@ __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 
 void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
+
+char *iio_strdup(const char *str);
 
 #undef __api
 

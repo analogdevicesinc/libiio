@@ -31,9 +31,9 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			name = _strdup((char *) attr->children->content);
+			name = iio_strdup((char *) attr->children->content);
 		} else if (!strcmp((char *) attr->name, "filename")) {
-			filename = _strdup((char *) attr->children->content);
+			filename = iio_strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in channel %s\n",
 					attr->name, chn->id);
@@ -46,7 +46,7 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	}
 
 	if (!filename) {
-		filename = _strdup(name);
+		filename = iio_strdup(name);
 		if (!filename)
 			goto err_free;
 	}
@@ -76,7 +76,7 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			name = _strdup((char *) attr->children->content);
+			name = iio_strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in device %s\n",
 					attr->name, dev->id);
@@ -157,9 +157,9 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 		const char *name = (const char *) attr->name,
 		      *content = (const char *) attr->children->content;
 		if (!strcmp(name, "name")) {
-			chn->name = _strdup(content);
+			chn->name = iio_strdup(content);
 		} else if (!strcmp(name, "id")) {
-			chn->id = _strdup(content);
+			chn->id = iio_strdup(content);
 		} else if (!strcmp(name, "type")) {
 			if (!strcmp(content, "output"))
 				chn->is_output = true;
@@ -210,9 +210,10 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			dev->name = _strdup((char *) attr->children->content);
+			dev->name = iio_strdup(
+					(char *) attr->children->content);
 		} else if (!strcmp((char *) attr->name, "id")) {
-			dev->id = _strdup((char *) attr->children->content);
+			dev->id = iio_strdup((char *) attr->children->content);
 		} else {
 			WARNING("Unknown attribute \'%s\' in <device>\n",
 					attr->name);
@@ -303,7 +304,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 
 	for (attr = root->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "description"))
-			ctx->description = _strdup(
+			ctx->description = iio_strdup(
 					(char *) attr->children->content);
 		else if (strcmp((char *) attr->name, "name"))
 			WARNING("Unknown parameter \'%s\' in <context>\n",

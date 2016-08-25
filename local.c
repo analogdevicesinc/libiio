@@ -1044,7 +1044,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 			ptr += len + 1;
 	}
 
-	return strdup(ptr);
+	return iio_strdup(ptr);
 }
 
 static int read_device_name(struct iio_device *dev)
@@ -1056,7 +1056,7 @@ static int read_device_name(struct iio_device *dev)
 	else if (ret == 0)
 		return -EIO;
 
-	dev->name = strdup(buf);
+	dev->name = iio_strdup(buf);
 	if (!dev->name)
 		return -ENOMEM;
 	else
@@ -1075,7 +1075,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	if (!strcmp(attr, "name"))
 		return read_device_name(dev);
 
-	name = strdup(attr);
+	name = iio_strdup(attr);
 	if (!name)
 		return -ENOMEM;
 
@@ -1125,7 +1125,7 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			return -EINVAL;
 		}
 
-		chn->pdata->enable_fn = strdup(path);
+		chn->pdata->enable_fn = iio_strdup(path);
 		if (!chn->pdata->enable_fn)
 			return -ENOMEM;
 
@@ -1151,7 +1151,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 		return ret;
 	}
 
-	fn = strdup(path);
+	fn = iio_strdup(path);
 	if (!fn)
 		goto err_free_name;
 
@@ -1524,7 +1524,7 @@ static int create_device(void *d, const char *path)
 	dev->pdata->nb_blocks = NB_BLOCKS;
 
 	dev->ctx = ctx;
-	dev->id = strdup(strrchr(path, '/') + 1);
+	dev->id = iio_strdup(strrchr(path, '/') + 1);
 	if (!dev->id) {
 		local_free_pdata(dev);
 		free(dev);
@@ -1571,7 +1571,7 @@ static int add_debug_attr(void *d, const char *path)
 {
 	struct iio_device *dev = d;
 	const char *attr = strrchr(path, '/') + 1;
-	char **attrs, *name = strdup(attr);
+	char **attrs, *name = iio_strdup(attr);
 	if (!name)
 		return -ENOMEM;
 

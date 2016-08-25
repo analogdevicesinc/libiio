@@ -200,7 +200,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 				"scale=\"%f\" />", chn->format.scale);
 	}
 
-	str = _strdup(buf);
+	str = iio_strdup(buf);
 	if (str)
 		*length = strlen(str);
 	return str;

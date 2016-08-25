@@ -988,11 +988,11 @@ static int usb_fill_context_info(struct iio_context_info *info,
 		"%04x:%04x (%s %s)", desc.idVendor,
 		desc.idProduct, manufacturer, product);
 
-	info->uri = _strdup(uri);
+	info->uri = iio_strdup(uri);
 	if (!info->uri)
 		return -ENOMEM;
 
-	info->description = _strdup(description);
+	info->description = iio_strdup(description);
 	if (!info->description)
 		return -ENOMEM;
 

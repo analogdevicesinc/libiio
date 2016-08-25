@@ -49,6 +49,9 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	endif()
 endif()
 
+include(CheckSymbolExists)
+check_symbol_exists(strdup "string.h" HAS_STRDUP)
+
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(WITH_IIOD "Build the IIO Daemon" ON)
 	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
@@ -66,7 +69,6 @@ endif()
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
 if (ENABLE_IPV6)
-	include(CheckSymbolExists)
 	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
 
 	if (NOT HAVE_IPV6)

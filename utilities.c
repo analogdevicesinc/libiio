@@ -43,7 +43,7 @@ static int read_double_locale(const char *str, double *val)
 	/* XXX: This is not thread-safe, but it's the only way we have to
 	 * support locales under MinGW without linking with Visual Studio
 	 * libraries. */
-	old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	old_locale = iio_strdup(setlocale(LC_NUMERIC, NULL));
 	if (!old_locale)
 		return -ENOMEM;
 
@@ -62,7 +62,7 @@ static int read_double_locale(const char *str, double *val)
 static int write_double_locale(char *buf, size_t len, double val)
 {
 	/* XXX: Not thread-safe, see above */
-	char *old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	char *old_locale = iio_strdup(setlocale(LC_NUMERIC, NULL));
 	if (!old_locale)
 		return -ENOMEM;
 
@@ -192,4 +192,20 @@ void iio_strerror(int err, char *buf, size_t len)
 #endif
 	if (ret != 0)
 		snprintf(buf, len, "Unknown error %i", err);
+}
+
+char *iio_strdup(const char *str)
+{
+#if defined(_WIN32)
+	return _strdup(str);
+#elif defined(HAS_STRDUP)
+	return strdup(str);
+#else
+	size_t len = strlen(str);
+	char *buf = malloc(len + 1);
+
+	if (buf)
+		memcpy(buf, str, len + 1);
+	return buf;
+#endif
 }
