@@ -51,6 +51,7 @@ endif()
 
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
+check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(WITH_IIOD "Build the IIO Daemon" ON)

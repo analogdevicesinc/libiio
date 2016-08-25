@@ -185,10 +185,13 @@ void iio_library_get_version(unsigned int *major,
 
 void iio_strerror(int err, char *buf, size_t len)
 {
-#ifdef _WIN32
+#if defined(_WIN32)
 	int ret = strerror_s(buf, len, err);
-#else
+#elif defined(HAS_STRERROR_R)
 	int ret = strerror_r(err, buf, len);
+#else
+	/* no strerror_s, no strerror_r... just use the default message */
+	int ret = 0xf7de;
 #endif
 	if (ret != 0)
 		snprintf(buf, len, "Unknown error %i", err);
