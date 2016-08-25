@@ -138,7 +138,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (chn->id[len] != '_' && chn->id[len] < '0' && chn->id[len] > '9')
 			continue;
 
-		chn->type = i;
+		chn->type = (enum iio_chan_type) i;
 	}
 
 	mod = strchr(chn->id, '_');
@@ -157,7 +157,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (mod[len] != '_')
 			continue;
 
-		chn->modifier = i;
+		chn->modifier = (enum iio_modifier) i;
 		break;
 	}
 }
