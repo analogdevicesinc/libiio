@@ -19,6 +19,7 @@
 /* Force the XSI version of strerror_r */
 #undef _GNU_SOURCE
 
+#include "iio-config.h"
 #include "iio-private.h"
 
 #include <errno.h>

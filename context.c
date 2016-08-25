@@ -17,6 +17,7 @@
  * */
 
 #include "debug.h"
+#include "iio-config.h"
 #include "iio-private.h"
 
 #include <errno.h>
@@ -264,27 +265,27 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 
 struct iio_context * iio_create_context_from_uri(const char *uri)
 {
-#if LOCAL_BACKEND
+#ifdef WITH_LOCAL_BACKEND
 	if (strcmp(uri, "local:") == 0) /* No address part */
 		return iio_create_local_context();
 #endif
 
-#if XML_BACKEND
+#ifdef WITH_XML_BACKEND
 	if (strncmp(uri, "xml:", sizeof("xml:") - 1) == 0)
 		return iio_create_xml_context(uri + sizeof("xml:") - 1);
 #endif
 
-#if NETWORK_BACKEND
+#ifdef WITH_NETWORK_BACKEND
 	if (strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
 		return iio_create_network_context(uri+3);
 #endif
 
-#if USB_BACKEND
+#ifdef WITH_USB_BACKEND
 	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
 		return usb_create_context_from_uri(uri);
 #endif
 
-#if SERIAL_BACKEND
+#ifdef WITH_SERIAL_BACKEND
 	if (strncmp(uri, "serial:", sizeof("serial:") - 1) == 0)
 		return serial_create_context_from_uri(uri);
 #endif
@@ -304,7 +305,7 @@ struct iio_context * iio_create_default_context(void)
 		if (ctx)
 			return ctx;
 
-#if NETWORK_BACKEND
+#ifdef WITH_NETWORK_BACKEND
 		/* If the environment variable is an empty string, we will
 		 * discover the server using ZeroConf */
 		if (strlen(hostname) == 0)
@@ -319,7 +320,7 @@ struct iio_context * iio_create_default_context(void)
 
 struct iio_context * iio_create_local_context(void)
 {
-#if LOCAL_BACKEND
+#ifdef WITH_LOCAL_BACKEND
 	return local_create_context();
 #else
 	errno = ENOSYS;
@@ -329,7 +330,7 @@ struct iio_context * iio_create_local_context(void)
 
 struct iio_context * iio_create_network_context(const char *hostname)
 {
-#if NETWORK_BACKEND
+#ifdef WITH_NETWORK_BACKEND
 	return network_create_context(hostname);
 #else
 	errno = ENOSYS;
@@ -339,7 +340,7 @@ struct iio_context * iio_create_network_context(const char *hostname)
 
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
-#if XML_BACKEND
+#ifdef WITH_XML_BACKEND
 	return xml_create_context_mem(xml, len);
 #else
 	errno = ENOSYS;
@@ -349,7 +350,7 @@ struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 
 struct iio_context * iio_create_xml_context(const char *xml_file)
 {
-#if XML_BACKEND
+#ifdef WITH_XML_BACKEND
 	return xml_create_context(xml_file);
 #else
 	errno = ENOSYS;

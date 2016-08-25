@@ -18,6 +18,7 @@
 
 #include "../debug.h"
 #include "../iio.h"
+#include "../iio-config.h"
 #include "ops.h"
 
 #include <arpa/inet.h>

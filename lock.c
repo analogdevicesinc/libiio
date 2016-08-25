@@ -16,6 +16,8 @@
  *
  */
 
+#include "iio-config.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #elif !defined(NO_THREADS)
@@ -25,7 +27,7 @@
 #include <stdlib.h>
 
 struct iio_mutex {
-#if NO_THREADS
+#ifdef NO_THREADS
 	int foo; /* avoid complaints about empty structure */
 #else
 #ifdef _WIN32
@@ -43,7 +45,7 @@ struct iio_mutex * iio_mutex_create(void)
 	if (!lock)
 		return NULL;
 
-#if !NO_THREADS
+#ifndef NO_THREADS
 #ifdef _WIN32
 	InitializeCriticalSection(&lock->lock);
 #else
@@ -55,7 +57,7 @@ struct iio_mutex * iio_mutex_create(void)
 
 void iio_mutex_destroy(struct iio_mutex *lock)
 {
-#if !NO_THREADS
+#ifndef NO_THREADS
 #ifdef _WIN32
 	DeleteCriticalSection(&lock->lock);
 #else
@@ -67,7 +69,7 @@ void iio_mutex_destroy(struct iio_mutex *lock)
 
 void iio_mutex_lock(struct iio_mutex *lock)
 {
-#if !NO_THREADS
+#ifndef NO_THREADS
 #ifdef _WIN32
 	EnterCriticalSection(&lock->lock);
 #else
@@ -78,7 +80,7 @@ void iio_mutex_lock(struct iio_mutex *lock)
 
 void iio_mutex_unlock(struct iio_mutex *lock)
 {
-#if !NO_THREADS
+#ifndef NO_THREADS
 #ifdef _WIN32
 	LeaveCriticalSection(&lock->lock);
 #else

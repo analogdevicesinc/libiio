@@ -65,15 +65,12 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
-
-include(CheckSymbolExists)
-check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
-
 if (ENABLE_IPV6)
+	include(CheckSymbolExists)
+	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
+
 	if (NOT HAVE_IPV6)
 		message(WARNING "IPv6 is not available in your system.")
-	else()
-		add_definitions(-DHAVE_IPV6=1)
 	endif()
 endif()
 
@@ -105,10 +102,6 @@ endif()
 if (NOT LIBIIO_VERSION_GIT)
 	set(LIBIIO_VERSION_GIT v${VERSION})
 endif()
-
-add_definitions(-DLIBIIO_VERSION_MAJOR=${LIBIIO_VERSION_MAJOR})
-add_definitions(-DLIBIIO_VERSION_MINOR=${LIBIIO_VERSION_MINOR})
-add_definitions(-DLIBIIO_VERSION_GIT="${LIBIIO_VERSION_GIT}")
 
 if(WITH_LOCAL_BACKEND)
 	add_definitions(-DLOCAL_BACKEND=1)
@@ -154,7 +147,7 @@ if (LIBSERIALPORT_LIBRARIES AND LIBSERIALPORT_INCLUDE_DIR)
 	endif()
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 if(WITH_NETWORK_BACKEND)
 	if (WIN32)
@@ -167,26 +160,14 @@ if(WITH_NETWORK_BACKEND)
 
 		if (HAS_O_TMPFILE)
 			option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
-
-			if (WITH_NETWORK_GET_BUFFER)
-				add_definitions(-DWITH_NETWORK_GET_BUFFER=1)
-			endif(WITH_NETWORK_GET_BUFFER)
 		endif(HAS_O_TMPFILE)
 
-		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }" HAS_EVENTFD)
-
-		if (HAS_EVENTFD)
-			add_definitions(-DWITH_NETWORK_EVENTFD=1)
-		endif(HAS_EVENTFD)
+		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }" WITH_NETWORK_EVENTFD)
 	endif()
 
 	if(NOT WIN32)
 		include(CheckCSourceCompiles)
 		check_c_source_compiles("#include <unistd.h>\n#include <fcntl.h>\nint main(void) { int fd[2]; return pipe2(fd, O_CLOEXEC | O_NONBLOCK); }" HAS_PIPE2)
-
-		if (HAS_PIPE2)
-			add_definitions(-DHAS_PIPE2=1)
-		endif(HAS_PIPE2)
 	endif()
 
 	add_definitions(-DNETWORK_BACKEND=1)
@@ -195,7 +176,7 @@ if(WITH_NETWORK_BACKEND)
 	find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 	find_library(AVAHI_COMMON_LIBRARIES avahi-common)
 	if(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
-		add_definitions(-DHAVE_AVAHI=1)
+		set(HAVE_AVAHI ON)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
 		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${AVAHI_LIBRARIES})
 	endif()
@@ -241,7 +222,7 @@ if (NEED_THREADS)
 			set(LIBS_TO_LINK ${LIBS_TO_LINK} ${PTHREAD_LIBRARIES})
 		else()
 			message(WARNING "pthread library not found; support for threads will be disabled")
-			add_definitions(-DNO_THREADS=1)
+			set(NO_THREADS ON)
 		endif()
 	else()
 	endif()
@@ -343,6 +324,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		message(WARNING "Missing pkgbuild or productbuild: OSX installer won't be created.")
 	endif()
 endif()
+
+configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
 
 if(WITH_IIOD)
 	add_subdirectory(iiod)

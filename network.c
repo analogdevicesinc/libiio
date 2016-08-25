@@ -16,6 +16,7 @@
  *
  * */
 
+#include "iio-config.h"
 #include "iio-private.h"
 #include "iio-lock.h"
 #include "iiod-client.h"

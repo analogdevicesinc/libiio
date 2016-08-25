@@ -32,6 +32,7 @@ void yyerror(yyscan_t scanner, const char *msg);
 typedef void *yyscan_t;
 #endif
 
+#include "../iio-config.h"
 #include "../debug.h"
 
 #include <stdbool.h>
