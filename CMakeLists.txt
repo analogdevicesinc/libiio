@@ -5,9 +5,8 @@ set(LIBIIO_VERSION_MAJOR 0)
 set(LIBIIO_VERSION_MINOR 7)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
 
-# Set the default install path to /usr
-if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
+if (NOT WIN32)
+	include("GNUInstallDirs")
 endif()
 
 set(CMAKE_INSTALL_DOCDIR "" CACHE PATH "documentation root (DATAROOTDIR/doc/${PROJECT_NAME}${LIBIIO_VERSION_MAJOR}-doc)")
