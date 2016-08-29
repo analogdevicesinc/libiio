@@ -433,7 +433,8 @@ ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		const struct iio_channel *chn = dev->channels[i];
-		unsigned int length = chn->format.length / 8;
+		unsigned int length = chn->format.length / 8 *
+			(chn->format.repeat ? chn->format.repeat : 1);
 
 		if (chn->index < 0)
 			break;
