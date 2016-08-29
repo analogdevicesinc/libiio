@@ -1233,6 +1233,9 @@ struct iio_data_format {
 
 	/** @brief Contains the scale to apply if with_scale is set */
 	double scale;
+
+	/** @brief Number of times length repeats (added in v0.8) */
+	unsigned int repeat;
 };
 
 
