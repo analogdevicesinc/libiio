@@ -1260,6 +1260,13 @@ __api __cnst const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn);
 
 
+/** @brief Get the channel's data format repeat field
+ * @param chn A pointer to an iio_channel structure
+ * @return Number of times chn->format.length repeats */
+__api unsigned int iio_channel_get_data_format_repeat(
+		const struct iio_channel *chn);
+
+
 /** @brief Convert the sample from hardware format to host format
  * @param chn A pointer to an iio_channel structure
  * @param dst A pointer to the destination buffer where the converted sample
