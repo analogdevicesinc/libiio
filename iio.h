@@ -1216,6 +1216,9 @@ struct iio_data_format {
 	/** @brief Length of valuable data in the sample, in bits */
 	unsigned int bits;
 
+	/** @brief Number of times length repeats */
+	unsigned int repeat;
+
 	/** @brief Right-shift to apply when converting sample */
 	unsigned int shift;
 
