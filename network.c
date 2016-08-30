@@ -78,6 +78,7 @@ struct iio_network_io_context {
 #else
 	int cancel_fd[2]; /* pipe */
 #endif
+	unsigned int timeout_ms;
 };
 
 struct iio_context_pdata {
@@ -282,12 +283,21 @@ static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
 	pfd[1].events = POLLIN;
 
 	do {
+		int timeout_ms;
+
+		if (io_ctx->timeout_ms > 0)
+			timeout_ms = (int) io_ctx->timeout_ms;
+		else
+			timeout_ms = -1;
+
 		do {
-			ret = poll(pfd, 2, -1);
+			ret = poll(pfd, 2, timeout_ms);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1)
 			return -errno;
+		if (!ret)
+			return -EAGAIN;
 
 		if (pfd[1].revents & POLLIN)
 			return -EBADF;
@@ -621,15 +631,15 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 }
 #endif /* !_WIN32 */
 
-static int create_socket(const struct addrinfo *addrinfo)
+static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
-	struct timeval timeout;
+	struct timeval tv;
 	int fd, yes = 1;
 
-	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
-	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
 
-	fd = do_connect(addrinfo, &timeout);
+	fd = do_connect(addrinfo, &tv);
 	if (fd < 0)
 		return fd;
 
@@ -650,13 +660,14 @@ static int network_open(const struct iio_device *dev,
 	if (ppdata->io_ctx.fd >= 0)
 		goto out_mutex_unlock;
 
-	ret = create_socket(pdata->addrinfo);
+	ret = create_socket(pdata->addrinfo, pdata->io_ctx.timeout_ms);
 	if (ret < 0)
 		goto out_mutex_unlock;
 
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
 	ppdata->io_ctx.cancellable = true;
+	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
 
 	ret = setup_cancel(&ppdata->io_ctx);
 	if (ret < 0)
@@ -1151,9 +1162,12 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 	ret = set_socket_timeout(fd, timeout);
 	if (!ret) {
-		timeout = calculate_remote_timeout(timeout);
+		unsigned int remote_timeout = calculate_remote_timeout(timeout);
+
 		ret = iiod_client_set_timeout(pdata->iiod_client,
-			&pdata->io_ctx, timeout);
+			&pdata->io_ctx, remote_timeout);
+		if (!ret)
+			pdata->io_ctx.timeout_ms = timeout;
 	}
 	if (ret < 0) {
 		char buf[1024];
@@ -1338,7 +1352,7 @@ struct iio_context * network_create_context(const char *host)
 		return NULL;
 	}
 
-	fd = create_socket(res);
+	fd = create_socket(res, DEFAULT_TIMEOUT_MS);
 	if (fd < 0) {
 		errno = fd;
 		goto err_free_addrinfo;
@@ -1352,6 +1366,7 @@ struct iio_context * network_create_context(const char *host)
 
 	pdata->io_ctx.fd = fd;
 	pdata->addrinfo = res;
+	pdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
 
 	pdata->lock = iio_mutex_create();
 	if (!pdata->lock) {
@@ -1427,6 +1442,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		dev->pdata->io_ctx.fd = -1;
+		dev->pdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
 #ifdef WITH_NETWORK_GET_BUFFER
 		dev->pdata->memfd = -1;
 #endif
