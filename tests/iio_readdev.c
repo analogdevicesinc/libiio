@@ -55,7 +55,7 @@ static void usage(void)
 	unsigned int i;
 
 	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
-			"[-b <buffer-size>] [-s <samples>] "
+			"[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
 			"<iio_device> [<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
