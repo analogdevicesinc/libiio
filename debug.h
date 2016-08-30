@@ -54,7 +54,7 @@
     fprintf(stdout, "DEBUG: " __VA_ARGS__)
 # endif
 #else
-#define DEBUG(...)
+#define DEBUG(...) do { } while (0)
 #endif
 
 #if (LOG_LEVEL >= Info_L)
@@ -66,7 +66,7 @@
     fprintf(stdout, __VA_ARGS__)
 # endif
 #else
-#define INFO(...)
+#define INFO(...) do { } while (0)
 #endif
 
 #if (LOG_LEVEL >= Warning_L)
@@ -78,7 +78,7 @@
     fprintf(stderr, "WARNING: " __VA_ARGS__)
 # endif
 #else
-#define WARNING(...)
+#define WARNING(...) do { } while (0)
 #endif
 
 #if (LOG_LEVEL >= Error_L)
@@ -90,7 +90,7 @@
     fprintf(stderr, "ERROR: " __VA_ARGS__)
 # endif
 #else
-#define ERROR(...)
+#define ERROR(...) do { } while (0)
 #endif
 
 #endif
