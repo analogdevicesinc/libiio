@@ -19,17 +19,15 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include "iio-config.h"
+
 #include <stdio.h>
 
-#define NODEBUG_L 0
-#define ERROR_L 1
-#define WARNING_L 2
-#define INFO_L 3
-#define DEBUG_L 4
-
-#ifndef LOG_LEVEL
-#define LOG_LEVEL INFO_L
-#endif
+#define NoLog_L 0
+#define Error_L 1
+#define Warning_L 2
+#define Info_L 3
+#define Debug_L 4
 
 /* -------------------- */
 
@@ -47,7 +45,7 @@
 #define COLOR_END "\e[0m"
 #endif
 
-#if (LOG_LEVEL >= DEBUG_L)
+#if (LOG_LEVEL >= Debug_L)
 # ifdef COLOR_DEBUG
 #  define DEBUG(str, ...) \
     fprintf(stdout, COLOR_DEBUG "DEBUG: " str COLOR_END, ##__VA_ARGS__)
@@ -59,7 +57,7 @@
 #define DEBUG(...)
 #endif
 
-#if (LOG_LEVEL >= INFO_L)
+#if (LOG_LEVEL >= Info_L)
 # ifdef COLOR_INFO
 #  define INFO(str, ...) \
     fprintf(stdout, COLOR_INFO str COLOR_END, ##__VA_ARGS__)
@@ -71,7 +69,7 @@
 #define INFO(...)
 #endif
 
-#if (LOG_LEVEL >= WARNING_L)
+#if (LOG_LEVEL >= Warning_L)
 # ifdef COLOR_WARNING
 #  define WARNING(str, ...) \
     fprintf(stderr, COLOR_WARNING "WARNING: " str COLOR_END, ##__VA_ARGS__)
@@ -83,7 +81,7 @@
 #define WARNING(...)
 #endif
 
-#if (LOG_LEVEL >= ERROR_L)
+#if (LOG_LEVEL >= Error_L)
 # ifdef COLOR_ERROR
 #  define ERROR(str, ...) \
     fprintf(stderr, COLOR_ERROR "ERROR: " str COLOR_END, ##__VA_ARGS__)

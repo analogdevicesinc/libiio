@@ -35,6 +35,11 @@ if (MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 endif()
 
+if (NOT LOG_LEVEL)
+	set(LOG_LEVEL Info CACHE STRING "Log level" FORCE)
+	set_property(CACHE LOG_LEVEL PROPERTY STRINGS NoLog Error Warning Info Debug)
+endif()
+
 if (CMAKE_COMPILER_IS_GNUCC)
 	if (NOT WIN32)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
