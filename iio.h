@@ -1174,6 +1174,7 @@ __api void * iio_buffer_end(const struct iio_buffer *buf);
  * @param buf A pointer to an iio_buffer structure
  * @param callback A pointer to a function to call for each sample found
  * @param data A user-specified pointer that will be passed to the callback
+ * @return number of bytes processed.
  *
  * <b>NOTE:</b> The callback receives four arguments:
  * * A pointer to the iio_channel structure corresponding to the sample,
