@@ -297,7 +297,7 @@ static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
 		if (ret == -1)
 			return -errno;
 		if (!ret)
-			return -EAGAIN;
+			return -EPIPE;
 
 		if (pfd[1].revents & POLLIN)
 			return -EBADF;
