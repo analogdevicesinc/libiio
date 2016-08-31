@@ -163,6 +163,11 @@ static bool network_should_retry(int err)
 	return err == -WSAEWOULDBLOCK;
 }
 
+static bool network_is_interrupted(int err)
+{
+	return false;
+}
+
 #else
 
 static int set_blocking_mode(int fd, bool blocking)
@@ -313,7 +318,12 @@ static int network_get_error(void)
 
 static bool network_should_retry(int err)
 {
-	return err == -EINTR || err == -EAGAIN;
+	return err == -EAGAIN;
+}
+
+static bool network_is_interrupted(int err)
+{
+	return err == -EINTR;
 }
 
 #endif
@@ -441,8 +451,14 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (network_should_retry(err))
+		if (network_should_retry(err)) {
+			if (io_ctx->cancellable)
+				continue;
+			else
+				return -EPIPE;
+		} else if (!network_is_interrupted(err)) {
 			return (ssize_t) err;
+		}
 	}
 	return ret;
 }
@@ -465,8 +481,14 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (network_should_retry(err))
+		if (network_should_retry(err)) {
+			if (io_ctx->cancellable)
+				continue;
+			else
+				return -EPIPE;
+		} else if (!network_is_interrupted(err)) {
 			return (ssize_t) err;
+		}
 	}
 
 	return ret;
