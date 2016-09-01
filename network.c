@@ -160,7 +160,7 @@ static int network_get_error(void)
 
 static bool network_should_retry(int err)
 {
-	return err == -WSAEWOULDBLOCK;
+	return err == -WSAEWOULDBLOCK || err == -WSAETIMEDOUT;
 }
 
 static bool network_is_interrupted(int err)
