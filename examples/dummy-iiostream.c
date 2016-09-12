@@ -1,6 +1,19 @@
 /*
  * libiio - Dummy IIO streaming example
  *
+ * This example libiio program is meant to exercise the features of IIO present
+ * in the sample dummy IIO device. For buffered access it relies on the hrtimer
+ * trigger but could be modified to use the sysfs trigger. No hardware should
+ * be required to run this program.
+ *
+ * How to setup the sample IIO dummy device and hrtimer trigger:
+ *
+ *   1. sudo modprobe industrialio kfifo_buf
+ *   2. sudo modprobe iio_dummy iio-trig-hrtimer
+ *   3. sudo mkdir /configfs
+ *   4. sudo mount -t configfs none /config
+ *   5. sudo mkdir /config/iio/triggers/hrtimer/instance1
+ *
  * Copyright (c) 2016, DAQRI. All rights reserved.
  * Author: Lucas Magasweran <lucas.magasweran@daqri.com>
  *
