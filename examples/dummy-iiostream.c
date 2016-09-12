@@ -8,7 +8,7 @@
  *
  * How to setup the sample IIO dummy device and hrtimer trigger:
  *
- *   1. sudo modprobe industrialio kfifo_buf
+ *   1. sudo modprobe industrialio kfifo_buf industrialio-sw-trigger
  *   2. sudo modprobe iio_dummy iio-trig-hrtimer
  *   3. sudo mkdir /configfs
  *   4. sudo mount -t configfs none /config
@@ -45,11 +45,9 @@
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-static char *name                = "iio_dummy_part_no";
-static char *trigger_str         = "instance1";
-
-#define BUFFER_LENGTH            1
-#define SAMPLING_FREQUENCY_HZ    "10"
+static char *name = "iio_dummy_part_no";
+static char *trigger_str = "instance1";
+#define BUFFER_LENGTH 1
 
 /*
  * libiio supports multiple methods for reading data from a buffer.
