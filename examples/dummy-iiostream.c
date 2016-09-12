@@ -49,6 +49,7 @@
 static char *name        = "iio_dummy_part_no";
 static char *trigger_str = "instance1";
 static int buffer_length = 1;
+static int count = -1;
 
 // libiio supports multiple methods for reading data from a buffer
 enum {
@@ -113,15 +114,16 @@ static void usage(int argc, char *argv[])
 	printf("Usage: %s [OPTION]\n", argv[0]);
 	printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
 	printf("  -t\ttrigger name (default \"instance1\")\n");
-	printf("  -c\tbuffer length (default 1)\n");
-	printf("  -r\tread method (0 pointer, 1 callback, 2 read, 3 read raw)\n");
+	printf("  -b\tbuffer length (default 1)\n");
+	printf("  -r\tread method (default 0 pointer, 1 callback, 2 read, 3 read raw)\n");
+	printf("  -c\tread count (default no limit)\n");
 }
 
 static void parse_options(int argc, char *argv[])
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "d:t:c:r:h")) != -1) {
+	while ((c = getopt(argc, argv, "d:t:b:r:c:h")) != -1) {
 		switch (c)
 		{
 		case 'd':
@@ -130,12 +132,20 @@ static void parse_options(int argc, char *argv[])
 		case 't':
 			trigger_str = optarg;
 			break;
-		case 'c':
+		case 'b':
 			buffer_length = atoi(optarg);
 			break;
 		case 'r':
 			if (atoi(optarg) >= 0 && atoi(optarg) < MAX_READ_METHOD) {
 				buffer_read_method = atoi(optarg);
+			} else {
+				usage(argc, argv);
+				exit(1);
+			}
+			break;
+		case 'c':
+			if (atoi(optarg) > 0) {
+				count = atoi(optarg);
 			} else {
 				usage(argc, argv);
 				exit(1);
@@ -301,6 +311,9 @@ int main (int argc, char **argv)
 			printf("\n");
 			break;
 		}
+
+		if (--count == 0)
+			break;
 	}
 
 	shutdown();
