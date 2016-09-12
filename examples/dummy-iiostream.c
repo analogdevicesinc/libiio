@@ -56,6 +56,7 @@ enum {
 	SAMPLE_CALLBACK,
 	CHANNEL_READ_RAW,
 	CHANNEL_READ,
+	MAX_READ_METHOD,
 };
 static int buffer_read_method = BUFFER_POINTER;
 
@@ -107,11 +108,20 @@ static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes,
 	return bytes * (fmt->repeat ? fmt->repeat : 1);
 }
 
+static void usage(int argc, char *argv[])
+{
+	printf("Usage: %s [OPTION]\n", argv[0]);
+	printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
+	printf("  -t\ttrigger name (default \"instance1\")\n");
+	printf("  -c\tbuffer length (default 1)\n");
+	printf("  -r\tread method (0 pointer, 1 callback, 2 read, 3 read raw)\n");
+}
+
 static void parse_options(int argc, char *argv[])
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "d:t:c:h")) != -1)
+	while ((c = getopt(argc, argv, "d:t:c:r:h")) != -1) {
 		switch (c)
 		{
 		case 'd':
@@ -123,14 +133,20 @@ static void parse_options(int argc, char *argv[])
 		case 'c':
 			buffer_length = atoi(optarg);
 			break;
+		case 'r':
+			if (atoi(optarg) >= 0 && atoi(optarg) < MAX_READ_METHOD) {
+				buffer_read_method = atoi(optarg);
+			} else {
+				usage(argc, argv);
+				exit(1);
+			}
+			break;
 		case 'h':
 		default:
-			printf("Usage: %s [OPTION]\n", argv[0]);
-			printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
-			printf("  -t\ttrigger name (default \"instance1\")\n");
-			printf("  -c\tbuffer length (default 1)\n");
+			usage(argc, argv);
 			exit(1);
 		}
+	}
 }
 
 /* simple configuration and streaming */
