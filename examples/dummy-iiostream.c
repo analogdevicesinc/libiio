@@ -41,18 +41,16 @@
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
+#include <getopt.h>
 #include <iio.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-static char *name = "iio_dummy_part_no";
+static char *name        = "iio_dummy_part_no";
 static char *trigger_str = "instance1";
-#define BUFFER_LENGTH 1
+static int buffer_length = 1;
 
-/*
- * libiio supports multiple methods for reading data from a buffer.
- * TODO make command line argument
- */
+// libiio supports multiple methods for reading data from a buffer
 enum {
 	BUFFER_POINTER,
 	SAMPLE_CALLBACK,
@@ -109,11 +107,39 @@ static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes,
 	return bytes * (fmt->repeat ? fmt->repeat : 1);
 }
 
+static void parse_options(int argc, char *argv[])
+{
+	int c;
+
+	while ((c = getopt(argc, argv, "d:t:c:h")) != -1)
+		switch (c)
+		{
+		case 'd':
+			name = optarg;
+			break;
+		case 't':
+			trigger_str = optarg;
+			break;
+		case 'c':
+			buffer_length = atoi(optarg);
+			break;
+		case 'h':
+		default:
+			printf("Usage: %s [OPTION]\n", argv[0]);
+			printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
+			printf("  -t\ttrigger name (default \"instance1\")\n");
+			printf("  -c\tbuffer length (default 1)\n");
+			exit(1);
+		}
+}
+
 /* simple configuration and streaming */
 int main (int argc, char **argv)
 {
 	// Hardware trigger
 	struct iio_device *trigger;
+
+	parse_options(argc, argv);
 
 	// Listen to ctrl+c and assert
 	signal(SIGINT, handle_sig);
@@ -170,8 +196,8 @@ int main (int argc, char **argv)
 		shutdown();
 	}
 
-	printf("* Creating non-cyclic IIO buffers with %d samples\n", BUFFER_LENGTH);
-	rxbuf = iio_device_create_buffer(dev, BUFFER_LENGTH, false);
+	printf("* Creating non-cyclic IIO buffers with %d samples\n", buffer_length);
+	rxbuf = iio_device_create_buffer(dev, buffer_length, false);
 	if (!rxbuf) {
 		perror("Could not create buffer");
 		shutdown();
@@ -237,12 +263,12 @@ int main (int argc, char **argv)
 				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
 				size_t sample_size = fmt->length / 8 * (fmt->repeat ? fmt->repeat : 1);
 
-				buf = malloc(sample_size * BUFFER_LENGTH);
+				buf = malloc(sample_size * buffer_length);
 
 				if (buffer_read_method == CHANNEL_READ_RAW)
-					bytes = iio_channel_read_raw(channels[i], rxbuf, buf, sample_size * BUFFER_LENGTH);
+					bytes = iio_channel_read_raw(channels[i], rxbuf, buf, sample_size * buffer_length);
 				else
-					bytes = iio_channel_read(channels[i], rxbuf, buf, sample_size * BUFFER_LENGTH);
+					bytes = iio_channel_read(channels[i], rxbuf, buf, sample_size * buffer_length);
 
 				printf("%s ", iio_channel_get_id(channels[i]));
 				for (int sample = 0; sample < bytes / sample_size; ++sample) {
