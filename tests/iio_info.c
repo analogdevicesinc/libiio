@@ -248,7 +248,15 @@ int main(int argc, char **argv)
 				if (format->is_fully_defined)
 					sign += 'A' - 'a';
 
-				printf(", index: %lu, format: %ce:%c%u/%u>>%u)\n",
+				if (format->repeat)
+					printf(", index: %lu, format: %ce:%c%u/%uX%u>>%u)\n",
+						iio_channel_get_index(ch),
+						format->is_be ? 'b' : 'l',
+						sign, format->bits,
+						format->length, format->repeat,
+						format->shift);
+				else
+					printf(", index: %lu, format: %ce:%c%u/%u>>%u)\n",
 						iio_channel_get_index(ch),
 						format->is_be ? 'b' : 'l',
 						sign, format->bits,

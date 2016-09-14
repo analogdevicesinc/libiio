@@ -1108,9 +1108,16 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 		if (ret > 0) {
 			char endian, sign;
 
-			sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
+			if (strchr(buf, 'X')) {
+				sscanf(buf, "%ce:%c%u/%uX%u>>%u", &endian, &sign,
+					&chn->format.bits, &chn->format.length,
+					&chn->format.repeat, &chn->format.shift);
+			} else {
+				chn->format.repeat = 0;
+				sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
 					&chn->format.bits, &chn->format.length,
 					&chn->format.shift);
+			}
 			chn->format.is_signed = (sign == 's' || sign == 'S');
 			chn->format.is_fully_defined =
 					(sign == 'S' || sign == 'U'||
