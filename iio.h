@@ -1174,6 +1174,7 @@ __api void * iio_buffer_end(const struct iio_buffer *buf);
  * @param buf A pointer to an iio_buffer structure
  * @param callback A pointer to a function to call for each sample found
  * @param data A user-specified pointer that will be passed to the callback
+ * @return number of bytes processed.
  *
  * <b>NOTE:</b> The callback receives four arguments:
  * * A pointer to the iio_channel structure corresponding to the sample,
@@ -1256,6 +1257,13 @@ __api __pure long iio_channel_get_index(const struct iio_channel *chn);
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to the channel's iio_data_format structure */
 __api __cnst const struct iio_data_format * iio_channel_get_data_format(
+		const struct iio_channel *chn);
+
+
+/** @brief Get the channel's data format repeat field
+ * @param chn A pointer to an iio_channel structure
+ * @return Number of times chn->format.length repeats */
+__api unsigned int iio_channel_get_data_format_repeat(
 		const struct iio_channel *chn);
 
 
