@@ -981,6 +981,12 @@ static int local_set_trigger(const struct iio_device *dev,
 {
 	ssize_t nb;
 	const char *value = trigger ? trigger->name : "";
+
+	/* Disable the trigger first, if any, to avoid -EBUSY */
+	nb = local_write_dev_attr(dev, "trigger/current_trigger", "", 1, false);
+	if (nb < 0)
+		return (int) nb;
+
 	nb = local_write_dev_attr(dev, "trigger/current_trigger",
 			value, strlen(value) + 1, false);
 	if (nb < 0)
