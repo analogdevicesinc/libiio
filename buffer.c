@@ -16,6 +16,7 @@
  *
  * */
 
+#include "iio-config.h"
 #include "iio-private.h"
 
 #include <errno.h>
