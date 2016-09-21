@@ -868,8 +868,10 @@ static int local_open(const struct iio_device *dev,
 		WARNING("High-speed mode not enabled\n");
 
 		/* Cyclic mode is only supported in high-speed mode */
-		if (cyclic)
-			return -EPERM;
+		if (cyclic) {
+			ret = -EPERM;
+			goto err_close;
+		}
 
 		/* Increase the size of the kernel buffer, when using the
 		 * low-speed interface. This avoids losing samples when
