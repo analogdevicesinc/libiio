@@ -25,6 +25,10 @@
 
 #define MY_NAME "iio_info"
 
+#ifdef _WIN32
+#define snprintf sprintf_s
+#endif
+
 enum backend {
 	LOCAL,
 	XML,
