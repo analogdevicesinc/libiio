@@ -247,4 +247,10 @@ Those debug parameters can be written using the following functions:
 As for debug attributes, some IIO devices also offer the possibility to read and write hardware registers directly.
 In libiio, this can be done with two functions, iio_device_reg_read() and iio_device_reg_write().
 
+@section abi Application Binary Interface
+
+The libiio ABI tries to be both backwards and forwards compatible.
+This means applications compiled against an older version will work fine with a newer dynamically linked library. Applications compiled against a newer version will work fine with an older dynamically linked library so long as they don't access any new features. Applications using new features should ensure the libiio version is compatible by using iio_library_get_version() to avoid undefined behavior.
+
+
 */

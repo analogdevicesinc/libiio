@@ -237,7 +237,7 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 					processed += ret;
 			}
 
-			ptr += length;
+			ptr += length * chn->format.repeat;
 		}
 	}
 	return processed;
@@ -260,7 +260,7 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 
 	for (i = 0; i < buffer->dev->nb_channels; i++) {
 		struct iio_channel *cur = buffer->dev->channels[i];
-		len = cur->format.length / 8;
+		len = cur->format.length / 8 * cur->format.repeat;
 
 		/* NOTE: dev->channels are ordered by index */
 		if (cur->index < 0 || cur->index == chn->index)
