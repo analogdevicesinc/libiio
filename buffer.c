@@ -45,7 +45,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	int ret = -EINVAL;
 	struct iio_buffer *buf;
 	unsigned int sample_size = iio_device_get_sample_size(dev);
-	if (!sample_size)
+
+	if (!sample_size || !samples_count)
 		goto err_set_errno;
 
 	buf = malloc(sizeof(*buf));
