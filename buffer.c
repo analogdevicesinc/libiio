@@ -205,7 +205,7 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 	const struct iio_device *dev = buffer->dev;
 	ssize_t processed = 0;
 
-	if (buffer->sample_size <= 0)
+	if (buffer->sample_size == 0)
 		return -EINVAL;
 
 	if (buffer->data_length < buffer->dev_sample_size)
