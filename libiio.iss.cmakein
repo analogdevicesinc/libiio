@@ -46,6 +46,9 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Source: "C:\projects\libiio\build-win32\Release\libiio.dll"; DestDir: "{sys}"; Flags: 32bit
 Source: "C:\projects\libiio\build-win64\Release\libiio.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode
 
+Source: "C:\projects\libiio\build-win32\tests\Release\*.exe"; DestDir: "{sys}"; Check: not Is64BitInstallMode
+Source: "C:\projects\libiio\build-win64\tests\Release\*.exe"; DestDir: "{sys}"; Check: Is64BitInstallMode
+
 Source: "C:\projects\libiio\build-win32\Release\libiio.lib"; DestDir: "{pf32}\Microsoft Visual Studio 12.0\VC\lib"; Check: not Is64BitInstallMode
 Source: "C:\projects\libiio\build-win64\Release\libiio.lib"; DestDir: "{pf32}\Microsoft Visual Studio 12.0\VC\lib\amd64"; Check: Is64BitInstallMode
 Source: "C:\projects\libiio\iio.h"; DestDir: "{pf32}\Microsoft Visual Studio 12.0\VC\include"
