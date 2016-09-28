@@ -559,7 +559,8 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 	transfer->type = LIBUSB_TRANSFER_TYPE_BULK;
 
 	ret = libusb_submit_transfer(transfer);
-	if (ret < 0) {
+	if (ret) {
+		ret = -(int) libusb_to_errno(ret);
 		libusb_free_transfer(transfer);
 		goto unlock;
 	}
@@ -620,7 +621,7 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 	ret = usb_sync_transfer(pdata, ep, LIBUSB_ENDPOINT_OUT, (char *) data,
 			len, &transferred);
 	if (ret)
-		return -(int) libusb_to_errno(ret);
+		return ret;
 	else
 		return (size_t) transferred != len ? -EIO : (ssize_t) len;
 }
@@ -633,7 +634,7 @@ static ssize_t read_data_sync(struct iio_context_pdata *pdata,
 	ret = usb_sync_transfer(pdata, ep, LIBUSB_ENDPOINT_IN, buf, len,
 			&transferred);
 	if (ret)
-		return -(int) libusb_to_errno(ret);
+		return ret;
 	else
 		return transferred;
 }
