@@ -33,6 +33,9 @@ option(WITH_TESTS "Build the test programs" ON)
 if (MSVC)
 	# Avoid annoying warnings from Visual Studio
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
+
+	set(CMAKE_FIND_LIBRARY_PREFIXES "lib" "")
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll.a" ".a" ".lib")
 endif()
 
 if (NOT LOG_LEVEL)
