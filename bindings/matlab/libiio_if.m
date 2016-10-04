@@ -398,7 +398,11 @@ classdef libiio_if < handle
             % Load the libiio library
             if(~libisloaded(obj.libname))
                 try
+                    % ignore unknown type warnings due to header parsing limitations
+                    warnState = warning('off', 'MATLAB:loadlibrary:TypeNotFound');
+                    cleanupObj = onCleanup(@()warning(warnState));
                     [notfound, warnings] = loadlibrary(obj.libname, obj.hname, 'addheader', 'iio.h');
+                    cleanupObj = []; % restore the warning state
                 catch exception
                     err_msg = exception.message;
                     return;
