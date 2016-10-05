@@ -14,5 +14,10 @@ if (MATLAB_EXECUTABLE)
 			DESTINATION "${CMAKE_INSTALL_PREFIX}/share/libiio"
 			PATTERN "CMakeLists.txt" EXCLUDE
 		)
+		install(
+			CODE "execute_process(
+				COMMAND ${MATLAB_EXECUTABLE} -nodesktop
+					-nodisplay -r \"cd('${CMAKE_INSTALL_PREFIX}/share/libiio/matlab');iio_installer_script;exit;\"
+				OUTPUT_QUIET)")
 	endif()
 endif()
