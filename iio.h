@@ -41,7 +41,7 @@ typedef ptrdiff_t ssize_t;
 #include <sys/types.h>
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
 #ifndef __cnst
 #define __cnst __attribute__((const))
 #endif
@@ -61,7 +61,7 @@ typedef ptrdiff_t ssize_t;
 #   else
 #	define __api __declspec(dllimport)
 #   endif
-#elif __GNUC__ >= 4
+#elif __GNUC__ >= 4 && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
 #   define __api __attribute__((visibility ("default")))
 #else
 #   define __api
