@@ -951,15 +951,19 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 			continue;
 		if (!ret)
 			ret = -EIO;
-		if (ret < 0)
+		if (ret < 0) {
+			ret = -errno;
 			goto err_close_pipe;
+		}
 
 		ret = splice(pipefd[0], NULL, fd_out, NULL, ret,
 				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
 		if (!ret)
 			ret = -EIO;
-		if (ret < 0)
+		if (ret < 0) {
+			ret = -errno;
 			goto err_close_pipe;
+		}
 
 		len -= ret;
 	} while (len);
