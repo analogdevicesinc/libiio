@@ -920,7 +920,7 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 {
 	int pipefd[2];
 	int fd_in, fd_out;
-	ssize_t ret, read_len = len;
+	ssize_t ret, read_len = len, write_len = 0;
 
 	ret = (ssize_t) pipe2(pipefd, O_CLOEXEC);
 	if (ret < 0)
@@ -939,39 +939,45 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 		if (ret < 0)
 			goto err_close_pipe;
 
-		/*
-		 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
-		 * splicing from a socket. As the socket is not in
-		 * non-blocking mode, it should never return -EAGAIN.
-		 * TODO(pcercuei): Find why it locks...
-		 * */
-		ret = splice(fd_in, NULL, pipefd[1], NULL, len,
-				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
-		if (ret < 0 && errno == EAGAIN)
-			continue;
-		if (!ret)
-			ret = -EIO;
-		if (ret < 0) {
-			ret = -errno;
-			goto err_close_pipe;
+		if (read_len) {
+			/*
+			 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
+			 * splicing from a socket. As the socket is not in
+			 * non-blocking mode, it should never return -EAGAIN.
+			 * TODO(pcercuei): Find why it locks...
+			 * */
+			ret = splice(fd_in, NULL, pipefd[1], NULL, read_len,
+					SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+			if (!ret)
+				ret = -EIO;
+			if (ret < 0 && errno != EAGAIN) {
+				ret = -errno;
+				goto err_close_pipe;
+			} else if (ret > 0) {
+				write_len += ret;
+				read_len -= ret;
+			}
 		}
 
-		ret = splice(pipefd[0], NULL, fd_out, NULL, ret,
-				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
-		if (!ret)
-			ret = -EIO;
-		if (ret < 0) {
-			ret = -errno;
-			goto err_close_pipe;
+		if (write_len) {
+			ret = splice(pipefd[0], NULL, fd_out, NULL, write_len,
+					SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+			if (!ret)
+				ret = -EIO;
+			if (ret < 0 && errno != EAGAIN) {
+				ret = -errno;
+				goto err_close_pipe;
+			} else if (ret > 0) {
+				write_len -= ret;
+			}
 		}
 
-		len -= ret;
-	} while (len);
+	} while (write_len || read_len);
 
 err_close_pipe:
 	close(pipefd[0]);
 	close(pipefd[1]);
-	return ret < 0 ? ret : read_len;
+	return ret < 0 ? ret : len;
 }
 
 static ssize_t network_get_buffer(const struct iio_device *dev,
