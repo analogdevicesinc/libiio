@@ -101,6 +101,7 @@ static const struct option options[] = {
 	  {"demux", no_argument, 0, 'D'},
 	  {"interactive", no_argument, 0, 'i'},
 	  {"aio", no_argument, 0, 'a'},
+	  {"ffs", required_argument, 0, 'F'},
 	  {0, 0, 0, 0},
 };
 
@@ -111,6 +112,7 @@ static const char *options_descriptions[] = {
 	"Demux channels directly on the server.",
 	"Run " MY_NAME " in the controlling terminal.",
 	"Use asynchronous I/O.",
+	"Use the given FunctionFS mountpoint to serve over USB",
 };
 
 #ifdef HAVE_AVAHI
@@ -363,10 +365,11 @@ int main(int argc, char **argv)
 	bool debug = false, interactive = false, use_aio = false;
 	struct iio_context *ctx;
 	int c, option_index = 0;
+	char *ffs_mountpoint = NULL;
 	char err_str[1024];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDia",
+	while ((c = getopt_long(argc, argv, "+hVdDiaF:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -384,6 +387,14 @@ int main(int argc, char **argv)
 			break;
 #else
 			ERROR("IIOD was not compiled with AIO support.\n");
+			return EXIT_FAILURE;
+#endif
+		case 'F':
+#ifdef WITH_IIOD_USBD
+			ffs_mountpoint = optarg;
+			break;
+#else
+			ERROR("IIOD was not compiled with USB support.\n");
 			return EXIT_FAILURE;
 #endif
 		case 'h':
@@ -418,6 +429,21 @@ int main(int argc, char **argv)
 	set_handler(SIGINT, sig_handler);
 	set_handler(SIGTERM, sig_handler);
 
+	if (ffs_mountpoint) {
+#ifdef WITH_IIOD_USBD
+		/* We pass use_aio == true directly, this is ensured to be true
+		 * by the CMake script. */
+		ret = start_usb_daemon(ctx, ffs_mountpoint,
+				debug, true, thread_pool);
+		if (ret) {
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			ERROR("Unable to start USB daemon: %s\n", err_str);
+			ret = EXIT_FAILURE;
+			goto out_destroy_thread_pool;
+		}
+#endif
+	}
+
 	if (interactive)
 		ret = main_interactive(ctx, debug, use_aio);
 	else
@@ -427,6 +453,10 @@ int main(int argc, char **argv)
 	 * In case we got here through an error in the main thread make sure all
 	 * the worker threads are signaled to shutdown.
 	 */
+
+#ifdef WITH_IIOD_USBD
+out_destroy_thread_pool:
+#endif
 	thread_pool_stop_and_wait(thread_pool);
 	thread_pool_destroy(thread_pool);
 

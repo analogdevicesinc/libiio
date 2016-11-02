@@ -63,6 +63,9 @@ extern bool server_demux; /* Defined in iiod.c */
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	bool is_socket, bool use_aio, struct thread_pool *pool);
 
+int start_usb_daemon(struct iio_context *ctx, const char *ffs,
+		bool debug, bool use_aio, struct thread_pool *pool);
+
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
 int close_dev(struct parser_pdata *pdata, struct iio_device *dev);
