@@ -20,6 +20,7 @@
 #include "../iio.h"
 #include "../iio-config.h"
 #include "ops.h"
+#include "thread-pool.h"
 
 #include <arpa/inet.h>
 #include <endian.h>
@@ -67,51 +68,8 @@ struct client_data {
 
 bool server_demux;
 
-/*
- * Eventfd that is used to signal all threads that the iiod has been asked to
- * stop and the threads should release all resources and stop.
- */
-int stop_fd;
+static struct thread_pool *thread_pool;
 
-/*
- * This is used to make sure that all active threads have finished cleanup when
- * a STOP event is received. We don't use pthread_join() since for most threads
- * we are OK with them exiting asynchronously and there really is no place to
- * call pthread_join() to free the thread's resources. We only need to
- * synchronize the threads that are still active when the iiod is shutdown to
- * give them a chance to release all resources, disable buffers etc, before
- * iio_context_destroy() is called.
- *
- * In order to avoid race conditions thread_started() must be called before
- * the thread is created and thread_stopped() must be called right before
- * leaving the thread.
- */
-static pthread_mutex_t thread_count_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t thread_count_cond = PTHREAD_COND_INITIALIZER;
-static unsigned int thread_count;
-
-void thread_started(void)
-{
-	pthread_mutex_lock(&thread_count_lock);
-	thread_count++;
-	pthread_mutex_unlock(&thread_count_lock);
-}
-
-void thread_stopped(void)
-{
-	pthread_mutex_lock(&thread_count_lock);
-	thread_count--;
-	pthread_cond_signal(&thread_count_cond);
-	pthread_mutex_unlock(&thread_count_lock);
-}
-
-static void wait_for_threads(void)
-{
-	pthread_mutex_lock(&thread_count_lock);
-	while (thread_count)
-		pthread_cond_wait(&thread_count_cond, &thread_count_lock);
-	pthread_mutex_unlock(&thread_count_lock);
-}
 
 static struct sockaddr_in sockaddr = {
 	.sin_family = AF_INET,
@@ -222,18 +180,16 @@ static void usage(void)
 					options_descriptions[i]);
 }
 
-static void * client_thd(void *d)
+static void client_thd(struct thread_pool *pool, void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug, true, false);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug,
+			true, false, pool);
 
 	INFO("Client exited\n");
 	close(cdata->fd);
 	free(cdata);
-	thread_stopped();
-
-	return NULL;
 }
 
 static void set_handler(int signal, void (*handler)(int))
@@ -246,14 +202,7 @@ static void set_handler(int signal, void (*handler)(int))
 
 static void sig_handler(int sig)
 {
-	uint64_t ev = 1;
-	int ret;
-
-	ret = write(stop_fd, &ev, sizeof(ev));
-	if (ret < 0) {
-		ERROR("Failed to shutdown cleanly\n");
-		exit(EXIT_FAILURE);
-	}
+	thread_pool_stop(thread_pool);
 }
 
 static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
@@ -270,7 +219,8 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 		fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
 	}
 
-	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose, false, use_aio);
+	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
+			false, use_aio, thread_pool);
 	return EXIT_SUCCESS;
 }
 
@@ -281,7 +231,6 @@ static int main_server(struct iio_context *ctx, bool debug)
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
 	struct pollfd pfd[2];
-	pthread_attr_t attr;
 	char err_str[1024];
 	bool ipv6;
 #ifdef HAVE_AVAHI
@@ -331,21 +280,16 @@ static int main_server(struct iio_context *ctx, bool debug)
 	avahi_started = !start_avahi();
 #endif
 
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
 	pfd[0].fd = fd;
 	pfd[0].events = POLLIN;
 	pfd[0].revents = 0;
-	pfd[1].fd = stop_fd;
+	pfd[1].fd = thread_pool_get_poll_fd(thread_pool);
 	pfd[1].events = POLLIN;
 	pfd[1].revents = 0;
 
 	while (true) {
-		pthread_t thd;
 		struct client_data *cdata;
 		struct sockaddr_in caddr;
-		sigset_t sigmask, oldsigmask;
 		socklen_t addr_len = sizeof(caddr);
 		int new;
 
@@ -390,22 +334,16 @@ static int main_server(struct iio_context *ctx, bool debug)
 
 		INFO("New client connected from %s\n",
 				inet_ntoa(caddr.sin_addr));
-		sigfillset(&sigmask);
-		pthread_sigmask(SIG_BLOCK, &sigmask, &oldsigmask);
-		thread_started();
-		ret = pthread_create(&thd, &attr, client_thd, cdata);
-		pthread_sigmask(SIG_SETMASK, &oldsigmask, NULL);
+
+		ret = thread_pool_add_thread(thread_pool, client_thd, cdata, "net_client_thd");
 		if (ret) {
 			iio_strerror(ret, err_str, sizeof(err_str));
 			ERROR("Failed to create new client thread: %s\n",
 				err_str);
 			close(new);
 			free(cdata);
-			thread_stopped();
 		}
 	}
-
-	pthread_attr_destroy(&attr);
 
 	DEBUG("Cleaning up\n");
 #ifdef HAVE_AVAHI
@@ -460,24 +398,25 @@ int main(int argc, char **argv)
 		}
 	}
 
-	stop_fd = eventfd(0, EFD_NONBLOCK);
-	if (stop_fd == -1) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		ERROR("Unable to create stop eventfd: %s\n", err_str);
-		return EXIT_FAILURE;
-	}
-
-	set_handler(SIGHUP, sig_handler);
-	set_handler(SIGPIPE, sig_handler);
-	set_handler(SIGINT, sig_handler);
-	set_handler(SIGTERM, sig_handler);
-
 	ctx = iio_create_local_context();
 	if (!ctx) {
 		iio_strerror(errno, err_str, sizeof(err_str));
 		ERROR("Unable to create local context: %s\n", err_str);
 		return EXIT_FAILURE;
 	}
+
+	thread_pool = thread_pool_new();
+	if (!thread_pool) {
+		iio_strerror(errno, err_str, sizeof(err_str));
+		ERROR("Unable to create thread pool: %s\n", err_str);
+		ret = EXIT_FAILURE;
+		goto out_destroy_context;
+	}
+
+	set_handler(SIGHUP, sig_handler);
+	set_handler(SIGPIPE, sig_handler);
+	set_handler(SIGINT, sig_handler);
+	set_handler(SIGTERM, sig_handler);
 
 	if (interactive)
 		ret = main_interactive(ctx, debug, use_aio);
@@ -488,11 +427,11 @@ int main(int argc, char **argv)
 	 * In case we got here through an error in the main thread make sure all
 	 * the worker threads are signaled to shutdown.
 	 */
-	sig_handler(SIGTERM);
+	thread_pool_stop_and_wait(thread_pool);
+	thread_pool_destroy(thread_pool);
 
-	wait_for_threads();
+out_destroy_context:
 	iio_context_destroy(ctx);
-	close(stop_fd);
 
 	return ret;
 }

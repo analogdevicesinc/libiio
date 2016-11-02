@@ -12,7 +12,7 @@ add_flex_bison_dependency(lexer parser)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(IIOD_CFILES iiod.c ops.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
+set(IIOD_CFILES iiod.c ops.c thread-pool.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
 
 add_executable(iiod ${IIOD_CFILES})
 set_target_properties(iiod PROPERTIES

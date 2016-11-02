@@ -34,6 +34,8 @@
 #include <libaio.h>
 #endif
 
+struct thread_pool;
+
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, verbose;
@@ -50,19 +52,16 @@ struct parser_pdata {
 	io_context_t aio_ctx;
 	int aio_eventfd;
 #endif
+	struct thread_pool *pool;
 
 	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf, size_t len);
 	ssize_t (*readfd)(struct parser_pdata *pdata, void *buf, size_t len);
 };
 
 extern bool server_demux; /* Defined in iiod.c */
-extern int stop_fd;
-
-void thread_started(void);
-void thread_stopped(void);
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-	bool is_socket, bool use_aio);
+	bool is_socket, bool use_aio, struct thread_pool *pool);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
