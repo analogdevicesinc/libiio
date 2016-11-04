@@ -820,6 +820,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	/* We reserve the first I/O endpoint couple for global operations */
 	pdata->io_ctx.ep = &pdata->io_endpoints[0];
+	pdata->io_ctx.ep->in_use = true;
 
 	ret = usb_reset_pipes(pdata);
 	if (ret) {
