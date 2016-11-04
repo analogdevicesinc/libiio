@@ -336,8 +336,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	endif()
 endif()
 
-configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
-
 if(WITH_IIOD)
 	add_subdirectory(iiod)
 endif()
@@ -347,3 +345,5 @@ if(WITH_TESTS)
 endif()
 
 add_subdirectory(bindings)
+
+configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
