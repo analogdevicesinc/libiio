@@ -27,6 +27,8 @@ endif()
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
+set(CMAKE_MACOSX_RPATH ON)
+
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 option(WITH_TESTS "Build the test programs" ON)
 
@@ -318,9 +320,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
 	add_custom_command(OUTPUT ${LIBIIO_TEMP_PKG} COMMAND ${PKGBUILD_EXECUTABLE}
-			--root ${CMAKE_CURRENT_BINARY_DIR}/Debug
-			--identifier libiio --version ${VERSION}
-			--install-location /System/Library/Frameworks ${LIBIIO_TEMP_PKG}
+			--component ${CMAKE_CURRENT_BINARY_DIR}/iio.framework
+			--identifier com.adi.iio --version ${VERSION}
+			--install-location /Library/Frameworks ${LIBIIO_TEMP_PKG}
 		DEPENDS iio
 	)
 
