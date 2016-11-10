@@ -183,6 +183,10 @@ int main (int argc, char **argv)
 	struct stream_cfg rxcfg;
 	struct stream_cfg txcfg;
 
+	struct iio_scan_context *ctxs;
+	struct iio_context_info **info;
+	unsigned int i = 0;
+
 	// Listen to ctrl+c and assert
 	signal(SIGINT, handle_sig);
 
@@ -199,7 +203,19 @@ int main (int argc, char **argv)
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
-	assert((ctx = iio_create_default_context()) && "No context");
+	ctx = iio_create_default_context();
+	if (!ctx) {
+		assert((ctxs = iio_create_scan_context(NULL, 0)) && "No Scan Context");
+		assert(iio_scan_context_get_info_list(ctxs, &info) > 0 && "No Scan Info");
+		while (info[i]) {
+			if(strstr(iio_context_info_get_description(info[i]), "ADALM-PLUTO")) {
+				ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[i]));
+				break;
+			}
+			i++;
+		}
+	}
+	assert(ctx && "No Context");
 	assert(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9361 streaming devices\n");
