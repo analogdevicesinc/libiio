@@ -16,6 +16,7 @@
  *
  * */
 
+#include "iio-config.h"
 #include "iio-private.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
@@ -77,6 +78,7 @@ struct iio_network_io_context {
 #else
 	int cancel_fd[2]; /* pipe */
 #endif
+	unsigned int timeout_ms;
 };
 
 struct iio_context_pdata {
@@ -158,10 +160,30 @@ static int network_get_error(void)
 
 static bool network_should_retry(int err)
 {
-	return err == -WSAEWOULDBLOCK;
+	return err == -WSAEWOULDBLOCK || err == -WSAETIMEDOUT;
+}
+
+static bool network_is_interrupted(int err)
+{
+	return false;
 }
 
 #else
+
+static int set_blocking_mode(int fd, bool blocking)
+{
+	int ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return -errno;
+
+	if (blocking)
+		ret &= ~O_NONBLOCK;
+	else
+		ret |= O_NONBLOCK;
+
+	ret = fcntl(fd, F_SETFL, ret);
+	return ret < 0 ? -errno : 0;
+}
 
 #include <poll.h>
 
@@ -266,12 +288,21 @@ static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
 	pfd[1].events = POLLIN;
 
 	do {
+		int timeout_ms;
+
+		if (io_ctx->timeout_ms > 0)
+			timeout_ms = (int) io_ctx->timeout_ms;
+		else
+			timeout_ms = -1;
+
 		do {
-			ret = poll(pfd, 2, -1);
+			ret = poll(pfd, 2, timeout_ms);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1)
 			return -errno;
+		if (!ret)
+			return -EPIPE;
 
 		if (pfd[1].revents & POLLIN)
 			return -EBADF;
@@ -287,7 +318,12 @@ static int network_get_error(void)
 
 static bool network_should_retry(int err)
 {
-	return err == -EINTR || err == -EAGAIN;
+	return err == -EAGAIN;
+}
+
+static bool network_is_interrupted(int err)
+{
+	return err == -EINTR;
 }
 
 #endif
@@ -415,8 +451,14 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (network_should_retry(err))
+		if (network_should_retry(err)) {
+			if (io_ctx->cancellable)
+				continue;
+			else
+				return -EPIPE;
+		} else if (!network_is_interrupted(err)) {
 			return (ssize_t) err;
+		}
 	}
 	return ret;
 }
@@ -439,8 +481,14 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (network_should_retry(err))
+		if (network_should_retry(err)) {
+			if (io_ctx->cancellable)
+				continue;
+			else
+				return -EPIPE;
+		} else if (!network_is_interrupted(err)) {
 			return (ssize_t) err;
+		}
 	}
 
 	return ret;
@@ -580,7 +628,7 @@ static int do_connect(const struct addrinfo *addrinfo,
 	SOCKET s;
 
 	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
-		WSA_FLAG_NO_HANDLE_INHERIT);
+		WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
 	if (s == INVALID_SOCKET)
 		return -WSAGetLastError();
 
@@ -605,15 +653,15 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 }
 #endif /* !_WIN32 */
 
-static int create_socket(const struct addrinfo *addrinfo)
+static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
-	struct timeval timeout;
+	struct timeval tv;
 	int fd, yes = 1;
 
-	timeout.tv_sec = DEFAULT_TIMEOUT_MS / 1000;
-	timeout.tv_usec = (DEFAULT_TIMEOUT_MS % 1000) * 1000;
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
 
-	fd = do_connect(addrinfo, &timeout);
+	fd = do_connect(addrinfo, &tv);
 	if (fd < 0)
 		return fd;
 
@@ -634,13 +682,14 @@ static int network_open(const struct iio_device *dev,
 	if (ppdata->io_ctx.fd >= 0)
 		goto out_mutex_unlock;
 
-	ret = create_socket(pdata->addrinfo);
+	ret = create_socket(pdata->addrinfo, pdata->io_ctx.timeout_ms);
 	if (ret < 0)
 		goto out_mutex_unlock;
 
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
 	ppdata->io_ctx.cancellable = true;
+	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
 
 	ret = setup_cancel(&ppdata->io_ctx);
 	if (ret < 0)
@@ -871,7 +920,7 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 {
 	int pipefd[2];
 	int fd_in, fd_out;
-	ssize_t ret, read_len = len;
+	ssize_t ret, read_len = len, write_len = 0;
 
 	ret = (ssize_t) pipe2(pipefd, O_CLOEXEC);
 	if (ret < 0)
@@ -890,35 +939,45 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 		if (ret < 0)
 			goto err_close_pipe;
 
-		/*
-		 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
-		 * splicing from a socket. As the socket is not in
-		 * non-blocking mode, it should never return -EAGAIN.
-		 * TODO(pcercuei): Find why it locks...
-		 * */
-		ret = splice(fd_in, NULL, pipefd[1], NULL, len,
-				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
-		if (ret < 0 && errno == EAGAIN)
-			continue;
-		if (!ret)
-			ret = -EIO;
-		if (ret < 0)
-			goto err_close_pipe;
+		if (read_len) {
+			/*
+			 * SPLICE_F_NONBLOCK is just here to avoid a deadlock when
+			 * splicing from a socket. As the socket is not in
+			 * non-blocking mode, it should never return -EAGAIN.
+			 * TODO(pcercuei): Find why it locks...
+			 * */
+			ret = splice(fd_in, NULL, pipefd[1], NULL, read_len,
+					SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+			if (!ret)
+				ret = -EIO;
+			if (ret < 0 && errno != EAGAIN) {
+				ret = -errno;
+				goto err_close_pipe;
+			} else if (ret > 0) {
+				write_len += ret;
+				read_len -= ret;
+			}
+		}
 
-		ret = splice(pipefd[0], NULL, fd_out, NULL, ret,
-				SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
-		if (!ret)
-			ret = -EIO;
-		if (ret < 0)
-			goto err_close_pipe;
+		if (write_len) {
+			ret = splice(pipefd[0], NULL, fd_out, NULL, write_len,
+					SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+			if (!ret)
+				ret = -EIO;
+			if (ret < 0 && errno != EAGAIN) {
+				ret = -errno;
+				goto err_close_pipe;
+			} else if (ret > 0) {
+				write_len -= ret;
+			}
+		}
 
-		len -= ret;
-	} while (len);
+	} while (write_len || read_len);
 
 err_close_pipe:
 	close(pipefd[0]);
 	close(pipefd[1]);
-	return ret < 0 ? ret : read_len;
+	return ret < 0 ? ret : len;
 }
 
 static ssize_t network_get_buffer(const struct iio_device *dev,
@@ -1135,9 +1194,12 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 	ret = set_socket_timeout(fd, timeout);
 	if (!ret) {
-		timeout = calculate_remote_timeout(timeout);
+		unsigned int remote_timeout = calculate_remote_timeout(timeout);
+
 		ret = iiod_client_set_timeout(pdata->iiod_client,
-			&pdata->io_ctx, timeout);
+			&pdata->io_ctx, remote_timeout);
+		if (!ret)
+			pdata->io_ctx.timeout_ms = timeout;
 	}
 	if (ret < 0) {
 		char buf[1024];
@@ -1322,7 +1384,7 @@ struct iio_context * network_create_context(const char *host)
 		return NULL;
 	}
 
-	fd = create_socket(res);
+	fd = create_socket(res, DEFAULT_TIMEOUT_MS);
 	if (fd < 0) {
 		errno = fd;
 		goto err_free_addrinfo;
@@ -1336,6 +1398,7 @@ struct iio_context * network_create_context(const char *host)
 
 	pdata->io_ctx.fd = fd;
 	pdata->addrinfo = res;
+	pdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
 
 	pdata->lock = iio_mutex_create();
 	if (!pdata->lock) {
@@ -1411,6 +1474,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		dev->pdata->io_ctx.fd = -1;
+		dev->pdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
 #ifdef WITH_NETWORK_GET_BUFFER
 		dev->pdata->memfd = -1;
 #endif

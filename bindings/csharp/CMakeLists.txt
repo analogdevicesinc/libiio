@@ -3,6 +3,7 @@ project(libiio-sharp NONE)
 
 find_program(MCS_EXECUTABLE
 	NAMES mcs csc
+	HINTS "C:/Windows/Microsoft.NET/Framework/v4.0.30319"
 	PATHS ENV MCS_EXECUTABLE_PATH
 	DOC "C# compiler")
 mark_as_advanced(MCS_EXECUTABLE)

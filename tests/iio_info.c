@@ -25,6 +25,10 @@
 
 #define MY_NAME "iio_info"
 
+#ifdef _WIN32
+#define snprintf sprintf_s
+#endif
+
 enum backend {
 	LOCAL,
 	XML,
@@ -244,15 +248,21 @@ int main(int argc, char **argv)
 				const struct iio_data_format *format =
 					iio_channel_get_data_format(ch);
 				char sign = format->is_signed ? 's' : 'u';
+				char repeat[8] = "";
 
 				if (format->is_fully_defined)
 					sign += 'A' - 'a';
 
-				printf(", index: %lu, format: %ce:%c%u/%u>>%u)\n",
-						iio_channel_get_index(ch),
-						format->is_be ? 'b' : 'l',
-						sign, format->bits,
-						format->length, format->shift);
+				if (format->repeat > 1)
+					snprintf(repeat, sizeof(repeat), "X%u",
+						format->repeat);
+
+				printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n",
+					iio_channel_get_index(ch),
+					format->is_be ? 'b' : 'l',
+					sign, format->bits,
+					format->length, repeat,
+					format->shift);
 			} else {
 				printf(")\n");
 			}

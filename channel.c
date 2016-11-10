@@ -138,7 +138,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (chn->id[len] != '_' && chn->id[len] < '0' && chn->id[len] > '9')
 			continue;
 
-		chn->type = i;
+		chn->type = (enum iio_chan_type) i;
 	}
 
 	mod = strchr(chn->id, '_');
@@ -157,7 +157,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (mod[len] != '_')
 			continue;
 
-		chn->modifier = i;
+		chn->modifier = (enum iio_modifier) i;
 		break;
 	}
 }
@@ -184,14 +184,17 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 
 static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 {
-	char buf[1024], *str;
+	char buf[1024], repeat[8] = "", *str;
 	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
 
+	if (chn->format.repeat > 1)
+		snprintf(repeat, sizeof(repeat), "X%u", chn->format.repeat);
+
 	snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
-			"format=\"%ce:%c%u/%u&gt;&gt;%u\" />",
+			"format=\"%ce:%c%u/%u%s&gt;&gt;%u\" />",
 			chn->index, chn->format.is_be ? 'b' : 'l',
 			chn->format.is_signed ? 's' + processed : 'u' + processed,
-			chn->format.bits, chn->format.length,
+			chn->format.bits, chn->format.length, repeat,
 			chn->format.shift);
 
 	if (chn->format.with_scale) {
@@ -200,7 +203,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 				"scale=\"%f\" />", chn->format.scale);
 	}
 
-	str = _strdup(buf);
+	str = iio_strdup(buf);
 	if (str)
 		*length = strlen(str);
 	return str;
@@ -519,33 +522,46 @@ static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
 void iio_channel_convert(const struct iio_channel *chn,
 		void *dst, const void *src)
 {
+	uintptr_t src_ptr = (uintptr_t) src, dst_ptr = (uintptr_t) dst;
 	unsigned int len = chn->format.length / 8;
+	ptrdiff_t end = len * chn->format.repeat;
+	uintptr_t end_ptr = src_ptr + end;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	bool swap = chn->format.is_be;
 #else
 	bool swap = !chn->format.is_be;
 #endif
 
-	if (len == 1 || !swap)
-		memcpy(dst, src, len);
-	else
-		byte_swap(dst, src, len);
-
-	if (chn->format.shift)
-		shift_bits(dst, chn->format.shift, len, false);
-
-	if (!chn->format.is_fully_defined) {
-		if (chn->format.is_signed)
-			sign_extend(dst, chn->format.bits, len);
+	for (src_ptr = (uintptr_t) src; src_ptr < end_ptr;
+			src_ptr += len, dst_ptr += len) {
+		if (len == 1 || !swap)
+			memcpy((void *) dst_ptr, (const void *) src_ptr, len);
 		else
-			mask_upper_bits(dst, chn->format.bits, len);
+			byte_swap((void *) dst_ptr, (const void *) src_ptr,
+				len);
+
+		if (chn->format.shift)
+			shift_bits((void *) dst_ptr, chn->format.shift, len,
+				false);
+
+		if (!chn->format.is_fully_defined) {
+			if (chn->format.is_signed)
+				sign_extend((void *) dst_ptr,
+					chn->format.bits, len);
+			else
+				mask_upper_bits((void *) dst_ptr,
+					chn->format.bits, len);
+		}
 	}
 }
 
 void iio_channel_convert_inverse(const struct iio_channel *chn,
 		void *dst, const void *src)
 {
+	uintptr_t src_ptr = (uintptr_t) src, dst_ptr = (uintptr_t) dst;
 	unsigned int len = chn->format.length / 8;
+	ptrdiff_t end = len * chn->format.repeat;
+	uintptr_t end_ptr = dst_ptr + end;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	bool swap = chn->format.is_be;
 #else
@@ -557,23 +573,26 @@ void iio_channel_convert_inverse(const struct iio_channel *chn,
 	if (len > sizeof(buf))
 		return;
 
-	memcpy(buf, src, len);
-	mask_upper_bits(buf, chn->format.bits, len);
+	for (dst_ptr = (uintptr_t) dst; dst_ptr < end_ptr;
+			src_ptr += len, dst_ptr += len) {
+		memcpy(buf, (const void *) src_ptr, len);
+		mask_upper_bits(buf, chn->format.bits, len);
 
-	if (chn->format.shift)
-		shift_bits(buf, chn->format.shift, len, true);
+		if (chn->format.shift)
+			shift_bits(buf, chn->format.shift, len, true);
 
-	if (len == 1 || !swap)
-		memcpy(dst, buf, len);
-	else
-		byte_swap(dst, buf, len);
+		if (len == 1 || !swap)
+			memcpy((void *) dst_ptr, buf, len);
+		else
+			byte_swap((void *) dst_ptr, buf, len);
+	}
 }
 
 size_t iio_channel_read_raw(const struct iio_channel *chn,
 		struct iio_buffer *buf, void *dst, size_t len)
 {
 	uintptr_t src_ptr, dst_ptr = (uintptr_t) dst, end = dst_ptr + len;
-	unsigned int length = chn->format.length / 8;
+	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
@@ -588,7 +607,7 @@ size_t iio_channel_read(const struct iio_channel *chn,
 		struct iio_buffer *buf, void *dst, size_t len)
 {
 	uintptr_t src_ptr, dst_ptr = (uintptr_t) dst, end = dst_ptr + len;
-	unsigned int length = chn->format.length / 8;
+	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
@@ -604,7 +623,7 @@ size_t iio_channel_write_raw(const struct iio_channel *chn,
 		struct iio_buffer *buf, const void *src, size_t len)
 {
 	uintptr_t dst_ptr, src_ptr = (uintptr_t) src, end = src_ptr + len;
-	unsigned int length = chn->format.length / 8;
+	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
@@ -619,7 +638,7 @@ size_t iio_channel_write(const struct iio_channel *chn,
 		struct iio_buffer *buf, const void *src, size_t len)
 {
 	uintptr_t dst_ptr, src_ptr = (uintptr_t) src, end = src_ptr + len;
-	unsigned int length = chn->format.length / 8;
+	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 

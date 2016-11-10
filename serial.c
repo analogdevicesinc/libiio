@@ -503,7 +503,7 @@ struct iio_context * serial_create_context_from_uri(const char *uri)
 	if (strncmp(uri, "serial:", sizeof("serial:") - 1) != 0)
 		goto err_bad_uri;
 
-	uri_dup = _strdup((const char *)
+	uri_dup = iio_strdup((const char *)
 			((uintptr_t) uri + sizeof("serial:") - 1));
 	if (!uri_dup) {
 		errno = ENOMEM;

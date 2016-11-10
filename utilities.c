@@ -19,10 +19,10 @@
 /* Force the XSI version of strerror_r */
 #undef _GNU_SOURCE
 
+#include "iio-config.h"
 #include "iio-private.h"
 
 #include <errno.h>
-#include <fcntl.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +43,7 @@ static int read_double_locale(const char *str, double *val)
 	/* XXX: This is not thread-safe, but it's the only way we have to
 	 * support locales under MinGW without linking with Visual Studio
 	 * libraries. */
-	old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	old_locale = iio_strdup(setlocale(LC_NUMERIC, NULL));
 	if (!old_locale)
 		return -ENOMEM;
 
@@ -62,7 +62,7 @@ static int read_double_locale(const char *str, double *val)
 static int write_double_locale(char *buf, size_t len, double val)
 {
 	/* XXX: Not thread-safe, see above */
-	char *old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	char *old_locale = iio_strdup(setlocale(LC_NUMERIC, NULL));
 	if (!old_locale)
 		return -ENOMEM;
 
@@ -185,28 +185,30 @@ void iio_library_get_version(unsigned int *major,
 
 void iio_strerror(int err, char *buf, size_t len)
 {
-#ifdef _WIN32
+#if defined(_WIN32)
 	int ret = strerror_s(buf, len, err);
-#else
+#elif defined(HAS_STRERROR_R)
 	int ret = strerror_r(err, buf, len);
+#else
+	/* no strerror_s, no strerror_r... just use the default message */
+	int ret = 0xf7de;
 #endif
 	if (ret != 0)
 		snprintf(buf, len, "Unknown error %i", err);
 }
 
-#ifndef _WIN32
-int set_blocking_mode(int fd, bool blocking)
+char *iio_strdup(const char *str)
 {
-	int ret = fcntl(fd, F_GETFL, 0);
-	if (ret < 0)
-		return -errno;
+#if defined(_WIN32)
+	return _strdup(str);
+#elif defined(HAS_STRDUP)
+	return strdup(str);
+#else
+	size_t len = strlen(str);
+	char *buf = malloc(len + 1);
 
-	if (blocking)
-		ret &= ~O_NONBLOCK;
-	else
-		ret |= O_NONBLOCK;
-
-	ret = fcntl(fd, F_SETFL, ret);
-	return ret < 0 ? -errno : 0;
-}
+	if (buf)
+		memcpy(buf, str, len + 1);
+	return buf;
 #endif
+}

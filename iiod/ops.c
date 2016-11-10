@@ -291,13 +291,12 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 	return ret;
 }
 
-static ssize_t write_all(struct parser_pdata *pdata,
-		const void *src, size_t len)
+ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len)
 {
 	uintptr_t ptr = (uintptr_t) src;
 
 	while (len) {
-		ssize_t ret = writefd(pdata, (void *) ptr, len);
+		ssize_t ret = pdata->writefd(pdata, (void *) ptr, len);
 		if (ret < 0)
 			return ret;
 		if (!ret)
@@ -315,7 +314,7 @@ static ssize_t read_all(struct parser_pdata *pdata,
 	uintptr_t ptr = (uintptr_t) dst;
 
 	while (len) {
-		ssize_t ret = readfd(pdata, (void *) ptr, len);
+		ssize_t ret = pdata->readfd(pdata, (void *) ptr, len);
 		if (ret < 0)
 			return ret;
 		if (!ret)
@@ -355,7 +354,7 @@ static ssize_t send_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char zero = 0;
 		for (i = 0; i < goal; i++)
-			writefd(info->pdata, &zero, 1);
+			info->pdata->writefd(info->pdata, &zero, 1);
 		info->cpt += goal;
 	}
 
@@ -378,7 +377,7 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 		unsigned int i, goal = length - info->cpt % length;
 		char foo;
 		for (i = 0; i < goal; i++)
-			readfd(info->pdata, &foo, 1);
+			info->pdata->readfd(info->pdata, &foo, 1);
 		info->cpt += goal;
 	}
 
@@ -1245,7 +1244,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 					MSG_NOSIGNAL | MSG_TRUNC);
 		}
 	} else {
-		ret = readfd(pdata, buf, len);
+		ret = pdata->readfd(pdata, buf, len);
 	}
 
 	return ret;

@@ -1,3 +1,21 @@
+/*
+ * libiio - Library for interfacing industrial I/O (IIO) devices
+ *
+ * Copyright (C) 2014-2016 Analog Devices, Inc.
+ * Author: Paul Cercueil <paul.cercueil@analog.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
+
 #include "debug.h"
 #include "iiod-client.h"
 #include "iio-lock.h"
@@ -289,6 +307,28 @@ int iiod_client_set_timeout(struct iiod_client *client,
 	return ret;
 }
 
+static int iiod_client_discard(struct iiod_client *client, void *desc,
+		char *buf, size_t buf_len, size_t to_discard)
+{
+	do {
+		size_t read_len;
+		ssize_t ret;
+
+		if (to_discard > buf_len)
+			read_len = buf_len;
+		else
+			read_len = to_discard;
+
+		ret = iiod_client_read_all(client, desc, buf, read_len);
+		if (ret < 0)
+			return ret;
+
+		to_discard -= (size_t) ret;
+	} while (to_discard);
+
+	return 0;
+}
+
 ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
 		const char *attr, char *dest, size_t len, bool is_debug)
@@ -328,6 +368,7 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		goto out_unlock;
 
 	if ((size_t) ret + 1 > len) {
+		iiod_client_discard(client, desc, dest, len, ret + 1);
 		ret = -EIO;
 		goto out_unlock;
 	}

@@ -30,16 +30,18 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <stddef.h>
 
-#ifdef _MSC_BUILD
-/* Come on Microsoft, time to get some C99... */
-typedef long ssize_t;
+#if (defined(_WIN32) || defined(__MBED__))
+#ifndef _SSIZE_T_DEFINED
+typedef ptrdiff_t ssize_t;
 #define _SSIZE_T_DEFINED
 #endif
+#else
+#include <sys/types.h>
+#endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
 #ifndef __cnst
 #define __cnst __attribute__((const))
 #endif
@@ -59,7 +61,7 @@ typedef long ssize_t;
 #   else
 #	define __api __declspec(dllimport)
 #   endif
-#elif __GNUC__ >= 4
+#elif __GNUC__ >= 4 && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
 #   define __api __attribute__((visibility ("default")))
 #else
 #   define __api
@@ -1174,6 +1176,7 @@ __api void * iio_buffer_end(const struct iio_buffer *buf);
  * @param buf A pointer to an iio_buffer structure
  * @param callback A pointer to a function to call for each sample found
  * @param data A user-specified pointer that will be passed to the callback
+ * @return number of bytes processed.
  *
  * <b>NOTE:</b> The callback receives four arguments:
  * * A pointer to the iio_channel structure corresponding to the sample,
@@ -1232,6 +1235,9 @@ struct iio_data_format {
 
 	/** @brief Contains the scale to apply if with_scale is set */
 	double scale;
+
+	/** @brief Number of times length repeats (added in v0.8) */
+	unsigned int repeat;
 };
 
 

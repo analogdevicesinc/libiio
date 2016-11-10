@@ -16,6 +16,7 @@
  *
  * */
 
+#include "iio-config.h"
 #include "iio-private.h"
 
 #include <errno.h>
@@ -44,7 +45,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	int ret = -EINVAL;
 	struct iio_buffer *buf;
 	unsigned int sample_size = iio_device_get_sample_size(dev);
-	if (!sample_size)
+
+	if (!sample_size || !samples_count)
 		goto err_set_errno;
 
 	buf = malloc(sizeof(*buf));
@@ -203,7 +205,7 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 	const struct iio_device *dev = buffer->dev;
 	ssize_t processed = 0;
 
-	if (buffer->sample_size <= 0)
+	if (buffer->sample_size == 0)
 		return -EINVAL;
 
 	if (buffer->data_length < buffer->dev_sample_size)
@@ -236,7 +238,9 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 					processed += ret;
 			}
 
-			ptr += length;
+			if (i == dev->nb_channels - 1 || dev->channels[
+					i + 1]->index != chn->index)
+				ptr += length * chn->format.repeat;
 		}
 	}
 	return processed;
@@ -259,7 +263,7 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 
 	for (i = 0; i < buffer->dev->nb_channels; i++) {
 		struct iio_channel *cur = buffer->dev->channels[i];
-		len = cur->format.length / 8;
+		len = cur->format.length / 8 * cur->format.repeat;
 
 		/* NOTE: dev->channels are ordered by index */
 		if (cur->index < 0 || cur->index == chn->index)
@@ -267,6 +271,10 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 
 		/* Test if the buffer has samples for this channel */
 		if (!TEST_BIT(buffer->mask, cur->index))
+			continue;
+
+		/* Two channels with the same index use the same samples */
+		if (i > 0 && cur->index == buffer->dev->channels[i - 1]->index)
 			continue;
 
 		if (ptr % len)

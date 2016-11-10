@@ -1,0 +1,17 @@
+# iiod - Systemd init script
+#
+# Copyright (C) 2016 Analog Devices Inc.
+
+[Unit]
+Description=IIO Daemon
+After=network.target
+ConditionPathExists=/sys/bus/iio
+
+[Service]
+ExecStart=/usr/sbin/iiod
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=iiod.service
