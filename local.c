@@ -1745,6 +1745,7 @@ int local_context_scan(struct iio_scan_result *scan_result)
 {
 	struct iio_context_info **info;
 	bool exists = false;
+	char *desc, *uri;
 	int ret;
 
 	ret = foreach_in_dir(&exists, "/sys/bus/iio/devices",
@@ -1752,12 +1753,25 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	if (ret < 0 || !exists)
 		return 0;
 
-	info = iio_scan_result_add(scan_result, 1);
-	if (!info)
+	desc = iio_strdup("Local devices");
+	if (!desc)
 		return -ENOMEM;
 
-	info[0]->description = "Local devices";
-	info[0]->uri = "local:";
+	uri = iio_strdup("local:");
+	if (!uri)
+		goto err_free_desc;
 
+	info = iio_scan_result_add(scan_result, 1);
+	if (!info)
+		goto err_free_uri;
+
+	info[0]->description = desc;
+	info[0]->uri = uri;
 	return 0;
+
+err_free_uri:
+	free(uri);
+err_free_desc:
+	free(desc);
+	return -ENOMEM;
 }
