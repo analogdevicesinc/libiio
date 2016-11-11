@@ -27,7 +27,7 @@ check_type_size("struct usb_functionfs_descs_head_v2" FUNCTIONFS_V2)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
 if (HAVE_FUNCTIONFS_V2)
-	OPTION(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ON)
+	OPTION(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ${ENABLE_AIO})
 
 	if (WITH_IIOD_USBD)
 		if (NOT ENABLE_AIO)
