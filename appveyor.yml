@@ -21,6 +21,7 @@ build_script:
     - set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319"
     - cmake -G "Visual Studio 12" -DCMAKE_BUILD_TYPE:STRING=Release \
         -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" \
+        -DPYTHON_BINDINGS:BOOL=OFF \
         -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" \
         -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" \
         -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" \
@@ -32,6 +33,7 @@ build_script:
     - cd c:\projects\libiio\build-win64
     - cmake -G "Visual Studio 12 Win64" -DCMAKE_BUILD_TYPE:STRING=Release \
         -DENABLE_IPV6:BOOL=OFF -DCSHARP_BINDINGS:BOOL=OFF \
+        -DPYTHON_BINDINGS:BOOL=OFF \
         -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" \
         -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" \
         -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" \
