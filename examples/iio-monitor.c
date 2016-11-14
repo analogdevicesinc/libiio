@@ -18,6 +18,7 @@
 
 #define _BSD_SOURCE
 #define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <cdk/cdk.h>
 #include <iio.h>
