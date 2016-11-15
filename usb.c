@@ -944,7 +944,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 err_bad_uri:
 	ERROR("Bad URI: \'%s\'\n", uri);
-	errno = -EINVAL;
+	errno = EINVAL;
 	return NULL;
 }
 
