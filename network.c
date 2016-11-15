@@ -1379,7 +1379,7 @@ struct iio_context * network_create_context(const char *host)
 		ERROR("Unable to find host: %s\n", gai_strerror(ret));
 #ifndef _WIN32
 		if (ret != EAI_SYSTEM)
-			errno = ret;
+			errno = -ret;
 #endif
 		return NULL;
 	}
