@@ -663,6 +663,8 @@ class Context(object):
 		If set to an empty string, the server will be discovered using ZeroConf.
 		If the environment variable is not set, a local context will be created instead.
 		"""
+		self._context = None
+
 		if(_context is None):
 			self._context = _new_default()
 		elif type(_context) is str:
