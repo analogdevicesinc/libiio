@@ -38,6 +38,10 @@ def _checkNegative(result, func, arguments):
 	else:
 		raise OSError(-result, _strerror(-result))
 
+class _ScanContext(Structure):
+	pass
+class _ContextInfo(Structure):
+	pass
 class _Context(Structure):
 	pass
 class _Device(Structure):
@@ -47,6 +51,8 @@ class _Channel(Structure):
 class _Buffer(Structure):
 	pass
 
+_ScanContextPtr = _POINTER(_ScanContext)
+_ContextInfoPtr = _POINTER(_ContextInfo)
 _ContextPtr = _POINTER(_Context)
 _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
@@ -54,6 +60,30 @@ _BufferPtr = _POINTER(_Buffer)
 
 _lib = _cdll('libiio.dll' if 'Windows' in _system() else 'libiio.so.0',
 		use_errno = True, use_last_error = True)
+
+_create_scan_context = _lib.iio_create_scan_context
+_create_scan_context.argtypes = (c_char_p, c_uint)
+_create_scan_context.restype = _ScanContextPtr
+_create_scan_context.errcheck = _checkNull
+
+_destroy_scan_context = _lib.iio_scan_context_destroy
+_destroy_scan_context.argtypes = (_ScanContextPtr, )
+
+_get_context_info_list = _lib.iio_scan_context_get_info_list
+_get_context_info_list.argtypes = (_ScanContextPtr, _POINTER(_POINTER(_ContextInfoPtr)))
+_get_context_info_list.restype = c_ssize_t
+_get_context_info_list.errcheck = _checkNegative
+
+_context_info_list_free = _lib.iio_context_info_list_free
+_context_info_list_free.argtypes = (_POINTER(_ContextInfoPtr), )
+
+_context_info_get_description = _lib.iio_context_info_get_description
+_context_info_get_description.argtypes = (_ContextInfoPtr, )
+_context_info_get_description.restype = c_char_p
+
+_context_info_get_uri = _lib.iio_context_info_get_uri
+_context_info_get_uri.argtypes = (_ContextInfoPtr, )
+_context_info_get_uri.restype = c_char_p
 
 _new_local = _lib.iio_create_local_context
 _new_local.restype = _ContextPtr
@@ -780,3 +810,17 @@ class NetworkContext(Context):
 		"""
 		ctx = _new_network(hostname)
 		super(NetworkContext, self).__init__(ctx)
+
+def scan_contexts():
+	d = dict()
+	ptr = _POINTER(_ContextInfoPtr)()
+
+	ctx = _create_scan_context(None, 0)
+	nb = _get_context_info_list(ctx, _byref(ptr));
+
+	for i in xrange(0, nb):
+		d[_context_info_get_uri(ptr[i])] = _context_info_get_description(ptr[i])
+
+	_context_info_list_free(ptr)
+	_destroy_scan_context(ctx)
+	return d
