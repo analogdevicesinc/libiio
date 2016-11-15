@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 	    uri_index = 0;
 	enum backend backend = LOCAL;
 	bool do_scan = false;
-	unsigned int major, minor;
+	unsigned int i, major, minor;
 	char git_tag[8];
 	int ret;
 
@@ -232,10 +232,20 @@ int main(int argc, char **argv)
 	printf("Backend description string: %s\n",
 			iio_context_get_description(ctx));
 
+	unsigned int nb_ctx_attrs = iio_context_get_attrs_count(ctx);
+	if (nb_ctx_attrs > 0)
+		printf("IIO context has %u attributes:\n", nb_ctx_attrs);
+
+	for (i = 0; i < nb_ctx_attrs; i++) {
+		const char *key, *value;
+
+		iio_context_get_attr(ctx, i, &key, &value);
+		printf("\t%s: %s\n", key, value);
+	}
+
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
 	printf("IIO context has %u devices:\n", nb_devices);
 
-	unsigned int i;
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
 		const char *name = iio_device_get_name(dev);
