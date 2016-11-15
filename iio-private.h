@@ -147,6 +147,10 @@ struct iio_context {
 	unsigned int nb_devices;
 
 	char *xml;
+
+	char **attrs;
+	char **values;
+	unsigned int nb_attrs;
 };
 
 struct iio_channel {

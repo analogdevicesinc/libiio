@@ -153,6 +153,14 @@ void iio_context_destroy(struct iio_context *ctx)
 	if (ctx->ops->shutdown)
 		ctx->ops->shutdown(ctx);
 
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		free(ctx->attrs[i]);
+		free(ctx->values[i]);
+	}
+	if (ctx->nb_attrs) {
+		free(ctx->attrs);
+		free(ctx->values);
+	}
 	for (i = 0; i < ctx->nb_devices; i++)
 		free_device(ctx->devices[i]);
 	if (ctx->nb_devices)
@@ -356,4 +364,35 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	errno = ENOSYS;
 	return NULL;
 #endif
+}
+
+unsigned int iio_context_get_attrs_count(const struct iio_context *ctx)
+{
+	return ctx->nb_attrs;
+}
+
+int iio_context_get_attr(const struct iio_context *ctx, unsigned int index,
+		const char **name, const char **value)
+{
+	if (index >= ctx->nb_attrs)
+		return -EINVAL;
+
+	if (name)
+		*name = ctx->attrs[index];
+	if (value)
+		*value = ctx->values[index];
+	return 0;
+}
+
+const char * iio_context_get_attr_value(
+		const struct iio_context *ctx, const char *name)
+{
+	unsigned int i;
+
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		if (!strcmp(name, ctx->attrs[i]))
+			return ctx->values[i];
+	}
+
+	return NULL;
 }

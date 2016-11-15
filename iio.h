@@ -356,6 +356,41 @@ __api __pure const char * iio_context_get_description(
 		const struct iio_context *ctx);
 
 
+/** @brief Get the number of context-specific attributes
+ * @param ctx A pointer to an iio_context structure
+ * @return The number of context-specific attributes
+ *
+ * Introduced in version 0.9. */
+__api __pure unsigned int iio_context_get_attrs_count(
+		const struct iio_context *ctx);
+
+
+/** @brief Retrieve the name and value of a context-specific attribute
+ * @param ctx A pointer to an iio_context structure
+ * @param index The index corresponding to the attribute
+ * @param name A pointer to a const char * pointer (NULL accepted)
+ * @param value A pointer to a const char * pointer (NULL accepted)
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * Introduced in version 0.9. */
+__api int iio_context_get_attr(
+		const struct iio_context *ctx, unsigned int index,
+		const char **name, const char **value);
+
+
+/** @brief Retrieve the value of a context-specific attribute
+ * @param ctx A pointer to an iio_context structure
+ * @param name The name of the context attribute to read
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the name does not correspond to any attribute, NULL is
+ * returned
+ *
+ * Introduced in version 0.9. */
+__api const char * iio_context_get_attr_value(
+		const struct iio_context *ctx, const char *name);
+
+
 /** @brief Enumerate the devices found in the given context
  * @param ctx A pointer to an iio_context structure
  * @return The number of devices found */
