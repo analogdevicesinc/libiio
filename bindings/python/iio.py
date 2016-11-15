@@ -13,8 +13,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-from ctypes import Structure, c_char_p, c_uint, c_int, \
-		c_char, c_void_p, c_bool, create_string_buffer, \
+from ctypes import Structure, c_char_p, c_uint, c_int, c_size_t, \
+		c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, \
 		POINTER as _POINTER, CDLL as _cdll, memmove as _memmove, byref as _byref
 from os import strerror as _strerror
 from platform import system as _system
@@ -139,12 +139,12 @@ _d_get_attr.argtypes = (_DevicePtr, )
 _d_get_attr.errcheck = _checkNull
 
 _d_read_attr = _lib.iio_device_attr_read
-_d_read_attr.restype = c_int
-_d_read_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_uint)
+_d_read_attr.restype = c_ssize_t
+_d_read_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
 _d_read_attr.errcheck = _checkNegative
 
 _d_write_attr = _lib.iio_device_attr_write
-_d_write_attr.restype = c_int
+_d_write_attr.restype = c_ssize_t
 _d_write_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_attr.errcheck = _checkNegative
 
@@ -158,12 +158,12 @@ _d_get_debug_attr.argtypes = (_DevicePtr, )
 _d_get_debug_attr.errcheck = _checkNull
 
 _d_read_debug_attr = _lib.iio_device_debug_attr_read
-_d_read_debug_attr.restype = c_int
-_d_read_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_uint)
+_d_read_debug_attr.restype = c_ssize_t
+_d_read_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
 _d_read_debug_attr.errcheck = _checkNegative
 
 _d_write_debug_attr = _lib.iio_device_debug_attr_write
-_d_write_debug_attr.restype = c_int
+_d_write_debug_attr.restype = c_ssize_t
 _d_write_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_debug_attr.errcheck = _checkNegative
 
@@ -242,12 +242,12 @@ _c_get_filename.argtypes = (_ChannelPtr, c_char_p, )
 _c_get_filename.errcheck = _checkNull
 
 _c_read_attr = _lib.iio_channel_attr_read
-_c_read_attr.restype = c_int
-_c_read_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p, c_uint)
+_c_read_attr.restype = c_ssize_t
+_c_read_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p, c_size_t)
 _c_read_attr.errcheck = _checkNegative
 
 _c_write_attr = _lib.iio_channel_attr_write
-_c_write_attr.restype = c_int
+_c_write_attr.restype = c_ssize_t
 _c_write_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p)
 _c_write_attr.errcheck = _checkNegative
 
@@ -262,36 +262,36 @@ _c_is_enabled.restype = c_bool
 _c_is_enabled.argtypes = (_ChannelPtr, )
 
 _c_read = _lib.iio_channel_read
-_c_read.restype = c_uint
-_c_read.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
+_c_read.restype = c_ssize_t
+_c_read.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_size_t, )
 
 _c_read_raw = _lib.iio_channel_read_raw
-_c_read_raw.restype = c_uint
-_c_read_raw.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
+_c_read_raw.restype = c_ssize_t
+_c_read_raw.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_size_t, )
 
 _c_write = _lib.iio_channel_write
-_c_write.restype = c_uint
-_c_write.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
+_c_write.restype = c_ssize_t
+_c_write.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_size_t, )
 
 _c_write_raw = _lib.iio_channel_write_raw
-_c_write_raw.restype = c_uint
-_c_write_raw.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_uint, )
+_c_write_raw.restype = c_ssize_t
+_c_write_raw.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_size_t, )
 
 _create_buffer = _lib.iio_device_create_buffer
 _create_buffer.restype = _BufferPtr
-_create_buffer.argtypes = (_DevicePtr, c_uint, c_bool, )
+_create_buffer.argtypes = (_DevicePtr, c_size_t, c_bool, )
 _create_buffer.errcheck = _checkNull
 
 _buffer_destroy = _lib.iio_buffer_destroy
 _buffer_destroy.argtypes = (_BufferPtr, )
 
 _buffer_refill = _lib.iio_buffer_refill
-_buffer_refill.restype = c_int
+_buffer_refill.restype = c_ssize_t
 _buffer_refill.argtypes = (_BufferPtr, )
 _buffer_refill.errcheck = _checkNegative
 
 _buffer_push_partial = _lib.iio_buffer_push_partial
-_buffer_push_partial.restype = c_int
+_buffer_push_partial.restype = c_ssize_t
 _buffer_push_partial.argtypes = (_BufferPtr, c_uint, )
 _buffer_push_partial.errcheck = _checkNegative
 
