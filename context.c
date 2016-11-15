@@ -30,13 +30,15 @@
 
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
-"<!ELEMENT context (device)*>"
+"<!ELEMENT context (device | context-attribute)*>"
+"<!ELEMENT context-attribute EMPTY>"
 "<!ELEMENT device (channel | attribute | debug-attribute)*>"
 "<!ELEMENT channel (scan-element?, attribute*)>"
 "<!ELEMENT attribute EMPTY>"
 "<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
 "<!ATTLIST context name CDATA #REQUIRED description CDATA #IMPLIED>"
+"<!ATTLIST context-attribute name CDATA #REQUIRED value CDATA #REQUIRED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST scan-element index CDATA #REQUIRED format CDATA #REQUIRED scale CDATA #IMPLIED>"
@@ -47,8 +49,8 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)
 {
-	size_t len, *devices_len;
-	char *str, *ptr, **devices;
+	size_t len, *devices_len = NULL;
+	char *str, *ptr, **devices = NULL;
 	unsigned int i;
 
 	len = strlen(ctx->name) + sizeof(xml_header) - 1 +
@@ -57,41 +59,30 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		len += strlen(ctx->description) +
 			sizeof(" description=\"\"") - 1;
 
-	if (!ctx->nb_devices) {
-		str = malloc(len);
-		if (!str) {
+	for (i = 0; i < ctx->nb_attrs; i++)
+		len += strlen(ctx->attrs[i]) +
+			strlen(ctx->values[i]) +
+			sizeof("<context-attribute name=\"\" value=\"\" />");
+
+	if (ctx->nb_devices) {
+		devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
+		if (!devices_len) {
 			errno = ENOMEM;
 			return NULL;
 		}
 
-		if (ctx->description)
-			snprintf(str, len, "%s<context name=\"%s\" "
-					"description=\"%s\" ></context>",
-					xml_header, ctx->name,
-					ctx->description);
-		else
-			snprintf(str, len, "%s<context name=\"%s\" ></context>",
-					xml_header, ctx->name);
-		return str;
-	}
+		devices = malloc(ctx->nb_devices * sizeof(*devices));
+		if (!devices)
+			goto err_free_devices_len;
 
-	devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
-	if (!devices_len) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	devices = malloc(ctx->nb_devices * sizeof(*devices));
-	if (!devices)
-		goto err_free_devices_len;
-
-	for (i = 0; i < ctx->nb_devices; i++) {
-		char *xml = iio_device_get_xml(ctx->devices[i],
-				&devices_len[i]);
-		if (!xml)
-			goto err_free_devices;
-		devices[i] = xml;
-		len += devices_len[i];
+		for (i = 0; i < ctx->nb_devices; i++) {
+			char *xml = iio_device_get_xml(ctx->devices[i],
+					&devices_len[i]);
+			if (!xml)
+				goto err_free_devices;
+			devices[i] = xml;
+			len += devices_len[i];
+		}
 	}
 
 	str = malloc(len);
@@ -108,6 +99,11 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		snprintf(str, len, "%s<context name=\"%s\" >",
 				xml_header, ctx->name);
 	ptr = strrchr(str, '\0');
+
+	for (i = 0; i < ctx->nb_attrs; i++)
+		ptr += sprintf(ptr, "<context-attribute name=\"%s\" value=\"%s\" />",
+				ctx->attrs[i], ctx->values[i]);
+
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		strcpy(ptr, devices[i]);
