@@ -291,6 +291,25 @@ static const struct iio_backend_ops xml_ops = {
 	.clone = xml_clone,
 };
 
+static int parse_context_attr(struct iio_context *ctx, xmlNode *n)
+{
+	xmlAttr *attr;
+	const char *name = NULL, *value = NULL;
+
+	for (attr = n->properties; attr; attr = attr->next) {
+		if (!strcmp((const char *) attr->name, "name")) {
+			name = (const char *) attr->children->content;
+		} else if (!strcmp((const char *) attr->name, "value")) {
+			value = (const char *) attr->children->content;
+		}
+	}
+
+	if (!name || !value)
+		return -EINVAL;
+	else
+		return iio_context_add_attr(ctx, name, value);
+}
+
 static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 {
 	unsigned int i;
@@ -323,7 +342,13 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	for (n = root->children; n; n = n->next) {
 		struct iio_device **devs, *dev;
 
-		if (strcmp((char *) n->name, "device")) {
+		if (!strcmp((char *) n->name, "context-attribute")) {
+			err = parse_context_attr(ctx, n);
+			if (err)
+				goto err_free_devices;
+			else
+				continue;
+		} else if (strcmp((char *) n->name, "device")) {
 			if (strcmp((char *) n->name, "text"))
 				WARNING("Unknown children \'%s\' in "
 						"<context>\n", n->name);
@@ -359,6 +384,12 @@ err_free_devices:
 		free_device(ctx->devices[i]);
 	if (ctx->nb_devices)
 		free(ctx->devices);
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		free(ctx->attrs[i]);
+		free(ctx->values[i]);
+	}
+	free(ctx->attrs);
+	free(ctx->values);
 err_free_ctx:
 	free(ctx);
 err_set_errno:
