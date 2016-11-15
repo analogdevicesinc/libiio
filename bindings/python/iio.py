@@ -15,22 +15,28 @@
 
 from ctypes import Structure, c_char_p, c_uint, c_int, \
 		c_char, c_void_p, c_bool, create_string_buffer, \
-		POINTER as _POINTER, cdll as _cdll, memmove as _memmove, byref as _byref
+		POINTER as _POINTER, CDLL as _cdll, memmove as _memmove, byref as _byref
 from os import strerror as _strerror
 from platform import system as _system
 import weakref
+
+if 'Windows' in _system():
+	from ctypes import get_last_error
+else:
+	from ctypes import get_errno
 
 def _checkNull(result, func, arguments):
 	if result:
 		return result
 	else:
-		raise Exception("Null pointer")
+		err = get_last_error() if 'Windows' in _system() else get_errno()
+		raise OSError(err, _strerror(err))
 
 def _checkNegative(result, func, arguments):
 	if result >= 0:
 		return result
 	else:
-		raise Exception("Error: " + _strerror(-result))
+		raise OSError(-result, _strerror(-result))
 
 class _Context(Structure):
 	pass
@@ -46,7 +52,8 @@ _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _BufferPtr = _POINTER(_Buffer)
 
-_lib = _cdll.LoadLibrary('libiio.dll' if 'Windows' in _system() else 'libiio.so.0')
+_lib = _cdll('libiio.dll' if 'Windows' in _system() else 'libiio.so.0',
+		use_errno = True, use_last_error = True)
 
 _new_local = _lib.iio_create_local_context
 _new_local.restype = _ContextPtr
