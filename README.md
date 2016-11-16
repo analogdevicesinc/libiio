@@ -2,7 +2,7 @@
 
 
 License : [![License](https://img.shields.io/badge/license-LGPL2-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/master/LICENSE)
-Latest Stable Release : [![GitHub release](https://img.shields.io/github/release/analogdevicesinc/libiio.svg)]()
+Latest Stable Release : [![GitHub release](https://img.shields.io/github/release/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 Number of downloads :  [![Github All Releases](https://img.shields.io/github/downloads/analogdevicesinc/libiio/total.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 
 | Operating System        | Status       |
