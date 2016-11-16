@@ -251,7 +251,10 @@ configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
 configure_file(libiio.pc.cmakein ${LIBIIO_PC} @ONLY)
-install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+
+if(NOT SKIP_INSTALL_ALL)
+	install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+endif()
 
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
@@ -296,7 +299,9 @@ if(DOXYGEN_FOUND)
 			COMMENT "Generating API documentation with Doxygen" VERBATIM
 			)
 
-		install(DIRECTORY ${HTML_DEST_DIR} DESTINATION ${CMAKE_INSTALL_DOCDIR})
+		if(NOT SKIP_INSTALL_ALL)
+			install(DIRECTORY ${HTML_DEST_DIR} DESTINATION ${CMAKE_INSTALL_DOCDIR})
+		endif()
 	endif()
 else()
 	message(STATUS "Doxygen not found, API documentation won't be generated")

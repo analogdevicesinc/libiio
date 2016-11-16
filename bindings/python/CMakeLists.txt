@@ -14,6 +14,8 @@ if (PYTHONINTERP_FOUND)
 
 		add_custom_target(libiio-py ALL DEPENDS ${SETUP_PY} COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet build)
 
-		install(CODE "execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX})")
+		if(NOT SKIP_INSTALL_ALL)
+			install(CODE "execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX})")
+		endif()
 	endif()
 endif()
