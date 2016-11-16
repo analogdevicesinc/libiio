@@ -1198,6 +1198,8 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 
 	if (pdata->fd_in_is_socket) {
 		struct pollfd pfd[2];
+		bool found;
+		size_t bytes_read = 0;
 
 		pfd[0].fd = pdata->fd_in;
 		pfd[0].events = POLLIN | POLLRDHUP;
@@ -1206,29 +1208,46 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		pfd[1].events = POLLIN;
 		pfd[1].revents = 0;
 
-		poll_nointr(pfd, 2);
+		do {
+			size_t i, to_trunc;
 
-		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP)
-			return 0;
+			poll_nointr(pfd, 2);
 
-		/* First read from the socket, without advancing the
-		 * read offset */
-		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL | MSG_PEEK);
-		if (ret > 0) {
-			size_t i;
+			if (pfd[1].revents & POLLIN ||
+					pfd[0].revents & POLLRDHUP)
+				return 0;
+
+			/* First read from the socket, without advancing the
+			 * read offset */
+			ret = recv(pdata->fd_in, buf, len,
+					MSG_NOSIGNAL | MSG_PEEK);
+			if (ret < 0)
+				return -errno;
 
 			/* Lookup for the trailing \n */
 			for (i = 0; i < (size_t) ret && buf[i] != '\n'; i++);
+			found = i < (size_t) ret;
 
-			/* No \n found? Just garbage data */
-			if (i == (size_t) ret)
-				return -EIO;
+			len -= ret;
+			buf += ret;
 
-			/* Advance the read offset to the byte following
-			 * the \n */
-			ret = recv(pdata->fd_in, buf, i + 1,
+			to_trunc = found ? i + 1 : (size_t) ret;
+
+			/* Advance the read offset after the \n if found, or
+			 * after the last character read otherwise */
+			ret = recv(pdata->fd_in, NULL, to_trunc,
 					MSG_NOSIGNAL | MSG_TRUNC);
-		}
+			if (ret < 0)
+				return -errno;
+
+			bytes_read += to_trunc;
+		} while (!found && len);
+
+		/* No \n found? Just garbage data */
+		if (!found)
+			ret = -EIO;
+		else
+			ret = bytes_read;
 	} else {
 		ret = pdata->readfd(pdata, buf, len);
 	}
