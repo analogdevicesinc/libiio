@@ -27,7 +27,10 @@ endif()
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
-set(CMAKE_MACOSX_RPATH ON)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	set(CMAKE_MACOSX_RPATH ON)
+	set(SKIP_INSTALL_ALL ON)
+endif()
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 option(WITH_TESTS "Build the test programs" ON)
@@ -337,6 +340,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 	if (PKGBUILD_EXECUTABLE AND PRODUCTBUILD_EXECUTABLE)
 		add_custom_target(libiio-pkg ALL DEPENDS ${LIBIIO_PKG})
+
+		install(CODE "execute_process(COMMAND /usr/sbin/installer -pkg ${LIBIIO_PKG} -target /)")
 	else()
 		message(WARNING "Missing pkgbuild or productbuild: OSX installer won't be created.")
 	endif()
