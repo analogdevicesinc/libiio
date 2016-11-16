@@ -16,6 +16,8 @@
  *
  * */
 
+#include "iio-config.h"
+
 #include <errno.h>
 #include <getopt.h>
 #include <iio.h>
@@ -179,6 +181,24 @@ int main(int argc, char **argv)
 
 	iio_library_get_version(&major, &minor, git_tag);
 	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
+
+	printf("Compiled with backends:"
+#ifdef WITH_LOCAL_BACKEND
+			" local"
+#endif
+#ifdef WITH_XML_BACKEND
+			" xml"
+#endif
+#ifdef WITH_NETWORK_BACKEND
+			" network"
+#endif
+#ifdef WITH_USB_BACKEND
+			" usb"
+#endif
+#ifdef WITH_SERIAL_BACKEND
+			" serial"
+#endif
+			"\n");
 
 	if (do_scan) {
 		scan();
