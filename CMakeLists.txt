@@ -319,16 +319,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		DOC "OSX Package builder (productbuild)")
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
-	add_custom_command(OUTPUT ${LIBIIO_TEMP_PKG} COMMAND ${PKGBUILD_EXECUTABLE}
+	add_custom_command(OUTPUT ${LIBIIO_PKG}
+		COMMAND ${PKGBUILD_EXECUTABLE}
 			--component ${CMAKE_CURRENT_BINARY_DIR}/iio.framework
 			--identifier com.adi.iio --version ${VERSION}
 			--install-location /Library/Frameworks ${LIBIIO_TEMP_PKG}
-		DEPENDS iio
-	)
-
-	add_custom_command(OUTPUT ${LIBIIO_PKG} COMMAND ${PRODUCTBUILD_EXECUTABLE}
+		COMMAND ${PRODUCTBUILD_EXECUTABLE}
 			--distribution ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_PKG}
-		DEPENDS ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_TEMP_PKG}
+		COMMAND ${CMAKE_COMMAND} -E remove ${LIBIIO_TEMP_PKG}
+		DEPENDS iio ${LIBIIO_DISTRIBUTION_XML}
 	)
 
 	if (PKGBUILD_EXECUTABLE AND PRODUCTBUILD_EXECUTABLE)
