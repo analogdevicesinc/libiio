@@ -10,14 +10,22 @@ compiler:
   - clang
   - gcc
 
+addons:
+  sonarqube: true
+
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb ; fi
+
+env:
+  global:
+    - secure: We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao=
 
 script:
   - mkdir build
   - cd build
   - cmake .. && make
+  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
 
 notifications:
   email:
