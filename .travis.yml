@@ -16,7 +16,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libaio-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-client-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-common-dev; fi
-# Doesn't exist on Ubunto Trusty / 14.04LTS, so don't install it
+# Doesn't exist on Ubuntu Trusty / 14.04LTS, so don't install it
 #   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libserialport-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libusb-1.0-0-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libxml2-dev; fi
@@ -27,8 +27,11 @@ env:
 script:
   - mkdir build
   - cd build
-  - cmake .. && make
-  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
+  - cmake ..
+  - make
+  - make package
+# only do this one time per build
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX=g++" ]] ; sonar-scanner -Dsonar.login=$SONAR_TOKEN ; fi
 notifications:
   email:
     on_success: change
