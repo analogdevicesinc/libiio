@@ -17,7 +17,7 @@ before_install:
 
 env:
   global:
-    - secure: We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao=
+    - secure: "We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao="
 script:
   - mkdir build
   - cd build
