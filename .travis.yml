@@ -19,7 +19,8 @@ before_install:
       sudo apt-get install -y libaio-dev;
       sudo apt-get install -y libavahi-client-dev;
       sudo apt-get install -y libavahi-common-dev;
-      sudo apt-get install -y libserialport-dev;
+# Doesn't exist on Ubunto Trusty / 14.04LTS, so don't install it
+# sudo apt-get install -y libserialport-dev;
       sudo apt-get install -y libusb-1.0-0-dev;
       sudo apt-get install -y libxml2-dev;
     fi

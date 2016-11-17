@@ -17,7 +17,7 @@ set(CPACK_BUNDLE_NAME libiio)
 set(CPACK_SET_DESTDIR ON)
 # debian settings
 set(CPACK_PACKAGE_CONTACT "Engineerzone <https://ez.analog.com/community/linux-device-drivers>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.110-3), libavahi-client-dev (>= 0.6.32-1), libavahi-common-dev (>= 0.6.32-1), libc6-dev (>= 2.24-5), libserialport-dev (>= 0.1.1-1), libusb-1.0-0-dev (>= 2:1.0.21-1), libxml2-dev (>= 2.9.4+dfsg1-2.1)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.109-4), libavahi-client-dev (>= 0.6.31-4), libavahi-common-dev (>= 0.6.31-4), libc6-dev (>= 2.19-0), libusb-1.0-0-dev (>= 2:1.0.17-1), libxml2-dev (>= 2.9.1+dfsg1-3)")
 
 # Set the default install path to /usr
 if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
