@@ -3,12 +3,28 @@ project(libiio C)
 
 set(LIBIIO_VERSION_MAJOR 0)
 set(LIBIIO_VERSION_MINOR 8)
-set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
+set(LIBIIO_VERSION_PATCH 0)
+set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}.${LIBIIO_VERSION_PATCH}")
+
+# support creating some basic binpkgs via `make package`
+set(CPACK_GENERATOR STGZ;TGZ;TBZ2;RPM;DEB)
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
+set(CPACK_PACKAGE_VERSION_MAJOR ${LIBIIO_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${LIBIIO_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${LIBIIO_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${LIBIIO_VERSION})
+set(CPACK_BUNDLE_NAME libiio)
+set(CPACK_SET_DESTDIR ON)
+# debian settings
+set(CPACK_PACKAGE_CONTACT "Engineerzone <https://ez.analog.com/community/linux-device-drivers>")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.110-3), libavahi-client-dev (>= 0.6.32-1), libavahi-common-dev (>= 0.6.32-1), libc6-dev (>= 2.24-5), libserialport-dev (>= 0.1.1-1), libusb-1.0-0-dev (>= 2:1.0.21-1), libxml2-dev (>= 2.9.4+dfsg1-2.1)")
 
 # Set the default install path to /usr
 if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
 endif()
+
+include(CPack)
 
 set(CMAKE_INSTALL_DOCDIR "" CACHE PATH "documentation root (DATAROOTDIR/doc/${PROJECT_NAME}${LIBIIO_VERSION_MAJOR}-doc)")
 include(GNUInstallDirs)
