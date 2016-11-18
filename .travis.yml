@@ -1,10 +1,10 @@
 os:
   - linux
-  - osx
+#  - osx
 dist: trusty
 language: c
 compiler:
-  - clang
+#  - clang
   - gcc
 addons:
   artifacts: true
@@ -14,6 +14,7 @@ addons:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget http://sonarqube.example.org:9000/static/cpp/build-wrapper-macosx-x86.zip; mv build-wrapper-macosx-x86.zip build-wrapper.zip; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libaio-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-client-dev; fi
@@ -26,6 +27,11 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y tar; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y gzip; fi
+  - mkdir -p $TRAVIS_BUILD_DIR/3rdparty
+  - cd $TRAVIS_BUILD_DIR/3rdparty
+  - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
+  - unzip build-wrapper-linux-x86.zip
+  - export PATH=$PWD/build-wrapper-linux-x86:$PATH
 
 env:
   global:
@@ -38,6 +44,8 @@ script:
   - make
   - make package
 # should only do this one time per build
+  - mkdir scanner-output
+  - build-wrapper-linux-x86-64 --out-dir ./scanner-output make clean all
   - cd ..
   - sonar-scanner -Dsonar.login=$SONAR_GITHUB_TOKEN
 notifications:
