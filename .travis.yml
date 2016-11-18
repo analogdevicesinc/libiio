@@ -46,7 +46,7 @@ script:
   - mkdir scanner-output
   - build-wrapper-linux-x86-64 --out-dir ./scanner-output make clean all
   - cd ..
-  - sonar-scanner -Dsonar.login=$SONAR_GITHUB_TOKEN
+  - sonar-scanner -e -X -Dsonar.host.url=https://sonarqube.com -Dsonar.login=$SONAR_TOKEN
 notifications:
   email:
     on_success: change
