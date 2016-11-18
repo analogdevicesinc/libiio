@@ -16,6 +16,7 @@
 #cmakedefine WITH_NETWORK_GET_BUFFER
 #cmakedefine WITH_NETWORK_EVENTFD
 #cmakedefine WITH_IIOD_USBD
+#cmakedefine WITH_LOCAL_CONFIG
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
 #cmakedefine HAS_STRERROR_R

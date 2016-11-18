@@ -38,6 +38,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#ifdef WITH_LOCAL_CONFIG
+#include <ini.h>
+#endif
 
 #define DEFAULT_TIMEOUT_MS 1000
 
@@ -1672,6 +1675,62 @@ static void init_scan_elements(struct iio_context *ctx)
 	}
 }
 
+#ifdef WITH_LOCAL_CONFIG
+static int populate_context_attrs(struct iio_context *ctx, const char *file)
+{
+	struct INI *ini;
+	int ret;
+
+	ini = ini_open(file);
+	if (!ini) {
+		/* INI file not present -> not an error */
+		if (errno == ENOENT)
+			return 0;
+		else
+			return -errno;
+	}
+
+	while (true) {
+		const char *section;
+		size_t len;
+
+		ret = ini_next_section(ini, &section, &len);
+		if (ret <= 0)
+			goto out_close_ini;
+
+		if (!strncmp(section, "Context Attributes", len))
+			break;
+	}
+
+	do {
+		const char *key, *value;
+		char *new_key, *new_val;
+		size_t klen, vlen;
+
+		ret = ini_read_pair(ini, &key, &klen, &value, &vlen);
+		if (ret <= 0)
+			break;
+
+		/* Create a dup of the strings read from the INI, since they are
+		 * not NULL-terminated. */
+		new_key = strndup(key, klen);
+		new_val = strndup(value, vlen);
+
+		if (!new_key || !new_val)
+			ret = -ENOMEM;
+		else
+			ret = iio_context_add_attr(ctx, new_key, new_val);
+
+		free(new_key);
+		free(new_val);
+	} while (!ret);
+
+out_close_ini:
+	ini_close(ini);
+	return ret;
+}
+#endif
+
 struct iio_context * local_create_context(void)
 {
 	int ret = -ENOMEM;
@@ -1712,6 +1771,13 @@ struct iio_context * local_create_context(void)
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
 
 	init_scan_elements(ctx);
+
+#ifdef WITH_LOCAL_CONFIG
+	ret = populate_context_attrs(ctx, "/etc/libiio.ini");
+	if (ret < 0)
+		goto err_context_destroy;
+#endif
+
 	ret = iio_context_init(ctx);
 	if (ret < 0)
 		goto err_context_destroy;
