@@ -270,8 +270,10 @@ int main (int argc, char **argv)
 		p_end = iio_buffer_end(txbuf);
 		for (p_dat = iio_buffer_first(txbuf, tx0_i); p_dat < p_end; p_dat += p_inc) {
 			// Example: fill with zeros
-			((int16_t*)p_dat)[0] = 0; // Real (I)
-			((int16_t*)p_dat)[1] = 0; // Imag (Q)
+			// 12-bit sample needs to be MSB alligned so shift by 4
+			// https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/basic_iq_datafiles#binary_format
+			((int16_t*)p_dat)[0] = 0 << 4; // Real (I)
+			((int16_t*)p_dat)[1] = 0 << 4; // Imag (Q)
 		}
 
 		// Sample counter increment and status output
