@@ -1299,7 +1299,6 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 
 		len -= ret;
 		dst += ret;
-		bytes_read += i;
 
 		if (found)
 			to_trunc = i + 1;
