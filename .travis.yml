@@ -36,6 +36,7 @@ script:
   - make
   - make package
 # should only do this one time per build
+  - cd ..
   - sonar-scanner -Dsonar.login=$SONAR_GITHUB_TOKEN
 notifications:
   email:
