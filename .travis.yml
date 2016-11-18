@@ -40,13 +40,17 @@ env:
 script:
   - cd $TRAVIS_BUILD_DIR/build
   - cmake ..
-  - make
-  - make package
-# should only do this one time per build
+# should only do this one time per build, and needs to be done first
   - mkdir scanner-output
   - build-wrapper-linux-x86-64 --out-dir ./scanner-output make clean all
-  - cd ..
+  - cd $TRAVIS_BUILD_DIR
   - sonar-scanner -e -X -Dsonar.host.url=https://sonarqube.com -Dsonar.login=$SONAR_TOKEN
+# Now make build the packages
+  - cd $TRAVIS_BUILD_DIR/build
+  - rm * -rf
+  - cmake ..
+  - make
+  - make package
 notifications:
   email:
     on_success: change
