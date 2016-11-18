@@ -14,7 +14,6 @@ set(CPACK_PACKAGE_VERSION_MINOR ${LIBIIO_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${LIBIIO_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION ${LIBIIO_VERSION})
 set(CPACK_BUNDLE_NAME libiio)
-set(CPACK_SET_DESTDIR ON)
 # debian settings
 set(CPACK_PACKAGE_CONTACT "Engineerzone <https://ez.analog.com/community/linux-device-drivers>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.109-4), libavahi-client-dev (>= 0.6.31-4), libavahi-common-dev (>= 0.6.31-4), libc6-dev (>= 2.19-0), libusb-1.0-0-dev (>= 2:1.0.17-1), libxml2-dev (>= 2.9.1+dfsg1-3)")
