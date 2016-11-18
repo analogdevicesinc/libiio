@@ -20,10 +20,12 @@ before_install:
 #   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libserialport-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libusb-1.0-0-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libxml2-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y rpm; fi
 
 env:
   global:
     - secure: "We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao="
+    - secure: "oYOjzcEuQZ5VFsFKYoXrlbkG5ei5QA1t0ryFmVWEl+98yPYBakf5+DqDVT7uO5gqKSzz3EFrmhJhUbqpTNHNJcJCxTUYwNXapot0CEy3zsWKbxOqZVtkII8BEaOSo2Kr9UmTqm17oUXQQ/1lg8Xmchx0h0udvPLIDus/iQEUvWo="
 script:
   - mkdir build
   - cd build
@@ -31,7 +33,7 @@ script:
   - make
   - make package
 # only do this one time per build
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX=g++" ]] ; sonar-scanner -Dsonar.login=$SONAR_TOKEN ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "g++" ]] ; sonar-scanner -Dsonar.login=$SONAR_GITHUB_TOKEN ; fi
 notifications:
   email:
     on_success: change
