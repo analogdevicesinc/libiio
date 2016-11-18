@@ -27,7 +27,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y tar; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y gzip; fi
-  - mkdir -p $TRAVIS_BUILD_DIR/3rdparty
+  - mkdir -p $TRAVIS_BUILD_DIR/3rdparty $TRAVIS_BUILD_DIR/build
   - cd $TRAVIS_BUILD_DIR/3rdparty
   - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
   - unzip build-wrapper-linux-x86.zip
@@ -38,8 +38,7 @@ env:
     - secure: "We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao="
     - secure: "oYOjzcEuQZ5VFsFKYoXrlbkG5ei5QA1t0ryFmVWEl+98yPYBakf5+DqDVT7uO5gqKSzz3EFrmhJhUbqpTNHNJcJCxTUYwNXapot0CEy3zsWKbxOqZVtkII8BEaOSo2Kr9UmTqm17oUXQQ/1lg8Xmchx0h0udvPLIDus/iQEUvWo="
 script:
-  - mkdir build
-  - cd build
+  - cd $TRAVIS_BUILD_DIR/build
   - cmake ..
   - make
   - make package
