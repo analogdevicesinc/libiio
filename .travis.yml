@@ -8,7 +8,9 @@ compiler:
   - gcc
 addons:
   artifacts: true
-  sonarqube: true
+  sonarqube:
+    branches:
+      - travis-ci
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
