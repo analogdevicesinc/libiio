@@ -35,8 +35,8 @@ script:
   - cmake ..
   - make
   - make package
-# only do this one time per build
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "g++" ]] ; sonar-scanner -Dsonar.login=$SONAR_GITHUB_TOKEN ; fi
+# should only do this one time per build
+  - sonar-scanner -Dsonar.login=$SONAR_GITHUB_TOKEN
 notifications:
   email:
     on_success: change
