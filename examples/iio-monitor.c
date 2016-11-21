@@ -18,13 +18,19 @@
 
 #define _BSD_SOURCE
 #define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <cdk/cdk.h>
-#include <iio.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
+
+#ifdef __APPLE__
+#include <iio/iio.h>
+#else
+#include <iio.h>
+#endif
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 

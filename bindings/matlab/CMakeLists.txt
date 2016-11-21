@@ -5,7 +5,7 @@ find_program(
 )
 mark_as_advanced(MATLAB_EXECUTABLE)
 
-if (MATLAB_EXECUTABLE)
+if (MATLAB_EXECUTABLE AND NOT SKIP_INSTALL_ALL)
 	option(MATLAB_BINDINGS "Install MATLAB bindings" ON)
 
 	if (MATLAB_BINDINGS)

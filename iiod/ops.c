@@ -18,6 +18,7 @@
 
 #include "ops.h"
 #include "parser.h"
+#include "thread-pool.h"
 #include "../debug.h"
 #include "../iio-private.h"
 
@@ -76,7 +77,7 @@ static int thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex,
 	pfd[0].events = POLLIN;
 	pfd[1].fd = fd_in;
 	pfd[1].events = POLLRDHUP;
-	pfd[2].fd = stop_fd;
+	pfd[2].fd = thread_pool_get_poll_fd(thd->pdata->pool);
 	pfd[2].events = POLLIN;
 
 	do {
@@ -113,8 +114,6 @@ struct DevEntry {
 	 * to all the threads who opened the device */
 	SLIST_HEAD(ThdHead, ThdEntry) thdlist_head;
 	pthread_mutex_t thdlist_lock;
-
-	pthread_t thd;
 
 	uint32_t *mask;
 	size_t nb_words;
@@ -159,7 +158,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	pfd[0].fd = pdata->aio_eventfd;
 	pfd[0].events = POLLIN;
 	pfd[0].revents = 0;
-	pfd[1].fd = stop_fd;
+	pfd[1].fd = thread_pool_get_poll_fd(pdata->pool);
 	pfd[1].events = POLLIN;
 	pfd[1].revents = 0;
 	num_pfds = 2;
@@ -224,7 +223,7 @@ static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 	pfd[0].fd = pdata->fd_in;
 	pfd[0].events = POLLIN | POLLRDHUP;
 	pfd[0].revents = 0;
-	pfd[1].fd = stop_fd;
+	pfd[1].fd = thread_pool_get_poll_fd(pdata->pool);
 	pfd[1].events = POLLIN;
 	pfd[1].revents = 0;
 
@@ -261,7 +260,7 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 	pfd[0].fd = pdata->fd_out;
 	pfd[0].events = POLLOUT;
 	pfd[0].revents = 0;
-	pfd[1].fd = stop_fd;
+	pfd[1].fd = thread_pool_get_poll_fd(pdata->pool);
 	pfd[1].events = POLLIN;
 	pfd[1].revents = 0;
 
@@ -490,7 +489,7 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 	thd_entry_event_signal(thd);
 }
 
-static void * rw_thd(void *d)
+static void rw_thd(struct thread_pool *pool, void *d)
 {
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd, *next_thd;
@@ -724,9 +723,6 @@ static void * rw_thd(void *d)
 			dev->name ? dev->name : dev->id);
 
 	dev_entry_put(entry);
-	thread_stopped();
-
-	return NULL;
 }
 
 static struct ThdEntry *parser_lookup_thd_entry(struct parser_pdata *pdata,
@@ -848,14 +844,12 @@ static void remove_thd_entry(struct ThdEntry *t)
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic)
 {
-	pthread_attr_t attr;
 	int ret = -ENOMEM;
 	struct DevEntry *entry;
 	struct ThdEntry *thd;
 	size_t len = strlen(mask);
 	uint32_t *words;
 	unsigned int nb_channels;
-	sigset_t sigmask, oldsigmask;
 
 	if (!dev)
 		return -ENODEV;
@@ -948,18 +942,10 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	DEBUG("Added thread to client list\n");
 
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-	sigfillset(&sigmask);
-	pthread_sigmask(SIG_BLOCK, &sigmask, &oldsigmask);
-	thread_started();
-	ret = pthread_create(&entry->thd, &attr, rw_thd, entry);
-	pthread_sigmask(SIG_SETMASK, &oldsigmask, NULL);
-	pthread_attr_destroy(&attr);
+	ret = thread_pool_add_thread(pdata->pool, rw_thd, entry, "rw_thd");
 	if (ret) {
 		pthread_mutex_unlock(&devlist_lock);
-		thread_stopped();
 		goto err_free_entry_mask;
 	}
 
@@ -1212,37 +1198,56 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 
 	if (pdata->fd_in_is_socket) {
 		struct pollfd pfd[2];
+		bool found;
+		size_t bytes_read = 0;
 
 		pfd[0].fd = pdata->fd_in;
 		pfd[0].events = POLLIN | POLLRDHUP;
 		pfd[0].revents = 0;
-		pfd[1].fd = stop_fd;
+		pfd[1].fd = thread_pool_get_poll_fd(pdata->pool);
 		pfd[1].events = POLLIN;
 		pfd[1].revents = 0;
 
-		poll_nointr(pfd, 2);
+		do {
+			size_t i, to_trunc;
 
-		if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP)
-			return 0;
+			poll_nointr(pfd, 2);
 
-		/* First read from the socket, without advancing the
-		 * read offset */
-		ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL | MSG_PEEK);
-		if (ret > 0) {
-			size_t i;
+			if (pfd[1].revents & POLLIN ||
+					pfd[0].revents & POLLRDHUP)
+				return 0;
+
+			/* First read from the socket, without advancing the
+			 * read offset */
+			ret = recv(pdata->fd_in, buf, len,
+					MSG_NOSIGNAL | MSG_PEEK);
+			if (ret < 0)
+				return -errno;
 
 			/* Lookup for the trailing \n */
 			for (i = 0; i < (size_t) ret && buf[i] != '\n'; i++);
+			found = i < (size_t) ret;
 
-			/* No \n found? Just garbage data */
-			if (i == (size_t) ret)
-				return -EIO;
+			len -= ret;
+			buf += ret;
 
-			/* Advance the read offset to the byte following
-			 * the \n */
-			ret = recv(pdata->fd_in, buf, i + 1,
+			to_trunc = found ? i + 1 : (size_t) ret;
+
+			/* Advance the read offset after the \n if found, or
+			 * after the last character read otherwise */
+			ret = recv(pdata->fd_in, NULL, to_trunc,
 					MSG_NOSIGNAL | MSG_TRUNC);
-		}
+			if (ret < 0)
+				return -errno;
+
+			bytes_read += to_trunc;
+		} while (!found && len);
+
+		/* No \n found? Just garbage data */
+		if (!found)
+			ret = -EIO;
+		else
+			ret = bytes_read;
 	} else {
 		ret = pdata->readfd(pdata, buf, len);
 	}
@@ -1251,7 +1256,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 }
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-	bool is_socket, bool use_aio)
+	bool is_socket, bool use_aio, struct thread_pool *pool)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
@@ -1263,6 +1268,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	pdata.fd_in = fd_in;
 	pdata.fd_out = fd_out;
 	pdata.verbose = verbose;
+	pdata.pool = pool;
 
 	pdata.fd_in_is_socket = is_socket;
 	pdata.fd_out_is_socket = is_socket;

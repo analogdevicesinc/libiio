@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<installer-gui-script minSpecVersion="1" >
+<installer-gui-script minSpecVersion="2" >
 	<title>Libiio</title>
 	<options customize="never" rootVolumeOnly="true" />
 	<allowed-os-versions>

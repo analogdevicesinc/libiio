@@ -944,7 +944,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 err_bad_uri:
 	ERROR("Bad URI: \'%s\'\n", uri);
-	errno = -EINVAL;
+	errno = EINVAL;
 	return NULL;
 }
 
@@ -953,10 +953,10 @@ static int usb_fill_context_info(struct iio_context_info *info,
 		unsigned int interface)
 {
 	struct libusb_device_descriptor desc;
-	char manufacturer[64], product[64];
+	char manufacturer[64], product[64], serial[64];
 	char uri[sizeof("usb:127.255.255")];
 	char description[sizeof(manufacturer) + sizeof(product) +
-		sizeof("0000:0000 ( )")];
+		sizeof(serial) + sizeof("0000:0000 ( ), serial=")];
 	int ret;
 
 	libusb_get_device_descriptor(dev, &desc);
@@ -986,9 +986,19 @@ static int usb_fill_context_info(struct iio_context_info *info,
 			product[0] = '\0';
 	}
 
+	if (desc.iSerialNumber == 0) {
+		serial[0] = '\0';
+	} else {
+		ret = libusb_get_string_descriptor_ascii(hdl,
+			desc.iSerialNumber, (unsigned char *) serial,
+			sizeof(serial));
+		if (ret < 0)
+			serial[0] = '\0';
+	}
+
 	snprintf(description, sizeof(description),
-		"%04x:%04x (%s %s)", desc.idVendor,
-		desc.idProduct, manufacturer, product);
+		"%04x:%04x (%s %s), serial=%s", desc.idVendor,
+		desc.idProduct, manufacturer, product, serial);
 
 	info->uri = iio_strdup(uri);
 	if (!info->uri)

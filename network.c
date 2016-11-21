@@ -1279,27 +1279,46 @@ static ssize_t network_read_data(struct iio_context_pdata *pdata,
 static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		void *io_data, char *dst, size_t len)
 {
+	bool found = false;
 	size_t i;
 #ifdef __linux__
 	struct iio_network_io_context *io_ctx = io_data;
 	ssize_t ret;
+	size_t bytes_read = 0;
 
-	ret = network_recv(io_ctx, dst, len, MSG_PEEK);
-	if (ret < 0)
-		return ret;
+	do {
+		size_t to_trunc;
 
-	/* Lookup for the trailing \n */
-	for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
+		ret = network_recv(io_ctx, dst, len, MSG_PEEK);
+		if (ret < 0)
+			return ret;
 
-	/* No \n found? Just garbage data */
-	if (i == (size_t) ret)
+		/* Lookup for the trailing \n */
+		for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
+		found = i < (size_t) ret;
+
+		len -= ret;
+		dst += ret;
+
+		if (found)
+			to_trunc = i + 1;
+		else
+			to_trunc = (size_t) ret;
+
+		/* Advance the read offset to the byte following the \n if
+		 * found, or after the last charater read otherwise */
+		ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
+		if (ret < 0)
+			return ret;
+
+		bytes_read += to_trunc;
+	} while (!found && len);
+
+	if (!found)
 		return -EIO;
-
-	/* Advance the read offset to the byte following the \n */
-	return network_recv(io_ctx, dst, i + 1, MSG_TRUNC);
+	else
+		return bytes_read;
 #else
-	bool found = false;
-
 	for (i = 0; i < len - 1; i++) {
 		ssize_t ret = network_read_data(pdata, io_data, dst + i, 1);
 
@@ -1379,14 +1398,14 @@ struct iio_context * network_create_context(const char *host)
 		ERROR("Unable to find host: %s\n", gai_strerror(ret));
 #ifndef _WIN32
 		if (ret != EAI_SYSTEM)
-			errno = ret;
+			errno = -ret;
 #endif
 		return NULL;
 	}
 
 	fd = create_socket(res, DEFAULT_TIMEOUT_MS);
 	if (fd < 0) {
-		errno = fd;
+		errno = -fd;
 		goto err_free_addrinfo;
 	}
 

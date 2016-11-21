@@ -27,6 +27,11 @@ endif()
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	set(CMAKE_MACOSX_RPATH ON)
+	set(SKIP_INSTALL_ALL ON)
+endif()
+
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 option(WITH_TESTS "Build the test programs" ON)
 
@@ -249,7 +254,10 @@ configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
 configure_file(libiio.pc.cmakein ${LIBIIO_PC} @ONLY)
-install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+
+if(NOT SKIP_INSTALL_ALL)
+	install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+endif()
 
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
@@ -294,7 +302,9 @@ if(DOXYGEN_FOUND)
 			COMMENT "Generating API documentation with Doxygen" VERBATIM
 			)
 
-		install(DIRECTORY ${HTML_DEST_DIR} DESTINATION ${CMAKE_INSTALL_DOCDIR})
+		if(NOT SKIP_INSTALL_ALL)
+			install(DIRECTORY ${HTML_DEST_DIR} DESTINATION ${CMAKE_INSTALL_DOCDIR})
+		endif()
 	endif()
 else()
 	message(STATUS "Doxygen not found, API documentation won't be generated")
@@ -317,26 +327,25 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		DOC "OSX Package builder (productbuild)")
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
-	add_custom_command(OUTPUT ${LIBIIO_TEMP_PKG} COMMAND ${PKGBUILD_EXECUTABLE}
-			--root ${CMAKE_CURRENT_BINARY_DIR}/Debug
-			--identifier libiio --version ${VERSION}
-			--install-location /System/Library/Frameworks ${LIBIIO_TEMP_PKG}
-		DEPENDS iio
-	)
-
-	add_custom_command(OUTPUT ${LIBIIO_PKG} COMMAND ${PRODUCTBUILD_EXECUTABLE}
+	add_custom_command(OUTPUT ${LIBIIO_PKG}
+		COMMAND ${PKGBUILD_EXECUTABLE}
+			--component ${CMAKE_CURRENT_BINARY_DIR}/iio.framework
+			--identifier com.adi.iio --version ${VERSION}
+			--install-location /Library/Frameworks ${LIBIIO_TEMP_PKG}
+		COMMAND ${PRODUCTBUILD_EXECUTABLE}
 			--distribution ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_PKG}
-		DEPENDS ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_TEMP_PKG}
+		COMMAND ${CMAKE_COMMAND} -E remove ${LIBIIO_TEMP_PKG}
+		DEPENDS iio ${LIBIIO_DISTRIBUTION_XML}
 	)
 
 	if (PKGBUILD_EXECUTABLE AND PRODUCTBUILD_EXECUTABLE)
 		add_custom_target(libiio-pkg ALL DEPENDS ${LIBIIO_PKG})
+
+		install(CODE "execute_process(COMMAND /usr/sbin/installer -pkg ${LIBIIO_PKG} -target /)")
 	else()
 		message(WARNING "Missing pkgbuild or productbuild: OSX installer won't be created.")
 	endif()
 endif()
-
-configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
 
 if(WITH_IIOD)
 	add_subdirectory(iiod)
@@ -347,3 +356,5 @@ if(WITH_TESTS)
 endif()
 
 add_subdirectory(bindings)
+
+configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)

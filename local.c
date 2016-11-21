@@ -1439,43 +1439,36 @@ static int add_scan_element(void *d, const char *path)
 static int foreach_in_dir(void *d, const char *path, bool is_dir,
 		int (*callback)(void *, const char *))
 {
-	long name_max;
-	struct dirent *entry, *result;
-	DIR *dir = opendir(path);
+	struct dirent *entry;
+	DIR *dir;
+	int ret = 0;
+
+	dir = opendir(path);
 	if (!dir)
 		return -errno;
-
-	name_max = pathconf(path, _PC_NAME_MAX);
-	if (name_max == -1)
-		name_max = 255;
-	entry = malloc(offsetof(struct dirent, d_name) + name_max + 1);
-	if (!entry) {
-		closedir(dir);
-		return -ENOMEM;
-	}
 
 	while (true) {
 		struct stat st;
 		char buf[1024];
-		int ret = readdir_r(dir, entry, &result);
-		if (ret) {
-			iio_strerror(ret, buf, sizeof(buf));
+
+		errno = 0;
+		entry = readdir(dir);
+		if (!entry) {
+			if (!errno)
+				break;
+
+			ret = -errno;
+			iio_strerror(errno, buf, sizeof(buf));
 			ERROR("Unable to open directory %s: %s\n", path, buf);
-			free(entry);
-			closedir(dir);
-			return -ret;
+			goto out_close_dir;
 		}
-		if (!result)
-			break;
 
 		snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
 			iio_strerror(errno, buf, sizeof(buf));
 			ERROR("Unable to stat file: %s\n", buf);
-			free(entry);
-			closedir(dir);
-			return ret;
+			goto out_close_dir;
 		}
 
 		if (is_dir && S_ISDIR(st.st_mode) && entry->d_name[0] != '.')
@@ -1485,16 +1478,13 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 		else
 			continue;
 
-		if (ret < 0) {
-			free(entry);
-			closedir(dir);
-			return ret;
-		}
+		if (ret < 0)
+			goto out_close_dir;
 	}
 
-	free(entry);
+out_close_dir:
 	closedir(dir);
-	return 0;
+	return ret;
 }
 
 static int add_scan_elements(struct iio_device *dev, const char *devpath)
@@ -1745,6 +1735,7 @@ int local_context_scan(struct iio_scan_result *scan_result)
 {
 	struct iio_context_info **info;
 	bool exists = false;
+	char *desc, *uri;
 	int ret;
 
 	ret = foreach_in_dir(&exists, "/sys/bus/iio/devices",
@@ -1752,12 +1743,25 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	if (ret < 0 || !exists)
 		return 0;
 
-	info = iio_scan_result_add(scan_result, 1);
-	if (!info)
+	desc = iio_strdup("Local devices");
+	if (!desc)
 		return -ENOMEM;
 
-	info[0]->description = "Local devices";
-	info[0]->uri = "local:";
+	uri = iio_strdup("local:");
+	if (!uri)
+		goto err_free_desc;
 
+	info = iio_scan_result_add(scan_result, 1);
+	if (!info)
+		goto err_free_uri;
+
+	info[0]->description = desc;
+	info[0]->uri = uri;
 	return 0;
+
+err_free_uri:
+	free(uri);
+err_free_desc:
+	free(desc);
+	return -ENOMEM;
 }
