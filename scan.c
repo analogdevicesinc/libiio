@@ -105,7 +105,10 @@ struct iio_context_info ** iio_scan_result_add(
 
 	info = realloc(scan_result->info, (new_size + 1) * sizeof(*info));
 	if (!info)
-		goto err_free_info_list;
+		return NULL;
+
+	scan_result->info = info;
+	scan_result->size = new_size;
 
 	for (i = old_size; i < new_size; i++) {
 		/* Make sure iio_context_info_list_free won't overflow */
@@ -113,18 +116,10 @@ struct iio_context_info ** iio_scan_result_add(
 
 		info[i] = zalloc(sizeof(**info));
 		if (!info[i])
-			goto err_free_info_list;
+			return NULL;
 	}
 
-	scan_result->info = info;
-	scan_result->size = new_size;
-
 	return &info[old_size];
-
-err_free_info_list:
-	scan_result->size = 0;
-	iio_context_info_list_free(scan_result->info);
-	return NULL;
 }
 
 struct iio_scan_context * iio_create_scan_context(
