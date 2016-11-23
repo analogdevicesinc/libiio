@@ -357,8 +357,13 @@ static ssize_t send_sample(const struct iio_channel *chn,
 	if (info->cpt % length) {
 		unsigned int i, goal = length - info->cpt % length;
 		char zero = 0;
-		for (i = 0; i < goal; i++)
-			info->pdata->writefd(info->pdata, &zero, 1);
+		ssize_t ret;
+
+		for (i = 0; i < goal; i++) {
+			ret = info->pdata->writefd(info->pdata, &zero, 1);
+			if (ret < 0)
+				return ret;
+		}
 		info->cpt += goal;
 	}
 
@@ -380,8 +385,13 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 	if (info->cpt % length) {
 		unsigned int i, goal = length - info->cpt % length;
 		char foo;
-		for (i = 0; i < goal; i++)
-			info->pdata->readfd(info->pdata, &foo, 1);
+		ssize_t ret;
+
+		for (i = 0; i < goal; i++) {
+			ret = info->pdata->readfd(info->pdata, &foo, 1);
+			if (ret < 0)
+				return ret;
+		}
 		info->cpt += goal;
 	}
 
