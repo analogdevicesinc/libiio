@@ -155,6 +155,13 @@ static int usb_open_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 	if (!pdata)
 		return -ENOMEM;
 
+	/* Either we open this pipe for the first time, or it was closed before.
+	 * In that case we called thread_pool_stop() without waiting for all the
+	 * threads to finish. We do that here. Since the running thread might still
+	 * have a open handle to the endpoints make sure that they have exited
+	 * before opening the endpoints again. */
+	thread_pool_stop_and_wait(pdata->pool[pipe_id]);
+
 	snprintf(buf, sizeof(buf), "%s/ep%u", pdata->ffs, pipe_id * 2 + 1);
 	cpdata->ep_out = open(buf, O_WRONLY);
 	if (cpdata->ep_out < 0) {
@@ -170,11 +177,6 @@ static int usb_open_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 	}
 
 	cpdata->pdata = pdata;
-
-	/* Either we open this pipe for the first time, or it was closed before.
-	 * In that case we called thread_pool_stop() without waiting for all the
-	 * threads to finish. We do that here. */
-	thread_pool_stop_and_wait(pdata->pool[pipe_id]);
 
 	err = thread_pool_add_thread(pdata->pool[pipe_id],
 			usbd_client_thread, cpdata, "usbd_client_thd");
