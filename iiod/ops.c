@@ -249,7 +249,10 @@ static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 			else
 				ret = read(pdata->fd_in, dest, len);
 		} while (ret == -1 && errno == EINTR);
-	} while (ret == -1 && errno == EAGAIN);
+
+		if (ret != -1 || errno != EAGAIN)
+			break;
+	} while (true);
 
 	if (ret == -1)
 		return -errno;
@@ -287,7 +290,9 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 				ret = write(pdata->fd_out, src, len);
 		} while (ret == -1 && errno == EINTR);
 
-	} while (ret == -1 && errno == EAGAIN);
+		if (ret != -1 || errno != EAGAIN)
+			break;
+	} while (true);
 
 	if (ret == -1)
 		return -errno;
