@@ -149,8 +149,11 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 
 	io_set_eventfd(&iocb, pdata->aio_eventfd);
 
+	pthread_mutex_lock(&pdata->aio_mutex);
+
 	ret = io_submit(pdata->aio_ctx, 1, ios);
 	if (ret != 1) {
+		pthread_mutex_unlock(&pdata->aio_mutex);
 		ERROR("Failed to submit IO operation: %zd\n", ret);
 		return -EIO;
 	}
@@ -195,6 +198,8 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 			num_pfds = 1;
 		}
 	} while (!(pfd[0].revents & POLLIN));
+
+	pthread_mutex_unlock(&pdata->aio_mutex);
 
 	/* Got STOP event, treat it as EOF */
 	if (num_pfds == 1)
@@ -1296,6 +1301,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 			close(pdata.aio_eventfd);
 			return;
 		}
+		pthread_mutex_init(&pdata.aio_mutex, NULL);
 		pdata.readfd = readfd_aio;
 		pdata.writefd = writefd_aio;
 #endif

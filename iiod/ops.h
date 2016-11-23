@@ -51,6 +51,7 @@ struct parser_pdata {
 #if WITH_AIO
 	io_context_t aio_ctx;
 	int aio_eventfd;
+	pthread_mutex_t aio_mutex;
 #endif
 	struct thread_pool *pool;
 
