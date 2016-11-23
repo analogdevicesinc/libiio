@@ -897,6 +897,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	if (entry) {
 		if (cyclic || entry->cyclic) {
 			/* Only one client allowed in cyclic mode */
+			pthread_mutex_unlock(&devlist_lock);
 			ret = -EBUSY;
 			goto err_free_thd;
 		}
