@@ -173,7 +173,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 			uint64_t event;
 			ret = read(pdata->aio_eventfd, &event, sizeof(event));
 			if (ret != sizeof(event)) {
-				ERROR("Failed to read from eventfd: %zd\n", ret);
+				ERROR("Failed to read from eventfd: %zd\n", -errno);
 				ret = -EIO;
 				break;
 			}
