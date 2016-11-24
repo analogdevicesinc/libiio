@@ -1778,6 +1778,10 @@ struct iio_context * local_create_context(void)
 		goto err_context_destroy;
 #endif
 
+	ret = iio_context_add_attr(ctx, "local,kernel", uts.release);
+	if (ret < 0)
+		goto err_context_destroy;
+
 	ret = iio_context_init(ctx);
 	if (ret < 0)
 		goto err_context_destroy;
