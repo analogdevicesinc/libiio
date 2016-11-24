@@ -68,7 +68,7 @@ struct client_data {
 
 bool server_demux;
 
-static struct thread_pool *thread_pool;
+struct thread_pool *main_thread_pool;
 
 
 static struct sockaddr_in sockaddr = {
@@ -204,7 +204,7 @@ static void set_handler(int signal, void (*handler)(int))
 
 static void sig_handler(int sig)
 {
-	thread_pool_stop(thread_pool);
+	thread_pool_stop(main_thread_pool);
 }
 
 static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
@@ -222,7 +222,7 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 	}
 
 	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
-			false, use_aio, thread_pool);
+			false, use_aio, main_thread_pool);
 	return EXIT_SUCCESS;
 }
 
@@ -285,7 +285,7 @@ static int main_server(struct iio_context *ctx, bool debug)
 	pfd[0].fd = fd;
 	pfd[0].events = POLLIN;
 	pfd[0].revents = 0;
-	pfd[1].fd = thread_pool_get_poll_fd(thread_pool);
+	pfd[1].fd = thread_pool_get_poll_fd(main_thread_pool);
 	pfd[1].events = POLLIN;
 	pfd[1].revents = 0;
 
@@ -337,7 +337,7 @@ static int main_server(struct iio_context *ctx, bool debug)
 		INFO("New client connected from %s\n",
 				inet_ntoa(caddr.sin_addr));
 
-		ret = thread_pool_add_thread(thread_pool, client_thd, cdata, "net_client_thd");
+		ret = thread_pool_add_thread(main_thread_pool, client_thd, cdata, "net_client_thd");
 		if (ret) {
 			iio_strerror(ret, err_str, sizeof(err_str));
 			ERROR("Failed to create new client thread: %s\n",
@@ -416,8 +416,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	thread_pool = thread_pool_new();
-	if (!thread_pool) {
+	main_thread_pool = thread_pool_new();
+	if (!main_thread_pool) {
 		iio_strerror(errno, err_str, sizeof(err_str));
 		ERROR("Unable to create thread pool: %s\n", err_str);
 		ret = EXIT_FAILURE;
@@ -434,7 +434,7 @@ int main(int argc, char **argv)
 		/* We pass use_aio == true directly, this is ensured to be true
 		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				debug, true, thread_pool);
+				debug, true, main_thread_pool);
 		if (ret) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			ERROR("Unable to start USB daemon: %s\n", err_str);
@@ -457,8 +457,8 @@ int main(int argc, char **argv)
 #ifdef WITH_IIOD_USBD
 out_destroy_thread_pool:
 #endif
-	thread_pool_stop_and_wait(thread_pool);
-	thread_pool_destroy(thread_pool);
+	thread_pool_stop_and_wait(main_thread_pool);
+	thread_pool_destroy(main_thread_pool);
 
 out_destroy_context:
 	iio_context_destroy(ctx);

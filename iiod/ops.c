@@ -964,7 +964,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
 
-	ret = thread_pool_add_thread(pdata->pool, rw_thd, entry, "rw_thd");
+	ret = thread_pool_add_thread(main_thread_pool, rw_thd, entry, "rw_thd");
 	if (ret) {
 		pthread_mutex_unlock(&devlist_lock);
 		goto err_free_entry_mask;

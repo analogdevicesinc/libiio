@@ -35,6 +35,7 @@
 #endif
 
 struct thread_pool;
+extern struct thread_pool *main_thread_pool;
 
 struct parser_pdata {
 	struct iio_context *ctx;
