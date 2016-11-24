@@ -211,9 +211,6 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 {
 	int flags;
 
-	/* Specify that we will read sequentially the input FD */
-	posix_fadvise(STDIN_FILENO, 0, 0, POSIX_FADV_SEQUENTIAL);
-
 	if (!use_aio) {
 		flags = fcntl(STDIN_FILENO, F_GETFL);
 		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
