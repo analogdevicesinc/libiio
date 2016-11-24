@@ -263,6 +263,9 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strdup(const char *str);
 
+int iio_context_add_attr(struct iio_context *ctx,
+		const char *key, const char *value);
+
 #undef __api
 
 #endif /* __IIO_PRIVATE_H__ */

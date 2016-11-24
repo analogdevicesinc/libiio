@@ -396,3 +396,38 @@ const char * iio_context_get_attr_value(
 
 	return NULL;
 }
+
+int iio_context_add_attr(struct iio_context *ctx,
+		const char *key, const char *value)
+{
+	char **attrs, **values, *new_key, *new_val;
+
+	attrs = realloc(ctx->attrs,
+			(ctx->nb_attrs + 1) * sizeof(*ctx->attrs));
+	if (!attrs)
+		return -ENOMEM;
+
+	ctx->attrs = attrs;
+
+	values = realloc(ctx->values,
+			(ctx->nb_attrs + 1) * sizeof(*ctx->values));
+	if (!values)
+		return -ENOMEM;
+
+	ctx->values = values;
+
+	new_key = iio_strdup(key);
+	if (!new_key)
+		return -ENOMEM;
+
+	new_val = iio_strdup(value);
+	if (!new_val) {
+		free(new_key);
+		return -ENOMEM;
+	}
+
+	ctx->attrs[ctx->nb_attrs] = new_key;
+	ctx->values[ctx->nb_attrs] = new_val;
+	ctx->nb_attrs++;
+	return 0;
+}
