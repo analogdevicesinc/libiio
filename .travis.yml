@@ -59,7 +59,7 @@ env:
     - secure: "oYOjzcEuQZ5VFsFKYoXrlbkG5ei5QA1t0ryFmVWEl+98yPYBakf5+DqDVT7uO5gqKSzz3EFrmhJhUbqpTNHNJcJCxTUYwNXapot0CEy3zsWKbxOqZVtkII8BEaOSo2Kr9UmTqm17oUXQQ/1lg8Xmchx0h0udvPLIDus/iQEUvWo="
 
 script:
-  - if [[ -n $COVERITY_SCAN_PROJECT_NAME ]] ; then exit 0; fi
+  - if [[ -z "$COVERITY_SCAN_PROJECT_NAME" ]] ; then ; fi
   - cd $TRAVIS_BUILD_DIR/build
   - cmake ..
 # should only do this one time per build, and needs to be done first
