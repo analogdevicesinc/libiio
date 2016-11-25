@@ -6,11 +6,28 @@ language: c
 compiler:
 #  - clang
   - gcc
+matrix:
+  include:
+    - compiler: "gcc"
+      os: linux
+      env:
+        - PLATFORM=linux BITS=64 HOST=x86_64
+        # TODO do `check` or `check_hw` here too, not just `check_sw` (as part of `coverage`)
+        - CHECK_RULE=coverage GCOV=1
+        - PKG_RULE=gzip
+        - COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG"
+        - COVERITY_SCAN_BRANCH_PATTERN="travis-ci"
+        - COVERITY_SCAN_NOTIFICATION_EMAIL="robin.getz@analog.com"
+        - COVERITY_SCAN_BUILD_COMMAND="cmake; make"
+        # The COVERITY_SCAN_TOKEN
+        - secure: "QQt2l9IVo0xXWLx7Xqgz/4Iezj7YroY3MKfmG+OhtzkMRx4prhx32/07JMNAcYx6mQrccyZkBNzpYuXlfIZjFL3xDxDj5+iKv5XXpJbRFQGhc5xZtAlzOIqHNMcFc0Aj8J2mZwKfSaDnBdf+nMgKcmn46pYbpJOmPe9iEfeLvvg="
+
 addons:
   artifacts: true
   sonarqube:
     branches:
-      - travis-ci
+      - travis-cixxx
+
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
@@ -33,10 +50,14 @@ before_install:
   - unzip build-wrapper-linux-x86.zip
   - export PATH=$PWD/build-wrapper-linux-x86:$PATH
 
+  - if [[ -n $COVERITY_SCAN_PROJECT_NAME ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - - if [[ -n $COVERITY_SCAN_PROJECT_NAME ]] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
+
 env:
   global:
     - secure: "We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao="
     - secure: "oYOjzcEuQZ5VFsFKYoXrlbkG5ei5QA1t0ryFmVWEl+98yPYBakf5+DqDVT7uO5gqKSzz3EFrmhJhUbqpTNHNJcJCxTUYwNXapot0CEy3zsWKbxOqZVtkII8BEaOSo2Kr9UmTqm17oUXQQ/1lg8Xmchx0h0udvPLIDus/iQEUvWo="
+
 script:
   - cd $TRAVIS_BUILD_DIR/build
   - cmake ..
