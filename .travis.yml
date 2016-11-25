@@ -18,7 +18,8 @@ matrix:
         - COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG"
         - COVERITY_SCAN_BRANCH_PATTERN="travis-ci"
         - COVERITY_SCAN_NOTIFICATION_EMAIL="robin.getz@analog.com"
-        - COVERITY_SCAN_BUILD_COMMAND="cmake; make"
+        - COVERITY_SCAN_BUILD_COMMAND_PREPEND="mkdir build && cd build && cmake .."
+        - COVERITY_SCAN_BUILD_COMMAND="make"
         # The COVERITY_SCAN_TOKEN
         - secure: "QQt2l9IVo0xXWLx7Xqgz/4Iezj7YroY3MKfmG+OhtzkMRx4prhx32/07JMNAcYx6mQrccyZkBNzpYuXlfIZjFL3xDxDj5+iKv5XXpJbRFQGhc5xZtAlzOIqHNMcFc0Aj8J2mZwKfSaDnBdf+nMgKcmn46pYbpJOmPe9iEfeLvvg="
 
@@ -59,7 +60,7 @@ env:
     - secure: "oYOjzcEuQZ5VFsFKYoXrlbkG5ei5QA1t0ryFmVWEl+98yPYBakf5+DqDVT7uO5gqKSzz3EFrmhJhUbqpTNHNJcJCxTUYwNXapot0CEy3zsWKbxOqZVtkII8BEaOSo2Kr9UmTqm17oUXQQ/1lg8Xmchx0h0udvPLIDus/iQEUvWo="
 
 script:
-  - if [[ -z "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
+  - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
   - cd $TRAVIS_BUILD_DIR/build
   - cmake ..
 # should only do this one time per build, and needs to be done first
