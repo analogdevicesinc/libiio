@@ -1,10 +1,10 @@
 os:
   - linux
-#  - osx
+  - osx
 dist: trusty
 language: c
 compiler:
-#  - clang
+  - clang
   - gcc
 matrix:
   include:
@@ -25,9 +25,6 @@ matrix:
 
 addons:
   artifacts: true
-  sonarqube:
-    branches:
-      - travis-cixxx
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
@@ -46,29 +43,12 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y gzip; fi
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
-  - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "1" == "1" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
+  - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "$TRAVIS_EVENT_TYPE" == "cron" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
 
-  - mkdir -p $TRAVIS_BUILD_DIR/3rdparty $TRAVIS_BUILD_DIR/build
-  - cd $TRAVIS_BUILD_DIR/3rdparty
-  - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
-  - unzip build-wrapper-linux-x86.zip
-  - export PATH=$PWD/build-wrapper-linux-x86:$PATH
-
-env:
-  global:
-    - secure: "We2ROEt69nCyx902cenuTUwfB6RVXEazRmLUkHNYBpLnhESsrQP4TGsRLc429ErtZbD4jUqogMvp9L5V9pGLqyxJLA3oLkgfLbEgfA1FimZ4QlnxxDh9WkPYMTwiCM8e6B+Bt/a8qA1ahRRU/yZWNJXtyWn7GYVJqsvpcNjKMao="
-    - secure: "oYOjzcEuQZ5VFsFKYoXrlbkG5ei5QA1t0ryFmVWEl+98yPYBakf5+DqDVT7uO5gqKSzz3EFrmhJhUbqpTNHNJcJCxTUYwNXapot0CEy3zsWKbxOqZVtkII8BEaOSo2Kr9UmTqm17oUXQQ/1lg8Xmchx0h0udvPLIDus/iQEUvWo="
+  - mkdir -p $TRAVIS_BUILD_DIR/build
 
 script:
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
-  - cd $TRAVIS_BUILD_DIR/build
-  - cmake ..
-# should only do this one time per build, and needs to be done first
-  - mkdir scanner-output
-  - build-wrapper-linux-x86-64 --out-dir ./scanner-output make clean all
-  - cd $TRAVIS_BUILD_DIR
-  - sonar-scanner -e -X -Dsonar.host.url=https://sonarqube.com -Dsonar.login=$SONAR_TOKEN
-# Now make build the packages
   - cd $TRAVIS_BUILD_DIR/build
   - rm * -rf
   - cmake ..
