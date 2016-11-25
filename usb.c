@@ -456,7 +456,7 @@ static int iio_usb_match_interface(const struct libusb_config_descriptor *desc,
 		ret = libusb_get_string_descriptor_ascii(hdl, idesc->iInterface,
 				(unsigned char *) name, sizeof(name));
 		if (ret < 0)
-			return ret;
+			return -(int) libusb_to_errno(ret);
 
 		if (!strcmp(name, IIO_INTERFACE_NAME))
 			return (int) i;
