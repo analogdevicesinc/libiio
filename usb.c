@@ -682,7 +682,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	libusb_context *usb_ctx;
 	libusb_device_handle *hdl;
 	const struct libusb_interface_descriptor *iface;
-	libusb_device *dev, *usb_dev;
+	libusb_device *usb_dev;
 	struct libusb_config_descriptor *conf_desc;
 	libusb_device **device_list;
 	struct iio_context *ctx;
@@ -732,7 +732,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	usb_dev = NULL;
 
 	for (i = 0; device_list[i]; i++) {
-		dev = device_list[i];
+		libusb_device *dev = device_list[i];
 
 		if (bus == libusb_get_bus_number(dev) &&
 			address == libusb_get_device_address(dev)) {
