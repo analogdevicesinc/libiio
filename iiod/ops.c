@@ -863,6 +863,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	size_t len = strlen(mask);
 	uint32_t *words;
 	unsigned int nb_channels;
+	unsigned int cyclic_retry = 500;
 
 	if (!dev)
 		return -ENODEV;
@@ -888,6 +889,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->dev = dev;
 	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 
+retry:
 	/* Atomically look up the thread and make sure that it is still active
 	 * or allocate new one. */
 	pthread_mutex_lock(&devlist_lock);
@@ -896,6 +898,39 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		if (cyclic || entry->cyclic) {
 			/* Only one client allowed in cyclic mode */
 			pthread_mutex_unlock(&devlist_lock);
+
+			/* There is an inherent race condition if a client
+			 * creates a new cyclic buffer shortly after destroying
+			 * a previous. E.g. like
+			 *
+			 *     iio_buffer_destroy(buf);
+			 *     buf = iio_device_create_buffer(dev, n, true);
+			 *
+			 * In this case the two buffers each use their own
+			 * communication channel which are unordered to each
+			 * other. E.g. the socket open might arrive before the
+			 * socket close on the host side, even though they were
+			 * sent in the opposite order on the client side. This
+			 * race condition can cause an error being reported back
+			 * to the client, even though the code on the client
+			 * side was well formed and would work fine e.g. using
+			 * the local backend.
+			 *
+			 * To avoid this issue go to sleep for up to 50ms in
+			 * intervals of 100us. This should be enough time for
+			 * the issue to resolve itself. If there actually is
+			 * contention on the buffer an error will eventually be
+			 * returned in which case the additional delay cause by
+			 * the retires should not matter too much.
+			 *
+			 * This is not pretty but it works.
+			 */
+			if (cyclic_retry) {
+			       cyclic_retry--;
+			       usleep(100);
+			       goto retry;
+			}
+
 			ret = -EBUSY;
 			goto err_free_thd;
 		}
