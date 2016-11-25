@@ -46,7 +46,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y gzip; fi
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
-  - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
+  - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "1" == "1" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
 
   - mkdir -p $TRAVIS_BUILD_DIR/3rdparty $TRAVIS_BUILD_DIR/build
   - cd $TRAVIS_BUILD_DIR/3rdparty
