@@ -676,6 +676,62 @@ static int usb_verify_eps(const struct libusb_interface_descriptor *iface)
 	return 0;
 }
 
+static int usb_populate_context_attrs(struct iio_context *ctx,
+		libusb_device *dev, libusb_device_handle *hdl)
+{
+	struct libusb_device_descriptor dev_desc;
+	char buffer[64];
+	unsigned int i;
+	int ret;
+
+	struct {
+		const char *attr;
+		uint8_t idx;
+	} attrs[3];
+
+	libusb_get_device_descriptor(dev, &dev_desc);
+
+	attrs[0].attr = "usb,vendor";
+	attrs[0].idx = dev_desc.iManufacturer;
+	attrs[1].attr = "usb,product";
+	attrs[1].idx = dev_desc.iProduct;
+	attrs[2].attr = "usb,serial";
+	attrs[2].idx = dev_desc.iSerialNumber;
+
+	snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idVendor);
+	ret = iio_context_add_attr(ctx, "usb,idVendor", buffer);
+	if (ret < 0)
+		return ret;
+
+	snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idProduct);
+	ret = iio_context_add_attr(ctx, "usb,idProduct", buffer);
+	if (ret < 0)
+		return ret;
+
+	snprintf(buffer, sizeof(buffer), "%1hhx.%1hhx",
+			(dev_desc.bcdUSB >> 8) & 0xf,
+			(dev_desc.bcdUSB >> 4) & 0xf);
+	ret = iio_context_add_attr(ctx, "usb,release", buffer);
+	if (ret < 0)
+		return ret;
+
+	for (i = 0; i < ARRAY_SIZE(attrs); i++) {
+		if (attrs[i].idx) {
+			ret = libusb_get_string_descriptor_ascii(hdl,
+					attrs[i].idx, (unsigned char *) buffer,
+					sizeof(buffer));
+			if (ret < 0)
+				return -(int) libusb_to_errno(ret);
+
+			ret = iio_context_add_attr(ctx, attrs[i].attr, buffer);
+			if (ret < 0)
+				return ret;
+		}
+	}
+
+	return 0;
+}
+
 struct iio_context * usb_create_context(unsigned int bus,
 		unsigned int address, unsigned int interface)
 {
@@ -860,6 +916,10 @@ struct iio_context * usb_create_context(unsigned int bus,
 		if (ret)
 			goto err_context_destroy;
 	}
+
+	ret = usb_populate_context_attrs(ctx, usb_dev, hdl);
+	if (ret < 0)
+		goto err_context_destroy;
 
 	return ctx;
 
