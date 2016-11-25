@@ -49,7 +49,6 @@ before_install:
 script:
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
   - cd $TRAVIS_BUILD_DIR/build
-  - rm * -rf
   - cmake ..
   - make
   - make package
