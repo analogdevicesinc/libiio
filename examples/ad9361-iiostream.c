@@ -22,7 +22,11 @@
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
+#include <math.h>
+#include <time.h>
+#include <sys/time.h>
 #include <iio.h>
+
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -78,20 +82,26 @@ static void handle_sig(int sig)
 }
 
 /* check return value of attr_write function */
-static void errchk(int v, const char* what) {
-	 if (v < 0) { fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n", v, what); shutdown(); }
+static void errchk(int v, const char* what, const char* value) {
+	 if (v < 0) {
+		 fprintf(stderr, "Error '%s (%d)' writing to channel \"%s\"\n"
+				 "value '%s' may not be supported.\n", strerror(abs(v)), v, what, value);
+		 shutdown();
+	 }
 }
 
 /* write attribute: long long int */
 static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 {
-	errchk(iio_channel_attr_write_longlong(chn, what, val), what);
+	char buf[128];
+	sprintf(buf, "%lli", val);
+	errchk(iio_channel_attr_write_longlong(chn, what, val), what, buf);
 }
 
 /* write attribute: string */
 static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
 {
-	errchk(iio_channel_attr_write(chn, what, str), what);
+	errchk(iio_channel_attr_write(chn, what, str), what, str);
 }
 
 /* helper function generating channel names */
@@ -175,6 +185,9 @@ int main (int argc, char **argv)
 	struct iio_device *tx;
 	struct iio_device *rx;
 
+	struct iio_channel *rx_chn;
+	struct iio_channel *tx_chn;
+
 	// RX and TX sample counters
 	size_t nrx = 0;
 	size_t ntx = 0;
@@ -185,25 +198,34 @@ int main (int argc, char **argv)
 
 	struct iio_scan_context *ctxs;
 	struct iio_context_info **info;
-	unsigned int i = 0;
+	unsigned int i = 0, itter = 0;
+	unsigned long long msps = (long long)(floor(MHZ(25.0 / (3 * 2 * 2))) + 1);
+	unsigned long long msps_low = msps, msps_toofast = 0;
+
+	bool txflow = false, rxflow = false;
+	float increment = 2;
+
+	// Clocks for timing
+	struct timeval start, end;
 
 	// Listen to ctrl+c and assert
 	signal(SIGINT, handle_sig);
 
 	// RX stream config
-	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
-	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
+	rxcfg.bw_hz = MHZ(2);			// 2 MHz rf bandwidth
+	rxcfg.fs_hz = msps;			// MS/s rx sample rate
+	rxcfg.lo_hz = GHZ(2.5);			// 2.5 GHz rf frequency
+	rxcfg.rfport = "A_BALANCED";		// port A (select for rf freq.)
 
 	// TX stream config
-	txcfg.bw_hz = MHZ(1.5); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
-	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
-	txcfg.rfport = "A"; // port A (select for rf freq.)
+	txcfg.bw_hz = MHZ(1.5);			// 1.5 MHz rf bandwidth
+	txcfg.fs_hz = msps;	 		// MS/s tx sample rate
+	txcfg.lo_hz = GHZ(2.5);			// 2.5 GHz rf frequency
+	txcfg.rfport = "A";			// port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
 	ctx = iio_create_default_context();
+	/* no local context, must be running remote */
 	if (!ctx) {
 		assert((ctxs = iio_create_scan_context(NULL, 0)) && "No Scan Context");
 		assert(iio_scan_context_get_info_list(ctxs, &info) > 0 && "No Scan Info");
@@ -250,13 +272,24 @@ int main (int argc, char **argv)
 		shutdown();
 	}
 
+	/* find these out of the loop, so it's faster to change the sample rates */
+	rx_chn = iio_device_find_channel(get_ad9361_phy(ctx), "voltage0", false);
+	tx_chn = iio_device_find_channel(get_ad9361_phy(ctx), "voltage0", true);
+
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
+
 	while (!stop)
 	{
 		ssize_t nbytes_rx, nbytes_tx;
 		void *p_dat, *p_end;
 		ptrdiff_t p_inc;
+		double elapsed;
 
+		if (itter == 0 || itter == 1) {
+			nrx = 0;
+			ntx = 0;
+			gettimeofday(&start, NULL);
+		}
 		// Schedule TX buffer
 		nbytes_tx = iio_buffer_push(txbuf);
 		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(); }
@@ -288,7 +321,73 @@ int main (int argc, char **argv)
 		// Sample counter increment and status output
 		nrx += nbytes_rx / iio_device_get_sample_size(rx);
 		ntx += nbytes_tx / iio_device_get_sample_size(tx);
-		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
+		gettimeofday(&end, NULL);
+		elapsed = (end.tv_sec * 1000000 + end.tv_usec) -
+				(start.tv_sec * 1000000 + start.tv_usec);
+
+		if (!(itter %10)) 
+			printf("itter\t\t Rx MSmp (  MSPS  ),     Tx MSmp (  MSPS  )"
+					" goal:%i,%03i,%03i SPS\n",
+					(int)(msps/1e6),
+					(int)(msps/1e3 - ((int)(msps/1e6))*1e3 ),
+					(int)(msps - ((int)(msps/1e3))*1e3) );
+
+		printf("%3i(%2.2fs)\t%8.2f (%8.5f),    %8.2f (%8.5f)\n",
+				itter, elapsed/1e6, nrx/1e6, nrx/elapsed, ntx/1e6, ntx/elapsed);
+		itter++;
+
+		if (!(itter %30)) {
+			char buf[128];
+			int ret = 0;
+			uint32_t val;
+
+			ret = iio_device_reg_read(tx, 0x4088 | 0x80000000, &val);
+			if (val)
+				txflow = true;
+			ret = iio_device_reg_read(rx, 0x88 | 0x80000000, &val);
+			if (val)
+				rxflow = true;
+			ret = 0;
+
+			if (rxflow || txflow) {
+				printf("%lli SPS too fast - slowing down\n", msps);
+				msps_toofast = msps;
+				msps = msps / increment;
+				increment = 1 + ((msps_toofast - msps_low) / 2.0)/(float)msps ;
+			} else {
+				printf("%lli SPS OK - speeding up\n", msps);
+				msps_low = msps;
+			}
+
+			if (!msps_toofast)
+				msps =  msps * increment;
+			else {
+				increment = 1 + ((msps_toofast - msps_low) / 2.0)/(float)msps;
+				msps = msps * increment;
+			}
+
+			if (msps > MHZ(61.44))
+				msps = MHZ(61.44);
+			if (msps <= (long long)(floor(MHZ(25.0 / (3 * 2 * 2))) + 1))
+				msps = (long long)(floor(MHZ(25.0 / (3 * 2 * 2))) + 1);
+
+			sprintf(buf, "%lli", msps);
+		        ret |= iio_channel_attr_write_longlong(rx_chn, "sampling_frequency", msps);
+			ret |= iio_channel_attr_write_longlong(tx_chn, "sampling_frequency", msps);
+
+			if (ret) {
+				printf("Error (%i) updating sample rate\n", ret);
+				shutdown();
+			}
+			if (rxflow) {
+				/* write one to clear */
+				iio_device_reg_write(rx, 0x88 | 0x80000000, 0);
+				rxflow = false;
+			}
+
+			itter = 0;
+		}
+
 	}
 
 	shutdown();

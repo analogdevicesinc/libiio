@@ -16,7 +16,7 @@
 
 TARGETS := ad9361-iiostream dummy-iiostream iio-monitor
 
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 
 .PHONY: all clean
 
