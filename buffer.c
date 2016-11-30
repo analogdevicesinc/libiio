@@ -201,6 +201,7 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 			void *, size_t, void *), void *d)
 {
 	uintptr_t ptr = (uintptr_t) buffer->buffer,
+		  start = ptr,
 		  end = ptr + buffer->data_length;
 	const struct iio_device *dev = buffer->dev;
 	ssize_t processed = 0;
@@ -225,8 +226,8 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 			if (!TEST_BIT(buffer->mask, chn->index))
 				continue;
 
-			if (ptr % length)
-				ptr += length - (ptr % length);
+			if ((ptr - start) % length)
+				ptr += length - ((ptr - start) % length);
 
 			/* Test if the client wants samples from this channel */
 			if (TEST_BIT(dev->mask, chn->index)) {
@@ -256,7 +257,8 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 {
 	size_t len;
 	unsigned int i;
-	uintptr_t ptr = (uintptr_t) buffer->buffer;
+	uintptr_t ptr = (uintptr_t) buffer->buffer,
+		  start = ptr;
 
 	if (!iio_channel_is_enabled(chn))
 		return iio_buffer_end(buffer);
@@ -277,14 +279,14 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 		if (i > 0 && cur->index == buffer->dev->channels[i - 1]->index)
 			continue;
 
-		if (ptr % len)
-			ptr += len - (ptr % len);
+		if ((ptr - start) % len)
+			ptr += len - ((ptr - start) % len);
 		ptr += len;
 	}
 
 	len = chn->format.length / 8;
-	if (ptr % len)
-		ptr += len - (ptr % len);
+	if ((ptr - start) % len)
+		ptr += len - ((ptr - start) % len);
 	return (void *) ptr;
 }
 
