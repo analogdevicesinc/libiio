@@ -350,7 +350,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if(WITH_IIOD)
-	add_subdirectory(iiod)
+	if (NOT PTHREAD_LIBRARIES)
+		message(WARNING "IIOD requires threads support; disabling")
+		set(WITH_IIOD OFF CACHE BOOL "" FORCE)
+	else()
+		add_subdirectory(iiod)
+	endif()
 endif()
 
 if(WITH_TESTS)
