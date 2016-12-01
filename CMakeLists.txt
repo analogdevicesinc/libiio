@@ -125,7 +125,9 @@ if(WITH_LOCAL_BACKEND)
 
 	# Link with librt if present
 	find_library(LIBRT_LIBRARIES rt)
-	set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBRT_LIBRARIES})
+	if (LIBRT_LIBRARIES)
+		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBRT_LIBRARIES})
+	endif()
 endif()
 
 find_library(LIBUSB_LIBRARIES usb-1.0)
