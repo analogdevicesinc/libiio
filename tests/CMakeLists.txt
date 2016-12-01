@@ -17,7 +17,7 @@ add_executable(iio_reg     iio_reg.c      ${GETOPT_C_FILE})
 
 target_link_libraries(iio_genxml  iio)
 target_link_libraries(iio_info    iio)
-target_link_libraries(iio_readdev iio ${PTHREAD_LIBRARIES})
+target_link_libraries(iio_readdev iio)
 target_link_libraries(iio_reg     iio)
 
 set(IIO_TESTS_TARGETS iio_genxml iio_info iio_readdev iio_reg)
@@ -27,6 +27,8 @@ if(PTHREAD_LIBRARIES)
 	add_executable(iio_adi_xflow_check iio_adi_xflow_check.c)
 	target_link_libraries(iio_adi_xflow_check iio ${PTHREAD_LIBRARIES})
 	set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio_adi_xflow_check)
+
+	target_link_libraries(iio_readdev ${PTHREAD_LIBRARIES})
 endif()
 
 set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
