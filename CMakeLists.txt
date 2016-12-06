@@ -3,12 +3,36 @@ project(libiio C)
 
 set(LIBIIO_VERSION_MAJOR 0)
 set(LIBIIO_VERSION_MINOR 8)
-set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
+if (NOT WIN32)
+	set(LIBIIO_VERSION_PATCH 0)
+	set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}.${LIBIIO_VERSION_PATCH}")
+else()
+	set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
+endif()
+
+# support creating some basic binpkgs via `make package`
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(CPACK_GENERATOR STGZ;TGZ;TBZ2;RPM;DEB)
+endif()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	set(CPACK_GENERATOR STGZ;TGZ)
+endif()
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
+set(CPACK_PACKAGE_VERSION_MAJOR ${LIBIIO_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${LIBIIO_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${LIBIIO_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${LIBIIO_VERSION})
+set(CPACK_BUNDLE_NAME libiio)
+# debian settings
+set(CPACK_PACKAGE_CONTACT "Engineerzone <https://ez.analog.com/community/linux-device-drivers>")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.109-4), libavahi-client-dev (>= 0.6.31-4), libavahi-common-dev (>= 0.6.31-4), libc6-dev (>= 2.19-0), libusb-1.0-0-dev (>= 2:1.0.17-1), libxml2-dev (>= 2.9.1+dfsg1-3)")
 
 # Set the default install path to /usr
 if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
 endif()
+
+include(CPack)
 
 set(CMAKE_INSTALL_DOCDIR "" CACHE PATH "documentation root (DATAROOTDIR/doc/${PROJECT_NAME}${LIBIIO_VERSION_MAJOR}-doc)")
 include(GNUInstallDirs)
