@@ -530,6 +530,6 @@ err_free_dup:
 	free(uri_dup);
 err_bad_uri:
 	ERROR("Bad URI: \'%s\'\n", uri);
-	errno = -EINVAL;
+	errno = EINVAL;
 	return NULL;
 }
