@@ -264,6 +264,24 @@ endif()
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
 
+# support creating some basic binpkgs via `make package`
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(CPACK_GENERATOR TBZ2;RPM;DEB)
+endif()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	set(CPACK_GENERATOR TGZ)
+endif()
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
+set(CPACK_PACKAGE_VERSION_MAJOR ${LIBIIO_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${LIBIIO_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH g${LIBIIO_VERSION_GIT})
+set(CPACK_BUNDLE_NAME libiio)
+set(CPACK_PACKAGE_VERSION ${LIBIIO_VERSION})
+# debian specific package settings
+set(CPACK_PACKAGE_CONTACT "Engineerzone <https://ez.analog.com/community/linux-device-drivers>")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.109-4), libavahi-client-dev (>= 0.6.31-4), libavahi-common-dev (>= 0.6.31-4), libc6-dev (>= 2.19-0), libusb-1.0-0-dev (>= 2:1.0.17-1), libxml2-dev (>= 2.9.1+dfsg1-3)")
+include(CPack)
+
 add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
 set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}

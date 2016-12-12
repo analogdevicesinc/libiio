@@ -4,17 +4,77 @@ os:
 
 dist: trusty
 
-language : c
+language: c
 
 compiler:
   - clang
   - gcc
+matrix:
+  include:
+    - compiler: "gcc"
+      os: linux
+      env:
+        - PLATFORM=linux BITS=64 HOST=x86_64
+        # TODO do `check` or `check_hw` here too, not just `check_sw` (as part of `coverage`)
+        - CHECK_RULE=coverage GCOV=1
+        - PKG_RULE=gzip
+        - COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG"
+        - COVERITY_SCAN_BRANCH_PATTERN="travis-ci"
+        - COVERITY_SCAN_NOTIFICATION_EMAIL="robin.getz@analog.com"
+        - COVERITY_SCAN_BUILD_COMMAND_PREPEND="mkdir build && cd build && cmake .."
+        - COVERITY_SCAN_BUILD_COMMAND="make"
+        # The COVERITY_SCAN_TOKEN
+        - secure: "QQt2l9IVo0xXWLx7Xqgz/4Iezj7YroY3MKfmG+OhtzkMRx4prhx32/07JMNAcYx6mQrccyZkBNzpYuXlfIZjFL3xDxDj5+iKv5XXpJbRFQGhc5xZtAlzOIqHNMcFc0Aj8J2mZwKfSaDnBdf+nMgKcmn46pYbpJOmPe9iEfeLvvg="
+
+addons:
+  artifacts: true
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y doxygen; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libaio-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-client-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-common-dev; fi
+# Doesn't exist on Ubuntu Trusty / 14.04LTS, so don't install it
+#   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libserialport-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libusb-1.0-0-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libxml2-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y rpm; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y tar; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y gzip; fi
+  - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
+  - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "$TRAVIS_EVENT_TYPE" == "cron" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
+
+  - mkdir -p $TRAVIS_BUILD_DIR/build
 
 script:
-  - mkdir build
-  - cd build
-  - cmake .. && make
+  - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
+  - cd $TRAVIS_BUILD_DIR/build
+  - cmake ..
+  - make
+  - make package
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+
+before_deploy:
+  - export RELEASE_PKG_FILE_DEB=$(ls *.deb)
+  - export RELEASE_PKG_FILE_RPM=$(ls *.rpm)
+  - export RELEASE_PKG_FILE_TB2=$(ls *.tar.bz2)
+  - echo "deploying $RELEASE_PKG_FILE_DEB, $RELEASE_PKG_FILE_RPM, $RELEASE_PKG_FILE_TB2 to GitHub releases"
+deploy:
+  provider: releases
+  api_key:
+    secure: Bl7sfWp796+D7cF99+YdmbQjr5stXh4H/4hN2L5FNL0FEHL4XnIscSqySgy2NNmcqWF4Mz5WNXMZ9M8rYSNAiOndcaBYB+xvesAUbIdncwswgTNn2cj6yQbv0yR9qVUdoyczvZMK1vIc6GtKWWkh0AmgR04cAFffU3fr+78JHIw=
+  file:
+    - "${RELEASE_PKG_FILE_DEB}"
+    - "${RELEASE_PKG_FILE_RPM}"
+    - "${RELEASE_PKG_FILE_TB2}"
+  skip_cleanup: true
+  on:
+    repo: analogdevicesinc/libiio
+    tags: true
