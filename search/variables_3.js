@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['scale',['scale',['../structiio__data__format.html#a55125a0f81f90be70428076b426f50e2',1,'iio_data_format']]],
-  ['shift',['shift',['../structiio__data__format.html#ab56ee226f46a755a6745e08d9d934804',1,'iio_data_format']]]
+  ['repeat',['repeat',['../structiio__data__format.html#a6db4ae39ce3e564aac2b31d0948a1efe',1,'iio_data_format']]]
 ];

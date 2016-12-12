@@ -1,13 +1,12 @@
 var indexSectionsWithContent =
 {
-  0: "bcdfilstw",
+  0: "bcdfilrstw",
   1: "i",
   2: "i",
   3: "i",
-  4: "bilsw",
+  4: "bilrsw",
   5: "i",
-  6: "bcdft",
-  7: "l"
+  6: "bcdft"
 };
 
 var indexSectionNames =
@@ -18,8 +17,7 @@ var indexSectionNames =
   3: "functions",
   4: "variables",
   5: "enums",
-  6: "groups",
-  7: "pages"
+  6: "groups"
 };
 
 var indexSectionLabels =
@@ -30,7 +28,6 @@ var indexSectionLabels =
   3: "Functions",
   4: "Variables",
   5: "Enumerations",
-  6: "Modules",
-  7: "Pages"
+  6: "Modules"
 };
 
