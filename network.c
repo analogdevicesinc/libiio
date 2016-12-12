@@ -666,8 +666,10 @@ static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 		return fd;
 
 	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-			(const char *) &yes, sizeof(yes));
+	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+				(const char *) &yes, sizeof(yes)) < 0)
+		return -errno;
+
 	return fd;
 }
 
