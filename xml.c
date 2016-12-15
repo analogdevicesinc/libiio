@@ -407,6 +407,7 @@ struct iio_context * xml_create_context(const char *xml_file)
 	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		ERROR("Unable to parse XML file\n");
+		errno = EINVAL;
 		return NULL;
 	}
 
@@ -425,6 +426,7 @@ struct iio_context * xml_create_context_mem(const char *xml, size_t len)
 	doc = xmlReadMemory(xml, (int) len, NULL, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		ERROR("Unable to parse XML file\n");
+		errno = EINVAL;
 		return NULL;
 	}
 
