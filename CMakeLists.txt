@@ -294,7 +294,14 @@ set(CPACK_PACKAGE_CONTACT "Engineerzone <https://ez.analog.com/community/linux-d
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio-dev (>= 0.3.109-4), libavahi-client-dev (>= 0.6.31-4), libavahi-common-dev (>= 0.6.31-4), libc6-dev (>= 2.19-0), libusb-1.0-0-dev (>= 2:1.0.17-1), libxml2-dev (>= 2.9.1+dfsg1-3)")
 include(CPack)
 
-add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
+add_subdirectory(bindings)
+
+if (WITH_MATLAB_BINDINGS_API)
+	set(LIBIIO_EXTRA_HEADERS ${LIBIIO_EXTRA_HEADERS} bindings/matlab/iio-wrapper.h)
+	add_definitions(-DMATLAB_BINDINGS_API=1)
+endif()
+
+add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS})
 set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}
 	SOVERSION ${LIBIIO_VERSION_MAJOR}
@@ -391,7 +398,5 @@ endif()
 if(WITH_TESTS)
 	add_subdirectory(tests)
 endif()
-
-add_subdirectory(bindings)
 
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
