@@ -20,6 +20,7 @@
 #include "ops.h"
 #include "thread-pool.h"
 
+#include <endian.h>
 #include <fcntl.h>
 #include <linux/usb/functionfs.h>
 #include <stdint.h>
@@ -41,11 +42,6 @@
 struct usb_ffs_header {
 	struct usb_functionfs_descs_head_v2 header;
 	uint32_t nb_fs, nb_hs, nb_ss;
-
-	struct {
-		struct usb_interface_descriptor intf;
-		struct usb_endpoint_descriptor_no_audio  eps[NB_PIPES][2];
-	} __attribute__((packed)) fs_descs, hs_descs, ss_descs;
 } __attribute__((packed));
 
 struct usb_ffs_strings {
@@ -65,56 +61,6 @@ struct usbd_pdata {
 struct usbd_client_pdata {
 	struct usbd_pdata *pdata;
 	int ep_in, ep_out;
-};
-
-
-static const struct usb_ffs_header ffs_header = {
-	.header = {
-		.magic = LE32(FUNCTIONFS_DESCRIPTORS_MAGIC_V2),
-		.length = LE32(sizeof(ffs_header)),
-		.flags = LE32(FUNCTIONFS_HAS_FS_DESC | FUNCTIONFS_HAS_HS_DESC |
-				FUNCTIONFS_HAS_SS_DESC),
-	},
-
-	.nb_fs = LE32(NB_PIPES * 2 + 1),
-	.nb_hs = LE32(NB_PIPES * 2 + 1),
-	.nb_ss = LE32(NB_PIPES * 2 + 1),
-
-#define EP(addr, packetsize) \
-	{ \
-	  .bLength = sizeof(struct usb_endpoint_descriptor_no_audio), \
-	  .bDescriptorType = USB_DT_ENDPOINT, \
-	  .bEndpointAddress = addr, \
-	  .bmAttributes = USB_ENDPOINT_XFER_BULK, \
-	  .wMaxPacketSize = LE16(packetsize), \
-	}
-
-#define EP_SET(id, packetsize) \
-	[id] = { \
-		[0] = EP((id + 1) | USB_DIR_IN, packetsize), \
-		[1] = EP((id + 1) | USB_DIR_OUT, packetsize), \
-	}
-
-#define DESC(name, packetsize) \
-	.name = {\
-		.intf = { \
-			.bLength = sizeof(ffs_header.name.intf), \
-			.bDescriptorType = USB_DT_INTERFACE, \
-			.bNumEndpoints = NB_PIPES * 2, \
-			.bInterfaceClass = USB_CLASS_COMM, \
-			.iInterface = 1, \
-		}, \
-		.eps = { \
-			EP_SET(0, packetsize), \
-			EP_SET(1, packetsize), \
-			EP_SET(2, packetsize), \
-		}, \
-	}
-	DESC(fs_descs, 64),
-	DESC(hs_descs, 512),
-	DESC(ss_descs, 512 /* no idea */),
-#undef DESC
-#undef EP
 };
 
 static const struct usb_ffs_strings ffs_strings = {
@@ -284,9 +230,83 @@ static void usbd_main(struct thread_pool *pool, void *d)
 	free(pdata);
 }
 
-static int write_header(int fd)
+static struct usb_ffs_header * create_header(
+		unsigned int nb_pipes, uint32_t size)
 {
-	int ret = write(fd, &ffs_header, sizeof(ffs_header));
+	/* Packet sizes for USB high-speed, full-speed, super-speed */
+	const unsigned int packet_sizes[3] = { 64, 512, 512, };
+	struct usb_ffs_header *hdr;
+	unsigned int i, pipe_id;
+	uintptr_t ptr;
+
+	hdr = zalloc(size);
+	if (!hdr) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	hdr->header.magic = LE32(FUNCTIONFS_DESCRIPTORS_MAGIC_V2);
+	hdr->header.length = htole32(size);
+	hdr->header.flags = LE32(FUNCTIONFS_HAS_FS_DESC |
+			FUNCTIONFS_HAS_HS_DESC |
+			FUNCTIONFS_HAS_SS_DESC);
+
+	hdr->nb_fs = htole32(nb_pipes * 2 + 1);
+	hdr->nb_hs = htole32(nb_pipes * 2 + 1);
+	hdr->nb_ss = htole32(nb_pipes * 2 + 1);
+
+	ptr = ((uintptr_t) hdr) + sizeof(*hdr);
+
+	for (i = 0; i < 3; i++) {
+		struct usb_interface_descriptor *desc =
+			(struct usb_interface_descriptor *) ptr;
+		struct usb_endpoint_descriptor_no_audio *ep;
+
+		desc->bLength = sizeof(*desc);
+		desc->bDescriptorType = USB_DT_INTERFACE;
+		desc->bNumEndpoints = nb_pipes * 2;
+		desc->bInterfaceClass = USB_CLASS_COMM;
+		desc->iInterface = 1;
+
+		ep = (struct usb_endpoint_descriptor_no_audio *)
+			(ptr + sizeof(*desc));
+
+		for (pipe_id = 0; pipe_id < nb_pipes; pipe_id++) {
+			ep->bLength = sizeof(*ep);
+			ep->bDescriptorType = USB_DT_ENDPOINT;
+			ep->bEndpointAddress = (pipe_id + 1) | USB_DIR_IN;
+			ep->bmAttributes = USB_ENDPOINT_XFER_BULK;
+			ep->wMaxPacketSize = htole16(packet_sizes[i]);
+			ep++;
+
+			ep->bLength = sizeof(*ep);
+			ep->bDescriptorType = USB_DT_ENDPOINT;
+			ep->bEndpointAddress = (pipe_id + 1) | USB_DIR_OUT;
+			ep->bmAttributes = USB_ENDPOINT_XFER_BULK;
+			ep->wMaxPacketSize = htole16(packet_sizes[i]);
+			ep++;
+		}
+
+		ptr += sizeof(*desc) + nb_pipes * 2 * sizeof(*ep);
+	}
+
+	return hdr;
+}
+
+static int write_header(int fd, unsigned int nb_pipes)
+{
+	uint32_t size = sizeof(struct usb_ffs_header) +
+		3 * sizeof(struct usb_interface_descriptor) +
+		6 * nb_pipes * sizeof(struct usb_endpoint_descriptor_no_audio);
+	struct usb_ffs_header *hdr;
+	int ret;
+
+	hdr = create_header(nb_pipes, size);
+	if (!hdr)
+		return -errno;
+
+	ret = write(fd, hdr, size);
+	free(hdr);
 	if (ret < 0)
 		return -errno;
 
@@ -323,7 +343,7 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		goto err_free_ffs;
 	}
 
-	ret = write_header(pdata->ep0_fd);
+	ret = write_header(pdata->ep0_fd, NB_PIPES);
 	if (ret < 0)
 		goto err_close_ep0;
 
