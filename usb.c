@@ -760,7 +760,8 @@ struct iio_context * usb_create_context(unsigned int bus,
 	ret = libusb_claim_interface(hdl, interface);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		ERROR("Unable to claim interface %u: %i\n", interface, ret);
+		ERROR("Unable to claim interface %u:%u:%u %i\n",
+			       bus, address, interface, ret);
 		goto err_libusb_close;
 	}
 
