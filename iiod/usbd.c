@@ -32,8 +32,6 @@
 #define LE32(x) ((__BYTE_ORDER != __BIG_ENDIAN) ? (x) : __bswap_constant_32(x))
 #define LE16(x) ((__BYTE_ORDER != __BIG_ENDIAN) ? (x) : __bswap_constant_16(x))
 
-#define NB_PIPES 3
-
 #define IIO_USD_CMD_RESET_PIPES 0
 #define IIO_USD_CMD_OPEN_PIPE 1
 #define IIO_USD_CMD_CLOSE_PIPE 2
@@ -55,7 +53,8 @@ struct usbd_pdata {
 	char *ffs;
 	int ep0_fd;
 	bool debug, use_aio;
-	struct thread_pool * pool[NB_PIPES];
+	struct thread_pool **pool;
+	unsigned int nb_pipes;
 };
 
 struct usbd_client_pdata {
@@ -94,7 +93,7 @@ static int usb_open_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 	char buf[256];
 	int err;
 
-	if (pipe_id >= NB_PIPES)
+	if (pipe_id >= pdata->nb_pipes)
 		return -EINVAL;
 
 	cpdata = malloc(sizeof(*cpdata));
@@ -139,7 +138,7 @@ err_free_cpdata:
 
 static int usb_close_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 {
-	if (pipe_id >= NB_PIPES)
+	if (pipe_id >= pdata->nb_pipes)
 		return -EINVAL;
 
 	thread_pool_stop(pdata->pool[pipe_id]);
@@ -150,7 +149,7 @@ static void usb_close_pipes(struct usbd_pdata *pdata)
 {
 	unsigned int i;
 
-	for (i = 0; i < NB_PIPES; i++)
+	for (i = 0; i < pdata->nb_pipes; i++)
 		usb_close_pipe(pdata, i);
 }
 
@@ -220,13 +219,14 @@ static void usbd_main(struct thread_pool *pool, void *d)
 		ret = read(pdata->ep0_fd, NULL, 0);
 	}
 
-	for (i = 0; i < NB_PIPES; i++) {
+	for (i = 0; i < pdata->nb_pipes; i++) {
 		thread_pool_stop_and_wait(pdata->pool[i]);
 		thread_pool_destroy(pdata->pool[i]);
 	}
 
 	close(pdata->ep0_fd);
 	free(pdata->ffs);
+	free(pdata->pool);
 	free(pdata);
 }
 
@@ -318,7 +318,8 @@ static int write_header(int fd, unsigned int nb_pipes)
 }
 
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
-		bool debug, bool use_aio, struct thread_pool *pool)
+		bool debug, bool use_aio, unsigned int nb_pipes,
+		struct thread_pool *pool)
 {
 	struct usbd_pdata *pdata;
 	unsigned int i;
@@ -329,10 +330,18 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 	if (!pdata)
 		return -ENOMEM;
 
+	pdata->nb_pipes = nb_pipes;
+
+	pdata->pool = calloc(nb_pipes, sizeof(*pdata->pool));
+	if (!pdata->pool) {
+		ret = -ENOMEM;
+		goto err_free_pdata;
+	}
+
 	pdata->ffs = strdup(ffs);
 	if (!pdata->ffs) {
 		ret = -ENOMEM;
-		goto err_free_pdata;
+		goto err_free_pdata_pool;
 	}
 
 	snprintf(buf, sizeof(buf), "%s/ep0", ffs);
@@ -343,11 +352,11 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		goto err_free_ffs;
 	}
 
-	ret = write_header(pdata->ep0_fd, NB_PIPES);
+	ret = write_header(pdata->ep0_fd, nb_pipes);
 	if (ret < 0)
 		goto err_close_ep0;
 
-	for (i = 0; i < NB_PIPES; i++) {
+	for (i = 0; i < nb_pipes; i++) {
 		pdata->pool[i] = thread_pool_new();
 		if (!pdata->pool[i]) {
 			ret = -errno;
@@ -366,7 +375,7 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 err_free_pools:
 	/* If we get here, usbd_main was not started, so the pools can be
 	 * destroyed directly */
-	for (i = 0; i < NB_PIPES; i++) {
+	for (i = 0; i < nb_pipes; i++) {
 		if (pdata->pool[i])
 			thread_pool_destroy(pdata->pool[i]);
 	}
@@ -374,6 +383,8 @@ err_close_ep0:
 	close(pdata->ep0_fd);
 err_free_ffs:
 	free(pdata->ffs);
+err_free_pdata_pool:
+	free(pdata->pool);
 err_free_pdata:
 	free(pdata);
 	return ret;

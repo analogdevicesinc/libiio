@@ -102,6 +102,7 @@ static const struct option options[] = {
 	  {"interactive", no_argument, 0, 'i'},
 	  {"aio", no_argument, 0, 'a'},
 	  {"ffs", required_argument, 0, 'F'},
+	  {"nb-pipes", required_argument, 0, 'n'},
 	  {0, 0, 0, 0},
 };
 
@@ -113,6 +114,7 @@ static const char *options_descriptions[] = {
 	"Run " MY_NAME " in the controlling terminal.",
 	"Use asynchronous I/O.",
 	"Use the given FunctionFS mountpoint to serve over USB",
+	"Specify the number of USB pipes (ep couples) to use",
 };
 
 #ifdef HAVE_AVAHI
@@ -360,13 +362,14 @@ err_close_socket:
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
+	long nb_pipes = 3;
 	struct iio_context *ctx;
 	int c, option_index = 0;
-	char *ffs_mountpoint = NULL;
+	char *end, *ffs_mountpoint = NULL;
 	char err_str[1024];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDiaF:",
+	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -389,6 +392,18 @@ int main(int argc, char **argv)
 		case 'F':
 #ifdef WITH_IIOD_USBD
 			ffs_mountpoint = optarg;
+			break;
+#else
+			ERROR("IIOD was not compiled with USB support.\n");
+			return EXIT_FAILURE;
+#endif
+		case 'n':
+#ifdef WITH_IIOD_USBD
+			nb_pipes = strtol(optarg, &end, 10);
+			if (optarg == end || nb_pipes < 3) {
+				ERROR("--nb-pipes: Invalid parameter\n");
+				return EXIT_FAILURE;
+			}
 			break;
 #else
 			ERROR("IIOD was not compiled with USB support.\n");
@@ -431,7 +446,8 @@ int main(int argc, char **argv)
 		/* We pass use_aio == true directly, this is ensured to be true
 		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				debug, true, main_thread_pool);
+				debug, true, (unsigned int) nb_pipes,
+				main_thread_pool);
 		if (ret) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			ERROR("Unable to start USB daemon: %s\n", err_str);
