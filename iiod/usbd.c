@@ -288,11 +288,11 @@ static int write_header(int fd)
 {
 	int ret = write(fd, &ffs_header, sizeof(ffs_header));
 	if (ret < 0)
-		return ret;
+		return -errno;
 
 	ret = write(fd, &ffs_strings, sizeof(ffs_strings));
 	if (ret < 0)
-		return ret;
+		return -errno;
 
 	return 0;
 }
