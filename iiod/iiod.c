@@ -400,7 +400,7 @@ int main(int argc, char **argv)
 		case 'n':
 #ifdef WITH_IIOD_USBD
 			nb_pipes = strtol(optarg, &end, 10);
-			if (optarg == end || nb_pipes < 3) {
+			if (optarg == end || nb_pipes < 1) {
 				ERROR("--nb-pipes: Invalid parameter\n");
 				return EXIT_FAILURE;
 			}
