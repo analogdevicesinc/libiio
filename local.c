@@ -100,6 +100,8 @@ struct iio_device_pdata {
 
 struct iio_channel_pdata {
 	char *enable_fn;
+	struct iio_channel_attr *protected_attrs;
+	unsigned int nb_protected_attrs;
 };
 
 static const char * const device_attrs_blacklist[] = {
@@ -167,15 +169,19 @@ static void strcut(char *str, int nb)
 
 static int set_channel_name(struct iio_channel *chn)
 {
+	struct iio_channel_pdata *pdata = chn->pdata;
 	size_t prefix_len = 0;
 	const char *attr0;
 	const char *ptr;
 	unsigned int i;
 
-	if (chn->nb_attrs < 2)
+	if (chn->nb_attrs + pdata->nb_protected_attrs < 2)
 		return 0;
 
-	attr0 = ptr = chn->attrs[0].name;
+	if (chn->nb_attrs)
+		attr0 = ptr = chn->attrs[0].name;
+	else
+		attr0 = ptr = pdata->protected_attrs[0].name;
 
 	while (true) {
 		bool can_fix = true;
@@ -188,6 +194,12 @@ static int set_channel_name(struct iio_channel *chn)
 		len = ptr - attr0 + 1;
 		for (i = 1; can_fix && i < chn->nb_attrs; i++)
 			can_fix = !strncmp(attr0, chn->attrs[i].name, len);
+
+		for (i = !chn->nb_attrs;
+				can_fix && i < pdata->nb_protected_attrs; i++) {
+			can_fix = !strncmp(attr0,
+					pdata->protected_attrs[i].name, len);
+		}
 
 		if (!can_fix)
 			break;
@@ -210,6 +222,8 @@ static int set_channel_name(struct iio_channel *chn)
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
 			strcut(chn->attrs[i].name, prefix_len);
+		for (i = 0; i < pdata->nb_protected_attrs; i++)
+			strcut(pdata->protected_attrs[i].name, prefix_len);
 	}
 
 	return 0;
@@ -1148,6 +1162,54 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 	return 0;
 }
 
+static int handle_scan_elements(struct iio_channel *chn)
+{
+	struct iio_channel_pdata *pdata = chn->pdata;
+	unsigned int i;
+
+	for (i = 0; i < pdata->nb_protected_attrs; i++) {
+		int ret = handle_protected_scan_element_attr(chn,
+				pdata->protected_attrs[i].name,
+				pdata->protected_attrs[i].filename);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int add_protected_attr(struct iio_channel *chn, char *name, char *fn)
+{
+	struct iio_channel_pdata *pdata = chn->pdata;
+	struct iio_channel_attr *attrs;
+
+	attrs = realloc(pdata->protected_attrs,
+			(1 + pdata->nb_protected_attrs) * sizeof(*attrs));
+	if (!attrs)
+		return -ENOMEM;
+
+	attrs[pdata->nb_protected_attrs].name = name;
+	attrs[pdata->nb_protected_attrs++].filename = fn;
+	pdata->protected_attrs = attrs;
+
+	DEBUG("Add protected attr \'%s\' to channel \'%s\'\n", name, chn->id);
+	return 0;
+}
+
+static void free_protected_attrs(struct iio_channel *chn)
+{
+	struct iio_channel_pdata *pdata = chn->pdata;
+	unsigned int i;
+
+	for (i = 0; i < pdata->nb_protected_attrs; i++) {
+		free(pdata->protected_attrs[i].name);
+		free(pdata->protected_attrs[i].filename);
+	}
+
+	free(pdata->protected_attrs);
+	pdata->nb_protected_attrs = 0;
+}
+
 static int add_attr_to_channel(struct iio_channel *chn,
 		const char *attr, const char *path, bool is_scan_element)
 {
@@ -1156,16 +1218,18 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	if (!name)
 		return -ENOMEM;
 
-	if (is_scan_element) {
-		int ret = handle_protected_scan_element_attr(chn, name, path);
-
-		free(name);
-		return ret;
-	}
-
 	fn = iio_strdup(path);
 	if (!fn)
 		goto err_free_name;
+
+	if (is_scan_element) {
+		int ret = add_protected_attr(chn, name, fn);
+
+		if (ret < 0)
+			goto err_free_fn;
+
+		return 0;
+	}
 
 	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
 			sizeof(struct iio_channel_attr));
@@ -1539,10 +1603,17 @@ static int create_device(void *d, const char *path)
 
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
-		goto err_free_device;
+		goto err_free_scan_elements;
 
-	for (i = 0; i < dev->nb_channels; i++)
-		set_channel_name(dev->channels[i]);
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+
+		set_channel_name(chn);
+		ret = handle_scan_elements(chn);
+		free_protected_attrs(chn);
+		if (ret < 0)
+			goto err_free_scan_elements;
+	}
 
 	ret = detect_and_move_global_attrs(dev);
 	if (ret < 0)
@@ -1563,6 +1634,9 @@ static int create_device(void *d, const char *path)
 	if (!ret)
 		return 0;
 
+err_free_scan_elements:
+	for (i = 0; i < dev->nb_channels; i++)
+		free_protected_attrs(dev->channels[i]);
 err_free_device:
 	local_free_pdata(dev);
 	free_device(dev);
