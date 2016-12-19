@@ -1102,7 +1102,7 @@ __api int iio_buffer_get_poll_fd(struct iio_buffer *buf);
 
 /** @brief Make iio_buffer_refill() and iio_buffer_push() blocking or not
  *
- * After this function has been called with blocking == true,
+ * After this function has been called with blocking == false,
  * iio_buffer_refill() and iio_buffer_push() will return -EAGAIN if no data is
  * ready.
  * A device is blocking by default.
