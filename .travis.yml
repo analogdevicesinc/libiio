@@ -9,6 +9,16 @@ language: c
 compiler:
   - clang
   - gcc
+
+env:
+  global:
+  # SSHHOST
+  - secure: "NEXUEA+ccm/I21ujCPuKYIHFb8Gogunr3nYysCRpTBNT40PsU9VFIy5vbmMxPAkCaMwk8XZ0rMHE3uaNGbBAGfoDL9v0Ban5wG/jA1JkmOAWUpFrUsbQeejXNRA04QcZ/4VeL6TgFegV2T6V0tLB4M6/X316dIPhS9Tat1ZUC8s="
+  # SSHUSER
+  - secure: "bYHqhcYYuSbciQa5mBqMxs3CbJkrxxD7/G4zDW2war1IcMh8AC/KPeoYIuhd/L2Mg9+tP++xCznKUJzX85Hu+8EyrMGkC/6zWpGYgyO27DH7wl+9AJjR191WJKkg+S6OqZmb/5v0rdJMDnGOZHrRVB3Vec9dBT+jDTQbyxrckxE="
+  # DEPLOY_TO directory
+  - secure: "PMp93w9HAYd0pR4aw2LT1sMIVmA06f01Xq2jaGW2iy74n3GrqBYe7H9aMR0WD1S6KH9sFydqFI11bCpwUQXPopl+8MPA34AS7V2gaxDUdE+UZnKKXpKV6KRPRp/txlryuEGspjFJM0bo5g1H5lPBSBFj8PB1Bf6BiloGl8TTuiY="
+
 matrix:
   include:
     - compiler: "gcc"
@@ -28,19 +38,23 @@ matrix:
 
 addons:
   artifacts: true
+  ssh_known_hosts:
+    secure: "q0dQ9MrhnOCo031McxSdQIqw4N6tEyAZLq7mdbWkAJcXOh/CX58NjFvcdSfamleDUYRmg7KpCZPPgnbx2JtqVvWJv8aNnr67CE1GIjRP1Fxh2WaKS+VK+I6rro7GwCO2C9d+uffCt63LfZKqddF1T7vMI2IgHcu9irc5LCuw6Wo="
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y doxygen; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install doxygen; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libaio-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-client-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-common-dev; fi
 # Doesn't exist on Ubuntu Trusty / 14.04LTS, so don't install it
 #   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libserialport-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libusb-1.0-0-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libxml2-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libxml2; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y rpm; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y tar; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
@@ -65,16 +79,37 @@ before_deploy:
   - export RELEASE_PKG_FILE_DEB=$(ls *.deb)
   - export RELEASE_PKG_FILE_RPM=$(ls *.rpm)
   - export RELEASE_PKG_FILE_TB2=$(ls *.tar.bz2)
-  - echo "deploying $RELEASE_PKG_FILE_DEB, $RELEASE_PKG_FILE_RPM, $RELEASE_PKG_FILE_TB2 to GitHub releases"
+  - export RELEASE_PKG_FILE_PKG=$(ls *.pkg)
+  - echo "deploying $RELEASE_PKG_FILE_DEB, $RELEASE_PKG_FILE_RPM, $RELEASE_PKG_FILE_TB2, $RELEASE_PKG_FILE_PKG to GitHub releases"
+  - openssl aes-256-cbc -K $encrypted_48a720578612_key -iv $encrypted_48a720578612_iv -in ${TRAVIS_BUILD_DIR}/deploy.rsa.enc -out /tmp/deploy.rsa -d
+  - eval "$(ssh-agent -s)"
+  - chmod 600 /tmp/deploy.rsa
+  - ssh-add /tmp/deploy.rsa
 deploy:
-  provider: releases
-  api_key:
-    secure: Bl7sfWp796+D7cF99+YdmbQjr5stXh4H/4hN2L5FNL0FEHL4XnIscSqySgy2NNmcqWF4Mz5WNXMZ9M8rYSNAiOndcaBYB+xvesAUbIdncwswgTNn2cj6yQbv0yR9qVUdoyczvZMK1vIc6GtKWWkh0AmgR04cAFffU3fr+78JHIw=
-  file:
-    - "${RELEASE_PKG_FILE_DEB}"
-    - "${RELEASE_PKG_FILE_RPM}"
-    - "${RELEASE_PKG_FILE_TB2}"
-  skip_cleanup: true
-  on:
-    repo: analogdevicesinc/libiio
-    tags: true
+  - provider: releases
+    api_key:
+      secure: Bl7sfWp796+D7cF99+YdmbQjr5stXh4H/4hN2L5FNL0FEHL4XnIscSqySgy2NNmcqWF4Mz5WNXMZ9M8rYSNAiOndcaBYB+xvesAUbIdncwswgTNn2cj6yQbv0yR9qVUdoyczvZMK1vIc6GtKWWkh0AmgR04cAFffU3fr+78JHIw=
+    file:
+      - "${RELEASE_PKG_FILE_DEB}"
+      - "${RELEASE_PKG_FILE_RPM}"
+      - "${RELEASE_PKG_FILE_TB2}"
+    skip_cleanup: true
+    on:
+      repo: analogdevicesinc/libiio
+      tags: true
+      condition: "$CC = gcc"
+      condition: "$TRAVIS_OS_NAME = linux"
+  - provider: script
+    skip_cleanup: true
+    script: scp ${RELEASE_PKG_FILE_DEB} ${SSHUSER}@${SSHHOST}:${DEPLOY_TO}/${RELEASE_PKG_FILE_DEB} ; ssh ${SSHUSER}@${SSHHOST} "rm ${DEPLOY_TO}/latest_libiio.deb"; ssh ${SSHUSER}@${SSHHOST} "ln ${DEPLOY_TO}/${RELEASE_PKG_FILE_DEB} ${DEPLOY_TO}/latest_libiio.deb"; scp ${RELEASE_PKG_FILE_RPM} ${SSHUSER}@${SSHHOST}:${DEPLOY_TO}/${RELEASE_PKG_FILE_RPM} ; ssh ${SSHUSER}@${SSHHOST} "rm ${DEPLOY_TO}/latest_libiio.rpm"; ssh ${SSHUSER}@${SSHHOST} "ln ${DEPLOY_TO}/${RELEASE_PKG_FILE_RPM} ${DEPLOY_TO}/latest_libiio.rpm";
+    on:
+      condition: "$CC = gcc"
+      condition: "$TRAVIS_OS_NAME = linux"
+      branch: master
+  - provider: script
+    skip_cleanup: true
+    script: scp ${RELEASE_PKG_FILE_PKG} ${SSHUSER}@${SSHHOST}:${DEPLOY_TO}/${RELEASE_PKG_FILE_PKG} ; ssh ${SSHUSER}@${SSHHOST} "rm ${DEPLOY_TO}/latest_libiio.pkg"; ssh ${SSHUSER}@${SSHHOST} "ln ${DEPLOY_TO}/${RELEASE_PKG_FILE_PKG} ${DEPLOY_TO}/latest_libiio.pkg";
+    on:
+      condition: "$CC = gcc"
+      condition: "$TRAVIS_OS_NAME = osx"
+      branch: master
