@@ -21,6 +21,7 @@
 #define _DEFAULT_SOURCE
 
 #include <cdk/cdk.h>
+#include <locale.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -61,8 +62,12 @@ static bool is_valid_channel(struct iio_channel *chn)
 
 static double get_channel_value(struct iio_channel *chn)
 {
+	char *old_locale;
 	char buf[1024];
 	double val;
+
+	old_locale = strdup(setlocale(LC_NUMERIC, NULL));
+	setlocale(LC_NUMERIC, "C");
 
 	if (channel_has_attr(chn, "input")) {
 		iio_channel_attr_read(chn, "input", buf, sizeof(buf));
@@ -81,6 +86,9 @@ static double get_channel_value(struct iio_channel *chn)
 			val *= strtod(buf, NULL);
 		}
 	}
+
+	setlocale(LC_NUMERIC, old_locale);
+	free(old_locale);
 
 	return val / 1000.0;
 }
