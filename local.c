@@ -1808,8 +1808,7 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	char *desc, *uri;
 	int ret;
 
-	ret = foreach_in_dir(&exists, "/sys/bus/iio/devices",
-			true, check_device);
+	ret = foreach_in_dir(&exists, "/sys/bus/iio", true, check_device);
 	if (ret < 0 || !exists)
 		return 0;
 
