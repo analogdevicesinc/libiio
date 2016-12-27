@@ -811,7 +811,9 @@ struct iio_context * usb_create_context(unsigned int bus,
 		goto err_libusb_exit;
 	}
 
+#if defined(LIBUSB_API_VERSION) && (LIBUSB_API_VERSION >= 0x01000016)
 	libusb_set_auto_detach_kernel_driver(hdl, true);
+#endif
 
 	ret = libusb_claim_interface(hdl, interface);
 	if (ret) {
