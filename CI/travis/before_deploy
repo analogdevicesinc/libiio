@@ -1,0 +1,40 @@
+#!/bin/sh
+
+cd $TRAVIS_BUILD_DIR/build
+
+if [ "$(echo *.deb)" != "*.deb" ] ; then
+	export RELEASE_PKG_FILE_DEB=$(ls *.deb)
+	export TARGET_DEB=$(echo ${RELEASE_PKG_FILE_DEB} | \
+		sed 's:.deb$::')${LDIST}.deb
+	echo "deploying $RELEASE_PKG_FILE_DEB to $TARGET_DEB"
+	ls -lh ${RELEASE_PKG_FILE_DEB}
+else
+	echo "Skipping deployment of debian package"
+fi
+if [ "$(echo *.rpm)" != "*.rpm" ] ; then
+	export RELEASE_PKG_FILE_RPM=$(ls *.rpm)
+	export TARGET_RPM=$(echo ${RELEASE_PKG_FILE_RPM} | \
+		sed 's:.rpm$::')${LDIST}.rpm;
+	echo "deploying $RELEASE_PKG_FILE_RPM to $TARGET_RPM"
+	ls -lh ${RELEASE_PKG_FILE_RPM}
+else
+	echo "Skipping deployment of rpm package"
+fi
+if [ "$(echo *.tar.gz)" != "*.tar.gz" ] ; then
+	export RELEASE_PKG_FILE_TGZ=$(ls *.tar.gz)
+	export TARGET_TGZ=$(echo ${RELEASE_PKG_FILE_TGZ} | \
+		sed 's:.tar.gz$::')${LDIST}.tar.gz;
+	echo "deploying $RELEASE_PKG_FILE_TGZ to $TARGET_TGZ"
+	ls -lh ${RELEASE_PKG_FILE_TGZ}
+else
+	echo "Skipping deployment of tarball"
+fi
+if [ "$(echo *.pkg)" != "*.pkg" ] ; then
+	export RELEASE_PKG_FILE_PKG=$(ls *.pkg)
+	export TARGET_PKG=$(echo ${RELEASE_PKG_FILE_PKG} | \
+		sed 's:.pkg$::')${LDIST}.pkg
+	echo "deploying $RELEASE_PKG_FILE_PKG to $TARGET_PKG"
+	ls -lh ${RELEASE_PKG_FILE_PKG}
+else
+	echo "Skipping deployment of OS X package"
+fi
