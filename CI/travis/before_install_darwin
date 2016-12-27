@@ -1,0 +1,9 @@
+#!/bin/sh
+
+brew update
+if ! brew ls --version cmake &>/dev/null; then
+	brew install cmake
+fi
+brew install doxygen
+brew install --build-from-source libusb
+brew install libxml2
