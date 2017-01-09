@@ -709,8 +709,8 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 		return ret;
 
 	snprintf(buffer, sizeof(buffer), "%1hhx.%1hhx",
-			(dev_desc.bcdUSB >> 8) & 0xf,
-			(dev_desc.bcdUSB >> 4) & 0xf);
+			(unsigned char)((dev_desc.bcdUSB >> 8) & 0xf),
+			(unsigned char)((dev_desc.bcdUSB >> 4) & 0xf));
 	ret = iio_context_add_attr(ctx, "usb,release", buffer);
 	if (ret < 0)
 		return ret;
