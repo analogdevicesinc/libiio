@@ -325,7 +325,7 @@ static ssize_t local_read(const struct iio_device *dev,
 		if (ret == -1) {
 			if (pdata->blocking && errno == EAGAIN)
 				continue;
-			ret = -EIO;
+			ret = -errno;
 			break;
 		} else if (ret == 0) {
 			ret = -EIO;
@@ -373,7 +373,7 @@ static ssize_t local_write(const struct iio_device *dev,
 			if (pdata->blocking && errno == EAGAIN)
 				continue;
 
-			ret = -EIO;
+			ret = -errno;
 			break;
 		} else if (ret == 0) {
 			ret = -EIO;
