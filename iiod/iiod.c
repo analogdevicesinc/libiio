@@ -362,10 +362,13 @@ err_close_socket:
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
+#ifdef WITH_IIOD_USBD
 	long nb_pipes = 3;
+	char *end;
+#endif
 	struct iio_context *ctx;
 	int c, option_index = 0;
-	char *end, *ffs_mountpoint = NULL;
+	char *ffs_mountpoint = NULL;
 	char err_str[1024];
 	int ret;
 
