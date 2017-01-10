@@ -793,7 +793,22 @@ struct iio_context * usb_create_context(unsigned int bus,
 		if (bus == libusb_get_bus_number(dev) &&
 			address == libusb_get_device_address(dev)) {
 			usb_dev = dev;
-			libusb_ref_device(usb_dev);
+
+			ret = libusb_open(usb_dev, &hdl);
+			/*
+			 * Workaround for libusb on Windows >= 8.1. A device
+			 * might appear twice in the list with one device being
+			 * bogus and only partially initialized. libusb_open()
+			 * returns LIBUSB_ERROR_NOT_SUPPORTED for such devices,
+			 * which should never happen for normal devices. So if
+			 * we find such a device skip it and keep looking.
+			 */
+			if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
+				WARNING("Skipping broken USB device. Please upgrade libusb.\n");
+				usb_dev = NULL;
+				continue;
+			}
+
 			break;
 		}
 	}
@@ -803,8 +818,6 @@ struct iio_context * usb_create_context(unsigned int bus,
 	if (!usb_dev)
 		goto err_libusb_exit;
 
-	ret = libusb_open(usb_dev, &hdl);
-	libusb_unref_device(usb_dev); /* Open gets us a extra ref */
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
 		ERROR("Unable to open device\n");
