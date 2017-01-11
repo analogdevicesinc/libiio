@@ -110,7 +110,9 @@ int thread_pool_add_thread(struct thread_pool *pool,
 		free(pdata);
 		thread_pool_thread_stopped(pool);
 	} else {
+#ifdef HAS_PTHREAD_SETNAME_NP
 		pthread_setname_np(thd, name);
+#endif
 	}
 
 	pthread_attr_destroy(&attr);
