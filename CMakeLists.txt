@@ -28,8 +28,9 @@ endif()
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	option(OSX_PACKAGE "Create a OSX package" ON)
 	set(CMAKE_MACOSX_RPATH ON)
-	set(SKIP_INSTALL_ALL ON)
+	set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
 endif()
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
@@ -356,7 +357,7 @@ else()
 endif()
 
 # Create an installer if compiling for OSX
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OSX_PACKAGE)
 	set(LIBIIO_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}.pkg)
 	set(LIBIIO_TEMP_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}-temp.pkg)
 	set(LIBIIO_DISTRIBUTION_XML ${CMAKE_CURRENT_BINARY_DIR}/Distribution.xml)
