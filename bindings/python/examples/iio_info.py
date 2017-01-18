@@ -27,7 +27,7 @@ def main():
 	print ('IIO context has %u devices:' % len(ctx.devices))
 
 	for dev in ctx.devices:
-		print ('\t' + dev.id.decode('utf-8') + ': ' + dev.name.decode('utf-8'))
+		print ('\t' + dev.id.decode() + ': ' + dev.name.decode())
 
 		if dev is iio.Trigger:
 			print ('Found trigger! Rate: %u Hz' % dev.frequency)
@@ -41,19 +41,19 @@ def main():
 				print ('\t\t\t%u channel-specific attributes found:' % len(chn.attrs))
 
 			for attr in chn.attrs:
-				print ('\t\t\t\t' + attr.decode('utf-8') + ', value: ' + chn.attrs[attr].value.decode('utf-8'))
+				print ('\t\t\t\t' + attr.decode() + ', value: ' + chn.attrs[attr].value.decode())
 
 		if len(dev.attrs) != 0:
 			print ('\t\t%u device-specific attributes found:' % len(dev.attrs))
 
 		for attr in dev.attrs:
-			print ('\t\t\t' + attr.decode('utf-8') + ', value: ' + dev.attrs[attr].value.decode('utf-8'))
+			print ('\t\t\t' + attr.decode() + ', value: ' + dev.attrs[attr].value.decode())
 
 		if len(dev.debug_attrs) != 0:
 			print ('\t\t%u debug attributes found:' % len(dev.debug_attrs))
 
 		for attr in dev.debug_attrs:
-			print ('\t\t\t' + attr.decode('utf-8') + ', value: ' + dev.debug_attrs[attr].value.decode('utf-8'))
+			print ('\t\t\t' + attr.decode() + ', value: ' + dev.debug_attrs[attr].value.decode())
 
 if __name__ == '__main__':
 	main()
