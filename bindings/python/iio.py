@@ -484,7 +484,7 @@ class Buffer(object):
 				operations will be performed
 			samples_count: type=int
 				The size of the buffer, in samples
-			circular: type=bool
+			cyclic: type=bool
 				If set to True, the buffer is circular
 
 		returns: type=iio.Buffer
