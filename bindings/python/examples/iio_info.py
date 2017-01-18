@@ -20,14 +20,14 @@ def main():
 
 	print ('Library version: %u.%u (git tag: %s)' % iio.version)
 
-	print ('IIO context created: ' + ctx.name)
+	print ('IIO context created: %s' % ctx.name)
 	print ('Backend version: %u.%u (git tag: %s)' % ctx.version)
-	print ('Backend description string: ' + ctx.description)
+	print ('Backend description string: %s' % ctx.description)
 
 	print ('IIO context has %u devices:' % len(ctx.devices))
 
 	for dev in ctx.devices:
-		print ('\t' + dev.id + ': ' + dev.name)
+		print ('\t' + dev.id.decode('utf-8') + ': ' + dev.name.decode('utf-8'))
 
 		if dev is iio.Trigger:
 			print ('Found trigger! Rate: %u Hz' % dev.frequency)
@@ -41,19 +41,19 @@ def main():
 				print ('\t\t\t%u channel-specific attributes found:' % len(chn.attrs))
 
 			for attr in chn.attrs:
-				print ('\t\t\t\t' + attr + ', value: ' + chn.attrs[attr].value)
+				print ('\t\t\t\t' + attr.decode('utf-8') + ', value: ' + chn.attrs[attr].value.decode('utf-8'))
 
 		if len(dev.attrs) != 0:
 			print ('\t\t%u device-specific attributes found:' % len(dev.attrs))
 
 		for attr in dev.attrs:
-			print ('\t\t\t' + attr + ', value: ' + dev.attrs[attr].value)
+			print ('\t\t\t' + attr.decode('utf-8') + ', value: ' + dev.attrs[attr].value.decode('utf-8'))
 
 		if len(dev.debug_attrs) != 0:
 			print ('\t\t%u debug attributes found:' % len(dev.debug_attrs))
 
 		for attr in dev.debug_attrs:
-			print ('\t\t\t' + attr + ', value: ' + dev.debug_attrs[attr].value)
+			print ('\t\t\t' + attr.decode('utf-8') + ', value: ' + dev.debug_attrs[attr].value.decode('utf-8'))
 
 if __name__ == '__main__':
 	main()
