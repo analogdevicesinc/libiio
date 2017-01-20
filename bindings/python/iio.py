@@ -61,6 +61,14 @@ _BufferPtr = _POINTER(_Buffer)
 _lib = _cdll('libiio.dll' if 'Windows' in _system() else 'libiio.so.0',
 		use_errno = True, use_last_error = True)
 
+_get_backends_count = _lib.iio_get_backends_count
+_get_backends_count.restype = c_uint
+
+_get_backend = _lib.iio_get_backend
+_get_backend.argtypes = (c_uint, )
+_get_backend.restype = c_char_p
+_get_backend.errcheck = _checkNull
+
 _create_scan_context = _lib.iio_create_scan_context
 _create_scan_context.argtypes = (c_char_p, c_uint)
 _create_scan_context.restype = _ScanContextPtr
@@ -350,6 +358,7 @@ def _get_lib_version():
 	return (major.value, minor.value, buf.value.decode('ascii') )
 
 version = _get_lib_version()
+backends = [ _get_backend(x).decode('ascii') for x in range(0, _get_backends_count()) ]
 
 class _Attr(object):
 	def __init__(self, name, filename = None):
