@@ -253,6 +253,30 @@ __api void iio_library_get_version(unsigned int *major,
 __api void iio_strerror(int err, char *dst, size_t len);
 
 
+/** @brief Check if the specified backend is available
+ * @param backend The name of the backend to query
+ * @return True if the backend is available, false otherwise
+ *
+ * Introduced in version 0.9. */
+__api __cnst bool iio_has_backend(const char *backend);
+
+
+/** @brief Get the number of available backends
+ * @return The number of available backends
+ *
+ * Introduced in version 0.9. */
+__api __cnst unsigned int iio_get_backends_count(void);
+
+
+/** @brief Retrieve the name of a given backend
+ * @param index The index corresponding to the attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the index is invalid, NULL is returned
+ *
+ * Introduced in version 0.9. */
+__api __cnst const char * iio_get_backend(unsigned int index);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/
 /** @defgroup Context Context
