@@ -27,7 +27,6 @@ extern "C" {
 #endif
 
 #include <limits.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -39,6 +38,17 @@ typedef ptrdiff_t ssize_t;
 #endif
 #else
 #include <sys/types.h>
+#endif
+
+#if defined(_MSC_VER) && (_MSC_VER < 1800) && !defined(__BOOL_DEFINED)
+#undef bool
+#undef false
+#undef true
+#define bool char
+#define false 0
+#define true 1
+#else
+#include <stdbool.h>
 #endif
 
 #if defined(__GNUC__) && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
