@@ -28,9 +28,6 @@
 #define snprintf sprintf_s
 #define inline __inline
 #endif
-#ifdef _WIN32
-#define strerror_r(err, buf, len) strerror_s(buf, len, err)
-#endif
 
 #ifdef _WIN32
 #   ifdef LIBIIO_EXPORTS
