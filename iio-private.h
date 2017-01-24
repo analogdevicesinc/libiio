@@ -22,6 +22,8 @@
 /* Include public interface */
 #include "iio.h"
 
+#include "iio-config.h"
+
 #include <stdbool.h>
 
 #ifdef _MSC_BUILD
