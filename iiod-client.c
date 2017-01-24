@@ -213,7 +213,8 @@ int iiod_client_get_trigger(struct iiod_client *client, void *desc,
 	unsigned int name_len;
 	int ret;
 
-	snprintf(buf, sizeof(buf), "GETTRIG %s\r\n", iio_device_get_id(dev));
+	iio_snprintf(buf, sizeof(buf), "GETTRIG %s\r\n",
+			iio_device_get_id(dev));
 
 	iio_mutex_lock(client->lock);
 	ret = iiod_client_exec_command(client, desc, buf);
@@ -264,13 +265,14 @@ int iiod_client_set_trigger(struct iiod_client *client, void *desc,
 	char buf[1024];
 	int ret;
 
-	if (trigger)
-		snprintf(buf, sizeof(buf), "SETTRIG %s %s\r\n",
+	if (trigger) {
+		iio_snprintf(buf, sizeof(buf), "SETTRIG %s %s\r\n",
 				iio_device_get_id(dev),
 				iio_device_get_id(trigger));
-	else
-		snprintf(buf, sizeof(buf), "SETTRIG %s\r\n",
+	} else {
+		iio_snprintf(buf, sizeof(buf), "SETTRIG %s\r\n",
 				iio_device_get_id(dev));
+	}
 
 	iio_mutex_lock(client->lock);
 	ret = iiod_client_exec_command(client, desc, buf);
@@ -284,7 +286,7 @@ int iiod_client_set_kernel_buffers_count(struct iiod_client *client, void *desc,
 	int ret;
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "SET %s BUFFERS_COUNT %u\r\n",
+	iio_snprintf(buf, sizeof(buf), "SET %s BUFFERS_COUNT %u\r\n",
 			iio_device_get_id(dev), nb_blocks);
 
 	iio_mutex_lock(client->lock);
@@ -299,7 +301,7 @@ int iiod_client_set_timeout(struct iiod_client *client,
 	int ret;
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", timeout);
+	iio_snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", timeout);
 
 	iio_mutex_lock(client->lock);
 	ret = iiod_client_exec_command(client, desc, buf);
@@ -350,16 +352,17 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		}
 	}
 
-	if (chn)
-		snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
+	if (chn) {
+		iio_snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
 				iio_channel_is_output(chn) ? "OUTPUT" : "INPUT",
 				iio_channel_get_id(chn), attr ? attr : "");
-	else if (is_debug)
-		snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
+	} else if (is_debug) {
+		iio_snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
 				id, attr ? attr : "");
-	else
-		snprintf(buf, sizeof(buf), "READ %s %s\r\n",
+	} else {
+		iio_snprintf(buf, sizeof(buf), "READ %s %s\r\n",
 				id, attr ? attr : "");
+	}
 
 	iio_mutex_lock(client->lock);
 
@@ -413,17 +416,18 @@ ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 		}
 	}
 
-	if (chn)
-		snprintf(buf, sizeof(buf), "WRITE %s %s %s %s %lu\r\n", id,
+	if (chn) {
+		iio_snprintf(buf, sizeof(buf), "WRITE %s %s %s %s %lu\r\n", id,
 				iio_channel_is_output(chn) ? "OUTPUT" : "INPUT",
 				iio_channel_get_id(chn), attr ? attr : "",
 				(unsigned long) len);
-	else if (is_debug)
-		snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
+	} else if (is_debug) {
+		iio_snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
 				id, attr ? attr : "", (unsigned long) len);
-	else
-		snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
+	} else {
+		iio_snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
 				id, attr ? attr : "", (unsigned long) len);
+	}
 
 	iio_mutex_lock(client->lock);
 	ret = ops->write(pdata, desc, buf, strlen(buf));
@@ -489,13 +493,14 @@ int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
 	char buf[1024], *ptr;
 	size_t i;
 
-	snprintf(buf, sizeof(buf), "OPEN %s %lu ",
+	iio_snprintf(buf, sizeof(buf), "OPEN %s %lu ",
 			iio_device_get_id(dev), (unsigned long) samples_count);
 	ptr = buf + strlen(buf);
 
-	for (i = dev->words; i > 0; i--, ptr += 8)
-		snprintf(ptr, (ptr - buf) + i * 8, "%08" PRIx32,
+	for (i = dev->words; i > 0; i--, ptr += 8) {
+		iio_snprintf(ptr, (ptr - buf) + i * 8, "%08" PRIx32,
 				dev->mask[i - 1]);
+	}
 
 	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
 
@@ -507,7 +512,7 @@ int iiod_client_close_unlocked(struct iiod_client *client, void *desc,
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "CLOSE %s\r\n", iio_device_get_id(dev));
+	iio_snprintf(buf, sizeof(buf), "CLOSE %s\r\n", iio_device_get_id(dev));
 	return iiod_client_exec_command(client, desc, buf);
 }
 
@@ -557,7 +562,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, void *desc,
 	if (!len || words != (nb_channels + 31) / 32)
 		return -EINVAL;
 
-	snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
+	iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
 			iio_device_get_id(dev), (unsigned long) len);
 
 	ret = iiod_client_write_all(client, desc, buf, strlen(buf));
@@ -602,7 +607,7 @@ ssize_t iiod_client_write_unlocked(struct iiod_client *client, void *desc,
 	char buf[1024];
 	int val;
 
-	snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+	iio_snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 			dev->id, (unsigned long) len);
 
 	ret = iiod_client_write_all(client, desc, buf, strlen(buf));

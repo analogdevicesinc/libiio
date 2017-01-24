@@ -34,9 +34,9 @@ static char *get_attr_xml(const char *attr, size_t *length, bool is_debug)
 
 	*length = len - 1; /* Skip the \0 */
 	if (is_debug)
-		snprintf(str, len, "<debug-attribute name=\"%s\" />", attr);
+		iio_snprintf(str, len, "<debug-attribute name=\"%s\" />", attr);
 	else
-		snprintf(str, len, "<attribute name=\"%s\" />", attr);
+		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr);
 	return str;
 }
 
@@ -104,7 +104,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	if (!str)
 		goto err_free_debug_attrs;
 
-	snprintf(str, len, "<device id=\"%s\"", dev->id);
+	iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
 	ptr = strrchr(str, '\0');
 
 	if (dev->name) {
@@ -501,7 +501,7 @@ int iio_device_attr_write_longlong(const struct iio_device *dev,
 	ssize_t ret;
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "%lld", val);
+	iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_device_attr_write(dev, attr, buf);
 
 	return ret < 0 ? ret : 0;
@@ -617,7 +617,7 @@ int iio_device_debug_attr_write_longlong(const struct iio_device *dev,
 	ssize_t ret;
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "%lld", val);
+	iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_device_debug_attr_write(dev, attr, buf);
 
 	return ret < 0 ? ret : 0;
@@ -691,9 +691,10 @@ int iio_device_reg_write(struct iio_device *dev,
 		uint32_t address, uint32_t value)
 {
 	ssize_t ret;
-
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "0x%" PRIx32 " 0x%" PRIx32, address, value);
+
+	iio_snprintf(buf, sizeof(buf), "0x%" PRIx32 " 0x%" PRIx32,
+			address, value);
 	ret = iio_device_debug_attr_write(dev, "direct_reg_access", buf);
 
 	return ret < 0 ? ret : 0;

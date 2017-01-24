@@ -356,7 +356,7 @@ static struct iio_context * serial_create_context(const char *port_name,
 		goto err_close_port;
 	}
 
-	snprintf(description, desc_len, "%s: %s", name, desc);
+	iio_snprintf(description, desc_len, "%s: %s", name, desc);
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {

@@ -175,10 +175,10 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 
 	*length = len - 1; /* Skip the \0 */
 	if (attr->filename)
-		snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
+		iio_snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
 				attr->name, attr->filename);
 	else
-		snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
+		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
 	return str;
 }
 
@@ -188,9 +188,9 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
 
 	if (chn->format.repeat > 1)
-		snprintf(repeat, sizeof(repeat), "X%u", chn->format.repeat);
+		iio_snprintf(repeat, sizeof(repeat), "X%u", chn->format.repeat);
 
-	snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
+	iio_snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
 			"format=\"%ce:%c%u/%u%s&gt;&gt;%u\" />",
 			chn->index, chn->format.is_be ? 'b' : 'l',
 			chn->format.is_signed ? 's' + processed : 'u' + processed,
@@ -199,7 +199,7 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 
 	if (chn->format.with_scale) {
 		char *ptr = strrchr(buf, '\0');
-		snprintf(ptr - 2, buf + sizeof(buf) - ptr + 2,
+		iio_snprintf(ptr - 2, buf + sizeof(buf) - ptr + 2,
 				"scale=\"%f\" />", chn->format.scale);
 	}
 
@@ -247,7 +247,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 	if (!str)
 		goto err_free_attrs;
 
-	snprintf(str, len, "<channel id=\"%s\"", chn->id);
+	iio_snprintf(str, len, "<channel id=\"%s\"", chn->id);
 	ptr = strrchr(str, '\0');
 
 	if (chn->name) {
@@ -694,7 +694,7 @@ int iio_channel_attr_write_longlong(const struct iio_channel *chn,
 {
 	ssize_t ret;
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "%lld", val);
+	iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_channel_attr_write(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }

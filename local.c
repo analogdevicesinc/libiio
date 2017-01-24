@@ -647,12 +647,14 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	if (!attr)
 		return local_read_all_dev_attrs(dev, dst, len, is_debug);
 
-	if (is_debug)
-		snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
+	if (is_debug) {
+		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
 				dev->id, attr);
-	else
-		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+	} else {
+		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
+	}
+
 	f = fopen(buf, "re");
 	if (!f)
 		return -errno;
@@ -677,12 +679,14 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	if (!attr)
 		return local_write_all_dev_attrs(dev, src, len, is_debug);
 
-	if (is_debug)
-		snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
+	if (is_debug) {
+		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
 				dev->id, attr);
-	else
-		snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+	} else {
+		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
+	}
+
 	f = fopen(buf, "we");
 	if (!f)
 		return -errno;
@@ -838,7 +842,7 @@ static int local_open(const struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
+	iio_snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
 	ret = local_write_dev_attr(dev, "buffer/length",
 			buf, strlen(buf) + 1, false);
 	if (ret < 0)
@@ -848,7 +852,7 @@ static int local_open(const struct iio_device *dev,
 	if (pdata->cancel_fd == -1)
 		return -errno;
 
-	snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
+	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
 	pdata->fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
 	if (pdata->fd == -1) {
 		ret = -errno;
@@ -893,7 +897,7 @@ static int local_open(const struct iio_device *dev,
 		/* Increase the size of the kernel buffer, when using the
 		 * low-speed interface. This avoids losing samples when
 		 * refilling the iio_buffer. */
-		snprintf(buf, sizeof(buf), "%lu", size);
+		iio_snprintf(buf, sizeof(buf), "%lu", size);
 		ret = local_write_dev_attr(dev, "buffer/length",
 				buf, strlen(buf) + 1, false);
 		if (ret < 0)
@@ -1482,7 +1486,7 @@ static int add_attr_or_channel_helper(struct iio_device *dev,
 	const char *name = strrchr(path, '/') + 1;
 
 	if (dir_is_scan_elements) {
-		snprintf(buf, sizeof(buf), "scan_elements/%s", name);
+		iio_snprintf(buf, sizeof(buf), "scan_elements/%s", name);
 		path = buf;
 	} else {
 		if (!is_channel(name, true))
@@ -1530,7 +1534,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 			goto out_close_dir;
 		}
 
-		snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
+		iio_snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
 			iio_strerror(errno, buf, sizeof(buf));
@@ -1558,7 +1562,8 @@ static int add_scan_elements(struct iio_device *dev, const char *devpath)
 {
 	struct stat st;
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "%s/scan_elements", devpath);
+
+	iio_snprintf(buf, sizeof(buf), "%s/scan_elements", devpath);
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
 		int ret = foreach_in_dir(dev, buf, false, add_scan_element);
@@ -1835,7 +1840,7 @@ struct iio_context * local_create_context(void)
 		goto err_set_errno;
 	}
 
-	snprintf(ctx->description, len + 5, "%s %s %s %s %s", uts.sysname,
+	iio_snprintf(ctx->description, len + 5, "%s %s %s %s %s", uts.sysname,
 			uts.nodename, uts.release, uts.version, uts.machine);
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);

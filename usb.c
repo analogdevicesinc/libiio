@@ -698,17 +698,17 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 	attrs[2].attr = "usb,serial";
 	attrs[2].idx = dev_desc.iSerialNumber;
 
-	snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idVendor);
+	iio_snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idVendor);
 	ret = iio_context_add_attr(ctx, "usb,idVendor", buffer);
 	if (ret < 0)
 		return ret;
 
-	snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idProduct);
+	iio_snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idProduct);
 	ret = iio_context_add_attr(ctx, "usb,idProduct", buffer);
 	if (ret < 0)
 		return ret;
 
-	snprintf(buffer, sizeof(buffer), "%1hhx.%1hhx",
+	iio_snprintf(buffer, sizeof(buffer), "%1hhx.%1hhx",
 			(unsigned char)((dev_desc.bcdUSB >> 8) & 0xf),
 			(unsigned char)((dev_desc.bcdUSB >> 4) & 0xf));
 	ret = iio_context_add_attr(ctx, "usb,release", buffer);
@@ -1034,7 +1034,7 @@ static int usb_fill_context_info(struct iio_context_info *info,
 
 	libusb_get_device_descriptor(dev, &desc);
 
-	snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
+	iio_snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
 		libusb_get_bus_number(dev), libusb_get_device_address(dev),
 		interface);
 
@@ -1069,7 +1069,7 @@ static int usb_fill_context_info(struct iio_context_info *info,
 			serial[0] = '\0';
 	}
 
-	snprintf(description, sizeof(description),
+	iio_snprintf(description, sizeof(description),
 		"%04x:%04x (%s %s), serial=%s", desc.idVendor,
 		desc.idProduct, manufacturer, product, serial);
 
