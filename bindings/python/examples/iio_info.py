@@ -57,19 +57,28 @@ def main():
 				print('\t\t\t%u channel-specific attributes found:' % len(chn.attrs))
 
 			for attr in chn.attrs:
-				print('\t\t\t\t' + attr + ', value: ' + chn.attrs[attr].value)
+				try:
+					print('\t\t\t\t' + attr + ', value: ' + chn.attrs[attr].value)
+				except OSError as e:
+					print('Unable to read ' + attr + ': ' + e.strerror)
 
 		if len(dev.attrs) != 0:
 			print('\t\t%u device-specific attributes found:' % len(dev.attrs))
 
 		for attr in dev.attrs:
-			print('\t\t\t' + attr + ', value: ' + dev.attrs[attr].value)
+			try:
+				print('\t\t\t' + attr + ', value: ' + dev.attrs[attr].value)
+			except OSError as e:
+				print('Unable to read ' + attr + ': ' + e.strerror)
 
 		if len(dev.debug_attrs) != 0:
 			print('\t\t%u debug attributes found:' % len(dev.debug_attrs))
 
 		for attr in dev.debug_attrs:
-			print('\t\t\t' + attr + ', value: ' + dev.debug_attrs[attr].value)
+			try:
+				print('\t\t\t' + attr + ', value: ' + dev.debug_attrs[attr].value)
+			except OSError as e:
+				print('Unable to read ' + attr + ': ' + e.strerror)
 
 if __name__ == '__main__':
 	main()
