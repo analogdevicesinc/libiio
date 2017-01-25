@@ -131,6 +131,15 @@ _get_version.restype = c_int
 _get_version.argtypes = (_ContextPtr, _POINTER(c_uint), _POINTER(c_uint), c_char_p, )
 _get_version.errcheck = _checkNegative
 
+_get_attrs_count = _lib.iio_context_get_attrs_count
+_get_attrs_count.restype = c_uint
+_get_attrs_count.argtypes = (_ContextPtr, )
+
+_get_attr = _lib.iio_context_get_attr
+_get_attr.restype = c_int
+_get_attr.argtypes = (_ContextPtr, c_uint, _POINTER(c_char_p), _POINTER(c_char_p))
+_get_attr.errcheck = _checkNegative
+
 _devices_count = _lib.iio_context_get_devices_count
 _devices_count.restype = c_uint
 _devices_count.argtypes = (_ContextPtr, )
@@ -715,6 +724,13 @@ class Context(object):
 		else:
 			self._context = _context
 
+		self._attrs = {}
+		for x in range(0, _get_attrs_count(self._context)):
+			str1 = c_char_p()
+			str2 = c_char_p()
+			_get_attr(self._context, x, _byref(str1), _byref(str2))
+			self._attrs[str1.value.decode('ascii')] = str2.value.decode('ascii')
+
 		# TODO(pcercuei): Use a dictionary for the devices.
 		self._devices = [ Trigger(dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
 				[ _get_device(self._context, x) for x in range(0, _devices_count(self._context)) ]]
@@ -774,6 +790,8 @@ class Context(object):
 			"XML representation of the current context.\n\ttype=str")
 	version = property(lambda self: self._version, None, None, \
 			"Version of the backend.\n\ttype=(int, int, str)")
+	attrs = property(lambda self: self._attrs, None, None, \
+			"List of context-specific attributes\n\ttype=dict of str objects")
 	devices = property(lambda self: self._devices, None, None, \
 			"List of devices contained in this context.\n\ttype=list of iio.Device and iio.Trigger objects")
 
