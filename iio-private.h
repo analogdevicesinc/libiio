@@ -28,9 +28,6 @@
 
 #ifdef _MSC_BUILD
 #define inline __inline
-#endif
-
-#ifdef HAS_SPRINTF_S
 #define iio_snprintf sprintf_s
 #else
 #define iio_snprintf snprintf
