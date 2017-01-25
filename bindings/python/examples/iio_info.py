@@ -40,6 +40,11 @@ def main():
 	print('Backend version: %u.%u (git tag: %s)' % ctx.version)
 	print('Backend description string: ' + ctx.description)
 
+	if len(ctx.attrs) > 0:
+		print('IIO context has %u attributes:' % len(ctx.attrs))
+	for attr, value in ctx.attrs.items():
+		print('\t' + attr + ': ' + value)
+
 	print('IIO context has %u devices:' % len(ctx.devices))
 
 	for dev in ctx.devices:
