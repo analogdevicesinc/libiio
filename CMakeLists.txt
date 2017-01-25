@@ -91,7 +91,7 @@ if (ENABLE_IPV6)
 	endif()
 endif()
 
-set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c scan.c)
+set(LIBIIO_CFILES channel.c device.c context.c buffer.c utilities.c scan.c iio-config.c)
 set(LIBIIO_HEADERS iio.h)
 
 add_definitions(-D_POSIX_C_SOURCE=200809L -D__XSI_VISIBLE=500 -DLIBIIO_EXPORTS=1)

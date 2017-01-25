@@ -253,6 +253,31 @@ __api void iio_library_get_version(unsigned int *major,
 __api void iio_strerror(int err, char *dst, size_t len);
 
 
+/** @brief Query if library was built with local backend
+ * @return True if built with local backend */
+__api __pure bool iio_backend_has_local();
+
+
+/** @brief Query if library was built with xml backend
+ * @return True if built with xml backend */
+__api __pure bool iio_backend_has_xml();
+
+
+/** @brief Query if library was built with network backend
+ * @return True if built with network backend */
+__api __pure bool iio_backend_has_network();
+
+
+/** @brief Query if library was built with usb backend
+ * @return True if built with usb backend */
+__api __pure bool iio_backend_has_usb();
+
+
+/** @brief Query if library was built with serial backend
+ * @return True if built with serial backend */
+__api __pure bool iio_backend_has_serial();
+
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/
 /** @defgroup Context Context
