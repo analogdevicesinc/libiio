@@ -1013,7 +1013,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 	if (pdata->mmap_addr && pdata->is_tx) {
 		char buf[1024];
-		snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
+
+		iio_snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
 				dev->id, (unsigned long) bytes_used);
 
 		iio_mutex_lock(pdata->lock);
@@ -1046,7 +1047,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		char buf[1024];
 		size_t len = pdata->mmap_len;
 
-		snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
+		iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
 				dev->id, (unsigned long) len);
 
 		iio_mutex_lock(pdata->lock);
@@ -1388,7 +1389,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		avahi_address_snprint(addr_str, sizeof(addr_str), &address);
-		snprintf(port_str, sizeof(port_str), "%hu", port);
+		iio_snprintf(port_str, sizeof(port_str), "%hu", port);
 		ret = getaddrinfo(addr_str, port_str, &hints, &res);
 	} else
 #endif
@@ -1517,7 +1518,7 @@ struct iio_context * network_create_context(const char *host)
 		}
 
 		ptr = strrchr(new_description, '\0');
-		snprintf(ptr, new_size - desc_len, " %s", ctx->description);
+		iio_snprintf(ptr, new_size - desc_len, " %s", ctx->description);
 		free(ctx->description);
 
 		ctx->description = new_description;

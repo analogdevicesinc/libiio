@@ -44,6 +44,7 @@ static const struct option options[] = {
 	  {"network", required_argument, 0, 'n'},
 	  {"uri", required_argument, 0, 'u'},
 	  {"scan", no_argument, 0, 's'},
+	  {"auto", no_argument, 0, 'a'},
 	  {0, 0, 0, 0},
 };
 
@@ -53,6 +54,7 @@ static const char *options_descriptions[] = {
 	"Use the network backend with the provided hostname.",
 	"Use the context at the provided URI.",
 	"Scan for available backends.",
+	"Scan for available contexts and if only one is available use it.",
 };
 
 static void usage(void)
@@ -106,6 +108,55 @@ err_free_ctx:
 	iio_scan_context_destroy(ctx);
 }
 
+static struct iio_context * autodetect_context(void)
+{
+	struct iio_scan_context *scan_ctx;
+	struct iio_context_info **info;
+	struct iio_context *ctx = NULL;
+	unsigned int i;
+	ssize_t ret;
+
+	scan_ctx = iio_create_scan_context(NULL, 0);
+	if (!scan_ctx) {
+		fprintf(stderr, "Unable to create scan context\n");
+		return NULL;
+	}
+
+	ret = iio_scan_context_get_info_list(scan_ctx, &info);
+	if (ret < 0) {
+		char err_str[1024];
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		goto err_free_ctx;
+	}
+
+	if (ret == 0) {
+		printf("No IIO context found.\n");
+		goto err_free_info_list;
+	}
+
+	if (ret == 1) {
+		printf("Using auto-detected IIO context at URI \"%s\"\n",
+				iio_context_info_get_uri(info[0]));
+		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+	} else {
+		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
+
+		for (i = 0; i < (size_t) ret; i++) {
+			fprintf(stderr, "\t%d: %s [%s]\n", i,
+				iio_context_info_get_description(info[i]),
+				iio_context_info_get_uri(info[i]));
+		}
+	}
+
+err_free_info_list:
+	iio_context_info_list_free(info);
+err_free_ctx:
+	iio_scan_context_destroy(scan_ctx);
+
+	return ctx;
+}
+
 static int dev_is_buffer_capable(const struct iio_device *dev)
 {
 	unsigned int i;
@@ -126,12 +177,12 @@ int main(int argc, char **argv)
 	int c, option_index = 0, arg_index = 0, xml_index = 0, ip_index = 0,
 	    uri_index = 0;
 	enum backend backend = LOCAL;
-	bool do_scan = false;
+	bool do_scan = false, detect_context = false;
 	unsigned int i, major, minor;
 	char git_tag[8];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:x:u:s",
+	while ((c = getopt_long(argc, argv, "+hn:x:u:sa",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -167,6 +218,10 @@ int main(int argc, char **argv)
 			backend = AUTO;
 			arg_index += 2;
 			uri_index = arg_index;
+			break;
+		case 'a':
+			arg_index += 1;
+			detect_context = true;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -205,7 +260,9 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	if (backend == XML)
+	if (detect_context)
+		ctx = autodetect_context();
+	else if (backend == XML)
 		ctx = iio_create_xml_context(argv[xml_index]);
 	else if (backend == NETWORK)
 		ctx = iio_create_network_context(argv[ip_index]);
@@ -215,7 +272,10 @@ int main(int argc, char **argv)
 		ctx = iio_create_default_context();
 
 	if (!ctx) {
-		fprintf(stderr, "Unable to create IIO context\n");
+		char buf[1024];
+
+		iio_strerror(errno, buf, sizeof(buf));
+		fprintf(stderr, "Unable to create IIO context: %s\n", buf);
 		return EXIT_FAILURE;
 	}
 

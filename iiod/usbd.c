@@ -20,7 +20,6 @@
 #include "ops.h"
 #include "thread-pool.h"
 
-#include <endian.h>
 #include <fcntl.h>
 #include <linux/usb/functionfs.h>
 #include <stdint.h>

@@ -40,3 +40,6 @@ set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
+
+# Make the test targets available to the main CMakeLists.txt
+set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} PARENT_SCOPE)

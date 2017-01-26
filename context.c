@@ -91,13 +91,15 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		goto err_free_devices;
 	}
 
-	if (ctx->description)
-		snprintf(str, len, "%s<context name=\"%s\" "
+	if (ctx->description) {
+		iio_snprintf(str, len, "%s<context name=\"%s\" "
 				"description=\"%s\" >",
 				xml_header, ctx->name, ctx->description);
-	else
-		snprintf(str, len, "%s<context name=\"%s\" >",
+	} else {
+		iio_snprintf(str, len, "%s<context name=\"%s\" >",
 				xml_header, ctx->name);
+	}
+
 	ptr = strrchr(str, '\0');
 
 	for (i = 0; i < ctx->nb_attrs; i++)

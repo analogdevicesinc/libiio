@@ -37,6 +37,7 @@ static const struct option options[] = {
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
 	  {"timeout", required_argument, 0, 'T'},
+	  {"auto", no_argument, 0, 'a'},
 	  {0, 0, 0, 0},
 };
 
@@ -47,7 +48,8 @@ static const char *options_descriptions[] = {
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
 	"Number of samples to capture, 0 = infinite. Default is 0.",
-	"Buffer timeout in milliseconds. 0 = no timeout"
+	"Buffer timeout in milliseconds. 0 = no timeout",
+	"Scan for available contexts and if only one is available use it.",
 };
 
 static void usage(void)
@@ -220,6 +222,53 @@ static ssize_t print_sample(const struct iio_channel *chn,
 	return (ssize_t) len;
 }
 
+static struct iio_context *scan(void)
+{
+	struct iio_scan_context *scan_ctx;
+	struct iio_context_info **info;
+	struct iio_context *ctx = NULL;
+	unsigned int i;
+	ssize_t ret;
+
+	scan_ctx = iio_create_scan_context(NULL, 0);
+	if (!scan_ctx) {
+		fprintf(stderr, "Unable to create scan context\n");
+		return NULL;
+	}
+
+	ret = iio_scan_context_get_info_list(scan_ctx, &info);
+	if (ret < 0) {
+		char err_str[1024];
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		goto err_free_ctx;
+	}
+
+	if (ret == 0) {
+		printf("No IIO context found.\n");
+		goto err_free_info_list;
+	}
+
+	if (ret == 1) {
+		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+	} else {
+		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
+
+		for (i = 0; i < (size_t) ret; i++) {
+			fprintf(stderr, "\t%d: %s [%s]\n", i,
+				iio_context_info_get_description(info[i]),
+				iio_context_info_get_uri(info[i]));
+		}
+	}
+
+err_free_info_list:
+	iio_context_info_list_free(info);
+err_free_ctx:
+	iio_scan_context_destroy(scan_ctx);
+
+	return ctx;
+}
+
 int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
@@ -228,8 +277,9 @@ int main(int argc, char **argv)
 	struct iio_device *dev;
 	size_t sample_size;
 	int timeout = -1;
+	bool scan_for_context = false;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:",
+	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:a",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -242,6 +292,10 @@ int main(int argc, char **argv)
 		case 'u':
 			arg_index += 2;
 			uri_index = arg_index;
+			break;
+		case 'a':
+			arg_index += 1;
+			scan_for_context = true;
 			break;
 		case 't':
 			arg_index += 2;
@@ -272,7 +326,9 @@ int main(int argc, char **argv)
 
 	setup_sig_handler();
 
-	if (uri_index)
+	if (scan_for_context)
+		ctx = scan();
+	else if (uri_index)
 		ctx = iio_create_context_from_uri(argv[uri_index]);
 	else if (ip_index)
 		ctx = iio_create_network_context(argv[ip_index]);

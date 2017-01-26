@@ -23,7 +23,6 @@
 #include "thread-pool.h"
 
 #include <arpa/inet.h>
-#include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -48,17 +47,6 @@
 #define MY_NAME "iiod"
 
 #define IIOD_PORT 30431
-
-#ifndef __bswap_constant_16
-#define __bswap_constant_16(x) \
-	((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-#endif
-
-#ifndef __bswap_constant_32
-#define __bswap_constant_32(x) \
-	((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
-	 (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
-#endif
 
 struct client_data {
 	int fd;
@@ -362,10 +350,13 @@ err_close_socket:
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
+#ifdef WITH_IIOD_USBD
 	long nb_pipes = 3;
+	char *end;
+#endif
 	struct iio_context *ctx;
 	int c, option_index = 0;
-	char *end, *ffs_mountpoint = NULL;
+	char *ffs_mountpoint = NULL;
 	char err_str[1024];
 	int ret;
 
@@ -400,7 +391,7 @@ int main(int argc, char **argv)
 		case 'n':
 #ifdef WITH_IIOD_USBD
 			nb_pipes = strtol(optarg, &end, 10);
-			if (optarg == end || nb_pipes < 3) {
+			if (optarg == end || nb_pipes < 1) {
 				ERROR("--nb-pipes: Invalid parameter\n");
 				return EXIT_FAILURE;
 			}

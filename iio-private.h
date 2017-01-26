@@ -22,14 +22,15 @@
 /* Include public interface */
 #include "iio.h"
 
+#include "iio-config.h"
+
 #include <stdbool.h>
 
 #ifdef _MSC_BUILD
-#define snprintf sprintf_s
 #define inline __inline
-#endif
-#ifdef _WIN32
-#define strerror_r(err, buf, len) strerror_s(buf, len, err)
+#define iio_snprintf sprintf_s
+#else
+#define iio_snprintf snprintf
 #endif
 
 #ifdef _WIN32
@@ -42,6 +43,10 @@
 #   define __api __attribute__((visibility ("default")))
 #else
 #   define __api
+#endif
+
+#ifdef WITH_MATLAB_BINDINGS_API
+#include "bindings/matlab/iio-wrapper.h"
 #endif
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)

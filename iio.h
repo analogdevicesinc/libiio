@@ -27,7 +27,6 @@ extern "C" {
 #endif
 
 #include <limits.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -39,6 +38,17 @@ typedef ptrdiff_t ssize_t;
 #endif
 #else
 #include <sys/types.h>
+#endif
+
+#if defined(_MSC_VER) && (_MSC_VER < 1800) && !defined(__BOOL_DEFINED)
+#undef bool
+#undef false
+#undef true
+#define bool char
+#define false 0
+#define true 1
+#else
+#include <stdbool.h>
 #endif
 
 #if defined(__GNUC__) && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
@@ -1102,7 +1112,7 @@ __api int iio_buffer_get_poll_fd(struct iio_buffer *buf);
 
 /** @brief Make iio_buffer_refill() and iio_buffer_push() blocking or not
  *
- * After this function has been called with blocking == true,
+ * After this function has been called with blocking == false,
  * iio_buffer_refill() and iio_buffer_push() will return -EAGAIN if no data is
  * ready.
  * A device is blocking by default.

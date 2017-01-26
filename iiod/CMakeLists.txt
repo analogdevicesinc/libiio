@@ -38,6 +38,11 @@ if (HAVE_FUNCTIONFS_V2)
 	endif (WITH_IIOD_USBD)
 endif (HAVE_FUNCTIONFS_V2)
 
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_LIBRARIES ${PTHREAD_LIBRARIES})
+check_symbol_exists(pthread_setname_np "pthread.h" HAS_PTHREAD_SETNAME_NP)
+set(CMAKE_REQUIRED_LIBRARIES)
+
 add_executable(iiod ${IIOD_CFILES})
 set_target_properties(iiod PROPERTIES
 	C_STANDARD 99

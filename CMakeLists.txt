@@ -28,8 +28,9 @@ endif()
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	option(OSX_PACKAGE "Create a OSX package" ON)
 	set(CMAKE_MACOSX_RPATH ON)
-	set(SKIP_INSTALL_ALL ON)
+	set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
 endif()
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
@@ -164,6 +165,12 @@ find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
 if (LIBSERIALPORT_LIBRARIES AND LIBSERIALPORT_INCLUDE_DIR)
 	option(WITH_SERIAL_BACKEND "Enable the serial backend" ON)
 
+	file(STRINGS ${LIBSERIALPORT_INCLUDE_DIR}/libserialport.h LIBSERIALPORT_VERSION_STR REGEX "SP_PACKAGE_VERSION_STRING")
+	string(REGEX REPLACE "#define SP_PACKAGE_VERSION_STRING \"(.*)\"" "\\1" LIBSERIALPORT_VERSION ${LIBSERIALPORT_VERSION_STR})
+	if ("${LIBSERIALPORT_VERSION}" VERSION_LESS 0.1.1)
+		message(SEND_ERROR "The installed version of libserialport is too old. The minimum version supported is 0.1.1.")
+	endif()
+
 	if (WITH_SERIAL_BACKEND)
 		add_definitions(-DSERIAL_BACKEND=1)
 		set(LIBIIO_CFILES ${LIBIIO_CFILES} serial.c)
@@ -276,7 +283,19 @@ endif()
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
 
-add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS})
+add_subdirectory(bindings)
+
+if (WITH_MATLAB_BINDINGS_API)
+	set(LIBIIO_EXTRA_HEADERS ${LIBIIO_EXTRA_HEADERS} bindings/matlab/iio-wrapper.h)
+	add_definitions(-DMATLAB_BINDINGS_API=1)
+endif()
+
+if(WITH_TESTS)
+	add_subdirectory(tests)
+endif()
+
+add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS})
+
 set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}
 	SOVERSION ${LIBIIO_VERSION_MAJOR}
@@ -325,10 +344,11 @@ else()
 endif()
 
 # Create an installer if compiling for OSX
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OSX_PACKAGE)
 	set(LIBIIO_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}.pkg)
 	set(LIBIIO_TEMP_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}-temp.pkg)
 	set(LIBIIO_DISTRIBUTION_XML ${CMAKE_CURRENT_BINARY_DIR}/Distribution.xml)
+	set(LIBIIO_FRAMEWORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/iio.framework)
 	configure_file(Distribution.xml.cmakein ${LIBIIO_DISTRIBUTION_XML} @ONLY)
 
 	find_program(PKGBUILD_EXECUTABLE
@@ -341,15 +361,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		DOC "OSX Package builder (productbuild)")
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
+	foreach(_tool ${IIO_TESTS_TARGETS})
+		list(APPEND IIO_TESTS $<TARGET_FILE:${_tool}>)
+	endforeach()
+
 	add_custom_command(OUTPUT ${LIBIIO_PKG}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${LIBIIO_FRAMEWORK_DIR}/Tools
+		COMMAND ${CMAKE_COMMAND} -E copy ${IIO_TESTS} ${LIBIIO_FRAMEWORK_DIR}/Tools
 		COMMAND ${PKGBUILD_EXECUTABLE}
-			--component ${CMAKE_CURRENT_BINARY_DIR}/iio.framework
+			--component ${LIBIIO_FRAMEWORK_DIR}
 			--identifier com.adi.iio --version ${VERSION}
 			--install-location /Library/Frameworks ${LIBIIO_TEMP_PKG}
 		COMMAND ${PRODUCTBUILD_EXECUTABLE}
 			--distribution ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_PKG}
 		COMMAND ${CMAKE_COMMAND} -E remove ${LIBIIO_TEMP_PKG}
-		DEPENDS iio ${LIBIIO_DISTRIBUTION_XML}
+		DEPENDS iio ${IIO_TESTS_TARGETS} ${LIBIIO_DISTRIBUTION_XML}
 	)
 
 	if (PKGBUILD_EXECUTABLE AND PRODUCTBUILD_EXECUTABLE)
@@ -369,12 +395,6 @@ if(WITH_IIOD)
 		add_subdirectory(iiod)
 	endif()
 endif()
-
-if(WITH_TESTS)
-	add_subdirectory(tests)
-endif()
-
-add_subdirectory(bindings)
 
 # support creating some basic binpkgs via `make package`
 if(PACKAGING_ON)
