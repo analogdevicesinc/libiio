@@ -1,0 +1,36 @@
+#!/bin/sh
+
+cd $TRAVIS_BUILD_DIR/build
+
+send()
+{
+if [ "$#" -ne 3 ] ; then
+	echo "skipping deployment of something"
+        echo "send called with $@"
+	return
+fi
+
+FROM=$1
+TO=${DEPLOY_TO}/$2
+LATE=${DEPLOY_TO}/latest_libiio${LDIST}$3
+GLOB=${DEPLOY_TO}/*${LDIST}$3
+if [ "x${FROM}" != "x" ] ; then
+	scp ${FROM} ${SSHUSER}@${SSHHOST}:${TO}
+	ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} "rm ${LATE}"
+	ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} "ln ${TO} ${LATE}"
+	for files in $(ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
+		"ls -lt ${GLOB}" | tail -n +10 | awk '{print $NF}')
+	do
+		ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
+			"rm ${DEPLOY_TO}/${files}"
+	done
+
+else
+	echo "Skipping deployment of $3"
+fi
+
+}
+
+#    from                   to             suffix
+send ${RELEASE_PKG_FILE_PKG} ${TARGET_PKG} .pkg
+send ${RELEASE_PKG_FILE_TGZ} ${TARGET_TGZ} .tar.gz

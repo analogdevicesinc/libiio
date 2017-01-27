@@ -1,14 +1,4 @@
-os:
-  - linux
-  - osx
-
-dist: trusty
-
 language: c
-
-compiler:
-  - clang
-  - gcc
 
 env:
   global:
@@ -29,12 +19,38 @@ matrix:
         - CHECK_RULE=coverage GCOV=1
         - PKG_RULE=gzip
         - COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG"
-        - COVERITY_SCAN_BRANCH_PATTERN="travis-ci"
+        - COVERITY_SCAN_BRANCH_PATTERN="master"
         - COVERITY_SCAN_NOTIFICATION_EMAIL="robin.getz@analog.com"
         - COVERITY_SCAN_BUILD_COMMAND_PREPEND="mkdir build && cd build && cmake .."
         - COVERITY_SCAN_BUILD_COMMAND="make"
         # The COVERITY_SCAN_TOKEN
         - secure: "QQt2l9IVo0xXWLx7Xqgz/4Iezj7YroY3MKfmG+OhtzkMRx4prhx32/07JMNAcYx6mQrccyZkBNzpYuXlfIZjFL3xDxDj5+iKv5XXpJbRFQGhc5xZtAlzOIqHNMcFc0Aj8J2mZwKfSaDnBdf+nMgKcmn46pYbpJOmPe9iEfeLvvg="
+    - compiler: "clang"
+      os: linux
+      dist: trusty
+      env: LDIST=DO_NOT_DEPLOY
+    - compiler: "gcc"
+      os: linux
+      dist: precise
+      env: LDIST=-precise
+    - compiller: "gcc"
+      os: linux
+      dist: trusty
+      env: LDIST=-trusty
+    - compiler: "gcc"
+      os: osx
+      osx_image: xcode6.4
+      env: LDIST=-osx_10.10
+    - compiler: "gcc"
+      os: osx
+      osx_image: xcode7.3
+      env: LDIST=-osx_10.11
+    - compiler: "gcc"
+      os: osx
+      osx_image: xcode8.1
+      env:
+        - LDIST=-osx_10.12
+        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
 
 addons:
   artifacts: true
@@ -42,23 +58,8 @@ addons:
     secure: "q0dQ9MrhnOCo031McxSdQIqw4N6tEyAZLq7mdbWkAJcXOh/CX58NjFvcdSfamleDUYRmg7KpCZPPgnbx2JtqVvWJv8aNnr67CE1GIjRP1Fxh2WaKS+VK+I6rro7GwCO2C9d+uffCt63LfZKqddF1T7vMI2IgHcu9irc5LCuw6Wo="
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y doxygen; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install doxygen; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libaio-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-client-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libavahi-common-dev; fi
-# Doesn't exist on Ubuntu Trusty / 14.04LTS, so don't install it
-#   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libserialport-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libusb-1.0-0-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --build-from-source libusb; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libxml2-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libxml2; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y rpm; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y tar; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y bzip2; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y gzip; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./CI/travis/before_install_darwin ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./CI/travis/before_install_linux ; fi
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "$TRAVIS_EVENT_TYPE" == "cron" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
 
@@ -67,20 +68,15 @@ before_install:
 script:
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
   - cd $TRAVIS_BUILD_DIR/build
-  - cmake ..
-  - make
-  - make package
+  - cmake -DPACKAGING_ON=1 -DCPACK_DETECT_DEPENDENCIES=1  ..
+  - make && make package
 notifications:
   email:
     on_success: change
     on_failure: always
 
 before_deploy:
-  - export RELEASE_PKG_FILE_DEB=$(ls *.deb)
-  - export RELEASE_PKG_FILE_RPM=$(ls *.rpm)
-  - export RELEASE_PKG_FILE_TB2=$(ls *.tar.bz2)
-  - export RELEASE_PKG_FILE_PKG=$(ls *.pkg)
-  - echo "deploying $RELEASE_PKG_FILE_DEB, $RELEASE_PKG_FILE_RPM, $RELEASE_PKG_FILE_TB2, $RELEASE_PKG_FILE_PKG to GitHub releases"
+  - . ${TRAVIS_BUILD_DIR}/CI/travis/before_deploy
   - openssl aes-256-cbc -K $encrypted_48a720578612_key -iv $encrypted_48a720578612_iv -in ${TRAVIS_BUILD_DIR}/deploy.rsa.enc -out /tmp/deploy.rsa -d
   - eval "$(ssh-agent -s)"
   - chmod 600 /tmp/deploy.rsa
@@ -92,24 +88,23 @@ deploy:
     file:
       - "${RELEASE_PKG_FILE_DEB}"
       - "${RELEASE_PKG_FILE_RPM}"
-      - "${RELEASE_PKG_FILE_TB2}"
+      - "${RELEASE_PKG_FILE_TGZ}"
     skip_cleanup: true
     on:
       repo: analogdevicesinc/libiio
       tags: true
-      condition: "$CC = gcc"
-      condition: "$TRAVIS_OS_NAME = linux"
+      condition: "($CC = gcc) && ($TRAVIS_OS_NAME = linux)"
   - provider: script
     skip_cleanup: true
-    script: scp ${RELEASE_PKG_FILE_DEB} ${SSHUSER}@${SSHHOST}:${DEPLOY_TO}/${RELEASE_PKG_FILE_DEB} ; ssh ${SSHUSER}@${SSHHOST} "rm ${DEPLOY_TO}/latest_libiio.deb"; ssh ${SSHUSER}@${SSHHOST} "ln ${DEPLOY_TO}/${RELEASE_PKG_FILE_DEB} ${DEPLOY_TO}/latest_libiio.deb"; scp ${RELEASE_PKG_FILE_RPM} ${SSHUSER}@${SSHHOST}:${DEPLOY_TO}/${RELEASE_PKG_FILE_RPM} ; ssh ${SSHUSER}@${SSHHOST} "rm ${DEPLOY_TO}/latest_libiio.rpm"; ssh ${SSHUSER}@${SSHHOST} "ln ${DEPLOY_TO}/${RELEASE_PKG_FILE_RPM} ${DEPLOY_TO}/latest_libiio.rpm";
+    script:
+      - ${TRAVIS_BUILD_DIR}/CI/travis/deploy_linux
     on:
-      condition: "$CC = gcc"
-      condition: "$TRAVIS_OS_NAME = linux"
+      condition: "($CC = gcc) && ($TRAVIS_OS_NAME = linux)"
       branch: master
   - provider: script
     skip_cleanup: true
-    script: scp ${RELEASE_PKG_FILE_PKG} ${SSHUSER}@${SSHHOST}:${DEPLOY_TO}/${RELEASE_PKG_FILE_PKG} ; ssh ${SSHUSER}@${SSHHOST} "rm ${DEPLOY_TO}/latest_libiio.pkg"; ssh ${SSHUSER}@${SSHHOST} "ln ${DEPLOY_TO}/${RELEASE_PKG_FILE_PKG} ${DEPLOY_TO}/latest_libiio.pkg";
+    script:
+      - ${TRAVIS_BUILD_DIR}/CI/travis/deploy_darwin
     on:
-      condition: "$CC = gcc"
       condition: "$TRAVIS_OS_NAME = osx"
       branch: master
