@@ -406,4 +406,15 @@ if(ENABLE_PACKAGING)
 	endif()
 endif()
 
+if (WITH_USB_BACKEND AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
+	option(INSTALL_UDEV_RULE "Install a udev rule for detection of USB devices" ON)
+
+	if (INSTALL_UDEV_RULE)
+		set(UDEV_RULES_INSTALL_DIR /lib/udev/rules.d CACHE PATH "default install path for udev rules")
+
+		configure_file(libiio.rules.cmakein ${CMAKE_CURRENT_BINARY_DIR}/90-libiio.rules @ONLY)
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/90-libiio.rules DESTINATION ${UDEV_RULES_INSTALL_DIR})
+	endif()
+endif()
+
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
