@@ -1,4 +1,5 @@
 # support creating some basic binpkgs via `make package`
+set(CPACK_SET_DESTDIR ON)
 set(CPACK_GENERATOR TGZ;RPM;DEB)
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
