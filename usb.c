@@ -908,8 +908,10 @@ struct iio_context * usb_create_context(unsigned int bus,
 	}
 
 	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx);
-	if (!ctx)
+	if (!ctx) {
+		ret = -errno;
 		goto err_reset_pipes;
+	}
 
 	libusb_free_config_descriptor(conf_desc);
 
