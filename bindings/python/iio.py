@@ -338,13 +338,14 @@ def _get_lib_version():
 	minor = c_uint()
 	buf = create_string_buffer(8)
 	_get_library_version(_byref(major), _byref(minor), buf)
-	return (major.value, minor.value, buf.value )
+	return (major.value, minor.value, buf.value.decode('ascii') )
 
 version = _get_lib_version()
 
 class _Attr(object):
 	def __init__(self, name, filename = None):
 		self._name = name
+		self._name_ascii = name.encode('ascii')
 		self._filename = name if filename is None else filename
 
 	def __str__(self):
@@ -361,16 +362,16 @@ class ChannelAttr(_Attr):
 	"""Represents an attribute of a channel."""
 
 	def __init__(self, channel, name):
-		super(ChannelAttr, self).__init__(name, _c_get_filename(channel, name))
+		super(ChannelAttr, self).__init__(name, _c_get_filename(channel, name.encode('ascii')).decode('ascii'))
 		self._channel = channel
 
 	def _Attr__read(self):
 		buf = create_string_buffer(1024)
-		_c_read_attr(self._channel, self.name, buf, len(buf))
-		return buf.value
+		_c_read_attr(self._channel, self._name_ascii, buf, len(buf))
+		return buf.value.decode('ascii')
 
 	def _Attr__write(self, value):
-		_c_write_attr(self._channel, self.name, value)
+		_c_write_attr(self._channel, self._name_ascii, value.encode('ascii'))
 
 class DeviceAttr(_Attr):
 	"""Represents an attribute of an IIO device."""
@@ -381,11 +382,11 @@ class DeviceAttr(_Attr):
 
 	def _Attr__read(self):
 		buf = create_string_buffer(1024)
-		_d_read_attr(self._device, self.name, buf, len(buf))
-		return buf.value
+		_d_read_attr(self._device, self._name_ascii, buf, len(buf))
+		return buf.value.decode('ascii')
 
 	def _Attr__write(self, value):
-		_d_write_attr(self._device, self.name, value)
+		_d_write_attr(self._device, self._name_ascii, value.encode('ascii'))
 
 class DeviceDebugAttr(DeviceAttr):
 	"""Represents a debug attribute of an IIO device."""
@@ -395,19 +396,21 @@ class DeviceDebugAttr(DeviceAttr):
 
 	def _Attr__read(self):
 		buf = create_string_buffer(1024)
-		_d_read_debug_attr(self._device, self.name, buf, len(buf))
-		return buf.value
+		_d_read_debug_attr(self._device, self._name_ascii, buf, len(buf))
+		return buf.value.decode('ascii')
 
 	def _Attr__write(self, value):
-		_d_write_debug_attr(self._device, self.name, value)
+		_d_write_debug_attr(self._device, self._name_ascii, value.encode('ascii'))
 
 class Channel(object):
 	def __init__(self, _channel):
 		self._channel = _channel
 		self._attrs = { name : ChannelAttr(_channel, name) for name in \
-				[_c_get_attr(_channel, x) for x in xrange(0, _c_attr_count(_channel))] }
-		self._id = _c_get_id(self._channel)
-		self._name = _c_get_name(self._channel)
+				[_c_get_attr(_channel, x).decode('ascii') for x in range(0, _c_attr_count(_channel))] }
+		self._id = _c_get_id(self._channel).decode('ascii')
+
+		name_raw = _c_get_name(self._channel)
+		self._name = name_raw.decode('ascii') if name_raw is not None else None
 		self._output = _c_is_output(self._channel)
 		self._scan_element = _c_is_scan_element(self._channel)
 
@@ -561,16 +564,18 @@ class _DeviceOrTrigger(object):
 	def __init__(self, _device):
 		self._device = _device
 		self._attrs = { name : DeviceAttr(_device, name) for name in \
-				[_d_get_attr(_device, x) for x in xrange(0, _d_attr_count(_device))] }
+				[_d_get_attr(_device, x).decode('ascii') for x in range(0, _d_attr_count(_device))] }
 		self._debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
-				[_d_get_debug_attr(_device, x) for x in xrange(0, _d_debug_attr_count(_device))] }
+				[_d_get_debug_attr(_device, x).decode('ascii') for x in range(0, _d_debug_attr_count(_device))] }
 
 		# TODO(pcercuei): Use a dictionary for the channels.
 		chans = [ Channel(_get_channel(self._device, x))
-			for x in xrange(0, _channels_count(self._device)) ]
+			for x in range(0, _channels_count(self._device)) ]
 		self._channels = sorted(chans, key=lambda c: c.id)
-		self._id = _d_get_id(self._device)
-		self._name = _d_get_name(self._device)
+		self._id = _d_get_id(self._device).decode('ascii')
+
+		name_raw = _d_get_name(self._device)
+		self._name = name_raw.decode('ascii') if name_raw is not None else None
 
 	def reg_write(self, reg, value):
 		"""
@@ -613,8 +618,9 @@ class _DeviceOrTrigger(object):
 		returns: type=iio.Device or type=iio.Trigger
 			The IIO Device
 		"""
-		return (filter(lambda x: (name_or_id == x.name or name_or_id == x.id) \
-				and x.output == is_output, self.channels) or [None])[0]
+		return next((x for x in self.channels \
+				if name_or_id == x.name or name_or_id == x.id and \
+				x.output == is_output), None)
 
 	def set_kernel_buffers_count(self, count):
 		"""
@@ -704,23 +710,23 @@ class Context(object):
 
 		if(_context is None):
 			self._context = _new_default()
-		elif type(_context) is str:
-			self._context = _new_uri(_context)
+		elif type(_context) is str or type(_context) is unicode:
+			self._context = _new_uri(_context.encode('ascii'))
 		else:
 			self._context = _context
 
 		# TODO(pcercuei): Use a dictionary for the devices.
 		self._devices = [ Trigger(dev) if _d_is_trigger(dev) else Device(self, dev) for dev in \
-				[ _get_device(self._context, x) for x in xrange(0, _devices_count(self._context)) ]]
-		self._name = _get_name(self._context)
-		self._description = _get_description(self._context)
-		self._xml = _get_xml(self._context)
+				[ _get_device(self._context, x) for x in range(0, _devices_count(self._context)) ]]
+		self._name = _get_name(self._context).decode('ascii')
+		self._description = _get_description(self._context).decode('ascii')
+		self._xml = _get_xml(self._context).decode('ascii')
 
 		major = c_uint()
 		minor = c_uint()
 		buf = create_string_buffer(8)
 		_get_version(self._context, _byref(major), _byref(minor), buf)
-		self._version = (major.value, minor.value, buf.value )
+		self._version = (major.value, minor.value, buf.value.decode('ascii') )
 
 	def __del__(self):
 		if(self._context is not None):
@@ -757,7 +763,8 @@ class Context(object):
 		returns: type=iio.Device or type=iio.Trigger
 			The IIO Device
 		"""
-		return (filter(lambda x: name_or_id == x.name or name_or_id == x.id, self.devices) or [None])[0]
+		return next((x for x in self.devices \
+				if name_or_id == x.name or name_or_id == x.id), None)
 
 	name = property(lambda self: self._name, None, None, \
 			"Name of this IIO context.\n\ttype=str")
@@ -793,7 +800,7 @@ class XMLContext(Context):
 		returns: type=iio.XMLContext
 			An new instance of this class
 		"""
-		ctx = _new_xml(xmlfile)
+		ctx = _new_xml(xmlfile.encode('ascii'))
 		super(XMLContext, self).__init__(ctx)
 
 class NetworkContext(Context):
@@ -808,7 +815,7 @@ class NetworkContext(Context):
 		returns: type=iio.NetworkContext
 			An new instance of this class
 		"""
-		ctx = _new_network(hostname)
+		ctx = _new_network(hostname.encode('ascii') if hostname is not None else None)
 		super(NetworkContext, self).__init__(ctx)
 
 def scan_contexts():
@@ -818,8 +825,8 @@ def scan_contexts():
 	ctx = _create_scan_context(None, 0)
 	nb = _get_context_info_list(ctx, _byref(ptr));
 
-	for i in xrange(0, nb):
-		d[_context_info_get_uri(ptr[i])] = _context_info_get_description(ptr[i])
+	for i in range(0, nb):
+		d[_context_info_get_uri(ptr[i]).decode('ascii')] = _context_info_get_description(ptr[i]).decode('ascii')
 
 	_context_info_list_free(ptr)
 	_destroy_scan_context(ctx)
