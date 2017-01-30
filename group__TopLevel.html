@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.8</span>
+   &#160;<span id="projectnumber">0.9</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -75,9 +75,98 @@ Functions</h2></td></tr>
 <tr class="memitem:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga4a117b0ac02e97aeda92e33c063f7cf0">iio_strerror</a> (int err, char *dst, size_t len)</td></tr>
 <tr class="memdesc:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of an error code.  <a href="#ga4a117b0ac02e97aeda92e33c063f7cf0">More...</a><br /></td></tr>
 <tr class="separator:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac261dc30aa66453d1eabed1e88aa8728"><td class="memItemLeft" align="right" valign="top">__api __cnst bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#gac261dc30aa66453d1eabed1e88aa8728">iio_has_backend</a> (const char *backend)</td></tr>
+<tr class="memdesc:gac261dc30aa66453d1eabed1e88aa8728"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the specified backend is available.  <a href="#gac261dc30aa66453d1eabed1e88aa8728">More...</a><br /></td></tr>
+<tr class="separator:gac261dc30aa66453d1eabed1e88aa8728"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8b5f231e009524ab5be5f918e6f041c3"><td class="memItemLeft" align="right" valign="top">__api __cnst unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga8b5f231e009524ab5be5f918e6f041c3">iio_get_backends_count</a> (void)</td></tr>
+<tr class="memdesc:ga8b5f231e009524ab5be5f918e6f041c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the number of available backends.  <a href="#ga8b5f231e009524ab5be5f918e6f041c3">More...</a><br /></td></tr>
+<tr class="separator:ga8b5f231e009524ab5be5f918e6f041c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga55574e54de682499c5c08566c652114a"><td class="memItemLeft" align="right" valign="top">__api __cnst const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga55574e54de682499c5c08566c652114a">iio_get_backend</a> (unsigned int index)</td></tr>
+<tr class="memdesc:ga55574e54de682499c5c08566c652114a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the name of a given backend.  <a href="#ga55574e54de682499c5c08566c652114a">More...</a><br /></td></tr>
+<tr class="separator:ga55574e54de682499c5c08566c652114a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="ga55574e54de682499c5c08566c652114a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga55574e54de682499c5c08566c652114a">&sect;&nbsp;</a></span>iio_get_backend()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __cnst const char* iio_get_backend </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>index</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieve the name of a given backend. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">index</td><td>The index corresponding to the attribute </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, a pointer to a static NULL-terminated string </dd>
+<dd>
+If the index is invalid, NULL is returned</dd></dl>
+<p>Introduced in version 0.9. </p>
+
+</div>
+</div>
+<a id="ga8b5f231e009524ab5be5f918e6f041c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga8b5f231e009524ab5be5f918e6f041c3">&sect;&nbsp;</a></span>iio_get_backends_count()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __cnst unsigned int iio_get_backends_count </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the number of available backends. </p>
+<dl class="section return"><dt>Returns</dt><dd>The number of available backends</dd></dl>
+<p>Introduced in version 0.9. </p>
+
+</div>
+</div>
+<a id="gac261dc30aa66453d1eabed1e88aa8728"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gac261dc30aa66453d1eabed1e88aa8728">&sect;&nbsp;</a></span>iio_has_backend()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __cnst bool iio_has_backend </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>backend</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check if the specified backend is available. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">backend</td><td>The name of the backend to query </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>True if the backend is available, false otherwise</dd></dl>
+<p>Introduced in version 0.9. </p>
+
+</div>
+</div>
 <a id="gaaa29e5bac86d00a1cef6e2d00b0ea24c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gaaa29e5bac86d00a1cef6e2d00b0ea24c">&sect;&nbsp;</a></span>iio_library_get_version()</h2>
 
@@ -169,7 +258,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Dec 12 2016 15:39:06 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 30 2017 14:45:32 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.12
 </small></address>

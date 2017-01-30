@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.8</span>
+   &#160;<span id="projectnumber">0.9</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -112,6 +112,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga5adbbac8ca9f6e6798f8904cfe6d7a1c">iio_context_get_description</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a description of the given context.  <a href="#ga5adbbac8ca9f6e6798f8904cfe6d7a1c">More...</a><br /></td></tr>
 <tr class="separator:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga43b3d80fdae82628d54398cf39cc351d"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga43b3d80fdae82628d54398cf39cc351d">iio_context_get_attrs_count</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
+<tr class="memdesc:ga43b3d80fdae82628d54398cf39cc351d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the number of context-specific attributes.  <a href="#ga43b3d80fdae82628d54398cf39cc351d">More...</a><br /></td></tr>
+<tr class="separator:ga43b3d80fdae82628d54398cf39cc351d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga30cc0f5ffa30537bb97021a5798328e9"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga30cc0f5ffa30537bb97021a5798328e9">iio_context_get_attr</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, unsigned int index, const char **name, const char **value)</td></tr>
+<tr class="memdesc:ga30cc0f5ffa30537bb97021a5798328e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the name and value of a context-specific attribute.  <a href="#ga30cc0f5ffa30537bb97021a5798328e9">More...</a><br /></td></tr>
+<tr class="separator:ga30cc0f5ffa30537bb97021a5798328e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7d11f631fcb2ca8e1bf918553bbb9938"><td class="memItemLeft" align="right" valign="top">__api const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga7d11f631fcb2ca8e1bf918553bbb9938">iio_context_get_attr_value</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, const char *name)</td></tr>
+<tr class="memdesc:ga7d11f631fcb2ca8e1bf918553bbb9938"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the value of a context-specific attribute.  <a href="#ga7d11f631fcb2ca8e1bf918553bbb9938">More...</a><br /></td></tr>
+<tr class="separator:ga7d11f631fcb2ca8e1bf918553bbb9938"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2acae321e081d85d61b6960f11c99573"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga2acae321e081d85d61b6960f11c99573">iio_context_get_devices_count</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga2acae321e081d85d61b6960f11c99573"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the devices found in the given context.  <a href="#ga2acae321e081d85d61b6960f11c99573">More...</a><br /></td></tr>
 <tr class="separator:ga2acae321e081d85d61b6960f11c99573"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -220,6 +229,130 @@ On failure, NULL is returned and errno is set appropriately </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, a pointer to an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> structure </dd>
 <dd>
 If the name or ID does not correspond to any known device, NULL is returned </dd></dl>
+
+</div>
+</div>
+<a id="ga30cc0f5ffa30537bb97021a5798328e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga30cc0f5ffa30537bb97021a5798328e9">&sect;&nbsp;</a></span>iio_context_get_attr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api int iio_context_get_attr </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char **&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char **&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieve the name and value of a context-specific attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ctx</td><td>A pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </td></tr>
+    <tr><td class="paramname">index</td><td>The index corresponding to the attribute </td></tr>
+    <tr><td class="paramname">name</td><td>A pointer to a const char * pointer (NULL accepted) </td></tr>
+    <tr><td class="paramname">value</td><td>A pointer to a const char * pointer (NULL accepted) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, 0 is returned </dd>
+<dd>
+On error, a negative errno code is returned</dd></dl>
+<p>Introduced in version 0.9. </p>
+
+</div>
+</div>
+<a id="ga7d11f631fcb2ca8e1bf918553bbb9938"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga7d11f631fcb2ca8e1bf918553bbb9938">&sect;&nbsp;</a></span>iio_context_get_attr_value()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api const char* iio_context_get_attr_value </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>name</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieve the value of a context-specific attribute. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ctx</td><td>A pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </td></tr>
+    <tr><td class="paramname">name</td><td>The name of the context attribute to read </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>On success, a pointer to a static NULL-terminated string </dd>
+<dd>
+If the name does not correspond to any attribute, NULL is returned</dd></dl>
+<p>Introduced in version 0.9. </p>
+
+</div>
+</div>
+<a id="ga43b3d80fdae82628d54398cf39cc351d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga43b3d80fdae82628d54398cf39cc351d">&sect;&nbsp;</a></span>iio_context_get_attrs_count()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__api __pure unsigned int iio_context_get_attrs_count </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the number of context-specific attributes. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ctx</td><td>A pointer to an <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The number of context-specific attributes</dd></dl>
+<p>Introduced in version 0.9. </p>
 
 </div>
 </div>
@@ -646,7 +779,7 @@ On failure, NULL is returned and errno is set appropriately</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Dec 12 2016 15:39:06 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 30 2017 14:45:32 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.12
 </small></address>

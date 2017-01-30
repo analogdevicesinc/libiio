@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.8</span>
+   &#160;<span id="projectnumber">0.9</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -73,11 +73,11 @@ $(function() {
 <p>Public interface.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &lt;limits.h&gt;</code><br />
-<code>#include &lt;stdbool.h&gt;</code><br />
 <code>#include &lt;stdint.h&gt;</code><br />
 <code>#include &lt;stdlib.h&gt;</code><br />
 <code>#include &lt;stddef.h&gt;</code><br />
 <code>#include &lt;sys/types.h&gt;</code><br />
+<code>#include &lt;stdbool.h&gt;</code><br />
 </div>
 <p><a href="iio_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -204,6 +204,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga4a117b0ac02e97aeda92e33c063f7cf0">iio_strerror</a> (int err, char *dst, size_t len)</td></tr>
 <tr class="memdesc:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of an error code.  <a href="group__TopLevel.html#ga4a117b0ac02e97aeda92e33c063f7cf0">More...</a><br /></td></tr>
 <tr class="separator:ga4a117b0ac02e97aeda92e33c063f7cf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac261dc30aa66453d1eabed1e88aa8728"><td class="memItemLeft" align="right" valign="top">__api __cnst bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#gac261dc30aa66453d1eabed1e88aa8728">iio_has_backend</a> (const char *backend)</td></tr>
+<tr class="memdesc:gac261dc30aa66453d1eabed1e88aa8728"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the specified backend is available.  <a href="group__TopLevel.html#gac261dc30aa66453d1eabed1e88aa8728">More...</a><br /></td></tr>
+<tr class="separator:gac261dc30aa66453d1eabed1e88aa8728"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8b5f231e009524ab5be5f918e6f041c3"><td class="memItemLeft" align="right" valign="top">__api __cnst unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga8b5f231e009524ab5be5f918e6f041c3">iio_get_backends_count</a> (void)</td></tr>
+<tr class="memdesc:ga8b5f231e009524ab5be5f918e6f041c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the number of available backends.  <a href="group__TopLevel.html#ga8b5f231e009524ab5be5f918e6f041c3">More...</a><br /></td></tr>
+<tr class="separator:ga8b5f231e009524ab5be5f918e6f041c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga55574e54de682499c5c08566c652114a"><td class="memItemLeft" align="right" valign="top">__api __cnst const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TopLevel.html#ga55574e54de682499c5c08566c652114a">iio_get_backend</a> (unsigned int index)</td></tr>
+<tr class="memdesc:ga55574e54de682499c5c08566c652114a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the name of a given backend.  <a href="group__TopLevel.html#ga55574e54de682499c5c08566c652114a">More...</a><br /></td></tr>
+<tr class="separator:ga55574e54de682499c5c08566c652114a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5f18bbe6c9e1993f26480f73f92e1ad5"><td class="memItemLeft" align="right" valign="top">__api struct <a class="el" href="structiio__context.html">iio_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga5f18bbe6c9e1993f26480f73f92e1ad5">iio_create_default_context</a> (void)</td></tr>
 <tr class="memdesc:ga5f18bbe6c9e1993f26480f73f92e1ad5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a context from local or remote IIO devices.  <a href="group__Context.html#ga5f18bbe6c9e1993f26480f73f92e1ad5">More...</a><br /></td></tr>
 <tr class="separator:ga5f18bbe6c9e1993f26480f73f92e1ad5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -240,6 +249,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="memItemLeft" align="right" valign="top">__api __pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga5adbbac8ca9f6e6798f8904cfe6d7a1c">iio_context_get_description</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a description of the given context.  <a href="group__Context.html#ga5adbbac8ca9f6e6798f8904cfe6d7a1c">More...</a><br /></td></tr>
 <tr class="separator:ga5adbbac8ca9f6e6798f8904cfe6d7a1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga43b3d80fdae82628d54398cf39cc351d"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga43b3d80fdae82628d54398cf39cc351d">iio_context_get_attrs_count</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
+<tr class="memdesc:ga43b3d80fdae82628d54398cf39cc351d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the number of context-specific attributes.  <a href="group__Context.html#ga43b3d80fdae82628d54398cf39cc351d">More...</a><br /></td></tr>
+<tr class="separator:ga43b3d80fdae82628d54398cf39cc351d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga30cc0f5ffa30537bb97021a5798328e9"><td class="memItemLeft" align="right" valign="top">__api int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga30cc0f5ffa30537bb97021a5798328e9">iio_context_get_attr</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, unsigned int index, const char **name, const char **value)</td></tr>
+<tr class="memdesc:ga30cc0f5ffa30537bb97021a5798328e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the name and value of a context-specific attribute.  <a href="group__Context.html#ga30cc0f5ffa30537bb97021a5798328e9">More...</a><br /></td></tr>
+<tr class="separator:ga30cc0f5ffa30537bb97021a5798328e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7d11f631fcb2ca8e1bf918553bbb9938"><td class="memItemLeft" align="right" valign="top">__api const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga7d11f631fcb2ca8e1bf918553bbb9938">iio_context_get_attr_value</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx, const char *name)</td></tr>
+<tr class="memdesc:ga7d11f631fcb2ca8e1bf918553bbb9938"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the value of a context-specific attribute.  <a href="group__Context.html#ga7d11f631fcb2ca8e1bf918553bbb9938">More...</a><br /></td></tr>
+<tr class="separator:ga7d11f631fcb2ca8e1bf918553bbb9938"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2acae321e081d85d61b6960f11c99573"><td class="memItemLeft" align="right" valign="top">__api __pure unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Context.html#ga2acae321e081d85d61b6960f11c99573">iio_context_get_devices_count</a> (const struct <a class="el" href="structiio__context.html">iio_context</a> *ctx)</td></tr>
 <tr class="memdesc:ga2acae321e081d85d61b6960f11c99573"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerate the devices found in the given context.  <a href="group__Context.html#ga2acae321e081d85d61b6960f11c99573">More...</a><br /></td></tr>
 <tr class="separator:ga2acae321e081d85d61b6960f11c99573"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -574,7 +592,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Dec 12 2016 15:39:06 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 30 2017 14:45:32 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.12
 </small></address>

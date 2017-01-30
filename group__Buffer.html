@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.8</span>
+   &#160;<span id="projectnumber">0.9</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -516,7 +516,7 @@ On error, a negative errno code is returned</dd></dl>
 </div><div class="memdoc">
 
 <p>Make <a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516" title="Fetch more samples from the hardware. ">iio_buffer_refill()</a> and <a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280" title="Send the samples to the hardware. ">iio_buffer_push()</a> blocking or not. </p>
-<p>After this function has been called with blocking == true, <a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516" title="Fetch more samples from the hardware. ">iio_buffer_refill()</a> and <a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280" title="Send the samples to the hardware. ">iio_buffer_push()</a> will return -EAGAIN if no data is ready. A device is blocking by default. </p><dl class="params"><dt>Parameters</dt><dd>
+<p>After this function has been called with blocking == false, <a class="el" href="group__Buffer.html#ga1aaecd70bdb441c8faaf061672060516" title="Fetch more samples from the hardware. ">iio_buffer_refill()</a> and <a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280" title="Send the samples to the hardware. ">iio_buffer_push()</a> will return -EAGAIN if no data is ready. A device is blocking by default. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">buf</td><td>A pointer to an <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> structure </td></tr>
     <tr><td class="paramname">blocking</td><td>true if the buffer API should be blocking, else false </td></tr>
@@ -671,7 +671,7 @@ On error, NULL is returned, and errno is set to the error code</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Dec 12 2016 15:39:06 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 30 2017 14:45:32 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.12
 </small></address>
