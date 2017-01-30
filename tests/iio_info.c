@@ -257,10 +257,14 @@ int main(int argc, char **argv)
 		ctx = iio_create_default_context();
 
 	if (!ctx) {
-		char buf[1024];
+		if (!detect_context) {
+			char buf[1024];
 
-		iio_strerror(errno, buf, sizeof(buf));
-		fprintf(stderr, "Unable to create IIO context: %s\n", buf);
+			iio_strerror(errno, buf, sizeof(buf));
+			fprintf(stderr, "Unable to create IIO context: %s\n",
+					buf);
+		}
+
 		return EXIT_FAILURE;
 	}
 
