@@ -65,7 +65,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 			sizeof("<context-attribute name=\"\" value=\"\" />");
 
 	if (ctx->nb_devices) {
-		devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
+		devices_len = calloc(ctx->nb_devices, sizeof(*devices_len));
 		if (!devices_len) {
 			errno = ENOMEM;
 			return NULL;
@@ -119,7 +119,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	return str;
 
 err_free_devices:
-	while (i--)
+	for (i = 0; i < ctx->nb_devices; i++)
 		free(devices[i]);
 	free(devices);
 err_free_devices_len:
