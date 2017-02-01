@@ -656,7 +656,7 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
 	struct timeval tv;
-	int fd, yes = 1;
+	int ret, fd, yes = 1;
 
 	tv.tv_sec = timeout / 1000;
 	tv.tv_usec = (timeout % 1000) * 1000;
@@ -667,8 +667,11 @@ static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 
 	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
 	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-				(const char *) &yes, sizeof(yes)) < 0)
-		return -errno;
+				(const char *) &yes, sizeof(yes)) < 0) {
+		ret = -errno;
+		close(fd);
+		return ret;
+	}
 
 	return fd;
 }
