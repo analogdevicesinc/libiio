@@ -43,7 +43,7 @@ int yylex_init_extra(void *d, yyscan_t *scanner);
 int yylex_destroy(yyscan_t yyscanner);
 
 void * yyget_extra(yyscan_t scanner);
-int yy_input(yyscan_t scanner, char *buf, size_t max_size);
+ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size);
 
 #define ECHO do { \
 		struct parser_pdata *pdata = yyget_extra(yyscanner); \
@@ -51,8 +51,8 @@ int yy_input(yyscan_t scanner, char *buf, size_t max_size);
 	} while (0)
 
 #define YY_INPUT(buf,result,max_size) do { \
-		int res = yy_input(yyscanner, buf, max_size); \
-		result = res <= 0 ? YY_NULL : res; \
+		ssize_t res = yy_input(yyscanner, buf, max_size); \
+		result = res <= 0 ? YY_NULL : (size_t) res; \
 	} while (0)
 }
 
@@ -404,10 +404,10 @@ void yyerror(yyscan_t scanner, const char *msg)
 	}
 }
 
-int yy_input(yyscan_t scanner, char *buf, size_t max_size)
+ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
-	int ret;
+	ssize_t ret;
 
 	ret = read_line(pdata, buf, max_size);
 	if (ret < 0)
