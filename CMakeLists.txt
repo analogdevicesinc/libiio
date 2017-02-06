@@ -398,7 +398,8 @@ endif()
 # support creating some basic binpkgs via `make package`
 option(ENABLE_PACKAGING "Create .deb/.rpm or .tar.gz packages via 'make package'" OFF)
 if(ENABLE_PACKAGING)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	# can't make tarballs by default, otherwise they are blank
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT OSX_PACKAGE)
 		include(cmake/DarwinPackaging.cmake)
 	endif()
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
