@@ -97,14 +97,14 @@ deploy:
   - provider: script
     skip_cleanup: true
     script:
-      - ${TRAVIS_BUILD_DIR}/CI/travis/deploy_linux
+      - ${TRAVIS_BUILD_DIR}/CI/travis/deploy
     on:
       condition: "($CC = gcc) && ($TRAVIS_OS_NAME = linux)"
       branch: master
   - provider: script
     skip_cleanup: true
     script:
-      - ${TRAVIS_BUILD_DIR}/CI/travis/deploy_darwin
+      - ${TRAVIS_BUILD_DIR}/CI/travis/deploy
     on:
       condition: "$TRAVIS_OS_NAME = osx"
       branch: master
