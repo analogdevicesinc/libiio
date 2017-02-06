@@ -100,11 +100,11 @@ deploy:
       - ${TRAVIS_BUILD_DIR}/CI/travis/deploy
     on:
       condition: "($CC = gcc) && ($TRAVIS_OS_NAME = linux)"
-      branch: master
+      branch: travis-ci
   - provider: script
     skip_cleanup: true
     script:
       - ${TRAVIS_BUILD_DIR}/CI/travis/deploy
     on:
       condition: "$TRAVIS_OS_NAME = osx"
-      branch: master
+      branch: travis-ci
