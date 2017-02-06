@@ -64,12 +64,12 @@ before_install:
   - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "$TRAVIS_EVENT_TYPE" == "cron" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
 
   - mkdir -p $TRAVIS_BUILD_DIR/build
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir -p $TRAVIS_BUILD_DIR/build_tar ; fi
 
 script:
-  - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then exit 0; fi
-  - cd $TRAVIS_BUILD_DIR/build
-  - cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON  ..
-  - make && make package
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_linux; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_darwin; fi
+
 notifications:
   email:
     on_success: change
