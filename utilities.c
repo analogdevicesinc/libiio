@@ -34,7 +34,7 @@
 #endif
 
 #ifdef LOCALE_SUPPORT
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || (!defined(_WIN32) && !defined(HAS_NEWLOCALE))
 static int read_double_locale(const char *str, double *val)
 {
 	char *end, *old_locale;

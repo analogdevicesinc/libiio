@@ -21,6 +21,7 @@
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
 #cmakedefine HAS_STRERROR_R
+#cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP
 #cmakedefine HAVE_IPV6
 #cmakedefine HAVE_AVAHI
