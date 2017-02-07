@@ -39,15 +39,27 @@ if [  -n "${temp}"  ] ; then
 	export RELEASE_PKG_FILE_TGZ=${temp}
 
 	# Add the MATLAB bindings into the tar file
-	RELEASE_PKG_FILE_TAR=$(basename ${RELEASE_PKG_FILE_TGZ} .gz)
-	cd $(dirname ${RELEASE_PKG_FILE_TGZ})
-	gunzip ${RELEASE_PKG_FILE_TAR}.gz
-	mkdir -p usr/include usr/share/matlab/iio
-	cp ${TRAVIS_BUILD_DIR}/bindings/matlab/iio-wrapper.h usr/include/
-	cp ${TRAVIS_BUILD_DIR}/bindings/matlab/*.m usr/share/matlab/iio/
-	tar -uf ${RELEASE_PKG_FILE_TAR} usr
-	gzip ${RELEASE_PKG_FILE_TAR}
-	cd ..
+	(
+		cd $(dirname ${RELEASE_PKG_FILE_TGZ})
+
+		mkdir tarball_fixup && cd tarball_fixup
+
+		if [ "$TRAVIS_OS_NAME" = "osx" ] ; then
+			tar --strip-components=1 -xzf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ}
+		else
+			tar -xzf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ}
+		fi
+
+		mkdir -p usr/include usr/lib/matlab/iio
+		cp ${TRAVIS_BUILD_DIR}/bindings/matlab/iio-wrapper.h usr/include/
+		cp ${TRAVIS_BUILD_DIR}/bindings/matlab/*.m usr/lib/matlab/iio/
+
+		if [ "$TRAVIS_OS_NAME" = "osx" ] ; then
+			tar -czf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ} usr Library
+		else
+			tar -czf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ} usr lib
+		fi
+	)
 
 	export TARGET_TGZ=$(echo ${RELEASE_PKG_FILE_TGZ} | \
 		sed -e 's:^./.*/::' -e 's:.tar.gz$::')${LDIST}.tar.gz;
