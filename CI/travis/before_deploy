@@ -57,6 +57,7 @@ if [  -n "${temp}"  ] ; then
 		if [ "$TRAVIS_OS_NAME" = "osx" ] ; then
 			ln -s /Library/Frameworks/iio.framework/iio usr/lib/libiio.dylib
 			ln -s /Library/Frameworks/iio.framework/Headers/iio.h usr/include/iio.h
+			cp /usr/local/lib/libusb-1.0.dylib usr/lib/
 			tar -czf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ} usr Library
 		else
 			tar -czf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ} usr lib
