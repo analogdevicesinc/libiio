@@ -38,7 +38,11 @@ set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
 )
 
 if(NOT SKIP_INSTALL_ALL)
-	install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION /Library/Frameworks/iio.framework/Tools)
+	else()
+		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
 endif()
 
 # Make the test targets available to the main CMakeLists.txt
