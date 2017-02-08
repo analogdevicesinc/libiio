@@ -1489,6 +1489,10 @@ struct iio_context * network_create_context(const char *host)
 #endif
 	}
 
+	ret = iio_context_add_attr(ctx, "ip,ip-addr", description);
+	if (ret < 0)
+		goto err_free_description;
+
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 
