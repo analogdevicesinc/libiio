@@ -1226,21 +1226,9 @@ static int network_set_kernel_buffers_count(const struct iio_device *dev,
 
 static struct iio_context * network_clone(const struct iio_context *ctx)
 {
-	if (ctx->description) {
-		char *ptr = strchr(ctx->description, ' ');
-		if (ptr) {
-#ifdef HAVE_IPV6
-			char buf[INET6_ADDRSTRLEN + IF_NAMESIZE + 2];
-#else
-			char buf[INET_ADDRSTRLEN + 1];
-#endif
-			strncpy(buf, ctx->description, sizeof(buf) - 1);
-			buf[ptr - ctx->description] = '\0';
-			return iio_create_network_context(buf);
-		}
-	}
+	const char *addr = iio_context_get_attr_value(ctx, "ip,ip-addr");
 
-	return iio_create_network_context(ctx->description);
+	return iio_create_network_context(addr);
 }
 
 static const struct iio_backend_ops network_ops = {
