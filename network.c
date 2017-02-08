@@ -170,6 +170,15 @@ static bool network_is_interrupted(int err)
 
 #else
 
+static bool get_blocking_mode(int fd)
+{
+	int ret = fcntl(fd, F_GETFL, 0);
+	if (ret < 0)
+		return true;
+
+	return !(ret & O_NONBLOCK);
+}
+
 static int set_blocking_mode(int fd, bool blocking)
 {
 	int ret = fcntl(fd, F_GETFL, 0);
