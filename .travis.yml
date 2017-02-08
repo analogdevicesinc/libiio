@@ -8,6 +8,9 @@ env:
   - secure: "bYHqhcYYuSbciQa5mBqMxs3CbJkrxxD7/G4zDW2war1IcMh8AC/KPeoYIuhd/L2Mg9+tP++xCznKUJzX85Hu+8EyrMGkC/6zWpGYgyO27DH7wl+9AJjR191WJKkg+S6OqZmb/5v0rdJMDnGOZHrRVB3Vec9dBT+jDTQbyxrckxE="
   # DEPLOY_TO directory
   - secure: "PMp93w9HAYd0pR4aw2LT1sMIVmA06f01Xq2jaGW2iy74n3GrqBYe7H9aMR0WD1S6KH9sFydqFI11bCpwUQXPopl+8MPA34AS7V2gaxDUdE+UZnKKXpKV6KRPRp/txlryuEGspjFJM0bo5g1H5lPBSBFj8PB1Bf6BiloGl8TTuiY="
+  - BRANCH_PULL=$TRAVIS_PULL_REQUEST_BRANCH
+  - PULL=$TRAVIS_PULL_REQUEST
+  - BRANCH=$TRAVIS_BRANCH
 
 matrix:
   include:
@@ -100,11 +103,11 @@ deploy:
       - ${TRAVIS_BUILD_DIR}/CI/travis/deploy
     on:
       condition: "($CC = gcc) && ($TRAVIS_OS_NAME = linux)"
-      branch: master
+      all_branches: true
   - provider: script
     skip_cleanup: true
     script:
       - ${TRAVIS_BUILD_DIR}/CI/travis/deploy
     on:
       condition: "$TRAVIS_OS_NAME = osx"
-      branch: master
+      all_branches: true

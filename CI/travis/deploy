@@ -21,13 +21,19 @@ if [ ! -r "$1" ] ; then
 	return
 fi
 
-FROM=$1
-TO=$2
-LATE=latest_libiio${LDIST}$3
-GLOB=${DEPLOY_TO}/libiio-*
+if [ $BRANCH_PULL ] ; then
+	branch=$BRANCH_PULL
+else
+	branch=$BRANCH
+fi
 
-echo attemting to deploy $1 to $2
-echo and latest_libiio${LDIST}$3
+FROM=$1
+TO=${branch}_$2
+LATE=${branch}_lastest_libiio${LDIST}$3
+GLOB=${DEPLOY_TO}/${branch}_libiio-*
+
+echo attemting to deploy $FROM to $TO
+echo and ${branch}_libiio${LDIST}$3
 ssh -V
 
 echo "cd ${DEPLOY_TO}" > script$3
