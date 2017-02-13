@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 2.8.7)
 project(libiio-sharp NONE)
 
+if (WIN32)
+	set(MCS_EXECUTABLE_NAME csc)
+else()
+	set(MCS_EXECUTABLE_NAME mcs)
+endif()
+
 find_program(MCS_EXECUTABLE
-	NAMES mcs csc
+	NAMES ${MCS_EXECUTABLE_NAME}
 	HINTS "C:/Windows/Microsoft.NET/Framework/v4.0.30319"
 	PATHS ENV MCS_EXECUTABLE_PATH
 	DOC "C# compiler")
