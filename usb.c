@@ -815,8 +815,10 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	libusb_free_device_list(device_list, true);
 
-	if (!usb_dev)
+	if (!usb_dev) {
+		ret = -ENODEV;
 		goto err_libusb_exit;
+	}
 
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
