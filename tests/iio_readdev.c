@@ -184,30 +184,6 @@ static void setup_sig_handler(void)
 
 #endif
 
-static struct iio_device * get_device(const struct iio_context *ctx,
-		const char *id)
-{
-
-	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
-	struct iio_device *device;
-
-	for (i = 0; i < nb_devices; i++) {
-		const char *name;
-		device = iio_context_get_device(ctx, i);
-		name = iio_device_get_name(device);
-		if (name && !strcmp(name, id))
-			break;
-		if (!strcmp(id, iio_device_get_id(device)))
-			break;
-	}
-
-	if (i < nb_devices)
-		return device;
-
-	fprintf(stderr, "Device %s not found\n", id);
-	return NULL;
-}
-
 static ssize_t print_sample(const struct iio_channel *chn,
 		void *buf, size_t len, void *d)
 {
@@ -343,15 +319,18 @@ int main(int argc, char **argv)
 	if (timeout >= 0)
 		iio_context_set_timeout(ctx, timeout);
 
-	dev = get_device(ctx, argv[arg_index + 1]);
+	dev = iio_context_find_device(ctx, argv[arg_index + 1]);
 	if (!dev) {
+		fprintf(stderr, "Device %s not found\n", argv[arg_index + 1]);
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
 
 	if (trigger_name) {
-		struct iio_device *trigger = get_device(ctx, trigger_name);
+		struct iio_device *trigger = iio_context_find_device(
+				ctx, trigger_name);
 		if (!trigger) {
+			fprintf(stderr, "Trigger %s not found\n", trigger_name);
 			iio_context_destroy(ctx);
 			return EXIT_FAILURE;
 		}
