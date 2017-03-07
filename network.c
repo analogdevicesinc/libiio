@@ -101,6 +101,22 @@ struct iio_device_pdata {
 
 #ifdef _WIN32
 
+static int set_blocking_mode(int s, bool blocking)
+{
+	unsigned int nonblock;
+	int ret;
+
+	nonblock = blocking ? 0 : 1;
+
+	ret = ioctlsocket(s, FIONBIO, &nonblock);
+	if (ret == SOCKET_ERROR) {
+		ret = -WSAGetLastError();
+		return ret;
+	}
+
+	return 0;
+}
+
 static int setup_cancel(struct iio_network_io_context *io_ctx)
 {
 	io_ctx->events[0] = WSACreateEvent();
@@ -167,6 +183,13 @@ static bool network_is_interrupted(int err)
 {
 	return false;
 }
+
+static bool network_connect_in_progress(int err)
+{
+	return err == -WSAEWOULDBLOCK;
+}
+
+#define NETWORK_ERR_TIMEOUT WSAETIMEDOUT
 
 #else
 
@@ -325,6 +348,13 @@ static bool network_is_interrupted(int err)
 {
 	return err == -EINTR;
 }
+
+static bool network_connect_in_progress(int err)
+{
+	return err == -EINPROGRESS;
+}
+
+#define NETWORK_ERR_TIMEOUT ETIMEDOUT
 
 #endif
 
@@ -539,64 +569,13 @@ static void network_cancel(const struct iio_device *dev)
 #define SOCK_CLOEXEC 0
 #endif
 
-/* The purpose of this function is to provide a version of connect()
- * that does not ignore timeouts... */
-static int do_connect(const struct addrinfo *addrinfo,
-	struct timeval *timeout)
+static int do_create_socket(const struct addrinfo *addrinfo)
 {
-	int ret, error;
-	socklen_t len;
-	fd_set set;
 	int fd;
 
 	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype | SOCK_CLOEXEC, 0);
 	if (fd < 0)
 		return -errno;
-
-	FD_ZERO(&set);
-	FD_SET(fd, &set);
-
-	ret = set_blocking_mode(fd, false);
-	if (ret < 0) {
-		close(fd);
-		return ret;
-	}
-
-	ret = connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
-	if (ret < 0 && errno != EINPROGRESS) {
-		ret = -errno;
-		goto end;
-	}
-
-	ret = select(fd + 1, &set, &set, NULL, timeout);
-	if (ret < 0) {
-		ret = -errno;
-		goto end;
-	}
-	if (ret == 0) {
-		ret = -ETIMEDOUT;
-		goto end;
-	}
-
-	/* Verify that we don't have an error */
-	len = sizeof(error);
-	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
-	if(ret < 0) {
-		ret = -errno;
-		goto end;
-	}
-	if (error) {
-		ret = -error;
-		goto end;
-	}
-
-end:
-	/* Restore blocking mode */
-	set_blocking_mode(fd, true);
-	if (ret < 0) {
-		close(fd);
-		return ret;
-	}
 
 	return fd;
 }
@@ -621,22 +600,14 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 #define WSA_FLAG_NO_HANDLE_INHERIT 0
 #endif
 
-static int do_connect(const struct addrinfo *addrinfo,
-	struct timeval *timeout)
+static int do_create_socket(const struct addrinfo *addrinfo)
 {
-	int ret;
 	SOCKET s;
 
 	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
 		WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
 	if (s == INVALID_SOCKET)
 		return -WSAGetLastError();
-
-	ret = connect(s, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
-	if (ret == SOCKET_ERROR) {
-		close(s);
-		return -WSAGetLastError();
-	}
 
 	return (int) s;
 }
@@ -653,11 +624,30 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 }
 #endif /* !_WIN32 */
 
-static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
+/* The purpose of this function is to provide a version of connect()
+ * that does not ignore timeouts... */
+static int do_connect(int fd, const struct addrinfo *addrinfo,
+	unsigned int timeout)
 {
 	struct timeval tv;
 	struct timeval *ptv;
-	int ret, fd, yes = 1;
+	int ret, error;
+	socklen_t len;
+	fd_set set;
+
+	ret = set_blocking_mode(fd, false);
+	if (ret < 0)
+		return ret;
+
+	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
+	if (ret < 0) {
+		ret = network_get_error();
+		if (!network_connect_in_progress(ret))
+			return ret;
+	}
+
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
 
 	if (timeout != 0) {
 		tv.tv_sec = timeout / 1000;
@@ -667,9 +657,42 @@ static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 		ptv = NULL;
 	}
 
-	fd = do_connect(addrinfo, ptv);
+	ret = select(fd + 1, NULL, &set, &set, ptv);
+	if (ret < 0)
+		return network_get_error();
+
+	if (ret == 0)
+		return -NETWORK_ERR_TIMEOUT;
+
+	/* Verify that we don't have an error */
+	len = sizeof(error);
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&error, &len);
+	if(ret < 0)
+		return network_get_error();
+
+	if (error)
+		return -error;
+
+	ret = set_blocking_mode(fd, true);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
+{
+	int ret, fd, yes = 1;
+
+	fd = do_create_socket(addrinfo);
 	if (fd < 0)
 		return fd;
+
+	ret = do_connect(fd, addrinfo, timeout);
+	if (ret < 0) {
+		close(fd);
+		return ret;
+	}
 
 	set_socket_timeout(fd, timeout);
 	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
