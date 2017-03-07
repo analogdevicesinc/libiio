@@ -656,12 +656,18 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
 	struct timeval tv;
+	struct timeval *ptv;
 	int ret, fd, yes = 1;
 
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
+	if (timeout != 0) {
+		tv.tv_sec = timeout / 1000;
+		tv.tv_usec = (timeout % 1000) * 1000;
+		ptv = &tv;
+	} else {
+		ptv = NULL;
+	}
 
-	fd = do_connect(addrinfo, &tv);
+	fd = do_connect(addrinfo, ptv);
 	if (fd < 0)
 		return fd;
 
