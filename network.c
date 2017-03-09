@@ -665,7 +665,7 @@ static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 	if (fd < 0)
 		return fd;
 
-	set_socket_timeout(fd, DEFAULT_TIMEOUT_MS);
+	set_socket_timeout(fd, timeout);
 	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
 				(const char *) &yes, sizeof(yes)) < 0) {
 		ret = -errno;
@@ -687,24 +687,27 @@ static int network_open(const struct iio_device *dev,
 	if (ppdata->io_ctx.fd >= 0)
 		goto out_mutex_unlock;
 
-	ret = create_socket(pdata->addrinfo, pdata->io_ctx.timeout_ms);
+	ret = create_socket(pdata->addrinfo, DEFAULT_TIMEOUT_MS);
 	if (ret < 0)
 		goto out_mutex_unlock;
 
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
-	ppdata->io_ctx.cancellable = true;
-	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
+	ppdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
+
+	ret = iiod_client_open_unlocked(pdata->iiod_client,
+			&ppdata->io_ctx, dev, samples_count, cyclic);
+	if (ret < 0)
+		goto err_close_socket;
 
 	ret = setup_cancel(&ppdata->io_ctx);
 	if (ret < 0)
 		goto err_close_socket;
 
-	ret = iiod_client_open_unlocked(pdata->iiod_client,
-			&ppdata->io_ctx, dev, samples_count, cyclic);
-	if (ret < 0)
-		goto err_cleanup_cancel;
+	set_socket_timeout(ppdata->io_ctx.fd, pdata->io_ctx.timeout_ms);
 
+	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
+	ppdata->io_ctx.cancellable = true;
 	ppdata->is_tx = iio_device_is_tx(dev);
 	ppdata->is_cyclic = cyclic;
 	ppdata->wait_for_err_code = false;
@@ -716,8 +719,6 @@ static int network_open(const struct iio_device *dev,
 
 	return 0;
 
-err_cleanup_cancel:
-	cleanup_cancel(&ppdata->io_ctx);
 err_close_socket:
 	close(ppdata->io_ctx.fd);
 	ppdata->io_ctx.fd = -1;
