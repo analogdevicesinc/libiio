@@ -25,22 +25,33 @@
 #include <string.h>
 #include <unistd.h>
 
+struct xflow_pthread_data {
+	struct iio_context *ctx;
+	const char *device_name;
+};
+
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
+	  {"network", required_argument, 0, 'n'},
+	  {"uri", required_argument, 0, 'u'},
 	  {"buffer-size", required_argument, 0, 's'},
+	  {"auto", no_argument, 0, 'a'},
 	  {0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
+	"Use the network backend with the provided hostname.",
+	"Use the context with the provided URI.",
 	"Size of the buffer in sample sets. Default is 1Msample",
+	"Scan for available contexts and if only one is available use it.",
 };
 
 static void usage(char *argv[])
 {
 	unsigned int i;
 
-	printf("Usage:\n\t%s [-s <size>] <iio_device>\n\nOptions:\n", argv[0]);
+	printf("Usage:\n\t%s [-n <hostname>] [-u <uri>] [ -a ][-s <size>] <iio_device>\n\nOptions:\n", argv[0]);
 	for (i = 0; options[i].name; i++)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 					options[i].val, options[i].name,
@@ -92,23 +103,19 @@ static struct iio_device *get_device(const struct iio_context *ctx,
 }
 
 
-static void *monitor_thread_fn(void *device_name)
+static void *monitor_thread_fn(void *data)
 {
+	struct xflow_pthread_data *xflow_pthread_data = data;
 	struct iio_context *ctx;
 	struct iio_device *dev;
 	uint32_t val;
 	int ret;
 
-	ctx = iio_create_default_context();
-	if (!ctx) {
-		fprintf(stderr, "Unable to create IIO context\n");
-		return (void *)-1;
-	}
+	ctx = xflow_pthread_data->ctx;
 
-	dev = get_device(ctx, device_name);
+	dev = get_device(ctx, xflow_pthread_data->device_name);
 	if (!dev) {
 		fprintf(stderr, "Unable to find IIO device\n");
-		iio_context_destroy(ctx);
 		return (void *)-1;
 	}
 
@@ -140,17 +147,64 @@ static void *monitor_thread_fn(void *device_name)
 		sleep(1);
 	}
 
-	iio_context_destroy(ctx);
-
 	return (void *)0;
+}
+
+static struct iio_context *scan(void)
+{
+	struct iio_scan_context *scan_ctx;
+	struct iio_context_info **info;
+	struct iio_context *ctx = NULL;
+	unsigned int i;
+	ssize_t ret;
+
+	scan_ctx = iio_create_scan_context(NULL, 0);
+	if (!scan_ctx) {
+		fprintf(stderr, "Unable to create scan context\n");
+		return NULL;
+	}
+
+	ret = iio_scan_context_get_info_list(scan_ctx, &info);
+	if (ret < 0) {
+		char err_str[1024];
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		goto err_free_ctx;
+	}
+
+	if (ret == 0) {
+		printf("No IIO context found.\n");
+		goto err_free_info_list;
+	}
+
+	if (ret == 1) {
+		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+	} else {
+		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
+
+		for (i = 0; i < (size_t) ret; i++) {
+			fprintf(stderr, "\t%d: %s [%s]\n", i,
+				iio_context_info_get_description(info[i]),
+				iio_context_info_get_uri(info[i]));
+		}
+	}
+
+	err_free_info_list:
+	iio_context_info_list_free(info);
+	err_free_ctx:
+	iio_scan_context_destroy(scan_ctx);
+
+	return ctx;
 }
 
 int main(int argc, char **argv)
 {
 	unsigned int buffer_size = 1024 * 1024;
-	int c, option_index = 0, arg_index = 0;
+	int c, option_index = 0, arg_index = 0, ip_index = 0, uri_index = 0;
 	unsigned int n_tx = 0, n_rx = 0;
 	static struct iio_context *ctx;
+	static struct xflow_pthread_data xflow_pthread_data;
+	bool scan_for_context = false;
 	unsigned int i, nb_channels;
 	struct iio_buffer *buffer;
 	pthread_t monitor_thread;
@@ -159,7 +213,7 @@ int main(int argc, char **argv)
 	char unit;
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hs:",
+	while ((c = getopt_long(argc, argv, "+hn:u:s:a",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -176,6 +230,18 @@ int main(int argc, char **argv)
 				else if (unit == 'M')
 					buffer_size *= 1024 * 1024;
 			}
+			break;
+		case 'n':
+			arg_index += 2;
+			ip_index = arg_index;
+			break;
+		case 'u':
+			arg_index += 2;
+			uri_index = arg_index;
+			break;
+		case 'a':
+			arg_index += 1;
+			scan_for_context = true;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -195,7 +261,16 @@ int main(int argc, char **argv)
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
 
-	ctx = iio_create_default_context();
+
+	if (scan_for_context)
+		ctx = scan();
+	else if (uri_index)
+		ctx = iio_create_context_from_uri(argv[uri_index]);
+	else if (ip_index)
+		ctx = iio_create_network_context(argv[ip_index]);
+	else
+		ctx = iio_create_default_context();
+
 	if (!ctx) {
 		fprintf(stderr, "Unable to create IIO context\n");
 		return EXIT_FAILURE;
@@ -236,8 +311,11 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	xflow_pthread_data.ctx = ctx;
+	xflow_pthread_data.device_name = device_name;
+
 	ret = pthread_create(&monitor_thread, NULL, monitor_thread_fn,
-		(void *)device_name);
+			     (void *)&xflow_pthread_data);
 	if (ret) {
 		fprintf(stderr, "Failed to create monitor thread: %s\n",
 				strerror(-ret));
