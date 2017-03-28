@@ -115,6 +115,8 @@ struct DevEntry {
 	SLIST_HEAD(ThdHead, ThdEntry) thdlist_head;
 	pthread_mutex_t thdlist_lock;
 
+	pthread_cond_t rw_ready_cond;
+
 	uint32_t *mask;
 	size_t nb_words;
 };
@@ -495,6 +497,7 @@ static void dev_entry_put(struct DevEntry *entry)
 
 	if (free_entry) {
 		pthread_mutex_destroy(&entry->thdlist_lock);
+		pthread_cond_destroy(&entry->rw_ready_cond);
 
 		free(entry->mask);
 		free(entry);
@@ -596,17 +599,15 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				has_readers |= thd->active;
 		}
 
+		if (!has_readers && !has_writers) {
+			pthread_cond_wait(&entry->rw_ready_cond,
+					&entry->thdlist_lock);
+		}
+
 		pthread_mutex_unlock(&entry->thdlist_lock);
 
-		if (!has_readers && !has_writers) {
-			struct timespec ts = {
-				.tv_sec = 0,
-				.tv_nsec = 1000000, /* 1 ms */
-			};
-
-			nanosleep(&ts, NULL);
+		if (!has_readers && !has_writers)
 			continue;
-		}
 
 		if (has_readers) {
 			ssize_t nb_bytes;
@@ -787,6 +788,8 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	thd->is_writer = is_write;
 	thd->active = true;
 
+	pthread_cond_signal(&entry->rw_ready_cond);
+
 	DEBUG("Waiting for completion...\n");
 	while (thd->active) {
 		ret = thd_entry_event_wait(thd, &entry->thdlist_lock, pdata->fd_in);
@@ -847,6 +850,8 @@ static void remove_thd_entry(struct ThdEntry *t)
 			entry->cancelled = true;
 			iio_buffer_cancel(entry->buf); /* Wakeup the rw thread */
 		}
+
+		pthread_cond_signal(&entry->rw_ready_cond);
 	}
 	pthread_mutex_unlock(&entry->thdlist_lock);
 	dev_entry_put(entry);
@@ -946,6 +951,8 @@ retry:
 			entry->update_mask = true;
 			DEBUG("Added thread to client list\n");
 
+			pthread_cond_signal(&entry->rw_ready_cond);
+
 			/* Wait until the device is opened by the rw thread */
 			while (thd->wait_for_open) {
 				ret = thd_entry_event_wait(thd, &entry->thdlist_lock, pdata->fd_in);
@@ -991,6 +998,7 @@ retry:
 	DEBUG("Added thread to client list\n");
 
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
+	pthread_cond_init(&entry->rw_ready_cond, NULL);
 
 	ret = thread_pool_add_thread(main_thread_pool, rw_thd, entry, "rw_thd");
 	if (ret) {
