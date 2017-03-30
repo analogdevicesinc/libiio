@@ -210,14 +210,20 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	return ret;
 }
 
+#define MAX_AIO_REQ_SIZE (1024 * 1024)
+
 static ssize_t readfd_aio(struct parser_pdata *pdata, void *dest, size_t len)
 {
+	if (len > MAX_AIO_REQ_SIZE)
+		len = MAX_AIO_REQ_SIZE;
 	return async_io(pdata, dest, len, true);
 }
 
 static ssize_t writefd_aio(struct parser_pdata *pdata, const void *dest,
-	size_t len)
+		size_t len)
 {
+	if (len > MAX_AIO_REQ_SIZE)
+		len = MAX_AIO_REQ_SIZE;
 	return async_io(pdata, (void *)dest, len, false);
 }
 #endif /* WITH_AIO */
