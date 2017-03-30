@@ -103,7 +103,7 @@ struct iio_device_pdata {
 
 static int set_blocking_mode(int s, bool blocking)
 {
-	unsigned int nonblock;
+	unsigned long nonblock;
 	int ret;
 
 	nonblock = blocking ? 0 : 1;
