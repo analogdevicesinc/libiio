@@ -33,7 +33,7 @@
 
 #ifdef WITH_COLOR_DEBUG
 #ifndef COLOR_DEBUG
-#define COLOR_DEBUG   "\e[0;34m"
+#define COLOR_DEBUG   "\e[0;32m"
 #endif
 #ifndef COLOR_WARNING
 #define COLOR_WARNING "\e[01;35m"
