@@ -36,6 +36,10 @@ endif()
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 option(WITH_TESTS "Build the test programs" ON)
 
+if (WITH_TESTS)
+	set(NEED_THREADS 1)
+endif()
+
 if (MSVC)
 	# Avoid annoying warnings from Visual Studio
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
