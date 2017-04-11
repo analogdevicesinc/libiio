@@ -223,6 +223,9 @@ static void reorder_channels(struct iio_device *dev)
 			}
 		}
 	} while (found);
+
+	for (i = 0; i < dev->nb_channels; i++)
+		dev->channels[i]->number = i;
 }
 
 int iio_context_init(struct iio_context *ctx)

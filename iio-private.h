@@ -173,6 +173,8 @@ struct iio_channel {
 
 	struct iio_channel_attr *attrs;
 	unsigned int nb_attrs;
+
+	unsigned int number;
 };
 
 struct iio_device {
