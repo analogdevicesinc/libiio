@@ -734,7 +734,7 @@ static int channel_write_state(const struct iio_channel *chn)
 	char *en = iio_channel_is_enabled(chn) ? "1" : "0";
 	ssize_t ret;
 
-	if (!chn->pdata || !chn->pdata->enable_fn) {
+	if (!chn->pdata->enable_fn) {
 		ERROR("Libiio bug: No \"en\" attribute parsed\n");
 		return -EINVAL;
 	}
@@ -921,6 +921,7 @@ err_close_cancel_fd:
 static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
+	unsigned int i;
 	int ret;
 
 	if (pdata->fd == -1)
@@ -947,6 +948,16 @@ static int local_close(const struct iio_device *dev)
 	pdata->cancel_fd = -1;
 
 	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+
+		if (chn->pdata->enable_fn) {
+			iio_channel_disable(chn);
+			channel_write_state(chn);
+		}
+	}
+
 	return (ret < 0) ? ret : 0;
 }
 
