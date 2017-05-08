@@ -1393,6 +1393,15 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	if (strncmp(chn->id, attr, len))
 		return 0;
 
+	/*
+	 * Don't move device level channel enable attribute to channel even though it
+	 * it is a shared attribute. For example, iio:device0/in_accel_en. "en" is a
+	 * special case because scan channels also use "en" but libiio does not
+	 * distinguish between the two "en"'s when searching by name.
+	 */
+	if (!strcmp(ptr + 1, "en"))
+		return 0;
+
 	DEBUG("Found match: %s and %s\n", chn->id, attr);
 	if (chn->id[len] >= '0' && chn->id[len] <= '9') {
 		if (chn->name) {
