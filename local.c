@@ -1223,6 +1223,7 @@ static void free_protected_attrs(struct iio_channel *chn)
 
 	free(pdata->protected_attrs);
 	pdata->nb_protected_attrs = 0;
+	pdata->protected_attrs = NULL;
 }
 
 static int add_attr_to_channel(struct iio_channel *chn,
