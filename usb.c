@@ -536,6 +536,17 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 	int completed = 0;
 	int ret;
 
+	/*
+	 * If the size of the data to transfer is too big, the
+	 * IOCTL_USBFS_SUBMITURB ioctl (called by libusb) might fail with
+	 * errno set to ENOMEM, as the kernel might use contiguous allocation
+	 * for the URB if the driver doesn't support scatter-gather.
+	 * To prevent that, we support URBs of 1 MiB maximum. The iiod-client
+	 * code will handle this properly and ask for a new transfer.
+	 */
+	if (len > 1 * 1024 * 1024)
+		len = 1 * 1024 * 1024;
+
 	if (ep_type == LIBUSB_ENDPOINT_IN)
 		ep = io_ctx->ep->addr_in;
 	else
