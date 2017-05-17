@@ -631,7 +631,7 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 	if (ret)
 		return ret;
 	else
-		return (size_t) transferred != len ? -EIO : (ssize_t) len;
+		return (ssize_t) transferred;
 }
 
 static ssize_t read_data_sync(struct iio_context_pdata *pdata,
