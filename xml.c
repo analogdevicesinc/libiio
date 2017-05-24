@@ -29,11 +29,17 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	char *name = NULL, *filename = NULL;
 	struct iio_channel_attr *attrs;
 
+	/* Report attributes as read-write, if IIOD is too old, so that we don't
+	 * break compatibility. This is informative anyway. */
+	long mode = IIO_R_OK | IIO_W_OK;
+
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
 			name = iio_strdup((char *) attr->children->content);
 		} else if (!strcmp((char *) attr->name, "filename")) {
 			filename = iio_strdup((char *) attr->children->content);
+		} else if (!strcmp((char *) attr->name, "mode")) {
+			mode = atol((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in channel %s\n",
 					attr->name, chn->id);
@@ -56,6 +62,7 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	if (!attrs)
 		goto err_free;
 
+	attrs[chn->nb_attrs].mode = (unsigned int) mode;
 	attrs[chn->nb_attrs].filename = filename;
 	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
@@ -74,10 +81,13 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 	xmlAttr *attr;
 	struct iio_device_attr *attrs;
 	char *name = NULL;
+	long mode = IIO_R_OK | IIO_W_OK; /* Same as above. */
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
 			name = iio_strdup((char *) attr->children->content);
+		} else if (!strcmp((char *) attr->name, "mode")) {
+			mode = atol((char *) attr->children->content);
 		} else {
 			WARNING("Unknown field \'%s\' in device %s\n",
 					attr->name, dev->id);
@@ -99,9 +109,11 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 		goto err_free;
 
 	if (is_debug) {
+		attrs[dev->nb_debug_attrs].mode = (unsigned int) mode;
 		attrs[dev->nb_debug_attrs++].name = name;
 		dev->debug_attrs = attrs;
 	} else {
+		attrs[dev->nb_attrs].mode = (unsigned int) mode;
 		attrs[dev->nb_attrs++].name = name;
 		dev->attrs = attrs;
 	}

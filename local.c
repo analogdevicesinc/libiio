@@ -1098,6 +1098,46 @@ static int read_device_name(struct iio_device *dev)
 		return 0;
 }
 
+static unsigned int get_file_mode(const char *path)
+{
+	unsigned int mode = 0;
+	struct stat buf;
+
+	if (!stat(path, &buf)) {
+		uid_t uid = getuid();
+		uid_t gid = getgid();
+
+		if (buf.st_uid == uid) {
+			if (buf.st_mode & S_IRUSR)
+				mode |= IIO_R_OK;
+			if (buf.st_mode & S_IWUSR)
+				mode |= IIO_W_OK;
+		} else if (buf.st_gid == gid) {
+			if (buf.st_mode & S_IRGRP)
+				mode |= IIO_R_OK;
+			if (buf.st_mode & S_IWGRP)
+				mode |= IIO_W_OK;
+		} else {
+			if (buf.st_mode & S_IROTH)
+				mode |= IIO_R_OK;
+			if (buf.st_mode & S_IWOTH)
+				mode |= IIO_W_OK;
+		}
+	}
+
+	return mode;
+}
+
+static unsigned int get_attr_mode(struct iio_device *dev, const char *fn)
+{
+	char buf[1024];
+
+	iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+			dev->id, fn);
+
+	return get_file_mode(buf);
+}
+
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	struct iio_device_attr *attrs;
@@ -1121,6 +1161,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 		return -ENOMEM;
 	}
 
+	attrs[dev->nb_attrs].mode = get_attr_mode(dev, name);
 	attrs[dev->nb_attrs++].name = name;
 	dev->attrs = attrs;
 	DEBUG("Added attr \'%s\' to device \'%s\'\n", attr, dev->id);
@@ -1254,6 +1295,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	if (!attrs)
 		goto err_free_fn;
 
+	attrs[chn->nb_attrs].mode = get_attr_mode(chn->dev, fn);
 	attrs[chn->nb_attrs].filename = fn;
 	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
@@ -1678,6 +1720,7 @@ static int add_debug_attr(void *d, const char *path)
 		return -ENOMEM;
 	}
 
+	attrs[dev->nb_debug_attrs].mode = get_file_mode(path);
 	attrs[dev->nb_debug_attrs++].name = name;
 	dev->debug_attrs = attrs;
 	DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);

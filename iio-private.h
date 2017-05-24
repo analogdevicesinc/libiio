@@ -60,6 +60,9 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
+#define IIO_R_OK	0x4
+#define IIO_W_OK	0x2
+
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
@@ -139,11 +142,13 @@ struct iio_scan_backend_context;
 
 struct iio_device_attr {
 	char *name;
+	unsigned int mode;
 };
 
 struct iio_channel_attr {
 	char *name;
 	char *filename;
+	unsigned int mode;
 };
 
 struct iio_context {
