@@ -336,6 +336,26 @@ const char * iio_channel_get_attr(const struct iio_channel *chn,
 		return chn->attrs[index].name;
 }
 
+int iio_channel_get_attr_mode(const struct iio_channel *chn,
+		const char *name)
+{
+	unsigned int i;
+
+	/* Fast path - if "attr" is one of our pointers */
+	for (i = 0; i < chn->nb_attrs; i++) {
+		if (chn->attrs[i].name == name)
+			return (int) chn->attrs[i].mode;
+	}
+
+	/* Slow path */
+	name = iio_channel_find_attr(chn, name);
+	if (name)
+		return iio_channel_get_attr_mode(chn, name);
+	else
+		return -ENOENT;
+
+}
+
 const char * iio_channel_find_attr(const struct iio_channel *chn,
 		const char *name)
 {

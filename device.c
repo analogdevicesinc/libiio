@@ -227,6 +227,46 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 		return dev->attrs[index].name;
 }
 
+int iio_device_get_attr_mode(const struct iio_device *dev,
+		const char *name)
+{
+	unsigned int i;
+
+	/* Fast path - if "attr" is one of our pointers */
+	for (i = 0; i < dev->nb_attrs; i++) {
+		if (dev->attrs[i].name == name)
+			return (int) dev->attrs[i].mode;
+	}
+
+	/* Slow path */
+	name = iio_device_find_attr(dev, name);
+	if (name)
+		return iio_device_get_attr_mode(dev, name);
+	else
+		return -ENOENT;
+
+}
+
+int iio_device_get_debug_attr_mode(const struct iio_device *dev,
+		const char *name)
+{
+	unsigned int i;
+
+	/* Fast path - if "attr" is one of our pointers */
+	for (i = 0; i < dev->nb_debug_attrs; i++) {
+		if (dev->debug_attrs[i].name == name)
+			return (int) dev->debug_attrs[i].mode;
+	}
+
+	/* Slow path */
+	name = iio_device_find_debug_attr(dev, name);
+	if (name)
+		return iio_device_get_debug_attr_mode(dev, name);
+	else
+		return -ENOENT;
+
+}
+
 const char * iio_device_find_attr(const struct iio_device *dev,
 		const char *name)
 {

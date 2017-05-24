@@ -77,6 +77,9 @@ typedef ptrdiff_t ssize_t;
 #   define __api
 #endif
 
+#define IIO_R_OK	0x4
+#define IIO_W_OK	0x2
+
 struct iio_context;
 struct iio_device;
 struct iio_channel;
@@ -551,6 +554,17 @@ __api __pure const char * iio_device_find_attr(
 		const struct iio_device *dev, const char *name);
 
 
+/** @brief Get the access mode for this device-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a mask consisting of the bitwise OR of zero, one or more
+ * of IIO_R_OK and IIO_W_OK.
+ * @return If the attribute does not exist, -ENOENT is returned. */
+__api __pure int iio_device_get_attr_mode(const struct iio_device *dev,
+		const char *name);
+
+
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
  * @param attr A NULL-terminated string corresponding to the name of the
@@ -831,6 +845,17 @@ __api __pure const char * iio_channel_get_attr(
  * static string from a dynamically allocated string. */
 __api __pure const char * iio_channel_find_attr(
 		const struct iio_channel *chn, const char *name);
+
+
+/** @brief Get the access mode for this channel-specific attribute
+ * @param chn A pointer to an iio_channel structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a mask consisting of the bitwise OR of zero, one or more
+ * of IIO_R_OK and IIO_W_OK.
+ * @return If the attribute does not exist, -ENOENT is returned. */
+__api __pure int iio_channel_get_attr_mode(const struct iio_channel *chn,
+		const char *name);
 
 
 /** @brief Retrieve the filename of an attribute
@@ -1382,6 +1407,17 @@ __api __pure const char * iio_device_get_debug_attr(
  * to a static string from a dynamically allocated string. */
 __api __pure const char * iio_device_find_debug_attr(
 		const struct iio_device *dev, const char *name);
+
+
+/** @brief Get the access mode for this debug attribute
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a mask consisting of the bitwise OR of zero, one or more
+ * of IIO_R_OK and IIO_W_OK.
+ * @return If the attribute does not exist, -ENOENT is returned. */
+__api __pure int iio_device_get_debug_attr_mode(const struct iio_device *dev,
+		const char *name);
 
 
 /** @brief Read the content of the given debug attribute
