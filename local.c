@@ -511,12 +511,12 @@ static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 		char *dst, size_t len, bool is_debug)
 {
 	unsigned int i, nb = is_debug ? dev->nb_debug_attrs : dev->nb_attrs;
-	char **attrs = is_debug ? dev->debug_attrs : dev->attrs;
+	struct iio_device_attr *attrs = is_debug ? dev->debug_attrs : dev->attrs;
 	char *ptr = dst;
 
 	for (i = 0; len >= 4 && i < nb; i++) {
 		/* Recursive! */
-		ssize_t ret = local_read_dev_attr(dev, attrs[i],
+		ssize_t ret = local_read_dev_attr(dev, attrs[i].name,
 				ptr + 4, len - 4, is_debug);
 		*(uint32_t *) ptr = iio_htobe32(ret);
 
@@ -584,7 +584,7 @@ static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 		const char *src, size_t len, bool is_debug)
 {
 	unsigned int i, nb = is_debug ? dev->nb_debug_attrs : dev->nb_attrs;
-	char **attrs = is_debug ? dev->debug_attrs : dev->attrs;
+	struct iio_device_attr *attrs = is_debug ? dev->debug_attrs : dev->attrs;
 	const char *ptr = src;
 
 	/* First step: Verify that the buffer is in the correct format */
@@ -597,7 +597,8 @@ static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 		ptr += 4;
 
 		if (val > 0) {
-			local_write_dev_attr(dev, attrs[i], ptr, val, is_debug);
+			local_write_dev_attr(dev, attrs[i].name,
+					ptr, val, is_debug);
 
 			/* Align the length to 4 bytes */
 			if (val & 3)
@@ -1099,7 +1100,8 @@ static int read_device_name(struct iio_device *dev)
 
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
-	char **attrs, *name;
+	struct iio_device_attr *attrs;
+	char *name;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(device_attrs_blacklist); i++)
@@ -1113,13 +1115,13 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	if (!name)
 		return -ENOMEM;
 
-	attrs = realloc(dev->attrs, (1 + dev->nb_attrs) * sizeof(char *));
+	attrs = realloc(dev->attrs, (1 + dev->nb_attrs) * sizeof(*attrs));
 	if (!attrs) {
 		free(name);
 		return -ENOMEM;
 	}
 
-	attrs[dev->nb_attrs++] = name;
+	attrs[dev->nb_attrs++].name = name;
 	dev->attrs = attrs;
 	DEBUG("Added attr \'%s\' to device \'%s\'\n", attr, dev->id);
 	return 0;
@@ -1436,10 +1438,10 @@ static int detect_global_attr(struct iio_device *dev, const char *attr,
 static int detect_and_move_global_attrs(struct iio_device *dev)
 {
 	unsigned int i;
-	char **ptr = dev->attrs;
+	struct iio_device_attr *ptr = dev->attrs;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		const char *attr = dev->attrs[i];
+		const char *attr = dev->attrs[i].name;
 		bool match;
 		int ret;
 
@@ -1454,17 +1456,17 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 		}
 
 		if (match) {
-			free(dev->attrs[i]);
-			dev->attrs[i] = NULL;
+			free(dev->attrs[i].name);
+			dev->attrs[i].name = NULL;
 		}
 	}
 
 	/* Find channels without an index */
 	for (i = 0; i < dev->nb_attrs; i++) {
-		const char *attr = dev->attrs[i];
+		const char *attr = dev->attrs[i].name;
 		int ret;
 
-		if (!dev->attrs[i])
+		if (!attr)
 			continue;
 
 		if (is_channel(attr, false)) {
@@ -1472,13 +1474,13 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 			if (ret)
 				return ret;
 
-			free(dev->attrs[i]);
-			dev->attrs[i] = NULL;
+			free(dev->attrs[i].name);
+			dev->attrs[i].name = NULL;
 		}
 	}
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		if (dev->attrs[i])
+		if (dev->attrs[i].name)
 			*ptr++ = dev->attrs[i];
 	}
 
@@ -1663,19 +1665,20 @@ err_free_device:
 static int add_debug_attr(void *d, const char *path)
 {
 	struct iio_device *dev = d;
+	struct iio_device_attr *attrs;
 	const char *attr = strrchr(path, '/') + 1;
-	char **attrs, *name = iio_strdup(attr);
+	char *name = iio_strdup(attr);
 	if (!name)
 		return -ENOMEM;
 
 	attrs = realloc(dev->debug_attrs,
-			(1 + dev->nb_debug_attrs) * sizeof(char *));
+			(1 + dev->nb_debug_attrs) * sizeof(*attrs));
 	if (!attrs) {
 		free(name);
 		return -ENOMEM;
 	}
 
-	attrs[dev->nb_debug_attrs++] = name;
+	attrs[dev->nb_debug_attrs++].name = name;
 	dev->debug_attrs = attrs;
 	DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);
 	return 0;

@@ -58,7 +58,8 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		goto err_free_attrs_len;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i], false);
+		char *xml = get_attr_xml(dev->attrs[i].name,
+				&attrs_len[i], false);
 		if (!xml)
 			goto err_free_attrs;
 		attrs[i] = xml;
@@ -92,7 +93,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		goto err_free_debug_attrs_len;
 
 	for (k = 0; k < dev->nb_debug_attrs; k++) {
-		char *xml = get_attr_xml(dev->debug_attrs[k],
+		char *xml = get_attr_xml(dev->debug_attrs[k].name,
 				&debug_attrs_len[k], true);
 		if (!xml)
 			goto err_free_debug_attrs;
@@ -218,7 +219,7 @@ const char * iio_device_get_attr(const struct iio_device *dev,
 	if (index >= dev->nb_attrs)
 		return NULL;
 	else
-		return dev->attrs[index];
+		return dev->attrs[index].name;
 }
 
 const char * iio_device_find_attr(const struct iio_device *dev,
@@ -226,7 +227,7 @@ const char * iio_device_find_attr(const struct iio_device *dev,
 {
 	unsigned int i;
 	for (i = 0; i < dev->nb_attrs; i++) {
-		const char *attr = dev->attrs[i];
+		const char *attr = dev->attrs[i].name;
 		if (!strcmp(attr, name))
 			return attr;
 	}
@@ -238,7 +239,7 @@ const char * iio_device_find_debug_attr(const struct iio_device *dev,
 {
 	unsigned int i;
 	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		const char *attr = dev->debug_attrs[i];
+		const char *attr = dev->debug_attrs[i].name;
 		if (!strcmp(attr, name))
 			return attr;
 	}
@@ -402,11 +403,11 @@ void free_device(struct iio_device *dev)
 {
 	unsigned int i;
 	for (i = 0; i < dev->nb_attrs; i++)
-		free(dev->attrs[i]);
+		free(dev->attrs[i].name);
 	if (dev->nb_attrs)
 		free(dev->attrs);
 	for (i = 0; i < dev->nb_debug_attrs; i++)
-		free(dev->debug_attrs[i]);
+		free(dev->debug_attrs[i].name);
 	if (dev->nb_debug_attrs)
 		free(dev->debug_attrs);
 	for (i = 0; i < dev->nb_channels; i++)
@@ -575,7 +576,7 @@ const char * iio_device_get_debug_attr(const struct iio_device *dev,
 	if (index >= dev->nb_debug_attrs)
 		return NULL;
 	else
-		return dev->debug_attrs[index];
+		return dev->debug_attrs[index].name;
 }
 
 int iio_device_debug_attr_read_longlong(const struct iio_device *dev,
@@ -675,16 +676,16 @@ int iio_device_identify_filename(const struct iio_device *dev,
 
 	for (i = 0; i < dev->nb_attrs; i++) {
 		/* Devices attributes are named after their filename */
-		if (!strcmp(dev->attrs[i], filename)) {
-			*attr = dev->attrs[i];
+		if (!strcmp(dev->attrs[i].name, filename)) {
+			*attr = dev->attrs[i].name;
 			*chn = NULL;
 			return 0;
 		}
 	}
 
 	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		if (!strcmp(dev->debug_attrs[i], filename)) {
-			*attr = dev->debug_attrs[i];
+		if (!strcmp(dev->debug_attrs[i].name, filename)) {
+			*attr = dev->debug_attrs[i].name;
 			*chn = NULL;
 			return 0;
 		}

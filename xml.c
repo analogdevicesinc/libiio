@@ -72,7 +72,8 @@ err_free:
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 {
 	xmlAttr *attr;
-	char **attrs, *name = NULL;
+	struct iio_device_attr *attrs;
+	char *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
@@ -90,18 +91,18 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 
 	if (is_debug)
 		attrs = realloc(dev->debug_attrs,
-				(1 + dev->nb_debug_attrs) * sizeof(char *));
+				(1 + dev->nb_debug_attrs) * sizeof(*attrs));
 	else
 		attrs = realloc(dev->attrs,
-				(1 + dev->nb_attrs) * sizeof(char *));
+				(1 + dev->nb_attrs) * sizeof(*attrs));
 	if (!attrs)
 		goto err_free;
 
 	if (is_debug) {
-		attrs[dev->nb_debug_attrs++] = name;
+		attrs[dev->nb_debug_attrs++].name = name;
 		dev->debug_attrs = attrs;
 	} else {
-		attrs[dev->nb_attrs++] = name;
+		attrs[dev->nb_attrs++].name = name;
 		dev->attrs = attrs;
 	}
 	return 0;

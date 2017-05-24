@@ -137,6 +137,10 @@ struct iio_device_pdata;
 struct iio_channel_pdata;
 struct iio_scan_backend_context;
 
+struct iio_device_attr {
+	char *name;
+};
+
 struct iio_channel_attr {
 	char *name;
 	char *filename;
@@ -184,10 +188,10 @@ struct iio_device {
 
 	char *name, *id;
 
-	char **attrs;
+	struct iio_device_attr *attrs;
 	unsigned int nb_attrs;
 
-	char **debug_attrs;
+	struct iio_device_attr *debug_attrs;
 	unsigned int nb_debug_attrs;
 
 	struct iio_channel **channels;
