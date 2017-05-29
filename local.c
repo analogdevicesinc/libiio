@@ -644,17 +644,23 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
+	int mode;
 
 	if (!attr)
 		return local_read_all_dev_attrs(dev, dst, len, is_debug);
 
 	if (is_debug) {
+		mode = iio_device_get_debug_attr_mode(dev, attr);
 		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
 				dev->id, attr);
 	} else {
+		mode = iio_device_get_attr_mode(dev, attr);
 		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
 	}
+
+	if (!(mode & IIO_R_OK))
+		return -EACCES;
 
 	f = fopen(buf, "re");
 	if (!f)
@@ -676,17 +682,23 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
+	int mode;
 
 	if (!attr)
 		return local_write_all_dev_attrs(dev, src, len, is_debug);
 
 	if (is_debug) {
+		mode = iio_device_get_debug_attr_mode(dev, attr);
 		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
 				dev->id, attr);
 	} else {
+		mode = iio_device_get_attr_mode(dev, attr);
 		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
 				dev->id, attr);
 	}
+
+	if (!(mode & IIO_W_OK))
+		return -EACCES;
 
 	f = fopen(buf, "we");
 	if (!f)
@@ -713,8 +725,14 @@ static const char * get_filename(const struct iio_channel *chn,
 static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
+	int mode;
+
 	if (!attr)
 		return local_read_all_chn_attrs(chn, dst, len);
+
+	mode = iio_channel_get_attr_mode(chn, attr);
+	if (!(mode & IIO_R_OK))
+		return -EACCES;
 
 	attr = get_filename(chn, attr);
 	return local_read_dev_attr(chn->dev, attr, dst, len, false);
@@ -723,8 +741,14 @@ static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
+	int mode;
+
 	if (!attr)
 		return local_write_all_chn_attrs(chn, src, len);
+
+	mode = iio_channel_get_attr_mode(chn, attr);
+	if (!(mode & IIO_W_OK))
+		return -EACCES;
 
 	attr = get_filename(chn, attr);
 	return local_write_dev_attr(chn->dev, attr, src, len, false);
