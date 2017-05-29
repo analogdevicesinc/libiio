@@ -42,8 +42,8 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
 "<!ATTLIST scan-element index CDATA #REQUIRED format CDATA #REQUIRED scale CDATA #IMPLIED>"
-"<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED>"
-"<!ATTLIST debug-attribute name CDATA #REQUIRED>"
+"<!ATTLIST attribute name CDATA #REQUIRED mode CDATA #REQUIRED filename CDATA #IMPLIED>"
+"<!ATTLIST debug-attribute name CDATA #REQUIRED mode CDATA #REQUIRED>"
 "]>";
 
 /* Returns a string containing the XML representation of this context */

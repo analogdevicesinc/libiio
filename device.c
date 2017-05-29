@@ -24,19 +24,25 @@
 #include <stdio.h>
 #include <string.h>
 
-static char *get_attr_xml(const char *attr, size_t *length, bool is_debug)
+static char *get_attr_xml(const struct iio_device_attr *attr,
+		size_t *length, bool is_debug)
 {
-	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr)
+	size_t len = sizeof("<attribute name=\"\" mode=\".\"/>")
+		+ strlen(attr->name)
 		+ (!is_debug ? 0 : sizeof("debug-") - 1);
 	char *str = malloc(len);
 	if (!str)
 		return NULL;
 
 	*length = len - 1; /* Skip the \0 */
-	if (is_debug)
-		iio_snprintf(str, len, "<debug-attribute name=\"%s\" />", attr);
-	else
-		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr);
+	if (is_debug) {
+		iio_snprintf(str, len, "<debug-attribute name=\"%s\" mode=\"%1x\"/>",
+				attr->name, attr->mode);
+	} else {
+		iio_snprintf(str, len, "<attribute name=\"%s\" mode=\"%1x\"/>",
+				attr->name, attr->mode);
+	}
+
 	return str;
 }
 
@@ -58,8 +64,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		goto err_free_attrs_len;
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		char *xml = get_attr_xml(dev->attrs[i].name,
-				&attrs_len[i], false);
+		char *xml = get_attr_xml(&dev->attrs[i], &attrs_len[i], false);
 		if (!xml)
 			goto err_free_attrs;
 		attrs[i] = xml;
@@ -93,7 +98,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		goto err_free_debug_attrs_len;
 
 	for (k = 0; k < dev->nb_debug_attrs; k++) {
-		char *xml = get_attr_xml(dev->debug_attrs[k].name,
+		char *xml = get_attr_xml(&dev->debug_attrs[k],
 				&debug_attrs_len[k], true);
 		if (!xml)
 			goto err_free_debug_attrs;

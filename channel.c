@@ -165,7 +165,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 {
 	char *str;
-	size_t len = strlen(attr->name) + sizeof("<attribute name=\"\" />");
+	size_t len = strlen(attr->name) + sizeof("<attribute name=\"\" mode=\".\"/>");
 	if (attr->filename)
 		len += strlen(attr->filename) + sizeof("filename=\"\"");
 
@@ -174,11 +174,14 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 		return NULL;
 
 	*length = len - 1; /* Skip the \0 */
-	if (attr->filename)
-		iio_snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
-				attr->name, attr->filename);
-	else
-		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
+	if (attr->filename) {
+		iio_snprintf(str, len, "<attribute name=\"%s\" mode=\"%1x\" filename=\"%s\"/>",
+				attr->name, attr->mode, attr->filename);
+	} else {
+		iio_snprintf(str, len, "<attribute name=\"%s\" mode=\"%1x\"/>",
+				attr->name, attr->mode);
+	}
+
 	return str;
 }
 
