@@ -68,6 +68,36 @@ static void usage(void)
 					options_descriptions[i]);
 }
 
+static const char * get_mode(int mode)
+{
+	if (mode < 0 || !(mode & (IIO_R_OK | IIO_W_OK)))
+		return "(no access)";
+	else if ((mode & IIO_R_OK) && (mode & IIO_W_OK))
+		return "(rw)";
+	else if (mode & IIO_R_OK)
+		return "(ro)";
+	else
+		return "(wo)";
+}
+
+static const char * get_dev_attr_mode(
+		const struct iio_device *dev, const char *attr)
+{
+	return get_mode(iio_device_get_attr_mode(dev, attr));
+}
+
+static const char * get_dev_debug_attr_mode(
+		const struct iio_device *dev, const char *attr)
+{
+	return get_mode(iio_device_get_debug_attr_mode(dev, attr));
+}
+
+static const char * get_chn_attr_mode(
+		const struct iio_channel *chn, const char *attr)
+{
+	return get_mode(iio_channel_get_attr_mode(chn, attr));
+}
+
 static void scan(void)
 {
 	struct iio_scan_context *ctx;
@@ -356,16 +386,22 @@ int main(int argc, char **argv)
 			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
 				const char *attr = iio_channel_get_attr(ch, k);
+				int mode = iio_channel_get_attr_mode(ch, attr);
+				const char *mode_str =
+					get_chn_attr_mode(ch, attr);
 				char buf[1024];
+
+				if (!(mode & IIO_R_OK)) {
+					printf("\t\t\t\tattr %u: %s %s\n",
+							k, attr, mode_str);
+					continue;
+				}
+
 				ret = (int) iio_channel_attr_read(ch,
 						attr, buf, sizeof(buf));
 				if (ret > 0) {
-					printf("\t\t\t\tattr %u: %s"
-							" value: %s\n", k,
-							attr, buf);
-				} else if (ret == -ENOSYS) {
-					printf("\t\t\t\tattr %u: %s\n",
-							k, attr);
+					printf("\t\t\t\tattr %u: %s %s, value: %s\n",
+							k, attr, mode_str, buf);
 				} else {
 					iio_strerror(-ret, buf, sizeof(buf));
 
@@ -381,15 +417,22 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_attr(dev, j);
+				int mode = iio_device_get_attr_mode(dev, attr);
+				const char *mode_str =
+					get_dev_attr_mode(dev, attr);
 				char buf[1024];
+
+				if (!(mode & IIO_R_OK)) {
+					printf("\t\t\t\tattr %u: %s %s\n",
+							j, attr, mode_str);
+					continue;
+				}
+
 				ret = (int) iio_device_attr_read(dev,
 						attr, buf, sizeof(buf));
 				if (ret > 0) {
-					printf("\t\t\t\tattr %u: %s value: %s"
-							"\n", j, attr, buf);
-				} else if (ret == -ENOSYS) {
-					printf("\t\t\t\tattr %u: %s\n",
-							j, attr);
+					printf("\t\t\t\tattr %u: %s %s, value: %s\n",
+							j, attr, mode_str, buf);
 				} else {
 					iio_strerror(-ret, buf, sizeof(buf));
 
@@ -405,16 +448,29 @@ int main(int argc, char **argv)
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr =
 					iio_device_get_debug_attr(dev, j);
+				int mode = iio_device_get_debug_attr_mode(
+						dev, attr);
+				const char *mode_str = get_dev_debug_attr_mode(
+						dev, attr);
 				char buf[1024];
+
+				if (!(mode & IIO_R_OK)) {
+					printf("\t\t\t\tdebug attr %u: %s %s\n",
+							j, attr, mode_str);
+					continue;
+				}
 
 				ret = (int) iio_device_debug_attr_read(dev,
 						attr, buf, sizeof(buf));
-				if (ret > 0)
-					printf("\t\t\t\tdebug attr %u: %s value: %s\n",
-							j, attr, buf);
-				else if (ret == -ENOSYS)
-					printf("\t\t\t\tdebug attr %u: %s\n", j,
-							attr);
+				if (ret > 0) {
+					printf("\t\t\t\tdebug attr %u: %s %s, value: %s\n",
+							j, attr, mode_str, buf);
+				} else {
+					iio_strerror(-ret, buf, sizeof(buf));
+
+					fprintf(stderr, "Unable to read debug attribute %s: %s\n",
+							attr, buf);
+				}
 			}
 		}
 
