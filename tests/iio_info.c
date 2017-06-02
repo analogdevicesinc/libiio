@@ -359,18 +359,14 @@ int main(int argc, char **argv)
 				char buf[1024];
 				ret = (int) iio_channel_attr_read(ch,
 						attr, buf, sizeof(buf));
+
+				printf("\t\t\t\tattr %2u: %s ", k, attr);
+
 				if (ret > 0) {
-					printf("\t\t\t\tattr %u: %s"
-							" value: %s\n", k,
-							attr, buf);
-				} else if (ret == -ENOSYS) {
-					printf("\t\t\t\tattr %u: %s\n",
-							k, attr);
+					printf("value: %s\n", buf);
 				} else {
 					iio_strerror(-ret, buf, sizeof(buf));
-
-					fprintf(stderr, "Unable to read attribute %s: %s\n",
-							attr, buf);
+					printf("ERROR: %s (%i)\n", buf, ret);
 				}
 			}
 		}
@@ -384,17 +380,15 @@ int main(int argc, char **argv)
 				char buf[1024];
 				ret = (int) iio_device_attr_read(dev,
 						attr, buf, sizeof(buf));
+
+				printf("\t\t\t\tattr %2u: %s ",
+						j, attr);
+
 				if (ret > 0) {
-					printf("\t\t\t\tattr %u: %s value: %s"
-							"\n", j, attr, buf);
-				} else if (ret == -ENOSYS) {
-					printf("\t\t\t\tattr %u: %s\n",
-							j, attr);
+					printf("value: %s\n", buf);
 				} else {
 					iio_strerror(-ret, buf, sizeof(buf));
-
-					fprintf(stderr, "Unable to read attribute %s: %s\n",
-							attr, buf);
+					printf("ERROR: %s (%i)\n", buf, ret);
 				}
 			}
 		}
@@ -409,12 +403,14 @@ int main(int argc, char **argv)
 
 				ret = (int) iio_device_debug_attr_read(dev,
 						attr, buf, sizeof(buf));
-				if (ret > 0)
-					printf("\t\t\t\tdebug attr %u: %s value: %s\n",
-							j, attr, buf);
-				else if (ret == -ENOSYS)
-					printf("\t\t\t\tdebug attr %u: %s\n", j,
-							attr);
+				printf("\t\t\t\tdebug attr %2u: %s ",
+						j, attr);
+				if (ret > 0) {
+					printf("value: %s\n", buf);
+				} else {
+					iio_strerror(-ret, buf, sizeof(buf));
+					printf("ERROR: %s (%i)\n", buf, ret);
+				}
 			}
 		}
 
