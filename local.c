@@ -969,6 +969,11 @@ static int local_get_fd(const struct iio_device *dev)
 		return dev->pdata->fd;
 }
 
+static bool local_get_blocking_mode(const struct iio_device *dev)
+{
+	return dev->pdata->blocking;
+}
+
 static int local_set_blocking_mode(const struct iio_device *dev, bool blocking)
 {
 	if (dev->pdata->fd == -1)
@@ -1724,6 +1729,7 @@ static const struct iio_backend_ops local_ops = {
 	.open = local_open,
 	.close = local_close,
 	.get_fd = local_get_fd,
+	.get_blocking_mode = local_get_blocking_mode,
 	.set_blocking_mode = local_set_blocking_mode,
 	.read = local_read,
 	.write = local_write,

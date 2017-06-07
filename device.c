@@ -291,6 +291,14 @@ int iio_device_get_poll_fd(const struct iio_device *dev)
 		return -ENOSYS;
 }
 
+bool iio_device_get_blocking_mode(const struct iio_device *dev)
+{
+	if (dev->ctx->ops->get_blocking_mode)
+		return dev->ctx->ops->get_blocking_mode(dev);
+	else
+		return true;
+}
+
 int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking)
 {
 	if (dev->ctx->ops->set_blocking_mode)

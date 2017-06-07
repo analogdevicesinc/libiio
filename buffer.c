@@ -123,6 +123,11 @@ int iio_buffer_get_poll_fd(struct iio_buffer *buffer)
 	return iio_device_get_poll_fd(buffer->dev);
 }
 
+bool iio_buffer_get_blocking_mode(struct iio_buffer *buffer)
+{
+	return iio_device_get_blocking_mode(buffer->dev);
+}
+
 int iio_buffer_set_blocking_mode(struct iio_buffer *buffer, bool blocking)
 {
 	return iio_device_set_blocking_mode(buffer->dev, blocking);

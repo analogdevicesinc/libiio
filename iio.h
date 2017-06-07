@@ -1134,6 +1134,15 @@ __api void iio_buffer_destroy(struct iio_buffer *buf);
  */
 __api int iio_buffer_get_poll_fd(struct iio_buffer *buf);
 
+/** @brief Retrieve the blocking mode of an iio_buffer structure
+ *
+ * A device is blocking by default.
+ * @param buf A pointer to an iio_buffer structure
+ * @return True if buffer API is blocking, false else
+ */
+__api bool iio_buffer_get_blocking_mode(struct iio_buffer *buf);
+
+
 /** @brief Make iio_buffer_refill() and iio_buffer_push() blocking or not
  *
  * After this function has been called with blocking == false,
