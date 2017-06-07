@@ -63,3 +63,5 @@ Source: "C:\libs\32\libserialport-0.dll"; DestDir: "{sys}"; Flags: onlyifdoesnte
 Source: "C:\libs\64\libserialport-0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 
 Source: "C:\projects\libiio\build-win32\bindings\csharp\libiio-sharp.dll"; DestDir: "{cf}\libiio"
+
+Source: "C:\projects\libiio\bindings\matlab\*"; Excludes: "CMakeLists.txt"; Destdir: "{cf}\libiio\matlab"
