@@ -157,17 +157,17 @@ static void dump_device_attributes(const struct iio_device *dev,
 		printf("'%s'\n", buf);
 	} else {
 		iio_strerror(-ret, buf, sizeof(buf));
-		printf("ERROR: %s (%li)\n", buf, ret);
+		printf("ERROR: %s (%li)\n", buf, (long)ret);
 	}
 
 	if (wbuf) {
 		ret = iio_device_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			printf("wrote %li bytes to %s\n", ret, attr);
+			printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
 			iio_strerror(-ret, buf, sizeof(buf));
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
-					buf, ret, attr, wbuf);
+					buf, (long)ret, attr, wbuf);
 		}
 		dump_device_attributes(dev, attr, NULL);
 	}
@@ -188,17 +188,17 @@ static void dump_debug_attributes(const struct iio_device *dev,
 		printf("'%s'\n", buf);
 	} else {
 		iio_strerror(-ret, buf, sizeof(buf));
-		printf("ERROR: %s (%li)\n", buf, ret);
+		printf("ERROR: %s (%li)\n", buf, (long)ret);
 	}
 
 	if (wbuf) {
 		ret = iio_device_debug_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			printf("wrote %li bytes to %s\n", ret, attr);
+			printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
 			iio_strerror(-ret, buf, sizeof(buf));
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
-					buf, ret, attr, wbuf);
+					buf, (long)ret, attr, wbuf);
 		}
 		dump_debug_attributes(dev, attr, NULL);
 	}
@@ -229,17 +229,17 @@ static void dump_channel_attributes(const struct iio_device *dev,
 		printf("value '%s'\n", buf);
 	} else {
 		iio_strerror(-ret, buf, sizeof(buf));
-		printf("ERROR: %s (%li)\n", buf, ret);
+		printf("ERROR: %s (%li)\n", buf, (long)ret);
 	}
 
 	if (wbuf) {
 		ret = iio_channel_attr_write(ch, attr, wbuf);
 		if (ret > 0) {
-			printf("wrote %li bytes to %s\n", ret, attr);
+			printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
 			iio_strerror(-ret, buf, sizeof(buf));
 			printf("error %s (%li) while writing '%s' with '%s'\n",
-					buf, ret, attr, wbuf);
+					buf, (long)ret, attr, wbuf);
 		}
 		dump_channel_attributes(dev, ch, attr, NULL);
 	}
