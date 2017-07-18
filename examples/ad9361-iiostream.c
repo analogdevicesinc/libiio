@@ -19,7 +19,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
 #include <signal.h>
 #include <stdio.h>
 
@@ -32,6 +31,13 @@
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
+
+#define ASSERT(expr) { \
+	if (!(expr)) { \
+		(void) fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
+		(void) abort(); \
+	} \
+}
 
 /* RX is input, TX is output */
 enum iodev { RX, TX };
@@ -110,7 +116,7 @@ static char* get_ch_name(const char* type, int id)
 static struct iio_device* get_ad9361_phy(struct iio_context *ctx)
 {
 	struct iio_device *dev =  iio_context_find_device(ctx, "ad9361-phy");
-	assert(dev && "No ad9361-phy found");
+	ASSERT(dev && "No ad9361-phy found");
 	return dev;
 }
 
@@ -120,7 +126,7 @@ static bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct 
 	switch (d) {
 	case TX: *dev = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc"); return *dev != NULL;
 	case RX: *dev = iio_context_find_device(ctx, "cf-ad9361-lpc");  return *dev != NULL;
-	default: assert(0); return false;
+	default: ASSERT(0); return false;
 	}
 }
 
@@ -139,7 +145,7 @@ static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid, struct
 	switch (d) {
 	case RX: *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("voltage", chid), false); return *chn != NULL;
 	case TX: *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("voltage", chid), true);  return *chn != NULL;
-	default: assert(0); return false;
+	default: ASSERT(0); return false;
 	}
 }
 
@@ -150,7 +156,7 @@ static bool get_lo_chan(struct iio_context *ctx, enum iodev d, struct iio_channe
 	 // LO chan is always output, i.e. true
 	case RX: *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("altvoltage", 0), true); return *chn != NULL;
 	case TX: *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("altvoltage", 1), true); return *chn != NULL;
-	default: assert(0); return false;
+	default: ASSERT(0); return false;
 	}
 }
 
@@ -188,7 +194,7 @@ int main (int argc, char **argv)
 	struct stream_cfg rxcfg;
 	struct stream_cfg txcfg;
 
-	// Listen to ctrl+c and assert
+	// Listen to ctrl+c and ASSERT
 	signal(SIGINT, handle_sig);
 
 	// RX stream config
@@ -204,22 +210,22 @@ int main (int argc, char **argv)
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
-	assert((ctx = iio_create_default_context()) && "No context");
-	assert(iio_context_get_devices_count(ctx) > 0 && "No devices");
+	ASSERT((ctx = iio_create_default_context()) && "No context");
+	ASSERT(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9361 streaming devices\n");
-	assert(get_ad9361_stream_dev(ctx, TX, &tx) && "No tx dev found");
-	assert(get_ad9361_stream_dev(ctx, RX, &rx) && "No rx dev found");
+	ASSERT(get_ad9361_stream_dev(ctx, TX, &tx) && "No tx dev found");
+	ASSERT(get_ad9361_stream_dev(ctx, RX, &rx) && "No rx dev found");
 
 	printf("* Configuring AD9361 for streaming\n");
-	assert(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0) && "RX port 0 not found");
-	assert(cfg_ad9361_streaming_ch(ctx, &txcfg, TX, 0) && "TX port 0 not found");
+	ASSERT(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0) && "RX port 0 not found");
+	ASSERT(cfg_ad9361_streaming_ch(ctx, &txcfg, TX, 0) && "TX port 0 not found");
 
 	printf("* Initializing AD9361 IIO streaming channels\n");
-	assert(get_ad9361_stream_ch(ctx, RX, rx, 0, &rx0_i) && "RX chan i not found");
-	assert(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
-	assert(get_ad9361_stream_ch(ctx, TX, tx, 0, &tx0_i) && "TX chan i not found");
-	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
+	ASSERT(get_ad9361_stream_ch(ctx, RX, rx, 0, &rx0_i) && "RX chan i not found");
+	ASSERT(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
+	ASSERT(get_ad9361_stream_ch(ctx, TX, tx, 0, &tx0_i) && "TX chan i not found");
+	ASSERT(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);
