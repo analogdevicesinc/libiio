@@ -145,103 +145,124 @@ err_free_ctx:
 
 
 static void dump_device_attributes(const struct iio_device *dev,
-		const char *attr, const char *wbuf)
+		const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
 	char buf[1024];
 
-	printf("dev '%s', attr '%s', value :",
-			iio_device_get_name(dev), attr);
-	ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
-	if (ret > 0) {
-		printf("'%s'\n", buf);
-	} else {
-		iio_strerror(-ret, buf, sizeof(buf));
-		printf("ERROR: %s (%li)\n", buf, (long)ret);
+	if (!wbuf || !quiet) {
+		if (!quiet)
+			printf("dev '%s', attr '%s', value :",
+					iio_device_get_name(dev), attr);
+		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
+		if (ret > 0) {
+			if (quiet)
+				printf("%s\n", buf);
+			else
+				printf("'%s'\n", buf);
+		} else {
+			iio_strerror(-ret, buf, sizeof(buf));
+			printf("ERROR: %s (%li)\n", buf, (long)ret);
+		}
 	}
-
 	if (wbuf) {
 		ret = iio_device_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			printf("wrote %li bytes to %s\n", (long)ret, attr);
+			if (!quiet)
+				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
 			iio_strerror(-ret, buf, sizeof(buf));
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_device_attributes(dev, attr, NULL);
+		dump_device_attributes(dev, attr, NULL, quiet);
 	}
 }
 
 static void dump_debug_attributes(const struct iio_device *dev,
-		const char *attr, const char *wbuf)
+				  const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
 	char buf[1024];
 
-	ret = iio_device_debug_attr_read(dev, attr, buf, sizeof(buf));
+	if (!wbuf || !quiet) {
+		ret = iio_device_debug_attr_read(dev, attr, buf, sizeof(buf));
 
-	printf("dev '%s', debug attr '%s', value :",
-			iio_device_get_name(dev), attr);
+		if (!quiet)
+			printf("dev '%s', debug attr '%s', value :",
+					iio_device_get_name(dev), attr);
 
-	if (ret > 0) {
-		printf("'%s'\n", buf);
-	} else {
-		iio_strerror(-ret, buf, sizeof(buf));
-		printf("ERROR: %s (%li)\n", buf, (long)ret);
+		if (ret > 0) {
+			if (quiet)
+				printf("%s\n", buf);
+			else
+				printf("'%s'\n", buf);
+		} else {
+			iio_strerror(-ret, buf, sizeof(buf));
+			printf("ERROR: %s (%li)\n", buf, (long)ret);
+		}
 	}
 
 	if (wbuf) {
 		ret = iio_device_debug_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			printf("wrote %li bytes to %s\n", (long)ret, attr);
+			if (!quiet)
+				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
 			iio_strerror(-ret, buf, sizeof(buf));
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_debug_attributes(dev, attr, NULL);
+		dump_debug_attributes(dev, attr, NULL, quiet);
 	}
 }
 
 static void dump_channel_attributes(const struct iio_device *dev,
-		struct iio_channel *ch, const char *attr, const char *wbuf)
+		struct iio_channel *ch, const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
 	char buf[1024];
 	const char *type_name;
 
-	if (iio_channel_is_output(ch))
-		type_name = "output";
-	else
-		type_name = "input";
+	if (!wbuf || !quiet) {
+		if (iio_channel_is_output(ch))
+			type_name = "output";
+		else
+			type_name = "input";
 
-	ret = iio_channel_attr_read(ch, attr, buf, sizeof(buf));
-	printf("dev '%s', channel '%s' (%s), ",
-			iio_device_get_name(dev),
-			iio_channel_get_id(ch),
-			type_name);
-	if (iio_channel_get_name(ch))
-		printf("id '%s', ", iio_channel_get_name(ch));
-	printf("attr '%s', ", attr);
+		ret = iio_channel_attr_read(ch, attr, buf, sizeof(buf));
+		if (!quiet)
+			printf("dev '%s', channel '%s' (%s), ",
+					iio_device_get_name(dev),
+					iio_channel_get_id(ch),
+					type_name);
+		if (iio_channel_get_name(ch) && !quiet)
+			printf("id '%s', ", iio_channel_get_name(ch));
 
-	if (ret > 0) {
-		printf("value '%s'\n", buf);
-	} else {
-		iio_strerror(-ret, buf, sizeof(buf));
-		printf("ERROR: %s (%li)\n", buf, (long)ret);
+		if (!quiet)
+			printf("attr '%s', ", attr);
+
+		if (ret > 0) {
+			if (quiet)
+				printf("%s\n", buf);
+			else
+				printf("value '%s'\n", buf);
+		} else {
+			iio_strerror(-ret, buf, sizeof(buf));
+			printf("ERROR: %s (%li)\n", buf, (long)ret);
+		}
 	}
-
 	if (wbuf) {
 		ret = iio_channel_attr_write(ch, attr, wbuf);
 		if (ret > 0) {
-			printf("wrote %li bytes to %s\n", (long)ret, attr);
+			if (!quiet)
+				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
 			iio_strerror(-ret, buf, sizeof(buf));
 			printf("error %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_channel_attributes(dev, ch, attr, NULL);
+		dump_channel_attributes(dev, ch, attr, NULL, quiet);
 	}
 }
 
@@ -249,6 +270,7 @@ static const struct option options[] = {
 	/* help */
 	{"help", no_argument, 0, 'h'},
 	{"ignore-case", no_argument, 0, 'I'},
+	{"quiet", no_argument, 0, 'q'},
 	/* context connection */
 	{"auto", no_argument, 0, 'a'},
 	{"uri", required_argument, 0, 'u'},
@@ -268,6 +290,7 @@ static const char *options_descriptions[] = {
 	/* help */
 	"Show this help and quit.",
 	"Ignore case distinctions.",
+	"Return result only.",
 	/* context connection */
 	"Use the first context found.",
 	"Use the context at the provided URI.",
@@ -316,11 +339,12 @@ int main(int argc, char **argv)
 	enum backend backend = LOCAL;
 	bool detect_context = false, search_device = false, ignore_case = false,
 	     search_channel = false, search_debug = false, search_context = false,
-	     input_only = false, output_only = false, scan_only = false;
+	     input_only = false, output_only = false, scan_only = false,
+	     quiet = false;
 	unsigned int i;
 	char *wbuf = NULL;
 
-	while ((c = getopt_long(argc, argv, "+hau:CdcDiosI",
+	while ((c = getopt_long(argc, argv, "+hau:CdcDiosIq",
 					options, &option_index)) != -1) {
 		switch (c) {
 		/* help */
@@ -373,6 +397,10 @@ int main(int argc, char **argv)
 		case 'I':
 			arg_index += 1;
 			ignore_case = true;
+			break;
+		case 'q':
+			arg_index += 1;
+			quiet = true;
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
@@ -611,7 +639,8 @@ int main(int argc, char **argv)
 							ignore_case))
 						continue;
 
-					dump_channel_attributes(dev, ch, attr, wbuf);
+					dump_channel_attributes(dev, ch, attr, wbuf,
+								attr_index ? quiet : false);
 				}
 			}
 
@@ -628,7 +657,8 @@ int main(int argc, char **argv)
 					    !str_match(attr, argv[attr_index], ignore_case))
 						continue;
 
-					dump_device_attributes(dev, attr, wbuf);
+					dump_device_attributes(dev, attr, wbuf,
+							       attr_index ? quiet : false);
 				}
 			}
 
@@ -645,7 +675,8 @@ int main(int argc, char **argv)
 
 					if ((attr_index && str_match(attr, argv[attr_index],
 								ignore_case)) || !attr_index)
-						dump_debug_attributes(dev, attr, wbuf);
+						dump_debug_attributes(dev, attr, wbuf,
+								      attr_index ? quiet : false);
 				}
 
 			}
