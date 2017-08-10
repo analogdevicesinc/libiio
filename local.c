@@ -729,9 +729,8 @@ static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 	return local_write_dev_attr(chn->dev, attr, src, len, false);
 }
 
-static int channel_write_state(const struct iio_channel *chn)
+static int channel_write_state(const struct iio_channel *chn, bool en)
 {
-	char *en = iio_channel_is_enabled(chn) ? "1" : "0";
 	ssize_t ret;
 
 	if (!chn->pdata->enable_fn) {
@@ -739,7 +738,7 @@ static int channel_write_state(const struct iio_channel *chn)
 		return -EINVAL;
 	}
 
-	ret = local_write_chn_attr(chn, chn->pdata->enable_fn, en, 2);
+	ret = local_write_chn_attr(chn, chn->pdata->enable_fn, en ? "1" : "0", 2);
 	if (ret < 0)
 		return (int) ret;
 	else
@@ -863,7 +862,7 @@ static int local_open(const struct iio_device *dev,
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 		if (chn->index >= 0 && !iio_channel_is_enabled(chn)) {
-			ret = channel_write_state(chn);
+			ret = channel_write_state(chn, false);
 			if (ret < 0)
 				goto err_close;
 		}
@@ -872,7 +871,7 @@ static int local_open(const struct iio_device *dev,
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 		if (chn->index >= 0 && iio_channel_is_enabled(chn)) {
-			ret = channel_write_state(chn);
+			ret = channel_write_state(chn, true);
 			if (ret < 0)
 				goto err_close;
 		}
@@ -952,10 +951,8 @@ static int local_close(const struct iio_device *dev)
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 
-		if (chn->pdata->enable_fn) {
-			iio_channel_disable(chn);
-			channel_write_state(chn);
-		}
+		if (chn->pdata->enable_fn)
+			channel_write_state(chn, false);
 	}
 
 	return (ret < 0) ? ret : 0;
