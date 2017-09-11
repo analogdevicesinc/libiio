@@ -52,7 +52,7 @@ build_script:
     - copy c:\libs\32\libxml2.dll c:\libiio-win32\
     - copy c:\libs\32\libusb-1.0.dll c:\libiio-win32\
     - copy c:\libs\32\libserialport-0.dll c:\libiio-win32\
-    - copy c:\Windows\SysWOW64\msvcr120.dll c:\libiio-win32\
+    - copy "c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x86\Microsoft.VC120.CRT\msvcr120.dll" c:\libiio-win32\
     - xcopy /S bindings\matlab c:\libiio-win32\matlab\
     - del c:\libiio-win32\matlab\CMakeLists.txt
     - 7z a "c:\libiio-win32.zip" c:\libiio-win32
@@ -65,7 +65,7 @@ build_script:
     - copy c:\libs\64\libxml2.dll c:\libiio-win64\
     - copy c:\libs\64\libusb-1.0.dll c:\libiio-win64\
     - copy c:\libs\64\libserialport-0.dll c:\libiio-win64\
-    - copy c:\Windows\System32\msvcr120.dll c:\libiio-win64\
+    - copy "c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x64\Microsoft.VC120.CRT\msvcr120.dll" c:\libiio-win64\
     - xcopy /S bindings\matlab c:\libiio-win64\matlab\
     - del c:\libiio-win64\matlab\CMakeLists.txt
     - 7z a "c:\libiio-win64.zip" c:\libiio-win64
