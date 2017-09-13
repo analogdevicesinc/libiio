@@ -14,7 +14,7 @@
 # Lesser General Public License for more details.
 
 
-TARGETS := ad9361-iiostream dummy-iiostream iio-monitor
+TARGETS := ad9361-iiostream ad9371-iiostream dummy-iiostream iio-monitor
 
 CFLAGS = -Wall
 
@@ -34,6 +34,9 @@ iio-monitor: iio-monitor.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS) -lpthread -lncurses -lcdk
 
 ad9361-iiostream : ad9361-iiostream.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+
+ad9371-iiostream : ad9371-iiostream.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 dummy-iiostream : dummy-iiostream.o
