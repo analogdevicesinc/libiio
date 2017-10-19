@@ -14,40 +14,40 @@ fi
 
 check_file deb
 if [ -n "${temp}" ] ; then
-	export RELEASE_PKG_FILE_DEB=${temp}
-	export TARGET_DEB=$(echo ${RELEASE_PKG_FILE_DEB} | \
+	export TARGET_DEB=$(echo ${temp} | \
 		sed -e 's:^./.*/::' -e 's:.deb$::')${LDIST}.deb
-	echo "deploying $RELEASE_PKG_FILE_DEB to nightly $TARGET_DEB"
-	ls -lh ${RELEASE_PKG_FILE_DEB}
+	echo "deploying ${temp} to nightly $TARGET_DEB"
+	cp ${temp} ${TARGET_DEB}
+	export RELEASE_PKG_FILE_DEB=./build/${TARGET_DEB}
+	ls -lh ${temp}
 else
 	echo "Skipping deployment of debian package"
 fi
 
 check_file rpm
 if [ -n "${temp}" ] ; then
-	export RELEASE_PKG_FILE_RPM=${temp}
-	export TARGET_RPM=$(echo ${RELEASE_PKG_FILE_RPM} | \
+	export TARGET_RPM=$(echo ${temp} | \
 		sed -e 's:^./.*/::' -e 's:.rpm$::')${LDIST}.rpm
-	echo "deploying $RELEASE_PKG_FILE_RPM to nightly $TARGET_RPM"
-	ls -lh ${RELEASE_PKG_FILE_RPM}
+	echo "deploying ${temp} to nightly $TARGET_RPM"
+	cp ${temp} ${TARGET_RPM}
+	export RELEASE_PKG_FILE_RPM=./build/${TARGET_RPM}
+	ls -lh ${temp}
 else
 	echo "Skipping deployment of rpm package"
 fi
 
 check_file tar.gz
 if [  -n "${temp}"  ] ; then
-	export RELEASE_PKG_FILE_TGZ=${temp}
-
 	# Add the MATLAB bindings into the tar file
 	(
-		cd $(dirname ${RELEASE_PKG_FILE_TGZ})
+		cd $(dirname ${temp})
 
 		mkdir tarball_fixup && cd tarball_fixup
 
 		if [ "$TRAVIS_OS_NAME" = "osx" ] ; then
-			tar --strip-components=1 -xzf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ}
+			tar --strip-components=1 -xzf ${TRAVIS_BUILD_DIR}/${temp}
 		else
-			tar -xzf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ}
+			tar -xzf ${TRAVIS_BUILD_DIR}/${temp}
 		fi
 
 		mkdir -p usr/include usr/lib/matlab/iio
@@ -75,27 +75,30 @@ if [  -n "${temp}"  ] ; then
 			chmod +w usr/lib/libusb-1.0.dylib
 			install_name_tool -id @rpath/libusb-1.0.dylib usr/lib/libusb-1.0.dylib
 
-			tar -czf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ} usr Library
+			tar -czf ${TRAVIS_BUILD_DIR}/${temp} usr Library
 		else
-			tar -czf ${TRAVIS_BUILD_DIR}/${RELEASE_PKG_FILE_TGZ} usr lib
+			tar -czf ${TRAVIS_BUILD_DIR}/${temp} usr lib
 		fi
 	)
 
-	export TARGET_TGZ=$(echo ${RELEASE_PKG_FILE_TGZ} | \
+	export TARGET_TGZ=$(echo ${temp} | \
 		sed -e 's:^./.*/::' -e 's:.tar.gz$::')${LDIST}.tar.gz;
-	echo "deploying $RELEASE_PKG_FILE_TGZ to $TARGET_TGZ"
-	ls -lh ${RELEASE_PKG_FILE_TGZ}
+	echo "deploying ${temp} to $TARGET_TGZ"
+	cp ${temp} ${TARGET_TGZ}
+	export RELEASE_PKG_FILE_TGZ=./build/${TARGET_TGZ}
+	ls -lh ${temp}
 else
 	echo "Skipping deployment of tarball"
 fi
 
 check_file pkg
 if [ -n "${temp}" ] ; then
-	export RELEASE_PKG_FILE_PKG=${temp}
-	export TARGET_PKG=$(echo ${RELEASE_PKG_FILE_PKG} | \
+	export TARGET_PKG=$(echo ${temp} | \
 		sed -e 's:^./.*/::' -e 's:.pkg$::')${LDIST}.pkg
-	echo "deploying $RELEASE_PKG_FILE_PKG to nightly $TARGET_PKG"
-	ls -lh ${RELEASE_PKG_FILE_PKG}
+	echo "deploying ${temp} to nightly $TARGET_PKG"
+	cp ${temp} ${TARGET_PKG}
+	export RELEASE_PKG_FILE_PKG=./build/${TARGET_PKG}
+	ls -lh ${temp}
 else
 	echo "Skipping deployment of OS X package"
 fi
