@@ -9,128 +9,128 @@ environment:
     MSYSTEM: MINGW64
     # Tell msys2 to inherit the current directory when starting the shell
     CHERE_INVOKING: 1
-    matrix:
-        - COMPILER: mingw
-        - COMPILER: msvc
 
 configuration:
     - Release
 
 install:
-    - if "%COMPILER%"=="mingw" (set GENERATOR=Unix Makefiles)
-    - if "%COMPILER%"=="msvc" (set GENERATOR=Visual Studio 12)
     - echo "Checking out sub-modules..."
     - git submodule update --init
     - echo "Downloading deps..."
-    - cd c:\
+    - cd C:\
     - appveyor DownloadFile http://swdownloads.analog.com/cse/build/libiio-win-deps.zip
-    - 7z x -y "c:\libiio-win-deps.zip"
+    - 7z x -y "C:\libiio-win-deps.zip"
     #Install Inno Setup
     - choco install InnoSetup
     - set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
-    - if "%COMPILER%"=="mingw" (set OPT_PATH=C:\msys64\mingw32\bin;C:\msys64\mingw64\bin;)
-    - set PATH=%OPT_PATH%%PATH%
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Syu")
 
 build_script:
-    - cd c:\projects\libiio
-    - set folder-path=c:\projects\libiio\build-win32
-    - if "%COMPILER%"=="mingw" (set folder-path=%folder-path%\%configuration%)
-    - echo "Running cmake for MinGW 32 bit... "
-    - mkdir build-win32
-    - cd build-win32
-
+    - set OLD_PATH=%PATH%
+    - set OPT_PATH=C:\msys64\mingw32\bin;C:\msys64\mingw64\bin;
+    - set PATH=%OPT_PATH%%PATH%
+    - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Syu"
+    - set GENERATOR=Unix Makefiles
+    - cd C:\projects\libiio
+    - set folder-path=C:\projects\libiio\build-mingw-win32\%configuration%
     # MinGW 32 bit
-    - if "%COMPILER%"=="mingw" (mkdir "%configuration%"& cd "%configuration%")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "pacman -Rs --noconfirm mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-libgfortran mingw-w64-i686-gcc-objc")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "rm /mingw32/etc/gdbinit")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy  mingw-w64-i686-gcc mingw-w64-i686-libusb mingw-w64-i686-cmake mingw-w64-i686-libxml2 mingw-w64-i686-pkg-config mingw-w64-i686-libzip mingw-w64-i686-doxygen")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DGIT_EXECUTABLE=C:/Program\ Files/Git/cmd/git.exe -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw32 -DCMAKE_C_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-g++.exe -DCSHARP_BINDINGS:BOOL=OFF -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw32/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DPYTHON_BINDINGS:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/32/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3")
-
-    # set LIBIIO_VERSION to current project version determined by cmake
-    - ps: >-
-        If ($env:COMPILER -Match "mingw") {
-            Set-AppveyorBuildVariable -Name LIBIIO_VERSION -Value (get-content .version)
-        }
-
-    #MSVC 32 bit
-    - if "%COMPILER%"=="msvc" (set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319")
-    - if "%COMPILER%"=="msvc" (cmake -G "%GENERATOR%" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..)
-    - if "%COMPILER%"=="msvc" (cmake --build . --config %configuration%)
-    
-    - cd c:\projects\libiio
-    - echo "Running cmake for 64 bit... "
-    - mkdir build-win64
-    - cd build-win64
+    - echo "Running cmake for MinGW 32 bit... "
+    - mkdir C:\projects\libiio\build-mingw-win32
+    - cd C:\projects\libiio\build-mingw-win32
+    - C:\msys64\usr\bin\bash -lc "pwd"
+    - mkdir C:\projects\libiio\build-mingw-win32\"%configuration%"& cd C:\projects\libiio\build-mingw-win32\"%configuration%"
+    - C:\msys64\usr\bin\bash -lc "pwd"
+    - C:\msys64\usr\bin\bash -lc "pacman -Rs --noconfirm mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-libgfortran mingw-w64-i686-gcc-objc"
+    - C:\msys64\usr\bin\bash -lc "rm /mingw32/etc/gdbinit"
+    - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy  mingw-w64-i686-gcc mingw-w64-i686-libusb mingw-w64-i686-cmake mingw-w64-i686-libxml2 mingw-w64-i686-pkg-config mingw-w64-i686-libzip mingw-w64-i686-doxygen"
+    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DGIT_EXECUTABLE=C:/Program\ Files/Git/cmd/git.exe -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw32 -DCMAKE_C_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-g++.exe -DCSHARP_BINDINGS:BOOL=OFF -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw32/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DPYTHON_BINDINGS:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/32/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
 
     # MinGW 64 bit
-    - if "%COMPILER%"=="mingw" (mkdir "%configuration%"& cd "%configuration%")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "pacman -Rs --noconfirm mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-libgfortran mingw-w64-x86_64-gcc-objc")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "rm /mingw64/etc/gdbinit")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy  mingw-w64-x86_64-gcc mingw-w64-x86_64-libusb mingw-w64-x86_64-cmake mingw-w64-x86_64-libxml2 mingw-w64-x86_64-pkg-config mingw-w64-x86_64-libzip mingw-w64-x86_64-doxygen")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DCSHARP_BINDINGS:BOOL=OFF -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DPYTHON_BINDINGS:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3")
-
-    #MSVC 64 bit
-    - if "%COMPILER%"=="msvc" (cmake -G "%GENERATOR% Win64" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..)
-    - if "%COMPILER%"=="msvc" (cmake --build . --config %configuration%)
+    - cd c:\projects\libiio
+    - echo "Running cmake for MinGW 64 bit... "
+    - mkdir c:\projects\libiio\build-mingw-win64
+    - cd c:\projects\libiio\build-mingw-win64
+    - mkdir c:\projects\libiio\build-mingw-win64\"%configuration%"& cd c:\projects\libiio\build-mingw-win64\"%configuration%"
+    - C:\msys64\usr\bin\bash -lc "pwd"
+    - C:\msys64\usr\bin\bash -lc "pacman -Rs --noconfirm mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-libgfortran mingw-w64-x86_64-gcc-objc"
+    - C:\msys64\usr\bin\bash -lc "rm /mingw64/etc/gdbinit"
+    - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy  mingw-w64-x86_64-gcc mingw-w64-x86_64-libusb mingw-w64-x86_64-cmake mingw-w64-x86_64-libxml2 mingw-w64-x86_64-pkg-config mingw-w64-x86_64-libzip mingw-w64-x86_64-doxygen"
+    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DCSHARP_BINDINGS:BOOL=OFF -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DPYTHON_BINDINGS:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
 
     # Move the tests folder
     - cd c:\projects\libiio
-    - if "%COMPILER%"=="mingw" (mkdir build-win32\tests\ build-win32\tests\"%configuration%"& copy build-win32\Release\tests\*.exe build-win32\tests\"%configuration%"\)
-    - if "%COMPILER%"=="mingw" (mkdir build-win64\tests\ build-win64\tests\"%configuration%"& copy build-win64\Release\tests\*.exe build-win64\tests\"%configuration%"\)
+    - mkdir build-mingw-win32\tests\ build-mingw-win32\tests\"%configuration%"& copy build-mingw-win32\Release\tests\*.exe build-mingw-win32\tests\"%configuration%"\
+    - mkdir build-mingw-win64\tests\ build-mingw-win64\tests\"%configuration%"& copy build-mingw-win64\Release\tests\*.exe build-mingw-win64\tests\"%configuration%"\
 
-    - if "%COMPILER%"=="msvc" (ISCC %folder-path%\libiio.iss)
-    - if "%COMPILER%"=="msvc" (appveyor PushArtifact C:\libiio-setup.exe)
-
-
-    # Create ZIP packages
-    - if "%COMPILER%"=="msvc" (set ARCHIVE_NAME=libiio-win32)
-    - if "%COMPILER%"=="mingw" (set ARCHIVE_NAME=libiio-%LIBIIO_VERSION%-MinGW-win32)
+    - set PATH=%OLD_PATH%
+    - set GENERATOR=Visual Studio 12
     - cd c:\projects\libiio
-    - mkdir c:\%ARCHIVE_NAME%
-    - copy iio.h c:\%ARCHIVE_NAME%
-    - copy build-win32\Release\libiio.* c:\%ARCHIVE_NAME%\
-    # Remove the iss and pc files
-    - if "%COMPILER%"=="mingw" (del c:\%ARCHIVE_NAME%\libiio.iss)
-    - if "%COMPILER%"=="mingw" (del c:\%ARCHIVE_NAME%\libiio.pc)
-    - copy build-win32\tests\Release\*.exe c:\%ARCHIVE_NAME%\
+    - set folder-path=c:\projects\libiio\build-win32
+     #MSVC 32 bit
+    - echo "Running cmake for Visual Studio 32 bit... "
+    - mkdir build-win32
+    - cd build-win32
+    - set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319"
+    - cmake -G "%GENERATOR%" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..
+    - cmake --build . --config %configuration%
+
+    #MSVC 64 bit
+    - cd c:\projects\libiio
+    - echo "Running cmake for Visual Studio 64 bit... "
+    - mkdir build-win64
+    - cd build-win64
+    - cmake -G "%GENERATOR% Win64" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..
+    - cmake --build . --config %configuration%
+
+    #Create the installer
+    - ISCC %folder-path%\libiio.iss
+    - appveyor PushArtifact C:\libiio-setup.exe
+
+    # Create ZIP package
+     # set LIBIIO_VERSION to current project version determined by cmake
+    - ps: >-
+          Set-AppveyorBuildVariable -Name LIBIIO_VERSION -Value (get-content .version)
+    - set ARCHIVE_NAME=libiio-%LIBIIO_VERSION%
+    - cd c:\projects\libiio
+    - mkdir c:\%ARCHIVE_NAME% c:\%ARCHIVE_NAME%\include c:\%ARCHIVE_NAME%\MS32 c:\%ARCHIVE_NAME%\MS64 c:\%ARCHIVE_NAME%\MinGW32 c:\%ARCHIVE_NAME%\MinGW64
+    - copy iio.h c:\%ARCHIVE_NAME%\include
+    - copy build-win32\Release\libiio.* c:\%ARCHIVE_NAME%\MS32
+    - copy build-win64\Release\libiio.* c:\%ARCHIVE_NAME%\MS64
+    - copy build-mingw-win32\Release\libiio.* c:\%ARCHIVE_NAME%\MinGW32
+    - copy build-mingw-win64\Release\libiio.* c:\%ARCHIVE_NAME%\MinGW64
+    - del c:\%ARCHIVE_NAME%\MinGW32\libiio.iss
+    - del c:\%ARCHIVE_NAME%\MinGW64\libiio.iss
+    - del c:\%ARCHIVE_NAME%\MinGW32\libiio.pc
+    - del c:\%ARCHIVE_NAME%\MinGW64\libiio.pc
+
+    - copy build-win32\tests\Release\*.exe c:\%ARCHIVE_NAME%\MS32
+    - copy build-win64\tests\Release\*.exe c:\%ARCHIVE_NAME%\MS64
+    - copy build-mingw-win32\tests\Release\*.exe c:\%ARCHIVE_NAME%\MinGW32
+    - copy build-mingw-win64\tests\Release\*.exe c:\%ARCHIVE_NAME%\MinGW64
     
     #Copy dependencies for MSVC
-    - if "%COMPILER%"=="msvc" (copy c:\libs\32\libxml2.dll c:\%ARCHIVE_NAME%\)
-    - if "%COMPILER%"=="msvc" (copy c:\libs\32\libusb-1.0.dll c:\%ARCHIVE_NAME%\)
-    - if "%COMPILER%"=="msvc" (copy c:\libs\32\libserialport-0.dll c:\%ARCHIVE_NAME%\)
+    - copy c:\libs\32\libxml2.dll c:\%ARCHIVE_NAME%\MS32
+    - copy c:\libs\64\libxml2.dll c:\%ARCHIVE_NAME%\MS64
+    - copy c:\libs\32\libusb-1.0.dll c:\%ARCHIVE_NAME%\MS32
+    - copy c:\libs\64\libusb-1.0.dll c:\%ARCHIVE_NAME%\MS64
+    - copy c:\libs\32\libserialport-0.dll c:\%ARCHIVE_NAME%\MS32
+    - copy c:\libs\64\libserialport-0.dll c:\%ARCHIVE_NAME%\MS64
     
     #Copy dependencies for MinGW
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw32/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip-*.dll libusb-*.dll /c/%ARCHIVE_NAME%/")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "cd c:/libs/32 ; cp libserialport-*.dll /c/%ARCHIVE_NAME%/")
+    - C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw32/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip-*.dll libusb-*.dll /c/%ARCHIVE_NAME%/MinGW32"
+    - C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw64/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip-*.dll libusb-*.dll /c/%ARCHIVE_NAME%/MinGW64"
+    - C:\msys64\usr\bin\bash -lc "cd c:/libs/32 ; cp libserialport-*.dll /c/%ARCHIVE_NAME%/MinGW32"
+    - C:\msys64\usr\bin\bash -lc "cd c:/libs/64 ; cp libserialport-*.dll /c/%ARCHIVE_NAME%/MinGW64"
     
-    - if "%COMPILER%"=="msvc" (copy "c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x86\Microsoft.VC120.CRT\msvcr120.dll" c:\%ARCHIVE_NAME%\)
-    - xcopy /S bindings\matlab c:\%ARCHIVE_NAME%\matlab\
-    - del c:\%ARCHIVE_NAME%\matlab\CMakeLists.txt
-    - 7z a "c:\%ARCHIVE_NAME%.zip" c:\%ARCHIVE_NAME%
-    - appveyor PushArtifact c:\%ARCHIVE_NAME%.zip
-
-    - if "%COMPILER%"=="msvc" (set ARCHIVE_NAME=libiio-win64)
-    - if "%COMPILER%"=="mingw" (set ARCHIVE_NAME=libiio-%LIBIIO_VERSION%-MinGW-win64)
-    - cd c:\projects\libiio
-    - mkdir c:\%ARCHIVE_NAME%
-    - copy iio.h c:\%ARCHIVE_NAME%\
-    - copy build-win64\Release\libiio.* c:\%ARCHIVE_NAME%\
-    # Remove the iss and pc files
-    - if "%COMPILER%"=="mingw" (del c:\%ARCHIVE_NAME%\libiio.iss)
-    - if "%COMPILER%"=="mingw" (del c:\%ARCHIVE_NAME%\libiio.pc)
-    - copy build-win64\tests\Release\*.exe c:\%ARCHIVE_NAME%\
-
-    #Copy dependencies for MSVC
-    - if "%COMPILER%"=="msvc" (copy c:\libs\64\libxml2.dll c:\%ARCHIVE_NAME%\)
-    - if "%COMPILER%"=="msvc" (copy c:\libs\64\libusb-1.0.dll c:\%ARCHIVE_NAME%\)
-    - if "%COMPILER%"=="msvc" (copy c:\libs\64\libserialport-0.dll c:\%ARCHIVE_NAME%\)
-    #Copy dependencies for MinGW
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw64/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip-*.dll libusb-*.dll /c/%ARCHIVE_NAME%/")
-    - if "%COMPILER%"=="mingw" (C:\msys64\usr\bin\bash -lc "cd c:/libs/64 ; cp libserialport-*.dll /c/%ARCHIVE_NAME%/")
+    - copy "c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x86\Microsoft.VC120.CRT\msvcr120.dll" c:\%ARCHIVE_NAME%\MS32
+    - copy "c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x64\Microsoft.VC120.CRT\msvcr120.dll" c:\%ARCHIVE_NAME%\MS64
+    - xcopy /S bindings\matlab c:\%ARCHIVE_NAME%\MS32\matlab\
+    - xcopy /S bindings\matlab c:\%ARCHIVE_NAME%\MS64\matlab\
+    - xcopy /S bindings\matlab c:\%ARCHIVE_NAME%\MinGW32\matlab\
+    - xcopy /S bindings\matlab c:\%ARCHIVE_NAME%\MinGW64\matlab\
+    - del c:\%ARCHIVE_NAME%\MS32\matlab\CMakeLists.txt
+    - del c:\%ARCHIVE_NAME%\MS64\matlab\CMakeLists.txt
+    - del c:\%ARCHIVE_NAME%\MinGW32\matlab\CMakeLists.txt
+    - del c:\%ARCHIVE_NAME%\MinGW64\matlab\CMakeLists.txt
     
-    - if "%COMPILER%"=="msvc" (copy "c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x64\Microsoft.VC120.CRT\msvcr120.dll" c:\%ARCHIVE_NAME%\)
-    - xcopy /S bindings\matlab c:\%ARCHIVE_NAME%\matlab\
-    - del c:\%ARCHIVE_NAME%\matlab\CMakeLists.txt
     - 7z a "c:\%ARCHIVE_NAME%.zip" c:\%ARCHIVE_NAME%
     - appveyor PushArtifact c:\%ARCHIVE_NAME%.zip
