@@ -275,7 +275,8 @@ __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
 
 void iio_channel_init_finalize(struct iio_channel *chn);
-unsigned int find_channel_modifier(const char *s, size_t *len_p);
+unsigned int find_channel_modifier(const char *s, size_t *offs_p,
+		size_t *len_p);
 
 char *iio_strdup(const char *str);
 
