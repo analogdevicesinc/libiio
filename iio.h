@@ -120,6 +120,11 @@ enum iio_chan_type {
 	IIO_CONCENTRATION,
 	IIO_RESISTANCE,
 	IIO_PH,
+	IIO_UVINDEX,
+	IIO_ELECTRICALCONDUCTIVITY,
+	IIO_COUNT,
+	IIO_INDEX,
+	IIO_GRAVITY,
 	IIO_CHAN_TYPE_UNKNOWN = INT_MAX
 };
 
@@ -167,6 +172,7 @@ enum iio_modifier {
 	IIO_MOD_Q,
 	IIO_MOD_CO2,
 	IIO_MOD_VOC,
+	IIO_MOD_LIGHT_UV,
 };
 
 /* ---------------------------------------------------------------------------*/
