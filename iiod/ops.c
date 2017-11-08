@@ -1248,10 +1248,15 @@ int set_buffers_count(struct parser_pdata *pdata,
 {
 	int ret = -EINVAL;
 
+	if (!dev) {
+		ret = -ENODEV;
+		goto err_print_value;
+	}
+
 	if (value >= 1)
 		ret = iio_device_set_kernel_buffers_count(
 				dev, (unsigned int) value);
-
+err_print_value:
 	print_value(pdata, ret);
 	return ret;
 }
