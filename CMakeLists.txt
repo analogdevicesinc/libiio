@@ -174,18 +174,19 @@ if (LIBSERIALPORT_LIBRARIES AND LIBSERIALPORT_INCLUDE_DIR)
 		file(STRINGS ${LIBSERIALPORT_INCLUDE_DIR}/libserialport.h LIBSERIALPORT_VERSION_STR REGEX "SP_PACKAGE_VERSION_STRING")
 		string(REGEX REPLACE "#define SP_PACKAGE_VERSION_STRING \"(.*)\"" "\\1" LIBSERIALPORT_VERSION ${LIBSERIALPORT_VERSION_STR})
 		if ("${LIBSERIALPORT_VERSION}" VERSION_LESS 0.1.1)
-			message(SEND_ERROR "The installed version of libserialport is too old. The minimum version supported is 0.1.1.")
+			message(WARNING "The installed version of libserialport is too old. The minimum version supported is 0.1.1. Disabling Serial support.")
+			SET(WITH_SERIAL_BACKEND OFF)
+		else()
+			add_definitions(-DSERIAL_BACKEND=1)
+			set(LIBIIO_CFILES ${LIBIIO_CFILES} serial.c)
+			set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBSERIALPORT_LIBRARIES})
+
+			set(NEED_THREADS 1)
+			set(IIOD_CLIENT 1)
+			set(NEED_LIBXML2 1)
+
+			include_directories(${LIBSERIALPORT_INCLUDE_DIR})
 		endif()
-
-		add_definitions(-DSERIAL_BACKEND=1)
-		set(LIBIIO_CFILES ${LIBIIO_CFILES} serial.c)
-		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${LIBSERIALPORT_LIBRARIES})
-
-		set(NEED_THREADS 1)
-		set(IIOD_CLIENT 1)
-		set(NEED_LIBXML2 1)
-
-		include_directories(${LIBSERIALPORT_INCLUDE_DIR})
 	endif()
 endif()
 
