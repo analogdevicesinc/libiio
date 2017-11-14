@@ -97,6 +97,17 @@ deploy:
       repo: analogdevicesinc/libiio
       tags: true
       condition: "($CC = gcc) && ($TRAVIS_OS_NAME = linux)"
+  - provider: releases
+    api_key:
+      secure: Bl7sfWp796+D7cF99+YdmbQjr5stXh4H/4hN2L5FNL0FEHL4XnIscSqySgy2NNmcqWF4Mz5WNXMZ9M8rYSNAiOndcaBYB+xvesAUbIdncwswgTNn2cj6yQbv0yR9qVUdoyczvZMK1vIc6GtKWWkh0AmgR04cAFffU3fr+78JHIw=
+    file:
+      - "${RELEASE_PKG_FILE_PKG}"
+      - "${RELEASE_PKG_FILE_TGZ}"
+    skip_cleanup: true
+    on:
+      repo: analogdevicesinc/libiio
+      tags: true
+      condition: "$TRAVIS_OS_NAME = osx"
   - provider: script
     skip_cleanup: true
     script:

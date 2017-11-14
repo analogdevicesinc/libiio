@@ -27,7 +27,7 @@ check_file()
 temp=""
 for i in $(find ./ -name CMakeCache.txt)
 do
-hit=$(find $(dirname ${i}) -maxdepth 1 -name "libiio*.$1")
+hit=$(find $(dirname ${i}) -maxdepth 1 -name "libiio*.$1" | grep -v -- ${LDIST})
 if [ "$(echo ${hit} | wc -w)" -gt "1"  ] ; then
 	echo "I am confused - more than 2 $1 files!"
 	echo $hit
@@ -50,11 +50,15 @@ done
 check_file deb
 if [ -n "${temp}" ] ; then
 	deploy=$(expr ${deploy} + 1)
-	export TARGET_DEB=$(echo ${temp} | \
-		sed -e 's:^./.*/::' -e 's:.deb$::')${LDIST}.deb
+	if [ -z "${TARGET_DEB}" ] ; then
+		export TARGET_DEB=$(echo ${temp} | \
+			sed -e 's:^./.*/::' -e 's:.deb$::')${LDIST}.deb
+	fi
 	echo "deploying ${temp} to nightly $TARGET_DEB"
-	export RELEASE_PKG_FILE_DEB=$(dirname ${temp})/${TARGET_DEB}
-	cp ${temp} ${RELEASE_PKG_FILE_DEB}
+	if [ -z "${RELEASE_PKG_FILE_DEB}" ] ; then
+		export RELEASE_PKG_FILE_DEB=$(dirname ${temp})/${TARGET_DEB}
+		cp ${temp} ${RELEASE_PKG_FILE_DEB}
+	fi
 	echo ${TARGET_DEB}
 	ls -lh ${temp}
 	echo ${RELEASE_PKG_FILE_DEB}
@@ -66,11 +70,15 @@ fi
 check_file rpm
 if [ -n "${temp}" ] ; then
 	deploy=$(expr ${deploy} + 1)
-	export TARGET_RPM=$(echo ${temp} | \
-		sed -e 's:^./.*/::' -e 's:.rpm$::')${LDIST}.rpm
+	if [ -z "${TARGET_RPM}" ] ; then
+		export TARGET_RPM=$(echo ${temp} | \
+			sed -e 's:^./.*/::' -e 's:.rpm$::')${LDIST}.rpm
+	fi
 	echo "deploying ${temp} to nightly $TARGET_RPM"
-	export RELEASE_PKG_FILE_RPM=$(dirname ${temp})/${TARGET_RPM}
-	cp ${temp}  ${RELEASE_PKG_FILE_RPM}
+	if [ -z "${RELEASE_PKG_FILE_RPM}" ] ; then
+		export RELEASE_PKG_FILE_RPM=$(dirname ${temp})/${TARGET_RPM}
+		cp ${temp}  ${RELEASE_PKG_FILE_RPM}
+	fi
 	echo ${TARGET_RPM}
 	ls -lh ${temp}
 	echo ${RELEASE_PKG_FILE_RPM}
@@ -82,8 +90,9 @@ fi
 check_file tar.gz
 if [  -n "${temp}"  ] ; then
 	deploy=$(expr ${deploy} + 1)
-	# Add the MATLAB bindings into the tar file
-	(
+	if [ -z "${TARGET_TGZ}" ] ; then
+		echo Add the MATLAB bindings into the tar file
+		(
 		cd $(dirname ${temp})
 		if [ -d tarball_fixup ] ; then
 			rm -rf tarball_fixup
@@ -125,13 +134,16 @@ if [  -n "${temp}"  ] ; then
 		else
 			tar -czf ${TRAVIS_BUILD_DIR}/${temp} usr lib
 		fi
-	)
+		)
 
-	export TARGET_TGZ=$(echo ${temp} | \
-		sed -e 's:^./.*/::' -e 's:.tar.gz$::')${LDIST}.tar.gz;
+		export TARGET_TGZ=$(echo ${temp} | \
+			sed -e 's:^./.*/::' -e 's:.tar.gz$::')${LDIST}.tar.gz;
+	fi
 	echo "deploying ${temp} to $TARGET_TGZ"
-	export RELEASE_PKG_FILE_TGZ=$(dirname ${temp})/${TARGET_TGZ}
-	cp ${temp} ${RELEASE_PKG_FILE_TGZ}
+	if [ -z "${RELEASE_PKG_FILE_TGZ}" ] ; then
+		export RELEASE_PKG_FILE_TGZ=$(dirname ${temp})/${TARGET_TGZ}
+		cp ${temp} ${RELEASE_PKG_FILE_TGZ}
+	fi
 	echo ${TARGET_TGZ}
 	ls -lh ${temp}
 	echo ${RELEASE_PKG_FILE_TGZ}
@@ -143,11 +155,15 @@ fi
 check_file pkg
 if [ -n "${temp}" ] ; then
 	deploy=$(expr ${deploy} + 1)
-	export TARGET_PKG=$(echo ${temp} | \
-		sed -e 's:^./.*/::' -e 's:.pkg$::')${LDIST}.pkg
+	if [ -z "${TARGET_PKG}" ] ; then
+		export TARGET_PKG=$(echo ${temp} | \
+			sed -e 's:^./.*/::' -e 's:.pkg$::')${LDIST}.pkg
+	fi
 	echo "deploying ${temp} to nightly $TARGET_PKG"
-	export RELEASE_PKG_FILE_PKG=$(dirname ${temp})/${TARGET_PKG}
-	cp ${temp} ${RELEASE_PKG_FILE_PKG}
+	if [ -z "${RELEASE_PKG_FILE_PKG}" ] ; then
+		export RELEASE_PKG_FILE_PKG=$(dirname ${temp})/${TARGET_PKG}
+		cp ${temp} ${RELEASE_PKG_FILE_PKG}
+	fi
 	echo ${TARGET_PKG}
 	ls -lh ${temp}
 	echo ${RELEASE_PKG_FILE_PKG}
