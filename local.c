@@ -784,6 +784,11 @@ static int enable_high_speed(const struct iio_device *dev)
 		goto err_freemem;
 	}
 
+	if (req.count == 0) {
+		ret = -ENOMEM;
+		goto err_block_free;
+	}
+
 	/* We might get less blocks than what we asked for */
 	pdata->nb_blocks = req.count;
 
@@ -817,6 +822,7 @@ static int enable_high_speed(const struct iio_device *dev)
 err_munmap:
 	for (; i > 0; i--)
 		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
+err_block_free:
 	ioctl_nointr(fd, BLOCK_FREE_IOCTL, 0);
 err_freemem:
 	free(pdata->addrs);
@@ -881,7 +887,12 @@ static int local_open(const struct iio_device *dev,
 	pdata->cyclic_buffer_enqueued = false;
 	pdata->buffer_enabled = false;
 	pdata->samples_count = samples_count;
-	pdata->is_high_speed = !enable_high_speed(dev);
+
+	ret = enable_high_speed(dev);
+	if (ret < 0 && ret != -ENOSYS)
+		goto err_close;
+
+	pdata->is_high_speed = !ret;
 
 	if (!pdata->is_high_speed) {
 		unsigned long size = samples_count * pdata->nb_blocks;
