@@ -36,7 +36,7 @@ matrix:
       os: linux
       dist: precise
       env: LDIST=-precise
-    - compiller: "gcc"
+    - compiler: "gcc"
       os: linux
       dist: trusty
       env: LDIST=-trusty
