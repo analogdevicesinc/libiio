@@ -233,7 +233,7 @@ static struct usb_ffs_header * create_header(
 		unsigned int nb_pipes, uint32_t size)
 {
 	/* Packet sizes for USB high-speed, full-speed, super-speed */
-	const unsigned int packet_sizes[3] = { 64, 512, 512, };
+	const unsigned int packet_sizes[3] = { 64, 512, 1024, };
 	struct usb_ffs_header *hdr;
 	unsigned int i, pipe_id;
 	uintptr_t ptr;
@@ -252,7 +252,7 @@ static struct usb_ffs_header * create_header(
 
 	hdr->nb_fs = htole32(nb_pipes * 2 + 1);
 	hdr->nb_hs = htole32(nb_pipes * 2 + 1);
-	hdr->nb_ss = htole32(nb_pipes * 2 + 1);
+	hdr->nb_ss = htole32(nb_pipes * 4 + 1);
 
 	ptr = ((uintptr_t) hdr) + sizeof(*hdr);
 
@@ -260,6 +260,7 @@ static struct usb_ffs_header * create_header(
 		struct usb_interface_descriptor *desc =
 			(struct usb_interface_descriptor *) ptr;
 		struct usb_endpoint_descriptor_no_audio *ep;
+		struct usb_ss_ep_comp_descriptor *comp;
 
 		desc->bLength = sizeof(*desc);
 		desc->bDescriptorType = USB_DT_INTERFACE;
@@ -278,12 +279,28 @@ static struct usb_ffs_header * create_header(
 			ep->wMaxPacketSize = htole16(packet_sizes[i]);
 			ep++;
 
+			if (i == 2) {
+				comp = (struct usb_ss_ep_comp_descriptor *) ep;
+				comp->bLength = USB_DT_SS_EP_COMP_SIZE;
+				comp->bDescriptorType = USB_DT_SS_ENDPOINT_COMP;
+				comp++;
+				ep = (struct usb_endpoint_descriptor_no_audio *) comp;
+			}
+
 			ep->bLength = sizeof(*ep);
 			ep->bDescriptorType = USB_DT_ENDPOINT;
 			ep->bEndpointAddress = (pipe_id + 1) | USB_DIR_OUT;
 			ep->bmAttributes = USB_ENDPOINT_XFER_BULK;
 			ep->wMaxPacketSize = htole16(packet_sizes[i]);
 			ep++;
+
+			if (i == 2) {
+				comp = (struct usb_ss_ep_comp_descriptor *) ep;
+				comp->bLength = USB_DT_SS_EP_COMP_SIZE;
+				comp->bDescriptorType = USB_DT_SS_ENDPOINT_COMP;
+				comp++;
+				ep = (struct usb_endpoint_descriptor_no_audio *) comp;
+			}
 		}
 
 		ptr += sizeof(*desc) + nb_pipes * 2 * sizeof(*ep);
@@ -296,7 +313,8 @@ static int write_header(int fd, unsigned int nb_pipes)
 {
 	uint32_t size = sizeof(struct usb_ffs_header) +
 		3 * sizeof(struct usb_interface_descriptor) +
-		6 * nb_pipes * sizeof(struct usb_endpoint_descriptor_no_audio);
+		6 * nb_pipes * sizeof(struct usb_endpoint_descriptor_no_audio) +
+		2 * nb_pipes * sizeof(struct usb_ss_ep_comp_descriptor);
 	struct usb_ffs_header *hdr;
 	int ret;
 
