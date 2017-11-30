@@ -405,6 +405,10 @@ void free_device(struct iio_device *dev)
 		free(dev->attrs[i]);
 	if (dev->nb_attrs)
 		free(dev->attrs);
+	for (i = 0; i < dev->nb_buffer_attrs; i++)
+		free(dev->buffer_attrs[i]);
+	if (dev->nb_buffer_attrs)
+		free(dev->buffer_attrs);
 	for (i = 0; i < dev->nb_debug_attrs; i++)
 		free(dev->debug_attrs[i]);
 	if (dev->nb_debug_attrs)

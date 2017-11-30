@@ -187,6 +187,9 @@ struct iio_device {
 	char **attrs;
 	unsigned int nb_attrs;
 
+	char **buffer_attrs;
+	unsigned int nb_buffer_attrs;
+
 	char **debug_attrs;
 	unsigned int nb_debug_attrs;
 
