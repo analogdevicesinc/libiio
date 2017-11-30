@@ -337,23 +337,23 @@ static ssize_t usb_write(const struct iio_device *dev,
 }
 
 static ssize_t usb_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, bool is_debug)
+		const char *attr, char *dst, size_t len, enum iio_attr_type type)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
 	return iiod_client_read_attr(pdata->iiod_client,
 			&pdata->io_ctx, dev, NULL, attr,
-			dst, len, is_debug);
+			dst, len, type);
 }
 
 static ssize_t usb_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, size_t len, bool is_debug)
+		const char *attr, const char *src, size_t len, enum iio_attr_type type)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
 	return iiod_client_write_attr(pdata->iiod_client,
 			&pdata->io_ctx, dev, NULL, attr,
-			src, len, is_debug);
+			src, len, type);
 }
 
 static ssize_t usb_read_chn_attr(const struct iio_channel *chn,

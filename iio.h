@@ -511,6 +511,11 @@ __api __pure unsigned int iio_device_get_channels_count(
 __api __pure unsigned int iio_device_get_attrs_count(
 		const struct iio_device *dev);
 
+/** @brief Enumerate the buffer-specific attributes of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of buffer-specific attributes found */
+__api __pure unsigned int iio_device_get_buffer_attrs_count(
+		const struct iio_device *dev);
 
 /** @brief Get the channel present at the given index
  * @param dev A pointer to an iio_device structure
@@ -529,6 +534,13 @@ __api __pure struct iio_channel * iio_device_get_channel(
 __api __pure const char * iio_device_get_attr(
 		const struct iio_device *dev, unsigned int index);
 
+/** @brief Get the buffer-specific attribute present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the index is invalid, NULL is returned */
+__api __pure const char * iio_device_get_buffer_attr(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Try to find a channel structure by its name of ID
  * @param dev A pointer to an iio_device structure
@@ -556,6 +568,19 @@ __api __pure struct iio_channel * iio_device_find_channel(
 __api __pure const char * iio_device_find_attr(
 		const struct iio_device *dev, const char *name);
 
+/** @brief Try to find a buffer-specific attribute by its name
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the name does not correspond to any known attribute of the given
+ * device, NULL is returned
+ *
+ * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
+ * It can also be used to retrieve the name of an attribute as a pointer to a
+ * static string from a dynamically allocated string. */
+__api __pure const char * iio_device_find_buffer_attr(
+		const struct iio_device *dev, const char *name);
 
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
@@ -711,6 +736,163 @@ __api int iio_device_attr_write_longlong(const struct iio_device *dev,
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 __api int iio_device_attr_write_double(const struct iio_device *dev,
+		const char *attr, double val);
+
+/** @brief Read the content of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param dst A pointer to the memory area where the NULL-terminated string
+ * corresponding to the value read will be stored
+ * @param len The available length of the memory area, in bytes
+ * @return On success, the number of bytes written to the buffer
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to
+ * iio_device_buffer_attr_read, it is now possible to read all of the attributes
+ * of a device.
+ *
+ * The buffer is filled with one block of data per attribute of the buffer,
+ * by the order they appear in the iio_device structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, it corresponds to the errno code that were
+ * returned when reading the attribute; if positive, it corresponds to the
+ * length of the data read. In that case, the rest of the block contains
+ * the data. */
+ __api ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len);
+
+/** @brief Read the content of all buffer-specific attributes
+ * @param dev A pointer to an iio_device structure
+ * @param cb A pointer to a callback function
+ * @param data A pointer that will be passed to the callback function
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This function is especially useful when used with the network
+ * backend, as all the buffer-specific attributes are read in one single
+ * command. */
+__api int iio_device_buffer_attr_read_all(struct iio_device *dev,
+		int (*cb)(struct iio_device *dev, const char *attr,
+			const char *value, size_t len, void *d),
+		void *data);
+
+
+/** @brief Read the content of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param val A pointer to a bool variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_buffer_attr_read_bool(const struct iio_device *dev,
+		const char *attr, bool *val);
+
+
+/** @brief Read the content of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param val A pointer to a long long variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
+		const char *attr, long long *val);
+
+
+/** @brief Read the content of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param val A pointer to a double variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_buffer_attr_read_double(const struct iio_device *dev,
+		const char *attr, double *val);
+
+
+/** @brief Set the value of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param src A NULL-terminated string to set the attribute to
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b>By passing NULL as the "attr" argument to
+ * iio_device_buffer_attr_write, it is now possible to write all of the
+ * attributes of a device.
+ *
+ * The buffer must contain one block of data per attribute of the buffer,
+ * by the order they appear in the iio_device structure.
+ *
+ * The first four bytes of one block correspond to a 32-bit signed value in
+ * network order. If negative, the attribute is not written; if positive,
+ * it corresponds to the length of the data to write. In that case, the rest
+ * of the block must contain the data. */
+__api ssize_t iio_device_buffer_attr_write(const struct iio_device *dev,
+		const char *attr, const char *src);
+
+
+/** @brief Set the value of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param src A pointer to the data to be written
+ * @param len The number of bytes that should be written
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
+__api ssize_t iio_device_buffer_attr_write_raw(const struct iio_device *dev,
+		const char *attr, const void *src, size_t len);
+
+
+/** @brief Set the values of all buffer-specific attributes
+ * @param dev A pointer to an iio_device structure
+ * @param cb A pointer to a callback function
+ * @param data A pointer that will be passed to the callback function
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This function is especially useful when used with the network
+ * backend, as all the buffer-specific attributes are written in one single
+ * command. */
+__api int iio_device_buffer_attr_write_all(struct iio_device *dev,
+		ssize_t (*cb)(struct iio_device *dev,
+			const char *attr, void *buf, size_t len, void *d),
+		void *data);
+
+
+/** @brief Set the value of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param val A bool value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_buffer_attr_write_bool(const struct iio_device *dev,
+		const char *attr, bool val);
+
+
+/** @brief Set the value of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param val A long long value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_buffer_attr_write_longlong(const struct iio_device *dev,
+		const char *attr, long long val);
+
+
+/** @brief Set the value of the given buffer-specific attribute
+ * @param dev A pointer to an iio_device structure
+ * @param attr A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @param val A double value to set the attribute to
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api int iio_device_buffer_attr_write_double(const struct iio_device *dev,
 		const char *attr, double val);
 
 

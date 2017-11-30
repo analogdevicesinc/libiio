@@ -56,11 +56,11 @@
 
 /* Forward declarations */
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, bool is_debug);
+		const char *attr, char *dst, size_t len, enum iio_attr_type type);
 static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, size_t len, bool is_debug);
+		const char *attr, const char *src, size_t len, enum iio_attr_type type);
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len);
 
@@ -513,16 +513,34 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 }
 
 static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
-		char *dst, size_t len, bool is_debug)
+		char *dst, size_t len, enum iio_attr_type type)
 {
-	unsigned int i, nb = is_debug ? dev->nb_debug_attrs : dev->nb_attrs;
-	char **attrs = is_debug ? dev->debug_attrs : dev->attrs;
+	unsigned int i, nb;
+	char **attrs;
 	char *ptr = dst;
+
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			nb =  dev->nb_attrs;
+			attrs = dev->attrs;
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			nb =  dev->nb_debug_attrs;
+			attrs = dev->debug_attrs;
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			nb =  dev->nb_buffer_attrs;
+			attrs = dev->buffer_attrs;
+			break;
+		default:
+			return -EINVAL;
+			break;
+	}
 
 	for (i = 0; len >= 4 && i < nb; i++) {
 		/* Recursive! */
 		ssize_t ret = local_read_dev_attr(dev, attrs[i],
-				ptr + 4, len - 4, is_debug);
+				ptr + 4, len - 4, type);
 		*(uint32_t *) ptr = iio_htobe32(ret);
 
 		/* Align the length to 4 bytes */
@@ -586,11 +604,29 @@ static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
 }
 
 static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
-		const char *src, size_t len, bool is_debug)
+		const char *src, size_t len, enum iio_attr_type type)
 {
-	unsigned int i, nb = is_debug ? dev->nb_debug_attrs : dev->nb_attrs;
-	char **attrs = is_debug ? dev->debug_attrs : dev->attrs;
+	unsigned int i, nb;
+	char **attrs;
 	const char *ptr = src;
+
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			nb =  dev->nb_attrs;
+			attrs = dev->attrs;
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			nb =  dev->nb_debug_attrs;
+			attrs = dev->debug_attrs;
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			nb =  dev->nb_buffer_attrs;
+			attrs = dev->buffer_attrs;
+			break;
+		default:
+			return -EINVAL;
+			break;
+	}
 
 	/* First step: Verify that the buffer is in the correct format */
 	if (local_buffer_analyze(nb, src, len))
@@ -602,7 +638,7 @@ static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 		ptr += 4;
 
 		if (val > 0) {
-			local_write_dev_attr(dev, attrs[i], ptr, val, is_debug);
+			local_write_dev_attr(dev, attrs[i], ptr, val, type);
 
 			/* Align the length to 4 bytes */
 			if (val & 3)
@@ -643,21 +679,30 @@ static ssize_t local_write_all_chn_attrs(const struct iio_channel *chn,
 }
 
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, bool is_debug)
+		const char *attr, char *dst, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 
 	if (!attr)
-		return local_read_all_dev_attrs(dev, dst, len, is_debug);
+		return local_read_all_dev_attrs(dev, dst, len, type);
 
-	if (is_debug) {
-		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-				dev->id, attr);
-	} else {
-		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-				dev->id, attr);
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+					dev->id, attr);
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
+					dev->id, attr);
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s",
+					dev->id, attr);
+			break;
+		default:
+			return -EINVAL;
 	}
 
 	f = fopen(buf, "re");
@@ -675,21 +720,30 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, size_t len, bool is_debug)
+		const char *attr, const char *src, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
 
 	if (!attr)
-		return local_write_all_dev_attrs(dev, src, len, is_debug);
+		return local_write_all_dev_attrs(dev, src, len, type);
 
-	if (is_debug) {
-		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-				dev->id, attr);
-	} else {
-		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-				dev->id, attr);
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+					dev->id, attr);
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
+					dev->id, attr);
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s",
+					dev->id, attr);
+			break;
+		default:
+			return -EINVAL;
 	}
 
 	f = fopen(buf, "we");

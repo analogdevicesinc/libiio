@@ -333,7 +333,7 @@ static int iiod_client_discard(struct iiod_client *client, void *desc,
 
 ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
-		const char *attr, char *dest, size_t len, bool is_debug)
+		const char *attr, char *dest, size_t len, enum iio_attr_type type)
 {
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
@@ -343,12 +343,23 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		if (chn) {
 			if (!iio_channel_find_attr(chn, attr))
 				return -ENOENT;
-		} else if (is_debug) {
-			if (!iio_device_find_debug_attr(dev, attr))
-				return -ENOENT;
 		} else {
-			if (!iio_device_find_attr(dev, attr))
-				return -ENOENT;
+			switch (type) {
+				case IIO_ATTR_TYPE_DEVICE:
+					if (!iio_device_find_attr(dev, attr))
+						return -ENOENT;
+					break;
+				case IIO_ATTR_TYPE_DEBUG:
+					if (!iio_device_find_debug_attr(dev, attr))
+						return -ENOENT;
+					break;
+				case IIO_ATTR_TYPE_BUFFER:
+					if (!iio_device_find_buffer_attr(dev, attr))
+						return -ENOENT;
+					break;
+				default:
+					return -EINVAL;
+			}
 		}
 	}
 
@@ -356,12 +367,21 @@ ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		iio_snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
 				iio_channel_is_output(chn) ? "OUTPUT" : "INPUT",
 				iio_channel_get_id(chn), attr ? attr : "");
-	} else if (is_debug) {
-		iio_snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
-				id, attr ? attr : "");
 	} else {
-		iio_snprintf(buf, sizeof(buf), "READ %s %s\r\n",
-				id, attr ? attr : "");
+		switch (type) {
+			case IIO_ATTR_TYPE_DEVICE:
+				iio_snprintf(buf, sizeof(buf), "READ %s %s\r\n",
+						id, attr ? attr : "");
+				break;
+			case IIO_ATTR_TYPE_DEBUG:
+				iio_snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
+						id, attr ? attr : "");
+				break;
+			case IIO_ATTR_TYPE_BUFFER:
+				iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n",
+						id, attr ? attr : "");
+				break;
+		}
 	}
 
 	iio_mutex_lock(client->lock);
@@ -394,7 +414,7 @@ out_unlock:
 
 ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len, bool is_debug)
+		const char *attr, const char *src, size_t len, enum iio_attr_type type)
 {
 	struct iio_context_pdata *pdata = client->pdata;
 	const struct iiod_client_ops *ops = client->ops;
@@ -407,12 +427,23 @@ ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 		if (chn) {
 			if (!iio_channel_find_attr(chn, attr))
 				return -ENOENT;
-		} else if (is_debug) {
-			if (!iio_device_find_debug_attr(dev, attr))
-				return -ENOENT;
 		} else {
-			if (!iio_device_find_attr(dev, attr))
-				return -ENOENT;
+			switch (type) {
+				case IIO_ATTR_TYPE_DEVICE:
+					if (!iio_device_find_attr(dev, attr))
+						return -ENOENT;
+					break;
+				case IIO_ATTR_TYPE_DEBUG:
+					if (!iio_device_find_debug_attr(dev, attr))
+						return -ENOENT;
+					break;
+				case IIO_ATTR_TYPE_BUFFER:
+					if (!iio_device_find_buffer_attr(dev, attr))
+						return -ENOENT;
+					break;
+				default:
+					return -EINVAL;
+			}
 		}
 	}
 
@@ -421,12 +452,21 @@ ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 				iio_channel_is_output(chn) ? "OUTPUT" : "INPUT",
 				iio_channel_get_id(chn), attr ? attr : "",
 				(unsigned long) len);
-	} else if (is_debug) {
-		iio_snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
-				id, attr ? attr : "", (unsigned long) len);
 	} else {
-		iio_snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
-				id, attr ? attr : "", (unsigned long) len);
+		switch (type) {
+			case IIO_ATTR_TYPE_DEVICE:
+				iio_snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
+						id, attr ? attr : "", (unsigned long) len);
+				break;
+			case IIO_ATTR_TYPE_DEBUG:
+				iio_snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
+						id, attr ? attr : "", (unsigned long) len);
+				break;
+			case IIO_ATTR_TYPE_BUFFER:
+				iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n",
+						id, attr ? attr : "", (unsigned long) len);
+				break;
+		}
 	}
 
 	iio_mutex_lock(client->lock);

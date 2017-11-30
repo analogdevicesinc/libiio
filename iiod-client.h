@@ -19,7 +19,7 @@
 #ifndef _IIOD_CLIENT_H
 #define _IIOD_CLIENT_H
 
-#include "iio.h"
+#include "iio-private.h"
 
 struct iio_mutex;
 struct iiod_client;
@@ -51,10 +51,10 @@ int iiod_client_set_timeout(struct iiod_client *client,
 		void *desc, unsigned int timeout);
 ssize_t iiod_client_read_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
-		const char *attr, char *dest, size_t len, bool is_debug);
+		const char *attr, char *dest, size_t len, enum iio_attr_type type);
 ssize_t iiod_client_write_attr(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len, bool is_debug);
+		const char *attr, const char *src, size_t len, enum iio_attr_type type);
 int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
 		const struct iio_device *dev, size_t samples_count,
 		bool cyclic);
