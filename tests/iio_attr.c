@@ -179,6 +179,44 @@ static void dump_device_attributes(const struct iio_device *dev,
 	}
 }
 
+static void dump_buffer_attributes(const struct iio_device *dev,
+				  const char *attr, const char *wbuf, bool quiet)
+{
+	ssize_t ret;
+	char buf[1024];
+
+	if (!wbuf || !quiet) {
+		ret = iio_device_buffer_attr_read(dev, attr, buf, sizeof(buf));
+
+		if (!quiet)
+			printf("dev '%s', buffer attr '%s', value :",
+					iio_device_get_name(dev), attr);
+
+		if (ret > 0) {
+			if (quiet)
+				printf("%s\n", buf);
+			else
+				printf("'%s'\n", buf);
+		} else {
+			iio_strerror(-ret, buf, sizeof(buf));
+			printf("ERROR: %s (%li)\n", buf, (long)ret);
+		}
+	}
+
+	if (wbuf) {
+		ret = iio_device_buffer_attr_write(dev, attr, wbuf);
+		if (ret > 0) {
+			if (!quiet)
+				printf("wrote %li bytes to %s\n", (long)ret, attr);
+		} else {
+			iio_strerror(-ret, buf, sizeof(buf));
+			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
+					buf, (long)ret, attr, wbuf);
+		}
+		dump_buffer_attributes(dev, attr, NULL, quiet);
+	}
+}
+
 static void dump_debug_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
@@ -282,6 +320,7 @@ static const struct option options[] = {
 	{"device-attr", no_argument, 0, 'd'},
 	{"channel-attr", no_argument, 0, 'c'},
 	{"context-attr", no_argument, 0, 'C'},
+	{"buffer-attr", no_argument, 0, 'B'},
 	{"debug-attr", no_argument, 0, 'D'},
 	{0, 0, 0, 0},
 };
@@ -302,6 +341,7 @@ static const char *options_descriptions[] = {
 	"Read/Write device attributes",
 	"Read/Write channel attributes.",
 	"Read IIO context attributes.",
+	"Read/Write buffer attributes.",
 	"Read/Write debug attributes.",
 };
 
@@ -311,6 +351,7 @@ static void usage(void)
 
 	printf("Usage:\n\t" MY_NAME " [OPTION]...\t-d [device] [attr] [value]\n"
 		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
+		"\t\t\t\t-B [device] [attr] [value]\n"
 		"\t\t\t\t-D [device] [attr] [value]\n"
 		"\t\t\t\t-C [attr]\nOptions:\n");
 	for (i = 0; options[i].name; i++) {
@@ -338,13 +379,13 @@ int main(int argc, char **argv)
 	    device_index = 0, channel_index = 0, attr_index = 0;
 	enum backend backend = LOCAL;
 	bool detect_context = false, search_device = false, ignore_case = false,
-	     search_channel = false, search_debug = false, search_context = false,
-	     input_only = false, output_only = false, scan_only = false,
-	     quiet = false;
+		search_channel = false, search_buffer = false, search_debug = false,
+		search_context = false, input_only = false, output_only = false,
+		scan_only = false, quiet = false;
 	unsigned int i;
 	char *wbuf = NULL;
 
-	while ((c = getopt_long(argc, argv, "+hau:CdcDiosIq",
+	while ((c = getopt_long(argc, argv, "+hau:CdcBDiosIq",
 					options, &option_index)) != -1) {
 		switch (c) {
 		/* help */
@@ -362,7 +403,7 @@ int main(int argc, char **argv)
 			uri_index = arg_index;
 			break;
 		/* Attribute type
-		 * 'd'evice, 'c'hannel, 'C'ontext, or 'D'ebug
+		 * 'd'evice, 'c'hannel, 'C'ontext, 'B'uffer or 'D'ebug
 		 */
 		case 'd':
 			arg_index += 1;
@@ -371,6 +412,10 @@ int main(int argc, char **argv)
 		case 'c':
 			arg_index += 1;
 			search_channel = true;
+			break;
+		case 'B':
+			arg_index +=1;
+			search_buffer = true;
 			break;
 		case 'D':
 			arg_index +=1;
@@ -408,18 +453,18 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if ((search_device + search_channel + search_context + search_debug) >= 2 ) {
-		fprintf(stderr, "The options -d, -c, -C and -D are exclusive"
+	if ((search_device + search_channel + search_context + search_debug + search_buffer) >= 2 ) {
+		fprintf(stderr, "The options -d, -c, -C, -B, and -D are exclusive"
 				" (can use only one).\n");
 		return EXIT_FAILURE;
 	}
 
-	if (!(search_device + search_channel + search_context + search_debug)) {
+	if (!(search_device + search_channel + search_context + search_debug + search_buffer)) {
 		if (argc == 1) {
 			usage();
 			return EXIT_SUCCESS;
 		}
-		fprintf(stderr, "must specify one of -d, -c, -C or -D.\n");
+		fprintf(stderr, "must specify one of -d, -c, -C, -B or -D.\n");
 		return EXIT_FAILURE;
 	}
 
@@ -455,6 +500,18 @@ int main(int argc, char **argv)
 			wbuf = argv[arg_index + 4];
 		if (argc >= arg_index + 6) {
 			fprintf(stderr, "Too many options for searching for channel attributes\n");
+			return EXIT_FAILURE;
+		}
+	} else if (search_buffer) {
+		/* -B [device] [attribute] [value] */
+		if (argc >= arg_index + 2)
+			device_index = arg_index + 1;
+		if (argc >= arg_index + 3)
+			attr_index = arg_index + 2;
+		if (argc >= arg_index + 4)
+			wbuf = argv[arg_index + 3];
+		if (argc >= arg_index + 5) {
+			fprintf(stderr, "Too many options for searching for buffer attributes\n");
 			return EXIT_FAILURE;
 		}
 	} else if (search_debug) {
@@ -526,7 +583,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (search_device || search_channel || search_debug) {
+	if (search_device || search_channel || search_buffer || search_debug) {
 		unsigned int nb_devices = iio_context_get_devices_count(ctx);
 
 		if (!device_index)
@@ -542,7 +599,7 @@ int main(int argc, char **argv)
 				continue;
 
 			if ((search_device && !device_index) || (search_channel && !device_index) ||
-					(search_debug && !device_index)) {
+					(search_buffer && !device_index) || (search_debug && !device_index)) {
 				printf("\t%s:", iio_device_get_id(dev));
 				if (name)
 					printf(" %s", name);
@@ -660,6 +717,25 @@ int main(int argc, char **argv)
 					dump_device_attributes(dev, attr, wbuf,
 							       attr_index ? quiet : false);
 				}
+			}
+
+			nb_attrs = iio_device_get_buffer_attrs_count(dev);
+
+			if (search_buffer && !device_index)
+				printf("found %u buffer attributes\n", nb_attrs);
+
+			if (search_buffer && device_index && nb_attrs) {
+				unsigned int j;
+
+				for (j = 0; j < nb_attrs; j++) {
+					const char *attr = iio_device_get_buffer_attr(dev, j);
+
+					if ((attr_index && str_match(attr, argv[attr_index],
+								ignore_case)) || !attr_index)
+						dump_buffer_attributes(dev, attr, wbuf,
+									  attr_index ? quiet : false);
+				}
+
 			}
 
 			nb_attrs = iio_device_get_debug_attrs_count(dev);
