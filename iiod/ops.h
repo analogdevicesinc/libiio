@@ -19,7 +19,7 @@
 #ifndef __OPS_H__
 #define __OPS_H__
 
-#include "../iio.h"
+#include "../iio-private.h"
 #include "queue.h"
 
 #include <endian.h>
@@ -89,9 +89,9 @@ ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		unsigned int nb, bool is_write);
 
 ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, bool is_debug);
+		const char *attr, enum iio_attr_type type);
 ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, size_t len, bool is_debug);
+		const char *attr, size_t len, enum iio_attr_type type);
 
 ssize_t read_chn_attr(struct parser_pdata *pdata, struct iio_channel *chn,
 		const char *attr);
