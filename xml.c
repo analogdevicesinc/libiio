@@ -69,7 +69,7 @@ err_free:
 	return -1;
 }
 
-static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
+static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
 {
 	xmlAttr *attr;
 	char **attrs, *name = NULL;
@@ -88,22 +88,41 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, bool is_debug)
 		goto err_free;
 	}
 
-	if (is_debug)
-		attrs = realloc(dev->debug_attrs,
-				(1 + dev->nb_debug_attrs) * sizeof(char *));
-	else
-		attrs = realloc(dev->attrs,
-				(1 + dev->nb_attrs) * sizeof(char *));
+	switch(type) {
+		case IIO_ATTR_TYPE_DEBUG:
+			attrs = realloc(dev->debug_attrs,
+					(1 + dev->nb_debug_attrs) * sizeof(char *));
+			break;
+		case IIO_ATTR_TYPE_DEVICE:
+			attrs = realloc(dev->attrs,
+					(1 + dev->nb_attrs) * sizeof(char *));
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			attrs = realloc(dev->buffer_attrs,
+					(1 + dev->nb_buffer_attrs) * sizeof(char *));
+			break;
+		default:
+			attrs = NULL;
+			break;
+	}
 	if (!attrs)
 		goto err_free;
 
-	if (is_debug) {
-		attrs[dev->nb_debug_attrs++] = name;
-		dev->debug_attrs = attrs;
-	} else {
-		attrs[dev->nb_attrs++] = name;
-		dev->attrs = attrs;
+	switch(type) {
+		case IIO_ATTR_TYPE_DEBUG:
+			attrs[dev->nb_debug_attrs++] = name;
+			dev->debug_attrs = attrs;
+			break;
+		case IIO_ATTR_TYPE_DEVICE:
+			attrs[dev->nb_attrs++] = name;
+			dev->attrs = attrs;
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			attrs[dev->nb_buffer_attrs++] = name;
+			dev->buffer_attrs = attrs;
+			break;
 	}
+
 	return 0;
 
 err_free:
@@ -254,10 +273,13 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			chns[dev->nb_channels++] = chn;
 			dev->channels = chns;
 		} else if (!strcmp((char *) n->name, "attribute")) {
-			if (add_attr_to_device(dev, n, false) < 0)
+			if (add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE) < 0)
 				goto err_free_device;
 		} else if (!strcmp((char *) n->name, "debug-attribute")) {
-			if (add_attr_to_device(dev, n, true) < 0)
+			if (add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG) < 0)
+				goto err_free_device;
+		} else if (!strcmp((char *) n->name, "buffer-attribute")) {
+			if (add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER) < 0)
 				goto err_free_device;
 		} else if (strcmp((char *) n->name, "text")) {
 			WARNING("Unknown children \'%s\' in <device>\n",
