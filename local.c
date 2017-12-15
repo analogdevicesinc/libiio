@@ -88,7 +88,9 @@ struct iio_context_pdata {
 struct iio_device_pdata {
 	int fd;
 	bool blocking;
-	unsigned int samples_count, nb_blocks;
+	unsigned int samples_count;
+	unsigned int max_nb_blocks;
+	unsigned int allocated_nb_blocks;
 
 	struct block *blocks;
 	void **addrs;
@@ -428,7 +430,7 @@ static int local_set_kernel_buffers_count(const struct iio_device *dev,
 	if (pdata->fd != -1)
 		return -EBUSY;
 
-	pdata->nb_blocks = nb_blocks;
+	pdata->max_nb_blocks = nb_blocks;
 
 	return 0;
 }
@@ -749,23 +751,24 @@ static int enable_high_speed(const struct iio_device *dev)
 {
 	struct block_alloc_req req;
 	struct iio_device_pdata *pdata = dev->pdata;
+	unsigned int nb_blocks;
 	unsigned int i;
 	int ret, fd = pdata->fd;
 
+
 	if (pdata->cyclic) {
-		pdata->nb_blocks = 1;
+		nb_blocks = 1;
 		DEBUG("Enabling cyclic mode\n");
 	} else {
+		nb_blocks = pdata->max_nb_blocks;
 		DEBUG("Cyclic mode not enabled\n");
 	}
 
-	pdata->blocks = calloc(pdata->nb_blocks, sizeof(*pdata->blocks));
-	if (!pdata->blocks) {
-		pdata->nb_blocks = 0;
+	pdata->blocks = calloc(nb_blocks, sizeof(*pdata->blocks));
+	if (!pdata->blocks)
 		return -ENOMEM;
-	}
 
-	pdata->addrs = calloc(pdata->nb_blocks, sizeof(*pdata->addrs));
+	pdata->addrs = calloc(nb_blocks, sizeof(*pdata->addrs));
 	if (!pdata->addrs) {
 		free(pdata->blocks);
 		pdata->blocks = NULL;
@@ -776,7 +779,7 @@ static int enable_high_speed(const struct iio_device *dev)
 	req.type = 0;
 	req.size = pdata->samples_count *
 		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
-	req.count = pdata->nb_blocks;
+	req.count = nb_blocks;
 
 	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
 	if (ret < 0) {
@@ -784,11 +787,16 @@ static int enable_high_speed(const struct iio_device *dev)
 		goto err_freemem;
 	}
 
+	if (req.count == 0) {
+		ret = -ENOMEM;
+		goto err_block_free;
+	}
+
 	/* We might get less blocks than what we asked for */
-	pdata->nb_blocks = req.count;
+	pdata->allocated_nb_blocks = req.count;
 
 	/* mmap all the blocks */
-	for (i = 0; i < pdata->nb_blocks; i++) {
+	for (i = 0; i < pdata->allocated_nb_blocks; i++) {
 		pdata->blocks[i].id = i;
 		ret = ioctl_nointr(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
 		if (ret) {
@@ -817,7 +825,9 @@ static int enable_high_speed(const struct iio_device *dev)
 err_munmap:
 	for (; i > 0; i--)
 		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
+err_block_free:
 	ioctl_nointr(fd, BLOCK_FREE_IOCTL, 0);
+	pdata->allocated_nb_blocks = 0;
 err_freemem:
 	free(pdata->addrs);
 	pdata->addrs = NULL;
@@ -881,10 +891,15 @@ static int local_open(const struct iio_device *dev,
 	pdata->cyclic_buffer_enqueued = false;
 	pdata->buffer_enabled = false;
 	pdata->samples_count = samples_count;
-	pdata->is_high_speed = !enable_high_speed(dev);
+
+	ret = enable_high_speed(dev);
+	if (ret < 0 && ret != -ENOSYS)
+		goto err_close;
+
+	pdata->is_high_speed = !ret;
 
 	if (!pdata->is_high_speed) {
-		unsigned long size = samples_count * pdata->nb_blocks;
+		unsigned long size = samples_count * pdata->max_nb_blocks;
 		WARNING("High-speed mode not enabled\n");
 
 		/* Cyclic mode is only supported in high-speed mode */
@@ -928,9 +943,10 @@ static int local_close(const struct iio_device *dev)
 
 	if (pdata->is_high_speed) {
 		unsigned int i;
-		for (i = 0; i < pdata->nb_blocks; i++)
+		for (i = 0; i < pdata->allocated_nb_blocks; i++)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
 		ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
 		pdata->addrs = NULL;
 		free(pdata->blocks);
@@ -1601,7 +1617,7 @@ static int create_device(void *d, const char *path)
 
 	dev->pdata->fd = -1;
 	dev->pdata->blocking = true;
-	dev->pdata->nb_blocks = NB_BLOCKS;
+	dev->pdata->max_nb_blocks = NB_BLOCKS;
 
 	dev->ctx = ctx;
 	dev->id = iio_strdup(strrchr(path, '/') + 1);
