@@ -89,6 +89,12 @@ static inline void *zalloc(size_t size)
 	return calloc(1, size);
 }
 
+enum iio_attr_type {
+	IIO_ATTR_TYPE_DEVICE = 0,
+	IIO_ATTR_TYPE_DEBUG,
+	IIO_ATTR_TYPE_BUFFER,
+};
+
 struct iio_backend_ops {
 	struct iio_context * (*clone)(const struct iio_context *ctx);
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
@@ -110,10 +116,10 @@ struct iio_backend_ops {
 			uint32_t *mask, size_t words);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
-			const char *attr, char *dst, size_t len, bool is_debug);
+			const char *attr, char *dst, size_t len, enum iio_attr_type);
 	ssize_t (*write_device_attr)(const struct iio_device *dev,
 			const char *attr, const char *src,
-			size_t len, bool is_debug);
+			size_t len, enum iio_attr_type);
 	ssize_t (*read_channel_attr)(const struct iio_channel *chn,
 			const char *attr, char *dst, size_t len);
 	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
@@ -186,6 +192,9 @@ struct iio_device {
 
 	char **attrs;
 	unsigned int nb_attrs;
+
+	char **buffer_attrs;
+	unsigned int nb_buffer_attrs;
 
 	char **debug_attrs;
 	unsigned int nb_debug_attrs;

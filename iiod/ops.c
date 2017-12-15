@@ -1088,24 +1088,35 @@ ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
 }
 
 ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, bool is_debug)
+		const char *attr, enum iio_attr_type type)
 {
 	/* We use a very large buffer here, as if attr is NULL all the
 	 * attributes will be read, which may represents a few kilobytes worth
 	 * of data. */
 	char buf[0x10000];
-	ssize_t ret;
+	ssize_t ret = -EINVAL;
 
 	if (!dev) {
 		print_value(pdata, -ENODEV);
 		return -ENODEV;
 	}
 
-	if (is_debug)
-		ret = iio_device_debug_attr_read(dev,
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			ret = iio_device_attr_read(dev, attr, buf, sizeof(buf) - 1);
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			ret = iio_device_debug_attr_read(dev,
 				attr, buf, sizeof(buf) - 1);
-	else
-		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf) - 1);
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			ret = iio_device_buffer_attr_read(dev,
+							attr, buf, sizeof(buf) - 1);
+			break;
+		default:
+			ret = -EINVAL;
+			break;
+	}
 	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
@@ -1115,7 +1126,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 }
 
 ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, size_t len, bool is_debug)
+		const char *attr, size_t len, enum iio_attr_type type)
 {
 	ssize_t ret = -ENOMEM;
 	char *buf;
@@ -1133,10 +1144,20 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 	if (ret < 0)
 		goto err_free_buffer;
 
-	if (is_debug)
-		ret = iio_device_debug_attr_write_raw(dev, attr, buf, len);
-	else
-		ret = iio_device_attr_write_raw(dev, attr, buf, len);
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			ret = iio_device_attr_write_raw(dev, attr, buf, len);
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			ret = iio_device_debug_attr_write_raw(dev, attr, buf, len);
+			break;
+		case IIO_ATTR_TYPE_BUFFER:
+			ret = iio_device_buffer_attr_write_raw(dev, attr, buf, len);
+			break;
+		default:
+			ret = -EINVAL;
+			break;
+	}
 
 err_free_buffer:
 	free(buf);

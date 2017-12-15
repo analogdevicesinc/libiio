@@ -393,6 +393,28 @@ int main(int argc, char **argv)
 			}
 		}
 
+		nb_attrs = iio_device_get_buffer_attrs_count(dev);
+		if (nb_attrs) {
+			printf("\t\t%u buffer-specific attributes found:\n",
+					nb_attrs);
+			for (j = 0; j < nb_attrs; j++) {
+				const char *attr = iio_device_get_buffer_attr(dev, j);
+				char buf[1024];
+				ret = (int) iio_device_buffer_attr_read(dev,
+						attr, buf, sizeof(buf));
+
+				printf("\t\t\t\tattr %2u: %s ",
+						j, attr);
+
+				if (ret > 0) {
+					printf("value: %s\n", buf);
+				} else {
+					iio_strerror(-ret, buf, sizeof(buf));
+					printf("ERROR: %s (%i)\n", buf, ret);
+				}
+			}
+		}
+
 		nb_attrs = iio_device_get_debug_attrs_count(dev);
 		if (nb_attrs) {
 			printf("\t\t%u debug attributes found:\n", nb_attrs);

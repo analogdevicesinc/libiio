@@ -84,6 +84,7 @@ ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size);
 %token GETTRIG
 %token TIMEOUT
 %token DEBUG_ATTR
+%token BUFFER_ATTR
 %token IN_OUT
 %token CYCLIC
 %token SET
@@ -125,9 +126,9 @@ Line:
 		"\t\tOpen the specified device with the given mask of channels\n"
 		"\tCLOSE <device>\n"
 		"\t\tClose the specified device\n"
-		"\tREAD <device> DEBUG|[INPUT|OUTPUT <channel>] [<attribute>]\n"
+		"\tREAD <device> DEBUG|BUFFER|[INPUT|OUTPUT <channel>] [<attribute>]\n"
 		"\t\tRead the value of an attribute\n"
-		"\tWRITE <device> DEBUG|[INPUT|OUTPUT <channel>] [<attribute>] <bytes_count>\n"
+		"\tWRITE <device> DEBUG|BUFFER|[INPUT|OUTPUT <channel>] [<attribute>] <bytes_count>\n"
 		"\t\tSet the value of an attribute\n"
 		"\tREADBUF <device> <bytes_count>\n"
 		"\t\tRead raw data from the specified device\n"
@@ -206,7 +207,7 @@ Line:
 	}
 	| READ SPACE DEVICE END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		if (read_dev_attr(pdata, $3, NULL, false) < 0)
+		if (read_dev_attr(pdata, $3, NULL, IIO_ATTR_TYPE_DEVICE) < 0)
 			YYABORT;
 		else
 			YYACCEPT;
@@ -214,7 +215,7 @@ Line:
 	| READ SPACE DEVICE SPACE WORD END {
 		char *attr = $5;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev_attr(pdata, $3, attr, false);
+		ssize_t ret = read_dev_attr(pdata, $3, attr, IIO_ATTR_TYPE_DEVICE);
 		free(attr);
 		if (ret < 0)
 			YYABORT;
@@ -223,7 +224,7 @@ Line:
 	}
 	| READ SPACE DEVICE SPACE DEBUG_ATTR END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		if (read_dev_attr(pdata, $3, NULL, true) < 0)
+		if (read_dev_attr(pdata, $3, NULL, IIO_ATTR_TYPE_DEBUG) < 0)
 			YYABORT;
 		else
 			YYACCEPT;
@@ -231,7 +232,24 @@ Line:
 	| READ SPACE DEVICE SPACE DEBUG_ATTR SPACE WORD END {
 		char *attr = $7;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = read_dev_attr(pdata, $3, attr, true);
+		ssize_t ret = read_dev_attr(pdata, $3, attr, IIO_ATTR_TYPE_DEBUG);
+		free(attr);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| READ SPACE DEVICE SPACE BUFFER_ATTR END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		if (read_dev_attr(pdata, $3, NULL, IIO_ATTR_TYPE_BUFFER) < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| READ SPACE DEVICE SPACE BUFFER_ATTR SPACE WORD END {
+		char *attr = $7;
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = read_dev_attr(pdata, $3, attr, IIO_ATTR_TYPE_BUFFER);
 		free(attr);
 		if (ret < 0)
 			YYABORT;
@@ -285,7 +303,7 @@ Line:
 		char *len = $5;
 		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, false);
+		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, IIO_ATTR_TYPE_DEVICE);
 		free(len);
 		if (ret < 0)
 			YYABORT;
@@ -296,7 +314,7 @@ Line:
 		char *attr = $5, *len = $7;
 		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, false);
+		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, IIO_ATTR_TYPE_DEVICE);
 		free(attr);
 		free(len);
 		if (ret < 0)
@@ -308,7 +326,7 @@ Line:
 		char *len = $7;
 		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, true);
+		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, IIO_ATTR_TYPE_DEBUG);
 		free(len);
 		if (ret < 0)
 			YYABORT;
@@ -319,7 +337,30 @@ Line:
 		char *attr = $7, *len = $9;
 		unsigned long nb = atol(len);
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, true);
+		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, IIO_ATTR_TYPE_DEBUG);
+		free(attr);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| WRITE SPACE DEVICE SPACE BUFFER_ATTR SPACE WORD END {
+		char *len = $7;
+		unsigned long nb = atol(len);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = write_dev_attr(pdata, $3, NULL, nb, IIO_ATTR_TYPE_BUFFER);
+		free(len);
+		if (ret < 0)
+			YYABORT;
+		else
+			YYACCEPT;
+	}
+	| WRITE SPACE DEVICE SPACE BUFFER_ATTR SPACE WORD SPACE WORD END {
+		char *attr = $7, *len = $9;
+		unsigned long nb = atol(len);
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		ssize_t ret = write_dev_attr(pdata, $3, attr, nb, IIO_ATTR_TYPE_BUFFER);
 		free(attr);
 		free(len);
 		if (ret < 0)
