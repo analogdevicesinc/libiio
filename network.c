@@ -408,9 +408,11 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
 				nanosleep(&ts, NULL);
 			}
 		}
-	case AVAHI_BROWSER_FAILURE: /* fall-through */
+		/* fall-through */
+	case AVAHI_BROWSER_FAILURE:
 		avahi_simple_poll_quit(ddata->poll);
-	case AVAHI_BROWSER_CACHE_EXHAUSTED: /* fall-through */
+		/* fall-through */
+	case AVAHI_BROWSER_CACHE_EXHAUSTED:
 		break;
 	}
 }
