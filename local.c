@@ -482,6 +482,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 			*addr_ptr = pdata->addrs[pdata->last_dequeued];
 			return (ssize_t) last_block->bytes_used;
 		}
+
+		pdata->last_dequeued = -1;
 	}
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
