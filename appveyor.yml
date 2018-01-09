@@ -132,5 +132,6 @@ build_script:
     - del c:\%ARCHIVE_NAME%\MinGW32\matlab\CMakeLists.txt
     - del c:\%ARCHIVE_NAME%\MinGW64\matlab\CMakeLists.txt
     
+    - copy c:\projects\libiio\CI\travis\zip.txt c:\%ARCHIVE_NAME%\README.txt
     - 7z a "c:\libiio.zip" c:\%ARCHIVE_NAME%
     - appveyor PushArtifact c:\libiio.zip
