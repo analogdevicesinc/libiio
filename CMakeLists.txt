@@ -303,8 +303,9 @@ if(WITH_TESTS)
 	add_subdirectory(tests)
 endif()
 
-add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS})
-set_target_properties(iio PROPERTIES
+add_library(iio SHARED ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS})
+add_library(iio-static STATIC ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS})
+set_target_properties(iio iio-static PROPERTIES
 	VERSION ${VERSION}
 	SOVERSION ${LIBIIO_VERSION_MAJOR}
 	FRAMEWORK TRUE
@@ -314,13 +315,15 @@ set_target_properties(iio PROPERTIES
 	C_EXTENSIONS OFF
 )
 target_link_libraries(iio LINK_PRIVATE ${LIBS_TO_LINK})
+target_link_libraries(iio-static LINK_PRIVATE ${LIBS_TO_LINK})
+set_target_properties(iio-static PROPERTIES OUTPUT_NAME iio)
 
 if (MSVC)
 	set_target_properties(iio PROPERTIES OUTPUT_NAME libiio)
 endif()
 
 if(NOT SKIP_INSTALL_ALL)
-	install(TARGETS iio
+	install(TARGETS iio iio-static
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
