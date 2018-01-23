@@ -43,7 +43,7 @@
 #include <netinet/tcp.h>
 #include <net/if.h>
 #include <sys/mman.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
@@ -631,11 +631,15 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 static int do_connect(int fd, const struct addrinfo *addrinfo,
 	unsigned int timeout)
 {
-	struct timeval tv;
-	struct timeval *ptv;
 	int ret, error;
 	socklen_t len;
+#ifdef _WIN32
+	struct timeval tv;
+	struct timeval *ptv;
 	fd_set set;
+#else
+	struct pollfd pfd;
+#endif
 
 	ret = set_blocking_mode(fd, false);
 	if (ret < 0)
@@ -648,6 +652,7 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 			return ret;
 	}
 
+#ifdef _WIN32
 	FD_ZERO(&set);
 	FD_SET(fd, &set);
 
@@ -660,6 +665,16 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	}
 
 	ret = select(fd + 1, NULL, &set, &set, ptv);
+#else
+	pfd.fd = fd;
+	pfd.events = POLLOUT | POLLERR;
+	pfd.revents = 0;
+
+	do {
+		ret = poll(&pfd, 1, timeout);
+	} while (ret == -1 && errno == EINTR);
+#endif
+
 	if (ret < 0)
 		return network_get_error();
 
