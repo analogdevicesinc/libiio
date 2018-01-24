@@ -1113,23 +1113,20 @@ static bool is_channel(const char *attr, bool strict)
 	if (*(ptr - 1) >= '0' && *(ptr - 1) <= '9')
 		return true;
 
-	if (find_channel_modifier(ptr + 1, NULL, NULL) != IIO_NO_MOD)
+	if (find_channel_modifier(ptr + 1, NULL) != IIO_NO_MOD)
 		return true;
 	return false;
 }
 
 static char * get_channel_id(const char *attr)
 {
-	char *res;
-	const char *ptr;
-	size_t len = 0;
-	size_t offs = 0;
+	char *res, *ptr;
+	size_t len;
 
 	attr = strchr(attr, '_') + 1;
-	if (find_channel_modifier(attr, &offs, &len) != IIO_NO_MOD)
-		ptr = attr + (offs == 0 ? 1 : offs) + len;
-	else
-		ptr = attr + (offs == 0 ? 0 : offs - 1);
+	ptr = strchr(attr, '_');
+	if (find_channel_modifier(ptr + 1, &len) != IIO_NO_MOD)
+		ptr += len + 1;
 
 	res = malloc(ptr - attr + 1);
 	if (!res)
@@ -1143,13 +1140,11 @@ static char * get_channel_id(const char *attr)
 static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
 	char *ptr = strchr(attr, '_') + 1;
-	size_t offs;
 	size_t len;
 
 	ptr = strchr(ptr, '_') + 1;
-	if (find_channel_modifier(ptr, &offs, &len) != IIO_NO_MOD)
+	if (find_channel_modifier(ptr, &len) != IIO_NO_MOD)
 		ptr += len + 1;
-	ptr += offs;
 
 	if (chn->name) {
 		size_t len = strlen(chn->name);
@@ -1464,7 +1459,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	else
 		return 0;
 
-	ptr = strrchr(attr, '_');
+	ptr = strchr(attr, '_');
 	if (!ptr)
 		return 0;
 
@@ -1486,7 +1481,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		return 0;
 	}
 
-	if (find_channel_modifier(chn->id + len + 1, NULL, NULL) != IIO_NO_MOD)
+	if (find_channel_modifier(chn->id + len + 1, NULL) != IIO_NO_MOD)
 		return 1;
 
 	return 0;

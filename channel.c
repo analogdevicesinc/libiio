@@ -98,59 +98,27 @@ static const char * const modifier_names[] = {
 };
 
 /*
- * Looks for a IIO channel modifier in the second to last underscore (_)
- * separated section of string s, after the channel-name extension, or at the
- * beginning of s if no underscore is found.
- *
- * If a modifier was found the symbolic constant (IIO_MOD_*) is
- * returned, otherwise IIO_NO_MOD is returned. If a modifier was found len_p
- * will be updated with the length of the modifier. If an extension was found
- * len_ex is set to its length, otherwise to zero. An extension can also exist
- * when IIO_NO_MOD is returned.
+ * Looks for a IIO channel modifier at the beginning of the string s. If a
+ * modifier was found the symbolic constant (IIO_MOD_*) is returned, otherwise
+ * IIO_NO_MOD is returned. If a modifier was found len_p will be updated with
+ * the length of the modifier.
  */
-unsigned int find_channel_modifier(const char *s, size_t *offs_p, size_t *len_p)
+unsigned int find_channel_modifier(const char *s, size_t *len_p)
 {
 	unsigned int i;
 	size_t len;
-	const char *fwd, *ptr;
-
-	if (offs_p)
-		*offs_p = 0;
-
-	/* find modifier location: fast forward to the last underscore,
-	 * then rewind to the previous one */
-	fwd = strrchr(s, '_');
-	ptr = fwd;
-	if (!fwd) {
-		fwd = s;
-	} else {
-		++ptr;
-		while (--fwd > s) {
-			if (*fwd == '_') {
-				++fwd;
-				if (offs_p)
-					*offs_p = fwd - s;
-				break;
-			}
-		}
-	}
 
 	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
 		if (!modifier_names[i])
 			continue;
 		len = strlen(modifier_names[i]);
-		if (strncmp(fwd, modifier_names[i], len) == 0 &&
-				(fwd[len] == '\0' || fwd[len] == '_')) {
+		if (strncmp(s, modifier_names[i], len) == 0 &&
+				(s[len] == '\0' || s[len] == '_')) {
 			if (len_p)
 				*len_p = len;
 			return i;
 		}
 	}
-
-	/* no modifier found, set offset to where it would otherwise be, after
-	 * the extension */
-	if (offs_p && ptr)
-		*offs_p = ptr - s;
 
 	return IIO_NO_MOD;
 }
