@@ -519,6 +519,10 @@ class Buffer(object):
 		self._length = samples_count * device.sample_size
 		self._samples_count = samples_count
 
+		self._ctx = device.ctx() 
+		# Holds a reference to the corresponding IIO Context. This ensures that
+		# every iio.Buffer object is destroyed before its corresponding IIO Context.
+
 	def __del__(self):
 		if self._buffer is not None:
 			_buffer_destroy(self._buffer)
