@@ -739,6 +739,7 @@ static int network_open(const struct iio_device *dev,
 
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
+	ppdata->io_ctx.cancellable = false;
 	ppdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
 
 	ret = iiod_client_open_unlocked(pdata->iiod_client,
