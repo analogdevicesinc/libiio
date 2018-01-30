@@ -1,5 +1,10 @@
 language: c
 
+branches:
+  only:
+    - update-gh-pages
+    - master
+
 env:
   global:
   # SSHHOST
@@ -11,6 +16,9 @@ env:
   - BRANCH_PULL=$TRAVIS_PULL_REQUEST_BRANCH
   - PULL=$TRAVIS_PULL_REQUEST
   - BRANCH=$TRAVIS_BRANCH
+  - GH_REPO_NAME: libiio
+  - DOXYFILE: $TRAVIS_BUILD_DIR/build/Doxyfile
+  - GH_REPO_REF: github.com/analogdevicesinc/libiio.git
 
 matrix:
   include:
@@ -59,6 +67,18 @@ addons:
   artifacts: true
   ssh_known_hosts:
     secure: "q0dQ9MrhnOCo031McxSdQIqw4N6tEyAZLq7mdbWkAJcXOh/CX58NjFvcdSfamleDUYRmg7KpCZPPgnbx2JtqVvWJv8aNnr67CE1GIjRP1Fxh2WaKS+VK+I6rro7GwCO2C9d+uffCt63LfZKqddF1T7vMI2IgHcu9irc5LCuw6Wo="
+  apt:
+    packages:
+      - doxygen
+      - doxygen-doc
+      - doxygen-latex
+      - doxygen-gui
+      - graphviz
+
+after_success:
+  - cd $TRAVIS_BUILD_DIR
+  - chmod +x CI/travis/deploy_doxygen
+  - ./CI/travis/deploy_doxygen
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./CI/travis/before_install_darwin ; fi
