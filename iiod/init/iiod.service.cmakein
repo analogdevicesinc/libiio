@@ -8,7 +8,7 @@ After=network.target
 ConditionPathExists=/sys/bus/iio
 
 [Service]
-ExecStart=/usr/sbin/iiod
+ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod
 KillMode=process
 Restart=on-failure
 
