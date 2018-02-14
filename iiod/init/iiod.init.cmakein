@@ -23,7 +23,7 @@ fi
 case "$1" in
 	start)
 		log_daemon_msg "Starting IIO Daemon" "iiod" || true
-		if start-stop-daemon -S -b -q -m -p /var/run/iiod.pid -x /usr/sbin/iiod -- $IIOD_OPTS; then
+		if start-stop-daemon -S -b -q -m -p /var/run/iiod.pid -x @CMAKE_INSTALL_FULL_SBINDIR@/iiod -- $IIOD_OPTS; then
 			log_end_msg 0 || true
 		else
 			log_end_msg 1 || true
@@ -46,9 +46,9 @@ case "$1" in
 
 	status)
 		if [ -f /var/run/iiod.pid ] ; then
-			status_of_proc -p /var/run/iiod.pid /usr/sbin/iiod iiod && exit 0 || exit $?
+			status_of_proc -p /var/run/iiod.pid @CMAKE_INSTALL_FULL_SBINDIR@/iiod iiod && exit 0 || exit $?
 		else
-			status_of_proc /usr/sbin/iiod iiod && exit 0 || exit $?
+			status_of_proc @CMAKE_INSTALL_FULL_SBINDIR@/iiod iiod && exit 0 || exit $?
 		fi
 		;;
 
