@@ -10,4 +10,4 @@ stop on runlevel [!2345]
 
 respawn
 
-exec /usr/sbin/iiod -D
+exec @CMAKE_INSTALL_FULL_SBINDIR@/iiod -D
