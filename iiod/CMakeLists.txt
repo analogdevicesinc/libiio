@@ -74,3 +74,8 @@ if (WITH_SYSVINIT)
 	        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
 	        DESTINATION ${SYSVINIT_INSTALL_DIR})
 endif()
+
+if (WITH_UPSTART)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.conf.cmakein ${PROJECT_BINARY_DIR}/init/iiod.conf)
+	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.conf DESTINATION ${UPSTART_CONF_INSTALL_DIR})
+endif()
