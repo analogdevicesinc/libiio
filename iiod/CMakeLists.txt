@@ -67,3 +67,10 @@ if (WITH_SYSTEMD)
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.service.cmakein ${PROJECT_BINARY_DIR}/init/iiod.service)
 	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.service DESTINATION ${SYSTEMD_UNIT_INSTALL_DIR})
 endif()
+
+if (WITH_SYSVINIT)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.init.cmakein ${PROJECT_BINARY_DIR}/init/iiod)
+	install(FILES ${PROJECT_BINARY_DIR}/init/iiod
+	        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+	        DESTINATION ${SYSVINIT_INSTALL_DIR})
+endif()
