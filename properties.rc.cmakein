@@ -1,0 +1,24 @@
+#include <windows.h>
+LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
+VS_VERSION_INFO VERSIONINFO
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName",        "Analog Devices"
+            VALUE "FileDescription",    "libiio - Library for interface to IIO devices"
+            VALUE "InternalName",       "libiio"
+            VALUE "LegalCopyright",     "Copyright 2015-@BUILD_YEAR@ ADI and other contributors"
+            VALUE "LegalTrademarks",    "http://www.gnu.org/licenses/lgpl-2.1.html"
+            VALUE "ProductName",        "libiio"
+            VALUE "ProductVersion",     "@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@-g@LIBIIO_VERSION_GIT@"
+            VALUE "OriginalFilename",   "@LIBIIO_ORIGINAL_FILENAME@"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END

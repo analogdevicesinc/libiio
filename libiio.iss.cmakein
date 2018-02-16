@@ -6,6 +6,7 @@ AppPublisher="Analog Devices, Inc."
 AppPublisherURL="http://www.analog.com"
 AppSupportURL="http://www.analog.com"
 AppUpdatesURL="http://www.analog.com"
+AppCopyright="Copyright 2015-@BUILD_YEAR@ ADI and other contributors"
 CreateAppDir=no
 LicenseFile="C:\projects\libiio\COPYING.txt"
 OutputBaseFilename=libiio-setup

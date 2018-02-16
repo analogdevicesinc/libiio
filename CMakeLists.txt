@@ -4,6 +4,9 @@ project(libiio C)
 set(LIBIIO_VERSION_MAJOR 0)
 set(LIBIIO_VERSION_MINOR 14)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
+if (WIN32)
+	string(TIMESTAMP BUILD_YEAR "%Y")
+endif()
 
 # Set the default install path to /usr
 if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -303,7 +306,13 @@ if(WITH_TESTS)
 	add_subdirectory(tests)
 endif()
 
-add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS})
+if (WIN32)
+	set(LIBIIO_ORIGINAL_FILENAME libiio.dll)
+	set(LIBIIO_RC ${CMAKE_CURRENT_BINARY_DIR}/properties.rc)
+	configure_file(properties.rc.cmakein ${LIBIIO_RC} @ONLY)
+endif()
+
+add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS} ${LIBIIO_RC})
 set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}
 	SOVERSION ${LIBIIO_VERSION_MAJOR}
