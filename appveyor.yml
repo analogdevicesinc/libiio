@@ -28,7 +28,6 @@ build_script:
     - set OLD_PATH=%PATH%
     - set OPT_PATH=C:\msys64\mingw32\bin;C:\msys64\mingw64\bin;
     - set PATH=%OPT_PATH%%PATH%
-    - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Syu"
     - set GENERATOR=Unix Makefiles
     - cd C:\projects\libiio
     - set folder-path=C:\projects\libiio\build-mingw-win32\%configuration%
