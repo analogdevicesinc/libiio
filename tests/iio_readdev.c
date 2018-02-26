@@ -249,7 +249,9 @@ int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	int c, option_index = 0, arg_index = 0, ip_index = 0, uri_index = 0;
+	const char *arg_uri = NULL;
+	const char *arg_ip = NULL;
+	int c, option_index = 0;
 	struct iio_device *dev;
 	size_t sample_size;
 	int timeout = -1;
@@ -262,39 +264,32 @@ int main(int argc, char **argv)
 			usage();
 			return EXIT_SUCCESS;
 		case 'n':
-			arg_index += 2;
-			ip_index = arg_index;
+			arg_ip = optarg;
 			break;
 		case 'u':
-			arg_index += 2;
-			uri_index = arg_index;
+			arg_uri = optarg;
 			break;
 		case 'a':
-			arg_index += 1;
 			scan_for_context = true;
 			break;
 		case 't':
-			arg_index += 2;
-			trigger_name = argv[arg_index];
+			trigger_name = optarg;
 			break;
 		case 'b':
-			arg_index += 2;
-			buffer_size = atoi(argv[arg_index]);
+			buffer_size = atoi(optarg);
 			break;
 		case 's':
-			arg_index += 2;
-			num_samples = atoi(argv[arg_index]);
+			num_samples = atoi(optarg);
 			break;
 		case 'T':
-			arg_index += 2;
-			timeout = atoi(argv[arg_index]);
+			timeout = atoi(optarg);
 			break;
 		case '?':
 			return EXIT_FAILURE;
 		}
 	}
 
-	if (arg_index + 1 >= argc) {
+	if (argc == optind) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage();
 		return EXIT_FAILURE;
@@ -304,10 +299,10 @@ int main(int argc, char **argv)
 
 	if (scan_for_context)
 		ctx = scan();
-	else if (uri_index)
-		ctx = iio_create_context_from_uri(argv[uri_index]);
-	else if (ip_index)
-		ctx = iio_create_network_context(argv[ip_index]);
+	else if (arg_uri)
+		ctx = iio_create_context_from_uri(arg_uri);
+	else if (arg_ip)
+		ctx = iio_create_network_context(arg_ip);
 	else
 		ctx = iio_create_default_context();
 
@@ -319,9 +314,9 @@ int main(int argc, char **argv)
 	if (timeout >= 0)
 		iio_context_set_timeout(ctx, timeout);
 
-	dev = iio_context_find_device(ctx, argv[arg_index + 1]);
+	dev = iio_context_find_device(ctx, argv[optind]);
 	if (!dev) {
-		fprintf(stderr, "Device %s not found\n", argv[arg_index + 1]);
+		fprintf(stderr, "Device %s not found\n", argv[optind]);
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -355,7 +350,7 @@ int main(int argc, char **argv)
 
 	nb_channels = iio_device_get_channels_count(dev);
 
-	if (argc == arg_index + 2) {
+	if (argc == optind + 1) {
 		/* Enable all channels */
 		for (i = 0; i < nb_channels; i++)
 			iio_channel_enable(iio_device_get_channel(dev, i));
@@ -363,7 +358,7 @@ int main(int argc, char **argv)
 		for (i = 0; i < nb_channels; i++) {
 			unsigned int j;
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
-			for (j = arg_index + 2; j < (unsigned int) argc; j++) {
+			for (j = optind + 1; j < (unsigned int) argc; j++) {
 				const char *n = iio_channel_get_name(ch);
 				if (!strcmp(argv[j], iio_channel_get_id(ch)) ||
 						(n && !strcmp(n, argv[j])))
