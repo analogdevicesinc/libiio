@@ -66,8 +66,10 @@ int main(int argc, char **argv)
 {
 	char *xml;
 	struct iio_context *ctx;
-	int c, option_index = 0, arg_index = 0, xml_index = 0, ip_index = 0;
-	int uri_index = 0;
+	int c, option_index = 0;
+	const char *arg_uri = NULL;
+	const char *arg_xml = NULL;
+	const char *arg_ip = NULL;
 	enum backend backend = LOCAL;
 
 	while ((c = getopt_long(argc, argv, "+hn:x:u:",
@@ -82,8 +84,7 @@ int main(int argc, char **argv)
 				return EXIT_FAILURE;
 			}
 			backend = NETWORK;
-			arg_index += 2;
-			ip_index = arg_index;
+			arg_ip = optarg;
 			break;
 		case 'x':
 			if (backend != LOCAL) {
@@ -91,12 +92,10 @@ int main(int argc, char **argv)
 				return EXIT_FAILURE;
 			}
 			backend = XML;
-			arg_index += 2;
-			xml_index = arg_index;
+			arg_xml = optarg;
 			break;
 		case 'u':
-			arg_index += 2;
-			uri_index = arg_index;
+			arg_uri = optarg;
 			backend = AUTO;
 			break;
 		case '?':
@@ -104,18 +103,18 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (arg_index >= argc) {
+	if (optind != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
 	if (backend == AUTO) 
-		ctx = iio_create_context_from_uri(argv[uri_index]);
+		ctx = iio_create_context_from_uri(arg_uri);
 	else if (backend == XML)
-		ctx = iio_create_xml_context(argv[xml_index]);
+		ctx = iio_create_xml_context(arg_xml);
 	else if (backend == NETWORK)
-		ctx = iio_create_network_context(argv[ip_index]);
+		ctx = iio_create_network_context(arg_ip);
 	else
 		ctx = iio_create_default_context();
 
