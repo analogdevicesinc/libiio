@@ -375,8 +375,9 @@ static void usage(void)
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
-	int c, option_index = 0, arg_index = 0, uri_index = 0,
-	    device_index = 0, channel_index = 0, attr_index = 0;
+	int c, option_index = 0;
+	int device_index = 0, channel_index = 0, attr_index = 0;
+	const char *arg_uri = NULL;
 	enum backend backend = LOCAL;
 	bool detect_context = false, search_device = false, ignore_case = false,
 		search_channel = false, search_buffer = false, search_debug = false,
@@ -394,57 +395,45 @@ int main(int argc, char **argv)
 			return EXIT_SUCCESS;
 		/* context connection */
 		case 'a':
-			arg_index += 1;
 			detect_context = true;
 			break;
 		case 'u':
 			backend = AUTO;
-			arg_index += 2;
-			uri_index = arg_index;
+			arg_uri = optarg;
 			break;
 		/* Attribute type
 		 * 'd'evice, 'c'hannel, 'C'ontext, 'B'uffer or 'D'ebug
 		 */
 		case 'd':
-			arg_index += 1;
 			search_device = true;
 			break;
 		case 'c':
-			arg_index += 1;
 			search_channel = true;
 			break;
 		case 'B':
-			arg_index +=1;
 			search_buffer = true;
 			break;
 		case 'D':
-			arg_index +=1;
 			search_debug = true;
 			break;
 		case 'C':
-			arg_index +=1;
 			search_context = true;
 			break;
 		/* Channel qualifiers */
 		case 'i':
-			arg_index += 1;
 			input_only = true;
 			break;
 		case 'o':
-			arg_index += 1;
 			output_only = true;
 			break;
 		case 's':
-			arg_index += 1;
 			scan_only = true;
 			break;
 		/* options */
 		case 'I':
-			arg_index += 1;
 			ignore_case = true;
 			break;
 		case 'q':
-			arg_index += 1;
 			quiet = true;
 			break;
 		case '?':
@@ -470,59 +459,59 @@ int main(int argc, char **argv)
 
 	if (search_context) {
 		/* -C [IIO_attribute] */
-		if (argc >= arg_index + 2)
-			attr_index = arg_index + 1;
-		if (argc >= arg_index + 3) {
+		if (argc >= optind + 1)
+			attr_index = optind;
+		if (argc >= optind + 2) {
 			fprintf(stderr, "Too many options for searching for context attributes\n");
 			return EXIT_FAILURE;
 		}
 	} else if (search_device) {
 		/* -d [device] [attr] [value] */
-		if (argc >= arg_index + 2)
-			device_index = arg_index + 1;
-		if (argc >= arg_index + 3)
-			attr_index = arg_index + 2;
-		if (argc >= arg_index + 4)
-			wbuf = argv[arg_index + 3];
-		if (argc >= arg_index + 5) {
+		if (argc >= optind + 1)
+			device_index = optind;
+		if (argc >= optind + 2)
+			attr_index = optind + 1;
+		if (argc >= optind + 3)
+			wbuf = argv[optind + 2];
+		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for device attributes\n");
 			return EXIT_FAILURE;
 		}
 	} else if (search_channel) {
 		/* -c [device] [channel] [attr] [value] */
-		if (argc >= arg_index + 2)
-			device_index = arg_index + 1;
-		if (argc >= arg_index + 3)
-			channel_index = arg_index + 2;
-		if (argc >= arg_index + 4)
-			attr_index = arg_index + 3;
-		if (argc >= arg_index + 5)
-			wbuf = argv[arg_index + 4];
-		if (argc >= arg_index + 6) {
+		if (argc >= optind + 1)
+			device_index = optind;
+		if (argc >= optind + 2)
+			channel_index = optind + 1;
+		if (argc >= optind + 3)
+			attr_index = optind + 2;
+		if (argc >= optind + 4)
+			wbuf = argv[optind + 3];
+		if (argc >= optind + 5) {
 			fprintf(stderr, "Too many options for searching for channel attributes\n");
 			return EXIT_FAILURE;
 		}
 	} else if (search_buffer) {
 		/* -B [device] [attribute] [value] */
-		if (argc >= arg_index + 2)
-			device_index = arg_index + 1;
-		if (argc >= arg_index + 3)
-			attr_index = arg_index + 2;
-		if (argc >= arg_index + 4)
-			wbuf = argv[arg_index + 3];
-		if (argc >= arg_index + 5) {
+		if (argc >= optind + 1)
+			device_index = optind;
+		if (argc >= optind + 2)
+			attr_index = optind + 1;
+		if (argc >= optind + 3)
+			wbuf = argv[optind + 2];
+		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for buffer attributes\n");
 			return EXIT_FAILURE;
 		}
 	} else if (search_debug) {
 		/* -D [device] [attribute] [value] */
-		if (argc >= arg_index + 2)
-			device_index = arg_index + 1;
-		if (argc >= arg_index + 3)
-			attr_index = arg_index + 2;
-		if (argc >= arg_index + 4)
-			wbuf = argv[arg_index + 3];
-		if (argc >= arg_index + 5) {
+		if (argc >= optind + 1)
+			device_index = optind;
+		if (argc >= optind + 2)
+			attr_index = optind + 1;
+		if (argc >= optind + 3)
+			wbuf = argv[optind + 2];
+		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for device attributes\n");
 			return EXIT_FAILURE;
 		}
@@ -552,7 +541,7 @@ int main(int argc, char **argv)
 	if (detect_context)
 		ctx = autodetect_context();
 	else if (backend == AUTO)
-		ctx = iio_create_context_from_uri(argv[uri_index]);
+		ctx = iio_create_context_from_uri(arg_uri);
 	else
 		ctx = iio_create_default_context();
 
