@@ -200,7 +200,9 @@ static struct iio_context *scan(void)
 int main(int argc, char **argv)
 {
 	unsigned int buffer_size = 1024 * 1024;
-	int c, option_index = 0, arg_index = 0, ip_index = 0, uri_index = 0;
+	int c, option_index = 0;
+	const char *arg_uri = NULL;
+	const char *arg_ip = NULL;
 	unsigned int n_tx = 0, n_rx = 0;
 	static struct iio_context *ctx;
 	static struct xflow_pthread_data xflow_pthread_data;
@@ -220,8 +222,7 @@ int main(int argc, char **argv)
 			usage(argv);
 			return EXIT_SUCCESS;
 		case 's':
-			arg_index += 2;
-			ret = sscanf(argv[arg_index], "%u%c", &buffer_size, &unit);
+			ret = sscanf(optarg, "%u%c", &buffer_size, &unit);
 			if (ret == 0)
 				return EXIT_FAILURE;
 			if (ret == 2) {
@@ -232,15 +233,12 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'n':
-			arg_index += 2;
-			ip_index = arg_index;
+			arg_ip = optarg;
 			break;
 		case 'u':
-			arg_index += 2;
-			uri_index = arg_index;
+			arg_uri = optarg;
 			break;
 		case 'a':
-			arg_index += 1;
 			scan_for_context = true;
 			break;
 		case '?':
@@ -248,7 +246,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (arg_index + 1 >= argc) {
+	if (optind + 1 != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage(argv);
 		return EXIT_FAILURE;
@@ -264,10 +262,10 @@ int main(int argc, char **argv)
 
 	if (scan_for_context)
 		ctx = scan();
-	else if (uri_index)
-		ctx = iio_create_context_from_uri(argv[uri_index]);
-	else if (ip_index)
-		ctx = iio_create_network_context(argv[ip_index]);
+	else if (arg_uri)
+		ctx = iio_create_context_from_uri(arg_uri);
+	else if (arg_ip)
+		ctx = iio_create_network_context(arg_ip);
 	else
 		ctx = iio_create_default_context();
 
@@ -276,7 +274,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	device_name = argv[arg_index + 1];
+	device_name = argv[optind];
 
 	dev = get_device(ctx, device_name);
 	if (!dev) {
