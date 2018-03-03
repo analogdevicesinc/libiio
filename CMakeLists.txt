@@ -249,7 +249,7 @@ else()
 endif()
 
 if (LIBXML2_FOUND)
-	option(WITH_XML_BACKEND "Enable the serial backend" ON)
+	option(WITH_XML_BACKEND "Enable the XML backend" ON)
 
 	if (WITH_XML_BACKEND)
 		set(LIBIIO_CFILES ${LIBIIO_CFILES} xml.c)
