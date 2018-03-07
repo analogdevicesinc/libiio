@@ -132,12 +132,25 @@ namespace iio
         /// <summary>Copy the given array of samples inside the <see cref="iio.IOBuffer"/> object.</summary>
         /// <param name="array">A <c>byte</c> array containing the samples that should be written.</param>
         /// <remarks>The number of samples written will not exceed the size of the buffer.</remarks>
+        /// <remarks>Use this to fill an output buffer.</remarks>
         public void fill(byte[] array)
         {
-            int length = (int) iio_buffer_end(buf) - (int) iio_buffer_start(buf);
+            long length = (long) iio_buffer_end(buf) - (long) iio_buffer_start(buf);
             if (length > array.Length)
                 length = array.Length;
-            Marshal.Copy(array, 0, iio_buffer_start(buf), length);
+            Marshal.Copy(array, 0, iio_buffer_start(buf), (int)length);
         }
+        
+        /// <summary>Copy the given array of samples inside the <see cref="iio.IOBuffer"/> object.</summary>
+        /// <param name="array">A <c>byte</c> array containing the samples that should be written.</param>
+        /// <remarks>The number of samples written will not exceed the size of the buffer.</remarks>
+        /// <remarks>Use this to read an input buffer.</remarks>
+        public void read(byte[] array)
+        {
+            long length = (long) iio_buffer_end(buf) - (long) iio_buffer_start(buf);
+            if (length > array.Length)
+                length = array.Length;
+            Marshal.Copy(iio_buffer_start(buf), array, 0, (int)length);
+        }        
     }
 }
