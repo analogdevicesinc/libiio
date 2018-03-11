@@ -86,6 +86,7 @@ struct iio_context_pdata {
 	struct addrinfo *addrinfo;
 	struct iio_mutex *lock;
 	struct iiod_client *iiod_client;
+	bool msg_trunc_supported;
 };
 
 struct iio_device_pdata {
@@ -1349,7 +1350,10 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 
 		/* Advance the read offset to the byte following the \n if
 		 * found, or after the last charater read otherwise */
-		ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
+		if (pdata->msg_trunc_supported)
+			ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
+		else
+			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
 		if (ret < 0)
 			return ret;
 
@@ -1385,6 +1389,28 @@ static const struct iiod_client_ops network_iiod_client_ops = {
 	.read = network_read_data,
 	.read_line = network_read_line,
 };
+
+#ifdef __linux__
+/*
+ * As of build 16299, Windows Subsystem for Linux presents a Linux API but
+ * without support for MSG_TRUNC. Since WSL allows running native Linux
+ * applications this is not something that can be detected at compile time. If
+ * we want to support WSL we have to have a runtime workaround.
+ */
+static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
+{
+	int ret;
+
+	ret = network_recv(io_ctx, NULL, 0, MSG_TRUNC | MSG_DONTWAIT);
+
+	return ret != -EFAULT && ret != -EINVAL;
+}
+#else
+static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
+{
+	return false;
+}
+#endif
 
 struct iio_context * network_create_context(const char *host)
 {
@@ -1469,6 +1495,13 @@ struct iio_context * network_create_context(const char *host)
 
 	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
 			&network_iiod_client_ops);
+
+	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
+	if (pdata->msg_trunc_supported)
+		DEBUG("MSG_TRUNC is supported\n");
+	else
+		DEBUG("MSG_TRUNC is NOT supported\n");
+
 	if (!pdata->iiod_client)
 		goto err_destroy_mutex;
 
