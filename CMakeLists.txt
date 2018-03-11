@@ -88,6 +88,17 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
 	add_definitions(-D_GNU_SOURCE=1)
+
+	# check for Windows Subsystem for Linux (WSL)
+	STRING(FIND ${CMAKE_SYSTEM} Microsoft IDX)
+	# CMAKE_SYSTEM is CMAKE_SYSTEM_NAME + CMAKE_SYSTEM_VERSION,
+	# in WSL "Microsoft" is part of the version, so can't be at 0
+	if (IDX GREATER 0)
+		option(WITH_MS_WSL "Build for Microsoft Windows Subsystem for Linux" ON)
+	endif()
+	if (WITH_MS_WSL)
+		add_definitions(-D_MS_WSL)
+	endif()
 endif()
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)

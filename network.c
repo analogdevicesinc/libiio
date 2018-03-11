@@ -1323,7 +1323,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 {
 	bool found = false;
 	size_t i;
-#ifdef __linux__
+#if defined(__linux__) && ! defined(_MS_WSL)
 	struct iio_network_io_context *io_ctx = io_data;
 	ssize_t ret;
 	size_t bytes_read = 0;
