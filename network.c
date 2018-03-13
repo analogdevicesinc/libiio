@@ -1323,9 +1323,9 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 {
 	bool found = false;
 	size_t i;
-#if defined(__linux__) && ! defined(_MS_WSL)
+#ifdef __linux__
 	struct iio_network_io_context *io_ctx = io_data;
-	ssize_t ret;
+	ssize_t ret, trunc;
 	size_t bytes_read = 0;
 
 	do {
@@ -1349,9 +1349,12 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 
 		/* Advance the read offset to the byte following the \n if
 		 * found, or after the last charater read otherwise */
-		ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
-		if (ret < 0)
-			return ret;
+		trunc = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
+		if (trunc < 0)
+			/* MSG_TRUNC unsupported, re-receive data into dst */
+			trunc = network_recv(io_ctx, dst - ret, to_trunc, 0);
+		if (trunc < 0)
+			return trunc;
 
 		bytes_read += to_trunc;
 	} while (!found && len);
