@@ -339,10 +339,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+	pthread_join(monitor_thread, NULL);
+
 	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
-
-	pthread_join(monitor_thread, NULL);
 
 	return 0;
 }
