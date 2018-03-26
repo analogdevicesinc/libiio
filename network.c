@@ -1458,7 +1458,7 @@ static const struct iiod_client_ops network_iiod_client_ops_no_trunc = {
 bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
 {
 	int ret = network_recv(io_ctx, NULL, 0, MSG_TRUNC);
-	return ret != EFAULT;
+	return ret != -EFAULT && ret != -EINVAL;
 }
 
 struct iio_context * network_create_context(const char *host)
