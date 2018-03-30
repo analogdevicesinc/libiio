@@ -1455,7 +1455,7 @@ static const struct iiod_client_ops network_iiod_client_ops_no_trunc = {
 	.read_line = network_read_line_no_trunc,
 };
 
-bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
+static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
 {
 	int ret = network_recv(io_ctx, NULL, 0, MSG_TRUNC);
 	return ret != -EFAULT && ret != -EINVAL;
@@ -1546,8 +1546,7 @@ struct iio_context * network_create_context(const char *host)
 		DEBUG("MSG_TRUNC is supported\n");
 		pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
 					&network_iiod_client_ops);
-	}
-	else {
+	} else {
 		DEBUG("MSG_TRUNC is NOT supported\n");
 		pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
 					&network_iiod_client_ops_no_trunc);
