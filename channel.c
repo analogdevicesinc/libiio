@@ -744,7 +744,7 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 			const char *attr, const char *val, size_t len, void *d),
 		void *data)
 {
-	int ret;
+	int ret, buf_size;
 	char *buf, *ptr;
 	unsigned int i;
 
@@ -758,12 +758,26 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 		goto err_free_buf;
 
 	ptr = buf;
+	buf_size = ret;
 
 	for (i = 0; i < iio_channel_get_attrs_count(chn); i++) {
 		const char *attr = iio_channel_get_attr(chn, i);
-		int32_t len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
+		int32_t len;
 
+		if (buf_size < 4) {
+			ret = -EPROTO;
+			break;
+		}
+
+		len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
 		ptr += 4;
+		buf_size -= 4;
+
+		if (len > 0 && buf_size < len) {
+			ret = -EPROTO;
+			break;
+		}
+
 		if (len > 0) {
 			ret = cb(chn, attr, ptr, (size_t) len, data);
 			if (ret < 0)
@@ -772,6 +786,10 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 			if (len & 0x3)
 				len = ((len >> 2) + 1) << 2;
 			ptr += len;
+			if (len >= buf_size)
+				buf_size = 0;
+			else
+				buf_size -= len;
 		}
 	}
 

@@ -918,7 +918,7 @@ static int read_each_attr(struct iio_device *dev, enum iio_attr_type type,
 			const char *attr, const char *val, size_t len, void *d),
 		void *data)
 {
-	int ret;
+	int ret, buf_size;
 	char *buf, *ptr;
 	unsigned int i, count;
 
@@ -953,10 +953,25 @@ static int read_each_attr(struct iio_device *dev, enum iio_attr_type type,
 		goto err_free_buf;
 
 	ptr = buf;
+	buf_size = ret;
 
 	for (i = 0; i < count; i++) {
 		const char *attr;
-		int32_t len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
+		int32_t len;
+
+		if (buf_size < 4) {
+			ret = -EPROTO;
+			break;
+		}
+
+		len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
+		ptr += 4;
+		buf_size -= 4;
+
+		if (len > 0 && buf_size < len) {
+			ret = -EPROTO;
+			break;
+		}
 
 		switch(type){
 			case IIO_ATTR_TYPE_DEVICE:
@@ -973,7 +988,6 @@ static int read_each_attr(struct iio_device *dev, enum iio_attr_type type,
 				break;
 		}
 
-		ptr += 4;
 		if (len > 0) {
 			ret = cb(dev, attr, ptr, (size_t) len, data);
 			if (ret < 0)
@@ -982,6 +996,10 @@ static int read_each_attr(struct iio_device *dev, enum iio_attr_type type,
 			if (len & 0x3)
 				len = ((len >> 2) + 1) << 2;
 			ptr += len;
+			if (len >= buf_size)
+				buf_size = 0;
+			else
+				buf_size -= len;
 		}
 	}
 
