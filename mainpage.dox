@@ -110,7 +110,7 @@ Write debug attributes with those functions:
 @section trigger Triggers
 Some devices, mostly low-speed ADCs and DACs, require a trigger to be set for the capture or upload process to work.
 
-In libiio, triggers are just regular iio_device objects. To check if a iio_buffer can be used as a trigger, you can use iio_device_is_trigger().
+In libiio, triggers are just regular iio_device objects. To check if an iio_device can be used as a trigger, you can use iio_device_is_trigger().
 
 To see if one device is associated with a trigger, use iio_device_get_trigger().
 
