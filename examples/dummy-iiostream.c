@@ -6,14 +6,6 @@
  * trigger but could be modified to use the sysfs trigger. No hardware should
  * be required to run this program.
  *
- * How to setup the sample IIO dummy device and hrtimer trigger:
- *
- *   1. sudo modprobe industrialio kfifo_buf industrialio-sw-trigger
- *   2. sudo modprobe iio_dummy iio-trig-hrtimer
- *   3. sudo mkdir /configfs
- *   4. sudo mount -t configfs none /config
- *   5. sudo mkdir /config/iio/triggers/hrtimer/instance1
- *
  * Copyright (c) 2016, DAQRI. All rights reserved.
  * Author: Lucas Magasweran <lucas.magasweran@daqri.com>
  *
@@ -30,6 +22,48 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
+ *
+ * How to setup the sample IIO dummy device and hrtimer trigger:
+ *
+ * 1. Check if `configfs` is already mounted
+ *
+ * $ mount | grep 'config'
+ * configfs on /sys/kernel/config type configfs (rw,relatime)
+ *
+ * 1.b. Mount `configfs` if it is not already mounted
+ *  $ sudo mount -t configfs none /sys/kernel/config
+ *
+ * 2. Load modules one by one
+ *
+ * $ sudo modprobe industrialio
+ * $ sudo modprobe industrialio-configfs
+ * $ sudo modprobe industrialio-sw-device
+ * $ sudo modprobe industrialio-sw-trigger
+ * $ sudo modprobe iio-trig-hrtimer
+ * $ sudo modprobe iio_dummy
+ *
+ * 3. Create trigger and dummy device under `/sys/kernel/config`
+ *
+ * $ sudo mkdir /sys/kernel/config/iio/triggers/hrtimer/instance1
+ * $ sudo mkdir /sys/kernel/config/iio/devices/dummy/my_dummy_device
+ *
+ * 4. Run `iio_info` to see that all worked properly
+ *
+ * $ iio_info
+ * Library version: 0.14 (git tag: c9909f2)
+ * Compiled with backends: local xml ip
+ * IIO context created with local backend.
+ * Backend version: 0.14 (git tag: c9909f2)
+ * Backend description string: Linux ...
+ * IIO context has 1 attributes:
+ *         local,kernel: 4.13.0-39-generic
+ * IIO context has 2 devices:
+ *         iio:device0: my_dummy_device
+ *                 10 channels found:
+ *                         activity_walking:  (input)
+ *                         1 channel-specific attributes found:
+ *                                 attr  0: input value: 4
+ * ...
  *
  **/
 
