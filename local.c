@@ -816,6 +816,16 @@ static int enable_high_speed(const struct iio_device *dev)
 	unsigned int i;
 	int ret, fd = pdata->fd;
 
+	/*
+	 * For the BLOCK_ALLOC_IOCTL ioctl it is not possible to distingush
+	 * between an error during the allocation (e.g. incorrect size) or
+	 * whether the high-speed interface is not supported. BLOCK_FREE_IOCTL does
+	 * never fail if the device supports the high-speed interface, so we use it
+	 * here. Calling it when no blocks are allocated the ioctl has no effect.
+	 */
+	ret = ioctl_nointr(fd, BLOCK_FREE_IOCTL, NULL);
+	if (ret < 0)
+		return -ENOSYS;
 
 	if (pdata->cyclic) {
 		nb_blocks = 1;
