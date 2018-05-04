@@ -122,8 +122,8 @@ build_script:
     - copy c:\libs\64\libserialport-0.dll c:\%ARCHIVE_NAME%\MS64
     
     #Copy dependencies for MinGW
-    - C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw32/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip-*.dll libusb-*.dll /c/%ARCHIVE_NAME%/MinGW32"
-    - C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw64/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip-*.dll libusb-*.dll /c/%ARCHIVE_NAME%/MinGW64"
+    - C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw32/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip*.dll libusb-*.dll /c/%ARCHIVE_NAME%/MinGW32"
+    - C:\msys64\usr\bin\bash -lc "cd c:/msys64/mingw64/bin ; cp -r libwinpthread-*.dll libgcc_*.dll libstdc++-*.dll libiconv-*.dll zlib*.dll libxml2-*.dll liblzma-*.dll libzip*.dll libusb-*.dll /c/%ARCHIVE_NAME%/MinGW64"
     - C:\msys64\usr\bin\bash -lc "cd c:/libs/32 ; cp libserialport-*.dll /c/%ARCHIVE_NAME%/MinGW32"
     - C:\msys64\usr\bin\bash -lc "cd c:/libs/64 ; cp libserialport-*.dll /c/%ARCHIVE_NAME%/MinGW64"
     
