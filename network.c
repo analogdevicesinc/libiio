@@ -86,6 +86,7 @@ struct iio_context_pdata {
 	struct addrinfo *addrinfo;
 	struct iio_mutex *lock;
 	struct iiod_client *iiod_client;
+	bool msg_trunc_supported;
 };
 
 struct iio_device_pdata {
@@ -1349,7 +1350,10 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 
 		/* Advance the read offset to the byte following the \n if
 		 * found, or after the last charater read otherwise */
-		ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
+		if (pdata->msg_trunc_supported)
+			ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
+		else
+			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
 		if (ret < 0)
 			return ret;
 
@@ -1385,6 +1389,12 @@ static const struct iiod_client_ops network_iiod_client_ops = {
 	.read = network_read_data,
 	.read_line = network_read_line,
 };
+
+static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
+{
+	int ret = network_recv(io_ctx, NULL, 0, MSG_TRUNC);
+	return ret != -EFAULT && ret != -EINVAL;
+}
 
 struct iio_context * network_create_context(const char *host)
 {
@@ -1460,6 +1470,7 @@ struct iio_context * network_create_context(const char *host)
 	pdata->io_ctx.fd = fd;
 	pdata->addrinfo = res;
 	pdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
+	pdata->msg_trunc_supported = true;
 
 	pdata->lock = iio_mutex_create();
 	if (!pdata->lock) {
@@ -1468,7 +1479,15 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
-			&network_iiod_client_ops);
+                       &network_iiod_client_ops);
+
+	if (msg_trunc_supported (&pdata->io_ctx)) {
+		DEBUG("MSG_TRUNC is supported\n");
+	} else {
+		DEBUG("MSG_TRUNC is NOT supported\n");
+		pdata->msg_trunc_supported = false;
+	}
+
 	if (!pdata->iiod_client)
 		goto err_destroy_mutex;
 
