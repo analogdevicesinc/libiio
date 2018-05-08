@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.10</span>
+   &#160;<span id="projectnumber">0.15</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -199,7 +199,7 @@ Modifying a parameter</h2>
 <h1><a class="anchor" id="trigger"></a>
 Triggers</h1>
 <p>Some devices, mostly low-speed ADCs and DACs, require a trigger to be set for the capture or upload process to work.</p>
-<p>In libiio, triggers are just regular <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> objects. To check if a <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> can be used as a trigger, you can use <a class="el" href="group__Device.html#ga41582140b8e1fe98148e51ae1350b816" title="Return True if the given device is a trigger. ">iio_device_is_trigger()</a>.</p>
+<p>In libiio, triggers are just regular <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> objects. To check if an <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> can be used as a trigger, you can use <a class="el" href="group__Device.html#ga41582140b8e1fe98148e51ae1350b816" title="Return True if the given device is a trigger. ">iio_device_is_trigger()</a>.</p>
 <p>To see if one device is associated with a trigger, use <a class="el" href="group__Device.html#ga9aa22c64b900bf6949a54816a04e7a87" title="Retrieve the trigger of a given device. ">iio_device_get_trigger()</a>.</p>
 <p>To assign one trigger to a <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a>, you can use <a class="el" href="group__Device.html#ga30151c105a19b3fc3ad6376046d60bf9" title="Associate a trigger to a given device. ">iio_device_set_trigger()</a>. If you want to disassociate a <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> from its trigger, pass NULL to the "trigger" parameter of this function.</p>
 <h1><a class="anchor" id="capture_upload"></a>
@@ -280,7 +280,7 @@ Application Binary Interface</h1>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jun 5 2017 17:00:52 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 8 2018 09:55:25 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
