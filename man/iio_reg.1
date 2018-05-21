@@ -1,0 +1,59 @@
+.\" Copyright (c) 2018 Robin Getz
+.\" Copyright (c) 2018 Analog Devices Inc.
+.\"
+.\" Permission to use, copy, modify, distribute, and sell this
+.\" documentation for any purpose is hereby granted under the
+.\" Creative Commons Attribution-ShareAlike 4.0 International Public License
+.\" https://creativecommons.org/licenses/by-sa/4.0/
+.\"
+.TH iio_reg 1 "10 May, 2018" "libiio-0.12" "LibIIO Utilities"
+.IX iio_reg_
+.SH NAME
+iio_reg \- do a low level read or write to SPI or I2C register
+.SH SYNOPSIS
+.B iio_reg
+[
+.I options
+]
+<device> <register> [<value>]
+.SH DESCRIPTION
+.B iio_reg
+is a utility for debugging local IIO devices.
+It should not be used by normal users, and is normally used by driver
+developers during development, or by end users debugging a driver, or sending
+in a feature request.
+It provides a mechanism to read or write SPI or I2C registers for IIO devices.
+This can be useful when troubleshooting IIO devices, and understanding how
+the Linux IIO subsystem is managing the device.
+
+This IIO utility does not work across a network or USB context.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Tells
+.I iio_reg
+to display some help, and then quit.
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH "SEE ALSO"
+.BR iio_adi_xflow_check (1),
+.BR iio_attr (1),
+.BR iio_genxml (1),
+.BR iio_info (1),
+.BR iio_readdev (1),
+.BR iio_reg (1),
+.BR iio_writedev (1),
+.BR libiio (3)
+.PP
+libiio home page:
+.BR https://wiki.analog.com/resources/tools-software/linux-software/libiio
+.PP
+libiio code:
+.BR https://github.com/analogdevicesinc/libiio
+.PP
+Doxygen for libiio
+.BR https://analogdevicesinc.github.io/libiio/
+.SH BUGS
+All bugs are tracked at:
+.BR https://github.com/analogdevicesinc/libiio/issues

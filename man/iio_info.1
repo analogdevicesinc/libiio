@@ -1,0 +1,92 @@
+.\" Copyright (c) 2018 Robin Getz
+.\" Copyright (c) 2018 Analog Devices Inc.
+.\"
+.\" Permission to use, copy, modify, distribute, and sell this
+.\" documentation for any purpose is hereby granted under the
+.\" Creative Commons Attribution-ShareAlike 4.0 International Public License
+.\" https://creativecommons.org/licenses/by-sa/4.0/
+.\"
+.TH iio_info 1 "10 May, 2018" "libiio-0.12" "LibIIO Utilities"
+.IX iio_info
+.SH NAME
+iio_info \- list IIO devices and device attributes
+.SH SYNOPSIS
+.B iio_info
+[
+.I options
+]
+-x <xml_file>
+.br
+.B iio_info
+[
+.I options
+]
+-n <hostname>
+.br
+.B iio_info
+[
+.I options
+]
+-u <uri>
+.SH DESCRIPTION
+.B iio_info
+is a utility for displaying information about local or remote IIO devices
+
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Tells
+.I iio_info
+to display some help, and then quit.
+.TP
+.B \-x, \-\-xml
+Use the XML backend with the provided XML file
+.TP
+.B \-n, \-\-network
+Use the network backend with the provided hostname
+.TP
+.B \-u, \-\-uri
+The Uniform Resource Identifier
+.I (uri)
+for connecting to devices, can be one of:
+.RS
+.IP ip:[address]
+network address, either numeric (192.168.0.1) or network hostname
+.IP usb:[device:port:instance]
+normally returned from
+.B iio_info -s
+.IP serial:[port]
+.IP local
+with no address part
+.RE
+.TP
+.B \-s, \-\-scan
+Scan for available backends
+.TP
+.B \-a, \-\-auto
+Scan for available contexts and if only one is available use it.
+
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH "SEE ALSO"
+.BR iio_adi_xflow_check (1),
+.BR iio_attr (1),
+.BR iio_genxml (1),
+.BR iio_info (1),
+.BR iio_readdev (1),
+.BR iio_reg (1),
+.BR iio_writedev (1),
+.BR libiio (3)
+.PP
+libiio home page:
+.BR https://wiki.analog.com/resources/tools-software/linux-software/libiio
+.PP
+libiio code:
+.BR https://github.com/analogdevicesinc/libiio
+.PP
+Doxygen for libiio
+.BR https://analogdevicesinc.github.io/libiio/
+.SH BUGS
+All bugs are tracked at:
+.BR https://github.com/analogdevicesinc/libiio/issues

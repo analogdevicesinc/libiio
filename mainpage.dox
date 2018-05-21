@@ -6,14 +6,20 @@
 @section license License
 Libiio has been developed and is released under the terms of the GNU Lesser General Public
 License, version 2. This open-source license allows anyone to use the library for proprietary or
-open-source, commercial or non-commercial applications. This choice was motivated by the fact
-that Analog Devices is a company that principally sells hardware, and this library provides the
-clients with a better and easier way of using this hardware.
+open-source, commercial or noncommercial applications.
+This choice was motivated by industry, and to spread IIO framework as a multi-platform open-source way to connect to embedded Linux hardware, that is easy, and just works.
+Although the majority of libiio was created by Analog Devices Inc. the libiio project is now maintained and managed by volunteers, and is free to use on any hardware, for any purpose, under the terms of the LGPL-2.1
 
-The full terms of the license can be found here: http://opensource.org/licenses/LGPL-2.1
+The full license can be found here: http://opensource.org/licenses/LGPL-2.1
 
 @section code_model Code Model
-The basic bricks of the libiio API are the iio_context, iio_device, iio_channel and iio_buffer classes.
+The libiio Library package contains the Industrial Input/Output (IIO) library used by programs (including iio utilities) requiring access to iio devices.
+The libraries job is to provide userspace an easy to use way to interface with kernel IIO devices, without having to understand specifics hardware devices (ADC/DAC/sensor/Accelerometers/IMU/Temperature Sensors/PLLs, etc)
+If libiio doesn't do what you want, or doesn't include a device control you are looking for, it's likely that is because the backing kernel device driver doesn't support it (yet).
+Libiio does not do anything device specific - devices are managed by the in-kernel IIO drivers.
+
+The basic bricks of the libiio API are similar to the IIO framework of the Linux kernel, iio_context, iio_device, iio_channel and iio_buffer classes.
+All of iio_context objects, iio_device objects, and iio_channel objects can have 0 to n attributes, which may be read only, read/write, or write only, depending on the specific backing device.
 
 ![Caption text](doc/codemodel.svg)
 
@@ -24,18 +30,24 @@ The basic bricks of the libiio API are the iio_context, iio_device, iio_channel 
 - A iio_device object may be associated with one iio_buffer object, and a iio_buffer object is associated with only one iio_device.
 
 @section creating_context Creating a context
-Different functions are available to create the iio_context object. Depending on what backends were enabled when compiling the library, some of them may not be available.
-Each function will result in a different backend being used.
+Different functions are available to create the iio_context object. Depending on what back ends were enabled when compiling the library, some of them may not be available.
+Each function will result in a different back end being used.
 
 Those functions are:
+- iio_create_context_from_uri(): Create a context from a Universal Resource Identifier (uri). The specific uri depends on which back ends the library was built with, but can be any of "local:", "xml:", "ip:", "serial:", or "usb:".
 - iio_create_local_context(): Create a "local" context, to use the IIO devices connected to the system (typically for cross-compiled applications).
-- iio_create_network_context(): Create a "network" context that will work with a remotely connected target.
+- iio_create_network_context(): Create a "network" context that will work with a remotely connected target. It is suggested to use an 'ip:' uri, and use the iio_create_context_from_uri() above, rather than this function directly.
 
 Note that every function that compose the API of libiio will work independently of the function that was used to create the iio_context object.
+In this way, you can think of the libiio as an RPC (Remote Procedure Call) for interacting with IIO devices independent of the connectivity (local, serial, usb, or Ethernet).
 
 The iio_context object can later be destroyed with iio_context_destroy().
 
 @subsection navigation Navigation
+@subsubsection context_obj IIO Contexts
+- Anyone can call iio_create_scan_context() at anytime.
+- This will return an iio_scan_context, which can be passed to iio_scan_context_get_info_list() to parse the list of available contexts to connect to. As of libiio release 0.15 - this supports USB and local context only.
+- While the network context does support zero-configuration networking (zeroconf) via avahi, it has not been integrated into the scan context yet.
 @subsubsection device_obj Device objects
 - From the iio_context object, you can obtain the number of available devices with iio_context_get_devices_count().
 - Then, each iio_device object can be accessed with iio_context_get_device().
@@ -64,6 +76,11 @@ Alternatively, it is possible to lookup for the name of an attribute with iio_de
 @section reading_modify_params Reading and modifying parameters
 
 @subsection read_param Reading a parameter
+Read context-specific attributes with those functions:
+- iio_context_get_attrs_count()
+- iio_context_get_attr()
+- iio_context_get_attr_value()
+
 Read device-specific attributes with those functions:
 - iio_device_attr_read()
 - iio_device_attr_read_all()
@@ -78,6 +95,13 @@ Read channel-specific attributes with those functions:
 - iio_channel_attr_read_longlong()
 - iio_channel_attr_read_double()
 
+Read buffer-specific attributes with those functions:
+- iio_device_buffer_attr_read()
+- iio_device_buffer_attr_read_all()
+- iio_device_buffer_attr_read_bool()
+- iio_device_buffer_attr_read_longlong()
+- iio_device_buffer_attr_read_double()
+
 Read debug attributes with those functions:
 - iio_device_debug_attr_read()
 - iio_device_debug_attr_read_all()
@@ -88,6 +112,7 @@ Read debug attributes with those functions:
 @subsection write_param Modifying a parameter
 Write device-specific attributes with those functions:
 - iio_device_attr_write()
+- iio_device_attr_write_raw()
 - iio_device_attr_write_all()
 - iio_device_attr_write_bool()
 - iio_device_attr_write_longlong()
@@ -95,13 +120,23 @@ Write device-specific attributes with those functions:
 
 Write channel-specific attributes with those functions:
 - iio_channel_attr_write()
+- iio_channel_attr_write_raw()
 - iio_channel_attr_write_all()
 - iio_channel_attr_write_bool()
 - iio_channel_attr_write_longlong()
 - iio_channel_attr_write_double()
 
+Write buffer attributes with those functions:
+- iio_device_buffer_attr_write()
+- iio_device_buffer_attr_write_raw()
+- iio_device_buffer_attr_write_all()
+- iio_device_buffer_attr_write_bool()
+- iio_device_buffer_attr_write_longlong()
+- iio_device_buffer_attr_write_double()
+
 Write debug attributes with those functions:
 - iio_device_debug_attr_write()
+- iio_device_debug_attr_write_raw()
 - iio_device_debug_attr_write_all()
 - iio_device_debug_attr_write_bool()
 - iio_device_debug_attr_write_longlong()
@@ -225,9 +260,15 @@ The iio_device and iio_channel allow you to register a pointer, that can then be
 - A pointer can be registered with a iio_channel object using iio_channel_set_data(), and can be retrieved with iio_channel_get_data().
 
 @subsection debug_attr Debug attributes
-Some IIO devices provide debug parameters, but their presence is optional. In a similar way than with regular device parameters,
+Some IIO devices provide debug parameters, but their presence is optional (depending on if the device supports it, and the kernel has it turned on. On a system with Linux IIO devices, this is controlled by the kernel's CONFIG_DEBUG_FS=y option, and the debug file system being mounted). In a similar way than with regular device parameters,
 the number of debug parameters can be obtained with iio_device_get_debug_attrs_count(). Each individual parameter can be retrieved with iio_device_get_debug_attr().
 Alternatively, it is possible to lookup for the name of a debug attribute with iio_device_find_debug_attr().
+
+\note
+Driver Developers can put any information they want in debug, and change them at anytime.
+The debugfs filesystem is not intended to serve as a stable ABI to user space.
+There are no stability constraints placed on files exported there, and application deveopers shouldn't rely on this.
+If the driver is missing a feature, implment the feature in the kernel driver.
 
 Those debug parameters can be read using the following functions:
 - iio_device_debug_attr_read(),

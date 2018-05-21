@@ -1,0 +1,105 @@
+.\" Copyright (c) 2018 Robin Getz
+.\" Copyright (c) 2018 Analog Devices Inc.
+.\"
+.\" Permission to use, copy, modify, distribute, and sell this
+.\" documentation for any purpose is hereby granted under the
+.\" Creative Commons Attribution-ShareAlike 4.0 International Public License
+.\" https://creativecommons.org/licenses/by-sa/4.0/
+.\"
+.TH iio_attr 1 "10 May, 2018" "libiio-0.12" "LibIIO Utilities"
+.IX iio_attr
+.SH NAME
+iio_attr \- list IIO devices, and read/write device attributes
+.SH SYNOPSIS
+.B iio_attr
+[
+.I options
+]
+-d [device] [attr] [value]
+.br
+.B iio_attr
+[
+.I options
+]
+-c [device] [channel] [attr] [value]
+.br
+.B iio_attr
+[
+.I options
+]
+-D [device] [attr] [value]
+.br
+.B iio_attr
+[
+.I options
+]
+-C [attr]
+.SH DESCRIPTION
+.B iio_attr
+is a utility for displaying information about local or remote IIO devices.
+By providing an optional value,
+.B iio_attr
+will attempt to write the new value to the attribute.
+
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Tells
+.I iio_attr
+to display some help, and then quit.
+.TP
+.B \-I, \-\-ignore-case
+When pattern matching devices, channels or attributes, ignore case
+.TP
+.B \-a, \-\-auto
+Look around for devices (locally, and usb), and if there is only one device
+found, connect to it.
+.TP
+.B \-u, \-\-uri
+The Uniform Resource Identifier
+.I (uri)
+for connecting to devices, can be one of:
+.RS
+.IP ip:[address]
+network address, either numeric (192.168.0.1) or network hostname
+.IP usb:[device:port:instance]
+normally returned from
+.B iio_info -s
+.IP serial:[port]
+.IP local
+with no address part
+.RE
+.TP
+.B \-i, \-\-input-channel
+Filters channels by input channels only
+.TP
+.B \-o, \-\-output-channel
+Filters channels by output channels only
+.TP
+.B \-s, \-\-scan-channel
+Filters channels by scan channels only
+
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH "SEE ALSO"
+.BR iio_adi_xflow_check (1),
+.BR iio_attr (1),
+.BR iio_genxml (1),
+.BR iio_info (1),
+.BR iio_readdev (1),
+.BR iio_reg (1),
+.BR iio_writedev (1),
+.BR libiio (3)
+.PP
+libiio home page:
+.BR https://wiki.analog.com/resources/tools-software/linux-software/libiio
+.PP
+libiio code:
+.BR https://github.com/analogdevicesinc/libiio
+.PP
+Doxygen for libiio
+.BR https://analogdevicesinc.github.io/libiio/
+.SH BUGS
+All bugs are tracked at:
+.BR https://github.com/analogdevicesinc/libiio/issues

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+cmk="../CMakeLists.txt"
+
+major=$(grep "set[[:space:]]*([[:space:]]*LIBIIO_VERSION_MAJOR" ${cmk} | \
+       sed -e 's:^[[:space:]]*set[[:space:]]*([[:space:]]*LIBIIO_VERSION_MAJOR[[:space:]]*::' \
+           -e 's:)::')
+minor=$(grep "set[[:space:]]*([[:space:]]*LIBIIO_VERSION_MINOR" ${cmk} | \
+       sed -e 's:^[[:space:]]*set[[:space:]]*([[:space:]]*LIBIIO_VERSION_MINOR[[:space:]]*::' \
+           -e 's:)::')
+
+for i in $(grep ^.TH *.[0-9] -l)
+do
+	replace=$(
+	echo -n ".TH ${i%.*} ${i##*.} \"$(date +"%d %B, %Y")\" \"libiio-${major}.${minor}\" "
+	if [ "${i}" == "libiio.3" ] ; then
+		echo \"LibIIO Library\"
+	else
+		echo \"LibIIO Utilities\"
+	fi
+	)
+	sed -i -e '/^.TH.*$/c\'"${replace}" ${i}
+done

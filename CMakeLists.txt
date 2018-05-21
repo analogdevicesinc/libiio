@@ -428,6 +428,17 @@ if (NOT OSX_PACKAGE)
 	option(ENABLE_PACKAGING "Create .deb/.rpm or .tar.gz packages via 'make package'" OFF)
 
 	if(ENABLE_PACKAGING)
+		# install man files into the BINARY directories,
+		# so the packages include them
+		# section 3 = library functions
+		install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/man/
+			DESTINATION ${CMAKE_INSTALL_MANDIR}/man3
+			COMPONENT doc FILES_MATCHING PATTERN "*.3*")
+		# section 1 = user commands
+		install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/man/
+			DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+			COMPONENT doc FILES_MATCHING PATTERN "*.1*")
+
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 			include(cmake/DarwinPackaging.cmake)
 		endif()
