@@ -138,6 +138,11 @@ struct iio_backend_ops {
 	int (*set_timeout)(struct iio_context *ctx, unsigned int timeout);
 };
 
+/*
+ * If these structures are updated, the qsort functions defined in sort.c
+ * may need to be updated.
+ */
+
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
