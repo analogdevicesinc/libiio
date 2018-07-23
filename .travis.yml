@@ -41,6 +41,10 @@ matrix:
       dist: trusty
       env: LDIST=-trusty
     - compiler: "gcc"
+      os: linux
+      dist: xenial
+      env: LDIST=-xenial
+    - compiler: "gcc"
       os: osx
       osx_image: xcode6.4
       env: LDIST=-osx_10.10
