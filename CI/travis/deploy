@@ -52,7 +52,7 @@ echo "bye" >> script$3
 sftp ${EXTRA_SSH} -b script$3 ${SSHUSER}@${SSHHOST}
 
 # limit things to a few files, so things don't grow forever
-if [ "${LDIST}" = "-precise" -a "$3" = ".deb" ] ; then
+if [ "$3" = ".deb" ] ; then
 	for files in $(ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
 		"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
 	do
