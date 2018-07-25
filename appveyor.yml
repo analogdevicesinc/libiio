@@ -1,4 +1,4 @@
-version: 2015.1.{build}
+version: '{branch}.{build}'
 clone_depth: 1
 
 skip_commits:
