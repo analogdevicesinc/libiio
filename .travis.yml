@@ -43,7 +43,9 @@ matrix:
     - compiler: "gcc"
       os: linux
       dist: xenial
-      env: LDIST=-xenial
+      env:
+        - LDIST=-xenial
+        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - compiler: "gcc"
       os: osx
       osx_image: xcode6.4
