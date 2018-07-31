@@ -133,3 +133,5 @@ deploy:
     on:
       condition: "$TRAVIS_OS_NAME = osx"
       all_branches: true
+after_deploy:
+  - ${TRAVIS_BUILD_DIR}/CI/travis/after_deploy

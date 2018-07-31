@@ -1,0 +1,46 @@
+#!/bin/bash -xe
+
+# These Travis-CI vars have to be non-empty
+[ -n "$TRAVIS_PULL_REQUEST" ] || exit 0
+[ -n "$TRAVIS_BRANCH" ] || exit 0
+[ -n "$ADI_TRAVIS_CI_LIBIIO_TOKEN" ] || exit 0
+
+# Has to be a non-pull-request
+[ "$TRAVIS_PULL_REQUEST" == "false" ] || exit 0
+
+pipeline_branch() {
+	local branch=$1
+
+	# master is a always a pipeline branch
+	[ "$branch" == "master" ] && return 0
+
+	# Check if branch name is 20XX_RY where:
+	#   XX - 14 to 99 /* wooh, that's a lot of years */
+	#   Y  - 1 to 9   /* wooh, that's a lot of releases per year */
+	for year in $(seq 2014 2099) ; do
+		for rel_num in $(seq 1 9) ; do
+			[ "$TRAVIS_BRANCH" == "${year}_R${rel_num}" ] && \
+				return 0
+		done
+	done
+
+	return 1
+}
+
+# Check if it's a pipeline branch; exit otherwise
+pipeline_branch "$TRAVIS_BRANCH" || exit 0
+
+body="{
+	\"request\": {
+		\"branch\":\"$TRAVIS_BRANCH\"
+	}
+}"
+
+curl -s -X POST \
+	-H "Content-Type: application/json" \
+	-H "Accept: application/json" \
+	-H "Travis-API-Version: 3" \
+	-H "Authorization: token $ADI_TRAVIS_CI_LIBIIO_TOKEN" \
+	-d "$body" \
+	https://api.travis-ci.org/repo/analogdevicesinc%2Flibad9361-iio/requests
+

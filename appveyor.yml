@@ -149,3 +149,5 @@ build_script:
     - copy c:\projects\libiio\CI\travis\zip.txt c:\%ARCHIVE_NAME%\README.txt
     - 7z a "c:\libiio.zip" c:\%ARCHIVE_NAME%
     - appveyor PushArtifact c:\libiio.zip
+after_deploy:
+    - curl -H "Authorization: Bearer $APPVEYOR_TOKEN" -H "Content-Type: application/json" https://ci.appveyor.com/api/roles
