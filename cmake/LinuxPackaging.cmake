@@ -6,6 +6,7 @@ FIND_PROGRAM(RPMBUILD_CMD rpmbuild)
 if (RPMBUILD_CMD)
 	set(CPACK_PACKAGE_RELOCATABLE OFF)
 	set(CPACK_GENERATOR ${CPACK_GENERATOR};RPM)
+	set(CPACK_RPM_PACKAGE_REQUIRES "libaio >= 0.3.107, avahi >= 0.6.25, libusb1 >= 1.0.9, libxml2 >= 2.7.6")
 endif()
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
@@ -103,6 +104,9 @@ else()
 	message(STATUS "Using default dependencies for packaging")
 endif()
 
-message(STATUS "Package dependencies: " ${CPACK_DEBIAN_PACKAGE_DEPENDS})
+message(STATUS "Package dependencies (.deb): " ${CPACK_DEBIAN_PACKAGE_DEPENDS})
+if (CPACK_RPM_PACKAGE_REQUIRES)
+	message(STATUS "Package dependencies (.rpm): " ${CPACK_RPM_PACKAGE_REQUIRES})
+endif()
 
 include(CPack)

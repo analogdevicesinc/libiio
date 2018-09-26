@@ -1,8 +1,25 @@
 #!/bin/sh -xe
 
-sudo apt-get -qq update
-sudo apt-get install -y cmake doxygen libaio-dev libavahi-client-dev libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar bzip2 gzip
-if [ `sudo apt-cache search libserialport-dev | wc -l` -gt 0 ] ; then
-	sudo apt-get install -y libserialport-dev
-fi
+handle_centos() {
+	sudo apt-get -qq update
+	echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
+	sudo service docker restart
 
+	# FIXME: The example had a `sleep 5` ; remove it later
+	sleep 5
+
+	sudo docker pull centos:centos${OS_VERSION}
+}
+
+handle_default() {
+	sudo apt-get -qq update
+	sudo apt-get install -y cmake doxygen libaio-dev libavahi-client-dev libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar bzip2 gzip
+	if [ `sudo apt-cache search libserialport-dev | wc -l` -gt 0 ] ; then
+		sudo apt-get install -y libserialport-dev
+	fi
+}
+
+OS_TYPE=${1:-default}
+OS_VERSION=${2}
+
+handle_${OS_TYPE}
