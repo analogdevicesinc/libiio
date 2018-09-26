@@ -5,6 +5,8 @@
 obj-*
 *.deb
 
+*.swp
+
 libiio.iss
 libiio.pc
 
