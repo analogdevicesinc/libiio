@@ -6,6 +6,7 @@ handle_default() {
 	cd $TRAVIS_BUILD_DIR/build
 	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON ..
 	make && make package
+	sudo dpkg -i libiio*.deb
 }
 
 handle_centos() {
