@@ -27,7 +27,7 @@ check_file()
 temp=""
 for i in $(find ./ -name CMakeCache.txt)
 do
-hit=$(find $(dirname ${i}) -maxdepth 1 -name "libiio*.$1" | grep -v -- ${LDIST})
+hit=$(find $(dirname ${i}) -maxdepth 1 -name "libiio*.$1" -a ! -name "*${LDIST}*")
 if [ "$(echo ${hit} | wc -w)" -gt "1"  ] ; then
 	echo "I am confused - more than 2 $1 files!"
 	echo $hit
