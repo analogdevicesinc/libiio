@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -xe
 
 brew update
 if ! brew ls --version cmake &>/dev/null; then

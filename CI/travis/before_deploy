@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -xe
 
 # Don't prepare a deploy on a Coverity build
 if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
