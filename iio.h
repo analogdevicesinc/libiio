@@ -1402,7 +1402,7 @@ __api void * iio_buffer_start(const struct iio_buffer *buf);
  * @return A pointer to the first sample found, or to the end of the buffer if
  * no sample for the given channel is present in the buffer
  *
- * <b>NOTE:</b> This fonction, coupled with iio_buffer_step and iio_buffer_end,
+ * <b>NOTE:</b> This function, coupled with iio_buffer_step and iio_buffer_end,
  * can be used to iterate on all the samples of a given channel present in the
  * buffer, doing the following:
  *
