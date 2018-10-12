@@ -333,7 +333,15 @@ classdef iio_sys_obj_matlab
         
         function ret = writeFirData(obj, fir_data_file)
             fir_data_str = fileread(fir_data_file);
-            ret = writeAttributeString(obj.libiio_ctrl_dev, 'filter_fir_config', fir_data_str);
+            % Force sample rate to a value not requiring a FIR to prevent loading errors,
+            % FIR profile will update the desired sample rate once enabled
+            r0 = writeAttributeString(obj.libiio_ctrl_dev, 'in_voltage_sampling_frequency', '3000000');
+            r1 = writeAttributeString(obj.libiio_ctrl_dev, 'in_out_voltage_filter_fir_en', '0');
+            r2 = writeAttributeString(obj.libiio_ctrl_dev, 'filter_fir_config', fir_data_str);
+            r3 = writeAttributeString(obj.libiio_ctrl_dev, 'in_out_voltage_filter_fir_en', '1');
+            if any([r0, r1, r2, r3]<0)
+                ret = -1;
+            end
         end
     end
 end
