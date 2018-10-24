@@ -19,9 +19,15 @@
 #include "iio-private.h"
 #include <string.h>
 
-/* These are a few functions to do sorting for various
+/* These are a few functions to do sorting via qsort for various
  * iio structures. For more info, see the qsort(3) man page.
- * If the structures are updated, the sort functions may
+ *
+ * The qsort comparison function must return an integer less than, equal to,
+ * or greater than zero if the first argument is considered to be
+ * respectively less than, equal to, or greater than the second. If two
+ * members compare as equal, their order in the sort order is undefined.
+ *
+ * If the structures are updated, the compare functions may
  * need to be updated.
  *
  * The actual arguments to these function are "pointers to
@@ -29,7 +35,7 @@
  * to char", hence the cast plus dereference
  */
 
-int qsort_iio_channel(const void *p1, const void *p2)
+int iio_channel_compare(const void *p1, const void *p2)
 {
 	const struct iio_channel *tmp1 = *(struct iio_channel **)p1;
 	const struct iio_channel *tmp2 = *(struct iio_channel **)p2;
@@ -53,7 +59,7 @@ int qsort_iio_channel(const void *p1, const void *p2)
 	return strcmp(tmp1->id, tmp2->id);
 }
 
-int qsort_iio_channel_attr(const void *p1, const void *p2)
+int iio_channel_attr_compare(const void *p1, const void *p2)
 {
 	const struct iio_channel_attr *tmp1 = (struct iio_channel_attr *)p1;
 	const struct iio_channel_attr *tmp2 = (struct iio_channel_attr *)p2;
@@ -61,7 +67,7 @@ int qsort_iio_channel_attr(const void *p1, const void *p2)
 	return strcmp(tmp1->name, tmp2->name);
 }
 
-int qsort_iio_device(const void *p1, const void *p2)
+int iio_device_compare(const void *p1, const void *p2)
 {
 	const struct iio_device *tmp1 = *(struct iio_device **)p1;
 	const struct iio_device *tmp2 = *(struct iio_device **)p2;
@@ -69,7 +75,7 @@ int qsort_iio_device(const void *p1, const void *p2)
 	return strcmp(tmp1->id, tmp2->id);
 }
 
-int qsort_iio_device_attr(const void *p1, const void *p2)
+int iio_device_attr_compare(const void *p1, const void *p2)
 {
 	const char *tmp1 = *(const char **)p1;
 	const char *tmp2 = *(const char **)p2;
@@ -77,7 +83,7 @@ int qsort_iio_device_attr(const void *p1, const void *p2)
 	return strcmp(tmp1, tmp2);
 }
 
-int qsort_iio_buffer_attr(const void *p1, const void *p2)
+int iio_buffer_attr_compare(const void *p1, const void *p2)
 {
 	const char *tmp1 = *(const char **)p1;
 	const char *tmp2 = *(const char **)p2;

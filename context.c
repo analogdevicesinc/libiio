@@ -206,7 +206,7 @@ static void reorder_channels(struct iio_device *dev)
 
 	/* Reorder channels by index */
 	 qsort(dev->channels, dev->nb_channels, sizeof(struct iio_channel *),
-                qsort_iio_channel);
+                iio_channel_compare);
 
 	for (i = 0; i < dev->nb_channels; i++)
 		dev->channels[i]->number = i;
