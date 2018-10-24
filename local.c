@@ -1159,7 +1159,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 
 	if (chn->name) {
 		size_t len = strlen(chn->name);
-		if  (strncmp(chn->name, ptr, len) == 0 && ptr[len] == '_')
+		if (strncmp(chn->name, ptr, len) == 0 && ptr[len] == '_')
 			ptr += len + 1;
 	}
 
@@ -1754,7 +1754,7 @@ static int create_device(void *d, const char *path)
 	ret = add_buffer_attributes(dev, path);
 	if (ret < 0)
 		goto err_free_device;
-	
+
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
 		goto err_free_scan_elements;
@@ -1773,7 +1773,7 @@ static int create_device(void *d, const char *path)
 	if (ret < 0)
 		goto err_free_device;
 
-	qsort(dev->attrs,  dev->nb_attrs, sizeof(char *),
+	qsort(dev->attrs, dev->nb_attrs, sizeof(char *),
 		iio_device_attr_compare);
 
 	dev->words = (dev->nb_channels + 31) / 32;
