@@ -150,7 +150,7 @@ static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
 	return timeout / 2;
 }
 
-#define USB_PIPE_CTRL_TIMEOUT 200 /* These should not take long */
+#define USB_PIPE_CTRL_TIMEOUT 1000 /* These should not take long */
 
 #define IIO_USD_CMD_RESET_PIPES 0
 #define IIO_USD_CMD_OPEN_PIPE 1
