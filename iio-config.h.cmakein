@@ -26,5 +26,6 @@
 #cmakedefine HAVE_IPV6
 #cmakedefine HAVE_AVAHI
 #cmakedefine NO_THREADS
+#cmakedefine HAS_LIBUSB_GETVERSION
 
 #endif /* IIO_CONFIG_H */
