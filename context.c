@@ -206,10 +206,14 @@ static void reorder_channels(struct iio_device *dev)
 
 	/* Reorder channels by index */
 	 qsort(dev->channels, dev->nb_channels, sizeof(struct iio_channel *),
-                qsort_iio_channel);
+                iio_channel_compare);
 
-	for (i = 0; i < dev->nb_channels; i++)
-		dev->channels[i]->number = i;
+	for (i = 0; i < dev->nb_channels; i++) {
+		struct iio_channel *chn = dev->channels[i];
+		chn->number = i;
+		qsort(chn->attrs, chn->nb_attrs, sizeof(struct iio_channel_attr),
+			iio_channel_attr_compare);
+	}
 }
 
 int iio_context_init(struct iio_context *ctx)

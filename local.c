@@ -1159,7 +1159,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 
 	if (chn->name) {
 		size_t len = strlen(chn->name);
-		if  (strncmp(chn->name, ptr, len) == 0 && ptr[len] == '_')
+		if (strncmp(chn->name, ptr, len) == 0 && ptr[len] == '_')
 			ptr += len + 1;
 	}
 
@@ -1713,7 +1713,7 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 			return ret;
 
 		qsort(dev->buffer_attrs, dev->nb_buffer_attrs, sizeof(char *),
-			qsort_iio_buffer_attr);
+			iio_buffer_attr_compare);
 	}
 
 	return 0;
@@ -1754,7 +1754,7 @@ static int create_device(void *d, const char *path)
 	ret = add_buffer_attributes(dev, path);
 	if (ret < 0)
 		goto err_free_device;
-	
+
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
 		goto err_free_scan_elements;
@@ -1767,17 +1767,14 @@ static int create_device(void *d, const char *path)
 		free_protected_attrs(chn);
 		if (ret < 0)
 			goto err_free_scan_elements;
-
-		qsort(chn->attrs,  chn->nb_attrs, sizeof(struct iio_channel_attr),
-			qsort_iio_channel_attr);
 	}
 
 	ret = detect_and_move_global_attrs(dev);
 	if (ret < 0)
 		goto err_free_device;
 
-	qsort(dev->attrs,  dev->nb_attrs, sizeof(char *),
-		qsort_iio_device_attr);
+	qsort(dev->attrs, dev->nb_attrs, sizeof(char *),
+		iio_device_attr_compare);
 
 	dev->words = (dev->nb_channels + 31) / 32;
 	if (dev->words) {
@@ -2003,7 +2000,7 @@ struct iio_context * local_create_context(void)
 		goto err_context_destroy;
 
 	qsort(ctx->devices, ctx->nb_devices, sizeof(struct iio_device *),
-		qsort_iio_device);
+		iio_device_compare);
 
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
 

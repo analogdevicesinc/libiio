@@ -19,10 +19,10 @@
 #ifndef __IIO_QSORT_H__
 #define __IIO_QSORT_H__
 
-int qsort_iio_channel(const void *p1, const void *p2);
-int qsort_iio_channel_attr(const void *p1, const void *p2);
-int qsort_iio_device(const void *p1, const void *p2);
-int qsort_iio_device_attr(const void *p1, const void *p2);
-int qsort_iio_buffer_attr(const void *p1, const void *p2);
+int iio_channel_compare(const void *p1, const void *p2);
+int iio_channel_attr_compare(const void *p1, const void *p2);
+int iio_device_compare(const void *p1, const void *p2);
+int iio_device_attr_compare(const void *p1, const void *p2);
+int iio_buffer_attr_compare(const void *p1, const void *p2);
 
 #endif /* __IIO_QSORT_H__ */
