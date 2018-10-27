@@ -333,7 +333,18 @@ classdef iio_sys_obj_matlab
         
         function ret = writeFirData(obj, fir_data_file)
             fir_data_str = fileread(fir_data_file);
+            ret = writeAttributeString(obj.libiio_ctrl_dev, 'in_out_voltage_filter_fir_en', '0');
+            if ret<0
+                return;
+            end
             ret = writeAttributeString(obj.libiio_ctrl_dev, 'filter_fir_config', fir_data_str);
+            if ret<0
+                return;
+            end
+            ret = writeAttributeString(obj.libiio_ctrl_dev, 'in_out_voltage_filter_fir_en', '1');
+            if ret<0
+                return;
+            end
         end
     end
 end
