@@ -54,10 +54,12 @@ matrix:
       env:
         - OS_TYPE=centos
         - OS_VERSION=6
+        - LDIST=-centos6
     - os: linux
       env:
         - OS_TYPE=centos
         - OS_VERSION=7
+        - LDIST=-centos7
     - compiler: "gcc"
       os: osx
       osx_image: xcode6.4
