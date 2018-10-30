@@ -109,4 +109,17 @@ if (CPACK_RPM_PACKAGE_REQUIRES)
 	message(STATUS "Package dependencies (.rpm): " ${CPACK_RPM_PACKAGE_REQUIRES})
 endif()
 
+if(${CMAKE_MAJOR_VERSION} LESS 3)
+	# old versions of cmake dont include this, but the same vintage of dpkg requires it
+	IF(NOT CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+		FIND_PROGRAM(DPKG_CMD dpkg)
+		IF(NOT DPKG_CMD)
+			MESSAGE(STATUS "Can not find dpkg in your path, default to i386.")
+			SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE i386)
+		ENDIF(NOT DPKG_CMD)
+		EXECUTE_PROCESS(COMMAND "${DPKG_CMD}" --print-architecture
+			OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
+			OUTPUT_STRIP_TRAILING_WHITESPACE)
+	ENDIF(NOT CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+endif()
 include(CPack)
