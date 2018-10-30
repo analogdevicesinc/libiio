@@ -126,8 +126,8 @@ Note that the channels will really be enabled or disabled when the iio_buffer ob
 
 Also, not all channels can be enabled. To know whether or not one channel can be enabled, use iio_channel_is_scan_element().
 
-Once the channels have been enabled, the iio_buffer object can be created from the iio_device object that will be used, with the function iio_device_create_buffer().
-This call will fail if no channels have been enabled.
+Once the channels have been enabled, and triggers assigned (for triggered buffers) the iio_buffer object can be created from the iio_device object that will be used, with the function iio_device_create_buffer().
+This call will fail if no channels have been enabled, or for triggered buffers, if the trigger has not been assigned.
 
 When the object is no more needed, it can be destroyed with iio_buffer_destroy().
 
