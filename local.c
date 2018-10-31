@@ -425,7 +425,7 @@ static ssize_t local_enable_buffer(const struct iio_device *dev)
 			pdata->buffer_enabled = true;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int local_set_kernel_buffers_count(const struct iio_device *dev,
