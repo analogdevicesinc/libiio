@@ -362,7 +362,7 @@ static ssize_t send_sample(const struct iio_channel *chn,
 		void *src, size_t length, void *d)
 {
 	struct sample_cb_info *info = d;
-	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
+	if (chn->index < 0 || !TEST_BIT(info->mask, chn->number))
 		return 0;
 	if (info->nb_bytes < length)
 		return 0;
@@ -389,7 +389,7 @@ static ssize_t receive_sample(const struct iio_channel *chn,
 		void *dst, size_t length, void *d)
 {
 	struct sample_cb_info *info = d;
-	if (chn->index < 0 || !TEST_BIT(info->mask, chn->index))
+	if (chn->index < 0 || !TEST_BIT(info->mask, chn->number))
 		return 0;
 	if (info->cpt == info->nb_bytes)
 		return 0;
@@ -560,7 +560,10 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				struct iio_channel *chn = dev->channels[i];
 				long index = chn->index;
 
-				if (index >= 0 && TEST_BIT(entry->mask, i))
+				if (index < 0)
+					continue;
+
+				if (TEST_BIT(entry->mask, chn->number))
 					iio_channel_enable(chn);
 				else
 					iio_channel_disable(chn);
