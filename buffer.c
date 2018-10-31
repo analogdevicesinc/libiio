@@ -223,14 +223,14 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 				break;
 
 			/* Test if the buffer has samples for this channel */
-			if (!TEST_BIT(buffer->mask, chn->index))
+			if (!TEST_BIT(buffer->mask, chn->number))
 				continue;
 
 			if ((ptr - start) % length)
 				ptr += length - ((ptr - start) % length);
 
 			/* Test if the client wants samples from this channel */
-			if (TEST_BIT(dev->mask, chn->index)) {
+			if (TEST_BIT(dev->mask, chn->number)) {
 				ssize_t ret = callback(chn,
 						(void *) ptr, length, d);
 				if (ret < 0)
