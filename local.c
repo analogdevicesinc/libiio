@@ -1767,6 +1767,9 @@ static int create_device(void *d, const char *path)
 		free_protected_attrs(chn);
 		if (ret < 0)
 			goto err_free_scan_elements;
+
+		qsort(chn->attrs,  chn->nb_attrs, sizeof(struct iio_channel_attr),
+			iio_channel_attr_compare);
 	}
 
 	ret = detect_and_move_global_attrs(dev);
