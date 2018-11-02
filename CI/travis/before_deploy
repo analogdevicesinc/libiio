@@ -18,8 +18,12 @@ else
 fi
 pwd
 
+if [ -z "${LDIST}" -a -f "build/.LDIST" ] ; then
+	LDIST="-$(cat build/.LDIST)"
+fi
 if [ -z "${LDIST}" ] ; then
-	LDIST=-$(lsb_release -c | awk '{print $NF}')
+	. CI/travis/get_ldist
+	LDIST="-$(get_ldist)"
 fi
 
 check_file()
@@ -52,7 +56,7 @@ if [ -n "${temp}" ] ; then
 	deploy=$(expr ${deploy} + 1)
 	if [ -z "${TARGET_DEB}" ] ; then
 		export TARGET_DEB=$(echo ${temp} | \
-			sed -e 's:^./.*/::' -e 's:.deb$::')${LDIST}.deb
+			sed -e 's:^./.*/::' -e 's:-Linux::' -e 's:.deb$::')${LDIST}.deb
 	fi
 	echo "deploying ${temp} to nightly $TARGET_DEB"
 	if [ -z "${RELEASE_PKG_FILE_DEB}" ] ; then
@@ -72,7 +76,7 @@ if [ -n "${temp}" ] ; then
 	deploy=$(expr ${deploy} + 1)
 	if [ -z "${TARGET_RPM}" ] ; then
 		export TARGET_RPM=$(echo ${temp} | \
-			sed -e 's:^./.*/::' -e 's:.rpm$::')${LDIST}.rpm
+			sed -e 's:^./.*/::' -e 's:-Linux::' -e 's:.rpm$::')${LDIST}.rpm
 	fi
 	echo "deploying ${temp} to nightly $TARGET_RPM"
 	if [ -z "${RELEASE_PKG_FILE_RPM}" ] ; then
@@ -137,7 +141,7 @@ if [  -n "${temp}"  ] ; then
 		)
 
 		export TARGET_TGZ=$(echo ${temp} | \
-			sed -e 's:^./.*/::' -e 's:.tar.gz$::')${LDIST}.tar.gz;
+			sed -e 's:^./.*/::' -e 's:-Linux::' -e 's:-Darwin::' -e 's:.tar.gz$::')${LDIST}.tar.gz;
 	fi
 	echo "deploying ${temp} to $TARGET_TGZ"
 	if [ -z "${RELEASE_PKG_FILE_TGZ}" ] ; then

@@ -39,40 +39,32 @@ matrix:
     - compiler: "gcc"
       os: linux
       dist: precise
-      env: LDIST=-precise
     - compiler: "gcc"
       os: linux
       dist: trusty
-      env: LDIST=-trusty
     - compiler: "gcc"
       os: linux
       dist: xenial
       env:
-        - LDIST=-xenial
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
       env:
         - OS_TYPE=centos
         - OS_VERSION=6
-        - LDIST=-centos6
     - os: linux
       env:
         - OS_TYPE=centos
         - OS_VERSION=7
-        - LDIST=-centos7
     - compiler: "gcc"
       os: osx
       osx_image: xcode6.4
-      env: LDIST=-osx_10.10
     - compiler: "gcc"
       os: osx
       osx_image: xcode7.3
-      env: LDIST=-osx_10.11
     - compiler: "gcc"
       os: osx
       osx_image: xcode8.1
       env:
-        - LDIST=-osx_10.12
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
 
 addons:
