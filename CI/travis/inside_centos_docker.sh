@@ -44,4 +44,7 @@ make package
 
 if [ "$TRAVIS_CI" == "travis-ci" ] ; then
 	yum -y install /libiio/build/libiio-*.rpm
+	# need to find this out inside the container
+	. /libiio/CI/travis/get_ldist
+	echo "$(get_ldist)" > /libiio/build/.LDIST
 fi
