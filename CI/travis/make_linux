@@ -16,6 +16,13 @@ handle_centos() {
 		/bin/bash -xe /libiio/CI/travis/inside_centos_docker.sh ${OS_VERSION} travis-ci
 }
 
+handle_ubuntu_docker() {
+	sudo docker run --rm=true \
+		-v `pwd`:/libiio:rw \
+		ubuntu:${OS_VERSION} \
+		/bin/bash -xe /libiio/CI/travis/inside_bionic_docker.sh travis-ci
+}
+
 OS_TYPE=${1:-default}
 OS_VERSION="$2"
 

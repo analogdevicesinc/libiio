@@ -55,6 +55,10 @@ matrix:
       env:
         - OS_TYPE=centos
         - OS_VERSION=7
+    - os: linux
+      env:
+        - OS_TYPE=ubuntu_docker
+        - OS_VERSION=bionic
     - compiler: "gcc"
       os: osx
       osx_image: xcode6.4
