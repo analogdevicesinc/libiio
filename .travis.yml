@@ -38,9 +38,6 @@ matrix:
       env: LDIST=DO_NOT_DEPLOY
     - compiler: "gcc"
       os: linux
-      dist: precise
-    - compiler: "gcc"
-      os: linux
       dist: trusty
     - compiler: "gcc"
       os: linux
