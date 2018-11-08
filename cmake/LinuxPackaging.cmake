@@ -48,6 +48,9 @@ if(DEB_DETECT_DEPENDENCIES AND DPKG_CMD AND DPKGQ_CMD)
 	if(WITH_XML_BACKEND)
 		set(PACKAGES "${PACKAGES} libxml2")
 	endif()
+	if(WITH_SERIAL_BACKEND)
+		set(PACKAGES "${PACKAGES} libserialport0")
+	endif()
 	# find the version of the installed package, which is hard to do in
 	# cmake first, turn the list into an list (seperated by semicolons)
 	string(REGEX REPLACE " " ";" PACKAGES ${PACKAGES})
@@ -100,7 +103,7 @@ if(DEB_DETECT_DEPENDENCIES AND DPKG_CMD AND DPKGQ_CMD)
 		${CPACK_DEBIAN_PACKAGE_DEPENDS})
 else()
 	# assume everything is turned on, and running on a modern OS
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio (>= 0.3.109), libavahi-client (>= 0.6.31), libavahi-common (>= 0.6.31), libc6 (>= 2.19), libusb-1.0-0 (>= 2:1.0.17), libxml2 (>= 2.9.1)")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libaio (>= 0.3.109), libavahi-client (>= 0.6.31), libavahi-common (>= 0.6.31), libc6 (>= 2.19), libusb-1.0-0 (>= 2:1.0.17), libxml2 (>= 2.9.1), libserialport0 (>=0.1.1)")
 	message(STATUS "Using default dependencies for packaging")
 endif()
 
