@@ -1,11 +1,13 @@
 #!/bin/sh -xe
 
-brew update
-if ! brew ls --version cmake &>/dev/null; then
-	brew install cmake
-else
-	brew upgrade cmake
-fi
-brew install doxygen
-brew install --build-from-source libusb
-brew install libxml2
+brew_install_or_upgrade() {
+	brew install $1 || \
+		brew upgrade $1 || \
+		brew ls --version $1
+}
+
+PACKAGES="cmake doxygen libusb libxml2"
+
+for pkg in $PACKAGES ; do
+	brew_install_or_upgrade $pkg
+done
