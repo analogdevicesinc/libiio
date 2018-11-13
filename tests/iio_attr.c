@@ -644,7 +644,7 @@ int main(int argc, char **argv)
 						const struct iio_data_format *format =
 							iio_channel_get_data_format(ch);
 						char sign = format->is_signed ? 's' : 'u';
-						char repeat[8] = "";
+						char repeat[12] = "";
 
 						if (format->is_fully_defined)
 							sign += 'A' - 'a';

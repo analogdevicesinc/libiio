@@ -190,7 +190,7 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 
 static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 {
-	char buf[1024], repeat[8] = "", *str;
+	char buf[1024], repeat[12] = "", *str;
 	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
 
 	if (chn->format.repeat > 1)
