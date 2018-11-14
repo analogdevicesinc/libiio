@@ -19,11 +19,11 @@ fi
 pwd
 
 if [ -z "${LDIST}" -a -f "build/.LDIST" ] ; then
-	LDIST="-$(cat build/.LDIST)"
+	export LDIST="-$(cat build/.LDIST)"
 fi
 if [ -z "${LDIST}" ] ; then
 	. CI/travis/get_ldist
-	LDIST="-$(get_ldist)"
+	export LDIST="-$(get_ldist)"
 fi
 
 check_file()
