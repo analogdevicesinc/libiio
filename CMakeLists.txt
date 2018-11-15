@@ -359,6 +359,13 @@ if(DOXYGEN_FOUND)
 	# It is not an error when 'dot' is not found, just switching off the Doxygen's HAVE_DOT option
 	find_package_handle_standard_args (Dot REQUIRED_VARS DOXYGEN_DOT_EXECUTABLE)
 
+	include(cmake/CheckCaseSensitiveFileSystem.cmake)
+	if (HAVE_CASE_SENSITIVE_FILESYSTEM)
+		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "YES")
+	else()
+		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "NO")
+	endif()
+
 	if (WITH_DOC)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 		set(HTML_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
