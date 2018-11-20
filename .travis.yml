@@ -97,10 +97,7 @@ notifications:
 
 before_deploy:
   - . ${TRAVIS_BUILD_DIR}/CI/travis/before_deploy
-  - openssl aes-256-cbc -K $encrypted_48a720578612_key -iv $encrypted_48a720578612_iv -in ${TRAVIS_BUILD_DIR}/CI/travis/deploy.rsa.enc -out /tmp/deploy.rsa -d
-  - eval "$(ssh-agent -s)"
-  - chmod 600 /tmp/deploy.rsa
-  - ssh-add /tmp/deploy.rsa
+
 deploy:
   - provider: releases
     api_key:

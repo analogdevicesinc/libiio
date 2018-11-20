@@ -3,6 +3,11 @@
 # Don't prepare a deploy on a Coverity build
 if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 
+openssl aes-256-cbc -K $encrypted_48a720578612_key -iv $encrypted_48a720578612_iv -in ${TRAVIS_BUILD_DIR}/CI/travis/deploy.rsa.enc -out /tmp/deploy.rsa -d
+eval "$(ssh-agent -s)"
+chmod 600 /tmp/deploy.rsa
+ssh-add /tmp/deploy.rsa
+
 deploy=0
 if [ -z "$TRAVIS_BUILD_DIR" ] ; then
 	t=$(find ./ -name CMakeCache.txt|head -1)
