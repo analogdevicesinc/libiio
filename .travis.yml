@@ -69,6 +69,9 @@ matrix:
       osx_image: xcode10.1
       env:
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
+    - os: linux
+      env:
+        - TRIGGER_NEXT_BUILD=true
 
 addons:
   artifacts: true

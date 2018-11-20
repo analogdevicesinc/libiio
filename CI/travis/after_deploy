@@ -1,5 +1,7 @@
 #!/bin/bash -xe
 
+[ "$TRIGGER_NEXT_BUILD" == "true" ] || exit 0
+
 # These Travis-CI vars have to be non-empty
 [ -n "$TRAVIS_PULL_REQUEST" ] || exit 0
 [ -n "$TRAVIS_BRANCH" ] || exit 0
@@ -29,6 +31,23 @@ pipeline_branch() {
 
 # Check if it's a pipeline branch; exit otherwise
 pipeline_branch "$TRAVIS_BRANCH" || exit 0
+
+WAIT_TIME=20 # minutes :(
+
+# Sigh... poll for 20 minutes here...
+# Alright: some explanation:
+#   There is no clean way in Travis-CI to get a status for
+#   when all the jobs finish; there is an alternative to using
+#   build stages, but that would take 2-10 days of development
+#   and testing to get right. We know that the longest running job
+#   takes ~16-18 minutes, so we add a new job that just waits.
+#   Piggy-backing on that slow job would be an idea, but it's not very
+#   future proof, because
+for it in $(seq 1 20) ; do
+	let left='WAIT_TIME - it'
+	echo "$it. Waiting 20 minutes: ${left} minutes left"
+	sleep 60
+done
 
 body="{
 	\"request\": {
