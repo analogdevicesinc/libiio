@@ -3,6 +3,8 @@
 LIBNAME="$1"
 TRAVIS_CI="$2"
 
+export TRAVIS_BUILD_DIR="/$LIBNAME"
+
 apt-get -qq update
 apt-get -y install sudo
 
@@ -18,9 +20,7 @@ else
 	cd build
 fi
 
-cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON ..
-make
-make package
+/$LIBNAME/CI/travis/make_linux "$LIBNAME" default
 
 # need to find this out inside the container
 . /${LIBNAME}/CI/travis/get_ldist
