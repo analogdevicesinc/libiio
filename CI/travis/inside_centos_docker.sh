@@ -1,7 +1,8 @@
 #!/bin/sh -xe
 
-OS_VERSION="$1"
-TRAVIS_CI="$2"
+LIBNAME="$1"
+OS_VERSION="$2"
+TRAVIS_CI="$3"
 
 # FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
 yum -y groupinstall 'Development Tools'
@@ -31,8 +32,8 @@ fi
 # Check we're in Travis-CI; the only place where this context is valid
 # It makes sure, users won't shoot themselves in the foot while running this script
 if [ "$TRAVIS_CI" == "travis-ci" ] ; then
-	mkdir -p /libiio/build
-	cd /libiio/build
+	mkdir -p /${LIBNAME}/build
+	cd /${LIBNAME}/build
 else
 	mkdir -p build
 	cd build
@@ -43,8 +44,8 @@ make
 make package
 
 if [ "$TRAVIS_CI" == "travis-ci" ] ; then
-	yum -y install /libiio/build/libiio-*.rpm
+	yum -y install /${LIBNAME}/build/${LIBNAME}-*.rpm
 	# need to find this out inside the container
-	. /libiio/CI/travis/get_ldist
-	echo "$(get_ldist)" > /libiio/build/.LDIST
+	. /${LIBNAME}/CI/travis/get_ldist
+	echo "$(get_ldist)" > /${LIBNAME}/build/.LDIST
 fi
