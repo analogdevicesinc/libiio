@@ -6,25 +6,26 @@ handle_default() {
 	cd $TRAVIS_BUILD_DIR/build
 	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON ..
 	make && make package
-	sudo dpkg -i libiio*.deb
+	sudo dpkg -i ${LIBNAME}*.deb
 }
 
 handle_centos() {
 	sudo docker run --rm=true \
-		-v `pwd`:/libiio:rw \
+		-v `pwd`:/${LIBNAME}:rw \
 		centos:centos${OS_VERSION} \
-		/bin/bash -xe /libiio/CI/travis/inside_centos_docker.sh ${OS_VERSION} travis-ci
+		/bin/bash -xe /${LIBNAME}/CI/travis/inside_centos_docker.sh ${LIBNAME} ${OS_VERSION} travis-ci
 }
 
 handle_ubuntu_docker() {
 	sudo docker run --rm=true \
-		-v `pwd`:/libiio:rw \
+		-v `pwd`:/${LIBNAME}:rw \
 		ubuntu:${OS_VERSION} \
-		/bin/bash -xe /libiio/CI/travis/inside_bionic_docker.sh travis-ci
+		/bin/bash -xe /${LIBNAME}/CI/travis/inside_bionic_docker.sh ${LIBNAME} travis-ci
 }
 
-OS_TYPE=${1:-default}
-OS_VERSION="$2"
+LIBNAME="$1"
+OS_TYPE=${2:-default}
+OS_VERSION="$3"
 
 handle_${OS_TYPE}
 
