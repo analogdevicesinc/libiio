@@ -1,7 +1,8 @@
 #!/bin/sh -xe
 
-# Don't prepare a deploy on a Coverity build
-if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
+. CI/travis/lib.sh
+
+is_deployable_travis_ci_run || exit 0
 
 openssl aes-256-cbc -K $encrypted_48a720578612_key -iv $encrypted_48a720578612_iv -in ${TRAVIS_BUILD_DIR}/CI/travis/deploy.rsa.enc -out /tmp/deploy.rsa -d
 eval "$(ssh-agent -s)"
