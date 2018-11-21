@@ -16,8 +16,7 @@ get_ldist() {
 			return 0
 		fi
 		. /etc/os-release
-		command dpkg --version >/dev/null 2>&1
-		if [ "$?" -ne 0 ] ; then
+		if ! command dpkg --version &> /dev/null ; then
 			echo $ID-$VERSION_ID-$(uname -m)
 		else
 			echo $ID-$VERSION_ID-$(dpkg --print-architecture)
