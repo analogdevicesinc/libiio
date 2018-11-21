@@ -2,6 +2,10 @@
 
 cd $TRAVIS_BUILD_DIR
 
+. CI/travis/lib.sh
+
+is_deployable_travis_ci_run || exit 0
+
 send()
 {
 if [ "$#" -ne 3 ] ; then
@@ -21,11 +25,7 @@ if [ ! -r "$1" ] ; then
 	return
 fi
 
-if [ $BRANCH_PULL ] ; then
-	branch=$BRANCH_PULL
-else
-	branch=$BRANCH
-fi
+local branch=$TRAVIS_BRANCH
 
 FROM=$1
 TO=${branch}_$2
