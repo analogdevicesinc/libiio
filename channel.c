@@ -141,7 +141,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (strncmp(iio_chan_type_name_spec[i], chn->id, len) != 0)
 			continue;
 		/* Type must be followed by either a '_' or a digit */
-		if (chn->id[len] != '_' && chn->id[len] < '0' && chn->id[len] > '9')
+		if (chn->id[len] != '_' && (chn->id[len] < '0' || chn->id[len] > '9'))
 			continue;
 
 		chn->type = (enum iio_chan_type) i;
@@ -158,9 +158,6 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 			continue;
 		len = strlen(modifier_names[i]);
 		if (strncmp(modifier_names[i], mod, len) != 0)
-			continue;
-		/* Modifier must be followed by a '_' */
-		if (mod[len] != '_')
 			continue;
 
 		chn->modifier = (enum iio_modifier) i;
