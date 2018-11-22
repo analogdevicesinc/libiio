@@ -84,28 +84,40 @@ upload_file_to_swdownloads() {
 	set +x
 
 	local FROM=$1
-	local TO=${branch}_$2
-	local LATE=${branch}_latest_libiio${LDIST}$3
+	local FNAME=$2
+	local EXT=$3
+
+	local TO=${branch}_${FNAME}
+	local LATE=${branch}_latest_libiio${LDIST}${EXT}
 	local GLOB=${DEPLOY_TO}/${branch}_libiio-*
 
+	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${TO} ; then
+		local RM_TO="rm ${TO}"
+	fi
+
+	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${LATE} ; then
+		local RM_LATE="rm ${LATE}"
+	fi
+
 	echo attemting to deploy $FROM to $TO
-	echo and ${branch}_libiio${LDIST}$3
+	echo and ${branch}_libiio${LDIST}${EXT}
 	ssh -V
 
-	echo "cd ${DEPLOY_TO}" > script$3
-	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${TO} ; then
-		echo "rm ${TO}" >> script$3
-	fi
-	echo "put ${FROM} ${TO}" >> script$3
-	echo "ls -l ${TO}" >> script$3
-	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${LATE} ; then
-		echo "rm ${LATE}" >> script$3
-	fi
-	echo "symlink ${TO} ${LATE}" >> script$3
-	echo "ls -l ${LATE}" >> script$3
-	echo "bye" >> script$3
+	mkdir -p build
 
-	sftp ${EXTRA_SSH} -b script$3 ${SSHUSER}@${SSHHOST}
+	cat > build/script${EXT} <<-EOF
+		cd ${DEPLOY_TO}
+
+		${RM_TO}
+		put ${FROM} ${TO}
+		ls -l ${TO}
+
+		${RM_LATE}
+		symlink ${TO} ${LATE}"
+		ls -l ${LATE}
+		bye
+	EOF
+	sftp ${EXTRA_SSH} -b build/script${EXT} ${SSHUSER}@${SSHHOST}
 
 	# limit things to a few files, so things don't grow forever
 	if [ "$3" = ".deb" ] ; then
