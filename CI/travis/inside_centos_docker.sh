@@ -46,6 +46,6 @@ make package
 if [ "$TRAVIS_CI" == "travis-ci" ] ; then
 	yum -y install /${LIBNAME}/build/${LIBNAME}-*.rpm
 	# need to find this out inside the container
-	. /${LIBNAME}/CI/travis/get_ldist
+	. /${LIBNAME}/CI/travis/lib.sh
 	echo "$(get_ldist)" > /${LIBNAME}/build/.LDIST
 fi

@@ -23,5 +23,5 @@ fi
 /$LIBNAME/CI/travis/make_linux "$LIBNAME" default
 
 # need to find this out inside the container
-. /${LIBNAME}/CI/travis/get_ldist
+. /${LIBNAME}/CI/travis/lib.sh
 echo "$(get_ldist)" > /${LIBNAME}/build/.LDIST
