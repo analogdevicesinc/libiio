@@ -44,6 +44,8 @@ matrix:
       dist: xenial
       env:
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
+        # GH_DOC_TOKEN used to deploy docs
+        - secure: "OrwnYeUITY2R7pn11WHqsO7c6F9fRY7G5fOh98GGXnw7dAIoSvUhjUE70ehaBzLH0CyO83KgaiyACP8eqRx9BYUd1McrqTFDmYJNVR+Wk01SSjJxaXzU4RMsJPhXH9l5U7BEH5dVk/IFLLaCwYnc35mlADHE2KCGNanvtnRU0gU="
     - os: linux
       env:
         - OS_TYPE=centos
