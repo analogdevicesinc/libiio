@@ -12,9 +12,6 @@ env:
   # ENCRYPTED_xxx vars are used to check whether this build is deploying anything or not
   - ENCRYPTED_KEY=$encrypted_48a720578612_key
   - ENCRYPTED_IV=$encrypted_48a720578612_iv
-  - BRANCH_PULL=$TRAVIS_PULL_REQUEST_BRANCH
-  - PULL=$TRAVIS_PULL_REQUEST
-  - BRANCH=$TRAVIS_BRANCH
 
 services:
   - docker
