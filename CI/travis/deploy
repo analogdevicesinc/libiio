@@ -7,8 +7,8 @@ cd $TRAVIS_BUILD_DIR
 is_deployable_travis_ci_run || exit 0
 
 #    from                   to             suffix
-upload_file_to_swdownloads ${RELEASE_PKG_FILE_DEB} ${TARGET_DEB} .deb
-upload_file_to_swdownloads ${RELEASE_PKG_FILE_RPM} ${TARGET_RPM} .rpm
-upload_file_to_swdownloads ${RELEASE_PKG_FILE_TGZ} ${TARGET_TGZ} .tar.gz
-upload_file_to_swdownloads ${RELEASE_PKG_FILE_PKG} ${TARGET_PKG} .pkg
+upload_file_to_swdownloads libiio ${RELEASE_PKG_FILE_DEB} ${TARGET_DEB} .deb
+upload_file_to_swdownloads libiio ${RELEASE_PKG_FILE_RPM} ${TARGET_RPM} .rpm
+upload_file_to_swdownloads libiio ${RELEASE_PKG_FILE_TGZ} ${TARGET_TGZ} .tar.gz
+upload_file_to_swdownloads libiio ${RELEASE_PKG_FILE_PKG} ${TARGET_PKG} .pkg
 
