@@ -7,7 +7,6 @@ handle_default() {
 	cd build
 	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON ..
 	make && make package
-	sudo dpkg -i ${LIBNAME}*.deb
 	if [ -n "${GH_DOC_TOKEN}" ] && \
 			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
 		sh generateDocumentationAndDeploy.sh
@@ -16,6 +15,14 @@ handle_default() {
 }
 
 handle_centos() {
+	mkdir -p build
+	cd build
+	cmake -DENABLE_PACKAGING=ON ..
+	make && make package
+	cd ..
+}
+
+handle_centos_docker() {
 	sudo docker run --rm=true \
 		-v `pwd`:/${LIBNAME}:rw \
 		centos:centos${OS_VERSION} \

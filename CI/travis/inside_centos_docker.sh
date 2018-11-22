@@ -5,14 +5,12 @@ OS_VERSION="$2"
 
 cd /$LIBNAME
 
-# FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
-yum -y groupinstall 'Development Tools'
-yum -y install cmake libxml2-devel libusb1-devel doxygen libaio-devel \
-	avahi-devel bzip2 gzip rpm rpm-build
+/$LIBNAME/CI/travis/before_install_linux centos
 
 # FIXME: cmake in CentOS 7 is broken, so we need to patch it for now
 # Remove this when it's fixed; but make sure we're doing this in Travis-CI context
 if [ "$OS_VERSION" == "7" ] ; then
+	cd /
 	patch -p1 <<-EOF
 --- a/usr/share/cmake/Modules/CPackRPM.cmake
 +++ b/usr/share/cmake/Modules/CPackRPM.cmake
@@ -26,15 +24,11 @@ if [ "$OS_VERSION" == "7" ] ; then
  endif()
  if (CPACK_RPM_PACKAGE_DEBUG)
 	EOF
+	cd /$LIBNAME
 fi
 
-cmake -DENABLE_PACKAGING=ON ..
-make
-make package
+/$LIBNAME/CI/travis/make_linux centos
 
-if [ "$TRAVIS_CI" == "travis-ci" ] ; then
-	yum -y install /${LIBNAME}/build/${LIBNAME}-*.rpm
-	# need to find this out inside the container
-	. /${LIBNAME}/CI/travis/lib.sh
-	echo "$(get_ldist)" > /${LIBNAME}/build/.LDIST
-fi
+# need to find this out inside the container
+. /${LIBNAME}/CI/travis/lib.sh
+echo "$(get_ldist)" > /${LIBNAME}/build/.LDIST

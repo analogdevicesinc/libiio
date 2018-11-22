@@ -48,11 +48,11 @@ matrix:
         - secure: "OrwnYeUITY2R7pn11WHqsO7c6F9fRY7G5fOh98GGXnw7dAIoSvUhjUE70ehaBzLH0CyO83KgaiyACP8eqRx9BYUd1McrqTFDmYJNVR+Wk01SSjJxaXzU4RMsJPhXH9l5U7BEH5dVk/IFLLaCwYnc35mlADHE2KCGNanvtnRU0gU="
     - os: linux
       env:
-        - OS_TYPE=centos
+        - OS_TYPE=centos_docker
         - OS_VERSION=6
     - os: linux
       env:
-        - OS_TYPE=centos
+        - OS_TYPE=centos_docker
         - OS_VERSION=7
     - os: linux
       env:
