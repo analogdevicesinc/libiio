@@ -42,3 +42,16 @@ get_ldist() {
 	esac
 	return 0
 }
+
+__brew_install_or_upgrade() {
+	brew install $1 || \
+		brew upgrade $1 || \
+		brew ls --version $1
+}
+
+brew_install_or_upgrade() {
+	while [ -n "$1" ] ; do
+		__brew_install_or_upgrade "$1" || return 1
+		shift
+	done
+}
