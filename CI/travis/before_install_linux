@@ -4,17 +4,12 @@ handle_centos() {
 	sudo apt-get -qq update
 	echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
 	sudo service docker restart
-
-	# FIXME: The example had a `sleep 5` ; remove it later
-	sleep 5
-
 	sudo docker pull centos:centos${OS_VERSION}
 }
 
 handle_ubuntu_docker() {
 	sudo apt-get -qq update
 	sudo service docker restart
-	sleep 5
 	sudo docker pull ubuntu:${OS_VERSION}
 }
 
