@@ -368,6 +368,8 @@ if(DOXYGEN_FOUND)
 
 	if (WITH_DOC)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
+				${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
 		set(HTML_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
 		file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc DESTINATION ${HTML_DEST_DIR})
 
