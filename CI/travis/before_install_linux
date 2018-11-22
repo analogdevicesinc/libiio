@@ -1,6 +1,13 @@
 #!/bin/sh -xe
 
 handle_centos() {
+	# FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
+	yum -y groupinstall 'Development Tools'
+	yum -y install cmake libxml2-devel libusb1-devel doxygen libaio-devel \
+		avahi-devel bzip2 gzip rpm rpm-build
+}
+
+handle_centos_docker() {
 	sudo apt-get -qq update
 	echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
 	sudo service docker restart
