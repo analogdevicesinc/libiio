@@ -28,7 +28,6 @@ if [ -z "${LDIST}" -a -f "build/.LDIST" ] ; then
 	export LDIST="-$(cat build/.LDIST)"
 fi
 if [ -z "${LDIST}" ] ; then
-	. CI/travis/get_ldist
 	export LDIST="-$(get_ldist)"
 fi
 
