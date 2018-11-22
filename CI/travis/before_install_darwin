@@ -1,13 +1,5 @@
 #!/bin/sh -xe
 
-brew_install_or_upgrade() {
-	brew install $1 || \
-		brew upgrade $1 || \
-		brew ls --version $1
-}
+. CI/travis/lib.sh
 
-PACKAGES="cmake doxygen libusb libxml2"
-
-for pkg in $PACKAGES ; do
-	brew_install_or_upgrade $pkg
-done
+brew_install_or_upgrade cmake doxygen libusb libxml2
