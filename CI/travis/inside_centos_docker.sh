@@ -2,7 +2,8 @@
 
 LIBNAME="$1"
 OS_VERSION="$2"
-TRAVIS_CI="$3"
+
+cd /$LIBNAME
 
 # FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
 yum -y groupinstall 'Development Tools'
@@ -11,9 +12,8 @@ yum -y install cmake libxml2-devel libusb1-devel doxygen libaio-devel \
 
 # FIXME: cmake in CentOS 7 is broken, so we need to patch it for now
 # Remove this when it's fixed; but make sure we're doing this in Travis-CI context
-if [ "$TRAVIS_CI" == "travis-ci" ] ; then
-	if [ "$OS_VERSION" == "7" ] ; then
-		patch -p1 <<-EOF
+if [ "$OS_VERSION" == "7" ] ; then
+	patch -p1 <<-EOF
 --- a/usr/share/cmake/Modules/CPackRPM.cmake
 +++ b/usr/share/cmake/Modules/CPackRPM.cmake
 @@ -703,7 +703,7 @@ if(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST)
@@ -25,18 +25,7 @@ if [ "$TRAVIS_CI" == "travis-ci" ] ; then
    endforeach()
  endif()
  if (CPACK_RPM_PACKAGE_DEBUG)
-		EOF
-	fi
-fi
-
-# Check we're in Travis-CI; the only place where this context is valid
-# It makes sure, users won't shoot themselves in the foot while running this script
-if [ "$TRAVIS_CI" == "travis-ci" ] ; then
-	mkdir -p /${LIBNAME}/build
-	cd /${LIBNAME}/build
-else
-	mkdir -p build
-	cd build
+	EOF
 fi
 
 cmake -DENABLE_PACKAGING=ON ..
