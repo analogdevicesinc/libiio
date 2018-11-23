@@ -2,10 +2,6 @@
 
 cd $TRAVIS_BUILD_DIR
 
-. CI/travis/lib.sh
-
-is_deployable_travis_ci_run || exit 0
-
 send()
 {
 if [ "$#" -ne 3 ] ; then

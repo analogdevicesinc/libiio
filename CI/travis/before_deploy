@@ -2,7 +2,8 @@
 
 . CI/travis/lib.sh
 
-is_deployable_travis_ci_run || exit 0
+# Don't prepare a deploy on a Coverity build
+if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 
 deploy=0
 if [ -z "$TRAVIS_BUILD_DIR" ] ; then
