@@ -157,16 +157,16 @@ upload_file_to_swdownloads() {
 		return
 	fi
 
-	if [ $BRANCH_PULL ] ; then
-		branch=$BRANCH_PULL
+	if [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ] ; then
+		local branch="$TRAVIS_PULL_REQUEST_BRANCH"
 	else
-		branch=$BRANCH
+		local branch="$TRAVIS_BRANCH"
 	fi
 
-	FROM=$1
-	TO=${branch}_$2
-	LATE=${branch}_latest_libiio${LDIST}$3
-	GLOB=${DEPLOY_TO}/${branch}_libiio-*
+	local FROM=$1
+	local TO=${branch}_$2
+	local LATE=${branch}_latest_libiio${LDIST}$3
+	local GLOB=${DEPLOY_TO}/${branch}_libiio-*
 
 	echo attemting to deploy $FROM to $TO
 	echo and ${branch}_libiio${LDIST}$3
