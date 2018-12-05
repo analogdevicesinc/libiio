@@ -143,18 +143,17 @@ upload_file_to_swdownloads() {
 	if [ "$#" -ne 3 ] ; then
 		echo "skipping deployment of something"
 		echo "send called with $@"
-		return
+		return 0
 	fi
 
 	if [ "x$1" = "x" ] ; then
 		echo no file to send
-		return
+		return 1
 	fi
 
 	if [ ! -r "$1" ] ; then
 		echo "file $1 is not readable"
-		ls -l $1
-		return
+		return 1
 	fi
 
 	if [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ] ; then
@@ -185,7 +184,7 @@ upload_file_to_swdownloads() {
 	echo "ls -l ${LATE}" >> script$3
 	echo "bye" >> script$3
 
-	sftp ${EXTRA_SSH} -b script$3 ${SSHUSER}@${SSHHOST}
+	sftp ${EXTRA_SSH} -b script$3 ${SSHUSER}@${SSHHOST} || return 1
 
 	# limit things to a few files, so things don't grow forever
 	if [ "$3" = ".deb" ] ; then
@@ -193,7 +192,10 @@ upload_file_to_swdownloads() {
 			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
 		do
 			ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
-				"rm ${DEPLOY_TO}/${files}"
+				"rm ${DEPLOY_TO}/${files}" || \
+				return 1
 		done
 	fi
+
+	return 0
 }
