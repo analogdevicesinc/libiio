@@ -146,13 +146,17 @@ upload_file_to_swdownloads() {
 		return 0
 	fi
 
-	if [ "x$1" = "x" ] ; then
+	local FROM=$1
+	local FNAME=$2
+	local EXT=$3
+
+	if [ -z "$FROM" ] ; then
 		echo no file to send
 		return 1
 	fi
 
-	if [ ! -r "$1" ] ; then
-		echo "file $1 is not readable"
+	if [ ! -r "$FROM" ] ; then
+		echo "file $FROM is not readable"
 		return 1
 	fi
 
@@ -162,13 +166,12 @@ upload_file_to_swdownloads() {
 		local branch="$TRAVIS_BRANCH"
 	fi
 
-	local FROM=$1
-	local TO=${branch}_$2
-	local LATE=${branch}_latest_libiio${LDIST}$3
+	local TO=${branch}_${FNAME}
+	local LATE=${branch}_latest_libiio${LDIST}${EXT}
 	local GLOB=${DEPLOY_TO}/${branch}_libiio-*
 
 	echo attemting to deploy $FROM to $TO
-	echo and ${branch}_libiio${LDIST}$3
+	echo and ${branch}_libiio${LDIST}${EXT}
 	ssh -V
 
 	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${TO} ; then
@@ -194,7 +197,7 @@ upload_file_to_swdownloads() {
 	[ "$?" = "0" ] || return 1
 
 	# limit things to a few files, so things don't grow forever
-	if [ "$3" = ".deb" ] ; then
+	if [ "${EXT}" = ".deb" ] ; then
 		for files in $(ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
 			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
 		do
