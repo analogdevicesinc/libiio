@@ -140,15 +140,16 @@ brew_install_or_upgrade() {
 
 upload_file_to_swdownloads() {
 
-	if [ "$#" -ne 3 ] ; then
+	if [ "$#" -ne 4 ] ; then
 		echo "skipping deployment of something"
 		echo "send called with $@"
 		return 0
 	fi
 
-	local FROM=$1
-	local FNAME=$2
-	local EXT=$3
+	local LIBNAME=$1
+	local FROM=$2
+	local FNAME=$3
+	local EXT=$4
 
 	if [ -z "$FROM" ] ; then
 		echo no file to send
@@ -167,11 +168,11 @@ upload_file_to_swdownloads() {
 	fi
 
 	local TO=${branch}_${FNAME}
-	local LATE=${branch}_latest_libiio${LDIST}${EXT}
-	local GLOB=${DEPLOY_TO}/${branch}_libiio-*
+	local LATE=${branch}_latest_${LIBNAME}${LDIST}${EXT}
+	local GLOB=${DEPLOY_TO}/${branch}_${LIBNAME}-*
 
 	echo attemting to deploy $FROM to $TO
-	echo and ${branch}_libiio${LDIST}${EXT}
+	echo and ${branch}_${LIBNAME}${LDIST}${EXT}
 	ssh -V
 
 	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${TO} ; then
