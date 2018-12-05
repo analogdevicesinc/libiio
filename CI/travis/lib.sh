@@ -171,20 +171,27 @@ upload_file_to_swdownloads() {
 	echo and ${branch}_libiio${LDIST}$3
 	ssh -V
 
-	echo "cd ${DEPLOY_TO}" > script$3
 	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${TO} ; then
-		echo "rm ${TO}" >> script$3
+		local RM_TO="rm ${TO}"
 	fi
-	echo "put ${FROM} ${TO}" >> script$3
-	echo "ls -l ${TO}" >> script$3
-	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${LATE} ; then
-		echo "rm ${LATE}" >> script$3
-	fi
-	echo "symlink ${TO} ${LATE}" >> script$3
-	echo "ls -l ${LATE}" >> script$3
-	echo "bye" >> script$3
 
-	sftp ${EXTRA_SSH} -b script$3 ${SSHUSER}@${SSHHOST} || return 1
+	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${LATE} ; then
+		local RM_LATE="rm ${LATE}"
+	fi
+
+	sftp ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} <<-EOF
+		cd ${DEPLOY_TO}
+
+		${RM_TO}
+		put ${FROM} ${TO}
+		ls -l ${TO}
+
+		${RM_LATE}
+		symlink ${TO} ${LATE}"
+		ls -l ${LATE}
+		bye
+	EOF
+	[ "$?" = "0" ] || return 1
 
 	# limit things to a few files, so things don't grow forever
 	if [ "$3" = ".deb" ] ; then
