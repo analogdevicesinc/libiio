@@ -2,6 +2,8 @@
 
 export TRAVIS_API_URL="https://api.travis-ci.org"
 
+COMMON_SCRIPTS="jobs_running_cnt.py inside_bionic_docker.sh inside_centos_docker.sh"
+
 get_script_path() {
 	local script="$1"
 
@@ -240,3 +242,13 @@ run_docker_script() {
 		$DOCKER_IMAGE \
 		/bin/bash -xe /${LIBNAME}/${DOCKER_SCRIPT} ${LIBNAME} ${OS_VERSION}
 }
+
+# Other scripts will download lib.sh [this script] and lib.sh will
+# in turn download the other scripts it needs.
+# This gives way more flexibility when changing things, as they propagate
+for script in $COMMON_SCRIPTS ; do
+	[ ! -f "CI/travis/$script" ] || continue
+	mkdir -p build
+	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
+		-O build/$script
+done
