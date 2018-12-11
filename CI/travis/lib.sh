@@ -2,6 +2,20 @@
 
 export TRAVIS_API_URL="https://api.travis-ci.org"
 
+get_script_path() {
+	local script="$1"
+
+	[ -n "$script" ] || return 1
+
+	if [ -f "CI/travis/$script" ] ; then
+		echo "CI/travis/$script"
+	elif [ -f "build/$script" ] ; then
+		echo "build/$script"
+	else
+		return 1
+	fi
+}
+
 pipeline_branch() {
 	local branch=$1
 
@@ -43,11 +57,8 @@ should_trigger_next_builds() {
 
 	pipeline_branch "$branch" || return 1
 
-	if [ -f CI/travis/jobs_running_cnt.py ] ; then
-		local python_script=CI/travis/jobs_running_cnt.py
-	elif [ -f build/jobs_running_cnt.py ] ; then
-		local python_script=build/jobs_running_cnt.py
-	else
+	local python_script="$(get_script_path jobs_running_cnt.py)"
+	if [ -z "$python_script" ] ; then
 		echo "Could not find 'jobs_running_cnt.py'"
 		return 1
 	fi
