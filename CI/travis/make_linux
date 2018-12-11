@@ -2,6 +2,8 @@
 
 if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 
+. CI/travis/lib.sh
+
 handle_default() {
 	mkdir -p build
 	cd build
@@ -23,17 +25,13 @@ handle_centos() {
 }
 
 handle_centos_docker() {
-	sudo docker run --rm=true \
-		-v `pwd`:/${LIBNAME}:rw \
-		centos:centos${OS_VERSION} \
-		/bin/bash -xe /${LIBNAME}/CI/travis/inside_centos_docker.sh ${LIBNAME} ${OS_VERSION}
+	run_docker_script inside_centos_docker.sh \
+		"${LIBNAME}" "centos:centos${OS_VERSION}"
 }
 
 handle_ubuntu_docker() {
-	sudo docker run --rm=true \
-		-v `pwd`:/${LIBNAME}:rw \
-		ubuntu:${OS_VERSION} \
-		/bin/bash -xe /${LIBNAME}/CI/travis/inside_bionic_docker.sh ${LIBNAME}
+	run_docker_script inside_bionic_docker.sh \
+		"${LIBNAME}" "ubuntu:${OS_VERSION}"
 }
 
 LIBNAME="$1"
