@@ -191,7 +191,7 @@ upload_file_to_swdownloads() {
 		ls -l ${TO}
 
 		${RM_LATE}
-		symlink ${TO} ${LATE}"
+		symlink ${TO} ${LATE}
 		ls -l ${LATE}
 		bye
 	EOF
