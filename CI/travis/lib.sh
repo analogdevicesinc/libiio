@@ -248,6 +248,7 @@ run_docker_script() {
 # This gives way more flexibility when changing things, as they propagate
 for script in $COMMON_SCRIPTS ; do
 	[ ! -f "CI/travis/$script" ] || continue
+	[ ! -f "build/$script" ] || continue
 	mkdir -p build
 	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
 		-O build/$script
