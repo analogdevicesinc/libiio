@@ -104,6 +104,12 @@ trigger_adi_build() {
 	trigger_build "analogdevicesinc%2F$adi_repo" "$branch"
 }
 
+command_exists() {
+	local $cmd=$1
+	[ -n "$cmd" ] || return 1
+	command "$cmd" --version >/dev/null 2>&1
+}
+
 get_ldist() {
 	case "$(uname)" in
 	Linux*)
@@ -122,7 +128,7 @@ get_ldist() {
 			return 0
 		fi
 		. /etc/os-release
-		if ! command dpkg --version >/dev/null 2>&1 ; then
+		if ! command_exists dpkg ; then
 			echo $ID-$VERSION_ID-$(uname -m)
 		else
 			echo $ID-$VERSION_ID-$(dpkg --print-architecture)
@@ -243,6 +249,18 @@ run_docker_script() {
 		/bin/bash -xe /${LIBNAME}/${DOCKER_SCRIPT} ${LIBNAME} ${OS_VERSION}
 }
 
+ensure_wget() {
+	! command_exists wget || return 0
+	if command_exists apt-get ; then
+		apt-get install -y wget
+		return 0
+	fi
+	if command_exists yum ; then
+		yum install -y wget
+		return 0
+	fi
+}
+
 # Other scripts will download lib.sh [this script] and lib.sh will
 # in turn download the other scripts it needs.
 # This gives way more flexibility when changing things, as they propagate
@@ -250,6 +268,7 @@ for script in $COMMON_SCRIPTS ; do
 	[ ! -f "CI/travis/$script" ] || continue
 	[ ! -f "build/$script" ] || continue
 	mkdir -p build
+	ensure_wget
 	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
 		-O build/$script
 done
