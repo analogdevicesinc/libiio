@@ -45,7 +45,7 @@ pipeline_branch() {
 should_trigger_next_builds() {
 	local branch="$1"
 
-	[ -z "${COVERITY_SCAN_PROJECT_NAME}"] || return 1
+	[ -z "${COVERITY_SCAN_PROJECT_NAME}" ] || return 1
 
 	# These Travis-CI vars have to be non-empty
 	[ -n "$TRAVIS_PULL_REQUEST" ] || return 1
@@ -105,7 +105,7 @@ trigger_adi_build() {
 }
 
 command_exists() {
-	local $cmd=$1
+	local cmd=$1
 	[ -n "$cmd" ] || return 1
 	command "$cmd" --version >/dev/null 2>&1
 }
