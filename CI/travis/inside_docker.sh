@@ -3,6 +3,8 @@
 LIBNAME="$1"
 OS_TYPE="$2"
 
+export TRAVIS_BUILD_DIR="/$LIBNAME"
+
 cd /$LIBNAME
 
 /$LIBNAME/CI/travis/before_install_linux "$OS_TYPE"
