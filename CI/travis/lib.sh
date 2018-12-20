@@ -107,7 +107,7 @@ trigger_adi_build() {
 command_exists() {
 	local cmd=$1
 	[ -n "$cmd" ] || return 1
-	command "$cmd" --version >/dev/null 2>&1
+	type "$cmd" >/dev/null 2>&1
 }
 
 get_ldist() {
