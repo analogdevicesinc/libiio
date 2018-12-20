@@ -249,16 +249,23 @@ run_docker_script() {
 		/bin/bash -xe "/${MOUNTPOINT}/${DOCKER_SCRIPT}" "${MOUNTPOINT}" "${OS_TYPE}"
 }
 
-ensure_wget() {
-	! command_exists wget || return 0
-	if command_exists apt-get ; then
-		apt-get install -y wget
-		return 0
-	fi
-	if command_exists yum ; then
-		yum install -y wget
-		return 0
-	fi
+ensure_command_exists() {
+	local cmd="$1"
+	local package="$2"
+	[ -n "$cmd" ] || return 1
+	[ -n "$package" ] || package="$cmd"
+	! command_exists "$cmd" || return 0
+	# go through known package managers
+	for pacman in apt-get brew yum ; do
+		command_exists $pacman || continue
+		$pacman install -y $package || {
+			# Try an update if install doesn't work the first time
+			$pacman -y update && \
+				$pacman install -y $package
+		}
+		return $?
+	done
+	return 1
 }
 
 # Other scripts will download lib.sh [this script] and lib.sh will
@@ -268,7 +275,7 @@ for script in $COMMON_SCRIPTS ; do
 	[ ! -f "CI/travis/$script" ] || continue
 	[ ! -f "build/$script" ] || continue
 	mkdir -p build
-	ensure_wget
+	ensure_command_exists wget
 	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
 		-O build/$script
 done
