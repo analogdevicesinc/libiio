@@ -25,13 +25,13 @@ handle_centos() {
 }
 
 handle_centos_docker() {
-	run_docker_script inside_centos_docker.sh \
-		"${LIBNAME}" "centos:centos${OS_VERSION}"
+	run_docker_script inside_docker.sh \
+		"centos:centos${OS_VERSION}" "centos"
 }
 
 handle_ubuntu_docker() {
-	run_docker_script inside_bionic_docker.sh \
-		"${LIBNAME}" "ubuntu:${OS_VERSION}"
+	run_docker_script inside_docker.sh \
+		"ubuntu:${OS_VERSION}"
 }
 
 LIBNAME="$1"

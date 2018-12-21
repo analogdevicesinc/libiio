@@ -2,7 +2,7 @@
 
 export TRAVIS_API_URL="https://api.travis-ci.org"
 
-COMMON_SCRIPTS="jobs_running_cnt.py inside_bionic_docker.sh inside_centos_docker.sh"
+COMMON_SCRIPTS="jobs_running_cnt.py inside_docker.sh"
 
 get_script_path() {
 	local script="$1"
@@ -240,13 +240,13 @@ prepare_docker_image() {
 
 run_docker_script() {
 	local DOCKER_SCRIPT="$(get_script_path $1)"
-	local LIBNAME="$2"
-	local DOCKER_IMAGE="$3"
-	local OS_VERSION="$4"
+	local DOCKER_IMAGE="$2"
+	local OS_TYPE="$3"
+	local MOUNTPOINT="${4:-docker_build_dir}"
 	sudo docker run --rm=true \
-		-v $(pwd):/${LIBNAME}:rw \
+		-v "$(pwd):/${MOUNTPOINT}:rw" \
 		$DOCKER_IMAGE \
-		/bin/bash -xe /${LIBNAME}/${DOCKER_SCRIPT} ${LIBNAME} ${OS_VERSION}
+		/bin/bash -xe "/${MOUNTPOINT}/${DOCKER_SCRIPT}" "${MOUNTPOINT}" "${OS_TYPE}"
 }
 
 ensure_wget() {
