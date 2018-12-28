@@ -1,0 +1,13 @@
+#!/bin/bash
+set -ex
+
+CHROOT_DIR=/tmp/arm-chroot
+
+sudo chroot ${CHROOT_DIR} bash -c "cd ${TRAVIS_BUILD_DIR} && ./CI/travis/make_linux libiio"
+sudo chroot ${CHROOT_DIR} bash -c ". ${TRAVIS_BUILD_DIR}/CI/travis/lib.sh && get_ldist > ${TRAVIS_BUILD_DIR}/build/.LDIST"
+
+#move the artifacts back to the non-qemu place
+sudo rsync -av ${CHROOT_DIR}/${TRAVIS_BUILD_DIR}/ ${TRAVIS_BUILD_DIR}/
+#make sure the normal travis user can read them
+sudo chown -R ${USER} ${TRAVIS_BUILD_DIR}
+
