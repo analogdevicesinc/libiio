@@ -7,6 +7,7 @@ libiio is used to interface to the Linux Industrial Input/Output (IIO) Subsystem
 Although libiio was primarily developed by Analog Devices Inc., it is an active open source library, which many people have contributed to. It released under the GNU Lesser General Public License, version 2.1 or later, this open-source license allows anyone to use the library, on any vendors processor/FPGA/SoC, which may be controlling any vendors peripheral device (ADC, DAC, etc) either locally or remotely. This includes closed or open-source, commercial or non-commercial applications (subject to the LGPL license freedoms, obligations and restrictions).
 
 License : [![License](https://img.shields.io/badge/license-LGPL2-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/master/COPYING.txt)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fanalogdevicesinc%2Flibiio.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fanalogdevicesinc%2Flibiio?ref=badge_shield)
 Latest Release : [![GitHub release](https://img.shields.io/github/release/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 Downloads :  [![Github All Releases](https://img.shields.io/github/downloads/analogdevicesinc/libiio/total.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 
@@ -50,3 +51,7 @@ Weblinks:
 
 1. The Ubuntu packages are known to work on their Debian counterpart releases.
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fanalogdevicesinc%2Flibiio.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fanalogdevicesinc%2Flibiio?ref=badge_large)
