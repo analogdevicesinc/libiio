@@ -11,6 +11,8 @@ get_script_path() {
 
 	if [ -f "CI/travis/$script" ] ; then
 		echo "CI/travis/$script"
+	elif [ -f "ci/travis/$script" ] ; then
+		echo "ci/travis/$script"
 	elif [ -f "build/$script" ] ; then
 		echo "build/$script"
 	else
@@ -275,6 +277,7 @@ ensure_command_exists sudo
 # This gives way more flexibility when changing things, as they propagate
 for script in $COMMON_SCRIPTS ; do
 	[ ! -f "CI/travis/$script" ] || continue
+	[ ! -f "ci/travis/$script" ] || continue
 	[ ! -f "build/$script" ] || continue
 	mkdir -p build
 	ensure_command_exists wget
