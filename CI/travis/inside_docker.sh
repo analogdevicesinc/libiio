@@ -3,6 +3,7 @@
 LIBNAME="$1"
 OS_TYPE="$2"
 
+export INSIDE_DOCKER="1"
 export TRAVIS_BUILD_DIR="/$LIBNAME"
 
 cd /$LIBNAME
