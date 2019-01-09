@@ -49,11 +49,9 @@ int iio_channel_compare(const void *p1, const void *p2)
 	if (iio_channel_is_scan_element(tmp1) && iio_channel_is_scan_element(tmp2)){
 		if (iio_channel_get_index(tmp1) > iio_channel_get_index(tmp2))
 			return 1;
-		if (iio_channel_get_index(tmp1) < iio_channel_get_index(tmp2))
-			return -1;
-		/* if the index is the same, fall through to ID */
+		return -1;
 	}
-	/* if the ID is the same, input channels first */
+	/* otherwise, if the ID is the same, input channels first */
 	if (strcmp(tmp1->id, tmp2->id) == 0)
 		return !iio_channel_is_output(tmp1);
 
