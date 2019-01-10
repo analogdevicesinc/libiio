@@ -1,4 +1,4 @@
 <map id="iio_buffer_first" name="iio_buffer_first">
-<area shape="rect" id="node2" href="$group__Channel.html#ga06d2d53147ee7e028da0092350efc22c" title="Returns True if the channel is enabled. " alt="" coords="157,5,313,32"/>
-<area shape="rect" id="node3" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer. " alt="" coords="184,56,287,83"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga06d2d53147ee7e028da0092350efc22c" title="Returns True if the channel is enabled. " alt="" coords="164,5,332,32"/>
+<area shape="rect" id="node3" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer. " alt="" coords="193,56,303,83"/>
 </map>
