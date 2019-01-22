@@ -4,6 +4,10 @@ export TRAVIS_API_URL="https://api.travis-ci.org"
 
 COMMON_SCRIPTS="jobs_running_cnt.py inside_docker.sh"
 
+echo_red()   { printf "\033[1;31m$*\033[m\n"; }
+echo_green() { printf "\033[1;32m$*\033[m\n"; }
+echo_blue()  { printf "\033[1;34m$*\033[m\n"; }
+
 get_script_path() {
 	local script="$1"
 
