@@ -163,6 +163,35 @@ brew_install_or_upgrade() {
 	done
 }
 
+sftp_cmd_pipe() {
+	sftp ${EXTRA_SSH} ${SSHUSER}@${SSHHOST}
+}
+
+sftp_rm_artifact() {
+	local artifact="$1"
+	sftp_cmd_pipe <<-EOF
+		cd ${DEPLOY_TO}
+		rm ${artifact}
+	EOF
+}
+
+sftp_upload() {
+	local FROM="$1"
+	local TO="$2"
+	local LATE="$3"
+
+	sftp_cmd_pipe <<-EOF
+		cd ${DEPLOY_TO}
+
+		put ${FROM} ${TO}
+		ls -l ${TO}
+
+		symlink ${TO} ${LATE}
+		ls -l ${LATE}
+		bye
+	EOF
+}
+
 upload_file_to_swdownloads() {
 
 	if [ "$#" -ne 4 ] ; then
@@ -200,27 +229,15 @@ upload_file_to_swdownloads() {
 	echo and ${branch}_${LIBNAME}${LDIST}${EXT}
 	ssh -V
 
-	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${TO} ; then
-		local RM_TO="rm ${TO}"
-	fi
+	for rmf in ${TO} ${LATE} ; do
+		sftp_rm_artifact ${rmf} || \
+			echo_blue "Could not delete ${rmf}"
+	done
 
-	if curl -m 10 -s -I -f -o /dev/null http://swdownloads.analog.com/cse/travis_builds/${LATE} ; then
-		local RM_LATE="rm ${LATE}"
-	fi
-
-	sftp ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} <<-EOF
-		cd ${DEPLOY_TO}
-
-		${RM_TO}
-		put ${FROM} ${TO}
-		ls -l ${TO}
-
-		${RM_LATE}
-		symlink ${TO} ${LATE}
-		ls -l ${LATE}
-		bye
-	EOF
-	[ "$?" = "0" ] || return 1
+	sftp_upload "${FROM}" "${TO}" "${LATE}" || {
+		echo_red "Failed to upload artifact from '${FROM}', to '${TO}', symlink '${LATE}'"
+		return 1
+	}
 
 	# limit things to a few files, so things don't grow forever
 	if [ "${EXT}" = ".deb" ] ; then
