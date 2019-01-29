@@ -1,4 +1,4 @@
-#!/bin/sh -xe
+#!/bin/sh -e
 
 export TRAVIS_API_URL="https://api.travis-ci.org"
 
@@ -32,7 +32,6 @@ pipeline_branch() {
 	# master is a always a pipeline branch
 	[ "$branch" = "master" ] && return 0
 
-	# Turn off tracing for a while ; log can fill up here
 	set +x
 	# Check if branch name is 20XX_RY where:
 	#   XX - 14 to 99 /* wooh, that's a lot of years */
@@ -43,7 +42,6 @@ pipeline_branch() {
 				return 0
 		done
 	done
-	set -x
 
 	return 1
 }
@@ -58,7 +56,6 @@ should_trigger_next_builds() {
 	[ -n "$branch" ] || return 1
 	set +x
 	[ -n "$TRAVIS_API_TOKEN" ] || return 1
-	set -x
 
 	# Has to be a non-pull-request
 	[ "$TRAVIS_PULL_REQUEST" = "false" ] || return 1
@@ -99,7 +96,6 @@ trigger_build() {
 		-H "Authorization: token $TRAVIS_API_TOKEN" \
 		-d "$body" \
 		https://api.travis-ci.org/repo/$repo_slug/requests
-	set -x
 }
 
 trigger_adi_build() {
@@ -269,7 +265,7 @@ run_docker_script() {
 	sudo docker run --rm=true \
 		-v "$(pwd):/${MOUNTPOINT}:rw" \
 		$DOCKER_IMAGE \
-		/bin/bash -xe "/${MOUNTPOINT}/${DOCKER_SCRIPT}" "${MOUNTPOINT}" "${OS_TYPE}"
+		/bin/bash -e "/${MOUNTPOINT}/${DOCKER_SCRIPT}" "${MOUNTPOINT}" "${OS_TYPE}"
 }
 
 ensure_command_exists() {
