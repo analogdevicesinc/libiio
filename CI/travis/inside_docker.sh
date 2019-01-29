@@ -1,4 +1,4 @@
-#!/bin/sh -xe
+#!/bin/sh -e
 
 LIBNAME="$1"
 OS_TYPE="$2"
