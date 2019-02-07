@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
 export TRAVIS_API_URL="https://api.travis-ci.org"
+LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 
 COMMON_SCRIPTS="jobs_running_cnt.py inside_docker.sh"
 
@@ -17,8 +18,8 @@ get_script_path() {
 		echo "CI/travis/$script"
 	elif [ -f "ci/travis/$script" ] ; then
 		echo "ci/travis/$script"
-	elif [ -f "build/$script" ] ; then
-		echo "build/$script"
+	elif [ -f "${LOCAL_BUILD_DIR}/$script" ] ; then
+		echo "${LOCAL_BUILD_DIR}/$script"
 	else
 		return 1
 	fi
@@ -295,9 +296,9 @@ ensure_command_exists sudo
 for script in $COMMON_SCRIPTS ; do
 	[ ! -f "CI/travis/$script" ] || continue
 	[ ! -f "ci/travis/$script" ] || continue
-	[ ! -f "build/$script" ] || continue
-	mkdir -p build
+	[ ! -f "${LOCAL_BUILD_DIR}/$script" ] || continue
+	mkdir -p ${LOCAL_BUILD_DIR}
 	ensure_command_exists wget
 	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
-		-O build/$script
+		-O $LOCAL_BUILD_DIR/$script
 done
