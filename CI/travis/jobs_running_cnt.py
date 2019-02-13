@@ -32,7 +32,7 @@ json_r = json.loads(response.decode('utf-8'))
 
 jobs_running = 0
 for job in json_r['jobs']:
-    if (job['state'] == 'started'):
+    if (job['state'] in [ 'started', 'created' ]):
         jobs_running += 1
 
 print (jobs_running)
