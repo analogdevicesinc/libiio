@@ -32,7 +32,11 @@ json_r = json.loads(response.decode('utf-8'))
 
 jobs_running = 0
 for job in json_r['jobs']:
-    if (job['state'] in [ 'started', 'created' ]):
+    # bump number of jobs higher, so nothing triggers
+    if (job['state'] in [ 'canceled', 'failed' ]):
+        jobs_running += 99
+        break
+    if (job['state'] in [ 'started', 'created', 'queued', 'received' ]):
         jobs_running += 1
 
 print (jobs_running)
