@@ -1713,7 +1713,7 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 			return ret;
 
 		qsort(dev->buffer_attrs, dev->nb_buffer_attrs, sizeof(char *),
-			iio_buffer_attr_compare);
+			qsort_iio_buffer_attr);
 	}
 
 	return 0;
@@ -1769,15 +1769,15 @@ static int create_device(void *d, const char *path)
 			goto err_free_scan_elements;
 
 		qsort(chn->attrs,  chn->nb_attrs, sizeof(struct iio_channel_attr),
-			iio_channel_attr_compare);
+			qsort_iio_channel_attr);
 	}
 
 	ret = detect_and_move_global_attrs(dev);
 	if (ret < 0)
 		goto err_free_device;
 
-	qsort(dev->attrs, dev->nb_attrs, sizeof(char *),
-		iio_device_attr_compare);
+	qsort(dev->attrs,  dev->nb_attrs, sizeof(char *),
+		qsort_iio_device_attr);
 
 	dev->words = (dev->nb_channels + 31) / 32;
 	if (dev->words) {
@@ -2003,7 +2003,7 @@ struct iio_context * local_create_context(void)
 		goto err_context_destroy;
 
 	qsort(ctx->devices, ctx->nb_devices, sizeof(struct iio_device *),
-		iio_device_compare);
+		qsort_iio_device);
 
 	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
 
