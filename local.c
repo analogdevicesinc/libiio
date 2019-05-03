@@ -1135,7 +1135,7 @@ static char * get_channel_id(const char *attr)
 	size_t len;
 
 	attr = strchr(attr, '_') + 1;
-	ptr = strchr(attr, '_');
+	ptr = strrchr(attr, '_');
 	if (find_channel_modifier(ptr + 1, &len) != IIO_NO_MOD)
 		ptr += len + 1;
 
