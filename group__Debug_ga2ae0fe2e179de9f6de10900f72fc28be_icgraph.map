@@ -1,6 +1,6 @@
 <map id="iio_device_debug_attr_read" name="iio_device_debug_attr_read">
-<area shape="rect" id="node2" href="$group__Debug.html#gac43421333d85b03e7aeb31eb60a676fe" title="Read the content of the given debug attribute. " alt="" coords="233,5,381,47"/>
-<area shape="rect" id="node4" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="435,71,572,98"/>
-<area shape="rect" id="node5" href="$group__Debug.html#ga01b435571a0bd034bc47987295821573" title="Read the content of the given debug attribute. " alt="" coords="233,123,381,164"/>
-<area shape="rect" id="node3" href="$group__Debug.html#gac2d887e2f77423596487302d2728c99e" title="Read the content of the given debug attribute. " alt="" coords="429,5,577,47"/>
+<area shape="rect" id="node2" href="$group__Debug.html#gac43421333d85b03e7aeb31eb60a676fe" title="Read the content of the given debug attribute. " alt="" coords="251,5,412,47"/>
+<area shape="rect" id="node4" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="467,71,615,98"/>
+<area shape="rect" id="node5" href="$group__Debug.html#ga01b435571a0bd034bc47987295821573" title="Read the content of the given debug attribute. " alt="" coords="251,123,412,164"/>
+<area shape="rect" id="node3" href="$group__Debug.html#gac2d887e2f77423596487302d2728c99e" title="Read the content of the given debug attribute. " alt="" coords="460,5,621,47"/>
 </map>

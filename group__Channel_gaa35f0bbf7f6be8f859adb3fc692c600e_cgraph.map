@@ -1,7 +1,7 @@
 <map id="iio_channel_read" name="iio_channel_read">
-<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer. " alt="" coords="384,5,487,32"/>
-<area shape="rect" id="node3" href="$group__Buffer.html#ga18d5cb8d912b5b888b9b54c6d0c7f92c" title="Get the step size between two samples of one channel. " alt="" coords="187,31,294,57"/>
-<area shape="rect" id="node4" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer. " alt="" coords="189,81,293,108"/>
-<area shape="rect" id="node6" href="$group__Debug.html#gaf910dce06335badc1ba307526c4112a6" title="Convert the sample from hardware format to host format. " alt="" coords="172,132,309,159"/>
-<area shape="rect" id="node5" href="$group__Channel.html#ga06d2d53147ee7e028da0092350efc22c" title="Returns True if the channel is enabled. " alt="" coords="357,81,513,108"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer. " alt="" coords="407,5,518,32"/>
+<area shape="rect" id="node3" href="$group__Buffer.html#ga18d5cb8d912b5b888b9b54c6d0c7f92c" title="Get the step size between two samples of one channel. " alt="" coords="199,31,314,57"/>
+<area shape="rect" id="node4" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer. " alt="" coords="201,81,312,108"/>
+<area shape="rect" id="node6" href="$group__Debug.html#gaf910dce06335badc1ba307526c4112a6" title="Convert the sample from hardware format to host format. " alt="" coords="183,132,331,159"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga06d2d53147ee7e028da0092350efc22c" title="Returns True if the channel is enabled. " alt="" coords="379,81,547,108"/>
 </map>

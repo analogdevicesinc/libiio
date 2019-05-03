@@ -1,4 +1,4 @@
 <map id="iio_device_get_channels_count" name="iio_device_get_channels_count">
-<area shape="rect" id="node2" href="$group__Device.html#ga41582140b8e1fe98148e51ae1350b816" title="Return True if the given device is a trigger. " alt="" coords="217,13,357,39"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga30151c105a19b3fc3ad6376046d60bf9" title="Associate a trigger to a given device. " alt="" coords="405,13,553,39"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga41582140b8e1fe98148e51ae1350b816" title="Return True if the given device is a trigger. " alt="" coords="229,13,380,39"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga30151c105a19b3fc3ad6376046d60bf9" title="Associate a trigger to a given device. " alt="" coords="428,13,588,39"/>
 </map>
