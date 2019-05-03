@@ -1,6 +1,6 @@
 <map id="iio_buffer_first" name="iio_buffer_first">
-<area shape="rect" id="node2" href="$group__Channel.html#gabf4e2755877dedae40a5fbeb54a3829e" title="iio_channel_read_raw" alt="" coords="164,5,323,32"/>
-<area shape="rect" id="node3" href="$group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e" title="iio_channel_read" alt="" coords="179,56,308,83"/>
-<area shape="rect" id="node4" href="$group__Channel.html#ga0d06dce5819723c3b16c4588eb5f477a" title="iio_channel_write_raw" alt="" coords="164,107,323,133"/>
-<area shape="rect" id="node5" href="$group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3" title="iio_channel_write" alt="" coords="178,157,309,184"/>
+<area shape="rect" id="node2" href="$group__Channel.html#gabf4e2755877dedae40a5fbeb54a3829e" title="iio_channel_read_raw" alt="" coords="159,5,306,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e" title="iio_channel_read" alt="" coords="173,56,292,83"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga0d06dce5819723c3b16c4588eb5f477a" title="iio_channel_write_raw" alt="" coords="157,107,308,133"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3" title="iio_channel_write" alt="" coords="171,157,294,184"/>
 </map>

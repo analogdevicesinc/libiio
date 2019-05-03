@@ -1,4 +1,4 @@
 <map id="iio_channel_is_output" name="iio_channel_is_output">
-<area shape="rect" id="node2" href="$group__Device.html#gacf9fe193b8183df86eab56df7da7361d" title="Try to find a channel structure by its name of ID. " alt="" coords="222,5,393,32"/>
-<area shape="rect" id="node3" href="$group__Debug.html#ga891aa6ffd6290fc3848e4f14a923d1fb" title="Try to find a debug attribute by its name. " alt="" coords="212,56,403,83"/>
+<area shape="rect" id="node2" href="$group__Device.html#gacf9fe193b8183df86eab56df7da7361d" title="Try to find a channel structure by its name of ID. " alt="" coords="208,5,368,32"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga891aa6ffd6290fc3848e4f14a923d1fb" title="Try to find a debug attribute by its name. " alt="" coords="200,56,376,83"/>
 </map>

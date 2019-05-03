@@ -1,7 +1,7 @@
 <map id="iio_device_attr_write_raw" name="iio_device_attr_write_raw">
-<area shape="rect" id="node2" href="$group__Device.html#ga3baae3a4b76956f9a7bc31c2ebb5b682" title="Set the value of the given device&#45;specific attribute. " alt="" coords="233,78,384,105"/>
-<area shape="rect" id="node6" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="235,129,383,155"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga176d11776f916c8148c6dfa1368cea3c" title="Set the value of the given device&#45;specific attribute. " alt="" coords="449,5,600,47"/>
-<area shape="rect" id="node4" href="$group__Device.html#ga638c2f54b187a1b137f9885f34fad338" title="Set the value of the given device&#45;specific attribute. " alt="" coords="449,71,600,112"/>
-<area shape="rect" id="node5" href="$group__Device.html#gae3a265d5053a2cac254eb59a8eeda9da" title="Set the value of the given device&#45;specific attribute. " alt="" coords="432,137,617,163"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga3baae3a4b76956f9a7bc31c2ebb5b682" title="Set the value of the given device&#45;specific attribute. " alt="" coords="223,78,364,105"/>
+<area shape="rect" id="node6" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="225,129,362,155"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga176d11776f916c8148c6dfa1368cea3c" title="Set the value of the given device&#45;specific attribute. " alt="" coords="427,5,569,47"/>
+<area shape="rect" id="node4" href="$group__Device.html#ga638c2f54b187a1b137f9885f34fad338" title="Set the value of the given device&#45;specific attribute. " alt="" coords="427,71,569,112"/>
+<area shape="rect" id="node5" href="$group__Device.html#gae3a265d5053a2cac254eb59a8eeda9da" title="Set the value of the given device&#45;specific attribute. " alt="" coords="412,137,584,163"/>
 </map>

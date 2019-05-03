@@ -1,8 +1,8 @@
 <map id="iio_device_debug_attr_write_raw" name="iio_device_debug_attr_write_raw">
-<area shape="rect" id="node2" href="$group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3" title="Set the value of the given debug attribute. " alt="" coords="215,96,376,137"/>
-<area shape="rect" id="node4" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="633,101,781,127"/>
-<area shape="rect" id="node7" href="$group__Debug.html#ga2013f7206e2dde3aedee31ba01945585" title="Set the value of the given debug attribute. " alt="" coords="215,239,376,280"/>
-<area shape="rect" id="node3" href="$group__Debug.html#ga83e2e2ef3c9fa91561b41dd32c59194e" title="Set the value of the given debug attribute. " alt="" coords="424,5,585,47"/>
-<area shape="rect" id="node5" href="$group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d" title="Set the value of the given debug attribute. " alt="" coords="424,71,585,112"/>
-<area shape="rect" id="node6" href="$group__Debug.html#ga821ace05c0f77bf4f87be7555ae84d52" title="Set the value of a hardware register. " alt="" coords="430,137,579,163"/>
+<area shape="rect" id="node2" href="$group__Debug.html#ga01151f264c7e22fcf8390b5303b51bb3" title="Set the value of the given debug attribute. " alt="" coords="201,96,349,137"/>
+<area shape="rect" id="node4" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="593,101,731,127"/>
+<area shape="rect" id="node7" href="$group__Debug.html#ga2013f7206e2dde3aedee31ba01945585" title="Set the value of the given debug attribute. " alt="" coords="201,239,349,280"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga83e2e2ef3c9fa91561b41dd32c59194e" title="Set the value of the given debug attribute. " alt="" coords="397,5,545,47"/>
+<area shape="rect" id="node5" href="$group__Debug.html#ga1d105cd9079c1218c363db75cf504e0d" title="Set the value of the given debug attribute. " alt="" coords="397,71,545,112"/>
+<area shape="rect" id="node6" href="$group__Debug.html#ga821ace05c0f77bf4f87be7555ae84d52" title="Set the value of a hardware register. " alt="" coords="401,137,541,163"/>
 </map>
