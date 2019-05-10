@@ -1110,21 +1110,17 @@ static int local_set_trigger(const struct iio_device *dev,
 
 static bool is_channel(const char *attr, bool strict)
 {
-	char *ptr = NULL;
-	if (!strncmp(attr, "in_timestamp_", sizeof("in_timestamp_") - 1))
-		return true;
+	int skip_prefix = 0;
+
 	if (!strncmp(attr, "in_", 3))
-		ptr = strchr(attr + 3, '_');
+		skip_prefix = 3;
 	else if (!strncmp(attr, "out_", 4))
-		ptr = strchr(attr + 4, '_');
-	if (!ptr)
+		skip_prefix = 4;
+	if (skip_prefix == 0 || strchr(attr + skip_prefix, '_') == NULL)
 		return false;
 	if (!strict)
 		return true;
-	if (*(ptr - 1) >= '0' && *(ptr - 1) <= '9')
-		return true;
-
-	if (find_channel_modifier(ptr + 1, NULL) != IIO_NO_MOD)
+	if (find_channel_type(attr + skip_prefix) != IIO_CHAN_TYPE_UNKNOWN)
 		return true;
 	return false;
 }
