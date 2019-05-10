@@ -113,7 +113,7 @@ enum iio_modifier find_channel_modifier(const char *s, size_t *len_p)
 			continue;
 		len = strlen(modifier_names[i]);
 		if (strncmp(s, modifier_names[i], len) == 0 &&
-				(s[len] == '\0' || s[len] == '_')) {
+				(s[len] == '\0' || s[len] == '_' )) {
 			if (len_p)
 				*len_p = len;
 			return i;
@@ -124,34 +124,42 @@ enum iio_modifier find_channel_modifier(const char *s, size_t *len_p)
 }
 
 /*
+ * Given a name, check if it matches a channel type:
+ * For instance: illuminance_raw matches.
+ */
+enum iio_chan_type find_channel_type(const char *name)
+{
+	unsigned int i;
+	size_t len;
+
+	for (i = 0; i < ARRAY_SIZE(iio_chan_type_name_spec); i++) {
+		len = strlen(iio_chan_type_name_spec[i]);
+		if (strncmp(iio_chan_type_name_spec[i], name, len) != 0)
+			continue;
+
+		/* Type must be followed by either a '_' or a digit */
+		if (name[len] != '_' && (name[len] < '0' || name[len] > '9'))
+			continue;
+
+		return (enum iio_chan_type) i;
+	}
+	return IIO_CHAN_TYPE_UNKNOWN;
+}
+
+/*
  * Initializes all auto-detected fields of the channel struct. Must be called
  * after the channel has been otherwise fully initialized.
  */
 void iio_channel_init_finalize(struct iio_channel *chn)
 {
-	unsigned int i;
-	size_t len;
 	char *mod;
-
-	chn->type = IIO_CHAN_TYPE_UNKNOWN;
-	chn->modifier = IIO_NO_MOD;
-
-	for (i = 0; i < ARRAY_SIZE(iio_chan_type_name_spec); i++) {
-		len = strlen(iio_chan_type_name_spec[i]);
-		if (strncmp(iio_chan_type_name_spec[i], chn->id, len) != 0)
-			continue;
-		/* Type must be followed by either a '_' or a digit */
-		if (chn->id[len] != '_' && (chn->id[len] < '0' || chn->id[len] > '9'))
-			continue;
-
-		chn->type = (enum iio_chan_type) i;
-	}
 
 	mod = strchr(chn->id, '_');
 	if (!mod)
 		return;
 
 	mod++;
+	chn->type = find_channel_type(chn->id);
 	chn->modifier = find_channel_modifier(mod, NULL);
 }
 
