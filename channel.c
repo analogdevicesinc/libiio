@@ -103,7 +103,7 @@ static const char * const modifier_names[] = {
  * IIO_NO_MOD is returned. If a modifier was found len_p will be updated with
  * the length of the modifier.
  */
-unsigned int find_channel_modifier(const char *s, size_t *len_p)
+enum iio_modifier find_channel_modifier(const char *s, size_t *len_p)
 {
 	unsigned int i;
 	size_t len;
@@ -152,17 +152,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		return;
 
 	mod++;
-
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
-		if (!modifier_names[i])
-			continue;
-		len = strlen(modifier_names[i]);
-		if (strncmp(modifier_names[i], mod, len) != 0)
-			continue;
-
-		chn->modifier = (enum iio_modifier) i;
-		break;
-	}
+	chn->modifier = find_channel_modifier(mod, NULL);
 }
 
 static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
