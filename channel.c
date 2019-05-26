@@ -351,6 +351,9 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
+	if (!chn)
+		return -ENOSYS;
+
 	if (chn->dev->ctx->ops->read_channel_attr)
 		return chn->dev->ctx->ops->read_channel_attr(chn,
 				attr, dst, len);
@@ -361,6 +364,9 @@ ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 		const char *attr, const void *src, size_t len)
 {
+	if (!chn)
+		return -ENOSYS;
+
 	if (chn->dev->ctx->ops->write_channel_attr)
 		return chn->dev->ctx->ops->write_channel_attr(chn,
 				attr, src, len);

@@ -250,6 +250,9 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 		const char *name, bool output)
 {
 	unsigned int i;
+	if (!dev)
+		return NULL;
+
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 		if (iio_channel_is_output(chn) != output)
