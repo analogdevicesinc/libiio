@@ -96,7 +96,7 @@ static int usb_open_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 		return -EINVAL;
 
 	cpdata = malloc(sizeof(*cpdata));
-	if (!pdata)
+	if (!cpdata)
 		return -ENOMEM;
 
 	/* Either we open this pipe for the first time, or it was closed before.
