@@ -79,21 +79,48 @@ build_script:
     - set GENERATOR=Visual Studio 12
     - cd c:\projects\libiio
     - set folder-path=c:\projects\libiio\build-win32
+
      #MSVC 32 bit
+    - set PATH=C:\\Python37;C:\\Python37\\libs;%PATH%
     - echo "Running cmake for Visual Studio 32 bit... "
     - mkdir build-win32
     - cd build-win32
     - set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319"
-    - cmake -G "%GENERATOR%" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..
+    - cmake -G "%GENERATOR%" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..
     - cmake --build . --config %configuration%
 
+    - cd bindings/python
+    - python.exe setup.py bdist_wininst
+    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py37-win32.exe"
+    - ps: cp dist\*.exe .
+    - ps: rm dist\*.exe
+    - set PATH=C:\\Python36;C:\\Python36\\libs;%PATH%
+    - python.exe setup.py bdist_wininst
+    - ls dist
+    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py36-win32.exe"
+    - ps: cp dist\*.exe .
+    - ps: rm dist\*.exe
+
     #MSVC 64 bit
+    - set PATH=C:\Python37-x64;C:\\Python37-x64\\libs;%PATH%
     - cd c:\projects\libiio
     - echo "Running cmake for Visual Studio 64 bit... "
     - mkdir build-win64
     - cd build-win64
-    - cmake -G "%GENERATOR% Win64" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=OFF -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..
+    - cmake -G "%GENERATOR% Win64" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..
     - cmake --build . --config %configuration%
+
+    - cd bindings/python
+    - python.exe setup.py bdist_wininst
+    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py37-amd64.exe"
+    - ps: cp dist\*.exe .
+    - ps: rm dist\*.exe
+    - set PATH=C:\Python36-x64;C:\\Python36-x64\\libs;%PATH%
+    - python.exe setup.py bdist_wininst
+    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py36-amd64.exe"
+    - ps: cp dist\*.exe .
+    - ps: rm dist\*.exe
+    - cd c:\projects\libiio\build-win64
 
     #Create the installer
     - ISCC %folder-path%\libiio.iss
@@ -109,6 +136,10 @@ build_script:
     - copy iio.h c:\%ARCHIVE_NAME%\include
     - copy build-win32\Release\libiio.* c:\%ARCHIVE_NAME%\MS32
     - copy build-win64\Release\libiio.* c:\%ARCHIVE_NAME%\MS64
+    - copy build-win32\bindings\csharp\libiio-sharp.dll c:\%ARCHIVE_NAME%\MS32
+    - copy build-win64\bindings\csharp\libiio-sharp.dll c:\%ARCHIVE_NAME%\MS64
+    - copy build-win32\bindings\python\*.exe c:\%ARCHIVE_NAME%\MS32
+    - copy build-win64\bindings\python\*.exe c:\%ARCHIVE_NAME%\MS64
     - copy build-mingw-win32\Release\libiio.* c:\%ARCHIVE_NAME%\MinGW32
     - copy build-mingw-win64\Release\libiio.* c:\%ARCHIVE_NAME%\MinGW64
     - del c:\%ARCHIVE_NAME%\MinGW32\libiio.iss
