@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include "gen_code.h"
 
 #define MY_NAME "iio_readdev"
 
@@ -38,6 +39,7 @@ static const struct option options[] = {
 	  {"samples", required_argument, 0, 's' },
 	  {"timeout", required_argument, 0, 'T'},
 	  {"auto", no_argument, 0, 'a'},
+	  {"generate-code", required_argument, 0, 'g'},
 	  {0, 0, 0, 0},
 };
 
@@ -50,6 +52,7 @@ static const char *options_descriptions[] = {
 	"Number of samples to capture, 0 = infinite. Default is 0.",
 	"Buffer timeout in milliseconds. 0 = no timeout",
 	"Scan for available contexts and if only one is available use it.",
+	 "Generate code.",
 };
 
 static void usage(void)
@@ -198,7 +201,7 @@ static ssize_t print_sample(const struct iio_channel *chn,
 	return (ssize_t) len;
 }
 
-static struct iio_context *scan(void)
+static struct iio_context *scan(bool gen_code)
 {
 	struct iio_scan_context *scan_ctx;
 	struct iio_context_info **info;
@@ -227,6 +230,8 @@ static struct iio_context *scan(void)
 
 	if (ret == 1) {
 		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+		if (gen_code)
+			gen_context(iio_context_info_get_uri(info[0]));
 	} else {
 		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
 
@@ -249,15 +254,16 @@ int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	const char *arg_uri = NULL;
+	const char *arg_uri = NULL, *gen_file = NULL;;
 	const char *arg_ip = NULL;
 	int c, option_index = 0;
 	struct iio_device *dev;
 	size_t sample_size;
 	int timeout = -1;
-	bool scan_for_context = false;
+	bool scan_for_context = false, gen_code = false;;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:a",
+
+	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:ag:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -284,10 +290,22 @@ int main(int argc, char **argv)
 		case 'T':
 			timeout = atoi(optarg);
 			break;
+		case 'g':
+			gen_code = true;
+			gen_file = optarg;
+			break;
 		case '?':
 			return EXIT_FAILURE;
 		}
 	}
+
+	if (gen_code) {
+		if (!gen_test_path(gen_file)) {
+			fprintf(stderr, "Can't write to %s to generate file\n", gen_file);
+			return EXIT_FAILURE;
+		}
+	}
+
 
 	if (argc == optind) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
@@ -297,17 +315,23 @@ int main(int argc, char **argv)
 
 	setup_sig_handler();
 
+	if (gen_code)
+		gen_start(gen_file);
+
 	if (scan_for_context)
-		ctx = scan();
-	else if (arg_uri)
+		ctx = scan(gen_code);
+	else if (arg_uri) {
 		ctx = iio_create_context_from_uri(arg_uri);
-	else if (arg_ip)
+		gen_context(arg_uri);
+	} else if (arg_ip) {
 		ctx = iio_create_network_context(arg_ip);
-	else
+		gen_context(arg_ip);
+	} else
 		ctx = iio_create_default_context();
 
 	if (!ctx) {
 		fprintf(stderr, "Unable to create IIO context\n");
+		gen_context_destroy();
 		return EXIT_FAILURE;
 	}
 
@@ -421,5 +445,6 @@ int main(int argc, char **argv)
 err_destroy_buffer:
 	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
+	gen_context_destroy();
 	return exit_code;
 }
