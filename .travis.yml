@@ -43,11 +43,7 @@ matrix:
         - secure: "QQt2l9IVo0xXWLx7Xqgz/4Iezj7YroY3MKfmG+OhtzkMRx4prhx32/07JMNAcYx6mQrccyZkBNzpYuXlfIZjFL3xDxDj5+iKv5XXpJbRFQGhc5xZtAlzOIqHNMcFc0Aj8J2mZwKfSaDnBdf+nMgKcmn46pYbpJOmPe9iEfeLvvg="
     - compiler: "clang"
       os: linux
-      dist: trusty
       env: LDIST=DO_NOT_DEPLOY
-    - compiler: "gcc"
-      os: linux
-      dist: trusty
     - compiler: "gcc"
       os: linux
       dist: xenial
