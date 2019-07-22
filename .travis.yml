@@ -76,6 +76,11 @@ matrix:
       osx_image: xcode10.1
       env:
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
+    - compiler: "gcc"
+      os: osx
+      osx_image: xcode11
+      env:
+        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
 
 addons:
   artifacts: true
