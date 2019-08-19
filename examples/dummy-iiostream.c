@@ -156,7 +156,7 @@ static void usage(int argc, char *argv[])
 	printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
 	printf("  -t\ttrigger name (default \"instance1\")\n");
 	printf("  -b\tbuffer length (default 1)\n");
-	printf("  -r\tread method (default 0 pointer, 1 callback, 2 read, 3 read raw)\n");
+	printf("  -r\tread method (default 0 pointer, 1 callback, 2 read raw, 3 read)\n");
 	printf("  -c\tread count (default no limit)\n");
 }
 
