@@ -16,6 +16,7 @@
 from ctypes import Structure, c_char_p, c_uint, c_int, c_size_t, \
 		c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, \
 		POINTER as _POINTER, CDLL as _cdll, memmove as _memmove, byref as _byref
+from ctypes.util import find_library
 from os import strerror as _strerror
 from platform import system as _system
 import weakref
@@ -58,8 +59,14 @@ _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _BufferPtr = _POINTER(_Buffer)
 
-_lib = _cdll('libiio.dll' if 'Windows' in _system() else 'libiio.so.0',
-		use_errno = True, use_last_error = True)
+if 'Windows' in _system():
+	_iiolib = 'libiio.dll'
+elif 'Darwin' in _system():
+	_iiolib = 'iio'
+else:
+	_iiolib = 'libiio.so.0'
+
+_lib = _cdll(find_library(_iiolib), use_errno = True, use_last_error = True)
 
 _get_backends_count = _lib.iio_get_backends_count
 _get_backends_count.restype = c_uint
