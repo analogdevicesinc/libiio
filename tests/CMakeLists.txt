@@ -6,6 +6,12 @@ project(iio_attr    C)
 project(iio_readdev C)
 project(iio_reg     C)
 
+if(APPLE)
+	# Add relative rpath to iio library (which is in the same framework)
+	set(CMAKE_INSTALL_RPATH "@executable_path/../..")
+	set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+endif()
+
 if (MSVC)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src)
 	set(GETOPT_C_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src/getopt.c)
@@ -50,7 +56,7 @@ set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
 
 if(NOT SKIP_INSTALL_ALL)
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION /Library/Frameworks/iio.framework/Tools)
+		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${OSX_INSTALL_FRAMEWORKSDIR}/iio.framework/Tools)
 	else()
 		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
