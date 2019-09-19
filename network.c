@@ -1537,15 +1537,17 @@ struct iio_context * network_create_context(const char *host)
 		inet_ntop(AF_INET6, &in->sin6_addr,
 				description, INET6_ADDRSTRLEN);
 
-		ptr = if_indextoname(in->sin6_scope_id, description +
-				strlen(description) + 1);
-		if (!ptr) {
-			ret = -errno;
-			ERROR("Unable to lookup interface of IPv6 address\n");
-			goto err_free_description;
-		}
+		if (IN6_IS_ADDR_LINKLOCAL(&in->sin6_addr)) {
+			ptr = if_indextoname(in->sin6_scope_id, description +
+					strlen(description) + 1);
+			if (!ptr) {
+				ret = -errno;
+				ERROR("Unable to lookup interface of IPv6 address\n");
+				goto err_free_description;
+			}
 
-		*(ptr - 1) = '%';
+			*(ptr - 1) = '%';
+		}
 	}
 #endif
 	if (res->ai_family == AF_INET) {
