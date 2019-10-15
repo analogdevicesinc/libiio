@@ -216,12 +216,12 @@ int main (int argc, char **argv)
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
-    if (argc == 1) {
-        ASSERT((ctx = iio_create_default_context()) && "No context");
-    }
-    else if (argc == 2) {
-        ASSERT((ctx = iio_create_context_from_uri(argv[1])) && "No context");
-    }
+	if (argc == 1) {
+		ASSERT((ctx = iio_create_default_context()) && "No context");
+	}
+	else if (argc == 2) {
+		ASSERT((ctx = iio_create_context_from_uri(argv[1])) && "No context");
+	}
 	ASSERT(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9361 streaming devices\n");
