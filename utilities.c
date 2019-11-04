@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_WIN32) || (defined(__USE_XOPEN2K8) && \
+#if defined(_WIN32) || \
+		(defined(__APPLE__) && defined(__MACH__)) || \
+		(defined(__USE_XOPEN2K8) && \
 		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
 #define LOCALE_SUPPORT
 #endif
