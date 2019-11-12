@@ -160,6 +160,18 @@ brew_install_or_upgrade() {
 	done
 }
 
+__brew_install_if_not_exists() {
+	brew ls --version $1 || \
+		brew install $1
+}
+
+brew_install_if_not_exists() {
+	while [ -n "$1" ] ; do
+		__brew_install_if_not_exists "$1" || return 1
+		shift
+	done
+}
+
 sftp_cmd_pipe() {
 	sftp ${EXTRA_SSH} ${SSHUSER}@${SSHHOST}
 }
