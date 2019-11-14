@@ -150,7 +150,7 @@ get_ldist() {
 __brew_install_or_upgrade() {
 	brew install $1 || \
 		brew upgrade $1 || \
-		brew ls --version $1
+		brew ls --versions $1
 }
 
 brew_install_or_upgrade() {
@@ -161,7 +161,7 @@ brew_install_or_upgrade() {
 }
 
 __brew_install_if_not_exists() {
-	brew ls --version $1 || \
+	brew ls --versions $1 || \
 		brew install $1
 }
 
