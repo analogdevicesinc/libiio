@@ -3,6 +3,9 @@
 export TRAVIS_API_URL="https://api.travis-ci.org"
 LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 
+HOMEBREW_NO_INSTALL_CLEANUP=1
+export HOMEBREW_NO_INSTALL_CLEANUP
+
 COMMON_SCRIPTS="jobs_running_cnt.py inside_docker.sh"
 
 echo_red()   { printf "\033[1;31m$*\033[m\n"; }
