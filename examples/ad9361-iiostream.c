@@ -180,6 +180,12 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 }
 
 /* simple configuration and streaming */
+/* usage: 
+ * Default context, assuming local IIO devices, i.e., this script is run on ADALM-Pluto for example
+ $./a.out
+ * URI context, find out the uri by typing `iio_info -s` at the command line of the host PC
+ $./a.out usb:x.x.x 
+ */
 int main (int argc, char **argv)
 {
 	// Streaming devices
@@ -210,7 +216,12 @@ int main (int argc, char **argv)
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
-	ASSERT((ctx = iio_create_default_context()) && "No context");
+	if (argc == 1) {
+		ASSERT((ctx = iio_create_default_context()) && "No context");
+	}
+	else if (argc == 2) {
+		ASSERT((ctx = iio_create_context_from_uri(argv[1])) && "No context");
+	}
 	ASSERT(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9361 streaming devices\n");
