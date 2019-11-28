@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.7)
 project(libiio-py NONE)
 
-include(FindPythonInterp)
+find_package (Python COMPONENTS Interpreter)
 
-if (PYTHONINTERP_FOUND)
+if (Python_Interpreter_FOUND)
 	option(PYTHON_BINDINGS "Install Python bindings" ON)
 
 	if (PYTHON_BINDINGS)
@@ -15,10 +15,10 @@ if (PYTHONINTERP_FOUND)
 
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/iio.py  ${CMAKE_CURRENT_BINARY_DIR}/iio.py COPYONLY)
 
-		add_custom_target(libiio-py ALL DEPENDS ${SETUP_PY} COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet build)
+		add_custom_target(libiio-py ALL DEPENDS ${SETUP_PY} COMMAND ${Python_EXECUTABLE} ${SETUP_PY} --quiet build)
 
 		if(NOT SKIP_INSTALL_ALL)
-			install(CODE "execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX})")
+			install(CODE "execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMAND ${Python_EXECUTABLE} ${SETUP_PY} install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX})")
 		endif()
 	endif()
 endif()
