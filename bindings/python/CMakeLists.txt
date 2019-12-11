@@ -1,7 +1,16 @@
 cmake_minimum_required(VERSION 2.8.7)
 project(libiio-py NONE)
 
-find_package (Python COMPONENTS Interpreter)
+if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
+	include(FindPythonInterp)
+
+	# Set variables as they would be set by module FindPython,
+	# which is available from CMake 3.12.
+	set(Python_Interpreter_FOUND ${PYTHONINTERP_FOUND})
+	set(Python_EXECUTABLE ${PYTHON_EXECUTABLE})
+else()
+	find_package (Python COMPONENTS Interpreter)
+endif()
 
 if (Python_Interpreter_FOUND)
 	option(PYTHON_BINDINGS "Install Python bindings" ON)
