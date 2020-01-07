@@ -39,6 +39,15 @@ def _checkNegative(result, func, arguments):
 	else:
 		raise OSError(-result, _strerror(-result))
 
+# Python 2 and Python 3 compatible _isstring function.
+def _isstring(s):
+	try:
+		# attempt to evaluate basestring (Python 2)
+		return isinstance(s, basestring)
+	except NameError:
+		# No basestring --> Python 3
+		return isinstance(s, str)
+
 class _ScanContext(Structure):
 	pass
 class _ContextInfo(Structure):
@@ -739,7 +748,7 @@ class Context(object):
 
 		if(_context is None):
 			self._context = _new_default()
-		elif type(_context) is str or type(_context) is unicode:
+		elif _isstring(_context):
 			self._context = _new_uri(_context.encode('ascii'))
 		else:
 			self._context = _context
