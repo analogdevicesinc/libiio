@@ -99,6 +99,13 @@ enum {
 	MAX_READ_METHOD,
 };
 static int buffer_read_method = BUFFER_POINTER;
+// these strings must be in the same order as the above enum
+static const char read_method_str[MAX_READ_METHOD][20] = {
+	"pointer",
+	"callback",
+	"read raw",
+	"read",
+};
 
 // Streaming devices
 static struct iio_device *dev;
@@ -156,7 +163,13 @@ static void usage(int argc, char *argv[])
 	printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
 	printf("  -t\ttrigger name (default \"instance1\")\n");
 	printf("  -b\tbuffer length (default 1)\n");
-	printf("  -r\tread method (default 0 pointer, 1 callback, 2 read, 3 read raw)\n");
+	printf("  -r\tread method (default ");
+	for (int i = 0 ; i < MAX_READ_METHOD; i++) {
+		if (i != 0)
+			printf("; ");
+		printf("%d %s", i, read_method_str[i]);
+	}
+	printf(")\n");
 	printf("  -c\tread count (default no limit)\n");
 }
 
