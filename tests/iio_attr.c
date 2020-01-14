@@ -526,8 +526,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	if (attr_index && !argv[attr_index])
 		return EXIT_FAILURE;
-	if (wbuf && !wbuf)
-		return EXIT_FAILURE;
 	if (wbuf && ((device_index && (!strcmp(".", argv[device_index]) ||
 				        strchr(argv[device_index], '*'))) ||
 		     (channel_index && (!strcmp(".", argv[channel_index]) ||
