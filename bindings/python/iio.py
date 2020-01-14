@@ -61,10 +61,9 @@ _BufferPtr = _POINTER(_Buffer)
 
 if 'Windows' in _system():
 	_iiolib = 'libiio.dll'
-elif 'Darwin' in _system():
-	_iiolib = 'iio'
 else:
-	_iiolib = 'libiio.so.0'
+	# Non-windows, possibly Posix system
+	_iiolib = 'iio'
 
 _lib = _cdll(find_library(_iiolib), use_errno = True, use_last_error = True)
 
