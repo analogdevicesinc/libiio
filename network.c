@@ -1436,7 +1436,7 @@ struct iio_context * network_create_context(const char *host)
 	hints.ai_socktype = SOCK_STREAM;
 
 #ifdef HAVE_AVAHI
-	if (!host) {
+	if (!host || !host[0]) {
 		char addr_str[AVAHI_ADDRESS_STR_MAX];
 		char port_str[6];
 		AvahiAddress address;
