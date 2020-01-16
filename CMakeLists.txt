@@ -98,6 +98,12 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE=1)
 endif()
 
+# For BSD variants
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBSD")
+	set(CMAKE_REQUIRED_DEFINITIONS "-D__BSD_VISIBLE")
+	add_definitions(-D__BSD_VISIBLE=1)
+endif()
+
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
 if (ENABLE_IPV6)
 	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
