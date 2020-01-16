@@ -303,7 +303,18 @@ ensure_command_exists() {
 	return 1
 }
 
+print_github_api_rate_limits() {
+	# See https://developer.github.com/v3/rate_limit/
+	# Note: Accessing this endpoint does not count against your REST API rate limit.
+	echo_green '-----------------------------------------'
+	echo_green 'Github API Rate limits'
+	echo_green '-----------------------------------------'
+	wget -q -O- https://api.github.com/rate_limit
+	echo_green '-----------------------------------------'
+}
+
 ensure_command_exists sudo
+ensure_command_exists wget
 
 # Other scripts will download lib.sh [this script] and lib.sh will
 # in turn download the other scripts it needs.
@@ -313,7 +324,8 @@ for script in $COMMON_SCRIPTS ; do
 	[ ! -f "ci/travis/$script" ] || continue
 	[ ! -f "${LOCAL_BUILD_DIR}/$script" ] || continue
 	mkdir -p ${LOCAL_BUILD_DIR}
-	ensure_command_exists wget
 	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
 		-O $LOCAL_BUILD_DIR/$script
 done
+
+print_github_api_rate_limits
