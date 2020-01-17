@@ -148,7 +148,7 @@ static void dump_device_attributes(const struct iio_device *dev,
 		const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char buf[1024];
+	char buf[2048];
 
 	if (!wbuf || !quiet) {
 		if (!quiet)
@@ -259,7 +259,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 		struct iio_channel *ch, const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char buf[1024];
+	char buf[2048];
 	const char *type_name;
 
 	if (!wbuf || !quiet) {
