@@ -324,6 +324,9 @@ endif()
 #set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
 #configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
 
+option(CSHARP_BINDINGS "Install C# bindings" OFF)
+option(PYTHON_BINDINGS "Install Python bindings" OFF)
+option(MATLAB_BINDINGS "Build MATLAB bindings" OFF)
 add_subdirectory(bindings)
 
 if (WITH_MATLAB_BINDINGS_API)
