@@ -163,8 +163,9 @@ if(WITH_LOCAL_BACKEND)
 	endif()
 endif()
 
-find_library(LIBUSB_LIBRARIES usb-1.0)
-find_path(LIBUSB_INCLUDE_DIR libusb-1.0/libusb.h)
+#Handle FreeBSD libusb and Linux libusb-1.0 libraries
+find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
 	message(STATUS "Looking for libusb-1.0 : Found")
 	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
@@ -180,11 +181,15 @@ if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
 		include_directories(${LIBUSB_INCLUDE_DIR})
 
 		set(TEMP ${CMAKE_REQUIRED_LIBRARIES})
+		set(TEMP1 ${CMAKE_REQUIRED_INCLUDES})
 		set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES}
-			 ${LIBUSB_LIBRARIES})
-		check_symbol_exists(libusb_get_version "libusb-1.0/libusb.h"
+			${LIBUSB_LIBRARIES})
+		set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES}
+			${LIBUSB_INCLUDE_DIR})
+		check_symbol_exists(libusb_get_version libusb.h
 			HAS_LIBUSB_GETVERSION)
 		set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
+		set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
 	endif()
 else()
 	message(STATUS "Looking for libusb-1.0 : Failed; building without usb")
