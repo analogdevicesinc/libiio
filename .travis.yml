@@ -1,5 +1,6 @@
 language: c
 sudo: required
+python: "3.6"
 
 env:
   global:
