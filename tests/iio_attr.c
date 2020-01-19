@@ -40,6 +40,26 @@ enum backend {
 	AUTO
 };
 
+/*
+ * internal buffers need to be big enough for attributes
+ * coming back from the kernel. Because of virtual memory,
+ * only the amount of ram that is needed is used.
+ */
+#define BUF_SIZE 16384
+
+static void * xmalloc(size_t n)
+{
+	void *p = malloc(n);
+
+	if (!p && n != 0) {
+		fprintf(stderr, MY_NAME
+			" fatal error: allocating %zu bytes failed\n",n);
+		exit(EXIT_FAILURE);
+	}
+
+	return p;
+}
+
 static bool str_match(const char * haystack, char * needle, bool ignore)
 {
 	bool ret = false;
@@ -112,9 +132,10 @@ static struct iio_context * autodetect_context(void)
 
 	ret = iio_scan_context_get_info_list(scan_ctx, &info);
 	if (ret < 0) {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str));
+		char *err_str = xmalloc(BUF_SIZE);
+		iio_strerror(-ret, err_str, BUF_SIZE);
 		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		free (err_str);
 		goto err_free_ctx;
 	}
 
@@ -148,20 +169,20 @@ static void dump_device_attributes(const struct iio_device *dev,
 		const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char buf[1024];
+	char *buf = xmalloc(BUF_SIZE);
 
 	if (!wbuf || !quiet) {
 		if (!quiet)
 			printf("dev '%s', attr '%s', value :",
 					iio_device_get_name(dev), attr);
-		ret = iio_device_attr_read(dev, attr, buf, sizeof(buf));
+		ret = iio_device_attr_read(dev, attr, buf, BUF_SIZE);
 		if (ret > 0) {
 			if (quiet)
 				printf("%s\n", buf);
 			else
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -171,22 +192,23 @@ static void dump_device_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
 		dump_device_attributes(dev, attr, NULL, quiet);
 	}
+	free(buf);
 }
 
 static void dump_buffer_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char buf[1024];
+	char *buf = xmalloc(BUF_SIZE);
 
 	if (!wbuf || !quiet) {
-		ret = iio_device_buffer_attr_read(dev, attr, buf, sizeof(buf));
+		ret = iio_device_buffer_attr_read(dev, attr, buf, BUF_SIZE);
 
 		if (!quiet)
 			printf("dev '%s', buffer attr '%s', value :",
@@ -198,7 +220,7 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 			else
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -209,22 +231,24 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
 		dump_buffer_attributes(dev, attr, NULL, quiet);
 	}
+
+	free(buf);
 }
 
 static void dump_debug_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char buf[1024];
+	char *buf = xmalloc(BUF_SIZE);
 
 	if (!wbuf || !quiet) {
-		ret = iio_device_debug_attr_read(dev, attr, buf, sizeof(buf));
+		ret = iio_device_debug_attr_read(dev, attr, buf, BUF_SIZE);
 
 		if (!quiet)
 			printf("dev '%s', debug attr '%s', value :",
@@ -236,7 +260,7 @@ static void dump_debug_attributes(const struct iio_device *dev,
 			else
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -247,19 +271,21 @@ static void dump_debug_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
 		dump_debug_attributes(dev, attr, NULL, quiet);
 	}
+
+	free(buf);
 }
 
 static void dump_channel_attributes(const struct iio_device *dev,
 		struct iio_channel *ch, const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char buf[1024];
+	char *buf = xmalloc(BUF_SIZE);
 	const char *type_name;
 
 	if (!wbuf || !quiet) {
@@ -268,7 +294,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 		else
 			type_name = "input";
 
-		ret = iio_channel_attr_read(ch, attr, buf, sizeof(buf));
+		ret = iio_channel_attr_read(ch, attr, buf, BUF_SIZE);
 		if (!quiet)
 			printf("dev '%s', channel '%s' (%s), ",
 					iio_device_get_name(dev),
@@ -286,7 +312,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 			else
 				printf("value '%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -296,12 +322,13 @@ static void dump_channel_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-ret, buf, BUF_SIZE);
 			printf("error %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
 		dump_channel_attributes(dev, ch, attr, NULL, quiet);
 	}
+	free(buf);
 }
 
 static const struct option options[] = {
@@ -545,11 +572,12 @@ int main(int argc, char **argv)
 
 	if (!ctx) {
 		if (!detect_context) {
-			char buf[1024];
+			char *buf = xmalloc(BUF_SIZE);
 
-			iio_strerror(errno, buf, sizeof(buf));
+			iio_strerror(errno, buf, BUF_SIZE);
 			fprintf(stderr, "Unable to create IIO context: %s\n",
 					buf);
+			free(buf);
 		}
 
 		return EXIT_FAILURE;
