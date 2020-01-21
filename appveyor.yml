@@ -50,7 +50,7 @@ build_script:
     # Download a 32-bit version of windres.exe
     - appveyor DownloadFile http://swdownloads.analog.com/cse/build/windres.exe.gz -FileName C:\windres.exe.gz
     - C:\msys64\usr\bin\bash -lc "cd /c ; gunzip windres.exe.gz"
-    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_RC_COMPILER=/c/windres.exe -DGIT_EXECUTABLE=C:/Program\ Files/Git/cmd/git.exe -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw32 -DCMAKE_C_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-g++.exe -DCSHARP_BINDINGS:BOOL=OFF -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw32/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DPYTHON_BINDINGS:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/32/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include -DLIBLZMA_LIBRARY=c:/msys64/mingw32/lib/liblzma.dll.a /c/projects/libiio && make -j3"
+    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_RC_COMPILER=/c/windres.exe -DGIT_EXECUTABLE=C:/Program\ Files/Git/cmd/git.exe -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw32 -DCMAKE_C_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw32/bin/i686-w64-mingw32-g++.exe -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw32/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/32/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include -DLIBLZMA_LIBRARY=c:/msys64/mingw32/lib/liblzma.dll.a /c/projects/libiio && make -j3"
 
     # MinGW 64 bit
     - cd c:\projects\libiio
@@ -68,7 +68,7 @@ build_script:
     # set the specific version of doxygen, need to look at this later.
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-doxygen-1.8.14-2-any.pkg.tar.xz"
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-graphviz-2.40.1-4-any.pkg.tar.xz"
-    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DCSHARP_BINDINGS:BOOL=OFF -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DPYTHON_BINDINGS:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
+    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
 
     # Move the tests folder
     - cd c:\projects\libiio
@@ -86,7 +86,7 @@ build_script:
     - mkdir build-win32
     - cd build-win32
     - set MCS_EXECUTABLE_PATH="C:\Windows\Microsoft.NET\Framework\v4.0.30319"
-    - cmake -G "%GENERATOR%" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..
+    - cmake -G "%GENERATOR%" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DCSHARP_BINDINGS:BOOL=ON -DPYTHON_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..
     - cmake --build . --config %configuration%
 
     - cd bindings/python
@@ -107,7 +107,7 @@ build_script:
     - echo "Running cmake for Visual Studio 64 bit... "
     - mkdir build-win64
     - cd build-win64
-    - cmake -G "%GENERATOR% Win64" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DPYTHON_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..
+    - cmake -G "%GENERATOR% Win64" -DCMAKE_BUILD_TYPE:STRING="%configuration%" -DENABLE_IPV6:BOOL=OFF -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DCSHARP_BINDINGS:BOOL=ON -DPYTHON_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..
     - cmake --build . --config %configuration%
 
     - cd bindings/python
