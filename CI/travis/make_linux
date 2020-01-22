@@ -7,7 +7,7 @@ if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 handle_default() {
 	mkdir -p build
 	cd build
-	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON ..
+	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DPYTHON_BINDINGS=ON ..
 	make && make package
 	if [ -n "${GH_DOC_TOKEN}" ] && \
 			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
@@ -19,7 +19,7 @@ handle_default() {
 handle_centos() {
 	mkdir -p build
 	cd build
-	cmake -DENABLE_PACKAGING=ON ..
+	cmake -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON ..
 	make && make package
 	cd ..
 }
