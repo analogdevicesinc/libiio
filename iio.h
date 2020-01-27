@@ -341,7 +341,25 @@ __api struct iio_context * iio_create_network_context(const char *host);
 /** @brief Create a context from a URI description
  * @param uri A URI describing the context location
  * @return On success, a pointer to a iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately */
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * <b>NOTE:</b> The following URIs are supported based on compile time backend
+ * support:
+ * - Local backend, "local:"\n
+ *   Does not have an address part. For example <i>"local:"</i>
+ * - XML backend, "xml:"\n Requires a path to the XML file for the address part.
+ *   For example <i>"xml:/home/user/file.xml"</i>
+ * - Network backend, "ip:"\n Requires a hostname, IPv4, or IPv6 to connect to
+ *   a specific running IIO Daemon or no address part for automatic discovery
+ *   when library is compiled with ZeroConf support. For example
+ *   <i>"ip:192.168.2.1"</i>, <i>"ip:localhost"</i>, <i>"ip:"</i>
+ * - USB backend, "usb:"\n Requires bus, address, and interface parts separated
+ *   with a dot. For example <i>"usb:3.32.5"</i>
+ * - Serial backend, "serial:"\n Requires a port, baud_rate, parity ('<b>n</b>'
+ *   none, 'o' odd, 'e' even, 'm' mark, 's' space), bits (<b>8</b>), and flow
+ *   ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR) parts separated
+ *   with a comma. For example <i>"serial:/dev/ttyUSB0,115200"</i>,
+ *   <i>"serial:/dev/ttyUSB0,115200,n,8,1"</i>*/
 __api struct iio_context * iio_create_context_from_uri(const char *uri);
 
 
