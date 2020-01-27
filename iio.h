@@ -621,7 +621,7 @@ __api __pure const char * iio_device_find_buffer_attr(
  * returned when reading the attribute; if positive, it corresponds to the
  * length of the data read. In that case, the rest of the block contains
  * the data. */
- __api ssize_t iio_device_attr_read(const struct iio_device *dev,
+__api ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
 
@@ -778,7 +778,7 @@ __api int iio_device_attr_write_double(const struct iio_device *dev,
  * returned when reading the attribute; if positive, it corresponds to the
  * length of the data read. In that case, the rest of the block contains
  * the data. */
- __api ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
+__api ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
 /** @brief Read the content of all buffer-specific attributes
