@@ -621,7 +621,7 @@ __api __pure const char * iio_device_find_buffer_attr(
  * returned when reading the attribute; if positive, it corresponds to the
  * length of the data read. In that case, the rest of the block contains
  * the data. */
- __api ssize_t iio_device_attr_read(const struct iio_device *dev,
+__api ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
 
@@ -778,7 +778,7 @@ __api int iio_device_attr_write_double(const struct iio_device *dev,
  * returned when reading the attribute; if positive, it corresponds to the
  * length of the data read. In that case, the rest of the block contains
  * the data. */
- __api ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
+__api ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
 /** @brief Read the content of all buffer-specific attributes
@@ -952,8 +952,7 @@ __api int iio_device_set_trigger(const struct iio_device *dev,
  * @return True if the device is a trigger, False otherwise */
 __api __pure bool iio_device_is_trigger(const struct iio_device *dev);
 
-/**
- * @brief Configure the number of kernel buffers for a device
+/** @brief Configure the number of kernel buffers for a device
  *
  * This function allows to change the number of buffers on kernel side.
  * @param dev A pointer to an iio_device structure
@@ -1226,7 +1225,7 @@ __api void iio_channel_disable(struct iio_channel *chn);
 __api bool iio_channel_is_enabled(const struct iio_channel *chn);
 
 
-/** Demultiplex the samples of a given channel
+/** @brief Demultiplex the samples of a given channel
  * @param chn A pointer to an iio_channel structure
  * @param buffer A pointer to an iio_buffer structure
  * @param dst A pointer to the memory area where the demultiplexed data will be
@@ -1237,7 +1236,7 @@ __api size_t iio_channel_read_raw(const struct iio_channel *chn,
 		struct iio_buffer *buffer, void *dst, size_t len);
 
 
-/** Demultiplex and convert the samples of a given channel
+/** @brief Demultiplex and convert the samples of a given channel
  * @param chn A pointer to an iio_channel structure
  * @param buffer A pointer to an iio_buffer structure
  * @param dst A pointer to the memory area where the converted data will be
@@ -1248,7 +1247,7 @@ __api size_t iio_channel_read(const struct iio_channel *chn,
 		struct iio_buffer *buffer, void *dst, size_t len);
 
 
-/** Multiplex the samples of a given channel
+/** @brief Multiplex the samples of a given channel
  * @param chn A pointer to an iio_channel structure
  * @param buffer A pointer to an iio_buffer structure
  * @param src A pointer to the memory area where the sequential data will
@@ -1259,7 +1258,7 @@ __api size_t iio_channel_write_raw(const struct iio_channel *chn,
 		struct iio_buffer *buffer, const void *src, size_t len);
 
 
-/** Convert and multiplex the samples of a given channel
+/** @brief Convert and multiplex the samples of a given channel
  * @param chn A pointer to an iio_channel structure
  * @param buffer A pointer to an iio_buffer structure
  * @param src A pointer to the memory area where the sequential data will
