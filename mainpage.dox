@@ -5,12 +5,13 @@
 
 @section license License
 Libiio has been developed and is released under the terms of the GNU Lesser General Public
-License, version 2. This open-source license allows anyone to use the library for proprietary or
-open-source, commercial or non-commercial applications. This choice was motivated by the fact
-that Analog Devices is a company that principally sells hardware, and this library provides the
-clients with a better and easier way of using this hardware.
+License, version 2 or (at your option) any later version.
+This open-source license allows anyone to use the library for proprietary or
+open-source, commercial or non-commercial applications.
 
-The full terms of the license can be found here: http://opensource.org/licenses/LGPL-2.1
+Seperately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the  GNU General Public License, version 2 or (at your option) any later version.
+
+The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
 
 @section code_model Code Model
 The basic bricks of the libiio API are the iio_context, iio_device, iio_channel and iio_buffer classes.
