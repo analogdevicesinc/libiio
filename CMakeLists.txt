@@ -380,12 +380,12 @@ if(NOT SKIP_INSTALL_ALL)
 		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-	option(WITH_DOC "Generate documentation with Doxygen" ON)
-
-	# It is not an error when 'dot' is not found, just switching off the Doxygen's HAVE_DOT option
-	find_package_handle_standard_args (Dot REQUIRED_VARS DOXYGEN_DOT_EXECUTABLE)
+option(WITH_DOC "Generate documentation with Doxygen" OFF)
+if(WITH_DOC)
+	find_package(Doxygen REQUIRED)
+	# It is not an error when 'dot' is not found,
+	# just switching off the Doxygen's HAVE_DOT option
+	find_package_handle_standard_args(Dot REQUIRED_VARS DOXYGEN_DOT_EXECUTABLE)
 
 	include(cmake/CheckCaseSensitiveFileSystem.cmake)
 	if (HAVE_CASE_SENSITIVE_FILESYSTEM)
@@ -394,25 +394,24 @@ if(DOXYGEN_FOUND)
 		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "NO")
 	endif()
 
-	if (WITH_DOC)
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
-				${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
-		set(HTML_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
-		file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc DESTINATION ${HTML_DEST_DIR})
+	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
+		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
+	set(HTML_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc DESTINATION ${HTML_DEST_DIR})
 
-		add_custom_command(TARGET iio POST_BUILD
-			COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-			COMMENT "Generating API documentation with Doxygen" VERBATIM
-			)
+	add_custom_command(TARGET iio POST_BUILD
+		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		COMMENT "Generating API documentation with Doxygen" VERBATIM)
 
-		if(NOT SKIP_INSTALL_ALL)
-			install(DIRECTORY ${HTML_DEST_DIR} DESTINATION ${CMAKE_INSTALL_DOCDIR})
-		endif()
+	if(NOT SKIP_INSTALL_ALL)
+		install(DIRECTORY ${HTML_DEST_DIR}
+			DESTINATION ${CMAKE_INSTALL_DOCDIR})
 	endif()
-else()
-	message(STATUS "Doxygen not found, API documentation won't be generated")
 endif()
 
 # Create an installer if compiling for OSX

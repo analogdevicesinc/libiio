@@ -7,7 +7,23 @@ if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 handle_default() {
 	mkdir -p build
 	cd build
-	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DPYTHON_BINDINGS=ON ..
+
+	# do not exit if the statement returns a non-true return value.
+	set +e
+	command doxygen -h >/dev/null 2>&1
+	if [ "$?" -eq "0" ] ; then
+		DOC_FOUND="-DWITH_DOC=ON"
+		echo "Found doxygen on CI, building WITH_DOC=ON"
+	else
+		DOC_FOUND=" "
+		echo "doxygen missing on CI"
+	fi
+	# set it back, to error immediately.
+	set -e
+
+	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
+		-DPYTHON_BINDINGS=ON ${DOC_FOUND} ..
+
 	make && make package
 	if [ -n "${GH_DOC_TOKEN}" ] && \
 			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
