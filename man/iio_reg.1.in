@@ -1,0 +1,74 @@
+.\" Copyright (c) 2018-2020 Robin Getz
+.\" Copyright (c) 2018-2020 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iio_reg 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iio_reg_
+.SH NAME
+iio_reg \- do a low level read or write to SPI or I2C register
+.SH SYNOPSIS
+.B iio_reg
+[
+.I options
+]
+<device> <register> [<value>]
+.SH DESCRIPTION
+.B iio_reg
+is a utility for debugging local IIO devices.
+It should not be used by normal users, and is normally used by driver
+developers during development, or by end users debugging a driver, or sending
+in a feature request.
+It provides a mechanism to read or write SPI or I2C registers for IIO devices.
+This can be useful when troubleshooting IIO devices, and understanding how
+the Linux IIO subsystem is managing the device.
+
+This IIO utility does not work across a network or USB context.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Tells
+.I iio_reg
+to display some help, and then quit.
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH "SEE ALSO"
+.ad l
+.BR iio_attr (1),
+.BR iio_info (1),
+.BR iio_readdev (1),
+.BR iio_reg (1),
+.BR iio_writedev (1),
+.BR libiio (3)
+.PP
+libiio home page:
+.BR \%https://wiki.analog.com/resources/tools-software/linux-software/libiio
+.PP
+libiio code:
+.BR \%https://github.com/analogdevicesinc/libiio
+.PP
+Doxygen for libiio
+.BR \%https://analogdevicesinc.github.io/libiio/
+.SH BUGS
+All bugs are tracked at:
+.BR \%https://github.com/analogdevicesinc/libiio/issues

@@ -1,0 +1,132 @@
+.\" Copyright (c) 2018-2020 Robin Getz
+.\" Copyright (c) 2018-2020 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iio_readdev 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iio_readdev_
+.SH NAME
+iio_readdev \- read buffers from an IIO device
+.SH SYNOPSIS
+.B iio_readdev
+[
+.I options
+]
+[-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] <iio_device> [<channel> ...]
+.SH DESCRIPTION
+.B iio_reg
+is a utility for reading buffers from connected IIO devices, and sending resutls to standard out.
+
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Tells
+.I iio_readdev
+to display some help, and then quit.
+.B \-n, \-\-network
+Use the network backend with the provided hostname
+.TP
+.B \-u, \-\-uri
+The Uniform Resource Identifier
+.I (uri)
+for connecting to devices, can be one of:
+.RS
+.IP ip:[address]
+network address, either numeric (192.168.0.1) or network hostname
+.IP ip:
+blank, if compiled with zeroconf support, will find an IIO device on network
+.IP usb:[device:port:instance]
+normally returned from
+.B iio_info -s
+.IP serial:[port]
+.IP local
+with no address part
+.RE
+.TP
+.B \-t \-\-trigger
+Use the specified trigger, if needed on the specificied channel
+.TP
+.B \-b \-\-buffer-size
+Size of the capture buffer. Default is 256.
+.TP
+.B \-s \-\-samples
+Number of samples (not bytes) to capture, 0 = infinite. Default is 0.
+.TP
+.B \-T \-\-timeout
+Buffer timeout in milliseconds. 0 = no timeout. Default is 0.
+.TP
+.B \-a, \-\-auto
+Scan for available contexts and if only one is available use it.
+
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH "USAGE"
+.PP 
+You use iio_readdev in the same way you use many of the other libiio utilites.
+You must specify a IIO device, and the specific channel to read. Since this is a read, channels must be input.
+It is easy to use
+.B iio_attr
+to find out what the channels are called.
+.PP
+This identifies the device, and channel that can be used.
+.RS
+.B \f(CWiio_attr \-a \-i \-c .\fP
+.br
+\f(CWUsing auto-detected IIO context at URI "usb:3.10.5"\fP
+.br
+dev 'cf-ad9361-lpc', channel 'voltage0' (input, index: 0, format: le:S12/16>>0)
+.br
+dev 'cf-ad9361-lpc', channel 'voltage1' (input, index: 1, format: le:S12/16>>0)
+.RE
+.PP
+This captures 1024 samples of I and Q data from the USB attached AD9361, and
+stores it (as raw binary) into the file samples.dat
+.RS
+.B \f(CWiio_readdev \-a \-s 1024 cf-ad9361-lpc voltage0 voltage1 > samples.dat\fP
+.RE
+.PP
+And plots the data with gnuplot.
+.RS
+.B \f(WCgnuplot \-e \(dq\&set term png; set output 'sample.png'; plot 'sample.dat' binary format='%short%short' using 1 with lines, 'sample.dat' binary format='%short%short' using 2 with lines;\(dq\&\fP
+.RE
+
+.SH "SEE ALSO"
+.ad l
+.BR iio_attr (1),
+.BR iio_info (1),
+.BR iio_readdev (1),
+.BR iio_reg (1),
+.BR iio_writedev (1),
+.BR libiio (3)
+.PP
+libiio home page:
+.BR \%https://wiki.analog.com/resources/tools-software/linux-software/libiio
+.PP
+libiio code:
+.BR \%https://github.com/analogdevicesinc/libiio
+.PP
+Doxygen for libiio
+.BR \%https://analogdevicesinc.github.io/libiio/
+.SH BUGS
+All bugs are tracked at:
+.BR \%https://github.com/analogdevicesinc/libiio/issues

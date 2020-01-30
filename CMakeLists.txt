@@ -414,6 +414,9 @@ if(WITH_DOC)
 	endif()
 endif()
 
+option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
+add_subdirectory(man)
+
 # Create an installer if compiling for OSX
 if(OSX_PACKAGE)
 	set(LIBIIO_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}.g${LIBIIO_VERSION_GIT}.pkg)
