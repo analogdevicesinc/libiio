@@ -139,5 +139,15 @@ namespace iio
                 length = array.Length;
             Marshal.Copy(array, 0, iio_buffer_start(buf), (int)length);
         }
+
+        /// <summary>Extract the samples from the <see cref="iio.IOBuffer"/> object.</summary>
+        /// <param name="array">A <c>byte</c> array containing the extracted samples.</param>
+        public void read(byte[] array)
+        {
+            long length = (long) iio_buffer_end(buf) - (long) iio_buffer_start(buf);
+            if (length > array.Length)
+                length = array.Length;
+            Marshal.Copy(iio_buffer_start(buf), array, 0, (int)length);
+        }
     }
 }
