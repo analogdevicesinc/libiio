@@ -1483,15 +1483,15 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	// Check for matching global differential attr, like "voltage-voltage"
 	dashptr = strchr(attr, '-');
 	if (dashptr && dashptr > attr && dashptr < ptr) {
-		unsigned int len1 = dashptr - attr,
-					 len2 = ptr - dashptr - 1;
+		unsigned int len1 = dashptr - attr;
+		unsigned int len2 = ptr - dashptr - 1;
 		const char*  iddashptr = strchr(chn->id, '-');
-		if (iddashptr && strlen(iddashptr+1) > len2 &&
+		if (iddashptr && strlen(iddashptr + 1) > len2 &&
 			iddashptr - chn->id > len1 &&
 			chn->id[len1] >= '0' && chn->id[len1] <= '9' &&
 			!strncmp(chn->id, attr, len1) &&
-			iddashptr[len2+1] >= '0' && iddashptr[len2+1] <= '9' &&
-			!strncmp(iddashptr+1, dashptr+1, len2))
+			iddashptr[len2 + 1] >= '0' && iddashptr[len2 + 1] <= '9' &&
+			!strncmp(iddashptr + 1, dashptr + 1, len2))
 			return 1;
 	}
 
