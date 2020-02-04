@@ -1465,7 +1465,7 @@ static int add_channel(struct iio_device *dev, const char *name,
 static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 {
 	unsigned int len;
-	char *ptr;
+	char *ptr, *dashptr;
 
 	if (!chn->is_output && !strncmp(attr, "in_", 3))
 		attr += 3;
@@ -1479,6 +1479,21 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		return 0;
 
 	len = ptr - attr;
+
+	// Check for matching global differential attr, like "voltage-voltage"
+	dashptr = strchr(attr, '-');
+	if (dashptr && dashptr > attr && dashptr < ptr) {
+		unsigned int len1 = dashptr - attr;
+		unsigned int len2 = ptr - dashptr - 1;
+		const char*  iddashptr = strchr(chn->id, '-');
+		if (iddashptr && strlen(iddashptr + 1) > len2 &&
+			iddashptr - chn->id > len1 &&
+			chn->id[len1] >= '0' && chn->id[len1] <= '9' &&
+			!strncmp(chn->id, attr, len1) &&
+			iddashptr[len2 + 1] >= '0' && iddashptr[len2 + 1] <= '9' &&
+			!strncmp(iddashptr + 1, dashptr + 1, len2))
+			return 1;
+	}
 
 	if (strncmp(chn->id, attr, len))
 		return 0;
