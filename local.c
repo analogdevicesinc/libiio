@@ -509,7 +509,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	}
 
 	/* Requested buffer size is too big! */
-	if (pdata->last_dequeued < 0 && bytes_used != block.size)
+	if (pdata->last_dequeued < 0 && bytes_used > block.size)
 		return -EFBIG;
 
 	pdata->last_dequeued = block.id;
