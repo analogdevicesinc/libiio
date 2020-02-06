@@ -140,8 +140,9 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		len = strlen(iio_chan_type_name_spec[i]);
 		if (strncmp(iio_chan_type_name_spec[i], chn->id, len) != 0)
 			continue;
-		/* Type must be followed by either a '_' or a digit */
-		if (chn->id[len] != '_' && (chn->id[len] < '0' || chn->id[len] > '9'))
+		/* Type must be followed by one of a '\0', a '_', or a digit */
+		if (chn->id[len] != '\0' && chn->id[len] != '_' &&
+				(chn->id[len] < '0' || chn->id[len] > '9'))
 			continue;
 
 		chn->type = (enum iio_chan_type) i;
