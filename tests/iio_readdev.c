@@ -84,6 +84,8 @@ static void quit_all(int sig)
 #ifdef _WIN32
 
 #include <windows.h>
+#include <io.h>
+#include <fcntl.h>
 
 BOOL WINAPI sig_handler_fn(DWORD dwCtrlType)
 {
@@ -377,6 +379,14 @@ int main(int argc, char **argv)
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
+
+#ifdef _WIN32
+	/*
+	 * Deactivate the translation for the stdout. Otherwise, bytes that have
+	 * the same value as line feed character (LF) will be translated to CR-LF.
+	 */
+	_setmode(_fileno(stdout), _O_BINARY);
+#endif
 
 	while (app_running) {
 		int ret = iio_buffer_refill(buffer);
