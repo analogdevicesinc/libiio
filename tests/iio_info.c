@@ -344,6 +344,9 @@ int main(int argc, char **argv)
 					iio_channel_get_id(ch),
 					name ? name : "", type_name);
 
+			if (iio_channel_get_type(ch) == IIO_CHAN_TYPE_UNKNOWN)
+				printf(", WARN:iio_channel_get_type()=UNKNOWN");
+
 			if (iio_channel_is_scan_element(ch)) {
 				const struct iio_data_format *format =
 					iio_channel_get_data_format(ch);
