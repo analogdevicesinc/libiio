@@ -1,7 +1,7 @@
 /*
  * iio_info - Part of Industrial I/O (IIO) utilities
  *
- * Copyright (C) 2014 Analog Devices, Inc.
+ * Copyright (C) 2014-2020 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -57,6 +57,26 @@ static const char *options_descriptions[] = {
 	"Scan for available backends.",
 	"Scan for available contexts and if only one is available use it.",
 };
+
+/*
+ * internal buffers need to be big enough for attributes
+ * coming back from the kernel. Because of virtual memory,
+ * only the amount of ram that is needed is used.
+ */
+#define BUF_SIZE 16384
+
+static void * xmalloc(size_t n)
+{
+	void *p = malloc(n);
+
+	if (!p && n != 0) {
+		fprintf(stderr, MY_NAME
+				" fatal error: allocating %zu bytes failed\n",n);
+		exit(EXIT_FAILURE);
+	}
+
+	return p;
+}
 
 static void usage(void)
 {
@@ -294,6 +314,7 @@ int main(int argc, char **argv)
 
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
 	printf("IIO context has %u devices:\n", nb_devices);
+	char *buf = xmalloc(BUF_SIZE);
 
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -356,16 +377,15 @@ int main(int argc, char **argv)
 			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
 				const char *attr = iio_channel_get_attr(ch, k);
-				char buf[1024];
 				ret = (int) iio_channel_attr_read(ch,
-						attr, buf, sizeof(buf));
+						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ", k, attr);
 
 				if (ret > 0) {
 					printf("value: %s\n", buf);
 				} else {
-					iio_strerror(-ret, buf, sizeof(buf));
+					iio_strerror(-ret, buf, BUF_SIZE);
 					printf("ERROR: %s (%i)\n", buf, ret);
 				}
 			}
@@ -377,9 +397,8 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_attr(dev, j);
-				char buf[1024];
 				ret = (int) iio_device_attr_read(dev,
-						attr, buf, sizeof(buf));
+						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
 						j, attr);
@@ -387,7 +406,7 @@ int main(int argc, char **argv)
 				if (ret > 0) {
 					printf("value: %s\n", buf);
 				} else {
-					iio_strerror(-ret, buf, sizeof(buf));
+					iio_strerror(-ret, buf, BUF_SIZE);
 					printf("ERROR: %s (%i)\n", buf, ret);
 				}
 			}
@@ -399,9 +418,8 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_buffer_attr(dev, j);
-				char buf[1024];
 				ret = (int) iio_device_buffer_attr_read(dev,
-						attr, buf, sizeof(buf));
+						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
 						j, attr);
@@ -409,7 +427,7 @@ int main(int argc, char **argv)
 				if (ret > 0) {
 					printf("value: %s\n", buf);
 				} else {
-					iio_strerror(-ret, buf, sizeof(buf));
+					iio_strerror(-ret, buf, BUF_SIZE);
 					printf("ERROR: %s (%i)\n", buf, ret);
 				}
 			}
@@ -421,16 +439,15 @@ int main(int argc, char **argv)
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr =
 					iio_device_get_debug_attr(dev, j);
-				char buf[1024];
 
 				ret = (int) iio_device_debug_attr_read(dev,
-						attr, buf, sizeof(buf));
+						attr, buf, BUF_SIZE);
 				printf("\t\t\t\tdebug attr %2u: %s ",
 						j, attr);
 				if (ret > 0) {
 					printf("value: %s\n", buf);
 				} else {
-					iio_strerror(-ret, buf, sizeof(buf));
+					iio_strerror(-ret, buf, BUF_SIZE);
 					printf("ERROR: %s (%i)\n", buf, ret);
 				}
 			}
@@ -450,6 +467,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	free(buf);
 	iio_context_destroy(ctx);
 	return EXIT_SUCCESS;
 }
