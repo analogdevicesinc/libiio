@@ -42,6 +42,9 @@ ad9371-iiostream : ad9371-iiostream.o
 adrv9009-iiostream : adrv9009-iiostream.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
+adxl372-iiobuffer: adxl372-iiobuffer.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+
 dummy-iiostream : dummy-iiostream.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
