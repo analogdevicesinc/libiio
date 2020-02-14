@@ -90,16 +90,15 @@ build_script:
     - cmake --build . --config %configuration%
 
     - cd bindings/python
-    - python.exe setup.py bdist_wininst
-    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py37-win32.exe"
-    - ps: cp dist\*.exe .
-    - ps: rm dist\*.exe
+    - python.exe setup.py sdist
+    - ps: Get-ChildItem dist\libiio-*.tar.gz | Rename-Item -NewName "libiio-py37-win32.tar.gz"
+    - ps: cp dist\*.tar.gz .
+    - ps: rm dist\*.tar.gz
     - set PATH=C:\\Python36;C:\\Python36\\libs;%PATH%
-    - python.exe setup.py bdist_wininst
-    - ls dist
-    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py36-win32.exe"
-    - ps: cp dist\*.exe .
-    - ps: rm dist\*.exe
+    - python.exe setup.py sdist
+    - ps: Get-ChildItem dist\libiio-*.tar.gz | Rename-Item -NewName "libiio-py36-win32.tar.gz"
+    - ps: cp dist\*.tar.gz .
+    - ps: rm dist\*.tar.gz
 
     #MSVC 64 bit
     - set PATH=C:\Python37-x64;C:\\Python37-x64\\libs;%PATH%
@@ -111,15 +110,15 @@ build_script:
     - cmake --build . --config %configuration%
 
     - cd bindings/python
-    - python.exe setup.py bdist_wininst
-    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py37-amd64.exe"
-    - ps: cp dist\*.exe .
-    - ps: rm dist\*.exe
+    - python.exe setup.py sdist
+    - ps: Get-ChildItem dist\libiio-*.tar.gz | Rename-Item -NewName "libiio-py37-amd64.tar.gz"
+    - ps: cp dist\*.tar.gz .
+    - ps: rm dist\*.tar.gz
     - set PATH=C:\Python36-x64;C:\\Python36-x64\\libs;%PATH%
-    - python.exe setup.py bdist_wininst
-    - ps: Get-ChildItem dist\libiio-*.exe | Rename-Item -NewName "libiio-py36-amd64.exe"
-    - ps: cp dist\*.exe .
-    - ps: rm dist\*.exe
+    - python.exe setup.py sdist
+    - ps: Get-ChildItem dist\libiio-*.tar.gz | Rename-Item -NewName "libiio-py36-amd64.tar.gz"
+    - ps: cp dist\*.tar.gz .
+    - ps: rm dist\*.tar.gz
     - cd c:\projects\libiio\build-win64
 
     #Create the installer
@@ -138,8 +137,8 @@ build_script:
     - copy build-win64\Release\libiio.* c:\%ARCHIVE_NAME%\MS64
     - copy build-win32\bindings\csharp\libiio-sharp.dll c:\%ARCHIVE_NAME%\MS32
     - copy build-win64\bindings\csharp\libiio-sharp.dll c:\%ARCHIVE_NAME%\MS64
-    - copy build-win32\bindings\python\*.exe c:\%ARCHIVE_NAME%\MS32
-    - copy build-win64\bindings\python\*.exe c:\%ARCHIVE_NAME%\MS64
+    - copy build-win32\bindings\python\*.tar.gz c:\%ARCHIVE_NAME%\MS32
+    - copy build-win64\bindings\python\*.tar.gz c:\%ARCHIVE_NAME%\MS64
     - copy build-mingw-win32\Release\libiio.* c:\%ARCHIVE_NAME%\MinGW32
     - copy build-mingw-win64\Release\libiio.* c:\%ARCHIVE_NAME%\MinGW64
     - del c:\%ARCHIVE_NAME%\MinGW32\libiio.iss
