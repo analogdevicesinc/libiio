@@ -1,7 +1,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014-2015 Analog Devices, Inc.
+ * Copyright (C) 2014-2020 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -735,8 +735,10 @@ static int network_open(const struct iio_device *dev,
 		goto out_mutex_unlock;
 
 	ret = create_socket(pdata->addrinfo, DEFAULT_TIMEOUT_MS);
-	if (ret < 0)
+	if (ret < 0) {
+		ERROR("Create socket: %d\n", ret);
 		goto out_mutex_unlock;
+	}
 
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
@@ -745,8 +747,10 @@ static int network_open(const struct iio_device *dev,
 
 	ret = iiod_client_open_unlocked(pdata->iiod_client,
 			&ppdata->io_ctx, dev, samples_count, cyclic);
-	if (ret < 0)
+	if (ret < 0) {
+		ERROR("Open unlocked: %d\n", ret);
 		goto err_close_socket;
+	}
 
 	ret = setup_cancel(&ppdata->io_ctx);
 	if (ret < 0)
@@ -849,8 +853,10 @@ static ssize_t read_all(struct iio_network_io_context *io_ctx,
 	uintptr_t ptr = (uintptr_t) dst;
 	while (len) {
 		ssize_t ret = network_recv(io_ctx, (void *) ptr, len, 0);
-		if (ret < 0)
+		if (ret < 0) {
+			ERROR("NETWORK RECV: %zu\n", ret);
 			return ret;
+		}
 		ptr += ret;
 		len -= ret;
 	}
@@ -892,8 +898,10 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 	ssize_t ret;
 
 	ret = read_integer(io_ctx, &read_len);
-	if (ret < 0)
+	if (ret < 0) {
+		ERROR("READ INTEGER: %zu\n", ret);
 		return ret;
+	}
 
 	if (read_len > 0 && mask) {
 		size_t i;
@@ -1354,15 +1362,18 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 			ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
 		else
 			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
-		if (ret < 0)
+		if (ret < 0) {
+			ERROR("NETWORK RECV: %zu\n", ret);
 			return ret;
+		}
 
 		bytes_read += to_trunc;
 	} while (!found && len);
 
-	if (!found)
+	if (!found) {
+		ERROR("EIO: %zu\n", ret);
 		return -EIO;
-	else
+	} else
 		return bytes_read;
 #else
 	for (i = 0; i < len - 1; i++) {
