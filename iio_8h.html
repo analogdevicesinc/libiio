@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.18</span>
+   &#160;<span id="projectnumber">0.19</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -499,12 +499,16 @@ Functions</h2></td></tr>
 <tr class="memdesc:ga06d2d53147ee7e028da0092350efc22c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns True if the channel is enabled.  <a href="group__Channel.html#ga06d2d53147ee7e028da0092350efc22c">More...</a><br /></td></tr>
 <tr class="separator:ga06d2d53147ee7e028da0092350efc22c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabf4e2755877dedae40a5fbeb54a3829e"><td class="memItemLeft" align="right" valign="top">__api size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gabf4e2755877dedae40a5fbeb54a3829e">iio_channel_read_raw</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buffer, void *dst, size_t len)</td></tr>
+<tr class="memdesc:gabf4e2755877dedae40a5fbeb54a3829e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Demultiplex the samples of a given channel.  <a href="group__Channel.html#gabf4e2755877dedae40a5fbeb54a3829e">More...</a><br /></td></tr>
 <tr class="separator:gabf4e2755877dedae40a5fbeb54a3829e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa35f0bbf7f6be8f859adb3fc692c600e"><td class="memItemLeft" align="right" valign="top">__api size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e">iio_channel_read</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buffer, void *dst, size_t len)</td></tr>
+<tr class="memdesc:gaa35f0bbf7f6be8f859adb3fc692c600e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Demultiplex and convert the samples of a given channel.  <a href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e">More...</a><br /></td></tr>
 <tr class="separator:gaa35f0bbf7f6be8f859adb3fc692c600e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0d06dce5819723c3b16c4588eb5f477a"><td class="memItemLeft" align="right" valign="top">__api size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga0d06dce5819723c3b16c4588eb5f477a">iio_channel_write_raw</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buffer, const void *src, size_t len)</td></tr>
+<tr class="memdesc:ga0d06dce5819723c3b16c4588eb5f477a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Multiplex the samples of a given channel.  <a href="group__Channel.html#ga0d06dce5819723c3b16c4588eb5f477a">More...</a><br /></td></tr>
 <tr class="separator:ga0d06dce5819723c3b16c4588eb5f477a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga343be1b2a9b4a23aa1ad6e22b5b334b3"><td class="memItemLeft" align="right" valign="top">__api size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3">iio_channel_write</a> (const struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, struct <a class="el" href="structiio__buffer.html">iio_buffer</a> *buffer, const void *src, size_t len)</td></tr>
+<tr class="memdesc:ga343be1b2a9b4a23aa1ad6e22b5b334b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert and multiplex the samples of a given channel.  <a href="group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3">More...</a><br /></td></tr>
 <tr class="separator:ga343be1b2a9b4a23aa1ad6e22b5b334b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5150c9b73386d899460ebafbe614f338"><td class="memItemLeft" align="right" valign="top">__api void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Channel.html#ga5150c9b73386d899460ebafbe614f338">iio_channel_set_data</a> (struct <a class="el" href="structiio__channel.html">iio_channel</a> *chn, void *data)</td></tr>
 <tr class="memdesc:ga5150c9b73386d899460ebafbe614f338"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associate a pointer to an <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> structure.  <a href="group__Channel.html#ga5150c9b73386d899460ebafbe614f338">More...</a><br /></td></tr>
@@ -669,7 +673,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 6 2019 09:04:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 14 2020 11:08:20 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

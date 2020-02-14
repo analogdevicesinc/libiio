@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.18</span>
+   &#160;<span id="projectnumber">0.19</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -624,7 +624,19 @@ On error, a negative errno code is returned </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>On success, a pointer to a <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> structure </dd>
 <dd>
-On failure, NULL is returned and errno is set appropriately </dd></dl>
+On failure, NULL is returned and errno is set appropriately</dd></dl>
+<p><b>NOTE:</b> The following URIs are supported based on compile time backend support:</p><ul>
+<li>Local backend, "local:"<br />
+ Does not have an address part. For example <em>"local:"</em></li>
+<li>XML backend, "xml:"<br />
+ Requires a path to the XML file for the address part. For example <em>"xml:/home/user/file.xml"</em></li>
+<li>Network backend, "ip:"<br />
+ Requires a hostname, IPv4, or IPv6 to connect to a specific running IIO Daemon or no address part for automatic discovery when library is compiled with ZeroConf support. For example <em>"ip:192.168.2.1"</em>, <em>"ip:localhost"</em>, <em>"ip:"</em></li>
+<li>USB backend, "usb:"<br />
+ Requires bus, address, and interface parts separated with a dot. For example <em>"usb:3.32.5"</em></li>
+<li>Serial backend, "serial:"<br />
+ Requires a port, baud_rate, parity ('<b>n</b>' none, 'o' odd, 'e' even, 'm' mark, 's' space), bits (<b>8</b>), and flow ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR) parts separated with a comma. For example <em>"serial:/dev/ttyUSB0,115200"</em>, <em>"serial:/dev/ttyUSB0,115200,n,8,1"</em> </li>
+</ul>
 
 <p><div class="dynheader">
 Here is the call graph for this function:</div>
@@ -836,7 +848,7 @@ On failure, NULL is returned and errno is set appropriately</dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 6 2019 09:04:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 14 2020 11:08:20 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

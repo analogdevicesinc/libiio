@@ -24,7 +24,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libiio
-   &#160;<span id="projectnumber">0.18</span>
+   &#160;<span id="projectnumber">0.19</span>
    </div>
    <div id="projectbrief">Library for interfacing with IIO devices</div>
   </td>
@@ -118,8 +118,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <div class="textblock"><h1><a class="anchor" id="license"></a>
 License</h1>
-<p>Libiio has been developed and is released under the terms of the GNU Lesser General Public License, version 2. This open-source license allows anyone to use the library for proprietary or open-source, commercial or non-commercial applications. This choice was motivated by the fact that Analog Devices is a company that principally sells hardware, and this library provides the clients with a better and easier way of using this hardware.</p>
-<p>The full terms of the license can be found here: <a href="http://opensource.org/licenses/LGPL-2.1">http://opensource.org/licenses/LGPL-2.1</a></p>
+<p>Libiio has been developed and is released under the terms of the GNU Lesser General Public License, version 2 or (at your option) any later version. This open-source license allows anyone to use the library for proprietary or open-source, commercial or non-commercial applications.</p>
+<p>Seperately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the GNU General Public License, version 2 or (at your option) any later version.</p>
+<p>The full terms of the library license can be found at: <a href="http://opensource.org/licenses/LGPL-2.1">http://opensource.org/licenses/LGPL-2.1</a> and the iio-utils license can be found at: <a href="https://opensource.org/licenses/GPL-2.0">https://opensource.org/licenses/GPL-2.0</a></p>
 <h1><a class="anchor" id="code_model"></a>
 Code Model</h1>
 <p>The basic bricks of the libiio API are the <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a>, <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a>, <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> and <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> classes.</p>
@@ -250,8 +251,8 @@ Iterating on the samples with a for loop</h3>
 <p>It basically consists in a for loop that uses the functions <a class="el" href="group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer. ">iio_buffer_first()</a>, <a class="el" href="group__Buffer.html#ga18d5cb8d912b5b888b9b54c6d0c7f92c" title="Get the step size between two samples of one channel. ">iio_buffer_step()</a> and <a class="el" href="group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer. ">iio_buffer_end()</a>:</p>
 <div class="fragment"><div class="line"><span class="keywordflow">for</span> (<span class="keywordtype">void</span> *ptr = <a class="code" href="group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156">iio_buffer_first</a>(buffer, channel);</div><div class="line">           ptr &lt; <a class="code" href="group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131">iio_buffer_end</a>(buffer);</div><div class="line">           ptr += <a class="code" href="group__Buffer.html#ga18d5cb8d912b5b888b9b54c6d0c7f92c">iio_buffer_step</a>(buffer)) {</div><div class="line">    <span class="comment">/* Use &quot;ptr&quot; to read or write a sample for this channel */</span></div><div class="line">}</div></div><!-- fragment --><h3><a class="anchor" id="deinterleave"></a>
 Extracting from/to a second buffer</h3>
-<p>Finally, it is possible to use the <a class="el" href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e">iio_channel_read()</a> and <a class="el" href="group__Channel.html#gabf4e2755877dedae40a5fbeb54a3829e">iio_channel_read_raw()</a> functions to read samples from the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> to a second byte array. The samples will be deinterleaved if needed. The "raw" variant will only deinterleave the samples, while the other variant will deinterleave and convert the samples.</p>
-<p>For output devices, the <a class="el" href="group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3">iio_channel_write()</a> and <a class="el" href="group__Channel.html#ga0d06dce5819723c3b16c4588eb5f477a">iio_channel_write_raw()</a> functions are also available. The "raw" variant will only interleave the samples (if needed), while the other variant will interleave and convert the samples back to their hardware format.</p>
+<p>Finally, it is possible to use the <a class="el" href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e" title="Demultiplex and convert the samples of a given channel. ">iio_channel_read()</a> and <a class="el" href="group__Channel.html#gabf4e2755877dedae40a5fbeb54a3829e" title="Demultiplex the samples of a given channel. ">iio_channel_read_raw()</a> functions to read samples from the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> to a second byte array. The samples will be deinterleaved if needed. The "raw" variant will only deinterleave the samples, while the other variant will deinterleave and convert the samples.</p>
+<p>For output devices, the <a class="el" href="group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3" title="Convert and multiplex the samples of a given channel. ">iio_channel_write()</a> and <a class="el" href="group__Channel.html#ga0d06dce5819723c3b16c4588eb5f477a" title="Multiplex the samples of a given channel. ">iio_channel_write_raw()</a> functions are also available. The "raw" variant will only interleave the samples (if needed), while the other variant will interleave and convert the samples back to their hardware format.</p>
 <h2><a class="anchor" id="convert"></a>
 Convert the samples from/to hardware format</h2>
 <p>The raw stream of samples generally isn't in a format that can be directly used in algorithms. Some operations, like endianness conversion and bit-shifting of the samples, have to be performed first.</p>
@@ -259,7 +260,7 @@ Convert the samples from/to hardware format</h2>
 <li><a class="el" href="group__Debug.html#gaf910dce06335badc1ba307526c4112a6" title="Convert the sample from hardware format to host format. ">iio_channel_convert()</a>, to convert from the hardware format</li>
 <li><a class="el" href="group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb" title="Convert the sample from host format to hardware format. ">iio_channel_convert_inverse()</a>, to convert to the hardware format.</li>
 </ul>
-<p>Those two functions should always be used when manipulating the samples of the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a>. The exception is when <a class="el" href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e">iio_channel_read()</a> or <a class="el" href="group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3">iio_channel_write()</a> are used, as the conversion is then done internally.</p>
+<p>Those two functions should always be used when manipulating the samples of the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a>. The exception is when <a class="el" href="group__Channel.html#gaa35f0bbf7f6be8f859adb3fc692c600e" title="Demultiplex and convert the samples of a given channel. ">iio_channel_read()</a> or <a class="el" href="group__Channel.html#ga343be1b2a9b4a23aa1ad6e22b5b334b3" title="Convert and multiplex the samples of a given channel. ">iio_channel_write()</a> are used, as the conversion is then done internally.</p>
 <h2><a class="anchor" id="push"></a>
 Submitting the Buffer (output devices only)</h2>
 <p>When all the samples have been written to the <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> object, you can submit the buffer to the hardware with a call to <a class="el" href="group__Buffer.html#ga28c43d91ddaf8856f2d1a79562072280" title="Send the samples to the hardware. ">iio_buffer_push()</a>. As soon as the buffer has been submitted, it can be re-used to store new samples.</p>
@@ -298,7 +299,7 @@ Application Binary Interface</h1>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 6 2019 09:04:27 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 14 2020 11:08:20 for libiio by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>
