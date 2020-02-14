@@ -748,7 +748,7 @@ static int network_open(const struct iio_device *dev,
 	ret = iiod_client_open_unlocked(pdata->iiod_client,
 			&ppdata->io_ctx, dev, samples_count, cyclic);
 	if (ret < 0) {
-		ERROR("Opend unlocked: %d\n", ret);
+		ERROR("Open unlocked: %d\n", ret);
 		goto err_close_socket;
 	}
 
