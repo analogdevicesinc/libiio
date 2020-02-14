@@ -859,16 +859,21 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	ret = libusb_claim_interface(hdl, interface);
 	if (ret) {
+		char err_str[1024];
 		ret = -(int) libusb_to_errno(ret);
-		ERROR("Unable to claim interface %u:%u:%u: %i\n",
-		      bus, address, interface, ret);
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		ERROR("Unable to claim interface %u:%u:%u: %s (%i)\n",
+		      bus, address, interface, err_str, ret);
 		goto err_libusb_close;
 	}
 
 	ret = libusb_get_active_config_descriptor(usb_dev, &conf_desc);
 	if (ret) {
+		char err_str[1024];
 		ret = -(int) libusb_to_errno(ret);
-		ERROR("Unable to get config descriptor: %i\n", ret);
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		ERROR("Unable to get config descriptor: %s (%i)\n",
+				err_str, ret);
 		goto err_libusb_close;
 	}
 
