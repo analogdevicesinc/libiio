@@ -1,5 +1,6 @@
 language: c
 sudo: required
+python: "3.6"
 
 env:
   global:
@@ -34,6 +35,7 @@ matrix:
         # TODO do `check` or `check_hw` here too, not just `check_sw` (as part of `coverage`)
         - CHECK_RULE=coverage GCOV=1
         - PKG_RULE=gzip
+        - PYPI=yes
         - COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG"
         - COVERITY_SCAN_BRANCH_PATTERN="master"
         - COVERITY_SCAN_NOTIFICATION_EMAIL="robin.getz@analog.com"
@@ -108,6 +110,7 @@ before_deploy:
   - eval "$(ssh-agent -s)"
   - chmod 600 /tmp/deploy.rsa
   - ssh-add /tmp/deploy.rsa
+  - if [[ "$PYPI" == "yes" ]]; then cd "build/bindings/python"; fi
 deploy:
   - provider: releases
     api_key:
@@ -146,6 +149,16 @@ deploy:
     on:
       condition: "$TRAVIS_OS_NAME = osx"
       all_branches: true
+  - provider: pypi
+    if: tag IS present
+    skip_cleanup: true
+    on:
+      tags: true
+      condition: "$PYPI = yes"
+    username: __token__
+    password:
+      secure: KfORvnPyLlMANLpcwJjcO44Kt6meP614omJk2GloD+B51SuV64O6N31VDOTi2xqioEk9Cajq7tmNte5YoHVUjL9iWFsBblpzxZoXcy40dn4pFN0kMiE8scszxckbDwuBZhokUVZ2fhfLKf/8xORcwjS3vKqSj5HwQKKvVgukSbQ=
+    distributions: sdist
 
 after_deploy:
   - ${TRAVIS_BUILD_DIR}/CI/travis/after_deploy

@@ -13,11 +13,77 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-from distutils.core import setup
+import sys
 
-setup(name='libiio',
-		version='${VERSION}',
-		description='Library to use the Industrial IO devices',
-		url='https://github.com/analogdevicesinc/libiio',
-		py_modules=['iio'],
-		)
+if sys.version_info[0] < 3:
+    from distutils.core import setup
+    from distutils.command.install import install
+
+    config = dict()
+else:
+    from setuptools import setup
+    from setuptools.command.install import install
+
+    config = dict(long_description_content_type="text/markdown")
+
+description = "Library for interfacing with Linux IIO devices"
+
+try:
+    with open("${CMAKE_SOURCE_DIR}/README.md", "r") as fh:
+        long_description = fh.read()
+except:
+    long_description = description
+
+
+class InstallWrapper(install):
+    """Before installing we check if the
+    libiio library is actually installed"""
+
+    def run(self):
+        self._check_libiio_installed()
+        # Run the standard PyPi copy
+        install.run(self)
+
+    def _check_libiio_installed(self):
+        from platform import system as _system
+        from ctypes import CDLL as _cdll
+        from ctypes.util import find_library
+
+        if "Windows" in _system():
+            _iiolib = "libiio.dll"
+        else:
+            # Non-windows, possibly Posix system
+            _iiolib = "iio"
+        try:
+            _lib = _cdll(find_library(_iiolib), use_errno=True, use_last_error=True)
+            if not _lib._name:
+                raise OSError
+        except OSError:
+            msg = "The libiio library could not be found.\n\
+            libiio needs to be installed first before the python bindings.\n\
+            The latest release can be found on GitHub:\n\
+            https://github.com/analogdevicesinc/libiio/releases"
+            raise Exception(msg)
+
+
+config.update(
+    dict(
+        name="libiio",
+        version="${VERSION}",
+        maintainer="Analog Devices, Inc",
+        maintainer_email="travis.collins@analog.com",
+        description=description,
+        long_description=long_description,
+        url="https://github.com/analogdevicesinc/libiio",
+        py_modules=["iio"],
+        cmdclass={"install": InstallWrapper},
+        classifiers=[
+            "Programming Language :: Python :: 3",
+            "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
+            "Operating System :: OS Independent",
+        ],
+    )
+)
+
+
+setup(**config)
