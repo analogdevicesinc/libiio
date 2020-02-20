@@ -44,7 +44,7 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client,
 		ret = client->ops->read_line(client->pdata,
 				desc, buf, sizeof(buf));
 		if (ret < 0) {
-			ERROR("READ LINE: %zu\n", ret);
+			ERROR("READ LINE: %zd\n", ret);
 			return ret;
 		}
 
@@ -571,7 +571,7 @@ static int iiod_client_read_mask(struct iiod_client *client,
 
 	ret = iiod_client_read_all(client, desc, buf, words * 8 + 1);
 	if (ret < 0) {
-		ERROR("READ ALL: %zu\n", ret);
+		ERROR("READ ALL: %zd\n", ret);
 		goto out_buf_free;
 	} else
 		ret = 0;
@@ -610,7 +610,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, void *desc,
 
 	ret = iiod_client_write_all(client, desc, buf, strlen(buf));
 	if (ret < 0) {
-		ERROR("WRITE ALL: %zu\n", ret);
+		ERROR("WRITE ALL: %zd\n", ret);
 		return ret;
 	}
 
@@ -619,7 +619,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, void *desc,
 
 		ret = iiod_client_read_integer(client, desc, &to_read);
 		if (ret < 0) {
-			ERROR("READ INTEGER: %zu\n", ret);
+			ERROR("READ INTEGER: %zd\n", ret);
 			return ret;
 		}
 		if (to_read < 0)
@@ -630,7 +630,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client, void *desc,
 		if (mask) {
 			ret = iiod_client_read_mask(client, desc, mask, words);
 			if (ret < 0) {
-				ERROR("READ ALL: %zu\n", ret);
+				ERROR("READ ALL: %zd\n", ret);
 				return ret;
 			}
 
