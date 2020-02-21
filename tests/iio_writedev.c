@@ -271,6 +271,7 @@ int main(int argc, char **argv)
 	int timeout = -1;
 	bool scan_for_context = false;
 	bool cyclic_buffer = false;
+	ssize_t ret;
 
 	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:ac",
 					options, &option_index)) != -1) {
@@ -329,8 +330,15 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (timeout >= 0)
-		iio_context_set_timeout(ctx, timeout);
+	if (timeout >= 0) {
+		ret = iio_context_set_timeout(ctx, timeout);
+		if (ret < 0) {
+			 char err_str[1024];
+			 iio_strerror(-ret, err_str, sizeof(err_str));
+			 fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
+					 err_str, ret);
+		}
+	}
 
 	dev = iio_context_find_device(ctx, argv[optind]);
 	if (!dev) {
@@ -359,11 +367,24 @@ int main(int argc, char **argv)
 		 * fail gracefully to remain compatible.
 		 */
 		if (iio_device_attr_write_longlong(trigger,
-				"sampling_frequency", DEFAULT_FREQ_HZ) < 0)
-			iio_device_attr_write_longlong(trigger,
+				"sampling_frequency", DEFAULT_FREQ_HZ) < 0) {
+			ret = iio_device_attr_write_longlong(trigger,
 				"frequency", DEFAULT_FREQ_HZ);
+			if (ret < 0) {
+				char buf[256];
+				iio_strerror(-ret, buf, sizeof(buf));
+				fprintf(stderr, "sample rate not set : %s (%zd)\n",
+						buf, ret);
+			}
+		}
 
-		iio_device_set_trigger(dev, trigger);
+		ret = iio_device_set_trigger(dev, trigger);
+		if (ret < 0) {
+			char buf[256];
+			iio_strerror(-ret, buf, sizeof(buf));
+			fprintf(stderr, "set triffer failed : %s (%zd)\n",
+					buf, ret);
+		}
 	}
 
 	nb_channels = iio_device_get_channels_count(dev);
@@ -426,7 +447,13 @@ int main(int argc, char **argv)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
-			iio_buffer_foreach_sample(buffer, read_sample, NULL);
+			ret = iio_buffer_foreach_sample(buffer, read_sample, NULL);
+			if (ret < 0) {
+				char buf[256];
+				iio_strerror(-ret, buf, sizeof(buf));
+				fprintf(stderr, "buffer processing failed : %s (%zd)\n",
+						buf, ret);
+			}
 		}
 
 		int ret = iio_buffer_push(buffer);

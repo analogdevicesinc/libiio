@@ -126,7 +126,11 @@ static void *monitor_thread_fn(void *data)
 	sleep(1);
 
 	/* Clear all status bits */
-	iio_device_reg_write(dev, 0x80000088, 0x6);
+	ret = iio_device_reg_write(dev, 0x80000088, 0x6);
+	if (ret) {
+		fprintf(stderr, "Failed to clearn DMA status register: %s\n",
+				strerror(-ret));
+	}
 
 	while (app_running) {
 		ret = iio_device_reg_read(dev, 0x80000088, &val);
@@ -145,8 +149,12 @@ static void *monitor_thread_fn(void *data)
 		}
 
 		/* Clear bits */
-		if (val)
-			iio_device_reg_write(dev, 0x80000088, val);
+		if (val) {
+			ret = iio_device_reg_write(dev, 0x80000088, val);
+			if (ret)
+				fprintf(stderr, "Failed to clearn DMA status register: %s\n",
+						strerror(-ret));
+		}
 		sleep(1);
 	}
 
