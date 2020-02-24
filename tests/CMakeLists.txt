@@ -40,9 +40,12 @@ set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_readdev iio_reg iio_write
 
 if(PTHREAD_LIBRARIES)
 	project(iio_adi_xflow_check C)
+	project(iio_stresstest C)
 	add_executable(iio_adi_xflow_check iio_adi_xflow_check.c)
+	add_executable(iio_stresstest iio_stresstest.c)
 	target_link_libraries(iio_adi_xflow_check iio ${PTHREAD_LIBRARIES})
-	set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio_adi_xflow_check)
+	target_link_libraries(iio_stresstest iio ${PTHREAD_LIBRARIES})
+	set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio_adi_xflow_check iio_stresstest)
 
 	target_link_libraries(iio_readdev  ${PTHREAD_LIBRARIES})
 	target_link_libraries(iio_writedev ${PTHREAD_LIBRARIES})
