@@ -253,14 +253,29 @@ if(WITH_NETWORK_BACKEND)
 
 	find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 	find_library(AVAHI_COMMON_LIBRARIES avahi-common)
-	if(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
-		message(STATUS "Building with Avahi, a zero-configuration networking (zeroconf) implementation")
-		set(HAVE_AVAHI ON)
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+		find_library(CORE_SERVICES CoreServices)
+
+		message(STATUS "Building with CFNetServices, an Apple DNS SD implementation")
+		set(HAVE_DNS_SD ON)
+
+		list(APPEND LIBIIO_CFILES dns_sd_bonjour.c)
+		list(APPEND LIBS_TO_LINK ${CORE_SERVICES} )
+
+	elseif(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
+		message(STATUS "Building with Avahi, a DNS SD implementation")
+		set(HAVE_DNS_SD ON)
+		
+		list(APPEND LIBIIO_CFILES dns_sd_avahi.c)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
-		set(LIBS_TO_LINK ${LIBS_TO_LINK} ${AVAHI_LIBRARIES})
+		list(APPEND LIBS_TO_LINK ${AVAHI_LIBRARIES})
 		set(AVAHI_SERVICE_INSTALL_DIR /etc/avahi/services/ CACHE PATH "default install path for Avahi service files")
 	else()
-		message(STATUS "Building without Avahi (zeroconf) support")
+		message(STATUS "Building without DNS-SD (Zeroconf) support")
+	endif()
+
+	if (HAVE_DNS_SD)
+		add_definitions(-DHAVE_DNS_SD=1)
 	endif()
 
 	set(NEED_THREADS 1)
