@@ -1484,7 +1484,7 @@ struct iio_context * network_create_context(const char *host)
 
 	fd = create_socket(res, DEFAULT_TIMEOUT_MS);
 	if (fd < 0) {
-		errno = fd;
+		errno = -fd;
 		goto err_free_addrinfo;
 	}
 
