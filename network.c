@@ -18,55 +18,15 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
+#include "network-private.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
-
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#define close(s) closesocket(s)
-
-/* winsock2.h defines ERROR, we don't want that */
-#undef ERROR
-
-#else /* _WIN32 */
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <net/if.h>
-#include <sys/mman.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#endif /* _WIN32 */
-
 #include "debug.h"
-
-#define DEFAULT_TIMEOUT_MS 5000
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
-#define IIOD_PORT 30431
 #define IIOD_PORT_STR STRINGIFY(IIOD_PORT)
-
-#ifdef HAVE_DNS_SD
-extern int discover_host(char *addr_str, size_t addr_len, uint16_t *port);
-#ifdef HAVE_AVAHI
-#include <avahi-common/address.h>
-#define DNS_SD_ADDRESS_STR_MAX AVAHI_ADDRESS_STR_MAX
-#else
-#define DNS_SD_ADDRESS_STR_MAX (40)
-#endif
-#endif
 
 struct iio_network_io_context {
 	int fd;
@@ -594,7 +554,7 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	return 0;
 }
 
-static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
+int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
 	int ret, fd, yes = 1;
 
@@ -1355,6 +1315,9 @@ struct iio_context * network_create_context(const char *host)
 			DEBUG("Unable to find host: %s\n", buf);
 			errno = -ret;
 			return NULL;
+		} else if (ret == 0) {
+			errno = ENOMEDIUM;
+			return NULL;
 		}
 
 		iio_snprintf(port_str, sizeof(port_str), "%hu", port);
@@ -1530,3 +1493,127 @@ err_free_addrinfo:
 	freeaddrinfo(res);
 	return NULL;
 }
+
+/* The only way to support scan context from the network is when
+ * DNS Service Discovery is turned on
+ */
+#ifdef HAVE_DNS_SD
+
+struct iio_scan_backend_context {
+	struct addrinfo *res;
+};
+
+static int dnssd_fill_context_info(struct iio_context_info *info,
+		char *hostname, char *addr_str, int port)
+{
+	struct iio_context *ctx;
+	char uri[HOST_NAME_MAX + 3];
+	char description[255], *p;
+	const char *hw_model, *serial;
+	int i;
+
+	ctx = network_create_context(addr_str);
+	if (!ctx) {
+		ERROR("No context at %s\n", addr_str);
+		return -ENOMEM;
+	}
+
+	if (port == IIOD_PORT)
+		sprintf(uri, "ip:%s", hostname);
+	else
+		sprintf(uri, "ip:%s:%d", hostname, port);
+
+	hw_model = iio_context_get_attr_value(ctx, "hw_model");
+	serial = iio_context_get_attr_value(ctx, "hw_serial");
+
+	if (hw_model && serial) {
+		sprintf(description, "%s (%s), serial=%s",
+		addr_str, hw_model, serial);
+	} else if (hw_model) {
+		sprintf(description, "%s %s", addr_str, hw_model);
+	} else if (serial) {
+		sprintf(description, "%s %s", addr_str, serial);
+	} else if (ctx->nb_devices == 0) {
+		sprintf(description, "%s", ctx->description);
+	} else {
+		sprintf(description, "%s (", addr_str);
+		p = description + strlen(description);
+		for (i = 0; i < ctx->nb_devices - 1; i++) {
+			sprintf(p, "%s,",  ctx->devices[i]->name);
+			p += strlen(p);
+		}
+		p--;
+		*p = ')';
+	}
+
+	iio_context_destroy(ctx);
+
+	info->uri = iio_strdup(uri);
+	if (!info->uri)
+		return -ENOMEM;
+
+	info->description = iio_strdup(description);
+	if (!info->description) {
+		free(info->uri);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+struct iio_scan_backend_context * dnssd_context_scan_init(void)
+{
+	struct iio_scan_backend_context *ctx;
+
+	ctx = malloc(sizeof(*ctx));
+	if (!ctx) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	return ctx;
+}
+
+void dnssd_context_scan_free(struct iio_scan_backend_context *ctx)
+{
+	free(ctx);
+}
+
+int dnssd_context_scan(struct iio_scan_backend_context *ctx,
+		struct iio_scan_result *scan_result)
+{
+	struct iio_context_info **info;
+	struct dns_sd_discovery_data *ddata, *ndata;
+	int i, ret = 0;
+
+	ret = dnssd_find_hosts(&ddata);
+	DEBUG("Found %d hosts via DNS SD\n", ret);
+	if (ret < 0)
+		return ret;
+	else if(!ret) {
+		/* if you return a error code with zero IP hosts,
+		 * USB scanning fails too
+		 */
+		goto context_scan_err;
+	}
+
+	info = iio_scan_result_add(scan_result, ret);
+	if (!info) {
+		ret = -ENOMEM;
+		goto context_scan_err;
+	}
+
+	for (i = 0, ndata=ddata; i < ret; i++) {
+		ret = dnssd_fill_context_info(info[i],
+				ndata->hostname, ndata->addr_str,ndata->port);
+		if (ret < 0)
+			break;
+		ndata = ndata->next;
+	}
+
+context_scan_err:
+	free_all_discovery_data(ddata);
+	return ret;
+}
+
+#endif /* HAVE_DNS_SD */
