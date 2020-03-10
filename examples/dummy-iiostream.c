@@ -122,13 +122,22 @@ static bool has_repeat;
 /* cleanup and exit */
 static void shutdown()
 {
+	int ret;
+
 	if (channels) { free(channels); }
 
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
 
 	printf("* Disassociate trigger\n");
-	if (dev) { iio_device_set_trigger(dev, NULL); }
+	if (dev) {
+		ret = iio_device_set_trigger(dev, NULL);
+		if (ret < 0) {
+			char buf[256];
+			iio_strerror(-ret, buf, sizeof(buf));
+			fprintf(stderr, "%s (%d) while Disassociate trigger\n", buf, ret);
+		}
+	}
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
@@ -333,11 +342,17 @@ int main (int argc, char **argv)
 			printf("\n");
 			break;
 
-		case SAMPLE_CALLBACK:
-			iio_buffer_foreach_sample(rxbuf, sample_cb, NULL);
+		case SAMPLE_CALLBACK: {
+			int ret;
+			ret = iio_buffer_foreach_sample(rxbuf, sample_cb, NULL);
+			if (ret < 0) {
+				char buf[256];
+				iio_strerror(-ret, buf, sizeof(buf));
+				fprintf(stderr, "%s (%d) while processing buffer\n", buf, ret);
+			}
 			printf("\n");
 			break;
-
+		}
 		case CHANNEL_READ_RAW:
 		case CHANNEL_READ:
 			for (int i = 0; i < channel_count; ++i) {
