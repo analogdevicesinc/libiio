@@ -9,5 +9,6 @@ ls
 
 cd $TRAVIS_BUILD_DIR/build_tar
 cmake -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON ..
-make && make package
+make
+make package
 ls
