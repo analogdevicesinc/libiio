@@ -24,7 +24,8 @@ handle_default() {
 	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
 		-DPYTHON_BINDINGS=ON ${DOC_FOUND} ..
 
-	make && make package
+	make
+	make package
 	if [ -n "${GH_DOC_TOKEN}" ] && \
 			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
 		sh generateDocumentationAndDeploy.sh
