@@ -78,6 +78,12 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	endif()
 endif()
 
+if(APPLE)
+	#full Single Unix Standard v3 (SUSv3) conformance (the Unix API)
+	add_definitions(-D_DARWIN_C_SOURCE)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-sign-compare")
+endif()
+
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
