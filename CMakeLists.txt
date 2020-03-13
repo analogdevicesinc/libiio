@@ -275,10 +275,6 @@ if(WITH_NETWORK_BACKEND)
 		message(STATUS "Building without DNS-SD (Zeroconf) support")
 	endif()
 
-	if (HAVE_DNS_SD)
-		add_definitions(-DHAVE_DNS_SD=1)
-	endif()
-
 	set(NEED_THREADS 1)
 	set(IIOD_CLIENT 1)
 	set(NEED_LIBXML2 1)
