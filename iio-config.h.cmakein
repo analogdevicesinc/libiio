@@ -24,6 +24,7 @@
 #cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP
 #cmakedefine HAVE_IPV6
+#cmakedefine HAVE_DNS_SD
 #cmakedefine HAVE_AVAHI
 #cmakedefine NO_THREADS
 #cmakedefine HAS_LIBUSB_GETVERSION

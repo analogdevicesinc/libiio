@@ -20,6 +20,8 @@
 #ifndef __IIO_NET_PRIVATE_H
 #define __IIO_NET_PRIVATE_H
 
+#include "iio-config.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -68,6 +70,7 @@ int create_socket(const struct addrinfo *addrinfo, unsigned int timeout);
 #define DEFAULT_TIMEOUT_MS 5000
 #define IIOD_PORT 30431
 
+#ifdef HAVE_DNS_SD
 struct dns_sd_discovery_data {
 	struct iio_mutex *lock;
 #ifdef HAVE_AVAHI
@@ -81,10 +84,10 @@ struct dns_sd_discovery_data {
 	struct dns_sd_discovery_data *next;
 };
 
-#ifdef HAVE_DNS_SD
 int discover_host(char *addr_str, size_t addr_len, uint16_t *port);
 int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata);
 void free_all_discovery_data(struct dns_sd_discovery_data *d);
+
 #endif /* HAVE_DNS_SD */
 
 #endif /* __IIO_NET_PRIVATE_H */

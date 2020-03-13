@@ -265,6 +265,7 @@ if(WITH_NETWORK_BACKEND)
 	elseif(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
 		message(STATUS "Building with Avahi, a DNS SD implementation")
 		set(HAVE_DNS_SD ON)
+		set(HAVE_AVAHI ON)
 		
 		list(APPEND LIBIIO_CFILES dns_sd_avahi.c)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
@@ -272,10 +273,6 @@ if(WITH_NETWORK_BACKEND)
 		set(AVAHI_SERVICE_INSTALL_DIR /etc/avahi/services/ CACHE PATH "default install path for Avahi service files")
 	else()
 		message(STATUS "Building without DNS-SD (Zeroconf) support")
-	endif()
-
-	if (HAVE_DNS_SD)
-		add_definitions(-DHAVE_DNS_SD=1)
 	endif()
 
 	set(NEED_THREADS 1)
