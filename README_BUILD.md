@@ -1,6 +1,6 @@
 # Build instructions for libiio
 
-## Install Prerequisites/Dependancies
+## Install Prerequisites/Dependencies
 
 Basic system setup
 ```shell
@@ -13,11 +13,22 @@ analog@precision:~$ sudo apt-get install libxml2-dev bison flex libcdk5-dev cmak
 ```
 Install Backends
 ```shell
-analog@precision:~$ sudo apt-get install libaio-dev libusb-1.0-0-dev libserialport-dev libavahi-client-dev
+analog@precision:~$ sudo apt-get install libaio-dev libusb-1.0-0-dev
+analog@precision:~$ sudo apt-get install libserialport-dev libavahi-client-dev
 ```
 Install to build doc
 ```shell
-sudo apt-get install doxygen graphviz
+analog@precision:~$ sudo apt-get install doxygen graphviz
+```
+Install to build python backends
+```shell
+analog@precision:~$ sudo apt-get python3 python3-pip python3-setuptools
+```
+Install to Read local context attributes from `/etc/libiio.ini`
+```shell
+analog@precision:~$ git clone https://github.com/pcercuei/libini.git
+analog@precision:~$ cd libini
+analog@precision:~/libini$ mkdir build && cd build && cmake ../ && make && sudo make install
 ```
 ## Clone
 ```shell
@@ -56,7 +67,7 @@ Cmake Options          | Depends on    | Description                     |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../
+analog@precision:~/libiio/build$ cmake ../ -DPYTHON_BINDINGS=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
