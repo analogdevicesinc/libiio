@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <sys/sysctl.h>
 
 #define MY_NAME "iio_stresstest"
 
