@@ -650,11 +650,20 @@ int main(int argc, char **argv)
 
 		for (i = 0; i < nb_ctx_attrs; i++) {
 			const char *key, *value;
+			ssize_t ret;
 
-			iio_context_get_attr(ctx, i, &key, &value);
-			if (!attr_index || str_match(key, argv[attr_index], ignore_case)) {
-				printf("%s: %s\n", key, value);
-				gen_context_attr(key);
+			ret = iio_context_get_attr(ctx, i, &key, &value);
+			if (!ret) {
+				if (!attr_index || str_match(key, argv[attr_index], ignore_case)) {
+					printf("%s: %s\n", key, value);
+					gen_context_attr(key);
+				}
+			} else {
+				char *buf = xmalloc(BUF_SIZE);
+				iio_strerror(errno, buf, BUF_SIZE);
+				fprintf(stderr, "Unable to get context attributes: %s (%zd)\n",
+						buf, ret);
+				free(buf);
 			}
 		}
 	}

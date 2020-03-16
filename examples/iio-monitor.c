@@ -63,30 +63,52 @@ static bool is_valid_channel(struct iio_channel *chn)
 		 channel_has_attr(chn, "input"));
 }
 
+static void err_str(int ret)
+{
+	char buf[256];
+	iio_strerror(-ret, buf, sizeof(buf));
+	fprintf(stderr, "Error during read: %s (%d)\n", buf, ret);
+}
+
 static double get_channel_value(struct iio_channel *chn)
 {
 	char *old_locale;
 	char buf[1024];
 	double val;
+	int ret;
 
 	old_locale = strdup(setlocale(LC_NUMERIC, NULL));
 	setlocale(LC_NUMERIC, "C");
 
 	if (channel_has_attr(chn, "input")) {
-		iio_channel_attr_read(chn, "input", buf, sizeof(buf));
-		val = strtod(buf, NULL);
+		ret = iio_channel_attr_read(chn, "input", buf, sizeof(buf));
+		if (ret < 0) {
+			err_str(ret);
+			val = 0;
+		} else
+			val = strtod(buf, NULL);
 	} else {
-		iio_channel_attr_read(chn, "raw", buf, sizeof(buf));
-		val = strtod(buf, NULL);
+		ret = iio_channel_attr_read(chn, "raw", buf, sizeof(buf));
+		if (ret < 0) {
+			err_str(ret);
+			val = 0;
+		} else
+			val = strtod(buf, NULL);
 
 		if (channel_has_attr(chn, "offset")) {
-			iio_channel_attr_read(chn, "offset", buf, sizeof(buf));
-			val += strtod(buf, NULL);
+			ret = iio_channel_attr_read(chn, "offset", buf, sizeof(buf));
+			if (ret < 0)
+				err_str(ret);
+			else
+				val += strtod(buf, NULL);
 		}
 
 		if (channel_has_attr(chn, "scale")) {
-			iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
-			val *= strtod(buf, NULL);
+			ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
+			if (ret < 0)
+				err_str(ret);
+			else
+				val *= strtod(buf, NULL);
 		}
 	}
 

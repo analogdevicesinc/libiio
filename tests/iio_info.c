@@ -106,7 +106,9 @@ static void scan(void)
 
 	ret = iio_scan_context_get_info_list(ctx, &info);
 	if (ret < 0) {
-		fprintf(stderr, "Unable to scan: %li\n", (long) ret);
+		char err_str[1024];
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		fprintf(stderr, "Unable to scan: %s (%zd)\n", err_str, ret);
 		goto err_free_ctx;
 	}
 
@@ -295,8 +297,11 @@ int main(int argc, char **argv)
 	if (!ret)
 		printf("Backend version: %u.%u (git tag: %s)\n",
 				major, minor, git_tag);
-	else
-		fprintf(stderr, "Unable to get backend version: %i\n", ret);
+	else {
+		char err_str[1024];
+		iio_strerror(-ret, err_str, sizeof(err_str));
+		fprintf(stderr, "Unable to get backend version: %s (%i)\n", err_str, ret);
+	}
 
 	printf("Backend description string: %s\n",
 			iio_context_get_description(ctx));
@@ -308,8 +313,15 @@ int main(int argc, char **argv)
 	for (i = 0; i < nb_ctx_attrs; i++) {
 		const char *key, *value;
 
-		iio_context_get_attr(ctx, i, &key, &value);
-		printf("\t%s: %s\n", key, value);
+		ret = iio_context_get_attr(ctx, i, &key, &value);
+		if (ret == 0)
+			printf("\t%s: %s\n", key, value);
+		else {
+			char err_str[1024];
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			fprintf(stderr, "\tUnable to read IIO context attributes: %s (%i)\n",
+					err_str, ret);
+		}
 	}
 
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
@@ -467,6 +479,11 @@ int main(int argc, char **argv)
 						iio_device_get_id(trig),
 						name ? name : "");
 			}
+		} else if (ret == -ENOENT) {
+			printf("\t\tNo trigger on this device\n");
+		} else if (ret < 0) {
+			iio_strerror(-ret, buf, BUF_SIZE);
+			printf("ERROR: checking for trigger : %s (%i)\n", buf, ret);
 		}
 	}
 

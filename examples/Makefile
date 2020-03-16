@@ -16,7 +16,7 @@
 
 TARGETS := ad9361-iiostream ad9371-iiostream adrv9009-iiostream dummy-iiostream iio-monitor
 
-CFLAGS = -Wall
+CFLAGS = -Wall -DIIO_CHECK_RET
 
 UNAME_S := $(shell uname -s)
 

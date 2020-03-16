@@ -46,6 +46,22 @@ subsystem and devices
 .sp
 cc file.c
 .B -liio
+.SH OPTIONS
+The define
+.B
+IIO_CHECK_REG
+will warn if return values are not checked. Most
+.B
+libiio
+functions, if/when a failure occurs will return a negative error number.
+this warning will ensure these error numbers are looked at. There is
+nothing more frustraining than calling a function, debugging some hardware,
+and then eventually realizing there was a typo in an attribute name.
+This option will force libraries users to at least capture the return value.
+.sp
+cc file.c
+.B -DIIO_CHECK_REG -liio
+
 .SH DESCRIPTION
 .I libiio
 is a library used to interface to the

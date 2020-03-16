@@ -22,6 +22,11 @@ if (WIN32)
 	set(LIBIIO_RC ${CMAKE_CURRENT_BINARY_DIR}/properties.rc)
 	configure_file(../properties.rc.cmakein ${LIBIIO_RC} @ONLY)
 endif()
+
+if (CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIIO_CHECK_RET")
+endif()
+
 add_executable(iio_genxml  iio_genxml.c   ${GETOPT_C_FILE} ${LIBIIO_RC})
 add_executable(iio_info    iio_info.c     ${GETOPT_C_FILE} ${LIBIIO_RC})
 add_executable(iio_attr    iio_attr.c gen_code.c    ${GETOPT_C_FILE} ${LIBIIO_RC})
