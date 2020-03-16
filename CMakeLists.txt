@@ -164,14 +164,10 @@ if(WITH_LOCAL_BACKEND)
 
 	option(WITH_LOCAL_CONFIG "Read local context attributes from /etc/libiio.ini" OFF)
 	if (WITH_LOCAL_CONFIG)
-		find_library(LIBINI_LIBRARIES ini)
-		find_path(LIBINI_INCLUDE_DIR ini.h)
-		if (NOT LIBINI_LIBRARIES OR NOT LIBINI_INCLUDE_DIR)
-			message(SEND_ERROR "WITH_LOCAL_CONFIG option requires libini to be installed")
-		else()
-			include_directories(${LIBINI_INCLUDE_DIR})
-			list(APPEND LIBS_TO_LINK ${LIBINI_LIBRARIES})
-		endif()
+		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/deps/libini)
+		set(LIBINI_C_FILE ${CMAKE_CURRENT_SOURCE_DIR}/deps/libini/libini.c)
+		
+		list(APPEND LIBIIO_CFILES ${LIBINI_C_FILE})
 	endif()
 endif()
 

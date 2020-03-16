@@ -1,3 +1,6 @@
 [submodule "deps/wingetopt"]
 	path = deps/wingetopt
 	url = https://github.com/alex85k/wingetopt.git
+[submodule "deps/libini"]
+	path = deps/libini
+	url = https://github.com/pcercuei/libini.git
