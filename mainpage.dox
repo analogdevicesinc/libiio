@@ -9,7 +9,7 @@ License, version 2 or (at your option) any later version.
 This open-source license allows anyone to use the library for proprietary or
 open-source, commercial or non-commercial applications.
 
-Seperately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the  GNU General Public License, version 2 or (at your option) any later version.
+Seperately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the GNU General Public License, version 2 or (at your option) any later version.
 
 The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
 
@@ -253,5 +253,14 @@ In libiio, this can be done with two functions, iio_device_reg_read() and iio_de
 The libiio ABI tries to be both backwards and forwards compatible.
 This means applications compiled against an older version will work fine with a newer dynamically linked library. Applications compiled against a newer version will work fine with an older dynamically linked library so long as they don't access any new features. Applications using new features should ensure the libiio version is compatible by using iio_library_get_version() to avoid undefined behavior.
 
-
+\example iio_attr.c Part of the libiio-utilites, iio_attr is a utility for displaying information about local or remote IIO devices. By providing an optional value, iio_attr will attempt to write the new value to the attribute.
+\example iio_info.c Part of the libiio-utilites, iio_info is a utility for displaying information about local or remote IIO devices.
+\example iio_readdev.c Part of the libiio-utilites, iio_readdev is a utility for reading buffers from connected IIO devices, and sending resutls to standard out.
+\example iio_writedev.c Part of the libiio-utilites, iio_writedev is a utility for writing buffers from connected IIO devices.
+\example iio_reg.c Part of the libiio-utilites, iio_reg is a utility for debugging local IIO devices. It should not be used by normal users, and is normally used by driver developers during development, or by end users debugging a driver, or sending in a feature request. It provides a mechanism to read or write SPI or I2C registers for IIO devices.
+\example ad9361-iiostream.c   This example libiio program is meant to exercise the features of IIO functionality on the AD9361 found on the AD-FMCOMMS2-EBZ, AD-FMCOMMS3-EBZ, and the ADRV9361-Z7035 RF SOM.
+\example ad9371-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the AD9371.
+\example adrv9009-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the ADRV9009.
+\example dummy-iiostream.c This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the linux kernel.
+\example iio-monitor.c A Curses based application which implements real time monitoring of IIO non-buffer samples.
 */
