@@ -663,7 +663,8 @@ RECURSIVE              = NO
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @CMAKE_SOURCE_DIR@/iio-private.h @CMAKE_SOURCE_DIR@/debug.h
+EXCLUDE                = @CMAKE_SOURCE_DIR@/iio-private.h @CMAKE_SOURCE_DIR@/debug.h @CMAKE_SOURCE_DIR@/iio-lock.h @CMAKE_SOURCE_DIR@/iiod-client.h @CMAKE_SOURCE_DIR@/sort.h
+
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -696,7 +697,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           =
+EXAMPLE_PATH           = @CMAKE_SOURCE_DIR@/tests @CMAKE_SOURCE_DIR@/examples
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1237,7 +1238,7 @@ DISABLE_INDEX          = NO
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-GENERATE_TREEVIEW      = NO
+GENERATE_TREEVIEW      = YES
 
 # The ENUM_VALUES_PER_LINE tag can be used to set the number of enum values that
 # doxygen will group on one line in the generated HTML documentation.
