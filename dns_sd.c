@@ -59,6 +59,93 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 	*ddata = d;
 }
 
+/* The only way to support scan context from the network is when
+ * DNS Service Discovery is turned on
+ */
+
+struct iio_scan_backend_context {
+	struct addrinfo *res;
+};
+
+static int dnssd_fill_context_info(struct iio_context_info *info,
+		char *hostname, char *addr_str, int port)
+{
+	struct iio_context *ctx;
+	char uri[MAXHOSTNAMELEN + 3];
+	char description[255], *p;
+	const char *hw_model, *serial;
+	int i;
+
+	ctx = network_create_context(addr_str);
+	if (!ctx) {
+		ERROR("No context at %s\n", addr_str);
+		return -ENOMEM;
+	}
+
+	if (port == IIOD_PORT)
+		sprintf(uri, "ip:%s", hostname);
+	else
+		sprintf(uri, "ip:%s:%d", hostname, port);
+
+	hw_model = iio_context_get_attr_value(ctx, "hw_model");
+	serial = iio_context_get_attr_value(ctx, "hw_serial");
+
+	if (hw_model && serial) {
+		snprintf(description, sizeof(description), "%s (%s), serial=%s",
+				addr_str, hw_model, serial);
+	} else if (hw_model) {
+		snprintf(description, sizeof(description), "%s %s", addr_str, hw_model);
+	} else if (serial) {
+		snprintf(description, sizeof(description), "%s %s", addr_str, serial);
+	} else if (ctx->nb_devices == 0) {
+		snprintf(description, sizeof(description), "%s", ctx->description);
+	} else {
+		snprintf(description, sizeof(description), "%s (", addr_str);
+		p = description + strlen(description);
+		for (i = 0; i < ctx->nb_devices - 1; i++) {
+			if (ctx->devices[i]->name) {
+				snprintf(p, sizeof(description) - strlen(description) -1,
+						"%s,",  ctx->devices[i]->name);
+				p += strlen(p);
+			}
+		}
+		p--;
+		*p = ')';
+	}
+
+	iio_context_destroy(ctx);
+
+	info->uri = iio_strdup(uri);
+	if (!info->uri)
+		return -ENOMEM;
+
+	info->description = iio_strdup(description);
+	if (!info->description) {
+		free(info->uri);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+struct iio_scan_backend_context * dnssd_context_scan_init(void)
+{
+	struct iio_scan_backend_context *ctx;
+
+	ctx = malloc(sizeof(*ctx));
+	if (!ctx) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	return ctx;
+}
+
+void dnssd_context_scan_free(struct iio_scan_backend_context *ctx)
+{
+	free(ctx);
+}
+
 /*
  * remove the ones in the list that you can't connect to
  * This is sort of silly, but we have seen non-iio devices advertised
@@ -145,6 +232,42 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 	iio_mutex_unlock(d->lock);
 
 	*ddata = d;
+}
+
+int dnssd_context_scan(struct iio_scan_backend_context *ctx,
+		struct iio_scan_result *scan_result)
+{
+	struct iio_context_info **info;
+	struct dns_sd_discovery_data *ddata, *ndata;
+	int ret = 0;
+
+	ret = dnssd_find_hosts(&ddata);
+
+	/* if we return an error when no devices are found, then other scans will fail */
+	if (ret == -ENXIO)
+		return 0;
+
+	if (ret < 0)
+		return ret;
+
+	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
+		info = iio_scan_result_add(scan_result, 1);
+		if (!info) {
+			ERROR("Out of memory when adding new scan result\n");
+			ret = -ENOMEM;
+			break;
+		}
+
+		ret = dnssd_fill_context_info(*info,
+				ndata->hostname, ndata->addr_str,ndata->port);
+		if (ret < 0) {
+			DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
+			break;
+		}
+	}
+
+	dnssd_free_all_discovery_data(ddata);
+	return ret;
 }
 
 int dnssd_discover_host(char *addr_str, size_t addr_len, uint16_t *port)

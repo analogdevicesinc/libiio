@@ -26,6 +26,9 @@ struct iio_scan_context {
 #ifdef WITH_USB_BACKEND
 	struct iio_scan_backend_context *usb_ctx;
 #endif
+#ifdef HAVE_DNS_SD
+	struct iio_scan_backend_context *dnssd_ctx;
+#endif
 	bool scan_local;
 };
 
@@ -60,6 +63,17 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 #ifdef WITH_USB_BACKEND
 	if (ctx->usb_ctx) {
 		int ret = usb_context_scan(ctx->usb_ctx, &scan_result);
+		if (ret < 0) {
+			if (scan_result.info)
+				iio_context_info_list_free(scan_result.info);
+			return ret;
+		}
+	}
+#endif
+
+#ifdef HAVE_DNS_SD
+	if (ctx->dnssd_ctx) {
+		int ret = dnssd_context_scan(ctx->dnssd_ctx, &scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
 				iio_context_info_list_free(scan_result.info);
@@ -146,6 +160,10 @@ struct iio_scan_context * iio_create_scan_context(
 	if (!backend || !strcmp(backend, "usb"))
 		ctx->usb_ctx = usb_context_scan_init();
 #endif
+#ifdef HAVE_DNS_SD
+	if (!backend || !strcmp(backend, "ip"))
+		ctx->dnssd_ctx = dnssd_context_scan_init();
+#endif
 
 	return ctx;
 }
@@ -155,6 +173,10 @@ void iio_scan_context_destroy(struct iio_scan_context *ctx)
 #ifdef WITH_USB_BACKEND
 	if (ctx->usb_ctx)
 		usb_context_scan_free(ctx->usb_ctx);
+#endif
+#ifdef HAVE_DNS_SD
+	if (ctx->dnssd_ctx)
+		dnssd_context_scan_free(ctx->dnssd_ctx);
 #endif
 	free(ctx);
 }
