@@ -421,6 +421,7 @@ int main(int argc, char **argv)
 	}
 
 	sample_size = iio_device_get_sample_size(dev);
+	bool num_samples_set = num_samples > 0;
 
 	buffer = iio_device_create_buffer(dev, buffer_size, cyclic_buffer);
 	if (!buffer) {
@@ -443,7 +444,7 @@ int main(int argc, char **argv)
 			size_t write_len, len = (intptr_t) iio_buffer_end(buffer)
 				- (intptr_t) start;
 
-			if (num_samples && len > num_samples * sample_size)
+			if (num_samples_set && len > num_samples * sample_size)
 				len = num_samples * sample_size;
 
 			for (write_len = len; len; ) {
@@ -455,9 +456,9 @@ int main(int argc, char **argv)
 				start = (void *)((intptr_t) start + nb);
 			}
 
-			if (num_samples) {
+			if (num_samples_set) {
 				num_samples -= write_len / sample_size;
-				if (!num_samples)
+				if (!num_samples && write_len < buffer_size * sample_size)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
