@@ -265,7 +265,7 @@ if(WITH_NETWORK_BACKEND)
 		message(STATUS "Building with CFNetServices, an Apple DNS SD implementation")
 		set(HAVE_DNS_SD ON)
 
-		list(APPEND LIBIIO_CFILES dns_sd_bonjour.c)
+		list(APPEND LIBIIO_CFILES dns_sd_bonjour.c dns_sd.c)
 		list(APPEND LIBS_TO_LINK ${CORE_SERVICES} )
 
 	elseif(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
@@ -273,7 +273,7 @@ if(WITH_NETWORK_BACKEND)
 		set(HAVE_DNS_SD ON)
 		set(HAVE_AVAHI ON)
 		
-		list(APPEND LIBIIO_CFILES dns_sd_avahi.c)
+		list(APPEND LIBIIO_CFILES dns_sd_avahi.c dns_sd.c)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
 		list(APPEND LIBS_TO_LINK ${AVAHI_LIBRARIES})
 	else()
