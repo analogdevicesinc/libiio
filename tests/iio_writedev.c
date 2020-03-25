@@ -59,7 +59,7 @@ static const char *options_descriptions[] = {
 	"Use the network backend with the provided hostname.",
 	"Use the context with the provided URI.",
 	"Use the specified trigger.",
-	"Size of the capture buffer. Default is 256.",
+	"Size of the transmit buffer. Default is 256.",
 	"Number of samples to write, 0 = infinite. Default is 0.",
 	"Buffer timeout in milliseconds. 0 = no timeout",
 	"Scan for available contexts and if only one is available use it.",
