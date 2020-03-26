@@ -262,6 +262,7 @@ err_free_ctx:
 int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
+	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
 	const char *arg_uri = NULL;
 	const char *arg_ip = NULL;
@@ -391,19 +392,32 @@ int main(int argc, char **argv)
 
 	if (argc == optind + 1) {
 		/* Enable all channels */
-		for (i = 0; i < nb_channels; i++)
-			iio_channel_enable(iio_device_get_channel(dev, i));
+		for (i = 0; i < nb_channels; i++) {
+			struct iio_channel *ch = iio_device_get_channel(dev, i);
+			if (iio_channel_is_output(ch)) {
+				iio_channel_enable(ch);
+				nb_active_channels++;
+			}
+		}
 	} else {
 		for (i = 0; i < nb_channels; i++) {
 			unsigned int j;
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
 			for (j = optind + 1; j < (unsigned int) argc; j++) {
 				const char *n = iio_channel_get_name(ch);
-				if (!strcmp(argv[j], iio_channel_get_id(ch)) ||
-						(n && !strcmp(n, argv[j])))
+				if ((!strcmp(argv[j], iio_channel_get_id(ch)) ||
+						(n && !strcmp(n, argv[j]))) &&
+						iio_channel_is_output(ch)) {
 					iio_channel_enable(ch);
+					nb_active_channels++;
+				}
 			}
 		}
+	}
+
+	if (!nb_active_channels) {
+		fprintf(stderr, "No output channels found\n");
+		return EXIT_FAILURE;
 	}
 
 	sample_size = iio_device_get_sample_size(dev);
