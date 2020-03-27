@@ -16,11 +16,6 @@
  *
  * */
 
-#include "iio-config.h"
-#include "iio-private.h"
-#include "iio-lock.h"
-#include "iiod-client.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -38,17 +33,21 @@
 
 #else /* _WIN32 */
 #include <arpa/inet.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <net/if.h>
-#include <sys/mman.h>
 #include <poll.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
 
 #include "debug.h"
+#include "iio-config.h"
+#include "iio-lock.h"
+#include "iio-private.h"
+#include "iiod-client.h"
 
 #define DEFAULT_TIMEOUT_MS 5000
 

@@ -16,15 +16,15 @@
  *
  */
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "debug.h"
 #include "iiod-client.h"
 #include "iio-lock.h"
 #include "iio-private.h"
-
-#include <errno.h>
-#include <inttypes.h>
-#include <string.h>
-#include <stdio.h>
 
 struct iiod_client {
 	struct iio_context_pdata *pdata;

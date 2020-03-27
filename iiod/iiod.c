@@ -16,12 +16,6 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-#include "../iio-config.h"
-#include "ops.h"
-#include "thread-pool.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -34,19 +28,26 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/eventfd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #ifdef HAVE_AVAHI
-#include <avahi-common/thread-watch.h>
-#include <avahi-common/error.h>
-#include <avahi-common/alternative.h>
-#include <avahi-common/malloc.h>
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
+#include <avahi-common/alternative.h>
 #include <avahi-common/domain.h>
+#include <avahi-common/error.h>
+#include <avahi-common/malloc.h>
+#include <avahi-common/thread-watch.h>
 #endif
+
+#include "../debug.h"
+#include "../iio-config.h"
+#include "../iio.h"
+
+#include "ops.h"
+#include "thread-pool.h"
 
 #define MY_NAME "iiod"
 

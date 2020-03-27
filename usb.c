@@ -16,10 +16,6 @@
  *
  * */
 
-#include "iio-lock.h"
-#include "iio-private.h"
-#include "iiod-client.h"
-
 #include <ctype.h>
 #include <errno.h>
 #include <libusb.h>
@@ -31,6 +27,9 @@
 #endif
 
 #include "debug.h"
+#include "iio-lock.h"
+#include "iio-private.h"
+#include "iiod-client.h"
 
 #define DEFAULT_TIMEOUT_MS 5000
 

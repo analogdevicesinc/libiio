@@ -17,10 +17,10 @@
  *
  * */
 
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 #include <iio.h>
+#include <stdio.h>
+#include <string.h>
 
 static FILE *fd = NULL;
 static char *uri;

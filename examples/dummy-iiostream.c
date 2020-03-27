@@ -73,16 +73,15 @@
  *
  **/
 
+#include <assert.h>
+#include <errno.h>
+#include <getopt.h>
+#include <inttypes.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
-#include <signal.h>
-#include <stdio.h>
-#include <errno.h>
-#include <getopt.h>
-#include <inttypes.h>
 
 #ifdef __APPLE__
 #include <iio/iio.h>

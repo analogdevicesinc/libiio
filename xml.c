@@ -16,12 +16,12 @@
  *
  * */
 
-#include "debug.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <libxml/tree.h>
 #include <string.h>
+
+#include "debug.h"
+#include "iio-private.h"
 
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {

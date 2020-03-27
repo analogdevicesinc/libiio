@@ -16,12 +16,9 @@
  *
  * */
 
-#include "debug.h"
-#include "iio-private.h"
-#include "sort.h"
-
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
 #include <stdbool.h>
@@ -31,17 +28,18 @@
 #include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <string.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
 #ifdef WITH_LOCAL_CONFIG
 #include <ini.h>
 #endif
+
+#include "debug.h"
+#include "iio-private.h"
+#include "sort.h"
 
 #define DEFAULT_TIMEOUT_MS 1000
 

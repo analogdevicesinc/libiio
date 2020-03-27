@@ -25,7 +25,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 #define MY_NAME "iio_readdev"
 

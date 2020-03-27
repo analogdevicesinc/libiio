@@ -19,14 +19,14 @@
 /* Force the XSI version of strerror_r */
 #undef _GNU_SOURCE
 
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "iio-config.h"
+#include "iio-private.h"
 
 #if defined(_WIN32) || \
 		(defined(__APPLE__) && defined(__MACH__)) || \

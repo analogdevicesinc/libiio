@@ -19,12 +19,12 @@
 #ifndef __IIO_PRIVATE_H__
 #define __IIO_PRIVATE_H__
 
+#include <stdbool.h>
+
 /* Include public interface */
 #include "iio.h"
 
 #include "iio-config.h"
-
-#include <stdbool.h>
 
 #ifdef _MSC_BUILD
 #define inline __inline

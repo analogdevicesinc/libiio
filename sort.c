@@ -16,8 +16,9 @@
  *
  * */
 
-#include "iio-private.h"
 #include <string.h>
+
+#include "iio-private.h"
 
 /* These are a few functions to do sorting via qsort for various
  * iio structures. For more info, see the qsort(3) man page.

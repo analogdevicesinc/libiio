@@ -15,8 +15,6 @@
  * Lesser General Public License for more details.
  */
 
-#include "thread-pool.h"
-
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
@@ -24,6 +22,8 @@
 #include <stdlib.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+
+#include "thread-pool.h"
 
 /*
  * This is used to make sure that all active threads have finished cleanup when

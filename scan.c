@@ -15,12 +15,12 @@
  * Lesser General Public License for more details.
  */
 
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "iio-config.h"
+#include "iio-private.h"
 
 struct iio_scan_context {
 #ifdef WITH_USB_BACKEND

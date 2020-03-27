@@ -15,15 +15,16 @@
  * Lesser General Public License for more details.
  */
 
-#include "../debug.h"
-#include "../iio-private.h"
-#include "ops.h"
-#include "thread-pool.h"
-
 #include <fcntl.h>
 #include <linux/usb/functionfs.h>
 #include <stdint.h>
 #include <string.h>
+
+#include "../debug.h"
+#include "../iio-private.h"
+
+#include "ops.h"
+#include "thread-pool.h"
 
 /* u8"IIO" for non-c11 compilers */
 #define NAME "\x0049\x0049\x004F"

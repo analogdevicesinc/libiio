@@ -16,12 +16,12 @@
  *
  * */
 
-#include "debug.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "debug.h"
+#include "iio-private.h"
 
 static const char * const iio_chan_type_name_spec[] = {
 	[IIO_VOLTAGE] = "voltage",

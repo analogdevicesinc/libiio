@@ -15,10 +15,10 @@
  * Lesser General Public License for more details.
  */
 
+#include <string.h>
+
 #include "iio-config.h"
 #include "iio-private.h"
-
-#include <string.h>
 
 unsigned int iio_get_backends_count(void)
 {

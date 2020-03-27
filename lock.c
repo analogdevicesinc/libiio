@@ -16,8 +16,6 @@
  *
  */
 
-#include "iio-config.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #elif !defined(NO_THREADS)
@@ -25,6 +23,8 @@
 #endif
 
 #include <stdlib.h>
+
+#include "iio-config.h"
 
 struct iio_mutex {
 #ifdef NO_THREADS

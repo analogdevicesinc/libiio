@@ -18,17 +18,17 @@
 
 #define _DEFAULT_SOURCE
 
+#include <errno.h>
 #include <getopt.h>
 #include <iio.h>
+#include <limits.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <errno.h>
-#include <limits.h>
-#include <sys/time.h>
 #include <sys/sysctl.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #define MY_NAME "iio_stresstest"
 

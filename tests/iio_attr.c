@@ -20,14 +20,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * */
 
+#include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
 #include <iio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <sys/types.h>
+
 #include "gen_code.h"
 
 #define MY_NAME "iio_attr"

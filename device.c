@@ -16,13 +16,13 @@
  *
  * */
 
-#include "debug.h"
-#include "iio-private.h"
-
-#include <inttypes.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "debug.h"
+#include "iio-private.h"
 
 static char *get_attr_xml(const char *attr, size_t *length, enum iio_attr_type type)
 {

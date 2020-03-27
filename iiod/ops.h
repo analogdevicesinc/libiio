@@ -19,21 +19,22 @@
 #ifndef __OPS_H__
 #define __OPS_H__
 
-#include "../iio-private.h"
-#include "queue.h"
-
 #include <endian.h>
 #include <errno.h>
+#include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #if WITH_AIO
 #include <libaio.h>
 #endif
+
+#include "../iio-private.h"
+
+#include "queue.h"
 
 #ifndef __bswap_constant_16
 #define __bswap_constant_16(x) \

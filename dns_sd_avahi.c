@@ -16,19 +16,18 @@
  *
  * */
 
-#include "iio.h"
-
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
 
-#include <avahi-common/error.h>
-#include <avahi-common/simple-watch.h>
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
+#include <avahi-common/error.h>
+#include <avahi-common/simple-watch.h>
 
 #include "debug.h"
+#include "iio.h"
 
 struct avahi_discovery_data {
 	AvahiSimplePoll *poll;

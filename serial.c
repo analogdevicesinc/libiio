@@ -16,16 +16,16 @@
  *
  * */
 
-#include "debug.h"
-#include "iio-private.h"
-#include "iio-lock.h"
-#include "iiod-client.h"
-
 #include <errno.h>
 #include <libserialport.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "debug.h"
+#include "iio-private.h"
+#include "iio-lock.h"
+#include "iiod-client.h"
 
 #define DEFAULT_TIMEOUT_MS 1000
 

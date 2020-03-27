@@ -27,8 +27,8 @@
 #include <locale.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef __APPLE__
 #include <iio/iio.h>

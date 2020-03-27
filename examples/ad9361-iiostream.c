@@ -19,11 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <signal.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef __APPLE__
 #include <iio/iio.h>

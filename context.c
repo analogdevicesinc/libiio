@@ -16,13 +16,13 @@
  *
  * */
 
+#include <errno.h>
+#include <string.h>
+
 #include "debug.h"
 #include "iio-config.h"
 #include "iio-private.h"
 #include "sort.h"
-
-#include <errno.h>
-#include <string.h>
 
 #ifdef _WIN32
 #define LOCAL_BACKEND 0

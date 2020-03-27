@@ -27,9 +27,9 @@ extern "C" {
 #endif
 
 #include <limits.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stddef.h>
 
 #if (defined(_WIN32) || defined(__MBED__))
 #ifndef _SSIZE_T_DEFINED

@@ -19,9 +19,9 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#include "iio-config.h"
-
 #include <stdio.h>
+
+#include "iio-config.h"
 
 #define NoLog_L 0
 #define Error_L 1
