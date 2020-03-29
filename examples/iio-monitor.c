@@ -38,9 +38,9 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
-#define RED	020
-#define YELLOW	040
-#define BLUE	050
+#define RED	020u
+#define YELLOW	040u
+#define BLUE	050u
 
 static int selected = -1;
 
@@ -224,11 +224,11 @@ static struct iio_context *show_contexts_screen(void)
 	struct iio_context *ctx = NULL;
 	struct iio_scan_context *scan_ctx;
 	struct iio_context_info **info;
-	unsigned int num_contexts;
+	int num_contexts;
 	CDKSCREEN *screen;
 	CDKSCROLL *list;
 	const char *uri;
-	unsigned int i;
+	int i;
 	bool free_uri;
 	char **items;
 	int ret;
