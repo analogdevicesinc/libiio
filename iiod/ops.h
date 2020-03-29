@@ -19,31 +19,31 @@
 #ifndef __OPS_H__
 #define __OPS_H__
 
-#include "../iio-private.h"
-#include "queue.h"
-
 #include <endian.h>
 #include <errno.h>
+#include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include "../iio-private.h"
+#include "queue.h"
 
 #if WITH_AIO
 #include <libaio.h>
 #endif
 
 #ifndef __bswap_constant_16
-#define __bswap_constant_16(x) \
-	((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+#define __bswap_constant_16(x)                                                 \
+	((unsigned short int)((((x) >> 8) & 0xff) | (((x)&0xff) << 8)))
 #endif
 
 #ifndef __bswap_constant_32
-#define __bswap_constant_32(x) \
-	((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
-	 (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+#define __bswap_constant_32(x)                                                 \
+	((((x)&0xff000000) >> 24) | (((x)&0x00ff0000) >> 8) |                  \
+	 (((x)&0x0000ff00) << 8) | (((x)&0x000000ff) << 24))
 #endif
 
 struct thread_pool;
@@ -68,43 +68,44 @@ struct parser_pdata {
 #endif
 	struct thread_pool *pool;
 
-	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf, size_t len);
+	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf,
+			   size_t len);
 	ssize_t (*readfd)(struct parser_pdata *pdata, void *buf, size_t len);
 };
 
 extern bool server_demux; /* Defined in iiod.c */
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-	bool is_socket, bool use_aio, struct thread_pool *pool);
+		 bool is_socket, bool use_aio, struct thread_pool *pool);
 
-int start_usb_daemon(struct iio_context *ctx, const char *ffs,
-		bool debug, bool use_aio, unsigned int nb_pipes,
-		struct thread_pool *pool);
+int start_usb_daemon(struct iio_context *ctx, const char *ffs, bool debug,
+		     bool use_aio, unsigned int nb_pipes,
+		     struct thread_pool *pool);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
-		size_t samples_count, const char *mask, bool cyclic);
+	     size_t samples_count, const char *mask, bool cyclic);
 int close_dev(struct parser_pdata *pdata, struct iio_device *dev);
 
 ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
-		unsigned int nb, bool is_write);
+	       unsigned int nb, bool is_write);
 
 ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, enum iio_attr_type type);
+		      const char *attr, enum iio_attr_type type);
 ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, size_t len, enum iio_attr_type type);
+		       const char *attr, size_t len, enum iio_attr_type type);
 
 ssize_t read_chn_attr(struct parser_pdata *pdata, struct iio_channel *chn,
-		const char *attr);
+		      const char *attr);
 ssize_t write_chn_attr(struct parser_pdata *pdata, struct iio_channel *chn,
-		const char *attr, size_t len);
+		       const char *attr, size_t len);
 
 ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev);
-ssize_t set_trigger(struct parser_pdata *pdata,
-		struct iio_device *dev, const char *trig);
+ssize_t set_trigger(struct parser_pdata *pdata, struct iio_device *dev,
+		    const char *trig);
 
 int set_timeout(struct parser_pdata *pdata, unsigned int timeout);
-int set_buffers_count(struct parser_pdata *pdata,
-		struct iio_device *dev, long value);
+int set_buffers_count(struct parser_pdata *pdata, struct iio_device *dev,
+		      long value);
 
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
 ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len);

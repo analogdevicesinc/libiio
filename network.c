@@ -16,17 +16,17 @@
  *
  * */
 
-#include "iio-config.h"
-#include "iio-private.h"
-#include "iio-lock.h"
-#include "iiod-client.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
+
+#include "iio-config.h"
+#include "iio-lock.h"
+#include "iio-private.h"
+#include "iiod-client.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -38,12 +38,12 @@
 
 #else /* _WIN32 */
 #include <arpa/inet.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <net/if.h>
-#include <sys/mman.h>
 #include <poll.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif /* _WIN32 */
@@ -164,8 +164,8 @@ static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
 	WSAResetEvent(io_ctx->events[0]);
 	WSAEventSelect(io_ctx->fd, io_ctx->events[0], wsa_events);
 
-	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
-		WSA_INFINITE, FALSE);
+	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE, WSA_INFINITE,
+				       FALSE);
 
 	if (ret == WSA_WAIT_EVENT_0 + 1)
 		return -EBADF;
@@ -318,7 +318,7 @@ static int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
 		int timeout_ms;
 
 		if (io_ctx->timeout_ms > 0)
-			timeout_ms = (int) io_ctx->timeout_ms;
+			timeout_ms = (int)io_ctx->timeout_ms;
 		else
 			timeout_ms = -1;
 
@@ -362,8 +362,8 @@ static bool network_connect_in_progress(int err)
 
 #endif
 
-static ssize_t network_recv(struct iio_network_io_context *io_ctx,
-		void *data, size_t len, int flags)
+static ssize_t network_recv(struct iio_network_io_context *io_ctx, void *data,
+			    size_t len, int flags)
 {
 	ssize_t ret;
 	int err;
@@ -373,7 +373,7 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 		if (ret < 0)
 			return ret;
 
-		ret = recv(io_ctx->fd, data, (int) len, flags);
+		ret = recv(io_ctx->fd, data, (int)len, flags);
 		if (ret == 0)
 			return -EPIPE;
 		else if (ret > 0)
@@ -386,14 +386,14 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 			else
 				return -EPIPE;
 		} else if (!network_is_interrupted(err)) {
-			return (ssize_t) err;
+			return (ssize_t)err;
 		}
 	}
 	return ret;
 }
 
 static ssize_t network_send(struct iio_network_io_context *io_ctx,
-		const void *data, size_t len, int flags)
+			    const void *data, size_t len, int flags)
 {
 	ssize_t ret;
 	int err;
@@ -403,7 +403,7 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 		if (ret < 0)
 			return ret;
 
-		ret = send(io_ctx->fd, data, (int) len, flags);
+		ret = send(io_ctx->fd, data, (int)len, flags);
 		if (ret == 0)
 			return -EPIPE;
 		else if (ret > 0)
@@ -416,29 +416,29 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 			else
 				return -EPIPE;
 		} else if (!network_is_interrupted(err)) {
-			return (ssize_t) err;
+			return (ssize_t)err;
 		}
 	}
 
 	return ret;
 }
 
-static ssize_t write_all(struct iio_network_io_context *io_ctx,
-		const void *src, size_t len)
+static ssize_t write_all(struct iio_network_io_context *io_ctx, const void *src,
+			 size_t len)
 {
-	uintptr_t ptr = (uintptr_t) src;
+	uintptr_t ptr = (uintptr_t)src;
 	while (len) {
-		ssize_t ret = network_send(io_ctx, (const void *) ptr, len, 0);
+		ssize_t ret = network_send(io_ctx, (const void *)ptr, len, 0);
 		if (ret < 0)
 			return ret;
 		ptr += ret;
 		len -= ret;
 	}
-	return (ssize_t)(ptr - (uintptr_t) src);
+	return (ssize_t)(ptr - (uintptr_t)src);
 }
 
 static ssize_t write_command(struct iio_network_io_context *io_ctx,
-		const char *cmd)
+			     const char *cmd)
 {
 	ssize_t ret;
 
@@ -472,7 +472,8 @@ static int do_create_socket(const struct addrinfo *addrinfo)
 {
 	int fd;
 
-	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype | SOCK_CLOEXEC, 0);
+	fd = socket(addrinfo->ai_family, addrinfo->ai_socktype | SOCK_CLOEXEC,
+		    0);
 	if (fd < 0)
 		return -errno;
 
@@ -486,8 +487,7 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 	tv.tv_sec = timeout / 1000;
 	tv.tv_usec = (timeout % 1000) * 1000;
 	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				&tv, sizeof(tv)) < 0)
+	    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		return -errno;
 	else
 		return 0;
@@ -504,19 +504,19 @@ static int do_create_socket(const struct addrinfo *addrinfo)
 	SOCKET s;
 
 	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
-		WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
+		       WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
 	if (s == INVALID_SOCKET)
 		return -WSAGetLastError();
 
-	return (int) s;
+	return (int)s;
 }
 
 static int set_socket_timeout(int fd, unsigned int timeout)
 {
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0)
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&timeout,
+		       sizeof(timeout)) < 0 ||
+	    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout,
+		       sizeof(timeout)) < 0)
 		return -WSAGetLastError();
 	else
 		return 0;
@@ -526,7 +526,7 @@ static int set_socket_timeout(int fd, unsigned int timeout)
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
 static int do_connect(int fd, const struct addrinfo *addrinfo,
-	unsigned int timeout)
+		      unsigned int timeout)
 {
 	int ret, error;
 	socklen_t len;
@@ -542,7 +542,7 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	if (ret < 0)
 		return ret;
 
-	ret = connect(fd, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
+	ret = connect(fd, addrinfo->ai_addr, (int)addrinfo->ai_addrlen);
 	if (ret < 0) {
 		ret = network_get_error();
 		if (!network_connect_in_progress(ret))
@@ -581,7 +581,7 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	/* Verify that we don't have an error */
 	len = sizeof(error);
 	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&error, &len);
-	if(ret < 0)
+	if (ret < 0)
 		return network_get_error();
 
 	if (error)
@@ -609,8 +609,8 @@ static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 	}
 
 	set_socket_timeout(fd, timeout);
-	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-				(const char *) &yes, sizeof(yes)) < 0) {
+	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (const char *)&yes,
+		       sizeof(yes)) < 0) {
 		ret = -errno;
 		close(fd);
 		return ret;
@@ -619,8 +619,8 @@ static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 	return fd;
 }
 
-static int network_open(const struct iio_device *dev,
-		size_t samples_count, bool cyclic)
+static int network_open(const struct iio_device *dev, size_t samples_count,
+			bool cyclic)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 	struct iio_device_pdata *ppdata = dev->pdata;
@@ -641,8 +641,8 @@ static int network_open(const struct iio_device *dev,
 	ppdata->io_ctx.cancellable = false;
 	ppdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
 
-	ret = iiod_client_open_unlocked(pdata->iiod_client,
-			&ppdata->io_ctx, dev, samples_count, cyclic);
+	ret = iiod_client_open_unlocked(pdata->iiod_client, &ppdata->io_ctx,
+					dev, samples_count, cyclic);
 	if (ret < 0) {
 		ERROR("Open unlocked: %d\n", ret);
 		goto err_close_socket;
@@ -714,28 +714,29 @@ static int network_close(const struct iio_device *dev)
 }
 
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
-		uint32_t *mask, size_t words)
+			    uint32_t *mask, size_t words)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret;
 
 	iio_mutex_lock(pdata->lock);
 	ret = iiod_client_read_unlocked(dev->ctx->pdata->iiod_client,
-			&pdata->io_ctx, dev, dst, len, mask, words);
+					&pdata->io_ctx, dev, dst, len, mask,
+					words);
 	iio_mutex_unlock(pdata->lock);
 
 	return ret;
 }
 
-static ssize_t network_write(const struct iio_device *dev,
-		const void *src, size_t len)
+static ssize_t network_write(const struct iio_device *dev, const void *src,
+			     size_t len)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret;
 
 	iio_mutex_lock(pdata->lock);
 	ret = iiod_client_write_unlocked(dev->ctx->pdata->iiod_client,
-			&pdata->io_ctx, dev, src, len);
+					 &pdata->io_ctx, dev, src, len);
 	iio_mutex_unlock(pdata->lock);
 
 	return ret;
@@ -743,12 +744,12 @@ static ssize_t network_write(const struct iio_device *dev,
 
 #ifdef WITH_NETWORK_GET_BUFFER
 
-static ssize_t read_all(struct iio_network_io_context *io_ctx,
-		void *dst, size_t len)
+static ssize_t read_all(struct iio_network_io_context *io_ctx, void *dst,
+			size_t len)
 {
-	uintptr_t ptr = (uintptr_t) dst;
+	uintptr_t ptr = (uintptr_t)dst;
 	while (len) {
-		ssize_t ret = network_recv(io_ctx, (void *) ptr, len, 0);
+		ssize_t ret = network_recv(io_ctx, (void *)ptr, len, 0);
 		if (ret < 0) {
 			ERROR("NETWORK RECV: %zu\n", ret);
 			return ret;
@@ -756,7 +757,7 @@ static ssize_t read_all(struct iio_network_io_context *io_ctx,
 		ptr += ret;
 		len -= ret;
 	}
-	return (ssize_t)(ptr - (uintptr_t) dst);
+	return (ssize_t)(ptr - (uintptr_t)dst);
 }
 
 static int read_integer(struct iio_network_io_context *io_ctx, long *val)
@@ -769,7 +770,7 @@ static int read_integer(struct iio_network_io_context *io_ctx, long *val)
 	for (i = 0; i < sizeof(buf) - 1; i++) {
 		ret = read_all(io_ctx, buf + i, 1);
 		if (ret < 0)
-			return (int) ret;
+			return (int)ret;
 
 		/* Skip the eventual first few carriage returns.
 		 * Also stop when a dot is found (for parsing floats) */
@@ -780,15 +781,15 @@ static int read_integer(struct iio_network_io_context *io_ctx, long *val)
 	}
 
 	buf[i] = '\0';
-	ret = (ssize_t) strtol(buf, &ptr, 10);
+	ret = (ssize_t)strtol(buf, &ptr, 10);
 	if (ptr == buf)
 		return -EINVAL;
-	*val = (long) ret;
+	*val = (long)ret;
 	return 0;
 }
 
 static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
-		uint32_t *mask, size_t words)
+				 uint32_t *mask, size_t words)
 {
 	long read_len;
 	ssize_t ret;
@@ -812,8 +813,8 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 				return ret;
 
 			sscanf(buf, "%08x", &mask[i - 1]);
-			DEBUG("mask[%lu] = 0x%x\n",
-					(unsigned long)(i - 1), mask[i - 1]);
+			DEBUG("mask[%lu] = 0x%x\n", (unsigned long)(i - 1),
+			      mask[i - 1]);
 		}
 	}
 
@@ -824,7 +825,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 			read_len = -EIO;
 	}
 
-	return (ssize_t) read_len;
+	return (ssize_t)read_len;
 }
 
 static ssize_t read_error_code(struct iio_network_io_context *io_ctx)
@@ -851,14 +852,14 @@ static ssize_t read_error_code(struct iio_network_io_context *io_ctx)
 		if (ret < 0)
 			return ret;
 		if (resp < 0)
-			return (ssize_t) resp;
+			return (ssize_t)resp;
 	}
 
-	return (ssize_t) resp;
+	return (ssize_t)resp;
 }
 
 static ssize_t write_rwbuf_command(const struct iio_device *dev,
-		const char *cmd)
+				   const char *cmd)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 
@@ -874,22 +875,22 @@ static ssize_t write_rwbuf_command(const struct iio_device *dev,
 }
 
 static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
-		bool read)
+				 bool read)
 {
 	int pipefd[2];
 	int fd_in, fd_out;
 	ssize_t ret, read_len = len, write_len = 0;
 
-	ret = (ssize_t) pipe2(pipefd, O_CLOEXEC);
+	ret = (ssize_t)pipe2(pipefd, O_CLOEXEC);
 	if (ret < 0)
 		return -errno;
 
 	if (read) {
-	    fd_in = pdata->io_ctx.fd;
-	    fd_out = pdata->memfd;
+		fd_in = pdata->io_ctx.fd;
+		fd_out = pdata->memfd;
 	} else {
-	    fd_in = pdata->memfd;
-	    fd_out = pdata->io_ctx.fd;
+		fd_in = pdata->memfd;
+		fd_out = pdata->io_ctx.fd;
 	}
 
 	do {
@@ -905,7 +906,7 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 			 * TODO(pcercuei): Find why it locks...
 			 * */
 			ret = splice(fd_in, NULL, pipefd[1], NULL, read_len,
-					SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+				     SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
 			if (!ret)
 				ret = -EIO;
 			if (ret < 0 && errno != EAGAIN) {
@@ -919,7 +920,7 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 
 		if (write_len) {
 			ret = splice(pipefd[0], NULL, fd_out, NULL, write_len,
-					SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+				     SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
 			if (!ret)
 				ret = -EIO;
 			if (ret < 0 && errno != EAGAIN) {
@@ -938,9 +939,9 @@ err_close_pipe:
 	return ret < 0 ? ret : len;
 }
 
-static ssize_t network_get_buffer(const struct iio_device *dev,
-		void **addr_ptr, size_t bytes_used,
-		uint32_t *mask, size_t words)
+static ssize_t network_get_buffer(const struct iio_device *dev, void **addr_ptr,
+				  size_t bytes_used, uint32_t *mask,
+				  size_t words)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	ssize_t ret, read = 0;
@@ -955,7 +956,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	 *
 	 * O_TMPFILE -> Linux 3.11.
 	 * TODO: use memfd_create (Linux 3.17) */
-	memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL | O_CLOEXEC, S_IRWXU);
+	memfd = open(P_tmpdir, O_RDWR | O_TMPFILE | O_EXCL | O_CLOEXEC,
+		     S_IRWXU);
 	if (memfd < 0)
 		return -ENOSYS;
 
@@ -970,8 +972,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (pdata->mmap_addr && pdata->is_tx) {
 		char buf[1024];
 
-		iio_snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-				dev->id, (unsigned long) bytes_used);
+		iio_snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n", dev->id,
+			     (unsigned long)bytes_used);
 
 		iio_mutex_lock(pdata->lock);
 
@@ -992,7 +994,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 
 	pdata->memfd = memfd;
 
-	ret = (ssize_t) ftruncate(pdata->memfd, pdata->mmap_len);
+	ret = (ssize_t)ftruncate(pdata->memfd, pdata->mmap_len);
 	if (ret < 0) {
 		ret = -errno;
 		ERROR("Unable to truncate temp file: %zi\n", -ret);
@@ -1003,8 +1005,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		char buf[1024];
 		size_t len = pdata->mmap_len;
 
-		iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
-				dev->id, (unsigned long) len);
+		iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n", dev->id,
+			     (unsigned long)len);
 
 		iio_mutex_lock(pdata->lock);
 		ret = write_rwbuf_command(dev, buf);
@@ -1031,8 +1033,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		iio_mutex_unlock(pdata->lock);
 	}
 
-	pdata->mmap_addr = mmap(NULL, pdata->mmap_len,
-			PROT_READ | PROT_WRITE, MAP_SHARED, pdata->memfd, 0);
+	pdata->mmap_addr = mmap(NULL, pdata->mmap_len, PROT_READ | PROT_WRITE,
+				MAP_SHARED, pdata->memfd, 0);
 	if (pdata->mmap_addr == MAP_FAILED) {
 		pdata->mmap_addr = NULL;
 		ret = -errno;
@@ -1041,7 +1043,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	}
 
 	*addr_ptr = pdata->mmap_addr;
-	return read ? read : (ssize_t) bytes_used;
+	return read ? read : (ssize_t)bytes_used;
 
 err_close_memfd:
 	close(memfd);
@@ -1052,57 +1054,60 @@ err_unlock:
 #endif
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, enum iio_attr_type type)
+				     const char *attr, char *dst, size_t len,
+				     enum iio_attr_type type)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, NULL, attr, dst, len, type);
+	return iiod_client_read_attr(pdata->iiod_client, &pdata->io_ctx, dev,
+				     NULL, attr, dst, len, type);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, size_t len, enum iio_attr_type type)
+				      const char *attr, const char *src,
+				      size_t len, enum iio_attr_type type)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, NULL, attr, src, len, type);
+	return iiod_client_write_attr(pdata->iiod_client, &pdata->io_ctx, dev,
+				      NULL, attr, src, len, type);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len)
+				     const char *attr, char *dst, size_t len)
 {
 	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
 
-	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, chn->dev, chn, attr, dst, len, false);
+	return iiod_client_read_attr(pdata->iiod_client, &pdata->io_ctx,
+				     chn->dev, chn, attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len)
+				      const char *attr, const char *src,
+				      size_t len)
 {
 	struct iio_context_pdata *pdata = chn->dev->ctx->pdata;
 
-	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, chn->dev, chn, attr, src, len, false);
+	return iiod_client_write_attr(pdata->iiod_client, &pdata->io_ctx,
+				      chn->dev, chn, attr, src, len, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
-		const struct iio_device **trigger)
+			       const struct iio_device **trigger)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return iiod_client_get_trigger(pdata->iiod_client,
-			&pdata->io_ctx, dev, trigger);
+	return iiod_client_get_trigger(pdata->iiod_client, &pdata->io_ctx, dev,
+				       trigger);
 }
 
 static int network_set_trigger(const struct iio_device *dev,
-		const struct iio_device *trigger)
+			       const struct iio_device *trigger)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return iiod_client_set_trigger(pdata->iiod_client,
-			&pdata->io_ctx, dev, trigger);
+	return iiod_client_set_trigger(pdata->iiod_client, &pdata->io_ctx, dev,
+				       trigger);
 }
 
 static void network_shutdown(struct iio_context *ctx)
@@ -1133,10 +1138,12 @@ static void network_shutdown(struct iio_context *ctx)
 }
 
 static int network_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor, char git_tag[8])
+			       unsigned int *major, unsigned int *minor,
+			       char git_tag[8])
 {
 	return iiod_client_get_version(ctx->pdata->iiod_client,
-			&ctx->pdata->io_ctx, major, minor, git_tag);
+				       &ctx->pdata->io_ctx, major, minor,
+				       git_tag);
 }
 
 static unsigned int calculate_remote_timeout(unsigned int timeout)
@@ -1156,7 +1163,7 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 		unsigned int remote_timeout = calculate_remote_timeout(timeout);
 
 		ret = iiod_client_set_timeout(pdata->iiod_client,
-			&pdata->io_ctx, remote_timeout);
+					      &pdata->io_ctx, remote_timeout);
 		if (!ret)
 			pdata->io_ctx.timeout_ms = timeout;
 	}
@@ -1169,15 +1176,15 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 }
 
 static int network_set_kernel_buffers_count(const struct iio_device *dev,
-		unsigned int nb_blocks)
+					    unsigned int nb_blocks)
 {
 	struct iio_context_pdata *pdata = dev->ctx->pdata;
 
-	return iiod_client_set_kernel_buffers_count(pdata->iiod_client,
-			 &pdata->io_ctx, dev, nb_blocks);
+	return iiod_client_set_kernel_buffers_count(
+			pdata->iiod_client, &pdata->io_ctx, dev, nb_blocks);
 }
 
-static struct iio_context * network_clone(const struct iio_context *ctx)
+static struct iio_context *network_clone(const struct iio_context *ctx)
 {
 	const char *addr = iio_context_get_attr_value(ctx, "ip,ip-addr");
 
@@ -1208,23 +1215,23 @@ static const struct iio_backend_ops network_ops = {
 };
 
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
-		void *io_data, const char *src, size_t len)
+				  void *io_data, const char *src, size_t len)
 {
 	struct iio_network_io_context *io_ctx = io_data;
 
 	return network_send(io_ctx, src, len, 0);
 }
 
-static ssize_t network_read_data(struct iio_context_pdata *pdata,
-		void *io_data, char *dst, size_t len)
+static ssize_t network_read_data(struct iio_context_pdata *pdata, void *io_data,
+				 char *dst, size_t len)
 {
 	struct iio_network_io_context *io_ctx = io_data;
 
 	return network_recv(io_ctx, dst, len, 0);
 }
 
-static ssize_t network_read_line(struct iio_context_pdata *pdata,
-		void *io_data, char *dst, size_t len)
+static ssize_t network_read_line(struct iio_context_pdata *pdata, void *io_data,
+				 char *dst, size_t len)
 {
 	bool found = false;
 	size_t i;
@@ -1241,8 +1248,9 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 			return ret;
 
 		/* Lookup for the trailing \n */
-		for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
-		found = i < (size_t) ret;
+		for (i = 0; i < (size_t)ret && dst[i] != '\n'; i++)
+			;
+		found = i < (size_t)ret;
 
 		len -= ret;
 		dst += ret;
@@ -1250,7 +1258,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		if (found)
 			to_trunc = i + 1;
 		else
-			to_trunc = (size_t) ret;
+			to_trunc = (size_t)ret;
 
 		/* Advance the read offset to the byte following the \n if
 		 * found, or after the last charater read otherwise */
@@ -1287,7 +1295,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 	if (!found || i == len - 1)
 		return -EIO;
 
-	return (ssize_t) i + 1;
+	return (ssize_t)i + 1;
 #endif
 }
 
@@ -1319,7 +1327,7 @@ static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
 }
 #endif
 
-struct iio_context * network_create_context(const char *host)
+struct iio_context *network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
@@ -1397,7 +1405,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
-			&network_iiod_client_ops);
+					     &network_iiod_client_ops);
 
 	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
 	if (pdata->msg_trunc_supported)
@@ -1435,14 +1443,15 @@ struct iio_context * network_create_context(const char *host)
 
 #ifdef HAVE_IPV6
 	if (res->ai_family == AF_INET6) {
-		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
+		struct sockaddr_in6 *in = (struct sockaddr_in6 *)res->ai_addr;
 		char *ptr;
-		inet_ntop(AF_INET6, &in->sin6_addr,
-				description, INET6_ADDRSTRLEN);
+		inet_ntop(AF_INET6, &in->sin6_addr, description,
+			  INET6_ADDRSTRLEN);
 
 		if (IN6_IS_ADDR_LINKLOCAL(&in->sin6_addr)) {
-			ptr = if_indextoname(in->sin6_scope_id, description +
-					strlen(description) + 1);
+			ptr = if_indextoname(in->sin6_scope_id,
+					     description + strlen(description) +
+							     1);
 			if (!ptr) {
 				ret = -errno;
 				ERROR("Unable to lookup interface of IPv6 address\n");
@@ -1454,7 +1463,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 #endif
 	if (res->ai_family == AF_INET) {
-		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
+		struct sockaddr_in *in = (struct sockaddr_in *)res->ai_addr;
 #if (!_WIN32 || _WIN32_WINNT >= 0x600)
 		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
 #else
@@ -1508,7 +1517,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	iiod_client_set_timeout(pdata->iiod_client, &pdata->io_ctx,
-			calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
+				calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
 	return ctx;
 
 err_free_description:
