@@ -40,13 +40,13 @@ enum backend {
 };
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"xml", required_argument, 0, 'x'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
-	  {"scan", no_argument, 0, 's'},
-	  {"auto", no_argument, 0, 'a'},
-	  {0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "xml", required_argument, 0, 'x' },
+	{ "network", required_argument, 0, 'n' },
+	{ "uri", required_argument, 0, 'u' },
+	{ "scan", no_argument, 0, 's' },
+	{ "auto", no_argument, 0, 'a' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -65,13 +65,14 @@ static const char *options_descriptions[] = {
  */
 #define BUF_SIZE 16384
 
-static void * xmalloc(size_t n)
+static void *xmalloc(size_t n)
 {
 	void *p = malloc(n);
 
 	if (!p && n != 0) {
-		fprintf(stderr, MY_NAME
-				" fatal error: allocating %zu bytes failed\n",n);
+		fprintf(stderr,
+			MY_NAME " fatal error: allocating %zu bytes failed\n",
+			n);
 		exit(EXIT_FAILURE);
 	}
 
@@ -82,13 +83,11 @@ static void usage(void)
 {
 	unsigned int i;
 
-	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t"
-			MY_NAME " [-n <hostname>]\n\t"
-			MY_NAME " [-u <uri>]\n\nOptions:\n");
+	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t" MY_NAME
+	       " [-n <hostname>]\n\t" MY_NAME " [-u <uri>]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
+		printf("\t-%c, --%s\n\t\t\t%s\n", options[i].val,
+		       options[i].name, options_descriptions[i]);
 }
 
 static void scan(void)
@@ -119,10 +118,10 @@ static void scan(void)
 
 	printf("Available contexts:\n");
 
-	for (i = 0; i < (size_t) ret; i++) {
+	for (i = 0; i < (size_t)ret; i++) {
 		printf("\t%d: %s [%s]\n", i,
-			iio_context_info_get_description(info[i]),
-			iio_context_info_get_uri(info[i]));
+		       iio_context_info_get_description(info[i]),
+		       iio_context_info_get_uri(info[i]));
 	}
 
 err_free_info_list:
@@ -131,7 +130,7 @@ err_free_ctx:
 	iio_scan_context_destroy(ctx);
 }
 
-static struct iio_context * autodetect_context(void)
+static struct iio_context *autodetect_context(void)
 {
 	struct iio_scan_context *scan_ctx;
 	struct iio_context_info **info;
@@ -149,7 +148,8 @@ static struct iio_context * autodetect_context(void)
 	if (ret < 0) {
 		char err_str[1024];
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n",
+			err_str);
 		goto err_free_ctx;
 	}
 
@@ -160,12 +160,14 @@ static struct iio_context * autodetect_context(void)
 
 	if (ret == 1) {
 		printf("Using auto-detected IIO context at URI \"%s\"\n",
+		       iio_context_info_get_uri(info[0]));
+		ctx = iio_create_context_from_uri(
 				iio_context_info_get_uri(info[0]));
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
 	} else {
-		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
+		fprintf(stderr,
+			"Multiple contexts found. Please select one using --uri:\n");
 
-		for (i = 0; i < (size_t) ret; i++) {
+		for (i = 0; i < (size_t)ret; i++) {
 			fprintf(stderr, "\t%d: %s [%s]\n", i,
 				iio_context_info_get_description(info[i]),
 				iio_context_info_get_uri(info[i]));
@@ -207,15 +209,16 @@ int main(int argc, char **argv)
 	char git_tag[8];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:x:u:sa",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "+hn:x:u:sa", options,
+				&option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
 		case 'n':
 			if (backend != LOCAL) {
-				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
+				fprintf(stderr,
+					"-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = NETWORK;
@@ -223,7 +226,8 @@ int main(int argc, char **argv)
 			break;
 		case 'x':
 			if (backend != LOCAL) {
-				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
+				fprintf(stderr,
+					"-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = XML;
@@ -234,7 +238,8 @@ int main(int argc, char **argv)
 			break;
 		case 'u':
 			if (backend != LOCAL) {
-				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
+				fprintf(stderr,
+					"-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
 			backend = AUTO;
@@ -284,27 +289,28 @@ int main(int argc, char **argv)
 
 			iio_strerror(errno, buf, sizeof(buf));
 			fprintf(stderr, "Unable to create IIO context: %s\n",
-					buf);
+				buf);
 		}
 
 		return EXIT_FAILURE;
 	}
 
 	printf("IIO context created with %s backend.\n",
-			iio_context_get_name(ctx));
+	       iio_context_get_name(ctx));
 
 	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
 	if (!ret)
-		printf("Backend version: %u.%u (git tag: %s)\n",
-				major, minor, git_tag);
+		printf("Backend version: %u.%u (git tag: %s)\n", major, minor,
+		       git_tag);
 	else {
 		char err_str[1024];
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Unable to get backend version: %s (%i)\n", err_str, ret);
+		fprintf(stderr, "Unable to get backend version: %s (%i)\n",
+			err_str, ret);
 	}
 
 	printf("Backend description string: %s\n",
-			iio_context_get_description(ctx));
+	       iio_context_get_description(ctx));
 
 	unsigned int nb_ctx_attrs = iio_context_get_attrs_count(ctx);
 	if (nb_ctx_attrs > 0)
@@ -319,8 +325,9 @@ int main(int argc, char **argv)
 		else {
 			char err_str[1024];
 			iio_strerror(-ret, err_str, sizeof(err_str));
-			fprintf(stderr, "\tUnable to read IIO context attributes: %s (%i)\n",
-					err_str, ret);
+			fprintf(stderr,
+				"\tUnable to read IIO context attributes: %s (%i)\n",
+				err_str, ret);
 		}
 	}
 
@@ -352,16 +359,15 @@ int main(int argc, char **argv)
 				type_name = "input";
 
 			name = iio_channel_get_name(ch);
-			printf("\t\t\t%s: %s (%s",
-					iio_channel_get_id(ch),
-					name ? name : "", type_name);
+			printf("\t\t\t%s: %s (%s", iio_channel_get_id(ch),
+			       name ? name : "", type_name);
 
 			if (iio_channel_get_type(ch) == IIO_CHAN_TYPE_UNKNOWN)
 				printf(", WARN:iio_channel_get_type()=UNKNOWN");
 
 			if (iio_channel_is_scan_element(ch)) {
 				const struct iio_data_format *format =
-					iio_channel_get_data_format(ch);
+						iio_channel_get_data_format(ch);
 				char sign = format->is_signed ? 's' : 'u';
 				char repeat[12] = "";
 
@@ -370,14 +376,13 @@ int main(int argc, char **argv)
 
 				if (format->repeat > 1)
 					snprintf(repeat, sizeof(repeat), "X%u",
-						format->repeat);
+						 format->repeat);
 
 				printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n",
-					iio_channel_get_index(ch),
-					format->is_be ? 'b' : 'l',
-					sign, format->bits,
-					format->length, repeat,
-					format->shift);
+				       iio_channel_get_index(ch),
+				       format->is_be ? 'b' : 'l', sign,
+				       format->bits, format->length, repeat,
+				       format->shift);
 			} else {
 				printf(")\n");
 			}
@@ -387,13 +392,13 @@ int main(int argc, char **argv)
 				continue;
 
 			printf("\t\t\t%u channel-specific attributes found:\n",
-					nb_attrs);
+			       nb_attrs);
 
 			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
 				const char *attr = iio_channel_get_attr(ch, k);
-				ret = (int) iio_channel_attr_read(ch,
-						attr, buf, BUF_SIZE);
+				ret = (int)iio_channel_attr_read(ch, attr, buf,
+								 BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ", k, attr);
 
@@ -409,14 +414,13 @@ int main(int argc, char **argv)
 		unsigned int nb_attrs = iio_device_get_attrs_count(dev);
 		if (nb_attrs) {
 			printf("\t\t%u device-specific attributes found:\n",
-					nb_attrs);
+			       nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_attr(dev, j);
-				ret = (int) iio_device_attr_read(dev,
-						attr, buf, BUF_SIZE);
+				ret = (int)iio_device_attr_read(dev, attr, buf,
+								BUF_SIZE);
 
-				printf("\t\t\t\tattr %2u: %s ",
-						j, attr);
+				printf("\t\t\t\tattr %2u: %s ", j, attr);
 
 				if (ret > 0) {
 					printf("value: %s\n", buf);
@@ -430,14 +434,14 @@ int main(int argc, char **argv)
 		nb_attrs = iio_device_get_buffer_attrs_count(dev);
 		if (nb_attrs) {
 			printf("\t\t%u buffer-specific attributes found:\n",
-					nb_attrs);
+			       nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
-				const char *attr = iio_device_get_buffer_attr(dev, j);
-				ret = (int) iio_device_buffer_attr_read(dev,
-						attr, buf, BUF_SIZE);
+				const char *attr = iio_device_get_buffer_attr(
+						dev, j);
+				ret = (int)iio_device_buffer_attr_read(
+						dev, attr, buf, BUF_SIZE);
 
-				printf("\t\t\t\tattr %2u: %s ",
-						j, attr);
+				printf("\t\t\t\tattr %2u: %s ", j, attr);
 
 				if (ret > 0) {
 					printf("value: %s\n", buf);
@@ -452,13 +456,12 @@ int main(int argc, char **argv)
 		if (nb_attrs) {
 			printf("\t\t%u debug attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
-				const char *attr =
-					iio_device_get_debug_attr(dev, j);
+				const char *attr = iio_device_get_debug_attr(
+						dev, j);
 
-				ret = (int) iio_device_debug_attr_read(dev,
-						attr, buf, BUF_SIZE);
-				printf("\t\t\t\tdebug attr %2u: %s ",
-						j, attr);
+				ret = (int)iio_device_debug_attr_read(
+						dev, attr, buf, BUF_SIZE);
+				printf("\t\t\t\tdebug attr %2u: %s ", j, attr);
 				if (ret > 0) {
 					printf("value: %s\n", buf);
 				} else {
@@ -476,14 +479,15 @@ int main(int argc, char **argv)
 			} else {
 				name = iio_device_get_name(trig);
 				printf("\t\tCurrent trigger: %s(%s)\n",
-						iio_device_get_id(trig),
-						name ? name : "");
+				       iio_device_get_id(trig),
+				       name ? name : "");
 			}
 		} else if (ret == -ENOENT) {
 			printf("\t\tNo trigger on this device\n");
 		} else if (ret < 0) {
 			iio_strerror(-ret, buf, BUF_SIZE);
-			printf("ERROR: checking for trigger : %s (%i)\n", buf, ret);
+			printf("ERROR: checking for trigger : %s (%i)\n", buf,
+			       ret);
 		}
 	}
 

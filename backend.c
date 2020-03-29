@@ -15,10 +15,10 @@
  * Lesser General Public License for more details.
  */
 
+#include <string.h>
+
 #include "iio-config.h"
 #include "iio-private.h"
-
-#include <string.h>
 
 unsigned int iio_get_backends_count(void)
 {
@@ -43,7 +43,7 @@ unsigned int iio_get_backends_count(void)
 	return count;
 }
 
-const char * iio_get_backend(unsigned int index)
+const char *iio_get_backend(unsigned int index)
 {
 #ifdef WITH_LOCAL_BACKEND
 	if (index == 0)
