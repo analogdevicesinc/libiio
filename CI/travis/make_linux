@@ -31,6 +31,11 @@ handle_default() {
 		sh generateDocumentationAndDeploy.sh
 	fi
 	cd ..
+
+	# make sure we are up to date (once)
+	if [ "$LDIST" = "DO_NOT_DEPLOY" ] ; then
+		./CI/travis/check_kernel.sh
+	fi
 }
 
 handle_centos() {
