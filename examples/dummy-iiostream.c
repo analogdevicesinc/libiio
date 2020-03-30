@@ -114,7 +114,7 @@ static struct iio_device *dev;
 static struct iio_context *ctx;
 static struct iio_buffer  *rxbuf;
 static struct iio_channel **channels;
-static int channel_count;
+static unsigned int channel_count;
 
 static bool stop;
 static bool has_repeat;
@@ -146,17 +146,17 @@ static void shutdown()
 
 static void handle_sig(int sig)
 {
-	printf("Waiting for process to finish...\n");
+	printf("Waiting for process to finish... got signal : %d\n", sig);
 	stop = true;
 }
 
-static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes, void *d)
+static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes, __notused void *d)
 {
 	const struct iio_data_format *fmt = iio_channel_get_data_format(chn);
-	unsigned int repeat = has_repeat ? fmt->repeat : 1;
+	unsigned int j, repeat = has_repeat ? fmt->repeat : 1;
 
 	printf("%s ", iio_channel_get_id(chn));
-	for (int j = 0; j < repeat; ++j) {
+	for (j = 0; j < repeat; ++j) {
 		if (bytes == sizeof(int16_t))
 			printf("%" PRIi16 " ", ((int16_t *)src)[j]);
 		else if (bytes == sizeof(int64_t))
@@ -166,7 +166,7 @@ static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes,
 	return bytes * repeat;
 }
 
-static void usage(int argc, char *argv[])
+static void usage(__notused int argc, char *argv[])
 {
 	printf("Usage: %s [OPTION]\n", argv[0]);
 	printf("  -d\tdevice name (default \"iio_dummy_part_no\")\n");
@@ -227,13 +227,14 @@ int main (int argc, char **argv)
 	// Listen to ctrl+c and assert
 	signal(SIGINT, handle_sig);
 
-	unsigned int major, minor;
+	unsigned int i, j, major, minor;
 	char git_tag[8];
 	iio_library_get_version(&major, &minor, git_tag);
 	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
 
-	/* check for struct iio_data_format.repeat support */
-	has_repeat = major >= 0 && minor >= 8 ? true : false;
+	/* check for struct iio_data_format.repeat support
+	 * 0.8 has repeat support, so anything greater than that */
+	has_repeat = ((major * 10000) + minor) >= 8 ? true : false;
 
 	printf("* Acquiring IIO context\n");
 	assert((ctx = iio_create_default_context()) && "No context");
@@ -247,7 +248,7 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Initializing IIO streaming channels:\n");
-	for (int i = 0; i < iio_device_get_channels_count(dev); ++i) {
+	for (i = 0; i < iio_device_get_channels_count(dev); ++i) {
 		struct iio_channel *chn = iio_device_get_channel(dev, i);
 		if (iio_channel_is_scan_element(chn)) {
 			printf("%s\n", iio_channel_get_id(chn));
@@ -263,7 +264,7 @@ int main (int argc, char **argv)
 		perror("Channel array allocation failed");
 		shutdown();
 	}
-	for (int i = 0; i < channel_count; ++i) {
+	for (i = 0; i < channel_count; ++i) {
 		struct iio_channel *chn = iio_device_get_channel(dev, i);
 		if (iio_channel_is_scan_element(chn))
 			channels[i] = chn;
@@ -277,7 +278,7 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Enabling IIO streaming channels for buffered capture\n");
-	for (int i = 0; i < channel_count; ++i)
+	for (i = 0; i < channel_count; ++i)
 		iio_channel_enable(channels[i]);
 
 	printf("* Enabling IIO buffer trigger\n");
@@ -299,7 +300,11 @@ int main (int argc, char **argv)
 	while (!stop)
 	{
 		ssize_t nbytes_rx;
-		void *p_dat, *p_end;
+		/* we use a char pointer, rather than a void pointer, for p_dat & p_end
+		 * to ensure the compiler understands the size is a byte, and then we
+		 * can do math on it.
+		 */
+		char *p_dat, *p_end;
 		ptrdiff_t p_inc;
 		int64_t now_ts;
 
@@ -325,13 +330,13 @@ int main (int argc, char **argv)
 		switch (buffer_read_method)
 		{
 		case BUFFER_POINTER:
-			for (int i = 0; i < channel_count; ++i) {
+			for (i = 0; i < channel_count; ++i) {
 				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 
 				printf("%s ", iio_channel_get_id(channels[i]));
 				for (p_dat = iio_buffer_first(rxbuf, channels[i]); p_dat < p_end; p_dat += p_inc) {
-					for (int j = 0; j < repeat; ++j) {
+					for (j = 0; j < repeat; ++j) {
 						if (fmt->length/8 == sizeof(int16_t))
 							printf("%" PRIi16 " ", ((int16_t *)p_dat)[j]);
 						else if (fmt->length/8 == sizeof(int64_t))
@@ -355,9 +360,9 @@ int main (int argc, char **argv)
 		}
 		case CHANNEL_READ_RAW:
 		case CHANNEL_READ:
-			for (int i = 0; i < channel_count; ++i) {
+			for (i = 0; i < channel_count; ++i) {
 				uint8_t *buf;
-				size_t bytes;
+				size_t sample, bytes;
 				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 				size_t sample_size = fmt->length / 8 * repeat;
@@ -370,8 +375,8 @@ int main (int argc, char **argv)
 					bytes = iio_channel_read(channels[i], rxbuf, buf, sample_size * buffer_length);
 
 				printf("%s ", iio_channel_get_id(channels[i]));
-				for (int sample = 0; sample < bytes / sample_size; ++sample) {
-					for (int j = 0; j < repeat; ++j) {
+				for (sample = 0; sample < bytes / sample_size; ++sample) {
+					for (j = 0; j < repeat; ++j) {
 						if (fmt->length / 8 == sizeof(int16_t))
 							printf("%" PRIi16 " ", ((int16_t *)buf)[sample+j]);
 						else if (fmt->length / 8 == sizeof(int64_t))

@@ -85,7 +85,7 @@ static void shutdown()
 
 static void handle_sig(int sig)
 {
-	printf("Waiting for process to finish...\n");
+	printf("Waiting for process to finish... Got signal %d\n", sig);
 	stop = true;
 }
 
@@ -152,7 +152,7 @@ static bool get_adrv9009_stream_dev(struct iio_context *ctx, enum iodev d, struc
 }
 
 /* finds adrv9009 streaming IIO channels */
-static bool get_adrv9009_stream_ch(struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, char modify, struct iio_channel **chn)
+static bool get_adrv9009_stream_ch(__notused struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, char modify, struct iio_channel **chn)
 {
 	*chn = iio_device_find_channel(dev, modify ? get_ch_name_mod("voltage", chid, modify) : get_ch_name("voltage", chid), d == TX);
 	if (!*chn)
@@ -197,7 +197,7 @@ bool cfg_adrv9009_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, 
 }
 
 /* simple configuration and streaming */
-int main (int argc, char **argv)
+int main (__notused int argc, __notused char **argv)
 {
 	// Streaming devices
 	struct iio_device *tx;

@@ -87,7 +87,7 @@ static void shutdown()
 
 static void handle_sig(int sig)
 {
-	printf("Waiting for process to finish...\n");
+	printf("Waiting for process to finish... Got signal %d\n", sig);
 	stop = true;
 }
 
@@ -134,7 +134,7 @@ static bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct 
 }
 
 /* finds AD9361 streaming IIO channels */
-static bool get_ad9361_stream_ch(struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
+static bool get_ad9361_stream_ch(__notused struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
 {
 	*chn = iio_device_find_channel(dev, get_ch_name("voltage", chid), d == TX);
 	if (!*chn)
