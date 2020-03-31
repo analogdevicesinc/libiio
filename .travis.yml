@@ -66,9 +66,8 @@ matrix:
         - OS_VERSION=7
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
+      dist: bionic
       env:
-        - OS_TYPE=ubuntu_docker
-        - OS_VERSION=bionic
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - compiler: "gcc"
       os: osx
