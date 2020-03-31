@@ -43,7 +43,7 @@ static struct iio_channel *tx_chan[2] = { NULL, NULL };
 
 enum {
 	I_CHAN,
-	Q_CHAN
+	Q_CHAN,
 };
 
 #ifdef _WIN32
