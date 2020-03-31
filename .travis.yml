@@ -16,7 +16,9 @@ services:
 
 matrix:
   include:
-    - compiler: "gcc"
+    - stage: "Build & Deploy"
+
+      compiler: "gcc"
       dist: xenial
       env:
         - ARCH=arm
@@ -79,6 +81,10 @@ matrix:
       env:
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
 
+    - stage: "Trigger Next In Pipeline"
+      env:
+        - TRIGGER_NEXT_BUILD=true
+
 addons:
   artifacts: true
   ssh_known_hosts:
@@ -98,6 +104,7 @@ script:
   - if [[ "$ARCH" == "arm" && "$TRAVIS_OS_NAME" == "linux" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_linux_qemu ; fi
   - if [[ -z "$ARCH" && "$TRAVIS_OS_NAME" == "linux" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_linux libiio "$OS_TYPE" "$OS_VERSION" ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_darwin; fi
+  - if [[ "$TRIGGER_NEXT_BUILD" == "true" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/after_deploy; fi
 
 notifications:
   email:
@@ -159,6 +166,3 @@ deploy:
     password:
       secure: KfORvnPyLlMANLpcwJjcO44Kt6meP614omJk2GloD+B51SuV64O6N31VDOTi2xqioEk9Cajq7tmNte5YoHVUjL9iWFsBblpzxZoXcy40dn4pFN0kMiE8scszxckbDwuBZhokUVZ2fhfLKf/8xORcwjS3vKqSj5HwQKKvVgukSbQ=
     distributions: sdist
-
-after_deploy:
-  - ${TRAVIS_BUILD_DIR}/CI/travis/after_deploy

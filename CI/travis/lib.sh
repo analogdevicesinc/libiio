@@ -1,12 +1,16 @@
 #!/bin/sh -e
 
+if [ "$TRIGGER_NEXT_BUILD" = "true" ] && [ "$TRIGGERING_NEXT_BUILD" != "true" ] ; then
+	exit 0
+fi
+
 export TRAVIS_API_URL="https://api.travis-ci.org"
 LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 
 HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_NO_INSTALL_CLEANUP
 
-COMMON_SCRIPTS="jobs_running_cnt.py inside_docker.sh"
+COMMON_SCRIPTS="inside_docker.sh"
 
 echo_red()   { printf "\033[1;31m$*\033[m\n"; }
 echo_green() { printf "\033[1;32m$*\033[m\n"; }
@@ -65,17 +69,6 @@ should_trigger_next_builds() {
 	[ "$TRAVIS_PULL_REQUEST" = "false" ] || return 1
 
 	pipeline_branch "$branch" || return 1
-
-	local python_script="$(get_script_path jobs_running_cnt.py)"
-	if [ -z "$python_script" ] ; then
-		echo "Could not find 'jobs_running_cnt.py'"
-		return 1
-	fi
-
-	local jobs_cnt=$(python $python_script)
-
-	# Trigger next job if we are the last job running
-	[ "$jobs_cnt" = "1" ]
 }
 
 trigger_build() {
