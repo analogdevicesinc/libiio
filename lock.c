@@ -38,7 +38,7 @@ struct iio_mutex {
 #endif
 };
 
-struct iio_mutex * iio_mutex_create(void)
+struct iio_mutex *iio_mutex_create(void)
 {
 	struct iio_mutex *lock = malloc(sizeof(*lock));
 

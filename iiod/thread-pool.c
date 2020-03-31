@@ -15,8 +15,6 @@
  * Lesser General Public License for more details.
  */
 
-#include "thread-pool.h"
-
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
@@ -24,6 +22,8 @@
 #include <stdlib.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+
+#include "thread-pool.h"
 
 /*
  * This is used to make sure that all active threads have finished cleanup when
@@ -63,7 +63,7 @@ static void thread_pool_thread_stopped(struct thread_pool *pool)
 	pthread_mutex_unlock(&pool->thread_count_lock);
 }
 
-static void * thread_body(void *d)
+static void *thread_body(void *d)
 {
 	struct thread_body_data *pdata = d;
 
@@ -76,8 +76,8 @@ static void * thread_body(void *d)
 }
 
 int thread_pool_add_thread(struct thread_pool *pool,
-		void (*f)(struct thread_pool *, void *),
-		void *d, const char *name)
+		void (*f)(struct thread_pool *, void *), void *d,
+		const char *name)
 {
 	struct thread_body_data *pdata;
 	sigset_t sigmask, oldsigmask;
@@ -120,7 +120,7 @@ int thread_pool_add_thread(struct thread_pool *pool,
 	return ret;
 }
 
-struct thread_pool * thread_pool_new(void)
+struct thread_pool *thread_pool_new(void)
 {
 	struct thread_pool *pool;
 

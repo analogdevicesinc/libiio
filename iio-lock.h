@@ -21,7 +21,7 @@
 
 struct iio_mutex;
 
-struct iio_mutex * iio_mutex_create(void);
+struct iio_mutex *iio_mutex_create(void);
 void iio_mutex_destroy(struct iio_mutex *lock);
 
 void iio_mutex_lock(struct iio_mutex *lock);

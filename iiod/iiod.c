@@ -16,12 +16,6 @@
  *
  * */
 
-#include "../debug.h"
-#include "../iio.h"
-#include "../iio-config.h"
-#include "ops.h"
-#include "thread-pool.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -34,18 +28,24 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/eventfd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include "../debug.h"
+#include "../iio-config.h"
+#include "../iio.h"
+#include "ops.h"
+#include "thread-pool.h"
+
 #ifdef HAVE_AVAHI
-#include <avahi-common/thread-watch.h>
-#include <avahi-common/error.h>
-#include <avahi-common/alternative.h>
-#include <avahi-common/malloc.h>
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
+#include <avahi-common/alternative.h>
 #include <avahi-common/domain.h>
+#include <avahi-common/error.h>
+#include <avahi-common/malloc.h>
+#include <avahi-common/thread-watch.h>
 #endif
 
 #define MY_NAME "iiod"
@@ -61,7 +61,6 @@ struct client_data {
 bool server_demux;
 
 struct thread_pool *main_thread_pool;
-
 
 static struct sockaddr_in sockaddr = {
 	.sin_family = AF_INET,
@@ -87,15 +86,15 @@ static struct sockaddr_in6 sockaddr6 = {
 #endif /* HAVE_IPV6 */
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"version", no_argument, 0, 'V'},
-	  {"debug", no_argument, 0, 'd'},
-	  {"demux", no_argument, 0, 'D'},
-	  {"interactive", no_argument, 0, 'i'},
-	  {"aio", no_argument, 0, 'a'},
-	  {"ffs", required_argument, 0, 'F'},
-	  {"nb-pipes", required_argument, 0, 'n'},
-	  {0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "version", no_argument, 0, 'V' },
+	{ "debug", no_argument, 0, 'd' },
+	{ "demux", no_argument, 0, 'D' },
+	{ "interactive", no_argument, 0, 'i' },
+	{ "aio", no_argument, 0, 'a' },
+	{ "ffs", required_argument, 0, 'F' },
+	{ "nb-pipes", required_argument, 0, 'n' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -124,11 +123,11 @@ static struct avahi_data {
 	AvahiThreadedPoll *poll;
 	AvahiClient *client;
 	AvahiEntryGroup *group;
-	char * name;
+	char *name;
 } avahi;
 
 static void create_services(AvahiClient *c);
-static AvahiClient * client_new(void);
+static AvahiClient *client_new(void);
 
 static void client_free()
 {
@@ -159,11 +158,11 @@ static void shutdown_avahi()
 	}
 }
 
-static void __avahi_group_cb(AvahiEntryGroup *group,
-		AvahiEntryGroupState state, void *d)
+static void __avahi_group_cb(
+		AvahiEntryGroup *group, AvahiEntryGroupState state, void *d)
 {
 	/* Called whenever the entry group state changes */
-	if (!group)  {
+	if (!group) {
 		ERROR("__avahi_group_cb with no valid group\n");
 		return;
 	}
@@ -171,40 +170,41 @@ static void __avahi_group_cb(AvahiEntryGroup *group,
 	avahi.group = group;
 
 	switch (state) {
-		case AVAHI_ENTRY_GROUP_ESTABLISHED :
-			INFO("Avahi: Service '%s' successfully established.\n",
-					avahi.name);
-			break;
-		case AVAHI_ENTRY_GROUP_COLLISION : {
-			char *n;
-			/* A service name collision, pick a new name */
-			n = avahi_alternative_service_name(avahi.name);
-			avahi_free(avahi.name);
-			avahi.name = n;
-			INFO("Avahi: Group Service name collision, renaming service to '%s'\n",
-					avahi.name);
-			create_services(avahi_entry_group_get_client(group));
-			break;
-		}
-		case AVAHI_ENTRY_GROUP_FAILURE :
-			ERROR("Entry group failure: %s\n",
-					avahi_strerror(avahi_client_errno(
-						avahi_entry_group_get_client(group))));
-			break;
-		case AVAHI_ENTRY_GROUP_UNCOMMITED:
-			/* This is normal,
+	case AVAHI_ENTRY_GROUP_ESTABLISHED:
+		INFO("Avahi: Service '%s' successfully established.\n",
+				avahi.name);
+		break;
+	case AVAHI_ENTRY_GROUP_COLLISION: {
+		char *n;
+		/* A service name collision, pick a new name */
+		n = avahi_alternative_service_name(avahi.name);
+		avahi_free(avahi.name);
+		avahi.name = n;
+		INFO("Avahi: Group Service name collision, renaming service to '%s'\n",
+				avahi.name);
+		create_services(avahi_entry_group_get_client(group));
+		break;
+	}
+	case AVAHI_ENTRY_GROUP_FAILURE:
+		ERROR("Entry group failure: %s\n",
+				avahi_strerror(avahi_client_errno(
+						avahi_entry_group_get_client(
+								group))));
+		break;
+	case AVAHI_ENTRY_GROUP_UNCOMMITED:
+		/* This is normal,
 			 * since we commit things in the create_services()
 			 */
-			DEBUG("Avahi: Group uncommited\n");
-			break;
-		case AVAHI_ENTRY_GROUP_REGISTERING:
-			DEBUG("Avahi: Group registering\n");
-			break;
+		DEBUG("Avahi: Group uncommited\n");
+		break;
+	case AVAHI_ENTRY_GROUP_REGISTERING:
+		DEBUG("Avahi: Group registering\n");
+		break;
 	}
 }
 
-static void __avahi_client_cb(AvahiClient *client,
-		AvahiClientState state, void *d)
+static void __avahi_client_cb(
+		AvahiClient *client, AvahiClientState state, void *d)
 {
 	if (!client) {
 		ERROR("__avahi_client_cb with no valid client\n");
@@ -212,48 +212,48 @@ static void __avahi_client_cb(AvahiClient *client,
 	}
 
 	switch (state) {
-		case AVAHI_CLIENT_S_RUNNING:
-			/* Same as AVAHI_SERVER_RUNNING */
-			DEBUG("Avahi: create services\n");
-			/* The server has startup successfully, so create our services */
-			create_services(client);
-			break;
-		case AVAHI_CLIENT_FAILURE:
-			ERROR("Avahi: Client failure: %s\n",
-					avahi_strerror(avahi_client_errno(client)));
-			client_free();
-			avahi.client = client_new();
-			break;
-		case AVAHI_CLIENT_S_COLLISION:
-			/* Same as AVAHI_SERVER_COLLISION */
-			/* When the server is back in AVAHI_SERVER_RUNNING state
+	case AVAHI_CLIENT_S_RUNNING:
+		/* Same as AVAHI_SERVER_RUNNING */
+		DEBUG("Avahi: create services\n");
+		/* The server has startup successfully, so create our services */
+		create_services(client);
+		break;
+	case AVAHI_CLIENT_FAILURE:
+		ERROR("Avahi: Client failure: %s\n",
+				avahi_strerror(avahi_client_errno(client)));
+		client_free();
+		avahi.client = client_new();
+		break;
+	case AVAHI_CLIENT_S_COLLISION:
+		/* Same as AVAHI_SERVER_COLLISION */
+		/* When the server is back in AVAHI_SERVER_RUNNING state
 			 * we will register them again with the new host name. */
-			DEBUG("Avahi: Client collision\n");
-			/* Let's drop our registered services.*/
-			if (avahi.group)
-				avahi_entry_group_reset(avahi.group);
-			break;
-		case AVAHI_CLIENT_S_REGISTERING:
-			/* Same as AVAHI_SERVER_REGISTERING */
-			DEBUG("Avahi: Client group reset\n");
-			if (avahi.group)
-				avahi_entry_group_reset(avahi.group);
-			break;
-		case AVAHI_CLIENT_CONNECTING:
-			DEBUG("Avahi: Client Connecting\n");
-			break;
+		DEBUG("Avahi: Client collision\n");
+		/* Let's drop our registered services.*/
+		if (avahi.group)
+			avahi_entry_group_reset(avahi.group);
+		break;
+	case AVAHI_CLIENT_S_REGISTERING:
+		/* Same as AVAHI_SERVER_REGISTERING */
+		DEBUG("Avahi: Client group reset\n");
+		if (avahi.group)
+			avahi_entry_group_reset(avahi.group);
+		break;
+	case AVAHI_CLIENT_CONNECTING:
+		DEBUG("Avahi: Client Connecting\n");
+		break;
 	}
 
 	/* NOTE: group is freed by avahi_client_free */
 }
 
-static AvahiClient * client_new(void)
+static AvahiClient *client_new(void)
 {
 	int ret;
-	AvahiClient * client;
+	AvahiClient *client;
 
-	client = avahi_client_new(avahi_threaded_poll_get(avahi.poll),
-			0, __avahi_client_cb, NULL, &ret);
+	client = avahi_client_new(avahi_threaded_poll_get(avahi.poll), 0,
+			__avahi_client_cb, NULL, &ret);
 	if (!client) {
 		ERROR("Avahi: failure creating client: %s (%d)\n",
 				avahi_strerror(ret), ret);
@@ -261,7 +261,6 @@ static AvahiClient * client_new(void)
 
 	return client;
 }
-
 
 static void create_services(AvahiClient *c)
 {
@@ -286,9 +285,9 @@ static void create_services(AvahiClient *c)
 		return;
 	}
 
-	ret = avahi_entry_group_add_service(avahi.group,
-			AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-			0, avahi.name, "_iio._tcp", NULL, NULL, IIOD_PORT, NULL);
+	ret = avahi_entry_group_add_service(avahi.group, AVAHI_IF_UNSPEC,
+			AVAHI_PROTO_UNSPEC, 0, avahi.name, "_iio._tcp", NULL,
+			NULL, IIOD_PORT, NULL);
 	if (ret < 0) {
 		if (ret == AVAHI_ERR_COLLISION) {
 			char *n;
@@ -301,18 +300,20 @@ static void create_services(AvahiClient *c)
 			create_services(c);
 			return;
 		}
-		ERROR("Failed to add _iio._tcp service: %s\n", avahi_strerror(ret));
+		ERROR("Failed to add _iio._tcp service: %s\n",
+				avahi_strerror(ret));
 		goto fail;
 	}
 
 	ret = avahi_entry_group_commit(avahi.group);
 	if (ret < 0) {
-		ERROR("Failed to commit entry group: %s\n", avahi_strerror(ret));
+		ERROR("Failed to commit entry group: %s\n",
+				avahi_strerror(ret));
 		goto fail;
 	}
 
-	INFO("Avahi: Registered '%s' to ZeroConf server %s\n",
-			avahi.name, avahi_client_get_version_string(c));
+	INFO("Avahi: Registered '%s' to ZeroConf server %s\n", avahi.name,
+			avahi_client_get_version_string(c));
 
 	return;
 
@@ -364,24 +365,22 @@ static void stop_avahi(void)
 }
 #endif /* HAVE_AVAHI */
 
-
 static void usage(void)
 {
 	unsigned int i;
 
 	printf("Usage:\n\t" MY_NAME " [OPTIONS ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
+		printf("\t-%c, --%s\n\t\t\t%s\n", options[i].val,
+				options[i].name, options_descriptions[i]);
 }
 
 static void client_thd(struct thread_pool *pool, void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug,
-			true, false, pool);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug, true, false,
+			pool);
 
 	INFO("Client exited\n");
 	close(cdata->fd);
@@ -412,17 +411,15 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 		fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
 	}
 
-	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
-			false, use_aio, main_thread_pool);
+	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose, false, use_aio,
+			main_thread_pool);
 	return EXIT_SUCCESS;
 }
 
 static int main_server(struct iio_context *ctx, bool debug)
 {
-	int ret, fd = -1, yes = 1,
-	    keepalive_time = 10,
-	    keepalive_intvl = 10,
-	    keepalive_probes = 6;
+	int ret, fd = -1, yes = 1, keepalive_time = 10, keepalive_intvl = 10,
+		 keepalive_probes = 6;
 	struct pollfd pfd[2];
 	char err_str[1024];
 	bool ipv6;
@@ -430,9 +427,8 @@ static int main_server(struct iio_context *ctx, bool debug)
 	bool avahi_started;
 #endif
 
-	INFO("Starting IIO Daemon version %u.%u.%s\n",
-			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
-			LIBIIO_VERSION_GIT);
+	INFO("Starting IIO Daemon version %u.%u.%s\n", LIBIIO_VERSION_MAJOR,
+			LIBIIO_VERSION_MINOR, LIBIIO_VERSION_GIT);
 
 #ifdef HAVE_IPV6
 	fd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -450,11 +446,11 @@ static int main_server(struct iio_context *ctx, bool debug)
 
 #ifdef HAVE_IPV6
 	if (ipv6)
-		ret = bind(fd, (struct sockaddr *) &sockaddr6,
+		ret = bind(fd, (struct sockaddr *)&sockaddr6,
 				sizeof(sockaddr6));
 #endif
 	if (!ipv6)
-		ret = bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
+		ret = bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
 	if (ret < 0) {
 		iio_strerror(errno, err_str, sizeof(err_str));
 		ERROR("Bind failed: %s\n", err_str);
@@ -492,14 +488,14 @@ static int main_server(struct iio_context *ctx, bool debug)
 		if (pfd[1].revents & POLLIN) /* STOP event */
 			break;
 
-		new = accept4(fd, (struct sockaddr *) &caddr, &addr_len,
-			SOCK_NONBLOCK);
+		new = accept4(fd, (struct sockaddr *)&caddr, &addr_len,
+				SOCK_NONBLOCK);
 		if (new == -1) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
 			iio_strerror(errno, err_str, sizeof(err_str));
 			ERROR("Failed to create connection socket: %s\n",
-				err_str);
+					err_str);
 			continue;
 		}
 
@@ -529,11 +525,12 @@ static int main_server(struct iio_context *ctx, bool debug)
 		INFO("New client connected from %s\n",
 				inet_ntoa(caddr.sin_addr));
 
-		ret = thread_pool_add_thread(main_thread_pool, client_thd, cdata, "net_client_thd");
+		ret = thread_pool_add_thread(main_thread_pool, client_thd,
+				cdata, "net_client_thd");
 		if (ret) {
 			iio_strerror(ret, err_str, sizeof(err_str));
 			ERROR("Failed to create new client thread: %s\n",
-				err_str);
+					err_str);
 			close(new);
 			free(cdata);
 		}
@@ -565,8 +562,8 @@ int main(int argc, char **argv)
 	char err_str[1024];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:", options,
+				&option_index)) != -1) {
 		switch (c) {
 		case 'd':
 			debug = true;
@@ -641,9 +638,8 @@ int main(int argc, char **argv)
 #ifdef WITH_IIOD_USBD
 		/* We pass use_aio == true directly, this is ensured to be true
 		 * by the CMake script. */
-		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				debug, true, (unsigned int) nb_pipes,
-				main_thread_pool);
+		ret = start_usb_daemon(ctx, ffs_mountpoint, debug, true,
+				(unsigned int)nb_pipes, main_thread_pool);
 		if (ret) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			ERROR("Unable to start USB daemon: %s\n", err_str);
@@ -658,7 +654,7 @@ int main(int argc, char **argv)
 	else
 		ret = main_server(ctx, debug);
 
-	/*
+		/*
 	 * In case we got here through an error in the main thread make sure all
 	 * the worker threads are signaled to shutdown.
 	 */

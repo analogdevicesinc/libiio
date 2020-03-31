@@ -16,11 +16,11 @@
  *
  * */
 
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <string.h>
+
+#include "iio-config.h"
+#include "iio-private.h"
 
 struct callback_wrapper_data {
 	ssize_t (*callback)(const struct iio_channel *, void *, size_t, void *);
@@ -36,11 +36,11 @@ static bool device_is_high_speed(const struct iio_device *dev)
 	 * -EBADF or -EINVAL otherwise. */
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	return !!ops->get_buffer &&
-		(ops->get_buffer(dev, NULL, 0, NULL, 0) != -ENOSYS);
+	       (ops->get_buffer(dev, NULL, 0, NULL, 0) != -ENOSYS);
 }
 
-struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count, bool cyclic)
+struct iio_buffer *iio_device_create_buffer(
+		const struct iio_device *dev, size_t samples_count, bool cyclic)
 {
 	int ret = -EINVAL;
 	struct iio_buffer *buf;
@@ -93,8 +93,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		}
 	}
 
-	buf->sample_size = iio_device_get_sample_size_mask(dev,
-			buf->mask, dev->words);
+	buf->sample_size = iio_device_get_sample_size_mask(
+			dev, buf->mask, dev->words);
 	buf->data_length = buf->length;
 	return buf;
 
@@ -143,8 +143,8 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (read >= 0) {
 		buffer->data_length = read;
-		buffer->sample_size = iio_device_get_sample_size_mask(dev,
-				buffer->mask, dev->words);
+		buffer->sample_size = iio_device_get_sample_size_mask(
+				dev, buffer->mask, dev->words);
 	}
 	return read;
 }
@@ -156,11 +156,11 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 
 	if (buffer->dev_is_high_speed) {
 		void *buf;
-		ret = dev->ctx->ops->get_buffer(dev, &buf,
-				buffer->data_length, buffer->mask, dev->words);
+		ret = dev->ctx->ops->get_buffer(dev, &buf, buffer->data_length,
+				buffer->mask, dev->words);
 		if (ret >= 0) {
 			buffer->buffer = buf;
-			ret = (ssize_t) buffer->data_length;
+			ret = (ssize_t)buffer->data_length;
 		}
 	} else {
 		void *ptr = buffer->buffer;
@@ -168,16 +168,16 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 
 		/* iio_device_write_raw doesn't guarantee that all bytes are
 		 * written */
-		for (tmp_len = buffer->data_length; tmp_len; ) {
+		for (tmp_len = buffer->data_length; tmp_len;) {
 			ret = iio_device_write_raw(dev, ptr, tmp_len);
 			if (ret < 0)
 				goto out_reset_data_length;
 
 			tmp_len -= ret;
-			ptr = (void *) ((uintptr_t) ptr + ret);
+			ptr = (void *)((uintptr_t)ptr + ret);
 		}
 
-		ret = (ssize_t) buffer->data_length;
+		ret = (ssize_t)buffer->data_length;
 	}
 
 out_reset_data_length:
@@ -197,11 +197,11 @@ ssize_t iio_buffer_push_partial(struct iio_buffer *buffer, size_t samples_count)
 }
 
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
-		ssize_t (*callback)(const struct iio_channel *,
-			void *, size_t, void *), void *d)
+		ssize_t (*callback)(const struct iio_channel *, void *, size_t,
+				void *),
+		void *d)
 {
-	uintptr_t ptr = (uintptr_t) buffer->buffer,
-		  start = ptr,
+	uintptr_t ptr = (uintptr_t)buffer->buffer, start = ptr,
 		  end = ptr + buffer->data_length;
 	const struct iio_device *dev = buffer->dev;
 	ssize_t processed = 0;
@@ -212,7 +212,7 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 	if (buffer->data_length < buffer->dev_sample_size)
 		return 0;
 
-	while (end - ptr >= (size_t) buffer->sample_size) {
+	while (end - ptr >= (size_t)buffer->sample_size) {
 		unsigned int i;
 
 		for (i = 0; i < dev->nb_channels; i++) {
@@ -231,34 +231,34 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 
 			/* Test if the client wants samples from this channel */
 			if (TEST_BIT(dev->mask, chn->number)) {
-				ssize_t ret = callback(chn,
-						(void *) ptr, length, d);
+				ssize_t ret = callback(
+						chn, (void *)ptr, length, d);
 				if (ret < 0)
 					return ret;
 				else
 					processed += ret;
 			}
 
-			if (i == dev->nb_channels - 1 || dev->channels[
-					i + 1]->index != chn->index)
+			if (i == dev->nb_channels - 1 ||
+					dev->channels[i + 1]->index !=
+							chn->index)
 				ptr += length * chn->format.repeat;
 		}
 	}
 	return processed;
 }
 
-void * iio_buffer_start(const struct iio_buffer *buffer)
+void *iio_buffer_start(const struct iio_buffer *buffer)
 {
 	return buffer->buffer;
 }
 
-void * iio_buffer_first(const struct iio_buffer *buffer,
-		const struct iio_channel *chn)
+void *iio_buffer_first(
+		const struct iio_buffer *buffer, const struct iio_channel *chn)
 {
 	size_t len;
 	unsigned int i;
-	uintptr_t ptr = (uintptr_t) buffer->buffer,
-		  start = ptr;
+	uintptr_t ptr = (uintptr_t)buffer->buffer, start = ptr;
 
 	if (!iio_channel_is_enabled(chn))
 		return iio_buffer_end(buffer);
@@ -287,17 +287,17 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 	len = chn->format.length / 8;
 	if ((ptr - start) % len)
 		ptr += len - ((ptr - start) % len);
-	return (void *) ptr;
+	return (void *)ptr;
 }
 
 ptrdiff_t iio_buffer_step(const struct iio_buffer *buffer)
 {
-	return (ptrdiff_t) buffer->sample_size;
+	return (ptrdiff_t)buffer->sample_size;
 }
 
-void * iio_buffer_end(const struct iio_buffer *buffer)
+void *iio_buffer_end(const struct iio_buffer *buffer)
 {
-	return (void *) ((uintptr_t) buffer->buffer + buffer->data_length);
+	return (void *)((uintptr_t)buffer->buffer + buffer->data_length);
 }
 
 void iio_buffer_set_data(struct iio_buffer *buf, void *data)
@@ -305,12 +305,12 @@ void iio_buffer_set_data(struct iio_buffer *buf, void *data)
 	buf->userdata = data;
 }
 
-void * iio_buffer_get_data(const struct iio_buffer *buf)
+void *iio_buffer_get_data(const struct iio_buffer *buf)
 {
 	return buf->userdata;
 }
 
-const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
+const struct iio_device *iio_buffer_get_device(const struct iio_buffer *buf)
 {
 	return buf->dev;
 }

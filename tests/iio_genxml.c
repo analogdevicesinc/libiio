@@ -38,11 +38,11 @@ enum backend {
 };
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"xml", required_argument, 0, 'x'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
-	  {0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "xml", required_argument, 0, 'x' },
+	{ "network", required_argument, 0, 'n' },
+	{ "uri", required_argument, 0, 'u' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -56,13 +56,11 @@ static void usage(void)
 {
 	unsigned int i;
 
-	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t"
-			MY_NAME " [-u <uri>]\n\t"
-			MY_NAME " [-n <hostname>]\n\nOptions:\n");
+	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t" MY_NAME
+	       " [-u <uri>]\n\t" MY_NAME " [-n <hostname>]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
+		printf("\t-%c, --%s\n\t\t\t%s\n", options[i].val,
+				options[i].name, options_descriptions[i]);
 }
 
 int main(int argc, char **argv)
@@ -75,8 +73,8 @@ int main(int argc, char **argv)
 	const char *arg_ip = NULL;
 	enum backend backend = LOCAL;
 
-	while ((c = getopt_long(argc, argv, "+hn:x:u:",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "+hn:x:u:", options,
+				&option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -112,7 +110,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (backend == AUTO) 
+	if (backend == AUTO)
 		ctx = iio_create_context_from_uri(arg_uri);
 	else if (backend == XML)
 		ctx = iio_create_xml_context(arg_xml);

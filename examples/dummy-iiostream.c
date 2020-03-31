@@ -73,16 +73,15 @@
  *
  **/
 
+#include <assert.h>
+#include <errno.h>
+#include <getopt.h>
+#include <inttypes.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
-#include <signal.h>
-#include <stdio.h>
-#include <errno.h>
-#include <getopt.h>
-#include <inttypes.h>
 
 #ifdef __APPLE__
 #include <iio/iio.h>
@@ -92,14 +91,13 @@
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-static char *name        = "iio_dummy_part_no";
+static char *name = "iio_dummy_part_no";
 static char *trigger_str = "instance1";
 static int buffer_length = 1;
-static int count         = -1;
+static int count = -1;
 
 // libiio supports multiple methods for reading data from a buffer
-enum {
-	BUFFER_POINTER,
+enum { BUFFER_POINTER,
 	SAMPLE_CALLBACK,
 	CHANNEL_READ_RAW,
 	CHANNEL_READ,
@@ -112,7 +110,7 @@ static struct iio_device *dev;
 
 /* IIO structs required for streaming */
 static struct iio_context *ctx;
-static struct iio_buffer  *rxbuf;
+static struct iio_buffer *rxbuf;
 static struct iio_channel **channels;
 static int channel_count;
 
@@ -124,10 +122,14 @@ static void shutdown()
 {
 	int ret;
 
-	if (channels) { free(channels); }
+	if (channels) {
+		free(channels);
+	}
 
 	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
+	if (rxbuf) {
+		iio_buffer_destroy(rxbuf);
+	}
 
 	printf("* Disassociate trigger\n");
 	if (dev) {
@@ -135,12 +137,15 @@ static void shutdown()
 		if (ret < 0) {
 			char buf[256];
 			iio_strerror(-ret, buf, sizeof(buf));
-			fprintf(stderr, "%s (%d) while Disassociate trigger\n", buf, ret);
+			fprintf(stderr, "%s (%d) while Disassociate trigger\n",
+					buf, ret);
 		}
 	}
 
 	printf("* Destroying context\n");
-	if (ctx) { iio_context_destroy(ctx); }
+	if (ctx) {
+		iio_context_destroy(ctx);
+	}
 	exit(0);
 }
 
@@ -150,7 +155,8 @@ static void handle_sig(int sig)
 	stop = true;
 }
 
-static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes, void *d)
+static ssize_t sample_cb(
+		const struct iio_channel *chn, void *src, size_t bytes, void *d)
 {
 	const struct iio_data_format *fmt = iio_channel_get_data_format(chn);
 	unsigned int repeat = has_repeat ? fmt->repeat : 1;
@@ -181,8 +187,7 @@ static void parse_options(int argc, char *argv[])
 	int c;
 
 	while ((c = getopt(argc, argv, "d:t:b:r:c:h")) != -1) {
-		switch (c)
-		{
+		switch (c) {
 		case 'd':
 			name = optarg;
 			break;
@@ -193,7 +198,8 @@ static void parse_options(int argc, char *argv[])
 			buffer_length = atoi(optarg);
 			break;
 		case 'r':
-			if (atoi(optarg) >= 0 && atoi(optarg) < MAX_READ_METHOD) {
+			if (atoi(optarg) >= 0 &&
+					atoi(optarg) < MAX_READ_METHOD) {
 				buffer_read_method = atoi(optarg);
 			} else {
 				usage(argc, argv);
@@ -217,7 +223,7 @@ static void parse_options(int argc, char *argv[])
 }
 
 /* simple configuration and streaming */
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
 	// Hardware trigger
 	struct iio_device *trigger;
@@ -286,7 +292,8 @@ int main (int argc, char **argv)
 		shutdown();
 	}
 
-	printf("* Creating non-cyclic IIO buffers with %d samples\n", buffer_length);
+	printf("* Creating non-cyclic IIO buffers with %d samples\n",
+			buffer_length);
 	rxbuf = iio_device_create_buffer(dev, buffer_length, false);
 	if (!rxbuf) {
 		perror("Could not create buffer");
@@ -294,10 +301,10 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
-	bool has_ts = strcmp(iio_channel_get_id(channels[channel_count-1]), "timestamp") == 0;
+	bool has_ts = strcmp(iio_channel_get_id(channels[channel_count - 1]),
+				      "timestamp") == 0;
 	int64_t last_ts = 0;
-	while (!stop)
-	{
+	while (!stop) {
 		ssize_t nbytes_rx;
 		void *p_dat, *p_end;
 		ptrdiff_t p_inc;
@@ -315,27 +322,43 @@ int main (int argc, char **argv)
 
 		// Print timestamp delta in ms
 		if (has_ts)
-			for (p_dat = iio_buffer_first(rxbuf, channels[channel_count-1]); p_dat < p_end; p_dat += p_inc) {
+			for (p_dat = iio_buffer_first(rxbuf,
+					     channels[channel_count - 1]);
+					p_dat < p_end; p_dat += p_inc) {
 				now_ts = (((int64_t *)p_dat)[0]);
-				printf("[%04" PRId64 "] ", last_ts > 0 ? (now_ts - last_ts)/1000/1000 : 0);
+				printf("[%04" PRId64 "] ",
+						last_ts > 0 ? (now_ts - last_ts) /
+										1000 /
+										1000
+							    : 0);
 				last_ts = now_ts;
 			}
 
 		// Print each captured sample
-		switch (buffer_read_method)
-		{
+		switch (buffer_read_method) {
 		case BUFFER_POINTER:
 			for (int i = 0; i < channel_count; ++i) {
-				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
-				unsigned int repeat = has_repeat ? fmt->repeat : 1;
+				const struct iio_data_format *fmt =
+						iio_channel_get_data_format(
+								channels[i]);
+				unsigned int repeat = has_repeat ? fmt->repeat
+								 : 1;
 
 				printf("%s ", iio_channel_get_id(channels[i]));
-				for (p_dat = iio_buffer_first(rxbuf, channels[i]); p_dat < p_end; p_dat += p_inc) {
+				for (p_dat = iio_buffer_first(
+						     rxbuf, channels[i]);
+						p_dat < p_end; p_dat += p_inc) {
 					for (int j = 0; j < repeat; ++j) {
-						if (fmt->length/8 == sizeof(int16_t))
-							printf("%" PRIi16 " ", ((int16_t *)p_dat)[j]);
-						else if (fmt->length/8 == sizeof(int64_t))
-							printf("%" PRId64 " ", ((int64_t *)p_dat)[j]);
+						if (fmt->length / 8 ==
+								sizeof(int16_t))
+							printf("%" PRIi16 " ",
+									((int16_t *)p_dat)
+											[j]);
+						else if (fmt->length / 8 ==
+								sizeof(int64_t))
+							printf("%" PRId64 " ",
+									((int64_t *)p_dat)
+											[j]);
 					}
 				}
 			}
@@ -348,7 +371,8 @@ int main (int argc, char **argv)
 			if (ret < 0) {
 				char buf[256];
 				iio_strerror(-ret, buf, sizeof(buf));
-				fprintf(stderr, "%s (%d) while processing buffer\n", buf, ret);
+				fprintf(stderr, "%s (%d) while processing buffer\n",
+						buf, ret);
 			}
 			printf("\n");
 			break;
@@ -358,24 +382,39 @@ int main (int argc, char **argv)
 			for (int i = 0; i < channel_count; ++i) {
 				uint8_t *buf;
 				size_t bytes;
-				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
-				unsigned int repeat = has_repeat ? fmt->repeat : 1;
+				const struct iio_data_format *fmt =
+						iio_channel_get_data_format(
+								channels[i]);
+				unsigned int repeat = has_repeat ? fmt->repeat
+								 : 1;
 				size_t sample_size = fmt->length / 8 * repeat;
 
 				buf = malloc(sample_size * buffer_length);
 
 				if (buffer_read_method == CHANNEL_READ_RAW)
-					bytes = iio_channel_read_raw(channels[i], rxbuf, buf, sample_size * buffer_length);
+					bytes = iio_channel_read_raw(
+							channels[i], rxbuf, buf,
+							sample_size * buffer_length);
 				else
-					bytes = iio_channel_read(channels[i], rxbuf, buf, sample_size * buffer_length);
+					bytes = iio_channel_read(channels[i],
+							rxbuf, buf,
+							sample_size * buffer_length);
 
 				printf("%s ", iio_channel_get_id(channels[i]));
-				for (int sample = 0; sample < bytes / sample_size; ++sample) {
+				for (int sample = 0;
+						sample < bytes / sample_size;
+						++sample) {
 					for (int j = 0; j < repeat; ++j) {
-						if (fmt->length / 8 == sizeof(int16_t))
-							printf("%" PRIi16 " ", ((int16_t *)buf)[sample+j]);
-						else if (fmt->length / 8 == sizeof(int64_t))
-							printf("%" PRId64 " ", ((int64_t *)buf)[sample+j]);
+						if (fmt->length / 8 ==
+								sizeof(int16_t))
+							printf("%" PRIi16 " ",
+									((int16_t *)buf)[sample +
+											 j]);
+						else if (fmt->length / 8 ==
+								sizeof(int64_t))
+							printf("%" PRId64 " ",
+									((int64_t *)buf)[sample +
+											 j]);
 					}
 				}
 
@@ -393,4 +432,3 @@ int main (int argc, char **argv)
 
 	return 0;
 }
-

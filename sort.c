@@ -16,8 +16,9 @@
  *
  * */
 
-#include "iio-private.h"
 #include <string.h>
+
+#include "iio-private.h"
 
 /* These are a few functions to do sorting via qsort for various
  * iio structures. For more info, see the qsort(3) man page.
@@ -41,12 +42,15 @@ int iio_channel_compare(const void *p1, const void *p2)
 	const struct iio_channel *tmp2 = *(struct iio_channel **)p2;
 
 	/* make sure buffer enabled channels are first */
-	if (iio_channel_is_scan_element(tmp1) && !iio_channel_is_scan_element(tmp2))
+	if (iio_channel_is_scan_element(tmp1) &&
+			!iio_channel_is_scan_element(tmp2))
 		return -1;
-	if (!iio_channel_is_scan_element(tmp1) && iio_channel_is_scan_element(tmp2))
+	if (!iio_channel_is_scan_element(tmp1) &&
+			iio_channel_is_scan_element(tmp2))
 		return 1;
 	/* and sort them by index */
-	if (iio_channel_is_scan_element(tmp1) && iio_channel_is_scan_element(tmp2)){
+	if (iio_channel_is_scan_element(tmp1) &&
+			iio_channel_is_scan_element(tmp2)) {
 		if (iio_channel_get_index(tmp1) > iio_channel_get_index(tmp2))
 			return 1;
 		return -1;
@@ -90,4 +94,3 @@ int iio_buffer_attr_compare(const void *p1, const void *p2)
 	/* qsort buffer attributes by name */
 	return strcmp(tmp1, tmp2);
 }
-

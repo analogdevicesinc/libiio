@@ -26,12 +26,11 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 #ifdef _WIN32
-#include <windows.h>
 #include <fcntl.h>
 #include <io.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -39,19 +38,19 @@
 #define MY_NAME "iio_writedev"
 
 #define SAMPLES_PER_READ 256
-#define DEFAULT_FREQ_HZ  100
+#define DEFAULT_FREQ_HZ 100
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
-	  {"trigger", required_argument, 0, 't'},
-	  {"buffer-size", required_argument, 0, 'b'},
-	  {"samples", required_argument, 0, 's' },
-	  {"timeout", required_argument, 0, 'T'},
-	  {"auto", no_argument, 0, 'a'},
-	  {"cyclic", no_argument, 0, 'c'},
-	  {0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "network", required_argument, 0, 'n' },
+	{ "uri", required_argument, 0, 'u' },
+	{ "trigger", required_argument, 0, 't' },
+	{ "buffer-size", required_argument, 0, 'b' },
+	{ "samples", required_argument, 0, 's' },
+	{ "timeout", required_argument, 0, 'T' },
+	{ "auto", no_argument, 0, 'a' },
+	{ "cyclic", no_argument, 0, 'c' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -71,12 +70,11 @@ static void usage(void)
 	unsigned int i;
 
 	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
-			"[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
-			"<iio_device> [<channel> ...]\n\nOptions:\n");
+	       "[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
+	       "<iio_device> [<channel> ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
+		printf("\t-%c, --%s\n\t\t\t%s\n", options[i].val,
+				options[i].name, options_descriptions[i]);
 }
 
 static struct iio_context *ctx;
@@ -153,7 +151,7 @@ static void setup_sig_handler(void)
 
 #include <pthread.h>
 
-static void * sig_handler_thd(void *data)
+static void *sig_handler_thd(void *data)
 {
 	sigset_t *mask = data;
 	int ret, sig;
@@ -191,15 +189,16 @@ static void setup_sig_handler(void)
 
 	ret = pthread_create(&thd, NULL, sig_handler_thd, &mask);
 	if (ret) {
-		fprintf(stderr, "Failed to create signal handler thread: %d\n", ret);
+		fprintf(stderr, "Failed to create signal handler thread: %d\n",
+				ret);
 		pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
 	}
 }
 
 #endif
 
-static ssize_t read_sample(const struct iio_channel *chn,
-		void *buf, size_t len, void *d)
+static ssize_t read_sample(
+		const struct iio_channel *chn, void *buf, size_t len, void *d)
 {
 	size_t nb = fread(buf, 1, len, stdin);
 	if (num_samples != 0) {
@@ -209,7 +208,7 @@ static ssize_t read_sample(const struct iio_channel *chn,
 			return -1;
 		}
 	}
-	return (ssize_t) nb;
+	return (ssize_t)nb;
 }
 
 static struct iio_context *scan(void)
@@ -230,7 +229,8 @@ static struct iio_context *scan(void)
 	if (ret < 0) {
 		char err_str[1024];
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n",
+				err_str);
 		goto err_free_ctx;
 	}
 
@@ -240,14 +240,16 @@ static struct iio_context *scan(void)
 	}
 
 	if (ret == 1) {
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+		ctx = iio_create_context_from_uri(
+				iio_context_info_get_uri(info[0]));
 	} else {
 		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
 
-		for (i = 0; i < (size_t) ret; i++) {
+		for (i = 0; i < (size_t)ret; i++) {
 			fprintf(stderr, "\t%d: %s [%s]\n", i,
-				iio_context_info_get_description(info[i]),
-				iio_context_info_get_uri(info[i]));
+					iio_context_info_get_description(
+							info[i]),
+					iio_context_info_get_uri(info[i]));
 		}
 	}
 
@@ -274,8 +276,8 @@ int main(int argc, char **argv)
 	bool cyclic_buffer = false;
 	ssize_t ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:ac",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:ac", options,
+				&option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -334,10 +336,10 @@ int main(int argc, char **argv)
 	if (timeout >= 0) {
 		ret = iio_context_set_timeout(ctx, timeout);
 		if (ret < 0) {
-			 char err_str[1024];
-			 iio_strerror(-ret, err_str, sizeof(err_str));
-			 fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
-					 err_str, ret);
+			char err_str[1024];
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
+					err_str, ret);
 		}
 	}
 
@@ -349,8 +351,8 @@ int main(int argc, char **argv)
 	}
 
 	if (trigger_name) {
-		struct iio_device *trigger = iio_context_find_device(
-				ctx, trigger_name);
+		struct iio_device *trigger =
+				iio_context_find_device(ctx, trigger_name);
 		if (!trigger) {
 			fprintf(stderr, "Trigger %s not found\n", trigger_name);
 			iio_context_destroy(ctx);
@@ -368,9 +370,10 @@ int main(int argc, char **argv)
 		 * fail gracefully to remain compatible.
 		 */
 		if (iio_device_attr_write_longlong(trigger,
-				"sampling_frequency", DEFAULT_FREQ_HZ) < 0) {
-			ret = iio_device_attr_write_longlong(trigger,
-				"frequency", DEFAULT_FREQ_HZ);
+				    "sampling_frequency",
+				    DEFAULT_FREQ_HZ) < 0) {
+			ret = iio_device_attr_write_longlong(
+					trigger, "frequency", DEFAULT_FREQ_HZ);
 			if (ret < 0) {
 				char buf[256];
 				iio_strerror(-ret, buf, sizeof(buf));
@@ -383,8 +386,8 @@ int main(int argc, char **argv)
 		if (ret < 0) {
 			char buf[256];
 			iio_strerror(-ret, buf, sizeof(buf));
-			fprintf(stderr, "set triffer failed : %s (%zd)\n",
-					buf, ret);
+			fprintf(stderr, "set triffer failed : %s (%zd)\n", buf,
+					ret);
 		}
 	}
 
@@ -403,10 +406,10 @@ int main(int argc, char **argv)
 		for (i = 0; i < nb_channels; i++) {
 			unsigned int j;
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
-			for (j = optind + 1; j < (unsigned int) argc; j++) {
+			for (j = optind + 1; j < (unsigned int)argc; j++) {
 				const char *n = iio_channel_get_name(ch);
 				if ((!strcmp(argv[j], iio_channel_get_id(ch)) ||
-						(n && !strcmp(n, argv[j]))) &&
+						    (n && !strcmp(n, argv[j]))) &&
 						iio_channel_is_output(ch)) {
 					iio_channel_enable(ch);
 					nb_active_channels++;
@@ -432,7 +435,7 @@ int main(int argc, char **argv)
 	}
 
 #ifdef _WIN32
-	_setmode(_fileno( stdin ), _O_BINARY);
+	_setmode(_fileno(stdin), _O_BINARY);
 #endif
 
 	while (app_running) {
@@ -440,19 +443,20 @@ int main(int argc, char **argv)
 		 * demux */
 		if (iio_buffer_step(buffer) == sample_size) {
 			void *start = iio_buffer_start(buffer);
-			size_t write_len, len = (intptr_t) iio_buffer_end(buffer)
-				- (intptr_t) start;
+			size_t write_len,
+					len = (intptr_t)iio_buffer_end(buffer) -
+					      (intptr_t)start;
 
 			if (num_samples && len > num_samples * sample_size)
 				len = num_samples * sample_size;
 
-			for (write_len = len; len; ) {
+			for (write_len = len; len;) {
 				size_t nb = fread(start, 1, len, stdin);
 				if (!nb)
 					goto err_destroy_buffer;
 
 				len -= nb;
-				start = (void *)((intptr_t) start + nb);
+				start = (void *)((intptr_t)start + nb);
 			}
 
 			if (num_samples) {
@@ -461,7 +465,8 @@ int main(int argc, char **argv)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
-			ret = iio_buffer_foreach_sample(buffer, read_sample, NULL);
+			ret = iio_buffer_foreach_sample(
+					buffer, read_sample, NULL);
 			if (ret < 0) {
 				char buf[256];
 				iio_strerror(-ret, buf, sizeof(buf));
@@ -475,12 +480,13 @@ int main(int argc, char **argv)
 			if (app_running) {
 				char buf[256];
 				iio_strerror(-ret, buf, sizeof(buf));
-				fprintf(stderr, "Unable to push buffer: %s\n", buf);
+				fprintf(stderr, "Unable to push buffer: %s\n",
+						buf);
 			}
 			break;
 		}
 
-		while(cyclic_buffer && app_running) {
+		while (cyclic_buffer && app_running) {
 #ifdef _WIN32
 			Sleep(1000);
 #else
@@ -488,7 +494,6 @@ int main(int argc, char **argv)
 #endif
 		}
 	}
-
 
 err_destroy_buffer:
 	iio_buffer_destroy(buffer);

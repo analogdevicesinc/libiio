@@ -16,12 +16,11 @@
  *
  * */
 
-#include <errno.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include <CFNetwork/CFNetwork.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <sys/types.h>
 
 #include "debug.h"
 
@@ -30,33 +29,30 @@
 */
 
 struct cfnet_discovery_data {
-	bool	have_v4;
-	bool	have_v6;
-	char 	address_v4[80];
-	char 	address_v6[80];
+	bool have_v4;
+	bool have_v6;
+	char address_v4[80];
+	char address_v6[80];
 	int16_t port;
 };
 
-static void __cfnet_browser_cb (
-	CFNetServiceBrowserRef	browser,
-	CFOptionFlags 			flags,
-	CFTypeRef 				domainOrService,
-	CFStreamError* 			error,
-	void* 					info)
+static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
+		CFOptionFlags flags, CFTypeRef domainOrService,
+		CFStreamError *error, void *info)
 {
 	CFStreamError anError;
-	
+
 	if ((flags & kCFNetServiceFlagIsDomain) != 0) {
 		ERROR("DNS SD: FATAL. Callback called for domain, not service.\n");
 		goto stop_browsing;
 	}
-	
+
 	struct cfnet_discovery_data *dd = (struct cfnet_discovery_data *)info;
 	if (dd == NULL) {
 		ERROR("DNS SD: Missing info structure. Stop browsing.\n");
 		goto stop_browsing;
 	}
-	
+
 	if (dd->have_v4 || dd->have_v6) {
 		// Already resolved one IIO service. Stop.
 		DEBUG("DNS SD: first service already resolved. Skip.\n");
@@ -68,34 +64,37 @@ static void __cfnet_browser_cb (
 		ERROR("DNS SD: Net service is null.\n");
 		goto stop_browsing;
 	}
-	
+
 	if (!CFNetServiceResolveWithTimeout(netService, 10.0, &anError)) {
-		ERROR("DNS SD: Resolve error: %ld.%d\n", anError.domain, anError.error);
+		ERROR("DNS SD: Resolve error: %ld.%d\n", anError.domain,
+				anError.error);
 		goto stop_browsing;
 	}
-	
+
 	dd->port = CFNetServiceGetPortNumber(netService);
-	
+
 	CFArrayRef addrArr = CFNetServiceGetAddressing(netService);
 	if (addrArr == NULL) {
 		ERROR("DNS SD: No valid addresses for service.\n");
 		goto stop_browsing;
 	}
-	
+
 	for (CFIndex i = 0; i < CFArrayGetCount(addrArr); i++) {
-		struct sockaddr_in *sa = (struct sockaddr_in *)
-		CFDataGetBytePtr(CFArrayGetValueAtIndex(addrArr, i));
-		switch(sa->sin_family) {
-			case AF_INET:
-				if (inet_ntop(sa->sin_family, &sa->sin_addr,
-							  dd->address_v4, sizeof(dd->address_v4))) {
-					dd->have_v4 = TRUE;
-				}
-			case AF_INET6:
-				if (inet_ntop(sa->sin_family, &sa->sin_addr,
-							  dd->address_v6, sizeof(dd->address_v6))) {
-					dd->have_v6 = TRUE;
-				}
+		struct sockaddr_in *sa = (struct sockaddr_in *)CFDataGetBytePtr(
+				CFArrayGetValueAtIndex(addrArr, i));
+		switch (sa->sin_family) {
+		case AF_INET:
+			if (inet_ntop(sa->sin_family, &sa->sin_addr,
+					    dd->address_v4,
+					    sizeof(dd->address_v4))) {
+				dd->have_v4 = TRUE;
+			}
+		case AF_INET6:
+			if (inet_ntop(sa->sin_family, &sa->sin_addr,
+					    dd->address_v6,
+					    sizeof(dd->address_v6))) {
+				dd->have_v6 = TRUE;
+			}
 		}
 	}
 
@@ -103,20 +102,21 @@ static void __cfnet_browser_cb (
 		DEBUG("DNS SD: No more entries coming.\n");
 		goto stop_browsing;
 	}
-	
+
 	return;
 
 stop_browsing:
-	
+
 	CFNetServiceBrowserStopSearch(browser, &anError);
 }
 
 int discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 {
 	int ret = 0;
-	
+
 	struct cfnet_discovery_data ddata = { FALSE, FALSE };
-	CFNetServiceClientContext clientContext = { 0, &ddata, NULL, NULL, NULL };
+	CFNetServiceClientContext clientContext = { 0, &ddata, NULL, NULL,
+		NULL };
 	CFStreamError error;
 	Boolean result;
 
@@ -125,8 +125,9 @@ int discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 
 	DEBUG("DNS SD: Resolving hostname.");
 
-	CFNetServiceBrowserRef gServiceBrowserRef = CFNetServiceBrowserCreate(
-		kCFAllocatorDefault, __cfnet_browser_cb, &clientContext);
+	CFNetServiceBrowserRef gServiceBrowserRef =
+			CFNetServiceBrowserCreate(kCFAllocatorDefault,
+					__cfnet_browser_cb, &clientContext);
 
 	if (gServiceBrowserRef == NULL) {
 		ERROR("DNS SD: Failed to create service browser.\n");
@@ -134,24 +135,22 @@ int discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 		goto exit;
 	}
 	result = CFNetServiceBrowserSearchForServices(
-		gServiceBrowserRef, domain, type, &error);
+			gServiceBrowserRef, domain, type, &error);
 
 	if (result == false) {
 		ERROR("DNS SD: CFNetServiceBrowserSearchForServices failed (domain = %ld, error = %d)\n",
-			(long)error.domain, error.error);
+				(long)error.domain, error.error);
 		ret = ENXIO;
 		goto free_browser;
 	}
-	
+
 	// Resolved address and port. ipv4 has precedence over ipv6.
 	*port = ddata.port;
 	if (ddata.have_v4) {
 		strncpy(addr_str, ddata.address_v4, addr_len);
-	}
-	else if (ddata.have_v6) {
+	} else if (ddata.have_v6) {
 		strncpy(addr_str, ddata.address_v6, addr_len);
-	}
-	else {
+	} else {
 		ERROR("DNS SD: IIO service not found.\n");
 		ret = ENXIO;
 	}
@@ -164,4 +163,3 @@ free_browser:
 exit:
 	return ret;
 }
-

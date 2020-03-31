@@ -20,11 +20,10 @@
 #define __IIO_PRIVATE_H__
 
 /* Include public interface */
-#include "iio.h"
+#include <stdbool.h>
 
 #include "iio-config.h"
-
-#include <stdbool.h>
+#include "iio.h"
 
 #ifdef _MSC_BUILD
 #define inline __inline
@@ -34,15 +33,15 @@
 #endif
 
 #ifdef _WIN32
-#   ifdef LIBIIO_EXPORTS
-#	define __api __declspec(dllexport)
-#   else
-#	define __api __declspec(dllimport)
-#   endif
-#elif __GNUC__ >= 4
-#   define __api __attribute__((visibility ("default")))
+#ifdef LIBIIO_EXPORTS
+#define __api __declspec(dllexport)
 #else
-#   define __api
+#define __api __declspec(dllimport)
+#endif
+#elif __GNUC__ >= 4
+#define __api __attribute__((visibility("default")))
+#else
+#define __api
 #endif
 
 #ifdef WITH_MATLAB_BINDINGS_API
@@ -53,13 +52,12 @@
 #define BIT(x) (1 << (x))
 #define BIT_MASK(bit) BIT((bit) % 32)
 #define BIT_WORD(bit) ((bit) / 32)
-#define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
-		& BIT_MASK(bit)))
+#define TEST_BIT(addr, bit) \
+	(!!(*(((uint32_t *)addr) + BIT_WORD(bit)) & BIT_MASK(bit)))
 #define SET_BIT(addr, bit) \
-	*(((uint32_t *) addr) + BIT_WORD(bit)) |= BIT_MASK(bit)
+	*(((uint32_t *)addr) + BIT_WORD(bit)) |= BIT_MASK(bit)
 #define CLEAR_BIT(addr, bit) \
-	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
-
+	*(((uint32_t *)addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
@@ -71,7 +69,7 @@ static inline uint32_t iio_be32toh(uint32_t word)
 	return __builtin_bswap32(word);
 #else
 	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) |
-		((word >> 8) & 0xff00) | ((word >> 24) & 0xff);
+	       ((word >> 8) & 0xff00) | ((word >> 24) & 0xff);
 #endif
 #else
 	return word;
@@ -96,30 +94,30 @@ enum iio_attr_type {
 };
 
 struct iio_backend_ops {
-	struct iio_context * (*clone)(const struct iio_context *ctx);
+	struct iio_context *(*clone)(const struct iio_context *ctx);
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
 			uint32_t *mask, size_t words);
-	ssize_t (*write)(const struct iio_device *dev,
-			const void *src, size_t len);
-	int (*open)(const struct iio_device *dev,
-			size_t samples_count, bool cyclic);
+	ssize_t (*write)(const struct iio_device *dev, const void *src,
+			size_t len);
+	int (*open)(const struct iio_device *dev, size_t samples_count,
+			bool cyclic);
 	int (*close)(const struct iio_device *dev);
 	int (*get_fd)(const struct iio_device *dev);
 	int (*set_blocking_mode)(const struct iio_device *dev, bool blocking);
 
 	void (*cancel)(const struct iio_device *dev);
 
-	int (*set_kernel_buffers_count)(const struct iio_device *dev,
-			unsigned int nb_blocks);
-	ssize_t (*get_buffer)(const struct iio_device *dev,
-			void **addr_ptr, size_t bytes_used,
-			uint32_t *mask, size_t words);
+	int (*set_kernel_buffers_count)(
+			const struct iio_device *dev, unsigned int nb_blocks);
+	ssize_t (*get_buffer)(const struct iio_device *dev, void **addr_ptr,
+			size_t bytes_used, uint32_t *mask, size_t words);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
-			const char *attr, char *dst, size_t len, enum iio_attr_type);
+			const char *attr, char *dst, size_t len,
+			enum iio_attr_type);
 	ssize_t (*write_device_attr)(const struct iio_device *dev,
-			const char *attr, const char *src,
-			size_t len, enum iio_attr_type);
+			const char *attr, const char *src, size_t len,
+			enum iio_attr_type);
 	ssize_t (*read_channel_attr)(const struct iio_channel *chn,
 			const char *attr, char *dst, size_t len);
 	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
@@ -232,8 +230,8 @@ struct iio_scan_result {
 	struct iio_context_info **info;
 };
 
-struct iio_context_info ** iio_scan_result_add(
-	struct iio_scan_result *scan_result, size_t num);
+struct iio_context_info **iio_scan_result_add(
+		struct iio_scan_result *scan_result, size_t num);
 
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
@@ -245,31 +243,31 @@ char *iio_context_create_xml(const struct iio_context *ctx);
 int iio_context_init(struct iio_context *ctx);
 
 bool iio_device_is_tx(const struct iio_device *dev);
-int iio_device_open(const struct iio_device *dev,
-		size_t samples_count, bool cyclic);
+int iio_device_open(const struct iio_device *dev, size_t samples_count,
+		bool cyclic);
 int iio_device_close(const struct iio_device *dev);
 int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking);
-ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len, uint32_t *mask, size_t words);
-ssize_t iio_device_write_raw(const struct iio_device *dev,
-		const void *src, size_t len);
+ssize_t iio_device_read_raw(const struct iio_device *dev, void *dst, size_t len,
+		uint32_t *mask, size_t words);
+ssize_t iio_device_write_raw(
+		const struct iio_device *dev, const void *src, size_t len);
 int iio_device_get_poll_fd(const struct iio_device *dev);
 
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
 
-struct iio_context * local_create_context(void);
-struct iio_context * network_create_context(const char *hostname);
-struct iio_context * xml_create_context_mem(const char *xml, size_t len);
-struct iio_context * xml_create_context(const char *xml_file);
-struct iio_context * usb_create_context(unsigned int bus, unsigned int address,
-		unsigned int interface);
-struct iio_context * usb_create_context_from_uri(const char *uri);
-struct iio_context * serial_create_context_from_uri(const char *uri);
+struct iio_context *local_create_context(void);
+struct iio_context *network_create_context(const char *hostname);
+struct iio_context *xml_create_context_mem(const char *xml, size_t len);
+struct iio_context *xml_create_context(const char *xml_file);
+struct iio_context *usb_create_context(
+		unsigned int bus, unsigned int address, unsigned int interface);
+struct iio_context *usb_create_context_from_uri(const char *uri);
+struct iio_context *serial_create_context_from_uri(const char *uri);
 
 int local_context_scan(struct iio_scan_result *scan_result);
 
-struct iio_scan_backend_context * usb_context_scan_init(void);
+struct iio_scan_backend_context *usb_context_scan_init(void);
 void usb_context_scan_free(struct iio_scan_backend_context *ctx);
 
 int usb_context_scan(struct iio_scan_backend_context *ctx,
@@ -284,8 +282,8 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strdup(const char *str);
 
-int iio_context_add_attr(struct iio_context *ctx,
-		const char *key, const char *value);
+int iio_context_add_attr(
+		struct iio_context *ctx, const char *key, const char *value);
 
 #undef __api
 

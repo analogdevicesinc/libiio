@@ -34,12 +34,12 @@ struct xflow_pthread_data {
 };
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
-	  {"buffer-size", required_argument, 0, 's'},
-	  {"auto", no_argument, 0, 'a'},
-	  {0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "network", required_argument, 0, 'n' },
+	{ "uri", required_argument, 0, 'u' },
+	{ "buffer-size", required_argument, 0, 's' },
+	{ "auto", no_argument, 0, 'a' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -54,11 +54,11 @@ static void usage(char *argv[])
 {
 	unsigned int i;
 
-	printf("Usage:\n\t%s [-n <hostname>] [-u <uri>] [ -a ][-s <size>] <iio_device>\n\nOptions:\n", argv[0]);
+	printf("Usage:\n\t%s [-n <hostname>] [-u <uri>] [ -a ][-s <size>] <iio_device>\n\nOptions:\n",
+			argv[0]);
 	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
+		printf("\t-%c, --%s\n\t\t\t%s\n", options[i].val,
+				options[i].name, options_descriptions[i]);
 }
 
 static bool app_running = true;
@@ -81,10 +81,9 @@ static void set_handler(int signal_nb, void (*handler)(int))
 #endif
 }
 
-static struct iio_device *get_device(const struct iio_context *ctx,
-		const char *id)
+static struct iio_device *get_device(
+		const struct iio_context *ctx, const char *id)
 {
-
 	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
 	struct iio_device *device;
 
@@ -104,7 +103,6 @@ static struct iio_device *get_device(const struct iio_context *ctx,
 	fprintf(stderr, "Device %s not found\n", id);
 	return NULL;
 }
-
 
 static void *monitor_thread_fn(void *data)
 {
@@ -179,7 +177,8 @@ static struct iio_context *scan(void)
 	if (ret < 0) {
 		char err_str[1024];
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n",
+				err_str);
 		goto err_free_ctx;
 	}
 
@@ -189,20 +188,22 @@ static struct iio_context *scan(void)
 	}
 
 	if (ret == 1) {
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+		ctx = iio_create_context_from_uri(
+				iio_context_info_get_uri(info[0]));
 	} else {
 		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
 
-		for (i = 0; i < (size_t) ret; i++) {
+		for (i = 0; i < (size_t)ret; i++) {
 			fprintf(stderr, "\t%d: %s [%s]\n", i,
-				iio_context_info_get_description(info[i]),
-				iio_context_info_get_uri(info[i]));
+					iio_context_info_get_description(
+							info[i]),
+					iio_context_info_get_uri(info[i]));
 		}
 	}
 
-	err_free_info_list:
+err_free_info_list:
 	iio_context_info_list_free(info);
-	err_free_ctx:
+err_free_ctx:
 	iio_scan_context_destroy(scan_ctx);
 
 	return ctx;
@@ -226,8 +227,8 @@ int main(int argc, char **argv)
 	char unit;
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:s:a",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "+hn:u:s:a", options,
+				&option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage(argv);
@@ -270,7 +271,6 @@ int main(int argc, char **argv)
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
 
-
 	if (scan_for_context)
 		ctx = scan();
 	else if (arg_uri)
@@ -311,7 +311,7 @@ int main(int argc, char **argv)
 		device_is_tx = false;
 
 	printf("Monitoring %s for underflows/overflows\n",
-		iio_device_get_name(dev));
+			iio_device_get_name(dev));
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	if (!buffer) {
@@ -324,7 +324,7 @@ int main(int argc, char **argv)
 	xflow_pthread_data.device_name = device_name;
 
 	ret = pthread_create(&monitor_thread, NULL, monitor_thread_fn,
-			     (void *)&xflow_pthread_data);
+			(void *)&xflow_pthread_data);
 	if (ret) {
 		fprintf(stderr, "Failed to create monitor thread: %s\n",
 				strerror(-ret));

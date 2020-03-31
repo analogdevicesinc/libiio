@@ -20,7 +20,7 @@
 
 struct thread_pool;
 
-struct thread_pool * thread_pool_new(void);
+struct thread_pool *thread_pool_new(void);
 
 int thread_pool_get_poll_fd(const struct thread_pool *pool);
 void thread_pool_stop(struct thread_pool *pool);
@@ -29,7 +29,7 @@ void thread_pool_stop_and_wait(struct thread_pool *pool);
 void thread_pool_destroy(struct thread_pool *pool);
 
 int thread_pool_add_thread(struct thread_pool *pool,
-		void (*func)(struct thread_pool *, void *),
-		void *data, const char *name);
+		void (*func)(struct thread_pool *, void *), void *data,
+		const char *name);
 
 #endif /* __THREAD_POOL_H__ */

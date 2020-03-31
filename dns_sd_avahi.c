@@ -16,19 +16,17 @@
  *
  * */
 
-#include "iio.h"
-
+#include <avahi-client/client.h>
+#include <avahi-client/lookup.h>
+#include <avahi-common/error.h>
+#include <avahi-common/simple-watch.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
 
-#include <avahi-common/error.h>
-#include <avahi-common/simple-watch.h>
-#include <avahi-client/client.h>
-#include <avahi-client/lookup.h>
-
 #include "debug.h"
+#include "iio.h"
 
 struct avahi_discovery_data {
 	AvahiSimplePoll *poll;
@@ -45,7 +43,7 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 		uint16_t port, __notused AvahiStringList *txt,
 		__notused AvahiLookupResultFlags flags, void *d)
 {
-	struct avahi_discovery_data *ddata = (struct avahi_discovery_data *) d;
+	struct avahi_discovery_data *ddata = (struct avahi_discovery_data *)d;
 
 	memcpy(ddata->address, address, sizeof(*address));
 	*ddata->port = port;
@@ -53,22 +51,20 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 	avahi_service_resolver_free(resolver);
 }
 
-static void __avahi_browser_cb(AvahiServiceBrowser *browser,
-		AvahiIfIndex iface, AvahiProtocol proto,
-		AvahiBrowserEvent event, const char *name,
+static void __avahi_browser_cb(AvahiServiceBrowser *browser, AvahiIfIndex iface,
+		AvahiProtocol proto, AvahiBrowserEvent event, const char *name,
 		const char *type, const char *domain,
 		__notused AvahiLookupResultFlags flags, void *d)
 {
-	struct avahi_discovery_data *ddata = (struct avahi_discovery_data *) d;
+	struct avahi_discovery_data *ddata = (struct avahi_discovery_data *)d;
 	struct AvahiClient *client = avahi_service_browser_get_client(browser);
 
 	switch (event) {
 	default:
 	case AVAHI_BROWSER_NEW:
 		ddata->found = !!avahi_service_resolver_new(client, iface,
-				proto, name, type, domain,
-				AVAHI_PROTO_UNSPEC, 0,
-				__avahi_resolver_cb, d);
+				proto, name, type, domain, AVAHI_PROTO_UNSPEC,
+				0, __avahi_resolver_cb, d);
 		break;
 	case AVAHI_BROWSER_ALL_FOR_NOW:
 		if (ddata->found) {
@@ -101,8 +97,8 @@ int discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 	if (!poll)
 		return -ENOMEM;
 
-	client = avahi_client_new(avahi_simple_poll_get(poll),
-			0, NULL, NULL, &ret);
+	client = avahi_client_new(
+			avahi_simple_poll_get(poll), 0, NULL, NULL, &ret);
 	if (!client) {
 		ERROR("Unable to create Avahi DNS-SD client :%s\n",
 				avahi_strerror(ret));
@@ -114,9 +110,9 @@ int discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 	ddata.address = &address;
 	ddata.port = port;
 
-	browser = avahi_service_browser_new(client,
-			AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-			"_iio._tcp", NULL, 0, __avahi_browser_cb, &ddata);
+	browser = avahi_service_browser_new(client, AVAHI_IF_UNSPEC,
+			AVAHI_PROTO_UNSPEC, "_iio._tcp", NULL, 0,
+			__avahi_browser_cb, &ddata);
 	if (!browser) {
 		ret = avahi_client_errno(client);
 		ERROR("Unable to create Avahi DNS-SD browser: %s\n",

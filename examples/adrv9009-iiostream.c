@@ -20,11 +20,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <signal.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef __APPLE__
 #include <iio/iio.h>
@@ -33,15 +33,17 @@
 #endif
 
 /* helper macros */
-#define MHZ(x) ((long long)(x*1000000.0 + .5))
-#define GHZ(x) ((long long)(x*1000000000.0 + .5))
+#define MHZ(x) ((long long)(x * 1000000.0 + .5))
+#define GHZ(x) ((long long)(x * 1000000000.0 + .5))
 
-#define ASSERT(expr) { \
-	if (!(expr)) { \
-		(void) fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
-		(void) abort(); \
-	} \
-}
+#define ASSERT(expr)                                                        \
+	{                                                                   \
+		if (!(expr)) {                                              \
+			(void)fprintf(stderr, "assertion failed (%s:%d)\n", \
+					__FILE__, __LINE__);                \
+			(void)abort();                                      \
+		}                                                           \
+	}
 
 /* RX is input, TX is output */
 enum iodev { RX, TX };
@@ -55,13 +57,13 @@ struct stream_cfg {
 static char tmpstr[64];
 
 /* IIO structs required for streaming */
-static struct iio_context *ctx   = NULL;
+static struct iio_context *ctx = NULL;
 static struct iio_channel *rx0_i = NULL;
 static struct iio_channel *rx0_q = NULL;
 static struct iio_channel *tx0_i = NULL;
 static struct iio_channel *tx0_q = NULL;
-static struct iio_buffer  *rxbuf = NULL;
-static struct iio_buffer  *txbuf = NULL;
+static struct iio_buffer *rxbuf = NULL;
+static struct iio_buffer *txbuf = NULL;
 
 static bool stop;
 
@@ -69,17 +71,31 @@ static bool stop;
 static void shutdown()
 {
 	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
-	if (txbuf) { iio_buffer_destroy(txbuf); }
+	if (rxbuf) {
+		iio_buffer_destroy(rxbuf);
+	}
+	if (txbuf) {
+		iio_buffer_destroy(txbuf);
+	}
 
 	printf("* Disabling streaming channels\n");
-	if (rx0_i) { iio_channel_disable(rx0_i); }
-	if (rx0_q) { iio_channel_disable(rx0_q); }
-	if (tx0_i) { iio_channel_disable(tx0_i); }
-	if (tx0_q) { iio_channel_disable(tx0_q); }
+	if (rx0_i) {
+		iio_channel_disable(rx0_i);
+	}
+	if (rx0_q) {
+		iio_channel_disable(rx0_q);
+	}
+	if (tx0_i) {
+		iio_channel_disable(tx0_i);
+	}
+	if (tx0_q) {
+		iio_channel_disable(tx0_q);
+	}
 
 	printf("* Destroying context\n");
-	if (ctx) { iio_context_destroy(ctx); }
+	if (ctx) {
+		iio_context_destroy(ctx);
+	}
 	exit(0);
 }
 
@@ -90,18 +106,23 @@ static void handle_sig(int sig)
 }
 
 /* check return value of attr_write function */
-static void errchk(int v, const char* what) {
-	 if (v < 0) { fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n", v, what); shutdown(); }
+static void errchk(int v, const char *what)
+{
+	if (v < 0) {
+		fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n",
+				v, what);
+		shutdown();
+	}
 }
 
 /* write attribute: long long int */
-static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
+static void wr_ch_lli(struct iio_channel *chn, const char *what, long long val)
 {
 	errchk(iio_channel_attr_write_longlong(chn, what, val), what);
 }
 
 /* write attribute: long long int */
-static long long rd_ch_lli(struct iio_channel *chn, const char* what)
+static long long rd_ch_lli(struct iio_channel *chn, const char *what)
 {
 	long long val;
 
@@ -120,84 +141,116 @@ static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str
 #endif
 
 /* helper function generating channel names */
-static char* get_ch_name_mod(const char* type, int id, char modify)
+static char *get_ch_name_mod(const char *type, int id, char modify)
 {
 	snprintf(tmpstr, sizeof(tmpstr), "%s%d_%c", type, id, modify);
 	return tmpstr;
 }
 
 /* helper function generating channel names */
-static char* get_ch_name(const char* type, int id)
+static char *get_ch_name(const char *type, int id)
 {
 	snprintf(tmpstr, sizeof(tmpstr), "%s%d", type, id);
 	return tmpstr;
 }
 
 /* returns adrv9009 phy device */
-static struct iio_device* get_adrv9009_phy(struct iio_context *ctx)
+static struct iio_device *get_adrv9009_phy(struct iio_context *ctx)
 {
-	struct iio_device *dev =  iio_context_find_device(ctx, "adrv9009-phy");
+	struct iio_device *dev = iio_context_find_device(ctx, "adrv9009-phy");
 	ASSERT(dev && "No adrv9009-phy found");
 	return dev;
 }
 
 /* finds adrv9009 streaming IIO devices */
-static bool get_adrv9009_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_device **dev)
+static bool get_adrv9009_stream_dev(
+		struct iio_context *ctx, enum iodev d, struct iio_device **dev)
 {
 	switch (d) {
-	case TX: *dev = iio_context_find_device(ctx, "axi-adrv9009-tx-hpc"); return *dev != NULL;
-	case RX: *dev = iio_context_find_device(ctx, "axi-adrv9009-rx-hpc");  return *dev != NULL;
-	default: ASSERT(0); return false;
+	case TX:
+		*dev = iio_context_find_device(ctx, "axi-adrv9009-tx-hpc");
+		return *dev != NULL;
+	case RX:
+		*dev = iio_context_find_device(ctx, "axi-adrv9009-rx-hpc");
+		return *dev != NULL;
+	default:
+		ASSERT(0);
+		return false;
 	}
 }
 
 /* finds adrv9009 streaming IIO channels */
-static bool get_adrv9009_stream_ch(struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, char modify, struct iio_channel **chn)
+static bool get_adrv9009_stream_ch(struct iio_context *ctx, enum iodev d,
+		struct iio_device *dev, int chid, char modify,
+		struct iio_channel **chn)
 {
-	*chn = iio_device_find_channel(dev, modify ? get_ch_name_mod("voltage", chid, modify) : get_ch_name("voltage", chid), d == TX);
+	*chn = iio_device_find_channel(dev,
+			modify ? get_ch_name_mod("voltage", chid, modify)
+			       : get_ch_name("voltage", chid),
+			d == TX);
 	if (!*chn)
-		*chn = iio_device_find_channel(dev, modify ? get_ch_name_mod("voltage", chid, modify) : get_ch_name("voltage", chid), d == TX);
+		*chn = iio_device_find_channel(dev,
+				modify ? get_ch_name_mod("voltage", chid,
+							 modify)
+				       : get_ch_name("voltage", chid),
+				d == TX);
 	return *chn != NULL;
 }
 
 /* finds adrv9009 phy IIO configuration channel with id chid */
-static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid, struct iio_channel **chn)
+static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid,
+		struct iio_channel **chn)
 {
 	switch (d) {
-	case RX: *chn = iio_device_find_channel(get_adrv9009_phy(ctx), get_ch_name("voltage", chid), false); return *chn != NULL;
-	case TX: *chn = iio_device_find_channel(get_adrv9009_phy(ctx), get_ch_name("voltage", chid), true);  return *chn != NULL;
-	default: ASSERT(0); return false;
+	case RX:
+		*chn = iio_device_find_channel(get_adrv9009_phy(ctx),
+				get_ch_name("voltage", chid), false);
+		return *chn != NULL;
+	case TX:
+		*chn = iio_device_find_channel(get_adrv9009_phy(ctx),
+				get_ch_name("voltage", chid), true);
+		return *chn != NULL;
+	default:
+		ASSERT(0);
+		return false;
 	}
 }
 
 /* finds adrv9009 local oscillator IIO configuration channels */
 static bool get_lo_chan(struct iio_context *ctx, struct iio_channel **chn)
 {
-	 // LO chan is always output, i.e. true
-	*chn = iio_device_find_channel(get_adrv9009_phy(ctx), get_ch_name("altvoltage", 0), true); return *chn != NULL;
+	// LO chan is always output, i.e. true
+	*chn = iio_device_find_channel(get_adrv9009_phy(ctx),
+			get_ch_name("altvoltage", 0), true);
+	return *chn != NULL;
 }
 
 /* applies streaming configuration through IIO */
-bool cfg_adrv9009_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, int chid)
+bool cfg_adrv9009_streaming_ch(
+		struct iio_context *ctx, struct stream_cfg *cfg, int chid)
 {
 	struct iio_channel *chn = NULL;
 
 	// Configure phy and lo channels
 	printf("* Acquiring ADRV9009 phy channel %d\n", chid);
-	if (!get_phy_chan(ctx, true, chid, &chn)) {	return false; }
+	if (!get_phy_chan(ctx, true, chid, &chn)) {
+		return false;
+	}
 
 	rd_ch_lli(chn, "rf_bandwidth");
 	rd_ch_lli(chn, "sampling_frequency");
 
 	// Configure LO channel
 	printf("* Acquiring ADRV9009 TRX lo channel\n");
-	if (!get_lo_chan(ctx, &chn)) { return false; }
+	if (!get_lo_chan(ctx, &chn)) {
+		return false;
+	}
 	wr_ch_lli(chn, "frequency", cfg->lo_hz);
 	return true;
 }
 
 /* simple configuration and streaming */
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
 	// Streaming devices
 	struct iio_device *tx;
@@ -225,13 +278,18 @@ int main (int argc, char **argv)
 	ASSERT(get_adrv9009_stream_dev(ctx, RX, &rx) && "No rx dev found");
 
 	printf("* Configuring ADRV9009 for streaming\n");
-	ASSERT(cfg_adrv9009_streaming_ch(ctx, &trxcfg, 0) && "TRX device not found");
+	ASSERT(cfg_adrv9009_streaming_ch(ctx, &trxcfg, 0) &&
+			"TRX device not found");
 
 	printf("* Initializing ADRV9009 IIO streaming channels\n");
-	ASSERT(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'i', &rx0_i) && "RX chan i not found");
-	ASSERT(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'q', &rx0_q) && "RX chan q not found");
-	ASSERT(get_adrv9009_stream_ch(ctx, TX, tx, 0, 0, &tx0_i) && "TX chan i not found");
-	ASSERT(get_adrv9009_stream_ch(ctx, TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
+	ASSERT(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'i', &rx0_i) &&
+			"RX chan i not found");
+	ASSERT(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'q', &rx0_q) &&
+			"RX chan q not found");
+	ASSERT(get_adrv9009_stream_ch(ctx, TX, tx, 0, 0, &tx0_i) &&
+			"TX chan i not found");
+	ASSERT(get_adrv9009_stream_ch(ctx, TX, tx, 1, 0, &tx0_q) &&
+			"TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);
@@ -240,58 +298,66 @@ int main (int argc, char **argv)
 	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
+	rxbuf = iio_device_create_buffer(rx, 1024 * 1024, false);
 	if (!rxbuf) {
 		perror("Could not create RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 1024*1024, false);
+	txbuf = iio_device_create_buffer(tx, 1024 * 1024, false);
 	if (!txbuf) {
 		perror("Could not create TX buffer");
 		shutdown();
 	}
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
-	while (!stop)
-	{
+	while (!stop) {
 		ssize_t nbytes_rx, nbytes_tx;
 		char *p_dat, *p_end;
 		ptrdiff_t p_inc;
 
 		// Schedule TX buffer
 		nbytes_tx = iio_buffer_push(txbuf);
-		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(); }
+		if (nbytes_tx < 0) {
+			printf("Error pushing buf %d\n", (int)nbytes_tx);
+			shutdown();
+		}
 
 		// Refill RX buffer
 		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) { printf("Error refilling buf %d\n",(int) nbytes_rx); shutdown(); }
+		if (nbytes_rx < 0) {
+			printf("Error refilling buf %d\n", (int)nbytes_rx);
+			shutdown();
+		}
 
 		// READ: Get pointers to RX buf and read IQ from RX buf port 0
 		p_inc = iio_buffer_step(rxbuf);
 		p_end = iio_buffer_end(rxbuf);
-		for (p_dat = iio_buffer_first(rxbuf, rx0_i); p_dat < p_end; p_dat += p_inc) {
+		for (p_dat = iio_buffer_first(rxbuf, rx0_i); p_dat < p_end;
+				p_dat += p_inc) {
 			// Example: swap I and Q
-			const int16_t i = ((int16_t*)p_dat)[0]; // Real (I)
-			const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
-			((int16_t*)p_dat)[0] = q;
-			((int16_t*)p_dat)[1] = i;
+			const int16_t i = ((int16_t *)p_dat)[0]; // Real (I)
+			const int16_t q = ((int16_t *)p_dat)[1]; // Imag (Q)
+			((int16_t *)p_dat)[0] = q;
+			((int16_t *)p_dat)[1] = i;
 		}
 
 		// WRITE: Get pointers to TX buf and write IQ to TX buf port 0
 		p_inc = iio_buffer_step(txbuf);
 		p_end = iio_buffer_end(txbuf);
-		for (p_dat = iio_buffer_first(txbuf, tx0_i); p_dat < p_end; p_dat += p_inc) {
+		for (p_dat = iio_buffer_first(txbuf, tx0_i); p_dat < p_end;
+				p_dat += p_inc) {
 			// Example: fill with zeros
 			// 14-bit sample needs to be MSB alligned so shift by 2
 			// https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/basic_iq_datafiles#binary_format
-			((int16_t*)p_dat)[0] = 0 << 2; // Real (I)
-			((int16_t*)p_dat)[1] = 0 << 2; // Imag (Q)
+			((int16_t *)p_dat)[0] = 0 << 2; // Real (I)
+			((int16_t *)p_dat)[1] = 0 << 2; // Imag (Q)
 		}
 
 		// Sample counter increment and status output
 		nrx += nbytes_rx / iio_device_get_sample_size(rx);
 		ntx += nbytes_tx / iio_device_get_sample_size(tx);
-		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
+		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx / 1e6,
+				ntx / 1e6);
 	}
 
 	shutdown();

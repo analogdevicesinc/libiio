@@ -19,19 +19,19 @@
 /* Force the XSI version of strerror_r */
 #undef _GNU_SOURCE
 
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_WIN32) || \
-		(defined(__APPLE__) && defined(__MACH__)) || \
-		(defined(__USE_XOPEN2K8) && \
-		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
+#include "iio-config.h"
+#include "iio-private.h"
+
+#if defined(_WIN32) || (defined(__APPLE__) && defined(__MACH__)) || \
+		(defined(__USE_XOPEN2K8) &&                         \
+				(!defined(__UCLIBC__) ||            \
+						defined(__UCLIBC_HAS_LOCALE__)))
 #define LOCALE_SUPPORT
 #endif
 
@@ -110,7 +110,7 @@ static int read_double_locale(const char *str, double *val)
 	double value;
 	locale_t old_locale, new_locale;
 
-	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
+	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t)0);
 	if (!new_locale)
 		return -errno;
 
@@ -131,7 +131,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 {
 	locale_t old_locale, new_locale;
 
-	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
+	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t)0);
 	if (!new_locale)
 		return -errno;
 
@@ -172,8 +172,8 @@ int write_double(char *buf, size_t len, double val)
 #endif
 }
 
-void iio_library_get_version(unsigned int *major,
-		unsigned int *minor, char git_tag[8])
+void iio_library_get_version(
+		unsigned int *major, unsigned int *minor, char git_tag[8])
 {
 	if (major)
 		*major = LIBIIO_VERSION_MAJOR;

@@ -14,9 +14,8 @@ struct iio_scan_block;
 * @param flags Unused for now. Set to 0.
 * @return on success, a pointer to a iio_scan_block structure
 * @return On failure, NULL is returned and errno is set appropriately */
-__api struct iio_scan_block * iio_create_scan_block(
+__api struct iio_scan_block *iio_create_scan_block(
 		const char *backend, unsigned int flags);
-
 
 /** @brief Destroy the given scan block
 * @param ctx A pointer to an iio_scan_block structure
@@ -24,14 +23,12 @@ __api struct iio_scan_block * iio_create_scan_block(
 * <b>NOTE:</b> After that function, the iio_scan_block pointer shall be invalid. */
 __api void iio_scan_block_destroy(struct iio_scan_block *blk);
 
-
 /** @brief Enumerate available contexts via scan block
 * @param blk A pointer to a iio_scan_block structure.
 * @returns On success, the number of contexts found.
 * @returns On failure, a negative error number.
 */
 __api ssize_t iio_scan_block_scan(struct iio_scan_block *blk);
-
 
 /** @brief Get the iio_context_info for a particular context
 * @param blk A pointer to an iio_scan_block structure

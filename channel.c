@@ -16,14 +16,14 @@
  *
  * */
 
-#include "debug.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
-static const char * const iio_chan_type_name_spec[] = {
+#include "debug.h"
+#include "iio-private.h"
+
+static const char *const iio_chan_type_name_spec[] = {
 	[IIO_VOLTAGE] = "voltage",
 	[IIO_CURRENT] = "current",
 	[IIO_POWER] = "power",
@@ -61,7 +61,7 @@ static const char * const iio_chan_type_name_spec[] = {
 	[IIO_MASSCONCENTRATION] = "massconcentration",
 };
 
-static const char * const modifier_names[] = {
+static const char *const modifier_names[] = {
 	[IIO_MOD_X] = "x",
 	[IIO_MOD_Y] = "y",
 	[IIO_MOD_Z] = "z",
@@ -155,7 +155,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 				(chn->id[len] < '0' || chn->id[len] > '9'))
 			continue;
 
-		chn->type = (enum iio_chan_type) i;
+		chn->type = (enum iio_chan_type)i;
 	}
 
 	mod = strchr(chn->id, '_');
@@ -171,7 +171,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (strncmp(modifier_names[i], mod, len) != 0)
 			continue;
 
-		chn->modifier = (enum iio_modifier) i;
+		chn->modifier = (enum iio_modifier)i;
 		break;
 	}
 }
@@ -189,14 +189,15 @@ static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 
 	*length = len - 1; /* Skip the \0 */
 	if (attr->filename)
-		iio_snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
+		iio_snprintf(str, len,
+				"<attribute name=\"%s\" filename=\"%s\" />",
 				attr->name, attr->filename);
 	else
 		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
 	return str;
 }
 
-static char * get_scan_element(const struct iio_channel *chn, size_t *length)
+static char *get_scan_element(const struct iio_channel *chn, size_t *length)
 {
 	char buf[1024], repeat[12] = "", *str;
 	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
@@ -204,10 +205,12 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 	if (chn->format.repeat > 1)
 		iio_snprintf(repeat, sizeof(repeat), "X%u", chn->format.repeat);
 
-	iio_snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
+	iio_snprintf(buf, sizeof(buf),
+			"<scan-element index=\"%li\" "
 			"format=\"%ce:%c%u/%u%s&gt;&gt;%u\" />",
 			chn->index, chn->format.is_be ? 'b' : 'l',
-			chn->format.is_signed ? 's' + processed : 'u' + processed,
+			chn->format.is_signed ? 's' + processed
+					      : 'u' + processed,
 			chn->format.bits, chn->format.length, repeat,
 			chn->format.shift);
 
@@ -224,11 +227,11 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 }
 
 /* Returns a string containing the XML representation of this channel */
-char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
+char *iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 {
 	size_t len = sizeof("<channel id=\"\" name=\"\" "
-			"type=\"output\" ></channel>")
-		+ strlen(chn->id) + (chn->name ? strlen(chn->name) : 0);
+			    "type=\"output\" ></channel>") +
+		     strlen(chn->id) + (chn->name ? strlen(chn->name) : 0);
 	char *ptr, *str, **attrs, *scan_element = NULL;
 	size_t *attrs_len, scan_element_len = 0;
 	unsigned int i;
@@ -303,12 +306,12 @@ err_free_scan_element:
 	return NULL;
 }
 
-const char * iio_channel_get_id(const struct iio_channel *chn)
+const char *iio_channel_get_id(const struct iio_channel *chn)
 {
 	return chn->id;
 }
 
-const char * iio_channel_get_name(const struct iio_channel *chn)
+const char *iio_channel_get_name(const struct iio_channel *chn)
 {
 	return chn->name;
 }
@@ -338,8 +341,8 @@ unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn)
 	return chn->nb_attrs;
 }
 
-const char * iio_channel_get_attr(const struct iio_channel *chn,
-		unsigned int index)
+const char *iio_channel_get_attr(
+		const struct iio_channel *chn, unsigned int index)
 {
 	if (index >= chn->nb_attrs)
 		return NULL;
@@ -347,8 +350,8 @@ const char * iio_channel_get_attr(const struct iio_channel *chn,
 		return chn->attrs[index].name;
 }
 
-const char * iio_channel_find_attr(const struct iio_channel *chn,
-		const char *name)
+const char *iio_channel_find_attr(
+		const struct iio_channel *chn, const char *name)
 {
 	unsigned int i;
 	for (i = 0; i < chn->nb_attrs; i++) {
@@ -359,12 +362,12 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 	return NULL;
 }
 
-ssize_t iio_channel_attr_read(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len)
+ssize_t iio_channel_attr_read(const struct iio_channel *chn, const char *attr,
+		char *dst, size_t len)
 {
 	if (chn->dev->ctx->ops->read_channel_attr)
-		return chn->dev->ctx->ops->read_channel_attr(chn,
-				attr, dst, len);
+		return chn->dev->ctx->ops->read_channel_attr(
+				chn, attr, dst, len);
 	else
 		return -ENOSYS;
 }
@@ -373,14 +376,14 @@ ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 		const char *attr, const void *src, size_t len)
 {
 	if (chn->dev->ctx->ops->write_channel_attr)
-		return chn->dev->ctx->ops->write_channel_attr(chn,
-				attr, src, len);
+		return chn->dev->ctx->ops->write_channel_attr(
+				chn, attr, src, len);
 	else
 		return -ENOSYS;
 }
 
-ssize_t iio_channel_attr_write(const struct iio_channel *chn,
-		const char *attr, const char *src)
+ssize_t iio_channel_attr_write(const struct iio_channel *chn, const char *attr,
+		const char *src)
 {
 	return iio_channel_attr_write_raw(chn, attr, src, strlen(src) + 1);
 }
@@ -390,7 +393,7 @@ void iio_channel_set_data(struct iio_channel *chn, void *data)
 	chn->userdata = data;
 }
 
-void * iio_channel_get_data(const struct iio_channel *chn)
+void *iio_channel_get_data(const struct iio_channel *chn)
 {
 	return chn->userdata;
 }
@@ -400,7 +403,7 @@ long iio_channel_get_index(const struct iio_channel *chn)
 	return chn->index;
 }
 
-const struct iio_data_format * iio_channel_get_data_format(
+const struct iio_data_format *iio_channel_get_data_format(
 		const struct iio_channel *chn)
 {
 	return &chn->format;
@@ -409,7 +412,7 @@ const struct iio_data_format * iio_channel_get_data_format(
 bool iio_channel_is_enabled(const struct iio_channel *chn)
 {
 	return chn->index >= 0 && chn->dev->mask &&
-		TEST_BIT(chn->dev->mask, chn->number);
+	       TEST_BIT(chn->dev->mask, chn->number);
 }
 
 void iio_channel_enable(struct iio_channel *chn)
@@ -532,11 +535,10 @@ static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
 		dst[i] = 0;
 }
 
-
-void iio_channel_convert(const struct iio_channel *chn,
-		void *dst, const void *src)
+void iio_channel_convert(
+		const struct iio_channel *chn, void *dst, const void *src)
 {
-	uintptr_t src_ptr = (uintptr_t) src, dst_ptr = (uintptr_t) dst;
+	uintptr_t src_ptr = (uintptr_t)src, dst_ptr = (uintptr_t)dst;
 	unsigned int len = chn->format.length / 8;
 	ptrdiff_t end = len * chn->format.repeat;
 	uintptr_t end_ptr = src_ptr + end;
@@ -546,33 +548,32 @@ void iio_channel_convert(const struct iio_channel *chn,
 	bool swap = !chn->format.is_be;
 #endif
 
-	for (src_ptr = (uintptr_t) src; src_ptr < end_ptr;
+	for (src_ptr = (uintptr_t)src; src_ptr < end_ptr;
 			src_ptr += len, dst_ptr += len) {
 		if (len == 1 || !swap)
-			memcpy((void *) dst_ptr, (const void *) src_ptr, len);
+			memcpy((void *)dst_ptr, (const void *)src_ptr, len);
 		else
-			byte_swap((void *) dst_ptr, (const void *) src_ptr,
-				len);
+			byte_swap((void *)dst_ptr, (const void *)src_ptr, len);
 
 		if (chn->format.shift)
-			shift_bits((void *) dst_ptr, chn->format.shift, len,
-				false);
+			shift_bits((void *)dst_ptr, chn->format.shift, len,
+					false);
 
 		if (!chn->format.is_fully_defined) {
 			if (chn->format.is_signed)
-				sign_extend((void *) dst_ptr,
-					chn->format.bits, len);
+				sign_extend((void *)dst_ptr, chn->format.bits,
+						len);
 			else
-				mask_upper_bits((void *) dst_ptr,
-					chn->format.bits, len);
+				mask_upper_bits((void *)dst_ptr,
+						chn->format.bits, len);
 		}
 	}
 }
 
-void iio_channel_convert_inverse(const struct iio_channel *chn,
-		void *dst, const void *src)
+void iio_channel_convert_inverse(
+		const struct iio_channel *chn, void *dst, const void *src)
 {
-	uintptr_t src_ptr = (uintptr_t) src, dst_ptr = (uintptr_t) dst;
+	uintptr_t src_ptr = (uintptr_t)src, dst_ptr = (uintptr_t)dst;
 	unsigned int len = chn->format.length / 8;
 	ptrdiff_t end = len * chn->format.repeat;
 	uintptr_t end_ptr = dst_ptr + end;
@@ -587,91 +588,91 @@ void iio_channel_convert_inverse(const struct iio_channel *chn,
 	if (len > sizeof(buf))
 		return;
 
-	for (dst_ptr = (uintptr_t) dst; dst_ptr < end_ptr;
+	for (dst_ptr = (uintptr_t)dst; dst_ptr < end_ptr;
 			src_ptr += len, dst_ptr += len) {
-		memcpy(buf, (const void *) src_ptr, len);
+		memcpy(buf, (const void *)src_ptr, len);
 		mask_upper_bits(buf, chn->format.bits, len);
 
 		if (chn->format.shift)
 			shift_bits(buf, chn->format.shift, len, true);
 
 		if (len == 1 || !swap)
-			memcpy((void *) dst_ptr, buf, len);
+			memcpy((void *)dst_ptr, buf, len);
 		else
-			byte_swap((void *) dst_ptr, buf, len);
+			byte_swap((void *)dst_ptr, buf, len);
 	}
 }
 
 size_t iio_channel_read_raw(const struct iio_channel *chn,
 		struct iio_buffer *buf, void *dst, size_t len)
 {
-	uintptr_t src_ptr, dst_ptr = (uintptr_t) dst, end = dst_ptr + len;
+	uintptr_t src_ptr, dst_ptr = (uintptr_t)dst, end = dst_ptr + len;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
-	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
+	uintptr_t buf_end = (uintptr_t)iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
-	for (src_ptr = (uintptr_t) iio_buffer_first(buf, chn);
+	for (src_ptr = (uintptr_t)iio_buffer_first(buf, chn);
 			src_ptr < buf_end && dst_ptr + length <= end;
 			src_ptr += buf_step, dst_ptr += length)
-		memcpy((void *) dst_ptr, (const void *) src_ptr, length);
-	return dst_ptr - (uintptr_t) dst;
+		memcpy((void *)dst_ptr, (const void *)src_ptr, length);
+	return dst_ptr - (uintptr_t)dst;
 }
 
-size_t iio_channel_read(const struct iio_channel *chn,
-		struct iio_buffer *buf, void *dst, size_t len)
+size_t iio_channel_read(const struct iio_channel *chn, struct iio_buffer *buf,
+		void *dst, size_t len)
 {
-	uintptr_t src_ptr, dst_ptr = (uintptr_t) dst, end = dst_ptr + len;
+	uintptr_t src_ptr, dst_ptr = (uintptr_t)dst, end = dst_ptr + len;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
-	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
+	uintptr_t buf_end = (uintptr_t)iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
-	for (src_ptr = (uintptr_t) iio_buffer_first(buf, chn);
+	for (src_ptr = (uintptr_t)iio_buffer_first(buf, chn);
 			src_ptr < buf_end && dst_ptr + length <= end;
 			src_ptr += buf_step, dst_ptr += length)
-		iio_channel_convert(chn,
-				(void *) dst_ptr, (const void *) src_ptr);
-	return dst_ptr - (uintptr_t) dst;
+		iio_channel_convert(
+				chn, (void *)dst_ptr, (const void *)src_ptr);
+	return dst_ptr - (uintptr_t)dst;
 }
 
 size_t iio_channel_write_raw(const struct iio_channel *chn,
 		struct iio_buffer *buf, const void *src, size_t len)
 {
-	uintptr_t dst_ptr, src_ptr = (uintptr_t) src, end = src_ptr + len;
+	uintptr_t dst_ptr, src_ptr = (uintptr_t)src, end = src_ptr + len;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
-	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
+	uintptr_t buf_end = (uintptr_t)iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
-	for (dst_ptr = (uintptr_t) iio_buffer_first(buf, chn);
+	for (dst_ptr = (uintptr_t)iio_buffer_first(buf, chn);
 			dst_ptr < buf_end && src_ptr + length <= end;
 			dst_ptr += buf_step, src_ptr += length)
-		memcpy((void *) dst_ptr, (const void *) src_ptr, length);
-	return src_ptr - (uintptr_t) src;
+		memcpy((void *)dst_ptr, (const void *)src_ptr, length);
+	return src_ptr - (uintptr_t)src;
 }
 
-size_t iio_channel_write(const struct iio_channel *chn,
-		struct iio_buffer *buf, const void *src, size_t len)
+size_t iio_channel_write(const struct iio_channel *chn, struct iio_buffer *buf,
+		const void *src, size_t len)
 {
-	uintptr_t dst_ptr, src_ptr = (uintptr_t) src, end = src_ptr + len;
+	uintptr_t dst_ptr, src_ptr = (uintptr_t)src, end = src_ptr + len;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
-	uintptr_t buf_end = (uintptr_t) iio_buffer_end(buf);
+	uintptr_t buf_end = (uintptr_t)iio_buffer_end(buf);
 	ptrdiff_t buf_step = iio_buffer_step(buf);
 
-	for (dst_ptr = (uintptr_t) iio_buffer_first(buf, chn);
+	for (dst_ptr = (uintptr_t)iio_buffer_first(buf, chn);
 			dst_ptr < buf_end && src_ptr + length <= end;
 			dst_ptr += buf_step, src_ptr += length)
-		iio_channel_convert_inverse(chn,
-				(void *) dst_ptr, (const void *) src_ptr);
-	return src_ptr - (uintptr_t) src;
+		iio_channel_convert_inverse(
+				chn, (void *)dst_ptr, (const void *)src_ptr);
+	return src_ptr - (uintptr_t)src;
 }
 
-int iio_channel_attr_read_longlong(const struct iio_channel *chn,
-		const char *attr, long long *val)
+int iio_channel_attr_read_longlong(
+		const struct iio_channel *chn, const char *attr, long long *val)
 {
 	char *end, buf[1024];
 	long long value;
 	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 
 	value = strtoll(buf, &end, 0);
 	if (end == buf)
@@ -680,8 +681,8 @@ int iio_channel_attr_read_longlong(const struct iio_channel *chn,
 	return 0;
 }
 
-int iio_channel_attr_read_bool(const struct iio_channel *chn,
-		const char *attr, bool *val)
+int iio_channel_attr_read_bool(
+		const struct iio_channel *chn, const char *attr, bool *val)
 {
 	long long value;
 	int ret = iio_channel_attr_read_longlong(chn, attr, &value);
@@ -692,19 +693,19 @@ int iio_channel_attr_read_bool(const struct iio_channel *chn,
 	return 0;
 }
 
-int iio_channel_attr_read_double(const struct iio_channel *chn,
-		const char *attr, double *val)
+int iio_channel_attr_read_double(
+		const struct iio_channel *chn, const char *attr, double *val)
 {
 	char buf[1024];
 	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 	else
 		return read_double(buf, val);
 }
 
-int iio_channel_attr_write_longlong(const struct iio_channel *chn,
-		const char *attr, long long val)
+int iio_channel_attr_write_longlong(
+		const struct iio_channel *chn, const char *attr, long long val)
 {
 	ssize_t ret;
 	char buf[1024];
@@ -713,20 +714,20 @@ int iio_channel_attr_write_longlong(const struct iio_channel *chn,
 	return ret < 0 ? ret : 0;
 }
 
-int iio_channel_attr_write_double(const struct iio_channel *chn,
-		const char *attr, double val)
+int iio_channel_attr_write_double(
+		const struct iio_channel *chn, const char *attr, double val)
 {
 	ssize_t ret;
 	char buf[1024];
 
-	ret = (ssize_t) write_double(buf, sizeof(buf), val);
+	ret = (ssize_t)write_double(buf, sizeof(buf), val);
 	if (!ret)
 		ret = iio_channel_attr_write(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
-int iio_channel_attr_write_bool(const struct iio_channel *chn,
-		const char *attr, bool val)
+int iio_channel_attr_write_bool(
+		const struct iio_channel *chn, const char *attr, bool val)
 {
 	ssize_t ret;
 	if (val)
@@ -736,7 +737,7 @@ int iio_channel_attr_write_bool(const struct iio_channel *chn,
 	return ret < 0 ? ret : 0;
 }
 
-const char * iio_channel_attr_get_filename(
+const char *iio_channel_attr_get_filename(
 		const struct iio_channel *chn, const char *attr)
 {
 	unsigned int i;
@@ -748,8 +749,8 @@ const char * iio_channel_attr_get_filename(
 }
 
 int iio_channel_attr_read_all(struct iio_channel *chn,
-		int (*cb)(struct iio_channel *chn,
-			const char *attr, const char *val, size_t len, void *d),
+		int (*cb)(struct iio_channel *chn, const char *attr,
+				const char *val, size_t len, void *d),
 		void *data)
 {
 	int ret, buf_size;
@@ -761,7 +762,7 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 	if (!buf)
 		return -ENOMEM;
 
-	ret = (int) iio_channel_attr_read(chn, NULL, buf, 0x100000);
+	ret = (int)iio_channel_attr_read(chn, NULL, buf, 0x100000);
 	if (ret < 0)
 		goto err_free_buf;
 
@@ -777,7 +778,7 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 			break;
 		}
 
-		len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
+		len = (int32_t)iio_be32toh(*(uint32_t *)ptr);
 		ptr += 4;
 		buf_size -= 4;
 
@@ -787,7 +788,7 @@ int iio_channel_attr_read_all(struct iio_channel *chn,
 		}
 
 		if (len > 0) {
-			ret = cb(chn, attr, ptr, (size_t) len, data);
+			ret = cb(chn, attr, ptr, (size_t)len, data);
 			if (ret < 0)
 				goto err_free_buf;
 
@@ -807,8 +808,8 @@ err_free_buf:
 }
 
 int iio_channel_attr_write_all(struct iio_channel *chn,
-		ssize_t (*cb)(struct iio_channel *chn,
-			const char *attr, void *buf, size_t len, void *d),
+		ssize_t (*cb)(struct iio_channel *chn, const char *attr,
+				void *buf, size_t len, void *d),
 		void *data)
 {
 	char *buf, *ptr;
@@ -826,11 +827,11 @@ int iio_channel_attr_write_all(struct iio_channel *chn,
 	for (i = 0; i < iio_channel_get_attrs_count(chn); i++) {
 		const char *attr = iio_channel_get_attr(chn, i);
 
-		ret = (int) cb(chn, attr, ptr + 4, len - 4, data);
+		ret = (int)cb(chn, attr, ptr + 4, len - 4, data);
 		if (ret < 0)
 			goto err_free_buf;
 
-		*(int32_t *) ptr = (int32_t) iio_htobe32((uint32_t) ret);
+		*(int32_t *)ptr = (int32_t)iio_htobe32((uint32_t)ret);
 		ptr += 4;
 		len -= 4;
 
@@ -842,14 +843,14 @@ int iio_channel_attr_write_all(struct iio_channel *chn,
 		}
 	}
 
-	ret = (int) iio_channel_attr_write_raw(chn, NULL, buf, ptr - buf);
+	ret = (int)iio_channel_attr_write_raw(chn, NULL, buf, ptr - buf);
 
 err_free_buf:
 	free(buf);
 	return ret < 0 ? ret : 0;
 }
 
-const struct iio_device * iio_channel_get_device(const struct iio_channel *chn)
+const struct iio_device *iio_channel_get_device(const struct iio_channel *chn)
 {
 	return chn->dev;
 }

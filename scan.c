@@ -15,12 +15,12 @@
  * Lesser General Public License for more details.
  */
 
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "iio-config.h"
+#include "iio-private.h"
 
 struct iio_scan_context {
 #ifdef WITH_USB_BACKEND
@@ -29,20 +29,19 @@ struct iio_scan_context {
 	bool scan_local;
 };
 
-const char * iio_context_info_get_description(
+const char *iio_context_info_get_description(
 		const struct iio_context_info *info)
 {
 	return info->description;
 }
 
-const char * iio_context_info_get_uri(
-		const struct iio_context_info *info)
+const char *iio_context_info_get_uri(const struct iio_context_info *info)
 {
 	return info->uri;
 }
 
-ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
-		struct iio_context_info ***info)
+ssize_t iio_scan_context_get_info_list(
+		struct iio_scan_context *ctx, struct iio_context_info ***info)
 {
 	struct iio_scan_result scan_result = { 0, NULL };
 
@@ -70,7 +69,7 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 
 	*info = scan_result.info;
 
-	return (ssize_t) scan_result.size;
+	return (ssize_t)scan_result.size;
 }
 
 void iio_context_info_list_free(struct iio_context_info **list)
@@ -93,7 +92,7 @@ void iio_context_info_list_free(struct iio_context_info **list)
 	free(list);
 }
 
-struct iio_context_info ** iio_scan_result_add(
+struct iio_context_info **iio_scan_result_add(
 		struct iio_scan_result *scan_result, size_t num)
 {
 	struct iio_context_info **info;
@@ -122,7 +121,7 @@ struct iio_context_info ** iio_scan_result_add(
 	return &info[old_size];
 }
 
-struct iio_scan_context * iio_create_scan_context(
+struct iio_scan_context *iio_create_scan_context(
 		const char *backend, unsigned int flags)
 {
 	struct iio_scan_context *ctx;
