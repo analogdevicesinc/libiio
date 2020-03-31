@@ -41,7 +41,7 @@
 enum backend {
 	LOCAL,
 	XML,
-	AUTO
+	AUTO,
 };
 
 /*

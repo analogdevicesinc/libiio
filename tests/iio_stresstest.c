@@ -156,7 +156,7 @@ enum backend {
 	IIO_LOCAL,
 	IIO_IP,
 	IIO_USB,
-	IIO_AUTO
+	IIO_AUTO,
 };
 
 enum verbosity {
