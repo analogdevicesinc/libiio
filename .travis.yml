@@ -97,7 +97,7 @@ addons:
 before_install:
   - if [[ "$ARCH" == "arm" ]] ; then ./CI/travis/setup_qemu_for_arm.sh ${OS_VERSION} ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./CI/travis/before_install_darwin ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./CI/travis/before_install_linux "$OS_TYPE" "$OS_VERSION" ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./CI/travis/before_install_linux "$OS_TYPE" ; fi
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "$TRAVIS_EVENT_TYPE" == "cron" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
 
@@ -106,7 +106,7 @@ before_install:
 
 script:
   - if [[ "$ARCH" == "arm" && "$TRAVIS_OS_NAME" == "linux" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_linux_qemu ; fi
-  - if [[ -z "$ARCH" && "$TRAVIS_OS_NAME" == "linux" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_linux libiio "$OS_TYPE" "$OS_VERSION" ; fi
+  - if [[ -z "$ARCH" && "$TRAVIS_OS_NAME" == "linux" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_linux libiio "$OS_TYPE" ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/make_darwin; fi
   - if [[ "$TRIGGER_NEXT_BUILD" == "true" ]]; then ${TRAVIS_BUILD_DIR}/CI/travis/after_deploy; fi
 

@@ -33,6 +33,5 @@ handle_default() {
 }
 
 OS_TYPE=${1:-default}
-OS_VERSION=${2}
 
 handle_${OS_TYPE}
