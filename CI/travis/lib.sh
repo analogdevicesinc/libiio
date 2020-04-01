@@ -320,6 +320,28 @@ ensure_command_exists() {
 	return 1
 }
 
+version_gt() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1"; }
+version_le() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" = "$1"; }
+version_lt() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" != "$1"; }
+version_ge() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" = "$1"; }
+
+get_codename() {
+	lsb_release -c -s
+}
+
+get_dist_id() {
+	lsb_release -i -s
+}
+
+get_version() {
+	lsb_release -r -s
+}
+
+is_ubuntu_at_least_ver() {
+	[ "$(get_dist_id)" = "Ubuntu" ] || return 1
+	version_ge "$(get_version)" "$1"
+}
+
 print_github_api_rate_limits() {
 	# See https://developer.github.com/v3/rate_limit/
 	# Note: Accessing this endpoint does not count against your REST API rate limit.
