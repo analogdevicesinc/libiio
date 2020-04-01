@@ -17,6 +17,10 @@ else
 	exit 1
 fi
 
+if [ -f "/$LIBNAME/inside-travis-ci-docker-env" ] ; then
+	. /$LIBNAME/inside-travis-ci-docker-env
+fi
+
 $CI/travis/before_install_linux "$OS_TYPE"
 
 $CI/travis/make_linux "$OS_TYPE"
