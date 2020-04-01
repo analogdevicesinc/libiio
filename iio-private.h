@@ -275,6 +275,12 @@ void usb_context_scan_free(struct iio_scan_backend_context *ctx);
 int usb_context_scan(struct iio_scan_backend_context *ctx,
 		struct iio_scan_result *scan_result);
 
+struct iio_scan_backend_context * dnssd_context_scan_init(void);
+void dnssd_context_scan_free(struct iio_scan_backend_context *ctx);
+
+int dnssd_context_scan(struct iio_scan_backend_context *ctx,
+		struct iio_scan_result *scan_result);
+
 /* This function is not part of the API, but is used by the IIO daemon */
 __api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);

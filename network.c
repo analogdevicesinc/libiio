@@ -18,55 +18,15 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
+#include "network.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
-
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#define close(s) closesocket(s)
-
-/* winsock2.h defines ERROR, we don't want that */
-#undef ERROR
-
-#else /* _WIN32 */
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <net/if.h>
-#include <sys/mman.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#endif /* _WIN32 */
-
 #include "debug.h"
-
-#define DEFAULT_TIMEOUT_MS 5000
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
-#define IIOD_PORT 30431
 #define IIOD_PORT_STR STRINGIFY(IIOD_PORT)
-
-#ifdef HAVE_DNS_SD
-extern int discover_host(char *addr_str, size_t addr_len, uint16_t *port);
-#ifdef HAVE_AVAHI
-#include <avahi-common/address.h>
-#define DNS_SD_ADDRESS_STR_MAX AVAHI_ADDRESS_STR_MAX
-#else
-#define DNS_SD_ADDRESS_STR_MAX (40)
-#endif
-#endif
 
 struct iio_network_io_context {
 	int fd;
@@ -594,7 +554,7 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	return 0;
 }
 
-static int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
+int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
 	int ret, fd, yes = 1;
 
@@ -1348,12 +1308,17 @@ struct iio_context * network_create_context(const char *host)
 		char port_str[6];
 		uint16_t port = IIOD_PORT;
 
-		ret = discover_host(addr_str, sizeof(addr_str), &port);
+		ret = dnssd_discover_host(addr_str, sizeof(addr_str), &port);
 		if (ret < 0) {
 			char buf[1024];
 			iio_strerror(-ret, buf, sizeof(buf));
 			DEBUG("Unable to find host: %s\n", buf);
 			errno = -ret;
+			return NULL;
+		}
+		if (!strlen(addr_str)) {
+			DEBUG("No DNS Service Discovery hosts on network\n");
+			errno = ENOENT;
 			return NULL;
 		}
 
