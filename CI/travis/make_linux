@@ -5,6 +5,7 @@ if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 . CI/travis/lib.sh
 
 handle_default() {
+	echo "### making build dir"
 	mkdir -p build
 	cd build
 
@@ -21,10 +22,22 @@ handle_default() {
 	# set it back, to error immediately.
 	set -e
 
+	echo "### cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON"
+	echo "          -DPYTHON_BINDINGS=ON ${DOC_FOUND}"
 	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
 		-DPYTHON_BINDINGS=ON ${DOC_FOUND} ..
 
+	echo "### make"
 	make
+	if [ "$TRAVIS" = "true" ] ; then
+		# make sure the *.so can be found during make package
+		echo "### Installing package as root"
+		sudo make install
+		# get rid of anything that will cause a problem
+		echo "### Deleting install_manifest.txt (created as root)"
+		sudo rm ./install_manifest.txt
+	fi
+	echo "### make package"
 	make package
 	if [ -n "${GH_DOC_TOKEN}" ] && \
 			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
@@ -36,6 +49,7 @@ handle_default() {
 	if [ "$LDIST" = "DO_NOT_DEPLOY" ] ; then
 		./CI/travis/check_kernel.sh
 	fi
+	echo "### All done building"
 }
 
 handle_centos() {
