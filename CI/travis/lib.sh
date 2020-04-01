@@ -10,6 +10,17 @@ LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_NO_INSTALL_CLEANUP
 
+# Add here all the common env-vars that should be propagated
+# to the docker image, simply by referencing the env-var name.
+# The values will be evaluated.
+#
+# Make sure to not pass certain stuff that are specific to the host
+# and not specific to inside-the-docker (like TRAVIS_BUILD_DIR)
+#
+# If these nothing should be passed, then clear or
+#'unset INSIDE_DOCKER_TRAVIS_CI_ENV' after this script is included
+INSIDE_DOCKER_TRAVIS_CI_ENV="TRAVIS TRAVIS_COMMIT TRAVIS_PULL_REQUEST"
+
 COMMON_SCRIPTS="inside_docker.sh"
 
 echo_red()   { printf "\033[1;31m$*\033[m\n"; }
@@ -266,11 +277,24 @@ prepare_docker_image() {
 	sudo docker pull "$DOCKER_IMAGE"
 }
 
+__save_env_for_docker() {
+	local env_file="$1/inside-travis-ci-docker-env"
+	for env in $INSIDE_DOCKER_TRAVIS_CI_ENV ; do
+		val="$(eval echo "\$${env}")"
+		if [ -n "$val" ] ; then
+			echo "export ${env}=${val}" >> "${env_file}"
+		fi
+	done
+}
+
 run_docker_script() {
 	local DOCKER_SCRIPT="$(get_script_path $1)"
 	local DOCKER_IMAGE="$2"
 	local OS_TYPE="$3"
 	local MOUNTPOINT="${4:-docker_build_dir}"
+
+	__save_env_for_docker "${TRAVIS_BUILD_DIR}"
+
 	sudo docker run --rm=true \
 		-v "$(pwd):/${MOUNTPOINT}:rw" \
 		$DOCKER_IMAGE \
