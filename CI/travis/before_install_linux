@@ -6,7 +6,7 @@ handle_centos() {
 	# FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
 	yum -y groupinstall 'Development Tools'
 	yum -y install cmake libxml2-devel libusb1-devel doxygen libaio-devel \
-		avahi-devel bzip2 gzip rpm rpm-build
+		avahi-devel bzip2 gzip rpm rpm-build redhat-lsb-core
 }
 
 handle_centos_docker() {
