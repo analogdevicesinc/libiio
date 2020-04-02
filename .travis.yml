@@ -71,6 +71,11 @@ matrix:
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
       env:
+        - OS_TYPE=centos_docker
+        - OS_VERSION=8
+        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
+    - os: linux
+      env:
         - OS_TYPE=ubuntu_docker
         - OS_VERSION=focal
         - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
