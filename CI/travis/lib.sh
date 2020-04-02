@@ -342,6 +342,11 @@ is_ubuntu_at_least_ver() {
 	version_ge "$(get_version)" "$1"
 }
 
+is_centos_at_least_ver() {
+	[ "$(get_dist_id)" = "CentOS" ] || return 1
+	version_ge "$(get_version)" "$1"
+}
+
 print_github_api_rate_limits() {
 	# See https://developer.github.com/v3/rate_limit/
 	# Note: Accessing this endpoint does not count against your REST API rate limit.
