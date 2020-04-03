@@ -1072,6 +1072,9 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 	if (bus < 0 || address < 0 || interface < 0)
 		goto err_bad_uri;
 
+	if (bus > UINT_MAX || address > UINT8_MAX || interface > UINT8_MAX)
+		goto err_bad_uri;
+
 	return usb_create_context((unsigned int) bus,
 			(unsigned int) address, (unsigned int) interface);
 
