@@ -249,11 +249,13 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 	ret = dnssd_find_hosts(&ddata);
 
 	/* if we return an error when no devices are found, then other scans will fail */
-	if (ret == -ENXIO)
-		return 0;
+	if (ret == -ENXIO) {
+		ret = 0;
+		goto fail;
+	}
 
 	if (ret < 0)
-		return ret;
+		goto fail;
 
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
 		info = iio_scan_result_add(scan_result, 1);
@@ -271,6 +273,7 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 		}
 	}
 
+fail:
 	dnssd_free_all_discovery_data(ddata);
 	return ret;
 }
