@@ -30,7 +30,6 @@
 /* Some functions for handling common linked list operations */
 static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 {
-
 	struct dns_sd_discovery_data *d, *ndata, *ldata, *tdata;
 	int i;
 
@@ -54,6 +53,7 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 			ldata = ndata;
 			i++;
 		}
+		ERROR("dnssd_remove_node call when %i exceeds list length (%i)\n", n, i);
 	}
 
 	*ddata = d;
@@ -158,10 +158,11 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 
 	d = *ddata;
 	iio_mutex_lock(d->lock);
-	for (i = 0, ndata = d; ndata->next != NULL; ndata = ndata->next) {
+	for (i = 0, ndata = d; ndata->next != NULL; ) {
 		char port_str[6];
 		struct addrinfo hints, *res, *rp;
 		int fd;
+		bool found = false;
 
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = AF_UNSPEC;
@@ -175,7 +176,6 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 			DEBUG("Unable to find host ('%s'): %s\n",
 					ndata->hostname,
 					gai_strerror(ret));
-			dnssd_remove_node(&d, i);
 		} else {
 			for (rp = res; rp != NULL; rp = rp->ai_next) {
 				fd = create_socket(rp, DEFAULT_TIMEOUT_MS);
@@ -184,18 +184,23 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 							rp->ai_family == AF_INET ? "ipv4" : "",
 							rp->ai_family == AF_INET6? "ipv6" : "",
 					ndata->hostname, ndata->port, ndata->addr_str);
-					dnssd_remove_node(&d, i);
 				} else {
 					close(fd);
 					DEBUG("Something %s%s at '%s:%d' %s)\n",
 							rp->ai_family == AF_INET ? "ipv4" : "",
 							rp->ai_family == AF_INET6? "ipv6" : "",
 							ndata->hostname, ndata->port, ndata->addr_str);
-					i++;
+					found = true;
 				}
 			}
 		}
 		freeaddrinfo(res);
+		ndata = ndata->next;
+		if (found) {
+			i++;
+		} else {
+			dnssd_remove_node(&d, i);
+		}
 	}
 	iio_mutex_unlock(d->lock);
 	*ddata = d;
