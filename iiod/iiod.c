@@ -446,7 +446,11 @@ static int main_server(struct iio_context *ctx, bool debug)
 		return EXIT_FAILURE;
 	}
 
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	if (ret < 0) {
+		iio_strerror(errno, err_str, sizeof(err_str));
+		WARNING("setsockopt SO_REUSEADDR : %s (%d)", err_str, -errno);
+	}
 
 #ifdef HAVE_IPV6
 	if (ipv6)
@@ -513,14 +517,34 @@ static int main_server(struct iio_context *ctx, bool debug)
 		/* Configure the socket to send keep-alive packets every 10s,
 		 * and disconnect the client if no reply was received for one
 		 * minute. */
-		setsockopt(new, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
-		setsockopt(new, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_probes,
+		ret = setsockopt(new, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
+		if (ret < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			WARNING("setsockopt SO_KEEPALIVE : %s (%d)", err_str, -errno);
+		}
+		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_probes,
 				sizeof(keepalive_probes));
-		setsockopt(new, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_time,
+		if (ret < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			WARNING("setsockopt TCP_KEEPCNT : %s (%d)", err_str, -errno);
+		}
+		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_time,
 				sizeof(keepalive_time));
-		setsockopt(new, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_intvl,
+		if (ret < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			WARNING("setsockopt TCP_KEEPIDLE : %s (%d)", err_str, -errno);
+		}
+		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_intvl,
 				sizeof(keepalive_intvl));
-		setsockopt(new, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
+		if (ret < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			WARNING("setsockopt TCP_KEEPINTVL : %s (%d)", err_str, -errno);
+		}
+		ret = setsockopt(new, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
+		if (ret < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			WARNING("setsockopt TCP_NODELAY : %s (%d)", err_str, -errno);
+		}
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
