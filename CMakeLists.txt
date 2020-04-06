@@ -345,19 +345,6 @@ if(NOT SKIP_INSTALL_ALL)
 	install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
-#set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
-#configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
-
-option(CSHARP_BINDINGS "Install C# bindings" OFF)
-option(PYTHON_BINDINGS "Install Python bindings" OFF)
-option(MATLAB_BINDINGS "Build MATLAB bindings" OFF)
-add_subdirectory(bindings)
-
-if (WITH_MATLAB_BINDINGS_API)
-	list(APPEND LIBIIO_EXTRA_HEADERS bindings/matlab/iio-wrapper.h)
-	add_definitions(-DMATLAB_BINDINGS_API=1)
-endif()
-
 if(WITH_TESTS)
 	add_subdirectory(tests)
 endif()
@@ -427,6 +414,16 @@ if(WITH_DOC)
 		install(DIRECTORY ${HTML_DEST_DIR}
 			DESTINATION ${CMAKE_INSTALL_DOCDIR})
 	endif()
+endif()
+
+option(CSHARP_BINDINGS "Install C# bindings" OFF)
+option(PYTHON_BINDINGS "Install Python bindings" OFF)
+option(MATLAB_BINDINGS "Build MATLAB bindings" OFF)
+add_subdirectory(bindings)
+
+if (WITH_MATLAB_BINDINGS_API)
+	list(APPEND LIBIIO_EXTRA_HEADERS bindings/matlab/iio-wrapper.h)
+	add_definitions(-DMATLAB_BINDINGS_API=1)
 endif()
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
