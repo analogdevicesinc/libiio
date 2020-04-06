@@ -120,7 +120,7 @@ static void scan(void)
 	printf("Available contexts:\n");
 
 	for (i = 0; i < (size_t) ret; i++) {
-		printf("\t%d: %s [%s]\n", i,
+		printf("\t%u: %s [%s]\n", i,
 			iio_context_info_get_description(info[i]),
 			iio_context_info_get_uri(info[i]));
 	}
@@ -166,7 +166,7 @@ static struct iio_context * autodetect_context(void)
 		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
 
 		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(stderr, "\t%d: %s [%s]\n", i,
+			fprintf(stderr, "\t%u: %s [%s]\n", i,
 				iio_context_info_get_description(info[i]),
 				iio_context_info_get_uri(info[i]));
 		}
