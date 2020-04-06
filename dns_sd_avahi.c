@@ -45,7 +45,7 @@ static int new_discovery_data(struct dns_sd_discovery_data **data)
 
 	d->address = zalloc(sizeof(struct AvahiAddress));
 	if (!d->address) {
-		free(data);
+		free(d);
 		return -ENOMEM;
 	}
 
