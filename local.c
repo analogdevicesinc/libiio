@@ -19,6 +19,10 @@
 #include "debug.h"
 #include "iio-private.h"
 #include "sort.h"
+#ifdef WITH_LOCAL_CONFIG
+#include "libini/ini.h"
+#endif
+
 
 #include <dirent.h>
 #include <errno.h>
@@ -39,9 +43,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
-#ifdef WITH_LOCAL_CONFIG
-#include <ini.h>
-#endif
 
 #define DEFAULT_TIMEOUT_MS 1000
 
