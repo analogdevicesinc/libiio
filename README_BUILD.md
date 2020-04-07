@@ -45,7 +45,7 @@ Cmake Options       | Default | Description                                    |
 `CSHARP_BINDINGS`   | OFF | Install C# bindings                                |
 `MATLAB_BINDINGS`   | OFF | Install MATLAB bindings                            |
 `PYTHON_BINDINGS`   | OFF | Install PYTHON bindings                            |
-`WITH_DOC`          | OFF | Generate documentation with Doxygen                |
+`WITH_DOC`          | OFF | Generate documentation with Doxygen and Sphinx     |
 `WITH_MAN`          | OFF | Generate and install man pages                     |
 `WITH_TESTS`        |  ON | Build the test programs                            |
 `WITH_LOCAL_CONFIG` | OFF | Read local context attributes from /etc/libiio.ini |
@@ -75,3 +75,8 @@ analog@precision:~/libiio/build$ make -j$(nproc)
 ```shell
 analog@precision:~/libiio/build$ sudo make install
 ```
+
+Note: Some things (specifically building doc)  need to find libiio or the bindings on path.
+That means that you configure (with -DWITH_DOC=OFF), build, install, configure
+(with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
+
