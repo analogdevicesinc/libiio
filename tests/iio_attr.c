@@ -156,7 +156,7 @@ static struct iio_context * autodetect_context(bool gen_code)
 	} else {
 		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
 		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(stderr, "\t%d: %s [%s]\n",
+			fprintf(stderr, "\t%u: %s [%s]\n",
 					i, iio_context_info_get_description(info[i]),
 					iio_context_info_get_uri(info[i]));
 		}

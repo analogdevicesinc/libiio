@@ -22,12 +22,6 @@
 #include <errno.h>
 #include <string.h>
 
-struct callback_wrapper_data {
-	ssize_t (*callback)(const struct iio_channel *, void *, size_t, void *);
-	void *data;
-	uint32_t *mask;
-};
-
 static bool device_is_high_speed(const struct iio_device *dev)
 {
 	/* Little trick: We call the backend's get_buffer() function, which is
