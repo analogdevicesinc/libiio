@@ -252,7 +252,7 @@ static void do_cancel(struct iio_network_io_context *io_ctx)
 		/* If this happens something went very seriously wrong */
 		char err_str[1024];
 		iio_strerror(errno, err_str, sizeof(err_str));
-		ERROR("Unable to signal cancellation event: %s\n", err_str);
+		IIO_ERROR("Unable to signal cancellation event: %s\n", err_str);
 	}
 }
 
@@ -402,12 +402,12 @@ static ssize_t write_command(struct iio_network_io_context *io_ctx,
 {
 	ssize_t ret;
 
-	DEBUG("Writing command: %s\n", cmd);
+	IIO_DEBUG("Writing command: %s\n", cmd);
 	ret = write_all(io_ctx, cmd, strlen(cmd));
 	if (ret < 0) {
 		char buf[1024];
 		iio_strerror(-ret, buf, sizeof(buf));
-		ERROR("Unable to send command: %s\n", buf);
+		IIO_ERROR("Unable to send command: %s\n", buf);
 	}
 	return ret;
 }
@@ -592,7 +592,7 @@ static int network_open(const struct iio_device *dev,
 
 	ret = create_socket(pdata->addrinfo, DEFAULT_TIMEOUT_MS);
 	if (ret < 0) {
-		ERROR("Create socket: %d\n", ret);
+		IIO_ERROR("Create socket: %d\n", ret);
 		goto out_mutex_unlock;
 	}
 
@@ -604,7 +604,7 @@ static int network_open(const struct iio_device *dev,
 	ret = iiod_client_open_unlocked(pdata->iiod_client,
 			&ppdata->io_ctx, dev, samples_count, cyclic);
 	if (ret < 0) {
-		ERROR("Open unlocked: %d\n", ret);
+		IIO_ERROR("Open unlocked: %d\n", ret);
 		goto err_close_socket;
 	}
 
@@ -710,7 +710,7 @@ static ssize_t read_all(struct iio_network_io_context *io_ctx,
 	while (len) {
 		ssize_t ret = network_recv(io_ctx, (void *) ptr, len, 0);
 		if (ret < 0) {
-			ERROR("NETWORK RECV: %zu\n", ret);
+			IIO_ERROR("NETWORK RECV: %zu\n", ret);
 			return ret;
 		}
 		ptr += ret;
@@ -755,7 +755,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 
 	ret = read_integer(io_ctx, &read_len);
 	if (ret < 0) {
-		ERROR("READ INTEGER: %zu\n", ret);
+		IIO_ERROR("READ INTEGER: %zu\n", ret);
 		return ret;
 	}
 
@@ -764,7 +764,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 		char buf[9];
 
 		buf[8] = '\0';
-		DEBUG("Reading mask\n");
+		IIO_DEBUG("Reading mask\n");
 
 		for (i = words; i > 0; i--) {
 			ret = read_all(io_ctx, buf, 8);
@@ -772,7 +772,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 				return ret;
 
 			sscanf(buf, "%08x", &mask[i - 1]);
-			DEBUG("mask[%lu] = 0x%x\n",
+			IIO_DEBUG("mask[%lu] = 0x%x\n",
 					(unsigned long)(i - 1), mask[i - 1]);
 		}
 	}
@@ -955,7 +955,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	ret = (ssize_t) ftruncate(pdata->memfd, pdata->mmap_len);
 	if (ret < 0) {
 		ret = -errno;
-		ERROR("Unable to truncate temp file: %zi\n", -ret);
+		IIO_ERROR("Unable to truncate temp file: %zi\n", -ret);
 		return ret;
 	}
 
@@ -996,7 +996,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (pdata->mmap_addr == MAP_FAILED) {
 		pdata->mmap_addr = NULL;
 		ret = -errno;
-		ERROR("Unable to mmap: %zi\n", -ret);
+		IIO_ERROR("Unable to mmap: %zi\n", -ret);
 		return ret;
 	}
 
@@ -1123,7 +1123,7 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	if (ret < 0) {
 		char buf[1024];
 		iio_strerror(-ret, buf, sizeof(buf));
-		WARNING("Unable to set R/W timeout: %s\n", buf);
+		IIO_WARNING("Unable to set R/W timeout: %s\n", buf);
 	}
 	return ret;
 }
@@ -1219,7 +1219,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		else
 			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
 		if (ret < 0) {
-			ERROR("NETWORK RECV: %zu\n", ret);
+			IIO_ERROR("NETWORK RECV: %zu\n", ret);
 			return ret;
 		}
 
@@ -1227,7 +1227,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 	} while (!found && len);
 
 	if (!found) {
-		ERROR("EIO: %zu\n", ret);
+		IIO_ERROR("EIO: %zu\n", ret);
 		return -EIO;
 	} else
 		return bytes_read;
@@ -1292,7 +1292,7 @@ struct iio_context * network_create_context(const char *host)
 
 	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
 	if (ret < 0) {
-		ERROR("WSAStartup failed with error %i\n", ret);
+		IIO_ERROR("WSAStartup failed with error %i\n", ret);
 		errno = -ret;
 		return NULL;
 	}
@@ -1312,12 +1312,12 @@ struct iio_context * network_create_context(const char *host)
 		if (ret < 0) {
 			char buf[1024];
 			iio_strerror(-ret, buf, sizeof(buf));
-			DEBUG("Unable to find host: %s\n", buf);
+			IIO_DEBUG("Unable to find host: %s\n", buf);
 			errno = -ret;
 			return NULL;
 		}
 		if (!strlen(addr_str)) {
-			DEBUG("No DNS Service Discovery hosts on network\n");
+			IIO_DEBUG("No DNS Service Discovery hosts on network\n");
 			errno = ENOENT;
 			return NULL;
 		}
@@ -1331,7 +1331,7 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	if (ret) {
-		ERROR("Unable to find host: %s\n", gai_strerror(ret));
+		IIO_ERROR("Unable to find host: %s\n", gai_strerror(ret));
 #ifndef _WIN32
 		if (ret != EAI_SYSTEM)
 			errno = -ret;
@@ -1366,14 +1366,14 @@ struct iio_context * network_create_context(const char *host)
 
 	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
 	if (pdata->msg_trunc_supported)
-		DEBUG("MSG_TRUNC is supported\n");
+		IIO_DEBUG("MSG_TRUNC is supported\n");
 	else
-		DEBUG("MSG_TRUNC is NOT supported\n");
+		IIO_DEBUG("MSG_TRUNC is NOT supported\n");
 
 	if (!pdata->iiod_client)
 		goto err_destroy_mutex;
 
-	DEBUG("Creating context...\n");
+	IIO_DEBUG("Creating context...\n");
 	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx);
 	if (!ctx)
 		goto err_destroy_iiod_client;
@@ -1410,7 +1410,7 @@ struct iio_context * network_create_context(const char *host)
 					strlen(description) + 1);
 			if (!ptr) {
 				ret = -errno;
-				ERROR("Unable to lookup interface of IPv6 address\n");
+				IIO_ERROR("Unable to lookup interface of IPv6 address\n");
 				goto err_free_description;
 			}
 

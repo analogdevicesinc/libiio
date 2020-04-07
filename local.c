@@ -224,7 +224,7 @@ static int set_channel_name(struct iio_channel *chn)
 			return -ENOMEM;
 		strncpy(name, attr0, prefix_len - 1);
 		name[prefix_len - 1] = '\0';
-		DEBUG("Setting name of channel %s to %s\n", chn->id, name);
+		IIO_DEBUG("Setting name of channel %s to %s\n", chn->id, name);
 		chn->name = name;
 
 		/* Shrink the attribute name */
@@ -475,7 +475,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		if (ret) {
 			ret = (ssize_t) -errno;
 			iio_strerror(errno, err_str, sizeof(err_str));
-			ERROR("Unable to enqueue block: %s\n", err_str);
+			IIO_ERROR("Unable to enqueue block: %s\n", err_str);
 			return ret;
 		}
 
@@ -503,7 +503,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		if ((!pdata->blocking && ret != -EAGAIN) ||
 				(pdata->blocking && ret != -ETIMEDOUT)) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			ERROR("Unable to dequeue block: %s\n", err_str);
+			IIO_ERROR("Unable to dequeue block: %s\n", err_str);
 		}
 		return ret;
 	}
@@ -800,7 +800,7 @@ static int channel_write_state(const struct iio_channel *chn, bool en)
 	ssize_t ret;
 
 	if (!chn->pdata->enable_fn) {
-		ERROR("Libiio bug: No \"en\" attribute parsed\n");
+		IIO_ERROR("Libiio bug: No \"en\" attribute parsed\n");
 		return -EINVAL;
 	}
 
@@ -832,10 +832,10 @@ static int enable_high_speed(const struct iio_device *dev)
 
 	if (pdata->cyclic) {
 		nb_blocks = 1;
-		DEBUG("Enabling cyclic mode\n");
+		IIO_DEBUG("Enabling cyclic mode\n");
 	} else {
 		nb_blocks = pdata->max_nb_blocks;
-		DEBUG("Cyclic mode not enabled\n");
+		IIO_DEBUG("Cyclic mode not enabled\n");
 	}
 
 	pdata->blocks = calloc(nb_blocks, sizeof(*pdata->blocks));
@@ -974,7 +974,7 @@ static int local_open(const struct iio_device *dev,
 
 	if (!pdata->is_high_speed) {
 		unsigned long size = samples_count * pdata->max_nb_blocks;
-		WARNING("High-speed mode not enabled\n");
+		IIO_WARNING("High-speed mode not enabled\n");
 
 		/* Cyclic mode is only supported in high-speed mode */
 		if (cyclic) {
@@ -1208,7 +1208,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 
 	attrs[dev->nb_attrs++] = name;
 	dev->attrs = attrs;
-	DEBUG("Added attr \'%s\' to device \'%s\'\n", attr, dev->id);
+	IIO_DEBUG("Added attr \'%s\' to device \'%s\'\n", attr, dev->id);
 	return 0;
 }
 
@@ -1248,7 +1248,7 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 
 	} else if (!strcmp(name, "en")) {
 		if (chn->pdata->enable_fn) {
-			ERROR("Libiio bug: \"en\" attribute already parsed for channel %s!\n",
+			IIO_ERROR("Libiio bug: \"en\" attribute already parsed for channel %s!\n",
 					chn->id);
 			return -EINVAL;
 		}
@@ -1294,7 +1294,7 @@ static int add_protected_attr(struct iio_channel *chn, char *name, char *fn)
 	attrs[pdata->nb_protected_attrs++].filename = fn;
 	pdata->protected_attrs = attrs;
 
-	DEBUG("Add protected attr \'%s\' to channel \'%s\'\n", name, chn->id);
+	IIO_DEBUG("Add protected attr \'%s\' to channel \'%s\'\n", name, chn->id);
 	return 0;
 }
 
@@ -1342,7 +1342,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	attrs[chn->nb_attrs].filename = fn;
 	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
-	DEBUG("Added attr \'%s\' to channel \'%s\'\n", name, chn->id);
+	IIO_DEBUG("Added attr \'%s\' to channel \'%s\'\n", name, chn->id);
 	return 0;
 
 err_free_fn:
@@ -1362,7 +1362,7 @@ static int add_channel_to_device(struct iio_device *dev,
 
 	channels[dev->nb_channels++] = chn;
 	dev->channels = channels;
-	DEBUG("Added %s channel \'%s\' to device \'%s\'\n",
+	IIO_DEBUG("Added %s channel \'%s\' to device \'%s\'\n",
 		chn->is_output ? "output" : "input", chn->id, dev->id);
 
 	return 0;
@@ -1378,7 +1378,7 @@ static int add_device_to_context(struct iio_context *ctx,
 
 	devices[ctx->nb_devices++] = dev;
 	ctx->devices = devices;
-	DEBUG("Added device \'%s\' to context \'%s\'\n", dev->id, ctx->name);
+	IIO_DEBUG("Added device \'%s\' to context \'%s\'\n", dev->id, ctx->name);
 	return 0;
 }
 
@@ -1498,7 +1498,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	if (strncmp(chn->id, attr, len))
 		return 0;
 
-	DEBUG("Found match: %s and %s\n", chn->id, attr);
+	IIO_DEBUG("Found match: %s and %s\n", chn->id, attr);
 	if (chn->id[len] >= '0' && chn->id[len] <= '9') {
 		if (chn->name) {
 			size_t name_len = strlen(chn->name);
@@ -1618,7 +1618,7 @@ static int add_buffer_attr(void *d, const char *path)
 
 	attrs[dev->nb_buffer_attrs++] = attr;
 	dev->buffer_attrs = attrs;
-	DEBUG("Added buffer attr \'%s\' to device \'%s\'\n", attr, dev->id);
+	IIO_DEBUG("Added buffer attr \'%s\' to device \'%s\'\n", attr, dev->id);
 	return 0;
 }
 
@@ -1673,7 +1673,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 
 			ret = -errno;
 			iio_strerror(errno, buf, sizeof(buf));
-			ERROR("Unable to open directory %s: %s\n", path, buf);
+			IIO_ERROR("Unable to open directory %s: %s\n", path, buf);
 			goto out_close_dir;
 		}
 
@@ -1681,7 +1681,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
 			iio_strerror(errno, buf, sizeof(buf));
-			ERROR("Unable to stat file: %s\n", buf);
+			IIO_ERROR("Unable to stat file: %s\n", buf);
 			goto out_close_dir;
 		}
 
@@ -1840,7 +1840,7 @@ static int add_debug_attr(void *d, const char *path)
 
 	attrs[dev->nb_debug_attrs++] = name;
 	dev->debug_attrs = attrs;
-	DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);
+	IIO_DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);
 	return 0;
 }
 
@@ -1872,7 +1872,7 @@ static void local_cancel(const struct iio_device *dev)
 		/* If this happens something went very seriously wrong */
 		char err_str[1024];
 		iio_strerror(errno, err_str, sizeof(err_str));
-		ERROR("Unable to signal cancellation event: %s\n", err_str);
+		IIO_ERROR("Unable to signal cancellation event: %s\n", err_str);
 	}
 }
 

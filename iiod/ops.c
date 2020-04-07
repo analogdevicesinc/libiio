@@ -156,7 +156,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	ret = io_submit(pdata->aio_ctx, 1, ios);
 	if (ret != 1) {
 		pthread_mutex_unlock(&pdata->aio_mutex);
-		ERROR("Failed to submit IO operation: %zd\n", ret);
+		IIO_ERROR("Failed to submit IO operation: %zd\n", ret);
 		return -EIO;
 	}
 
@@ -175,14 +175,14 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 			uint64_t event;
 			ret = read(pdata->aio_eventfd, &event, sizeof(event));
 			if (ret != sizeof(event)) {
-				ERROR("Failed to read from eventfd: %d\n", -errno);
+				IIO_ERROR("Failed to read from eventfd: %d\n", -errno);
 				ret = -EIO;
 				break;
 			}
 
 			ret = io_getevents(pdata->aio_ctx, 0, 1, e, NULL);
 			if (ret != 1) {
-				ERROR("Failed to read IO events: %zd\n", ret);
+				IIO_ERROR("Failed to read IO events: %zd\n", ret);
 				ret = -EIO;
 				break;
 			} else {
@@ -192,7 +192,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 			/* Got a STOP event to abort this whole session */
 			ret = io_cancel(pdata->aio_ctx, &iocb, e);
 			if (ret != -EINPROGRESS && ret != -EINVAL) {
-				ERROR("Failed to cancel IO transfer: %zd\n", ret);
+				IIO_ERROR("Failed to cancel IO transfer: %zd\n", ret);
 				ret = -EIO;
 				break;
 			}
@@ -526,7 +526,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	unsigned int nb_words = entry->nb_words;
 	ssize_t ret = 0;
 
-	DEBUG("R/W thread started for device %s\n",
+	IIO_DEBUG("R/W thread started for device %s\n",
 			dev->name ? dev->name : dev->id);
 
 	while (true) {
@@ -573,7 +573,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 					samples_count, entry->cyclic);
 			if (!entry->buf) {
 				ret = -errno;
-				ERROR("Unable to create buffer\n");
+				IIO_ERROR("Unable to create buffer\n");
 				break;
 			}
 			entry->cancelled = false;
@@ -586,10 +586,10 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				}
 			}
 
-			DEBUG("IIO device %s reopened with new mask:\n",
+			IIO_DEBUG("IIO device %s reopened with new mask:\n",
 					dev->id);
 			for (i = 0; i < nb_words; i++)
-				DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
+				IIO_DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
 
 			entry->sample_size = iio_device_get_sample_size(dev);
@@ -640,7 +640,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			}
 
 			if (ret < 0) {
-				ERROR("Reading from device failed: %i\n",
+				IIO_ERROR("Reading from device failed: %i\n",
 						(int) ret);
 				break;
 			}
@@ -704,7 +704,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				continue;
 			}
 			if (ret < 0) {
-				ERROR("Writing to device failed: %i\n",
+				IIO_ERROR("Writing to device failed: %i\n",
 						(int) ret);
 				break;
 			}
@@ -743,7 +743,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		iio_device_set_data(dev, NULL);
 	pthread_mutex_unlock(&devlist_lock);
 
-	DEBUG("Stopping R/W thread for device %s\n",
+	IIO_DEBUG("Stopping R/W thread for device %s\n",
 			dev->name ? dev->name : dev->id);
 
 	dev_entry_put(entry);
@@ -800,7 +800,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 
 	pthread_cond_signal(&entry->rw_ready_cond);
 
-	DEBUG("Waiting for completion...\n");
+	IIO_DEBUG("Waiting for completion...\n");
 	while (thd->active) {
 		ret = thd_entry_event_wait(thd, &entry->thdlist_lock, pdata->fd_in);
 		if (ret)
@@ -813,7 +813,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 	if (ret > 0 && ret < nb)
 		print_value(thd->pdata, 0);
 
-	DEBUG("Exiting rw_buffer with code %li\n", (long) ret);
+	IIO_DEBUG("Exiting rw_buffer with code %li\n", (long) ret);
 	if (ret < 0)
 		return ret;
 	else
@@ -833,7 +833,7 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 		sprintf(buf, "%.*s", 8, mask);
 		sscanf(buf, "%08x", --ptr);
 		mask += 8;
-		DEBUG("Mask[%lu]: 0x%08x\n",
+		IIO_DEBUG("Mask[%lu]: 0x%08x\n",
 				(unsigned long) (words - ptr) / 4, *ptr);
 	}
 
@@ -959,7 +959,7 @@ retry:
 			SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
 			thd->entry = entry;
 			entry->update_mask = true;
-			DEBUG("Added thread to client list\n");
+			IIO_DEBUG("Added thread to client list\n");
 
 			pthread_cond_signal(&entry->rw_ready_cond);
 
@@ -1005,7 +1005,7 @@ retry:
 	SLIST_INIT(&entry->thdlist_head);
 	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
 	thd->entry = entry;
-	DEBUG("Added thread to client list\n");
+	IIO_DEBUG("Added thread to client list\n");
 
 	pthread_mutex_init(&entry->thdlist_lock, NULL);
 	pthread_cond_init(&entry->rw_ready_cond, NULL);
@@ -1016,7 +1016,7 @@ retry:
 		goto err_free_entry_mask;
 	}
 
-	DEBUG("Adding new device thread to device list\n");
+	IIO_DEBUG("Adding new device thread to device list\n");
 	iio_device_set_data(dev, entry);
 	pthread_mutex_unlock(&devlist_lock);
 
@@ -1377,7 +1377,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		pdata.aio_eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 		if (pdata.aio_eventfd < 0) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			ERROR("Failed to create AIO eventfd: %s\n", err_str);
+			IIO_ERROR("Failed to create AIO eventfd: %s\n", err_str);
 			return;
 		}
 
@@ -1385,7 +1385,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		ret = io_setup(1, &pdata.aio_ctx);
 		if (ret < 0) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
-			ERROR("Failed to create AIO context: %s\n", err_str);
+			IIO_ERROR("Failed to create AIO context: %s\n", err_str);
 			close(pdata.aio_eventfd);
 			return;
 		}

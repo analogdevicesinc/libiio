@@ -47,50 +47,50 @@
 
 #if (LOG_LEVEL >= Debug_L)
 # ifdef COLOR_DEBUG
-#  define DEBUG(str, ...) \
+#  define IIO_DEBUG(str, ...) \
     fprintf(stdout, COLOR_DEBUG "DEBUG: " str COLOR_END, ##__VA_ARGS__)
 # else
-#  define DEBUG(...) \
+#  define IIO_DEBUG(...) \
     fprintf(stdout, "DEBUG: " __VA_ARGS__)
 # endif
 #else
-#define DEBUG(...) do { } while (0)
+#define IIO_DEBUG(...) do { } while (0)
 #endif
 
 #if (LOG_LEVEL >= Info_L)
 # ifdef COLOR_INFO
-#  define INFO(str, ...) \
+#  define IIO_INFO(str, ...) \
     fprintf(stdout, COLOR_INFO str COLOR_END, ##__VA_ARGS__)
 # else
-#  define INFO(...) \
+#  define IIO_INFO(...) \
     fprintf(stdout, __VA_ARGS__)
 # endif
 #else
-#define INFO(...) do { } while (0)
+#define IIO_INFO(...) do { } while (0)
 #endif
 
 #if (LOG_LEVEL >= Warning_L)
 # ifdef COLOR_WARNING
-#  define WARNING(str, ...) \
+#  define IIO_WARNING(str, ...) \
     fprintf(stderr, COLOR_WARNING "WARNING: " str COLOR_END, ##__VA_ARGS__)
 # else
-#  define WARNING(...) \
+#  define IIO_WARNING(...) \
     fprintf(stderr, "WARNING: " __VA_ARGS__)
 # endif
 #else
-#define WARNING(...) do { } while (0)
+#define IIO_WARNING(...) do { } while (0)
 #endif
 
 #if (LOG_LEVEL >= Error_L)
 # ifdef COLOR_ERROR
-#  define ERROR(str, ...) \
+#  define IIO_ERROR(str, ...) \
     fprintf(stderr, COLOR_ERROR "ERROR: " str COLOR_END, ##__VA_ARGS__)
 # else
-#  define ERROR(...) \
+#  define IIO_ERROR(...) \
     fprintf(stderr, "ERROR: " __VA_ARGS__)
 # endif
 #else
-#define ERROR(...) do { } while (0)
+#define IIO_ERROR(...) do { } while (0)
 #endif
 
 #endif

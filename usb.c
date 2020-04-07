@@ -250,7 +250,7 @@ static int usb_open(const struct iio_device *dev,
 		char err_str[1024];
 
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		ERROR("Failed to open pipe: %s\n", err_str);
+		IIO_ERROR("Failed to open pipe: %s\n", err_str);
 		usb_free_ep_unlocked(dev);
 		goto out_unlock;
 	}
@@ -504,7 +504,7 @@ static int iio_usb_match_device(struct libusb_device *dev,
 	if (ret < 0)
 		return ret;
 
-	DEBUG("Found IIO interface on device %u:%u using interface %u\n",
+	IIO_DEBUG("Found IIO interface on device %u:%u using interface %u\n",
 			libusb_get_bus_number(dev),
 			libusb_get_device_address(dev), i - 1);
 
@@ -797,21 +797,21 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
-		ERROR("Unable to allocate pdata\n");
+		IIO_ERROR("Unable to allocate pdata\n");
 		ret = -ENOMEM;
 		goto err_set_errno;
 	}
 
 	pdata->lock = iio_mutex_create();
 	if (!pdata->lock) {
-		ERROR("Unable to create mutex\n");
+		IIO_ERROR("Unable to create mutex\n");
 		ret = -ENOMEM;
 		goto err_free_pdata;
 	}
 
 	pdata->ep_lock = iio_mutex_create();
 	if (!pdata->ep_lock) {
-		ERROR("Unable to create mutex\n");
+		IIO_ERROR("Unable to create mutex\n");
 		ret = -ENOMEM;
 		goto err_destroy_mutex;
 	}
@@ -819,7 +819,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
 			&usb_iiod_client_ops);
 	if (!pdata->iiod_client) {
-		ERROR("Unable to create IIOD client\n");
+		IIO_ERROR("Unable to create IIOD client\n");
 		ret = -errno;
 		goto err_destroy_ep_mutex;
 	}
@@ -827,7 +827,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	ret = libusb_init(&usb_ctx);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		ERROR("Unable to init libusb: %i\n", ret);
+		IIO_ERROR("Unable to init libusb: %i\n", ret);
 		goto err_destroy_iiod_client;
 	}
 
@@ -852,7 +852,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 			 * we find such a device skip it and keep looking.
 			 */
 			if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
-				WARNING("Skipping broken USB device. Please upgrade libusb.\n");
+				IIO_WARNING("Skipping broken USB device. Please upgrade libusb.\n");
 				usb_dev = NULL;
 				continue;
 			}
@@ -870,7 +870,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		ERROR("Unable to open device\n");
+		IIO_ERROR("Unable to open device\n");
 		goto err_libusb_exit;
 	}
 
@@ -883,7 +883,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 		char err_str[1024];
 		ret = -(int) libusb_to_errno(ret);
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		ERROR("Unable to claim interface %u:%u:%u: %s (%i)\n",
+		IIO_ERROR("Unable to claim interface %u:%u:%u: %s (%i)\n",
 		      bus, address, interface, err_str, ret);
 		goto err_libusb_close;
 	}
@@ -893,7 +893,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 		char err_str[1024];
 		ret = -(int) libusb_to_errno(ret);
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		ERROR("Unable to get config descriptor: %s (%i)\n",
+		IIO_ERROR("Unable to get config descriptor: %s (%i)\n",
 				err_str, ret);
 		goto err_libusb_close;
 	}
@@ -902,18 +902,18 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	ret = usb_verify_eps(iface);
 	if (ret) {
-		ERROR("Invalid configuration of endpoints\n");
+		IIO_ERROR("Invalid configuration of endpoints\n");
 		goto err_free_config_descriptor;
 	}
 
 	pdata->nb_ep_couples = iface->bNumEndpoints / 2;
 
-	DEBUG("Found %hhu usable i/o endpoint couples\n", pdata->nb_ep_couples);
+	IIO_DEBUG("Found %hhu usable i/o endpoint couples\n", pdata->nb_ep_couples);
 
 	pdata->io_endpoints = calloc(pdata->nb_ep_couples,
 			sizeof(*pdata->io_endpoints));
 	if (!pdata->io_endpoints) {
-		ERROR("Unable to allocate endpoints\n");
+		IIO_ERROR("Unable to allocate endpoints\n");
 		ret = -ENOMEM;
 		goto err_free_config_descriptor;
 	}
@@ -925,12 +925,12 @@ struct iio_context * usb_create_context(unsigned int bus,
 		ep->addr_out = iface->endpoint[i * 2 + 1].bEndpointAddress;
 		ep->pipe_id = i;
 
-		DEBUG("Couple %i with endpoints 0x%x / 0x%x\n", i,
+		IIO_DEBUG("Couple %i with endpoints 0x%x / 0x%x\n", i,
 				ep->addr_in, ep->addr_out);
 
 		ep->lock = iio_mutex_create();
 		if (!ep->lock) {
-			ERROR("Unable to create mutex\n");
+			IIO_ERROR("Unable to create mutex\n");
 			ret = -ENOMEM;
 			goto err_free_endpoints;
 		}
@@ -952,14 +952,14 @@ struct iio_context * usb_create_context(unsigned int bus,
 	ret = usb_reset_pipes(pdata);
 	if (ret) {
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		ERROR("Failed to reset pipes: %s\n", err_str);
+		IIO_ERROR("Failed to reset pipes: %s\n", err_str);
 		goto err_io_context_exit;
 	}
 
 	ret = usb_open_pipe(pdata, 0);
 	if (ret) {
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		ERROR("Failed to open control pipe: %s\n", err_str);
+		IIO_ERROR("Failed to open control pipe: %s\n", err_str);
 		goto err_io_context_exit;
 	}
 
@@ -980,7 +980,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
-			ERROR("Unable to allocate memory\n");
+			IIO_ERROR("Unable to allocate memory\n");
 			ret = -ENOMEM;
 			goto err_context_destroy;
 		}
@@ -1079,7 +1079,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 			(unsigned int) address, (unsigned int) interface);
 
 err_bad_uri:
-	ERROR("Bad URI: \'%s\'\n", uri);
+	IIO_ERROR("Bad URI: \'%s\'\n", uri);
 	errno = EINVAL;
 	return NULL;
 }

@@ -56,18 +56,18 @@ static void __cfnet_browser_cb (
 	CFStreamError	anError;
 
 	if ((flags & kCFNetServiceFlagIsDomain) != 0) {
-		ERROR("DNS SD: FATAL! Callback called for domain, not service.\n");
+		IIO_ERROR("DNS SD: FATAL! Callback called for domain, not service.\n");
 		goto stop_browsing;
 	}
 	
 	struct dns_sd_discovery_data *dd = (struct dns_sd_discovery_data *)info;
 	if (dd == NULL) {
-		ERROR("DNS SD: Missing info structure. Stop browsing.\n");
+		IIO_ERROR("DNS SD: Missing info structure. Stop browsing.\n");
 		goto stop_browsing;
 	}
 
 	if ((flags & kCFNetServiceFlagRemove) != 0) {
-		DEBUG("DNS SD: Callback to remove service. Ignore.\n");
+		IIO_DEBUG("DNS SD: Callback to remove service. Ignore.\n");
 		return;
 	}
 
@@ -75,31 +75,31 @@ static void __cfnet_browser_cb (
 
 	const CFNetServiceRef netService = (CFNetServiceRef)domainOrService;
 	if (netService == NULL) {
-		DEBUG("DNS SD: Net service is null.\n");
+		IIO_DEBUG("DNS SD: Net service is null.\n");
 		goto verify_flags;
 	}
 	
 	if (!CFNetServiceResolveWithTimeout(netService, 10.0, &anError)) {
-		DEBUG("DNS SD: Resolve error: %ld.%d\n", anError.domain, anError.error);
+		IIO_DEBUG("DNS SD: Resolve error: %ld.%d\n", anError.domain, anError.error);
 		goto exit;
 	}
 	
 	CFStringRef targetHost = CFNetServiceGetTargetHost(netService);
 	if (targetHost == NULL) {
-		DEBUG("DNS SD: No valid target host for service.\n");
+		IIO_DEBUG("DNS SD: No valid target host for service.\n");
 		goto exit;
 	}
 
 	char hostname[MAXHOSTNAMELEN];
 	if (!CFStringGetCString(targetHost, hostname, sizeof(hostname), kCFStringEncodingASCII)) {
-		ERROR("DNS SD: Could not translate hostname\n");
+		IIO_ERROR("DNS SD: Could not translate hostname\n");
 		goto exit;
 	}
 
 	CFStringRef svcName = CFNetServiceGetName(netService);
 	char name[MAXHOSTNAMELEN];
 	if (!CFStringGetCString(svcName, name, sizeof(name), kCFStringEncodingASCII)) {
-		ERROR("DNS SD: Could not translate service name\n");
+		IIO_ERROR("DNS SD: Could not translate service name\n");
 		goto exit;
 	}
 
@@ -107,7 +107,7 @@ static void __cfnet_browser_cb (
 	
 	CFArrayRef addrArr = CFNetServiceGetAddressing(netService);
 	if (addrArr == NULL) {
-		WARNING("DNS SD: No valid addresses for service %s.\n", name);
+		IIO_WARNING("DNS SD: No valid addresses for service %s.\n", name);
 		goto exit;
 	}
 	
@@ -133,7 +133,7 @@ static void __cfnet_browser_cb (
 	}
 
 	if (!have_v4 && !have_v6) {
-		WARNING("DNS SD: Can't resolve valid address for service %s.\n", name);
+		IIO_WARNING("DNS SD: Can't resolve valid address for service %s.\n", name);
 		goto exit;
 	}
 
@@ -149,7 +149,7 @@ static void __cfnet_browser_cb (
 		strncpy(dd->addr_str, address_v6, sizeof(dd->addr_str));
 	}
 
-	DEBUG("DNS SD: added %s (%s:%d)\n", hostname, dd->addr_str, port);
+	IIO_DEBUG("DNS SD: added %s (%s:%d)\n", hostname, dd->addr_str, port);
 
 	if (have_v4 || have_v6) {
 		// A list entry was filled, prepare new item on the list.
@@ -157,13 +157,13 @@ static void __cfnet_browser_cb (
 			/* duplicate lock */
 			dd->next->lock = dd->lock;
 		} else {
-			ERROR("DNS SD Bonjour Resolver : memory failure\n");
+			IIO_ERROR("DNS SD Bonjour Resolver : memory failure\n");
 		}
 	}
 
 verify_flags:
 	if ((flags & kCFNetServiceFlagMoreComing) == 0) {
-		DEBUG("DNS SD: No more entries coming.\n");
+		IIO_DEBUG("DNS SD: No more entries coming.\n");
 		CFNetServiceBrowserStopSearch(browser, &anError);
 	}
 
@@ -180,7 +180,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata)
 	int ret = 0;
 	struct dns_sd_discovery_data *d;
 
-	DEBUG("DNS SD: Start service discovery.\n");
+	IIO_DEBUG("DNS SD: Start service discovery.\n");
 
 	if (new_discovery_data(&d) < 0) {
 		return -ENOMEM;
@@ -197,7 +197,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata)
 		kCFAllocatorDefault, __cfnet_browser_cb, &clientContext);
 
 	if (serviceBrowser == NULL) {
-		ERROR("DNS SD: Failed to create service browser.\n");
+		IIO_ERROR("DNS SD: Failed to create service browser.\n");
 		dnssd_free_all_discovery_data(d);
 		ret = -ENOMEM;
 		goto exit;
@@ -212,7 +212,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata)
 	Boolean result = CFNetServiceBrowserSearchForServices(serviceBrowser, domain, type, &error);
 
 	if (result == false) {
-		ERROR("DNS SD: CFNetServiceBrowserSearchForServices failed (domain = %ld, error = %d)\n",
+		IIO_ERROR("DNS SD: CFNetServiceBrowserSearchForServices failed (domain = %ld, error = %d)\n",
 			(long)error.domain, error.error);
 
 		ret = -ENXIO;
@@ -221,16 +221,16 @@ int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata)
 
 		if (runRes != kCFRunLoopRunHandledSource && runRes != kCFRunLoopRunTimedOut) {
 			if (runRes == kCFRunLoopRunFinished)
-				ERROR("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunFinished (%d)\n", runRes);
+				IIO_ERROR("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunFinished (%d)\n", runRes);
 			else if (runRes == kCFRunLoopRunStopped)
-				ERROR("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunStopped (%d)\n", runRes);
+				IIO_ERROR("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunStopped (%d)\n", runRes);
 			else
-				ERROR("DSN SD: CFRunLoopRunInMode completed for unknown reason (%d)\n", runRes);
+				IIO_ERROR("DSN SD: CFRunLoopRunInMode completed for unknown reason (%d)\n", runRes);
 		} else {
 			if (runRes == kCFRunLoopRunHandledSource)
-				DEBUG("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunHandledSource (%d)\n", runRes);
+				IIO_DEBUG("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunHandledSource (%d)\n", runRes);
 			else
-				DEBUG("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunTimedOut (%d)\n", runRes);
+				IIO_DEBUG("DSN SD: CFRunLoopRunInMode completed kCFRunLoopRunTimedOut (%d)\n", runRes);
 		}
 
 		port_knock_discovery_data(&d);
@@ -242,7 +242,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata)
 	CFRelease(serviceBrowser);
 	serviceBrowser = NULL;
 
-	DEBUG("DNS SD: Completed service discovery, return code : %d\n", ret);
+	IIO_DEBUG("DNS SD: Completed service discovery, return code : %d\n", ret);
 
 exit:
 	iio_mutex_destroy(d->lock);
