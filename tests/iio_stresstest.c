@@ -50,6 +50,48 @@ static int getNumCores(void) {
 #endif
 }
 
+
+/* Code snippet insired by Nick Strupat
+ * https://stackoverflow.com/questions/794632/programmatically-get-the-cache-line-size
+ * released under the "Feel free to do whatever you want with it." license.
+ */
+static size_t cache_line_size(void)
+{
+	size_t cacheline = 0;
+
+#ifdef _WIN32
+	DWORD buffer_size = 0;
+	DWORD i = 0;
+	SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
+
+	GetLogicalProcessorInformation(0, &buffer_size);
+	buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
+	GetLogicalProcessorInformation(&buffer[0], &buffer_size);
+
+	for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) {
+		if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) {
+			cacheline = buffer[i].Cache.LineSize;
+			break;
+		}
+	}
+	free(buffer);
+
+#elif __APPLE__
+	size_t sizeof_line_size = sizeof(cacheline);
+	sysctlbyname("hw.cachelinesize", &cacheline, &sizeof_line_size, 0, 0);
+
+#elif __linux__
+	FILE * p = 0;
+
+	p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+	if (p) {
+		fscanf(p, "%zu", &cacheline);
+		fclose(p);
+	}
+#endif
+	return cacheline;
+}
+
 static const struct option options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"uri", required_argument, 0, 'u'},
@@ -174,7 +216,7 @@ struct info {
 
 	int uri_index, device_index, arg_index;
 	unsigned int buffer_size, timeout;
-	int num_threads;
+	unsigned int num_threads;
 	pthread_t *tid;
 	unsigned int *starts, *buffers, *refills;
 	pthread_t *threads;
@@ -346,6 +388,20 @@ thread_fail:
 	return (void *)EXIT_FAILURE;
 }
 
+static unsigned long int clamp(const char *name, unsigned long int val,
+		unsigned long int min, unsigned long int max)
+{
+	if (val > max) {
+		val = max;
+		fprintf(stderr, "Clamped %s to max %lu", name, max);
+	}
+	if (val < min) {
+		val = min;
+		fprintf(stderr, "Clamped %s to min %lu", name, min);
+	}
+	return val;
+}
+
 int main(int argc, char **argv)
 {
 	sigset_t set, oldset;
@@ -355,6 +411,8 @@ int main(int argc, char **argv)
 	int c, pret;
 	struct timeval start, end, s_loop;
 	void **ret;
+	size_t min_samples;
+	unsigned long int tmp;
 
 #ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
@@ -373,6 +431,10 @@ int main(int argc, char **argv)
 	info.argc = argc;
 	info.argv = argv;
 
+	min_samples = cache_line_size();
+	if(!min_samples)
+		min_samples = 128;
+
 	while ((c = getopt_long(argc, argv, "hvu:b:s:t:T:",
 					options, &option_index)) != -1) {
 		switch (c) {
@@ -385,18 +447,21 @@ int main(int argc, char **argv)
 			break;
 		case 'b':
 			info.arg_index += 2;
-			info.buffer_size = strtol(info.argv[info.arg_index], NULL, 10);
-			/* Max 4M */
-			if (info.buffer_size > (1024 * 1024 * 4))
-				info.buffer_size = 1024 * 1024 * 4;
+			tmp = strtoul(info.argv[info.arg_index], NULL, 10);
+			/* Max 4M , min 64 bytes (cache line) */
+			info.buffer_size = clamp("buffersize", tmp, min_samples, 1024 * 1024 * 4);
 			break;
 		case 't':
 			info.arg_index +=2;
-			info.timeout = 1000 * strtol(info.argv[info.arg_index], NULL, 10);
+			tmp = strtoul(info.argv[info.arg_index], NULL, 10);
+			/* ensure between least once a day and never (0) */
+			info.timeout = 1000 * clamp("timeout", tmp, 0, 60 * 60 * 24);
 			break;
 		case 'T':
 			info.arg_index +=2;
-			info.num_threads = strtol(info.argv[info.arg_index], NULL, 10);
+			tmp = strtoul(info.argv[info.arg_index], NULL, 10);
+			/* Max number threads 1024, min 1 */
+			info.num_threads = clamp("threads", tmp, 1, 1024);
 			break;
 		case 'v':
 			if (!info.verbose)
