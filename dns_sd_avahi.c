@@ -77,13 +77,13 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 	struct dns_sd_discovery_data *ddata = (struct dns_sd_discovery_data *) d;
 
 	if (!resolver) {
-		ERROR("Fatal Error in Avahi Resolver\n");
+		IIO_ERROR("Fatal Error in Avahi Resolver\n");
 		return;
 	}
 
 	switch(event) {
 	case AVAHI_RESOLVER_FAILURE:
-		ERROR("Avahi Resolver: Failed resolve service '%s' "
+		IIO_ERROR("Avahi Resolver: Failed resolve service '%s' "
 				"of type '%s' in domain '%s': %s\n",
 				name, type, domain,
 				avahi_strerror(
@@ -114,13 +114,13 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 			ddata->next->poll = ddata->poll;
 			ddata->next->lock = ddata->lock;
 		} else {
-			ERROR("Avahi Resolver : memory failure\n");
+			IIO_ERROR("Avahi Resolver : memory failure\n");
 		}
 		iio_mutex_unlock(ddata->lock);
 
-		DEBUG("Avahi Resolver : service '%s' of type '%s' in domain '%s':\n",
+		IIO_DEBUG("Avahi Resolver : service '%s' of type '%s' in domain '%s':\n",
 				name, type, domain);
-		DEBUG("\t\t%s:%u (%s)\n", host_name, port, ddata->addr_str);
+		IIO_DEBUG("\t\t%s:%u (%s)\n", host_name, port, ddata->addr_str);
 
 		break;
 		}
@@ -139,25 +139,25 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
 	int i;
 
 	if (!browser) {
-		ERROR("Fatal Error in Avahi Browser\n");
+		IIO_ERROR("Fatal Error in Avahi Browser\n");
 		return;
 	}
 
 	switch (event) {
 	case AVAHI_BROWSER_REMOVE:
-		DEBUG("Avahi Browser : REMOVE : "
+		IIO_DEBUG("Avahi Browser : REMOVE : "
 				"service '%s' of type '%s' in domain '%s'\n",
 				name, type, domain);
 		break;
 	case AVAHI_BROWSER_NEW:
-		DEBUG("Avahi Browser : NEW: "
+		IIO_DEBUG("Avahi Browser : NEW: "
 				"service '%s' of type '%s' in domain '%s'\n",
 				name, type, domain);
 		if(!avahi_service_resolver_new(client, iface,
 				proto, name, type, domain,
 				AVAHI_PROTO_UNSPEC, 0,
 				__avahi_resolver_cb, d)) {
-			ERROR("Failed to resolve service '%s\n", name);
+			IIO_ERROR("Failed to resolve service '%s\n", name);
 		} else {
 			iio_mutex_lock(ddata->lock);
 			ddata->found++;
@@ -167,7 +167,7 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
 	case AVAHI_BROWSER_ALL_FOR_NOW:
 		/* Wait for a max of 1 second */
 		i = 0;
-		DEBUG("Avahi Browser : ALL_FOR_NOW Browser : %d, Resolved : %d\n",
+		IIO_DEBUG("Avahi Browser : ALL_FOR_NOW Browser : %d, Resolved : %d\n",
 				ddata->found, ddata->resolved);
 		/* 200 * 5ms = wait 1 second */
 		while ((ddata->found != ddata->resolved)  && i <= 200) {
@@ -180,11 +180,11 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
 		avahi_simple_poll_quit(ddata->poll);
 		break;
 	case AVAHI_BROWSER_FAILURE:
-		DEBUG("Avahi Browser : FAILURE\n");
+		IIO_DEBUG("Avahi Browser : FAILURE\n");
 		avahi_simple_poll_quit(ddata->poll);
 		break;
 	case AVAHI_BROWSER_CACHE_EXHAUSTED:
-		DEBUG("Avahi Browser : CACHE_EXHAUSTED\n");
+		IIO_DEBUG("Avahi Browser : CACHE_EXHAUSTED\n");
 		break;
 	}
 }
@@ -220,7 +220,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	client = avahi_client_new(avahi_simple_poll_get(d->poll),
 			0, NULL, NULL, &ret);
 	if (!client) {
-		ERROR("Unable to create Avahi DNS-SD client :%s\n",
+		IIO_ERROR("Unable to create Avahi DNS-SD client :%s\n",
 				avahi_strerror(ret));
 		goto err_free_poll;
 	}
@@ -230,12 +230,12 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 			"_iio._tcp", NULL, 0, __avahi_browser_cb, d);
 	if (!browser) {
 		ret = avahi_client_errno(client);
-		ERROR("Unable to create Avahi DNS-SD browser: %s\n",
+		IIO_ERROR("Unable to create Avahi DNS-SD browser: %s\n",
 				avahi_strerror(ret));
 		goto err_free_client;
 	}
 
-	DEBUG("Trying to discover host\n");
+	IIO_DEBUG("Trying to discover host\n");
 	avahi_simple_poll_loop(d->poll);
 
 	if (d->resolved) {

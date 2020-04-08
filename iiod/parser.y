@@ -95,7 +95,7 @@ ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size);
 %token <chn> CHANNEL
 %token <value> VALUE;
 
-%destructor { DEBUG("Freeing token \"%s\"\n", $$); free($$); } <word>
+%destructor { IIO_DEBUG("Freeing token \"%s\"\n", $$); free($$); } <word>
 
 %start Line
 %%

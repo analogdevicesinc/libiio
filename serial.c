@@ -194,7 +194,7 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 	ssize_t ret = (ssize_t) libserialport_to_errno(sp_blocking_write(
 				pdata->port, data, len, pdata->timeout_ms));
 
-	DEBUG("Write returned %li: %s\n", (long) ret, data);
+	IIO_DEBUG("Write returned %li: %s\n", (long) ret, data);
 	return ret;
 }
 
@@ -204,7 +204,7 @@ static ssize_t serial_read_data(struct iio_context_pdata *pdata,
 	ssize_t ret = (ssize_t) libserialport_to_errno(sp_blocking_read_next(
 				pdata->port, buf, len, pdata->timeout_ms));
 
-	DEBUG("Read returned %li: %.*s\n", (long) ret, (int) ret, buf);
+	IIO_DEBUG("Read returned %li: %.*s\n", (long) ret, (int) ret, buf);
 	return ret;
 }
 
@@ -215,18 +215,18 @@ static ssize_t serial_read_line(struct iio_context_pdata *pdata,
 	bool found = false;
 	int ret;
 
-	DEBUG("Readline size 0x%lx\n", (unsigned long) len);
+	IIO_DEBUG("Readline size 0x%lx\n", (unsigned long) len);
 
 	for (i = 0; i < len - 1; i++) {
 		ret = libserialport_to_errno(sp_blocking_read_next(
 					pdata->port, &buf[i], 1,
 					pdata->timeout_ms));
 		if (ret < 0) {
-			ERROR("sp_blocking_read_next returned %i\n", ret);
+			IIO_ERROR("sp_blocking_read_next returned %i\n", ret);
 			return (ssize_t) ret;
 		}
 
-		DEBUG("Character: %c\n", buf[i]);
+		IIO_DEBUG("Character: %c\n", buf[i]);
 
 		if (buf[i] != '\n')
 			found = true;
@@ -529,7 +529,7 @@ struct iio_context * serial_create_context_from_uri(const char *uri)
 err_free_dup:
 	free(uri_dup);
 err_bad_uri:
-	ERROR("Bad URI: \'%s\'\n", uri);
+	IIO_ERROR("Bad URI: \'%s\'\n", uri);
 	errno = EINVAL;
 	return NULL;
 }

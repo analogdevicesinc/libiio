@@ -53,7 +53,7 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 			ldata = ndata;
 			i++;
 		}
-		ERROR("dnssd_remove_node call when %i exceeds list length (%i)\n", n, i);
+		IIO_ERROR("dnssd_remove_node call when %i exceeds list length (%i)\n", n, i);
 	}
 
 	*ddata = d;
@@ -78,7 +78,7 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 
 	ctx = network_create_context(addr_str);
 	if (!ctx) {
-		ERROR("No context at %s\n", addr_str);
+		IIO_ERROR("No context at %s\n", addr_str);
 		return -ENOMEM;
 	}
 
@@ -173,20 +173,20 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 
 		/* getaddrinfo() returns a list of address structures */
 		if (ret) {
-			DEBUG("Unable to find host ('%s'): %s\n",
+			IIO_DEBUG("Unable to find host ('%s'): %s\n",
 					ndata->hostname,
 					gai_strerror(ret));
 		} else {
 			for (rp = res; rp != NULL; rp = rp->ai_next) {
 				fd = create_socket(rp, DEFAULT_TIMEOUT_MS);
 				if (fd < 0) {
-					DEBUG("Unable to open %s%s socket ('%s:%d' %s)\n",
+					IIO_DEBUG("Unable to open %s%s socket ('%s:%d' %s)\n",
 							rp->ai_family == AF_INET ? "ipv4" : "",
 							rp->ai_family == AF_INET6? "ipv6" : "",
 					ndata->hostname, ndata->port, ndata->addr_str);
 				} else {
 					close(fd);
-					DEBUG("Something %s%s at '%s:%d' %s)\n",
+					IIO_DEBUG("Something %s%s at '%s:%d' %s)\n",
 							rp->ai_family == AF_INET ? "ipv4" : "",
 							rp->ai_family == AF_INET6? "ipv6" : "",
 							ndata->hostname, ndata->port, ndata->addr_str);
@@ -226,7 +226,7 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 		for (j = i + 1, mdata = ndata->next; mdata->next != NULL; mdata = mdata->next) {
 			if (!strcmp(mdata->hostname, ndata->hostname) &&
 					!strcmp(mdata->addr_str, ndata->addr_str)){
-				DEBUG("Removing duplicate in list: '%s'\n",
+				IIO_DEBUG("Removing duplicate in list: '%s'\n",
 						ndata->hostname);
 				dnssd_remove_node(&d, j);
 			}
@@ -260,7 +260,7 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
 		info = iio_scan_result_add(scan_result, 1);
 		if (!info) {
-			ERROR("Out of memory when adding new scan result\n");
+			IIO_ERROR("Out of memory when adding new scan result\n");
 			ret = -ENOMEM;
 			break;
 		}
@@ -268,7 +268,7 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 		ret = dnssd_fill_context_info(*info,
 				ndata->hostname, ndata->addr_str,ndata->port);
 		if (ret < 0) {
-			DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
+			IIO_DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
 			break;
 		}
 	}

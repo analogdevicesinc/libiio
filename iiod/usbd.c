@@ -204,13 +204,13 @@ static void usbd_main(struct thread_pool *pool, void *d)
 
 		ret = read(pdata->ep0_fd, &event, sizeof(event));
 		if (ret != sizeof(event)) {
-			WARNING("Short read!\n");
+			IIO_WARNING("Short read!\n");
 			continue;
 		}
 
 		ret = handle_event(pdata, &event);
 		if (ret) {
-			ERROR("Unable to handle event: %i\n", ret);
+			IIO_ERROR("Unable to handle event: %i\n", ret);
 			break;
 		}
 
