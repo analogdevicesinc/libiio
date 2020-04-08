@@ -91,7 +91,7 @@ static void quit_all(int sig)
 {
 	exit_code = sig;
 	app_running = false;
-	if (buffer)
+	if (buffer && exit_code != EXIT_SUCCESS)
 		iio_buffer_cancel(buffer);
 }
 
@@ -457,8 +457,9 @@ int main(int argc, char **argv)
 
 			if (num_samples) {
 				num_samples -= write_len / sample_size;
-				if (!num_samples)
+				if (!num_samples && !cyclic_buffer) {
 					quit_all(EXIT_SUCCESS);
+				}
 			}
 		} else {
 			ret = iio_buffer_foreach_sample(buffer, read_sample, NULL);
