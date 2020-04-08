@@ -43,6 +43,7 @@ Components
    channel
    trigger
    examples
+   tools
 
 Indices and tables
 ==================
