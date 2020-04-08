@@ -49,6 +49,9 @@ channels = None
 
 
 def read_arguments():
+    """
+    Method for reading the command line parameters and setting the corresponding variables.
+    """
     global arg_ip, arg_uri, scan_for_context, buffer_size, num_samples, timeout, device_name, channels
 
     args = parser.parse_args()
@@ -76,6 +79,20 @@ def read_arguments():
 
 
 def create_context(scan_for_context, arg_uri, arg_ip):
+    """
+    Method for creating the corresponding context.
+
+    parameters:
+        scan_for_context: type=bool
+            Scan for available contexts and if only one is available use it.
+        arg_uri: type=string
+            The URI on which the program should look for a Context.
+        arg_ip: type=string
+            The IP on which the program should look for a Network Context.
+
+    returns: type:iio.Context
+        The resulted context.
+    """
     ctx = None
 
     try:
@@ -113,6 +130,18 @@ signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 
 def read_data(buffer, num_samples):
+    """
+    Method for reading data from the buffer.
+
+    parameters:
+        buffer: type=iio.Buffer
+            Current buffer.
+        num_samples: type=int
+            Number of samples to capture, 0 = infinite. Default is 0.
+
+    returns: type=None
+        Reads data from buffer.
+    """
     if buffer is None:
         sys.stderr.write('Unable to create buffer!\n')
         exit(1)
