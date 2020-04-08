@@ -29,3 +29,26 @@ if (Python_Interpreter_FOUND)
 else()
 	message(FATAL_ERROR "Python search failed : Can not build Python bindings")
 endif()
+
+if(WITH_DOC)
+	find_program(SPHINX_EXECUTABLE
+		NAMES sphinx-build
+		DOC "Sphinx Documentation Builder (sphinx-doc.org)"
+	)
+	if (NOT SPHINX_EXECUTABLE)
+		message(FATAL_ERROR "Can not build python doc without sphinx-build")
+	endif()
+	message (STATUS "Building with Python Doc (Sphinx)")
+	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/doc/conf.py.in
+		${CMAKE_CURRENT_SOURCE_DIR}/doc/conf.py)
+	add_custom_command(TARGET libiio-py POST_BUILD
+		COMMAND ${SPHINX_EXECUTABLE}
+			-b html
+			-c ${CMAKE_CURRENT_SOURCE_DIR}/doc
+			-d ${CMAKE_CURRENT_BINARY_DIR}/doctrees
+			${CMAKE_CURRENT_SOURCE_DIR}/doc
+			${CMAKE_HTML_DEST_DIR}/python
+		COMMENT "Generating Python binding documentation with Sphinx" VERBATIM
+	)
+endif()

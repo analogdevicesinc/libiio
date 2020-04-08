@@ -2,18 +2,40 @@
 
 . CI/travis/lib.sh
 
+install_sphinx() {
+	if ! command_exists pip3 ; then
+		pip install sphinx
+		pip install sphinx-rtd-theme
+	else
+		pip3 install sphinx
+		pip3 install sphinx-rtd-theme
+	fi
+
+}
+
 handle_centos() {
 	# FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
 	yum -y groupinstall 'Development Tools'
 	yum -y install cmake libxml2-devel libusb1-devel libaio-devel \
-		bzip2 gzip rpm rpm-build redhat-lsb-core python3-pip
+		bzip2 gzip rpm rpm-build redhat-lsb-core
+
+	# CENTOS 6 doesn't include python 3, it's too old.
+	if is_centos_at_least_ver "7" ; then
+		yum -y install python3-pip
+	fi
 
 	if is_centos_at_least_ver "8" ; then
 		# On CentOS 8, avahi-devel & doxygen are in this repo; enable it
 		yum config-manager --set-enabled PowerTools
 	fi
 
-	yum -y install doxygen avahi-devel
+	# CENTOS 6 will has issues with sphinx
+	if is_centos_at_least_ver "7" ; then
+		yum -y install doxygen
+		install_sphinx
+	fi
+
+	yum -y install avahi-devel
 }
 
 handle_centos_docker() {
@@ -33,6 +55,7 @@ handle_default() {
 
 	if [ -n "${GH_DOC_TOKEN}" ] ; then
 		sudo apt-get install -y doxygen
+		install_sphinx
 	fi
 	if [ `sudo apt-cache search libserialport-dev | wc -l` -gt 0 ] ; then
 		sudo apt-get install -y libserialport-dev

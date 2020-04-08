@@ -345,19 +345,6 @@ if(NOT SKIP_INSTALL_ALL)
 	install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
-#set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python/setup.py)
-#configure_file(python/setup.py.in ${SETUP_PY} @ONLY)
-
-option(CSHARP_BINDINGS "Install C# bindings" OFF)
-option(PYTHON_BINDINGS "Install Python bindings" OFF)
-option(MATLAB_BINDINGS "Build MATLAB bindings" OFF)
-add_subdirectory(bindings)
-
-if (WITH_MATLAB_BINDINGS_API)
-	list(APPEND LIBIIO_EXTRA_HEADERS bindings/matlab/iio-wrapper.h)
-	add_definitions(-DMATLAB_BINDINGS_API=1)
-endif()
-
 if(WITH_TESTS)
 	add_subdirectory(tests)
 endif()
@@ -407,14 +394,16 @@ if(WITH_DOC)
 		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "NO")
 	endif()
 
+	set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
+	set(CMAKE_API_DEST_DIR "${PROJECT_NAME}")
+
 	configure_file(
 		${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
 		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 	configure_file(
 		${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
 		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
-	set(HTML_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc DESTINATION ${HTML_DEST_DIR})
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc DESTINATION ${CMAKE_HTML_DEST_DIR}/${CMAKE_API_DEST_DIR})
 
 	add_custom_command(TARGET iio POST_BUILD
 		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
@@ -425,6 +414,16 @@ if(WITH_DOC)
 		install(DIRECTORY ${HTML_DEST_DIR}
 			DESTINATION ${CMAKE_INSTALL_DOCDIR})
 	endif()
+endif()
+
+option(CSHARP_BINDINGS "Install C# bindings" OFF)
+option(PYTHON_BINDINGS "Install Python bindings" OFF)
+option(MATLAB_BINDINGS "Build MATLAB bindings" OFF)
+add_subdirectory(bindings)
+
+if (WITH_MATLAB_BINDINGS_API)
+	list(APPEND LIBIIO_EXTRA_HEADERS bindings/matlab/iio-wrapper.h)
+	add_definitions(-DMATLAB_BINDINGS_API=1)
 endif()
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)

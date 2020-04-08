@@ -9,23 +9,10 @@ handle_default() {
 	mkdir -p build
 	cd build
 
-	# do not exit if the statement returns a non-true return value.
-	set +e
-	command doxygen -h >/dev/null 2>&1
-	if [ "$?" -eq "0" ] ; then
-		DOC_FOUND="-DWITH_DOC=ON"
-		echo "Found doxygen on CI, building WITH_DOC=ON"
-	else
-		DOC_FOUND=" "
-		echo "doxygen missing on CI"
-	fi
-	# set it back, to error immediately.
-	set -e
-
 	echo "### cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON"
-	echo "          -DPYTHON_BINDINGS=ON ${DOC_FOUND}"
+	echo "          -DPYTHON_BINDINGS=ON"
 	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
-		-DPYTHON_BINDINGS=ON ${DOC_FOUND} ..
+		-DPYTHON_BINDINGS=ON ..
 
 	echo "### make"
 	make
@@ -36,6 +23,15 @@ handle_default() {
 		# get rid of anything that will cause a problem
 		echo "### Deleting install_manifest.txt (created as root)"
 		sudo rm ./install_manifest.txt
+	fi
+	if command_exists sphinx-build ; then
+		# to build the python doc, libiio and py-iio need to be installed
+		# so we need to re-do some minor things now that they are
+		echo "### enable -DWITH_DOC=ON"
+		cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
+			-DPYTHON_BINDINGS=ON -DWITH_DOC=ON ..
+		echo "### make"
+		make
 	fi
 	echo "### make package"
 	make package

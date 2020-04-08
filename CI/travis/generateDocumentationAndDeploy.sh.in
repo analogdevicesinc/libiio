@@ -33,7 +33,7 @@ set -e
 # by the time this script is run, we should have already made the docs
 cd $TRAVIS_BUILD_DIR/build
 #docs should be in the $TRAVIS_BUILD_DIR/build/html directory
-if [ ! -d "html" ] || [ ! -f "./html/index.html" ]; then
+if [ ! -d "html" ] || [ ! -f "./html/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@/@PROJECT_NAME@/index.html" ]; then
 	echo '' >&2
 	echo 'Warning: No documentation (html) files have been found!' >&2
 	echo 'Warning: Not going to push the documentation to GitHub!' >&2
@@ -55,9 +55,9 @@ cd $GH_REPO_NAME
 # stayed the same and will only update the changed files. So the gh-pages branch
 # can be safely cleaned, and it is sure that everything pushed later is the new
 # documentation.
-rm -rf *
+rm -rf v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@/*
 
-#copy the files over
+#copy the files over, this should add the new version
 cp -a ../html/* ./
 
 ##### Configure git.
