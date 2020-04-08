@@ -407,9 +407,24 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 
 	if (!use_aio) {
 		flags = fcntl(STDIN_FILENO, F_GETFL);
-		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+		if (flags >= 0)
+			flags = fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+		if (flags < 0) {
+			char err_str[1024];
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Could not get/set O_NONBLOCK on STDIN_FILENO"
+					" %s (%d)\n", err_str, -errno);
+		}
+
 		flags = fcntl(STDOUT_FILENO, F_GETFL);
-		fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
+		if (flags >= 0)
+			flags = fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
+		if (flags < 0) {
+			char err_str[1024];
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Could not get/set O_NONBLOCK on STDOUT_FILENO"
+					" %s (%d)\n", err_str, -errno);
+		}
 	}
 
 	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,

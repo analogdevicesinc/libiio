@@ -286,13 +286,14 @@ int dnssd_discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 	ret = dnssd_find_hosts(&ddata);
 
 	if (ret < 0)
-		return ret;
+		goto host_fail;
 
 	if (ddata) {
 		*port = ddata->port;
 		strncpy(addr_str, ddata->addr_str, addr_len);
 	}
 
+host_fail:
 	dnssd_free_all_discovery_data(ddata);
 
 	/* negative error codes, 0 for no data */

@@ -385,15 +385,18 @@ int main(int argc, char **argv)
 			break;
 		case 'b':
 			info.arg_index += 2;
-			info.buffer_size = atoi(info.argv[info.arg_index]);
+			info.buffer_size = strtol(info.argv[info.arg_index], NULL, 10);
+			/* Max 4M */
+			if (info.buffer_size > (1024 * 1024 * 4))
+				info.buffer_size = 1024 * 1024 * 4;
 			break;
 		case 't':
 			info.arg_index +=2;
-			info.timeout = 1000 * atoi(info.argv[info.arg_index]);
+			info.timeout = 1000 * strtol(info.argv[info.arg_index], NULL, 10);
 			break;
 		case 'T':
 			info.arg_index +=2;
-			info.num_threads = atoi(info.argv[info.arg_index]);
+			info.num_threads = strtol(info.argv[info.arg_index], NULL, 10);
 			break;
 		case 'v':
 			if (!info.verbose)
