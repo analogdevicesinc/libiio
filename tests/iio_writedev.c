@@ -472,11 +472,9 @@ int main(int argc, char **argv)
 
 		int ret = iio_buffer_push(buffer);
 		if (ret < 0) {
-			if (app_running) {
-				char buf[256];
-				iio_strerror(-ret, buf, sizeof(buf));
-				fprintf(stderr, "Unable to push buffer: %s\n", buf);
-			}
+			char buf[256];
+			iio_strerror(-ret, buf, sizeof(buf));
+			fprintf(stderr, "Unable to push buffer: %s\n", buf);
 			break;
 		}
 
