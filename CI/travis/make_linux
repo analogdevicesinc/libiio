@@ -9,10 +9,10 @@ handle_default() {
 	mkdir -p build
 	cd build
 
-	echo "### cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON"
-	echo "          -DPYTHON_BINDINGS=ON"
-	cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
-		-DPYTHON_BINDINGS=ON ..
+	FLAGS="-DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DPYTHON_BINDINGS=ON"
+
+	echo "### cmake ${FLAGS}"
+	cmake ${FLAGS} ..
 
 	echo "### make"
 	make
@@ -27,9 +27,9 @@ handle_default() {
 	if command_exists sphinx-build ; then
 		# to build the python doc, libiio and py-iio need to be installed
 		# so we need to re-do some minor things now that they are
-		echo "### enable -DWITH_DOC=ON"
-		cmake -DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON \
-			-DPYTHON_BINDINGS=ON -DWITH_DOC=ON ..
+		FLAGS="${FLAGS} -DWITH_DOC=ON -DWITH_MAN=ON"
+		echo "### cmake ${FLAGS}"
+		cmake ${FLAGS} ..
 		echo "### make"
 		make
 	fi
