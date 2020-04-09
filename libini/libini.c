@@ -61,13 +61,14 @@ struct INI *ini_open(const char *file)
 	}
 
 	fseek(f, 0, SEEK_END);
-	len = ftell(f);
+	ret = ftell(f);
 
-	if (!len) {
+	if (ret <= 0) {
 		ret = -EINVAL;
 		goto error_fclose;
 	}
 
+	len = (size_t) ret;
 	buf = malloc(len);
 	if (!buf) {
 		ret = -ENOMEM;
