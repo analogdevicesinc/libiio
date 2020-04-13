@@ -392,9 +392,22 @@ class _Attr(object):
 			None, "Current value of this attribute.\n\ttype=str")
 
 class ChannelAttr(_Attr):
+
 	"""Represents an attribute of a channel."""
 
 	def __init__(self, channel, name):
+		"""
+		Initializes a new instance of the ChannelAttr class.
+
+		parameters:
+			channel: type=iio.Channel
+				A valid instance of the iio.Channel class.
+			name: type=str
+				The channel attribute's name
+
+		returns: type=iio.ChannelAttr
+			A new instance of this class
+		"""
 		super(ChannelAttr, self).__init__(name, _c_get_filename(channel, name.encode('ascii')).decode('ascii'))
 		self._channel = channel
 
@@ -407,9 +420,22 @@ class ChannelAttr(_Attr):
 		_c_write_attr(self._channel, self._name_ascii, value.encode('ascii'))
 
 class DeviceAttr(_Attr):
+
 	"""Represents an attribute of an IIO device."""
 
 	def __init__(self, device, name):
+		"""
+		Initializes a new instance of the DeviceAttr class.
+
+		parameters:
+			device: type=iio.Device
+				A valid instance of the iio.Device class.
+			name: type=str
+				The device attribute's name
+
+		returns: type=iio.DeviceAttr
+			A new instance of this class
+		"""
 		super(DeviceAttr, self).__init__(name)
 		self._device = device
 
@@ -422,9 +448,22 @@ class DeviceAttr(_Attr):
 		_d_write_attr(self._device, self._name_ascii, value.encode('ascii'))
 
 class DeviceDebugAttr(DeviceAttr):
+
 	"""Represents a debug attribute of an IIO device."""
 
 	def __init__(self, device, name):
+		"""
+		Initializes a new instance of the DeviceDebugAttr class.
+
+		parameters:
+			device: type=iio.Device
+				A valid instance of the iio.Device class.
+			name: type=str
+				The device debug attribute's name
+
+		returns: type=iio.DeviceDebugAttr
+			A new instance of this class
+		"""
 		super(DeviceDebugAttr, self).__init__(device, name)
 
 	def _Attr__read(self):
@@ -436,7 +475,19 @@ class DeviceDebugAttr(DeviceAttr):
 		_d_write_debug_attr(self._device, self._name_ascii, value.encode('ascii'))
 
 class Channel(object):
+	"""Represents a channel of an IIO device."""
+
 	def __init__(self, _channel):
+		"""
+		Initializes a new instance of the Channel class.
+
+		parameters:
+			_channel: type=_ChannelPtr
+				Pointer to an IIO Channel.
+
+		returns: type=iio.Channel
+			An new instance of this class
+		"""
 		self._channel = _channel
 		self._attrs = { name : ChannelAttr(_channel, name) for name in \
 				[_c_get_attr(_channel, x).decode('ascii') for x in range(0, _c_attr_count(_channel))] }
@@ -508,6 +559,7 @@ class Channel(object):
 			None, "Configured state of the channel\n\ttype=bool")
 
 class Buffer(object):
+
 	"""The class used for all I/O operations."""
 
 	def __init__(self, device, samples_count, cyclic = False):
@@ -533,7 +585,6 @@ class Buffer(object):
 			raise
 		self._length = samples_count * device.sample_size
 		self._samples_count = samples_count
-
 		self._ctx = device.ctx() 
 		# Holds a reference to the corresponding IIO Context. This ensures that
 		# every iio.Buffer object is destroyed before its corresponding IIO Context.
@@ -692,9 +743,20 @@ class _DeviceOrTrigger(object):
 			"List of channels available with this IIO device.\n\ttype=list of iio.Channel objects")
 
 class Trigger(_DeviceOrTrigger):
+
 	"""Contains the representation of an IIO device that can act as a trigger."""
 
 	def __init__(self, _device):
+		"""
+		Initializes a new instance of the Trigger class.
+
+		parameters:
+			_device: type=iio._DevicePtr
+				A pointer to an IIO device.
+
+		returns: type=iio.Trigger
+			An new instance of this class
+		"""
 		super(Trigger, self).__init__(_device)
 
 	def _get_rate(self):
@@ -707,9 +769,22 @@ class Trigger(_DeviceOrTrigger):
 			"Configured frequency (in Hz) of this trigger\n\ttype=int")
 
 class Device(_DeviceOrTrigger):
+
 	"""Contains the representation of an IIO device."""
 
 	def __init__(self, ctx, _device):
+		"""
+		Initializes a new instance of the Device class.
+
+		parameters:
+			ctx: type=iio.Context
+				A valid instance of the iio.Context class.
+			_device: type=_DevicePtr
+				A pointer to an IIO device.
+
+		returns: type=iio.Device
+			An new instance of this class
+		"""
 		super(Device, self).__init__(_device)
 		self.ctx = weakref.ref(ctx)
 
@@ -729,6 +804,7 @@ class Device(_DeviceOrTrigger):
 			"Contains the configured trigger for this IIO device.\n\ttype=iio.Trigger")
 
 class Context(object):
+
 	"""Contains the representation of an IIO context."""
 
 	def __init__(self, _context=None):
@@ -850,7 +926,7 @@ class XMLContext(Context):
 		super(XMLContext, self).__init__(ctx)
 
 class NetworkContext(Context):
-	def __init__(self, hostname = None):
+	def __init__(self, hostname=None):
 		"""
 		Initializes a new instance of the Context class, using the network backend of the IIO library.
 
