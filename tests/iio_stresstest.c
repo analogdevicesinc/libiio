@@ -35,6 +35,13 @@
 #define SAMPLES_PER_READ 256
 #define NUM_TIMESTAMPS (16*1024)
 
+#ifdef _MSC_BUILD
+#define inline __inline
+#define iio_snprintf sprintf_s
+#else
+#define iio_snprintf snprintf
+#endif
+
 static int getNumCores(void) {
 #ifdef _WIN32
 	SYSTEM_INFO sysinfo;
@@ -82,11 +89,14 @@ static size_t cache_line_size(void)
 
 #elif __linux__
 	FILE * p = 0;
+	int ret;
 
 	p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
 	if (p) {
-		fscanf(p, "%zu", &cacheline);
+		ret = fscanf(p, "%zu", &cacheline);
 		fclose(p);
+		if (ret != 1)
+			cacheline = 0;
 	}
 #endif
 	return cacheline;
@@ -388,16 +398,28 @@ thread_fail:
 	return (void *)EXIT_FAILURE;
 }
 
-static unsigned long int clamp(const char *name, unsigned long int val,
+static unsigned long int sanitize_clamp(const char *name, const char *argv,
 		unsigned long int min, unsigned long int max)
 {
+
+	unsigned long int val;
+	char buf[20];
+
+	if (!argv) {
+		val = 0;
+	} else {
+		/* sanitized buffer by taking first 20 (or less) char */
+		iio_snprintf(buf, sizeof(buf), "%s", argv);
+		val = strtoul(buf, NULL, 10);
+	}
+
 	if (val > max) {
 		val = max;
-		fprintf(stderr, "Clamped %s to max %lu", name, max);
+		fprintf(stderr, "Clamped %s to max %lu\n", name, max);
 	}
 	if (val < min) {
 		val = min;
-		fprintf(stderr, "Clamped %s to min %lu", name, min);
+		fprintf(stderr, "Clamped %s to min %lu\n", name, min);
 	}
 	return val;
 }
@@ -412,7 +434,6 @@ int main(int argc, char **argv)
 	struct timeval start, end, s_loop;
 	void **ret;
 	size_t min_samples;
-	unsigned long int tmp;
 
 #ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
@@ -447,21 +468,21 @@ int main(int argc, char **argv)
 			break;
 		case 'b':
 			info.arg_index += 2;
-			tmp = strtoul(info.argv[info.arg_index], NULL, 10);
 			/* Max 4M , min 64 bytes (cache line) */
-			info.buffer_size = clamp("buffersize", tmp, min_samples, 1024 * 1024 * 4);
+			info.buffer_size = sanitize_clamp("buffersize", info.argv[info.arg_index],
+					min_samples, 1024 * 1024 * 4);
 			break;
 		case 't':
 			info.arg_index +=2;
-			tmp = strtoul(info.argv[info.arg_index], NULL, 10);
 			/* ensure between least once a day and never (0) */
-			info.timeout = 1000 * clamp("timeout", tmp, 0, 60 * 60 * 24);
+			info.timeout = 1000 * sanitize_clamp("timeout", info.argv[info.arg_index],
+					0, 60 * 60 * 24);
 			break;
 		case 'T':
 			info.arg_index +=2;
-			tmp = strtoul(info.argv[info.arg_index], NULL, 10);
 			/* Max number threads 1024, min 1 */
-			info.num_threads = clamp("threads", tmp, 1, 1024);
+			info.num_threads = sanitize_clamp("threads", info.argv[info.arg_index],
+					1, 1024);
 			break;
 		case 'v':
 			if (!info.verbose)
