@@ -1,0 +1,2 @@
+# Cmake leaves a file in the source dir, so ignore it
+conf.py
