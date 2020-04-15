@@ -25,13 +25,13 @@ set -x
 
 ##### Setup this script and get the current gh-pages branch.
 echo 'Setting up the script...'
-GH_REPO_NAME=$(echo $TRAVIS_REPO_SLUG | awk -F/ '{print $2}')
+GH_REPO_NAME=$(echo "$TRAVIS_REPO_SLUG" | awk -F/ '{print $2}')
 
 # Exit with nonzero exit code if anything fails
 set -e
 
 # by the time this script is run, we should have already made the docs
-cd $TRAVIS_BUILD_DIR/build
+cd "$TRAVIS_BUILD_DIR/build"
 #docs should be in the $TRAVIS_BUILD_DIR/build/html directory
 if [ ! -d "html" ] || [ ! -f "./html/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@/@PROJECT_NAME@/index.html" ]; then
 	echo '' >&2
@@ -48,7 +48,7 @@ fi
 
 # Get the current gh-pages branch
 git clone -b gh-pages https://git@github.com/$TRAVIS_REPO_SLUG
-cd $GH_REPO_NAME
+cd "$GH_REPO_NAME"
 
 # Remove everything currently in the gh-pages branch.
 # GitHub is smart enough to know which files have changed and which files have
