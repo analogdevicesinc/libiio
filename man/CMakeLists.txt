@@ -9,7 +9,7 @@ if (WITH_MAN)
 		)
 	configure_file(
 		${CMAKE_BINARY_DIR}/libiio.3.in
-		${CMAKE_BINARY_DIR}/man/libiio.3 @ONLY)
+		${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/libiio.3 @ONLY)
 
 	if (WITH_DOC)
 		find_program(MAN2HTML man2html)
@@ -20,7 +20,7 @@ if (WITH_MAN)
 		file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR}/man3)
 		execute_process(
 			COMMAND ${MAN2HTML} -r
-			INPUT_FILE ${CMAKE_BINARY_DIR}/man/libiio.3
+			INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/libiio.3
 			OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man3/libiio.3.html
 		)
 	endif()
@@ -28,14 +28,14 @@ if (WITH_MAN)
 		list(APPEND MAN1 iio_attr.1 iio_info.1 iio_readdev.1 iio_reg.1 iio_writedev.1)
 		foreach(_page ${MAN1})
 			configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/${_page}.in
-				${CMAKE_BINARY_DIR}/man/${_page} @ONLY)
+				${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page} @ONLY)
 		endforeach()
 		if (WITH_DOC)
 			file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR}/man1)
 			foreach(_page ${MAN1})
 				execute_process(
 					COMMAND ${MAN2HTML} -r
-					INPUT_FILE ${CMAKE_BINARY_DIR}/man/${_page}
+					INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}
 					OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man1/${_page}.html
 				)
 			endforeach()
@@ -43,11 +43,11 @@ if (WITH_MAN)
 	endif()
 	# install man files into the BINARY directories,
 	# section 3 = library functions
-	install(DIRECTORY ${CMAKE_BINARY_DIR}/man/
+	install(DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}
 		DESTINATION ${CMAKE_INSTALL_MANDIR}/man3
 		COMPONENT doc FILES_MATCHING PATTERN "*.3*")
 	# section 1 = user commands
-	install(DIRECTORY ${CMAKE_BINARY_DIR}/man/
+	install(DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}
 		DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
 		COMPONENT doc FILES_MATCHING PATTERN "*.1*")
 
