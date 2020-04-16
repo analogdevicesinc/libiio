@@ -103,6 +103,7 @@ namespace iio
             circular_buffer_pushed = true;
         }
 
+        /// <summary>Submit all the samples contained in this buffer to the hardware.</summary>
         public void push()
         {
             push(this.samples_count);

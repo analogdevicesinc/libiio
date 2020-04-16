@@ -100,6 +100,7 @@ namespace iio
 
         /// <summary>Retrieve a human-readable information string about the current context.</summary>
         public readonly string description;
+        /// <summary>Retrieve a information about the version context.</summary>
         public readonly Version library_version, backend_version;
 
         /// <summary>A <c>List</c> of all the IIO devices present on the current context.</summary>
