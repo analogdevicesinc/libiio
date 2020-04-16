@@ -534,17 +534,21 @@ int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
 {
 	char buf[1024], *ptr;
 	size_t i;
+	ssize_t len;
 
-	iio_snprintf(buf, sizeof(buf), "OPEN %s %lu ",
+	len = sizeof(buf);
+	iio_snprintf(buf, len, "OPEN %s %lu ",
 			iio_device_get_id(dev), (unsigned long) samples_count);
 	ptr = buf + strlen(buf);
+	len -= strnlen(buf, sizeof(buf));
 
 	for (i = dev->words; i > 0; i--, ptr += 8) {
-		iio_snprintf(ptr, (ptr - buf) + i * 8, "%08" PRIx32,
+		iio_snprintf(ptr, len, "%08" PRIx32,
 				dev->mask[i - 1]);
+		len -= 8; /* 8 characters */
 	}
 
-	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
+	iio_strlcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n", len);
 
 	return iiod_client_exec_command(client, desc, buf);
 }

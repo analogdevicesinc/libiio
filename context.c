@@ -53,8 +53,9 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)
 {
-	size_t len, *devices_len = NULL;
-	char *str, *ptr, **devices = NULL;
+	ssize_t len;
+	size_t *devices_len = NULL;
+	char *str, *ptr, *eptr, **devices = NULL;
 	unsigned int i;
 
 	len = strlen(ctx->name) + sizeof(xml_header) - 1 +
@@ -94,6 +95,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		errno = ENOMEM;
 		goto err_free_devices;
 	}
+	eptr = str + len;
 
 	if (ctx->description) {
 		iio_snprintf(str, len, "%s<context name=\"%s\" "
@@ -105,21 +107,33 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	ptr = strrchr(str, '\0');
+	len = eptr - ptr;
 
-	for (i = 0; i < ctx->nb_attrs; i++)
-		ptr += sprintf(ptr, "<context-attribute name=\"%s\" value=\"%s\" />",
-				ctx->attrs[i], ctx->values[i]);
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		if (len > 0)
+			ptr += iio_snprintf(ptr, len, "<context-attribute name=\"%s\" value=\"%s\" />",
+					ctx->attrs[i], ctx->values[i]);
+		len = eptr - ptr;
+	}
 
 
 	for (i = 0; i < ctx->nb_devices; i++) {
-		strcpy(ptr, devices[i]);
+		if (len > 0)
+			iio_strlcpy(ptr, devices[i], len);
 		ptr += devices_len[i];
+		len -= devices_len[i];
 		free(devices[i]);
 	}
 
 	free(devices);
 	free(devices_len);
-	strcpy(ptr, "</context>");
+	if (len > 0)
+		iio_strlcpy(ptr, "</context>", len);
+	len -= sizeof("</context>");
+
+	if (len < 0)
+		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length isssue\n");
+
 	return str;
 
 err_free_devices:
