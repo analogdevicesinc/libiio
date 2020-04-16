@@ -50,7 +50,7 @@ while IFS="" read -r p ; do
 	key=$(echo ${p//[[:space:],]/})
 	count=$(grep "\[$key\]" /tmp/libiio_iio_chan_type_name_spec | wc -l)
 	if [ "$count" -eq "0" ] ; then
-		echo $key missing from channel.c iio_chan_type_name_spec
+		echo "$key missing from channel.c iio_chan_type_name_spec"
 		ret=1
 	fi
 done < /tmp/libiio_iio_chan_type
@@ -59,10 +59,10 @@ echo
 sed -i '/IIO_NO_MOD/d' /tmp/libiio_iio_modifier
 
 while IFS="" read -r p ; do
-	key=$(echo ${p//[[:space:],]/})
+	key=$(echo "${p//[[:space:],]/}")
 	count=$(grep "\[$key\]" /tmp/libiio_modifier_names | wc -l)
 	if [ "$count" -eq "0" ] ; then
-		echo $key missing from channel.c modifier_names
+		echo "$key missing from channel.c modifier_names"
 		ret=1
 	fi
 done < /tmp/libiio_iio_modifier

@@ -87,7 +87,7 @@ Windows, and mbed (via tiny-iiod). The main C structures are:
 .in +.5i
 EOF
 
-tmp=$(grep @struct ${header} | sed 's:^[[:space:]]*\*[[:space:]]*@::g' | awk '{print length($0)}' | sort -n | tail -1)
+tmp=$(grep @struct "${header}" | sed 's:^[[:space:]]*\*[[:space:]]*@::g' | awk '{print length($0)}' | sort -n | tail -1)
 echo  .TP $((tmp - 5))
 
 grep @struct ../iio.h -A 1 | \
@@ -111,24 +111,24 @@ long=0
 longest=""
 
 #go over things by groups
-for i in $(grep -e defgroup ${header} |sed 's|\/\*\*[[:space:]]*||')
+for i in $(grep -e defgroup "${header}" |sed 's|\/\*\*[[:space:]]*||')
 do
 	echo .sp
 	echo "${i//@defgroup /}"
 
-	n=$(grep -e defgroup ${header} | grep -A 1 $i | tail -1 | sed 's|\/\*\*[[:space:]]*||')
-	f=$(awk "/${i}/{f=1;next} /${n}/{f=0} f" ${header} | grep __api | \
+	n=$(grep -e defgroup "${header}" | grep -A 1 "$i" | tail -1 | sed 's|\/\*\*[[:space:]]*||')
+	f=$(awk "/${i}/{f=1;next} /${n}/{f=0} f" "${header}" | grep __api | \
 		awk 'split(substr($0, match($0, /iio[a-z_]*\(/)), a, " ") {print a[1]}' | \
 		sed 's/(.*$//' | grep -ve "^#undef")
 	for func in ${f}
 	do
-		if [ $(echo $func | wc -c) -gt $long ] ; then
-			long=$(echo $func | wc -c)
+		if [ $(echo "$func" | wc -c) -gt "$long" ] ; then
+			long=$(echo "$func" | wc -c)
 			longest=$func
 		fi
 	done
 	echo .in +.5i
-	echo .TP $(echo ${longest} | wc -c)
+	echo .TP $(echo "${longest}" | wc -c)
 	echo .TP
 	echo "\fIFunction\fP"
 	echo "\fIDescription\fP"
@@ -136,12 +136,12 @@ do
 	for func in ${f}
 	do
 		echo -e ".TP\n.B ${func}"
-		l=$(grep -B 40 ${func} ${header} | \
+		l=$(grep -B 40 "${func}" "${header}" | \
 			grep @brief | \
 			tail -1 | \
 			awk '{$1=$2=""; print $0}'| \
 			sed -e 's:^[[:space:]]*::' -e 's:(.*<.*)::')
-		echo ${l}
+		echo "${l}"
 	done
 	echo .LP
 

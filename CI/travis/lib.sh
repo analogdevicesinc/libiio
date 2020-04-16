@@ -103,7 +103,7 @@ trigger_build() {
 		-H "Travis-API-Version: 3" \
 		-H "Authorization: token $TRAVIS_API_TOKEN" \
 		-d "$body" \
-		https://api.travis-ci.org/repo/$repo_slug/requests
+		"https://api.travis-ci.org/repo/$repo_slug/requests"
 }
 
 trigger_adi_build() {
@@ -155,9 +155,9 @@ get_ldist() {
 }
 
 __brew_install_or_upgrade() {
-	brew install $1 || \
-		brew upgrade $1 || \
-		brew ls --versions $1
+	brew install "$1" || \
+		brew upgrade "$1" || \
+		brew ls --versions "$1"
 }
 
 brew_install_or_upgrade() {
@@ -168,8 +168,8 @@ brew_install_or_upgrade() {
 }
 
 __brew_install_if_not_exists() {
-	brew ls --versions $1 || \
-		brew install $1
+	brew ls --versions "$1" || \
+		brew install "$1"
 }
 
 brew_install_if_not_exists() {
@@ -180,7 +180,7 @@ brew_install_if_not_exists() {
 }
 
 sftp_cmd_pipe() {
-	sftp ${EXTRA_SSH} ${SSHUSER}@${SSHHOST}
+	sftp "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}"
 }
 
 sftp_rm_artifact() {
@@ -241,12 +241,12 @@ upload_file_to_swdownloads() {
 	local LATE=${branch}_latest_${LIBNAME}${LDIST}${EXT}
 	local GLOB=${DEPLOY_TO}/${branch}_${LIBNAME}-*
 
-	echo attemting to deploy $FROM to $TO
-	echo and ${branch}_${LIBNAME}${LDIST}${EXT}
+	echo attemting to deploy "$FROM" to "$TO"
+	echo and "${branch}_${LIBNAME}${LDIST}${EXT}"
 	ssh -V
 
 	for rmf in ${TO} ${LATE} ; do
-		sftp_rm_artifact ${rmf} || \
+		sftp_rm_artifact "${rmf}" || \
 			echo_blue "Could not delete ${rmf}"
 	done
 
@@ -257,10 +257,10 @@ upload_file_to_swdownloads() {
 
 	# limit things to a few files, so things don't grow forever
 	if [ "${EXT}" = ".deb" ] ; then
-		for files in $(ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
+		for files in $(ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
 			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
 		do
-			ssh ${EXTRA_SSH} ${SSHUSER}@${SSHHOST} \
+			ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
 				"rm ${DEPLOY_TO}/${files}" || \
 				return 1
 		done
@@ -297,7 +297,7 @@ run_docker_script() {
 
 	sudo docker run --rm=true \
 		-v "$(pwd):/${MOUNTPOINT}:rw" \
-		$DOCKER_IMAGE \
+		"$DOCKER_IMAGE" \
 		/bin/bash -e "/${MOUNTPOINT}/${DOCKER_SCRIPT}" "${MOUNTPOINT}" "${OS_TYPE}"
 }
 
@@ -310,10 +310,10 @@ ensure_command_exists() {
 	# go through known package managers
 	for pacman in apt-get brew yum ; do
 		command_exists $pacman || continue
-		$pacman install -y $package || {
+		"$pacman" install -y "$package" || {
 			# Try an update if install doesn't work the first time
-			$pacman -y update && \
-				$pacman install -y $package
+			"$pacman" -y update && \
+				"$pacman" install -y "$package"
 		}
 		return $?
 	done
@@ -367,9 +367,9 @@ for script in $COMMON_SCRIPTS ; do
 	[ ! -f "CI/travis/$script" ] || continue
 	[ ! -f "ci/travis/$script" ] || continue
 	[ ! -f "${LOCAL_BUILD_DIR}/$script" ] || continue
-	mkdir -p ${LOCAL_BUILD_DIR}
+	mkdir -p "${LOCAL_BUILD_DIR}"
 	wget https://raw.githubusercontent.com/analogdevicesinc/libiio/master/CI/travis/$script \
-		-O $LOCAL_BUILD_DIR/$script
+		-O "$LOCAL_BUILD_DIR/$script"
 done
 
 print_github_api_rate_limits
