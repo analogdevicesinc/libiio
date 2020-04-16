@@ -394,6 +394,9 @@ if(WITH_DOC)
 		${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
 		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/bindings/csharp/Doxyfile.in
+		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp @ONLY)
+	configure_file(
 		${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
 		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc
@@ -405,6 +408,10 @@ if(WITH_DOC)
 		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 		COMMENT "Generating API documentation with Doxygen" VERBATIM)
+	add_custom_command(TARGET iio POST_BUILD
+		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		COMMENT "Generating C# documentation with Doxygen" VERBATIM)
 
 	if(NOT SKIP_INSTALL_ALL)
 		install(DIRECTORY ${HTML_DEST_DIR}

@@ -1,0 +1,82 @@
+/**
+@mainpage
+
+@tableofcontents
+
+<a href="../index.html">Back to libIIO</a> 
+
+@section license License
+Libiio and the C# bindings have been developed and is released under the terms of the GNU Lesser General Public
+License, version 2 or (at your option) any later version.
+This open-source license allows anyone to use the library for C# proprietary or
+open-source, commercial or non-commercial applications.
+(if you change the bindings or library, send the source of the bindings and library along with the binary).
+
+The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
+
+@section code_model Code Model
+The basic bricks of the libiio API, and therefore the C# bindings are the the iio namepace, and the classes of that nameplace: iio.Channel, iio.Context, iio.Device, iio.IOBuffer, iio.Trigger, and iio.Attr (channel or device attributes).
+
+![Caption text](doc/codemodel.svg)
+
+@section creating_context Creating a context
+
+Creating a context is quite easy with the iio.Context class:
+
+~~~{.cs}
+Context ctx = new Context("ip:10.44.2.241");
+~~~
+
+@subsection navigation Navigation
+@subsubsection device_obj Device objects
+
+~~~{.cs}
+   foreach (Device dev in ctx.devices)
+   {
+      Console.WriteLine("\t" + dev.id + ": " + dev.name);
+   }
+~~~
+
+@subsubsection channel_obj Channel objects
+
+Each iio.Channel can be either input, or output. This information can be retrieved with iio.Channel.output
+As for the Device objects, the iio.Channel object features an ID and optionally a name
+The ID can be obtained with iio.Channel.id, and the name can be obtained with iio.Channel.name.
+Important note: two iio_channel can have the same ID, as long as one is input and the other is output.
+
+~~~{.cs}
+    foreach (Channel chn in dev.channels)
+    {
+        string type = "input";
+        if (chn.output)
+            type = "output";
+        Console.WriteLine("\t\t\t" + chn.id + ": " + chn.name + " (" + type + ")");
+    }
+~~~
+
+@subsection list_params Parameters
+Different kinds of parameters are available: parameters that apply to a iio_device, and parameters that apply to one or more iio_channel.
+
+for Channel attributes: iio.Channel.attrs
+
+~~~{.cs}
+    foreach (Attr attr in chn.attrs)
+    {
+        Console.WriteLine("\t\t\t\t" + attr.name);
+        if (attr.name.CompareTo("frequency") == 0)
+        {
+            Console.WriteLine("Attribute content: " + attr.read());
+        }
+    }
+~~~
+
+For Device Attributes: iio.Device.attrs
+
+~~~{.cs}
+    foreach (Attr attr in dev.attrs)
+       Console.WriteLine("\t\t\t" + attr.name);
+~~~
+
+
+\example ExampleProgram.cs Small example program
+*/
