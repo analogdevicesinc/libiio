@@ -3,6 +3,8 @@
 
 @tableofcontents
 
+<a href="../index.html">Back to libIIO</a>
+
 @section license License
 Libiio has been developed and is released under the terms of the GNU Lesser General Public
 License, version 2 or (at your option) any later version.
