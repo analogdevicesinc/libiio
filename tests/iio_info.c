@@ -26,18 +26,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "iio_common.h"
+
 #define MY_NAME "iio_info"
 
 #ifdef _WIN32
 #define snprintf sprintf_s
 #endif
-
-enum backend {
-	LOCAL,
-	XML,
-	NETWORK,
-	AUTO,
-};
 
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
@@ -58,26 +53,6 @@ static const char *options_descriptions[] = {
 	"Scan for available contexts and if only one is available use it.",
 };
 
-/*
- * internal buffers need to be big enough for attributes
- * coming back from the kernel. Because of virtual memory,
- * only the amount of ram that is needed is used.
- */
-#define BUF_SIZE 16384
-
-static void * xmalloc(size_t n)
-{
-	void *p = malloc(n);
-
-	if (!p && n != 0) {
-		fprintf(stderr, MY_NAME
-				" fatal error: allocating %zu bytes failed\n",n);
-		exit(EXIT_FAILURE);
-	}
-
-	return p;
-}
-
 static void usage(void)
 {
 	unsigned int i;
@@ -89,95 +64,6 @@ static void usage(void)
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 					options[i].val, options[i].name,
 					options_descriptions[i]);
-}
-
-static void scan(void)
-{
-	struct iio_scan_context *ctx;
-	struct iio_context_info **info;
-	unsigned int i;
-	ssize_t ret;
-
-	ctx = iio_create_scan_context(NULL, 0);
-	if (!ctx) {
-		fprintf(stderr, "Unable to create scan context\n");
-		return;
-	}
-
-	ret = iio_scan_context_get_info_list(ctx, &info);
-	if (ret < 0) {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Unable to scan: %s (%zd)\n", err_str, ret);
-		goto err_free_ctx;
-	}
-
-	if (ret == 0) {
-		printf("No contexts found.\n");
-		goto err_free_info_list;
-	}
-
-	printf("Available contexts:\n");
-
-	for (i = 0; i < (size_t) ret; i++) {
-		printf("\t%u: %s [%s]\n", i,
-			iio_context_info_get_description(info[i]),
-			iio_context_info_get_uri(info[i]));
-	}
-
-err_free_info_list:
-	iio_context_info_list_free(info);
-err_free_ctx:
-	iio_scan_context_destroy(ctx);
-}
-
-static struct iio_context * autodetect_context(void)
-{
-	struct iio_scan_context *scan_ctx;
-	struct iio_context_info **info;
-	struct iio_context *ctx = NULL;
-	unsigned int i;
-	ssize_t ret;
-
-	scan_ctx = iio_create_scan_context(NULL, 0);
-	if (!scan_ctx) {
-		fprintf(stderr, "Unable to create scan context\n");
-		return NULL;
-	}
-
-	ret = iio_scan_context_get_info_list(scan_ctx, &info);
-	if (ret < 0) {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
-		goto err_free_ctx;
-	}
-
-	if (ret == 0) {
-		printf("No IIO context found.\n");
-		goto err_free_info_list;
-	}
-
-	if (ret == 1) {
-		printf("Using auto-detected IIO context at URI \"%s\"\n",
-				iio_context_info_get_uri(info[0]));
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
-	} else {
-		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
-
-		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(stderr, "\t%u: %s [%s]\n", i,
-				iio_context_info_get_description(info[i]),
-				iio_context_info_get_uri(info[i]));
-		}
-	}
-
-err_free_info_list:
-	iio_context_info_list_free(info);
-err_free_ctx:
-	iio_scan_context_destroy(scan_ctx);
-
-	return ctx;
 }
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
@@ -201,7 +87,7 @@ int main(int argc, char **argv)
 	const char *arg_uri = NULL;
 	const char *arg_ip = NULL;
 	const char *arg_xml = NULL;
-	enum backend backend = LOCAL;
+	enum backend backend = IIO_LOCAL;
 	bool do_scan = false, detect_context = false;
 	unsigned int i, major, minor;
 	char git_tag[8];
@@ -214,30 +100,30 @@ int main(int argc, char **argv)
 			usage();
 			return EXIT_SUCCESS;
 		case 'n':
-			if (backend != LOCAL) {
+			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
-			backend = NETWORK;
+			backend = IIO_NETWORK;
 			arg_ip = optarg;
 			break;
 		case 'x':
-			if (backend != LOCAL) {
+			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
-			backend = XML;
+			backend = IIO_XML;
 			arg_xml = optarg;
 			break;
 		case 's':
 			do_scan = true;
 			break;
 		case 'u':
-			if (backend != LOCAL) {
+			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
-			backend = AUTO;
+			backend = IIO_AUTO;
 			arg_uri = optarg;
 			break;
 		case 'a':
@@ -263,17 +149,17 @@ int main(int argc, char **argv)
 	printf("\n");
 
 	if (do_scan) {
-		scan();
+		autodetect_context(false, NULL, MY_NAME);
 		return EXIT_SUCCESS;
 	}
 
 	if (detect_context)
-		ctx = autodetect_context();
-	else if (backend == XML)
+		ctx = autodetect_context(true, NULL, MY_NAME);
+	else if (backend == IIO_XML)
 		ctx = iio_create_xml_context(arg_xml);
-	else if (backend == NETWORK)
+	else if (backend == IIO_NETWORK)
 		ctx = iio_create_network_context(arg_ip);
-	else if (backend == AUTO)
+	else if (backend == IIO_AUTO)
 		ctx = iio_create_context_from_uri(arg_uri);
 	else
 		ctx = iio_create_default_context();
@@ -326,7 +212,7 @@ int main(int argc, char **argv)
 
 	unsigned int nb_devices = iio_context_get_devices_count(ctx);
 	printf("IIO context has %u devices:\n", nb_devices);
-	char *buf = xmalloc(BUF_SIZE);
+	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);

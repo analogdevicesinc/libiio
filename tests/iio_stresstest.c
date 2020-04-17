@@ -30,6 +30,8 @@
 #include <sys/time.h>
 #include <sys/sysctl.h>
 
+#include "iio_common.h"
+
 #define MY_NAME "iio_stresstest"
 
 #define SAMPLES_PER_READ 256
@@ -204,13 +206,6 @@ static struct iio_device * get_device(const struct iio_context *ctx,
 	return NULL;
 }
 
-enum backend {
-	IIO_LOCAL,
-	IIO_IP,
-	IIO_USB,
-	IIO_AUTO
-};
-
 enum verbosity {
 	QUIET,
 	SUMMARY,
@@ -355,7 +350,7 @@ static void *client_thread(void *data)
 				/* depending on backend, do more */
 				if(info->back == IIO_USB && rand() % 3 == 0)
 					break;
-				else if (info->back == IIO_IP && rand() % 5 == 0)
+				else if (info->back == IIO_NETWORK && rand() % 5 == 0)
 					break;
 				else if (rand() % 10 == 0)
 					break;
@@ -365,7 +360,7 @@ static void *client_thread(void *data)
 			/* depending on backend, do more */
 			if(info->back == IIO_USB) {
 				break;
-			} else if (info->back == IIO_IP) {
+			} else if (info->back == IIO_NETWORK) {
 				if (rand() % 5 == 0)
 					break;
 			} else {
@@ -543,7 +538,7 @@ int main(int argc, char **argv)
 		if (!strncmp(info.argv[info.uri_index], "usb:", strlen("usb:")))
 			info.back = IIO_USB;
 		else if (!strncmp(info.argv[info.uri_index], "ip:", strlen("ip:")))
-			info.back = IIO_IP;
+			info.back = IIO_NETWORK;
 		else if (!strncmp(info.argv[info.uri_index], "local:", strlen("local:")))
 			info.back = IIO_LOCAL;
 
