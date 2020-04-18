@@ -71,7 +71,7 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 		char *hostname, char *addr_str, int port)
 {
 	struct iio_context *ctx;
-	char uri[MAXHOSTNAMELEN + 3];
+	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65536") + 1];
 	char description[255], *p;
 	const char *hw_model, *serial;
 	int i;
@@ -83,28 +83,28 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 	}
 
 	if (port == IIOD_PORT)
-		sprintf(uri, "ip:%s", hostname);
+		iio_snprintf(uri, sizeof(uri), "ip:%s", hostname);
 	else
-		sprintf(uri, "ip:%s:%d", hostname, port);
+		iio_snprintf(uri, sizeof(uri), "ip:%s:%d", hostname, port);
 
 	hw_model = iio_context_get_attr_value(ctx, "hw_model");
 	serial = iio_context_get_attr_value(ctx, "hw_serial");
 
 	if (hw_model && serial) {
-		snprintf(description, sizeof(description), "%s (%s), serial=%s",
+		iio_snprintf(description, sizeof(description), "%s (%s), serial=%s",
 				addr_str, hw_model, serial);
 	} else if (hw_model) {
-		snprintf(description, sizeof(description), "%s %s", addr_str, hw_model);
+		iio_snprintf(description, sizeof(description), "%s %s", addr_str, hw_model);
 	} else if (serial) {
-		snprintf(description, sizeof(description), "%s %s", addr_str, serial);
+		iio_snprintf(description, sizeof(description), "%s %s", addr_str, serial);
 	} else if (ctx->nb_devices == 0) {
-		snprintf(description, sizeof(description), "%s", ctx->description);
+		iio_snprintf(description, sizeof(description), "%s", ctx->description);
 	} else {
-		snprintf(description, sizeof(description), "%s (", addr_str);
+		iio_snprintf(description, sizeof(description), "%s (", addr_str);
 		p = description + strlen(description);
 		for (i = 0; i < ctx->nb_devices - 1; i++) {
 			if (ctx->devices[i]->name) {
-				snprintf(p, sizeof(description) - strlen(description) -1,
+				iio_snprintf(p, sizeof(description) - strlen(description) -1,
 						"%s,",  ctx->devices[i]->name);
 				p += strlen(p);
 			}

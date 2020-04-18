@@ -353,7 +353,7 @@ static void print_value(struct parser_pdata *pdata, long value)
 		output(pdata, "\n");
 	} else {
 		char buf[128];
-		sprintf(buf, "%li\n", value);
+		iio_snprintf(buf, sizeof(buf), "%li\n", value);
 		output(pdata, buf);
 	}
 }
@@ -428,14 +428,22 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 		unsigned int i;
 		char buf[129], *ptr = buf;
 		uint32_t *mask = demux ? thd->mask : dev->mask;
-		ssize_t ret;
+		ssize_t ret, len;
 
+		len = sizeof(buf);
 		/* Send the current mask */
 		for (i = dev->nb_words; i > 0 && ptr < buf + sizeof(buf);
-				i--, ptr += 8)
-			sprintf(ptr, "%08x", mask[i - 1]);
+				i--, ptr += 8) {
+			iio_snprintf(ptr, len, "%08x", mask[i - 1]);
+			len -= 8;
+		}
 
 		*ptr = '\n';
+		len--;
+
+		if (len < 0)
+			IIO_ERROR("send_data: string length error\n");
+
 		ret = write_all(pdata, buf, ptr + 1 - buf);
 		if (ret < 0)
 			return ret;
@@ -830,7 +838,7 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 	ptr = words + nb;
 	while (*mask) {
 		char buf[9];
-		sprintf(buf, "%.*s", 8, mask);
+		iio_snprintf(buf, sizeof(buf), "%.*s", 8, mask);
 		sscanf(buf, "%08x", --ptr);
 		mask += 8;
 		IIO_DEBUG("Mask[%lu]: 0x%08x\n",
