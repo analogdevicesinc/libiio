@@ -1,7 +1,7 @@
 libiio Python Bindings
 ==================================
 
-Python bindings for the Industrial I/O interface library. 
+Python bindings for the `Industrial I/O <../index.html>`_ interface library. 
 
 Installation
 ==================
@@ -43,7 +43,6 @@ Components
    channel
    trigger
    examples
-   tools
 
 Indices and tables
 ==================

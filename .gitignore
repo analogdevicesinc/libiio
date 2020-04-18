@@ -17,6 +17,5 @@ install_manifest.txt
 Makefile
 build/
 
-html/
 Doxyfile
 doxygen_sqlite3.db

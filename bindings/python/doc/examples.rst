@@ -1,6 +1,18 @@
 Examples
 ==================
 
+
+Complete Application Examples
+------------------------------
+.. toctree::
+   iio_readdev
+   iio_writedev
+   iio_info
+
+
+Code Snippets
+-----------------------------
+
 Scan contexts and list channels of each device
 
 .. code-block:: python
