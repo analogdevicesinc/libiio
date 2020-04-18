@@ -144,9 +144,9 @@ static void __cfnet_browser_cb (
 	dd->port = port;
 	dd->hostname = strdup(hostname);
 	if (have_v4) {
-		strncpy(dd->addr_str, address_v4, sizeof(dd->addr_str));
+		iio_strlcpy(dd->addr_str, address_v4, sizeof(dd->addr_str));
 	} else if(have_v6) {
-		strncpy(dd->addr_str, address_v6, sizeof(dd->addr_str));
+		iio_strlcpy(dd->addr_str, address_v6, sizeof(dd->addr_str));
 	}
 
 	IIO_DEBUG("DNS SD: added %s (%s:%d)\n", hostname, dd->addr_str, port);

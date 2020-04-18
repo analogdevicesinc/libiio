@@ -202,7 +202,7 @@ int iiod_client_get_version(struct iiod_client *client, void *desc,
 	if (minor)
 		*minor = (unsigned int) min;
 	if (git_tag)
-		strncpy(git_tag, ptr, 8);
+		iio_strlcpy(git_tag, ptr, 8);
 	return 0;
 }
 

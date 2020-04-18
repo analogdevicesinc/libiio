@@ -290,7 +290,7 @@ int dnssd_discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 
 	if (ddata) {
 		*port = ddata->port;
-		strncpy(addr_str, ddata->addr_str, addr_len);
+		iio_strlcpy(addr_str, ddata->addr_str, addr_len);
 	}
 
 host_fail:
