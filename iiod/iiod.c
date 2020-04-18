@@ -330,9 +330,9 @@ static int start_avahi(void)
 
 	ret = gethostname(host, sizeof(host));
 	if (!ret) {
-		snprintf(label, sizeof(label), IIOD_ON "%s", host);
+		iio_snprintf(label, sizeof(label), "%s%s", IIOD_ON, host);
 	} else {
-		snprintf(label, sizeof(label), "iiod");
+		iio_snprintf(label, sizeof(label), "iiod");
 	}
 
 	avahi.name = avahi_strdup(label);
