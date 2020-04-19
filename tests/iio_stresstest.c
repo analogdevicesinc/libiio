@@ -37,13 +37,6 @@
 #define SAMPLES_PER_READ 256
 #define NUM_TIMESTAMPS (16*1024)
 
-#ifdef _MSC_BUILD
-#define inline __inline
-#define iio_snprintf sprintf_s
-#else
-#define iio_snprintf snprintf
-#endif
-
 static int getNumCores(void) {
 #ifdef _WIN32
 	SYSTEM_INFO sysinfo;
@@ -391,32 +384,6 @@ thread_fail:
 	info->tid[id] = 0;
 	info->start[id][stamp].tv_sec = 0; info->start[id][stamp].tv_usec = 0;
 	return (void *)EXIT_FAILURE;
-}
-
-static unsigned long int sanitize_clamp(const char *name, const char *argv,
-		unsigned long int min, unsigned long int max)
-{
-
-	unsigned long int val;
-	char buf[20];
-
-	if (!argv) {
-		val = 0;
-	} else {
-		/* sanitized buffer by taking first 20 (or less) char */
-		iio_snprintf(buf, sizeof(buf), "%s", argv);
-		val = strtoul(buf, NULL, 10);
-	}
-
-	if (val > max) {
-		val = max;
-		fprintf(stderr, "Clamped %s to max %lu\n", name, max);
-	}
-	if (val < min) {
-		val = min;
-		fprintf(stderr, "Clamped %s to min %lu\n", name, min);
-	}
-	return val;
 }
 
 int main(int argc, char **argv)

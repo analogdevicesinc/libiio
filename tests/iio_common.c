@@ -21,9 +21,17 @@
 
 #include <iio.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "iio_common.h"
 #include "gen_code.h"
+
+#ifdef _MSC_BUILD
+#define inline __inline
+#define iio_snprintf sprintf_s
+#else
+#define iio_snprintf snprintf
+#endif
 
 void * xmalloc(size_t n, const char * name)
 {
@@ -93,5 +101,30 @@ err_free_ctx:
 	iio_scan_context_destroy(scan_ctx);
 
 	return ctx;
+}
+
+unsigned long int sanitize_clamp(const char *name, const char *argv,
+	uint64_t min, uint64_t max)
+{
+	unsigned long int val;
+	char buf[20];
+
+	if (!argv) {
+		val = 0;
+	} else {
+		/* sanitized buffer by taking first 20 (or less) char */
+		iio_snprintf(buf, sizeof(buf), "%s", argv);
+		val = strtoul(buf, NULL, 10);
+	}
+
+	if (val > max) {
+		val = max;
+		fprintf(stderr, "Clamped %s to max %" PRIu64 "\n", name, max);
+	}
+	if (val < min) {
+		val = min;
+		fprintf(stderr, "Clamped %s to min %" PRIu64 "\n", name, min);
+	}
+	return val;
 }
 

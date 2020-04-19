@@ -40,5 +40,7 @@ enum backend {
 void * xmalloc(size_t n, const char *name);
 
 struct iio_context * autodetect_context(bool rtn, bool gen_code, const char *name);
+unsigned long int sanitize_clamp(const char *name, const char *argv,
+	uint64_t min, uint64_t max);
 
 #endif /* IIO_TESTS_COMMON_H */

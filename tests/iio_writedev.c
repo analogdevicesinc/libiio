@@ -248,13 +248,13 @@ int main(int argc, char **argv)
 			trigger_name = optarg;
 			break;
 		case 'b':
-			buffer_size = atoi(optarg);
+			buffer_size = sanitize_clamp("buffer size", optarg, 64, 4 * 1024 * 1024);
 			break;
 		case 's':
-			num_samples = atoi(optarg);
+			num_samples = sanitize_clamp("number of samples", optarg, 0, SIZE_MAX);
 			break;
 		case 'T':
-			timeout = atoi(optarg);
+			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
 		case 'c':
 			cyclic_buffer = true;
