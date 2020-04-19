@@ -48,23 +48,13 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"[-n <hostname>] [-u <uri>] [-a ] [-s <size>] <iio_device>",
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
 	"Use the context with the provided URI.",
 	"Size of the buffer in sample sets. Default is 1Msample",
 	"Scan for available contexts and if only one is available use it.",
 };
-
-static void usage(char *argv[])
-{
-	unsigned int i;
-
-	printf("Usage:\n\t%s [-n <hostname>] [-u <uri>] [ -a ][-s <size>] <iio_device>\n\nOptions:\n", argv[0]);
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static bool app_running = true;
 static bool device_is_tx;
@@ -188,7 +178,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage(argv);
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 's':
 			ret = sscanf(optarg, "%u%c", &buffer_size, &unit);
@@ -217,7 +207,7 @@ int main(int argc, char **argv)
 
 	if (optind + 1 != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage(argv);
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 

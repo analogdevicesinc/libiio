@@ -45,6 +45,9 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"\t[-x <xml_file>]\n"
+		"\t\t\t\t[-n <hostname>]\n"
+		"\t\t\t\t[-u <uri>]",
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
 	"Use the network backend with the provided hostname.",
@@ -52,19 +55,6 @@ static const char *options_descriptions[] = {
 	"Scan for available backends.",
 	"Scan for available contexts and if only one is available use it.",
 };
-
-static void usage(void)
-{
-	unsigned int i;
-
-	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t"
-			MY_NAME " [-n <hostname>]\n\t"
-			MY_NAME " [-u <uri>]\n\nOptions:\n");
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
 {
@@ -97,7 +87,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 'n':
 			if (backend != IIO_LOCAL) {
@@ -136,7 +126,7 @@ int main(int argc, char **argv)
 
 	if (optind != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 

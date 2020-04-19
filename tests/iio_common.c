@@ -22,6 +22,7 @@
 #include <iio.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <getopt.h>
 
 #include "iio_common.h"
 #include "gen_code.h"
@@ -126,5 +127,21 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 		fprintf(stderr, "Clamped %s to min %" PRIu64 "\n", name, min);
 	}
 	return val;
+}
+
+
+void usage(char *name, const struct option *options,
+	const char *options_descriptions[])
+{
+	unsigned int i;
+
+	printf("Usage:\n");
+	printf("\t%s [OPTION]...\t%s\n", name, options_descriptions[0]);
+	printf("Options:\n");
+	for (i = 0; options[i].name; i++) {
+		printf("\t-%c, --%s\n\t\t\t%s\n",
+				options[i].val, options[i].name,
+			options_descriptions[i + 1]);
+	}
 }
 

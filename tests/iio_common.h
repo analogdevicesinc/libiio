@@ -22,6 +22,8 @@
 #ifndef IIO_TESTS_COMMON_H
 #define IIO_TESTS_COMMON_H
 
+#include <getopt.h>
+
 /*
  * internal buffers need to be big enough for attributes
  * coming back from the kernel. Because of virtual memory,
@@ -42,5 +44,6 @@ void * xmalloc(size_t n, const char *name);
 struct iio_context * autodetect_context(bool rtn, bool gen_code, const char *name);
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
+void usage(char *name, const struct option *options, const char *options_descriptions[]);
 
 #endif /* IIO_TESTS_COMMON_H */

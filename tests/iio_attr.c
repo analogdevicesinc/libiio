@@ -292,6 +292,11 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"-d [device] [attr] [value]\n"
+		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
+		"\t\t\t\t-B [device] [attr] [value]\n"
+		"\t\t\t\t-D [device] [attr] [value]\n"
+		"\t\t\t\t-C [attr]",
 	/* help */
 	"Show this help and quit.",
 	"Ignore case distinctions.",
@@ -312,34 +317,6 @@ static const char *options_descriptions[] = {
 	"Read/Write debug attributes.",
 };
 
-static void usage(void)
-{
-	unsigned int i, j = 0, k;
-
-	printf("Usage:\n\t" MY_NAME " [OPTION]...\t-d [device] [attr] [value]\n"
-		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
-		"\t\t\t\t-B [device] [attr] [value]\n"
-		"\t\t\t\t-D [device] [attr] [value]\n"
-		"\t\t\t\t-C [attr]\nOptions:\n");
-	for (i = 0; options[i].name; i++) {
-		k = strlen(options[i].name);
-		if (k > j)
-			j = k;
-	}
-	j++;
-	for (i = 0; options[i].name; i++) {
-		printf("\t-%c, --%s%*c: %s\n",
-				options[i].val, options[i].name,
-				j - (int)strlen(options[i].name), ' ',
-				options_descriptions[i]);
-		/* when printing out the help, add some subtitles, to help visually */
-		if (i == 3)
-			printf("Optional qualifiers:\n");
-		if (i == 8)
-			printf("Attribute types:\n");
-	}
-}
-
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
@@ -359,7 +336,7 @@ int main(int argc, char **argv)
 		switch (c) {
 		/* help */
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		/* context connection */
 		case 'a':
@@ -429,7 +406,7 @@ int main(int argc, char **argv)
 
 	if (!(search_device + search_channel + search_context + search_debug + search_buffer)) {
 		if (argc == 1) {
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		}
 		fprintf(stderr, "must specify one of -d, -c, -C, -B or -D.\n");

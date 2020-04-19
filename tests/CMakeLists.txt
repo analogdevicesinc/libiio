@@ -36,7 +36,7 @@ add_executable(iio_readdev iio_readdev.c  ${GETOPT_C_FILE} ${LIBIIO_RC})
 add_executable(iio_reg     iio_reg.c      ${GETOPT_C_FILE} ${LIBIIO_RC})
 add_executable(iio_writedev iio_writedev.c  ${GETOPT_C_FILE} ${LIBIIO_RC})
 
-target_link_libraries(iio_genxml  iio)
+target_link_libraries(iio_genxml  iio iio_tests_helper)
 target_link_libraries(iio_info    iio iio_tests_helper)
 target_link_libraries(iio_attr    iio iio_tests_helper)
 target_link_libraries(iio_readdev iio iio_tests_helper)

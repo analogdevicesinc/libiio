@@ -57,6 +57,9 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"[-n <hostname>] [-t <trigger>] "
+		"[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
+		"<iio_device> [<channel> ...]",
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
 	"Use the context with the provided URI.",
@@ -67,19 +70,6 @@ static const char *options_descriptions[] = {
 	"Scan for available contexts and if only one is available use it.",
 	"Use cyclic buffer mode.",
 };
-
-static void usage(void)
-{
-	unsigned int i;
-
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
-			"[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
-			"<iio_device> [<channel> ...]\n\nOptions:\n");
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static struct iio_context *ctx;
 static struct iio_buffer *buffer;
@@ -233,7 +223,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 'n':
 			arg_ip = optarg;
@@ -266,7 +256,7 @@ int main(int argc, char **argv)
 
 	if (argc == optind) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 

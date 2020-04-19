@@ -109,6 +109,8 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>] [-s <samples>]"
+		"<iio_device> [<channel> ...]",
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",
@@ -117,19 +119,6 @@ static const char *options_descriptions[] = {
 	"Number of Threads",
 	"Increase verbosity (-vv and -vvv for more)",
 };
-
-static void usage(void)
-{
-	unsigned int i;
-
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-u <vid>:<pid>] "
-			"[-t <trigger>] [-b <buffer-size>] [-s <samples>] "
-			"<iio_device> [<channel> ...]\n\nOptions:\n");
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static bool app_running = true;
 static bool threads_running = true;
@@ -422,7 +411,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 'u':
 			info.arg_index += 2;
@@ -490,7 +479,7 @@ int main(int argc, char **argv)
 			}
 		}
 		fprintf(stderr, "\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
@@ -498,7 +487,7 @@ int main(int argc, char **argv)
 		struct iio_context *ctx = iio_create_context_from_uri(info.argv[info.uri_index]);
 		if (!ctx) {
 			fprintf(stderr, "need valid uri\n");
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_FAILURE;
 		}
 		iio_context_destroy(ctx);
@@ -511,7 +500,7 @@ int main(int argc, char **argv)
 
 	} else {
 		fprintf(stderr, "need valid uri\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
