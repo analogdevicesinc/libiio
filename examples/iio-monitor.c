@@ -19,9 +19,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * */
 
-#define _BSD_SOURCE
-#define _GNU_SOURCE
-#define _DEFAULT_SOURCE
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE 1
+#endif
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
 
 #include <cdk.h>
 #include <locale.h>
