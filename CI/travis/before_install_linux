@@ -32,6 +32,9 @@ handle_centos() {
 	if is_centos_at_least_ver "8" ; then
 		# On CentOS 8, avahi-devel & doxygen are in this repo; enable it
 		yum config-manager --set-enabled PowerTools
+	else
+		# On CentOS 8, cdk-devel (Curses Development Kit) does not exist yet
+		yum -y install ncurses-devel cdk-devel
 	fi
 
 	# CENTOS 6 will has issues with sphinx
@@ -56,7 +59,7 @@ handle_default() {
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cmake graphviz \
 		libaio-dev libavahi-client-dev \
 		libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar \
-		bzip2 gzip flex bison git lsb-release python3-pip
+		bzip2 gzip flex bison git lsb-release python3-pip libncurses5-dev libcdk5-dev
 
 	if [ -n "${GH_DOC_TOKEN}" ] ; then
 		sudo apt-get install -y doxygen man2html
