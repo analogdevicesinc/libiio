@@ -46,6 +46,7 @@ endif()
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 option(WITH_TESTS "Build the test programs" ON)
+option(WITH_EXAMPLES "Build examples" OFF)
 
 if (WITH_TESTS)
 	set(NEED_THREADS 1)
@@ -340,6 +341,9 @@ endif()
 
 if(WITH_TESTS)
 	add_subdirectory(tests)
+endif()
+if(WITH_EXAMPLES)
+	add_subdirectory(examples)
 endif()
 
 if (WIN32)
