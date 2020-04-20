@@ -23,7 +23,7 @@
 #define _GNU_SOURCE
 #define _DEFAULT_SOURCE
 
-#include <cdk/cdk.h>
+#include <cdk.h>
 #include <locale.h>
 #include <pthread.h>
 #include <stdbool.h>

@@ -3,8 +3,9 @@
 The libiio is a cross platform library for interfacing with Linux IIO devices. 
 
 These are some primitive examples of using the libiio library. 
-These are not compiled or tested during a nominal library cmake/make process and must be compiled separately.
-A linux Makefile is included.
+
+These are only build if the -DWITH_EXAMPLES=ON is provided to the standard Cmake.
+
 While the libiio library is tested on many operating systems, these examples are only tested on Linux.
 
 More examples using all languages supported by libiio are encouraged to be added here.
