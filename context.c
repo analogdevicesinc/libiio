@@ -53,20 +53,25 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)
 {
-	size_t len, *devices_len = NULL;
-	char *str, *ptr, **devices = NULL;
+	ssize_t len;
+	size_t *devices_len = NULL;
+	char *str, *ptr, *eptr, **devices = NULL;
 	unsigned int i;
 
-	len = strlen(ctx->name) + sizeof(xml_header) - 1 +
-		sizeof("<context name=\"\" ></context>");
-	if (ctx->description)
-		len += strlen(ctx->description) +
-			sizeof(" description=\"\"") - 1;
+	len = sizeof(xml_header) - 1;
+	len += strnlen(ctx->name, MAX_CTX_NAME);
+	len += sizeof("<context name=\"\" ></context>") - 1;
 
-	for (i = 0; i < ctx->nb_attrs; i++)
-		len += strlen(ctx->attrs[i]) +
-			strlen(ctx->values[i]) +
-			sizeof("<context-attribute name=\"\" value=\"\" />");
+	if (ctx->description) {
+		len += strnlen(ctx->description, MAX_CTX_DESC);
+		len += sizeof(" description=\"\"") - 1;
+	}
+
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		len += strnlen(ctx->attrs[i], MAX_ATTR_NAME);
+		len += strnlen(ctx->values[i], MAX_ATTR_VALUE);
+		len += sizeof("<context-attribute name=\"\" value=\"\" />") - 1;
+	}
 
 	if (ctx->nb_devices) {
 		devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
@@ -94,6 +99,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		errno = ENOMEM;
 		goto err_free_devices;
 	}
+	eptr = str + len;
 
 	if (ctx->description) {
 		iio_snprintf(str, len, "%s<context name=\"%s\" "
@@ -105,21 +111,32 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	ptr = strrchr(str, '\0');
+	len = eptr - ptr;
 
-	for (i = 0; i < ctx->nb_attrs; i++)
+	for (i = 0; i < ctx->nb_attrs; i++) {
 		ptr += sprintf(ptr, "<context-attribute name=\"%s\" value=\"%s\" />",
 				ctx->attrs[i], ctx->values[i]);
-
+		len = eptr - ptr;
+	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		strcpy(ptr, devices[i]);
 		ptr += devices_len[i];
+		len -= devices_len[i];
 		free(devices[i]);
 	}
 
 	free(devices);
 	free(devices_len);
 	strcpy(ptr, "</context>");
+	len -= sizeof("</context>") - 1;
+
+	if (len < 0) {
+		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length isssue\n");
+		free(str);
+		return NULL;
+	}
+
 	return str;
 
 err_free_devices:

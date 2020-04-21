@@ -65,6 +65,10 @@
 #define MAX_CHN_NAME 256 /* encoded in the sysfs filename */
 #define MAX_DEV_ID 256 /* encoded in the sysfs filename */
 #define MAX_DEV_NAME 256 /* encoded in the sysfs filename */
+#define MAX_CTX_NAME 256    /* nominally "xml" */
+#define MAX_CTX_DESC 256    /* nominally "linux ..." */
+#define MAX_ATTR_NAME 256   /* encoded in the sysfs filename */
+#define MAX_ATTR_VALUE 4096 /* Linux page size, could be anything */
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
