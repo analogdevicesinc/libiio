@@ -65,11 +65,17 @@ static char *get_attr_xml(const char *attr, size_t *length, enum iio_attr_type t
 /* Returns a string containing the XML representation of this device */
 char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 {
-	size_t len = sizeof("<device id=\"\" name=\"\" ></device>")
-		+ strlen(dev->id) + (dev->name ? strlen(dev->name) : 0);
-	char *ptr, *str, **attrs, **channels, **buffer_attrs, **debug_attrs;
+	ssize_t len;
+	char *ptr, *eptr, *str, **attrs, **channels, **buffer_attrs, **debug_attrs;
 	size_t *attrs_len, *channels_len, *buffer_attrs_len, *debug_attrs_len;
 	unsigned int i, j, k;
+
+	len = sizeof("<device id=\"\" ></device> ") - 1;
+	len += strnlen(dev->id, MAX_DEV_ID);
+	if (dev->name) {
+		len += sizeof(" name=\"\"") - 1;
+		len += strnlen(dev->name, MAX_DEV_NAME);
+	}
 
 	attrs_len = malloc(dev->nb_attrs * sizeof(*attrs_len));
 	if (!attrs_len)
@@ -143,21 +149,26 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	str = malloc(len);
 	if (!str)
 		goto err_free_debug_attrs;
+	eptr = str + len;
 
 	iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
 	ptr = strrchr(str, '\0');
+	len = eptr - ptr;
 
 	if (dev->name) {
 		sprintf(ptr, " name=\"%s\"", dev->name);
 		ptr = strrchr(ptr, '\0');
+		len = eptr - ptr;
 	}
 
 	strcpy(ptr, " >");
 	ptr += 2;
+	len -= 2;
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		strcpy(ptr, channels[i]);
 		ptr += channels_len[i];
+		len -= channels_len[i];
 		free(channels[i]);
 	}
 
@@ -167,6 +178,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	for (i = 0; i < dev->nb_attrs; i++) {
 		strcpy(ptr, attrs[i]);
 		ptr += attrs_len[i];
+		len -= attrs_len[i];
 		free(attrs[i]);
 	}
 
@@ -176,6 +188,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	for (i = 0; i < dev->nb_buffer_attrs; i++) {
 		strcpy(ptr, buffer_attrs[i]);
 		ptr += buffer_attrs_len[i];
+		len -= buffer_attrs_len[i];
 		free(buffer_attrs[i]);
 	}
 
@@ -185,6 +198,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	for (i = 0; i < dev->nb_debug_attrs; i++) {
 		strcpy(ptr, debug_attrs[i]);
 		ptr += debug_attrs_len[i];
+		len -= debug_attrs_len[i];
 		free(debug_attrs[i]);
 	}
 
@@ -192,7 +206,16 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(debug_attrs_len);
 
 	strcpy(ptr, "</device>");
+	len -= sizeof("</device>") - 1;
+
 	*length = ptr - str + sizeof("</device>") - 1;
+
+	if (len < 0) {
+		IIO_ERROR("Internal libIIO error: iio_device_get_xml str length isssue\n");
+		free(str);
+		return NULL;
+	}
+
 	return str;
 
 err_free_debug_attrs:
