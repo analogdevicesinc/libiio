@@ -153,26 +153,23 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	ptr = str;
 
 	if (len > 0) {
-		iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
-		ptr = strrchr(str, '\0');
+		ptr += iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
 		len = eptr - ptr;
 	}
 
 	if (dev->name && len > 0) {
-		iio_snprintf(ptr, len, " name=\"%s\"", dev->name);
-		ptr = strrchr(ptr, '\0');
+		ptr += iio_snprintf(ptr, len, " name=\"%s\"", dev->name);
 		len = eptr - ptr;
 	}
 
 	if (len > 0) {
-		iio_strlcpy(ptr, " >", len);
-		ptr += 2;
+		ptr += iio_strlcpy(ptr, " >", len);
 		len -= 2;
 	}
 
 	for (i = 0; i < dev->nb_channels; i++) {
-		if (len > 0) {
-			iio_strlcpy(ptr, channels[i], len);
+		if (len > channels_len[i]) {
+			memcpy(ptr, channels[i], channels_len[i]); /* Flawfinder: ignore */
 			ptr += channels_len[i];
 			len -= channels_len[i];
 		}
@@ -183,8 +180,8 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(channels_len);
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		if (len > 0) {
-			iio_strlcpy(ptr, attrs[i], len);
+		if (len > attrs_len[i]) {
+			memcpy(ptr, attrs[i], attrs_len[i]); /* Flawfinder: ignore */
 			ptr += attrs_len[i];
 			len -= attrs_len[i];
 		}
@@ -195,8 +192,8 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(attrs_len);
 
 	for (i = 0; i < dev->nb_buffer_attrs; i++) {
-		if (len > 0) {
-			iio_strlcpy(ptr, buffer_attrs[i], len);
+		if (len > buffer_attrs_len[i]) {
+			memcpy(ptr, buffer_attrs[i], buffer_attrs_len[i]); /* Flawfinder: ignore */
 			ptr += buffer_attrs_len[i];
 			len -= buffer_attrs_len[i];
 		}
@@ -207,8 +204,8 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(buffer_attrs_len);
 
 	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		if (len > 0) {
-			iio_strlcpy(ptr, debug_attrs[i], len);
+		if (len > debug_attrs_len[i]) {
+			memcpy(ptr, debug_attrs[i], debug_attrs_len[i]); /* Flawfinder: ignore */
 			ptr += debug_attrs_len[i];
 			len -= debug_attrs_len[i];
 		}
@@ -219,11 +216,11 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(debug_attrs_len);
 
 	if (len > 0) {
-		iio_strlcpy(ptr, "</device>", len);
+		ptr += iio_strlcpy(ptr, "</device>", len);
 		len -= sizeof("</device>") - 1;
 	}
 
-	*length = ptr - str + sizeof("</device>") - 1;
+	*length = ptr - str;
 
 	if (len < 0) {
 		IIO_ERROR("Internal libIIO error: iio_device_get_xml str length isssue\n");
