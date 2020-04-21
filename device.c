@@ -150,25 +150,32 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	if (!str)
 		goto err_free_debug_attrs;
 	eptr = str + len;
+	ptr = str;
 
-	iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
-	ptr = strrchr(str, '\0');
-	len = eptr - ptr;
+	if (len > 0) {
+		iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
+		ptr = strrchr(str, '\0');
+		len = eptr - ptr;
+	}
 
-	if (dev->name) {
-		sprintf(ptr, " name=\"%s\"", dev->name);
+	if (dev->name && len > 0) {
+		iio_snprintf(ptr, len, " name=\"%s\"", dev->name);
 		ptr = strrchr(ptr, '\0');
 		len = eptr - ptr;
 	}
 
-	strcpy(ptr, " >");
-	ptr += 2;
-	len -= 2;
+	if (len > 0) {
+		iio_strlcpy(ptr, " >", len);
+		ptr += 2;
+		len -= 2;
+	}
 
 	for (i = 0; i < dev->nb_channels; i++) {
-		strcpy(ptr, channels[i]);
-		ptr += channels_len[i];
-		len -= channels_len[i];
+		if (len > 0) {
+			iio_strlcpy(ptr, channels[i], len);
+			ptr += channels_len[i];
+			len -= channels_len[i];
+		}
 		free(channels[i]);
 	}
 
@@ -176,9 +183,11 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(channels_len);
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		strcpy(ptr, attrs[i]);
-		ptr += attrs_len[i];
-		len -= attrs_len[i];
+		if (len > 0) {
+			iio_strlcpy(ptr, attrs[i], len);
+			ptr += attrs_len[i];
+			len -= attrs_len[i];
+		}
 		free(attrs[i]);
 	}
 
@@ -186,9 +195,11 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(attrs_len);
 
 	for (i = 0; i < dev->nb_buffer_attrs; i++) {
-		strcpy(ptr, buffer_attrs[i]);
-		ptr += buffer_attrs_len[i];
-		len -= buffer_attrs_len[i];
+		if (len > 0) {
+			iio_strlcpy(ptr, buffer_attrs[i], len);
+			ptr += buffer_attrs_len[i];
+			len -= buffer_attrs_len[i];
+		}
 		free(buffer_attrs[i]);
 	}
 
@@ -196,17 +207,21 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(buffer_attrs_len);
 
 	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		strcpy(ptr, debug_attrs[i]);
-		ptr += debug_attrs_len[i];
-		len -= debug_attrs_len[i];
+		if (len > 0) {
+			iio_strlcpy(ptr, debug_attrs[i], len);
+			ptr += debug_attrs_len[i];
+			len -= debug_attrs_len[i];
+		}
 		free(debug_attrs[i]);
 	}
 
 	free(debug_attrs);
 	free(debug_attrs_len);
 
-	strcpy(ptr, "</device>");
-	len -= sizeof("</device>") - 1;
+	if (len > 0) {
+		iio_strlcpy(ptr, "</device>", len);
+		len -= sizeof("</device>") - 1;
+	}
 
 	*length = ptr - str + sizeof("</device>") - 1;
 
