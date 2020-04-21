@@ -100,36 +100,43 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		goto err_free_devices;
 	}
 	eptr = str + len;
+	ptr = str;
 
-	if (ctx->description) {
-		iio_snprintf(str, len, "%s<context name=\"%s\" "
-				"description=\"%s\" >",
-				xml_header, ctx->name, ctx->description);
-	} else {
-		iio_snprintf(str, len, "%s<context name=\"%s\" >",
-				xml_header, ctx->name);
+	if (len > 0) {
+		if (ctx->description) {
+			iio_snprintf(str, len, "%s<context name=\"%s\" "
+					"description=\"%s\" >",
+					xml_header, ctx->name, ctx->description);
+		} else {
+			iio_snprintf(str, len, "%s<context name=\"%s\" >",
+					xml_header, ctx->name);
+		}
+		ptr = strrchr(str, '\0');
+		len = eptr - ptr;
 	}
 
-	ptr = strrchr(str, '\0');
-	len = eptr - ptr;
-
-	for (i = 0; i < ctx->nb_attrs; i++) {
-		ptr += sprintf(ptr, "<context-attribute name=\"%s\" value=\"%s\" />",
+	for (i = 0; i < ctx->nb_attrs && len > 0; i++) {
+		ptr += iio_snprintf(ptr, len, "<context-attribute name=\"%s\" value=\"%s\" />",
 				ctx->attrs[i], ctx->values[i]);
 		len = eptr - ptr;
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
-		strcpy(ptr, devices[i]);
-		ptr += devices_len[i];
-		len -= devices_len[i];
+		if (len > 0) {
+			iio_strlcpy(ptr, devices[i], len);
+			ptr += devices_len[i];
+			len -= devices_len[i];
+		}
 		free(devices[i]);
 	}
 
 	free(devices);
 	free(devices_len);
-	strcpy(ptr, "</context>");
-	len -= sizeof("</context>") - 1;
+
+	if (len > 0) {
+		iio_strlcpy(ptr, "</context>", len);
+		len -= sizeof("</context>") - 1;
+	}
 
 	if (len < 0) {
 		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length isssue\n");
