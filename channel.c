@@ -226,12 +226,15 @@ static char * get_scan_element(const struct iio_channel *chn, size_t *length)
 /* Returns a string containing the XML representation of this channel */
 char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 {
-	size_t len = sizeof("<channel id=\"\" name=\"\" "
-			"type=\"output\" ></channel>")
-		+ strlen(chn->id) + (chn->name ? strlen(chn->name) : 0);
-	char *ptr, *str, **attrs, *scan_element = NULL;
+	ssize_t len;
+	char *ptr, *eptr, *str, **attrs, *scan_element = NULL;
 	size_t *attrs_len, scan_element_len = 0;
 	unsigned int i;
+
+	len = sizeof("<channel id=\"\" type=\"\" ></channel>");
+	len += strnlen(chn->id, MAX_CHN_ID);
+	len += chn->is_output ? sizeof("output") : sizeof("input");
+	len += chn->name ? sizeof(" name= ") + strnlen(chn->name, MAX_CHN_NAME) : 0;
 
 	if (chn->is_scan_element) {
 		scan_element = get_scan_element(chn, &scan_element_len);
@@ -260,26 +263,32 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 	str = malloc(len);
 	if (!str)
 		goto err_free_attrs;
+	eptr = str + len;
 
 	iio_snprintf(str, len, "<channel id=\"%s\"", chn->id);
 	ptr = strrchr(str, '\0');
+	len = eptr - ptr;
 
 	if (chn->name) {
 		sprintf(ptr, " name=\"%s\"", chn->name);
 		ptr = strrchr(ptr, '\0');
+		len = eptr - ptr;
 	}
 
 	sprintf(ptr, " type=\"%s\" >", chn->is_output ? "output" : "input");
 	ptr = strrchr(ptr, '\0');
+	len = eptr - ptr;
 
 	if (chn->is_scan_element) {
 		strcpy(ptr, scan_element);
 		ptr += scan_element_len;
+		len -= scan_element_len;
 	}
 
 	for (i = 0; i < chn->nb_attrs; i++) {
 		strcpy(ptr, attrs[i]);
 		ptr += attrs_len[i];
+		len -= attrs_len[i];
 		free(attrs[i]);
 	}
 
@@ -289,6 +298,14 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 
 	strcpy(ptr, "</channel>");
 	*length = ptr - str + sizeof("</channel>") - 1;
+	len -= sizeof("</channel>");
+
+	if (len < 0) {
+		IIO_ERROR("Internal libIIO error: iio_channel_get_xml str length isssue\n");
+		free(str);
+		return NULL;
+	}
+
 	return str;
 
 err_free_attrs:
