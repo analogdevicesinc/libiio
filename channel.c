@@ -263,32 +263,39 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 	str = malloc(len);
 	if (!str)
 		goto err_free_attrs;
+	ptr = str;
 	eptr = str + len;
 
-	iio_snprintf(str, len, "<channel id=\"%s\"", chn->id);
-	ptr = strrchr(str, '\0');
-	len = eptr - ptr;
+	if (len > 0) {
+		iio_snprintf(str, len, "<channel id=\"%s\"", chn->id);
+		ptr = strrchr(str, '\0');
+		len = eptr - ptr;
+	}
 
-	if (chn->name) {
-		sprintf(ptr, " name=\"%s\"", chn->name);
+	if (chn->name && len > 0) {
+		iio_snprintf(ptr, len, " name=\"%s\"", chn->name);
 		ptr = strrchr(ptr, '\0');
 		len = eptr - ptr;
 	}
 
-	sprintf(ptr, " type=\"%s\" >", chn->is_output ? "output" : "input");
-	ptr = strrchr(ptr, '\0');
-	len = eptr - ptr;
+	if (len > 0) {
+		iio_snprintf(ptr, len, " type=\"%s\" >", chn->is_output ? "output" : "input");
+		ptr = strrchr(ptr, '\0');
+		len = eptr - ptr;
+	}
 
-	if (chn->is_scan_element) {
-		strcpy(ptr, scan_element);
+	if (chn->is_scan_element && len > 0) {
+		iio_strlcpy(ptr, scan_element, len);
 		ptr += scan_element_len;
 		len -= scan_element_len;
 	}
 
 	for (i = 0; i < chn->nb_attrs; i++) {
-		strcpy(ptr, attrs[i]);
-		ptr += attrs_len[i];
-		len -= attrs_len[i];
+		if (len > 0) {
+			iio_strlcpy(ptr, attrs[i], len);
+			ptr += attrs_len[i];
+			len -= attrs_len[i];
+		}
 		free(attrs[i]);
 	}
 
@@ -296,9 +303,11 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 	free(attrs);
 	free(attrs_len);
 
-	strcpy(ptr, "</channel>");
+	if (len > 0) {
+		iio_strlcpy(ptr, "</channel>", len);
+		len -= sizeof("</channel>");
+	}
 	*length = ptr - str + sizeof("</channel>") - 1;
-	len -= sizeof("</channel>");
 
 	if (len < 0) {
 		IIO_ERROR("Internal libIIO error: iio_channel_get_xml str length isssue\n");
