@@ -104,14 +104,13 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 
 	if (len > 0) {
 		if (ctx->description) {
-			iio_snprintf(str, len, "%s<context name=\"%s\" "
+			ptr += iio_snprintf(str, len, "%s<context name=\"%s\" "
 					"description=\"%s\" >",
 					xml_header, ctx->name, ctx->description);
 		} else {
-			iio_snprintf(str, len, "%s<context name=\"%s\" >",
+			ptr += iio_snprintf(str, len, "%s<context name=\"%s\" >",
 					xml_header, ctx->name);
 		}
-		ptr = strrchr(str, '\0');
 		len = eptr - ptr;
 	}
 
@@ -122,8 +121,8 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
-		if (len > 0) {
-			iio_strlcpy(ptr, devices[i], len);
+		if (len > devices_len[i]) {
+			memcpy(ptr, devices[i], devices_len[i]); /* Flawfinder: ignore */
 			ptr += devices_len[i];
 			len -= devices_len[i];
 		}
@@ -134,7 +133,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	free(devices_len);
 
 	if (len > 0) {
-		iio_strlcpy(ptr, "</context>", len);
+		ptr += iio_strlcpy(ptr, "</context>", len);
 		len -= sizeof("</context>") - 1;
 	}
 
