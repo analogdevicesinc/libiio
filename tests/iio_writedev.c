@@ -36,6 +36,8 @@
 #include <unistd.h>
 #endif
 
+#include "iio_common.h"
+
 #define MY_NAME "iio_writedev"
 
 #define SAMPLES_PER_READ 256
@@ -55,6 +57,9 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"[-n <hostname>] [-t <trigger>] "
+		"[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
+		"<iio_device> [<channel> ...]",
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
 	"Use the context with the provided URI.",
@@ -65,19 +70,6 @@ static const char *options_descriptions[] = {
 	"Scan for available contexts and if only one is available use it.",
 	"Use cyclic buffer mode.",
 };
-
-static void usage(void)
-{
-	unsigned int i;
-
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-t <trigger>] "
-			"[-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] "
-			"<iio_device> [<channel> ...]\n\nOptions:\n");
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static struct iio_context *ctx;
 static struct iio_buffer *buffer;
@@ -212,53 +204,6 @@ static ssize_t read_sample(const struct iio_channel *chn,
 	return (ssize_t) nb;
 }
 
-static struct iio_context *scan(void)
-{
-	struct iio_scan_context *scan_ctx;
-	struct iio_context_info **info;
-	struct iio_context *ctx = NULL;
-	unsigned int i;
-	ssize_t ret;
-
-	scan_ctx = iio_create_scan_context(NULL, 0);
-	if (!scan_ctx) {
-		fprintf(stderr, "Unable to create scan context\n");
-		return NULL;
-	}
-
-	ret = iio_scan_context_get_info_list(scan_ctx, &info);
-	if (ret < 0) {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
-		goto err_free_ctx;
-	}
-
-	if (ret == 0) {
-		printf("No IIO context found.\n");
-		goto err_free_info_list;
-	}
-
-	if (ret == 1) {
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
-	} else {
-		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
-
-		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(stderr, "\t%u: %s [%s]\n", i,
-				iio_context_info_get_description(info[i]),
-				iio_context_info_get_uri(info[i]));
-		}
-	}
-
-err_free_info_list:
-	iio_context_info_list_free(info);
-err_free_ctx:
-	iio_scan_context_destroy(scan_ctx);
-
-	return ctx;
-}
-
 int main(int argc, char **argv)
 {
 	unsigned int i, nb_channels;
@@ -278,7 +223,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 'n':
 			arg_ip = optarg;
@@ -293,13 +238,13 @@ int main(int argc, char **argv)
 			trigger_name = optarg;
 			break;
 		case 'b':
-			buffer_size = atoi(optarg);
+			buffer_size = sanitize_clamp("buffer size", optarg, 64, 4 * 1024 * 1024);
 			break;
 		case 's':
-			num_samples = atoi(optarg);
+			num_samples = sanitize_clamp("number of samples", optarg, 0, SIZE_MAX);
 			break;
 		case 'T':
-			timeout = atoi(optarg);
+			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
 		case 'c':
 			cyclic_buffer = true;
@@ -311,14 +256,14 @@ int main(int argc, char **argv)
 
 	if (argc == optind) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
 	setup_sig_handler();
 
 	if (scan_for_context)
-		ctx = scan();
+		ctx = autodetect_context(true, NULL, MY_NAME);
 	else if (arg_uri)
 		ctx = iio_create_context_from_uri(arg_uri);
 	else if (arg_ip)

@@ -24,18 +24,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "iio_common.h"
+
 #ifndef _WIN32
 #define _strdup strdup
 #endif
 
 #define MY_NAME "iio_genxml"
-
-enum backend {
-	LOCAL,
-	XML,
-	NETWORK,
-	AUTO,
-};
 
 static const struct option options[] = {
 	  {"help", no_argument, 0, 'h'},
@@ -46,24 +41,14 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"\t[-x <xml_file>]\n"
+		"\t\t\t\t[-u <uri>]\n"
+		"\t\t\t\t[-n <hostname>]",
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
 	"Use the network backend with the provided hostname.",
 	"Use the context with the provided URI.",
 };
-
-static void usage(void)
-{
-	unsigned int i;
-
-	printf("Usage:\n\t" MY_NAME " [-x <xml_file>]\n\t"
-			MY_NAME " [-u <uri>]\n\t"
-			MY_NAME " [-n <hostname>]\n\nOptions:\n");
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 int main(int argc, char **argv)
 {
@@ -73,33 +58,33 @@ int main(int argc, char **argv)
 	const char *arg_uri = NULL;
 	const char *arg_xml = NULL;
 	const char *arg_ip = NULL;
-	enum backend backend = LOCAL;
+	enum backend backend = IIO_LOCAL;
 
 	while ((c = getopt_long(argc, argv, "+hn:x:u:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 'n':
-			if (backend != LOCAL) {
+			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-x and -n are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
-			backend = NETWORK;
+			backend = IIO_NETWORK;
 			arg_ip = optarg;
 			break;
 		case 'x':
-			if (backend != LOCAL) {
+			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-x and -n are mutually exclusive\n");
 				return EXIT_FAILURE;
 			}
-			backend = XML;
+			backend = IIO_XML;
 			arg_xml = optarg;
 			break;
 		case 'u':
 			arg_uri = optarg;
-			backend = AUTO;
+			backend = IIO_AUTO;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -108,15 +93,15 @@ int main(int argc, char **argv)
 
 	if (optind != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
-	if (backend == AUTO) 
+	if (backend == IIO_AUTO) 
 		ctx = iio_create_context_from_uri(arg_uri);
-	else if (backend == XML)
+	else if (backend == IIO_XML)
 		ctx = iio_create_xml_context(arg_xml);
-	else if (backend == NETWORK)
+	else if (backend == IIO_NETWORK)
 		ctx = iio_create_network_context(arg_ip);
 	else
 		ctx = iio_create_default_context();

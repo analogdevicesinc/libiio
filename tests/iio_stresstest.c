@@ -30,17 +30,12 @@
 #include <sys/time.h>
 #include <sys/sysctl.h>
 
+#include "iio_common.h"
+
 #define MY_NAME "iio_stresstest"
 
 #define SAMPLES_PER_READ 256
 #define NUM_TIMESTAMPS (16*1024)
-
-#ifdef _MSC_BUILD
-#define inline __inline
-#define iio_snprintf sprintf_s
-#else
-#define iio_snprintf snprintf
-#endif
 
 static int getNumCores(void) {
 #ifdef _WIN32
@@ -114,6 +109,8 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>] [-s <samples>]"
+		"<iio_device> [<channel> ...]",
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",
@@ -122,19 +119,6 @@ static const char *options_descriptions[] = {
 	"Number of Threads",
 	"Increase verbosity (-vv and -vvv for more)",
 };
-
-static void usage(void)
-{
-	unsigned int i;
-
-	printf("Usage:\n\t" MY_NAME " [-n <hostname>] [-u <vid>:<pid>] "
-			"[-t <trigger>] [-b <buffer-size>] [-s <samples>] "
-			"<iio_device> [<channel> ...]\n\nOptions:\n");
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static bool app_running = true;
 static bool threads_running = true;
@@ -203,13 +187,6 @@ static struct iio_device * get_device(const struct iio_context *ctx,
 	fprintf(stderr, "Device %s not found\n", id);
 	return NULL;
 }
-
-enum backend {
-	IIO_LOCAL,
-	IIO_IP,
-	IIO_USB,
-	IIO_AUTO
-};
 
 enum verbosity {
 	QUIET,
@@ -355,7 +332,7 @@ static void *client_thread(void *data)
 				/* depending on backend, do more */
 				if(info->back == IIO_USB && rand() % 3 == 0)
 					break;
-				else if (info->back == IIO_IP && rand() % 5 == 0)
+				else if (info->back == IIO_NETWORK && rand() % 5 == 0)
 					break;
 				else if (rand() % 10 == 0)
 					break;
@@ -365,7 +342,7 @@ static void *client_thread(void *data)
 			/* depending on backend, do more */
 			if(info->back == IIO_USB) {
 				break;
-			} else if (info->back == IIO_IP) {
+			} else if (info->back == IIO_NETWORK) {
 				if (rand() % 5 == 0)
 					break;
 			} else {
@@ -396,32 +373,6 @@ thread_fail:
 	info->tid[id] = 0;
 	info->start[id][stamp].tv_sec = 0; info->start[id][stamp].tv_usec = 0;
 	return (void *)EXIT_FAILURE;
-}
-
-static unsigned long int sanitize_clamp(const char *name, const char *argv,
-		unsigned long int min, unsigned long int max)
-{
-
-	unsigned long int val;
-	char buf[20];
-
-	if (!argv) {
-		val = 0;
-	} else {
-		/* sanitized buffer by taking first 20 (or less) char */
-		iio_snprintf(buf, sizeof(buf), "%s", argv);
-		val = strtoul(buf, NULL, 10);
-	}
-
-	if (val > max) {
-		val = max;
-		fprintf(stderr, "Clamped %s to max %lu\n", name, max);
-	}
-	if (val < min) {
-		val = min;
-		fprintf(stderr, "Clamped %s to min %lu\n", name, min);
-	}
-	return val;
 }
 
 int main(int argc, char **argv)
@@ -460,7 +411,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 'u':
 			info.arg_index += 2;
@@ -528,7 +479,7 @@ int main(int argc, char **argv)
 			}
 		}
 		fprintf(stderr, "\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
@@ -536,20 +487,20 @@ int main(int argc, char **argv)
 		struct iio_context *ctx = iio_create_context_from_uri(info.argv[info.uri_index]);
 		if (!ctx) {
 			fprintf(stderr, "need valid uri\n");
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_FAILURE;
 		}
 		iio_context_destroy(ctx);
 		if (!strncmp(info.argv[info.uri_index], "usb:", strlen("usb:")))
 			info.back = IIO_USB;
 		else if (!strncmp(info.argv[info.uri_index], "ip:", strlen("ip:")))
-			info.back = IIO_IP;
+			info.back = IIO_NETWORK;
 		else if (!strncmp(info.argv[info.uri_index], "local:", strlen("local:")))
 			info.back = IIO_LOCAL;
 
 	} else {
 		fprintf(stderr, "need valid uri\n");
-		usage();
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 

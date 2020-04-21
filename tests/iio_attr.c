@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include "gen_code.h"
+#include "iio_common.h"
 
 #define MY_NAME "iio_attr"
 
@@ -37,32 +38,6 @@
 #else
 #define _strdup strdup
 #endif
-
-enum backend {
-	LOCAL,
-	XML,
-	AUTO
-};
-
-/*
- * internal buffers need to be big enough for attributes
- * coming back from the kernel. Because of virtual memory,
- * only the amount of ram that is needed is used.
- */
-#define BUF_SIZE 16384
-
-static void * xmalloc(size_t n)
-{
-	void *p = malloc(n);
-
-	if (!p && n != 0) {
-		fprintf(stderr, MY_NAME
-			" fatal error: allocating %zu bytes failed\n",n);
-		exit(EXIT_FAILURE);
-	}
-
-	return p;
-}
 
 static bool str_match(const char * haystack, char * needle, bool ignore)
 {
@@ -120,62 +95,11 @@ eek:
 	return ret;
 }
 
-static struct iio_context * autodetect_context(bool gen_code)
-{
-	struct iio_scan_context *scan_ctx;
-	struct iio_context_info **info;
-	struct iio_context *ctx = NULL;
-	unsigned int i;
-	ssize_t ret;
-
-	scan_ctx = iio_create_scan_context(NULL, 0);
-	if (!scan_ctx) {
-		fprintf(stderr, "Unable to create scan context\n");
-		return NULL;
-	}
-
-	ret = iio_scan_context_get_info_list(scan_ctx, &info);
-	if (ret < 0) {
-		char *err_str = xmalloc(BUF_SIZE);
-		iio_strerror(-ret, err_str, BUF_SIZE);
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
-		free (err_str);
-		goto err_free_ctx;
-	}
-
-	if (ret == 0) {
-		printf("No IIO context found.\n");
-		goto err_free_info_list;
-	}
-	if (ret == 1) {
-		printf("Using auto-detected IIO context at URI \"%s\"\n",
-				iio_context_info_get_uri(info[0]));
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
-		if (gen_code)
-			gen_context(iio_context_info_get_uri(info[0]));
-	} else {
-		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
-		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(stderr, "\t%u: %s [%s]\n",
-					i, iio_context_info_get_description(info[i]),
-					iio_context_info_get_uri(info[i]));
-		}
-	}
-
-err_free_info_list:
-	iio_context_info_list_free(info);
-err_free_ctx:
-	iio_scan_context_destroy(scan_ctx);
-
-	return ctx;
-}
-
-
 static void dump_device_attributes(const struct iio_device *dev,
 		const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char *buf = xmalloc(BUF_SIZE);
+	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 
 	if (!wbuf || !quiet) {
 		if (!quiet)
@@ -213,7 +137,7 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char *buf = xmalloc(BUF_SIZE);
+	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 
 	if (!wbuf || !quiet) {
 		gen_function("device_buffer", "dev", attr, NULL);
@@ -255,7 +179,7 @@ static void dump_debug_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char *buf = xmalloc(BUF_SIZE);
+	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 
 	if (!wbuf || !quiet) {
 		gen_function("device_debug", "dev", attr, NULL);
@@ -297,7 +221,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 		struct iio_channel *ch, const char *attr, const char *wbuf, bool quiet)
 {
 	ssize_t ret;
-	char *buf = xmalloc(BUF_SIZE);
+	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *type_name;
 
 	if (!wbuf || !quiet) {
@@ -368,6 +292,11 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"-d [device] [attr] [value]\n"
+		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
+		"\t\t\t\t-B [device] [attr] [value]\n"
+		"\t\t\t\t-D [device] [attr] [value]\n"
+		"\t\t\t\t-C [attr]",
 	/* help */
 	"Show this help and quit.",
 	"Ignore case distinctions.",
@@ -388,41 +317,13 @@ static const char *options_descriptions[] = {
 	"Read/Write debug attributes.",
 };
 
-static void usage(void)
-{
-	unsigned int i, j = 0, k;
-
-	printf("Usage:\n\t" MY_NAME " [OPTION]...\t-d [device] [attr] [value]\n"
-		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
-		"\t\t\t\t-B [device] [attr] [value]\n"
-		"\t\t\t\t-D [device] [attr] [value]\n"
-		"\t\t\t\t-C [attr]\nOptions:\n");
-	for (i = 0; options[i].name; i++) {
-		k = strlen(options[i].name);
-		if (k > j)
-			j = k;
-	}
-	j++;
-	for (i = 0; options[i].name; i++) {
-		printf("\t-%c, --%s%*c: %s\n",
-				options[i].val, options[i].name,
-				j - (int)strlen(options[i].name), ' ',
-				options_descriptions[i]);
-		/* when printing out the help, add some subtitles, to help visually */
-		if (i == 3)
-			printf("Optional qualifiers:\n");
-		if (i == 8)
-			printf("Attribute types:\n");
-	}
-}
-
 int main(int argc, char **argv)
 {
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	int device_index = 0, channel_index = 0, attr_index = 0;
 	const char *arg_uri = NULL, *gen_file = NULL;
-	enum backend backend = LOCAL;
+	enum backend backend = IIO_LOCAL;
 	bool detect_context = false, search_device = false, ignore_case = false,
 		search_channel = false, search_buffer = false, search_debug = false,
 		search_context = false, input_only = false, output_only = false,
@@ -435,14 +336,14 @@ int main(int argc, char **argv)
 		switch (c) {
 		/* help */
 		case 'h':
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		/* context connection */
 		case 'a':
 			detect_context = true;
 			break;
 		case 'u':
-			backend = AUTO;
+			backend = IIO_AUTO;
 			arg_uri = optarg;
 			break;
 		/* Attribute type
@@ -505,7 +406,7 @@ int main(int argc, char **argv)
 
 	if (!(search_device + search_channel + search_context + search_debug + search_buffer)) {
 		if (argc == 1) {
-			usage();
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		}
 		fprintf(stderr, "must specify one of -d, -c, -C, -B or -D.\n");
@@ -623,8 +524,8 @@ int main(int argc, char **argv)
 	}
 
 	if (detect_context)
-		ctx = autodetect_context(gen_code);
-	else if (backend == AUTO) {
+		ctx = autodetect_context(true, gen_code, MY_NAME);
+	else if (backend == IIO_AUTO) {
 		ctx = iio_create_context_from_uri(arg_uri);
 		gen_context(arg_uri);
 	} else
@@ -632,7 +533,7 @@ int main(int argc, char **argv)
 
 	if (!ctx) {
 		if (!detect_context) {
-			char *buf = xmalloc(BUF_SIZE);
+			char *buf = xmalloc(BUF_SIZE, MY_NAME);
 
 			iio_strerror(errno, buf, BUF_SIZE);
 			fprintf(stderr, "Unable to create IIO context: %s\n",
@@ -659,7 +560,7 @@ int main(int argc, char **argv)
 					gen_context_attr(key);
 				}
 			} else {
-				char *buf = xmalloc(BUF_SIZE);
+				char *buf = xmalloc(BUF_SIZE, MY_NAME);
 				iio_strerror(errno, buf, BUF_SIZE);
 				fprintf(stderr, "Unable to get context attributes: %s (%zd)\n",
 						buf, ret);

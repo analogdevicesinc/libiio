@@ -28,6 +28,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "iio_common.h"
+
+
+#define MY_NAME "iio_adi_xflow_check"
+
 struct xflow_pthread_data {
 	struct iio_context *ctx;
 	const char *device_name;
@@ -43,23 +48,13 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
+	"[-n <hostname>] [-u <uri>] [-a ] [-s <size>] <iio_device>",
 	"Show this help and quit.",
 	"Use the network backend with the provided hostname.",
 	"Use the context with the provided URI.",
 	"Size of the buffer in sample sets. Default is 1Msample",
 	"Scan for available contexts and if only one is available use it.",
 };
-
-static void usage(char *argv[])
-{
-	unsigned int i;
-
-	printf("Usage:\n\t%s [-n <hostname>] [-u <uri>] [ -a ][-s <size>] <iio_device>\n\nOptions:\n", argv[0]);
-	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
-}
 
 static bool app_running = true;
 static bool device_is_tx;
@@ -161,53 +156,6 @@ static void *monitor_thread_fn(void *data)
 	return (void *)0;
 }
 
-static struct iio_context *scan(void)
-{
-	struct iio_scan_context *scan_ctx;
-	struct iio_context_info **info;
-	struct iio_context *ctx = NULL;
-	unsigned int i;
-	ssize_t ret;
-
-	scan_ctx = iio_create_scan_context(NULL, 0);
-	if (!scan_ctx) {
-		fprintf(stderr, "Unable to create scan context\n");
-		return NULL;
-	}
-
-	ret = iio_scan_context_get_info_list(scan_ctx, &info);
-	if (ret < 0) {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
-		goto err_free_ctx;
-	}
-
-	if (ret == 0) {
-		printf("No IIO context found.\n");
-		goto err_free_info_list;
-	}
-
-	if (ret == 1) {
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
-	} else {
-		fprintf(stderr, "Multiple contexts found. Please select one using --uri:\n");
-
-		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(stderr, "\t%u: %s [%s]\n", i,
-				iio_context_info_get_description(info[i]),
-				iio_context_info_get_uri(info[i]));
-		}
-	}
-
-	err_free_info_list:
-	iio_context_info_list_free(info);
-	err_free_ctx:
-	iio_scan_context_destroy(scan_ctx);
-
-	return ctx;
-}
-
 int main(int argc, char **argv)
 {
 	unsigned int buffer_size = 1024 * 1024;
@@ -230,7 +178,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
-			usage(argv);
+			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		case 's':
 			ret = sscanf(optarg, "%u%c", &buffer_size, &unit);
@@ -259,7 +207,7 @@ int main(int argc, char **argv)
 
 	if (optind + 1 != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
-		usage(argv);
+		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
@@ -272,7 +220,7 @@ int main(int argc, char **argv)
 
 
 	if (scan_for_context)
-		ctx = scan();
+		ctx = autodetect_context(true, NULL, MY_NAME);
 	else if (arg_uri)
 		ctx = iio_create_context_from_uri(arg_uri);
 	else if (arg_ip)

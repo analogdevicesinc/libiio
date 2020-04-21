@@ -24,7 +24,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int write_reg(const char *name, unsigned long addr, unsigned long val)
+#include "iio_common.h"
+
+static int write_reg(const char *name, uint32_t addr, uint32_t val)
 {
 	struct iio_device *dev;
 	struct iio_context *ctx;
@@ -103,12 +105,12 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	addr = strtoul(argv[2], NULL, 0);
+	addr = sanitize_clamp("register address", argv[2], 0, UINT32_MAX);
 
 	if (argc == 3) {
 		return read_reg(argv[1], addr);
 	} else {
-		unsigned long val = strtoul(argv[3], NULL, 0);
+		uint32_t val = sanitize_clamp("register value", argv[3], 0, UINT32_MAX);
 		return write_reg(argv[1], addr, val);
 	}
 }
