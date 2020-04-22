@@ -418,7 +418,7 @@ if(WITH_DOC)
 		COMMENT "Generating C# documentation with Doxygen" VERBATIM)
 
 	if(NOT SKIP_INSTALL_ALL)
-		install(DIRECTORY ${HTML_DEST_DIR}
+		install(DIRECTORY ${CMAKE_HTML_DEST_DIR}
 			DESTINATION ${CMAKE_INSTALL_DOCDIR})
 	endif()
 endif()
