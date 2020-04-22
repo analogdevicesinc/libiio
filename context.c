@@ -25,11 +25,6 @@
 #include <errno.h>
 #include <string.h>
 
-#ifdef _WIN32
-#define LOCAL_BACKEND 0
-#define NETWORK_BACKEND 1
-#endif
-
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device | context-attribute)*>"
