@@ -62,7 +62,6 @@ class _Channel(Structure):
 class _Buffer(Structure):
 	pass
 class DataFormat(Structure):
-
 	"""Represents the data format of an IIO channel."""
 
 	_fields_ = [('length', c_uint),
@@ -76,7 +75,7 @@ class DataFormat(Structure):
 				('repeat', c_uint)]
 
 class ChannelModifier(Enum):
-	"""Contains the modifier types of an IIO channel. """
+	"""Contains the modifier types of an IIO channel."""
 
 	IIO_NO_MOD = 0
 	IIO_MOD_X = 1
@@ -124,7 +123,6 @@ class ChannelModifier(Enum):
 	IIO_MOD_H2 = 43
 
 class ChannelType(Enum):
-
 	"""Contains the type of an IIO channel."""
 
 	IIO_VOLTAGE = 0
@@ -666,7 +664,6 @@ class DeviceDebugAttr(DeviceAttr):
 		_d_write_debug_attr(self._device, self._name_ascii, value.encode('ascii'))
 
 class DeviceBufferAttr(DeviceAttr):
-
 	"""Represents a buffer attribute of an IIO device."""
 
 	def __init__(self, device, name):
