@@ -13,10 +13,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
 
-from ctypes import Structure, c_char_p, c_uint, c_int, c_size_t, \
-		c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, \
+from ctypes import Structure, c_char_p, c_uint, c_int, c_long, c_longlong, c_size_t, \
+		c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, c_double, \
 		POINTER as _POINTER, CDLL as _cdll, memmove as _memmove, byref as _byref
 from ctypes.util import find_library
+from enum import Enum
 from os import strerror as _strerror
 from platform import system as _system
 import weakref
@@ -60,6 +61,108 @@ class _Channel(Structure):
 	pass
 class _Buffer(Structure):
 	pass
+class DataFormat(Structure):
+
+	"""Represents the data format of an IIO channel."""
+
+	_fields_ = [('length', c_uint),
+				('bits', c_uint),
+				('shift', c_uint),
+				('is_signed', c_bool),
+				('is_fully_defined', c_bool),
+				('is_be', c_bool),
+				('with_scale', c_bool),
+				('scale', c_double),
+				('repeat', c_uint)]
+
+class ChannelModifier(Enum):
+	"""Contains the modifier types of an IIO channel. """
+
+	IIO_NO_MOD = 0
+	IIO_MOD_X = 1
+	IIO_MOD_Y = 2
+	IIO_MOD_Z = 3
+	IIO_MOD_X_AND_Y = 4
+	IIO_MOD_X_AND_Z = 5
+	IIO_MOD_Y_AND_Z = 6
+	IIO_MOD_X_AND_Y_AND_Z = 7
+	IIO_MOD_X_OR_Y = 8
+	IIO_MOD_X_OR_Z = 9
+	IIO_MOD_Y_OR_Z = 10
+	IIO_MOD_X_OR_Y_OR_Z = 11
+	IIO_MOD_LIGHT_BOTH = 12
+	IIO_MOD_LIGHT_IR = 13
+	IIO_MOD_ROOT_SUM_SQUARED_X_Y = 14
+	IIO_MOD_SUM_SQUARED_X_Y_Z = 15
+	IIO_MOD_LIGHT_CLEAR = 16
+	IIO_MOD_LIGHT_RED = 17
+	IIO_MOD_LIGHT_GREEN = 18
+	IIO_MOD_LIGHT_BLUE = 19
+	IIO_MOD_QUATERNION = 20
+	IIO_MOD_TEMP_AMBIENT = 21
+	IIO_MOD_TEMP_OBJECT = 22
+	IIO_MOD_NORTH_MAGN = 23
+	IIO_MOD_NORTH_TRUE = 24
+	IIO_MOD_NORTH_MAGN_TILT_COMP = 25
+	IIO_MOD_NORTH_TRUE_TILT_COMP = 26
+	IIO_MOD_RUNNING = 27
+	IIO_MOD_JOGGING = 28
+	IIO_MOD_WALKING = 29
+	IIO_MOD_STILL = 30
+	IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z = 31
+	IIO_MOD_I = 32
+	IIO_MOD_Q = 33
+	IIO_MOD_CO2 = 34
+	IIO_MOD_VOC = 35
+	IIO_MOD_LIGHT_UV = 36
+	IIO_MOD_LIGHT_DUV = 37
+	IIO_MOD_PM1 = 38
+	IIO_MOD_PM2P5 = 39
+	IIO_MOD_PM4 = 40
+	IIO_MOD_PM10 = 41
+	IIO_MOD_ETHANOL = 42
+	IIO_MOD_H2 = 43
+
+class ChannelType(Enum):
+
+	"""Contains the type of an IIO channel."""
+
+	IIO_VOLTAGE = 0
+	IIO_CURRENT = 1
+	IIO_POWER = 2
+	IIO_ACCEL = 3
+	IIO_ANGL_VEL = 4
+	IIO_MAGN = 5
+	IIO_LIGHT = 6
+	IIO_INTENSITY = 7
+	IIO_PROXIMITY = 8
+	IIO_TEMP = 9
+	IIO_INCLI = 10
+	IIO_ROT = 11
+	IIO_ANGL = 12
+	IIO_TIMESTAMP = 13
+	IIO_CAPACITANCE = 14
+	IIO_ALTVOLTAGE = 15
+	IIO_CCT = 16
+	IIO_PRESSURE = 17
+	IIO_HUMIDITYRELATIVE = 18
+	IIO_ACTIVITY = 19
+	IIO_STEPS = 20
+	IIO_ENERGY = 21
+	IIO_DISTANCE = 22
+	IIO_VELOCITY = 23
+	IIO_CONCENTRATION = 24
+	IIO_RESISTANCE = 25
+	IIO_PH = 26
+	IIO_UVINDEX = 27
+	IIO_ELECTRICALCONDUCTIVITY = 28
+	IIO_COUNT = 29
+	IIO_INDEX = 30
+	IIO_GRAVITY = 31
+	IIO_POSITIONRELATIVE = 32
+	IIO_PHASE = 33
+	IIO_MASSCONCENTRATION = 34
+	IIO_CHAN_TYPE_UNKNOWN = 0x7fffffff
 
 _ScanContextPtr = _POINTER(_ScanContext)
 _ContextInfoPtr = _POINTER(_ContextInfo)
@@ -67,6 +170,7 @@ _ContextPtr = _POINTER(_Context)
 _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _BufferPtr = _POINTER(_Buffer)
+_DataFormatPtr = _POINTER(DataFormat)
 
 if 'Windows' in _system():
 	_iiolib = 'libiio.dll'
@@ -91,6 +195,14 @@ _create_scan_context.errcheck = _checkNull
 
 _destroy_scan_context = _lib.iio_scan_context_destroy
 _destroy_scan_context.argtypes = (_ScanContextPtr, )
+
+_iio_has_backend = _lib.iio_has_backend
+_iio_has_backend.argtypes = (c_char_p, )
+_iio_has_backend.restype = c_bool
+
+_iio_strerror = _lib.iio_strerror
+_iio_strerror.argtypes = (c_int, c_char_p, c_uint)
+_iio_strerror.restype = None
 
 _get_context_info_list = _lib.iio_scan_context_get_info_list
 _get_context_info_list.argtypes = (_ScanContextPtr, _POINTER(_POINTER(_ContextInfoPtr)))
@@ -229,6 +341,29 @@ _d_write_debug_attr.restype = c_ssize_t
 _d_write_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_debug_attr.errcheck = _checkNegative
 
+_d_buffer_attr_count = _lib.iio_device_get_buffer_attrs_count
+_d_buffer_attr_count.restype = c_uint
+_d_buffer_attr_count.argtypes = (_DevicePtr, )
+
+_d_get_buffer_attr = _lib.iio_device_get_buffer_attr
+_d_get_buffer_attr.restype = c_char_p
+_d_get_buffer_attr.argtypes = (_DevicePtr, )
+_d_get_buffer_attr.errcheck = _checkNull
+
+_d_read_buffer_attr = _lib.iio_device_buffer_attr_read
+_d_read_buffer_attr.restype = c_ssize_t
+_d_read_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
+_d_read_buffer_attr.errcheck = _checkNegative
+
+_d_write_buffer_attr = _lib.iio_device_buffer_attr_write
+_d_write_buffer_attr.restype = c_ssize_t
+_d_write_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
+_d_write_buffer_attr.errcheck = _checkNegative
+
+_d_get_context = _lib.iio_device_get_context
+_d_get_context.restype = _ContextPtr
+_d_get_context.argtypes = (_DevicePtr, )
+
 _d_reg_write = _lib.iio_device_reg_write
 _d_reg_write.restype = c_int
 _d_reg_write.argtypes = (_DevicePtr, c_uint, c_uint)
@@ -339,6 +474,30 @@ _c_write_raw = _lib.iio_channel_write_raw
 _c_write_raw.restype = c_ssize_t
 _c_write_raw.argtypes = (_ChannelPtr, _BufferPtr, c_void_p, c_size_t, )
 
+_channel_get_device = _lib.iio_channel_get_device
+_channel_get_device.restype = _DevicePtr
+_channel_get_device.argtypes = (_ChannelPtr, )
+
+_channel_get_index = _lib.iio_channel_get_index
+_channel_get_index.restype = c_long
+_channel_get_index.argtypes = (_ChannelPtr, )
+
+_channel_get_data_format = _lib.iio_channel_get_data_format
+_channel_get_data_format.restype = _DataFormatPtr
+_channel_get_data_format.argtypes = (_ChannelPtr, )
+
+_channel_get_modifier = _lib.iio_channel_get_modifier
+_channel_get_modifier.restype = c_int
+_channel_get_modifier.argtypes = (_ChannelPtr, )
+
+_channel_get_type = _lib.iio_channel_get_type
+_channel_get_type.restype = c_int
+_channel_get_type.argtypes = (_ChannelPtr, )
+
+_channel_convert = _lib.iio_channel_convert
+_channel_convert.restype = None
+_channel_convert.argtypes = (_ChannelPtr, c_void_p, c_void_p)
+
 _create_buffer = _lib.iio_device_create_buffer
 _create_buffer.restype = _BufferPtr
 _create_buffer.argtypes = (_DevicePtr, c_size_t, c_bool, )
@@ -365,12 +524,44 @@ _buffer_end = _lib.iio_buffer_end
 _buffer_end.restype = c_void_p
 _buffer_end.argtypes = (_BufferPtr, )
 
+_buffer_cancel = _lib.iio_buffer_cancel
+_buffer_cancel.restype = c_void_p
+_buffer_cancel.argtypes = (_BufferPtr, )
+
+_buffer_get_data = _lib.iio_buffer_get_data
+_buffer_get_data.restype = c_void_p
+_buffer_get_data.argtypes = (_BufferPtr, )
+
+_buffer_get_device = _lib.iio_buffer_get_device
+_buffer_get_device.restype = _DevicePtr
+_buffer_get_device.argtypes = (_BufferPtr, )
+
+_buffer_get_poll_fd = _lib.iio_buffer_get_poll_fd
+_buffer_get_poll_fd.restype = c_int
+_buffer_get_poll_fd.argtypes = (_BufferPtr, )
+
+_buffer_step = _lib.iio_buffer_step
+_buffer_step.restype = c_longlong
+_buffer_step.argtypes = (_BufferPtr, )
+
+_buffer_set_blocking_mode = _lib.iio_buffer_set_blocking_mode
+_buffer_set_blocking_mode.restype = c_uint
+_buffer_set_blocking_mode.argtypes = (_BufferPtr, c_bool)
+
 def _get_lib_version():
 	major = c_uint()
 	minor = c_uint()
 	buf = create_string_buffer(8)
 	_get_library_version(_byref(major), _byref(minor), buf)
 	return (major.value, minor.value, buf.value.decode('ascii') )
+
+def _has_backend(backend):
+	b_backend = backend.encode('utf-8')
+	return _iio_has_backend(b_backend)
+
+def iio_strerror(err, buf, length):
+	b_buf = buf.encode('utf-8')
+	_iio_strerror(err, b_buf, length)
 
 version = _get_lib_version()
 backends = [ _get_backend(x).decode('ascii') for x in range(0, _get_backends_count()) ]
@@ -474,6 +665,33 @@ class DeviceDebugAttr(DeviceAttr):
 	def _Attr__write(self, value):
 		_d_write_debug_attr(self._device, self._name_ascii, value.encode('ascii'))
 
+class DeviceBufferAttr(DeviceAttr):
+
+	"""Represents a buffer attribute of an IIO device."""
+
+	def __init__(self, device, name):
+		"""
+		Initializes a new instance of the DeviceBufferAttr class.
+
+		parameters:
+			device: type=iio.Device
+				A valid instance of the iio.Device class.
+			name: type=str
+				The device buffer attribute's name
+
+		returns: type=iio.DeviceBufferAttr
+			A new instance of this class
+		"""
+		super(DeviceBufferAttr, self).__init__(device, name)
+
+	def _Attr__read(self):
+		buf = create_string_buffer(1024)
+		_d_read_buffer_attr(self._device, self._name_ascii, buf, len(buf))
+		return buf.value.decode('ascii')
+
+	def _Attr__write(self, value):
+		_d_write_buffer_attr(self._device, self._name_ascii, value.encode('ascii'))
+
 class Channel(object):
 	"""Represents a channel of an IIO device."""
 
@@ -557,6 +775,46 @@ class Channel(object):
 	enabled = property(lambda self: _c_is_enabled(self._channel), \
 			lambda self, x: _c_enable(self._channel) if x else _c_disable(self._channel),
 			None, "Configured state of the channel\n\ttype=bool")
+
+	@property
+	def device(self):
+		"""
+		This channel's corresponding device.
+		type: iio.Device
+		"""
+		c_dev = _channel_get_device(self._channel)
+		return Device(_d_get_context(c_dev), c_dev)
+
+	@property
+	def index(self):
+		return _channel_get_index(self._channel)
+
+	@property
+	def data_format(self):
+		"""
+		This channel's data format.
+		type: iio.DataFormat
+		"""
+		return _channel_get_data_format(self._channel).contents
+
+	@property
+	def modifier(self):
+		"""
+		This channel's modifier.
+		type: iio.ChannelModifier(Enum)
+		"""
+		return ChannelModifier(_channel_get_modifier(self._channel))
+
+	@property
+	def type(self):
+		"""
+		This channel's type.
+		type: iio.ChannelType(Enum)
+		"""
+		return ChannelType(_channel_get_type(self._channel))
+
+	def convert(self, dst, src):
+		_channel_convert(self._channel, c_void_p(*dst), c_void_p(*src))
 
 class Buffer(object):
 
@@ -648,13 +906,41 @@ class Buffer(object):
 		_memmove(start, c_array, length)
 		return length
 
+	def cancel(self):
+		_buffer_cancel(self._buffer)
+
+	def get_data(self):
+		return _buffer_get_data(self._buffer)
+
+	def set_blocking_mode(self, blocking):
+		return _buffer_set_blocking_mode(self._buffer, c_bool(blocking))
+
+	@property
+	def device(self):
+		"""
+		This buffer's corresponding device.
+		type: iio.Device
+		"""
+		return Device(self._ctx, _buffer_get_device(self._buffer))
+
+	@property
+	def poll_fd(self):
+		return _buffer_get_poll_fd(self._buffer)
+
+	@property
+	def step(self):
+		return _buffer_step(self._buffer)
+
 class _DeviceOrTrigger(object):
 	def __init__(self, _device):
 		self._device = _device
+		self._context = _d_get_context(_device)
 		self._attrs = { name : DeviceAttr(_device, name) for name in \
 				[_d_get_attr(_device, x).decode('ascii') for x in range(0, _d_attr_count(_device))] }
 		self._debug_attrs = { name: DeviceDebugAttr(_device, name) for name in \
 				[_d_get_debug_attr(_device, x).decode('ascii') for x in range(0, _d_debug_attr_count(_device))] }
+		self._buffer_attrs = { name: DeviceBufferAttr(_device, name) for name in \
+				[_d_get_buffer_attr(_device, x).decode('ascii') for x in range(0, _d_buffer_attr_count(_device))] }
 
 		# TODO(pcercuei): Use a dictionary for the channels.
 		chans = [ Channel(_get_channel(self._device, x))
@@ -739,6 +1025,8 @@ class _DeviceOrTrigger(object):
 			"List of attributes for this IIO device.\n\ttype=dict of iio.DeviceAttr")
 	debug_attrs = property(lambda self: self._debug_attrs, None, None,
 			"List of debug attributes for this IIO device.\n\ttype=dict of iio.DeviceDebugAttr")
+	buffer_attrs = property(lambda self: self._buffer_attrs, None, None,
+			"List of buffer attributes for this IIO device.\n\ttype=dict of iio.DeviceBufferAttr")
 	channels = property(lambda self: self._channels, None, None,
 			"List of channels available with this IIO device.\n\ttype=list of iio.Channel objects")
 
@@ -802,6 +1090,10 @@ class Device(_DeviceOrTrigger):
 
 	trigger = property(_get_trigger, _set_trigger, None, \
 			"Contains the configured trigger for this IIO device.\n\ttype=iio.Trigger")
+
+	@property
+	def context(self):
+		return self.ctx()
 
 class Context(object):
 
