@@ -60,6 +60,15 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
+/* 256 is the MAX_NAME (file name) on Linux, 4096 is PAGESIZE */
+#define MAX_CHN_ID 256 /* encoded in the sysfs filename */
+#define MAX_CHN_NAME 256 /* encoded in the sysfs filename */
+#define MAX_DEV_ID 256 /* encoded in the sysfs filename */
+#define MAX_DEV_NAME 256 /* encoded in the sysfs filename */
+#define MAX_CTX_NAME 256    /* nominally "xml" */
+#define MAX_CTX_DESC 256    /* nominally "linux ..." */
+#define MAX_ATTR_NAME 256   /* encoded in the sysfs filename */
+#define MAX_ATTR_VALUE 4096 /* Linux page size, could be anything */
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
@@ -289,6 +298,7 @@ void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strdup(const char *str);
+size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
 
 int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value);
