@@ -154,7 +154,6 @@ if (NOT LIBIIO_VERSION_GIT)
 endif()
 
 if(WITH_LOCAL_BACKEND)
-	add_definitions(-DLOCAL_BACKEND=1)
 	list(APPEND LIBIIO_CFILES local.c)
 
 	# Link with librt if present
@@ -177,7 +176,6 @@ if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
 	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 
 	if(WITH_USB_BACKEND)
-		add_definitions(-DUSB_BACKEND=1)
 		list(APPEND LIBIIO_CFILES usb.c)
 		list(APPEND LIBS_TO_LINK ${LIBUSB_LIBRARIES})
 		set(IIOD_CLIENT 1)
@@ -211,7 +209,6 @@ if (LIBSERIALPORT_LIBRARIES AND LIBSERIALPORT_INCLUDE_DIR)
 			message(WARNING "The installed version of libserialport is too old. The minimum version supported is 0.1.1. Disabling Serial support.")
 			SET(WITH_SERIAL_BACKEND OFF)
 		else()
-			add_definitions(-DSERIAL_BACKEND=1)
 			list(APPEND LIBIIO_CFILES serial.c)
 			list(APPEND LIBS_TO_LINK ${LIBSERIALPORT_LIBRARIES})
 
@@ -248,7 +245,6 @@ if(WITH_NETWORK_BACKEND)
 		check_c_source_compiles("#include <unistd.h>\n#include <fcntl.h>\nint main(void) { int fd[2]; return pipe2(fd, O_CLOEXEC | O_NONBLOCK); }" HAS_PIPE2)
 	endif()
 
-	add_definitions(-DNETWORK_BACKEND=1)
 	list(APPEND LIBIIO_CFILES network.c)
 
 	find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
@@ -300,7 +296,6 @@ if (LIBXML2_FOUND)
 	if (WITH_XML_BACKEND)
 		list(APPEND LIBIIO_CFILES xml.c)
 
-		add_definitions(${LIBXML2_DEFINITIONS} -DXML_BACKEND=1)
 		include_directories(${LIBXML2_INCLUDE_DIR})
 		list(APPEND LIBS_TO_LINK ${LIBXML2_LIBRARIES})
 	endif()
@@ -430,7 +425,6 @@ add_subdirectory(bindings)
 
 if (WITH_MATLAB_BINDINGS_API)
 	list(APPEND LIBIIO_EXTRA_HEADERS bindings/matlab/iio-wrapper.h)
-	add_definitions(-DMATLAB_BINDINGS_API=1)
 endif()
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
