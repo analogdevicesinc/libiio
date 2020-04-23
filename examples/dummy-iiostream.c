@@ -368,6 +368,10 @@ int main (int argc, char **argv)
 				size_t sample_size = fmt->length / 8 * repeat;
 
 				buf = malloc(sample_size * buffer_length);
+				if (!buf) {
+					perror("trying to allocate memory for buffer\n");
+					shutdown();
+				}
 
 				if (buffer_read_method == CHANNEL_READ_RAW)
 					bytes = iio_channel_read_raw(channels[i], rxbuf, buf, sample_size * buffer_length);

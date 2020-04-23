@@ -246,6 +246,10 @@ static struct iio_context *show_contexts_screen(void)
 		return NULL;
 
 	screen = initCDKScreen(win);
+	if (!screen) {
+		fprintf(stderr, "out of memory\n");
+		goto scan_err;
+	}
 
 	do {
 		ret = iio_scan_context_get_info_list(scan_ctx, &info);
@@ -255,6 +259,10 @@ static struct iio_context *show_contexts_screen(void)
 		num_contexts = ret;
 
 		items = calloc(num_contexts + 1, sizeof(*items));
+		if (!items) {
+			fprintf(stderr, "calloc failed, out of memory\n");
+			break;
+		}
 
 		for (i = 0; i < num_contexts; i++) {
 			 asprintf(&items[i], "</%d>%s<!%d> </%d>[%s]<!%d>", YELLOW,
@@ -307,6 +315,7 @@ static struct iio_context *show_contexts_screen(void)
 
 	destroyCDKScreen(screen);
 
+scan_err:
 	iio_scan_context_destroy(scan_ctx);
 
 	return ctx;
@@ -322,11 +331,23 @@ static void show_main_screen(struct iio_context *ctx)
 
 	stop = FALSE;
 	screen = initCDKScreen(left);
+	if (!screen) {
+		stop = TRUE;
+		fprintf(stderr, "initCDKScreen failed, out of memory\n");
+		return;
+	}
 
-	pthread_create(&thd, NULL, read_thd, ctx);
+	if (pthread_create(&thd, NULL, read_thd, ctx)) {
+		fprintf(stderr, "problem with pthread_create\n");
+		goto thread_err;
+	}
 
 	nb_devices = iio_context_get_devices_count(ctx);
-	dev_names = malloc(nb_devices * sizeof(char *));
+	dev_names = calloc(nb_devices, sizeof(char *));
+	if (!dev_names) {
+		fprintf(stderr, "calloc failed, out of memory\n");
+		goto name_err;
+	}
 
 	for (i = 0; i < nb_devices; i++) {
 		char buf[1024];
@@ -336,6 +357,8 @@ static void show_main_screen(struct iio_context *ctx)
 			name = iio_device_get_id(dev);
 		sprintf(buf, "</B> %s", name);
 		dev_names[i] = strdup(buf);
+		if (!dev_names[i])
+			goto dev_name_err;
 	}
 
 	boxWindow(right, 0);
@@ -360,6 +383,20 @@ static void show_main_screen(struct iio_context *ctx)
 		free(dev_names[i]);
 	free(dev_names);
 	destroyCDKScreen(screen);
+
+dev_name_err:
+	for (i = 0; i < nb_devices; i++) {
+		if (dev_names[i])
+			free(dev_names[i]);
+	}
+	free(dev_names);
+name_err:
+	stop = TRUE;
+	pthread_join(thd, NULL);
+thread_err:
+	destroyCDKScreen(screen);
+
+	return;
 }
 
 int main(void)
