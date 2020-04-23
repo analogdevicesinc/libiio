@@ -75,7 +75,7 @@ class DataFormat(Structure):
 				('repeat', c_uint)]
 
 class ChannelModifier(Enum):
-	"""Contains the modifier types of an IIO channel."""
+	"""Contains the modifier type of an IIO channel."""
 
 	IIO_NO_MOD = 0
 	IIO_MOD_X = 1
@@ -526,10 +526,6 @@ _buffer_cancel = _lib.iio_buffer_cancel
 _buffer_cancel.restype = c_void_p
 _buffer_cancel.argtypes = (_BufferPtr, )
 
-_buffer_get_data = _lib.iio_buffer_get_data
-_buffer_get_data.restype = c_void_p
-_buffer_get_data.argtypes = (_BufferPtr, )
-
 _buffer_get_device = _lib.iio_buffer_get_device
 _buffer_get_device.restype = _DevicePtr
 _buffer_get_device.argtypes = (_BufferPtr, )
@@ -811,6 +807,15 @@ class Channel(object):
 		return ChannelType(_channel_get_type(self._channel))
 
 	def convert(self, dst, src):
+		"""
+		Converts src and saves the result in dst, using current channel's data format.
+
+		parameters:
+			dst: type=list
+				The variable where the result is stored.
+			src: type=list
+				Data to be converted.
+		"""
 		_channel_convert(self._channel, c_void_p(*dst), c_void_p(*src))
 
 class Buffer(object):
@@ -904,12 +909,22 @@ class Buffer(object):
 		return length
 
 	def cancel(self):
+		"""
+		Cancels the current buffer.
+		"""
 		_buffer_cancel(self._buffer)
 
-	def get_data(self):
-		return _buffer_get_data(self._buffer)
-
 	def set_blocking_mode(self, blocking):
+		"""
+		Sets the buffer's blocking mode.
+
+		parameters:
+			blocking: type=boolean
+				True if in blocking_mode else False.
+
+		returns: type=int
+			Return code from the C layer.
+		"""
 		return _buffer_set_blocking_mode(self._buffer, c_bool(blocking))
 
 	@property
@@ -922,10 +937,18 @@ class Buffer(object):
 
 	@property
 	def poll_fd(self):
+		"""
+		This buffer's poll_fd.
+		type: int
+		"""
 		return _buffer_get_poll_fd(self._buffer)
 
 	@property
 	def step(self):
+		"""
+		This buffer's step size.
+		type: int
+		"""
 		return _buffer_step(self._buffer)
 
 class _DeviceOrTrigger(object):
@@ -1090,6 +1113,10 @@ class Device(_DeviceOrTrigger):
 
 	@property
 	def context(self):
+		"""
+		This device's context.
+		type: iio.Context
+		"""
 		return self.ctx()
 
 class Context(object):
