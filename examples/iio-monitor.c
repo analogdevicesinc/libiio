@@ -408,6 +408,15 @@ int main(void)
 	noecho();
 	keypad(win, TRUE);
 	getmaxyx(win, row, col);
+
+	/* If this was started from a small window, quit */
+	if (row < 10 || col < 50) {
+		endwin();
+		fprintf(stderr, "Sorry, I need a bigger window,\n"
+				"min is 10 x 50\n");
+		return 0;
+	}
+
 	initCDKColor();
 
 	left = newwin(row, col / 2, 0, 0);
