@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 	const char *arg_ip = NULL;
 	int c, option_index = 0;
 	struct iio_device *dev;
-	size_t sample_size;
+	ssize_t sample_size;
 	int timeout = -1;
 	bool scan_for_context = false;
 	bool cyclic_buffer = false;
@@ -366,6 +366,18 @@ int main(int argc, char **argv)
 	}
 
 	sample_size = iio_device_get_sample_size(dev);
+	/* Zero isn't normally an error code, but in this case it is an error */
+	if (sample_size == 0) {
+		fprintf(stderr, "Unable to get sample size, returned 0\n");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	} else if (sample_size < 0) {
+		char buf[256];
+		iio_strerror(errno, buf, sizeof(buf));
+		fprintf(stderr, "Unable to get sample size : %s\n", buf);
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
 
 	buffer = iio_device_create_buffer(dev, buffer_size, cyclic_buffer);
 	if (!buffer) {
