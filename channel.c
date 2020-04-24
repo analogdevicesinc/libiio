@@ -179,20 +179,28 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
 {
 	char *str;
-	size_t len = strlen(attr->name) + sizeof("<attribute name=\"\" />");
-	if (attr->filename)
-		len += strlen(attr->filename) + sizeof("filename=\"\"");
+	size_t len;
 
+	len = strnlen(attr->name, MAX_ATTR_NAME);
+	len += sizeof("<attribute name=\"\" />") - 1;
+
+	if (attr->filename) {
+		len += strnlen(attr->filename, NAME_MAX);
+		len += sizeof(" filename=\"\"") - 1;
+	}
+
+	*length = len; /* just the chars */
+	len++;         /* room for terminating NULL */
 	str = malloc(len);
 	if (!str)
 		return NULL;
 
-	*length = len - 1; /* Skip the \0 */
 	if (attr->filename)
 		iio_snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
 				attr->name, attr->filename);
 	else
 		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
+
 	return str;
 }
 
@@ -231,10 +239,13 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 	size_t *attrs_len, scan_element_len = 0;
 	unsigned int i;
 
-	len = sizeof("<channel id=\"\" type=\"\" ></channel>");
+	len = sizeof("<channel id=\"\" type=\"\" ></channel>") - 1;
 	len += strnlen(chn->id, MAX_CHN_ID);
-	len += chn->is_output ? sizeof("output") : sizeof("input");
-	len += chn->name ? sizeof(" name= ") + strnlen(chn->name, MAX_CHN_NAME) : 0;
+	len += (chn->is_output ? sizeof("output") : sizeof("input")) - 1;
+	if (chn->name) {
+		len += sizeof(" name=\"\"") - 1;
+		len += strnlen(chn->name, MAX_CHN_NAME);
+	}
 
 	if (chn->is_scan_element) {
 		scan_element = get_scan_element(chn, &scan_element_len);
@@ -260,6 +271,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		len += attrs_len[i];
 	}
 
+	len++;  /* room for terminating NULL */
 	str = malloc(len);
 	if (!str)
 		goto err_free_attrs;
@@ -307,7 +319,8 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 
 	*length = ptr - str;
 
-	if (len < 0) {
+	/* NULL char should be left, and that is it */
+	if (len != 1) {
 		IIO_ERROR("Internal libIIO error: iio_channel_get_xml str length isssue\n");
 		free(str);
 		return NULL;

@@ -26,8 +26,11 @@
 
 static char *get_attr_xml(const char *attr, size_t *length, enum iio_attr_type type)
 {
-	size_t len = sizeof("<attribute name=\"\" />") + strlen(attr);
+	size_t len;
 	char *str;
+
+	len = sizeof("<attribute name=\"\" />") - 1;
+	len += strnlen(attr, MAX_ATTR_NAME);
 
 	switch(type){
 		case IIO_ATTR_TYPE_DEVICE:
@@ -42,11 +45,12 @@ static char *get_attr_xml(const char *attr, size_t *length, enum iio_attr_type t
 			return NULL;
 	}
 
+	*length = len; /* just the chars */
+	len++; /* room for terminating NULL */
 	str = malloc(len);
 	if (!str)
 		return NULL;
 
-	*length = len - 1; /* Skip the \0 */
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
 			iio_snprintf(str, len, "<attribute name=\"%s\" />", attr);
@@ -70,7 +74,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	size_t *attrs_len, *channels_len, *buffer_attrs_len, *debug_attrs_len;
 	unsigned int i, j, k;
 
-	len = sizeof("<device id=\"\" ></device> ") - 1;
+	len = sizeof("<device id=\"\" ></device>") - 1;
 	len += strnlen(dev->id, MAX_DEV_ID);
 	if (dev->name) {
 		len += sizeof(" name=\"\"") - 1;
@@ -146,6 +150,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		len += debug_attrs_len[k];
 	}
 
+	len++;  /* room for terminating NULL */
 	str = malloc(len);
 	if (!str)
 		goto err_free_debug_attrs;
@@ -222,7 +227,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 
 	*length = ptr - str;
 
-	if (len < 0) {
+	if (len != 1) {
 		IIO_ERROR("Internal libIIO error: iio_device_get_xml str length isssue\n");
 		free(str);
 		return NULL;

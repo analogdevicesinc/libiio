@@ -89,6 +89,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		}
 	}
 
+	len++; /* room for terminating NULL */
 	str = malloc(len);
 	if (!str) {
 		errno = ENOMEM;
@@ -132,7 +133,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		len -= sizeof("</context>") - 1;
 	}
 
-	if (len < 0) {
+	if (len != 1) {
 		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length isssue\n");
 		free(str);
 		return NULL;
