@@ -16,6 +16,9 @@ pyroma:
 mypy:
   run: false
 
+pylint:
+  run: false
+
 pydocroma:
   run: true
 
