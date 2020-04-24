@@ -60,15 +60,30 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
-/* 256 is the MAX_NAME (file name) on Linux, 4096 is PAGESIZE */
-#define MAX_CHN_ID 256 /* encoded in the sysfs filename */
-#define MAX_CHN_NAME 256 /* encoded in the sysfs filename */
-#define MAX_DEV_ID 256 /* encoded in the sysfs filename */
-#define MAX_DEV_NAME 256 /* encoded in the sysfs filename */
-#define MAX_CTX_NAME 256    /* nominally "xml" */
-#define MAX_CTX_DESC 256    /* nominally "linux ..." */
-#define MAX_ATTR_NAME 256   /* encoded in the sysfs filename */
-#define MAX_ATTR_VALUE 4096 /* Linux page size, could be anything */
+/* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
+ * {NAME_MAX} : Maximum number of bytes in a filename
+ * {PATH_MAX} : Maximum number of bytes in a pathname
+ * {PAGESIZE} : Size in bytes of a page
+ * Too bad we work on non-POSIX systems
+ */
+#ifndef NAME_MAX
+#define NAME_MAX 256
+#endif
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+#ifndef PAGESIZE
+#define PAGESIZE 4096
+#endif
+
+#define MAX_CHN_ID     NAME_MAX  /* encoded in the sysfs filename */
+#define MAX_CHN_NAME   NAME_MAX  /* encoded in the sysfs filename */
+#define MAX_DEV_ID     NAME_MAX  /* encoded in the sysfs filename */
+#define MAX_DEV_NAME   NAME_MAX  /* encoded in the sysfs filename */
+#define MAX_CTX_NAME   NAME_MAX  /* nominally "xml" */
+#define MAX_CTX_DESC   NAME_MAX  /* nominally "linux ..." */
+#define MAX_ATTR_NAME  NAME_MAX  /* encoded in the sysfs filename */
+#define MAX_ATTR_VALUE PAGESIZE  /* Linux page size, could be anything */
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
