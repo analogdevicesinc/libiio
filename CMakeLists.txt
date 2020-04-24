@@ -347,6 +347,34 @@ if (WIN32)
 	configure_file(properties.rc.cmakein ${LIBIIO_RC} @ONLY)
 endif()
 
+option(COVERITY_BUILD "Turn on things for Coverity Builds" OFF)
+if (COVERITY_BUILD)
+	# Make sure everything gets turned on
+	list(APPEND LIBIIO_CFILES local.c
+		./libini/libini.c
+		usb.c
+		serial.c
+		network.c
+		dns_sd_avahi.c
+		dns_sd.c
+		xml.c
+		lock.c
+		iiod-client.c
+	)
+	# turn on optional code paths
+	set(WITH_USB_BACKEND ON)
+	set(WITH_NETWORK_BACKEND ON)
+	set(WITH_LOCAL_BACKEND ON)
+	set(WITH_SERIAL_BACKEND ON)
+	set(WITH_XML_BACKEND ON)
+	set(WITH_IIOD ON)
+	set(SKIP_INSTALL_ALL ON)
+	set(ENABLE_IPV6 ON)
+	set(WITH_LOCAL_CONFIG ON)
+	# in case something was already turned on, remove it
+	list(REMOVE_DUPLICATES LIBIIO_CFILES)
+endif()
+
 add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS} ${LIBIIO_RC})
 set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}

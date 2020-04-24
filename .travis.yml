@@ -41,7 +41,7 @@ matrix:
         - COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG"
         - COVERITY_SCAN_BRANCH_PATTERN="master"
         - COVERITY_SCAN_NOTIFICATION_EMAIL="robin.getz@analog.com"
-        - COVERITY_SCAN_BUILD_COMMAND_PREPEND="mkdir build && cd build && cmake -DWITH_EXAMPLES=ON .."
+        - COVERITY_SCAN_BUILD_COMMAND_PREPEND="mkdir build && cd build && cmake -DCOVERITY_BUILD=ON -DWITH_EXAMPLES=ON .."
         - COVERITY_SCAN_BUILD_COMMAND="make"
         # The COVERITY_SCAN_TOKEN
         - secure: "QQt2l9IVo0xXWLx7Xqgz/4Iezj7YroY3MKfmG+OhtzkMRx4prhx32/07JMNAcYx6mQrccyZkBNzpYuXlfIZjFL3xDxDj5+iKv5XXpJbRFQGhc5xZtAlzOIqHNMcFc0Aj8J2mZwKfSaDnBdf+nMgKcmn46pYbpJOmPe9iEfeLvvg="
