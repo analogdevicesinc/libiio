@@ -36,7 +36,7 @@
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
-#define IIO_ASSERT(expr) { \
+#define IIO_ENSURE(expr) { \
 	if (!(expr)) { \
 		(void) fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
 		(void) abort(); \
@@ -137,7 +137,7 @@ static char* get_ch_name(const char* type, int id)
 static struct iio_device* get_adrv9009_phy(struct iio_context *ctx)
 {
 	struct iio_device *dev =  iio_context_find_device(ctx, "adrv9009-phy");
-	IIO_ASSERT(dev && "No adrv9009-phy found");
+	IIO_ENSURE(dev && "No adrv9009-phy found");
 	return dev;
 }
 
@@ -147,7 +147,7 @@ static bool get_adrv9009_stream_dev(struct iio_context *ctx, enum iodev d, struc
 	switch (d) {
 	case TX: *dev = iio_context_find_device(ctx, "axi-adrv9009-tx-hpc"); return *dev != NULL;
 	case RX: *dev = iio_context_find_device(ctx, "axi-adrv9009-rx-hpc");  return *dev != NULL;
-	default: IIO_ASSERT(0); return false;
+	default: IIO_ENSURE(0); return false;
 	}
 }
 
@@ -166,7 +166,7 @@ static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid, struct
 	switch (d) {
 	case RX: *chn = iio_device_find_channel(get_adrv9009_phy(ctx), get_ch_name("voltage", chid), false); return *chn != NULL;
 	case TX: *chn = iio_device_find_channel(get_adrv9009_phy(ctx), get_ch_name("voltage", chid), true);  return *chn != NULL;
-	default: IIO_ASSERT(0); return false;
+	default: IIO_ENSURE(0); return false;
 	}
 }
 
@@ -210,28 +210,28 @@ int main (__notused int argc, __notused char **argv)
 	// Stream configuration
 	struct stream_cfg trxcfg;
 
-	// Listen to ctrl+c and IIO_ASSERT
+	// Listen to ctrl+c and IIO_ENSURE
 	signal(SIGINT, handle_sig);
 
 	// TRX stream config
 	trxcfg.lo_hz = GHZ(2.5);
 
 	printf("* Acquiring IIO context\n");
-	IIO_ASSERT((ctx = iio_create_default_context()) && "No context");
-	IIO_ASSERT(iio_context_get_devices_count(ctx) > 0 && "No devices");
+	IIO_ENSURE((ctx = iio_create_default_context()) && "No context");
+	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring ADRV9009 streaming devices\n");
-	IIO_ASSERT(get_adrv9009_stream_dev(ctx, TX, &tx) && "No tx dev found");
-	IIO_ASSERT(get_adrv9009_stream_dev(ctx, RX, &rx) && "No rx dev found");
+	IIO_ENSURE(get_adrv9009_stream_dev(ctx, TX, &tx) && "No tx dev found");
+	IIO_ENSURE(get_adrv9009_stream_dev(ctx, RX, &rx) && "No rx dev found");
 
 	printf("* Configuring ADRV9009 for streaming\n");
-	IIO_ASSERT(cfg_adrv9009_streaming_ch(ctx, &trxcfg, 0) && "TRX device not found");
+	IIO_ENSURE(cfg_adrv9009_streaming_ch(ctx, &trxcfg, 0) && "TRX device not found");
 
 	printf("* Initializing ADRV9009 IIO streaming channels\n");
-	IIO_ASSERT(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'i', &rx0_i) && "RX chan i not found");
-	IIO_ASSERT(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'q', &rx0_q) && "RX chan q not found");
-	IIO_ASSERT(get_adrv9009_stream_ch(ctx, TX, tx, 0, 0, &tx0_i) && "TX chan i not found");
-	IIO_ASSERT(get_adrv9009_stream_ch(ctx, TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
+	IIO_ENSURE(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'i', &rx0_i) && "RX chan i not found");
+	IIO_ENSURE(get_adrv9009_stream_ch(ctx, RX, rx, 0, 'q', &rx0_q) && "RX chan q not found");
+	IIO_ENSURE(get_adrv9009_stream_ch(ctx, TX, tx, 0, 0, &tx0_i) && "TX chan i not found");
+	IIO_ENSURE(get_adrv9009_stream_ch(ctx, TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);
