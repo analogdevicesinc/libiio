@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <limits.h>
 #include <sys/time.h>
-#include <sys/sysctl.h>
 
 #include "iio_common.h"
 
