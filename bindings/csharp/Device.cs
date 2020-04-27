@@ -49,7 +49,9 @@ namespace iio
                 StringBuilder builder = new StringBuilder(1024);
                 int err = iio_device_attr_read(dev, name, builder, 1024);
                 if (err < 0)
+                {
                     throw new Exception("Unable to read device attribute " + err);
+                }
                 return builder.ToString();
             }
 
@@ -57,7 +59,9 @@ namespace iio
             {
                 int err = iio_device_attr_write(dev, name, str);
                 if (err < 0)
+                {
                     throw new Exception("Unable to write device attribute " + err);
+                }
             }
         }
 
@@ -81,7 +85,9 @@ namespace iio
                 StringBuilder builder = new StringBuilder(1024);
                 int err = iio_device_debug_attr_read(dev, name, builder, 1024);
                 if (err < 0)
+                {
                     throw new Exception("Unable to read debug attribute " + err);
+                }
                 return builder.ToString();
             }
 
@@ -89,7 +95,9 @@ namespace iio
             {
                 int err = iio_device_debug_attr_write(dev, name, str);
                 if (err < 0)
+                {
                     throw new Exception("Unable to write debug attribute " + err);
+                }
             }
         }
 
@@ -165,20 +173,30 @@ namespace iio
                 nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
 
             for (uint i = 0; i < nb_channels; i++)
+            {
                 channels.Add(new Channel(iio_device_get_channel(dev, i)));
+            }
 
             for (uint i = 0; i < nb_attrs; i++)
+            {
                 attrs.Add(new DeviceAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_attr(dev, i))));
+            }
             for (uint i = 0; i < nb_debug_attrs; i++)
+            {
                 debug_attrs.Add(new DeviceDebugAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_debug_attr(dev, i))));
+            }
 
             id = Marshal.PtrToStringAnsi(iio_device_get_id(dev));
 
             IntPtr name_ptr = iio_device_get_name(dev);
             if (name_ptr == IntPtr.Zero)
+            {
                 name = "";
+            }
             else
+            {
                 name = Marshal.PtrToStringAnsi(name_ptr);
+            }
         }
 
         /// <summary>Get the <see cref="iio.Channel"/> object of the specified name.</summary>
@@ -187,10 +205,13 @@ namespace iio
         /// name or ID could not be found in the current context.</exception>
         public Channel get_channel(string name)
         {
-            foreach (Channel each in channels) {
+            foreach (Channel each in channels)
+            {
                 if (each.name.CompareTo(name) == 0 ||
                             each.id.CompareTo(name) == 0)
+                {
                     return each;
+                }
             }
 
             throw new Exception("Channel " + name + " not found");
@@ -203,7 +224,9 @@ namespace iio
         {
             int err = iio_device_set_trigger(this.dev, trig == null ? IntPtr.Zero : trig.dev);
             if (err < 0)
+            {
                 throw new Exception("Unable to set trigger: err=" + err);
+            }
         }
 
         /// <summary>Get the current trigger affected to this device.</summary>
@@ -214,13 +237,18 @@ namespace iio
             IntPtr ptr = (IntPtr)0;
             int err = iio_device_get_trigger(this.dev, ptr);
             if (err < 0)
+            {
                 throw new Exception("Unable to get trigger: err=" + err);
+            }
 
             ptr = Marshal.ReadIntPtr(ptr);
 
-            foreach (Trigger trig in ctx.devices) {
+            foreach (Trigger trig in ctx.devices)
+            {
                 if (trig.dev == ptr)
+                {
                     return trig;
+                }
             }
 
             return null;
@@ -233,7 +261,9 @@ namespace iio
         {
             int ret = iio_device_get_sample_size(dev);
             if (ret < 0)
+            {
                 throw new Exception("Internal error. Please report any bug.");
+            }
             return (uint) ret;
         }
         /// <summary>Set a value to one register of this device.</summary>
@@ -244,7 +274,9 @@ namespace iio
         {
             int err = iio_device_reg_write(dev, addr, value);
             if (err < 0)
+            {
                 throw new Exception("Unable to write register");
+            }
         }
 
         /// <summary>Read the content of a register of this device.</summary>
@@ -255,7 +287,9 @@ namespace iio
             uint value = 0;
             int err = iio_device_reg_read(dev, addr, ref value);
             if (err < 0)
+            {
                 throw new Exception("Unable to read register");
+            }
             return value;
         }
     }

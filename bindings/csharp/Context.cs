@@ -129,7 +129,9 @@ namespace iio
         {
             IntPtr ptr = iio_create_context_from_uri(str);
             if (ptr == IntPtr.Zero)
+            {
                 ptr = iio_create_network_context(str);
+            }
             return ptr;
         }
 
@@ -138,7 +140,9 @@ namespace iio
             this.ctx = ctx;
 
             if (ctx == IntPtr.Zero)
+            {
                 throw new Exception("Unable to create IIO context");
+            }
 
             uint nb_devices = iio_context_get_devices_count(ctx);
 
@@ -147,9 +151,13 @@ namespace iio
             {
                 IntPtr ptr = iio_context_get_device(ctx, i);
                 if (iio_device_is_trigger(ptr))
+                {
                     devices.Add(new Trigger(this, ptr));
+                }
                 else
+                {
                     devices.Add(new Device(this, ptr));
+                }
             }
 
             xml = Marshal.PtrToStringAnsi(iio_context_get_xml(ctx));
@@ -167,14 +175,18 @@ namespace iio
             builder.Clear();
             int err = iio_context_get_version(ctx, ref major, ref minor, builder);
             if (err < 0)
+            {
                 throw new Exception("Unable to read backend version");
+            }
             backend_version = new Version(major, minor, builder.ToString());
         }
 
         ~Context()
         {
             if (ctx != IntPtr.Zero)
+            {
                 Dispose(false);
+            }
         }
 
         /// <summary>Clone this instance.</summary>
@@ -192,7 +204,9 @@ namespace iio
             foreach (Device each in devices) {
                 if (each.name.CompareTo(name) == 0 ||
                             each.id.CompareTo(name) == 0)
+                {
                     return each;
+                }
             }
 
             throw new Exception("Device " + name + " not found");
@@ -205,7 +219,9 @@ namespace iio
         {
             int ret = iio_context_set_timeout(ctx, timeout);
             if (ret < 0)
+            {
                 throw new Exception("Unable to set timeout");
+            }
         }
 
         /// <summary>Releases all resource used by the <see cref="iio.Context"/> object.</summary>
@@ -223,7 +239,9 @@ namespace iio
             if (ctx != IntPtr.Zero)
             {
                 if (clean)
+                {
                     GC.SuppressFinalize(this);
+                }
                 iio_context_destroy(ctx);
                 ctx = IntPtr.Zero;
             }

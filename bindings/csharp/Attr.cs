@@ -78,9 +78,13 @@ namespace iio
         public void write(bool val)
         {
             if (val)
+            {
                 write("1");
+            }
             else
+            {
                 write("0");
+            }
         }
 
         /// <summary>Set this attribute to the value contained in the <c>long</c> argument.</summary>
