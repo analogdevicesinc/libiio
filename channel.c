@@ -293,14 +293,14 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 		len = eptr - ptr;
 	}
 
-	if (chn->is_scan_element && len > scan_element_len) {
+	if (chn->is_scan_element && len > (ssize_t) scan_element_len) {
 		memcpy(ptr, scan_element, scan_element_len); /* Flawfinder: ignore */
 		ptr += scan_element_len;
 		len -= scan_element_len;
 	}
 
 	for (i = 0; i < chn->nb_attrs; i++) {
-		if (len > attrs_len[i]) {
+		if (len > (ssize_t) attrs_len[i]) {
 			memcpy(ptr, attrs[i], attrs_len[i]); /* Flawfinder: ignore */
 			ptr += attrs_len[i];
 			len -= attrs_len[i];

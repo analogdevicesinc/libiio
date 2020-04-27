@@ -173,7 +173,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	}
 
 	for (i = 0; i < dev->nb_channels; i++) {
-		if (len > channels_len[i]) {
+		if (len > (ssize_t) channels_len[i]) {
 			memcpy(ptr, channels[i], channels_len[i]); /* Flawfinder: ignore */
 			ptr += channels_len[i];
 			len -= channels_len[i];
@@ -185,7 +185,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(channels_len);
 
 	for (i = 0; i < dev->nb_attrs; i++) {
-		if (len > attrs_len[i]) {
+		if (len > (ssize_t) attrs_len[i]) {
 			memcpy(ptr, attrs[i], attrs_len[i]); /* Flawfinder: ignore */
 			ptr += attrs_len[i];
 			len -= attrs_len[i];
@@ -197,7 +197,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(attrs_len);
 
 	for (i = 0; i < dev->nb_buffer_attrs; i++) {
-		if (len > buffer_attrs_len[i]) {
+		if (len > (ssize_t) buffer_attrs_len[i]) {
 			memcpy(ptr, buffer_attrs[i], buffer_attrs_len[i]); /* Flawfinder: ignore */
 			ptr += buffer_attrs_len[i];
 			len -= buffer_attrs_len[i];
@@ -209,7 +209,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(buffer_attrs_len);
 
 	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		if (len > debug_attrs_len[i]) {
+		if (len > (ssize_t) debug_attrs_len[i]) {
 			memcpy(ptr, debug_attrs[i], debug_attrs_len[i]); /* Flawfinder: ignore */
 			ptr += debug_attrs_len[i];
 			len -= debug_attrs_len[i];

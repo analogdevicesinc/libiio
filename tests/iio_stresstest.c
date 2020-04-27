@@ -604,7 +604,7 @@ int main(int argc, char **argv)
 		}
 
 		/* Calculate some stats about the threads */
-		int a =0, b = 0;
+		unsigned int a =0, b = 0;
 		c = 0;
 		for (i = 0; i < info.num_threads; i++) {
 			a+= info.starts[i];
