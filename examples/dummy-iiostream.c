@@ -77,7 +77,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -91,6 +90,14 @@
 #endif
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+#define IIO_ENSURE(expr) { \
+	if (!(expr)) { \
+		(void) fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
+		(void) abort(); \
+	} \
+}
+
 
 static char *name        = "iio_dummy_part_no";
 static char *trigger_str = "instance1";
@@ -237,8 +244,8 @@ int main (int argc, char **argv)
 	has_repeat = ((major * 10000) + minor) >= 8 ? true : false;
 
 	printf("* Acquiring IIO context\n");
-	assert((ctx = iio_create_default_context()) && "No context");
-	assert(iio_context_get_devices_count(ctx) > 0 && "No devices");
+	IIO_ENSURE((ctx = iio_create_default_context()) && "No context");
+	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring device %s\n", name);
 	dev = iio_context_find_device(ctx, name);
