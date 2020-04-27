@@ -59,8 +59,7 @@ if (NOT LOG_LEVEL)
 endif()
 
 if (MSVC)
-	add_compile_options(/W4 /wd4018 /wd4200 /wd4127 /wd4100)
-	# C4018: signed/unsigned mismatch ; same as -Wno-sign-compare
+	add_compile_options(/W4 /wd4200 /wd4127 /wd4100)
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
 	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
 	# C4100: unreferenced parameter; same as -Wno-unused-parameter
@@ -77,7 +76,7 @@ elseif (CMAKE_COMPILER_IS_GNUCC)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 	endif()
 
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter")
 
 	include(CheckCCompilerFlag)
 	check_c_compiler_flag(-Wpedantic HAS_WPEDANTIC)
@@ -97,7 +96,7 @@ elseif (CMAKE_COMPILER_IS_GNUCC)
 	endif()
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-sign-compare")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter")
 	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
 		message(STATUS "Running in a Travis-CI environment, setting -Werror")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
