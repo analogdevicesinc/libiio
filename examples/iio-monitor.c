@@ -398,6 +398,8 @@ static void show_main_screen(struct iio_context *ctx)
 	free(dev_names);
 	destroyCDKScreen(screen);
 
+	return;
+
 dev_name_err:
 	for (i = 0; i < nb_devices; i++) {
 		if (dev_names[i])
