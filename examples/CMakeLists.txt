@@ -56,6 +56,17 @@ if (PTHREAD_LIBRARIES
     AND CDK_LIBRARY
 )
     find_path(LIBCKD_INCLUDE_DIR cdk.h PATH_SUFFIXES cdk)
+
+    set(TEMP ${CMAKE_REQUIRED_LIBRARIES})
+    set(TEMP1 ${CMAKE_REQUIRED_INCLUDES})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${CURSES_LIBRARY} ${CDK_LIBRARY})
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBCKD_INCLUDE_DIR})
+    check_symbol_exists(CDK_CSTRING2 "cdk.h" HAS_CDK_CSTRING2)
+    set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
+    set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
+endif()
+
+if(HAS_CDK_CSTRING2)
     include_directories(${LIBCKD_INCLUDE_DIR})
     project(iio-monitor C)
     add_executable(iio-monitor iio-monitor.c)
@@ -63,6 +74,8 @@ if (PTHREAD_LIBRARIES
         iio-monitor iio ${PTHREAD_LIBRARIES} ${CURSES_LIBRARY} ${CDK_LIBRARY}
     )
     set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio-monitor)
+else()
+    message(STATUS "Curses Development Kit (CDK) missing or too old, skipping iio-monitor")
 endif ()
 
 set_target_properties(

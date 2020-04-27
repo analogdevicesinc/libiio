@@ -134,7 +134,7 @@ static struct {
 	{ "power",	"W" },
 	{ "temp",	"°C" },
 	{ "voltage",	"V" },
-	{ 0, },
+	{ NULL, NULL },
 };
 
 static const char *id_to_unit(const char *id)
@@ -265,18 +265,25 @@ static struct iio_context *show_contexts_screen(void)
 		}
 
 		for (i = 0; i < num_contexts; i++) {
-			 asprintf(&items[i], "</%d>%s<!%d> </%d>[%s]<!%d>", YELLOW,
+			ret = asprintf(&items[i], "</%d>%s<!%d> </%d>[%s]<!%d>", YELLOW,
 				iio_context_info_get_description(info[i]),
 				YELLOW, BLUE,
 				iio_context_info_get_uri(info[i]),
 				BLUE);
+			if (ret < 0) {
+				fprintf(stderr, "asprintf failed, out of memory?\n");
+				break;
+			}
+		}
+		if (ret < 0) {
+			break;
 		}
 
 		items[i] = "Enter location";
 
 		list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
 				"\n Select a IIO context to use:\n",
-				items, num_contexts + 1, TRUE,
+				(CDK_CSTRING2) items, num_contexts + 1, TRUE,
 				A_BOLD | A_REVERSE, TRUE, FALSE);
 
 		drawCDKScroll(list, TRUE);
@@ -298,7 +305,7 @@ static struct iio_context *show_contexts_screen(void)
 			ctx = iio_create_context_from_uri(uri);
 			if (ctx == NULL) {
 				char *msg[] = { "</16>Failed to create IIO context.<!16>" };
-				popupLabel(screen, msg, 1);
+				popupLabel(screen, (CDK_CSTRING2)msg, 1);
 			}
 
 			if (free_uri)
@@ -364,7 +371,7 @@ static void show_main_screen(struct iio_context *ctx)
 	boxWindow(right, 0);
 	list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
 			"\n List of available IIO devices:\n",
-			dev_names, nb_devices, FALSE,
+			(CDK_CSTRING2) dev_names, nb_devices, FALSE,
 			A_BOLD | A_REVERSE, TRUE, FALSE);
 
 	drawCDKScroll(list, TRUE);

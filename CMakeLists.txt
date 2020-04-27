@@ -1,3 +1,4 @@
+message(STATUS "cmake verison: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 2.8.7)
 project(libiio C)
 
@@ -76,6 +77,16 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	check_c_compiler_flag(-Wpedantic HAS_WPEDANTIC)
 	if (HAS_WPEDANTIC)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic")
+	endif()
+	# cmake 2.8 doesn't support C_STANDARD defined in set_target_properties
+	if (${CMAKE_VERSION} VERSION_LESS "3.2")
+		check_c_compiler_flag(-std=c99 HAS_C99)
+		if (HAS_C99)
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+		endif()
+	endif()
+	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 	endif()
 endif()
 
