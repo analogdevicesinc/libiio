@@ -1424,7 +1424,7 @@ struct iio_context * network_create_context(const char *host)
 		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
 #else
 		char *tmp = inet_ntoa(in->sin_addr);
-		strncpy(description, tmp, len);
+		iio_strlcpy(description, tmp, len);
 #endif
 	}
 

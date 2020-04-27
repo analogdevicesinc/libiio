@@ -180,8 +180,7 @@ void iio_library_get_version(unsigned int *major,
 	if (minor)
 		*minor = LIBIIO_VERSION_MINOR;
 	if (git_tag) {
-		strncpy(git_tag, LIBIIO_VERSION_GIT, 8);
-		git_tag[7] = '\0';
+		iio_strlcpy(git_tag, LIBIIO_VERSION_GIT, 8);
 	}
 }
 

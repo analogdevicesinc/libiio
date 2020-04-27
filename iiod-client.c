@@ -202,7 +202,7 @@ int iiod_client_get_version(struct iiod_client *client, void *desc,
 	if (minor)
 		*minor = (unsigned int) min;
 	if (git_tag)
-		strncpy(git_tag, ptr, 8);
+		iio_strlcpy(git_tag, ptr, 8);
 	return 0;
 }
 
@@ -534,17 +534,24 @@ int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
 {
 	char buf[1024], *ptr;
 	size_t i;
+	ssize_t len;
 
-	iio_snprintf(buf, sizeof(buf), "OPEN %s %lu ",
+	len = sizeof(buf);
+	len -= iio_snprintf(buf, len, "OPEN %s %lu ",
 			iio_device_get_id(dev), (unsigned long) samples_count);
 	ptr = buf + strlen(buf);
 
 	for (i = dev->words; i > 0; i--, ptr += 8) {
-		iio_snprintf(ptr, (ptr - buf) + i * 8, "%08" PRIx32,
+		len -= iio_snprintf(ptr, len, "%08" PRIx32,
 				dev->mask[i - 1]);
 	}
 
-	strcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n");
+	len -= iio_strlcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n", len);
+
+	if (len < 0) {
+		IIO_ERROR("strlength problem in iiod_client_open_unlocked\n");
+		return -ENOMEM;
+	}
 
 	return iiod_client_exec_command(client, desc, buf);
 }

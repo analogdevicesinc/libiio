@@ -1262,7 +1262,7 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 		ret = strlen(trigger->name);
 		print_value(pdata, ret);
 
-		snprintf(buf, sizeof(buf), "%s\n", trigger->name);
+		iio_snprintf(buf, sizeof(buf), "%s\n", trigger->name);
 		ret = write_all(pdata, buf, ret + 1);
 	} else {
 		print_value(pdata, ret);
