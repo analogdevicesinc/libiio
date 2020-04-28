@@ -661,7 +661,7 @@ int iio_device_attr_write_longlong(const struct iio_device *dev,
 	iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_device_attr_write(dev, attr, buf);
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_attr_write_double(const struct iio_device *dev,
@@ -673,7 +673,7 @@ int iio_device_attr_write_double(const struct iio_device *dev,
 	ret = (ssize_t) write_double(buf, sizeof(buf), val);
 	if (!ret)
 		ret = iio_device_attr_write(dev, attr, buf);
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_attr_write_bool(const struct iio_device *dev,
@@ -686,7 +686,7 @@ int iio_device_attr_write_bool(const struct iio_device *dev,
 	else
 		ret = iio_device_attr_write(dev, attr, "0");
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
@@ -737,7 +737,7 @@ int iio_device_buffer_attr_write_longlong(const struct iio_device *dev,
 	iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_device_buffer_attr_write(dev, attr, buf);
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_buffer_attr_write_double(const struct iio_device *dev,
@@ -749,7 +749,7 @@ int iio_device_buffer_attr_write_double(const struct iio_device *dev,
 	ret = (ssize_t) write_double(buf, sizeof(buf), val);
 	if (!ret)
 		ret = iio_device_buffer_attr_write(dev, attr, buf);
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_buffer_attr_write_bool(const struct iio_device *dev,
@@ -762,7 +762,7 @@ int iio_device_buffer_attr_write_bool(const struct iio_device *dev,
 	else
 		ret = iio_device_buffer_attr_write(dev, attr, "0");
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
@@ -853,7 +853,7 @@ int iio_device_debug_attr_write_longlong(const struct iio_device *dev,
 	iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_device_debug_attr_write(dev, attr, buf);
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_debug_attr_write_double(const struct iio_device *dev,
@@ -865,7 +865,7 @@ int iio_device_debug_attr_write_double(const struct iio_device *dev,
 	ret = (ssize_t) write_double(buf, sizeof(buf), val);
 	if (!ret)
 		ret = iio_device_debug_attr_write(dev, attr, buf);
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_debug_attr_write_bool(const struct iio_device *dev,
@@ -878,7 +878,7 @@ int iio_device_debug_attr_write_bool(const struct iio_device *dev,
 	else
 		ret = iio_device_debug_attr_write_raw(dev, attr, "0", 2);
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_identify_filename(const struct iio_device *dev,
@@ -930,7 +930,7 @@ int iio_device_reg_write(struct iio_device *dev,
 			address, value);
 	ret = iio_device_debug_attr_write(dev, "direct_reg_access", buf);
 
-	return ret < 0 ? ret : 0;
+	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_reg_read(struct iio_device *dev,

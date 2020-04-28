@@ -100,7 +100,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 	if (!locale)
 		return -ENOMEM;
 
-	_snprintf_l(buf, len, "%f", locale, val);
+	_snprintf_s_l(buf, len, _TRUNCATE, "%f", locale, val);
 	_free_locale(locale);
 	return 0;
 }
@@ -269,7 +269,10 @@ char * iio_getenv (char * envvar)
 	if (_dupenv_s(&hostname, NULL, envvar))
 		return NULL;
 #else
-	hostname = getenv(envvar);
+	/* This is qualified below, and a copy is returned
+	 * so it's safe to use
+	 */
+	hostname = getenv(envvar); /* Flawfinder: ignore */
 #endif
 
 	if (!hostname)
