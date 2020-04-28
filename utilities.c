@@ -21,6 +21,7 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
+#include "network.h"
 
 #include <errno.h>
 #include <locale.h>
@@ -255,4 +256,46 @@ size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t ds
 	}
 
 	return(src - osrc - 1); /* count does not include NUL */
+}
+
+/* Cross platform version of getenv */
+
+char * iio_getenv (char * envvar)
+{
+	char *hostname;
+	size_t len, tmp;
+
+#ifdef _MSC_BUILD
+	if (_dupenv_s(&hostname, NULL, envvar))
+		return NULL;
+#else
+	hostname = getenv(envvar);
+#endif
+
+	if (!hostname)
+		return NULL;
+
+	tmp = MAXHOSTNAMELEN + sizeof("serial:") + sizeof(":65535") - 2;
+	len = strnlen(hostname, tmp);
+
+	/* Should be smaller than max length */
+	if (len <= tmp)
+		goto wrong_str;
+
+	/* should be more than "usb:" or "ip:" */
+	tmp = sizeof("ip:") - 1;
+	if (len < tmp)
+		goto wrong_str;
+
+#ifdef _MSC_BUILD
+	return hostname;
+#else
+	return strdup (hostname);
+#endif
+
+wrong_str:
+#ifdef _WIN32
+	free(hostname);
+#endif
+	return NULL;
 }

@@ -314,6 +314,7 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strdup(const char *str);
 size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
+char * iio_getenv (char * envvar);
 
 int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value);

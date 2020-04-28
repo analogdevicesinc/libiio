@@ -20,7 +20,6 @@
 #include "iio-config.h"
 #include "iio-private.h"
 #include "sort.h"
-#include "network.h"
 
 #include <errno.h>
 #include <string.h>
@@ -328,22 +327,13 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 
 struct iio_context * iio_create_default_context(void)
 {
-	char *hostname = getenv("IIOD_REMOTE");
+	char *hostname = iio_getenv("IIOD_REMOTE");
+	struct iio_context * ctx;
 
 	if (hostname) {
-		if (strlen(hostname) > 2 && strlen(hostname) < MAXHOSTNAMELEN + 4) {
-			struct iio_context *ctx;
-
-			ctx = iio_create_context_from_uri(hostname);
-			if (ctx)
-				return ctx;
-		}
-#ifdef HAVE_DNS_SD
-		/* If the environment variable is an empty string, we will
-		 * discover the server using ZeroConf */
-		if (!hostname[0])
-			return iio_create_network_context(NULL);
-#endif
+		ctx = iio_create_context_from_uri(hostname);
+		free(hostname);
+		return ctx;
 	}
 
 	return iio_create_local_context();
