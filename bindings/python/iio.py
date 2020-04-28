@@ -496,6 +496,10 @@ _channel_convert = _lib.iio_channel_convert
 _channel_convert.restype = None
 _channel_convert.argtypes = (_ChannelPtr, c_void_p, c_void_p)
 
+_channel_convert_inverse = _lib.iio_channel_convert_inverse
+_channel_convert_inverse.restype = None
+_channel_convert_inverse.argtypes = (_ChannelPtr, c_void_p, c_void_p)
+
 _create_buffer = _lib.iio_device_create_buffer
 _create_buffer.restype = _BufferPtr
 _create_buffer.argtypes = (_DevicePtr, c_size_t, c_bool, )
@@ -819,6 +823,20 @@ class Channel(object):
 		src_ptr = cast((c_char * (len(src) * self.data_format.length))(*src), c_void_p)
 		dst_ptr = cast((c_char * (len(dst) * self.data_format.length))(*dst), c_void_p)
 		_channel_convert(self._channel, src_ptr, dst_ptr)
+
+	def convert_inverse(self, dst, src):
+		"""
+		Convert the sample from host format to hardware format.
+
+		parameters:
+			dst: type=list
+				The variable where the result is stored.
+			src: type=list
+				Data to be converted.
+		"""
+		src_ptr = cast((c_char * (len(src) * self.data_format.length))(*src), c_void_p)
+		dst_ptr = cast((c_char * (len(dst) * self.data_format.length))(*dst), c_void_p)
+		_channel_convert_inverse(self._channel, src_ptr, dst_ptr)
 
 class Buffer(object):
 
