@@ -44,6 +44,13 @@
 #include <iio.h>
 #endif
 
+#ifdef _MSC_BUILD
+#define inline __inline
+#define iio_snprintf sprintf_s
+#else
+#define iio_snprintf snprintf
+#endif
+
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
 #define RED	020u
@@ -177,7 +184,7 @@ static void * read_thd(void *d)
 
 		werase(right);
 
-		sprintf(buf, "</B>Device selected: </%u>%s<!%u><!B>",
+		iio_snprintf(buf, sizeof(buf), "</B>Device selected: </%u>%s<!%u><!B>",
 				RED, name, RED);
 		str = char2Chtype(buf, &len, &align);
 		writeChtype(right, 2, line, str, HORIZONTAL, 0, len);
@@ -200,14 +207,14 @@ static void * read_thd(void *d)
 				name = id;
 			unit = id_to_unit(id);
 
-			sprintf(buf, "</%u></B>%s<!B><!%u>",
+			iio_snprintf(buf, sizeof(buf), "</%u></B>%s<!B><!%u>",
 					BLUE, name, BLUE);
 			str = char2Chtype(buf, &len, &align);
 			writeChtype(right, 2, line, str,
 					HORIZONTAL, 0, len);
 			freeChtype(str);
 
-			sprintf(buf, "</%u></B>%.3lf %s<!B><!%u>",
+			iio_snprintf(buf, sizeof(buf), "</%u></B>%.3lf %s<!B><!%u>",
 					YELLOW, get_channel_value(chn), unit,
 					YELLOW);
 			str = char2Chtype(buf, &len, &align);
@@ -362,7 +369,7 @@ static void show_main_screen(struct iio_context *ctx)
 		const char *name = iio_device_get_name(dev);
 		if (!name)
 			name = iio_device_get_id(dev);
-		sprintf(buf, "</B> %s", name);
+		iio_snprintf(buf, sizeof(buf), "</B> %s", name);
 		dev_names[i] = strdup(buf);
 		if (!dev_names[i])
 			goto dev_name_err;
@@ -390,6 +397,8 @@ static void show_main_screen(struct iio_context *ctx)
 		free(dev_names[i]);
 	free(dev_names);
 	destroyCDKScreen(screen);
+
+	return;
 
 dev_name_err:
 	for (i = 0; i < nb_devices; i++) {
