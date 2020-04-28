@@ -82,12 +82,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <inttypes.h>
-
-#ifdef __APPLE__
-#include <iio/iio.h>
-#else
 #include <iio.h>
-#endif
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 

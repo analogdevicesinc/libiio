@@ -37,12 +37,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-
-#ifdef __APPLE__
-#include <iio/iio.h>
-#else
 #include <iio.h>
-#endif
 
 #ifdef _MSC_BUILD
 #define inline __inline
