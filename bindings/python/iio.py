@@ -14,7 +14,7 @@
 # Lesser General Public License for more details.
 
 from ctypes import Structure, c_char_p, c_uint, c_int, c_long, c_longlong, c_size_t, \
-		c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, c_double, \
+		c_ssize_t, c_char, c_void_p, c_bool, create_string_buffer, c_double, cast, \
 		POINTER as _POINTER, CDLL as _cdll, memmove as _memmove, byref as _byref
 from ctypes.util import find_library
 from enum import Enum
@@ -816,7 +816,9 @@ class Channel(object):
 			src: type=list
 				Data to be converted.
 		"""
-		_channel_convert(self._channel, c_void_p(*dst), c_void_p(*src))
+		src_ptr = cast((c_char * (len(src) * self.data_format.length))(*src), c_void_p)
+		dst_ptr = cast((c_char * (len(dst) * self.data_format.length))(*dst), c_void_p)
+		_channel_convert(self._channel, src_ptr, dst_ptr)
 
 class Buffer(object):
 
