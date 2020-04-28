@@ -55,11 +55,15 @@ namespace IIOCSharp
                 {
                     string type = "input";
                     if (chn.output)
+                    {
                         type = "output";
+                    }
                     Console.WriteLine("\t\t\t" + chn.id + ": " + chn.name + " (" + type + ")");
 
                     if (chn.attrs.Count == 0)
+                    {
                         continue;
+                    }
 
                     Console.WriteLine("\t\t\t" + chn.attrs.Count + " channel-specific attributes found:");
                     foreach (Attr attr in chn.attrs)
@@ -86,11 +90,15 @@ namespace IIOCSharp
                 }
 
                 if (dev.attrs.Count == 0)
+                {
                     continue;
+                }
 
                 Console.WriteLine("\t\t" + dev.attrs.Count + " device-specific attributes found:");
                 foreach (Attr attr in dev.attrs)
+                {
                     Console.WriteLine("\t\t\t" + attr.name);
+                }
 
             }
 
