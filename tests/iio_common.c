@@ -75,7 +75,7 @@ struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * na
 		printf("No IIO context found.\n");
 		goto err_free_info_list;
 	}
-	if (!rtn && ret == 1) {
+	if (rtn && ret == 1) {
 		printf("Using auto-detected IIO context at URI \"%s\"\n",
 		iio_context_info_get_uri(info[0]));
 		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
