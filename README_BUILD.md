@@ -52,7 +52,7 @@ Cmake Options       | Default | Description                                    |
 `ENABLE_PACKAGING`  | OFF | Create .deb/.rpm/.tar.gz via 'make package'        |
 `INSTALL_UDEV_RULE` |  ON | Install a udev rule for detection of USB devices   |
 
-Which backends the library supports is dependant on the build system, but can be overridden.
+Which backends the library supports is dependent on the build system, but can be overridden.
 (If cmake finds libusb, it will use it, unless turned off manually)
 
 Cmake Options          | Depends on    | Description                     |

@@ -228,7 +228,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	*length = ptr - str;
 
 	if (len != 1) {
-		IIO_ERROR("Internal libIIO error: iio_device_get_xml str length isssue\n");
+		IIO_ERROR("Internal libIIO error: iio_device_get_xml str length issue\n");
 		free(str);
 		return NULL;
 	}

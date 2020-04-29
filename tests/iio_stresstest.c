@@ -586,7 +586,7 @@ int main(int argc, char **argv)
 			if (pret < 0)
 				app_running = 0;
 		}
-		/* Did at least one thread end in sucess? */
+		/* Did at least one thread end in success? */
 		for (i = 0; i < info.num_threads; i++) {
 			if (!((int) (intptr_t)ret[i])) {
 				flag = 1;

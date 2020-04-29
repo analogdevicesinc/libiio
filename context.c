@@ -134,7 +134,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	if (len != 1) {
-		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length isssue\n");
+		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length issue\n");
 		free(str);
 		return NULL;
 	}

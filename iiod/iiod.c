@@ -195,7 +195,7 @@ static void __avahi_group_cb(AvahiEntryGroup *group,
 			/* This is normal,
 			 * since we commit things in the create_services()
 			 */
-			IIO_DEBUG("Avahi: Group uncommited\n");
+			IIO_DEBUG("Avahi: Group uncommitted\n");
 			break;
 		case AVAHI_ENTRY_GROUP_REGISTERING:
 			IIO_DEBUG("Avahi: Group registering\n");

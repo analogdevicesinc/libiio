@@ -49,7 +49,7 @@ __api void ini_close(struct INI *ini);
  * XXX: the pointer will be invalid as soon as ini_close() is called.
  *
  * Returns:
- * 	-EIO if an error occured while reading the file,
+ * 	-EIO if an error occurred while reading the file,
  * 	0 if no more section can be found,
  * 	1 otherwise.
  */
@@ -63,7 +63,7 @@ __api int ini_next_section(struct INI *ini,
  * XXX: the pointers will be invalid as soon as ini_close() is called.
  *
  * Returns:
- *  -EIO if an error occured while reading the file,
+ *  -EIO if an error occurred while reading the file,
  *  0 if no more key/value pairs can be found,
  *  1 otherwise.
  */

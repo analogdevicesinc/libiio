@@ -89,7 +89,7 @@ struct dns_sd_discovery_data {
  */
 int create_socket(const struct addrinfo *addrinfo, unsigned int timeout);
 
-/* These fuctions are common, and implemented in dns_sd_[*].c  based on the
+/* These functions are common, and implemented in dns_sd_[*].c  based on the
  * implementations: avahi (linux), bonjour (mac), or ServiceDiscovery (Win10)
  */
 

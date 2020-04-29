@@ -472,7 +472,7 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 {
 	struct parser_pdata *pdata = thd->pdata;
 
-	/* Inform that no error occured, and that we'll start reading data */
+	/* Inform that no error occurred, and that we'll start reading data */
 	if (thd->new_client) {
 		print_value(thd->pdata, 0);
 		thd->new_client = false;

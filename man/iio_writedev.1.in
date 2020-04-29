@@ -63,7 +63,7 @@ with no address part
 .RE
 .TP
 .B \-t \-\-trigger
-Use the specified trigger, if needed on the specificied channel
+Use the specified trigger, if needed on the specified channel
 .TP
 .B \-b \-\-buffer-size
 Size of the capture buffer. Default is 256.
@@ -85,7 +85,7 @@ If the specified device is not found, a non-zero exit code is returned.
 
 .SH "USAGE"
 .PP 
-You use iio_readdev in the same way you use many of the other libiio utilites.
+You use iio_readdev in the same way you use many of the other libiio utilities.
 You must specify a IIO device, and the specific channel to read. Since this is a write, channels must be output.
 It is easy to use
 .B iio_attr
