@@ -1230,12 +1230,24 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			char endian, sign;
 
 			if (strchr(buf, 'X')) {
-				sscanf(buf, "%ce:%c%u/%uX%u>>%u", &endian, &sign,
+				iio_sscanf(buf, "%ce:%c%u/%uX%u>>%u",
+#ifdef _MSC_BUILD
+					&endian, sizeof(endian),
+					&sign, sizeof(sign),
+#else
+					&endian, &sign,
+#endif
 					&chn->format.bits, &chn->format.length,
 					&chn->format.repeat, &chn->format.shift);
 			} else {
 				chn->format.repeat = 1;
-				sscanf(buf, "%ce:%c%u/%u>>%u", &endian, &sign,
+				iio_sscanf(buf, "%ce:%c%u/%u>>%u",
+#ifdef _MSC_BUILD
+					&endian, sizeof(endian),
+					&sign, sizeof(sign),
+#else
+					&endian, &sign,
+#endif
 					&chn->format.bits, &chn->format.length,
 					&chn->format.shift);
 			}

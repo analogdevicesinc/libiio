@@ -588,7 +588,7 @@ static int iiod_client_read_mask(struct iiod_client *client,
 	IIO_DEBUG("Reading mask\n");
 
 	for (i = words, ptr = buf; i > 0; i--) {
-		sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
+		iio_sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
 		IIO_DEBUG("mask[%lu] = 0x%08" PRIx32 "\n",
 				(unsigned long)(i - 1), mask[i - 1]);
 

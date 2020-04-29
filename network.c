@@ -771,7 +771,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 			if (ret < 0)
 				return ret;
 
-			sscanf(buf, "%08x", &mask[i - 1]);
+			iio_sscanf(buf, "%08x", &mask[i - 1]);
 			IIO_DEBUG("mask[%lu] = 0x%x\n",
 					(unsigned long)(i - 1), mask[i - 1]);
 		}

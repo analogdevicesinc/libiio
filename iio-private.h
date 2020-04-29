@@ -29,8 +29,10 @@
 #ifdef _MSC_BUILD
 #define inline __inline
 #define iio_snprintf sprintf_s
+#define iio_sscanf sscanf_s
 #else
 #define iio_snprintf snprintf
+#define iio_sscanf sscanf
 #endif
 
 #ifdef _WIN32
