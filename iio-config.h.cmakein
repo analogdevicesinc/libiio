@@ -20,6 +20,7 @@
 #cmakedefine WITH_LOCAL_CONFIG
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
+#cmakedefine HAS_STRNDUP
 #cmakedefine HAS_STRERROR_R
 #cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP

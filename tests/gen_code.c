@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <iio.h>
 
+#include "iio_common.h"
+
 static FILE *fd = NULL;
 static char *uri;
 static enum languages {
@@ -30,10 +32,27 @@ static enum languages {
 	UNSUPPORTED_LANG,
 } lang = UNSUPPORTED_LANG;
 
+static int gen_fopen(FILE** pFile, const char *filename, const char *mode)
+{
+	int ret = 0;
+
+
+#ifdef _MSC_BUILD
+	ret = fopen_s(pFile, filename, mode);
+#else
+	*pFile = fopen(filename, mode);
+	if (!*pFile)
+		ret = -errno;
+#endif
+
+	return ret;
+}
+
 bool gen_test_path(const char *gen_file)
 {
 	FILE *test;
-	char *first, *last;
+	char *last;
+	int ret;
 
 	if (!gen_file)
 		return false;
@@ -41,12 +60,10 @@ bool gen_test_path(const char *gen_file)
 	if (gen_file[0] == '-')
 		return false;
 
-	last = first = strchr(gen_file, '.');
-	if (!first)
+	last = strrchr(gen_file, '.');
+	if (*last != '.')
 		return false;
-
-	while ((first = strchr(last, '.')))
-		last = first + 1;
+	last++;
 
 	if (!strcmp(last, "c"))
 		lang = C_LANG;
@@ -57,8 +74,8 @@ bool gen_test_path(const char *gen_file)
 		return false;
 	}
 
-	test = fopen(gen_file, "w");
-	if (!test)
+	ret = gen_fopen(&test, gen_file, "w");
+	if (ret)
 		return false;
 	fclose(test);
 
@@ -67,15 +84,19 @@ bool gen_test_path(const char *gen_file)
 
 void gen_start(const char *gen_file)
 {
+	int ret;
+
 	if (!gen_file)
 		return;
 
 	if (lang == UNSUPPORTED_LANG)
 		return;
 
-	fd = fopen(gen_file, "w");
-	if (!fd) {
-		fprintf(stderr, "Error '%s' opening file: %s\n", strerror(errno),gen_file);
+	ret = gen_fopen(&fd, gen_file, "w");
+	if (ret) {
+		char buf[1024];
+		iio_strerror(-ret, buf, sizeof(buf));
+		fprintf(stderr, "Error '%s' opening file: %s\n", buf, gen_file);
 		return;
 	}
 	if (lang == C_LANG) {
@@ -142,7 +163,7 @@ void gen_context (const char *uri_in)
 	if (!fd)
 		return;
 
-	uri = strdup(uri_in);
+	uri = cmn_strndup(uri_in, NAME_MAX);
 	if (lang == C_LANG) {
 		fprintf(fd, "\t/* Create IIO Context */\n"
 		    "\tIIO_ASSERT(ctx = iio_create_context_from_uri(\"%s\"));\n\n", uri);

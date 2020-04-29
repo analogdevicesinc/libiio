@@ -139,12 +139,12 @@ int main(int argc, char **argv)
 	printf("\n");
 
 	if (do_scan) {
-		autodetect_context(false, NULL, MY_NAME);
+		autodetect_context(false, false, MY_NAME);
 		return EXIT_SUCCESS;
 	}
 
 	if (detect_context)
-		ctx = autodetect_context(true, NULL, MY_NAME);
+		ctx = autodetect_context(true, false, MY_NAME);
 	else if (backend == IIO_XML)
 		ctx = iio_create_xml_context(arg_xml);
 	else if (backend == IIO_NETWORK)

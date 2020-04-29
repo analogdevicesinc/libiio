@@ -40,10 +40,22 @@ enum backend {
 };
 
 void * xmalloc(size_t n, const char *name);
+char *cmn_strndup(const char *str, size_t n);
 
 struct iio_context * autodetect_context(bool rtn, bool gen_code, const char *name);
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
+
+/* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
+ * {NAME_MAX} : Maximum number of bytes in a filename
+ * {PATH_MAX} : Maximum number of bytes in a pathname
+ * {PAGESIZE} : Size in bytes of a page
+ * Too bad we work on non-POSIX systems
+ */
+#ifndef NAME_MAX
+#define NAME_MAX 256
+#endif
+
 
 #endif /* IIO_TESTS_COMMON_H */

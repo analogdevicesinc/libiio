@@ -26,10 +26,6 @@
 
 #include "iio_common.h"
 
-#ifndef _WIN32
-#define _strdup strdup
-#endif
-
 #define MY_NAME "iio_genxml"
 
 static const struct option options[] = {
@@ -53,11 +49,13 @@ static const char *options_descriptions[] = {
 int main(int argc, char **argv)
 {
 	char *xml;
+	const char *tmp;
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	const char *arg_uri = NULL;
 	const char *arg_xml = NULL;
 	const char *arg_ip = NULL;
+	size_t xml_len;
 	enum backend backend = IIO_LOCAL;
 
 	while ((c = getopt_long(argc, argv, "+hn:x:u:",
@@ -111,7 +109,13 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	xml = _strdup(iio_context_get_xml(ctx));
+	tmp = iio_context_get_xml(ctx);
+	if (!tmp) {
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
+	xml_len = strnlen(tmp, (size_t)-1);
+	xml = cmn_strndup(tmp, xml_len);
 	if (!xml) {
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
@@ -121,7 +125,7 @@ int main(int argc, char **argv)
 
 	iio_context_destroy(ctx);
 
-	ctx = iio_create_xml_context_mem(xml, strlen(xml));
+	ctx = iio_create_xml_context_mem(xml, xml_len);
 	if (!ctx) {
 		fprintf(stderr, "Unable to re-generate context\n");
 	} else {

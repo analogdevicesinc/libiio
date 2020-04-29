@@ -15,6 +15,7 @@ endif()
 if (MSVC)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src)
 	set(GETOPT_C_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src/getopt.c)
+	set_source_files_properties(${GETOPT_C_FILE} PROPERTIES COMPILE_FLAGS -D_CRT_SECURE_NO_WARNINGS=1)
 endif (MSVC)
 
 if (WIN32)
