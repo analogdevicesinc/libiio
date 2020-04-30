@@ -321,7 +321,7 @@ char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
 
 	/* NULL char should be left, and that is it */
 	if (len != 1) {
-		IIO_ERROR("Internal libIIO error: iio_channel_get_xml str length isssue\n");
+		IIO_ERROR("Internal libIIO error: iio_channel_get_xml str length issue\n");
 		free(str);
 		return NULL;
 	}

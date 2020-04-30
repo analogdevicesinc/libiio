@@ -158,7 +158,7 @@ static void setup_sig_handler(void)
 
 	/*
 	 * Async signals are difficult to handle and the IIO API is not signal
-	 * safe. Use a seperate thread and handle the signals synchronous so we
+	 * safe. Use a separate thread and handle the signals synchronous so we
 	 * can call iio_buffer_cancel().
 	 */
 

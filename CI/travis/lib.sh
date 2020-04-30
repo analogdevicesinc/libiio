@@ -241,7 +241,7 @@ upload_file_to_swdownloads() {
 	local LATE=${branch}_latest_${LIBNAME}${LDIST}${EXT}
 	local GLOB=${DEPLOY_TO}/${branch}_${LIBNAME}-*
 
-	echo attemting to deploy "$FROM" to "$TO"
+	echo attempting to deploy "$FROM" to "$TO"
 	echo and "${branch}_${LIBNAME}${LDIST}${EXT}"
 	ssh -V
 

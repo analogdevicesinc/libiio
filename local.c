@@ -820,7 +820,7 @@ static int enable_high_speed(const struct iio_device *dev)
 	int ret, fd = pdata->fd;
 
 	/*
-	 * For the BLOCK_ALLOC_IOCTL ioctl it is not possible to distingush
+	 * For the BLOCK_ALLOC_IOCTL ioctl it is not possible to distinguish
 	 * between an error during the allocation (e.g. incorrect size) or
 	 * whether the high-speed interface is not supported. BLOCK_FREE_IOCTL does
 	 * never fail if the device supports the high-speed interface, so we use it

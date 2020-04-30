@@ -799,7 +799,7 @@ static ssize_t read_error_code(struct iio_network_io_context *io_ctx)
 	 *
 	 * To speed up things, we delay error reporting. We just send out the
 	 * data without reading the error code that the server gives us, because
-	 * the answer will take too much time. If an error occured, it will be
+	 * the answer will take too much time. If an error occurred, it will be
 	 * reported by the next call to iio_buffer_push().
 	 */
 
@@ -1213,7 +1213,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 			to_trunc = (size_t) ret;
 
 		/* Advance the read offset to the byte following the \n if
-		 * found, or after the last charater read otherwise */
+		 * found, or after the last character read otherwise */
 		if (pdata->msg_trunc_supported)
 			ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
 		else

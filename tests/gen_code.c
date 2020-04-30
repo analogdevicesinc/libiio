@@ -280,7 +280,7 @@ void gen_function(const char* prefix, const char* target,
 			} else if (!strcmp(prefix, "device_debug")) {
 				fprintf(fd, "    %s.debug_attrs[\"%s\"].value = str(\"%s\")\n", target, attr, wbuf);
 			} else {
-				fprintf(fd, "    # Write for %s / %s not implmented yet\n", prefix, target);
+				fprintf(fd, "    # Write for %s / %s not implemented yet\n", prefix, target);
 			}
 			fprintf(fd, "    print(\"wrote %s into %s\")\n", wbuf, attr);
 		} else {
@@ -292,7 +292,7 @@ void gen_function(const char* prefix, const char* target,
 				fprintf(fd, "    print(\"%s : \" + %s.debug_attrs[\"%s\"].value)\n",
 						attr, target, attr);
 			} else {
-				fprintf(fd, "    # Read for %s / %s not implmented yet\n", prefix, target);
+				fprintf(fd, "    # Read for %s / %s not implemented yet\n", prefix, target);
 			}
 		}
 
