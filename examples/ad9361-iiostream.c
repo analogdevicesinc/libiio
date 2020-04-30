@@ -24,12 +24,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
-
-#ifdef __APPLE__
-#include <iio/iio.h>
-#else
 #include <iio.h>
-#endif
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))

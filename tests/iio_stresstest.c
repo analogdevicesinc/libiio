@@ -29,6 +29,11 @@
 #include <limits.h>
 #include <sys/time.h>
 
+#ifdef __APPLE__
+	/* Needed for sysctlbyname */
+#include <sys/sysctl.h>
+#endif
+
 #include "iio_common.h"
 
 #define MY_NAME "iio_stresstest"
