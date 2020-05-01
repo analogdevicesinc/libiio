@@ -450,12 +450,7 @@ endif()
 
 option(CSHARP_BINDINGS "Install C# bindings" OFF)
 option(PYTHON_BINDINGS "Install Python bindings" OFF)
-option(MATLAB_BINDINGS "Build MATLAB bindings" OFF)
 add_subdirectory(bindings)
-
-if (WITH_MATLAB_BINDINGS_API)
-	list(APPEND LIBIIO_EXTRA_HEADERS bindings/matlab/iio-wrapper.h)
-endif()
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)
