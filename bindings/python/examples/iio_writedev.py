@@ -1,64 +1,61 @@
-#!/usr/bin/env python
-#
-# Copyright (C) 2020 Analog Devices, Inc.
-# Author: Cristian Iacob <cristian.iacob@analog.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+!/usr/bin/env python
+
+Copyright (C) 2020 Analog Devices, Inc.
+Author: Cristian Iacob <cristian.iacob@analog.com>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+
 import time
-
-import iio
 import sys
-import signal
 import argparse
+import iio
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-n', '--network', type=str, metavar='',
+PARSER = argparse.ArgumentParser()
+PARSER.add_argument('-n', '--network', type=str, metavar='',
                     help='Use the network backend with the provided hostname.')
-parser.add_argument('-u', '--uri', type=str, metavar='',
+PARSER.add_argument('-u', '--uri', type=str, metavar='',
                     help='Use the context with the provided URI.')
-parser.add_argument('-b', '--buffer-size', type=int, metavar='',
+PARSER.add_argument('-b', '--buffer-size', type=int, metavar='',
                     help='Size of the capture buffer. Default is 256.')
-parser.add_argument('-s', '--samples', type=int, metavar='',
+PARSER.add_argument('-s', '--samples', type=int, metavar='',
                     help='Number of samples to capture, 0 = infinite. Default is 0.')
-parser.add_argument('-T', '--timeout', type=int, metavar='',
+PARSER.add_argument('-T', '--timeout', type=int, metavar='',
                     help='Buffer timeout in milliseconds. 0 = no timeout')
-parser.add_argument('-a', '--auto', action='store_true',
+PARSER.add_argument('-a', '--auto', action='store_true',
                     help='Scan for available contexts and if only one is available use it.')
-parser.add_argument('-c', '--cyclic', action='store_true',
+PARSER.add_argument('-c', '--cyclic', action='store_true',
                     help='Use cyclic buffer mode.')
-parser.add_argument('device', type=str, nargs=1)
-parser.add_argument('channel', type=str, nargs='*')
-
-arg_ip = ''
-arg_uri = ''
-scan_for_context = False
-buffer_size = 256
-num_samples = 0
-timeout = 0
-cyclic = False
-device_name = None
-channels = None
+PARSER.add_argument('device', type=str, nargs=1)
+PARSER.add_argument('channel', type=str, nargs='*')
 
 
 def read_arguments():
     """
     Method for reading the command line parameters and setting the corresponding variables.
     """
-    global arg_ip, arg_uri, scan_for_context, buffer_size, num_samples, timeout, cyclic, device_name, channels
+    arg_ip = ''
+    arg_uri = ''
+    scan_for_context = False
+    buffer_size = 256
+    num_samples = 0
+    timeout = 0
+    cyclic = False
 
-    args = parser.parse_args()
+    args = PARSER.parse_args()
 
     if args.network is not None:
         arg_ip = str(args.network)
@@ -83,6 +80,9 @@ def read_arguments():
 
     device_name = args.device[0]
     channels = args.channel
+
+    return (arg_ip, arg_uri, scan_for_context, buffer_size, num_samples, timeout,
+            cyclic, device_name, channels)
 
 
 def create_context(scan_for_context, arg_uri, arg_ip):
@@ -114,7 +114,7 @@ def create_context(scan_for_context, arg_uri, arg_ip):
             else:
                 print('Multiple contexts found. Please select one using --uri!')
 
-                for uri, _ in contexts:
+                for uri, _ in contexts.items():
                     print(uri)
         elif arg_uri != '':
             ctx = iio.Context(_context=arg_uri)
@@ -127,13 +127,6 @@ def create_context(scan_for_context, arg_uri, arg_ip):
         exit(1)
 
     return ctx
-
-
-def keyboard_interrupt_handler(signal, frame):
-    sys.exit(0)
-
-
-signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
 
 def write_data(dev, buffer, num_samples, buffer_size, cyclic):
@@ -172,7 +165,7 @@ def write_data(dev, buffer, num_samples, buffer_size, cyclic):
                 exit(0)
 
         if num_samples_set:
-            num_samples -= int(write_len / dev.sample_size)
+            num_samples -= write_len // dev.sample_size
 
             if num_samples == 0 and write_len < buffer_size * dev.sample_size:
                 exit(0)
@@ -191,7 +184,8 @@ def write_data(dev, buffer, num_samples, buffer_size, cyclic):
 
 
 def main():
-    read_arguments()
+    (arg_ip, arg_uri, scan_for_context, buffer_size, num_samples, timeout,
+     cyclic, device_name, channels) = read_arguments()
 
     ctx = create_context(scan_for_context, arg_uri, arg_ip)
 
@@ -202,7 +196,7 @@ def main():
 
     if dev is None:
         sys.stderr.write('Device %s not found!' % device_name)
-        exit(1)
+        sys.exit(1)
 
     if len(channels) == 0:
         for channel in dev.channels:
@@ -215,9 +209,12 @@ def main():
 
     if buffer is None:
         sys.stderr.write('Unable to create buffer!')
-        exit(1)
+        sys.exit(1)
 
-    write_data(dev, buffer, num_samples, buffer_size, cyclic)
+    try:
+        write_data(dev, buffer, num_samples, buffer_size, cyclic)
+    except KeyboardInterrupt:
+        sys.exit(0)
 
 
 if __name__ == '__main__':
