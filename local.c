@@ -223,7 +223,7 @@ static int set_channel_name(struct iio_channel *chn)
 		name = malloc(prefix_len);
 		if (!name)
 			return -ENOMEM;
-		iio_strlcpy(name, attr0, prefix_len - 1);
+		iio_strlcpy(name, attr0, prefix_len);
 		IIO_DEBUG("Setting name of channel %s to %s\n", chn->id, name);
 		chn->name = name;
 
