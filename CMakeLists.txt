@@ -53,20 +53,19 @@ if (WITH_TESTS)
 	set(NEED_THREADS 1)
 endif()
 
+if (NOT LOG_LEVEL)
+	set(LOG_LEVEL Info CACHE STRING "Log level" FORCE)
+	set_property(CACHE LOG_LEVEL PROPERTY STRINGS NoLog Error Warning Info Debug)
+endif()
+
 if (MSVC)
 	# Avoid annoying warnings from Visual Studio
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib" "")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll.a" ".a" ".lib")
-endif()
 
-if (NOT LOG_LEVEL)
-	set(LOG_LEVEL Info CACHE STRING "Log level" FORCE)
-	set_property(CACHE LOG_LEVEL PROPERTY STRINGS NoLog Error Warning Info Debug)
-endif()
-
-if (CMAKE_COMPILER_IS_GNUCC)
+elseif (CMAKE_COMPILER_IS_GNUCC)
 	if (NOT WIN32)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 	endif()
@@ -86,17 +85,27 @@ if (CMAKE_COMPILER_IS_GNUCC)
 		endif()
 	endif()
 	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
+		message(STATUS "Running in a Travis-CI environment, setting -Werror")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 	endif()
+
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-sign-compare")
+	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
+		message(STATUS "Running in a Travis-CI environment, setting -Werror")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	endif()
+
+else()
+	message(STATUS "Unknown compiler, please report upstream")
+	message(STATUS "CMAKE_C_COMPILER_ID : " ${CMAKE_C_COMPILER_ID})
+	message(STATUS "CFLAGS set to " ${CMAKE_C_FLAGS})
 endif()
 
+# No matter what compiler you are using, set this on macos
 if(APPLE)
 	#full Single Unix Standard v3 (SUSv3) conformance (the Unix API)
 	add_definitions(-D_DARWIN_C_SOURCE)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-sign-compare")
-	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-	endif()
 endif()
 
 include(CheckSymbolExists)
