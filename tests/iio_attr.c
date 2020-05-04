@@ -35,8 +35,6 @@
 
 #ifdef _WIN32
 #define snprintf sprintf_s
-#else
-#define _strdup strdup
 #endif
 
 static bool str_match(const char * haystack, char * needle, bool ignore)
@@ -55,17 +53,17 @@ static bool str_match(const char * haystack, char * needle, bool ignore)
 	if (!strcmp(".", needle) || !strcmp("*", needle))
 		return true;
 
-	ncpy = _strdup(needle);
-	hcpy = _strdup(haystack);
+	ncpy = cmn_strndup(needle, NAME_MAX);
+	hcpy = cmn_strndup(haystack, NAME_MAX);
 
 	if (!ncpy || !hcpy)
 		goto eek;
 
 	if (ignore) {
 		for (i = 0; hcpy[i]; i++)
-			hcpy[i] = tolower(hcpy[i]);
+			hcpy[i] = (char) (tolower(hcpy[i]) & 0xFF);
 		for (i = 0; ncpy[i]; i++)
-			ncpy[i] = tolower(ncpy[i]);
+			ncpy[i] = (char) (tolower(ncpy[i]) & 0xFF);
 	}
 
 	first = ncpy[0];
@@ -113,7 +111,7 @@ static void dump_device_attributes(const struct iio_device *dev,
 			else
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -124,7 +122,7 @@ static void dump_device_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
@@ -153,7 +151,7 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 			else
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -165,7 +163,7 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
@@ -195,7 +193,7 @@ static void dump_debug_attributes(const struct iio_device *dev,
 			else
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -207,7 +205,7 @@ static void dump_debug_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
@@ -249,7 +247,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 			else
 				printf("value '%s'\n", buf);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li)\n", buf, (long)ret);
 		}
 	}
@@ -260,7 +258,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 		} else {
-			iio_strerror(-ret, buf, BUF_SIZE);
+			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("error %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}

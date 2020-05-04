@@ -36,12 +36,17 @@ static bool device_is_high_speed(const struct iio_device *dev)
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
-	int ret = -EINVAL;
+	ssize_t ret = -EINVAL;
 	struct iio_buffer *buf;
-	unsigned int sample_size = iio_device_get_sample_size(dev);
+	ssize_t sample_size = iio_device_get_sample_size(dev);
 
 	if (!sample_size || !samples_count)
 		goto err_set_errno;
+
+	if (sample_size < 0) {
+		ret = sample_size;
+		goto err_set_errno;
+	}
 
 	buf = malloc(sizeof(*buf));
 	if (!buf) {
@@ -49,7 +54,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		goto err_set_errno;
 	}
 
-	buf->dev_sample_size = sample_size;
+	buf->dev_sample_size = (unsigned int) sample_size;
 	buf->length = sample_size * samples_count;
 	buf->dev = dev;
 	buf->mask = calloc(dev->words, sizeof(*buf->mask));
@@ -87,8 +92,11 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		}
 	}
 
-	buf->sample_size = iio_device_get_sample_size_mask(dev,
-			buf->mask, dev->words);
+	ret = iio_device_get_sample_size_mask(dev, buf->mask, dev->words);
+	if (ret < 0)
+		goto err_close_device;
+
+	buf->sample_size = (unsigned int) ret;
 	buf->data_length = buf->length;
 	return buf;
 
@@ -99,7 +107,7 @@ err_free_mask:
 err_free_buf:
 	free(buf);
 err_set_errno:
-	errno = -ret;
+	errno = -(int)ret;
 	return NULL;
 }
 
@@ -126,6 +134,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read;
 	const struct iio_device *dev = buffer->dev;
+	ssize_t ret;
 
 	if (buffer->dev_is_high_speed) {
 		read = dev->ctx->ops->get_buffer(dev, &buffer->buffer,
@@ -137,8 +146,10 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (read >= 0) {
 		buffer->data_length = read;
-		buffer->sample_size = iio_device_get_sample_size_mask(dev,
-				buffer->mask, dev->words);
+		ret = iio_device_get_sample_size_mask(dev, buffer->mask, dev->words);
+		if (ret < 0)
+			return ret;
+		buffer->sample_size = (unsigned int)ret;
 	}
 	return read;
 }

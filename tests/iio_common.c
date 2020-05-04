@@ -23,9 +23,11 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <getopt.h>
+#include <string.h>
 
 #include "iio_common.h"
 #include "gen_code.h"
+#include "iio-config.h"
 
 #ifdef _MSC_BUILD
 #define inline __inline
@@ -47,6 +49,25 @@ void * xmalloc(size_t n, const char * name)
 	return p;
 }
 
+char *cmn_strndup(const char *str, size_t n)
+{
+#ifdef HAS_STRNDUP
+	return strndup(str, n);
+#else
+	size_t len = strnlen(str, n + 1);
+	char *buf = malloc(len + 1);
+
+	if (buf) {
+		/* len = size of buf, so memcpy is OK */
+		memcpy(buf, str, len); /* Flawfinder: ignore */
+		buf[len + 1] = 0;
+	}
+	return buf;
+#endif
+}
+
+
+
 struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * name)
 {
 	struct iio_scan_context *scan_ctx;
@@ -65,7 +86,7 @@ struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * na
 	ret = iio_scan_context_get_info_list(scan_ctx, &info);
 	if (ret < 0) {
 		char *err_str = xmalloc(BUF_SIZE, name);
-		iio_strerror(-ret, err_str, BUF_SIZE);
+		iio_strerror(-(int)ret, err_str, BUF_SIZE);
 		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
 		free (err_str);
 		goto err_free_ctx;
@@ -107,7 +128,7 @@ err_free_ctx:
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max)
 {
-	unsigned long int val;
+	uint64_t val;
 	char buf[20];
 
 	if (!argv) {
@@ -126,7 +147,7 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 		val = min;
 		fprintf(stderr, "Clamped %s to min %" PRIu64 "\n", name, min);
 	}
-	return val;
+	return (unsigned long int) val;
 }
 
 

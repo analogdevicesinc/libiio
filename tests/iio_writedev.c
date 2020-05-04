@@ -263,7 +263,7 @@ int main(int argc, char **argv)
 	setup_sig_handler();
 
 	if (scan_for_context)
-		ctx = autodetect_context(true, NULL, MY_NAME);
+		ctx = autodetect_context(true, false, MY_NAME);
 	else if (arg_uri)
 		ctx = iio_create_context_from_uri(arg_uri);
 	else if (arg_ip)
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 		ret = iio_context_set_timeout(ctx, timeout);
 		if (ret < 0) {
 			 char err_str[1024];
-			 iio_strerror(-ret, err_str, sizeof(err_str));
+			 iio_strerror(-(int)ret, err_str, sizeof(err_str));
 			 fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
 					 err_str, ret);
 		}
@@ -318,7 +318,7 @@ int main(int argc, char **argv)
 				"frequency", DEFAULT_FREQ_HZ);
 			if (ret < 0) {
 				char buf[256];
-				iio_strerror(-ret, buf, sizeof(buf));
+				iio_strerror(-(int)ret, buf, sizeof(buf));
 				fprintf(stderr, "sample rate not set : %s (%zd)\n",
 						buf, ret);
 			}
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 		ret = iio_device_set_trigger(dev, trigger);
 		if (ret < 0) {
 			char buf[256];
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-(int)ret, buf, sizeof(buf));
 			fprintf(stderr, "set triffer failed : %s (%zd)\n",
 					buf, ret);
 		}
@@ -422,16 +422,16 @@ int main(int argc, char **argv)
 			ret = iio_buffer_foreach_sample(buffer, read_sample, NULL);
 			if (ret < 0) {
 				char buf[256];
-				iio_strerror(-ret, buf, sizeof(buf));
+				iio_strerror(-(int)ret, buf, sizeof(buf));
 				fprintf(stderr, "buffer processing failed : %s (%zd)\n",
 						buf, ret);
 			}
 		}
 
-		int ret = iio_buffer_push(buffer);
+		ret = iio_buffer_push(buffer);
 		if (ret < 0) {
 			char buf[256];
-			iio_strerror(-ret, buf, sizeof(buf));
+			iio_strerror(-(int)ret, buf, sizeof(buf));
 			fprintf(stderr, "Unable to push buffer: %s\n", buf);
 			break;
 		}

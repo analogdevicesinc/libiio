@@ -406,7 +406,7 @@ static ssize_t write_command(struct iio_network_io_context *io_ctx,
 	ret = write_all(io_ctx, cmd, strlen(cmd));
 	if (ret < 0) {
 		char buf[1024];
-		iio_strerror(-ret, buf, sizeof(buf));
+		iio_strerror(-(int) ret, buf, sizeof(buf));
 		IIO_ERROR("Unable to send command: %s\n", buf);
 	}
 	return ret;
@@ -510,8 +510,17 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	}
 
 #ifdef _WIN32
+#ifdef _MSC_BUILD
+	/* This is so stupid, but studio emits a signed/unsigned mismatch
+	 * on their own FD_ZERO macro, so turn the warning off/on
+	 */
+#pragma warning(disable : 4389)
+#endif
 	FD_ZERO(&set);
 	FD_SET(fd, &set);
+#ifdef _MSC_BUILD
+#pragma warning(default: 4389)
+#endif
 
 	if (timeout != 0) {
 		tv.tv_sec = timeout / 1000;
@@ -771,7 +780,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 			if (ret < 0)
 				return ret;
 
-			sscanf(buf, "%08x", &mask[i - 1]);
+			iio_sscanf(buf, "%08x", &mask[i - 1]);
 			IIO_DEBUG("mask[%lu] = 0x%x\n",
 					(unsigned long)(i - 1), mask[i - 1]);
 		}

@@ -41,7 +41,7 @@
 
 struct iio_usb_ep_couple {
 	unsigned char addr_in, addr_out;
-	unsigned int pipe_id;
+	uint16_t pipe_id;
 	bool in_use;
 
 	struct iio_mutex *lock;
@@ -58,7 +58,7 @@ struct iio_usb_io_context {
 struct iio_context_pdata {
 	libusb_context *ctx;
 	libusb_device_handle *hdl;
-	unsigned int interface;
+	uint16_t interface;
 
 	struct iiod_client *iiod_client;
 
@@ -69,7 +69,7 @@ struct iio_context_pdata {
 	struct iio_mutex *ep_lock;
 
 	struct iio_usb_ep_couple *io_endpoints;
-	unsigned int nb_ep_couples;
+	uint16_t nb_ep_couples;
 
 	unsigned int timeout_ms;
 
@@ -159,28 +159,57 @@ static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
 static int usb_reset_pipes(struct iio_context_pdata *pdata)
 {
 	int ret;
-
-	ret = libusb_control_transfer(pdata->hdl, LIBUSB_REQUEST_TYPE_VENDOR |
-		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_RESET_PIPES,
-		0, pdata->interface, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
+/*
+	int libusb_control_transfer(libusb_device_handle *devh,
+			uint8_t bmRequestType,
+			uint8_t bRequest,
+			uint16_t wValue,
+			uint16_t wIndex,
+			unsigned char *data,
+			uint16_t wLength,
+			unsigned int timeout)
+*/
+	ret = libusb_control_transfer(pdata->hdl,
+			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE,
+			IIO_USD_CMD_RESET_PIPES,
+			0,
+			pdata->interface,
+			NULL,
+			0,
+			USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
 		return -(int) libusb_to_errno(ret);
 	return 0;
 }
 
-static int usb_open_pipe(struct iio_context_pdata *pdata, unsigned int pipe_id)
+static int usb_open_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 {
 	int ret;
-
-	ret = libusb_control_transfer(pdata->hdl, LIBUSB_REQUEST_TYPE_VENDOR |
-		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_OPEN_PIPE,
-		pipe_id, pdata->interface, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
+/*
+	libusb_device_handle *devh,
+	uint8_t bmRequestType,
+	uint8_t bRequest,
+	uint16_t wValue,
+	uint16_t wIndex,
+	unsigned char *data,
+	uint16_t wLength,
+	unsigned int timeout)
+*/
+	ret = libusb_control_transfer(
+			pdata->hdl,
+			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE,
+			IIO_USD_CMD_OPEN_PIPE,
+			pipe_id,
+			pdata->interface,
+			NULL,
+			0,
+			USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
 		return -(int) libusb_to_errno(ret);
 	return 0;
 }
 
-static int usb_close_pipe(struct iio_context_pdata *pdata, unsigned int pipe_id)
+static int usb_close_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 {
 	int ret;
 
@@ -552,8 +581,8 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 	struct iio_usb_io_context *io_ctx, unsigned int ep_type,
 	char *data, size_t len, int *transferred)
 {
-	unsigned int ep;
-	struct libusb_transfer *transfer;
+	unsigned char ep;
+	struct libusb_transfer *transfer = NULL;
 	int completed = 0;
 	int ret;
 
@@ -781,10 +810,10 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 }
 
 struct iio_context * usb_create_context(unsigned int bus,
-		unsigned int address, unsigned int interface)
+		uint16_t address, uint16_t interface)
 {
 	libusb_context *usb_ctx;
-	libusb_device_handle *hdl;
+	libusb_device_handle *hdl = NULL;
 	const struct libusb_interface_descriptor *iface;
 	libusb_device *usb_dev;
 	struct libusb_config_descriptor *conf_desc;
@@ -792,7 +821,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
 	char err_str[1024];
-	unsigned int i;
+	uint16_t i;
 	int ret;
 
 	pdata = zalloc(sizeof(*pdata));
@@ -831,7 +860,12 @@ struct iio_context * usb_create_context(unsigned int bus,
 		goto err_destroy_iiod_client;
 	}
 
-	libusb_get_device_list(usb_ctx, &device_list);
+	ret = (int) libusb_get_device_list(usb_ctx, &device_list);
+	if (ret < 0) {
+		ret = -(int) libusb_to_errno(ret);
+		IIO_ERROR("Unable to get usb device list: %i\n", ret);
+		goto err_destroy_iiod_client;
+	}
 
 	usb_dev = NULL;
 
@@ -863,7 +897,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 
 	libusb_free_device_list(device_list, true);
 
-	if (!usb_dev) {
+	if (!usb_dev || !hdl) {
 		ret = -ENODEV;
 		goto err_libusb_exit;
 	}
@@ -1076,7 +1110,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 		goto err_bad_uri;
 
 	return usb_create_context((unsigned int) bus,
-			(unsigned int) address, (unsigned int) interface);
+			(uint16_t) address, (uint16_t) interface);
 
 err_bad_uri:
 	IIO_ERROR("Bad URI: \'%s\'\n", uri);
@@ -1186,7 +1220,7 @@ int usb_context_scan(struct iio_scan_backend_context *ctx,
 	unsigned int i;
 	int ret;
 
-	ret = libusb_get_device_list(ctx->ctx, &device_list);
+	ret = (int) libusb_get_device_list(ctx->ctx, &device_list);
 	if (ret < 0)
 		return -(int) libusb_to_errno(ret);
 

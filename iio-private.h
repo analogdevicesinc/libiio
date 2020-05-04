@@ -29,8 +29,10 @@
 #ifdef _MSC_BUILD
 #define inline __inline
 #define iio_snprintf sprintf_s
+#define iio_sscanf sscanf_s
 #else
 #define iio_snprintf snprintf
+#define iio_sscanf sscanf
 #endif
 
 #ifdef _WIN32
@@ -286,8 +288,8 @@ struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);
 struct iio_context * xml_create_context_mem(const char *xml, size_t len);
 struct iio_context * xml_create_context(const char *xml_file);
-struct iio_context * usb_create_context(unsigned int bus, unsigned int address,
-		unsigned int interface);
+struct iio_context * usb_create_context(unsigned int bus, uint16_t address,
+		uint16_t interface);
 struct iio_context * usb_create_context_from_uri(const char *uri);
 struct iio_context * serial_create_context_from_uri(const char *uri);
 
@@ -314,6 +316,7 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strdup(const char *str);
 size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
+char * iio_getenv (char * envvar);
 
 int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value);

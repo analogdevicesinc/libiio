@@ -143,14 +143,24 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 		} else if (!strcmp(name, "format")) {
 			char e, s;
 			if (strchr(content, 'X')) {
-				sscanf(content, "%ce:%c%u/%uX%u>>%u", &e, &s,
+				iio_sscanf(content, "%ce:%c%u/%uX%u>>%u",
+#ifdef _MSC_BUILD
+					&e, sizeof(e), &s, sizeof(s),
+#else
+					&e, &s,
+#endif
 					&chn->format.bits,
 					&chn->format.length,
 					&chn->format.repeat,
 					&chn->format.shift);
 			} else {
 				chn->format.repeat = 1;
-				sscanf(content, "%ce:%c%u/%u>>%u", &e, &s,
+				iio_sscanf(content, "%ce:%c%u/%u>>%u",
+#ifdef _MSC_BUILD
+					&e, sizeof(e), &s, sizeof(s),
+#else
+					&e, &s,
+#endif
 					&chn->format.bits,
 					&chn->format.length,
 					&chn->format.shift);

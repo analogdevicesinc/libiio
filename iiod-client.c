@@ -169,13 +169,13 @@ int iiod_client_get_version(struct iiod_client *client, void *desc,
 
 	iio_mutex_lock(client->lock);
 
-	ret = ops->write(pdata, desc, "VERSION\r\n", sizeof("VERSION\r\n") - 1);
+	ret = (int) ops->write(pdata, desc, "VERSION\r\n", sizeof("VERSION\r\n") - 1);
 	if (ret < 0) {
 		iio_mutex_unlock(client->lock);
 		return ret;
 	}
 
-	ret = ops->read_line(pdata, desc, buf, sizeof(buf));
+	ret = (int) ops->read_line(pdata, desc, buf, sizeof(buf));
 	iio_mutex_unlock(client->lock);
 
 	if (ret < 0)
@@ -325,7 +325,7 @@ static int iiod_client_discard(struct iiod_client *client, void *desc,
 
 		ret = iiod_client_read_all(client, desc, buf, read_len);
 		if (ret < 0)
-			return ret;
+			return (int) ret;
 
 		to_discard -= (size_t) ret;
 	} while (to_discard);
@@ -588,7 +588,7 @@ static int iiod_client_read_mask(struct iiod_client *client,
 	IIO_DEBUG("Reading mask\n");
 
 	for (i = words, ptr = buf; i > 0; i--) {
-		sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
+		iio_sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
 		IIO_DEBUG("mask[%lu] = 0x%08" PRIx32 "\n",
 				(unsigned long)(i - 1), mask[i - 1]);
 

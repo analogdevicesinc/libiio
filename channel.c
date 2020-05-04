@@ -743,33 +743,33 @@ int iio_channel_attr_read_double(const struct iio_channel *chn,
 int iio_channel_attr_write_longlong(const struct iio_channel *chn,
 		const char *attr, long long val)
 {
-	ssize_t ret;
+	int ret;
 	char buf[1024];
 	iio_snprintf(buf, sizeof(buf), "%lld", val);
-	ret = iio_channel_attr_write(chn, attr, buf);
+	ret = (int) iio_channel_attr_write(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
 int iio_channel_attr_write_double(const struct iio_channel *chn,
 		const char *attr, double val)
 {
-	ssize_t ret;
+	int ret;
 	char buf[1024];
 
-	ret = (ssize_t) write_double(buf, sizeof(buf), val);
+	ret = write_double(buf, sizeof(buf), val);
 	if (!ret)
-		ret = iio_channel_attr_write(chn, attr, buf);
+		ret = (int) iio_channel_attr_write(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
 int iio_channel_attr_write_bool(const struct iio_channel *chn,
 		const char *attr, bool val)
 {
-	ssize_t ret;
+	int ret;
 	if (val)
-		ret = iio_channel_attr_write_raw(chn, attr, "1", 2);
+		ret = (int) iio_channel_attr_write_raw(chn, attr, "1", 2);
 	else
-		ret = iio_channel_attr_write_raw(chn, attr, "0", 2);
+		ret = (int) iio_channel_attr_write_raw(chn, attr, "0", 2);
 	return ret < 0 ? ret : 0;
 }
 

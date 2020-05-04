@@ -59,9 +59,16 @@ if (NOT LOG_LEVEL)
 endif()
 
 if (MSVC)
-	# Avoid annoying warnings from Visual Studio
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
+	add_compile_options(/W4 /wd4018 /wd4200 /wd4127 /wd4100)
+	# C4018: signed/unsigned mismatch ; same as -Wno-sign-compare
+	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
+	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
+	# C4100: unreferenced parameter; same as -Wno-unused-parameter
 
+	if(DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR})
+		message(STATUS "Running in an AppVeyor environment, setting -Werror")
+		add_compile_options(/WX)
+	endif()
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib" "")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll.a" ".a" ".lib")
 
@@ -110,6 +117,7 @@ endif()
 
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
+check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 
