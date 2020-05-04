@@ -98,11 +98,18 @@ static void dump_device_attributes(const struct iio_device *dev,
 {
 	ssize_t ret;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	const char *name = iio_device_get_name(dev);
 
 	if (!wbuf || !quiet) {
-		if (!quiet)
-			printf("dev '%s', attr '%s', value :",
-					iio_device_get_name(dev), attr);
+		if (!quiet) {
+			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+			if(name)
+				printf("'%s'", name);
+			else
+				printf("'%s'", iio_device_get_id(dev));
+
+			printf(", attr '%s', value :", attr);
+		}
 		gen_function("device", "dev", attr, NULL);
 		ret = iio_device_attr_read(dev, attr, buf, BUF_SIZE);
 		if (ret > 0) {
@@ -136,14 +143,21 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 {
 	ssize_t ret;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	const char *name = iio_device_get_name(dev);
 
 	if (!wbuf || !quiet) {
 		gen_function("device_buffer", "dev", attr, NULL);
 		ret = iio_device_buffer_attr_read(dev, attr, buf, BUF_SIZE);
 
-		if (!quiet)
-			printf("dev '%s', buffer attr '%s', value :",
-					iio_device_get_name(dev), attr);
+		if (!quiet) {
+			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+			if (name)
+				printf("'%s'", name);
+			else
+				printf("'%s'", iio_device_get_id(dev));
+
+			printf(", buffer attr '%s', value :", attr);
+		}
 
 		if (ret > 0) {
 			if (quiet)
@@ -178,14 +192,22 @@ static void dump_debug_attributes(const struct iio_device *dev,
 {
 	ssize_t ret;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	const char *name = iio_device_get_name(dev);
 
 	if (!wbuf || !quiet) {
 		gen_function("device_debug", "dev", attr, NULL);
 		ret = iio_device_debug_attr_read(dev, attr, buf, BUF_SIZE);
 
-		if (!quiet)
-			printf("dev '%s', debug attr '%s', value :",
-					iio_device_get_name(dev), attr);
+		if (!quiet) {
+			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+			if (name)
+				printf("'%s'", name);
+			else
+				printf("'%s'", iio_device_get_id(dev));
+
+			printf(", debug attr '%s', value :", attr);
+
+		}
 
 		if (ret > 0) {
 			if (quiet)
@@ -221,6 +243,7 @@ static void dump_channel_attributes(const struct iio_device *dev,
 	ssize_t ret;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *type_name;
+	const char *name = iio_device_get_name(dev);
 
 	if (!wbuf || !quiet) {
 		if (iio_channel_is_output(ch))
@@ -230,11 +253,17 @@ static void dump_channel_attributes(const struct iio_device *dev,
 
 		gen_function("channel", "ch", attr, NULL);
 		ret = iio_channel_attr_read(ch, attr, buf, BUF_SIZE);
-		if (!quiet)
-			printf("dev '%s', channel '%s' (%s), ",
-					iio_device_get_name(dev),
+		if (!quiet) {
+			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+			if (name)
+				printf("'%s'", name);
+			else
+				printf("'%s'", iio_device_get_id(dev));
+
+			printf(", channel '%s' (%s), ",
 					iio_channel_get_id(ch),
 					type_name);
+		}
 		if (iio_channel_get_name(ch) && !quiet)
 			printf("id '%s', ", iio_channel_get_name(ch));
 
@@ -576,18 +605,21 @@ int main(int argc, char **argv)
 		for (i = 0; i < nb_devices; i++) {
 			const struct iio_device *dev = iio_context_get_device(ctx, i);
 			const char *name = iio_device_get_name(dev);
+			const char *ch_name;
+			const char *dev_id = iio_device_get_id(dev);
 			unsigned int nb_attrs, nb_channels, j;
 
-
-			if (device_index && !str_match(name, argv[device_index], ignore_case))
+			if (device_index && !str_match(dev_id, argv[device_index], ignore_case)
+					&& !str_match(name, argv[device_index], ignore_case)) {
 				continue;
+			}
 
 			if ((search_device && !device_index) || (search_channel && !device_index) ||
 					(search_buffer && !device_index) || (search_debug && !device_index)) {
-				printf("\t%s:", iio_device_get_id(dev));
+				printf("\t%s", dev_id);
 				if (name)
-					printf(" %s", name);
-				printf(", ");
+					printf(", %s", name);
+				printf(": ");
 			}
 
 			if (search_channel && !device_index)
@@ -616,22 +648,26 @@ int main(int argc, char **argv)
 				else
 					type_name = "input";
 
-				name = iio_channel_get_name(ch);
+				ch_name = iio_channel_get_name(ch);
 				if (channel_index &&
 						!str_match(iio_channel_get_id(ch),
 						argv[channel_index], ignore_case) &&
-						(!name || (name &&
-						!str_match( name,argv[channel_index], ignore_case))))
+						(!ch_name || !str_match(ch_name,argv[channel_index], ignore_case)))
 					continue;
 
 				if ((!scan_only && !channel_index) ||
 				    ( scan_only && iio_channel_is_scan_element(ch))) {
-					printf("dev '%s', channel '%s'",
-						iio_device_get_name(dev),
+					printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+					if (name)
+						printf("'%s', ", name);
+					else
+						printf("'%s', ", dev_id);
+
+					printf("channel '%s'",
 						iio_channel_get_id(ch));
 
-					if (name)
-						printf(", id '%s'", name);
+					if (ch_name)
+						printf(", id '%s'", ch_name);
 
 					printf(" (%s", type_name);
 
