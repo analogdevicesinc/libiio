@@ -74,7 +74,7 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];
 	char description[255], *p;
 	const char *hw_model, *serial;
-	int i;
+	unsigned int i;
 
 	ctx = network_create_context(addr_str);
 	if (!ctx) {

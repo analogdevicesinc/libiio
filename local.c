@@ -266,7 +266,7 @@ static int get_rel_timeout_ms(struct timespec *start, unsigned int timeout_rel)
 	diff_ms = (now.tv_sec - start->tv_sec) * 1000;
 	diff_ms += (now.tv_nsec - start->tv_nsec) / 1000000;
 
-	if (diff_ms >= timeout_rel) /* Expired */
+	if (diff_ms >= (int) timeout_rel) /* Expired */
 		return 0;
 	if (diff_ms > 0) /* Should never be false, but lets be safe */
 		timeout_rel -= diff_ms;
@@ -1499,7 +1499,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		unsigned int len2 = ptr - dashptr - 1;
 		const char*  iddashptr = strchr(chn->id, '-');
 		if (iddashptr && strlen(iddashptr + 1) > len2 &&
-			iddashptr - chn->id > len1 &&
+			(unsigned int)(iddashptr - chn->id) > len1 &&
 			chn->id[len1] >= '0' && chn->id[len1] <= '9' &&
 			!strncmp(chn->id, attr, len1) &&
 			iddashptr[len2 + 1] >= '0' && iddashptr[len2 + 1] <= '9' &&
@@ -1612,7 +1612,7 @@ static int add_buffer_attr(void *d, const char *path)
 	struct iio_device *dev = (struct iio_device *) d;
 	const char *name = strrchr(path, '/') + 1;
 	char **attrs, *attr;
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(buffer_attrs_reserved); i++)
 		if (!strcmp(buffer_attrs_reserved[i], name))

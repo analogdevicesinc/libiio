@@ -116,7 +116,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
-		if (len > devices_len[i]) {
+		if (len > (ssize_t) devices_len[i]) {
 			memcpy(ptr, devices[i], devices_len[i]); /* Flawfinder: ignore */
 			ptr += devices_len[i];
 			len -= devices_len[i];

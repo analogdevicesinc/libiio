@@ -674,7 +674,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 				if (ret < 0 || thd->nb < sample_size)
 					signal_thread(thd, (ret < 0) ?
-							ret : thd->nb);
+							ret : (ssize_t) thd->nb);
 			}
 
 			pthread_mutex_unlock(&entry->thdlist_lock);
@@ -820,7 +820,7 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 		ret = thd->err;
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	if (ret > 0 && ret < nb)
+	if (ret > 0 && ret < (ssize_t) nb)
 		print_value(thd->pdata, 0);
 
 	IIO_DEBUG("Exiting rw_buffer with code %li\n", (long) ret);
