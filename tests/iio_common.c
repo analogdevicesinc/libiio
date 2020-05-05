@@ -56,11 +56,10 @@ char *cmn_strndup(const char *str, size_t n)
 #else
 	size_t len = strnlen(str, n + 1);
 	char *buf = malloc(len + 1);
-
 	if (buf) {
 		/* len = size of buf, so memcpy is OK */
 		memcpy(buf, str, len); /* Flawfinder: ignore */
-		buf[len + 1] = 0;
+		buf[len] = 0;
 	}
 	return buf;
 #endif
