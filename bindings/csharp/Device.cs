@@ -31,7 +31,7 @@ namespace iio
     {
         private class DeviceAttr : Attr
         {
-            private IntPtr dev;
+            internal IntPtr dev;
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
@@ -101,7 +101,43 @@ namespace iio
             }
         }
 
-        private Context ctx;
+        private class DeviceBufferAttr : Attr
+        {
+            private IntPtr dev;
+
+            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int iio_device_buffer_attr_read(IntPtr dev, [In] string name, [Out] StringBuilder val, uint len);
+
+            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int iio_device_buffer_attr_write(IntPtr dev, [In] string name, [In] string val);
+
+            public DeviceBufferAttr(IntPtr dev, string name) : base(name)
+            {
+                this.dev = dev;
+            }
+
+            public override string read()
+            {
+                StringBuilder builder = new StringBuilder(16384);
+                int err = iio_device_buffer_attr_read(dev, name, builder, 16384);
+                if (err < 0)
+                {
+                    throw new Exception("Unable to read buffer attribute " + err);
+                }
+                return builder.ToString();
+            }
+
+            public override void write(string str)
+            {
+                int err = iio_device_buffer_attr_write(dev, name, str);
+                if (err < 0)
+                {
+                    throw new Exception("Unable to write buffer attribute " + err);
+                }
+            }
+        }
+
+        internal Context ctx;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_id(IntPtr dev);
@@ -122,10 +158,16 @@ namespace iio
         private static extern uint iio_device_get_debug_attrs_count(IntPtr dev);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_device_get_buffer_attrs_count(IntPtr dev);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_attr(IntPtr dev, uint index);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_debug_attr(IntPtr dev, uint index);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_buffer_attr(IntPtr dev, uint index);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_get_trigger(IntPtr dev, IntPtr triggerptr);
@@ -142,6 +184,27 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_reg_read(IntPtr dev, uint addr, ref uint value);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_context(IntPtr dev);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_device_set_kernel_buffers_count(IntPtr dev, uint nb);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_find_buffer_attr(IntPtr dev, [In] string name);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_find_debug_attr(IntPtr dev, [In] string name);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_find_attr(IntPtr dev, [In] string name);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_find_channel(IntPtr dev, [In] string name, [In] bool output);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_device_identify_filename(IntPtr dev, [In] string filename, out IntPtr chn_ptr, out IntPtr attr);
+
         internal IntPtr dev;
 
         /// <summary>An identifier of this device.</summary>
@@ -157,6 +220,9 @@ namespace iio
         /// <summary>A <c>list</c> of all the debug attributes that this device has.</summary>
         public readonly List<Attr> debug_attrs;
 
+        /// <summary>A <c>list</c> of all the buffer attributes that this device has.</summary>
+        public List<Attr> buffer_attrs { get; private set; }
+
         /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
         public readonly List<Channel> channels;
 
@@ -167,10 +233,12 @@ namespace iio
             channels = new List<Channel>();
             attrs = new List<Attr>();
             debug_attrs = new List<Attr>();
+            buffer_attrs = new List<Attr>();
 
-            uint nb_channels = iio_device_get_channels_count(dev),
-                nb_attrs = iio_device_get_attrs_count(dev),
-                nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
+            uint nb_channels = iio_device_get_channels_count(dev);
+            uint nb_attrs = iio_device_get_attrs_count(dev);
+            uint nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
+            uint nb_buffer_attrs = iio_device_get_buffer_attrs_count(dev);
 
             for (uint i = 0; i < nb_channels; i++)
             {
@@ -181,9 +249,15 @@ namespace iio
             {
                 attrs.Add(new DeviceAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_attr(dev, i))));
             }
+
             for (uint i = 0; i < nb_debug_attrs; i++)
             {
                 debug_attrs.Add(new DeviceDebugAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_debug_attr(dev, i))));
+            }
+
+            for (uint i = 0; i < nb_buffer_attrs; i++)
+            {
+                buffer_attrs.Add(new DeviceBufferAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_buffer_attr(dev, i))));
             }
 
             id = Marshal.PtrToStringAnsi(iio_device_get_id(dev));
@@ -291,6 +365,95 @@ namespace iio
                 throw new Exception("Unable to read register");
             }
             return value;
+        }
+
+        /// <summary>Sets the number of active kernel buffers for this device.</summary>
+        /// <param name="nb">The number of kernel buffers.</param>
+        public int set_kernel_buffers_count(uint nb)
+        {
+            return iio_device_set_kernel_buffers_count(dev, nb);
+        }
+
+        /// <summary>Gets the context of the current device.</summary>
+        /// <returns>An instance of the <see cref="iio.Context"/> class.</returns>
+        public Context get_context()
+        {
+            return new Context(iio_device_get_context(dev));
+        }
+
+        /// <summary>Finds the channel with the given name from the current device.</summary>
+        /// <param name="channel">The name of the channel.</param>
+        /// <param name="output">true if you are looking for an output channel, otherwise false.</param>
+        /// <returns>An instance of the <see cref="iio.Channel"/> class.</returns>
+        /// <exception cref="System.Exception">There is no channel with the given name.</exception>
+        public Channel find_channel(string channel, bool output)
+        {
+            IntPtr chn = iio_device_find_channel(dev, channel, output);
+
+            if (chn == IntPtr.Zero)
+            {
+                throw new Exception("There is no channel with the given name!");
+            }
+
+            return new Channel(chn);
+        }
+
+        /// <summary>Finds the attribute with the given name from the current device.</summary>
+        /// <param name="attribute">The name of the attribute.</param>
+        /// <returns>An instance of the <see cref="iio.Device.DeviceAttr"/> class.</returns>
+        /// <exception cref="System.Exception">There is no attribute with the given name.</exception>
+        public Attr find_attribute(string attribute)
+        {
+            IntPtr attr = iio_device_find_attr(dev, attribute);
+
+            if (attr == IntPtr.Zero)
+            {
+                throw new Exception("This device has no attribute with the given name!");
+            }
+
+            return new DeviceAttr(dev, Marshal.PtrToStringAnsi(attr));
+        }
+
+        /// <summary>Finds the debug attribute with the given name from the current device.</summary>
+        /// <param name="attribute">The name of the debug attribute.</param>
+        /// <returns>An instance of the <see cref="iio.Device.DeviceDebugAttr"/> class.</returns>
+        /// <exception cref="System.Exception">There is no debug attribute with the given name.</exception>
+        public Attr find_debug_attribute(string attribute)
+        {
+            IntPtr attr = iio_device_find_debug_attr(dev, attribute);
+
+            if (attr == IntPtr.Zero)
+            {
+                throw new Exception("This device has no debug attribute with the given name!");
+            }
+
+            return new DeviceDebugAttr(dev, Marshal.PtrToStringAnsi(attr));
+        }
+
+        /// <summary>Finds the buffer attribute with the given name from the current device.</summary>
+        /// <param name="attribute">The name of the buffer attribute.</param>
+        /// <returns>An instance of the <see cref="iio.Device.DeviceBufferAttr"/> class.</returns>
+        /// <exception cref="System.Exception">There is no attribute with the given name.</exception>
+        public Attr find_buffer_attribute(string attribute)
+        {
+            IntPtr attr = iio_device_find_buffer_attr(dev, attribute);
+
+            if (attr == IntPtr.Zero)
+            {
+                throw new Exception("This device has no buffer attribute with the given name!");
+            }
+
+            return new DeviceBufferAttr(dev, Marshal.PtrToStringAnsi(attr));
+        }
+
+        /// <summary>Finds the channel attribute coresponding to the given filename from the current device.</summary>
+        /// <param name="filename">The name of the attribute.</param>
+        /// <param name="chn_ptr">Output variable. It will contain a pointer to the resulting <see cref="iio.Channel"/>.</param>
+        /// <param name="attr">Output variable. It will contain a pointer to the resulting <see cref="iio.ChannelAttr"/>.</param>
+        /// <returns>C errorcode if error encountered, otherwise 0.</returns>
+        public int identify_filename(string filename, IntPtr chn_ptr, IntPtr attr)
+        {
+            return iio_device_identify_filename(dev, filename, out chn_ptr, out attr);
         }
     }
 }

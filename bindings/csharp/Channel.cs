@@ -69,8 +69,99 @@ namespace iio
             }
         }
 
+        /// <summary><see cref="iio.Channel.ChannelModifier"/> class:
+        /// Contains the available channel modifiers.</summary>
+        public enum ChannelModifier
+        {
+            IIO_NO_MOD,
+            IIO_MOD_X,
+            IIO_MOD_Y,
+            IIO_MOD_Z,
+            IIO_MOD_X_AND_Y,
+            IIO_MOD_X_AND_Z,
+            IIO_MOD_Y_AND_Z,
+            IIO_MOD_X_AND_Y_AND_Z,
+            IIO_MOD_X_OR_Y,
+            IIO_MOD_X_OR_Z,
+            IIO_MOD_Y_OR_Z,
+            IIO_MOD_X_OR_Y_OR_Z,
+            IIO_MOD_LIGHT_BOTH,
+            IIO_MOD_LIGHT_IR,
+            IIO_MOD_ROOT_SUM_SQUARED_X_Y,
+            IIO_MOD_SUM_SQUARED_X_Y_Z,
+            IIO_MOD_LIGHT_CLEAR,
+            IIO_MOD_LIGHT_RED,
+            IIO_MOD_LIGHT_GREEN,
+            IIO_MOD_LIGHT_BLUE,
+            IIO_MOD_QUATERNION,
+            IIO_MOD_TEMP_AMBIENT,
+            IIO_MOD_TEMP_OBJECT,
+            IIO_MOD_NORTH_MAGN,
+            IIO_MOD_NORTH_TRUE,
+            IIO_MOD_NORTH_MAGN_TILT_COMP,
+            IIO_MOD_NORTH_TRUE_TILT_COMP,
+            IIO_MOD_RUNNING,
+            IIO_MOD_JOGGING,
+            IIO_MOD_WALKING,
+            IIO_MOD_STILL,
+            IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z,
+            IIO_MOD_I,
+            IIO_MOD_Q,
+            IIO_MOD_CO2,
+            IIO_MOD_VOC,
+            IIO_MOD_LIGHT_UV,
+            IIO_MOD_LIGHT_DUV,
+            IIO_MOD_PM1,
+            IIO_MOD_PM2P5,
+            IIO_MOD_PM4,
+            IIO_MOD_PM10,
+            IIO_MOD_ETHANOL,
+            IIO_MOD_H2
+        }
 
-        private IntPtr chn;
+        /// <summary><see cref="iio.Channel.ChannelType"/> class:
+        /// Contains the available channel types.</summary>
+        public enum ChannelType
+        {
+            IIO_VOLTAGE,
+            IIO_CURRENT,
+            IIO_POWER,
+            IIO_ACCEL,
+            IIO_ANGL_VEL,
+            IIO_MAGN,
+            IIO_LIGHT,
+            IIO_INTENSITY,
+            IIO_PROXIMITY,
+            IIO_TEMP,
+            IIO_INCLI,
+            IIO_ROT,
+            IIO_ANGL,
+            IIO_TIMESTAMP,
+            IIO_CAPACITANCE,
+            IIO_ALTVOLTAGE,
+            IIO_CCT,
+            IIO_PRESSURE,
+            IIO_HUMIDITYRELATIVE,
+            IIO_ACTIVITY,
+            IIO_STEPS,
+            IIO_ENERGY,
+            IIO_DISTANCE,
+            IIO_VELOCITY,
+            IIO_CONCENTRATION,
+            IIO_RESISTANCE,
+            IIO_PH,
+            IIO_UVINDEX,
+            IIO_ELECTRICALCONDUCTIVITY,
+            IIO_COUNT,
+            IIO_INDEX,
+            IIO_GRAVITY,
+            IIO_POSITIONRELATIVE,
+            IIO_PHASE,
+            IIO_MASSCONCENTRATION,
+            IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
+        }
+
+        internal IntPtr chn;
         private uint sample_size;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -118,6 +209,30 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_data_format(IntPtr chn);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_channel_get_index(IntPtr chn);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_channel_get_device(IntPtr chn);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_context(IntPtr dev);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_channel_get_modifier(IntPtr chn);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_channel_get_type(IntPtr chn);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_channel_find_attr(IntPtr chn, [In] string name);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_channel_convert(IntPtr chn, IntPtr dst, IntPtr src);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_channel_convert_inverse(IntPtr chn, IntPtr dst, IntPtr src);
+
         /// <summary>The name of this channel.</summary>
         public readonly string name;
 
@@ -139,11 +254,19 @@ namespace iio
         /// <summary>A <c>list</c> of all the attributes that this channel has.</summary>
         public readonly List<Attr> attrs;
 
+        /// <summary>The modifier of this channel.</summary>
+        public ChannelModifier modifier { get; private set; }
+
+        /// <summary>The type of this channel.</summary>
+        public ChannelType type { get; private set; }
+
         internal Channel(IntPtr chn)
         {
             this.chn = chn;
             attrs = new List<Attr>();
             sample_size = (uint)Marshal.ReadInt32(iio_channel_get_data_format(this.chn)) / 8;
+            modifier = (ChannelModifier) iio_channel_get_modifier(chn);
+            type = (ChannelType) iio_channel_get_type(chn);
             uint nb_attrs = iio_channel_get_attrs_count(chn);
 
             for (uint i = 0; i < nb_attrs; i++)
@@ -257,6 +380,47 @@ namespace iio
             handle.Free();
 
             return count;
+        }
+
+        /// <summary>Get the index of this channel.</summary>
+        public long get_index()
+        {
+            return iio_channel_get_index(chn);
+        }
+
+        /// <summary>Finds the attribute of the current channel with the given name.</summary>
+        /// <returns><see cref="iio.Channel.ChannelAttr"/></returns>
+        /// <exception cref="System.Exception">There is no attribute with the given name.</exception>
+        public Attr find_attribute(string attribute)
+        {
+            IntPtr attr = iio_channel_find_attr(chn, attribute);
+
+            if (attr == IntPtr.Zero)
+            {
+                throw new Exception("There is no attribute with the given name!");
+            }
+
+            return new ChannelAttr(chn, Marshal.PtrToStringAnsi(attr));
+        }
+
+        /// <summary>Finds the device of the current channel.</summary>
+        /// <returns><see cref="iio.Device"/></returns>
+        public Device get_device()
+        {
+            IntPtr dev_ptr = iio_channel_get_device(chn);
+            return new Device(new Context(dev_ptr), dev_ptr);
+        }
+
+        /// <summary>Converts the data from the hardware format to the format of the arhitecture on which libiio is running.</summary>
+        public void convert(IntPtr dst, IntPtr src)
+        {
+            iio_channel_convert(chn, dst, src);
+        }
+
+        /// <summary>Converts the data from the arhitecture on which libiio is running to the hardware format.</summary>
+        public void convert_inverse(IntPtr dst, IntPtr src)
+        {
+            iio_channel_convert_inverse(chn, dst, src);
         }
     }
 }

@@ -20,6 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Remoting.Contexts;
+using System.Security.Authentication.ExtendedProtection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -49,6 +51,27 @@ namespace iio
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_buffer_end(IntPtr buf);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_buffer_get_poll_fd(IntPtr buf);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_buffer_set_blocking_mode(IntPtr buf, bool blocking);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_buffer_cancel(IntPtr buf);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_buffer_first(IntPtr buf, IntPtr chn);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern long iio_buffer_step(IntPtr buf);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_context(IntPtr dev);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_buffer_get_device(IntPtr buf);
 
         internal IntPtr buf;
 
@@ -165,6 +188,50 @@ namespace iio
                 length = array.Length;
             }
             Marshal.Copy(iio_buffer_start(buf), array, 0, (int)length);
+        }
+
+        /// <summary>Returns poll file descriptor for the current buffer.</summary>
+        public int get_poll_fd()
+        {
+            return iio_buffer_get_poll_fd(buf);
+        }
+
+        /// <summary>Sets the blocking behavior of the current buffer.</summary>
+        /// <param name="blocking">true if blocking buffer, otherwise false</param>
+        public int set_blocking_mode(bool blocking)
+        {
+            return iio_buffer_set_blocking_mode(buf, blocking);
+        }
+
+        /// <summary>Cancels the current buffer.</summary>
+        public void cancel()
+        {
+            iio_buffer_cancel(buf);
+        }
+
+        /// <summary>Gets the device of the current buffer.</summary>
+        /// <returns>The device of the current buffer.</returns>
+        public Device get_device()
+        {
+            IntPtr dev = iio_buffer_get_device(buf);
+            return new Device(new Context(iio_device_get_context(dev)), dev);
+        }
+
+        /// <summary>Gets a pointer to the first sample from the current buffer for a specific channel.</summary>
+        /// <param name="ch">The channel for which to find the first sample.</param>
+        public IntPtr first(Channel ch)
+        {
+            if (ch == null)
+            {
+                throw new System.Exception("The channel should not be null!");
+            }
+            return iio_buffer_first(buf, ch.chn);
+        }
+
+        /// <summary>Gets the step size of the current buffer.</summary>
+        public long step()
+        {
+            return iio_buffer_step(buf);
         }
     }
 }
