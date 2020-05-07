@@ -26,6 +26,7 @@ pep8:
   run: true
   disable: [
     E501,  # Line-length, already controlled by pylint
+    E302,  # expected 2 blank lines, found 1, controlled by black
   ]
 
 pep257:
