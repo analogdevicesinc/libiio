@@ -1,18 +1,25 @@
 #!/usr/bin/env python
-#
-# Copyright (C) 2014 Analog Devices, Inc.
-# Author: Paul Cercueil <paul.cercueil@analog.com>
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+"""
+Copyright (C) 2014 Analog Devices, Inc.
+Author: Paul Cercueil <paul.cercueil@analog.com>
 
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+"""
+
+# Imports from package ctypes are not grouped
+# pylint: disable=ungrouped-imports
+#
+# The way the methods and classes are used, violate this, but there
+#   isn't a good way to do things otherwise
+# pylint: disable=protected-access
 from ctypes import (
     Structure,
     c_char_p,
@@ -43,31 +50,39 @@ if "Windows" in _system():
     from ctypes import get_last_error
 else:
     from ctypes import get_errno
+# pylint: enable=ungrouped-imports
+
+# ctypes requires the errcheck to take three arguments, but we don't use them
+# pylint: disable=unused-argument
 
 
-def _checkNull(result, func, arguments):
+def _check_null(result, func, arguments):
     if result:
         return result
-    else:
-        err = get_last_error() if "Windows" in _system() else get_errno()
-        raise OSError(err, _strerror(err))
+    err = get_last_error() if "Windows" in _system() else get_errno()
+    raise OSError(err, _strerror(err))
 
 
-def _checkNegative(result, func, arguments):
+def _check_negative(result, func, arguments):
     if result >= 0:
         return result
-    else:
-        raise OSError(-result, _strerror(-result))
+    raise OSError(-result, _strerror(-result))
 
+
+# pylint: enable=unused-argument
 
 # Python 2 and Python 3 compatible _isstring function.
-def _isstring(s):
+# pylint: disable=basestring-builtin
+def _isstring(argument):
     try:
         # attempt to evaluate basestring (Python 2)
-        return isinstance(s, basestring)
+        return isinstance(argument, basestring)
     except NameError:
         # No basestring --> Python 3
-        return isinstance(s, str)
+        return isinstance(argument, str)
+
+
+# pylint: enable=basestring-builtin
 
 
 class _ScanContext(Structure):
@@ -200,6 +215,7 @@ class ChannelType(Enum):
     IIO_CHAN_TYPE_UNKNOWN = 0x7FFFFFFF
 
 
+# pylint: disable=invalid-name
 _ScanContextPtr = _POINTER(_ScanContext)
 _ContextInfoPtr = _POINTER(_ContextInfo)
 _ContextPtr = _POINTER(_Context)
@@ -222,12 +238,12 @@ _get_backends_count.restype = c_uint
 _get_backend = _lib.iio_get_backend
 _get_backend.argtypes = (c_uint,)
 _get_backend.restype = c_char_p
-_get_backend.errcheck = _checkNull
+_get_backend.errcheck = _check_null
 
 _create_scan_context = _lib.iio_create_scan_context
 _create_scan_context.argtypes = (c_char_p, c_uint)
 _create_scan_context.restype = _ScanContextPtr
-_create_scan_context.errcheck = _checkNull
+_create_scan_context.errcheck = _check_null
 
 _destroy_scan_context = _lib.iio_scan_context_destroy
 _destroy_scan_context.argtypes = (_ScanContextPtr,)
@@ -243,7 +259,7 @@ _iio_strerror.restype = None
 _get_context_info_list = _lib.iio_scan_context_get_info_list
 _get_context_info_list.argtypes = (_ScanContextPtr, _POINTER(_POINTER(_ContextInfoPtr)))
 _get_context_info_list.restype = c_ssize_t
-_get_context_info_list.errcheck = _checkNegative
+_get_context_info_list.errcheck = _check_negative
 
 _context_info_list_free = _lib.iio_context_info_list_free
 _context_info_list_free.argtypes = (_POINTER(_ContextInfoPtr),)
@@ -258,25 +274,25 @@ _context_info_get_uri.restype = c_char_p
 
 _new_local = _lib.iio_create_local_context
 _new_local.restype = _ContextPtr
-_new_local.errcheck = _checkNull
+_new_local.errcheck = _check_null
 
 _new_xml = _lib.iio_create_xml_context
 _new_xml.restype = _ContextPtr
 _new_xml.argtypes = (c_char_p,)
-_new_xml.errcheck = _checkNull
+_new_xml.errcheck = _check_null
 
 _new_network = _lib.iio_create_network_context
 _new_network.restype = _ContextPtr
 _new_network.argtypes = (c_char_p,)
-_new_network.errcheck = _checkNull
+_new_network.errcheck = _check_null
 
 _new_default = _lib.iio_create_default_context
 _new_default.restype = _ContextPtr
-_new_default.errcheck = _checkNull
+_new_default.errcheck = _check_null
 
 _new_uri = _lib.iio_create_context_from_uri
 _new_uri.restype = _ContextPtr
-_new_uri.errcheck = _checkNull
+_new_uri.errcheck = _check_null
 
 _destroy = _lib.iio_context_destroy
 _destroy.argtypes = (_ContextPtr,)
@@ -284,7 +300,7 @@ _destroy.argtypes = (_ContextPtr,)
 _get_name = _lib.iio_context_get_name
 _get_name.restype = c_char_p
 _get_name.argtypes = (_ContextPtr,)
-_get_name.errcheck = _checkNull
+_get_name.errcheck = _check_null
 
 _get_description = _lib.iio_context_get_description
 _get_description.restype = c_char_p
@@ -309,7 +325,7 @@ _get_version.argtypes = (
     _POINTER(c_uint),
     c_char_p,
 )
-_get_version.errcheck = _checkNegative
+_get_version.errcheck = _check_negative
 
 _get_attrs_count = _lib.iio_context_get_attrs_count
 _get_attrs_count.restype = c_uint
@@ -318,7 +334,7 @@ _get_attrs_count.argtypes = (_ContextPtr,)
 _get_attr = _lib.iio_context_get_attr
 _get_attr.restype = c_int
 _get_attr.argtypes = (_ContextPtr, c_uint, _POINTER(c_char_p), _POINTER(c_char_p))
-_get_attr.errcheck = _checkNegative
+_get_attr.errcheck = _check_negative
 
 _devices_count = _lib.iio_context_get_devices_count
 _devices_count.restype = c_uint
@@ -327,7 +343,7 @@ _devices_count.argtypes = (_ContextPtr,)
 _get_device = _lib.iio_context_get_device
 _get_device.restype = _DevicePtr
 _get_device.argtypes = (_ContextPtr, c_uint)
-_get_device.errcheck = _checkNull
+_get_device.errcheck = _check_null
 
 _set_timeout = _lib.iio_context_set_timeout
 _set_timeout.restype = c_int
@@ -335,17 +351,17 @@ _set_timeout.argtypes = (
     _ContextPtr,
     c_uint,
 )
-_set_timeout.errcheck = _checkNegative
+_set_timeout.errcheck = _check_negative
 
 _clone = _lib.iio_context_clone
 _clone.restype = _ContextPtr
 _clone.argtypes = (_ContextPtr,)
-_clone.errcheck = _checkNull
+_clone.errcheck = _check_null
 
 _d_get_id = _lib.iio_device_get_id
 _d_get_id.restype = c_char_p
 _d_get_id.argtypes = (_DevicePtr,)
-_d_get_id.errcheck = _checkNull
+_d_get_id.errcheck = _check_null
 
 _d_get_name = _lib.iio_device_get_name
 _d_get_name.restype = c_char_p
@@ -358,17 +374,17 @@ _d_attr_count.argtypes = (_DevicePtr,)
 _d_get_attr = _lib.iio_device_get_attr
 _d_get_attr.restype = c_char_p
 _d_get_attr.argtypes = (_DevicePtr,)
-_d_get_attr.errcheck = _checkNull
+_d_get_attr.errcheck = _check_null
 
 _d_read_attr = _lib.iio_device_attr_read
 _d_read_attr.restype = c_ssize_t
 _d_read_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
-_d_read_attr.errcheck = _checkNegative
+_d_read_attr.errcheck = _check_negative
 
 _d_write_attr = _lib.iio_device_attr_write
 _d_write_attr.restype = c_ssize_t
 _d_write_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
-_d_write_attr.errcheck = _checkNegative
+_d_write_attr.errcheck = _check_negative
 
 _d_debug_attr_count = _lib.iio_device_get_debug_attrs_count
 _d_debug_attr_count.restype = c_uint
@@ -377,17 +393,17 @@ _d_debug_attr_count.argtypes = (_DevicePtr,)
 _d_get_debug_attr = _lib.iio_device_get_debug_attr
 _d_get_debug_attr.restype = c_char_p
 _d_get_debug_attr.argtypes = (_DevicePtr,)
-_d_get_debug_attr.errcheck = _checkNull
+_d_get_debug_attr.errcheck = _check_null
 
 _d_read_debug_attr = _lib.iio_device_debug_attr_read
 _d_read_debug_attr.restype = c_ssize_t
 _d_read_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
-_d_read_debug_attr.errcheck = _checkNegative
+_d_read_debug_attr.errcheck = _check_negative
 
 _d_write_debug_attr = _lib.iio_device_debug_attr_write
 _d_write_debug_attr.restype = c_ssize_t
 _d_write_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
-_d_write_debug_attr.errcheck = _checkNegative
+_d_write_debug_attr.errcheck = _check_negative
 
 _d_buffer_attr_count = _lib.iio_device_get_buffer_attrs_count
 _d_buffer_attr_count.restype = c_uint
@@ -396,17 +412,17 @@ _d_buffer_attr_count.argtypes = (_DevicePtr,)
 _d_get_buffer_attr = _lib.iio_device_get_buffer_attr
 _d_get_buffer_attr.restype = c_char_p
 _d_get_buffer_attr.argtypes = (_DevicePtr,)
-_d_get_buffer_attr.errcheck = _checkNull
+_d_get_buffer_attr.errcheck = _check_null
 
 _d_read_buffer_attr = _lib.iio_device_buffer_attr_read
 _d_read_buffer_attr.restype = c_ssize_t
 _d_read_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
-_d_read_buffer_attr.errcheck = _checkNegative
+_d_read_buffer_attr.errcheck = _check_negative
 
 _d_write_buffer_attr = _lib.iio_device_buffer_attr_write
 _d_write_buffer_attr.restype = c_ssize_t
 _d_write_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
-_d_write_buffer_attr.errcheck = _checkNegative
+_d_write_buffer_attr.errcheck = _check_negative
 
 _d_get_context = _lib.iio_device_get_context
 _d_get_context.restype = _ContextPtr
@@ -415,12 +431,12 @@ _d_get_context.argtypes = (_DevicePtr,)
 _d_reg_write = _lib.iio_device_reg_write
 _d_reg_write.restype = c_int
 _d_reg_write.argtypes = (_DevicePtr, c_uint, c_uint)
-_d_reg_write.errcheck = _checkNegative
+_d_reg_write.errcheck = _check_negative
 
 _d_reg_read = _lib.iio_device_reg_read
 _d_reg_read.restype = c_int
 _d_reg_read.argtypes = (_DevicePtr, c_uint, _POINTER(c_uint))
-_d_reg_read.errcheck = _checkNegative
+_d_reg_read.errcheck = _check_negative
 
 _channels_count = _lib.iio_device_get_channels_count
 _channels_count.restype = c_uint
@@ -429,12 +445,12 @@ _channels_count.argtypes = (_DevicePtr,)
 _get_channel = _lib.iio_device_get_channel
 _get_channel.restype = _ChannelPtr
 _get_channel.argtypes = (_DevicePtr, c_uint)
-_get_channel.errcheck = _checkNull
+_get_channel.errcheck = _check_null
 
 _get_sample_size = _lib.iio_device_get_sample_size
 _get_sample_size.restype = c_int
 _get_sample_size.argtypes = (_DevicePtr,)
-_get_sample_size.errcheck = _checkNegative
+_get_sample_size.errcheck = _check_negative
 
 _d_is_trigger = _lib.iio_device_is_trigger
 _d_is_trigger.restype = c_bool
@@ -446,7 +462,7 @@ _d_get_trigger.argtypes = (
     _DevicePtr,
     _DevicePtr,
 )
-_d_get_trigger.errcheck = _checkNegative
+_d_get_trigger.errcheck = _check_negative
 
 _d_set_trigger = _lib.iio_device_set_trigger
 _d_set_trigger.restype = c_int
@@ -454,17 +470,17 @@ _d_set_trigger.argtypes = (
     _DevicePtr,
     _DevicePtr,
 )
-_d_set_trigger.errcheck = _checkNegative
+_d_set_trigger.errcheck = _check_negative
 
 _d_set_buffers_count = _lib.iio_device_set_kernel_buffers_count
 _d_set_buffers_count.restype = c_int
 _d_set_buffers_count.argtypes = (_DevicePtr, c_uint)
-_d_set_buffers_count.errcheck = _checkNegative
+_d_set_buffers_count.errcheck = _check_negative
 
 _c_get_id = _lib.iio_channel_get_id
 _c_get_id.restype = c_char_p
 _c_get_id.argtypes = (_ChannelPtr,)
-_c_get_id.errcheck = _checkNull
+_c_get_id.errcheck = _check_null
 
 _c_get_name = _lib.iio_channel_get_name
 _c_get_name.restype = c_char_p
@@ -485,7 +501,7 @@ _c_attr_count.argtypes = (_ChannelPtr,)
 _c_get_attr = _lib.iio_channel_get_attr
 _c_get_attr.restype = c_char_p
 _c_get_attr.argtypes = (_ChannelPtr,)
-_c_get_attr.errcheck = _checkNull
+_c_get_attr.errcheck = _check_null
 
 _c_get_filename = _lib.iio_channel_attr_get_filename
 _c_get_filename.restype = c_char_p
@@ -493,17 +509,17 @@ _c_get_filename.argtypes = (
     _ChannelPtr,
     c_char_p,
 )
-_c_get_filename.errcheck = _checkNull
+_c_get_filename.errcheck = _check_null
 
 _c_read_attr = _lib.iio_channel_attr_read
 _c_read_attr.restype = c_ssize_t
 _c_read_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p, c_size_t)
-_c_read_attr.errcheck = _checkNegative
+_c_read_attr.errcheck = _check_negative
 
 _c_write_attr = _lib.iio_channel_attr_write
 _c_write_attr.restype = c_ssize_t
 _c_write_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p)
-_c_write_attr.errcheck = _checkNegative
+_c_write_attr.errcheck = _check_negative
 
 _c_enable = _lib.iio_channel_enable
 _c_enable.argtypes = (_ChannelPtr,)
@@ -586,7 +602,7 @@ _create_buffer.argtypes = (
     c_size_t,
     c_bool,
 )
-_create_buffer.errcheck = _checkNull
+_create_buffer.errcheck = _check_null
 
 _buffer_destroy = _lib.iio_buffer_destroy
 _buffer_destroy.argtypes = (_BufferPtr,)
@@ -594,7 +610,7 @@ _buffer_destroy.argtypes = (_BufferPtr,)
 _buffer_refill = _lib.iio_buffer_refill
 _buffer_refill.restype = c_ssize_t
 _buffer_refill.argtypes = (_BufferPtr,)
-_buffer_refill.errcheck = _checkNegative
+_buffer_refill.errcheck = _check_negative
 
 _buffer_push_partial = _lib.iio_buffer_push_partial
 _buffer_push_partial.restype = c_ssize_t
@@ -602,7 +618,7 @@ _buffer_push_partial.argtypes = (
     _BufferPtr,
     c_uint,
 )
-_buffer_push_partial.errcheck = _checkNegative
+_buffer_push_partial.errcheck = _check_negative
 
 _buffer_start = _lib.iio_buffer_start
 _buffer_start.restype = c_void_p
@@ -633,6 +649,9 @@ _buffer_set_blocking_mode.restype = c_uint
 _buffer_set_blocking_mode.argtypes = (_BufferPtr, c_bool)
 
 
+# pylint: enable=invalid-name
+
+
 def _get_lib_version():
     major = c_uint()
     minor = c_uint()
@@ -647,6 +666,9 @@ def _has_backend(backend):
 
 
 def iio_strerror(err, buf, length):
+
+    """Get a string description of an error code."""
+
     b_buf = buf.encode("utf-8")
     _iio_strerror(err, b_buf, length)
 
@@ -655,7 +677,7 @@ version = _get_lib_version()
 backends = [_get_backend(x).decode("ascii") for x in range(0, _get_backends_count())]
 
 
-class _Attr(object):
+class _attr(object):
     def __init__(self, name, filename=None):
         self._name = name
         self._name_ascii = name.encode("ascii")
@@ -681,7 +703,7 @@ class _Attr(object):
     )
 
 
-class ChannelAttr(_Attr):
+class ChannelAttr(_attr):
 
     """Represents an attribute of a channel."""
 
@@ -703,16 +725,16 @@ class ChannelAttr(_Attr):
         )
         self._channel = channel
 
-    def _Attr__read(self):
+    def _attr__read(self):
         buf = create_string_buffer(1024)
         _c_read_attr(self._channel, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _Attr__write(self, value):
+    def _attr__write(self, value):
         _c_write_attr(self._channel, self._name_ascii, value.encode("ascii"))
 
 
-class DeviceAttr(_Attr):
+class DeviceAttr(_attr):
 
     """Represents an attribute of an IIO device."""
 
@@ -732,12 +754,12 @@ class DeviceAttr(_Attr):
         super(DeviceAttr, self).__init__(name)
         self._device = device
 
-    def _Attr__read(self):
+    def _attr__read(self):
         buf = create_string_buffer(1024)
         _d_read_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _Attr__write(self, value):
+    def _attr__write(self, value):
         _d_write_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
@@ -760,12 +782,12 @@ class DeviceDebugAttr(DeviceAttr):
         """
         super(DeviceDebugAttr, self).__init__(device, name)
 
-    def _Attr__read(self):
+    def _attr__read(self):
         buf = create_string_buffer(1024)
         _d_read_debug_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _Attr__write(self, value):
+    def _attr__write(self, value):
         _d_write_debug_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
@@ -787,12 +809,12 @@ class DeviceBufferAttr(DeviceAttr):
         """
         super(DeviceBufferAttr, self).__init__(device, name)
 
-    def _Attr__read(self):
+    def _attr__read(self):
         buf = create_string_buffer(1024)
         _d_read_buffer_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _Attr__write(self, value):
+    def _attr__write(self, value):
         _d_write_buffer_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
@@ -868,8 +890,7 @@ class Channel(object):
         c_array = mytype.from_buffer(array)
         if raw:
             return _c_write_raw(self._channel, buf._buffer, c_array, len(array))
-        else:
-            return _c_write(self._channel, buf._buffer, c_array, len(array))
+        return _c_write(self._channel, buf._buffer, c_array, len(array))
 
     id = property(
         lambda self: self._id,
@@ -916,6 +937,9 @@ class Channel(object):
 
     @property
     def index(self):
+        """
+        This channel's index
+        """
         return _channel_get_index(self._channel)
 
     @property
@@ -993,7 +1017,7 @@ class Buffer(object):
         """
         try:
             self._buffer = _create_buffer(device._device, samples_count, cyclic)
-        except:
+        except Exception:
             self._buffer = None
             raise
         self._length = samples_count * device.sample_size
@@ -1007,7 +1031,7 @@ class Buffer(object):
             _buffer_destroy(self._buffer)
 
     def __len__(self):
-        """The size of this buffer, in bytes."""
+        """Size of this buffer, in bytes."""
         return self._length
 
     def refill(self):
@@ -1353,10 +1377,10 @@ class Context(object):
             self._context = _context
 
         self._attrs = {}
-        for x in range(0, _get_attrs_count(self._context)):
+        for index in range(0, _get_attrs_count(self._context)):
             str1 = c_char_p()
             str2 = c_char_p()
-            _get_attr(self._context, x, _byref(str1), _byref(str2))
+            _get_attr(self._context, index, _byref(str1), _byref(str2))
             self._attrs[str1.value.decode("ascii")] = str2.value.decode("ascii")
 
         # TODO(pcercuei): Use a dictionary for the devices.
@@ -1453,6 +1477,9 @@ class Context(object):
 
 
 class LocalContext(Context):
+
+    """Local IIO Context."""
+
     def __init__(self):
         """
         Initializes a new instance of the Context class, using the local backend of the IIO library.
@@ -1465,6 +1492,9 @@ class LocalContext(Context):
 
 
 class XMLContext(Context):
+
+    """XML IIO Context."""
+
     def __init__(self, xmlfile):
         """
         Initializes a new instance of the Context class, using the XML backend of the IIO library.
@@ -1481,6 +1511,9 @@ class XMLContext(Context):
 
 
 class NetworkContext(Context):
+
+    """Network IIO Context."""
+
     def __init__(self, hostname=None):
         """
         Initializes a new instance of the Context class, using the network backend of the IIO library.
@@ -1497,17 +1530,20 @@ class NetworkContext(Context):
 
 
 def scan_contexts():
-    d = dict()
+
+    """Scanning Context."""
+
+    scan_ctx = dict()
     ptr = _POINTER(_ContextInfoPtr)()
 
     ctx = _create_scan_context(None, 0)
-    nb = _get_context_info_list(ctx, _byref(ptr))
+    ctx_nb = _get_context_info_list(ctx, _byref(ptr))
 
-    for i in range(0, nb):
-        d[
+    for i in range(0, ctx_nb):
+        scan_ctx[
             _context_info_get_uri(ptr[i]).decode("ascii")
         ] = _context_info_get_description(ptr[i]).decode("ascii")
 
     _context_info_list_free(ptr)
     _destroy_scan_context(ctx)
-    return d
+    return scan_ctx
