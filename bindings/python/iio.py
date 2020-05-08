@@ -45,6 +45,7 @@ from enum import Enum
 from os import strerror as _strerror
 from platform import system as _system
 import weakref
+import abc
 
 if "Windows" in _system():
     from ctypes import get_last_error
@@ -685,6 +686,14 @@ class _attr(object):
 
     def __str__(self):
         return self._name
+
+    @abc.abstractmethod
+    def __read(self):
+        pass
+
+    @abc.abstractmethod
+    def __write(self):
+        pass
 
     name = property(
         lambda self: self._name, None, None, "The name of this attribute.\n\ttype=str"
