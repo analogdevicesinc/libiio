@@ -96,7 +96,7 @@ check_file tar.gz
 if [  -n "${temp}"  ] ; then
 	deploy=$(expr ${deploy} + 1)
 	if [ -z "${TARGET_TGZ}" ] ; then
-		echo Add the MATLAB bindings into the tar file
+		echo updating tar file
 		(
 		cd $(dirname ${temp})
 		if [ -d tarball_fixup ] ; then
@@ -109,10 +109,6 @@ if [  -n "${temp}"  ] ; then
 		else
 			tar -xzf ${TRAVIS_BUILD_DIR}/${temp}
 		fi
-
-		mkdir -p usr/include usr/lib/matlab/iio
-		cp ${TRAVIS_BUILD_DIR}/bindings/matlab/iio-wrapper.h usr/include/
-		cp ${TRAVIS_BUILD_DIR}/bindings/matlab/*.m usr/lib/matlab/iio/
 
 		if [ "$TRAVIS_OS_NAME" = "osx" ] ; then
 			cd usr/lib
