@@ -45,6 +45,7 @@ from enum import Enum
 from os import strerror as _strerror
 from platform import system as _system
 import weakref
+import abc
 
 if "Windows" in _system():
     from ctypes import get_last_error
@@ -674,7 +675,7 @@ def iio_strerror(err, buf, length):
 
 
 version = _get_lib_version()
-backends = [_get_backend(x).decode("ascii") for x in range(0, _get_backends_count())]
+backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
 
 
 class _attr(object):
@@ -686,6 +687,14 @@ class _attr(object):
     def __str__(self):
         return self._name
 
+    @abc.abstractmethod
+    def _read(self):
+        pass
+
+    @abc.abstractmethod
+    def _write(self, value):
+        pass
+
     name = property(
         lambda self: self._name, None, None, "The name of this attribute.\n\ttype=str"
     )
@@ -696,8 +705,8 @@ class _attr(object):
         "The filename in sysfs to which this attribute is bound.\n\ttype=str",
     )
     value = property(
-        lambda self: self.__read(),
-        lambda self, x: self.__write(x),
+        lambda self: self._read(),
+        lambda self, x: self._write(x),
         None,
         "Current value of this attribute.\n\ttype=str",
     )
@@ -725,12 +734,12 @@ class ChannelAttr(_attr):
         )
         self._channel = channel
 
-    def _attr__read(self):
+    def _read(self):
         buf = create_string_buffer(1024)
         _c_read_attr(self._channel, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _attr__write(self, value):
+    def _write(self, value):
         _c_write_attr(self._channel, self._name_ascii, value.encode("ascii"))
 
 
@@ -754,12 +763,12 @@ class DeviceAttr(_attr):
         super(DeviceAttr, self).__init__(name)
         self._device = device
 
-    def _attr__read(self):
+    def _read(self):
         buf = create_string_buffer(1024)
         _d_read_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _attr__write(self, value):
+    def _write(self, value):
         _d_write_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
@@ -782,12 +791,12 @@ class DeviceDebugAttr(DeviceAttr):
         """
         super(DeviceDebugAttr, self).__init__(device, name)
 
-    def _attr__read(self):
+    def _read(self):
         buf = create_string_buffer(1024)
         _d_read_debug_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _attr__write(self, value):
+    def _write(self, value):
         _d_write_debug_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
@@ -809,12 +818,12 @@ class DeviceBufferAttr(DeviceAttr):
         """
         super(DeviceBufferAttr, self).__init__(device, name)
 
-    def _attr__read(self):
+    def _read(self):
         buf = create_string_buffer(1024)
         _d_read_buffer_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
-    def _attr__write(self, value):
+    def _write(self, value):
         _d_write_buffer_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
@@ -1436,10 +1445,7 @@ class Context(object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        return next(
-            (x for x in self.devices if name_or_id == x.name or name_or_id == x.id),
-            None,
-        )
+        return next((x for x in self.devices if name_or_id in [x.name, x.id]), None,)
 
     name = property(
         lambda self: self._name, None, None, "Name of this IIO context.\n\ttype=str"
