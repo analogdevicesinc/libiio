@@ -181,8 +181,6 @@ void iio_scan_context_destroy(struct iio_scan_context *ctx)
 	free(ctx);
 }
 
-#ifdef WITH_MATLAB_BINDINGS_API
-
 struct iio_scan_block {
 	struct iio_scan_context *ctx;
 	struct iio_context_info **info;
@@ -233,4 +231,3 @@ void iio_scan_block_destroy(struct iio_scan_block *blk)
 	iio_scan_context_destroy(blk->ctx);
 	free(blk);
 }
-#endif

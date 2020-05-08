@@ -43,7 +43,6 @@ when configuring libiio with cmake, there are a few optional settings that you c
 Cmake Options       | Default | Description                                    |
 ------------------- | ------- | ---------------------------------------------- |
 `CSHARP_BINDINGS`   | OFF | Install C# bindings                                |
-`MATLAB_BINDINGS`   | OFF | Install MATLAB bindings                            |
 `PYTHON_BINDINGS`   | OFF | Install PYTHON bindings                            |
 `WITH_DOC`          | OFF | Generate documentation with Doxygen and Sphinx     |
 `WITH_MAN`          | OFF | Generate and install man pages                     |

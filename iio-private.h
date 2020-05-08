@@ -47,10 +47,6 @@
 #   define __api
 #endif
 
-#ifdef WITH_MATLAB_BINDINGS_API
-#include "bindings/matlab/iio-wrapper.h"
-#endif
-
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 #define BIT(x) (1 << (x))
 #define BIT_MASK(bit) BIT((bit) % 32)
