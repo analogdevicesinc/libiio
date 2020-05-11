@@ -21,6 +21,7 @@
 
 #include <iio.h>
 #include <stdio.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <getopt.h>
 #include <string.h>
@@ -149,6 +150,145 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 	return (unsigned long int) val;
 }
 
+char ** dup_argv(int argc, char * argv[])
+{
+	int i = 1;
+	char** new_argv = xmalloc((argc + 1) * sizeof(char *), NULL);
+
+	for(int i = 0; i < argc; i++) {
+		new_argv[i] = cmn_strndup(argv[i], NAME_MAX);
+		if (!new_argv[i])
+			goto err_dup;
+	}
+
+	return new_argv;
+
+err_dup:
+	i--;
+	for (; i >= 0; i--)
+		free(new_argv[i]);
+
+	free(new_argv);
+
+	fprintf(stderr, "out of memory\n");
+	exit(0);
+}
+
+void free_argw(int argc, char * argw[])
+{
+	int i;
+
+	for(i = 0; i < argc; i++) {
+		free(argw[i]);
+	}
+	free(argw);
+}
+
+static const struct option common_options[] = {
+	{"help", no_argument, 0, 'h'},
+	{"xml", required_argument, 0, 'x'},
+	{"uri", required_argument, 0, 'u'},
+	{"scan", no_argument, 0, 'S'},
+	{"auto", no_argument, 0, 'a'},
+	{0, 0, 0, 0},
+};
+
+static const char *common_options_descriptions[] = {
+	"Show this help and quit.",
+	"Use the XML backend with the provided XML file.",
+	"Use the context at the provided URI.",
+	"Scan for available backends.",
+	"Scan for available contexts and if only one is available use it.",
+};
+
+
+struct iio_context * handle_common_opts(char * name, int argc, char * const argv[],
+		const struct option *options, const char *options_descriptions[])
+{
+	struct iio_context *ctx = NULL;
+	int c, option_index = 0;
+	enum backend backend = IIO_LOCAL;
+	const char *arg = NULL;
+	bool do_scan = false, detect_context = false;
+
+	/* Setting opterr to zero disables error messages from getopt_long */
+	opterr = 0;
+	/* start over at first index */
+	optind = 1;
+	while ((c = getopt_long(argc, argv, COMMON_OPTIONS,	/* Flawfinder: ignore */
+			common_options, &option_index)) != -1) {
+		switch (c) {
+		case 'h':
+			usage(name, options, options_descriptions);
+			break;
+		case 'n':
+			if (backend != IIO_LOCAL) {
+				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+				return NULL;
+			}
+			backend = IIO_NETWORK;
+			arg = optarg;
+			break;
+		case 'x':
+			if (backend != IIO_LOCAL) {
+				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+				return NULL;
+			}
+			backend = IIO_XML;
+			arg = optarg;
+			break;
+		case 'u':
+			if (backend != IIO_LOCAL) {
+				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+				return NULL;
+			}
+			backend = IIO_AUTO;
+			arg = optarg;
+			break;
+		case 'a':
+			if (backend != IIO_LOCAL) {
+				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+				return NULL;
+			}
+			detect_context = true;
+			break;
+		case 'S':
+			do_scan = true;
+			break;
+		case '?':
+			break;
+		}
+	}
+	optind = 1;
+	opterr = 1;
+
+	if (do_scan) {
+		autodetect_context(false, false, name);
+		exit(0);
+	} else if (detect_context)
+		ctx = autodetect_context(true, false, name);
+	else if (!arg && backend != IIO_LOCAL)
+		fprintf(stderr, "argument parsing error\n");
+	else if (backend == IIO_XML)
+		ctx = iio_create_xml_context(arg);
+	else if (backend == IIO_NETWORK)
+		ctx = iio_create_network_context(arg);
+	else if (backend == IIO_AUTO)
+		ctx = iio_create_context_from_uri(arg);
+	else
+		ctx = iio_create_default_context();
+
+	if (!ctx && !do_scan && !detect_context) {
+		char buf[1024];
+		iio_strerror(errno, buf, sizeof(buf));
+		if (arg)
+			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, buf);
+		else
+			fprintf(stderr, "Unable to create Local IIO context : %s\n", buf);
+	}
+
+	return ctx;
+}
 
 void usage(char *name, const struct option *options,
 	const char *options_descriptions[])
@@ -158,10 +298,19 @@ void usage(char *name, const struct option *options,
 	printf("Usage:\n");
 	printf("\t%s [OPTION]...\t%s\n", name, options_descriptions[0]);
 	printf("Options:\n");
+	for (i = 0; common_options[i].name; i++) {
+		printf("\t-%c, --%s\n\t\t\t%s\n",
+				common_options[i].val, common_options[i].name,
+				common_options_descriptions[i]);
+	}
 	for (i = 0; options[i].name; i++) {
 		printf("\t-%c, --%s\n\t\t\t%s\n",
 				options[i].val, options[i].name,
 			options_descriptions[i + 1]);
 	}
+	printf("\nThis is free software; see the source for copying conditions.  There is NO\n"
+			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
+
+	exit(0);
 }
 
