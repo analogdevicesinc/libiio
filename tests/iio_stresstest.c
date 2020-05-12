@@ -318,8 +318,11 @@ static void *client_thread(void *data)
 			info->buffers[id]++;
 			buffer = iio_device_create_buffer(dev, info->buffer_size, false);
 			if (!buffer) {
+				struct timespec wait;
+				wait.tv_sec = 0;
+				wait.tv_nsec = (1 * 1000);
 				thread_err(id, errno, "iio_device_create_buffer failed");
-				usleep(1);
+				nanosleep(&wait, &wait);
 				continue;
 			}
 	
@@ -571,7 +574,10 @@ int main(int argc, char **argv)
 			if (info.timeout && duration >= info.timeout) {
 				threads_running = false;
 			} else {
-				usleep(1000);
+				struct timespec wait;
+				wait.tv_sec = 0;
+				wait.tv_nsec = (1000 * 1000);
+				nanosleep(&wait, &wait);
 			}
 		}
 

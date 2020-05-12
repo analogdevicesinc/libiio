@@ -162,9 +162,12 @@ static void * read_thd(void *d)
 		unsigned int i, nb_channels, nb = 0;
 		char buf[1024];
 		chtype *str;
+		struct timespec wait;
 		(void) row; /* Prevent warning */
 
-		usleep(100000);
+		wait.tv_sec = 0;
+		wait.tv_nsec = (100000 * 1000);
+		nanosleep(&wait, &wait);
 
 		if (selected < 0)
 			continue;
@@ -380,9 +383,13 @@ static void show_main_screen(struct iio_context *ctx)
 
 	while (!stop) {
 		int ret = activateCDKScroll(list, NULL);
+		struct timespec wait;
+		wait.tv_sec = 0;
+		wait.tv_nsec = (100000 * 1000);
+
 		stop = ret < 0;
 		selected = ret;
-		usleep(100000);
+		nanosleep(&wait, &wait);
 	}
 
 	pthread_join(thd, NULL);

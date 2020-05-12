@@ -951,9 +951,12 @@ retry:
 			 * This is not pretty but it works.
 			 */
 			if (cyclic_retry) {
-			       cyclic_retry--;
-			       usleep(100);
-			       goto retry;
+				struct timespec wait;
+				wait.tv_sec = 0;
+				wait.tv_nsec = (100 * 1000);
+				cyclic_retry--;
+				nanosleep(&wait, &wait);
+				goto retry;
 			}
 
 			ret = -EBUSY;
