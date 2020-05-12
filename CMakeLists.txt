@@ -64,10 +64,6 @@ if (MSVC)
 	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
 	# C4100: unreferenced parameter; same as -Wno-unused-parameter
 
-	if(DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR})
-		message(STATUS "Running in an AppVeyor environment, setting -Werror")
-		add_compile_options(/WX)
-	endif()
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib" "")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll.a" ".a" ".lib")
 
@@ -90,35 +86,88 @@ elseif (CMAKE_COMPILER_IS_GNUCC)
 			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 		endif()
 	endif()
-	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
-		message(STATUS "Running in a Travis-CI environment, setting -Werror")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-	endif()
-
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter")
-	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
-		message(STATUS "Running in a Travis-CI environment, setting -Werror")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-	endif()
-
 else()
 	message(STATUS "Unknown compiler, please report upstream")
 	message(STATUS "CMAKE_C_COMPILER_ID : " ${CMAKE_C_COMPILER_ID})
 	message(STATUS "CFLAGS set to " ${CMAKE_C_FLAGS})
 endif()
 
-# No matter what compiler you are using, set this on macos
+# based on host, set these on macos
 if(APPLE)
 	#full Single Unix Standard v3 (SUSv3) conformance (the Unix API)
 	add_definitions(-D_DARWIN_C_SOURCE)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
+	add_definitions(-D_GNU_SOURCE=1)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBSD")
+	set(CMAKE_REQUIRED_DEFINITIONS "-D__BSD_VISIBLE")
+	add_definitions(-D__BSD_VISIBLE=1)
 endif()
+add_definitions(-D_POSIX_C_SOURCE=200809L -D__XSI_VISIBLE=500 -DLIBIIO_EXPORTS=1)
 
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
 check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
+
+if (NOT WIN32)
+	find_library(PTHREAD_LIBRARIES pthread)
+	set(CMAKE_REQUIRED_LIBRARIES ${PTHREAD_LIBRARIES})
+	check_symbol_exists(pthread_setname_np "pthread.h" HAS_PTHREAD_SETNAME_NP)
+	set(CMAKE_REQUIRED_LIBRARIES)
+endif()
+
+option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
+if (ENABLE_IPV6)
+	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
+	if (NOT HAVE_IPV6)
+		message(WARNING "IPv6 is not available in your system.")
+	endif()
+endif()
+
+#Handle FreeBSD libusb and Linux libusb-1.0 libraries
+find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
+if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
+	message(STATUS "Looking for libusb-1.0 : Found")
+	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
+
+	if(WITH_USB_BACKEND)
+		set(IIOD_CLIENT 1)
+		set(NEED_LIBXML2 1)
+		set(NEED_THREADS 1)
+
+		include_directories(${LIBUSB_INCLUDE_DIR})
+
+		set(TEMP ${CMAKE_REQUIRED_LIBRARIES})
+		set(TEMP1 ${CMAKE_REQUIRED_INCLUDES})
+		list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBUSB_LIBRARIES})
+		list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBUSB_INCLUDE_DIR})
+		check_symbol_exists(libusb_get_version libusb.h
+				HAS_LIBUSB_GETVERSION)
+		set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
+			set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
+	endif()
+else()
+	message(STATUS "Looking for libusb-1.0 : Failed; building without usb")
+endif()
+
+# make sure all check_symbol_exists are before this point, otherwise they fail
+# on some versions of compilers
+if (MSVC)
+	if(DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR})
+		message(STATUS "Running in an AppVeyor environment, setting -Werror")
+		add_compile_options(/WX)
+	endif()
+elseif (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+	if(DEFINED ENV{TRAVIS} AND DEFINED ENV{CI})
+		message(STATUS "Running in a Travis-CI environment, setting -Werror")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	endif()
+endif()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(WITH_IIOD "Build the IIO Daemon" ON)
@@ -130,30 +179,15 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	if (WITH_IIOD)
 		set(NEED_THREADS 1)
 	endif()
-
-	set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE=1")
-	add_definitions(-D_GNU_SOURCE=1)
-endif()
-
-# For BSD variants
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBSD")
-	set(CMAKE_REQUIRED_DEFINITIONS "-D__BSD_VISIBLE")
-	add_definitions(-D__BSD_VISIBLE=1)
-endif()
-
-option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
-if (ENABLE_IPV6)
-	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
-
-	if (NOT HAVE_IPV6)
-		message(WARNING "IPv6 is not available in your system.")
-	endif()
 endif()
 
 set(LIBIIO_CFILES backend.c channel.c device.c context.c buffer.c utilities.c scan.c sort.c)
 set(LIBIIO_HEADERS iio.h)
 
-add_definitions(-D_POSIX_C_SOURCE=200809L -D__XSI_VISIBLE=500 -DLIBIIO_EXPORTS=1)
+if(WITH_USB_BACKEND)
+	list(APPEND LIBIIO_CFILES usb.c)
+	list(APPEND LIBS_TO_LINK ${LIBUSB_LIBRARIES})
+endif()
 
 # Get the GIT hash of the latest commit
 include(FindGit OPTIONAL)
@@ -196,35 +230,6 @@ if(WITH_LOCAL_BACKEND)
 	if (WITH_LOCAL_CONFIG)
 		list(APPEND LIBIIO_CFILES ./libini/libini.c)
 	endif()
-endif()
-
-#Handle FreeBSD libusb and Linux libusb-1.0 libraries
-find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
-find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
-if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
-	message(STATUS "Looking for libusb-1.0 : Found")
-	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
-
-	if(WITH_USB_BACKEND)
-		list(APPEND LIBIIO_CFILES usb.c)
-		list(APPEND LIBS_TO_LINK ${LIBUSB_LIBRARIES})
-		set(IIOD_CLIENT 1)
-		set(NEED_LIBXML2 1)
-		set(NEED_THREADS 1)
-
-		include_directories(${LIBUSB_INCLUDE_DIR})
-
-		set(TEMP ${CMAKE_REQUIRED_LIBRARIES})
-		set(TEMP1 ${CMAKE_REQUIRED_INCLUDES})
-		list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBUSB_LIBRARIES})
-		list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBUSB_INCLUDE_DIR})
-		check_symbol_exists(libusb_get_version libusb.h
-			HAS_LIBUSB_GETVERSION)
-		set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
-		set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
-	endif()
-else()
-	message(STATUS "Looking for libusb-1.0 : Failed; building without usb")
 endif()
 
 find_library(LIBSERIALPORT_LIBRARIES serialport)
@@ -337,15 +342,12 @@ endif()
 
 if (NEED_THREADS)
 	if (NOT WIN32)
-		find_library(PTHREAD_LIBRARIES pthread)
-
 		if (PTHREAD_LIBRARIES)
 			list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
 		else()
 			message(WARNING "pthread library not found; support for threads will be disabled")
 			set(NO_THREADS ON)
 		endif()
-	else()
 	endif()
 
 	list(APPEND LIBIIO_CFILES lock.c)
