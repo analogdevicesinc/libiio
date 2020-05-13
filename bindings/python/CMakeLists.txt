@@ -45,8 +45,10 @@ if(WITH_DOC)
 	add_custom_command(TARGET libiio-py POST_BUILD
 		COMMAND ${SPHINX_EXECUTABLE}
 			-b html
+			-n
 			-c ${CMAKE_CURRENT_SOURCE_DIR}/doc
 			-d ${CMAKE_CURRENT_BINARY_DIR}/doctrees
+			-w ${CMAKE_BINARY_DIR}/Spx_output_python
 			${CMAKE_CURRENT_SOURCE_DIR}/doc
 			${CMAKE_HTML_DEST_DIR}/python
 		COMMENT "Generating Python binding documentation with Sphinx" VERBATIM
