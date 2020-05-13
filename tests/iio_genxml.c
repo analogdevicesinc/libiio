@@ -29,62 +29,40 @@
 #define MY_NAME "iio_genxml"
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"xml", required_argument, 0, 'x'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
-	  {0, 0, 0, 0},
+	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	"\t[-x <xml_file>]\n"
 		"\t\t\t\t[-u <uri>]\n"
 		"\t\t\t\t[-n <hostname>]",
-	"Show this help and quit.",
-	"Use the XML backend with the provided XML file.",
-	"Use the network backend with the provided hostname.",
-	"Use the context with the provided URI.",
 };
 
 int main(int argc, char **argv)
 {
+	char **argw;
 	char *xml;
 	const char *tmp;
 	struct iio_context *ctx;
 	int c, option_index = 0;
-	const char *arg_uri = NULL;
-	const char *arg_xml = NULL;
-	const char *arg_ip = NULL;
 	size_t xml_len;
-	enum backend backend = IIO_LOCAL;
 
-	while ((c = getopt_long(argc, argv, "+hn:x:u:",
+	argw = dup_argv(argc, argv);
+	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
+
+	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS,  /* Flawfinder: ignore */
 					options, &option_index)) != -1) {
 		switch (c) {
+		/* All these are handled in the common */
 		case 'h':
-			usage(MY_NAME, options, options_descriptions);
-			return EXIT_SUCCESS;
 		case 'n':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-x and -n are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = IIO_NETWORK;
-			arg_ip = optarg;
-			break;
 		case 'x':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-x and -n are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = IIO_XML;
-			arg_xml = optarg;
-			break;
+		case 'S':
 		case 'u':
-			arg_uri = optarg;
-			backend = IIO_AUTO;
+		case 'a':
 			break;
 		case '?':
+			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
 		}
 	}
@@ -95,19 +73,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (backend == IIO_AUTO) 
-		ctx = iio_create_context_from_uri(arg_uri);
-	else if (backend == IIO_XML)
-		ctx = iio_create_xml_context(arg_xml);
-	else if (backend == IIO_NETWORK)
-		ctx = iio_create_network_context(arg_ip);
-	else
-		ctx = iio_create_default_context();
-
-	if (!ctx) {
-		fprintf(stderr, "Unable to create IIO context\n");
+	if (!ctx)
 		return EXIT_FAILURE;
-	}
 
 	tmp = iio_context_get_xml(ctx);
 	if (!tmp) {
@@ -132,6 +99,7 @@ int main(int argc, char **argv)
 		printf("Context re-creation from generated XML succeeded!\n");
 		iio_context_destroy(ctx);
 	}
+	free_argw(argc, argw);
 	free(xml);
 	return EXIT_SUCCESS;
 }

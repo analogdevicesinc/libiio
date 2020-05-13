@@ -39,9 +39,6 @@ struct xflow_pthread_data {
 };
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
 	  {"buffer-size", required_argument, 0, 's'},
 	  {"auto", no_argument, 0, 'a'},
 	  {0, 0, 0, 0},
@@ -49,9 +46,6 @@ static const struct option options[] = {
 
 static const char *options_descriptions[] = {
 	"[-n <hostname>] [-u <uri>] [-a ] [-s <size>] <iio_device>",
-	"Show this help and quit.",
-	"Use the network backend with the provided hostname.",
-	"Use the context with the provided URI.",
 	"Size of the buffer in sample sets. Default is 1Msample",
 	"Scan for available contexts and if only one is available use it.",
 };
@@ -158,14 +152,12 @@ static void *monitor_thread_fn(void *data)
 
 int main(int argc, char **argv)
 {
+	char **argw;
 	unsigned int buffer_size = 1024 * 1024;
 	int c, option_index = 0;
-	const char *arg_uri = NULL;
-	const char *arg_ip = NULL;
 	unsigned int n_tx = 0, n_rx = 0;
 	static struct iio_context *ctx;
 	static struct xflow_pthread_data xflow_pthread_data;
-	bool scan_for_context = false;
 	unsigned int i, nb_channels;
 	struct iio_buffer *buffer;
 	pthread_t monitor_thread;
@@ -174,12 +166,22 @@ int main(int argc, char **argv)
 	char unit;
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:s:a",
+	argw = dup_argv(argc, argv);
+
+	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
+
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "s:a", /* Flawfinder: ignore */
 					options, &option_index)) != -1) {
 		switch (c) {
+		/* All these are handled in the common */
 		case 'h':
-			usage(MY_NAME, options, options_descriptions);
-			return EXIT_SUCCESS;
+		case 'n':
+		case 'x':
+		case 'S':
+		case 'u':
+		case 'a':
+			break;
+
 		case 's':
 			ret = sscanf(optarg, "%u%c", &buffer_size, &unit);
 			if (ret == 0)
@@ -190,15 +192,6 @@ int main(int argc, char **argv)
 				else if (unit == 'M')
 					buffer_size *= 1024 * 1024;
 			}
-			break;
-		case 'n':
-			arg_ip = optarg;
-			break;
-		case 'u':
-			arg_uri = optarg;
-			break;
-		case 'a':
-			scan_for_context = true;
 			break;
 		case '?':
 			return EXIT_FAILURE;
@@ -211,6 +204,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	if (!ctx)
+		return EXIT_FAILURE;
+
 #ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);
 #endif
@@ -218,22 +214,7 @@ int main(int argc, char **argv)
 	set_handler(SIGSEGV, &quit_all);
 	set_handler(SIGTERM, &quit_all);
 
-
-	if (scan_for_context)
-		ctx = autodetect_context(true, NULL, MY_NAME);
-	else if (arg_uri)
-		ctx = iio_create_context_from_uri(arg_uri);
-	else if (arg_ip)
-		ctx = iio_create_network_context(arg_ip);
-	else
-		ctx = iio_create_default_context();
-
-	if (!ctx) {
-		fprintf(stderr, "Unable to create IIO context\n");
-		return EXIT_FAILURE;
-	}
-
-	device_name = argv[optind];
+	device_name = argw[optind];
 
 	dev = get_device(ctx, device_name);
 	if (!dev) {
@@ -302,6 +283,6 @@ int main(int argc, char **argv)
 
 	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
-
+	free_argw(argc, argw);
 	return 0;
 }

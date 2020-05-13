@@ -297,14 +297,9 @@ static void dump_channel_attributes(const struct iio_device *dev,
 }
 
 static const struct option options[] = {
-	/* help */
-	{"help", no_argument, 0, 'h'},
 	{"ignore-case", no_argument, 0, 'I'},
 	{"quiet", no_argument, 0, 'q'},
 	{"generate-code", required_argument, 0, 'g'},
-	/* context connection */
-	{"auto", no_argument, 0, 'a'},
-	{"uri", required_argument, 0, 'u'},
 	/* Channel qualifiers */
 	{"input-channel", no_argument, 0, 'i'},
 	{"output-channel", no_argument, 0, 'o'},
@@ -325,13 +320,9 @@ static const char *options_descriptions[] = {
 		"\t\t\t\t-D [device] [attr] [value]\n"
 		"\t\t\t\t-C [attr]",
 	/* help */
-	"Show this help and quit.",
 	"Ignore case distinctions.",
 	"Return result only.",
 	"Generate code.",
-	/* context connection */
-	"Use the first context found.",
-	"Use the context at the provided URI.",
 	/* Channel qualifiers */
 	"Filter Input Channels only.",
 	"Filter Output Channels only.",
@@ -346,32 +337,32 @@ static const char *options_descriptions[] = {
 
 int main(int argc, char **argv)
 {
+	char **argw;
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	int device_index = 0, channel_index = 0, attr_index = 0;
-	const char *arg_uri = NULL, *gen_file = NULL;
-	enum backend backend = IIO_LOCAL;
-	bool detect_context = false, search_device = false, ignore_case = false,
+	const char *gen_file = NULL;
+	bool search_device = false, ignore_case = false,
 		search_channel = false, search_buffer = false, search_debug = false,
 		search_context = false, input_only = false, output_only = false,
 		scan_only = false, quiet = false, gen_code = false;
 	unsigned int i;
 	char *wbuf = NULL;
 
-	while ((c = getopt_long(argc, argv, "+hau:g:CdcBDiosIq",
+	argw = dup_argv(argc, argv);
+
+	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
+
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "g:CdcBDiosIq", /* Flawfinder: ignore */
 					options, &option_index)) != -1) {
 		switch (c) {
-		/* help */
+		/* All these are handled in the common */
 		case 'h':
-			usage(MY_NAME, options, options_descriptions);
-			return EXIT_SUCCESS;
-		/* context connection */
-		case 'a':
-			detect_context = true;
-			break;
+		case 'n':
+		case 'x':
+		case 'S':
 		case 'u':
-			backend = IIO_AUTO;
-			arg_uri = optarg;
+		case 'a':
 			break;
 		/* Attribute type
 		 * 'd'evice, 'c'hannel, 'C'ontext, 'B'uffer or 'D'ebug
@@ -418,6 +409,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+
+	if (!ctx)
+		return EXIT_FAILURE;
+
 	if (gen_code) {
 		if (!gen_test_path(gen_file)) {
 			fprintf(stderr, "Can't write to %s to generate file\n", gen_file);
@@ -460,7 +455,7 @@ int main(int argc, char **argv)
 		if (argc >= optind + 2)
 			attr_index = optind + 1;
 		if (argc >= optind + 3)
-			wbuf = argv[optind + 2];
+			wbuf = argw[optind + 2];
 		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for device attributes\n");
 			return EXIT_FAILURE;
@@ -479,7 +474,7 @@ int main(int argc, char **argv)
 		if (argc >= optind + 3)
 			attr_index = optind + 2;
 		if (argc >= optind + 4)
-			wbuf = argv[optind + 3];
+			wbuf = argw[optind + 3];
 		if (argc >= optind + 5) {
 			fprintf(stderr, "Too many options for searching for channel attributes\n");
 			return EXIT_FAILURE;
@@ -496,7 +491,7 @@ int main(int argc, char **argv)
 		if (argc >= optind + 2)
 			attr_index = optind + 1;
 		if (argc >= optind + 3)
-			wbuf = argv[optind + 2];
+			wbuf = argw[optind + 2];
 		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for buffer attributes\n");
 			return EXIT_FAILURE;
@@ -514,7 +509,7 @@ int main(int argc, char **argv)
 		if (argc >= optind + 2)
 			attr_index = optind + 1;
 		if (argc >= optind + 3)
-			wbuf = argv[optind + 2];
+			wbuf = argw[optind + 2];
 		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for device attributes\n");
 			return EXIT_FAILURE;
@@ -529,18 +524,18 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (device_index && !argv[device_index])
+	if (device_index && !argw[device_index])
 		return EXIT_FAILURE;
-	if (channel_index && !argv[channel_index])
+	if (channel_index && !argw[channel_index])
 		return EXIT_FAILURE;
-	if (attr_index && !argv[attr_index])
+	if (attr_index && !argw[attr_index])
 		return EXIT_FAILURE;
-	if ((gen_code || wbuf) && ((device_index && (!strcmp(".", argv[device_index]) ||
-				        strchr(argv[device_index], '*'))) ||
-		     (channel_index && (!strcmp(".", argv[channel_index]) ||
-					 strchr(argv[channel_index], '*'))) ||
-		     (attr_index && (!strcmp(".", argv[attr_index])  ||
-				      strchr(argv[attr_index], '*'))))) {
+	if ((gen_code || wbuf) && ((device_index && (!strcmp(".", argw[device_index]) ||
+				        strchr(argw[device_index], '*'))) ||
+		     (channel_index && (!strcmp(".", argw[channel_index]) ||
+					 strchr(argw[channel_index], '*'))) ||
+		     (attr_index && (!strcmp(".", argw[attr_index])  ||
+				      strchr(argw[attr_index], '*'))))) {
 		printf("can't %s with wildcard match\n",
 				gen_code ? "generate code" : "write value");
 		return EXIT_FAILURE;
@@ -548,27 +543,6 @@ int main(int argc, char **argv)
 
 	if (gen_code) {
 		gen_start(gen_file);
-	}
-
-	if (detect_context)
-		ctx = autodetect_context(true, gen_code, MY_NAME);
-	else if (backend == IIO_AUTO) {
-		ctx = iio_create_context_from_uri(arg_uri);
-		gen_context(arg_uri);
-	} else
-		ctx = iio_create_default_context();
-
-	if (!ctx) {
-		if (!detect_context) {
-			char *buf = xmalloc(BUF_SIZE, MY_NAME);
-
-			iio_strerror(errno, buf, BUF_SIZE);
-			fprintf(stderr, "Unable to create IIO context: %s\n",
-					buf);
-			free(buf);
-		}
-		gen_context_destroy();
-		return EXIT_FAILURE;
 	}
 
 	if (search_context) {
@@ -582,7 +556,7 @@ int main(int argc, char **argv)
 
 			ret = iio_context_get_attr(ctx, i, &key, &value);
 			if (!ret) {
-				if (!attr_index || str_match(key, argv[attr_index], ignore_case)) {
+				if (!attr_index || str_match(key, argw[attr_index], ignore_case)) {
 					printf("%s: %s\n", key, value);
 					gen_context_attr(key);
 				}
@@ -609,8 +583,8 @@ int main(int argc, char **argv)
 			const char *dev_id = iio_device_get_id(dev);
 			unsigned int nb_attrs, nb_channels, j;
 
-			if (device_index && !str_match(dev_id, argv[device_index], ignore_case)
-					&& !str_match(name, argv[device_index], ignore_case)) {
+			if (device_index && !str_match(dev_id, argw[device_index], ignore_case)
+					&& !str_match(name, argw[device_index], ignore_case)) {
 				continue;
 			}
 
@@ -651,8 +625,8 @@ int main(int argc, char **argv)
 				ch_name = iio_channel_get_name(ch);
 				if (channel_index &&
 						!str_match(iio_channel_get_id(ch),
-						argv[channel_index], ignore_case) &&
-						(!ch_name || !str_match(ch_name,argv[channel_index], ignore_case)))
+						argw[channel_index], ignore_case) &&
+						(!ch_name || !str_match(ch_name,argw[channel_index], ignore_case)))
 					continue;
 
 				if ((!scan_only && !channel_index) ||
@@ -712,7 +686,7 @@ int main(int argc, char **argv)
 						iio_channel_get_attr(ch, k);
 
 					if (attr_index &&
-						!str_match(attr, argv[attr_index],
+						!str_match(attr, argw[attr_index],
 							ignore_case))
 						continue;
 					gen_dev(dev);
@@ -732,7 +706,7 @@ int main(int argc, char **argv)
 					const char *attr = iio_device_get_attr(dev, j);
 
 					if (attr_index &&
-					    !str_match(attr, argv[attr_index], ignore_case))
+					    !str_match(attr, argw[attr_index], ignore_case))
 						continue;
 
 					gen_dev(dev);
@@ -752,7 +726,7 @@ int main(int argc, char **argv)
 				for (j = 0; j < nb_attrs; j++) {
 					const char *attr = iio_device_get_buffer_attr(dev, j);
 
-					if ((attr_index && str_match(attr, argv[attr_index],
+					if ((attr_index && str_match(attr, argw[attr_index],
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
 						dump_buffer_attributes(dev, attr, wbuf,
@@ -773,7 +747,7 @@ int main(int argc, char **argv)
 				for (j = 0; j < nb_attrs; j++) {
 					const char *attr = iio_device_get_debug_attr(dev, j);
 
-					if ((attr_index && str_match(attr, argv[attr_index],
+					if ((attr_index && str_match(attr, argw[attr_index],
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
 						dump_debug_attributes(dev, attr, wbuf,
@@ -788,8 +762,9 @@ int main(int argc, char **argv)
 
 	iio_context_destroy(ctx);
 
-        if (gen_code)
+	if (gen_code)
 		gen_context_destroy();
 
+	free_argw(argc, argw);
 	return EXIT_SUCCESS;
 }

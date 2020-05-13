@@ -35,9 +35,6 @@
 #define DEFAULT_FREQ_HZ  100
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
 	  {"trigger", required_argument, 0, 't'},
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
@@ -47,11 +44,8 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	"[-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>]"
+	"[-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>]"
 		"[-s <samples>] <iio_device> [<channel> ...]",
-	"Show this help and quit.",
-	"Use the network backend with the provided hostname.",
-	"Use the context with the provided URI.",
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
 	"Number of samples to capture, 0 = infinite. Default is 0.",
@@ -196,32 +190,30 @@ static ssize_t print_sample(const struct iio_channel *chn,
 
 int main(int argc, char **argv)
 {
+	char **argw;
 	unsigned int i, nb_channels;
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	const char *arg_uri = NULL;
-	const char *arg_ip = NULL;
 	int c, option_index = 0;
 	struct iio_device *dev;
 	ssize_t sample_size;
 	int timeout = -1;
-	bool scan_for_context = false;
 	ssize_t ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:u:t:b:s:T:a",
+	argw = dup_argv(argc, argv);
+
+	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
+
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "t:b:s:T:",	/* Flawfinder: ignore */
 					options, &option_index)) != -1) {
 		switch (c) {
+		/* All these are handled in the common */
 		case 'h':
-			usage(MY_NAME, options, options_descriptions);
-			return EXIT_SUCCESS;
 		case 'n':
-			arg_ip = optarg;
-			break;
+		case 'x':
+		case 'S':
 		case 'u':
-			arg_uri = optarg;
-			break;
 		case 'a':
-			scan_for_context = true;
 			break;
 		case 't':
 			trigger_name = optarg;
@@ -236,6 +228,7 @@ int main(int argc, char **argv)
 			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
 		case '?':
+			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
 		}
 	}
@@ -246,21 +239,10 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	setup_sig_handler();
-
-	if (scan_for_context)
-		ctx = autodetect_context(true, false, MY_NAME);
-	else if (arg_uri)
-		ctx = iio_create_context_from_uri(arg_uri);
-	else if (arg_ip)
-		ctx = iio_create_network_context(arg_ip);
-	else
-		ctx = iio_create_default_context();
-
-	if (!ctx) {
-		fprintf(stderr, "Unable to create IIO context\n");
+	if (!ctx)
 		return EXIT_FAILURE;
-	}
+
+	setup_sig_handler();
 
 	if (timeout >= 0) {
 		ret = iio_context_set_timeout(ctx, timeout);
@@ -272,9 +254,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	dev = iio_context_find_device(ctx, argv[optind]);
+	dev = iio_context_find_device(ctx, argw[optind]);
 	if (!dev) {
-		fprintf(stderr, "Device %s not found\n", argv[optind]);
+		fprintf(stderr, "Device %s not found\n", argw[optind]);
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -336,8 +318,8 @@ int main(int argc, char **argv)
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
 			for (j = optind + 1; j < (unsigned int) argc; j++) {
 				const char *n = iio_channel_get_name(ch);
-				if ((!strcmp(argv[j], iio_channel_get_id(ch)) ||
-						(n && !strcmp(n, argv[j]))) &&
+				if ((!strcmp(argw[j], iio_channel_get_id(ch)) ||
+						(n && !strcmp(n, argw[j]))) &&
 						!iio_channel_is_output(ch)) {
 					iio_channel_enable(ch);
 					nb_active_channels++;
@@ -431,5 +413,6 @@ int main(int argc, char **argv)
 err_destroy_buffer:
 	iio_buffer_destroy(buffer);
 	iio_context_destroy(ctx);
+	free_argw(argc, argw);
 	return exit_code;
 }

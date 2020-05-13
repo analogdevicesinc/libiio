@@ -35,25 +35,14 @@
 #endif
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"xml", required_argument, 0, 'x'},
-	  {"network", required_argument, 0, 'n'},
-	  {"uri", required_argument, 0, 'u'},
-	  {"scan", no_argument, 0, 's'},
-	  {"auto", no_argument, 0, 'a'},
-	  {0, 0, 0, 0},
+	{"scan", no_argument, 0, 's'},
+	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
-	"\t[-x <xml_file>]\n"
-		"\t\t\t\t[-n <hostname>]\n"
+	"[-x <xml_file>]\n"
 		"\t\t\t\t[-u <uri>]",
-	"Show this help and quit.",
-	"Use the XML backend with the provided XML file.",
-	"Use the network backend with the provided hostname.",
-	"Use the context at the provided URI.",
 	"Scan for available backends.",
-	"Scan for available contexts and if only one is available use it.",
 };
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
@@ -72,54 +61,39 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 
 int main(int argc, char **argv)
 {
+	char **argw;
 	struct iio_context *ctx;
 	int c, option_index = 0;
-	const char *arg_uri = NULL;
-	const char *arg_ip = NULL;
-	const char *arg_xml = NULL;
-	enum backend backend = IIO_LOCAL;
-	bool do_scan = false, detect_context = false;
 	unsigned int i, major, minor;
 	char git_tag[8];
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hn:x:u:sa",
+	argw = dup_argv(argc, argv);
+
+	iio_library_get_version(&major, &minor, git_tag);
+	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
+
+	printf("Compiled with backends:");
+	for (i = 0; i < iio_get_backends_count(); i++)
+		printf(" %s", iio_get_backend(i));
+	printf("\n");
+
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "s",	/* Flawfinder: ignore */
 					options, &option_index)) != -1) {
 		switch (c) {
+			/* All these are handled in the common */
 		case 'h':
-			usage(MY_NAME, options, options_descriptions);
-			return EXIT_SUCCESS;
 		case 'n':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = IIO_NETWORK;
-			arg_ip = optarg;
-			break;
 		case 'x':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = IIO_XML;
-			arg_xml = optarg;
+		case 'S':
+		case 'u':
+		case 'a':
 			break;
 		case 's':
-			do_scan = true;
-			break;
-		case 'u':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-x, -n and -u are mutually exclusive\n");
-				return EXIT_FAILURE;
-			}
-			backend = IIO_AUTO;
-			arg_uri = optarg;
-			break;
-		case 'a':
-			detect_context = true;
-			break;
+			autodetect_context(false, false, MY_NAME);
+			return EXIT_SUCCESS;
 		case '?':
+			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
 		}
 	}
@@ -130,41 +104,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	iio_library_get_version(&major, &minor, git_tag);
-	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
-
-	printf("Compiled with backends:");
-	for (i = 0; i < iio_get_backends_count(); i++)
-		printf(" %s", iio_get_backend(i));
-	printf("\n");
-
-	if (do_scan) {
-		autodetect_context(false, false, MY_NAME);
-		return EXIT_SUCCESS;
-	}
-
-	if (detect_context)
-		ctx = autodetect_context(true, false, MY_NAME);
-	else if (backend == IIO_XML)
-		ctx = iio_create_xml_context(arg_xml);
-	else if (backend == IIO_NETWORK)
-		ctx = iio_create_network_context(arg_ip);
-	else if (backend == IIO_AUTO)
-		ctx = iio_create_context_from_uri(arg_uri);
-	else
-		ctx = iio_create_default_context();
-
-	if (!ctx) {
-		if (!detect_context) {
-			char buf[1024];
-
-			iio_strerror(errno, buf, sizeof(buf));
-			fprintf(stderr, "Unable to create IIO context: %s\n",
-					buf);
-		}
-
+	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
+	if (!ctx)
 		return EXIT_FAILURE;
-	}
 
 	printf("IIO context created with %s backend.\n",
 			iio_context_get_name(ctx));
@@ -363,6 +305,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	free_argw(argc, argw);
 	free(buf);
 	iio_context_destroy(ctx);
 	return EXIT_SUCCESS;

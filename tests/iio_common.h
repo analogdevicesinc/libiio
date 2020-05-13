@@ -45,7 +45,14 @@ char *cmn_strndup(const char *str, size_t n);
 struct iio_context * autodetect_context(bool rtn, bool gen_code, const char *name);
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
+
+#define COMMON_OPTIONS "hn:x:u:aS"
+struct iio_context * handle_common_opts(char * name, int argc, char * const argv[],
+	const struct option *options, const char *options_descriptions[]);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
+
+char ** dup_argv(int argc, char * argv[]);
+void free_argw(int argc, char * argw[]);
 
 /* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
  * {NAME_MAX} : Maximum number of bytes in a filename
