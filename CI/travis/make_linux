@@ -37,6 +37,25 @@ handle_default() {
 		cmake ${FLAGS} ..
 		echo "### make"
 		make
+		# check the error output if either file isn't empty
+		if [ -s ./Dox_output_libiio -o -s ./Dox_output_csharp -o -s ./Spx_output_python ] ; then
+			if [ -s ./Dox_output_libiio ] ; then
+				echo "### ERRORs in Dox_output_libiio"
+				cat ./Dox_output_libiio
+			fi
+			if [ -s ./Dox_output_csharp ] ; then
+				echo "### ERRORs in Dox_output_csharp"
+				cat ./Dox_output_csharp
+			fi
+			if [ -s ./Spx_output_python ] ; then
+				echo "### ERRRORs in Spx_output_python"
+				cat ./Spx_output_python
+			fi
+			exit 1
+		else
+			echo "### No errors in Doc"
+			ls -l Dox_output_csharp Dox_output_libiio Spx_output_python
+		fi
 	fi
 	echo "### make package"
 	make package
