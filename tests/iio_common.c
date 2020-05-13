@@ -42,8 +42,12 @@ void * xmalloc(size_t n, const char * name)
 	void *p = malloc(n);
 
 	if (!p && n != 0) {
-		fprintf(stderr, "%s fatal error: allocating %zu bytes failed\n",
+		if (name) {
+			fprintf(stderr, "%s fatal error: allocating %zu bytes failed\n",
 				name, n);
+		} else {
+			fprintf(stderr, "Fatal error: allocating %zu bytes failed\n", n);
+		}
 		exit(EXIT_FAILURE);
 	}
 
@@ -150,10 +154,10 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 	return (unsigned long int) val;
 }
 
-char ** dup_argv(int argc, char * argv[])
+char ** dup_argv(char * name, int argc, char * argv[])
 {
 	int i = 1;
-	char** new_argv = xmalloc((argc + 1) * sizeof(char *), NULL);
+	char** new_argv = xmalloc((argc + 1) * sizeof(char *), name);
 
 	for(int i = 0; i < argc; i++) {
 		new_argv[i] = cmn_strndup(argv[i], NAME_MAX);

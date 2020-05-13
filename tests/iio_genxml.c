@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	int c, option_index = 0;
 	size_t xml_len;
 
-	argw = dup_argv(argc, argv);
+	argw = dup_argv(MY_NAME, argc, argv);
 	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
 
 	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS,  /* Flawfinder: ignore */

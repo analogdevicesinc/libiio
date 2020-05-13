@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 	char git_tag[8];
 	int ret;
 
-	argw = dup_argv(argc, argv);
+	argw = dup_argv(MY_NAME, argc, argv);
 
 	iio_library_get_version(&major, &minor, git_tag);
 	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);

@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	int c, option_index = 0;
 	char * name;
 
-	argw = dup_argv(argc, argv);
+	argw = dup_argv(MY_NAME, argc, argv);
 
 	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
 

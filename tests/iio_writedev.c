@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 	bool cyclic_buffer = false;
 	ssize_t ret;
 
-	argw = dup_argv(argc, argv);
+	argw = dup_argv(MY_NAME, argc, argv);
 
 	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
 
