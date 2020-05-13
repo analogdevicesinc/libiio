@@ -267,7 +267,7 @@ __api struct iio_scan_block * iio_create_scan_block(
 
 
 /** @brief Destroy the given scan block
- * @param ctx A pointer to an iio_scan_block structure
+ * @param blk A pointer to an iio_scan_block structure
  *
  * <b>NOTE:</b> After that function, the iio_scan_block pointer shall be invalid.
  *
