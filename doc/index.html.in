@@ -212,7 +212,7 @@
     C/C++ library that provides generic access to Industrial Input Output (IIO)
     devices. IIO started as a <a href=
     "https://www.kernel.org/doc/html/latest/driver-api/iio/index.html">Linux
-    kernel subsystem</a> to support for devices that that included
+    kernel subsystem</a> to support for devices that included
     analog-to-digital convertors (ADCs) and/or digital-to-analog convertors
     (DACs). While the libIIO continues to provide an easy interface to the
     Linux kernel IIO subsystem, it has also expanded beyond that, and is now
@@ -281,7 +281,7 @@
     header in your source.</p>
     <p>For other platforms, you are encouraged to use one of our <a href=
     "https://github.com/analogdevicesinc/libiio/releases/latest">release
-    builds</a>. If if you want to use the very latest, you have the option to
+    builds</a>. If you want to use the very latest, you have the option to
     use a nightly build or build from source. Please check the Downloads
     menu.</p>
     <p>If you prefer, you can also access the source directly from <a href=
@@ -289,7 +289,7 @@
     <p>Once you have secured your access to the library and its header, please
     check the libIIO API or the libIIO examples.</p>
     <h3>Where is (insert my favourite language) support?</h3>
-    <p>The mainline library is built in C, can be used in C++, and has built in
+    <p>The mainline library is written in C, can be used in C++, and has built in
     bindings for Python and C# (C-Sharp). <a href=
     "https://github.com/drom/node-iio">Node.js</a> and <a href=
     "https://github.com/fpagliughi/rust-industrial-io">Rust</a> are maintained
