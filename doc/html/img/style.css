@@ -27,10 +27,13 @@ h3{
 }
 header{
 	margin-bottom: 20px;
+	display: table;
 }
 header img{
 	margin-top: 10px;
 	margin-bottom: 0px;
+	margin-right: 10px;
+	float: left;
 	height: 75px;
 	vertical-align: middle
 }
