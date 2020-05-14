@@ -53,7 +53,8 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 			ldata = ndata;
 			i++;
 		}
-		IIO_ERROR("dnssd_remove_node call when %i exceeds list length (%i)\n", n, i);
+		if (i < n)
+			IIO_ERROR("dnssd_remove_node call when %i exceeds list length (%i)\n", n, i);
 	}
 
 	*ddata = d;
