@@ -51,7 +51,7 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 	const struct option *options, const char *options_descriptions[]);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
 
-char ** dup_argv(int argc, char * argv[]);
+char ** dup_argv(char * name, int argc, char * argv[]);
 void free_argw(int argc, char * argw[]);
 
 /* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
