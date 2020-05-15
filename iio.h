@@ -411,14 +411,20 @@ __api __check_ret struct iio_context * iio_create_network_context(const char *ho
  * - Network backend, "ip:"\n Requires a hostname, IPv4, or IPv6 to connect to
  *   a specific running IIO Daemon or no address part for automatic discovery
  *   when library is compiled with ZeroConf support. For example
- *   <i>"ip:192.168.2.1"</i>, <i>"ip:localhost"</i>, <i>"ip:"</i>
+ *   <i>"ip:192.168.2.1"</i>, <b>or</b> <i>"ip:localhost"</i>, <b>or</b> <i>"ip:"</i>
+ *   <b>or</b> <i>"ip:plutosdr.local"</i>
  * - USB backend, "usb:"\n Requires bus, address, and interface parts separated
  *   with a dot. For example <i>"usb:3.32.5"</i>
- * - Serial backend, "serial:"\n Requires a port, baud_rate, parity ('<b>n</b>'
- *   none, 'o' odd, 'e' even, 'm' mark, 's' space), bits (<b>8</b>), and flow
- *   ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR) parts separated
- *   with a comma. For example <i>"serial:/dev/ttyUSB0,115200"</i>,
- *   <i>"serial:/dev/ttyUSB0,115200,n,8,1"</i>*/
+ * - Serial backend, "serial:"\n Requires:
+ *     - a port (/dev/ttyUSB0),
+ *     - baud_rate (default <b>115200</b>)
+ *     - serial port configuration
+ *        - data bits (5 6 7 <b>8</b> 9)
+ *        - parity ('<b>n</b>' none, 'o' odd, 'e' even, 'm' mark, 's' space)
+ *        - stop bits (<b>1</b> 2)
+ *        - flow control ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR)
+ *
+ *  For example <i>"serial:/dev/ttyUSB0,115200"</i> <b>or</b> <i>"serial:/dev/ttyUSB0,115200,8n1"</i>*/
 __api __check_ret struct iio_context * iio_create_context_from_uri(const char *uri);
 
 
