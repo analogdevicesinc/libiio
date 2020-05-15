@@ -1,0 +1,4 @@
+<map id="iio.Channel.is_enabled" name="iio.Channel.is_enabled">
+<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4539e8e210e3f94f9121cf7e0fbad457" title="Extract the samples corresponding to this channel from the given iio.IOBuffer object." alt="" coords="208,5,324,32"/>
+<area shape="rect" id="node3" href="$classiio_1_1Channel.html#a7eda7ca0cbf91d49d52d7ea8bef0151c" title="Write the specified array of samples corresponding to this channel into the given iio..." alt="" coords="207,56,325,83"/>
+</map>

@@ -1,0 +1,416 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>iio_writedev &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> libiio-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../buffer.html">Buffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device.html">Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trigger.html">Trigger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">libiio-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>iio_writedev</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for iio_writedev</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2020 Analog Devices, Inc.</span>
+<span class="c1"># Author: Cristian Iacob &lt;cristian.iacob@analog.com&gt;</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU General Public License</span>
+<span class="c1"># as published by the Free Software Foundation; either version 2</span>
+<span class="c1"># of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">iio</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--network&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use the network backend with the provided hostname.&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-u&#39;</span><span class="p">,</span> <span class="s1">&#39;--uri&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use the context with the provided URI.&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;--buffer-size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Size of the capture buffer. Default is 256.&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="s1">&#39;--samples&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of samples to capture, 0 = infinite. Default is 0.&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-T&#39;</span><span class="p">,</span> <span class="s1">&#39;--timeout&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Buffer timeout in milliseconds. 0 = no timeout&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;--auto&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Scan for available contexts and if only one is available use it.&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--cyclic&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use cyclic buffer mode.&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;device&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+
+<span class="n">arg_ip</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+<span class="n">arg_uri</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+<span class="n">scan_for_context</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">buffer_size</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">cyclic</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">device_name</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">channels</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="read_arguments"><a class="viewcode-back" href="../iio_writedev.html#iio_writedev.read_arguments">[docs]</a><span class="k">def</span> <span class="nf">read_arguments</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method for reading the command line parameters and setting the corresponding variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">arg_ip</span><span class="p">,</span> <span class="n">arg_uri</span><span class="p">,</span> <span class="n">scan_for_context</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">cyclic</span><span class="p">,</span> <span class="n">device_name</span><span class="p">,</span> <span class="n">channels</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">arg_ip</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">network</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">uri</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">arg_uri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">uri</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">auto</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">scan_for_context</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">buffer_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">buffer_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">buffer_size</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">samples</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cyclic</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">cyclic</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">device_name</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">channels</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">channel</span></div>
+
+
+<div class="viewcode-block" id="create_context"><a class="viewcode-back" href="../iio_writedev.html#iio_writedev.create_context">[docs]</a><span class="k">def</span> <span class="nf">create_context</span><span class="p">(</span><span class="n">scan_for_context</span><span class="p">,</span> <span class="n">arg_uri</span><span class="p">,</span> <span class="n">arg_ip</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method for creating the corresponding context.</span>
+
+<span class="sd">    parameters:</span>
+<span class="sd">        scan_for_context: type=bool</span>
+<span class="sd">            Scan for available contexts and if only one is available use it.</span>
+<span class="sd">        arg_uri: type=string</span>
+<span class="sd">            The URI on which the program should look for a Context.</span>
+<span class="sd">        arg_ip: type=string</span>
+<span class="sd">            The IP on which the program should look for a Network Context.</span>
+
+<span class="sd">    returns: type:iio.Context</span>
+<span class="sd">        The resulted context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">scan_for_context</span><span class="p">:</span>
+            <span class="n">contexts</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">scan_contexts</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;No IIO context found.&#39;</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">uri</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">contexts</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>
+                <span class="n">ctx</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">_context</span><span class="o">=</span><span class="n">uri</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Multiple contexts found. Please select one using --uri!&#39;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">uri</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">contexts</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">arg_uri</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">_context</span><span class="o">=</span><span class="n">arg_uri</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">arg_ip</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">NetworkContext</span><span class="p">(</span><span class="n">arg_ip</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Unable to create IIO context&#39;</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ctx</span></div>
+
+
+<span class="k">def</span> <span class="nf">keyboard_interrupt_handler</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">keyboard_interrupt_handler</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="write_data"><a class="viewcode-back" href="../iio_writedev.html#iio_writedev.write_data">[docs]</a><span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="n">cyclic</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method for pushing data to the buffer.</span>
+
+<span class="sd">    parameters:</span>
+<span class="sd">        dev: type=iio.Device</span>
+<span class="sd">            Current device.</span>
+<span class="sd">        buffer: type=iio.Buffer</span>
+<span class="sd">            Current buffer.</span>
+<span class="sd">        num_samples: type=int</span>
+<span class="sd">            Number of samples to capture, 0 = infinite. Default is 0.</span>
+<span class="sd">        buffer_size: type=int</span>
+<span class="sd">            Size of the capture buffer. Default is 256.</span>
+<span class="sd">        cyclic: type=bool</span>
+<span class="sd">            Use cyclic buffer mode.</span>
+
+<span class="sd">    returns: type=None</span>
+<span class="sd">        Push data to buffer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">app_running</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">num_samples_set</span> <span class="o">=</span> <span class="n">num_samples</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">app_running</span><span class="p">:</span>
+        <span class="n">bytes_to_read</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">.</span><span class="n">_length</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">num_samples_set</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">_length</span><span class="p">,</span> <span class="n">num_samples</span> <span class="o">*</span> <span class="n">dev</span><span class="o">.</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="n">write_len</span> <span class="o">=</span> <span class="n">bytes_to_read</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">while</span> <span class="n">bytes_to_read</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">read_data</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">bytes_to_read</span><span class="p">)</span>
+            <span class="n">bytes_to_read</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">read_data</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">read_data</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">read_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">num_samples_set</span><span class="p">:</span>
+            <span class="n">num_samples</span> <span class="o">-=</span> <span class="nb">int</span><span class="p">(</span><span class="n">write_len</span> <span class="o">/</span> <span class="n">dev</span><span class="o">.</span><span class="n">sample_size</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">num_samples</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">write_len</span> <span class="o">&lt;</span> <span class="n">buffer_size</span> <span class="o">*</span> <span class="n">dev</span><span class="o">.</span><span class="n">sample_size</span><span class="p">:</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">buffer</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">app_running</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Unable to push buffer!&#39;</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">break</span>
+
+        <span class="k">while</span> <span class="n">app_running</span> <span class="ow">and</span> <span class="n">cyclic</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">read_arguments</span><span class="p">()</span>
+
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">create_context</span><span class="p">(</span><span class="n">scan_for_context</span><span class="p">,</span> <span class="n">arg_uri</span><span class="p">,</span> <span class="n">arg_ip</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">set_timeout</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="n">dev</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">find_device</span><span class="p">(</span><span class="n">device_name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dev</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Device </span><span class="si">%s</span><span class="s1"> not found!&#39;</span> <span class="o">%</span> <span class="n">device_name</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+            <span class="n">channel</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">channel_idx</span> <span class="ow">in</span> <span class="n">channels</span><span class="p">:</span>
+            <span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">channel_idx</span><span class="p">)]</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">buffer</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">Buffer</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="n">cyclic</span><span class="o">=</span><span class="n">cyclic</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">buffer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Unable to create buffer!&#39;</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">write_data</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="n">cyclic</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Analog Devices, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

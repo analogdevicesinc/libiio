@@ -1,0 +1,4 @@
+<map id="iio_device_find_debug_attr" name="iio_device_find_debug_attr">
+<area shape="rect" id="node2" href="$group__Channel.html#ga3c24e9c93e2217c9506073d04b878461" title="Return True if the given channel is an output channel. " alt="" coords="234,5,381,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled. " alt="" coords="229,56,385,83"/>
+</map>

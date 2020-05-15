@@ -1,5 +1,0 @@
-<map id="iio_device_is_trigger" name="iio_device_is_trigger">
-<area shape="rect" id="node2" href="$group__Device.html#gab673fa9f0dd70dcc6dd756048593a0fa" title="Enumerate the channels of the given device. " alt="" coords="204,5,380,47"/>
-<area shape="rect" id="node3" href="$group__Device.html#gae7adad053ab5e2a5f447851f7d34dc04" title="Retrieve the device name (e.g. xadc) " alt="" coords="214,71,370,98"/>
-<area shape="rect" id="node4" href="$group__Device.html#ga233b868380bca0578907bda28d3a5480" title="Retrieve the device ID (e.g. iio:device0) " alt="" coords="227,122,357,149"/>
-</map>

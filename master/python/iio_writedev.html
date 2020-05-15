@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>iio_writedev &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="iio_info" href="iio_info.html" />
+    <link rel="prev" title="iio_readdev" href="iio_readdev.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> libiio-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="examples.html#complete-application-examples">Complete Application Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">iio_writedev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iio_info.html">iio_info</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#code-snippets">Code Snippets</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">libiio-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="examples.html">Examples</a> &raquo;</li>
+        
+      <li>iio_writedev</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/iio_writedev.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="iio-writedev">
+<h1>iio_writedev<a class="headerlink" href="#iio-writedev" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line">iio_writedev is part of the Libiio package, a library that has been developed to ease the development of software interfacing Linux Industrial I/O (IIO) devices.</div>
+<div class="line">This tool is written using the libiio Python bindings. It works in the same way as the base iio_writedev works. You can find more informations about it on this <a class="reference external" href="https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_writedev">page</a>.</div>
+</div>
+<span class="target" id="module-iio_writedev"></span><dl class="function">
+<dt id="iio_writedev.create_context">
+<code class="descclassname">iio_writedev.</code><code class="descname">create_context</code><span class="sig-paren">(</span><em>scan_for_context</em>, <em>arg_uri</em>, <em>arg_ip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#create_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.create_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for creating the corresponding context.</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>scan_for_context: type=bool</dt>
+<dd>Scan for available contexts and if only one is available use it.</dd>
+<dt>arg_uri: type=string</dt>
+<dd>The URI on which the program should look for a Context.</dd>
+<dt>arg_ip: type=string</dt>
+<dd>The IP on which the program should look for a Network Context.</dd>
+</dl>
+</dd>
+<dt>returns: type:iio.Context</dt>
+<dd>The resulted context.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="iio_writedev.read_arguments">
+<code class="descclassname">iio_writedev.</code><code class="descname">read_arguments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#read_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.read_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for reading the command line parameters and setting the corresponding variables.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="iio_writedev.write_data">
+<code class="descclassname">iio_writedev.</code><code class="descname">write_data</code><span class="sig-paren">(</span><em>dev</em>, <em>buffer</em>, <em>num_samples</em>, <em>buffer_size</em>, <em>cyclic</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#write_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.write_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for pushing data to the buffer.</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>dev: type=iio.Device</dt>
+<dd>Current device.</dd>
+<dt>buffer: type=iio.Buffer</dt>
+<dd>Current buffer.</dd>
+<dt>num_samples: type=int</dt>
+<dd>Number of samples to capture, 0 = infinite. Default is 0.</dd>
+<dt>buffer_size: type=int</dt>
+<dd>Size of the capture buffer. Default is 256.</dd>
+<dt>cyclic: type=bool</dt>
+<dd>Use cyclic buffer mode.</dd>
+</dl>
+</dd>
+<dt>returns: type=None</dt>
+<dd>Push data to buffer.</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="iio_info.html" class="btn btn-neutral float-right" title="iio_info" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="iio_readdev.html" class="btn btn-neutral float-left" title="iio_readdev" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Analog Devices, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

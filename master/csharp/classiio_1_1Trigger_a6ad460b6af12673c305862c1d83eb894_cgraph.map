@@ -1,0 +1,4 @@
+<map id="iio.Trigger.get_rate" name="iio.Trigger.get_rate">
+<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a62af2e28fdc64d0e1818d2b98d476de7" title="Read the value of this attribute as a long." alt="" coords="184,5,304,32"/>
+<area shape="rect" id="node3" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="352,5,441,32"/>
+</map>

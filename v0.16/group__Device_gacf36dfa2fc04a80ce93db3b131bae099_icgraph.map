@@ -1,0 +1,6 @@
+<map id="iio_device_attr_read" name="iio_device_attr_read">
+<area shape="rect" id="node2" href="$group__Device.html#gace7a0de3e19a58c38f23e2a9b444dfff" title="Read the content of the given device&#45;specific attribute. " alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node4" href="$group__Device.html#gaeb192bd3730c8c65a4e5c29feca62257" title="Read the content of the given device&#45;specific attribute. " alt="" coords="192,71,331,112"/>
+<area shape="rect" id="node5" href="$group__Debug.html#gaf549d2113214add88129493697cb3587" title="Get the value of a hardware register. " alt="" coords="193,137,330,163"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga81493a122a9da884af36d087cbc80614" title="Read the content of the given device&#45;specific attribute. " alt="" coords="379,13,548,39"/>
+</map>

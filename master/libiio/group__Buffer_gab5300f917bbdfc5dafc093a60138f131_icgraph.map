@@ -1,0 +1,7 @@
+<map id="iio_buffer_end" name="iio_buffer_end">
+<area shape="rect" id="node2" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer. " alt="" coords="156,100,260,127"/>
+<area shape="rect" id="node3" href="$group__Channel.html#gacd227a6861960ea2fb49d957f62887dd" title="Demultiplex the samples of a given channel. " alt="" coords="310,5,457,32"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30" title="Demultiplex and convert the samples of a given channel. " alt="" coords="324,63,443,89"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga350e81855764c159c6aefa12fb78e1c2" title="Multiplex the samples of a given channel. " alt="" coords="308,125,459,152"/>
+<area shape="rect" id="node6" href="$group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2" title="Convert and multiplex the samples of a given channel. " alt="" coords="322,188,445,215"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="iio_channel_attr_read_all" name="iio_channel_attr_read_all">
+<area shape="rect" id="node2" href="$group__Channel.html#gacb37ef830dcc100a9908d0592d1ff190" title="Read the content of the given channel&#45;specific attribute. " alt="" coords="219,5,364,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga0d9e98519d12fc02a17a3f47011321fb" title="Enumerate the channel&#45;specific attributes of the given channel. " alt="" coords="219,57,364,98"/>
+<area shape="rect" id="node4" href="$group__Channel.html#gafd133e49a1a694e394939b4c5a073cb5" title="Get the channel&#45;specific attribute present at the given index. " alt="" coords="222,123,361,149"/>
+</map>

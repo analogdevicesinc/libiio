@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Buffer &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Device" href="device.html" />
+    <link rel="prev" title="Contexts" href="context.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> libiio-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Buffer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#members">Members</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">libiio-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Buffer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/buffer.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="buffer">
+<h1>Buffer<a class="headerlink" href="#buffer" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="members">
+<h2>Members<a class="headerlink" href="#members" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="iio.Buffer">
+<em class="property">class </em><code class="descclassname">iio.</code><code class="descname">Buffer</code><span class="sig-paren">(</span><em>device</em>, <em>samples_count</em>, <em>cyclic=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The class used for all I/O operations.</p>
+<dl class="method">
+<dt id="iio.Buffer.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the current buffer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="iio.Buffer.device">
+<code class="descname">device</code><a class="headerlink" href="#iio.Buffer.device" title="Permalink to this definition">¶</a></dt>
+<dd><p>This buffer’s corresponding device.
+type: iio.Device</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="iio.Buffer.poll_fd">
+<code class="descname">poll_fd</code><a class="headerlink" href="#iio.Buffer.poll_fd" title="Permalink to this definition">¶</a></dt>
+<dd><p>This buffer’s poll_fd.
+type: int</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="iio.Buffer.push">
+<code class="descname">push</code><span class="sig-paren">(</span><em>samples_count=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer.push"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer.push" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit the samples contained in this buffer to the hardware.</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>samples_count: type=int</dt>
+<dd>The number of samples to submit, default = full buffer</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="iio.Buffer.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the samples contained inside the Buffer object.</p>
+<dl class="docutils">
+<dt>returns: type=bytearray</dt>
+<dd>An array containing the samples</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="iio.Buffer.refill">
+<code class="descname">refill</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer.refill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer.refill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch a new set of samples from the hardware.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="iio.Buffer.set_blocking_mode">
+<code class="descname">set_blocking_mode</code><span class="sig-paren">(</span><em>blocking</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer.set_blocking_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer.set_blocking_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the buffer’s blocking mode.</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>blocking: type=boolean</dt>
+<dd>True if in blocking_mode else False.</dd>
+</dl>
+</dd>
+<dt>returns: type=int</dt>
+<dd>Return code from the C layer.</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="iio.Buffer.step">
+<code class="descname">step</code><a class="headerlink" href="#iio.Buffer.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>This buffer’s step size.
+type: int</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="iio.Buffer.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Buffer.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Buffer.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy the given array of samples inside the Buffer object.</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>array: type=bytearray</dt>
+<dd>The array containing the samples to copy</dd>
+</dl>
+</dd>
+<dt>returns: type=int</dt>
+<dd>The number of bytes written into the buffer</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="device.html" class="btn btn-neutral float-right" title="Device" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="context.html" class="btn btn-neutral float-left" title="Contexts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Analog Devices, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

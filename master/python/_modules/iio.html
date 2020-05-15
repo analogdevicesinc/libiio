@@ -1,0 +1,1747 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>iio &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> libiio-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../buffer.html">Buffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device.html">Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trigger.html">Trigger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">libiio-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>iio</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for iio</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Copyright (C) 2014 Analog Devices, Inc.</span>
+<span class="sd">Author: Paul Cercueil &lt;paul.cercueil@analog.com&gt;</span>
+
+<span class="sd">This library is free software; you can redistribute it and/or</span>
+<span class="sd">modify it under the terms of the GNU Lesser General Public</span>
+<span class="sd">License as published by the Free Software Foundation; either</span>
+<span class="sd">version 2.1 of the License, or (at your option) any later version.</span>
+
+<span class="sd">This library is distributed in the hope that it will be useful,</span>
+<span class="sd">but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="sd">MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="sd">Lesser General Public License for more details.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Imports from package ctypes are not grouped</span>
+<span class="c1"># pylint: disable=ungrouped-imports</span>
+<span class="c1">#</span>
+<span class="c1"># The way the methods and classes are used, violate this, but there</span>
+<span class="c1">#   isn&#39;t a good way to do things otherwise</span>
+<span class="c1"># pylint: disable=protected-access</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Structure</span><span class="p">,</span>
+    <span class="n">c_char_p</span><span class="p">,</span>
+    <span class="n">c_uint</span><span class="p">,</span>
+    <span class="n">c_int</span><span class="p">,</span>
+    <span class="n">c_long</span><span class="p">,</span>
+    <span class="n">c_longlong</span><span class="p">,</span>
+    <span class="n">c_size_t</span><span class="p">,</span>
+    <span class="n">c_ssize_t</span><span class="p">,</span>
+    <span class="n">c_char</span><span class="p">,</span>
+    <span class="n">c_void_p</span><span class="p">,</span>
+    <span class="n">c_bool</span><span class="p">,</span>
+    <span class="n">create_string_buffer</span><span class="p">,</span>
+    <span class="n">c_double</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+    <span class="n">POINTER</span> <span class="k">as</span> <span class="n">_POINTER</span><span class="p">,</span>
+    <span class="n">CDLL</span> <span class="k">as</span> <span class="n">_cdll</span><span class="p">,</span>
+    <span class="n">memmove</span> <span class="k">as</span> <span class="n">_memmove</span><span class="p">,</span>
+    <span class="n">byref</span> <span class="k">as</span> <span class="n">_byref</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="kn">import</span> <span class="n">find_library</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">strerror</span> <span class="k">as</span> <span class="n">_strerror</span>
+<span class="kn">from</span> <span class="nn">platform</span> <span class="kn">import</span> <span class="n">system</span> <span class="k">as</span> <span class="n">_system</span>
+<span class="kn">import</span> <span class="nn">weakref</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+
+<span class="k">if</span> <span class="s2">&quot;Windows&quot;</span> <span class="ow">in</span> <span class="n">_system</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="n">get_last_error</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="n">get_errno</span>
+<span class="c1"># pylint: enable=ungrouped-imports</span>
+
+<span class="c1"># ctypes requires the errcheck to take three arguments, but we don&#39;t use them</span>
+<span class="c1"># pylint: disable=unused-argument</span>
+
+
+<span class="k">def</span> <span class="nf">_check_null</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">get_last_error</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;Windows&quot;</span> <span class="ow">in</span> <span class="n">_system</span><span class="p">()</span> <span class="k">else</span> <span class="n">get_errno</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">_strerror</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_check_negative</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="o">-</span><span class="n">result</span><span class="p">,</span> <span class="n">_strerror</span><span class="p">(</span><span class="o">-</span><span class="n">result</span><span class="p">))</span>
+
+
+<span class="c1"># pylint: enable=unused-argument</span>
+
+<span class="c1"># Python 2 and Python 3 compatible _isstring function.</span>
+<span class="c1"># pylint: disable=basestring-builtin</span>
+<span class="k">def</span> <span class="nf">_isstring</span><span class="p">(</span><span class="n">argument</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># attempt to evaluate basestring (Python 2)</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+        <span class="c1"># No basestring --&gt; Python 3</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+
+<span class="c1"># pylint: enable=basestring-builtin</span>
+
+
+<span class="k">class</span> <span class="nc">_ScanContext</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">_ContextInfo</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">_Context</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">_Device</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">_Channel</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">_Buffer</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="DataFormat"><a class="viewcode-back" href="../channel.html#iio.DataFormat">[docs]</a><span class="k">class</span> <span class="nc">DataFormat</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents the data format of an IIO channel.&quot;&quot;&quot;</span>
+
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;length&quot;</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;bits&quot;</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;shift&quot;</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;is_signed&quot;</span><span class="p">,</span> <span class="n">c_bool</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;is_fully_defined&quot;</span><span class="p">,</span> <span class="n">c_bool</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;is_be&quot;</span><span class="p">,</span> <span class="n">c_bool</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;with_scale&quot;</span><span class="p">,</span> <span class="n">c_bool</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">c_double</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;repeat&quot;</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">),</span>
+    <span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ChannelModifier"><a class="viewcode-back" href="../channel.html#iio.ChannelModifier">[docs]</a><span class="k">class</span> <span class="nc">ChannelModifier</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Contains the modifier type of an IIO channel.&quot;&quot;&quot;</span>
+
+    <span class="n">IIO_NO_MOD</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">IIO_MOD_X</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">IIO_MOD_Y</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">IIO_MOD_Z</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">IIO_MOD_X_AND_Y</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">IIO_MOD_X_AND_Z</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">IIO_MOD_Y_AND_Z</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">IIO_MOD_X_AND_Y_AND_Z</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">IIO_MOD_X_OR_Y</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">IIO_MOD_X_OR_Z</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">IIO_MOD_Y_OR_Z</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">IIO_MOD_X_OR_Y_OR_Z</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">IIO_MOD_LIGHT_BOTH</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">IIO_MOD_LIGHT_IR</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">IIO_MOD_ROOT_SUM_SQUARED_X_Y</span> <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">IIO_MOD_SUM_SQUARED_X_Y_Z</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">IIO_MOD_LIGHT_CLEAR</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">IIO_MOD_LIGHT_RED</span> <span class="o">=</span> <span class="mi">17</span>
+    <span class="n">IIO_MOD_LIGHT_GREEN</span> <span class="o">=</span> <span class="mi">18</span>
+    <span class="n">IIO_MOD_LIGHT_BLUE</span> <span class="o">=</span> <span class="mi">19</span>
+    <span class="n">IIO_MOD_QUATERNION</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">IIO_MOD_TEMP_AMBIENT</span> <span class="o">=</span> <span class="mi">21</span>
+    <span class="n">IIO_MOD_TEMP_OBJECT</span> <span class="o">=</span> <span class="mi">22</span>
+    <span class="n">IIO_MOD_NORTH_MAGN</span> <span class="o">=</span> <span class="mi">23</span>
+    <span class="n">IIO_MOD_NORTH_TRUE</span> <span class="o">=</span> <span class="mi">24</span>
+    <span class="n">IIO_MOD_NORTH_MAGN_TILT_COMP</span> <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">IIO_MOD_NORTH_TRUE_TILT_COMP</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">IIO_MOD_RUNNING</span> <span class="o">=</span> <span class="mi">27</span>
+    <span class="n">IIO_MOD_JOGGING</span> <span class="o">=</span> <span class="mi">28</span>
+    <span class="n">IIO_MOD_WALKING</span> <span class="o">=</span> <span class="mi">29</span>
+    <span class="n">IIO_MOD_STILL</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z</span> <span class="o">=</span> <span class="mi">31</span>
+    <span class="n">IIO_MOD_I</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">IIO_MOD_Q</span> <span class="o">=</span> <span class="mi">33</span>
+    <span class="n">IIO_MOD_CO2</span> <span class="o">=</span> <span class="mi">34</span>
+    <span class="n">IIO_MOD_VOC</span> <span class="o">=</span> <span class="mi">35</span>
+    <span class="n">IIO_MOD_LIGHT_UV</span> <span class="o">=</span> <span class="mi">36</span>
+    <span class="n">IIO_MOD_LIGHT_DUV</span> <span class="o">=</span> <span class="mi">37</span>
+    <span class="n">IIO_MOD_PM1</span> <span class="o">=</span> <span class="mi">38</span>
+    <span class="n">IIO_MOD_PM2P5</span> <span class="o">=</span> <span class="mi">39</span>
+    <span class="n">IIO_MOD_PM4</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">IIO_MOD_PM10</span> <span class="o">=</span> <span class="mi">41</span>
+    <span class="n">IIO_MOD_ETHANOL</span> <span class="o">=</span> <span class="mi">42</span>
+    <span class="n">IIO_MOD_H2</span> <span class="o">=</span> <span class="mi">43</span></div>
+
+
+<div class="viewcode-block" id="ChannelType"><a class="viewcode-back" href="../channel.html#iio.ChannelType">[docs]</a><span class="k">class</span> <span class="nc">ChannelType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Contains the type of an IIO channel.&quot;&quot;&quot;</span>
+
+    <span class="n">IIO_VOLTAGE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">IIO_CURRENT</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">IIO_POWER</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">IIO_ACCEL</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">IIO_ANGL_VEL</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">IIO_MAGN</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">IIO_LIGHT</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">IIO_INTENSITY</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">IIO_PROXIMITY</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">IIO_TEMP</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">IIO_INCLI</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">IIO_ROT</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">IIO_ANGL</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">IIO_TIMESTAMP</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">IIO_CAPACITANCE</span> <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">IIO_ALTVOLTAGE</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">IIO_CCT</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">IIO_PRESSURE</span> <span class="o">=</span> <span class="mi">17</span>
+    <span class="n">IIO_HUMIDITYRELATIVE</span> <span class="o">=</span> <span class="mi">18</span>
+    <span class="n">IIO_ACTIVITY</span> <span class="o">=</span> <span class="mi">19</span>
+    <span class="n">IIO_STEPS</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">IIO_ENERGY</span> <span class="o">=</span> <span class="mi">21</span>
+    <span class="n">IIO_DISTANCE</span> <span class="o">=</span> <span class="mi">22</span>
+    <span class="n">IIO_VELOCITY</span> <span class="o">=</span> <span class="mi">23</span>
+    <span class="n">IIO_CONCENTRATION</span> <span class="o">=</span> <span class="mi">24</span>
+    <span class="n">IIO_RESISTANCE</span> <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">IIO_PH</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">IIO_UVINDEX</span> <span class="o">=</span> <span class="mi">27</span>
+    <span class="n">IIO_ELECTRICALCONDUCTIVITY</span> <span class="o">=</span> <span class="mi">28</span>
+    <span class="n">IIO_COUNT</span> <span class="o">=</span> <span class="mi">29</span>
+    <span class="n">IIO_INDEX</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">IIO_GRAVITY</span> <span class="o">=</span> <span class="mi">31</span>
+    <span class="n">IIO_POSITIONRELATIVE</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">IIO_PHASE</span> <span class="o">=</span> <span class="mi">33</span>
+    <span class="n">IIO_MASSCONCENTRATION</span> <span class="o">=</span> <span class="mi">34</span>
+    <span class="n">IIO_CHAN_TYPE_UNKNOWN</span> <span class="o">=</span> <span class="mh">0x7FFFFFFF</span></div>
+
+
+<span class="c1"># pylint: disable=invalid-name</span>
+<span class="n">_ScanContextPtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_ScanContext</span><span class="p">)</span>
+<span class="n">_ContextInfoPtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_ContextInfo</span><span class="p">)</span>
+<span class="n">_ContextPtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_Context</span><span class="p">)</span>
+<span class="n">_DevicePtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_Device</span><span class="p">)</span>
+<span class="n">_ChannelPtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_Channel</span><span class="p">)</span>
+<span class="n">_BufferPtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_Buffer</span><span class="p">)</span>
+<span class="n">_DataFormatPtr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">DataFormat</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="s2">&quot;Windows&quot;</span> <span class="ow">in</span> <span class="n">_system</span><span class="p">():</span>
+    <span class="n">_iiolib</span> <span class="o">=</span> <span class="s2">&quot;libiio.dll&quot;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Non-windows, possibly Posix system</span>
+    <span class="n">_iiolib</span> <span class="o">=</span> <span class="s2">&quot;iio&quot;</span>
+
+<span class="n">_lib</span> <span class="o">=</span> <span class="n">_cdll</span><span class="p">(</span><span class="n">find_library</span><span class="p">(</span><span class="n">_iiolib</span><span class="p">),</span> <span class="n">use_errno</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_last_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">_get_backends_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_get_backends_count</span>
+<span class="n">_get_backends_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+
+<span class="n">_get_backend</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_get_backend</span>
+<span class="n">_get_backend</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_uint</span><span class="p">,)</span>
+<span class="n">_get_backend</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_get_backend</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_create_scan_context</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_create_scan_context</span>
+<span class="n">_create_scan_context</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">)</span>
+<span class="n">_create_scan_context</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ScanContextPtr</span>
+<span class="n">_create_scan_context</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_destroy_scan_context</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_scan_context_destroy</span>
+<span class="n">_destroy_scan_context</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ScanContextPtr</span><span class="p">,)</span>
+
+<span class="n">_iio_has_backend</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_has_backend</span>
+<span class="n">_iio_has_backend</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_char_p</span><span class="p">,)</span>
+<span class="n">_iio_has_backend</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_bool</span>
+
+<span class="n">_iio_strerror</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_strerror</span>
+<span class="n">_iio_strerror</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_int</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">)</span>
+<span class="n">_iio_strerror</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">_get_context_info_list</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_scan_context_get_info_list</span>
+<span class="n">_get_context_info_list</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ScanContextPtr</span><span class="p">,</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_POINTER</span><span class="p">(</span><span class="n">_ContextInfoPtr</span><span class="p">)))</span>
+<span class="n">_get_context_info_list</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_get_context_info_list</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_context_info_list_free</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_info_list_free</span>
+<span class="n">_context_info_list_free</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_POINTER</span><span class="p">(</span><span class="n">_ContextInfoPtr</span><span class="p">),)</span>
+
+<span class="n">_context_info_get_description</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_info_get_description</span>
+<span class="n">_context_info_get_description</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextInfoPtr</span><span class="p">,)</span>
+<span class="n">_context_info_get_description</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+
+<span class="n">_context_info_get_uri</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_info_get_uri</span>
+<span class="n">_context_info_get_uri</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextInfoPtr</span><span class="p">,)</span>
+<span class="n">_context_info_get_uri</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+
+<span class="n">_new_local</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_create_local_context</span>
+<span class="n">_new_local</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_new_local</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_new_xml</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_create_xml_context</span>
+<span class="n">_new_xml</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_new_xml</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_char_p</span><span class="p">,)</span>
+<span class="n">_new_xml</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_new_network</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_create_network_context</span>
+<span class="n">_new_network</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_new_network</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_char_p</span><span class="p">,)</span>
+<span class="n">_new_network</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_new_default</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_create_default_context</span>
+<span class="n">_new_default</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_new_default</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_new_uri</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_create_context_from_uri</span>
+<span class="n">_new_uri</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_new_uri</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_destroy</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_destroy</span>
+<span class="n">_destroy</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+
+<span class="n">_get_name</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_name</span>
+<span class="n">_get_name</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_get_name</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+<span class="n">_get_name</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_get_description</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_description</span>
+<span class="n">_get_description</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_get_description</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+
+<span class="n">_get_xml</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_xml</span>
+<span class="n">_get_xml</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_get_xml</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+
+<span class="n">_get_library_version</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_library_get_version</span>
+<span class="n">_get_library_version</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_uint</span><span class="p">),</span>
+    <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_uint</span><span class="p">),</span>
+    <span class="n">c_char_p</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_get_version</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_version</span>
+<span class="n">_get_version</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_get_version</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ContextPtr</span><span class="p">,</span>
+    <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_uint</span><span class="p">),</span>
+    <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_uint</span><span class="p">),</span>
+    <span class="n">c_char_p</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_get_version</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_get_attrs_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_attrs_count</span>
+<span class="n">_get_attrs_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_get_attrs_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+
+<span class="n">_get_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_attr</span>
+<span class="n">_get_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_get_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">,</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_char_p</span><span class="p">),</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_char_p</span><span class="p">))</span>
+<span class="n">_get_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_devices_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_devices_count</span>
+<span class="n">_devices_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_devices_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+
+<span class="n">_get_device</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_get_device</span>
+<span class="n">_get_device</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_DevicePtr</span>
+<span class="n">_get_device</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">)</span>
+<span class="n">_get_device</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_set_timeout</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_set_timeout</span>
+<span class="n">_set_timeout</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_set_timeout</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ContextPtr</span><span class="p">,</span>
+    <span class="n">c_uint</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_set_timeout</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_clone</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_context_clone</span>
+<span class="n">_clone</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_clone</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ContextPtr</span><span class="p">,)</span>
+<span class="n">_clone</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_d_get_id</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_id</span>
+<span class="n">_d_get_id</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_d_get_id</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+<span class="n">_d_get_id</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_d_get_name</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_name</span>
+<span class="n">_d_get_name</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_d_get_name</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_d_attr_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_attrs_count</span>
+<span class="n">_d_attr_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_d_attr_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_d_get_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_attr</span>
+<span class="n">_d_get_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_d_get_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+<span class="n">_d_get_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_d_read_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_attr_read</span>
+<span class="n">_d_read_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_d_read_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_size_t</span><span class="p">)</span>
+<span class="n">_d_read_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_write_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_attr_write</span>
+<span class="n">_d_write_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_d_write_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">)</span>
+<span class="n">_d_write_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_debug_attr_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_debug_attrs_count</span>
+<span class="n">_d_debug_attr_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_d_debug_attr_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_d_get_debug_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_debug_attr</span>
+<span class="n">_d_get_debug_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_d_get_debug_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+<span class="n">_d_get_debug_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_d_read_debug_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_debug_attr_read</span>
+<span class="n">_d_read_debug_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_d_read_debug_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_size_t</span><span class="p">)</span>
+<span class="n">_d_read_debug_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_write_debug_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_debug_attr_write</span>
+<span class="n">_d_write_debug_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_d_write_debug_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">)</span>
+<span class="n">_d_write_debug_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_buffer_attr_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_buffer_attrs_count</span>
+<span class="n">_d_buffer_attr_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_d_buffer_attr_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_d_get_buffer_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_buffer_attr</span>
+<span class="n">_d_get_buffer_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_d_get_buffer_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+<span class="n">_d_get_buffer_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_d_read_buffer_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_buffer_attr_read</span>
+<span class="n">_d_read_buffer_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_d_read_buffer_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_size_t</span><span class="p">)</span>
+<span class="n">_d_read_buffer_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_write_buffer_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_buffer_attr_write</span>
+<span class="n">_d_write_buffer_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_d_write_buffer_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">)</span>
+<span class="n">_d_write_buffer_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_get_context</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_context</span>
+<span class="n">_d_get_context</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ContextPtr</span>
+<span class="n">_d_get_context</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_d_reg_write</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_reg_write</span>
+<span class="n">_d_reg_write</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_d_reg_write</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">)</span>
+<span class="n">_d_reg_write</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_reg_read</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_reg_read</span>
+<span class="n">_d_reg_read</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_d_reg_read</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">,</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">c_uint</span><span class="p">))</span>
+<span class="n">_d_reg_read</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_channels_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_channels_count</span>
+<span class="n">_channels_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_channels_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_get_channel</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_channel</span>
+<span class="n">_get_channel</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_ChannelPtr</span>
+<span class="n">_get_channel</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">)</span>
+<span class="n">_get_channel</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_get_sample_size</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_sample_size</span>
+<span class="n">_get_sample_size</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_get_sample_size</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+<span class="n">_get_sample_size</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_is_trigger</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_is_trigger</span>
+<span class="n">_d_is_trigger</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_bool</span>
+<span class="n">_d_is_trigger</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,)</span>
+
+<span class="n">_d_get_trigger</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_get_trigger</span>
+<span class="n">_d_get_trigger</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_d_get_trigger</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_DevicePtr</span><span class="p">,</span>
+    <span class="n">_DevicePtr</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_d_get_trigger</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_set_trigger</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_set_trigger</span>
+<span class="n">_d_set_trigger</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_d_set_trigger</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_DevicePtr</span><span class="p">,</span>
+    <span class="n">_DevicePtr</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_d_set_trigger</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_d_set_buffers_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_set_kernel_buffers_count</span>
+<span class="n">_d_set_buffers_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_d_set_buffers_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_DevicePtr</span><span class="p">,</span> <span class="n">c_uint</span><span class="p">)</span>
+<span class="n">_d_set_buffers_count</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_c_get_id</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_id</span>
+<span class="n">_c_get_id</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_c_get_id</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+<span class="n">_c_get_id</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_c_get_name</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_name</span>
+<span class="n">_c_get_name</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_c_get_name</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_is_output</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_is_output</span>
+<span class="n">_c_is_output</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_bool</span>
+<span class="n">_c_is_output</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_is_scan_element</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_is_scan_element</span>
+<span class="n">_c_is_scan_element</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_bool</span>
+<span class="n">_c_is_scan_element</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_attr_count</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_attrs_count</span>
+<span class="n">_c_attr_count</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_c_attr_count</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_get_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_attr</span>
+<span class="n">_c_get_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_c_get_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+<span class="n">_c_get_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_c_get_filename</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_attr_get_filename</span>
+<span class="n">_c_get_filename</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char_p</span>
+<span class="n">_c_get_filename</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ChannelPtr</span><span class="p">,</span>
+    <span class="n">c_char_p</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_c_get_filename</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_c_read_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_attr_read</span>
+<span class="n">_c_read_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_c_read_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_size_t</span><span class="p">)</span>
+<span class="n">_c_read_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_c_write_attr</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_attr_write</span>
+<span class="n">_c_write_attr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_c_write_attr</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">)</span>
+<span class="n">_c_write_attr</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_c_enable</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_enable</span>
+<span class="n">_c_enable</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_disable</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_disable</span>
+<span class="n">_c_disable</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_is_enabled</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_is_enabled</span>
+<span class="n">_c_is_enabled</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_bool</span>
+<span class="n">_c_is_enabled</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_c_read</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_read</span>
+<span class="n">_c_read</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_c_read</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ChannelPtr</span><span class="p">,</span>
+    <span class="n">_BufferPtr</span><span class="p">,</span>
+    <span class="n">c_void_p</span><span class="p">,</span>
+    <span class="n">c_size_t</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_c_read_raw</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_read_raw</span>
+<span class="n">_c_read_raw</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_c_read_raw</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ChannelPtr</span><span class="p">,</span>
+    <span class="n">_BufferPtr</span><span class="p">,</span>
+    <span class="n">c_void_p</span><span class="p">,</span>
+    <span class="n">c_size_t</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_c_write</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_write</span>
+<span class="n">_c_write</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_c_write</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ChannelPtr</span><span class="p">,</span>
+    <span class="n">_BufferPtr</span><span class="p">,</span>
+    <span class="n">c_void_p</span><span class="p">,</span>
+    <span class="n">c_size_t</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_c_write_raw</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_write_raw</span>
+<span class="n">_c_write_raw</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_c_write_raw</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_ChannelPtr</span><span class="p">,</span>
+    <span class="n">_BufferPtr</span><span class="p">,</span>
+    <span class="n">c_void_p</span><span class="p">,</span>
+    <span class="n">c_size_t</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_channel_get_device</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_device</span>
+<span class="n">_channel_get_device</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_DevicePtr</span>
+<span class="n">_channel_get_device</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_channel_get_index</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_index</span>
+<span class="n">_channel_get_index</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_long</span>
+<span class="n">_channel_get_index</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_channel_get_data_format</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_data_format</span>
+<span class="n">_channel_get_data_format</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_DataFormatPtr</span>
+<span class="n">_channel_get_data_format</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_channel_get_modifier</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_modifier</span>
+<span class="n">_channel_get_modifier</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_channel_get_modifier</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_channel_get_type</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_get_type</span>
+<span class="n">_channel_get_type</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_channel_get_type</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
+
+<span class="n">_channel_convert</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_convert</span>
+<span class="n">_channel_convert</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_channel_convert</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">)</span>
+
+<span class="n">_channel_convert_inverse</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_convert_inverse</span>
+<span class="n">_channel_convert_inverse</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_channel_convert_inverse</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">)</span>
+
+<span class="n">_create_buffer</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_create_buffer</span>
+<span class="n">_create_buffer</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_BufferPtr</span>
+<span class="n">_create_buffer</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_DevicePtr</span><span class="p">,</span>
+    <span class="n">c_size_t</span><span class="p">,</span>
+    <span class="n">c_bool</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_create_buffer</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_null</span>
+
+<span class="n">_buffer_destroy</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_destroy</span>
+<span class="n">_buffer_destroy</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_refill</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_refill</span>
+<span class="n">_buffer_refill</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_buffer_refill</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+<span class="n">_buffer_refill</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_buffer_push_partial</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_push_partial</span>
+<span class="n">_buffer_push_partial</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_ssize_t</span>
+<span class="n">_buffer_push_partial</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_BufferPtr</span><span class="p">,</span>
+    <span class="n">c_uint</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_buffer_push_partial</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_negative</span>
+
+<span class="n">_buffer_start</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_start</span>
+<span class="n">_buffer_start</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_void_p</span>
+<span class="n">_buffer_start</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_end</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_end</span>
+<span class="n">_buffer_end</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_void_p</span>
+<span class="n">_buffer_end</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_cancel</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_cancel</span>
+<span class="n">_buffer_cancel</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_void_p</span>
+<span class="n">_buffer_cancel</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_get_device</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_get_device</span>
+<span class="n">_buffer_get_device</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_DevicePtr</span>
+<span class="n">_buffer_get_device</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_get_poll_fd</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_get_poll_fd</span>
+<span class="n">_buffer_get_poll_fd</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
+<span class="n">_buffer_get_poll_fd</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_step</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_step</span>
+<span class="n">_buffer_step</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_longlong</span>
+<span class="n">_buffer_step</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,)</span>
+
+<span class="n">_buffer_set_blocking_mode</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_buffer_set_blocking_mode</span>
+<span class="n">_buffer_set_blocking_mode</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_uint</span>
+<span class="n">_buffer_set_blocking_mode</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_BufferPtr</span><span class="p">,</span> <span class="n">c_bool</span><span class="p">)</span>
+
+
+<span class="c1"># pylint: enable=invalid-name</span>
+
+
+<span class="k">def</span> <span class="nf">_get_lib_version</span><span class="p">():</span>
+    <span class="n">major</span> <span class="o">=</span> <span class="n">c_uint</span><span class="p">()</span>
+    <span class="n">minor</span> <span class="o">=</span> <span class="n">c_uint</span><span class="p">()</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">_get_library_version</span><span class="p">(</span><span class="n">_byref</span><span class="p">(</span><span class="n">major</span><span class="p">),</span> <span class="n">_byref</span><span class="p">(</span><span class="n">minor</span><span class="p">),</span> <span class="n">buf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">major</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">minor</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_has_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">):</span>
+    <span class="n">b_backend</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_iio_has_backend</span><span class="p">(</span><span class="n">b_backend</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">iio_strerror</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Get a string description of an error code.&quot;&quot;&quot;</span>
+
+    <span class="n">b_buf</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">_iio_strerror</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">b_buf</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+
+
+<span class="n">version</span> <span class="o">=</span> <span class="n">_get_lib_version</span><span class="p">()</span>
+<span class="n">backends</span> <span class="o">=</span> <span class="p">[</span><span class="n">_get_backend</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_get_backends_count</span><span class="p">())]</span>
+
+
+<span class="k">class</span> <span class="nc">_attr</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">filename</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;The name of this attribute.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span>
+    <span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;The filename in sysfs to which this attribute is bound.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(),</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Current value of this attribute.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ChannelAttr</span><span class="p">(</span><span class="n">_attr</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Represents an attribute of a channel.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the ChannelAttr class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            channel: type=iio.Channel</span>
+<span class="sd">                A valid instance of the iio.Channel class.</span>
+<span class="sd">            name: type=str</span>
+<span class="sd">                The channel attribute&#39;s name</span>
+
+<span class="sd">        returns: type=iio.ChannelAttr</span>
+<span class="sd">            A new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ChannelAttr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">_c_get_filename</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">_c_read_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">_c_write_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">DeviceAttr</span><span class="p">(</span><span class="n">_attr</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Represents an attribute of an IIO device.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the DeviceAttr class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            device: type=iio.Device</span>
+<span class="sd">                A valid instance of the iio.Device class.</span>
+<span class="sd">            name: type=str</span>
+<span class="sd">                The device attribute&#39;s name</span>
+
+<span class="sd">        returns: type=iio.DeviceAttr</span>
+<span class="sd">            A new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeviceAttr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">device</span>
+
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">_d_read_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">_d_write_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="DeviceDebugAttr"><a class="viewcode-back" href="../device.html#iio.DeviceDebugAttr">[docs]</a><span class="k">class</span> <span class="nc">DeviceDebugAttr</span><span class="p">(</span><span class="n">DeviceAttr</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Represents a debug attribute of an IIO device.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the DeviceDebugAttr class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            device: type=iio.Device</span>
+<span class="sd">                A valid instance of the iio.Device class.</span>
+<span class="sd">            name: type=str</span>
+<span class="sd">                The device debug attribute&#39;s name</span>
+
+<span class="sd">        returns: type=iio.DeviceDebugAttr</span>
+<span class="sd">            A new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeviceDebugAttr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">_d_read_debug_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">_d_write_debug_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DeviceBufferAttr"><a class="viewcode-back" href="../device.html#iio.DeviceBufferAttr">[docs]</a><span class="k">class</span> <span class="nc">DeviceBufferAttr</span><span class="p">(</span><span class="n">DeviceAttr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a buffer attribute of an IIO device.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the DeviceBufferAttr class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            device: type=iio.Device</span>
+<span class="sd">                A valid instance of the iio.Device class.</span>
+<span class="sd">            name: type=str</span>
+<span class="sd">                The device buffer attribute&#39;s name</span>
+
+<span class="sd">        returns: type=iio.DeviceBufferAttr</span>
+<span class="sd">            A new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeviceBufferAttr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">_d_read_buffer_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">_d_write_buffer_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../channel.html#iio.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a channel of an IIO device.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Channel class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            _channel: type=_ChannelPtr</span>
+<span class="sd">                Pointer to an IIO Channel.</span>
+
+<span class="sd">        returns: type=iio.Channel</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">ChannelAttr</span><span class="p">(</span><span class="n">_channel</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">_c_get_attr</span><span class="p">(</span><span class="n">_channel</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c_attr_count</span><span class="p">(</span><span class="n">_channel</span><span class="p">))</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">_c_get_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+        <span class="n">name_raw</span> <span class="o">=</span> <span class="n">_c_get_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name_raw</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">name_raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="n">_c_is_output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_element</span> <span class="o">=</span> <span class="n">_c_is_scan_element</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Channel.read"><a class="viewcode-back" href="../channel.html#iio.Channel.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract the samples corresponding to this channel from the given iio.Buffer object.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            buf: type=iio.Buffer</span>
+<span class="sd">                A valid instance of the iio.Buffer class</span>
+<span class="sd">            raw: type=bool</span>
+<span class="sd">                If set to True, the samples are not converted from their</span>
+<span class="sd">                native format to their host format</span>
+
+<span class="sd">        returns: type=bytearray</span>
+<span class="sd">            An array containing the samples for this channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">buf</span><span class="o">.</span><span class="n">_length</span><span class="p">)</span>
+        <span class="n">mytype</span> <span class="o">=</span> <span class="n">c_char</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">c_array</span> <span class="o">=</span> <span class="n">mytype</span><span class="o">.</span><span class="n">from_buffer</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">_c_read_raw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">c_array</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">_c_read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">c_array</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">[:</span><span class="n">length</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Channel.write"><a class="viewcode-back" href="../channel.html#iio.Channel.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write the specified array of samples corresponding to this channel into the given iio.Buffer object.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            buf: type=iio.Buffer</span>
+<span class="sd">                A valid instance of the iio.Buffer class</span>
+<span class="sd">            array: type=bytearray</span>
+<span class="sd">                The array containing the samples to copy</span>
+<span class="sd">            raw: type=bool</span>
+<span class="sd">                If set to True, the samples are not converted from their</span>
+<span class="sd">                host format to their native format</span>
+
+<span class="sd">        returns: type=int</span>
+<span class="sd">            The number of bytes written</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mytype</span> <span class="o">=</span> <span class="n">c_char</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">c_array</span> <span class="o">=</span> <span class="n">mytype</span><span class="o">.</span><span class="n">from_buffer</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_c_write_raw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">c_array</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">_c_write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">c_array</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">))</span></div>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;An identifier of this channel.</span><span class="se">\n\t</span><span class="s2">Note that it is possible that two channels have the same ID, if one is an input channel and the other is an output channel.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;The name of this channel.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span>
+    <span class="p">)</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of attributes for this channel.</span><span class="se">\n\t</span><span class="s2">type=dict of iio.ChannelAttr&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Contains True if the channel is an output channel, False otherwise.</span><span class="se">\n\t</span><span class="s2">type=bool&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">scan_element</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_element</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Contains True if the channel is a scan element, False otherwise.</span><span class="se">\n\t</span><span class="s2">If a channel is a scan element, then it is possible to enable it and use it for I/O operations.</span><span class="se">\n\t</span><span class="s2">type=bool&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">enabled</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="n">_c_is_enabled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">_c_enable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="k">else</span> <span class="n">_c_disable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">),</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Configured state of the channel</span><span class="se">\n\t</span><span class="s2">type=bool&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This channel&#39;s corresponding device.</span>
+<span class="sd">        type: iio.Device</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c_dev</span> <span class="o">=</span> <span class="n">_channel_get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Device</span><span class="p">(</span><span class="n">_d_get_context</span><span class="p">(</span><span class="n">c_dev</span><span class="p">),</span> <span class="n">c_dev</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This channel&#39;s index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_channel_get_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This channel&#39;s data format.</span>
+<span class="sd">        type: iio.DataFormat</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_channel_get_data_format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span><span class="o">.</span><span class="n">contents</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">modifier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This channel&#39;s modifier.</span>
+<span class="sd">        type: iio.ChannelModifier(Enum)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ChannelModifier</span><span class="p">(</span><span class="n">_channel_get_modifier</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This channel&#39;s type.</span>
+<span class="sd">        type: iio.ChannelType(Enum)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ChannelType</span><span class="p">(</span><span class="n">_channel_get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Channel.convert"><a class="viewcode-back" href="../channel.html#iio.Channel.convert">[docs]</a>    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts src and saves the result in dst, using current channel&#39;s data format.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            dst: type=list</span>
+<span class="sd">                The variable where the result is stored.</span>
+<span class="sd">            src: type=list</span>
+<span class="sd">                Data to be converted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">_channel_convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">src_ptr</span><span class="p">,</span> <span class="n">dst_ptr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Channel.convert_inverse"><a class="viewcode-back" href="../channel.html#iio.Channel.convert_inverse">[docs]</a>    <span class="k">def</span> <span class="nf">convert_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the sample from host format to hardware format.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            dst: type=list</span>
+<span class="sd">                The variable where the result is stored.</span>
+<span class="sd">            src: type=list</span>
+<span class="sd">                Data to be converted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">_channel_convert_inverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">src_ptr</span><span class="p">,</span> <span class="n">dst_ptr</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Buffer"><a class="viewcode-back" href="../buffer.html#iio.Buffer">[docs]</a><span class="k">class</span> <span class="nc">Buffer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;The class used for all I/O operations.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">samples_count</span><span class="p">,</span> <span class="n">cyclic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Buffer class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            device: type=iio.Device</span>
+<span class="sd">                The iio.Device object that represents the device where the I/O</span>
+<span class="sd">                operations will be performed</span>
+<span class="sd">            samples_count: type=int</span>
+<span class="sd">                The size of the buffer, in samples</span>
+<span class="sd">            circular: type=bool</span>
+<span class="sd">                If set to True, the buffer is circular</span>
+
+<span class="sd">        returns: type=iio.Buffer</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">_create_buffer</span><span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">samples_count</span><span class="p">,</span> <span class="n">cyclic</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">raise</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length</span> <span class="o">=</span> <span class="n">samples_count</span> <span class="o">*</span> <span class="n">device</span><span class="o">.</span><span class="n">sample_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples_count</span> <span class="o">=</span> <span class="n">samples_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span> <span class="o">=</span> <span class="n">device</span><span class="o">.</span><span class="n">ctx</span><span class="p">()</span>
+        <span class="c1"># Holds a reference to the corresponding IIO Context. This ensures that</span>
+        <span class="c1"># every iio.Buffer object is destroyed before its corresponding IIO Context.</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_buffer_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Size of this buffer, in bytes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length</span>
+
+<div class="viewcode-block" id="Buffer.refill"><a class="viewcode-back" href="../buffer.html#iio.Buffer.refill">[docs]</a>    <span class="k">def</span> <span class="nf">refill</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch a new set of samples from the hardware.&quot;&quot;&quot;</span>
+        <span class="n">_buffer_refill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Buffer.push"><a class="viewcode-back" href="../buffer.html#iio.Buffer.push">[docs]</a>    <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples_count</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Submit the samples contained in this buffer to the hardware.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            samples_count: type=int</span>
+<span class="sd">                The number of samples to submit, default = full buffer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_buffer_push_partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">samples_count</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples_count</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Buffer.read"><a class="viewcode-back" href="../buffer.html#iio.Buffer.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the samples contained inside the Buffer object.</span>
+
+<span class="sd">        returns: type=bytearray</span>
+<span class="sd">            An array containing the samples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">_buffer_start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">_buffer_end</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+        <span class="n">mytype</span> <span class="o">=</span> <span class="n">c_char</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">c_array</span> <span class="o">=</span> <span class="n">mytype</span><span class="o">.</span><span class="n">from_buffer</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">_memmove</span><span class="p">(</span><span class="n">c_array</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">array</span></div>
+
+<div class="viewcode-block" id="Buffer.write"><a class="viewcode-back" href="../buffer.html#iio.Buffer.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copy the given array of samples inside the Buffer object.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            array: type=bytearray</span>
+<span class="sd">                The array containing the samples to copy</span>
+
+<span class="sd">        returns: type=int</span>
+<span class="sd">            The number of bytes written into the buffer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">_buffer_start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">_buffer_end</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+        <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">mytype</span> <span class="o">=</span> <span class="n">c_char</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">c_array</span> <span class="o">=</span> <span class="n">mytype</span><span class="o">.</span><span class="n">from_buffer</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">_memmove</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">c_array</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">length</span></div>
+
+<div class="viewcode-block" id="Buffer.cancel"><a class="viewcode-back" href="../buffer.html#iio.Buffer.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cancels the current buffer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_buffer_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Buffer.set_blocking_mode"><a class="viewcode-back" href="../buffer.html#iio.Buffer.set_blocking_mode">[docs]</a>    <span class="k">def</span> <span class="nf">set_blocking_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocking</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the buffer&#39;s blocking mode.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            blocking: type=boolean</span>
+<span class="sd">                True if in blocking_mode else False.</span>
+
+<span class="sd">        returns: type=int</span>
+<span class="sd">            Return code from the C layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_buffer_set_blocking_mode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">c_bool</span><span class="p">(</span><span class="n">blocking</span><span class="p">))</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This buffer&#39;s corresponding device.</span>
+<span class="sd">        type: iio.Device</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="p">,</span> <span class="n">_buffer_get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">poll_fd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This buffer&#39;s poll_fd.</span>
+<span class="sd">        type: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_buffer_get_poll_fd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This buffer&#39;s step size.</span>
+<span class="sd">        type: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_buffer_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">_DeviceOrTrigger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">_device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">_d_get_context</span><span class="p">(</span><span class="n">_device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">DeviceAttr</span><span class="p">(</span><span class="n">_device</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">_d_get_attr</span><span class="p">(</span><span class="n">_device</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_d_attr_count</span><span class="p">(</span><span class="n">_device</span><span class="p">))</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_debug_attrs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">DeviceDebugAttr</span><span class="p">(</span><span class="n">_device</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">_d_get_debug_attr</span><span class="p">(</span><span class="n">_device</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_d_debug_attr_count</span><span class="p">(</span><span class="n">_device</span><span class="p">))</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer_attrs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">DeviceBufferAttr</span><span class="p">(</span><span class="n">_device</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">_d_get_buffer_attr</span><span class="p">(</span><span class="n">_device</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_d_buffer_attr_count</span><span class="p">(</span><span class="n">_device</span><span class="p">))</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="c1"># TODO(pcercuei): Use a dictionary for the channels.</span>
+        <span class="n">chans</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Channel</span><span class="p">(</span><span class="n">_get_channel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_channels_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">))</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channels</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">chans</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">_d_get_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+        <span class="n">name_raw</span> <span class="o">=</span> <span class="n">_d_get_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name_raw</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">name_raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">reg_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a value to one register of this device.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            reg: type=int</span>
+<span class="sd">                The register address</span>
+<span class="sd">            value: type=int</span>
+<span class="sd">                The value that will be used for this register</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_d_reg_write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reg_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read the content of a register of this device.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            reg: type=int</span>
+<span class="sd">                The register address</span>
+
+<span class="sd">        returns: type=int</span>
+<span class="sd">            The value of the register</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">c_uint</span><span class="p">()</span>
+        <span class="n">_d_reg_read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">_byref</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">find_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_or_id</span><span class="p">,</span> <span class="n">is_output</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Find a IIO channel by its name or ID.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            name_or_id: type=str</span>
+<span class="sd">                The name or ID of the channel to find</span>
+<span class="sd">            is_output: type=bool</span>
+<span class="sd">                Set to True to search for an output channel</span>
+
+<span class="sd">        returns: type=iio.Device or type=iio.Trigger</span>
+<span class="sd">            The IIO Device</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">x</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span>
+                <span class="k">if</span> <span class="n">name_or_id</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="n">name_or_id</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">id</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">output</span> <span class="o">==</span> <span class="n">is_output</span>
+            <span class="p">),</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_kernel_buffers_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Set the number of kernel buffers to use with the specified device.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            count: type=int</span>
+<span class="sd">                The number of kernel buffers</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_d_set_buffers_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sample_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current sample size of this device.</span>
+<span class="sd">        type: int</span>
+
+<span class="sd">        The sample size varies each time channels get enabled or disabled.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_get_sample_size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;An identifier of this device, only valid in this IIO context.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;The name of this device.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span>
+    <span class="p">)</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of attributes for this IIO device.</span><span class="se">\n\t</span><span class="s2">type=dict of iio.DeviceAttr&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">debug_attrs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_attrs</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of debug attributes for this IIO device.</span><span class="se">\n\t</span><span class="s2">type=dict of iio.DeviceDebugAttr&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">buffer_attrs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer_attrs</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of buffer attributes for this IIO device.</span><span class="se">\n\t</span><span class="s2">type=dict of iio.DeviceBufferAttr&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">channels</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channels</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of channels available with this IIO device.</span><span class="se">\n\t</span><span class="s2">type=list of iio.Channel objects&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="Trigger"><a class="viewcode-back" href="../trigger.html#iio.Trigger">[docs]</a><span class="k">class</span> <span class="nc">Trigger</span><span class="p">(</span><span class="n">_DeviceOrTrigger</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO device that can act as a trigger.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Trigger class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            _device: type=iio._DevicePtr</span>
+<span class="sd">                A pointer to an IIO device.</span>
+
+<span class="sd">        returns: type=iio.Trigger</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Trigger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">_device</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span><span class="p">[</span><span class="s2">&quot;frequency&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span><span class="p">[</span><span class="s2">&quot;frequency&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="n">frequency</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_get_rate</span><span class="p">,</span>
+        <span class="n">_set_rate</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Configured frequency (in Hz) of this trigger</span><span class="se">\n\t</span><span class="s2">type=int&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Device"><a class="viewcode-back" href="../device.html#iio.Device">[docs]</a><span class="k">class</span> <span class="nc">Device</span><span class="p">(</span><span class="n">_DeviceOrTrigger</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO device.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Device class.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            ctx: type=iio.Context</span>
+<span class="sd">                A valid instance of the iio.Context class.</span>
+<span class="sd">            _device: type=_DevicePtr</span>
+<span class="sd">                A pointer to an IIO device.</span>
+
+<span class="sd">        returns: type=iio.Device</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">_device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger</span><span class="p">):</span>
+        <span class="n">_d_set_trigger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">trigger</span><span class="o">.</span><span class="n">_device</span> <span class="k">if</span> <span class="n">trigger</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">_Device</span><span class="p">()</span>
+        <span class="n">_d_get_trigger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">_byref</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">()</span><span class="o">.</span><span class="n">_devices</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">dev</span><span class="o">.</span><span class="n">_device</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dev</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">trigger</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_get_trigger</span><span class="p">,</span>
+        <span class="n">_set_trigger</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Contains the configured trigger for this IIO device.</span><span class="se">\n\t</span><span class="s2">type=iio.Trigger&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This device&#39;s context.</span>
+<span class="sd">        type: iio.Context</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../context.html#iio.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO context.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_context</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Context class, using the local or the network backend of the IIO library.</span>
+
+<span class="sd">        returns: type=iio.Context</span>
+<span class="sd">            An new instance of this class</span>
+
+<span class="sd">        This function will create a network context if the IIOD_REMOTE</span>
+<span class="sd">        environment variable is set to the hostname where the IIOD server runs.</span>
+<span class="sd">        If set to an empty string, the server will be discovered using ZeroConf.</span>
+<span class="sd">        If the environment variable is not set, a local context will be created instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">_context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">_new_default</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">_isstring</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">_new_uri</span><span class="p">(</span><span class="n">_context</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">_context</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_get_attrs_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)):</span>
+            <span class="n">str1</span> <span class="o">=</span> <span class="n">c_char_p</span><span class="p">()</span>
+            <span class="n">str2</span> <span class="o">=</span> <span class="n">c_char_p</span><span class="p">()</span>
+            <span class="n">_get_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">_byref</span><span class="p">(</span><span class="n">str1</span><span class="p">),</span> <span class="n">_byref</span><span class="p">(</span><span class="n">str2</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span><span class="p">[</span><span class="n">str1</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">str2</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+        <span class="c1"># TODO(pcercuei): Use a dictionary for the devices.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_devices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Trigger</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span> <span class="k">if</span> <span class="n">_d_is_trigger</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span> <span class="k">else</span> <span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">_get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_devices_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">))</span>
+            <span class="p">]</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">_get_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="n">_get_description</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span> <span class="o">=</span> <span class="n">_get_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+        <span class="n">major</span> <span class="o">=</span> <span class="n">c_uint</span><span class="p">()</span>
+        <span class="n">minor</span> <span class="o">=</span> <span class="n">c_uint</span><span class="p">()</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+        <span class="n">_get_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">_byref</span><span class="p">(</span><span class="n">major</span><span class="p">),</span> <span class="n">_byref</span><span class="p">(</span><span class="n">minor</span><span class="p">),</span> <span class="n">buf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="p">(</span><span class="n">major</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">minor</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Context.set_timeout"><a class="viewcode-back" href="../context.html#iio.Context.set_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">set_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a timeout for I/O operations.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            timeout: type=int</span>
+<span class="sd">                The timeout value, in milliseconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_set_timeout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Context.clone"><a class="viewcode-back" href="../context.html#iio.Context.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clone this instance.</span>
+
+<span class="sd">        returns: type=iio.LocalContext</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Context</span><span class="p">(</span><span class="n">_clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Context.find_device"><a class="viewcode-back" href="../context.html#iio.Context.find_device">[docs]</a>    <span class="k">def</span> <span class="nf">find_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_or_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Find a IIO device by its name or ID.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            name_or_id: type=str</span>
+<span class="sd">                The name or ID of the device to find</span>
+
+<span class="sd">        returns: type=iio.Device or type=iio.Trigger</span>
+<span class="sd">            The IIO Device</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">((</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span> <span class="k">if</span> <span class="n">name_or_id</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">id</span><span class="p">]),</span> <span class="kc">None</span><span class="p">,)</span></div>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Name of this IIO context.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span>
+    <span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_description</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Description of this IIO context.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">xml</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;XML representation of the current context.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Version of the backend.</span><span class="se">\n\t</span><span class="s2">type=(int, int, str)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attrs</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of context-specific attributes</span><span class="se">\n\t</span><span class="s2">type=dict of str objects&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">devices</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_devices</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;List of devices contained in this context.</span><span class="se">\n\t</span><span class="s2">type=list of iio.Device and iio.Trigger objects&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LocalContext"><a class="viewcode-back" href="../context.html#iio.LocalContext">[docs]</a><span class="k">class</span> <span class="nc">LocalContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Local IIO Context.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Context class, using the local backend of the IIO library.</span>
+
+<span class="sd">        returns: type=iio.LocalContext</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">_new_local</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LocalContext</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="XMLContext"><a class="viewcode-back" href="../context.html#iio.XMLContext">[docs]</a><span class="k">class</span> <span class="nc">XMLContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;XML IIO Context.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmlfile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Context class, using the XML backend of the IIO library.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            xmlfile: type=str</span>
+<span class="sd">                Filename of the XML file to build the context from</span>
+
+<span class="sd">        returns: type=iio.XMLContext</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">_new_xml</span><span class="p">(</span><span class="n">xmlfile</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">XMLContext</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NetworkContext"><a class="viewcode-back" href="../context.html#iio.NetworkContext">[docs]</a><span class="k">class</span> <span class="nc">NetworkContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Network IIO Context.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Context class, using the network backend of the IIO library.</span>
+
+<span class="sd">        parameters:</span>
+<span class="sd">            hostname: type=str</span>
+<span class="sd">                Hostname, IPv4 or IPv6 address where the IIO Daemon is running</span>
+
+<span class="sd">        returns: type=iio.NetworkContext</span>
+<span class="sd">            An new instance of this class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">_new_network</span><span class="p">(</span><span class="n">hostname</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">hostname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NetworkContext</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">scan_contexts</span><span class="p">():</span>
+
+    <span class="sd">&quot;&quot;&quot;Scanning Context.&quot;&quot;&quot;</span>
+
+    <span class="n">scan_ctx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">ptr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_ContextInfoPtr</span><span class="p">)()</span>
+
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">_create_scan_context</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">ctx_nb</span> <span class="o">=</span> <span class="n">_get_context_info_list</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">_byref</span><span class="p">(</span><span class="n">ptr</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ctx_nb</span><span class="p">):</span>
+        <span class="n">scan_ctx</span><span class="p">[</span>
+            <span class="n">_context_info_get_uri</span><span class="p">(</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">_context_info_get_description</span><span class="p">(</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+
+    <span class="n">_context_info_list_free</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span>
+    <span class="n">_destroy_scan_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scan_ctx</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Analog Devices, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+<map id="iio_buffer_push_partial" name="iio_buffer_push_partial">
+<area shape="rect" id="node2" href="$group__Buffer.html#gae7033c625d128667a56cf482aa3149bd" title="Send the samples to the hardware. " alt="" coords="213,5,323,32"/>
+<area shape="rect" id="node3" href="$group__Buffer.html#ga810ec50155e82331b18ec71d3c507104" title="Call the supplied callback for each sample found in a buffer. " alt="" coords="205,57,331,98"/>
+</map>

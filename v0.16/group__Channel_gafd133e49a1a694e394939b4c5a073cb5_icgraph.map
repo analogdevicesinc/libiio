@@ -1,0 +1,4 @@
+<map id="iio_channel_get_attr" name="iio_channel_get_attr">
+<area shape="rect" id="node2" href="$group__Channel.html#ga66bdc45f6b55cd28e76945ead18686ca" title="Read the content of all channel&#45;specific attributes. " alt="" coords="193,5,359,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga0430f53a97a6fe7474416d7e2b228421" title="Set the values of all channel&#45;specific attributes. " alt="" coords="192,56,360,83"/>
+</map>
