@@ -314,7 +314,7 @@ static int apply_settings(struct sp_port *port, unsigned int baud_rate,
 }
 
 static struct iio_context * serial_create_context(const char *port_name,
-		unsigned int baud_rate, unsigned int bits,
+		unsigned int baud_rate, unsigned int bits, unsigned int stop,
 		enum sp_parity parity, enum sp_flowcontrol flow)
 {
 	struct sp_port *port;
@@ -337,7 +337,7 @@ static struct iio_context * serial_create_context(const char *port_name,
 		goto err_free_port;
 	}
 
-	ret = apply_settings(port, baud_rate, bits, 1, parity, flow);
+	ret = apply_settings(port, baud_rate, bits, stop, parity, flow);
 	if (ret) {
 		errno = -ret;
 		goto err_close_port;
@@ -419,22 +419,66 @@ err_free_port:
 	return NULL;
 }
 
+/* Take string, in "[baud rate],[data bits][parity][stop bits][flow control]"
+ * notation, where:
+ *   - baud_rate    = between 110 - 1,000,000 (default 115200)
+ *   - data bits    = between 5 and 9 (default 8)
+ *   - parity       = one of 'n' none, 'o' odd, 'e' even, 'm' mark, 's' space
+ *                         (default 'n' none)
+ *   - stop bits    = 1 or 2 (default 1)
+ *   - flow control = one of '\0' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR
+ *                         (default '\0' none)
+ *
+ * eg: "115200,8n1x"
+ *     "115200,8n1"
+ *     "115200,8"
+ *     "115200"
+ *     ""
+ */
 static int serial_parse_params(const char *params,
-		unsigned int *baud_rate, unsigned int *bits,
+		unsigned int *baud_rate, unsigned int *bits, unsigned int *stop,
 		enum sp_parity *parity, enum sp_flowcontrol *flow)
 {
 	char *end;
+
+	/* Default settings */
+	*baud_rate = 115200;
+	*parity = SP_PARITY_NONE;
+	*bits = 8;
+	*stop = 1;
+	*flow = SP_FLOWCONTROL_NONE;
+
+	if (!params || !params[0])
+		return 0;
 
 	*baud_rate = strtoul(params, &end, 10);
 	if (params == end)
 		return -EINVAL;
 
+	/* 110 baud to 1,000,000 baud */
+	if (*baud_rate < 110 || *baud_rate > 1000001)
+		return -EINVAL;
+
+	if (*end == ',')
+		end++;
+
+	if (!*end)
+		return 0;
+
+	params = (const char *)(end);
+
+	*bits = strtoul(params, &end, 10);
+	if (params == end)
+		return -EINVAL;
+
+	if (*bits > 9 || *bits < 5)
+		return -EINVAL;
+
+	if (*end == ',')
+		end++;
+
 	switch (*end) {
 	case '\0':
-		/* Default settings */
-		*bits = 8;
-		*parity = SP_PARITY_NONE;
-		*flow = SP_FLOWCONTROL_NONE;
 		return 0;
 	case 'n':
 		*parity = SP_PARITY_NONE;
@@ -455,21 +499,31 @@ static int serial_parse_params(const char *params,
 		return -EINVAL;
 	}
 
-	params = (const char *)((uintptr_t) end + 1);
+	end++;
+	if (*end == ',')
+		end++;
 
-	if (!*params) {
-		*bits = 8;
-		*flow = SP_FLOWCONTROL_NONE;
+	params = (const char *)(end);
+
+	if (!*params)
 		return 0;
-	}
 
-	*bits = strtoul(params, &end, 10);
+	params = (const char *)(end);
+	if (!*params)
+		return 0;
+	*stop = strtoul(params, &end, 10);
+
 	if (params == end)
 		return -EINVAL;
 
+	if (!*stop || *stop > 2)
+		return -EINVAL;
+
+	if (*end == ',')
+		end++;
+
 	switch (*end) {
 	case '\0':
-		*flow = SP_FLOWCONTROL_NONE;
 		return 0;
 	case 'x':
 		*flow = SP_FLOWCONTROL_XONXOFF;
@@ -495,7 +549,7 @@ struct iio_context * serial_create_context_from_uri(const char *uri)
 {
 	struct iio_context *ctx = NULL;
 	char *comma, *uri_dup;
-	unsigned int baud_rate, bits;
+	unsigned int baud_rate, bits, stop;
 	enum sp_parity parity;
 	enum sp_flowcontrol flow;
 	int ret;
@@ -511,17 +565,19 @@ struct iio_context * serial_create_context_from_uri(const char *uri)
 	}
 
 	comma = strchr(uri_dup, ',');
-	if (!comma)
-		goto err_free_dup;
+	if (comma) {
+		*comma = '\0';
+		ret = serial_parse_params((char *)((uintptr_t) comma + 1),
+			&baud_rate, &bits, &stop, &parity, &flow);
+	} else {
+		ret = serial_parse_params(NULL,
+				&baud_rate, &bits, &stop, &parity, &flow);
+	}
 
-	*comma = '\0';
-
-	ret = serial_parse_params((char *)((uintptr_t) comma + 1),
-			&baud_rate, &bits, &parity, &flow);
 	if (ret)
 		goto err_free_dup;
 
-	ctx = serial_create_context(uri_dup, baud_rate, bits, parity, flow);
+	ctx = serial_create_context(uri_dup, baud_rate, bits, stop, parity, flow);
 
 	free(uri_dup);
 	return ctx;
