@@ -28,7 +28,7 @@ class Arguments:
 
     def __init__(self):
         """Arguments class constructor."""
-        self.parser = argparse.ArgumentParser(description='iio_readdev')
+        self.parser = argparse.ArgumentParser(description="iio_readdev")
         self._add_parser_arguments()
         args = self.parser.parse_args()
 
@@ -43,21 +43,48 @@ class Arguments:
 
     def _add_parser_arguments(self):
         self.parser.add_argument(
-            '-n', '--network', type=str, metavar='', help='Use the network backend with the provided hostname.')
-        self.parser.add_argument(
-            '-u', '--uri', type=str, metavar='', help='Use the context with the provided URI.')
-        self.parser.add_argument(
-            '-b', '--buffer-size', type=int, metavar='', help='Size of the capture buffer. Default is 256.')
-        self.parser.add_argument(
-            '-s', '--samples', type=int, metavar='', help='Number of samples to capture, 0 = infinite. Default is 0.')
-        self.parser.add_argument(
-            '-T', '--timeout', type=int, metavar='', help='Buffer timeout in milliseconds. 0 = no timeout')
-        self.parser.add_argument(
-            '-a', '--auto', action='store_true',
-            help='Scan for available contexts and if only one is available use it.'
+            "-n",
+            "--network",
+            type=str,
+            metavar="",
+            help="Use the network backend with the provided hostname.",
         )
-        self.parser.add_argument('device', type=str, nargs=1)
-        self.parser.add_argument('channel', type=str, nargs='*')
+        self.parser.add_argument(
+            "-u",
+            "--uri",
+            type=str,
+            metavar="",
+            help="Use the context with the provided URI.",
+        )
+        self.parser.add_argument(
+            "-b",
+            "--buffer-size",
+            type=int,
+            metavar="",
+            help="Size of the capture buffer. Default is 256.",
+        )
+        self.parser.add_argument(
+            "-s",
+            "--samples",
+            type=int,
+            metavar="",
+            help="Number of samples to capture, 0 = infinite. Default is 0.",
+        )
+        self.parser.add_argument(
+            "-T",
+            "--timeout",
+            type=int,
+            metavar="",
+            help="Buffer timeout in milliseconds. 0 = no timeout",
+        )
+        self.parser.add_argument(
+            "-a",
+            "--auto",
+            action="store_true",
+            help="Scan for available contexts and if only one is available use it.",
+        )
+        self.parser.add_argument("device", type=str, nargs=1)
+        self.parser.add_argument("channel", type=str, nargs="*")
 
 
 class ContextBuilder:
@@ -81,12 +108,12 @@ class ContextBuilder:
     def _auto(self):
         contexts = iio.scan_contexts()
         if len(contexts) == 0:
-            raise Exception('No IIO context found.\n')
+            raise Exception("No IIO context found.\n")
         if len(contexts) == 1:
             uri, _ = contexts.popitem()
             self.ctx = iio.Context(_context=uri)
         else:
-            print('Multiple contexts found. Please select one using --uri!')
+            print("Multiple contexts found. Please select one using --uri!")
             for uri, _ in contexts.items():
                 print(uri)
             sys.exit(0)
@@ -117,7 +144,7 @@ class ContextBuilder:
             else:
                 self._default()
         except FileNotFoundError:
-            raise Exception('Unable to create IIO context!\n')
+            raise Exception("Unable to create IIO context!\n")
 
         self._timeout()
 
@@ -144,7 +171,7 @@ class BufferBuilder:
         self.dev = self.ctx.find_device(self.arguments.device_name)
 
         if self.dev is None:
-            raise Exception('Device %s not found!' % self.arguments.device_name)
+            raise Exception("Device %s not found!" % self.arguments.device_name)
 
         return self
 
@@ -165,7 +192,7 @@ class BufferBuilder:
         buffer = iio.Buffer(self.dev, self.arguments.buffer_size)
 
         if buffer is None:
-            raise Exception('Unable to create buffer!\n')
+            raise Exception("Unable to create buffer!\n")
 
         return buffer
 
@@ -193,8 +220,12 @@ class DataReader:
             samples = self.buffer.read()
 
             if self.arguments.num_samples > 0:
-                sys.stdout.buffer.write(samples[:min(self.arguments.num_samples, len(samples))])
-                self.arguments.num_samples -= min(self.arguments.num_samples, len(samples))
+                sys.stdout.buffer.write(
+                    samples[: min(self.arguments.num_samples, len(samples))]
+                )
+                self.arguments.num_samples -= min(
+                    self.arguments.num_samples, len(samples)
+                )
 
                 if self.arguments.num_samples == 0:
                     break
@@ -210,5 +241,5 @@ def main():
     reader.read()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
