@@ -93,10 +93,10 @@ eek:
 	return ret;
 }
 
-static void dump_device_attributes(const struct iio_device *dev,
+static int dump_device_attributes(const struct iio_device *dev,
 		const char *attr, const char *wbuf, bool quiet)
 {
-	ssize_t ret;
+	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *name = iio_device_get_name(dev);
 
@@ -128,20 +128,22 @@ static void dump_device_attributes(const struct iio_device *dev,
 		if (ret > 0) {
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
+			dump_device_attributes(dev, attr, NULL, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_device_attributes(dev, attr, NULL, quiet);
 	}
 	free(buf);
+
+	return (int)ret;
 }
 
-static void dump_buffer_attributes(const struct iio_device *dev,
+static int dump_buffer_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
-	ssize_t ret;
+	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *name = iio_device_get_name(dev);
 
@@ -176,21 +178,22 @@ static void dump_buffer_attributes(const struct iio_device *dev,
 		if (ret > 0) {
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
+			dump_buffer_attributes(dev, attr, NULL, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_buffer_attributes(dev, attr, NULL, quiet);
 	}
 
 	free(buf);
+	return (int)ret;
 }
 
-static void dump_debug_attributes(const struct iio_device *dev,
+static int dump_debug_attributes(const struct iio_device *dev,
 				  const char *attr, const char *wbuf, bool quiet)
 {
-	ssize_t ret;
+	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *name = iio_device_get_name(dev);
 
@@ -226,21 +229,22 @@ static void dump_debug_attributes(const struct iio_device *dev,
 		if (ret > 0) {
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
+			dump_debug_attributes(dev, attr, NULL, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("ERROR: %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_debug_attributes(dev, attr, NULL, quiet);
 	}
 
 	free(buf);
+	return (int)ret;
 }
 
-static void dump_channel_attributes(const struct iio_device *dev,
+static int dump_channel_attributes(const struct iio_device *dev,
 		struct iio_channel *ch, const char *attr, const char *wbuf, bool quiet)
 {
-	ssize_t ret;
+	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *type_name;
 	const char *name = iio_device_get_name(dev);
@@ -286,14 +290,15 @@ static void dump_channel_attributes(const struct iio_device *dev,
 		if (ret > 0) {
 			if (!quiet)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
+			dump_channel_attributes(dev, ch, attr, NULL, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
 			printf("error %s (%li) while writing '%s' with '%s'\n",
 					buf, (long)ret, attr, wbuf);
 		}
-		dump_channel_attributes(dev, ch, attr, NULL, quiet);
 	}
 	free(buf);
+	return (int)ret;
 }
 
 static const struct option options[] = {
@@ -346,6 +351,9 @@ int main(int argc, char **argv)
 		search_channel = false, search_buffer = false, search_debug = false,
 		search_context = false, input_only = false, output_only = false,
 		scan_only = false, quiet = false, gen_code = false;
+	bool found_err = false, read_err = false, write_err = false,
+		dev_found = false, attr_found = false, ctx_found = false,
+		channel_found = false ;
 	unsigned int i;
 	char *wbuf = NULL;
 
@@ -549,7 +557,13 @@ int main(int argc, char **argv)
 		unsigned int nb_ctx_attrs = iio_context_get_attrs_count(ctx);
 		if (!attr_index && nb_ctx_attrs > 0)
 			printf("IIO context with %u attributes:\n", nb_ctx_attrs);
+		if (!attr_index && !nb_ctx_attrs) {
+			printf("%s: Found context, but it has %u context attributes\n",
+					MY_NAME, nb_ctx_attrs);
+			found_err = true;
+		}
 
+		ctx_found = true;
 		for (i = 0; i < nb_ctx_attrs; i++) {
 			const char *key, *value;
 			ssize_t ret;
@@ -557,6 +571,7 @@ int main(int argc, char **argv)
 			ret = iio_context_get_attr(ctx, i, &key, &value);
 			if (!ret) {
 				if (!attr_index || str_match(key, argw[attr_index], ignore_case)) {
+					attr_found = true;
 					printf("%s: %s\n", key, value);
 					gen_context_attr(key);
 				}
@@ -587,6 +602,7 @@ int main(int argc, char **argv)
 					&& !str_match(name, argw[device_index], ignore_case)) {
 				continue;
 			}
+			dev_found = true;
 
 			if ((search_device && !device_index) || (search_channel && !device_index) ||
 					(search_buffer && !device_index) || (search_debug && !device_index)) {
@@ -600,6 +616,12 @@ int main(int argc, char **argv)
 				printf("found %u channels\n", iio_device_get_channels_count(dev));
 
 			nb_channels = iio_device_get_channels_count(dev);
+
+			if (search_channel && device_index && !channel_index && !nb_channels) {
+				printf("%s: Found %s device, but it has %u channels\n",
+						MY_NAME, argw[device_index], nb_channels);
+				found_err = true;
+			}
 			for (j = 0; j < nb_channels; j++) {
 				struct iio_channel *ch;
 				const char *type_name;
@@ -629,6 +651,7 @@ int main(int argc, char **argv)
 						(!ch_name || !str_match(ch_name,argw[channel_index], ignore_case)))
 					continue;
 
+				channel_found = true;
 				if ((!scan_only && !channel_index) ||
 				    ( scan_only && iio_channel_is_scan_element(ch))) {
 					printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
@@ -677,11 +700,18 @@ int main(int argc, char **argv)
 				if (!channel_index)
 					printf("found %u channel-specific attributes\n",
 							nb_attrs);
+				/* search_channel & device_index are checked in L630 */
+				if(channel_index && !attr_index && !nb_attrs) {
+					printf("%s: Found %s device, but it has %u channel attributes\n",
+							MY_NAME, argw[device_index], nb_attrs);
+					found_err = true;
+				}
 
 				if (!nb_attrs || !channel_index)
 					continue;
 
 				for (k = 0; k < nb_attrs; k++) {
+					int ret;
 					const char *attr =
 						iio_channel_get_attr(ch, k);
 
@@ -690,18 +720,29 @@ int main(int argc, char **argv)
 							ignore_case))
 						continue;
 					gen_dev(dev);
+					attr_found = true;
 					gen_ch(ch);
-					dump_channel_attributes(dev, ch, attr, wbuf,
+					ret = dump_channel_attributes(dev, ch, attr, wbuf,
 								attr_index ? quiet : false);
+					if (wbuf && ret < 0)
+						write_err = true;
+					else if (ret < 0)
+						read_err = true;
 				}
 			}
 
 			nb_attrs = iio_device_get_attrs_count(dev);
 			if (search_device && !device_index)
 				printf("found %u device attributes\n", nb_attrs);
+			if (search_device && device_index && !attr_index && !nb_attrs) {
+				printf("%s: Found %s device, but it has %u device attributes\n",
+						MY_NAME, argw[device_index], nb_attrs);
+				found_err = true;
+			}
 
 			if (search_device && device_index && nb_attrs) {
 				unsigned int j;
+				int ret;
 				for (j = 0; j < nb_attrs; j++) {
 					const char *attr = iio_device_get_attr(dev, j);
 
@@ -710,8 +751,13 @@ int main(int argc, char **argv)
 						continue;
 
 					gen_dev(dev);
-					dump_device_attributes(dev, attr, wbuf,
+					attr_found = true;
+					ret = dump_device_attributes(dev, attr, wbuf,
 							       attr_index ? quiet : false);
+					if (wbuf && ret < 0)
+						write_err = true;
+					else if (ret < 0)
+						read_err = true;
 				}
 			}
 
@@ -719,18 +765,29 @@ int main(int argc, char **argv)
 
 			if (search_buffer && !device_index)
 				printf("found %u buffer attributes\n", nb_attrs);
+			if (search_buffer && device_index && !attr_index && !nb_attrs) {
+				printf("%s: Found %s device, but it has %u buffer attributes\n",
+						MY_NAME, argw[device_index], nb_attrs);
+				found_err = true;
+			}
 
 			if (search_buffer && device_index && nb_attrs) {
 				unsigned int j;
 
 				for (j = 0; j < nb_attrs; j++) {
+					int ret;
 					const char *attr = iio_device_get_buffer_attr(dev, j);
 
 					if ((attr_index && str_match(attr, argw[attr_index],
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
-						dump_buffer_attributes(dev, attr, wbuf,
+						attr_found = true;
+						ret = dump_buffer_attributes(dev, attr, wbuf,
 									  attr_index ? quiet : false);
+						if (wbuf && ret < 0)
+							write_err = true;
+						else if (ret < 0)
+							read_err = true;
 					}
 				}
 
@@ -745,13 +802,19 @@ int main(int argc, char **argv)
 				unsigned int j;
 
 				for (j = 0; j < nb_attrs; j++) {
+					int ret;
 					const char *attr = iio_device_get_debug_attr(dev, j);
 
 					if ((attr_index && str_match(attr, argw[attr_index],
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
-						dump_debug_attributes(dev, attr, wbuf,
+						attr_found = true;
+						ret = dump_debug_attributes(dev, attr, wbuf,
 								      attr_index ? quiet : false);
+						if (wbuf && ret < 0)
+							write_err = true;
+						else if (ret < 0)
+							read_err = true;
 					}
 				}
 
@@ -765,6 +828,30 @@ int main(int argc, char **argv)
 	if (gen_code)
 		gen_context_destroy();
 
+	if (!dev_found && device_index)
+		fprintf(stderr, "%s: Error : could not find device (%s)\n", MY_NAME, argw[device_index]);
+	else if (!ctx_found && search_context)
+		fprintf(stderr, "%s: Error : could not find Context Attributes\n", MY_NAME);
+	else if (!channel_found && channel_index) {
+		if (input_only)
+			fprintf(stderr, "%s: Error : could not find Input channel (%s)\n", MY_NAME, argw[channel_index]);
+		if (output_only)
+			fprintf(stderr, "%s: Error : could not find Output channel (%s)\n", MY_NAME, argw[channel_index]);
+		if (scan_only)
+			fprintf(stderr, "%s: Error : could not find Scan channel (%s)\n", MY_NAME, argw[channel_index]);
+		if (!input_only && !output_only && !scan_only)
+			fprintf(stderr, "%s: Error : could not find channel (%s)\n", MY_NAME, argw[channel_index]);
+	} else if (!attr_found && attr_index)
+		fprintf(stderr, "%s: Error : could not find attribute (%s)\n", MY_NAME, argw[attr_index]);
+
 	free_argw(argc, argw);
+
+	if ((!dev_found && device_index) || (!ctx_found && search_context) ||
+			(!channel_found && channel_index) || (!attr_found && attr_index))
+		return EXIT_FAILURE;
+
+	if (write_err || read_err || found_err)
+		return EXIT_FAILURE;
+
 	return EXIT_SUCCESS;
 }
