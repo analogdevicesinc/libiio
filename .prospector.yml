@@ -35,4 +35,6 @@ pep257:
   disable: [
     D203,  # 1 blank line required before class docstring
            # conflicts with D0211, No blank lines allowed before class docstring
+    D402,  # First line should not be the function's "signature"
+           # conflicts with D213, Multi-line docstring summary should start at the second line
   ]
