@@ -1221,9 +1221,16 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 
 	if (!strcmp(name, "index")) {
 		ret = local_read_dev_attr(dev, path, buf, sizeof(buf), false);
-		if (ret > 0)
-			chn->index = atol(buf);
+		if (ret > 0) {
+			char *end;
+			long long value;
 
+			value = strtoll(buf, &end, 0);
+			if (end == buf || value < 0 || value > LONG_MAX)
+				return -EINVAL;
+
+			chn->index = (long) value;
+		}
 	} else if (!strcmp(name, "type")) {
 		ret = local_read_dev_attr(dev, path, buf, sizeof(buf), false);
 		if (ret > 0) {
@@ -1917,16 +1924,21 @@ static const struct iio_backend_ops local_ops = {
 
 static void init_data_scale(struct iio_channel *chn)
 {
-	char buf[1024];
+	char *end, buf[1024];
 	ssize_t ret;
+	float value;
 
+	chn->format.with_scale = false;
 	ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
-	if (ret < 0) {
-		chn->format.with_scale = false;
-	} else {
-		chn->format.with_scale = true;
-		chn->format.scale = atof(buf);
-	}
+	if (ret < 0)
+		return;
+
+	value = strtof(buf, &end);
+	if (end == buf)
+		return;
+
+	chn->format.with_scale = true;
+	chn->format.scale = value;
 }
 
 static void init_scan_elements(struct iio_context *ctx)

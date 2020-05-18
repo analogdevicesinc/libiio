@@ -139,7 +139,13 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 		const char *name = (const char *) attr->name,
 		      *content = (const char *) attr->children->content;
 		if (!strcmp(name, "index")) {
-			chn->index = atol(content);
+			char *end;
+			long long value;
+
+			value = strtoll(content, &end, 0);
+			if (end == content || value < 0 || value > LONG_MAX)
+				return;
+			chn->index = (long) value;
 		} else if (!strcmp(name, "format")) {
 			char e, s;
 			if (strchr(content, 'X')) {
@@ -170,8 +176,17 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			chn->format.is_fully_defined = (s == 'S' || s == 'U' ||
 				chn->format.bits == chn->format.length);
 		} else if (!strcmp(name, "scale")) {
+			char *end;
+			float value;
+
+			value = strtof(content, &end);
+			if (end == content) {
+				chn->format.with_scale = false;
+				return;
+			}
+
 			chn->format.with_scale = true;
-			chn->format.scale = atof(content);
+			chn->format.scale = value;
 		} else {
 			IIO_WARNING("Unknown attribute \'%s\' in <scan-element>\n",
 					name);
