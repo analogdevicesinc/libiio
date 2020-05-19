@@ -413,8 +413,10 @@ __api __check_ret struct iio_context * iio_create_network_context(const char *ho
  *   when library is compiled with ZeroConf support. For example
  *   <i>"ip:192.168.2.1"</i>, <b>or</b> <i>"ip:localhost"</i>, <b>or</b> <i>"ip:"</i>
  *   <b>or</b> <i>"ip:plutosdr.local"</i>
- * - USB backend, "usb:"\n Requires bus, address, and interface parts separated
- *   with a dot. For example <i>"usb:3.32.5"</i>
+ * - USB backend, "usb:"\n When more than one usb device is attached, requires
+ *   bus, address, and interface parts separated with a dot. For example
+ *   <i>"usb:3.32.5"</i>. Where there is only one USB device attached, the shorthand
+ *   <i>"usb:"</i> can be used.
  * - Serial backend, "serial:"\n Requires:
  *     - a port (/dev/ttyUSB0),
  *     - baud_rate (default <b>115200</b>)
