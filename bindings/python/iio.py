@@ -667,9 +667,7 @@ def _has_backend(backend):
 
 
 def iio_strerror(err, buf, length):
-
     """Get a string description of an error code."""
-
     b_buf = buf.encode("utf-8")
     _iio_strerror(err, b_buf, length)
 
@@ -678,7 +676,7 @@ version = _get_lib_version()
 backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
 
 
-class _attr(object):
+class _Attr(object):
     def __init__(self, name, filename=None):
         self._name = name
         self._name_ascii = name.encode("ascii")
@@ -712,19 +710,17 @@ class _attr(object):
     )
 
 
-class ChannelAttr(_attr):
-
+class ChannelAttr(_Attr):
     """Represents an attribute of a channel."""
 
     def __init__(self, channel, name):
         """
-        Initializes a new instance of the ChannelAttr class.
+        Initialize a new instance of the ChannelAttr class.
 
-        parameters:
-            channel: type=iio.Channel
-                A valid instance of the iio.Channel class.
-            name: type=str
-                The channel attribute's name
+        :param channel: type=iio.Channel
+            A valid instance of the iio.Channel class.
+        :param name: type=str
+            The channel attribute's name
 
         returns: type=iio.ChannelAttr
             A new instance of this class
@@ -743,19 +739,17 @@ class ChannelAttr(_attr):
         _c_write_attr(self._channel, self._name_ascii, value.encode("ascii"))
 
 
-class DeviceAttr(_attr):
-
+class DeviceAttr(_Attr):
     """Represents an attribute of an IIO device."""
 
     def __init__(self, device, name):
         """
-        Initializes a new instance of the DeviceAttr class.
+        Initialize a new instance of the DeviceAttr class.
 
-        parameters:
-            device: type=iio.Device
-                A valid instance of the iio.Device class.
-            name: type=str
-                The device attribute's name
+        :param device: type=iio.Device
+            A valid instance of the iio.Device class.
+        :param name: type=str
+            The device attribute's name
 
         returns: type=iio.DeviceAttr
             A new instance of this class
@@ -773,18 +767,16 @@ class DeviceAttr(_attr):
 
 
 class DeviceDebugAttr(DeviceAttr):
-
     """Represents a debug attribute of an IIO device."""
 
     def __init__(self, device, name):
         """
-        Initializes a new instance of the DeviceDebugAttr class.
+        Initialize a new instance of the DeviceDebugAttr class.
 
-        parameters:
-            device: type=iio.Device
-                A valid instance of the iio.Device class.
-            name: type=str
-                The device debug attribute's name
+        :param device: type=iio.Device
+             A valid instance of the iio.Device class.
+        :param name: type=str
+             The device debug attribute's name
 
         returns: type=iio.DeviceDebugAttr
             A new instance of this class
@@ -805,13 +797,12 @@ class DeviceBufferAttr(DeviceAttr):
 
     def __init__(self, device, name):
         """
-        Initializes a new instance of the DeviceBufferAttr class.
+        Initialize a new instance of the DeviceBufferAttr class.
 
-        parameters:
-            device: type=iio.Device
-                A valid instance of the iio.Device class.
-            name: type=str
-                The device buffer attribute's name
+        :param device: type=iio.Device
+            A valid instance of the iio.Device class.
+        :param name: type=str
+            The device buffer attribute's name
 
         returns: type=iio.DeviceBufferAttr
             A new instance of this class
@@ -832,11 +823,10 @@ class Channel(object):
 
     def __init__(self, _channel):
         """
-        Initializes a new instance of the Channel class.
+        Initialize a new instance of the Channel class.
 
-        parameters:
-            _channel: type=_ChannelPtr
-                Pointer to an IIO Channel.
+        :param _channel: type=_ChannelPtr
+            Pointer to an IIO Channel.
 
         returns: type=iio.Channel
             An new instance of this class
@@ -860,12 +850,11 @@ class Channel(object):
         """
         Extract the samples corresponding to this channel from the given iio.Buffer object.
 
-        parameters:
-            buf: type=iio.Buffer
-                A valid instance of the iio.Buffer class
-            raw: type=bool
-                If set to True, the samples are not converted from their
-                native format to their host format
+        :param buf: type=iio.Buffer
+            A valid instance of the iio.Buffer class
+        :param raw: type=bool
+            If set to True, the samples are not converted from their
+            native format to their host format
 
         returns: type=bytearray
             An array containing the samples for this channel
@@ -883,14 +872,13 @@ class Channel(object):
         """
         Write the specified array of samples corresponding to this channel into the given iio.Buffer object.
 
-        parameters:
-            buf: type=iio.Buffer
-                A valid instance of the iio.Buffer class
-            array: type=bytearray
-                The array containing the samples to copy
-            raw: type=bool
-                If set to True, the samples are not converted from their
-                host format to their native format
+        :param buf: type=iio.Buffer
+            A valid instance of the iio.Buffer class
+        :param array: type=bytearray
+            The array containing the samples to copy
+        :param raw: type=bool
+            If set to True, the samples are not converted from their
+            host format to their native format
 
         returns: type=int
             The number of bytes written
@@ -938,7 +926,7 @@ class Channel(object):
     @property
     def device(self):
         """
-        This channel's corresponding device.
+        Corresponding device for the channel.
         type: iio.Device
         """
         c_dev = _channel_get_device(self._channel)
@@ -946,15 +934,13 @@ class Channel(object):
 
     @property
     def index(self):
-        """
-        This channel's index
-        """
+        """Index for the channel."""
         return _channel_get_index(self._channel)
 
     @property
     def data_format(self):
         """
-        This channel's data format.
+        Channel data format.
         type: iio.DataFormat
         """
         return _channel_get_data_format(self._channel).contents
@@ -962,7 +948,7 @@ class Channel(object):
     @property
     def modifier(self):
         """
-        This channel's modifier.
+        Channel modifier.
         type: iio.ChannelModifier(Enum)
         """
         return ChannelModifier(_channel_get_modifier(self._channel))
@@ -970,20 +956,19 @@ class Channel(object):
     @property
     def type(self):
         """
-        This channel's type.
+        Type for the channel.
         type: iio.ChannelType(Enum)
         """
         return ChannelType(_channel_get_type(self._channel))
 
     def convert(self, dst, src):
         """
-        Converts src and saves the result in dst, using current channel's data format.
+        Convert src and saves the result in dst, using current channel's data format.
 
-        parameters:
-            dst: type=list
-                The variable where the result is stored.
-            src: type=list
-                Data to be converted.
+        :param dst: type=list
+            The variable where the result is stored.
+        :param src: type=list
+            Data to be converted.
         """
         src_ptr = cast((c_char * (len(src) * self.data_format.length))(*src), c_void_p)
         dst_ptr = cast((c_char * (len(dst) * self.data_format.length))(*dst), c_void_p)
@@ -993,11 +978,10 @@ class Channel(object):
         """
         Convert the sample from host format to hardware format.
 
-        parameters:
-            dst: type=list
-                The variable where the result is stored.
-            src: type=list
-                Data to be converted.
+        :param dst: type=list
+            The variable where the result is stored.
+        :param src: type=list
+            Data to be converted.
         """
         src_ptr = cast((c_char * (len(src) * self.data_format.length))(*src), c_void_p)
         dst_ptr = cast((c_char * (len(dst) * self.data_format.length))(*dst), c_void_p)
@@ -1005,21 +989,19 @@ class Channel(object):
 
 
 class Buffer(object):
-
     """The class used for all I/O operations."""
 
     def __init__(self, device, samples_count, cyclic=False):
         """
-        Initializes a new instance of the Buffer class.
+        Initialize a new instance of the Buffer class.
 
-        parameters:
-            device: type=iio.Device
-                The iio.Device object that represents the device where the I/O
-                operations will be performed
-            samples_count: type=int
-                The size of the buffer, in samples
-            circular: type=bool
-                If set to True, the buffer is circular
+        :param device: type=iio.Device
+            The iio.Device object that represents the device where the I/O
+            operations will be performed
+        :param samples_count: type=int
+            The size of the buffer, in samples
+        :param circular: type=bool
+            If set to True, the buffer is circular
 
         returns: type=iio.Buffer
             An new instance of this class
@@ -1036,6 +1018,7 @@ class Buffer(object):
         # every iio.Buffer object is destroyed before its corresponding IIO Context.
 
     def __del__(self):
+        """Destroy this buffer."""
         if self._buffer is not None:
             _buffer_destroy(self._buffer)
 
@@ -1051,9 +1034,8 @@ class Buffer(object):
         """
         Submit the samples contained in this buffer to the hardware.
 
-        parameters:
-            samples_count: type=int
-                The number of samples to submit, default = full buffer
+        :param samples_count: type=int
+            The number of samples to submit, default = full buffer
         """
         _buffer_push_partial(self._buffer, samples_count or self._samples_count)
 
@@ -1064,7 +1046,6 @@ class Buffer(object):
         returns: type=bytearray
             An array containing the samples
         """
-
         start = _buffer_start(self._buffer)
         end = _buffer_end(self._buffer)
         array = bytearray(end - start)
@@ -1077,8 +1058,7 @@ class Buffer(object):
         """
         Copy the given array of samples inside the Buffer object.
 
-        parameters:
-            array: type=bytearray
+        :param array: type=bytearray
                 The array containing the samples to copy
 
         returns: type=int
@@ -1095,18 +1075,15 @@ class Buffer(object):
         return length
 
     def cancel(self):
-        """
-        Cancels the current buffer.
-        """
+        """Cancel the current buffer."""
         _buffer_cancel(self._buffer)
 
     def set_blocking_mode(self, blocking):
         """
-        Sets the buffer's blocking mode.
+        Set the buffer's blocking mode.
 
-        parameters:
-            blocking: type=boolean
-                True if in blocking_mode else False.
+        :param blocking: type=boolean
+            True if in blocking_mode else False.
 
         returns: type=int
             Return code from the C layer.
@@ -1116,7 +1093,7 @@ class Buffer(object):
     @property
     def device(self):
         """
-        This buffer's corresponding device.
+        Device for the buffer.
         type: iio.Device
         """
         return Device(self._ctx, _buffer_get_device(self._buffer))
@@ -1124,7 +1101,7 @@ class Buffer(object):
     @property
     def poll_fd(self):
         """
-        This buffer's poll_fd.
+        Poll_fd for the buffer.
         type: int
         """
         return _buffer_get_poll_fd(self._buffer)
@@ -1132,7 +1109,7 @@ class Buffer(object):
     @property
     def step(self):
         """
-        This buffer's step size.
+        Step size for the buffer.
         type: int
         """
         return _buffer_step(self._buffer)
@@ -1179,11 +1156,10 @@ class _DeviceOrTrigger(object):
         """
         Set a value to one register of this device.
 
-        parameters:
-            reg: type=int
-                The register address
-            value: type=int
-                The value that will be used for this register
+        :param reg: type=int
+            The register address
+        :param value: type=int
+            The value that will be used for this register
         """
         _d_reg_write(self._device, reg, value)
 
@@ -1191,9 +1167,8 @@ class _DeviceOrTrigger(object):
         """
         Read the content of a register of this device.
 
-        parameters:
-            reg: type=int
-                The register address
+        :param reg: type=int
+            The register address
 
         returns: type=int
             The value of the register
@@ -1207,11 +1182,10 @@ class _DeviceOrTrigger(object):
 
         Find a IIO channel by its name or ID.
 
-        parameters:
-            name_or_id: type=str
-                The name or ID of the channel to find
-            is_output: type=bool
-                Set to True to search for an output channel
+        :param name_or_id: type=str
+            The name or ID of the channel to find
+        :param is_output: type=bool
+            Set to True to search for an output channel
 
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
@@ -1230,9 +1204,8 @@ class _DeviceOrTrigger(object):
 
         Set the number of kernel buffers to use with the specified device.
 
-        parameters:
-            count: type=int
-                The number of kernel buffers
+        :param count: type=int
+            The number of kernel buffers
 
         """
         return _d_set_buffers_count(self._device, count)
@@ -1240,10 +1213,11 @@ class _DeviceOrTrigger(object):
     @property
     def sample_size(self):
         """
-        Current sample size of this device.
+        Sample size of this device.
         type: int
 
-        The sample size varies each time channels get enabled or disabled."""
+        The sample size varies each time channels get enabled or disabled.
+        """
         return _get_sample_size(self._device)
 
     id = property(
@@ -1282,16 +1256,14 @@ class _DeviceOrTrigger(object):
 
 
 class Trigger(_DeviceOrTrigger):
-
     """Contains the representation of an IIO device that can act as a trigger."""
 
     def __init__(self, _device):
         """
-        Initializes a new instance of the Trigger class.
+        Initialize a new instance of the Trigger class.
 
-        parameters:
-            _device: type=iio._DevicePtr
-                A pointer to an IIO device.
+        :param _device: type=iio._DevicePtr
+            A pointer to an IIO device.
 
         returns: type=iio.Trigger
             An new instance of this class
@@ -1313,18 +1285,16 @@ class Trigger(_DeviceOrTrigger):
 
 
 class Device(_DeviceOrTrigger):
-
     """Contains the representation of an IIO device."""
 
     def __init__(self, ctx, _device):
         """
-        Initializes a new instance of the Device class.
+        Initialize a new instance of the Device class.
 
-        parameters:
-            ctx: type=iio.Context
-                A valid instance of the iio.Context class.
-            _device: type=_DevicePtr
-                A pointer to an IIO device.
+        :param ctx: type=iio.Context
+            A valid instance of the iio.Context class.
+        :param _device: type=_DevicePtr
+            A pointer to an IIO device.
 
         returns: type=iio.Device
             An new instance of this class
@@ -1354,19 +1324,18 @@ class Device(_DeviceOrTrigger):
     @property
     def context(self):
         """
-        This device's context.
+        Context for the device.
         type: iio.Context
         """
         return self.ctx()
 
 
 class Context(object):
-
     """Contains the representation of an IIO context."""
 
     def __init__(self, _context=None):
         """
-        Initializes a new instance of the Context class, using the local or the network backend of the IIO library.
+        Initialize a new instance of the Context class, using the local or the network backend of the IIO library.
 
         returns: type=iio.Context
             An new instance of this class
@@ -1411,6 +1380,7 @@ class Context(object):
         self._version = (major.value, minor.value, buf.value.decode("ascii"))
 
     def __del__(self):
+        """Destroy this context."""
         if self._context is not None:
             _destroy(self._context)
 
@@ -1418,9 +1388,8 @@ class Context(object):
         """
         Set a timeout for I/O operations.
 
-        parameters:
-            timeout: type=int
-                The timeout value, in milliseconds
+        :param timeout: type=int
+            The timeout value, in milliseconds
         """
         _set_timeout(self._context, timeout)
 
@@ -1438,9 +1407,8 @@ class Context(object):
 
         Find a IIO device by its name or ID.
 
-        parameters:
-            name_or_id: type=str
-                The name or ID of the device to find
+        :param name_or_id: type=str
+            The name or ID of the device to find
 
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
@@ -1483,12 +1451,11 @@ class Context(object):
 
 
 class LocalContext(Context):
-
     """Local IIO Context."""
 
     def __init__(self):
         """
-        Initializes a new instance of the Context class, using the local backend of the IIO library.
+        Initialize a new instance of the Context class, using the local backend of the IIO library.
 
         returns: type=iio.LocalContext
             An new instance of this class
@@ -1498,16 +1465,14 @@ class LocalContext(Context):
 
 
 class XMLContext(Context):
-
     """XML IIO Context."""
 
     def __init__(self, xmlfile):
         """
-        Initializes a new instance of the Context class, using the XML backend of the IIO library.
+        Initialize a new instance of the Context class, using the XML backend of the IIO library.
 
-        parameters:
-            xmlfile: type=str
-                Filename of the XML file to build the context from
+        :param xmlfile: type=str
+            Filename of the XML file to build the context from
 
         returns: type=iio.XMLContext
             An new instance of this class
@@ -1517,16 +1482,14 @@ class XMLContext(Context):
 
 
 class NetworkContext(Context):
-
     """Network IIO Context."""
 
     def __init__(self, hostname=None):
         """
-        Initializes a new instance of the Context class, using the network backend of the IIO library.
+        Initialize a new instance of the Context class, using the network backend of the IIO library.
 
-        parameters:
-            hostname: type=str
-                Hostname, IPv4 or IPv6 address where the IIO Daemon is running
+        :param hostname: type=str
+            Hostname, IPv4 or IPv6 address where the IIO Daemon is running
 
         returns: type=iio.NetworkContext
             An new instance of this class
@@ -1536,9 +1499,7 @@ class NetworkContext(Context):
 
 
 def scan_contexts():
-
-    """Scanning Context."""
-
+    """Scan Context."""
     scan_ctx = dict()
     ptr = _POINTER(_ContextInfoPtr)()
 

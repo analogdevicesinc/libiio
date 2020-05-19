@@ -23,9 +23,7 @@ import iio
 
 
 def main():
-    """
-    Dump iio devices, list all iio attributes.
-    """
+    """Dump iio devices, list all iio attributes."""
     print("Library version: %u.%u (git tag: %s)" % iio.version)
 
     if len(argv) == 3 and argv[1] == "--uri":
