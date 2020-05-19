@@ -16,15 +16,22 @@ pyroma:
 mypy:
   run: false
 
+mccabe:
+  run: false
+
 pylint:
   run: false
 
 pydocroma:
   run: true
 
+pyflakes:
+  run: true
+
 pep8:
   run: true
   disable: [
+    N811,  # false negatives from from ctypes import
     E501,  # Line-length, already controlled by pylint
     E302,  # expected 2 blank lines, found 1, controlled by black
   ]
@@ -33,8 +40,17 @@ pep257:
   run: true
     # see http://pep257.readthedocs.io/en/latest/error_codes.html
   disable: [
+    # numpy convention
+    D107,  # Missing docstring in __init__
     D203,  # 1 blank line required before class docstring
            # conflicts with D0211, No blank lines allowed before class docstring
+    D205,  # 1 blank line required between summary line and description
+    D212,  # Multi-line docstring summary should start at the first line
+           # Conflictes with D213 / Multi-line docstring summary should start at the second line
+    D213,  # Multi-line docstring summary should start at the second line
     D402,  # First line should not be the function's "signature"
            # conflicts with D213, Multi-line docstring summary should start at the second line
+    D406,  # Section name should end with a newline
+    D407,  # Missing dashed underline after section
+    D413,  # Missing blank line after last section
   ]

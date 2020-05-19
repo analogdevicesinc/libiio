@@ -92,7 +92,8 @@ class ContextBuilder:
 
     def __init__(self, arguments):
         """
-        ContextBuilder class constructor.
+        Class constructor.
+
         Args:
             arguments: type=Arguments
                 Contains the input arguments.
@@ -156,7 +157,8 @@ class BufferBuilder:
 
     def __init__(self, ctx, arguments):
         """
-        BufferBuilder class constructor.
+        Class constructor.
+
         Args:
             ctx: type=iio.Context
                 This buffer's context.
@@ -202,7 +204,8 @@ class DataReader:
 
     def __init__(self, ctx, arguments):
         """
-        DataWriter class constructor.
+        Class constructor.
+
         Args:
             ctx: type=iio.Context
                 Current context.
