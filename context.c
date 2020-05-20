@@ -414,6 +414,18 @@ int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value)
 {
 	char **attrs, **values, *new_key, *new_val;
+	unsigned int i;
+
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		if(!strcmp(ctx->attrs[i], key)) {
+			new_val = iio_strdup(value);
+			if (!new_val)
+				return -ENOMEM;
+			free(ctx->values[i]);
+			ctx->values[i] = new_val;
+			return 0;
+		}
+	}
 
 	attrs = realloc(ctx->attrs,
 			(ctx->nb_attrs + 1) * sizeof(*ctx->attrs));
