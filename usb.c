@@ -744,6 +744,7 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 	char buffer[64];
 	unsigned int i;
 	int ret;
+	char uri[sizeof("usb:127.255.255")];
 
 	struct {
 		const char *attr;
@@ -758,6 +759,13 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 	attrs[1].idx = dev_desc.iProduct;
 	attrs[2].attr = "usb,serial";
 	attrs[2].idx = dev_desc.iSerialNumber;
+
+	iio_snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
+		libusb_get_bus_number(dev), libusb_get_device_address(dev),
+		(uint8_t)ctx->pdata->interface);
+	ret = iio_context_add_attr(ctx, "uri", uri);
+	if (ret < 0)
+		return ret;
 
 	iio_snprintf(buffer, sizeof(buffer), "%04hx", dev_desc.idVendor);
 	ret = iio_context_add_attr(ctx, "usb,idVendor", buffer);

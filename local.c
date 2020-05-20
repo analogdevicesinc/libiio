@@ -2063,6 +2063,10 @@ struct iio_context * local_create_context(void)
 	if (ret < 0)
 		goto err_context_destroy;
 
+	ret = iio_context_add_attr(ctx, "uri", "local:");
+	if (ret < 0)
+		goto err_context_destroy;
+
 	ret = iio_context_init(ctx);
 	if (ret < 0)
 		goto err_context_destroy;
