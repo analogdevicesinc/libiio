@@ -1293,9 +1293,9 @@ struct iio_context * network_create_context(const char *host)
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
-	size_t i, len;
+	size_t i, len, uri_len;
 	int fd, ret;
-	char *description;
+	char *description, *uri;
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -1399,10 +1399,21 @@ struct iio_context * network_create_context(const char *host)
 	len = INET_ADDRSTRLEN + 1;
 #endif
 
+	uri_len = len;
+	if (host && host[0])
+		uri_len = strnlen(host, MAXHOSTNAMELEN);
+	uri_len += sizeof ("ip:");
+
+	uri = malloc(uri_len);
+	if (!uri) {
+		ret = -ENOMEM;
+		goto err_network_shutdown;
+	}
+
 	description = malloc(len);
 	if (!description) {
 		ret = -ENOMEM;
-		goto err_network_shutdown;
+		goto err_free_uri;
 	}
 
 	description[0] = '\0';
@@ -1438,6 +1449,15 @@ struct iio_context * network_create_context(const char *host)
 	}
 
 	ret = iio_context_add_attr(ctx, "ip,ip-addr", description);
+	if (ret < 0)
+		goto err_free_description;
+
+	if (host && host[0])
+		iio_snprintf(uri, uri_len, "ip:%s", host);
+	else
+		iio_snprintf(uri, uri_len, "ip:%s\n", description);
+
+	ret = iio_context_add_attr(ctx, "uri", uri);
 	if (ret < 0)
 		goto err_free_description;
 
@@ -1487,6 +1507,8 @@ struct iio_context * network_create_context(const char *host)
 
 err_free_description:
 	free(description);
+err_free_uri:
+	free(uri);
 err_network_shutdown:
 	iio_context_destroy(ctx);
 	errno = -ret;
