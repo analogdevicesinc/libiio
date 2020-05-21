@@ -1131,16 +1131,18 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 	if (!isdigit(*ptr))
 		goto err_bad_uri;
 
+	errno = 0;
 	bus = strtol(ptr, &end, 10);
-	if (ptr == end || *end != '.')
+	if (ptr == end || *end != '.' || errno == ERANGE)
 		goto err_bad_uri;
 
 	ptr = (const char *) ((uintptr_t) end + 1);
 	if (!isdigit(*ptr))
 		goto err_bad_uri;
 
+	errno = 0;
 	address = strtol(ptr, &end, 10);
-	if (ptr == end)
+	if (ptr == end || errno == ERANGE)
 		goto err_bad_uri;
 
 	if (*end == '\0') {
@@ -1150,8 +1152,9 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 		if (!isdigit(*ptr))
 			goto err_bad_uri;
 
+		errno = 0;
 		intrfc = strtol(ptr, &end, 10);
-		if (ptr == end || *end != '\0')
+		if (ptr == end || *end != '\0' || errno == ERANGE)
 			goto err_bad_uri;
 	} else {
 		goto err_bad_uri;

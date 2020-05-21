@@ -749,8 +749,9 @@ static int read_integer(struct iio_network_io_context *io_ctx, long *val)
 	}
 
 	buf[i] = '\0';
+	errno = 0;
 	ret = (ssize_t) strtol(buf, &ptr, 10);
-	if (ptr == buf)
+	if (ptr == buf || errno == ERANGE)
 		return -EINVAL;
 	*val = (long) ret;
 	return 0;

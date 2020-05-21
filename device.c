@@ -622,8 +622,9 @@ int iio_device_attr_read_longlong(const struct iio_device *dev,
 	if (ret < 0)
 		return (int) ret;
 
+	errno = 0;
 	value = strtoll(buf, &end, 0);
-	if (end == buf)
+	if (end == buf || errno == ERANGE)
 		return -EINVAL;
 	*val = value;
 	return 0;
@@ -698,8 +699,9 @@ int iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
 	if (ret < 0)
 		return (int) ret;
 
+	errno = 0;
 	value = strtoll(buf, &end, 0);
-	if (end == buf)
+	if (end == buf || errno == ERANGE)
 		return -EINVAL;
 	*val = value;
 	return 0;
@@ -814,8 +816,9 @@ int iio_device_debug_attr_read_longlong(const struct iio_device *dev,
 	if (ret < 0)
 		return (int) ret;
 
+	errno = 0;
 	value = strtoll(buf, &end, 0);
-	if (end == buf)
+	if (end == buf || errno == ERANGE)
 		return -EINVAL;
 	*val = value;
 	return 0;

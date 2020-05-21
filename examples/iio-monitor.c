@@ -82,7 +82,7 @@ static void err_str(int ret)
 
 static double get_channel_value(struct iio_channel *chn)
 {
-	char *old_locale;
+	char *old_locale, *end;
 	char buf[1024];
 	double val;
 	int ret;
@@ -95,30 +95,49 @@ static double get_channel_value(struct iio_channel *chn)
 		if (ret < 0) {
 			err_str(ret);
 			val = 0;
-		} else
-			val = strtod(buf, NULL);
+		} else {
+			errno = 0;
+			val = strtod(buf, &end);
+			if (buf == end || errno == ERANGE) {
+				fprintf(stderr, "issue decoding '%s' to decimal\n", buf);
+				val = 0;
+			}
+		}
 	} else {
 		ret = iio_channel_attr_read(chn, "raw", buf, sizeof(buf));
 		if (ret < 0) {
 			err_str(ret);
 			val = 0;
-		} else
-			val = strtod(buf, NULL);
-
+		} else {
+			errno = 0;
+			val = strtod(buf, &end);
+			if (buf == end || errno == ERANGE) {
+				fprintf(stderr, "issue decoding '%s' to decimal\n", buf);
+				val = 0;
+			}
+		}
 		if (channel_has_attr(chn, "offset")) {
 			ret = iio_channel_attr_read(chn, "offset", buf, sizeof(buf));
 			if (ret < 0)
 				err_str(ret);
-			else
-				val += strtod(buf, NULL);
+			else {
+				errno = 0;
+				val += strtod(buf, &end);
+				if (buf == end || errno == ERANGE)
+					fprintf(stderr, "issue decoding '%s' to decimal\n", buf);
+			}
 		}
 
 		if (channel_has_attr(chn, "scale")) {
 			ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
 			if (ret < 0)
 				err_str(ret);
-			else
-				val *= strtod(buf, NULL);
+			else {
+				errno = 0;
+				val *= strtod(buf, &end);
+				if (buf == end || errno == ERANGE)
+					fprintf(stderr, "issue decoding '%s' to decimal\n", buf);
+			}
 		}
 	}
 

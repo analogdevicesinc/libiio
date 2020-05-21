@@ -710,8 +710,9 @@ int iio_channel_attr_read_longlong(const struct iio_channel *chn,
 	if (ret < 0)
 		return (int) ret;
 
+	errno = 0;
 	value = strtoll(buf, &end, 0);
-	if (end == buf)
+	if (end == buf || errno == ERANGE)
 		return -EINVAL;
 	*val = value;
 	return 0;

@@ -42,6 +42,7 @@ static int read_double_locale(const char *str, double *val)
 {
 	char *end, *old_locale;
 	double value;
+	bool problem = false;
 
 	/* XXX: This is not thread-safe, but it's the only way we have to
 	 * support locales under MinGW without linking with Visual Studio
@@ -51,11 +52,16 @@ static int read_double_locale(const char *str, double *val)
 		return -ENOMEM;
 
 	setlocale(LC_NUMERIC, "C");
+
+	errno = 0;
 	value = strtod(str, &end);
+	if (end == str || errno == ERANGE)
+		problem = true;
+
 	setlocale(LC_NUMERIC, old_locale);
 	free(old_locale);
 
-	if (end == str)
+	if (problem)
 		return -EINVAL;
 
 	*val = value;
@@ -80,14 +86,20 @@ static int read_double_locale(const char *str, double *val)
 {
 	char *end;
 	double value;
+	bool problem = false;
+
 	_locale_t locale = _create_locale(LC_NUMERIC, "C");
 	if (!locale)
 		return -ENOMEM;
 
+	errno = 0;
 	value = _strtod_l(str, &end, locale);
+	if (end == str || errno == ERANGE)
+		problem = true;
+
 	_free_locale(locale);
 
-	if (end == str)
+	if (problem)
 		return -EINVAL;
 
 	*val = value;
@@ -109,6 +121,7 @@ static int read_double_locale(const char *str, double *val)
 {
 	char *end;
 	double value;
+	bool problem = false;
 	locale_t old_locale, new_locale;
 
 	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
@@ -117,11 +130,15 @@ static int read_double_locale(const char *str, double *val)
 
 	old_locale = uselocale(new_locale);
 
+	errno = 0;
 	value = strtod(str, &end);
+	if (end == str || errno == ERANGE)
+		problem = true;
+
 	uselocale(old_locale);
 	freelocale(new_locale);
 
-	if (end == str)
+	if (problem)
 		return -EINVAL;
 
 	*val = value;
@@ -153,9 +170,11 @@ int read_double(const char *str, double *val)
 	return read_double_locale(str, val);
 #else
 	char *end;
-	double value = strtod(str, &end);
+	double value;
 
-	if (end == str)
+	errno = 0;
+	value = strtod(str, &end);
+	if (end == str || errno == ERANGE)
 		return -EINVAL;
 
 	*val = value;

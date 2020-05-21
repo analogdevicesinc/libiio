@@ -521,7 +521,11 @@ static int serial_parse_params(const char *params,
 	if (!params || !params[0])
 		return 0;
 
+	errno = 0;
 	*baud_rate = strtoul(params, &end, 10);
+	if (params == end || errno == ERANGE)
+		return -EINVAL;
+
 	/* 110 baud to 1,000,000 baud */
 	if (params == end || *baud_rate < 110 || *baud_rate > 1000001) {
 		IIO_ERROR("Invalid baud rate\n");
@@ -536,8 +540,9 @@ static int serial_parse_params(const char *params,
 
 	params = (const char *)(end);
 
+	errno = 0;
 	*bits = strtoul(params, &end, 10);
-	if (params == end || *bits > 9 || *bits < 5) {
+	if (params == end || *bits > 9 || *bits < 5 || errno == ERANGE) {
 		IIO_ERROR("Invalid number of bits\n");
 		return -EINVAL;
 	}
@@ -571,9 +576,10 @@ static int serial_parse_params(const char *params,
 	params = (const char *)(end);
 	if (!*params)
 		return 0;
-	*stop = strtoul(params, &end, 10);
 
-	if (params == end || !*stop || *stop > 2) {
+	errno = 0;
+	*stop = strtoul(params, &end, 10);
+	if (params == end || !*stop || *stop > 2 || errno == ERANGE) {
 		IIO_ERROR("Invalid number of stop bits\n");
 		return -EINVAL;
 	}

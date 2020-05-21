@@ -60,8 +60,9 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client,
 
 	buf[i] = '\0';
 
+	errno = 0;
 	value = (int) strtol(ptr, &end, 10);
-	if (ptr == end)
+	if (ptr == end || errno == ERANGE)
 		return -EINVAL;
 
 	*val = value;
@@ -181,13 +182,15 @@ int iiod_client_get_version(struct iiod_client *client, void *desc,
 	if (ret < 0)
 		return ret;
 
+	errno = 0;
 	maj = strtol(ptr, &end, 10);
-	if (ptr == end)
+	if (ptr == end || errno == ERANGE)
 		return -EIO;
 
 	ptr = end + 1;
+	errno = 0;
 	min = strtol(ptr, &end, 10);
-	if (ptr == end)
+	if (ptr == end || errno == ERANGE)
 		return -EIO;
 
 	ptr = end + 1;
