@@ -58,7 +58,7 @@ struct iio_usb_io_context {
 struct iio_context_pdata {
 	libusb_context *ctx;
 	libusb_device_handle *hdl;
-	uint16_t interface;
+	uint16_t intrfc;
 
 	struct iiod_client *iiod_client;
 
@@ -173,7 +173,7 @@ static int usb_reset_pipes(struct iio_context_pdata *pdata)
 			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE,
 			IIO_USD_CMD_RESET_PIPES,
 			0,
-			pdata->interface,
+			pdata->intrfc,
 			NULL,
 			0,
 			USB_PIPE_CTRL_TIMEOUT);
@@ -200,7 +200,7 @@ static int usb_open_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE,
 			IIO_USD_CMD_OPEN_PIPE,
 			pipe_id,
-			pdata->interface,
+			pdata->intrfc,
 			NULL,
 			0,
 			USB_PIPE_CTRL_TIMEOUT);
@@ -215,7 +215,7 @@ static int usb_close_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 
 	ret = libusb_control_transfer(pdata->hdl, LIBUSB_REQUEST_TYPE_VENDOR |
 		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_CLOSE_PIPE,
-		pipe_id, pdata->interface, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
+		pipe_id, pdata->intrfc, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
 		return -(int) libusb_to_errno(ret);
 	return 0;
@@ -482,15 +482,15 @@ static void usb_shutdown(struct iio_context *ctx)
 }
 
 static int iio_usb_match_interface(const struct libusb_config_descriptor *desc,
-		struct libusb_device_handle *hdl, unsigned int interface)
+		struct libusb_device_handle *hdl, unsigned int intrfc)
 {
 	const struct libusb_interface *iface;
 	unsigned int i;
 
-	if (interface >= desc->bNumInterfaces)
+	if (intrfc >= desc->bNumInterfaces)
 		return -EINVAL;
 
-	iface = &desc->interface[interface];
+	iface = &desc->interface[intrfc];
 
 	for (i = 0; i < (unsigned int) iface->num_altsetting; i++) {
 		const struct libusb_interface_descriptor *idesc =
@@ -515,7 +515,7 @@ static int iio_usb_match_interface(const struct libusb_config_descriptor *desc,
 
 static int iio_usb_match_device(struct libusb_device *dev,
 		struct libusb_device_handle *hdl,
-		unsigned int *interface)
+		unsigned int *intrfc)
 {
 	struct libusb_config_descriptor *desc;
 	unsigned int i;
@@ -537,7 +537,7 @@ static int iio_usb_match_device(struct libusb_device *dev,
 			libusb_get_bus_number(dev),
 			libusb_get_device_address(dev), i - 1);
 
-	*interface = i - 1;
+	*intrfc = i - 1;
 	return ret;
 }
 
@@ -810,7 +810,7 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 }
 
 struct iio_context * usb_create_context(unsigned int bus,
-		uint16_t address, uint16_t interface)
+		uint16_t address, uint16_t intrfc)
 {
 	libusb_context *usb_ctx;
 	libusb_device_handle *hdl = NULL;
@@ -912,13 +912,13 @@ struct iio_context * usb_create_context(unsigned int bus,
 	libusb_set_auto_detach_kernel_driver(hdl, true);
 #endif
 
-	ret = libusb_claim_interface(hdl, interface);
+	ret = libusb_claim_interface(hdl, intrfc);
 	if (ret) {
 		char err_str[1024];
 		ret = -(int) libusb_to_errno(ret);
 		iio_strerror(-ret, err_str, sizeof(err_str));
 		IIO_ERROR("Unable to claim interface %u:%u:%u: %s (%i)\n",
-		      bus, address, interface, err_str, ret);
+		      bus, address, intrfc, err_str, ret);
 		goto err_libusb_close;
 	}
 
@@ -932,7 +932,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 		goto err_libusb_close;
 	}
 
-	iface = &conf_desc->interface[interface].altsetting[0];
+	iface = &conf_desc->interface[intrfc].altsetting[0];
 
 	ret = usb_verify_eps(iface);
 	if (ret) {
@@ -973,7 +973,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	pdata->ctx = usb_ctx;
 	pdata->hdl = hdl;
 	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
-	pdata->interface = interface;
+	pdata->intrfc = intrfc;
 
 	ret = usb_io_context_init(&pdata->io_ctx);
 	if (ret)
@@ -1066,7 +1066,7 @@ err_set_errno:
 
 struct iio_context * usb_create_context_from_uri(const char *uri)
 {
-	long bus, address, interface;
+	long bus, address, intrfc;
 	char *end;
 	const char *ptr;
 	/* keep MSVS happy by setting these to NULL */
@@ -1136,23 +1136,23 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 		goto err_bad_uri;
 
 	if (*end == '\0') {
-		interface = 0;
+		intrfc = 0;
 	} else if (*end == '.') {
 		ptr = (const char *) ((uintptr_t) end + 1);
 		if (!isdigit(*ptr))
 			goto err_bad_uri;
 
-		interface = strtol(ptr, &end, 10);
+		intrfc = strtol(ptr, &end, 10);
 		if (ptr == end || *end != '\0')
 			goto err_bad_uri;
 	} else {
 		goto err_bad_uri;
 	}
 
-	if (bus < 0 || address < 0 || interface < 0)
+	if (bus < 0 || address < 0 || intrfc < 0)
 		goto err_bad_uri;
 
-	if (bus > (long) UINT_MAX || address > UINT8_MAX || interface > UINT8_MAX)
+	if (bus > (long) UINT_MAX || address > UINT8_MAX || intrfc > UINT8_MAX)
 		goto err_bad_uri;
 
 	if (scan) {
@@ -1160,7 +1160,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 		iio_scan_context_destroy(scan_ctx);
 	}
 	return usb_create_context((unsigned int) bus,
-			(uint16_t) address, (uint16_t) interface);
+			(uint16_t) address, (uint16_t) intrfc);
 
 err_bad_uri:
 	if (scan) {
@@ -1175,7 +1175,7 @@ err_bad_uri:
 
 static int usb_fill_context_info(struct iio_context_info *info,
 		struct libusb_device *dev, struct libusb_device_handle *hdl,
-		unsigned int interface)
+		unsigned int intrfc)
 {
 	struct libusb_device_descriptor desc;
 	char manufacturer[64], product[64], serial[64];
@@ -1188,7 +1188,7 @@ static int usb_fill_context_info(struct iio_context_info *info,
 
 	iio_snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
 		libusb_get_bus_number(dev), libusb_get_device_address(dev),
-		interface);
+		intrfc);
 
 	if (desc.iManufacturer == 0) {
 		manufacturer[0] = '\0';
@@ -1282,19 +1282,19 @@ int usb_context_scan(struct iio_scan_backend_context *ctx,
 	for (i = 0; device_list[i]; i++) {
 		struct libusb_device_handle *hdl;
 		struct libusb_device *dev = device_list[i];
-		unsigned int interface = 0;
+		unsigned int intrfc = 0;
 
 		ret = libusb_open(dev, &hdl);
 		if (ret)
 			continue;
 
-		if (!iio_usb_match_device(dev, hdl, &interface)) {
+		if (!iio_usb_match_device(dev, hdl, &intrfc)) {
 			info = iio_scan_result_add(scan_result, 1);
 			if (!info)
 				ret = -ENOMEM;
 			else
 				ret = usb_fill_context_info(*info, dev, hdl,
-						interface);
+						intrfc);
 		}
 
 		libusb_close(hdl);
