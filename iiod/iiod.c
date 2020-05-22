@@ -634,8 +634,9 @@ int main(int argc, char **argv)
 #endif
 		case 'n':
 #ifdef WITH_IIOD_USBD
+			errno = 0;
 			nb_pipes = strtol(optarg, &end, 10);
-			if (optarg == end || nb_pipes < 1) {
+			if (optarg == end || nb_pipes < 1 || errno == ERANGE) {
 				IIO_ERROR("--nb-pipes: Invalid parameter\n");
 				return EXIT_FAILURE;
 			}

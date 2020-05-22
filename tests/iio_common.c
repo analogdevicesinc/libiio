@@ -133,14 +133,17 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max)
 {
 	uint64_t val;
-	char buf[20];
+	char buf[20], *end;
 
 	if (!argv) {
 		val = 0;
 	} else {
 		/* sanitized buffer by taking first 20 (or less) char */
 		iio_snprintf(buf, sizeof(buf), "%s", argv);
-		val = strtoul(buf, NULL, 10);
+		errno = 0;
+		val = strtoul(buf, &end, 10);
+		if (buf == end || errno == ERANGE)
+			val = 0;
 	}
 
 	if (val > max) {

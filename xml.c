@@ -142,8 +142,9 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			char *end;
 			long long value;
 
+			errno = 0;
 			value = strtoll(content, &end, 0);
-			if (end == content || value < 0 || value > LONG_MAX)
+			if (end == content || value < 0 || errno == ERANGE)
 				return;
 			chn->index = (long) value;
 		} else if (!strcmp(name, "format")) {
@@ -179,8 +180,9 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			char *end;
 			float value;
 
+			errno = 0;
 			value = strtof(content, &end);
-			if (end == content) {
+			if (end == content || errno == ERANGE) {
 				chn->format.with_scale = false;
 				return;
 			}

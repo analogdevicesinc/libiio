@@ -143,7 +143,15 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 }
 
 <WANT_VALUE>{WORD} {
-	yylval->value = strtol(yytext, NULL, 10);
+	char *end;
+	char errstr[100];
+
+	errno = 0;
+	yylval->value = strtol(yytext, &end, 10);
+	if (yytext == end || errno == ERANGE) {
+		sprintf(errstr,"lex : bad long constant: %s",(char*)yytext);
+		perror(errstr);
+	}
 	return VALUE;
 }
 

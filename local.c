@@ -1225,8 +1225,9 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			char *end;
 			long long value;
 
+			errno = 0;
 			value = strtoll(buf, &end, 0);
-			if (end == buf || value < 0 || value > LONG_MAX)
+			if (end == buf || value < 0 || errno == ERANGE)
 				return -EINVAL;
 
 			chn->index = (long) value;
@@ -1933,8 +1934,9 @@ static void init_data_scale(struct iio_channel *chn)
 	if (ret < 0)
 		return;
 
+	errno = 0;
 	value = strtof(buf, &end);
-	if (end == buf)
+	if (end == buf || errno == ERANGE)
 		return;
 
 	chn->format.with_scale = true;
