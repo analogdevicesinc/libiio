@@ -444,6 +444,20 @@ __api __check_ret struct iio_context * iio_context_clone(const struct iio_contex
 __api void iio_context_destroy(struct iio_context *ctx);
 
 
+/** @brief Do not use : release all memory used by the library
+ *
+ * <b>NOTE:</b> <i>Only expert users should use this function.</i>
+ * This attempts to reclaim all related global memory allocated by libxml2
+ * (and potentially other libraries) for the libiio processing. If your
+ * application is multithreaded, or supports plugins, uses libxml2, or
+ * other libraries, abstain from calling this function. It is used by the
+ * libiio development team just before calling exit() to avoid false
+ * positive leak reports from valgrind.
+ *
+ * Introduced in version 0.20. */
+__api void iio_context_purge(void);
+
+
 /** @brief Get the version of the backend in use
  * @param ctx A pointer to an iio_context structure
  * @param major A pointer to an unsigned integer (NULL accepted)
