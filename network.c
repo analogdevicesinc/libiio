@@ -1502,6 +1502,7 @@ struct iio_context * network_create_context(const char *host)
 		ctx->description = description;
 	}
 
+	free(uri);
 	iiod_client_set_timeout(pdata->iiod_client, &pdata->io_ctx,
 			calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
 	return ctx;
