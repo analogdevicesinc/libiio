@@ -227,6 +227,7 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 		switch (c) {
 		case 'h':
 			usage(name, options, options_descriptions);
+			return NULL;
 			break;
 		case 'n':
 			if (backend != IIO_LOCAL) {
@@ -271,7 +272,6 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 
 	if (do_scan) {
 		autodetect_context(false, false, name);
-		exit(0);
 	} else if (detect_context)
 		ctx = autodetect_context(true, false, name);
 	else if (!arg && backend != IIO_LOCAL)
@@ -318,6 +318,5 @@ void usage(char *name, const struct option *options,
 	printf("\nThis is free software; see the source for copying conditions.  There is NO\n"
 			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 
-	exit(0);
 }
 

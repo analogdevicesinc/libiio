@@ -192,6 +192,11 @@ void iio_context_destroy(struct iio_context *ctx)
 	free(ctx);
 }
 
+void iio_context_purge(void)
+{
+	xml_purge_context();
+}
+
 unsigned int iio_context_get_devices_count(const struct iio_context *ctx)
 {
 	return ctx->nb_devices;

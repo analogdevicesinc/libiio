@@ -344,7 +344,7 @@ int main(int argc, char **argv)
 {
 	char **argw;
 	struct iio_context *ctx;
-	int c, option_index = 0;
+	int ret = EXIT_FAILURE, c, option_index = 0;
 	int device_index = 0, channel_index = 0, attr_index = 0;
 	const char *gen_file = NULL;
 	bool search_device = false, ignore_case = false,
@@ -413,34 +413,35 @@ int main(int argc, char **argv)
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 	}
 
 
 	if (!ctx)
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 
 	if (gen_code) {
 		if (!gen_test_path(gen_file)) {
 			fprintf(stderr, "Can't write to %s to generate file\n", gen_file);
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 	}
 
 	if ((search_device + search_channel + search_context + search_debug + search_buffer) >= 2 ) {
 		fprintf(stderr, "The options -d, -c, -C, -B, and -D are exclusive"
 				" (can use only one).\n");
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	}
 
 	if (!(search_device + search_channel + search_context + search_debug + search_buffer)) {
 		if (argc == 1) {
 			usage(MY_NAME, options, options_descriptions);
-			return EXIT_SUCCESS;
+			ret = EXIT_SUCCESS;
+			goto err_close_ctx;
 		}
 		fprintf(stderr, "must specify one of -d, -c, -C, -B or -D.\n");
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	}
 
 	if (search_context) {
@@ -449,12 +450,12 @@ int main(int argc, char **argv)
 			attr_index = optind;
 		if (argc >= optind + 2) {
 			fprintf(stderr, "Too many options for searching for context attributes\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 		if (gen_code && !attr_index) {
 			printf("When generating code for Context Attributes, must include specific attribute\n"
 					"-C [IIO_context_attribute]\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 	} else if (search_device) {
 		/* -d [device] [attr] [value] */
@@ -466,12 +467,12 @@ int main(int argc, char **argv)
 			wbuf = argw[optind + 2];
 		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for device attributes\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 		if (gen_code && !attr_index) {
 			printf("When generating code for device Attributes, must include specific attribute\n"
 					"-d [IIO_device] [IIO_device_attr] [value]\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 	} else if (search_channel) {
 		/* -c [device] [channel] [attr] [value] */
@@ -485,12 +486,12 @@ int main(int argc, char **argv)
 			wbuf = argw[optind + 3];
 		if (argc >= optind + 5) {
 			fprintf(stderr, "Too many options for searching for channel attributes\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 		if (gen_code && !attr_index) {
 			printf("When generating code for Channel Attributes, must include specific attribute\n"
 					"-c [IIO_device] [IIO_device_channel] [IIO_channel_attr] [value]\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 	} else if (search_buffer) {
 		/* -B [device] [attribute] [value] */
@@ -502,12 +503,12 @@ int main(int argc, char **argv)
 			wbuf = argw[optind + 2];
 		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for buffer attributes\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 		if (gen_code && !attr_index) {
 			printf("When generating code for Buffer Attributes, must include specific attribute\n"
 					"-B [IIO_device] [IIO_buffer_attribute] [value]\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 
 	} else if (search_debug) {
@@ -520,24 +521,24 @@ int main(int argc, char **argv)
 			wbuf = argw[optind + 2];
 		if (argc >= optind + 4) {
 			fprintf(stderr, "Too many options for searching for device attributes\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 		if (gen_code && !attr_index) {
 			printf("When generating code for Debug Attributes, must include specific attribute\n"
 					"-D [IIO_device] [IIO_debug_attribute] [value]\n");
-			return EXIT_FAILURE;
+			goto err_close_ctx;
 		}
 	} else {
 		fprintf(stderr, "error in application\n");
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	}
 
 	if (device_index && !argw[device_index])
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	if (channel_index && !argw[channel_index])
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	if (attr_index && !argw[attr_index])
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	if ((gen_code || wbuf) && ((device_index && (!strcmp(".", argw[device_index]) ||
 				        strchr(argw[device_index], '*'))) ||
 		     (channel_index && (!strcmp(".", argw[channel_index]) ||
@@ -546,7 +547,7 @@ int main(int argc, char **argv)
 				      strchr(argw[attr_index], '*'))))) {
 		printf("can't %s with wildcard match\n",
 				gen_code ? "generate code" : "write value");
-		return EXIT_FAILURE;
+		goto err_close_ctx;
 	}
 
 	if (gen_code) {
@@ -823,8 +824,6 @@ int main(int argc, char **argv)
 
 	}
 
-	iio_context_destroy(ctx);
-
 	if (gen_code)
 		gen_context_destroy();
 
@@ -844,14 +843,20 @@ int main(int argc, char **argv)
 	} else if (!attr_found && attr_index)
 		fprintf(stderr, "%s: Error : could not find attribute (%s)\n", MY_NAME, argw[attr_index]);
 
-	free_argw(argc, argw);
+	ret = EXIT_SUCCESS;
 
 	if ((!dev_found && device_index) || (!ctx_found && search_context) ||
 			(!channel_found && channel_index) || (!attr_found && attr_index))
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
 
 	if (write_err || read_err || found_err)
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
 
-	return EXIT_SUCCESS;
+err_close_ctx:
+	free_argw(argc, argw);
+	if (ctx)
+		iio_context_destroy(ctx);
+	iio_context_purge();
+
+	return ret;
 }

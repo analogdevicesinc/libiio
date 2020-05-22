@@ -451,6 +451,9 @@ struct iio_context * xml_create_context(const char *xml_file)
 	struct iio_context *ctx;
 	xmlDoc *doc;
 
+	/*
+	 * Initialize libxml, This calls xmlInitParser(); when necessary.
+	 */
 	LIBXML_TEST_VERSION;
 
 	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
@@ -463,6 +466,27 @@ struct iio_context * xml_create_context(const char *xml_file)
 	ctx = iio_create_xml_context_helper(doc);
 	xmlFreeDoc(doc);
 	return ctx;
+}
+
+void xml_purge_context(void)
+{
+	/* These functions are cleanup functions for the XML library.
+	 * It will try to reclaim all related global memory allocated
+	 * for the xlm library processing. One should call xmlCleanupParser()
+	 * only when the process has finished using the library and all
+	 * XML/HTML documents built with it. If your application is
+	 * multithreaded or has plugin support calling this may crash the
+	 * application if another thread or a plugin is still using libxml2.
+	 *
+	 * In case of doubt abstain from calling this function at all or do
+	 * it just before calling exit() to avoid leak reports from valgrind.
+	 */
+
+	/* Cleanup function for the XML library. */
+	xmlCleanupParser();
+
+	/* this is to debug memory for regression tests */
+	xmlMemoryDump();
 }
 
 struct iio_context * xml_create_context_mem(const char *xml, size_t len)
