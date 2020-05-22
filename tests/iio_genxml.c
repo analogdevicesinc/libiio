@@ -101,5 +101,6 @@ int main(int argc, char **argv)
 	}
 	free_argw(argc, argw);
 	free(xml);
+	iio_context_purge();
 	return EXIT_SUCCESS;
 }

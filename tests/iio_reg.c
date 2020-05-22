@@ -81,6 +81,7 @@ int main(int argc, char **argv)
 	struct iio_device *dev;
 	int c, option_index = 0;
 	char * name;
+	int ret = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -99,34 +100,40 @@ int main(int argc, char **argv)
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
-			return EXIT_FAILURE;
+			goto err_purge_context;
 		}
 	}
 
 	if ((argc - optind) < 2 || (argc - optind) > 3) {
 		usage(MY_NAME, options, options_descriptions);
-		return EXIT_SUCCESS;
+		goto err_destroy_context;
 	}
+
+	if (!ctx)
+		goto err_purge_context;
 
 	name = cmn_strndup(argw[optind], NAME_MAX);
 	dev = iio_context_find_device(ctx, name);
 	if (!dev) {
 		perror("Unable to find device");
-		goto err_destroy_context;
+		goto err_destroy_name;
 	}
 
 	addr = sanitize_clamp("register address", argw[optind + 1], 0, UINT32_MAX);
 
 	if ((argc - optind) == 2) {
-		return read_reg(dev, addr);
+		ret = read_reg(dev, addr);
 	} else {
 		uint32_t val = sanitize_clamp("register value", argw[optind + 2], 0, UINT32_MAX);
-		return write_reg(dev, addr, val);
+		ret = write_reg(dev, addr, val);
 	}
 
-err_destroy_context:
+err_destroy_name:
 	free(name);
+err_destroy_context:
 	iio_context_destroy(ctx);
+err_purge_context:
+	iio_context_purge();
 	free_argw(argc, argw);
-	return EXIT_SUCCESS;
+	return ret;
 }
