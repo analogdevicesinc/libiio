@@ -762,7 +762,7 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 
 	iio_snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
 		libusb_get_bus_number(dev), libusb_get_device_address(dev),
-		(uint8_t)ctx->pdata->interface);
+		(uint8_t)ctx->pdata->intrfc);
 	ret = iio_context_add_attr(ctx, "uri", uri);
 	if (ret < 0)
 		return ret;
