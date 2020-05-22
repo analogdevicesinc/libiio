@@ -2080,6 +2080,48 @@ err_set_errno:
 	return NULL;
 }
 
+#define BUF_SIZE 128
+
+static char * cat_file(const char *path)
+{
+	char buf[BUF_SIZE];
+	ssize_t ret;
+
+	FILE *f;
+
+	f = fopen(path, "re");
+	if (!f)
+		return NULL;
+
+	ret = fread(buf, 1, sizeof(buf)-1, f);
+	fclose(f);
+	if (ret > 0)
+		buf[ret - 1] = '\0';
+	else
+		return NULL;
+
+	return strndup(buf, sizeof(buf) - 1);
+}
+
+static int build_names(void *d, const char *path)
+{
+	char buf[BUF_SIZE], *dst;
+	char *names = (char *)d;
+	size_t len;
+
+	if (!strstr(path, "iio:device"))
+		return 0;
+
+	iio_snprintf(buf, sizeof(buf), "%s/name", path);
+	dst = cat_file(buf);
+	if (dst) {
+		len = strnlen(names, sizeof(buf));
+		iio_snprintf(&names[len], BUF_SIZE - len - 1, "%s, ", dst);
+		free(dst);
+	}
+	return 0;
+}
+
 static int check_device(void *d, const char *path)
 {
 	*(bool *)d = true;
@@ -2090,14 +2132,34 @@ int local_context_scan(struct iio_scan_result *scan_result)
 {
 	struct iio_context_info **info;
 	bool exists = false;
-	char *desc, *uri;
+	char *desc, *uri, *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	int ret;
 
 	ret = foreach_in_dir(&exists, "/sys/bus/iio", true, check_device);
 	if (ret < 0 || !exists)
 		return 0;
 
-	desc = iio_strdup("Local devices");
+	names[0] = '\0';
+	ret = foreach_in_dir(&names, "/sys/bus/iio/devices", true, build_names);
+	if (ret < 0)
+		return 0;
+
+	machine = cat_file("/sys/firmware/devicetree/base/model");
+	if (!machine)
+		machine = cat_file("/sys/class/dmi/id/board_vendor");
+
+	if (machine) {
+		if (names[0]) {
+			ret = strnlen(names, sizeof(names));
+			names[ret - 2] = '\0';
+			iio_snprintf(buf, sizeof(buf), "(%s on %s)", names, machine);
+		} else
+			iio_snprintf(buf, sizeof(buf), "(Local IIO devices on %s)", machine);
+		free(machine);
+		desc = iio_strdup(buf);
+	} else {
+		desc = iio_strdup("(Local IIO devices)");
+	}
 	if (!desc)
 		return -ENOMEM;
 
