@@ -357,6 +357,10 @@ if (IIOD_CLIENT)
 	list(APPEND LIBIIO_CFILES iiod-client.c)
 endif()
 
+if (WIN32)
+	string(REPLACE "." "," LIBIIO_FILEVERSION ${VERSION})
+endif()
+
 configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
