@@ -34,6 +34,7 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 	int i;
 
 	d = *ddata;
+	ldata = NULL;
 
 	if (n == 0) {
 		tdata = d->next;
