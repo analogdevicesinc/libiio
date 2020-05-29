@@ -159,10 +159,10 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 
 char ** dup_argv(char * name, int argc, char * argv[])
 {
-	int i = 1;
+	int i;
 	char** new_argv = xmalloc((argc + 1) * sizeof(char *), name);
 
-	for(int i = 0; i < argc; i++) {
+	for(i = 0; i < argc; i++) {
 		new_argv[i] = cmn_strndup(argv[i], NAME_MAX);
 		if (!new_argv[i])
 			goto err_dup;

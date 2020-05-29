@@ -625,7 +625,7 @@ int main(int argc, char **argv)
 			for (j = 0; j < nb_channels; j++) {
 				struct iio_channel *ch;
 				const char *type_name;
-				unsigned int k, nb_attrs;
+				unsigned int k;
 
 				if (!search_channel || !device_index)
 					continue;
@@ -741,7 +741,6 @@ int main(int argc, char **argv)
 			}
 
 			if (search_device && device_index && nb_attrs) {
-				unsigned int j;
 				int ret;
 				for (j = 0; j < nb_attrs; j++) {
 					const char *attr = iio_device_get_attr(dev, j);
@@ -772,8 +771,6 @@ int main(int argc, char **argv)
 			}
 
 			if (search_buffer && device_index && nb_attrs) {
-				unsigned int j;
-
 				for (j = 0; j < nb_attrs; j++) {
 					int ret;
 					const char *attr = iio_device_get_buffer_attr(dev, j);
@@ -799,8 +796,6 @@ int main(int argc, char **argv)
 				printf("found %u debug attributes\n", nb_attrs);
 
 			if (search_debug && device_index && nb_attrs) {
-				unsigned int j;
-
 				for (j = 0; j < nb_attrs; j++) {
 					int ret;
 					const char *attr = iio_device_get_debug_attr(dev, j);

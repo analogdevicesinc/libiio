@@ -365,7 +365,7 @@ int main(int argc, char **argv)
 #endif
 
 	while (app_running) {
-		ssize_t ret = iio_buffer_refill(buffer);
+		ret = iio_buffer_refill(buffer);
 		if (ret < 0) {
 			if (app_running) {
 				char buf[256];
