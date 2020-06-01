@@ -205,8 +205,10 @@ enum iio_modifier {
 
 
 /** @brief Create a scan context
- * @param backend A NULL-terminated string containing the backend to use for
- * scanning. If NULL, all the available backends are used.
+ * @param backend A NULL-terminated string containing the backend(s) to use for
+ * scanning (example: pre version 0.20 :  "local", "ip", or "usb"; post version
+ * 0.20 can handle multiple, including "local:usb:", "ip:usb:", "local:usb:ip:").
+ * If NULL, all the available backends are used.
  * @param flags Unused for now. Set to 0.
  * @return on success, a pointer to a iio_scan_context structure
  * @return On failure, NULL is returned and errno is set appropriately */
