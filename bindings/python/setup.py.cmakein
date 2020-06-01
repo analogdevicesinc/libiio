@@ -29,7 +29,7 @@ else:
 description = "Library for interfacing with Linux IIO devices"
 
 try:
-    with open("${CMAKE_SOURCE_DIR}/README.md", "r") as fh:
+    with open("${CMAKE_CURRENT_SOURCE_DIR}/README.md", "r") as fh:
         long_description = fh.read()
 except:
     long_description = description
