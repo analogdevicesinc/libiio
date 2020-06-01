@@ -72,7 +72,7 @@ char *cmn_strndup(const char *str, size_t n)
 
 
 
-struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * name)
+struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * name, const char * scan)
 {
 	struct iio_scan_context *scan_ctx;
 	struct iio_context_info **info;
@@ -81,7 +81,7 @@ struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * na
 	ssize_t ret;
 	FILE *out;
 
-	scan_ctx = iio_create_scan_context(NULL, 0);
+	scan_ctx = iio_create_scan_context(scan, 0);
 	if (!scan_ctx) {
 		fprintf(stderr, "Unable to create scan context\n");
 		return NULL;
@@ -195,8 +195,8 @@ static const struct option common_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"xml", required_argument, 0, 'x'},
 	{"uri", required_argument, 0, 'u'},
-	{"scan", no_argument, 0, 'S'},
-	{"auto", no_argument, 0, 'a'},
+	{"scan", optional_argument, 0, 'S'},
+	{"auto", optional_argument, 0, 'a'},
 	{0, 0, 0, 0},
 };
 
@@ -204,8 +204,10 @@ static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
 	"Use the context at the provided URI.",
-	"Scan for available backends.",
-	"Scan for available contexts and if only one is available use it.",
+	"Scan for available backends."
+		"\n\t\t\toptional arg of specific backend(s)",
+	"Scan for available contexts and if only one is available use it."
+		"\n\t\t\toptional arg of specific backend(s)",
 };
 
 
@@ -222,6 +224,7 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 	opterr = 0;
 	/* start over at first index */
 	optind = 1;
+
 	while ((c = getopt_long(argc, argv, COMMON_OPTIONS,	/* Flawfinder: ignore */
 			common_options, &option_index)) != -1) {
 		switch (c) {
@@ -258,9 +261,21 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 				return NULL;
 			}
 			detect_context = true;
+			if (optarg) {
+				arg = optarg;
+			} else {
+				if (argv[optind] && argv[optind][0] != '-')
+					arg = argv[optind++];
+			}
 			break;
 		case 'S':
 			do_scan = true;
+			if (optarg) {
+				arg = optarg;
+			} else {
+				if (argv[optind] && argv[optind][0] != '-')
+					arg = argv[optind++];
+			}
 			break;
 		case '?':
 			break;
@@ -270,10 +285,10 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 	opterr = 1;
 
 	if (do_scan) {
-		autodetect_context(false, false, name);
+		autodetect_context(false, false, name, arg);
 		exit(0);
 	} else if (detect_context)
-		ctx = autodetect_context(true, false, name);
+		ctx = autodetect_context(true, false, name, arg);
 	else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
 	else if (backend == IIO_XML)

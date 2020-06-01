@@ -85,12 +85,15 @@ int main(int argc, char **argv)
 		case 'h':
 		case 'n':
 		case 'x':
-		case 'S':
 		case 'u':
+			break;
+		case 'S':
 		case 'a':
+			if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+				optind++;
 			break;
 		case 's':
-			autodetect_context(false, false, MY_NAME);
+			autodetect_context(false, false, MY_NAME, NULL);
 			return EXIT_SUCCESS;
 		case '?':
 			printf("Unknown argument '%c'\n", c);

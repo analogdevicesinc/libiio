@@ -222,9 +222,12 @@ int main(int argc, char **argv)
 		case 'h':
 		case 'n':
 		case 'x':
-		case 'S':
 		case 'u':
+			break;
+		case 'S':
 		case 'a':
+			if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+				optind++;
 			break;
 		case 't':
 			trigger_name = optarg;
