@@ -152,7 +152,8 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			if (strchr(content, 'X')) {
 				iio_sscanf(content, "%ce:%c%u/%uX%u>>%u",
 #ifdef _MSC_BUILD
-					&e, sizeof(e), &s, sizeof(s),
+					&e, (unsigned int)sizeof(e),
+					&s, (unsigned int)sizeof(s),
 #else
 					&e, &s,
 #endif
@@ -164,7 +165,8 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 				chn->format.repeat = 1;
 				iio_sscanf(content, "%ce:%c%u/%u>>%u",
 #ifdef _MSC_BUILD
-					&e, sizeof(e), &s, sizeof(s),
+					&e, (unsigned int)sizeof(e),
+					&s, (unsigned int)sizeof(s),
 #else
 					&e, &s,
 #endif
