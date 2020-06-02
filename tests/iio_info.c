@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 				optind++;
 			break;
 		case 's':
-			autodetect_context(false, false, MY_NAME, NULL);
+			autodetect_context(false, MY_NAME, NULL);
 			return EXIT_SUCCESS;
 		case '?':
 			printf("Unknown argument '%c'\n", c);

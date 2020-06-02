@@ -163,7 +163,11 @@ void gen_context (const char *uri_in)
 	if (!fd)
 		return;
 
-	uri = cmn_strndup(uri_in, NAME_MAX);
+	if (uri_in)
+		uri = cmn_strndup(uri_in, NAME_MAX);
+	else
+		uri = cmn_strndup("unknown:", NAME_MAX);
+
 	if (lang == C_LANG) {
 		fprintf(fd, "\t/* Create IIO Context */\n"
 		    "\tIIO_ASSERT(ctx = iio_create_context_from_uri(\"%s\"));\n\n", uri);
@@ -289,7 +293,7 @@ void gen_function(const char* prefix, const char* target,
 			prefix, rw, target, attr);
 		fprintf(fd, "\t *******************************************************************/\n");
 		if (wbuf) {
-			fprintf(fd, "\tprintf(\"Wrote %%li bytes\\n\", ret);\n\n");
+			fprintf(fd, "\tprintf(\"Wrote %%zi bytes\\n\", ret);\n\n");
 		} else {
 			fprintf(fd, "\tprintf(\"%s : %%s\\n\", buf);\n\n", attr);
 		}
