@@ -50,6 +50,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 	ssize_t len;
 	size_t *devices_len = NULL;
 	char *str, *ptr, *eptr, **devices = NULL;
+	char ** ctx_attrs, **ctx_values;
 	unsigned int i;
 
 	len = sizeof(xml_header) - 1;
@@ -61,9 +62,25 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		len += sizeof(" description=\"\"") - 1;
 	}
 
+	ctx_attrs = calloc(ctx->nb_attrs, sizeof(ctx->attrs));
+	if (!ctx_attrs) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	ctx_values = calloc(ctx->nb_attrs, sizeof(ctx->values));
+	if (!ctx_values) {
+		errno = ENOMEM;
+		goto err_free_ctx_attrs;
+	}
+
 	for (i = 0; i < ctx->nb_attrs; i++) {
-		len += strnlen(ctx->attrs[i], MAX_ATTR_NAME);
-		len += strnlen(ctx->values[i], MAX_ATTR_VALUE);
+		ctx_attrs[i] = encode_xml_ndup(ctx->attrs[i]);
+		ctx_values[i] = encode_xml_ndup(ctx->values[i]);
+		if (!ctx_attrs[i] || !ctx_values[i])
+			goto err_free_ctx_attrs_values;
+
+		len += strnlen(ctx_attrs[i], MAX_ATTR_NAME);
+		len += strnlen(ctx_values[i], MAX_ATTR_VALUE);
 		len += sizeof("<context-attribute name=\"\" value=\"\" />") - 1;
 	}
 
@@ -71,7 +88,7 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
 		if (!devices_len) {
 			errno = ENOMEM;
-			return NULL;
+			goto err_free_ctx_attrs_values;
 		}
 
 		devices = calloc(ctx->nb_devices, sizeof(*devices));
@@ -111,9 +128,14 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 
 	for (i = 0; i < ctx->nb_attrs && len > 0; i++) {
 		ptr += iio_snprintf(ptr, len, "<context-attribute name=\"%s\" value=\"%s\" />",
-				ctx->attrs[i], ctx->values[i]);
+				ctx_attrs[i], ctx_values[i]);
+		free(ctx_attrs[i]);
+		free(ctx_values[i]);
 		len = eptr - ptr;
 	}
+
+	free(ctx_attrs);
+	free(ctx_values);
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		if (len > (ssize_t) devices_len[i]) {
@@ -146,6 +168,17 @@ err_free_devices:
 	free(devices);
 err_free_devices_len:
 	free(devices_len);
+err_free_ctx_attrs_values:
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		if (ctx_attrs[i])
+			free(ctx_attrs[i]);
+		if (ctx_values[i])
+			free(ctx_values[i]);
+	}
+
+	free(ctx_values);
+err_free_ctx_attrs:
+	free(ctx_attrs);
 	return NULL;
 }
 
