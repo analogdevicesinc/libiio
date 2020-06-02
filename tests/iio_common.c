@@ -70,9 +70,7 @@ char *cmn_strndup(const char *str, size_t n)
 #endif
 }
 
-
-
-struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * name, const char * scan)
+struct iio_context * autodetect_context(bool rtn, const char * name, const char * scan)
 {
 	struct iio_scan_context *scan_ctx;
 	struct iio_context_info **info;
@@ -104,8 +102,6 @@ struct iio_context * autodetect_context(bool rtn, bool gen_code, const char * na
 		printf("Using auto-detected IIO context at URI \"%s\"\n",
 		iio_context_info_get_uri(info[0]));
 		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
-		if (gen_code)
-			gen_context(iio_context_info_get_uri(info[0]));
 	} else {
 		if (rtn) {
 			out = stderr;
@@ -285,10 +281,10 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 	opterr = 1;
 
 	if (do_scan) {
-		autodetect_context(false, false, name, arg);
+		autodetect_context(false, name, arg);
 		exit(0);
 	} else if (detect_context)
-		ctx = autodetect_context(true, false, name, arg);
+		ctx = autodetect_context(true, name, arg);
 	else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
 	else if (backend == IIO_XML)

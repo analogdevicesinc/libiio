@@ -554,6 +554,7 @@ int main(int argc, char **argv)
 
 	if (gen_code) {
 		gen_start(gen_file);
+		gen_context(iio_context_get_attr_value(ctx, "uri"));
 	}
 
 	if (search_context) {
