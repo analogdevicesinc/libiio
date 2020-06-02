@@ -1131,7 +1131,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 	errno = 0;
 	bus = strtol(ptr, &end, 10);
-	if (ptr == end || *end != '.' || errno == ERANGE)
+	if (ptr == end || *end != '.' || errno == ERANGE || bus < 0 || bus > UINT8_MAX)
 		goto err_bad_uri;
 
 	ptr = (const char *) ((uintptr_t) end + 1);
@@ -1140,7 +1140,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 	errno = 0;
 	address = strtol(ptr, &end, 10);
-	if (ptr == end || errno == ERANGE)
+	if (ptr == end || errno == ERANGE || address < 0 || address > UINT8_MAX)
 		goto err_bad_uri;
 
 	if (*end == '\0') {
@@ -1152,17 +1152,11 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 		errno = 0;
 		intrfc = strtol(ptr, &end, 10);
-		if (ptr == end || *end != '\0' || errno == ERANGE)
+		if (ptr == end || *end != '\0' || errno == ERANGE || intrfc < 0 || intrfc > UINT8_MAX)
 			goto err_bad_uri;
 	} else {
 		goto err_bad_uri;
 	}
-
-	if (bus < 0 || address < 0 || intrfc < 0)
-		goto err_bad_uri;
-
-	if (bus > (long) UINT_MAX || address > UINT8_MAX || intrfc > UINT8_MAX)
-		goto err_bad_uri;
 
 	if (scan) {
 		iio_context_info_list_free(info);
