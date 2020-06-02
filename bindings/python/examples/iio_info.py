@@ -18,82 +18,111 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 
-from sys import argv
+import sys
 import iio
 
 
-def main():
-    """Dump iio devices, list all iio attributes."""
-    print("Library version: %u.%u (git tag: %s)" % iio.version)
-
-    if len(argv) == 3 and argv[1] == "--uri":
-        uri = argv[2]
+def _create_context():
+    if len(sys.argv) == 3 and sys.argv[1] == "--uri":
+        uri = sys.argv[2]
     else:
         contexts = iio.scan_contexts()
         if len(contexts) > 1:
             print("Multiple contexts found. Please select one using --uri:")
-            for index, each in enumerate(contexts):
-                print("\t%d: %s [%s]" % (index, contexts[each], each))
-            return
+            for uri, description in contexts.items():
+                print("\t%s: %s" % (uri, description))
+        sys.exit(0)
 
-        uri = next(iter(contexts), None)
+    return iio.Context(uri)
 
-    ctx = iio.Context(uri)
 
-    if uri is not None:
-        print('Using auto-detected IIO context at URI "%s"' % uri)
+class Information:
+    """Class for retrieving the requested information."""
 
-    print("IIO context created: " + ctx.name)
-    print("Backend version: %u.%u (git tag: %s)" % ctx.version)
-    print("Backend description string: " + ctx.description)
+    def __init__(self, context):
+        """
+        Class constructor.
 
-    if len(ctx.attrs) > 0:
-        print("IIO context has %u attributes:" % len(ctx.attrs))
-    for attr, value in ctx.attrs.items():
-        print("\t" + attr + ": " + value)
+        Args:
+            context: type=iio.Context
+                Context used for retrieving the information.
+        """
+        self.context = context
 
-    print("IIO context has %u devices:" % len(ctx.devices))
+    def write_information(self):
+        """Write the information about the current context."""
+        self._context_info()
 
-    for dev in ctx.devices:
+    def _context_info(self):
+        print("IIO context created: " + self.context.name)
+        print("Backend version: %u.%u (git tag: %s" % self.context.version)
+        print("Backend description string: " + self.context.description)
+
+        if len(self.context.attrs) > 0:
+            print("IIO context has %u attributes: " % len(self.context.attrs))
+
+        for attr, value in self.context.attrs.items():
+            print("\t" + attr + ": " + value)
+
+        print("IIO context has %u devices:" % len(self.context.devices))
+
+        for dev in self.context.devices:
+            self._device_info(dev)
+
+    def _device_info(self, dev):
         print("\t" + dev.id + ": " + dev.name)
 
         if dev is iio.Trigger:
-            print("Found trigger! Rate: %u Hz" % dev.frequency)
+            print("Found trigger! Rate: %u HZ" % dev.frequency)
 
-        print("\t\t%u channels found:" % len(dev.channels))
+        print("\t\t%u channels found: " % len(dev.channels))
+        for channel in dev.channels:
+            self._channel_info(channel)
 
-        for chn in dev.channels:
-            print(
-                "\t\t\t%s: %s (%s)"
-                % (chn.id, chn.name or "", "output" if chn.output else "input")
-            )
+        if len(dev.attrs) > 0:
+            print("\t\t%u device-specific attributes found: " % len(dev.attrs))
+            for device_attr in dev.attrs:
+                self._device_attribute_info(dev, device_attr)
 
-            if len(chn.attrs) != 0:
-                print("\t\t\t%u channel-specific attributes found:" % len(chn.attrs))
+        if len(dev.debug_attrs) > 0:
+            print("\t\t%u debug attributes found: " % len(dev.debug_attrs))
+            for debug_attr in dev.debug_attrs:
+                self._device_debug_attribute_info(dev, debug_attr)
 
-            for attr in chn.attrs:
-                try:
-                    print("\t\t\t\t" + attr + ", value: " + chn.attrs[attr].value)
-                except OSError as err:
-                    print("Unable to read " + attr + ": " + err.strerror)
+    def _channel_info(self, channel):
+        print("\t\t\t%s: %s (%s)" % (channel.id, channel.name or "", "output" if channel.output else "input"))
+        if len(channel.attrs) > 0:
+            print("\t\t\t%u channel-specific attributes found: " % len(channel.attrs))
+            for channel_attr in channel.attrs:
+                self._channel_attribute_info(channel, channel_attr)
 
-        if len(dev.attrs) != 0:
-            print("\t\t%u device-specific attributes found:" % len(dev.attrs))
+    @staticmethod
+    def _channel_attribute_info(channel, channel_attr):
+        try:
+            print("\t\t\t\t" + channel_attr + ", value: " + channel.attrs[channel_attr].value)
+        except OSError as err:
+            print("Unable to read " + channel_attr + ": " + err.strerror)
 
-        for attr in dev.attrs:
-            try:
-                print("\t\t\t" + attr + ", value: " + dev.attrs[attr].value)
-            except OSError as err:
-                print("Unable to read " + attr + ": " + err.strerror)
+    @staticmethod
+    def _device_attribute_info(dev, device_attr):
+        try:
+            print("\t\t\t" + device_attr + ", value: " + dev.attrs[device_attr].value)
+        except OSError as err:
+            print("Unable to read " + device_attr + ": " + err.strerror)
 
-        if len(dev.debug_attrs) != 0:
-            print("\t\t%u debug attributes found:" % len(dev.debug_attrs))
+    @staticmethod
+    def _device_debug_attribute_info(dev, debug_attr):
+        try:
+            print("\t\t\t" + debug_attr + ", value: " + dev.debug_attrs[debug_attr].value)
+        except OSError as err:
+            print("Unable to read " + debug_attr + ": " + err.strerror)
 
-        for attr in dev.debug_attrs:
-            try:
-                print("\t\t\t" + attr + ", value: " + dev.debug_attrs[attr].value)
-            except OSError as err:
-                print("Unable to read " + attr + ": " + err.strerror)
+
+def main():
+    """Module's main method."""
+    context = _create_context()
+    information = Information(context)
+    information.write_information()
 
 
 if __name__ == "__main__":
