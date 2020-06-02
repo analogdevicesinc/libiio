@@ -411,6 +411,10 @@ int main(int argc, char **argv)
 			quiet = true;
 			break;
 		case 'g':
+			if (!optarg) {
+				fprintf(stderr, "Code generation requires an option\n");
+				return EXIT_FAILURE;
+			}
 			gen_code = true;
 			gen_file = optarg;
 			break;
