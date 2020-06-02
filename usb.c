@@ -1087,9 +1087,9 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 	/* if uri is just "usb:" that means search for the first one */
 	if (!*ptr) {
-		ssize_t ret, i, hit = -1;
+		ssize_t ret;
 
-		scan_ctx = iio_create_scan_context(NULL, 0);
+		scan_ctx = iio_create_scan_context("usb", 0);
 		if (!scan_ctx) {
 			errno = ENOMEM;
 			goto err_bad_uri;
@@ -1102,27 +1102,11 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 			goto err_bad_uri;
 		}
 		scan = true;
-		if (ret == 0) {
+		if (ret == 0 || ret > 1) {
 			errno = ENXIO;
 			goto err_bad_uri;
 		}
-		for (i = 0; i < ret; i++) {
-			ptr = iio_context_info_get_uri(info[i]);
-			if (strncmp(ptr, "usb:", sizeof("usb:") - 1) != 0)
-				continue;
-
-			if (hit != -1) {
-				errno = EMLINK;
-				goto err_bad_uri;
-			}
-			hit = (unsigned int)i;
-		}
-		if (hit == -1) {
-			errno = ENXIO;
-			goto err_bad_uri;
-		}
-
-		ptr = iio_context_info_get_uri(info[hit]);
+		ptr = iio_context_info_get_uri(info[0]);
 		ptr += sizeof("usb:") - 1;
 	}
 
