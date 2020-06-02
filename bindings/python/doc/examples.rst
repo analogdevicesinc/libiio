@@ -7,6 +7,7 @@ Complete Application Examples
 .. toctree::
    iio_readdev
    iio_writedev
+   iio_attr
    iio_info
 
 
