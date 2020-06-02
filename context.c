@@ -62,12 +62,12 @@ char * iio_context_create_xml(const struct iio_context *ctx)
 		len += sizeof(" description=\"\"") - 1;
 	}
 
-	ctx_attrs = calloc(ctx->nb_attrs, sizeof(ctx->attrs));
+	ctx_attrs = calloc(ctx->nb_attrs, sizeof(*ctx->attrs));
 	if (!ctx_attrs) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	ctx_values = calloc(ctx->nb_attrs, sizeof(ctx->values));
+	ctx_values = calloc(ctx->nb_attrs, sizeof(*ctx->values));
 	if (!ctx_values) {
 		errno = ENOMEM;
 		goto err_free_ctx_attrs;
