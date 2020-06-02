@@ -153,15 +153,15 @@ struct iio_scan_context * iio_create_scan_context(
 		return NULL;
 	}
 
-	if (!backend || !strcmp(backend, "local"))
+	if (!backend || strstr(backend, "local"))
 		ctx->scan_local = true;
 
 #ifdef WITH_USB_BACKEND
-	if (!backend || !strcmp(backend, "usb"))
+	if (!backend || strstr(backend, "usb"))
 		ctx->usb_ctx = usb_context_scan_init();
 #endif
 #ifdef HAVE_DNS_SD
-	if (!backend || !strcmp(backend, "ip"))
+	if (!backend || strstr(backend, "ip"))
 		ctx->dnssd_ctx = dnssd_context_scan_init();
 #endif
 
