@@ -196,6 +196,43 @@ static const struct option common_options[] = {
 	{0, 0, 0, 0},
 };
 
+struct option * add_common_options(const struct option * longopts)
+{
+	int i = 0, j = 0;
+	struct option *opts;
+
+	while (longopts[i].name) {
+		i++;
+	}
+	while (common_options[j].name) {
+		j++;
+		i++;
+	}
+	opts = calloc(i + 1, sizeof(struct option));
+	if (!opts) {
+		fprintf(stderr, "Out of memory\n");
+		return NULL;
+	}
+	i = 0, j = 0;
+	while (longopts[i].name) {
+		opts[i].name = longopts[i].name;
+		opts[i].has_arg = longopts[i].has_arg;
+		opts[i].flag = longopts[i].flag;
+		opts[i].val = longopts[i].val;
+		i++;
+	}
+	while (common_options[j].name) {
+		opts[i].name = common_options[j].name;
+		opts[i].has_arg = common_options[j].has_arg;
+		opts[i].flag = common_options[j].flag;
+		opts[i].val = common_options[j].val;
+		i++;
+		j++;
+	}
+
+	return opts;
+}
+
 static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
@@ -207,22 +244,32 @@ static const char *common_options_descriptions[] = {
 };
 
 
-struct iio_context * handle_common_opts(char * name, int argc, char * const argv[],
+struct iio_context * handle_common_opts(char * name, int argc,
+		char * const argv[], const char *optstring,
 		const struct option *options, const char *options_descriptions[])
 {
 	struct iio_context *ctx = NULL;
-	int c, option_index = 0;
+	int c;
 	enum backend backend = IIO_LOCAL;
 	const char *arg = NULL;
 	bool do_scan = false, detect_context = false;
+	char buf[128];
+	struct option *opts;
 
 	/* Setting opterr to zero disables error messages from getopt_long */
 	opterr = 0;
 	/* start over at first index */
 	optind = 1;
 
-	while ((c = getopt_long(argc, argv, COMMON_OPTIONS,	/* Flawfinder: ignore */
-			common_options, &option_index)) != -1) {
+	iio_snprintf(buf, sizeof(buf), "%s%s", COMMON_OPTIONS, optstring);
+	opts = add_common_options(options);
+	if (!opts) {
+		fprintf(stderr, "Failed to add common options\n");
+		return NULL;
+	}
+
+	while ((c = getopt_long(argc, argv, buf,	/* Flawfinder: ignore */
+			opts, NULL)) != -1) {
 		switch (c) {
 		case 'h':
 			usage(name, options, options_descriptions);
@@ -272,7 +319,7 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 			if (optarg) {
 				arg = optarg;
 			} else {
-				if (argv[optind] && argv[optind][0] != '-')
+				if (argc > optind && argv[optind] && argv[optind][0] != '-')
 					arg = argv[optind++];
 			}
 			break;
@@ -281,7 +328,7 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 			if (optarg) {
 				arg = optarg;
 			} else {
-				if (argv[optind] && argv[optind][0] != '-')
+				if (argc > optind && argv[optind] && argv[optind][0] != '-')
 					arg = argv[optind++];
 			}
 			break;
@@ -289,12 +336,13 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 			break;
 		}
 	}
+	free(opts);
 	optind = 1;
 	opterr = 1;
 
 	if (do_scan) {
 		autodetect_context(false, name, arg);
-		exit(0);
+		return NULL;
 	} else if (detect_context)
 		ctx = autodetect_context(true, name, arg);
 	else if (!arg && backend != IIO_LOCAL)
@@ -329,14 +377,23 @@ void usage(char *name, const struct option *options,
 	printf("\t%s [OPTION]...\t%s\n", name, options_descriptions[0]);
 	printf("Options:\n");
 	for (i = 0; common_options[i].name; i++) {
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-				common_options[i].val, common_options[i].name,
+		printf("\t-%c, --%s", common_options[i].val, common_options[i].name);
+		if (common_options[i].has_arg == required_argument)
+			printf(" [arg]");
+		else if (common_options[i].has_arg == optional_argument)
+			printf(" <arg>");
+		printf("\n\t\t\t%s\n",
 				common_options_descriptions[i]);
 	}
 	for (i = 0; options[i].name; i++) {
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-				options[i].val, options[i].name,
+		printf("\t-%c, --%s", options[i].val, options[i].name);
+		if (options[i].has_arg == required_argument)
+			printf(" [arg]");
+		else if (options[i].has_arg == optional_argument)
+			printf(" <arg>");
+		printf("\n\t\t\t%s\n",
 			options_descriptions[i + 1]);
+
 	}
 	printf("\nThis is free software; see the source for copying conditions.  There is NO\n"
 			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");

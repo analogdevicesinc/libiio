@@ -198,25 +198,32 @@ static ssize_t read_sample(const struct iio_channel *chn,
 	return (ssize_t) nb;
 }
 
+#define MY_OPTS "t:b:s:T:ac"
+
 int main(int argc, char **argv)
 {
 	char **argw;
 	unsigned int i, nb_channels;
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	int c, option_index = 0;
+	int c;
 	struct iio_device *dev;
 	ssize_t sample_size;
 	int timeout = -1;
 	bool cyclic_buffer = false;
 	ssize_t ret;
+	struct option *opts;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
-
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "t:b:s:T:ac",  /* Flawfinder: ignore */
-					options, &option_index)) != -1) {
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	opts = add_common_options(options);
+	if (!opts) {
+		fprintf(stderr, "Failed to add common options\n");
+		return EXIT_FAILURE;
+	}
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS,  /* Flawfinder: ignore */
+					opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -226,7 +233,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL
+					&& argv[optind][0] != '-')
 				optind++;
 			break;
 		case 't':
@@ -265,6 +273,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
+	free(opts);
 
 	if (argc == optind) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");

@@ -44,14 +44,19 @@ int main(int argc, char **argv)
 	char *xml;
 	const char *tmp;
 	struct iio_context *ctx;
-	int c, option_index = 0;
+	int c;
 	size_t xml_len;
+	struct option *opts;
 
 	argw = dup_argv(MY_NAME, argc, argv);
-	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
-
+	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions);
+	opts = add_common_options(options);
+	if (!opts) {
+		fprintf(stderr, "Failed to add common options\n");
+		return EXIT_FAILURE;
+	}
 	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS,  /* Flawfinder: ignore */
-					options, &option_index)) != -1) {
+					opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -61,7 +66,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL
+					&& argv[optind][0] != '-')
 				optind++;
 			break;
 		case '?':
@@ -69,6 +75,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
+	free(opts);
 
 	if (optind != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");

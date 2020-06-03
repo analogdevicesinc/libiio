@@ -150,11 +150,13 @@ static void *monitor_thread_fn(void *data)
 	return (void *)0;
 }
 
+#define MY_OPTS "s:a"
+
 int main(int argc, char **argv)
 {
 	char **argw;
 	unsigned int buffer_size = 1024 * 1024;
-	int c, option_index = 0;
+	int c;
 	unsigned int n_tx = 0, n_rx = 0;
 	static struct iio_context *ctx;
 	static struct xflow_pthread_data xflow_pthread_data;
@@ -165,13 +167,18 @@ int main(int argc, char **argv)
 	struct iio_device *dev;
 	char unit;
 	int ret;
+	struct option *opts;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
-
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "s:a", /* Flawfinder: ignore */
-					options, &option_index)) != -1) {
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	opts = add_common_options(options);
+	if (!opts) {
+		fprintf(stderr, "Failed to add common options\n");
+		return EXIT_FAILURE;
+	}
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
+					opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -181,7 +188,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL
+					&& argv[optind][0] != '-')
 				optind++;
 			break;
 
@@ -204,6 +212,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
+	free(opts);
 
 	if (optind + 1 != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");

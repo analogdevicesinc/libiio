@@ -46,9 +46,16 @@ struct iio_context * autodetect_context(bool rtn, const char *name, const char *
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
 
+/* optstring is a string containing the legitimate option characters.
+ * If such a character is followed by a colon, the option  requires  an  argument.
+ * Two colons mean an option takes an optional argument.
+ */
 #define COMMON_OPTIONS "hn:x:u:a::S::"
-struct iio_context * handle_common_opts(char * name, int argc, char * const argv[],
+
+struct iio_context * handle_common_opts(char * name, int argc,
+	char * const argv[], const char *optstring,
 	const struct option *options, const char *options_descriptions[]);
+struct option * add_common_options(const struct option * longopts);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
 
 char ** dup_argv(char * name, int argc, char * argv[]);
