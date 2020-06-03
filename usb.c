@@ -1087,9 +1087,9 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 	/* if uri is just "usb:" that means search for the first one */
 	if (!*ptr) {
-		ssize_t ret, i, hit = -1;
+		ssize_t ret;
 
-		scan_ctx = iio_create_scan_context(NULL, 0);
+		scan_ctx = iio_create_scan_context("usb", 0);
 		if (!scan_ctx) {
 			errno = ENOMEM;
 			goto err_bad_uri;
@@ -1102,27 +1102,11 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 			goto err_bad_uri;
 		}
 		scan = true;
-		if (ret == 0) {
+		if (ret == 0 || ret > 1) {
 			errno = ENXIO;
 			goto err_bad_uri;
 		}
-		for (i = 0; i < ret; i++) {
-			ptr = iio_context_info_get_uri(info[i]);
-			if (strncmp(ptr, "usb:", sizeof("usb:") - 1) != 0)
-				continue;
-
-			if (hit != -1) {
-				errno = EMLINK;
-				goto err_bad_uri;
-			}
-			hit = (unsigned int)i;
-		}
-		if (hit == -1) {
-			errno = ENXIO;
-			goto err_bad_uri;
-		}
-
-		ptr = iio_context_info_get_uri(info[hit]);
+		ptr = iio_context_info_get_uri(info[0]);
 		ptr += sizeof("usb:") - 1;
 	}
 
@@ -1131,7 +1115,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 	errno = 0;
 	bus = strtol(ptr, &end, 10);
-	if (ptr == end || *end != '.' || errno == ERANGE)
+	if (ptr == end || *end != '.' || errno == ERANGE || bus < 0 || bus > UINT8_MAX)
 		goto err_bad_uri;
 
 	ptr = (const char *) ((uintptr_t) end + 1);
@@ -1140,7 +1124,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 	errno = 0;
 	address = strtol(ptr, &end, 10);
-	if (ptr == end || errno == ERANGE)
+	if (ptr == end || errno == ERANGE || address < 0 || address > UINT8_MAX)
 		goto err_bad_uri;
 
 	if (*end == '\0') {
@@ -1152,17 +1136,11 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 
 		errno = 0;
 		intrfc = strtol(ptr, &end, 10);
-		if (ptr == end || *end != '\0' || errno == ERANGE)
+		if (ptr == end || *end != '\0' || errno == ERANGE || intrfc < 0 || intrfc > UINT8_MAX)
 			goto err_bad_uri;
 	} else {
 		goto err_bad_uri;
 	}
-
-	if (bus < 0 || address < 0 || intrfc < 0)
-		goto err_bad_uri;
-
-	if (bus > (long) UINT_MAX || address > UINT8_MAX || intrfc > UINT8_MAX)
-		goto err_bad_uri;
 
 	if (scan) {
 		iio_context_info_list_free(info);
