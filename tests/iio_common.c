@@ -232,6 +232,10 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
 				return NULL;
 			}
+			if (!optarg) {
+				fprintf(stderr, "network options requires a uri\n");
+				return NULL;
+			}
 			backend = IIO_NETWORK;
 			arg = optarg;
 			break;
@@ -240,12 +244,20 @@ struct iio_context * handle_common_opts(char * name, int argc, char * const argv
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
 				return NULL;
 			}
+			if (!optarg) {
+				fprintf(stderr, "xml options requires a uri\n");
+				return NULL;
+			}
 			backend = IIO_XML;
 			arg = optarg;
 			break;
 		case 'u':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+				return NULL;
+			}
+			if (!optarg) {
+				fprintf(stderr, "uri options requires a uri\n");
 				return NULL;
 			}
 			backend = IIO_AUTO;

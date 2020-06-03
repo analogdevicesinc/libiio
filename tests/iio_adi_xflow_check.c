@@ -186,6 +186,10 @@ int main(int argc, char **argv)
 			break;
 
 		case 's':
+			if (!optarg) {
+				fprintf(stderr, "Samples options requires a value.\n\n");
+				return EXIT_FAILURE;
+			}
 			ret = sscanf(optarg, "%u%c", &buffer_size, &unit);
 			if (ret == 0)
 				return EXIT_FAILURE;

@@ -219,15 +219,31 @@ int main(int argc, char **argv)
 				optind++;
 			break;
 		case 't':
+			if (!optarg) {
+				fprintf(stderr, "Trigger requires an argument\n");
+				return EXIT_FAILURE;
+			}
 			trigger_name = optarg;
 			break;
 		case 'b':
+			if (!optarg) {
+				fprintf(stderr, "Buffersize requires an argument\n");
+				return EXIT_FAILURE;
+			}
 			buffer_size = sanitize_clamp("buffer size", optarg, 64, 4 * 1024 * 1024);
 			break;
 		case 's':
+			if (!optarg) {
+				fprintf(stderr, "Number of Samples requires an argument\n");
+				return EXIT_FAILURE;
+			}
 			num_samples = sanitize_clamp("number of samples", optarg, 0, SIZE_MAX);
 			break;
 		case 'T':
+			if (!optarg) {
+				fprintf(stderr, "Timeout requires an argument\n");
+				return EXIT_FAILURE;
+			}
 			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
 		case '?':
