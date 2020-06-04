@@ -50,6 +50,13 @@ iio_attr \- list IIO devices, and read/write device attributes
 .I options
 ]
 -C [attr]
+.br
+.B iio_attr
+-S <arg>
+.br
+.B iio_attr
+-h
+
 .SH DESCRIPTION
 .B iio_attr
 is a utility for displaying information about local or remote IIO devices.
@@ -57,18 +64,37 @@ By providing an optional value,
 .B iio_attr
 will attempt to write the new value to the attribute.
 
-.SH OPTIONS
+.SH COMMANDS
+.TP
+The iio_attr utility has a few main options, which control what the main utility of the application is.
+.TP
+.B \-d, \-\-device-attr
+Read and Write IIO device attributes
+.TP
+.B \-c \-\-channel-attr
+Read and Write IIO channel attributes
+.TP
+.B \-B \-\-buffer-attr
+Read and Write IIO Buffer attributes
+.TP
+.B \-C \-\-context-attr
+Read and Write IIO Context attributes
+.TP
+.B \-D \-\-debug-attr
+Read and Write IIO Debug attributes
+.TP
+.B \-S, \-\-Scan
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip:usb'. If no argument is given, it checks all that are availble.
 .TP
 .B \-h, \-\-help
 Tells
 .I iio_attr
 to display some help, and then quit.
-.TP
-.B \-I, \-\-ignore-case
-When pattern matching devices, channels or attributes, ignore case
+
+.SH OPTIONS
 .TP
 .B \-a, \-\-auto
-Look around for devices (locally, and usb), and if there is only one device
+Look around for devices (locally, ip, and usb), and if there is only one device
 found, connect to it.
 .TP
 .B \-u, \-\-uri
@@ -77,14 +103,19 @@ The Uniform Resource Identifier
 for connecting to devices, can be one of:
 .RS
 .IP ip:[address]
-network address, either numeric (192.168.0.1) or network hostname
+network address, either numeric (192.168.0.1) or network hostname (pluto.local)
 .IP ip:
 blank, if compiled with zeroconf support, will find an IIO device on network
 .IP usb:[device:port:instance]
 normally returned from
 .B iio_info -s
-.IP serial:[port]
-.IP local
+or
+.B iio_attr -S
+.IP usb:
+blank, if there is only one IIO device plugged into USB, find it, and attach to it.
+.IP serial:[port],[baud],[config]
+serial configuration, serial:/dev/ttyUSB0,115200,8n1 115200 baud, 8 data bits, no partity, one stop bit
+.IP local:
 with no address part
 .RE
 .TP
@@ -96,7 +127,13 @@ Filters channels by output channels only
 .TP
 .B \-s, \-\-scan-channel
 Filters channels by scan channels only
-
+.TP
+.B \-I, \-\-ignore-case
+When pattern matching devices, channels or attributes, ignore case
+.TP
+.B \-g, \-\-generate-code <arg>
+Generate small C or python snippets that emulate what you are doing on the command line. Argument is a file name 'foo.c' or 'foo.py'
+.TP
 .SH RETURN VALUE
 If the specified device is not found, a non-zero exit code is returned.
 
