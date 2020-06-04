@@ -43,7 +43,7 @@ namespace iio
     /// Contains the representation of an IIO context.</summary>
     public class Context : IDisposable
     {
-        private IntPtr ctx;
+        internal IntPtr ctx;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_create_network_context(
@@ -57,6 +57,9 @@ namespace iio
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_create_default_context();
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_create_local_context();
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_context_destroy(IntPtr ctx);
@@ -92,6 +95,18 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_context_clone(IntPtr ctx);
 
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_context_get_attrs_count(IntPtr ctx);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_context_get_attr(IntPtr ctx, uint index, IntPtr name_ptr, IntPtr value_ptr);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_context_find_device(IntPtr ctx, [In] string name);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_context_info_get_description(IntPtr info);
+
         /// <summary>A XML representation of the current context.</summary>
         public readonly string xml;
 
@@ -105,6 +120,9 @@ namespace iio
 
         /// <summary>A <c>List</c> of all the IIO devices present on the current context.</summary>
         public readonly List<Device> devices;
+
+        /// <summary>A <c>Dictionary</c> of all the attributes of the current channel. (key, value) = (name, value)</summary>
+        public Dictionary<string, string> attrs { get; private set; }
 
         /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
         /// using the provided URI. For compatibility with existing code, providing
@@ -135,7 +153,7 @@ namespace iio
             return ptr;
         }
 
-        private Context(IntPtr ctx)
+        internal Context(IntPtr ctx)
         {
             this.ctx = ctx;
 
@@ -179,6 +197,24 @@ namespace iio
                 throw new Exception("Unable to read backend version");
             }
             backend_version = new Version(major, minor, builder.ToString());
+
+            attrs = new Dictionary<string, string>();
+
+            for (uint i = 0; i < iio_context_get_attrs_count(ctx); i++)
+            {
+                string attr_name = "";
+                GCHandle name_handle = GCHandle.Alloc(attr_name, GCHandleType.Pinned);
+                IntPtr name_ptr = GCHandle.ToIntPtr(name_handle);
+                string attr_value = "";
+                GCHandle value_handle = GCHandle.Alloc(attr_value, GCHandleType.Pinned);
+                IntPtr value_ptr = GCHandle.ToIntPtr(value_handle);
+
+                iio_context_get_attr(ctx, i, name_ptr, value_ptr);
+                attr_name = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(name_ptr));
+                attr_value = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(value_ptr));
+
+                attrs[attr_name] = attr_value;
+            }
         }
 
         ~Context()
@@ -245,6 +281,21 @@ namespace iio
                 iio_context_destroy(ctx);
                 ctx = IntPtr.Zero;
             }
+        }
+
+        /// <summary>Finds the device with the given name from the current context.</summary>
+        /// <param name="device">The name of the device.</param>
+        /// <exception cref="System.Exception">There is no device with the given name.</exception>
+        public Device find_device(string device)
+        {
+            IntPtr dev = iio_context_find_device(ctx, device);
+
+            if (dev == IntPtr.Zero)
+            {
+                throw new Exception("There is no device with the given name!");
+            }
+
+            return new Device(this, dev);
         }
     }
 }
