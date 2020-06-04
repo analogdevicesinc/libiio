@@ -354,7 +354,7 @@ int main(int argc, char **argv)
 		scan_only = false, quiet = false, gen_code = false;
 	bool found_err = false, read_err = false, write_err = false,
 		dev_found = false, attr_found = false, ctx_found = false,
-		channel_found = false ;
+		debug_found = false, channel_found = false ;
 	unsigned int i;
 	char *wbuf = NULL;
 	struct option *opts;
@@ -628,10 +628,39 @@ int main(int argc, char **argv)
 				printf(": ");
 			}
 
-			if (search_channel && !device_index)
-				printf("found %u channels\n", iio_device_get_channels_count(dev));
-
 			nb_channels = iio_device_get_channels_count(dev);
+
+			if (search_channel && !device_index) {
+				if (scan_only || input_only || output_only) {
+					unsigned int scan = 0, in = 0, out = 0;
+					for (j = 0; j < nb_channels; j++) {
+						struct iio_channel *ch;
+						ch = iio_device_get_channel(dev, j);
+						if (iio_channel_is_output(ch))
+							out++;
+						else
+							in++;
+						if (iio_channel_is_scan_element(ch))
+							scan++;
+					}
+					printf("found ");
+					if (scan_only)
+						printf("%u scan", scan);
+					if (output_only) {
+						if (scan_only)
+							printf(", ");
+						printf("%u output", out);
+					}
+					if (input_only) {
+						if (scan_only || output_only)
+							printf(", ");
+						printf("%u input", in);
+					}
+					printf(" channels\n");
+				} else {
+					printf("found %u channels\n", nb_channels);
+				}
+			}
 
 			if (search_channel && device_index && !channel_index && !nb_channels) {
 				printf("%s: Found %s device, but it has %u channels\n",
@@ -742,7 +771,7 @@ int main(int argc, char **argv)
 								attr_index ? quiet : false);
 					if (wbuf && ret < 0)
 						write_err = true;
-					else if (ret < 0)
+					else if (ret < 0 && attr_index)
 						read_err = true;
 				}
 			}
@@ -771,7 +800,7 @@ int main(int argc, char **argv)
 							       attr_index ? quiet : false);
 					if (wbuf && ret < 0)
 						write_err = true;
-					else if (ret < 0)
+					else if (ret < 0 && attr_index)
 						read_err = true;
 				}
 			}
@@ -782,8 +811,9 @@ int main(int argc, char **argv)
 				printf("found %u buffer attributes\n", nb_attrs);
 			if (search_buffer && device_index && !attr_index && !nb_attrs) {
 				printf("%s: Found %s device, but it has %u buffer attributes\n",
-						MY_NAME, argw[device_index], nb_attrs);
-				found_err = true;
+						MY_NAME, name ? name : dev_id, nb_attrs);
+				if (!attr_found)
+					found_err = true;
 			}
 
 			if (search_buffer && device_index && nb_attrs) {
@@ -794,12 +824,13 @@ int main(int argc, char **argv)
 					if ((attr_index && str_match(attr, argw[attr_index],
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
+						found_err = false;
 						attr_found = true;
 						ret = dump_buffer_attributes(dev, attr, wbuf,
 									  attr_index ? quiet : false);
 						if (wbuf && ret < 0)
 							write_err = true;
-						else if (ret < 0)
+						else if (ret < 0 && attr_index)
 							read_err = true;
 					}
 				}
@@ -820,11 +851,12 @@ int main(int argc, char **argv)
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
 						attr_found = true;
+						debug_found = true;
 						ret = dump_debug_attributes(dev, attr, wbuf,
 								      attr_index ? quiet : false);
 						if (wbuf && ret < 0)
 							write_err = true;
-						else if (ret < 0)
+						else if (ret < 0 && attr_index)
 							read_err = true;
 					}
 				}
@@ -854,11 +886,15 @@ int main(int argc, char **argv)
 			fprintf(stderr, "%s: Error : could not find channel (%s)\n", MY_NAME, argw[channel_index]);
 	} else if (!attr_found && attr_index)
 		fprintf(stderr, "%s: Error : could not find attribute (%s)\n", MY_NAME, argw[attr_index]);
+	else if (!debug_found && search_debug && device_index) {
+		fprintf(stderr, "%s: Error : device (%s) had 0 debug attributes\n", MY_NAME, argw[device_index]);
+	}
 
 	free_argw(argc, argw);
 
 	if ((!dev_found && device_index) || (!ctx_found && search_context) ||
-			(!channel_found && channel_index) || (!attr_found && attr_index))
+			(!channel_found && channel_index) || (!attr_found && attr_index) ||
+			(!debug_found && search_debug && device_index))
 		return EXIT_FAILURE;
 
 	if (write_err || read_err || found_err)
