@@ -59,14 +59,17 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 	return false;
 }
 
+#define MY_OPTS "s"
+
 int main(int argc, char **argv)
 {
 	char **argw;
 	struct iio_context *ctx;
-	int c, option_index = 0;
+	int c;
 	unsigned int i, major, minor;
 	char git_tag[8];
 	int ret;
+	struct option *opts;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -78,8 +81,14 @@ int main(int argc, char **argv)
 		printf(" %s", iio_get_backend(i));
 	printf("\n");
 
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS "s",	/* Flawfinder: ignore */
-					options, &option_index)) != -1) {
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	opts = add_common_options(options);
+	if (!opts) {
+		fprintf(stderr, "Failed to add common options\n");
+		return EXIT_FAILURE;
+	}
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS,	/* Flawfinder: ignore */
+					opts, NULL)) != -1) {
 		switch (c) {
 			/* All these are handled in the common */
 		case 'h':
@@ -89,7 +98,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+			if (!optarg && argc > optind && argw[optind] != NULL
+					&& argw[optind][0] != '-')
 				optind++;
 			break;
 		case 's':
@@ -100,6 +110,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
+	free(opts);
 
 	if (optind != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
@@ -107,7 +118,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, options, options_descriptions);
 	if (!ctx)
 		return EXIT_FAILURE;
 
