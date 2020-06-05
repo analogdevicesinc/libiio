@@ -1,0 +1,36 @@
+var group__Debug =
+[
+    [ "iio_data_format", "structiio__data__format.html", [
+      [ "bits", "structiio__data__format.html#ac0749cd625e020fca8a77095261acdf2", null ],
+      [ "is_be", "structiio__data__format.html#a1c1775c482b9b4c3f1dfa0b67ad6fbaa", null ],
+      [ "is_fully_defined", "structiio__data__format.html#a86c382f0ff1dcf40f68f261d2d81caf5", null ],
+      [ "is_signed", "structiio__data__format.html#a173f2fb6931c4215e53d934667f0dc3f", null ],
+      [ "length", "structiio__data__format.html#a80a90d327d93ba59c4717f2fcf420930", null ],
+      [ "repeat", "structiio__data__format.html#a6db4ae39ce3e564aac2b31d0948a1efe", null ],
+      [ "scale", "structiio__data__format.html#a55125a0f81f90be70428076b426f50e2", null ],
+      [ "shift", "structiio__data__format.html#ab56ee226f46a755a6745e08d9d934804", null ],
+      [ "with_scale", "structiio__data__format.html#a1def0aacbe62d0cf3c6b350d47b9c623", null ]
+    ] ],
+    [ "iio_channel_convert", "group__Debug.html#gaf910dce06335badc1ba307526c4112a6", null ],
+    [ "iio_channel_convert_inverse", "group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb", null ],
+    [ "iio_channel_get_data_format", "group__Debug.html#gadbb2dabfdd85c3f2c6b168f0512c7748", null ],
+    [ "iio_channel_get_index", "group__Debug.html#gaf9cc94902b5081bdacc4aed05e7d2412", null ],
+    [ "iio_device_debug_attr_read", "group__Debug.html#ga8d786ee19093f86da4feb92fb91dd5d7", null ],
+    [ "iio_device_debug_attr_read_all", "group__Debug.html#ga1fb487123cf36ea55b650165d49a91ff", null ],
+    [ "iio_device_debug_attr_read_bool", "group__Debug.html#gadffd69effb8ff8ddb504ea9492a29529", null ],
+    [ "iio_device_debug_attr_read_double", "group__Debug.html#ga1356356c2eebcb56df2d72e93042d896", null ],
+    [ "iio_device_debug_attr_read_longlong", "group__Debug.html#gaff27d1a48f8469531c25471918d0b6de", null ],
+    [ "iio_device_debug_attr_write", "group__Debug.html#gaea7f639edb7efd15b718be4c7faaeae5", null ],
+    [ "iio_device_debug_attr_write_all", "group__Debug.html#ga57e3af5219859303c2a8629e9b80f9ca", null ],
+    [ "iio_device_debug_attr_write_bool", "group__Debug.html#ga40579d97ca0b68f2244bed67ece80ce6", null ],
+    [ "iio_device_debug_attr_write_double", "group__Debug.html#ga2a4e26d2d33db7fe9fc76d3034cb264f", null ],
+    [ "iio_device_debug_attr_write_longlong", "group__Debug.html#ga22df5b7b0606a9e453fac421d15e6fb2", null ],
+    [ "iio_device_debug_attr_write_raw", "group__Debug.html#ga1eac5d59a58b6c8e2db892adce7a05a3", null ],
+    [ "iio_device_find_debug_attr", "group__Debug.html#ga2923f184fc57071db9fda14e16c40a9c", null ],
+    [ "iio_device_get_debug_attr", "group__Debug.html#gafe451e9a078ed5588b43a4a34cf3b2bc", null ],
+    [ "iio_device_get_debug_attrs_count", "group__Debug.html#gabacd0e63720d19e7335088c2fd19bbdc", null ],
+    [ "iio_device_get_sample_size", "group__Debug.html#ga52b3e955c10d6f962b2c2e749c7c02fb", null ],
+    [ "iio_device_identify_filename", "group__Debug.html#ga87ef46fa578c7be7b3e2a6f9f16fdf7e", null ],
+    [ "iio_device_reg_read", "group__Debug.html#ga70829552f676ef9fc74e755933da05d8", null ],
+    [ "iio_device_reg_write", "group__Debug.html#ga170d5a84de1d5fdb987113aa90e2a19b", null ]
+];

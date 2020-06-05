@@ -1,0 +1,5 @@
+<map id="iio_context_info_list_free" name="iio_context_info_list_free">
+<area shape="rect" id="node2" href="$group__Scan.html#ga5d364d8d008bdbfe5486e6329d06257f" title="Enumerate available contexts. " alt="" coords="238,5,394,47"/>
+<area shape="rect" id="node3" href="$group__Scan.html#gaee7e04572c3b4d202cd0043bb8cee642" title="Enumerate available contexts via scan block. " alt="" coords="448,42,599,69"/>
+<area shape="rect" id="node4" href="$group__Scan.html#ga91f6902ca18c491f96627cadb88c5c0a" title="Destroy the given scan block. " alt="" coords="232,122,400,149"/>
+</map>
