@@ -36,7 +36,8 @@ enum backend {
 	IIO_XML,
 	IIO_NETWORK,
 	IIO_USB,
-	IIO_AUTO
+	IIO_URI,
+	IIO_AUTO,
 };
 
 void * xmalloc(size_t n, const char *name);

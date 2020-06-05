@@ -307,7 +307,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				fprintf(stderr, "uri options requires a uri\n");
 				return NULL;
 			}
-			backend = IIO_AUTO;
+			backend = IIO_URI;
 			arg = optarg;
 			break;
 		case 'a':
@@ -315,6 +315,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
 				return NULL;
 			}
+			backend = IIO_AUTO;
 			detect_context = true;
 			if (optarg) {
 				arg = optarg;
@@ -343,7 +344,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	if (do_scan) {
 		autodetect_context(false, name, arg);
 		return NULL;
-	} else if (detect_context)
+	} else if (detect_context || backend == IIO_AUTO)
 		ctx = autodetect_context(true, name, arg);
 	else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
@@ -351,7 +352,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		ctx = iio_create_xml_context(arg);
 	else if (backend == IIO_NETWORK)
 		ctx = iio_create_network_context(arg);
-	else if (backend == IIO_AUTO)
+	else if (backend == IIO_URI)
 		ctx = iio_create_context_from_uri(arg);
 	else
 		ctx = iio_create_default_context();
