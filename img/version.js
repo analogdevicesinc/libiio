@@ -2,7 +2,7 @@ function calcDate() {
 	var today = new Date();
 	// Updates these on new releases
 	// months count from 0 = Jan, 11 = Dec
-	var last_release = new Date(2020,01,14);
+	var last_release = new Date(2020,05,05);
 	// getTime returns in milliseconds, so convert to days
 	var diff = Math.floor((today.getTime() - last_release.getTime()) / (1000 * 60 * 60 * 24));
 
