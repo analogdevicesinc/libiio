@@ -37,6 +37,12 @@
 #define snprintf sprintf_s
 #endif
 
+enum verbosity {
+	ATTR_QUIET,
+	ATTR_NORMAL,
+	ATTR_VERBOSE,
+};
+
 static bool str_match(const char * haystack, char * needle, bool ignore)
 {
 	bool ret = false;
@@ -94,14 +100,14 @@ eek:
 }
 
 static int dump_device_attributes(const struct iio_device *dev,
-		const char *attr, const char *wbuf, bool quiet)
+		const char *attr, const char *wbuf, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *name = iio_device_get_name(dev);
 
-	if (!wbuf || !quiet) {
-		if (!quiet) {
+	if (!wbuf || quiet == ATTR_VERBOSE) {
+		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			if(name)
 				printf("'%s'", name);
@@ -113,9 +119,9 @@ static int dump_device_attributes(const struct iio_device *dev,
 		gen_function("device", "dev", attr, NULL);
 		ret = iio_device_attr_read(dev, attr, buf, BUF_SIZE);
 		if (ret > 0) {
-			if (quiet)
+			if (quiet == ATTR_NORMAL)
 				printf("%s\n", buf);
-			else
+			else if (quiet == ATTR_VERBOSE)
 				printf("'%s'\n", buf);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
@@ -126,7 +132,7 @@ static int dump_device_attributes(const struct iio_device *dev,
 		gen_function("device", "dev", attr, wbuf);
 		ret = iio_device_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			if (!quiet)
+			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_device_attributes(dev, attr, NULL, quiet);
 		} else {
@@ -141,17 +147,17 @@ static int dump_device_attributes(const struct iio_device *dev,
 }
 
 static int dump_buffer_attributes(const struct iio_device *dev,
-				  const char *attr, const char *wbuf, bool quiet)
+				  const char *attr, const char *wbuf, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *name = iio_device_get_name(dev);
 
-	if (!wbuf || !quiet) {
+	if (!wbuf || quiet == ATTR_VERBOSE ) {
 		gen_function("device_buffer", "dev", attr, NULL);
 		ret = iio_device_buffer_attr_read(dev, attr, buf, BUF_SIZE);
 
-		if (!quiet) {
+		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			if (name)
 				printf("'%s'", name);
@@ -162,9 +168,9 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 		}
 
 		if (ret > 0) {
-			if (quiet)
+			if (quiet == ATTR_NORMAL)
 				printf("%s\n", buf);
-			else
+			else  if (quiet == ATTR_VERBOSE)
 				printf("'%s'\n", buf);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
@@ -176,7 +182,7 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 		gen_function("device_buffer", "dev", attr, wbuf);
 		ret = iio_device_buffer_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			if (!quiet)
+			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_buffer_attributes(dev, attr, NULL, quiet);
 		} else {
@@ -191,17 +197,17 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 }
 
 static int dump_debug_attributes(const struct iio_device *dev,
-				  const char *attr, const char *wbuf, bool quiet)
+				  const char *attr, const char *wbuf, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *name = iio_device_get_name(dev);
 
-	if (!wbuf || !quiet) {
+	if (!wbuf || quiet == ATTR_VERBOSE) {
 		gen_function("device_debug", "dev", attr, NULL);
 		ret = iio_device_debug_attr_read(dev, attr, buf, BUF_SIZE);
 
-		if (!quiet) {
+		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			if (name)
 				printf("'%s'", name);
@@ -213,9 +219,9 @@ static int dump_debug_attributes(const struct iio_device *dev,
 		}
 
 		if (ret > 0) {
-			if (quiet)
+			if (quiet == ATTR_NORMAL)
 				printf("%s\n", buf);
-			else
+			else if (quiet == ATTR_VERBOSE)
 				printf("'%s'\n", buf);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
@@ -227,7 +233,7 @@ static int dump_debug_attributes(const struct iio_device *dev,
 		gen_function("device_debug", "dev", attr, wbuf);
 		ret = iio_device_debug_attr_write(dev, attr, wbuf);
 		if (ret > 0) {
-			if (!quiet)
+			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_debug_attributes(dev, attr, NULL, quiet);
 		} else {
@@ -242,14 +248,14 @@ static int dump_debug_attributes(const struct iio_device *dev,
 }
 
 static int dump_channel_attributes(const struct iio_device *dev,
-		struct iio_channel *ch, const char *attr, const char *wbuf, bool quiet)
+		struct iio_channel *ch, const char *attr, const char *wbuf, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *type_name;
 	const char *name = iio_device_get_name(dev);
 
-	if (!wbuf || !quiet) {
+	if (!wbuf || quiet == ATTR_VERBOSE) {
 		if (iio_channel_is_output(ch))
 			type_name = "output";
 		else
@@ -257,7 +263,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 
 		gen_function("channel", "ch", attr, NULL);
 		ret = iio_channel_attr_read(ch, attr, buf, BUF_SIZE);
-		if (!quiet) {
+		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			if (name)
 				printf("'%s'", name);
@@ -268,16 +274,16 @@ static int dump_channel_attributes(const struct iio_device *dev,
 					iio_channel_get_id(ch),
 					type_name);
 		}
-		if (iio_channel_get_name(ch) && !quiet)
+		if (iio_channel_get_name(ch) && quiet == ATTR_VERBOSE)
 			printf("id '%s', ", iio_channel_get_name(ch));
 
-		if (!quiet)
+		if (quiet == ATTR_VERBOSE)
 			printf("attr '%s', ", attr);
 
 		if (ret > 0) {
-			if (quiet)
+			if (quiet == ATTR_NORMAL)
 				printf("%s\n", buf);
-			else
+			else if (quiet == ATTR_VERBOSE)
 				printf("value '%s'\n", buf);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
@@ -288,7 +294,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 		gen_function("channel", "ch", attr, wbuf);
 		ret = iio_channel_attr_write(ch, attr, wbuf);
 		if (ret > 0) {
-			if (!quiet)
+			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_channel_attributes(dev, ch, attr, NULL, quiet);
 		} else {
@@ -304,6 +310,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 static const struct option options[] = {
 	{"ignore-case", no_argument, 0, 'I'},
 	{"quiet", no_argument, 0, 'q'},
+	{"verbose", no_argument, 0, 'v'},
 	{"generate-code", required_argument, 0, 'g'},
 	/* Channel qualifiers */
 	{"input-channel", no_argument, 0, 'i'},
@@ -327,6 +334,7 @@ static const char *options_descriptions[] = {
 	/* help */
 	"Ignore case distinctions.",
 	"Return result only.",
+	"Verbose, say what is going on",
 	"Generate code.",
 	/* Channel qualifiers */
 	"Filter Input Channels only.",
@@ -340,7 +348,7 @@ static const char *options_descriptions[] = {
 	"Read/Write debug attributes.",
 };
 
-#define MY_OPTS "CdcBDiosIqg:"
+#define MY_OPTS "CdcBDiosIqvg:"
 int main(int argc, char **argv)
 {
 	char **argw;
@@ -351,10 +359,12 @@ int main(int argc, char **argv)
 	bool search_device = false, ignore_case = false,
 		search_channel = false, search_buffer = false, search_debug = false,
 		search_context = false, input_only = false, output_only = false,
-		scan_only = false, quiet = false, gen_code = false;
+		scan_only = false, gen_code = false;
+	enum verbosity quiet = ATTR_NORMAL;
 	bool found_err = false, read_err = false, write_err = false,
 		dev_found = false, attr_found = false, ctx_found = false,
 		debug_found = false, channel_found = false ;
+	bool context_scan = false;
 	unsigned int i;
 	char *wbuf = NULL;
 	struct option *opts;
@@ -377,6 +387,8 @@ int main(int argc, char **argv)
 		case 'u':
 			break;
 		case 'S':
+			context_scan = true;
+			/* FALLTHRU */
 		case 'a':
 			if (!optarg && argc > optind && argv[optind] != NULL
 					&& argv[optind][0] != '-')
@@ -415,10 +427,13 @@ int main(int argc, char **argv)
 			ignore_case = true;
 			break;
 		case 'q':
-			quiet = true;
+			quiet = ATTR_QUIET;
+			break;
+		case 'v':
+			quiet = ATTR_VERBOSE;
 			break;
 		case 'g':
-			if (!optarg) {
+			if (!optarg || optarg[0] == '-') {
 				fprintf(stderr, "Code generation requires an option\n");
 				return EXIT_FAILURE;
 			}
@@ -432,6 +447,9 @@ int main(int argc, char **argv)
 	}
 
 	free(opts);
+
+	if (context_scan)
+		return EXIT_SUCCESS;
 
 	if (!ctx)
 		return EXIT_FAILURE;
@@ -553,15 +571,20 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	if (attr_index && !argw[attr_index])
 		return EXIT_FAILURE;
-	if ((gen_code || wbuf) && ((device_index && (!strcmp(".", argw[device_index]) ||
-				        strchr(argw[device_index], '*'))) ||
-		     (channel_index && (!strcmp(".", argw[channel_index]) ||
-					 strchr(argw[channel_index], '*'))) ||
-		     (attr_index && (!strcmp(".", argw[attr_index])  ||
-				      strchr(argw[attr_index], '*'))))) {
-		printf("can't %s with wildcard match\n",
-				gen_code ? "generate code" : "write value");
-		return EXIT_FAILURE;
+	/* check for wildcards */
+	if (((device_index && (!strcmp(".", argw[device_index]) ||
+				strchr(argw[device_index], '*'))) ||
+			(channel_index && (!strcmp(".", argw[channel_index]) ||
+				strchr(argw[channel_index], '*'))) ||
+			(attr_index && (!strcmp(".", argw[attr_index])  ||
+				strchr(argw[attr_index], '*'))))) {
+		if (gen_code || wbuf) {
+			printf("can't %s with wildcard match\n",
+					gen_code ? "generate code" : "write value");
+			return EXIT_FAILURE;
+		}
+		/* Force verbose mode */
+		quiet = ATTR_VERBOSE;
 	}
 
 	if (gen_code) {
@@ -587,6 +610,7 @@ int main(int argc, char **argv)
 			ret = iio_context_get_attr(ctx, i, &key, &value);
 			if (!ret) {
 				if (!attr_index || str_match(key, argw[attr_index], ignore_case)) {
+					found_err = false;
 					attr_found = true;
 					printf("%s: %s\n", key, value);
 					gen_context_attr(key);
@@ -765,10 +789,11 @@ int main(int argc, char **argv)
 							ignore_case))
 						continue;
 					gen_dev(dev);
+					found_err = false;
 					attr_found = true;
 					gen_ch(ch);
 					ret = dump_channel_attributes(dev, ch, attr, wbuf,
-								attr_index ? quiet : false);
+								attr_index ? quiet : ATTR_VERBOSE);
 					if (wbuf && ret < 0)
 						write_err = true;
 					else if (ret < 0 && attr_index)
@@ -781,8 +806,9 @@ int main(int argc, char **argv)
 				printf("found %u device attributes\n", nb_attrs);
 			if (search_device && device_index && !attr_index && !nb_attrs) {
 				printf("%s: Found %s device, but it has %u device attributes\n",
-						MY_NAME, argw[device_index], nb_attrs);
-				found_err = true;
+						MY_NAME, name ? name : dev_id, nb_attrs);
+				if (!attr_found)
+					found_err = true;
 			}
 
 			if (search_device && device_index && nb_attrs) {
@@ -795,9 +821,10 @@ int main(int argc, char **argv)
 						continue;
 
 					gen_dev(dev);
+					found_err = false;
 					attr_found = true;
 					ret = dump_device_attributes(dev, attr, wbuf,
-							       attr_index ? quiet : false);
+							       attr_index ? quiet : ATTR_VERBOSE);
 					if (wbuf && ret < 0)
 						write_err = true;
 					else if (ret < 0 && attr_index)
@@ -827,7 +854,7 @@ int main(int argc, char **argv)
 						found_err = false;
 						attr_found = true;
 						ret = dump_buffer_attributes(dev, attr, wbuf,
-									  attr_index ? quiet : false);
+									  attr_index ? quiet : ATTR_VERBOSE);
 						if (wbuf && ret < 0)
 							write_err = true;
 						else if (ret < 0 && attr_index)
@@ -850,10 +877,11 @@ int main(int argc, char **argv)
 					if ((attr_index && str_match(attr, argw[attr_index],
 								ignore_case)) || !attr_index) {
 						gen_dev(dev);
+						found_err = false;
 						attr_found = true;
 						debug_found = true;
 						ret = dump_debug_attributes(dev, attr, wbuf,
-								      attr_index ? quiet : false);
+								      attr_index ? quiet : ATTR_VERBOSE);
 						if (wbuf && ret < 0)
 							write_err = true;
 						else if (ret < 0 && attr_index)

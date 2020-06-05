@@ -236,11 +236,17 @@ struct option * add_common_options(const struct option * longopts)
 static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
-	"Use the context at the provided URI.",
+	"Use the context at the provided URI."
+		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
+		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
+		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
+		"\n\t\t\t    'local:' (Linux only)",
 	"Scan for available backends."
-		"\n\t\t\toptional arg of specific backend(s)",
-	"Scan for available contexts and if only one is available use it."
-		"\n\t\t\toptional arg of specific backend(s)",
+		"\n\t\t\toptional arg of specific backend(s)"
+		"\n\t\t\t    'ip', 'usb' or 'ip:usb'",
+	"Scan for available contexts and if a single context is"
+		"\n\t\t\tavailable use it. <arg> filters backend(s)"
+		"\n\t\t\t    'ip', 'usb' or 'ip:usb:'",
 };
 
 
@@ -307,7 +313,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				fprintf(stderr, "uri options requires a uri\n");
 				return NULL;
 			}
-			backend = IIO_AUTO;
+			backend = IIO_URI;
 			arg = optarg;
 			break;
 		case 'a':
@@ -315,6 +321,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
 				return NULL;
 			}
+			backend = IIO_AUTO;
 			detect_context = true;
 			if (optarg) {
 				arg = optarg;
@@ -343,7 +350,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	if (do_scan) {
 		autodetect_context(false, name, arg);
 		return NULL;
-	} else if (detect_context)
+	} else if (detect_context || backend == IIO_AUTO)
 		ctx = autodetect_context(true, name, arg);
 	else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
@@ -351,7 +358,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		ctx = iio_create_xml_context(arg);
 	else if (backend == IIO_NETWORK)
 		ctx = iio_create_network_context(arg);
-	else if (backend == IIO_AUTO)
+	else if (backend == IIO_URI)
 		ctx = iio_create_context_from_uri(arg);
 	else
 		ctx = iio_create_default_context();
