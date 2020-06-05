@@ -301,7 +301,7 @@ Here is the call graph for this function:</div>
 <p>Create a scan context. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">backend</td><td>A NULL-terminated string containing the backend to use for scanning. If NULL, all the available backends are used. </td></tr>
+    <tr><td class="paramname">backend</td><td>A NULL-terminated string containing the backend(s) to use for scanning (example: pre version 0.20 : "local", "ip", or "usb"; post version 0.20 can handle multiple, including "local:usb:", "ip:usb:", "local:usb:ip:"). If NULL, all the available backends are used. </td></tr>
     <tr><td class="paramname">flags</td><td>Unused for now. Set to 0. </td></tr>
   </table>
   </dd>

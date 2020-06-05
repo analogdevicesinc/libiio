@@ -118,6 +118,24 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a804281513f552fd8e6570b9a826301a2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#a804281513f552fd8e6570b9a826301a2">read</a> (byte[] array)</td></tr>
 <tr class="memdesc:a804281513f552fd8e6570b9a826301a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the samples from the <a class="el" href="classiio_1_1IOBuffer.html" title="iio.IOBuffer class: The class used for all I/O operations.">iio.IOBuffer</a> object. <a href="#a804281513f552fd8e6570b9a826301a2">More...</a><br /></td></tr>
 <tr class="separator:a804281513f552fd8e6570b9a826301a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70243ca0b0ae463181af421905525e6d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#a70243ca0b0ae463181af421905525e6d">get_poll_fd</a> ()</td></tr>
+<tr class="memdesc:a70243ca0b0ae463181af421905525e6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns poll file descriptor for the current buffer. <a href="#a70243ca0b0ae463181af421905525e6d">More...</a><br /></td></tr>
+<tr class="separator:a70243ca0b0ae463181af421905525e6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcae94765967aafa22375b21e026c7a8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#adcae94765967aafa22375b21e026c7a8">set_blocking_mode</a> (bool blocking)</td></tr>
+<tr class="memdesc:adcae94765967aafa22375b21e026c7a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the blocking behavior of the current buffer. <a href="#adcae94765967aafa22375b21e026c7a8">More...</a><br /></td></tr>
+<tr class="separator:adcae94765967aafa22375b21e026c7a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab78a5b13a284f30c4980df8917ae3ec9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#ab78a5b13a284f30c4980df8917ae3ec9">cancel</a> ()</td></tr>
+<tr class="memdesc:ab78a5b13a284f30c4980df8917ae3ec9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancels the current buffer. <a href="#ab78a5b13a284f30c4980df8917ae3ec9">More...</a><br /></td></tr>
+<tr class="separator:ab78a5b13a284f30c4980df8917ae3ec9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56e996c52498ce2a91dad07f9e535f6d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Device.html">Device</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#a56e996c52498ce2a91dad07f9e535f6d">get_device</a> ()</td></tr>
+<tr class="memdesc:a56e996c52498ce2a91dad07f9e535f6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the device of the current buffer. <a href="#a56e996c52498ce2a91dad07f9e535f6d">More...</a><br /></td></tr>
+<tr class="separator:a56e996c52498ce2a91dad07f9e535f6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad542f4c43e33e8b6fc04e1256875c7ac"><td class="memItemLeft" align="right" valign="top">IntPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#ad542f4c43e33e8b6fc04e1256875c7ac">first</a> (<a class="el" href="classiio_1_1Channel.html">Channel</a> ch)</td></tr>
+<tr class="memdesc:ad542f4c43e33e8b6fc04e1256875c7ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets a pointer to the first sample from the current buffer for a specific channel. <a href="#ad542f4c43e33e8b6fc04e1256875c7ac">More...</a><br /></td></tr>
+<tr class="separator:ad542f4c43e33e8b6fc04e1256875c7ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bc109c422c32ded351060e83b3a69a1"><td class="memItemLeft" align="right" valign="top">long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1IOBuffer.html#a6bc109c422c32ded351060e83b3a69a1">step</a> ()</td></tr>
+<tr class="memdesc:a6bc109c422c32ded351060e83b3a69a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the step size of the current buffer. <a href="#a6bc109c422c32ded351060e83b3a69a1">More...</a><br /></td></tr>
+<tr class="separator:a6bc109c422c32ded351060e83b3a69a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -198,6 +216,33 @@ Here is the call graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab78a5b13a284f30c4980df8917ae3ec9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab78a5b13a284f30c4980df8917ae3ec9">&#9670;&nbsp;</a></span>cancel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void iio.IOBuffer.cancel </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Cancels the current buffer.</p>
+
+</div>
+</div>
 <a id="ab2056e50d032c13abb3f8a2f6cbb6753"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab2056e50d032c13abb3f8a2f6cbb6753">&#9670;&nbsp;</a></span>Dispose()</h2>
 
@@ -266,6 +311,95 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 <p>The number of samples written will not exceed the size of the buffer.</p>
+
+</div>
+</div>
+<a id="ad542f4c43e33e8b6fc04e1256875c7ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad542f4c43e33e8b6fc04e1256875c7ac">&#9670;&nbsp;</a></span>first()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">IntPtr iio.IOBuffer.first </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classiio_1_1Channel.html">Channel</a>&#160;</td>
+          <td class="paramname"><em>ch</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gets a pointer to the first sample from the current buffer for a specific channel.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ch</td><td>The channel for which to find the first sample.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a56e996c52498ce2a91dad07f9e535f6d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56e996c52498ce2a91dad07f9e535f6d">&#9670;&nbsp;</a></span>get_device()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Device.html">Device</a> iio.IOBuffer.get_device </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gets the device of the current buffer.</p>
+<dl class="section return"><dt>Returns</dt><dd>The device of the current buffer.</dd></dl>
+
+</div>
+</div>
+<a id="a70243ca0b0ae463181af421905525e6d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70243ca0b0ae463181af421905525e6d">&#9670;&nbsp;</a></span>get_poll_fd()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int iio.IOBuffer.get_poll_fd </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns poll file descriptor for the current buffer.</p>
 
 </div>
 </div>
@@ -394,6 +528,67 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="adcae94765967aafa22375b21e026c7a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adcae94765967aafa22375b21e026c7a8">&#9670;&nbsp;</a></span>set_blocking_mode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int iio.IOBuffer.set_blocking_mode </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>blocking</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets the blocking behavior of the current buffer.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">blocking</td><td>true if blocking buffer, otherwise false</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a6bc109c422c32ded351060e83b3a69a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6bc109c422c32ded351060e83b3a69a1">&#9670;&nbsp;</a></span>step()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">long iio.IOBuffer.step </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gets the step size of the current buffer.</p>
 
 </div>
 </div>

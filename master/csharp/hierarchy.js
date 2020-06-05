@@ -6,5 +6,6 @@ var hierarchy =
     [ "iio.Device", "classiio_1_1Device.html", [
       [ "iio.Trigger", "classiio_1_1Trigger.html", null ]
     ] ],
-    [ "iio.IOBuffer", "classiio_1_1IOBuffer.html", null ]
+    [ "iio.IOBuffer", "classiio_1_1IOBuffer.html", null ],
+    [ "iio.ScanContext", "classiio_1_1ScanContext.html", null ]
 ];

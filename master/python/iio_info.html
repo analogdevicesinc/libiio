@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>iio_info &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  <title>iio_info &mdash; libiio-py 0.19.g4372fa3 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="iio_writedev" href="iio_writedev.html" /> 
+    <link rel="prev" title="iio_attr" href="iio_attr.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -89,6 +89,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="examples.html#complete-application-examples">Complete Application Examples</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="iio_readdev.html">iio_readdev</a></li>
 <li class="toctree-l3"><a class="reference internal" href="iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iio_attr.html">iio_attr</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">iio_info</a></li>
 </ul>
 </li>
@@ -167,10 +168,36 @@
 <div class="line">iio_info is part of the Libiio package, a library that has been developed to ease the development of software interfacing Linux Industrial I/O (IIO) devices.</div>
 <div class="line">This tool is written using the libiio Python bindings. It works in the same way as the base iio_info works. You can find more informations about it on this <a class="reference external" href="https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_info">page</a>.</div>
 </div>
-<span class="target" id="module-iio_info"></span><dl class="function">
+<span class="target" id="module-iio_info"></span><p>Copyright (C) 2015 Analog Devices, Inc.
+Author: Paul Cercueil &lt;<a class="reference external" href="mailto:paul&#46;cercueil&#37;&#52;&#48;analog&#46;com">paul<span>&#46;</span>cercueil<span>&#64;</span>analog<span>&#46;</span>com</a>&gt;</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</p>
+<dl class="py class">
+<dt id="iio_info.Information">
+<em class="property">class </em><code class="sig-prename descclassname">iio_info.</code><code class="sig-name descname">Information</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">context</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_info.html#Information"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_info.Information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for retrieving the requested information.</p>
+<dl class="py method">
+<dt id="iio_info.Information.write_information">
+<code class="sig-name descname">write_information</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_info.html#Information.write_information"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_info.Information.write_information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the information about the current context.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
 <dt id="iio_info.main">
-<code class="descclassname">iio_info.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_info.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_info.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="sig-prename descclassname">iio_info.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_info.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_info.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Module’s main method.</p>
+</dd></dl>
 
 </div>
 
@@ -183,7 +210,7 @@
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="iio_writedev.html" class="btn btn-neutral float-left" title="iio_writedev" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="iio_attr.html" class="btn btn-neutral float-left" title="iio_attr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

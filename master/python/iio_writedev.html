@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>iio_writedev &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  <title>iio_writedev &mdash; libiio-py 0.19.g4372fa3 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="iio_info" href="iio_info.html" />
+    <link rel="next" title="iio_attr" href="iio_attr.html" />
     <link rel="prev" title="iio_readdev" href="iio_readdev.html" /> 
 </head>
 
@@ -90,6 +90,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="examples.html#complete-application-examples">Complete Application Examples</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="iio_readdev.html">iio_readdev</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">iio_writedev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iio_attr.html">iio_attr</a></li>
 <li class="toctree-l3"><a class="reference internal" href="iio_info.html">iio_info</a></li>
 </ul>
 </li>
@@ -168,54 +169,65 @@
 <div class="line">iio_writedev is part of the Libiio package, a library that has been developed to ease the development of software interfacing Linux Industrial I/O (IIO) devices.</div>
 <div class="line">This tool is written using the libiio Python bindings. It works in the same way as the base iio_writedev works. You can find more informations about it on this <a class="reference external" href="https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_writedev">page</a>.</div>
 </div>
-<span class="target" id="module-iio_writedev"></span><dl class="function">
-<dt id="iio_writedev.create_context">
-<code class="descclassname">iio_writedev.</code><code class="descname">create_context</code><span class="sig-paren">(</span><em>scan_for_context</em>, <em>arg_uri</em>, <em>arg_ip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#create_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.create_context" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method for creating the corresponding context.</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>scan_for_context: type=bool</dt>
-<dd>Scan for available contexts and if only one is available use it.</dd>
-<dt>arg_uri: type=string</dt>
-<dd>The URI on which the program should look for a Context.</dd>
-<dt>arg_ip: type=string</dt>
-<dd>The IP on which the program should look for a Network Context.</dd>
-</dl>
-</dd>
-<dt>returns: type:iio.Context</dt>
-<dd>The resulted context.</dd>
-</dl>
+<span class="target" id="module-iio_writedev"></span><p>Copyright (C) 2020 Analog Devices, Inc.
+Author: Cristian Iacob &lt;<a class="reference external" href="mailto:cristian&#46;iacob&#37;&#52;&#48;analog&#46;com">cristian<span>&#46;</span>iacob<span>&#64;</span>analog<span>&#46;</span>com</a>&gt;</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</p>
+<dl class="py class">
+<dt id="iio_writedev.Arguments">
+<em class="property">class </em><code class="sig-prename descclassname">iio_writedev.</code><code class="sig-name descname">Arguments</code><a class="reference internal" href="_modules/iio_writedev.html#Arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.Arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for parsing the input arguments.</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="iio_writedev.read_arguments">
-<code class="descclassname">iio_writedev.</code><code class="descname">read_arguments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#read_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.read_arguments" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method for reading the command line parameters and setting the corresponding variables.</p>
+<dl class="py class">
+<dt id="iio_writedev.BufferBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">iio_writedev.</code><code class="sig-name descname">BufferBuilder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">arguments</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#BufferBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.BufferBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for creating the buffer.</p>
+<dl class="py method">
+<dt id="iio_writedev.BufferBuilder.create">
+<code class="sig-name descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#BufferBuilder.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.BufferBuilder.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the IIO buffer.</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="iio_writedev.write_data">
-<code class="descclassname">iio_writedev.</code><code class="descname">write_data</code><span class="sig-paren">(</span><em>dev</em>, <em>buffer</em>, <em>num_samples</em>, <em>buffer_size</em>, <em>cyclic</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#write_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.write_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method for pushing data to the buffer.</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>dev: type=iio.Device</dt>
-<dd>Current device.</dd>
-<dt>buffer: type=iio.Buffer</dt>
-<dd>Current buffer.</dd>
-<dt>num_samples: type=int</dt>
-<dd>Number of samples to capture, 0 = infinite. Default is 0.</dd>
-<dt>buffer_size: type=int</dt>
-<dd>Size of the capture buffer. Default is 256.</dd>
-<dt>cyclic: type=bool</dt>
-<dd>Use cyclic buffer mode.</dd>
-</dl>
-</dd>
-<dt>returns: type=None</dt>
-<dd>Push data to buffer.</dd>
-</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="iio_writedev.ContextBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">iio_writedev.</code><code class="sig-name descname">ContextBuilder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">arguments</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#ContextBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.ContextBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for creating the requested context.</p>
+<dl class="py method">
+<dt id="iio_writedev.ContextBuilder.create">
+<code class="sig-name descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#ContextBuilder.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.ContextBuilder.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the requested context.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="iio_writedev.DataWriter">
+<em class="property">class </em><code class="sig-prename descclassname">iio_writedev.</code><code class="sig-name descname">DataWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">arguments</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#DataWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.DataWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for writing samples to the device.</p>
+<dl class="py method">
+<dt id="iio_writedev.DataWriter.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#DataWriter.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.DataWriter.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Push data into the buffer.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="iio_writedev.main">
+<code class="sig-prename descclassname">iio_writedev.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_writedev.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Module’s main method.</p>
 </dd></dl>
 
 </div>
@@ -228,7 +240,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="iio_info.html" class="btn btn-neutral float-right" title="iio_info" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="iio_attr.html" class="btn btn-neutral float-right" title="iio_attr" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="iio_readdev.html" class="btn btn-neutral float-left" title="iio_readdev" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

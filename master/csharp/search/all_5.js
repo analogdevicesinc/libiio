@@ -1,8 +1,11 @@
 var searchData=
 [
-  ['get_5fchannel',['get_channel',['../classiio_1_1Device.html#ab7f441c0264fa93c34106df969221d89',1,'iio::Device']]],
-  ['get_5fdevice',['get_device',['../classiio_1_1Context.html#aec3175f0ba17f5e1e378e764a1cc7ce2',1,'iio::Context']]],
-  ['get_5frate',['get_rate',['../classiio_1_1Trigger.html#a6ad460b6af12673c305862c1d83eb894',1,'iio::Trigger']]],
-  ['get_5fsample_5fsize',['get_sample_size',['../classiio_1_1Device.html#a8fcf659b560ffae54b8e5e3181d7988f',1,'iio::Device']]],
-  ['get_5ftrigger',['get_trigger',['../classiio_1_1Device.html#a0d6bcb4c98aa71895c5c9476bb2e7285',1,'iio.Device.get_trigger()'],['../classiio_1_1Trigger.html#a9e5ece91f51e1faf5785ebbd4da0ccba',1,'iio.Trigger.get_trigger()']]]
+  ['filename',['filename',['../classiio_1_1Attr.html#a8883445f581563799d9d14cdbb9651c0',1,'iio::Attr']]],
+  ['fill',['fill',['../classiio_1_1IOBuffer.html#aae86ce12d92bd8ca087d458553b08256',1,'iio::IOBuffer']]],
+  ['find_5fattribute',['find_attribute',['../classiio_1_1Channel.html#a8138947c0cefeaaf1bf87448acf51355',1,'iio.Channel.find_attribute()'],['../classiio_1_1Device.html#a896da3d065f48f2629caa500a73e91ff',1,'iio.Device.find_attribute()']]],
+  ['find_5fbuffer_5fattribute',['find_buffer_attribute',['../classiio_1_1Device.html#a03130c752e898b7fb81706ed82207639',1,'iio::Device']]],
+  ['find_5fchannel',['find_channel',['../classiio_1_1Device.html#a1984d9df28ff05c5171f77f4d84c01f0',1,'iio::Device']]],
+  ['find_5fdebug_5fattribute',['find_debug_attribute',['../classiio_1_1Device.html#a8cf4d34965b05de495857a8e5f29e6f4',1,'iio::Device']]],
+  ['find_5fdevice',['find_device',['../classiio_1_1Context.html#a9aa5bf7e06b078acab4a7a9567c109bf',1,'iio::Context']]],
+  ['first',['first',['../classiio_1_1IOBuffer.html#ad542f4c43e33e8b6fc04e1256875c7ac',1,'iio::IOBuffer']]]
 ];

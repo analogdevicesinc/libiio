@@ -88,6 +88,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <div class="toc"><h3>Table of Contents</h3>
 <ul><li class="level1"><a href="#license">License</a></li>
 <li class="level1"><a href="#code_model">Code Model</a></li>
+<li class="level1"><a href="#scan_contexts">Scanning for IIO contexts</a></li>
 <li class="level1"><a href="#creating_context">Creating a context</a><ul><li class="level2"><a href="#navigation">Navigation</a><ul><li class="level3"><a href="#device_obj">Device objects</a></li>
 <li class="level3"><a href="#channel_obj">Channel objects</a></li>
 </ul>
@@ -138,10 +139,19 @@ Caption text</div></div>
 <li>A <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> object may contain zero or more <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> objects. A <a class="el" href="structiio__channel.html" title="Represents an input or output channel of a device. ">iio_channel</a> object is associated with only one <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a>.</li>
 <li>A <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a> object may be associated with one <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> object, and a <a class="el" href="structiio__buffer.html" title="An input or output buffer, used to read or write samples. ">iio_buffer</a> object is associated with only one <a class="el" href="structiio__device.html" title="Represents a device in the IIO context. ">iio_device</a>.</li>
 </ul>
+<h1><a class="anchor" id="scan_contexts"></a>
+Scanning for IIO contexts</h1>
+<p>The first step when dealing with a collection of IIO devices (known as a context) is to find the context. This can be connected via usb, network, serial or local. Having these different connectivity options could prove to be problematic, but libiio abstracts the low level communications away, and allows you just to find contexts, and talk to devices without being interested in the low level aspects. Many find this convinent to develop applications and algorithms on a host, and quickly move to an embedded Linux system without having to change any code.</p>
+<p>To find what IIO contexts are available, the first things to is use the following:</p><ul>
+<li><a class="el" href="group__Scan.html#gaa333dd2e410a2769cf5685019185d99c" title="Create a scan context. ">iio_create_scan_context()</a>: Create a iio_scan_context object. Depending on what backends were enabled with compiling the library, some of them may not be available. The first argument to this function is a string which is used as a filter ("usb:", "ip:", "local:", "usb:ip", where the default (NULL) means any backend that is compiled in).</li>
+<li><a class="el" href="group__Scan.html#ga5d364d8d008bdbfe5486e6329d06257f" title="Enumerate available contexts. ">iio_scan_context_get_info_list()</a>: get the <a class="el" href="structiio__context__info.html" title="The information related to a discovered context. ">iio_context_info</a> object from the iio_scan_context object. The <a class="el" href="structiio__context__info.html" title="The information related to a discovered context. ">iio_context_info</a> object can be examined with the <a class="el" href="group__Scan.html#ga885558697d0e4dad11a4a5b6f5fbc4d6" title="Get a description of a discovered context. ">iio_context_info_get_description()</a> and <a class="el" href="group__Scan.html#ga6a142a62112a0f84370d22facb2f2a37" title="Get the URI of a discovered context. ">iio_context_info_get_uri()</a> to determine which uri you want to attach to.</li>
+</ul>
 <h1><a class="anchor" id="creating_context"></a>
 Creating a context</h1>
 <p>Different functions are available to create the <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a> object. Depending on what backends were enabled when compiling the library, some of them may not be available. Each function will result in a different backend being used.</p>
 <p>Those functions are:</p><ul>
+<li><a class="el" href="group__Context.html#gafdcee40508700fa395370b6c636e16fe" title="Create a context from a URI description. ">iio_create_context_from_uri()</a>: This should be the main function to create contexts, which takes a Uniform Resource Identifier (uri), and returns a <a class="el" href="structiio__context.html" title="Contains the representation of an IIO context. ">iio_context</a>.</li>
+<li><a class="el" href="group__Context.html#ga21076125f817a680e0c01d4a490f0416" title="Create a context from local or remote IIO devices. ">iio_create_default_context()</a>: Create a "local" context if we can, otherwise use the ENV_VAR IIOD_REMOTE.</li>
 <li><a class="el" href="group__Context.html#gaf31acec2d0f9f498870cc52a1d49783e" title="Create a context from local IIO devices (Linux only) ">iio_create_local_context()</a>: Create a "local" context, to use the IIO devices connected to the system (typically for cross-compiled applications).</li>
 <li><a class="el" href="group__Context.html#ga8adf2ef4d2b62aa34201469cd7049617" title="Create a context from the network. ">iio_create_network_context()</a>: Create a "network" context that will work with a remotely connected target.</li>
 </ul>

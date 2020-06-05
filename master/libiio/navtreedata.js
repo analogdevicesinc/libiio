@@ -3,6 +3,7 @@ var NAVTREE =
   [ "libiio", "index.html", [
     [ "License", "index.html#license", null ],
     [ "Code Model", "index.html#code_model", null ],
+    [ "Scanning for IIO contexts", "index.html#scan_contexts", null ],
     [ "Creating a context", "index.html#creating_context", [
       [ "Navigation", "index.html#navigation", [
         [ "Device objects", "index.html#device_obj", null ],

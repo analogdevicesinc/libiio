@@ -663,15 +663,15 @@ On failure, NULL is returned and errno is set appropriately</dd></dl>
 <li>Network backend, "ip:"<br />
  Requires a hostname, IPv4, or IPv6 to connect to a specific running IIO Daemon or no address part for automatic discovery when library is compiled with ZeroConf support. For example <em>"ip:192.168.2.1"</em>, <b>or</b> <em>"ip:localhost"</em>, <b>or</b> <em>"ip:"</em> <b>or</b> <em>"ip:plutosdr.local"</em></li>
 <li>USB backend, "usb:"<br />
- Requires bus, address, and interface parts separated with a dot. For example <em>"usb:3.32.5"</em></li>
+ When more than one usb device is attached, requires bus, address, and interface parts separated with a dot. For example <em>"usb:3.32.5"</em>. Where there is only one USB device attached, the shorthand <em>"usb:"</em> can be used.</li>
 <li><p class="startli">Serial backend, "serial:"<br />
  Requires:</p><ul>
 <li>a port (/dev/ttyUSB0),</li>
 <li>baud_rate (default <b>115200</b>)</li>
 <li>serial port configuration<ul>
-<li>bits (5 6 7 <b>8</b> 9)</li>
+<li>data bits (5 6 7 <b>8</b> 9)</li>
 <li>parity ('<b>n</b>' none, 'o' odd, 'e' even, 'm' mark, 's' space)</li>
-<li>stop bots (<b>1</b> 2)</li>
+<li>stop bits (<b>1</b> 2)</li>
 <li>flow control ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR)</li>
 </ul>
 </li>

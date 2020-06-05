@@ -84,6 +84,7 @@ $(document).ready(function(){initNavTree('classiio_1_1Device.html','');});
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="classiio_1_1Device-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">iio.Device Class Reference</div>  </div>
@@ -98,6 +99,14 @@ Inheritance diagram for iio.Device:</div>
 <div class="center"><img src="classiio_1_1Device__inherit__graph.png" border="0" usemap="#iio_8Device_inherit__map" alt="Inheritance graph"/></div>
 <map name="iio_8Device_inherit__map" id="iio_8Device_inherit__map">
 <area shape="rect" id="node2" href="classiio_1_1Trigger.html" title="iio.Trigger class: Contains the representation of an IIO device that can act as a trigger..." alt="" coords="6,80,85,107"/>
+</map>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
+<div class="dynheader">
+Collaboration diagram for iio.Device:</div>
+<div class="dyncontent">
+<div class="center"><img src="classiio_1_1Device__coll__graph.png" border="0" usemap="#iio_8Device_coll__map" alt="Collaboration graph"/></div>
+<map name="iio_8Device_coll__map" id="iio_8Device_coll__map">
+<area shape="rect" id="node2" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="5,5,91,32"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -121,6 +130,27 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a2b67eb64e1094bca59468f177f6c039e"><td class="memItemLeft" align="right" valign="top">uint&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a2b67eb64e1094bca59468f177f6c039e">reg_read</a> (uint addr)</td></tr>
 <tr class="memdesc:a2b67eb64e1094bca59468f177f6c039e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the content of a register of this device. <a href="#a2b67eb64e1094bca59468f177f6c039e">More...</a><br /></td></tr>
 <tr class="separator:a2b67eb64e1094bca59468f177f6c039e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9005ab45349aa4c98a6717847001d6fd"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a9005ab45349aa4c98a6717847001d6fd">set_kernel_buffers_count</a> (uint nb)</td></tr>
+<tr class="memdesc:a9005ab45349aa4c98a6717847001d6fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the number of active kernel buffers for this device. <a href="#a9005ab45349aa4c98a6717847001d6fd">More...</a><br /></td></tr>
+<tr class="separator:a9005ab45349aa4c98a6717847001d6fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecb809422163d179c3b501bbadaa1ae7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Context.html">Context</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#aecb809422163d179c3b501bbadaa1ae7">get_context</a> ()</td></tr>
+<tr class="memdesc:aecb809422163d179c3b501bbadaa1ae7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the context of the current device. <a href="#aecb809422163d179c3b501bbadaa1ae7">More...</a><br /></td></tr>
+<tr class="separator:aecb809422163d179c3b501bbadaa1ae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1984d9df28ff05c5171f77f4d84c01f0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Channel.html">Channel</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a1984d9df28ff05c5171f77f4d84c01f0">find_channel</a> (string channel, bool output)</td></tr>
+<tr class="memdesc:a1984d9df28ff05c5171f77f4d84c01f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the channel with the given name from the current device. <a href="#a1984d9df28ff05c5171f77f4d84c01f0">More...</a><br /></td></tr>
+<tr class="separator:a1984d9df28ff05c5171f77f4d84c01f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a896da3d065f48f2629caa500a73e91ff"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Attr.html">Attr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a896da3d065f48f2629caa500a73e91ff">find_attribute</a> (string attribute)</td></tr>
+<tr class="memdesc:a896da3d065f48f2629caa500a73e91ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the attribute with the given name from the current device. <a href="#a896da3d065f48f2629caa500a73e91ff">More...</a><br /></td></tr>
+<tr class="separator:a896da3d065f48f2629caa500a73e91ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cf4d34965b05de495857a8e5f29e6f4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Attr.html">Attr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a8cf4d34965b05de495857a8e5f29e6f4">find_debug_attribute</a> (string attribute)</td></tr>
+<tr class="memdesc:a8cf4d34965b05de495857a8e5f29e6f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the debug attribute with the given name from the current device. <a href="#a8cf4d34965b05de495857a8e5f29e6f4">More...</a><br /></td></tr>
+<tr class="separator:a8cf4d34965b05de495857a8e5f29e6f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03130c752e898b7fb81706ed82207639"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Attr.html">Attr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a03130c752e898b7fb81706ed82207639">find_buffer_attribute</a> (string attribute)</td></tr>
+<tr class="memdesc:a03130c752e898b7fb81706ed82207639"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the buffer attribute with the given name from the current device. <a href="#a03130c752e898b7fb81706ed82207639">More...</a><br /></td></tr>
+<tr class="separator:a03130c752e898b7fb81706ed82207639"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac68bcd5fa0278c23f2db0d7e35a28dce"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#ac68bcd5fa0278c23f2db0d7e35a28dce">identify_filename</a> (string filename, IntPtr chn_ptr, IntPtr attr)</td></tr>
+<tr class="memdesc:ac68bcd5fa0278c23f2db0d7e35a28dce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the channel attribute coresponding to the given filename from the current device. <a href="#ac68bcd5fa0278c23f2db0d7e35a28dce">More...</a><br /></td></tr>
+<tr class="separator:ac68bcd5fa0278c23f2db0d7e35a28dce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -139,10 +169,191 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a060ce06a0516ccc7468196e44fb30b00"><td class="memItemLeft" align="right" valign="top">readonly List&lt; <a class="el" href="classiio_1_1Channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#a060ce06a0516ccc7468196e44fb30b00">channels</a></td></tr>
 <tr class="memdesc:a060ce06a0516ccc7468196e44fb30b00"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <code>list</code> of all the <a class="el" href="classiio_1_1Channel.html" title="iio.Channel class: Contains the representation of an input or output channel.">iio.Channel</a> objects that this device possesses. <a href="#a060ce06a0516ccc7468196e44fb30b00">More...</a><br /></td></tr>
 <tr class="separator:a060ce06a0516ccc7468196e44fb30b00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:af886c74c8e341cb7140ba9474dbd2340"><td class="memItemLeft" align="right" valign="top">List&lt; <a class="el" href="classiio_1_1Attr.html">Attr</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Device.html#af886c74c8e341cb7140ba9474dbd2340">buffer_attrs</a><code> [get]</code></td></tr>
+<tr class="memdesc:af886c74c8e341cb7140ba9474dbd2340"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <code>list</code> of all the buffer attributes that this device has. <a href="#af886c74c8e341cb7140ba9474dbd2340">More...</a><br /></td></tr>
+<tr class="separator:af886c74c8e341cb7140ba9474dbd2340"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device.">iio.Device</a> class: Contains the representation of an IIO device.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a896da3d065f48f2629caa500a73e91ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a896da3d065f48f2629caa500a73e91ff">&#9670;&nbsp;</a></span>find_attribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Attr.html">Attr</a> iio.Device.find_attribute </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>attribute</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the attribute with the given name from the current device.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attribute</td><td>The name of the attribute.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An instance of the iio.Device.DeviceAttr class.</dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">System.Exception</td><td>There is no attribute with the given name.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a03130c752e898b7fb81706ed82207639"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03130c752e898b7fb81706ed82207639">&#9670;&nbsp;</a></span>find_buffer_attribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Attr.html">Attr</a> iio.Device.find_buffer_attribute </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>attribute</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the buffer attribute with the given name from the current device.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attribute</td><td>The name of the buffer attribute.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An instance of the iio.Device.DeviceBufferAttr class.</dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">System.Exception</td><td>There is no attribute with the given name.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a1984d9df28ff05c5171f77f4d84c01f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1984d9df28ff05c5171f77f4d84c01f0">&#9670;&nbsp;</a></span>find_channel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Channel.html">Channel</a> iio.Device.find_channel </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>channel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>output</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the channel with the given name from the current device.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">channel</td><td>The name of the channel.</td></tr>
+    <tr><td class="paramname">output</td><td>true if you are looking for an output channel, otherwise false.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An instance of the <a class="el" href="classiio_1_1Channel.html" title="iio.Channel class: Contains the representation of an input or output channel.">iio.Channel</a> class.</dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">System.Exception</td><td>There is no channel with the given name.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a8cf4d34965b05de495857a8e5f29e6f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cf4d34965b05de495857a8e5f29e6f4">&#9670;&nbsp;</a></span>find_debug_attribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Attr.html">Attr</a> iio.Device.find_debug_attribute </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>attribute</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the debug attribute with the given name from the current device.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attribute</td><td>The name of the debug attribute.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An instance of the iio.Device.DeviceDebugAttr class.</dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">System.Exception</td><td>There is no debug attribute with the given name.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="ab7f441c0264fa93c34106df969221d89"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab7f441c0264fa93c34106df969221d89">&#9670;&nbsp;</a></span>get_channel()</h2>
 
@@ -180,6 +391,34 @@ Public Attributes</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="aecb809422163d179c3b501bbadaa1ae7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aecb809422163d179c3b501bbadaa1ae7">&#9670;&nbsp;</a></span>get_context()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Context.html">Context</a> iio.Device.get_context </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gets the context of the current device.</p>
+<dl class="section return"><dt>Returns</dt><dd>An instance of the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> class.</dd></dl>
 
 </div>
 </div>
@@ -248,6 +487,59 @@ Public Attributes</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="ac68bcd5fa0278c23f2db0d7e35a28dce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac68bcd5fa0278c23f2db0d7e35a28dce">&#9670;&nbsp;</a></span>identify_filename()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int iio.Device.identify_filename </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">IntPtr&#160;</td>
+          <td class="paramname"><em>chn_ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">IntPtr&#160;</td>
+          <td class="paramname"><em>attr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the channel attribute coresponding to the given filename from the current device.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>The name of the attribute.</td></tr>
+    <tr><td class="paramname">chn_ptr</td><td>Output variable. It will contain a pointer to the resulting <a class="el" href="classiio_1_1Channel.html" title="iio.Channel class: Contains the representation of an input or output channel.">iio.Channel</a>.</td></tr>
+    <tr><td class="paramname">attr</td><td>Output variable. It will contain a pointer to the resulting iio.ChannelAttr.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>C errorcode if error encountered, otherwise 0.</dd></dl>
 
 </div>
 </div>
@@ -336,6 +628,40 @@ Public Attributes</h2></td></tr>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
     <tr><td class="paramname">System.Exception</td><td>The register could not be written.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9005ab45349aa4c98a6717847001d6fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9005ab45349aa4c98a6717847001d6fd">&#9670;&nbsp;</a></span>set_kernel_buffers_count()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int iio.Device.set_kernel_buffers_count </td>
+          <td>(</td>
+          <td class="paramtype">uint&#160;</td>
+          <td class="paramname"><em>nb</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets the number of active kernel buffers for this device.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">nb</td><td>The number of kernel buffers.</td></tr>
   </table>
   </dd>
 </dl>
@@ -461,6 +787,31 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>The name of this device.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Property Documentation</h2>
+<a id="af886c74c8e341cb7140ba9474dbd2340"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af886c74c8e341cb7140ba9474dbd2340">&#9670;&nbsp;</a></span>buffer_attrs</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">List&lt;<a class="el" href="classiio_1_1Attr.html">Attr</a>&gt; iio.Device.buffer_attrs</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">get</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>A <code>list</code> of all the buffer attributes that this device has.</p>
 
 </div>
 </div>

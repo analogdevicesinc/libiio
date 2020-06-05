@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['trigger',['Trigger',['../classiio_1_1Trigger.html',1,'iio']]]
+  ['scancontext',['ScanContext',['../classiio_1_1ScanContext.html',1,'iio']]]
 ];

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['xml',['xml',['../classiio_1_1Context.html#a9f9eb26f85fc6b41ba10902a7782b88a',1,'iio::Context']]]
+  ['trigger',['Trigger',['../classiio_1_1Trigger.html',1,'iio']]],
+  ['type',['type',['../classiio_1_1Channel.html#a0a8e7a2aef01d07302fdc71975d274d2',1,'iio::Channel']]]
 ];

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Device &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  <title>Device &mdash; libiio-py 0.19.g4372fa3 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -159,134 +159,134 @@
 <h1>Device<a class="headerlink" href="#device" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="members">
 <h2>Members<a class="headerlink" href="#members" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="iio.Device">
-<em class="property">class </em><code class="descclassname">iio.</code><code class="descname">Device</code><span class="sig-paren">(</span><em>ctx</em>, <em>_device</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Device"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Device" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">iio.</code><code class="sig-name descname">Device</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">_device</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Device"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Device" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contains the representation of an IIO device.</p>
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.attrs">
-<code class="descname">attrs</code><a class="headerlink" href="#iio.Device.attrs" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">attrs</code><a class="headerlink" href="#iio.Device.attrs" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of attributes for this IIO device.
 type=dict of iio.DeviceAttr</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.buffer_attrs">
-<code class="descname">buffer_attrs</code><a class="headerlink" href="#iio.Device.buffer_attrs" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">buffer_attrs</code><a class="headerlink" href="#iio.Device.buffer_attrs" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of buffer attributes for this IIO device.
 type=dict of iio.DeviceBufferAttr</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.channels">
-<code class="descname">channels</code><a class="headerlink" href="#iio.Device.channels" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">channels</code><a class="headerlink" href="#iio.Device.channels" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of channels available with this IIO device.
 type=list of iio.Channel objects</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.context">
-<code class="descname">context</code><a class="headerlink" href="#iio.Device.context" title="Permalink to this definition">¶</a></dt>
-<dd><p>This device’s context.
+<em class="property">property </em><code class="sig-name descname">context</code><a class="headerlink" href="#iio.Device.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context for the device.
 type: iio.Context</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.debug_attrs">
-<code class="descname">debug_attrs</code><a class="headerlink" href="#iio.Device.debug_attrs" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">debug_attrs</code><a class="headerlink" href="#iio.Device.debug_attrs" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of debug attributes for this IIO device.
 type=dict of iio.DeviceDebugAttr</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="iio.Device.find_channel">
-<code class="descname">find_channel</code><span class="sig-paren">(</span><em>name_or_id</em>, <em>is_output=False</em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.find_channel" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">find_channel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_or_id</span></em>, <em class="sig-param"><span class="n">is_output</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.find_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find a IIO channel by its name or ID.</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>name_or_id: type=str</dt>
-<dd>The name or ID of the channel to find</dd>
-<dt>is_output: type=bool</dt>
-<dd>Set to True to search for an output channel</dd>
-</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name_or_id</strong> – type=str
+The name or ID of the channel to find</p></li>
+<li><p><strong>is_output</strong> – type=bool
+Set to True to search for an output channel</p></li>
+</ul>
 </dd>
-<dt>returns: type=iio.Device or type=iio.Trigger</dt>
-<dd>The IIO Device</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.id">
-<code class="descname">id</code><a class="headerlink" href="#iio.Device.id" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">id</code><a class="headerlink" href="#iio.Device.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>An identifier of this device, only valid in this IIO context.
 type=str</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.name">
-<code class="descname">name</code><a class="headerlink" href="#iio.Device.name" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#iio.Device.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of this device.
 type=str</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="iio.Device.reg_read">
-<code class="descname">reg_read</code><span class="sig-paren">(</span><em>reg</em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.reg_read" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">reg_read</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.reg_read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read the content of a register of this device.</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>reg: type=int</dt>
-<dd>The register address</dd>
-</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>reg</strong> – type=int
+The register address</p>
 </dd>
-<dt>returns: type=int</dt>
-<dd>The value of the register</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=int</dt><dd><p>The value of the register</p>
+</dd>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="iio.Device.reg_write">
-<code class="descname">reg_write</code><span class="sig-paren">(</span><em>reg</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.reg_write" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">reg_write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reg</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.reg_write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set a value to one register of this device.</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>reg: type=int</dt>
-<dd>The register address</dd>
-<dt>value: type=int</dt>
-<dd>The value that will be used for this register</dd>
-</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reg</strong> – type=int
+The register address</p></li>
+<li><p><strong>value</strong> – type=int
+The value that will be used for this register</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.sample_size">
-<code class="descname">sample_size</code><a class="headerlink" href="#iio.Device.sample_size" title="Permalink to this definition">¶</a></dt>
-<dd><p>Current sample size of this device.
+<em class="property">property </em><code class="sig-name descname">sample_size</code><a class="headerlink" href="#iio.Device.sample_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample size of this device.
 type: int</p>
 <p>The sample size varies each time channels get enabled or disabled.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="iio.Device.set_kernel_buffers_count">
-<code class="descname">set_kernel_buffers_count</code><span class="sig-paren">(</span><em>count</em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.set_kernel_buffers_count" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_kernel_buffers_count</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">count</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.set_kernel_buffers_count" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the number of kernel buffers to use with the specified device.</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>count: type=int</dt>
-<dd>The number of kernel buffers</dd>
-</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>count</strong> – type=int
+The number of kernel buffers</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.Device.trigger">
-<code class="descname">trigger</code><a class="headerlink" href="#iio.Device.trigger" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">trigger</code><a class="headerlink" href="#iio.Device.trigger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contains the configured trigger for this IIO device.
 type=iio.Trigger</p>
 </dd></dl>
@@ -297,54 +297,54 @@ type=iio.Trigger</p>
 <hr class="docutils" />
 <div class="section" id="device-attributes">
 <h2>Device attributes<a class="headerlink" href="#device-attributes" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="iio.DeviceDebugAttr">
-<em class="property">class </em><code class="descclassname">iio.</code><code class="descname">DeviceDebugAttr</code><span class="sig-paren">(</span><em>device</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#DeviceDebugAttr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.DeviceDebugAttr" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">iio.</code><code class="sig-name descname">DeviceDebugAttr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">device</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#DeviceDebugAttr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.DeviceDebugAttr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a debug attribute of an IIO device.</p>
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.DeviceDebugAttr.filename">
-<code class="descname">filename</code><a class="headerlink" href="#iio.DeviceDebugAttr.filename" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#iio.DeviceDebugAttr.filename" title="Permalink to this definition">¶</a></dt>
 <dd><p>The filename in sysfs to which this attribute is bound.
 type=str</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.DeviceDebugAttr.name">
-<code class="descname">name</code><a class="headerlink" href="#iio.DeviceDebugAttr.name" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#iio.DeviceDebugAttr.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of this attribute.
 type=str</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.DeviceDebugAttr.value">
-<code class="descname">value</code><a class="headerlink" href="#iio.DeviceDebugAttr.value" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">value</code><a class="headerlink" href="#iio.DeviceDebugAttr.value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Current value of this attribute.
 type=str</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="iio.DeviceBufferAttr">
-<em class="property">class </em><code class="descclassname">iio.</code><code class="descname">DeviceBufferAttr</code><span class="sig-paren">(</span><em>device</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#DeviceBufferAttr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.DeviceBufferAttr" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">iio.</code><code class="sig-name descname">DeviceBufferAttr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">device</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#DeviceBufferAttr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.DeviceBufferAttr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a buffer attribute of an IIO device.</p>
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.DeviceBufferAttr.filename">
-<code class="descname">filename</code><a class="headerlink" href="#iio.DeviceBufferAttr.filename" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#iio.DeviceBufferAttr.filename" title="Permalink to this definition">¶</a></dt>
 <dd><p>The filename in sysfs to which this attribute is bound.
 type=str</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.DeviceBufferAttr.name">
-<code class="descname">name</code><a class="headerlink" href="#iio.DeviceBufferAttr.name" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#iio.DeviceBufferAttr.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of this attribute.
 type=str</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="iio.DeviceBufferAttr.value">
-<code class="descname">value</code><a class="headerlink" href="#iio.DeviceBufferAttr.value" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">value</code><a class="headerlink" href="#iio.DeviceBufferAttr.value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Current value of this attribute.
 type=str</p>
 </dd></dl>

@@ -84,6 +84,7 @@ $(document).ready(function(){initNavTree('classiio_1_1Context.html','');});
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="classiio_1_1Context-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">iio.Context Class Reference</div>  </div>
@@ -115,6 +116,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:adc35e6f453bdb4e4209d9e7dee76c0cc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Context.html#adc35e6f453bdb4e4209d9e7dee76c0cc">Dispose</a> ()</td></tr>
 <tr class="memdesc:adc35e6f453bdb4e4209d9e7dee76c0cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases all resource used by the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> object. <a href="#adc35e6f453bdb4e4209d9e7dee76c0cc">More...</a><br /></td></tr>
 <tr class="separator:adc35e6f453bdb4e4209d9e7dee76c0cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9aa5bf7e06b078acab4a7a9567c109bf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Device.html">Device</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Context.html#a9aa5bf7e06b078acab4a7a9567c109bf">find_device</a> (string device)</td></tr>
+<tr class="memdesc:a9aa5bf7e06b078acab4a7a9567c109bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the device with the given name from the current context. <a href="#a9aa5bf7e06b078acab4a7a9567c109bf">More...</a><br /></td></tr>
+<tr class="separator:a9aa5bf7e06b078acab4a7a9567c109bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -133,6 +137,12 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:ad5fc9205417a8a2daacdb3cc9832995c"><td class="memItemLeft" align="right" valign="top">readonly List&lt; <a class="el" href="classiio_1_1Device.html">Device</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Context.html#ad5fc9205417a8a2daacdb3cc9832995c">devices</a></td></tr>
 <tr class="memdesc:ad5fc9205417a8a2daacdb3cc9832995c"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <code>List</code> of all the IIO devices present on the current context. <a href="#ad5fc9205417a8a2daacdb3cc9832995c">More...</a><br /></td></tr>
 <tr class="separator:ad5fc9205417a8a2daacdb3cc9832995c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:a3eef82f7c710339551dc6dd3475002e3"><td class="memItemLeft" align="right" valign="top">Dictionary&lt; string, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Context.html#a3eef82f7c710339551dc6dd3475002e3">attrs</a><code> [get]</code></td></tr>
+<tr class="memdesc:a3eef82f7c710339551dc6dd3475002e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <code>Dictionary</code> of all the attributes of the current channel. (key, value) = (name, value) <a href="#a3eef82f7c710339551dc6dd3475002e3">More...</a><br /></td></tr>
+<tr class="separator:a3eef82f7c710339551dc6dd3475002e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> class: Contains the representation of an IIO context.</p>
@@ -265,6 +275,46 @@ Public Attributes</h2></td></tr>
 
 <p>Releases all resource used by the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> object.</p>
 <p>Call <a class="el" href="classiio_1_1Context.html#adc35e6f453bdb4e4209d9e7dee76c0cc" title="Releases all resource used by the iio.Context object.">Dispose</a> when you are finished using the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a>. The <a class="el" href="classiio_1_1Context.html#adc35e6f453bdb4e4209d9e7dee76c0cc" title="Releases all resource used by the iio.Context object.">Dispose</a> method leaves the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> in an unusable state. After calling <a class="el" href="classiio_1_1Context.html#adc35e6f453bdb4e4209d9e7dee76c0cc" title="Releases all resource used by the iio.Context object.">Dispose</a>, you must release all references to the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> so the garbage collector can reclaim the memory that the <a class="el" href="classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context.">iio.Context</a> was occupying.</p>
+
+</div>
+</div>
+<a id="a9aa5bf7e06b078acab4a7a9567c109bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9aa5bf7e06b078acab4a7a9567c109bf">&#9670;&nbsp;</a></span>find_device()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Device.html">Device</a> iio.Context.find_device </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>device</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the device with the given name from the current context.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">device</td><td>The name of the device.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">System.Exception</td><td>There is no device with the given name.</td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -426,6 +476,31 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>A XML representation of the current context.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Property Documentation</h2>
+<a id="a3eef82f7c710339551dc6dd3475002e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3eef82f7c710339551dc6dd3475002e3">&#9670;&nbsp;</a></span>attrs</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Dictionary&lt;string, string&gt; iio.Context.attrs</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">get</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>A <code>Dictionary</code> of all the attributes of the current channel. (key, value) = (name, value)</p>
 
 </div>
 </div>

@@ -82,8 +82,10 @@ $(document).ready(function(){initNavTree('classiio_1_1Channel.html','');});
 
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="classiio_1_1Channel-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">iio.Channel Class Reference</div>  </div>
@@ -93,6 +95,117 @@ $(document).ready(function(){initNavTree('classiio_1_1Channel.html','');});
 <p><a class="el" href="classiio_1_1Channel.html" title="iio.Channel class: Contains the representation of an input or output channel.">iio.Channel</a> class: Contains the representation of an input or output channel. 
  <a href="classiio_1_1Channel.html#details">More...</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a0fb67718975decc040a97c6cda065eee"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee">ChannelModifier</a> { <br />
+&#160;&#160;<b>IIO_NO_MOD</b>, 
+<b>IIO_MOD_X</b>, 
+<b>IIO_MOD_Y</b>, 
+<b>IIO_MOD_Z</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_X_AND_Y</b>, 
+<b>IIO_MOD_X_AND_Z</b>, 
+<b>IIO_MOD_Y_AND_Z</b>, 
+<b>IIO_MOD_X_AND_Y_AND_Z</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_X_OR_Y</b>, 
+<b>IIO_MOD_X_OR_Z</b>, 
+<b>IIO_MOD_Y_OR_Z</b>, 
+<b>IIO_MOD_X_OR_Y_OR_Z</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_LIGHT_BOTH</b>, 
+<b>IIO_MOD_LIGHT_IR</b>, 
+<b>IIO_MOD_ROOT_SUM_SQUARED_X_Y</b>, 
+<b>IIO_MOD_SUM_SQUARED_X_Y_Z</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_LIGHT_CLEAR</b>, 
+<b>IIO_MOD_LIGHT_RED</b>, 
+<b>IIO_MOD_LIGHT_GREEN</b>, 
+<b>IIO_MOD_LIGHT_BLUE</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_QUATERNION</b>, 
+<b>IIO_MOD_TEMP_AMBIENT</b>, 
+<b>IIO_MOD_TEMP_OBJECT</b>, 
+<b>IIO_MOD_NORTH_MAGN</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_NORTH_TRUE</b>, 
+<b>IIO_MOD_NORTH_MAGN_TILT_COMP</b>, 
+<b>IIO_MOD_NORTH_TRUE_TILT_COMP</b>, 
+<b>IIO_MOD_RUNNING</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_JOGGING</b>, 
+<b>IIO_MOD_WALKING</b>, 
+<b>IIO_MOD_STILL</b>, 
+<b>IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_I</b>, 
+<b>IIO_MOD_Q</b>, 
+<b>IIO_MOD_CO2</b>, 
+<b>IIO_MOD_VOC</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_LIGHT_UV</b>, 
+<b>IIO_MOD_LIGHT_DUV</b>, 
+<b>IIO_MOD_PM1</b>, 
+<b>IIO_MOD_PM2P5</b>, 
+<br />
+&#160;&#160;<b>IIO_MOD_PM4</b>, 
+<b>IIO_MOD_PM10</b>, 
+<b>IIO_MOD_ETHANOL</b>, 
+<b>IIO_MOD_H2</b>
+<br />
+ }<tr class="memdesc:a0fb67718975decc040a97c6cda065eee"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee" title="iio.Channel.ChannelModifier class: Contains the available channel modifiers.">iio.Channel.ChannelModifier</a> class: Contains the available channel modifiers. <a href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:a0fb67718975decc040a97c6cda065eee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57f13debcf0ff524fb8ae8613c6599da"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da">ChannelType</a> { <br />
+&#160;&#160;<b>IIO_VOLTAGE</b>, 
+<b>IIO_CURRENT</b>, 
+<b>IIO_POWER</b>, 
+<b>IIO_ACCEL</b>, 
+<br />
+&#160;&#160;<b>IIO_ANGL_VEL</b>, 
+<b>IIO_MAGN</b>, 
+<b>IIO_LIGHT</b>, 
+<b>IIO_INTENSITY</b>, 
+<br />
+&#160;&#160;<b>IIO_PROXIMITY</b>, 
+<b>IIO_TEMP</b>, 
+<b>IIO_INCLI</b>, 
+<b>IIO_ROT</b>, 
+<br />
+&#160;&#160;<b>IIO_ANGL</b>, 
+<b>IIO_TIMESTAMP</b>, 
+<b>IIO_CAPACITANCE</b>, 
+<b>IIO_ALTVOLTAGE</b>, 
+<br />
+&#160;&#160;<b>IIO_CCT</b>, 
+<b>IIO_PRESSURE</b>, 
+<b>IIO_HUMIDITYRELATIVE</b>, 
+<b>IIO_ACTIVITY</b>, 
+<br />
+&#160;&#160;<b>IIO_STEPS</b>, 
+<b>IIO_ENERGY</b>, 
+<b>IIO_DISTANCE</b>, 
+<b>IIO_VELOCITY</b>, 
+<br />
+&#160;&#160;<b>IIO_CONCENTRATION</b>, 
+<b>IIO_RESISTANCE</b>, 
+<b>IIO_PH</b>, 
+<b>IIO_UVINDEX</b>, 
+<br />
+&#160;&#160;<b>IIO_ELECTRICALCONDUCTIVITY</b>, 
+<b>IIO_COUNT</b>, 
+<b>IIO_INDEX</b>, 
+<b>IIO_GRAVITY</b>, 
+<br />
+&#160;&#160;<b>IIO_POSITIONRELATIVE</b>, 
+<b>IIO_PHASE</b>, 
+<b>IIO_MASSCONCENTRATION</b>, 
+<b>IIO_CHAN_TYPE_UNKNOWN</b> = Int32.MaxValue
+<br />
+ }<tr class="memdesc:a57f13debcf0ff524fb8ae8613c6599da"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da" title="iio.Channel.ChannelType class: Contains the available channel types.">iio.Channel.ChannelType</a> class: Contains the available channel types. <a href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:a57f13debcf0ff524fb8ae8613c6599da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab0205ddf3f2f16b804eace62557a0610"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#ab0205ddf3f2f16b804eace62557a0610">enable</a> ()</td></tr>
@@ -110,6 +223,21 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7eda7ca0cbf91d49d52d7ea8bef0151c"><td class="memItemLeft" align="right" valign="top">uint&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a7eda7ca0cbf91d49d52d7ea8bef0151c">write</a> (<a class="el" href="classiio_1_1IOBuffer.html">IOBuffer</a> buffer, byte[] array, bool raw=false)</td></tr>
 <tr class="memdesc:a7eda7ca0cbf91d49d52d7ea8bef0151c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the specified array of samples corresponding to this channel into the given <a class="el" href="classiio_1_1IOBuffer.html" title="iio.IOBuffer class: The class used for all I/O operations.">iio.IOBuffer</a> object. <a href="#a7eda7ca0cbf91d49d52d7ea8bef0151c">More...</a><br /></td></tr>
 <tr class="separator:a7eda7ca0cbf91d49d52d7ea8bef0151c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89d5dc152580f8bf83597832e073df42"><td class="memItemLeft" align="right" valign="top">long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a89d5dc152580f8bf83597832e073df42">get_index</a> ()</td></tr>
+<tr class="memdesc:a89d5dc152580f8bf83597832e073df42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the index of this channel. <a href="#a89d5dc152580f8bf83597832e073df42">More...</a><br /></td></tr>
+<tr class="separator:a89d5dc152580f8bf83597832e073df42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8138947c0cefeaaf1bf87448acf51355"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Attr.html">Attr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a8138947c0cefeaaf1bf87448acf51355">find_attribute</a> (string attribute)</td></tr>
+<tr class="memdesc:a8138947c0cefeaaf1bf87448acf51355"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the attribute of the current channel with the given name. <a href="#a8138947c0cefeaaf1bf87448acf51355">More...</a><br /></td></tr>
+<tr class="separator:a8138947c0cefeaaf1bf87448acf51355"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a942e10b2242e296bf75f183ea4b841a5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Device.html">Device</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a942e10b2242e296bf75f183ea4b841a5">get_device</a> ()</td></tr>
+<tr class="memdesc:a942e10b2242e296bf75f183ea4b841a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the device of the current channel. <a href="#a942e10b2242e296bf75f183ea4b841a5">More...</a><br /></td></tr>
+<tr class="separator:a942e10b2242e296bf75f183ea4b841a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30cc0d41bf46de22bd6401f7bda61122"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a30cc0d41bf46de22bd6401f7bda61122">convert</a> (IntPtr dst, IntPtr src)</td></tr>
+<tr class="memdesc:a30cc0d41bf46de22bd6401f7bda61122"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts the data from the hardware format to the format of the arhitecture on which libiio is running. <a href="#a30cc0d41bf46de22bd6401f7bda61122">More...</a><br /></td></tr>
+<tr class="separator:a30cc0d41bf46de22bd6401f7bda61122"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2a951ac21bc0e05c4176aae4287dd77"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#ad2a951ac21bc0e05c4176aae4287dd77">convert_inverse</a> (IntPtr dst, IntPtr src)</td></tr>
+<tr class="memdesc:ad2a951ac21bc0e05c4176aae4287dd77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts the data from the arhitecture on which libiio is running to the hardware format. <a href="#ad2a951ac21bc0e05c4176aae4287dd77">More...</a><br /></td></tr>
+<tr class="separator:ad2a951ac21bc0e05c4176aae4287dd77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -128,10 +256,144 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a8c293243f2ca9ea86da1e633b5441bd9"><td class="memItemLeft" align="right" valign="top">readonly List&lt; <a class="el" href="classiio_1_1Attr.html">Attr</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a8c293243f2ca9ea86da1e633b5441bd9">attrs</a></td></tr>
 <tr class="memdesc:a8c293243f2ca9ea86da1e633b5441bd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <code>list</code> of all the attributes that this channel has. <a href="#a8c293243f2ca9ea86da1e633b5441bd9">More...</a><br /></td></tr>
 <tr class="separator:a8c293243f2ca9ea86da1e633b5441bd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:ade4aa6fcb830ef383db4695e8b65ade0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee">ChannelModifier</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#ade4aa6fcb830ef383db4695e8b65ade0">modifier</a><code> [get]</code></td></tr>
+<tr class="memdesc:ade4aa6fcb830ef383db4695e8b65ade0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The modifier of this channel. <a href="#ade4aa6fcb830ef383db4695e8b65ade0">More...</a><br /></td></tr>
+<tr class="separator:ade4aa6fcb830ef383db4695e8b65ade0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a8e7a2aef01d07302fdc71975d274d2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da">ChannelType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classiio_1_1Channel.html#a0a8e7a2aef01d07302fdc71975d274d2">type</a><code> [get]</code></td></tr>
+<tr class="memdesc:a0a8e7a2aef01d07302fdc71975d274d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of this channel. <a href="#a0a8e7a2aef01d07302fdc71975d274d2">More...</a><br /></td></tr>
+<tr class="separator:a0a8e7a2aef01d07302fdc71975d274d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classiio_1_1Channel.html" title="iio.Channel class: Contains the representation of an input or output channel.">iio.Channel</a> class: Contains the representation of an input or output channel.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="a0fb67718975decc040a97c6cda065eee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0fb67718975decc040a97c6cda065eee">&#9670;&nbsp;</a></span>ChannelModifier</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee">iio.Channel.ChannelModifier</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p><a class="el" href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee" title="iio.Channel.ChannelModifier class: Contains the available channel modifiers.">iio.Channel.ChannelModifier</a> class: Contains the available channel modifiers.</p>
+
+</div>
+</div>
+<a id="a57f13debcf0ff524fb8ae8613c6599da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a57f13debcf0ff524fb8ae8613c6599da">&#9670;&nbsp;</a></span>ChannelType</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da">iio.Channel.ChannelType</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p><a class="el" href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da" title="iio.Channel.ChannelType class: Contains the available channel types.">iio.Channel.ChannelType</a> class: Contains the available channel types.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a30cc0d41bf46de22bd6401f7bda61122"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a30cc0d41bf46de22bd6401f7bda61122">&#9670;&nbsp;</a></span>convert()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void iio.Channel.convert </td>
+          <td>(</td>
+          <td class="paramtype">IntPtr&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">IntPtr&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts the data from the hardware format to the format of the arhitecture on which libiio is running.</p>
+
+</div>
+</div>
+<a id="ad2a951ac21bc0e05c4176aae4287dd77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2a951ac21bc0e05c4176aae4287dd77">&#9670;&nbsp;</a></span>convert_inverse()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void iio.Channel.convert_inverse </td>
+          <td>(</td>
+          <td class="paramtype">IntPtr&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">IntPtr&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts the data from the arhitecture on which libiio is running to the hardware format.</p>
+
+</div>
+</div>
 <a id="a525ca933e1fb97de56a0fe862385b18b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a525ca933e1fb97de56a0fe862385b18b">&#9670;&nbsp;</a></span>disable()</h2>
 
@@ -183,6 +445,96 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Enable the current channel, so that it can be used for I/O operations.</p>
+
+</div>
+</div>
+<a id="a8138947c0cefeaaf1bf87448acf51355"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8138947c0cefeaaf1bf87448acf51355">&#9670;&nbsp;</a></span>find_attribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Attr.html">Attr</a> iio.Channel.find_attribute </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>attribute</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the attribute of the current channel with the given name.</p>
+<dl class="section return"><dt>Returns</dt><dd>iio.Channel.ChannelAttr</dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">System.Exception</td><td>There is no attribute with the given name.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a942e10b2242e296bf75f183ea4b841a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a942e10b2242e296bf75f183ea4b841a5">&#9670;&nbsp;</a></span>get_device()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Device.html">Device</a> iio.Channel.get_device </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Finds the device of the current channel.</p>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device.">iio.Device</a></dd></dl>
+
+</div>
+</div>
+<a id="a89d5dc152580f8bf83597832e073df42"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89d5dc152580f8bf83597832e073df42">&#9670;&nbsp;</a></span>get_index()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">long iio.Channel.get_index </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the index of this channel.</p>
 
 </div>
 </div>
@@ -429,6 +781,55 @@ Here is the call graph for this function:</div>
 
 <p>Contains <code>true</code> if the channel is a scan element, <code>false</code> otherwise.</p>
 <p>If a channel is a scan element, then it is possible to enable it and use it for I/O operations.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Property Documentation</h2>
+<a id="ade4aa6fcb830ef383db4695e8b65ade0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade4aa6fcb830ef383db4695e8b65ade0">&#9670;&nbsp;</a></span>modifier</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Channel.html#a0fb67718975decc040a97c6cda065eee">ChannelModifier</a> iio.Channel.modifier</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">get</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The modifier of this channel.</p>
+
+</div>
+</div>
+<a id="a0a8e7a2aef01d07302fdc71975d274d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0a8e7a2aef01d07302fdc71975d274d2">&#9670;&nbsp;</a></span>type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classiio_1_1Channel.html#a57f13debcf0ff524fb8ae8613c6599da">ChannelType</a> iio.Channel.type</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">get</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The type of this channel.</p>
 
 </div>
 </div>

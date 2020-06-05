@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>iio &mdash; libiio-py 0.19.g6fc25d5 documentation</title>
+  <title>iio &mdash; libiio-py 0.19.g4372fa3 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -817,9 +817,7 @@
 
 
 <span class="k">def</span> <span class="nf">iio_strerror</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Get a string description of an error code.&quot;&quot;&quot;</span>
-
     <span class="n">b_buf</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
     <span class="n">_iio_strerror</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">b_buf</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
 
@@ -828,7 +826,7 @@
 <span class="n">backends</span> <span class="o">=</span> <span class="p">[</span><span class="n">_get_backend</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_get_backends_count</span><span class="p">())]</span>
 
 
-<span class="k">class</span> <span class="nc">_attr</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_Attr</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
@@ -862,19 +860,17 @@
     <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ChannelAttr</span><span class="p">(</span><span class="n">_attr</span><span class="p">):</span>
-
+<span class="k">class</span> <span class="nc">ChannelAttr</span><span class="p">(</span><span class="n">_Attr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents an attribute of a channel.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the ChannelAttr class.</span>
+<span class="sd">        Initialize a new instance of the ChannelAttr class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            channel: type=iio.Channel</span>
-<span class="sd">                A valid instance of the iio.Channel class.</span>
-<span class="sd">            name: type=str</span>
-<span class="sd">                The channel attribute&#39;s name</span>
+<span class="sd">        :param channel: type=iio.Channel</span>
+<span class="sd">            A valid instance of the iio.Channel class.</span>
+<span class="sd">        :param name: type=str</span>
+<span class="sd">            The channel attribute&#39;s name</span>
 
 <span class="sd">        returns: type=iio.ChannelAttr</span>
 <span class="sd">            A new instance of this class</span>
@@ -893,19 +889,17 @@
         <span class="n">_c_write_attr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
 
 
-<span class="k">class</span> <span class="nc">DeviceAttr</span><span class="p">(</span><span class="n">_attr</span><span class="p">):</span>
-
+<span class="k">class</span> <span class="nc">DeviceAttr</span><span class="p">(</span><span class="n">_Attr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents an attribute of an IIO device.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the DeviceAttr class.</span>
+<span class="sd">        Initialize a new instance of the DeviceAttr class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            device: type=iio.Device</span>
-<span class="sd">                A valid instance of the iio.Device class.</span>
-<span class="sd">            name: type=str</span>
-<span class="sd">                The device attribute&#39;s name</span>
+<span class="sd">        :param device: type=iio.Device</span>
+<span class="sd">            A valid instance of the iio.Device class.</span>
+<span class="sd">        :param name: type=str</span>
+<span class="sd">            The device attribute&#39;s name</span>
 
 <span class="sd">        returns: type=iio.DeviceAttr</span>
 <span class="sd">            A new instance of this class</span>
@@ -923,18 +917,16 @@
 
 
 <div class="viewcode-block" id="DeviceDebugAttr"><a class="viewcode-back" href="../device.html#iio.DeviceDebugAttr">[docs]</a><span class="k">class</span> <span class="nc">DeviceDebugAttr</span><span class="p">(</span><span class="n">DeviceAttr</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Represents a debug attribute of an IIO device.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the DeviceDebugAttr class.</span>
+<span class="sd">        Initialize a new instance of the DeviceDebugAttr class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            device: type=iio.Device</span>
-<span class="sd">                A valid instance of the iio.Device class.</span>
-<span class="sd">            name: type=str</span>
-<span class="sd">                The device debug attribute&#39;s name</span>
+<span class="sd">        :param device: type=iio.Device</span>
+<span class="sd">             A valid instance of the iio.Device class.</span>
+<span class="sd">        :param name: type=str</span>
+<span class="sd">             The device debug attribute&#39;s name</span>
 
 <span class="sd">        returns: type=iio.DeviceDebugAttr</span>
 <span class="sd">            A new instance of this class</span>
@@ -955,13 +947,12 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the DeviceBufferAttr class.</span>
+<span class="sd">        Initialize a new instance of the DeviceBufferAttr class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            device: type=iio.Device</span>
-<span class="sd">                A valid instance of the iio.Device class.</span>
-<span class="sd">            name: type=str</span>
-<span class="sd">                The device buffer attribute&#39;s name</span>
+<span class="sd">        :param device: type=iio.Device</span>
+<span class="sd">            A valid instance of the iio.Device class.</span>
+<span class="sd">        :param name: type=str</span>
+<span class="sd">            The device buffer attribute&#39;s name</span>
 
 <span class="sd">        returns: type=iio.DeviceBufferAttr</span>
 <span class="sd">            A new instance of this class</span>
@@ -982,11 +973,10 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_channel</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Channel class.</span>
+<span class="sd">        Initialize a new instance of the Channel class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            _channel: type=_ChannelPtr</span>
-<span class="sd">                Pointer to an IIO Channel.</span>
+<span class="sd">        :param _channel: type=_ChannelPtr</span>
+<span class="sd">            Pointer to an IIO Channel.</span>
 
 <span class="sd">        returns: type=iio.Channel</span>
 <span class="sd">            An new instance of this class</span>
@@ -1010,12 +1000,11 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Extract the samples corresponding to this channel from the given iio.Buffer object.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            buf: type=iio.Buffer</span>
-<span class="sd">                A valid instance of the iio.Buffer class</span>
-<span class="sd">            raw: type=bool</span>
-<span class="sd">                If set to True, the samples are not converted from their</span>
-<span class="sd">                native format to their host format</span>
+<span class="sd">        :param buf: type=iio.Buffer</span>
+<span class="sd">            A valid instance of the iio.Buffer class</span>
+<span class="sd">        :param raw: type=bool</span>
+<span class="sd">            If set to True, the samples are not converted from their</span>
+<span class="sd">            native format to their host format</span>
 
 <span class="sd">        returns: type=bytearray</span>
 <span class="sd">            An array containing the samples for this channel</span>
@@ -1033,14 +1022,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write the specified array of samples corresponding to this channel into the given iio.Buffer object.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            buf: type=iio.Buffer</span>
-<span class="sd">                A valid instance of the iio.Buffer class</span>
-<span class="sd">            array: type=bytearray</span>
-<span class="sd">                The array containing the samples to copy</span>
-<span class="sd">            raw: type=bool</span>
-<span class="sd">                If set to True, the samples are not converted from their</span>
-<span class="sd">                host format to their native format</span>
+<span class="sd">        :param buf: type=iio.Buffer</span>
+<span class="sd">            A valid instance of the iio.Buffer class</span>
+<span class="sd">        :param array: type=bytearray</span>
+<span class="sd">            The array containing the samples to copy</span>
+<span class="sd">        :param raw: type=bool</span>
+<span class="sd">            If set to True, the samples are not converted from their</span>
+<span class="sd">            host format to their native format</span>
 
 <span class="sd">        returns: type=int</span>
 <span class="sd">            The number of bytes written</span>
@@ -1088,7 +1076,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This channel&#39;s corresponding device.</span>
+<span class="sd">        Corresponding device for the channel.</span>
 <span class="sd">        type: iio.Device</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">c_dev</span> <span class="o">=</span> <span class="n">_channel_get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
@@ -1096,15 +1084,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This channel&#39;s index</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Index for the channel.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_channel_get_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">data_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This channel&#39;s data format.</span>
+<span class="sd">        Channel data format.</span>
 <span class="sd">        type: iio.DataFormat</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_channel_get_data_format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">)</span><span class="o">.</span><span class="n">contents</span>
@@ -1112,7 +1098,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">modifier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This channel&#39;s modifier.</span>
+<span class="sd">        Channel modifier.</span>
 <span class="sd">        type: iio.ChannelModifier(Enum)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">ChannelModifier</span><span class="p">(</span><span class="n">_channel_get_modifier</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span>
@@ -1120,20 +1106,19 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This channel&#39;s type.</span>
+<span class="sd">        Type for the channel.</span>
 <span class="sd">        type: iio.ChannelType(Enum)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">ChannelType</span><span class="p">(</span><span class="n">_channel_get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Channel.convert"><a class="viewcode-back" href="../channel.html#iio.Channel.convert">[docs]</a>    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts src and saves the result in dst, using current channel&#39;s data format.</span>
+<span class="sd">        Convert src and saves the result in dst, using current channel&#39;s data format.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            dst: type=list</span>
-<span class="sd">                The variable where the result is stored.</span>
-<span class="sd">            src: type=list</span>
-<span class="sd">                Data to be converted.</span>
+<span class="sd">        :param dst: type=list</span>
+<span class="sd">            The variable where the result is stored.</span>
+<span class="sd">        :param src: type=list</span>
+<span class="sd">            Data to be converted.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
         <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
@@ -1143,11 +1128,10 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert the sample from host format to hardware format.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            dst: type=list</span>
-<span class="sd">                The variable where the result is stored.</span>
-<span class="sd">            src: type=list</span>
-<span class="sd">                Data to be converted.</span>
+<span class="sd">        :param dst: type=list</span>
+<span class="sd">            The variable where the result is stored.</span>
+<span class="sd">        :param src: type=list</span>
+<span class="sd">            Data to be converted.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
         <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
@@ -1155,21 +1139,19 @@
 
 
 <div class="viewcode-block" id="Buffer"><a class="viewcode-back" href="../buffer.html#iio.Buffer">[docs]</a><span class="k">class</span> <span class="nc">Buffer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;The class used for all I/O operations.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">samples_count</span><span class="p">,</span> <span class="n">cyclic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Buffer class.</span>
+<span class="sd">        Initialize a new instance of the Buffer class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            device: type=iio.Device</span>
-<span class="sd">                The iio.Device object that represents the device where the I/O</span>
-<span class="sd">                operations will be performed</span>
-<span class="sd">            samples_count: type=int</span>
-<span class="sd">                The size of the buffer, in samples</span>
-<span class="sd">            circular: type=bool</span>
-<span class="sd">                If set to True, the buffer is circular</span>
+<span class="sd">        :param device: type=iio.Device</span>
+<span class="sd">            The iio.Device object that represents the device where the I/O</span>
+<span class="sd">            operations will be performed</span>
+<span class="sd">        :param samples_count: type=int</span>
+<span class="sd">            The size of the buffer, in samples</span>
+<span class="sd">        :param circular: type=bool</span>
+<span class="sd">            If set to True, the buffer is circular</span>
 
 <span class="sd">        returns: type=iio.Buffer</span>
 <span class="sd">            An new instance of this class</span>
@@ -1186,6 +1168,7 @@
         <span class="c1"># every iio.Buffer object is destroyed before its corresponding IIO Context.</span>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Destroy this buffer.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">_buffer_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
 
@@ -1201,9 +1184,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Submit the samples contained in this buffer to the hardware.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            samples_count: type=int</span>
-<span class="sd">                The number of samples to submit, default = full buffer</span>
+<span class="sd">        :param samples_count: type=int</span>
+<span class="sd">            The number of samples to submit, default = full buffer</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_buffer_push_partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">samples_count</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples_count</span><span class="p">)</span></div>
 
@@ -1214,7 +1196,6 @@
 <span class="sd">        returns: type=bytearray</span>
 <span class="sd">            An array containing the samples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">start</span> <span class="o">=</span> <span class="n">_buffer_start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
         <span class="n">end</span> <span class="o">=</span> <span class="n">_buffer_end</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
         <span class="n">array</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
@@ -1227,8 +1208,7 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Copy the given array of samples inside the Buffer object.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            array: type=bytearray</span>
+<span class="sd">        :param array: type=bytearray</span>
 <span class="sd">                The array containing the samples to copy</span>
 
 <span class="sd">        returns: type=int</span>
@@ -1245,18 +1225,15 @@
         <span class="k">return</span> <span class="n">length</span></div>
 
 <div class="viewcode-block" id="Buffer.cancel"><a class="viewcode-back" href="../buffer.html#iio.Buffer.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Cancels the current buffer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Cancel the current buffer.&quot;&quot;&quot;</span>
         <span class="n">_buffer_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Buffer.set_blocking_mode"><a class="viewcode-back" href="../buffer.html#iio.Buffer.set_blocking_mode">[docs]</a>    <span class="k">def</span> <span class="nf">set_blocking_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocking</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the buffer&#39;s blocking mode.</span>
+<span class="sd">        Set the buffer&#39;s blocking mode.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            blocking: type=boolean</span>
-<span class="sd">                True if in blocking_mode else False.</span>
+<span class="sd">        :param blocking: type=boolean</span>
+<span class="sd">            True if in blocking_mode else False.</span>
 
 <span class="sd">        returns: type=int</span>
 <span class="sd">            Return code from the C layer.</span>
@@ -1266,7 +1243,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This buffer&#39;s corresponding device.</span>
+<span class="sd">        Device for the buffer.</span>
 <span class="sd">        type: iio.Device</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="p">,</span> <span class="n">_buffer_get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">))</span>
@@ -1274,7 +1251,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">poll_fd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This buffer&#39;s poll_fd.</span>
+<span class="sd">        Poll_fd for the buffer.</span>
 <span class="sd">        type: int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_buffer_get_poll_fd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
@@ -1282,7 +1259,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This buffer&#39;s step size.</span>
+<span class="sd">        Step size for the buffer.</span>
 <span class="sd">        type: int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_buffer_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span></div>
@@ -1329,11 +1306,10 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a value to one register of this device.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            reg: type=int</span>
-<span class="sd">                The register address</span>
-<span class="sd">            value: type=int</span>
-<span class="sd">                The value that will be used for this register</span>
+<span class="sd">        :param reg: type=int</span>
+<span class="sd">            The register address</span>
+<span class="sd">        :param value: type=int</span>
+<span class="sd">            The value that will be used for this register</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_d_reg_write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
@@ -1341,9 +1317,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Read the content of a register of this device.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            reg: type=int</span>
-<span class="sd">                The register address</span>
+<span class="sd">        :param reg: type=int</span>
+<span class="sd">            The register address</span>
 
 <span class="sd">        returns: type=int</span>
 <span class="sd">            The value of the register</span>
@@ -1357,11 +1332,10 @@
 
 <span class="sd">        Find a IIO channel by its name or ID.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            name_or_id: type=str</span>
-<span class="sd">                The name or ID of the channel to find</span>
-<span class="sd">            is_output: type=bool</span>
-<span class="sd">                Set to True to search for an output channel</span>
+<span class="sd">        :param name_or_id: type=str</span>
+<span class="sd">            The name or ID of the channel to find</span>
+<span class="sd">        :param is_output: type=bool</span>
+<span class="sd">            Set to True to search for an output channel</span>
 
 <span class="sd">        returns: type=iio.Device or type=iio.Trigger</span>
 <span class="sd">            The IIO Device</span>
@@ -1380,9 +1354,8 @@
 
 <span class="sd">        Set the number of kernel buffers to use with the specified device.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            count: type=int</span>
-<span class="sd">                The number of kernel buffers</span>
+<span class="sd">        :param count: type=int</span>
+<span class="sd">            The number of kernel buffers</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_d_set_buffers_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
@@ -1390,10 +1363,11 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">sample_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Current sample size of this device.</span>
+<span class="sd">        Sample size of this device.</span>
 <span class="sd">        type: int</span>
 
-<span class="sd">        The sample size varies each time channels get enabled or disabled.&quot;&quot;&quot;</span>
+<span class="sd">        The sample size varies each time channels get enabled or disabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_get_sample_size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
 
     <span class="nb">id</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
@@ -1432,16 +1406,14 @@
 
 
 <div class="viewcode-block" id="Trigger"><a class="viewcode-back" href="../trigger.html#iio.Trigger">[docs]</a><span class="k">class</span> <span class="nc">Trigger</span><span class="p">(</span><span class="n">_DeviceOrTrigger</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO device that can act as a trigger.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Trigger class.</span>
+<span class="sd">        Initialize a new instance of the Trigger class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            _device: type=iio._DevicePtr</span>
-<span class="sd">                A pointer to an IIO device.</span>
+<span class="sd">        :param _device: type=iio._DevicePtr</span>
+<span class="sd">            A pointer to an IIO device.</span>
 
 <span class="sd">        returns: type=iio.Trigger</span>
 <span class="sd">            An new instance of this class</span>
@@ -1463,18 +1435,16 @@
 
 
 <div class="viewcode-block" id="Device"><a class="viewcode-back" href="../device.html#iio.Device">[docs]</a><span class="k">class</span> <span class="nc">Device</span><span class="p">(</span><span class="n">_DeviceOrTrigger</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO device.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Device class.</span>
+<span class="sd">        Initialize a new instance of the Device class.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            ctx: type=iio.Context</span>
-<span class="sd">                A valid instance of the iio.Context class.</span>
-<span class="sd">            _device: type=_DevicePtr</span>
-<span class="sd">                A pointer to an IIO device.</span>
+<span class="sd">        :param ctx: type=iio.Context</span>
+<span class="sd">            A valid instance of the iio.Context class.</span>
+<span class="sd">        :param _device: type=_DevicePtr</span>
+<span class="sd">            A pointer to an IIO device.</span>
 
 <span class="sd">        returns: type=iio.Device</span>
 <span class="sd">            An new instance of this class</span>
@@ -1504,19 +1474,18 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This device&#39;s context.</span>
+<span class="sd">        Context for the device.</span>
 <span class="sd">        type: iio.Context</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Context"><a class="viewcode-back" href="../context.html#iio.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO context.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_context</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Context class, using the local or the network backend of the IIO library.</span>
+<span class="sd">        Initialize a new instance of the Context class, using the local or the network backend of the IIO library.</span>
 
 <span class="sd">        returns: type=iio.Context</span>
 <span class="sd">            An new instance of this class</span>
@@ -1561,6 +1530,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="p">(</span><span class="n">major</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">minor</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Destroy this context.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)</span>
 
@@ -1568,9 +1538,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a timeout for I/O operations.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            timeout: type=int</span>
-<span class="sd">                The timeout value, in milliseconds</span>
+<span class="sd">        :param timeout: type=int</span>
+<span class="sd">            The timeout value, in milliseconds</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_set_timeout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span></div>
 
@@ -1588,9 +1557,8 @@
 
 <span class="sd">        Find a IIO device by its name or ID.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            name_or_id: type=str</span>
-<span class="sd">                The name or ID of the device to find</span>
+<span class="sd">        :param name_or_id: type=str</span>
+<span class="sd">            The name or ID of the device to find</span>
 
 <span class="sd">        returns: type=iio.Device or type=iio.Trigger</span>
 <span class="sd">            The IIO Device</span>
@@ -1633,12 +1601,11 @@
 
 
 <div class="viewcode-block" id="LocalContext"><a class="viewcode-back" href="../context.html#iio.LocalContext">[docs]</a><span class="k">class</span> <span class="nc">LocalContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Local IIO Context.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Context class, using the local backend of the IIO library.</span>
+<span class="sd">        Initialize a new instance of the Context class, using the local backend of the IIO library.</span>
 
 <span class="sd">        returns: type=iio.LocalContext</span>
 <span class="sd">            An new instance of this class</span>
@@ -1648,16 +1615,14 @@
 
 
 <div class="viewcode-block" id="XMLContext"><a class="viewcode-back" href="../context.html#iio.XMLContext">[docs]</a><span class="k">class</span> <span class="nc">XMLContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;XML IIO Context.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmlfile</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Context class, using the XML backend of the IIO library.</span>
+<span class="sd">        Initialize a new instance of the Context class, using the XML backend of the IIO library.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            xmlfile: type=str</span>
-<span class="sd">                Filename of the XML file to build the context from</span>
+<span class="sd">        :param xmlfile: type=str</span>
+<span class="sd">            Filename of the XML file to build the context from</span>
 
 <span class="sd">        returns: type=iio.XMLContext</span>
 <span class="sd">            An new instance of this class</span>
@@ -1667,16 +1632,14 @@
 
 
 <div class="viewcode-block" id="NetworkContext"><a class="viewcode-back" href="../context.html#iio.NetworkContext">[docs]</a><span class="k">class</span> <span class="nc">NetworkContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Network IIO Context.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a new instance of the Context class, using the network backend of the IIO library.</span>
+<span class="sd">        Initialize a new instance of the Context class, using the network backend of the IIO library.</span>
 
-<span class="sd">        parameters:</span>
-<span class="sd">            hostname: type=str</span>
-<span class="sd">                Hostname, IPv4 or IPv6 address where the IIO Daemon is running</span>
+<span class="sd">        :param hostname: type=str</span>
+<span class="sd">            Hostname, IPv4 or IPv6 address where the IIO Daemon is running</span>
 
 <span class="sd">        returns: type=iio.NetworkContext</span>
 <span class="sd">            An new instance of this class</span>
@@ -1686,9 +1649,7 @@
 
 
 <span class="k">def</span> <span class="nf">scan_contexts</span><span class="p">():</span>
-
-    <span class="sd">&quot;&quot;&quot;Scanning Context.&quot;&quot;&quot;</span>
-
+    <span class="sd">&quot;&quot;&quot;Scan Context.&quot;&quot;&quot;</span>
     <span class="n">scan_ctx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
     <span class="n">ptr</span> <span class="o">=</span> <span class="n">_POINTER</span><span class="p">(</span><span class="n">_ContextInfoPtr</span><span class="p">)()</span>
 
