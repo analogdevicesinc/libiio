@@ -3,12 +3,12 @@
 . CI/travis/lib.sh
 
 install_sphinx() {
-	if ! command_exists pip3 ; then
-		pip install sphinx
-		pip install sphinx-rtd-theme
+	if [ "$(python -c 'import sys; print(".".join(map(str, sys.version_info[:1])))')" -eq "3" ] ; then
+		sudo pip3 install sphinx
+		sudo pip3 install sphinx-rtd-theme
 	else
-		pip3 install sphinx
-		pip3 install sphinx-rtd-theme
+		sudo pip install sphinx
+		sudo pip install sphinx-rtd-theme
 	fi
 
 }
@@ -61,10 +61,9 @@ handle_default() {
 		libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar \
 		bzip2 gzip flex bison git lsb-release python3-pip libncurses5-dev libcdk5-dev
 
-	if [ -n "${GH_DOC_TOKEN}" ] ; then
-		sudo apt-get install -y doxygen man2html
-		install_sphinx
-	fi
+	sudo apt-get install -y doxygen man2html
+	install_sphinx
+	
 	if [ `sudo apt-cache search libserialport-dev | wc -l` -gt 0 ] ; then
 		sudo apt-get install -y libserialport-dev
 	fi
