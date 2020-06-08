@@ -69,8 +69,8 @@ class InstallWrapper(install):
             destdir = os.getenv("DESTDIR", "")
             if destdir:
                 destdir = os.path.join("${CMAKE_BINARY_DIR}", destdir)
-                out = find_recursive(destdir, "libiio.so")
-                _lib = _cdll(out, use_errno=True, use_last_error=True)
+                fulllibpath = find_recursive(destdir, "libiio.so")
+                _lib = _cdll(fulllibpath, use_errno=True, use_last_error=True)
             else:
                 _lib = _cdll(find_library(_iiolib), use_errno=True, use_last_error=True)
             if not _lib._name:
