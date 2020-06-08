@@ -21,14 +21,6 @@ handle_default() {
 
 	echo "### make"
 	make
-	if [ "$TRAVIS" = "true" ] ; then
-		# make sure the *.so can be found during make package
-		echo "### Installing package as root"
-		sudo make install
-		# get rid of anything that will cause a problem
-		echo "### Deleting install_manifest.txt (created as root)"
-		sudo rm ./install_manifest.txt
-	fi
 	if command_exists sphinx-build ; then
 		# to build the python doc, libiio and py-iio need to be installed
 		# so we need to re-do some minor things now that they are
