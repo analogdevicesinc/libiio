@@ -166,7 +166,6 @@ deploy:
       condition: "$TRAVIS_OS_NAME = osx"
       all_branches: true
   - provider: pypi
-    if: tag IS present
     skip_cleanup: true
     on:
       tags: true
