@@ -35,6 +35,15 @@ except:
     long_description = description
 
 
+def find_recursive(folder, filename):
+    import os
+
+    for root, dirs, files in os.walk(folder):
+        for file in files:
+            if file == filename:
+                return os.path.join(root, file)
+
+
 class InstallWrapper(install):
     """Before installing we check if the
     libiio library is actually installed"""
@@ -55,7 +64,15 @@ class InstallWrapper(install):
             # Non-windows, possibly Posix system
             _iiolib = "iio"
         try:
-            _lib = _cdll(find_library(_iiolib), use_errno=True, use_last_error=True)
+            import os
+
+            destdir = os.getenv("DESTDIR", "")
+            if destdir:
+                destdir = os.path.join("${CMAKE_BINARY_DIR}", destdir)
+                out = find_recursive(destdir, "libiio.so")
+                _lib = _cdll(out, use_errno=True, use_last_error=True)
+            else:
+                _lib = _cdll(find_library(_iiolib), use_errno=True, use_last_error=True)
             if not _lib._name:
                 raise OSError
         except OSError:
