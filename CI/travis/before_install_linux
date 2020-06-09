@@ -3,15 +3,34 @@
 . CI/travis/lib.sh
 
 install_sphinx() {
-	if [ "$(python -c 'import sys; print(".".join(map(str, sys.version_info[:1])))')" -eq "3" ] ; then
-		sudo pip3 install sphinx
-		sudo pip3 install sphinx-rtd-theme
-	else
-		sudo pip install sphinx
-		sudo pip install sphinx-rtd-theme
+	if command_exists python ; then
+		python --version
+		command -v python
+		python -m pip install -U pip
+		python -m pip install sphinx
+		python -m pip install sphinx-rtd-theme
 	fi
-
 }
+
+install_pyenv() {
+	if ! command_exists pyenv ; then
+		echo installing pyenv
+		git clone git://github.com/yyuu/pyenv.git $HOME/.pyenv
+		export PATH="$HOME/.pyenv/bin:$PATH"
+		export PYENV_ROOT="$HOME/.pyenv"
+	fi
+}
+
+install_python() {
+	echo "### installing python"
+	command -v pyenv
+	add_python_path
+	pyenv install --list | grep "^[[:space:]]*[0-9]"
+	pyenv install 3.6.3
+	pyenv global 3.6.3
+	add_python_path
+}
+
 
 handle_centos() {
 	# needed for man2html and a few other popular tools
@@ -24,23 +43,38 @@ handle_centos() {
 	yum -y install cmake libxml2-devel libusb1-devel libaio-devel \
 		bzip2 gzip rpm rpm-build redhat-lsb-core
 
-	# CENTOS 6 doesn't include python 3, it's too old.
-	if is_centos_at_least_ver "7" ; then
-		yum -y install python3-pip
+	# needed for building python with pyenv
+	yum install -y  gcc gcc-c++ make git patch openssl-devel zlib-devel readline-devel sqlite-devel bzip2-devel
+
+	# CentOS 6 & 7 don't work with doc, or the latest python.
+	# install_pyenv
+	# install_python
+
+	if [ "$(get_version | head -c 1)" = "7" ] ; then
+		# install Cmake3, and make it the default
+		yum -y install cmake3
+		alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake 10 \
+			--slave /usr/local/bin/ctest ctest /usr/bin/ctest \
+			--slave /usr/local/bin/cpack cpack /usr/bin/cpack \
+			--slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake \
+			--family cmake
+		alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
+			--slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
+			--slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
+			--slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
+			--family cmake
 	fi
 
 	if is_centos_at_least_ver "8" ; then
 		# On CentOS 8, avahi-devel & doxygen are in this repo; enable it
+		yum -y install yum-utils
 		yum config-manager --set-enabled PowerTools
+		# On CentOS 6 & 7, have issues building or packaging doc
+		yum -y install python3 doxygen man2html
+		install_sphinx
 	else
 		# On CentOS 8, cdk-devel (Curses Development Kit) does not exist yet
 		yum -y install ncurses-devel cdk-devel
-	fi
-
-	# CENTOS 6 will has issues with sphinx
-	if is_centos_at_least_ver "7" ; then
-		yum -y install doxygen man2html
-		install_sphinx
 	fi
 
 	yum -y install avahi-devel
@@ -56,13 +90,24 @@ handle_ubuntu_docker() {
 
 handle_default() {
 	sudo apt-get -qq update
+	sudo apt-get install -y apt-utils
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cmake graphviz \
 		libaio-dev libavahi-client-dev \
 		libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar \
-		bzip2 gzip flex bison git lsb-release python3-pip libncurses5-dev libcdk5-dev
+		bzip2 gzip flex bison git lsb-release libncurses5-dev libcdk5-dev
 
-	sudo apt-get install -y doxygen man2html
-	install_sphinx
+	# Most of these should be here, but are needed for building python by pyenv
+	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential \
+		libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+		wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev \
+		libffi-dev liblzma-dev python-openssl git
+
+	if ! is_arm ; then
+		install_pyenv
+		install_python
+		sudo apt-get install -y doxygen man2html
+		install_sphinx
+	fi
 	
 	if [ `sudo apt-cache search libserialport-dev | wc -l` -gt 0 ] ; then
 		sudo apt-get install -y libserialport-dev

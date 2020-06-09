@@ -27,6 +27,48 @@ echo_red()   { printf "\033[1;31m$*\033[m\n"; }
 echo_green() { printf "\033[1;32m$*\033[m\n"; }
 echo_blue()  { printf "\033[1;34m$*\033[m\n"; }
 
+backtrace() {
+	# shell backtraces only work on bash
+	if [ ! -z "${BASH}" ] ; then
+		local i=
+		i=${#FUNCNAME[@]}
+		((--i))
+
+		while (( i >= 0 ))
+		do
+			echo "${BASH_SOURCE[$i]}:${BASH_LINENO[$i]}.${FUNCNAME[$i]}()"
+			i=$((i - 1))
+		done
+	fi
+}
+
+add_python_path() {
+	echo "adding Python to the path"
+	if [ -d "$HOME/.pyenv/bin" -a "$(echo "$PATH" | grep .pyenv/bin | wc -c)" -eq "0" ] ; then
+		echo "adding $HOME/.pyenv/bin to path"
+		export PATH="$HOME/.pyenv/bin:$PATH"
+	fi
+	if [ -z "${PYENV_SHELL}" ] ; then
+		echo init pyenv
+		eval "$(pyenv init -)"
+	fi
+	if [ -d /opt/pyenv/versions/3.6.3/bin -a "$(echo "$PATH" | grep opt/pyenv/versions | wc -c)" -eq "0" ] ; then
+		echo adding python on opt to PATH
+		export PATH="/opt/pyenv/versions/3.6.3/bin:$PATH"
+	fi
+	if [ -d /root/.pyenv/versions/3.6.3/bin -a "$(echo "$PATH" | grep root/.pyenv/versions | wc -c)" -eq "0" ] ; then
+		echo adding python on root/.pyenv to PATH
+		export PATH="/root/.pyenv/versions/3.6.3/bin:$PATH"
+	fi
+	if ! command_exists python ; then
+		echo No python on path
+		echo "$PATH"
+	else
+		python --version
+		command -v python
+	fi
+}
+
 get_script_path() {
 	local script="$1"
 
@@ -345,6 +387,11 @@ is_ubuntu_at_least_ver() {
 is_centos_at_least_ver() {
 	[ "$(get_dist_id)" = "CentOS" ] || return 1
 	version_ge "$(get_version)" "$1"
+}
+
+is_arm() {
+	[ "$(dpkg --print-architecture)" = "armhf" ] || return 1
+	test "$(dpkg --print-architecture)" = "armhf"
 }
 
 print_github_api_rate_limits() {
