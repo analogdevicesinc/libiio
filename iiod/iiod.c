@@ -219,9 +219,14 @@ static void __avahi_client_cb(AvahiClient *client,
 			create_services(client);
 			break;
 		case AVAHI_CLIENT_FAILURE:
-			IIO_ERROR("Avahi: Client failure: %s\n",
+			if (avahi_client_errno(client) != AVAHI_ERR_DISCONNECTED) {
+				IIO_ERROR("Avahi: Client failure: %s\n",
 					avahi_strerror(avahi_client_errno(client)));
-			client_free();
+				break;
+			}
+			IIO_INFO("Avahi: server disconnected\n");
+			avahi_client_free(client);
+			avahi.group = NULL;
 			avahi.client = client_new();
 			break;
 		case AVAHI_CLIENT_S_COLLISION:
@@ -253,8 +258,10 @@ static AvahiClient * client_new(void)
 	AvahiClient * client;
 
 	client = avahi_client_new(avahi_threaded_poll_get(avahi.poll),
-			0, __avahi_client_cb, NULL, &ret);
-	if (!client) {
+			AVAHI_CLIENT_NO_FAIL, __avahi_client_cb, NULL, &ret);
+
+	/* No Daemon is handled by the avahi_start thread */
+	if (!client && ret != AVAHI_ERR_NO_DAEMON) {
 		IIO_ERROR("Avahi: failure creating client: %s (%d)\n",
 				avahi_strerror(ret), ret);
 	}
@@ -322,41 +329,90 @@ fail:
 
 #define IIOD_ON "iiod on "
 
-static int start_avahi(void)
+static void start_avahi_thd(struct thread_pool *pool, void *d)
 {
+
+	struct pollfd pfd[2];
 	int ret = ENOMEM;
 	char label[AVAHI_LABEL_MAX];
 	char host[AVAHI_LABEL_MAX - sizeof(IIOD_ON)];
+	struct timespec ts;
+	ts.tv_nsec = 0;
+	ts.tv_sec = 1;
 
-	ret = gethostname(host, sizeof(host));
-	if (!ret) {
+	pfd[1].fd = thread_pool_get_poll_fd(main_thread_pool);
+	pfd[1].events = POLLIN;
+	pfd[1].revents = 0;
+
+	while(true) {
+		if (pfd[1].revents & POLLIN) /* STOP event */
+			break;
+
+		ret = gethostname(host, sizeof(host));
+		IIO_ERROR("host %s\n", host);
+		if (ret || !strncmp(host, "none", sizeof("none") - 1))
+			goto again;
+
 		iio_snprintf(label, sizeof(label), "%s%s", IIOD_ON, host);
-	} else {
-		iio_snprintf(label, sizeof(label), "iiod");
+
+		if (!avahi.name)
+			avahi.name = avahi_strdup(label);
+		if (!avahi.name)
+			break;
+
+		if (!avahi.poll)
+			avahi.poll = avahi_threaded_poll_new();
+		if (!avahi.poll) {
+			goto again;
+		}
+
+		if (!avahi.client)
+			avahi.client = client_new();
+		if (avahi.client)
+			break;
+again:
+		IIO_INFO("Avahi didn't start, try again later\n");
+		nanosleep(&ts, NULL);
+		ts.tv_sec++;
+		/* If it hasn't started in 10 times over 60 seconds,
+		 * it is not going to, so stop
+		 */
+		if (ts.tv_sec >= 11)
+			break;
 	}
 
-	avahi.name = avahi_strdup(label);
-	if (!avahi.name)
-		return -ENOMEM;
-
-	avahi.poll = avahi_threaded_poll_new();
-	if (!avahi.poll) {
+	if (avahi.client && avahi.poll) {
+		avahi_threaded_poll_start(avahi.poll);
+		IIO_INFO("Avahi: Started.\n");
+	} else  {
 		shutdown_avahi();
-		return -ENOMEM;
+		IIO_INFO("Avahi: Failed to start.\n");
 	}
-
-	avahi.client = client_new();
-	if (!avahi.client) {
-		shutdown_avahi();
-		return -ENOMEM;
-	}
-
-	avahi_threaded_poll_start(avahi.poll);
-	IIO_INFO("Avahi: Started.\n");
-
-	return 0;
 }
 
+static void start_avahi(void)
+{
+	int ret;
+	char err_str[1024];
+
+	IIO_INFO("Attempting to start Avahi\n");
+
+	avahi.poll = NULL;
+	avahi.client = NULL;
+	avahi.group = NULL;
+	avahi.name = NULL;
+
+	/* In case dbus, or avahi deamon are not started, we create a thread
+	 * that tries a few times to attach, if it can't within the first
+	 * minute, it gives up.
+	 */
+	ret = thread_pool_add_thread(main_thread_pool, start_avahi_thd, NULL, "avahi_thd");
+	if (ret) {
+		iio_strerror(ret, err_str, sizeof(err_str));
+		IIO_ERROR("Failed to create new Avahi thread: %s\n",
+				err_str);
+	}
+}
 static void stop_avahi(void)
 {
 	shutdown_avahi();
@@ -441,9 +497,6 @@ static int main_server(struct iio_context *ctx, bool debug)
 	struct pollfd pfd[2];
 	char err_str[1024];
 	bool ipv6;
-#ifdef HAVE_AVAHI
-	bool avahi_started;
-#endif
 
 	IIO_INFO("Starting IIO Daemon version %u.%u.%s\n",
 			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
@@ -490,7 +543,7 @@ static int main_server(struct iio_context *ctx, bool debug)
 	}
 
 #ifdef HAVE_AVAHI
-	avahi_started = !start_avahi();
+	start_avahi();
 #endif
 
 	pfd[0].fd = fd;
@@ -580,8 +633,7 @@ static int main_server(struct iio_context *ctx, bool debug)
 
 	IIO_DEBUG("Cleaning up\n");
 #ifdef HAVE_AVAHI
-	if (avahi_started)
-		stop_avahi();
+	stop_avahi();
 #endif
 	close(fd);
 	return EXIT_SUCCESS;
