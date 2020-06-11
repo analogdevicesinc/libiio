@@ -100,9 +100,14 @@ addons:
     secure: "q0dQ9MrhnOCo031McxSdQIqw4N6tEyAZLq7mdbWkAJcXOh/CX58NjFvcdSfamleDUYRmg7KpCZPPgnbx2JtqVvWJv8aNnr67CE1GIjRP1Fxh2WaKS+VK+I6rro7GwCO2C9d+uffCt63LfZKqddF1T7vMI2IgHcu9irc5LCuw6Wo="
 
 before_install:
-  - if [[ "$ARCH" == "arm" ]] ; then ./CI/travis/setup_qemu_for_arm.sh ${OS_VERSION} ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      if [[ "$ARCH" == "arm" ]] ; then
+        ./CI/travis/setup_qemu_for_arm.sh ${OS_VERSION} ;
+      else
+        ./CI/travis/before_install_linux "$OS_TYPE" ;
+      fi
+    fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./CI/travis/before_install_darwin ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./CI/travis/before_install_linux "$OS_TYPE" ; fi
   - if [[ -n "$COVERITY_SCAN_PROJECT_NAME" ]] ; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [ -n "$COVERITY_SCAN_PROJECT_NAME" -a "$TRAVIS_EVENT_TYPE" == "cron" ] ; then curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | bash || true ; fi
 
