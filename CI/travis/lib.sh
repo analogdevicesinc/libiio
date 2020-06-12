@@ -298,7 +298,8 @@ upload_file_to_swdownloads() {
 	}
 
 	# limit things to a few files, so things don't grow forever
-	if [ "${EXT}" = ".deb" ] ; then
+	# we only do this on one build so simultaneous builds don't clobber each other
+	if [ -n "${GH_DOC_TOKEN}" ] ; then
 		for files in $(ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
 			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
 		do
