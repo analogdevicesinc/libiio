@@ -222,7 +222,7 @@ brew_install_if_not_exists() {
 }
 
 sftp_cmd_pipe() {
-	sftp "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}"
+	sftp -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}"
 }
 
 sftp_rm_artifact() {
@@ -310,15 +310,15 @@ upload_file_to_swdownloads() {
 	# limit things to a few files, so things don't grow forever
 	# we only do this on one build so simultaneous builds don't clobber each other
 	if [ -n "${GH_DOC_TOKEN}" ] ; then
-		for files in $(ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+		for files in $(ssh -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
 			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
 		do
-			ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+			ssh -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
 				"rm ${DEPLOY_TO}/${files}" || \
 				return 1
 		done
 		# provide an index so people can find files.
-		ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+		ssh -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
 			"ls -lt ${DEPLOY_TO}" | grep ${LIBNAME} > ${LIBNAME}_index.html
 		sftp_rm_artifact "${LIBNAME}_index.html" || \
 			echo_blue "Could not delete ${LIBNAME}_index.html"
