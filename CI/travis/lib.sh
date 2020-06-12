@@ -238,16 +238,26 @@ sftp_upload() {
 	local TO="$2"
 	local LATE="$3"
 
-	sftp_cmd_pipe <<-EOF
-		cd ${DEPLOY_TO}
+	if [ -n "${LATE}" ] ; then
+		sftp_cmd_pipe <<-EOF
+			cd ${DEPLOY_TO}
 
-		put ${FROM} ${TO}
-		ls -l ${TO}
+			put ${FROM} ${TO}
+			ls -l ${TO}
 
-		symlink ${TO} ${LATE}
-		ls -l ${LATE}
-		bye
-	EOF
+			symlink ${TO} ${LATE}
+			ls -l ${LATE}
+			bye
+		EOF
+	else
+		sftp_cmd_pipe <<-EOF
+			cd ${DEPLOY_TO}
+
+			put ${FROM} ${TO}
+			ls -l ${TO}
+			bye
+		EOF
+	fi
 }
 
 upload_file_to_swdownloads() {
@@ -307,6 +317,12 @@ upload_file_to_swdownloads() {
 				"rm ${DEPLOY_TO}/${files}" || \
 				return 1
 		done
+		# provide an index so people can find files.
+		ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+			"ls -lt ${DEPLOY_TO}" | grep ${LIBNAME} > ${LIBNAME}_index.html
+		sftp_rm_artifact "${LIBNAME}_index.html" || \
+			echo_blue "Could not delete ${LIBNAME}_index.html"
+		sftp_upload "${LIBNAME}_index.html" "${LIBNAME}_index.html"
 	fi
 
 	return 0
