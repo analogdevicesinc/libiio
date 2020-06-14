@@ -95,7 +95,6 @@ matrix:
         - TRIGGER_NEXT_BUILD=true
 
 addons:
-  artifacts: true
   ssh_known_hosts:
     secure: "q0dQ9MrhnOCo031McxSdQIqw4N6tEyAZLq7mdbWkAJcXOh/CX58NjFvcdSfamleDUYRmg7KpCZPPgnbx2JtqVvWJv8aNnr67CE1GIjRP1Fxh2WaKS+VK+I6rro7GwCO2C9d+uffCt63LfZKqddF1T7vMI2IgHcu9irc5LCuw6Wo="
 
