@@ -7,6 +7,7 @@ install_sphinx() {
 		python --version
 		command -v python
 		python -m pip install -U pip
+		python -m pip install -U setuptools
 		python -m pip install sphinx
 		python -m pip install sphinx-rtd-theme
 	fi
