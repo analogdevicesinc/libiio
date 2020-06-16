@@ -9,7 +9,34 @@ handle_default() {
 	mkdir -p build
 	cd build
 
-	FLAGS="-DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON"
+	add_python_path
+	if command_exists python ; then
+		command -v python
+		python --version
+
+		PYTHON_HELP="-DPYTHON_BINDINGS=ON \
+			-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())") \
+			-DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))") \
+			-DPYTHON_EXECUTABLE=$(command -v python)"
+		if command_exists sphinx-build ; then
+			DOC_HELP="-DWITH_DOC=ON"
+		fi
+	else
+		echo No Python
+		if command_exists doxygen ; then
+			DOC_HELP="-DWITH_DOC=ON"
+		fi
+	fi
+	if [ ! -n "${DOC_HELP}" ] ; then
+		if command_exists man2html ; then
+			echo doc and man
+			MAN_HELP="-DWITH_MAN=ON"
+		fi
+	else
+		MAN_HELP="-DWITH_MAN=ON"
+	fi
+
+	FLAGS="-DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DWITH_EXAMPLES=ON ${PYTHON_HELP} ${DOC_HELP} ${MAN_HELP}"
 
 	echo "### cmake ${FLAGS}"
 	cmake ${FLAGS} ..
@@ -21,42 +48,35 @@ handle_default() {
 
 	echo "### make"
 	make
-	if [ "$TRAVIS" = "true" ] ; then
-		# make sure the *.so can be found during make package
-		echo "### Installing package as root"
-		sudo make install
-		# get rid of anything that will cause a problem
-		echo "### Deleting install_manifest.txt (created as root)"
-		sudo rm ./install_manifest.txt
-	fi
-	if command_exists sphinx-build ; then
-		# to build the python doc, libiio and py-iio need to be installed
-		# so we need to re-do some minor things now that they are
-		FLAGS="${FLAGS} -DWITH_DOC=ON -DWITH_MAN=ON"
-		echo "### cmake ${FLAGS}"
-		cmake ${FLAGS} ..
-		echo "### make"
-		make
-		# check the error output if either file isn't empty
-		if [ -s ./Dox_output_libiio -o -s ./Dox_output_csharp -o -s ./Spx_output_python ] ; then
-			if [ -s ./Dox_output_libiio ] ; then
-				echo "### ERRORs in Dox_output_libiio"
-				cat ./Dox_output_libiio
-			fi
-			if [ -s ./Dox_output_csharp ] ; then
-				echo "### ERRORs in Dox_output_csharp"
-				cat ./Dox_output_csharp
-			fi
-			if [ -s ./Spx_output_python ] ; then
-				echo "### ERRRORs in Spx_output_python"
-				cat ./Spx_output_python
-			fi
-			exit 1
-		else
-			echo "### No errors in Doc"
-			ls -l Dox_output_csharp Dox_output_libiio Spx_output_python
+
+	# check the error output if either file is not empty
+	if [ -s ./Dox_output_libiio -o -s ./Dox_output_csharp -o -s ./Spx_output_python ] ; then
+		if [ -s ./Dox_output_libiio ] ; then
+			echo "### ERRORs in Dox_output_libiio"
+			cat ./Dox_output_libiio
+		fi
+		if [ -s ./Dox_output_csharp ] ; then
+			echo "### ERRORs in Dox_output_csharp"
+			cat ./Dox_output_csharp
+		fi
+		if [ -s ./Spx_output_python ] ; then
+			echo "### ERRRORs in Spx_output_python"
+			cat ./Spx_output_python
+		fi
+		exit 1
+	else
+		echo "### No errors in Doc"
+		if [ -f Dox_output_csharp ] ; then
+			ls -l Dox_output_csharp
+		fi
+		if [ -f Dox_output_libiio ] ; then
+			ls -l Dox_output_libiio
+		fi
+		if [ -f Spx_output_python ] ; then
+			ls -l Spx_output_python
 		fi
 	fi
+
 	echo "### make package"
 	make package
 	if [ -n "${GH_DOC_TOKEN}" ] && \
@@ -73,6 +93,7 @@ handle_default() {
 }
 
 handle_centos() {
+	echo "handle centos"
 	mkdir -p build
 	cd build
 	cmake -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON ..

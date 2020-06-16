@@ -27,6 +27,48 @@ echo_red()   { printf "\033[1;31m$*\033[m\n"; }
 echo_green() { printf "\033[1;32m$*\033[m\n"; }
 echo_blue()  { printf "\033[1;34m$*\033[m\n"; }
 
+backtrace() {
+	# shell backtraces only work on bash
+	if [ ! -z "${BASH}" ] ; then
+		local i=
+		i=${#FUNCNAME[@]}
+		((--i))
+
+		while (( i >= 0 ))
+		do
+			echo "${BASH_SOURCE[$i]}:${BASH_LINENO[$i]}.${FUNCNAME[$i]}()"
+			i=$((i - 1))
+		done
+	fi
+}
+
+add_python_path() {
+	echo "adding Python to the path"
+	if [ -d "$HOME/.pyenv/bin" -a "$(echo "$PATH" | grep .pyenv/bin | wc -c)" -eq "0" ] ; then
+		echo "adding $HOME/.pyenv/bin to path"
+		export PATH="$HOME/.pyenv/bin:$PATH"
+	fi
+	if [ -z "${PYENV_SHELL}" ] ; then
+		echo init pyenv
+		eval "$(pyenv init -)"
+	fi
+	if [ -d /opt/pyenv/versions/3.6.3/bin -a "$(echo "$PATH" | grep opt/pyenv/versions | wc -c)" -eq "0" ] ; then
+		echo adding python on opt to PATH
+		export PATH="/opt/pyenv/versions/3.6.3/bin:$PATH"
+	fi
+	if [ -d /root/.pyenv/versions/3.6.3/bin -a "$(echo "$PATH" | grep root/.pyenv/versions | wc -c)" -eq "0" ] ; then
+		echo adding python on root/.pyenv to PATH
+		export PATH="/root/.pyenv/versions/3.6.3/bin:$PATH"
+	fi
+	if ! command_exists python ; then
+		echo No python on path
+		echo "$PATH"
+	else
+		python --version
+		command -v python
+	fi
+}
+
 get_script_path() {
 	local script="$1"
 
@@ -180,7 +222,22 @@ brew_install_if_not_exists() {
 }
 
 sftp_cmd_pipe() {
-	sftp "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}"
+	sftp -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}"
+}
+
+sftp_run_cmds() {
+	local x=5
+	while [ "${x}" -gt "0" ] ; do
+		sftp -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" 0< "$1" && break;
+		echo_red "failed to ssh, trying again"
+		x=$((x  - 1))
+		sleep 10
+	done
+	if [ "${x}" -eq "0" ] ; then
+		echo_red "failed to upload files"
+		return 1;
+	fi
+	return 0
 }
 
 sftp_rm_artifact() {
@@ -188,6 +245,7 @@ sftp_rm_artifact() {
 	sftp_cmd_pipe <<-EOF
 		cd ${DEPLOY_TO}
 		rm ${artifact}
+		bye
 	EOF
 }
 
@@ -196,16 +254,26 @@ sftp_upload() {
 	local TO="$2"
 	local LATE="$3"
 
-	sftp_cmd_pipe <<-EOF
-		cd ${DEPLOY_TO}
+	if [ -n "${LATE}" ] ; then
+		sftp_cmd_pipe <<-EOF
+			cd ${DEPLOY_TO}
 
-		put ${FROM} ${TO}
-		ls -l ${TO}
+			put ${FROM} ${TO}
+			ls -l ${TO}
 
-		symlink ${TO} ${LATE}
-		ls -l ${LATE}
-		bye
-	EOF
+			symlink ${TO} ${LATE}
+			ls -l ${LATE}
+			bye
+		EOF
+	else
+		sftp_cmd_pipe <<-EOF
+			cd ${DEPLOY_TO}
+
+			put ${FROM} ${TO}
+			ls -l ${TO}
+			bye
+		EOF
+	fi
 }
 
 upload_file_to_swdownloads() {
@@ -245,26 +313,106 @@ upload_file_to_swdownloads() {
 	echo and "${branch}_${LIBNAME}${LDIST}${EXT}"
 	ssh -V
 
-	for rmf in ${TO} ${LATE} ; do
-		sftp_rm_artifact "${rmf}" || \
-			echo_blue "Could not delete ${rmf}"
-	done
+	local tmpfl=$(mktemp)
+	echo "cd ${DEPLOY_TO}" > "${tmpfl}"
+	echo "rm ${TO}" >> "${tmpfl}"
+	echo "rm ${LATE}" >> "${tmpfl}"
+	echo "put ${FROM} ${TO}" >> "${tmpfl}"
+	echo "symlink ${TO} ${LATE}" >> "${tmpfl}"
+	echo "ls -l ${TO}" >> "${tmpfl}"
+	echo "ls -l ${LATE}" >> "${tmpfl}"
+	echo "bye"  >> "${tmpfl}"
 
-	sftp_upload "${FROM}" "${TO}" "${LATE}" || {
-		echo_red "Failed to upload artifact from '${FROM}', to '${TO}', symlink '${LATE}'"
-		return 1
-	}
+	sftp_run_cmds "${tmpfl}"
+	rm "${tmpfl}"
 
+	return 0
+}
+
+remove_old_pkgs() {
 	# limit things to a few files, so things don't grow forever
-	if [ "${EXT}" = ".deb" ] ; then
-		for files in $(ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
-			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
-		do
-			ssh "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
-				"rm ${DEPLOY_TO}/${files}" || \
-				return 1
-		done
+	# we only do this on one build so simultaneous builds don't clobber each other
+	if [ -z "${GH_DOC_TOKEN}" ] ; then
+		return 0
 	fi
+
+	if [ -z "${TRAVIS_BUILD_DIR}" ] ; then
+		echo "TRAVIS_BUILD_DIR not set"
+		return 0
+	fi
+
+	if [ ! -d "${TRAVIS_BUILD_DIR}/.git" ] ; then
+		echo "No ${TRAVIS_BUILD_DIR}/.git to operate git on"
+		return 0
+	fi
+
+	local LIBNAME=$1
+	local old=
+
+	echo "Remove old packages from ${LIBNAME}"
+
+	if [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ] ; then
+		local branch="$TRAVIS_PULL_REQUEST_BRANCH"
+	else
+		local branch="$TRAVIS_BRANCH"
+	fi
+
+	local GLOB=${DEPLOY_TO}/${branch}_${LIBNAME}-*
+
+	# putting everything into a file, and connecting once decreases the chances
+	# for ssh issues, connections happen once, not every single file
+	local tmpfl=$(mktemp)
+	echo "cd ${DEPLOY_TO}" > "${tmpfl}"
+	for files in $(ssh -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+			"ls -lt ${GLOB}" | tail -n +100 | awk '{print $NF}')
+	do
+		echo "rm ${files}" >> "${tmpfl}"
+	done
+	echo "bye" >> "${tmpfl}"
+	# if it is only cd & bye, skip it
+	if [ "$(wc -l "${tmpfl}" | awk '{print $1}')" -gt "2" ] ; then
+		sftp_run_cmds "${tmpfl}"
+	fi
+	rm "${tmpfl}"
+	# provide an index so people can find files.
+	ssh -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+			"ls -lt ${DEPLOY_TO}" | grep "${LIBNAME}" > "${LIBNAME}_index.html"
+	echo "ls captured"
+
+	echo "cd ${DEPLOY_TO}" > "${tmpfl}"
+	# prune old / removed branches, leave things are are tags/branches
+	for old in $(sed 's/-> .*$//' libiio_index.html | \
+			awk  '{print $NF}' | grep -v master | sort | \
+			sed "s/_libiio-0.[0-9][0-9].g[a-z0-9]*-/ %% /" | \
+			grep "%%" | awk '{print $1}' | sort -u)
+	do
+		if [ "$(git --git-dir "${TRAVIS_BUILD_DIR}/.git" ls-remote --heads origin "${old}" | wc -l)" -ne "0" ] ; then
+			echo "${old} is a branch"
+		else
+			if [ "$(git --git-dir "${TRAVIS_BUILD_DIR}/.git" ls-remote --tags origin "${old}" | wc -l)" -ne "0" ] ; then
+				echo "${old} is a tag"
+			else
+				echo "${old} can be removed"
+				echo "rm ${old}_${LIBNAME}-*" >> "${tmpfl}"
+				echo "rm ${old}_latest_${LIBNAME}-*" >> "${tmpfl}"
+				echo "rm ${old}_lastest_${LIBNAME}-*" >> "${tmpfl}"
+			fi
+		fi
+	done
+	# cap things at 15, so we don't exceed the time
+	sed -i 16q "${tmpfl}"
+	echo "bye" >> "${tmpfl}"
+	# if it is only cd & bye, skip it
+	if [ "$(wc -l "${tmpfl}" | awk '{print $1}')" -gt "2" ] ; then
+		sftp_run_cmds "${tmpfl}"
+	fi
+	rm "${tmpfl}"
+
+	#Now that we removed things, do it again
+	rm "${LIBNAME}_index.html"
+	ssh -o "StrictHostKeyChecking no" "${EXTRA_SSH}" "${SSHUSER}@${SSHHOST}" \
+			"ls -lt ${DEPLOY_TO}" | grep "${LIBNAME}" > "${LIBNAME}_index.html"
+	sftp_upload "${LIBNAME}_index.html" "${LIBNAME}_index.html"
 
 	return 0
 }
@@ -345,6 +493,11 @@ is_ubuntu_at_least_ver() {
 is_centos_at_least_ver() {
 	[ "$(get_dist_id)" = "CentOS" ] || return 1
 	version_ge "$(get_version)" "$1"
+}
+
+is_arm() {
+	[ "$(dpkg --print-architecture)" = "armhf" ] || return 1
+	test "$(dpkg --print-architecture)" = "armhf"
 }
 
 print_github_api_rate_limits() {

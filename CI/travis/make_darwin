@@ -18,14 +18,6 @@ build_osx() {
 cd $TRAVIS_BUILD_DIR/build
 build_osx "-DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON"
 
-# do not do this in the function, it will not install twice.
-if [ "$TRAVIS" = "true" ] ; then
-	echo "### Installing package as root"
-	sudo make install
-	echo "### Deleting install_manifest.txt (created as root)"
-	sudo rm ./install_manifest.txt
-fi
-
 cd $TRAVIS_BUILD_DIR/build_tar
 build_osx "-DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON"
 echo "### make package"

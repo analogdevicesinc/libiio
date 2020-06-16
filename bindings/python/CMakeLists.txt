@@ -2,14 +2,28 @@ cmake_minimum_required(VERSION 2.8.7)
 project(libiio-py NONE)
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
+	message(STATUS "bin=${PYTHON_EXECUTABLE} lib=${PYTHON_LIBRARY} inc=${PYTHON_INCLUDE_DIR}")
 	include(FindPythonInterp)
 
 	# Set variables as they would be set by module FindPython,
 	# which is available from CMake 3.12.
 	set(Python_Interpreter_FOUND ${PYTHONINTERP_FOUND})
 	set(Python_EXECUTABLE ${PYTHON_EXECUTABLE})
+	message(STATUS "old")
 else()
+	if(PYTHON_EXECUTABLE)
+		set(Python_EXECUTABLE ${PYTHON_EXECUTABLE})
+	endif()
+	if (PYTHON_LIBRARY)
+		set(Python_LIBRARY ${PYTHON_LIBRARY})
+	endif()
+	if (PYTHON_INCLUDE_DIR)
+		set(Python_INCLUDE_DIR ${PYTHON_INCLUDE_DIR})
+	endif()
+	message(STATUS "bin=${Python_EXECUTABLE} lib=${Python_LIBRARY} inc=${Python_INCLUDE_DIR}")
 	find_package (Python COMPONENTS Interpreter)
+	message(STATUS "new")
+	message(STATUS "Python_EXECUTABLE ${Python_EXECUTABLE}")
 endif()
 
 if (Python_Interpreter_FOUND)
@@ -31,6 +45,10 @@ else()
 endif()
 
 if(WITH_DOC)
+	if(${CMAKE_VERSION} VERSION_LESS "3.2.0")
+		# cmake -E env was added in 3.2
+		message(FATAL_ERROR "Sorry, you can't build python doc with ancient cmake, please update")
+	endif()
 	find_program(SPHINX_EXECUTABLE
 		NAMES sphinx-build
 		DOC "Sphinx Documentation Builder (sphinx-doc.org)"
@@ -43,7 +61,8 @@ if(WITH_DOC)
 		${CMAKE_CURRENT_SOURCE_DIR}/doc/conf.py.in
 		${CMAKE_CURRENT_SOURCE_DIR}/doc/conf.py)
 	add_custom_command(TARGET libiio-py POST_BUILD
-		COMMAND ${SPHINX_EXECUTABLE}
+		COMMAND ${CMAKE_COMMAND} -E env "LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH}:${CMAKE_BINARY_DIR}"
+		${SPHINX_EXECUTABLE}
 			-b html
 			-n
 			-c ${CMAKE_CURRENT_SOURCE_DIR}/doc
