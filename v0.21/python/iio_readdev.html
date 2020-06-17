@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>iio_readdev &mdash; libiio-py 0.21.g565bf68 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="iio_writedev" href="iio_writedev.html" />
+    <link rel="prev" title="Examples" href="examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> libiio-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="examples.html#complete-application-examples">Complete Application Examples</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">iio_readdev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iio_attr.html">iio_attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iio_info.html">iio_info</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#code-snippets">Code Snippets</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">libiio-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="examples.html">Examples</a> &raquo;</li>
+        
+      <li>iio_readdev</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/iio_readdev.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="iio-readdev">
+<h1>iio_readdev<a class="headerlink" href="#iio-readdev" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line">iio_readdev is part of the Libiio package, a library that has been developed to ease the development of software interfacing Linux Industrial I/O (IIO) devices.</div>
+<div class="line">This tool is written using the libiio Python bindings. It works in the same way as the base iio_readdev works. You can find more informations about it on this <a class="reference external" href="https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_readdev?s[]=readdev">page</a>.</div>
+</div>
+<span class="target" id="module-iio_readdev"></span><p>Copyright (C) 2020 Analog Devices, Inc.
+Author: Cristian Iacob &lt;<a class="reference external" href="mailto:cristian&#46;iacob&#37;&#52;&#48;analog&#46;com">cristian<span>&#46;</span>iacob<span>&#64;</span>analog<span>&#46;</span>com</a>&gt;</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</p>
+<dl class="py class">
+<dt id="iio_readdev.Arguments">
+<em class="property">class </em><code class="sig-prename descclassname">iio_readdev.</code><code class="sig-name descname">Arguments</code><a class="reference internal" href="_modules/iio_readdev.html#Arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.Arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for parsing the input arguments.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="iio_readdev.BufferBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">iio_readdev.</code><code class="sig-name descname">BufferBuilder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">arguments</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#BufferBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.BufferBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for creating the buffer.</p>
+<dl class="py method">
+<dt id="iio_readdev.BufferBuilder.create">
+<code class="sig-name descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#BufferBuilder.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.BufferBuilder.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the IIO buffer.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="iio_readdev.ContextBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">iio_readdev.</code><code class="sig-name descname">ContextBuilder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">arguments</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#ContextBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.ContextBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for creating the requested context.</p>
+<dl class="py method">
+<dt id="iio_readdev.ContextBuilder.create">
+<code class="sig-name descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#ContextBuilder.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.ContextBuilder.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the requested context.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="iio_readdev.DataReader">
+<em class="property">class </em><code class="sig-prename descclassname">iio_readdev.</code><code class="sig-name descname">DataReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">arguments</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#DataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.DataReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for reading samples from the device.</p>
+<dl class="py method">
+<dt id="iio_readdev.DataReader.read">
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#DataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.DataReader.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read data from the buffer.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="iio_readdev.main">
+<code class="sig-prename descclassname">iio_readdev.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_readdev.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio_readdev.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Module’s main method.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="iio_writedev.html" class="btn btn-neutral float-right" title="iio_writedev" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Analog Devices, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

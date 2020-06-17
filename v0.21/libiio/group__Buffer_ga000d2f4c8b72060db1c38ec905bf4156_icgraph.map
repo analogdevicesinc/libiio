@@ -1,0 +1,6 @@
+<map id="iio_buffer_first" name="iio_buffer_first">
+<area shape="rect" id="node2" href="$group__Channel.html#gacd227a6861960ea2fb49d957f62887dd" title="Demultiplex the samples of a given channel. " alt="" coords="164,5,323,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30" title="Demultiplex and convert the samples of a given channel. " alt="" coords="179,56,308,83"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga350e81855764c159c6aefa12fb78e1c2" title="Multiplex the samples of a given channel. " alt="" coords="164,107,323,133"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2" title="Convert and multiplex the samples of a given channel. " alt="" coords="178,157,309,184"/>
+</map>

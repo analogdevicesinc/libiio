@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Device &mdash; libiio-py 0.21.g565bf68 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Channels" href="channel.html" />
+    <link rel="prev" title="Buffer" href="buffer.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> libiio-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Device</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#members">Members</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#device-attributes">Device attributes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">libiio-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Device</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/device.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="device">
+<h1>Device<a class="headerlink" href="#device" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="members">
+<h2>Members<a class="headerlink" href="#members" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="iio.Device">
+<em class="property">class </em><code class="sig-prename descclassname">iio.</code><code class="sig-name descname">Device</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">_device</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Device"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.Device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the representation of an IIO device.</p>
+<dl class="py method">
+<dt id="iio.Device.attrs">
+<em class="property">property </em><code class="sig-name descname">attrs</code><a class="headerlink" href="#iio.Device.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of attributes for this IIO device.
+type=dict of iio.DeviceAttr</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.buffer_attrs">
+<em class="property">property </em><code class="sig-name descname">buffer_attrs</code><a class="headerlink" href="#iio.Device.buffer_attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of buffer attributes for this IIO device.
+type=dict of iio.DeviceBufferAttr</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.channels">
+<em class="property">property </em><code class="sig-name descname">channels</code><a class="headerlink" href="#iio.Device.channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of channels available with this IIO device.
+type=list of iio.Channel objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.context">
+<em class="property">property </em><code class="sig-name descname">context</code><a class="headerlink" href="#iio.Device.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context for the device.
+type: iio.Context</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.debug_attrs">
+<em class="property">property </em><code class="sig-name descname">debug_attrs</code><a class="headerlink" href="#iio.Device.debug_attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of debug attributes for this IIO device.
+type=dict of iio.DeviceDebugAttr</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.find_channel">
+<code class="sig-name descname">find_channel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_or_id</span></em>, <em class="sig-param"><span class="n">is_output</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.find_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a IIO channel by its name or ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name_or_id</strong> – type=str
+The name or ID of the channel to find</p></li>
+<li><p><strong>is_output</strong> – type=bool
+Set to True to search for an output channel</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.id">
+<em class="property">property </em><code class="sig-name descname">id</code><a class="headerlink" href="#iio.Device.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>An identifier of this device, only valid in this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.name">
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#iio.Device.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this device.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.reg_read">
+<code class="sig-name descname">reg_read</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.reg_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the content of a register of this device.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>reg</strong> – type=int
+The register address</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=int</dt><dd><p>The value of the register</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.reg_write">
+<code class="sig-name descname">reg_write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reg</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.reg_write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a value to one register of this device.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reg</strong> – type=int
+The register address</p></li>
+<li><p><strong>value</strong> – type=int
+The value that will be used for this register</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.sample_size">
+<em class="property">property </em><code class="sig-name descname">sample_size</code><a class="headerlink" href="#iio.Device.sample_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample size of this device.
+type: int</p>
+<p>The sample size varies each time channels get enabled or disabled.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.set_kernel_buffers_count">
+<code class="sig-name descname">set_kernel_buffers_count</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">count</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.set_kernel_buffers_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the number of kernel buffers to use with the specified device.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>count</strong> – type=int
+The number of kernel buffers</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.Device.trigger">
+<em class="property">property </em><code class="sig-name descname">trigger</code><a class="headerlink" href="#iio.Device.trigger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the configured trigger for this IIO device.
+type=iio.Trigger</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<hr class="docutils" />
+<div class="section" id="device-attributes">
+<h2>Device attributes<a class="headerlink" href="#device-attributes" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="iio.DeviceDebugAttr">
+<em class="property">class </em><code class="sig-prename descclassname">iio.</code><code class="sig-name descname">DeviceDebugAttr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">device</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#DeviceDebugAttr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.DeviceDebugAttr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a debug attribute of an IIO device.</p>
+<dl class="py method">
+<dt id="iio.DeviceDebugAttr.filename">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#iio.DeviceDebugAttr.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>The filename in sysfs to which this attribute is bound.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.DeviceDebugAttr.name">
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#iio.DeviceDebugAttr.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this attribute.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.DeviceDebugAttr.value">
+<em class="property">property </em><code class="sig-name descname">value</code><a class="headerlink" href="#iio.DeviceDebugAttr.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current value of this attribute.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="iio.DeviceBufferAttr">
+<em class="property">class </em><code class="sig-prename descclassname">iio.</code><code class="sig-name descname">DeviceBufferAttr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">device</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#DeviceBufferAttr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#iio.DeviceBufferAttr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a buffer attribute of an IIO device.</p>
+<dl class="py method">
+<dt id="iio.DeviceBufferAttr.filename">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#iio.DeviceBufferAttr.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>The filename in sysfs to which this attribute is bound.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.DeviceBufferAttr.name">
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#iio.DeviceBufferAttr.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this attribute.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="iio.DeviceBufferAttr.value">
+<em class="property">property </em><code class="sig-name descname">value</code><a class="headerlink" href="#iio.DeviceBufferAttr.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current value of this attribute.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="channel.html" class="btn btn-neutral float-right" title="Channels" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="buffer.html" class="btn btn-neutral float-left" title="Buffer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Analog Devices, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
