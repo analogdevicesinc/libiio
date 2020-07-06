@@ -379,7 +379,13 @@ endif()
 
 configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
+include(cmake/JoinPaths.cmake)
+
+join_paths(libdir_for_pc_file "\${prefix}" "${CMAKE_INSTALL_LIBDIR}")
+join_paths(includedir_for_pc_file "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
+
 configure_file(libiio.pc.cmakein ${LIBIIO_PC} @ONLY)
 
 if(NOT SKIP_INSTALL_ALL)
