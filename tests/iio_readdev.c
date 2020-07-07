@@ -38,18 +38,16 @@ static const struct option options[] = {
 	  {"trigger", required_argument, 0, 't'},
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
-	  {"timeout", required_argument, 0, 'T'},
 	  {"auto", no_argument, 0, 'a'},
 	  {0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
-	"[-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>]"
+	"[-t <trigger>] [-b <buffer-size>]"
 		"[-s <samples>] <iio_device> [<channel> ...]",
 	"Use the specified trigger.",
 	"Size of the capture buffer. Default is 256.",
 	"Number of samples to capture, 0 = infinite. Default is 0.",
-	"Buffer timeout in milliseconds. 0 = no timeout",
 	"Scan for available contexts and if only one is available use it.",
 };
 
@@ -198,7 +196,6 @@ int main(int argc, char **argv)
 	int c;
 	struct iio_device *dev;
 	ssize_t sample_size;
-	int timeout = -1;
 	ssize_t ret;
 	struct option *opts;
 
@@ -219,6 +216,7 @@ int main(int argc, char **argv)
 		case 'n':
 		case 'x':
 		case 'u':
+		case 'T':
 			break;
 		case 'S':
 		case 'a':
@@ -247,13 +245,6 @@ int main(int argc, char **argv)
 			}
 			num_samples = sanitize_clamp("number of samples", optarg, 0, SIZE_MAX);
 			break;
-		case 'T':
-			if (!optarg) {
-				fprintf(stderr, "Timeout requires an argument\n");
-				return EXIT_FAILURE;
-			}
-			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
-			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
@@ -271,16 +262,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 
 	setup_sig_handler();
-
-	if (timeout >= 0) {
-		ret = iio_context_set_timeout(ctx, timeout);
-		if (ret < 0) {
-			char err_str[1024];
-			iio_strerror(-(int)ret, err_str, sizeof(err_str));
-			fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
-					err_str, ret);
-		}
-	}
 
 	dev = iio_context_find_device(ctx, argw[optind]);
 	if (!dev) {
