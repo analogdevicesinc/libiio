@@ -312,6 +312,7 @@ static const struct option options[] = {
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"generate-code", required_argument, 0, 'g'},
+	{"timeout", required_argument, 0, 't'},
 	/* Channel qualifiers */
 	{"input-channel", no_argument, 0, 'i'},
 	{"output-channel", no_argument, 0, 'o'},
@@ -336,6 +337,7 @@ static const char *options_descriptions[] = {
 	"Return result only.",
 	"Verbose, say what is going on",
 	"Generate code.",
+	"Context timeout in milliseconds. 0 = no timeout.",
 	/* Channel qualifiers */
 	"Filter Input Channels only.",
 	"Filter Output Channels only.",
@@ -348,13 +350,14 @@ static const char *options_descriptions[] = {
 	"Read/Write debug attributes.",
 };
 
-#define MY_OPTS "CdcBDiosIqvg:"
+#define MY_OPTS "CdcBDiosIqvg:t:"
 int main(int argc, char **argv)
 {
 	char **argw;
 	struct iio_context *ctx;
 	int c;
 	int device_index = 0, channel_index = 0, attr_index = 0;
+	int timeout = -1;
 	const char *gen_file = NULL;
 	bool search_device = false, ignore_case = false,
 		search_channel = false, search_buffer = false, search_debug = false,
@@ -440,6 +443,13 @@ int main(int argc, char **argv)
 			gen_code = true;
 			gen_file = optarg;
 			break;
+		case 't':
+			if (!optarg) {
+				fprintf(stderr, "Timeout requires an argument\n");
+				return EXIT_FAILURE;
+			}
+			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
+			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
@@ -453,6 +463,16 @@ int main(int argc, char **argv)
 
 	if (!ctx)
 		return EXIT_FAILURE;
+
+	if (timeout >= 0) {
+		ssize_t ret = iio_context_set_timeout(ctx, timeout);
+		if (ret < 0) {
+			char err_str[1024];
+			iio_strerror(-(int)ret, err_str, sizeof(err_str));
+			fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
+				err_str, ret);
+		}
+	}
 
 	if (gen_code) {
 		if (!gen_test_path(gen_file)) {
