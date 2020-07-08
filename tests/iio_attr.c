@@ -385,6 +385,7 @@ int main(int argc, char **argv)
 		case 'n':
 		case 'x':
 		case 'u':
+		case 'T':
 			break;
 		case 'S':
 			context_scan = true;

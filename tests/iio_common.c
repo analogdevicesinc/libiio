@@ -193,6 +193,7 @@ static const struct option common_options[] = {
 	{"uri", required_argument, 0, 'u'},
 	{"scan", optional_argument, 0, 'S'},
 	{"auto", optional_argument, 0, 'a'},
+	{"timeout", required_argument, 0, 'T'},
 	{0, 0, 0, 0},
 };
 
@@ -247,6 +248,8 @@ static const char *common_options_descriptions[] = {
 	"Scan for available contexts and if a single context is"
 		"\n\t\t\tavailable use it. <arg> filters backend(s)"
 		"\n\t\t\t    'ip', 'usb' or 'ip:usb:'",
+	"Context timeout in milliseconds."
+		"\n\t\t\t0 = no timeout (wait forever)",
 };
 
 
@@ -261,6 +264,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	bool do_scan = false, detect_context = false;
 	char buf[128];
 	struct option *opts;
+	int timeout = -1;
 
 	/* Setting opterr to zero disables error messages from getopt_long */
 	opterr = 0;
@@ -339,6 +343,13 @@ struct iio_context * handle_common_opts(char * name, int argc,
 					arg = argv[optind++];
 			}
 			break;
+		case 'T':
+			if (!optarg) {
+				fprintf(stderr, "Timeout requires an argument\n");
+				return NULL;
+			}
+			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
+			break;
 		case '?':
 			break;
 		}
@@ -370,6 +381,18 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, buf);
 		else
 			fprintf(stderr, "Unable to create Local IIO context : %s\n", buf);
+	}
+
+	if (ctx && timeout >= 0) {
+		ssize_t ret = iio_context_set_timeout(ctx, timeout);
+		if (ret < 0) {
+			char err_str[1024];
+			iio_strerror(-(int)ret, err_str, sizeof(err_str));
+			fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
+					err_str, ret);
+			iio_context_destroy(ctx);
+			return NULL;
+		}
 	}
 
 	return ctx;

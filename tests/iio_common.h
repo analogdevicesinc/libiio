@@ -51,7 +51,7 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
  * If such a character is followed by a colon, the option  requires  an  argument.
  * Two colons mean an option takes an optional argument.
  */
-#define COMMON_OPTIONS "hn:x:u:a::S::"
+#define COMMON_OPTIONS "hn:x:u:a::S::T:"
 
 struct iio_context * handle_common_opts(char * name, int argc,
 	char * const argv[], const char *optstring,

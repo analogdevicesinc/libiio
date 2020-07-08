@@ -106,8 +106,8 @@ static const struct option options[] = {
 	{"uri", required_argument, 0, 'u'},
 	{"buffer-size", required_argument, 0, 'b'},
 	{"samples", required_argument, 0, 's' },
-	{"timeout", required_argument, 0, 't'},
-	{"Threads", required_argument, 0, 'T'},
+	{"Timeout", required_argument, 0, 'T'},
+	{"threads", required_argument, 0, 't'},
 	{"verbose", no_argument, 0, 'v'},
 	{0, 0, 0, 0},
 };
@@ -430,13 +430,13 @@ int main(int argc, char **argv)
 			info.buffer_size = sanitize_clamp("buffersize", info.argv[info.arg_index],
 					min_samples, 1024 * 1024 * 4);
 			break;
-		case 't':
+		case 'T':
 			info.arg_index +=2;
 			/* ensure between least once a day and never (0) */
 			info.timeout = 1000 * sanitize_clamp("timeout", info.argv[info.arg_index],
 					0, 60 * 60 * 24);
 			break;
-		case 'T':
+		case 't':
 			info.arg_index +=2;
 			/* Max number threads 1024, min 1 */
 			info.num_threads = sanitize_clamp("threads", info.argv[info.arg_index],
