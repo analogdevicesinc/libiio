@@ -85,7 +85,7 @@ class InstallWrapper(install):
 
 config.update(
     dict(
-        name="libiio",
+        name="pylibiio",
         version="${VERSION}",
         maintainer="Analog Devices, Inc",
         maintainer_email="travis.collins@analog.com",
