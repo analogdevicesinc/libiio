@@ -5,7 +5,7 @@ This package contains the python bindings for libiio, a library for interfacing 
 libiio is used to interface to the Linux Industrial Input/Output (IIO) Subsystem. The Linux IIO subsystem is intended to provide support for devices that in some sense are analog to digital or digital to analog converters (ADCs, DACs). This includes, but is not limited to ADCs, Accelerometers, Gyros, IMUs, Capacitance to Digital Converters (CDCs), Pressure Sensors, Color, Light and Proximity Sensors, Temperature Sensors, Magnetometers, DACs, DDS (Direct Digital Synthesis), PLLs (Phase Locked Loops), Variable/Programmable Gain Amplifiers (VGA, PGA), and RF transceivers. You can use libiio natively on an embedded Linux target (local mode), or use libiio to communicate remotely to that same target from a host Linux, Windows or MAC over USB or Ethernet or Serial.
 
 [![Build Status](https://travis-ci.org/analogdevicesinc/libiio.svg?branch=master)](https://travis-ci.org/analogdevicesinc/libiio)
-[![PyPI version](https://badge.fury.io/py/libiio.svg)](https://badge.fury.io/py/libiio) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4bd027bfc5774029a30a9e1cedf5a434)](https://www.codacy.com/app/rgetz/libiio?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=analogdevicesinc/libiio&amp;utm_campaign=Badge_Grade)
+[![PyPI version](https://badge.fury.io/py/pylibiio.svg)](https://badge.fury.io/py/pylibiio) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4bd027bfc5774029a30a9e1cedf5a434)](https://www.codacy.com/app/rgetz/libiio?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=analogdevicesinc/libiio&amp;utm_campaign=Badge_Grade)
 ![open bugs](https://img.shields.io/github/issues/analogdevicesinc/libiio.svg)
 
 [[Docs](https://analogdevicesinc.github.io/libiio/v0.19/python/index.html)]
@@ -20,7 +20,7 @@ To use these bindings naturally you need the core library they depend upon, libi
 ### Installing the bindings
 To install these bindings there are a few methods. If you already have the library itself and just need the bindings, pip is the most convenient method:
 ```shell
-(sudo) pip install libiio
+(sudo) pip install pylibiio
 ```
 If you do not want to use pip, then installation is dependent on your operating system.
 #### Linux / macOS
