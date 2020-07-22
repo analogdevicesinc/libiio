@@ -1,9 +1,10 @@
 #!/bin/bash -e
 
-if [ -z "$TRAVIS_BUILD_DIR" ] ; then
-	header="../iio.h"
-else
-	header="$TRAVIS_BUILD_DIR/iio.h"
+header="@CMAKE_SOURCE_DIR@/iio.h"
+
+if [ ! -f "${header}" ] ; then
+	echo "Can not find iio.h at ${header}"
+	exit
 fi
 
 cat <<EOF
@@ -90,7 +91,7 @@ EOF
 tmp=$(grep @struct "${header}" | sed 's:^[[:space:]]*\*[[:space:]]*@::g' | awk '{print length($0)}' | sort -n | tail -1)
 echo  .TP $((tmp - 5))
 
-grep @struct ../iio.h -A 1 | \
+grep @struct ${header} -A 1 | \
 	sed -e 's:^[[:space:]]*\*[[:space:]]*@::g' \
        	    -e 's:struct[[:space:]]*:.TP\n.B :' \
 	    -e 's:brief[[:space:]]*::' \

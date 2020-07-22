@@ -4,8 +4,11 @@ if (WITH_MAN)
 	execute_process(
 		COMMAND ${DATE_EXECUTABLE} "+%d %B %Y"
 		OUTPUT_VARIABLE CMAKE_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/make_man.sh.in
+		${CMAKE_CURRENT_BINARY_DIR}/make_man.sh @ONLY)
 	execute_process(
-		COMMAND ${BASH_EXECUTABLE} "-c" "${CMAKE_CURRENT_SOURCE_DIR}/make_man.sh > ${CMAKE_BINARY_DIR}/libiio.3.in"
+		COMMAND ${BASH_EXECUTABLE} "-c" "${CMAKE_CURRENT_BINARY_DIR}/make_man.sh > ${CMAKE_BINARY_DIR}/libiio.3.in"
 		)
 	configure_file(
 		${CMAKE_BINARY_DIR}/libiio.3.in
