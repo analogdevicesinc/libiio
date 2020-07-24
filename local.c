@@ -901,6 +901,8 @@ err_freemem:
 	return ret;
 }
 
+static int local_close(const struct iio_device *dev);
+
 static int local_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
@@ -929,8 +931,8 @@ static int local_open(const struct iio_device *dev,
 	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
 	pdata->fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
 	if (pdata->fd == -1) {
-		ret = -errno;
-		goto err_close_cancel_fd;
+		close(pdata->cancel_fd);
+		return -errno;
 	}
 
 	/* Disable channels */
@@ -988,11 +990,7 @@ static int local_open(const struct iio_device *dev,
 
 	return 0;
 err_close:
-	close(pdata->fd);
-	pdata->fd = -1;
-err_close_cancel_fd:
-	close(pdata->cancel_fd);
-	pdata->cancel_fd = -1;
+	local_close(dev);
 	return ret;
 }
 
@@ -1000,16 +998,18 @@ static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	unsigned int i;
-	int ret;
 
 	if (pdata->fd == -1)
 		return -EBADF;
 
 	if (pdata->is_high_speed) {
 		unsigned int i;
-		for (i = 0; i < pdata->allocated_nb_blocks; i++)
-			munmap(pdata->addrs[i], pdata->blocks[i].size);
-		ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		if (pdata->addrs) {
+			for (i = 0; i < pdata->allocated_nb_blocks; i++)
+				munmap(pdata->addrs[i], pdata->blocks[i].size);
+		}
+		if (pdata->fd > -1)
+			ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
 		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
 		pdata->addrs = NULL;
@@ -1017,16 +1017,15 @@ static int local_close(const struct iio_device *dev)
 		pdata->blocks = NULL;
 	}
 
-	ret = close(pdata->fd);
-	if (ret)
-		return ret;
-
-	close(pdata->cancel_fd);
-
+	close(pdata->fd);
 	pdata->fd = -1;
-	pdata->cancel_fd = -1;
 
-	ret = local_buffer_enabled_set(dev, false);
+	if (pdata->cancel_fd > -1) {
+		close(pdata->cancel_fd);
+		pdata->cancel_fd = -1;
+	}
+
+	local_buffer_enabled_set(dev, false);
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
@@ -1035,7 +1034,7 @@ static int local_close(const struct iio_device *dev)
 			channel_write_state(chn, false);
 	}
 
-	return (ret < 0) ? ret : 0;
+	return 0;
 }
 
 static int local_get_fd(const struct iio_device *dev)
