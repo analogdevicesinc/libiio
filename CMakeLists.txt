@@ -86,6 +86,16 @@ elseif (CMAKE_COMPILER_IS_GNUCC)
 			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 		endif()
 	endif()
+
+	# Per http://www.mingw.org/wiki/Use_more_recent_defined_functions
+	if (MINGW)
+		# Build for Vista and above
+		# check mingw-w64-headers/include/w32api.h or windows sdkddkver.h
+		# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
+		# using a hex value is bad - but stops from loading the otherwise unnecessary headers
+		set(CMAKE_C_FLAGS "-D_WIN32_WINNT=0x600 ${CMAKE_C_FLAGS}")
+		set(CMAKE_C_FLAGS "-DWINVER=0x600 ${CMAKE_C_FLAGS}")
+	endif()
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter")
 else()
