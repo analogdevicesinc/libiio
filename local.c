@@ -97,7 +97,7 @@ struct iio_device_pdata {
 	struct block *blocks;
 	void **addrs;
 	int last_dequeued;
-	bool is_high_speed, cyclic, cyclic_buffer_enqueued, buffer_enabled;
+	bool is_high_speed, cyclic, cyclic_buffer_enqueued;
 
 	int cancel_fd;
 };
@@ -413,19 +413,10 @@ static ssize_t local_write(const struct iio_device *dev,
 		return ret;
 }
 
-static ssize_t local_enable_buffer(const struct iio_device *dev)
+static ssize_t local_buffer_enabled_set(const struct iio_device *dev, bool en)
 {
-	struct iio_device_pdata *pdata = dev->pdata;
-	ssize_t ret = 0;
-
-	if (!pdata->buffer_enabled) {
-		ret = local_write_dev_attr(dev,
-				"buffer/enable", "1", 2, false);
-		if (ret >= 0)
-			pdata->buffer_enabled = true;
-	}
-
-	return ret;
+	return local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
+				    2, false);
 }
 
 static int local_set_kernel_buffers_count(const struct iio_device *dev,
@@ -921,7 +912,7 @@ static int local_open(const struct iio_device *dev,
 	if (pdata->fd != -1)
 		return -EBUSY;
 
-	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+	ret = local_buffer_enabled_set(dev, false);
 	if (ret < 0)
 		return ret;
 
@@ -963,7 +954,6 @@ static int local_open(const struct iio_device *dev,
 
 	pdata->cyclic = cyclic;
 	pdata->cyclic_buffer_enqueued = false;
-	pdata->buffer_enabled = false;
 	pdata->samples_count = samples_count;
 
 	ret = enable_high_speed(dev);
@@ -992,7 +982,7 @@ static int local_open(const struct iio_device *dev,
 			goto err_close;
 	}
 
-	ret = local_enable_buffer(dev);
+	ret = local_buffer_enabled_set(dev, true);
 	if (ret < 0)
 		goto err_close;
 
@@ -1036,7 +1026,7 @@ static int local_close(const struct iio_device *dev)
 	pdata->fd = -1;
 	pdata->cancel_fd = -1;
 
-	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+	ret = local_buffer_enabled_set(dev, false);
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
