@@ -353,7 +353,7 @@ int main(int argc, char **argv)
 {
 	char **argw;
 	struct iio_context *ctx;
-	int c;
+	int c, argd = argc;
 	int device_index = 0, channel_index = 0, attr_index = 0;
 	const char *gen_file = NULL;
 	bool search_device = false, ignore_case = false,
@@ -371,13 +371,24 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	/*
+	 * getopt_long() thinks negative numbers are options, -1 is option '1'
+	 * The only time we should see a negative number is the last argument during a write,
+	 * so if there is one, we skip that argument during getopt processing
+	 * look for "-" followed by a number.
+	 */
+	if (strnlen(argv[argc - 1], 2) >= 2 && argv[argc - 1][0] == '-' && 
+			(argv[argc - 1][1] >= '0' && argv[argc - 1][1] <= '9')) {
+		argd--;
+	}
+
+	ctx = handle_common_opts(MY_NAME, argd, argw, MY_OPTS, options, options_descriptions);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
+	while ((c = getopt_long(argd, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
 					opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
