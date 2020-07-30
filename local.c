@@ -998,10 +998,14 @@ static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	unsigned int i;
+	char err_str[32];
+	int ret, ret1;
 
 	if (pdata->fd == -1)
 		return -EBADF;
 
+	ret = 0;
+	ret1 = 0;
 	if (pdata->is_high_speed) {
 		unsigned int i;
 		if (pdata->addrs) {
@@ -1009,7 +1013,12 @@ static int local_close(const struct iio_device *dev)
 				munmap(pdata->addrs[i], pdata->blocks[i].size);
 		}
 		if (pdata->fd > -1)
-			ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		if (ret) {
+			ret = -errno;
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Error during ioctl(): %s\n", err_str);
+		}
 		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
 		pdata->addrs = NULL;
@@ -1017,24 +1026,59 @@ static int local_close(const struct iio_device *dev)
 		pdata->blocks = NULL;
 	}
 
-	close(pdata->fd);
+	ret1 = close(pdata->fd);
+	if (ret1) {
+		ret1 = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during close() of main FD: %s\n", err_str);
+		if (ret == 0)
+			ret = ret1;
+	}
+
 	pdata->fd = -1;
 
 	if (pdata->cancel_fd > -1) {
 		close(pdata->cancel_fd);
 		pdata->cancel_fd = -1;
+
+		if (ret1) {
+			ret1 = -errno;
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Error during close() of cancel FD): %s\n",
+				  err_str);
+			if (ret == 0)
+				ret = ret1;
+		}
 	}
 
-	local_buffer_enabled_set(dev, false);
+	ret1 = local_buffer_enabled_set(dev, false);
+	if (ret1) {
+		ret1 = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during buffer disable: %s\n", err_str);
+		if (ret == 0)
+			ret = ret1;
+	}
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 
-		if (chn->pdata->enable_fn)
-			channel_write_state(chn, false);
+		if (!chn->pdata->enable_fn)
+			continue;
+
+		ret1 = channel_write_state(chn, false);
+		if (ret1 == 0)
+			continue;
+
+		ret1 = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during channel[%u] disable: %s\n",
+			  i, err_str);
+		if (ret == 0)
+			ret = ret1;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int local_get_fd(const struct iio_device *dev)
