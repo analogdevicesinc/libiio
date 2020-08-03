@@ -137,7 +137,7 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 		/* sanitized buffer by taking first 20 (or less) char */
 		iio_snprintf(buf, sizeof(buf), "%s", argv);
 		errno = 0;
-		val = strtoul(buf, &end, 10);
+		val = strtoul(buf, &end, 0);
 		if (buf == end || errno == ERANGE)
 			val = 0;
 	}
