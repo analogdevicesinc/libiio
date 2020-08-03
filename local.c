@@ -97,7 +97,7 @@ struct iio_device_pdata {
 	struct block *blocks;
 	void **addrs;
 	int last_dequeued;
-	bool is_high_speed, cyclic, cyclic_buffer_enqueued, buffer_enabled;
+	bool is_high_speed, cyclic, cyclic_buffer_enqueued;
 
 	int cancel_fd;
 };
@@ -413,19 +413,10 @@ static ssize_t local_write(const struct iio_device *dev,
 		return ret;
 }
 
-static ssize_t local_enable_buffer(const struct iio_device *dev)
+static ssize_t local_buffer_enabled_set(const struct iio_device *dev, bool en)
 {
-	struct iio_device_pdata *pdata = dev->pdata;
-	ssize_t ret = 0;
-
-	if (!pdata->buffer_enabled) {
-		ret = local_write_dev_attr(dev,
-				"buffer/enable", "1", 2, false);
-		if (ret >= 0)
-			pdata->buffer_enabled = true;
-	}
-
-	return ret;
+	return local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
+				    2, false);
 }
 
 static int local_set_kernel_buffers_count(const struct iio_device *dev,
@@ -910,6 +901,8 @@ err_freemem:
 	return ret;
 }
 
+static int local_close(const struct iio_device *dev);
+
 static int local_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
@@ -921,7 +914,7 @@ static int local_open(const struct iio_device *dev,
 	if (pdata->fd != -1)
 		return -EBUSY;
 
-	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+	ret = local_buffer_enabled_set(dev, false);
 	if (ret < 0)
 		return ret;
 
@@ -938,8 +931,8 @@ static int local_open(const struct iio_device *dev,
 	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
 	pdata->fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
 	if (pdata->fd == -1) {
-		ret = -errno;
-		goto err_close_cancel_fd;
+		close(pdata->cancel_fd);
+		return -errno;
 	}
 
 	/* Disable channels */
@@ -963,7 +956,6 @@ static int local_open(const struct iio_device *dev,
 
 	pdata->cyclic = cyclic;
 	pdata->cyclic_buffer_enqueued = false;
-	pdata->buffer_enabled = false;
 	pdata->samples_count = samples_count;
 
 	ret = enable_high_speed(dev);
@@ -992,17 +984,13 @@ static int local_open(const struct iio_device *dev,
 			goto err_close;
 	}
 
-	ret = local_enable_buffer(dev);
+	ret = local_buffer_enabled_set(dev, true);
 	if (ret < 0)
 		goto err_close;
 
 	return 0;
 err_close:
-	close(pdata->fd);
-	pdata->fd = -1;
-err_close_cancel_fd:
-	close(pdata->cancel_fd);
-	pdata->cancel_fd = -1;
+	local_close(dev);
 	return ret;
 }
 
@@ -1010,16 +998,27 @@ static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	unsigned int i;
-	int ret;
+	char err_str[32];
+	int ret, ret1;
 
 	if (pdata->fd == -1)
 		return -EBADF;
 
+	ret = 0;
+	ret1 = 0;
 	if (pdata->is_high_speed) {
 		unsigned int i;
-		for (i = 0; i < pdata->allocated_nb_blocks; i++)
-			munmap(pdata->addrs[i], pdata->blocks[i].size);
-		ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		if (pdata->addrs) {
+			for (i = 0; i < pdata->allocated_nb_blocks; i++)
+				munmap(pdata->addrs[i], pdata->blocks[i].size);
+		}
+		if (pdata->fd > -1)
+			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		if (ret) {
+			ret = -errno;
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Error during ioctl(): %s\n", err_str);
+		}
 		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
 		pdata->addrs = NULL;
@@ -1027,25 +1026,59 @@ static int local_close(const struct iio_device *dev)
 		pdata->blocks = NULL;
 	}
 
-	ret = close(pdata->fd);
-	if (ret)
-		return ret;
-
-	close(pdata->cancel_fd);
+	ret1 = close(pdata->fd);
+	if (ret1) {
+		ret1 = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during close() of main FD: %s\n", err_str);
+		if (ret == 0)
+			ret = ret1;
+	}
 
 	pdata->fd = -1;
-	pdata->cancel_fd = -1;
 
-	ret = local_write_dev_attr(dev, "buffer/enable", "0", 2, false);
+	if (pdata->cancel_fd > -1) {
+		close(pdata->cancel_fd);
+		pdata->cancel_fd = -1;
+
+		if (ret1) {
+			ret1 = -errno;
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Error during close() of cancel FD): %s\n",
+				  err_str);
+			if (ret == 0)
+				ret = ret1;
+		}
+	}
+
+	ret1 = local_buffer_enabled_set(dev, false);
+	if (ret1) {
+		ret1 = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during buffer disable: %s\n", err_str);
+		if (ret == 0)
+			ret = ret1;
+	}
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 
-		if (chn->pdata->enable_fn)
-			channel_write_state(chn, false);
+		if (!chn->pdata->enable_fn)
+			continue;
+
+		ret1 = channel_write_state(chn, false);
+		if (ret1 == 0)
+			continue;
+
+		ret1 = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during channel[%u] disable: %s\n",
+			  i, err_str);
+		if (ret == 0)
+			ret = ret1;
 	}
 
-	return (ret < 0) ? ret : 0;
+	return ret;
 }
 
 static int local_get_fd(const struct iio_device *dev)
