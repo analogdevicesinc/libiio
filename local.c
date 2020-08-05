@@ -1038,7 +1038,7 @@ static int local_close(const struct iio_device *dev)
 	pdata->fd = -1;
 
 	if (pdata->cancel_fd > -1) {
-		close(pdata->cancel_fd);
+		ret1 = close(pdata->cancel_fd);
 		pdata->cancel_fd = -1;
 
 		if (ret1) {
