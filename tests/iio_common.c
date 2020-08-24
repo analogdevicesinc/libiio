@@ -375,12 +375,12 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		ctx = iio_create_default_context();
 
 	if (!ctx && !do_scan && !detect_context) {
-		char buf[1024];
-		iio_strerror(errno, buf, sizeof(buf));
+		char err_str[1024];
+		iio_strerror(errno, err_str, sizeof(err_str));
 		if (arg)
-			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, buf);
+			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, err_str);
 		else
-			fprintf(stderr, "Unable to create Local IIO context : %s\n", buf);
+			fprintf(stderr, "Unable to create Local IIO context : %s\n", err_str);
 	}
 
 	if (ctx && timeout >= 0) {
