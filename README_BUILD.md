@@ -22,7 +22,7 @@ analog@precision:~$ sudo apt-get install doxygen graphviz
 ```
 Install to build python backends
 ```shell
-analog@precision:~$ sudo apt-get python3 python3-pip python3-setuptools
+analog@precision:~$ sudo apt-get install python3 python3-pip python3-setuptools
 ```
 Install to Read local context attributes from `/etc/libiio.ini`
 ```shell
