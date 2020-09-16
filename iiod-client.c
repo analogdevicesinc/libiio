@@ -75,6 +75,12 @@ static int iiod_client_exec_command(struct iiod_client *client,
 	int resp;
 	ssize_t ret;
 
+	if (client->ops->consume) {
+		ret = client->ops->consume(client->pdata);
+		if (ret)
+			return (int) ret;
+	}
+
 	ret = client->ops->write(client->pdata, desc, cmd, strlen(cmd));
 	if (ret < 0)
 		return (int) ret;

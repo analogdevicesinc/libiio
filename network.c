@@ -1193,6 +1193,38 @@ static ssize_t network_read_data(struct iio_context_pdata *pdata,
 	return network_recv(io_ctx, dst, len, 0);
 }
 
+static int network_consume(struct iio_context_pdata *pdata)
+{
+	int ret;
+	char dummy[1024];
+
+	set_blocking_mode(pdata->io_ctx.fd, false);
+
+	do {
+		ret = recv(pdata->io_ctx.fd, dummy, sizeof(dummy), 0);
+		if (!ret) {
+			ret = -EPIPE;
+			break;
+		} else if (ret < 0) {
+			int err;
+
+			err = network_get_error();
+			if (network_is_interrupted(err))
+				continue;
+
+			/* if we get this it means there's no stalled data so we can proceed */
+			if (network_should_retry(err))
+				ret = 0;
+
+			break;
+		}
+	} while (1);
+
+	set_blocking_mode(pdata->io_ctx.fd, true);
+
+	return ret;
+}
+
 static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		void *io_data, char *dst, size_t len)
 {
@@ -1265,6 +1297,7 @@ static const struct iiod_client_ops network_iiod_client_ops = {
 	.write = network_write_data,
 	.read = network_read_data,
 	.read_line = network_read_line,
+	.consume = network_consume,
 };
 
 #ifdef __linux__

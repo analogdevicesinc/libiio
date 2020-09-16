@@ -32,6 +32,7 @@ struct iiod_client_ops {
 			void *desc, char *dst, size_t len);
 	ssize_t (*read_line)(struct iio_context_pdata *pdata,
 			void *desc, char *dst, size_t len);
+	int (*consume)(struct iio_context_pdata *pdata);
 };
 
 struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
