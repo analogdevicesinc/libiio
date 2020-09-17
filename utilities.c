@@ -301,7 +301,7 @@ char * iio_getenv (char * envvar)
 	len = strnlen(hostname, tmp);
 
 	/* Should be smaller than max length */
-	if (len <= tmp)
+	if (len == tmp)
 		goto wrong_str;
 
 	/* should be more than "usb:" or "ip:" */
