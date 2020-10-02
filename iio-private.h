@@ -22,6 +22,20 @@
 /* Include public interface */
 #include "iio.h"
 
+#ifdef _WIN32
+#   ifdef LIBIIO_EXPORTS
+#	define __api __declspec(dllexport)
+#   else
+#	define __api __declspec(dllimport)
+#   endif
+#elif __GNUC__ >= 4
+#   define __api __attribute__((visibility ("default")))
+#else
+#   define __api
+#endif
+
+#include "iio-backend.h"
+
 #include "iio-config.h"
 
 #include <stdbool.h>
@@ -33,18 +47,6 @@
 #else
 #define iio_snprintf snprintf
 #define iio_sscanf sscanf
-#endif
-
-#ifdef _WIN32
-#   ifdef LIBIIO_EXPORTS
-#	define __api __declspec(dllexport)
-#   else
-#	define __api __declspec(dllimport)
-#   endif
-#elif __GNUC__ >= 4
-#   define __api __attribute__((visibility ("default")))
-#else
-#   define __api
 #endif
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
@@ -110,55 +112,6 @@ static inline void *zalloc(size_t size)
 {
 	return calloc(1, size);
 }
-
-enum iio_attr_type {
-	IIO_ATTR_TYPE_DEVICE = 0,
-	IIO_ATTR_TYPE_DEBUG,
-	IIO_ATTR_TYPE_BUFFER,
-};
-
-struct iio_backend_ops {
-	struct iio_context * (*clone)(const struct iio_context *ctx);
-	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
-			uint32_t *mask, size_t words);
-	ssize_t (*write)(const struct iio_device *dev,
-			const void *src, size_t len);
-	int (*open)(const struct iio_device *dev,
-			size_t samples_count, bool cyclic);
-	int (*close)(const struct iio_device *dev);
-	int (*get_fd)(const struct iio_device *dev);
-	int (*set_blocking_mode)(const struct iio_device *dev, bool blocking);
-
-	void (*cancel)(const struct iio_device *dev);
-
-	int (*set_kernel_buffers_count)(const struct iio_device *dev,
-			unsigned int nb_blocks);
-	ssize_t (*get_buffer)(const struct iio_device *dev,
-			void **addr_ptr, size_t bytes_used,
-			uint32_t *mask, size_t words);
-
-	ssize_t (*read_device_attr)(const struct iio_device *dev,
-			const char *attr, char *dst, size_t len, enum iio_attr_type);
-	ssize_t (*write_device_attr)(const struct iio_device *dev,
-			const char *attr, const char *src,
-			size_t len, enum iio_attr_type);
-	ssize_t (*read_channel_attr)(const struct iio_channel *chn,
-			const char *attr, char *dst, size_t len);
-	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
-			const char *attr, const char *src, size_t len);
-
-	int (*get_trigger)(const struct iio_device *dev,
-			const struct iio_device **trigger);
-	int (*set_trigger)(const struct iio_device *dev,
-			const struct iio_device *trigger);
-
-	void (*shutdown)(struct iio_context *ctx);
-
-	int (*get_version)(const struct iio_context *ctx, unsigned int *major,
-			unsigned int *minor, char git_tag[8]);
-
-	int (*set_timeout)(struct iio_context *ctx, unsigned int timeout);
-};
 
 /*
  * If these structures are updated, the qsort functions defined in sort.c
