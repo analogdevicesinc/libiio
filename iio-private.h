@@ -315,6 +315,8 @@ char *iio_strdup(const char *str);
 size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
 char * iio_getenv (char * envvar);
 
+int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
+
 int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value);
 

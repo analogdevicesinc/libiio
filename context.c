@@ -443,6 +443,22 @@ const char * iio_context_get_attr_value(
 	return NULL;
 }
 
+int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev)
+{
+	struct iio_device **devices = realloc(ctx->devices,
+			(ctx->nb_devices + 1) * sizeof(struct iio_device *));
+
+	if (!devices) {
+		IIO_ERROR("Unable to allocate memory\n");
+		return -ENOMEM;
+	}
+
+	devices[ctx->nb_devices++] = dev;
+	ctx->devices = devices;
+	IIO_DEBUG("Added device \'%s\' to context \'%s\'\n", dev->id, ctx->name);
+	return 0;
+}
+
 int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value)
 {
