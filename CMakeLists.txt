@@ -508,13 +508,15 @@ if(OSX_PACKAGE)
 		DOC "OSX Package builder (productbuild)")
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
+	set(COPY_TOOLS_COMMAND)
 	foreach(_tool ${IIO_TESTS_TARGETS})
-		list(APPEND IIO_TESTS $<TARGET_FILE:${_tool}>)
+		list(APPEND COPY_TOOLS_COMMAND
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_tool}> ${LIBIIO_FRAMEWORK_DIR}/Tools)
 	endforeach()
 
 	add_custom_command(OUTPUT ${LIBIIO_PKG}
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${LIBIIO_FRAMEWORK_DIR}/Tools
-		COMMAND ${CMAKE_COMMAND} -E copy ${IIO_TESTS} ${LIBIIO_FRAMEWORK_DIR}/Tools
+		${COPY_TOOLS_COMMAND}
 		COMMAND ${PKGBUILD_EXECUTABLE}
 			--component ${LIBIIO_FRAMEWORK_DIR}
 			--identifier com.adi.iio --version ${VERSION}
