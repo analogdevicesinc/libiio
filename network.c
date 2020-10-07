@@ -1085,8 +1085,8 @@ static void network_shutdown(struct iio_context *ctx)
 	close(pdata->io_ctx.fd);
 	iio_mutex_unlock(pdata->lock);
 
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
 		struct iio_device_pdata *dpdata = dev->pdata;
 
 		if (dpdata) {
@@ -1462,8 +1462,8 @@ struct iio_context * network_create_context(const char *host)
 	if (ret < 0)
 		goto err_free_description;
 
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
 
 		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {

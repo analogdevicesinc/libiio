@@ -449,12 +449,13 @@ static int usb_set_trigger(const struct iio_device *dev,
 
 static void usb_shutdown(struct iio_context *ctx)
 {
+	unsigned int nb_devices = iio_context_get_devices_count(ctx);
 	unsigned int i;
 
 	usb_io_context_exit(&ctx->pdata->io_ctx);
 
-	for (i = 0; i < ctx->nb_devices; i++)
-		usb_close(ctx->devices[i]);
+	for (i = 0; i < nb_devices; i++)
+		usb_close(iio_context_get_device(ctx, i));
 
 	iio_mutex_destroy(ctx->pdata->lock);
 	iio_mutex_destroy(ctx->pdata->ep_lock);
@@ -465,8 +466,8 @@ static void usb_shutdown(struct iio_context *ctx)
 	if (ctx->pdata->io_endpoints)
 		free(ctx->pdata->io_endpoints);
 
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
+	for (i = 0; i < nb_devices; i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
 
 		usb_io_context_exit(&dev->pdata->io_ctx);
 		free(dev->pdata);
@@ -1015,8 +1016,8 @@ struct iio_context * usb_create_context(unsigned int bus,
 	ctx->ops = &usb_ops;
 	ctx->pdata = pdata;
 
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
 
 		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
