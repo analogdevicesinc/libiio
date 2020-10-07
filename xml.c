@@ -400,7 +400,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	}
 
 	for (n = root->children; n; n = n->next) {
-		struct iio_device **devs, *dev;
+		struct iio_device *dev;
 
 		if (!strcmp((char *) n->name, "context-attribute")) {
 			err = parse_context_attr(ctx, n);
@@ -421,16 +421,11 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 			goto err_context_destroy;
 		}
 
-		devs = realloc(ctx->devices, (1 + ctx->nb_devices) *
-				sizeof(struct iio_device *));
-		if (!devs) {
-			IIO_ERROR("Unable to allocate memory\n");
+		err = iio_context_add_device(ctx, dev);
+		if (err) {
 			free(dev);
 			goto err_context_destroy;
 		}
-
-		devs[ctx->nb_devices++] = dev;
-		ctx->devices = devs;
 	}
 
 	err = iio_context_init(ctx);

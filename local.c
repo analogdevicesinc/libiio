@@ -1421,20 +1421,6 @@ static int add_channel_to_device(struct iio_device *dev,
 	return 0;
 }
 
-static int add_device_to_context(struct iio_context *ctx,
-		struct iio_device *dev)
-{
-	struct iio_device **devices = realloc(ctx->devices,
-			(ctx->nb_devices + 1) * sizeof(struct iio_device *));
-	if (!devices)
-		return -ENOMEM;
-
-	devices[ctx->nb_devices++] = dev;
-	ctx->devices = devices;
-	IIO_DEBUG("Added device \'%s\' to context \'%s\'\n", dev->id, ctx->name);
-	return 0;
-}
-
 static struct iio_channel *create_channel(struct iio_device *dev,
 		char *id, const char *attr, const char *path,
 		bool is_scan_element)
@@ -1863,7 +1849,7 @@ static int create_device(void *d, const char *path)
 
 	dev->mask = mask;
 
-	ret = add_device_to_context(ctx, dev);
+	ret = iio_context_add_device(ctx, dev);
 	if (!ret)
 		return 0;
 
