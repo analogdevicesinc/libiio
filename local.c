@@ -156,8 +156,8 @@ static void local_shutdown(struct iio_context *ctx)
 	/* Free the backend data stored in every device structure */
 	unsigned int i;
 
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
 
 		iio_device_close(dev);
 		local_free_pdata(dev);
@@ -1125,9 +1125,9 @@ static int local_get_trigger(const struct iio_device *dev,
 		return 0;
 	}
 
-	nb = dev->ctx->nb_devices;
+	nb = iio_context_get_devices_count(dev->ctx);
 	for (i = 0; i < (size_t) nb; i++) {
-		const struct iio_device *cur = dev->ctx->devices[i];
+		const struct iio_device *cur = iio_context_get_device(dev->ctx, i);
 		if (cur->name && !strcmp(cur->name, buf)) {
 			*trigger = cur;
 			return 0;
@@ -1986,8 +1986,8 @@ static void init_scan_elements(struct iio_context *ctx)
 {
 	unsigned int i, j;
 
-	for (i = 0; i < ctx->nb_devices; i++) {
-		struct iio_device *dev = ctx->devices[i];
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
 
 		for (j = 0; j < dev->nb_channels; j++)
 			init_data_scale(dev->channels[j]);
