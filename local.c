@@ -706,10 +706,16 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		return -errno;
 
 	ret = fread(dst, 1, len, f);
+
+	/* if we didn't read the entire file, fail */
+	if (!feof(f))
+		ret = -EFBIG;
+
 	if (ret > 0)
 		dst[ret - 1] = '\0';
 	else
 		dst[0] = '\0';
+
 	fflush(f);
 	if (ferror(f))
 		ret = -errno;
