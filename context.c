@@ -182,6 +182,51 @@ err_free_ctx_attrs:
 	return NULL;
 }
 
+struct iio_context * iio_context_create_from_backend(
+		const struct iio_backend *backend,
+		const char *description)
+{
+	struct iio_context *ctx;
+	int ret;
+
+	if (!backend) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	ctx = zalloc(sizeof(*ctx));
+	if (!ctx) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	ret = -ENOMEM;
+	if (backend->sizeof_context_pdata) {
+		ctx->pdata = zalloc(backend->sizeof_context_pdata);
+		if (!ctx->pdata)
+			goto err_free_ctx;
+	}
+
+	if (description) {
+		ctx->description = iio_strdup(description);
+		if (!ctx->description)
+			goto err_free_pdata;
+	}
+
+	ctx->name = backend->name;
+	ctx->ops = backend->ops;
+
+	return ctx;
+
+err_free_pdata:
+	if (ctx->pdata)
+		free(ctx->pdata);
+err_free_ctx:
+	free(ctx);
+	errno = -ret;
+	return NULL;
+}
+
 const char * iio_context_get_xml(const struct iio_context *ctx)
 {
 	return ctx->xml;

@@ -1948,6 +1948,14 @@ static const struct iio_backend_ops local_ops = {
 	.cancel = local_cancel,
 };
 
+static const struct iio_backend local_backend = {
+	.api_version = IIO_BACKEND_API_V1,
+	.name = "local",
+	.uri_prefix = "local:",
+	.ops = &local_ops,
+	.sizeof_context_pdata = sizeof(struct iio_context_pdata),
+};
+
 static void init_data_scale(struct iio_channel *chn)
 {
 	char *end, buf[1024];
@@ -2038,36 +2046,28 @@ out_close_ini:
 
 struct iio_context * local_create_context(void)
 {
+	struct iio_context *ctx;
+	char *description;
 	int ret = -ENOMEM;
 	unsigned int len;
 	struct utsname uts;
-	struct iio_context *ctx = zalloc(sizeof(*ctx));
-	if (!ctx)
-		goto err_set_errno;
-
-	ctx->ops = &local_ops;
-	ctx->name = "local";
-
-	ctx->pdata = zalloc(sizeof(*ctx->pdata));
-	if (!ctx->pdata) {
-		free(ctx);
-		goto err_set_errno;
-	}
-
-	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	uname(&uts);
 	len = strlen(uts.sysname) + strlen(uts.nodename) + strlen(uts.release)
 		+ strlen(uts.version) + strlen(uts.machine);
-	ctx->description = malloc(len + 5); /* 4 spaces + EOF */
-	if (!ctx->description) {
-		free(ctx->pdata);
-		free(ctx);
+	description = malloc(len + 5); /* 4 spaces + EOF */
+	if (!description)
 		goto err_set_errno;
-	}
 
-	iio_snprintf(ctx->description, len + 5, "%s %s %s %s %s", uts.sysname,
+	iio_snprintf(description, len + 5, "%s %s %s %s %s", uts.sysname,
 			uts.nodename, uts.release, uts.version, uts.machine);
+
+	ctx = iio_context_create_from_backend(&local_backend, description);
+	free(description);
+	if (!ctx)
+		goto err_set_errno;
+
+	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0)

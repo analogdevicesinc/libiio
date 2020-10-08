@@ -352,6 +352,13 @@ static const struct iio_backend_ops xml_ops = {
 	.clone = xml_clone,
 };
 
+static const struct iio_backend xml_backend = {
+	.api_version = IIO_BACKEND_API_V1,
+	.name = "xml",
+	.uri_prefix = "xml:",
+	.ops = &xml_ops,
+};
+
 static int parse_context_attr(struct iio_context *ctx, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -376,28 +383,27 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	xmlNode *root, *n;
 	xmlAttr *attr;
 	int err = -ENOMEM;
-	struct iio_context *ctx = zalloc(sizeof(*ctx));
-	if (!ctx)
-		goto err_set_errno;
-
-	ctx->name = "xml";
-	ctx->ops = &xml_ops;
+	struct iio_context *ctx;
+	const char *description = NULL;
 
 	root = xmlDocGetRootElement(doc);
 	if (strcmp((char *) root->name, "context")) {
 		IIO_ERROR("Unrecognized XML file\n");
 		err = -EINVAL;
-		goto err_context_destroy;
+		goto err_set_errno;
 	}
 
 	for (attr = root->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "description"))
-			ctx->description = iio_strdup(
-					(char *) attr->children->content);
+			description = (const char *)attr->children->content;
 		else if (strcmp((char *) attr->name, "name"))
 			IIO_WARNING("Unknown parameter \'%s\' in <context>\n",
 					(char *) attr->children->content);
 	}
+
+	ctx = iio_context_create_from_backend(&xml_backend, description);
+	if (!ctx)
+		goto err_set_errno;
 
 	for (n = root->children; n; n = n->next) {
 		struct iio_device *dev;
