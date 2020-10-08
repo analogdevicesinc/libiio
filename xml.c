@@ -373,7 +373,6 @@ static int parse_context_attr(struct iio_context *ctx, xmlNode *n)
 
 static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 {
-	unsigned int i;
 	xmlNode *root, *n;
 	xmlAttr *attr;
 	int err = -ENOMEM;
@@ -388,7 +387,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	if (strcmp((char *) root->name, "context")) {
 		IIO_ERROR("Unrecognized XML file\n");
 		err = -EINVAL;
-		goto err_free_ctx;
+		goto err_context_destroy;
 	}
 
 	for (attr = root->properties; attr; attr = attr->next) {
@@ -406,7 +405,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		if (!strcmp((char *) n->name, "context-attribute")) {
 			err = parse_context_attr(ctx, n);
 			if (err)
-				goto err_free_devices;
+				goto err_context_destroy;
 			else
 				continue;
 		} else if (strcmp((char *) n->name, "device")) {
@@ -419,7 +418,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		dev = create_device(ctx, n);
 		if (!dev) {
 			IIO_ERROR("Unable to create device\n");
-			goto err_free_devices;
+			goto err_context_destroy;
 		}
 
 		devs = realloc(ctx->devices, (1 + ctx->nb_devices) *
@@ -427,7 +426,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		if (!devs) {
 			IIO_ERROR("Unable to allocate memory\n");
 			free(dev);
-			goto err_free_devices;
+			goto err_context_destroy;
 		}
 
 		devs[ctx->nb_devices++] = dev;
@@ -436,23 +435,12 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 
 	err = iio_context_init(ctx);
 	if (err)
-		goto err_free_devices;
+		goto err_context_destroy;
 
 	return ctx;
 
-err_free_devices:
-	for (i = 0; i < ctx->nb_devices; i++)
-		free_device(ctx->devices[i]);
-	if (ctx->nb_devices)
-		free(ctx->devices);
-	for (i = 0; i < ctx->nb_attrs; i++) {
-		free(ctx->attrs[i]);
-		free(ctx->values[i]);
-	}
-	free(ctx->attrs);
-	free(ctx->values);
-err_free_ctx:
-	free(ctx);
+err_context_destroy:
+	iio_context_destroy(ctx);
 err_set_errno:
 	errno = -err;
 	return NULL;
