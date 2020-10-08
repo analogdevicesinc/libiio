@@ -1422,8 +1422,8 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	yylex_destroy(scanner);
 
 	/* Close all opened devices */
-	for (i = 0; i < ctx->nb_devices; i++)
-		close_dev_helper(&pdata, ctx->devices[i]);
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++)
+		close_dev_helper(&pdata, iio_context_get_device(ctx, i));
 
 #if WITH_AIO
 	if (use_aio) {
