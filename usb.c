@@ -62,9 +62,6 @@ struct iio_context_pdata {
 
 	struct iiod_client *iiod_client;
 
-	/* Lock for non-streaming operations */
-	struct iio_mutex *lock;
-
 	/* Lock for endpoint reservation */
 	struct iio_mutex *ep_lock;
 
@@ -457,7 +454,6 @@ static void usb_shutdown(struct iio_context *ctx)
 	for (i = 0; i < nb_devices; i++)
 		usb_close(iio_context_get_device(ctx, i));
 
-	iio_mutex_destroy(ctx->pdata->lock);
 	iio_mutex_destroy(ctx->pdata->ep_lock);
 
 	for (i = 0; i < ctx->pdata->nb_ep_couples; i++)
@@ -840,22 +836,14 @@ struct iio_context * usb_create_context(unsigned int bus,
 		goto err_set_errno;
 	}
 
-	pdata->lock = iio_mutex_create();
-	if (!pdata->lock) {
+	pdata->ep_lock = iio_mutex_create();
+	if (!pdata->ep_lock) {
 		IIO_ERROR("Unable to create mutex\n");
 		ret = -ENOMEM;
 		goto err_free_pdata;
 	}
 
-	pdata->ep_lock = iio_mutex_create();
-	if (!pdata->ep_lock) {
-		IIO_ERROR("Unable to create mutex\n");
-		ret = -ENOMEM;
-		goto err_destroy_mutex;
-	}
-
-	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
-			&usb_iiod_client_ops);
+	pdata->iiod_client = iiod_client_new(pdata, &usb_iiod_client_ops);
 	if (!pdata->iiod_client) {
 		IIO_ERROR("Unable to create IIOD client\n");
 		ret = -errno;
@@ -1062,8 +1050,6 @@ err_destroy_iiod_client:
 	iiod_client_destroy(pdata->iiod_client);
 err_destroy_ep_mutex:
 	iio_mutex_destroy(pdata->ep_lock);
-err_destroy_mutex:
-	iio_mutex_destroy(pdata->lock);
 err_free_pdata:
 	free(pdata);
 err_set_errno:
