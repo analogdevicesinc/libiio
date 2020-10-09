@@ -32,7 +32,6 @@
 
 struct iio_context_pdata {
 	struct sp_port *port;
-	struct iio_mutex *lock;
 	struct iiod_client *iiod_client;
 
 	unsigned int timeout_ms;
@@ -124,7 +123,7 @@ static int serial_open(const struct iio_device *dev,
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret = -EBUSY;
 
-	iio_mutex_lock(ctx_pdata->lock);
+	iiod_client_mutex_lock(ctx_pdata->iiod_client);
 	if (pdata->opened)
 		goto out_unlock;
 
@@ -134,7 +133,7 @@ static int serial_open(const struct iio_device *dev,
 	pdata->opened = !ret;
 
 out_unlock:
-	iio_mutex_unlock(ctx_pdata->lock);
+	iiod_client_mutex_unlock(ctx_pdata->iiod_client);
 	return ret;
 }
 
@@ -145,7 +144,7 @@ static int serial_close(const struct iio_device *dev)
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret = -EBADF;
 
-	iio_mutex_lock(ctx_pdata->lock);
+	iiod_client_mutex_lock(ctx_pdata->iiod_client);
 	if (!pdata->opened)
 		goto out_unlock;
 
@@ -153,7 +152,7 @@ static int serial_close(const struct iio_device *dev)
 	pdata->opened = false;
 
 out_unlock:
-	iio_mutex_unlock(ctx_pdata->lock);
+	iiod_client_mutex_unlock(ctx_pdata->iiod_client);
 	return ret;
 }
 
@@ -164,10 +163,10 @@ static ssize_t serial_read(const struct iio_device *dev, void *dst, size_t len,
 	struct iio_context_pdata *pdata = ctx->pdata;
 	ssize_t ret;
 
-	iio_mutex_lock(pdata->lock);
+	iiod_client_mutex_lock(pdata->iiod_client);
 	ret = iiod_client_read_unlocked(pdata->iiod_client, NULL,
 			dev, dst, len, mask, words);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(pdata->iiod_client);
 
 	return ret;
 }
@@ -179,9 +178,9 @@ static ssize_t serial_write(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = ctx->pdata;
 	ssize_t ret;
 
-	iio_mutex_lock(pdata->lock);
+	iiod_client_mutex_lock(pdata->iiod_client);
 	ret = iiod_client_write_unlocked(pdata->iiod_client, NULL, dev, src, len);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(pdata->iiod_client);
 
 	return ret;
 }
@@ -297,7 +296,6 @@ static void serial_shutdown(struct iio_context *ctx)
 	unsigned int i;
 
 	iiod_client_destroy(ctx_pdata->iiod_client);
-	iio_mutex_destroy(ctx_pdata->lock);
 	sp_close(ctx_pdata->port);
 	sp_free_port(ctx_pdata->port);
 
@@ -425,16 +423,9 @@ static struct iio_context * serial_create_context(const char *port_name,
 	pdata->port = port;
 	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 
-	pdata->lock = iio_mutex_create();
-	if (!pdata->lock) {
-		errno = ENOMEM;
-		goto err_free_pdata;
-	}
-
-	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
-			&serial_iiod_client_ops);
+	pdata->iiod_client = iiod_client_new(pdata, &serial_iiod_client_ops);
 	if (!pdata->iiod_client)
-		goto err_destroy_mutex;
+		goto err_free_pdata;
 
 	ctx = iiod_client_create_context(pdata->iiod_client, NULL);
 	if (!ctx)
@@ -473,8 +464,6 @@ err_context_destroy:
 
 err_destroy_iiod_client:
 	iiod_client_destroy(pdata->iiod_client);
-err_destroy_mutex:
-	iio_mutex_destroy(pdata->lock);
 err_free_pdata:
 	free(pdata);
 err_free_description:

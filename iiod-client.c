@@ -32,6 +32,16 @@ struct iiod_client {
 	struct iio_mutex *lock;
 };
 
+void iiod_client_mutex_lock(struct iiod_client *client)
+{
+	iio_mutex_lock(client->lock);
+}
+
+void iiod_client_mutex_unlock(struct iiod_client *client)
+{
+	iio_mutex_unlock(client->lock);
+}
+
 static ssize_t iiod_client_read_integer(struct iiod_client *client,
 		void *desc, int *val)
 {
@@ -138,7 +148,7 @@ static ssize_t iiod_client_read_all(struct iiod_client *client,
 }
 
 struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
-		struct iio_mutex *lock, const struct iiod_client_ops *ops)
+				     const struct iiod_client_ops *ops)
 {
 	struct iiod_client *client;
 
@@ -148,14 +158,24 @@ struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
 		return NULL;
 	}
 
-	client->lock = lock;
+	client->lock = iio_mutex_create();
+	if (!client->lock) {
+		errno = ENOMEM;
+		goto err_free_client;
+	}
+
 	client->pdata = pdata;
 	client->ops = ops;
 	return client;
+
+err_free_client:
+	free(client);
+	return NULL;
 }
 
 void iiod_client_destroy(struct iiod_client *client)
 {
+	iio_mutex_destroy(client->lock);
 	free(client);
 }
 

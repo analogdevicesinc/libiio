@@ -47,7 +47,6 @@ struct iio_network_io_context {
 struct iio_context_pdata {
 	struct iio_network_io_context io_ctx;
 	struct addrinfo *addrinfo;
-	struct iio_mutex *lock;
 	struct iiod_client *iiod_client;
 	bool msg_trunc_supported;
 };
@@ -1080,10 +1079,10 @@ static void network_shutdown(struct iio_context *ctx)
 	struct iio_context_pdata *pdata = ctx->pdata;
 	unsigned int i;
 
-	iio_mutex_lock(pdata->lock);
+	iiod_client_mutex_lock(pdata->iiod_client);
 	write_command(&pdata->io_ctx, "\r\nEXIT\r\n");
 	close(pdata->io_ctx.fd);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(pdata->iiod_client);
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -1097,7 +1096,6 @@ static void network_shutdown(struct iio_context *ctx)
 	}
 
 	iiod_client_destroy(pdata->iiod_client);
-	iio_mutex_destroy(pdata->lock);
 	freeaddrinfo(pdata->addrinfo);
 	free(pdata);
 }
@@ -1293,6 +1291,7 @@ struct iio_context * network_create_context(const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
+	struct iiod_client *iiod_client;
 	struct iio_context_pdata *pdata;
 	size_t i, len, uri_len;
 	int fd, ret;
@@ -1361,27 +1360,20 @@ struct iio_context * network_create_context(const char *host)
 		goto err_close_socket;
 	}
 
+	iiod_client = iiod_client_new(pdata, &network_iiod_client_ops);
+	if (!iiod_client)
+		goto err_free_pdata;
+
+	pdata->iiod_client = iiod_client;
 	pdata->io_ctx.fd = fd;
 	pdata->addrinfo = res;
 	pdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
-
-	pdata->lock = iio_mutex_create();
-	if (!pdata->lock) {
-		errno = ENOMEM;
-		goto err_free_pdata;
-	}
-
-	pdata->iiod_client = iiod_client_new(pdata, pdata->lock,
-			&network_iiod_client_ops);
 
 	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
 	if (pdata->msg_trunc_supported)
 		IIO_DEBUG("MSG_TRUNC is supported\n");
 	else
 		IIO_DEBUG("MSG_TRUNC is NOT supported\n");
-
-	if (!pdata->iiod_client)
-		goto err_destroy_mutex;
 
 	IIO_DEBUG("Creating context...\n");
 	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx);
@@ -1517,9 +1509,7 @@ err_network_shutdown:
 	return NULL;
 
 err_destroy_iiod_client:
-	iiod_client_destroy(pdata->iiod_client);
-err_destroy_mutex:
-	iio_mutex_destroy(pdata->lock);
+	iiod_client_destroy(iiod_client);
 err_free_pdata:
 	free(pdata);
 err_close_socket:

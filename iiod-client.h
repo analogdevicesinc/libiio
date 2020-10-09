@@ -34,8 +34,11 @@ struct iiod_client_ops {
 			void *desc, char *dst, size_t len);
 };
 
+void iiod_client_mutex_lock(struct iiod_client *client);
+void iiod_client_mutex_unlock(struct iiod_client *client);
+
 struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
-		struct iio_mutex *lock, const struct iiod_client_ops *ops);
+				     const struct iiod_client_ops *ops);
 void iiod_client_destroy(struct iiod_client *client);
 
 int iiod_client_get_version(struct iiod_client *client, void *desc,
