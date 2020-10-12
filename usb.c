@@ -475,7 +475,6 @@ static void usb_shutdown(struct iio_context *ctx)
 
 	libusb_close(ctx->pdata->hdl);
 	libusb_exit(ctx->pdata->ctx);
-	free(ctx->pdata);
 }
 
 static int iio_usb_match_interface(const struct libusb_config_descriptor *desc,

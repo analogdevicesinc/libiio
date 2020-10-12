@@ -267,6 +267,8 @@ void iio_context_destroy(struct iio_context *ctx)
 		free(ctx->xml);
 	if (ctx->description)
 		free(ctx->description);
+	if (ctx->pdata)
+		free(ctx->pdata);
 	free(ctx);
 }
 

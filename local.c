@@ -162,8 +162,6 @@ static void local_shutdown(struct iio_context *ctx)
 		iio_device_close(dev);
 		local_free_pdata(dev);
 	}
-
-	free(ctx->pdata);
 }
 
 /** Shrinks the first nb characters of a string

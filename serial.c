@@ -325,8 +325,6 @@ static void serial_shutdown(struct iio_context *ctx)
 
 		free(pdata);
 	}
-
-	free(ctx_pdata);
 }
 
 static int serial_set_timeout(struct iio_context *ctx, unsigned int timeout)
