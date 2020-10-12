@@ -273,6 +273,8 @@ int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
 int iio_context_add_attr(struct iio_context *ctx,
 		const char *key, const char *value);
 
+struct iio_context_pdata * iio_context_get_pdata(const struct iio_context *ctx);
+
 #undef __api
 
 #endif /* __IIO_PRIVATE_H__ */
