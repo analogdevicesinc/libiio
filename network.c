@@ -1148,7 +1148,6 @@ static void network_shutdown(struct iio_context *ctx)
 
 	iiod_client_destroy(pdata->iiod_client);
 	freeaddrinfo(pdata->addrinfo);
-	free(pdata);
 }
 
 static int network_get_version(const struct iio_context *ctx,
