@@ -587,6 +587,60 @@ int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 	return fd;
 }
 
+static char * network_get_description(struct addrinfo *res, size_t *len)
+{
+	char *description;
+
+#ifdef HAVE_IPV6
+	*len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
+#else
+	*len = INET_ADDRSTRLEN + 1;
+#endif
+
+	description = malloc(*len);
+	if (!description) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	description[0] = '\0';
+
+#ifdef HAVE_IPV6
+	if (res->ai_family == AF_INET6) {
+		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
+		char *ptr;
+		inet_ntop(AF_INET6, &in->sin6_addr,
+				description, INET6_ADDRSTRLEN);
+
+		if (IN6_IS_ADDR_LINKLOCAL(&in->sin6_addr)) {
+			ptr = if_indextoname(in->sin6_scope_id, description +
+					strlen(description) + 1);
+			if (!ptr) {
+				IIO_ERROR("Unable to lookup interface of IPv6 address\n");
+				goto err_free_description;
+			}
+
+			*(ptr - 1) = '%';
+		}
+	}
+#endif
+	if (res->ai_family == AF_INET) {
+		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
+#if (!_WIN32 || _WIN32_WINNT >= 0x600)
+		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
+#else
+		char *tmp = inet_ntoa(in->sin_addr);
+		iio_strlcpy(description, tmp, *len);
+#endif
+	}
+
+	return description;
+
+err_free_description:
+	free(description);
+	return NULL;
+}
+
 static int network_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
@@ -1361,9 +1415,13 @@ struct iio_context * network_create_context(const char *host)
 		goto err_close_socket;
 	}
 
+	description = network_get_description(res, &len);
+	if (!description)
+		goto err_free_pdata;
+
 	iiod_client = iiod_client_new(pdata, &network_iiod_client_ops);
 	if (!iiod_client)
-		goto err_free_pdata;
+		goto err_free_description;
 
 	pdata->iiod_client = iiod_client;
 	pdata->io_ctx.fd = fd;
@@ -1387,12 +1445,6 @@ struct iio_context * network_create_context(const char *host)
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 
-#ifdef HAVE_IPV6
-	len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
-#else
-	len = INET_ADDRSTRLEN + 1;
-#endif
-
 	uri_len = len;
 	if (host && host[0])
 		uri_len = strnlen(host, MAXHOSTNAMELEN);
@@ -1404,47 +1456,9 @@ struct iio_context * network_create_context(const char *host)
 		goto err_network_shutdown;
 	}
 
-	description = malloc(len);
-	if (!description) {
-		ret = -ENOMEM;
-		goto err_free_uri;
-	}
-
-	description[0] = '\0';
-
-#ifdef HAVE_IPV6
-	if (res->ai_family == AF_INET6) {
-		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
-		char *ptr;
-		inet_ntop(AF_INET6, &in->sin6_addr,
-				description, INET6_ADDRSTRLEN);
-
-		if (IN6_IS_ADDR_LINKLOCAL(&in->sin6_addr)) {
-			ptr = if_indextoname(in->sin6_scope_id, description +
-					strlen(description) + 1);
-			if (!ptr) {
-				ret = -errno;
-				IIO_ERROR("Unable to lookup interface of IPv6 address\n");
-				goto err_free_description;
-			}
-
-			*(ptr - 1) = '%';
-		}
-	}
-#endif
-	if (res->ai_family == AF_INET) {
-		struct sockaddr_in *in = (struct sockaddr_in *) res->ai_addr;
-#if (!_WIN32 || _WIN32_WINNT >= 0x600)
-		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
-#else
-		char *tmp = inet_ntoa(in->sin_addr);
-		iio_strlcpy(description, tmp, len);
-#endif
-	}
-
 	ret = iio_context_add_attr(ctx, "ip,ip-addr", description);
 	if (ret < 0)
-		goto err_free_description;
+		goto err_free_uri;
 
 	if (host && host[0])
 		iio_snprintf(uri, uri_len, "ip:%s", host);
@@ -1453,7 +1467,7 @@ struct iio_context * network_create_context(const char *host)
 
 	ret = iio_context_add_attr(ctx, "uri", uri);
 	if (ret < 0)
-		goto err_free_description;
+		goto err_free_uri;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -1461,7 +1475,7 @@ struct iio_context * network_create_context(const char *host)
 		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
 			ret = -ENOMEM;
-			goto err_free_description;
+			goto err_free_uri;
 		}
 
 		dev->pdata->io_ctx.fd = -1;
@@ -1473,7 +1487,7 @@ struct iio_context * network_create_context(const char *host)
 		dev->pdata->lock = iio_mutex_create();
 		if (!dev->pdata->lock) {
 			ret = -ENOMEM;
-			goto err_free_description;
+			goto err_free_uri;
 		}
 	}
 
@@ -1483,7 +1497,7 @@ struct iio_context * network_create_context(const char *host)
 		char *ptr, *new_description = realloc(description, new_size);
 		if (!new_description) {
 			ret = -ENOMEM;
-			goto err_free_description;
+			goto err_free_uri;
 		}
 
 		ptr = strrchr(new_description, '\0');
@@ -1500,17 +1514,18 @@ struct iio_context * network_create_context(const char *host)
 			calculate_remote_timeout(DEFAULT_TIMEOUT_MS));
 	return ctx;
 
-err_free_description:
-	free(description);
 err_free_uri:
 	free(uri);
 err_network_shutdown:
+	free(description);
 	iio_context_destroy(ctx);
 	errno = -ret;
 	return NULL;
 
 err_destroy_iiod_client:
 	iiod_client_destroy(iiod_client);
+err_free_description:
+	free(description);
 err_free_pdata:
 	free(pdata);
 err_close_socket:
