@@ -378,32 +378,10 @@ static int parse_context_attr(struct iio_context *ctx, xmlNode *n)
 		return iio_context_add_attr(ctx, name, value);
 }
 
-static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
+static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *root)
 {
-	xmlNode *root, *n;
-	xmlAttr *attr;
+	xmlNode *n;
 	int err = -ENOMEM;
-	struct iio_context *ctx;
-	const char *description = NULL;
-
-	root = xmlDocGetRootElement(doc);
-	if (strcmp((char *) root->name, "context")) {
-		IIO_ERROR("Unrecognized XML file\n");
-		err = -EINVAL;
-		goto err_set_errno;
-	}
-
-	for (attr = root->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "description"))
-			description = (const char *)attr->children->content;
-		else if (strcmp((char *) attr->name, "name"))
-			IIO_WARNING("Unknown parameter \'%s\' in <context>\n",
-					(char *) attr->children->content);
-	}
-
-	ctx = iio_context_create_from_backend(&xml_backend, description);
-	if (!ctx)
-		goto err_set_errno;
 
 	for (n = root->children; n; n = n->next) {
 		struct iio_device *dev;
@@ -411,7 +389,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		if (!strcmp((char *) n->name, "context-attribute")) {
 			err = parse_context_attr(ctx, n);
 			if (err)
-				goto err_context_destroy;
+				goto err_set_errno;
 			else
 				continue;
 		} else if (strcmp((char *) n->name, "device")) {
@@ -424,27 +402,59 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		dev = create_device(ctx, n);
 		if (!dev) {
 			IIO_ERROR("Unable to create device\n");
-			goto err_context_destroy;
+			goto err_set_errno;
 		}
 
 		err = iio_context_add_device(ctx, dev);
 		if (err) {
 			free(dev);
-			goto err_context_destroy;
+			goto err_set_errno;
 		}
 	}
 
 	err = iio_context_init(ctx);
 	if (err)
-		goto err_context_destroy;
+		goto err_set_errno;
 
-	return ctx;
+	return 0;
 
-err_context_destroy:
-	iio_context_destroy(ctx);
 err_set_errno:
 	errno = -err;
-	return NULL;
+	return err;
+}
+
+static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
+{
+	const char *description = NULL;
+	struct iio_context *ctx;
+	xmlNode *root;
+	xmlAttr *attr;
+
+	root = xmlDocGetRootElement(doc);
+	if (strcmp((char *) root->name, "context")) {
+		IIO_ERROR("Unrecognized XML file\n");
+		errno = EINVAL;
+		return NULL;
+	}
+
+	for (attr = root->properties; attr; attr = attr->next) {
+		if (!strcmp((char *) attr->name, "description"))
+			description = (const char *)attr->children->content;
+		else if (strcmp((char *) attr->name, "name"))
+			IIO_WARNING("Unknown parameter \'%s\' in <context>\n",
+					(char *) attr->children->content);
+	}
+
+	ctx = iio_context_create_from_backend(&xml_backend, description);
+	if (!ctx)
+		return NULL;
+
+	if (iio_populate_xml_context_helper(ctx, root)) {
+		iio_context_destroy(ctx);
+		return NULL;
+	}
+
+	return ctx;
 }
 
 struct iio_context * xml_create_context(const char *xml_file)
