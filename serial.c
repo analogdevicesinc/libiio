@@ -115,6 +115,26 @@ static int serial_get_version(const struct iio_context *ctx,
 			major, minor, git_tag);
 }
 
+static char * serial_get_description(struct sp_port *port)
+{
+	char *description, *name, *desc;
+	size_t desc_len;
+
+	name = sp_get_port_name(port);
+	desc = sp_get_port_description(port);
+
+	desc_len = sizeof(": \0") + strlen(name) + strlen(desc);
+	description = malloc(desc_len);
+	if (!description) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	iio_snprintf(description, desc_len, "%s: %s", name, desc);
+
+	return description;
+}
+
 static int serial_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
@@ -368,8 +388,8 @@ static struct iio_context * serial_create_context(const char *port_name,
 	struct sp_port *port;
 	struct iio_context_pdata *pdata;
 	struct iio_context *ctx;
-	char *name, *desc, *description;
-	size_t desc_len, uri_len;
+	char *description;
+	size_t uri_len;
 	unsigned int i;
 	int ret;
 	char *uri;
@@ -402,17 +422,9 @@ static struct iio_context * serial_create_context(const char *port_name,
 	/* Empty the buffers */
 	sp_flush(port, SP_BUF_BOTH);
 
-	name = sp_get_port_name(port);
-	desc = sp_get_port_description(port);
-
-	desc_len = sizeof(": \0") + strlen(name) + strlen(desc);
-	description = malloc(desc_len);
-	if (!description) {
-		errno = ENOMEM;
+	description = serial_get_description(port);
+	if (!description)
 		goto err_close_port;
-	}
-
-	iio_snprintf(description, desc_len, "%s: %s", name, desc);
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
