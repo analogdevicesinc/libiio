@@ -1293,7 +1293,8 @@ struct iio_context * network_create_context(const char *host)
 	struct iio_context *ctx;
 	struct iiod_client *iiod_client;
 	struct iio_context_pdata *pdata;
-	size_t i, len, uri_len;
+	size_t len, uri_len;
+	unsigned int i;
 	int fd, ret;
 	char *description, *uri;
 #ifdef _WIN32
