@@ -617,7 +617,8 @@ static char * network_get_description(struct addrinfo *res, size_t *len)
 					strlen(description) + 1);
 			if (!ptr) {
 				IIO_ERROR("Unable to lookup interface of IPv6 address\n");
-				goto err_free_description;
+				free(description);
+				return NULL;
 			}
 
 			*(ptr - 1) = '%';
@@ -635,10 +636,6 @@ static char * network_get_description(struct addrinfo *res, size_t *len)
 	}
 
 	return description;
-
-err_free_description:
-	free(description);
-	return NULL;
 }
 
 static int network_open(const struct iio_device *dev,
