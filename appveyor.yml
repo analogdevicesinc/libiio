@@ -29,6 +29,7 @@ build_script:
     - set OPT_PATH=C:\msys64\mingw32\bin;C:\msys64\mingw64\bin;
     - set PATH=%OPT_PATH%%PATH%
     - set GENERATOR=Unix Makefiles
+    - set MINGW_TOOLCHAIN_VERSION=10.0.0-3
     - cd C:\projects\libiio
     - set folder-path=C:\projects\libiio\build-mingw-win32\%configuration%
     # MinGW 32 bit
@@ -50,7 +51,7 @@ build_script:
     - C:\msys64\usr\bin\bash -lc "rm /mingw32/etc/gdbinit"
     - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy  mingw-w64-i686-gcc mingw-w64-i686-libusb mingw-w64-i686-curl mingw-w64-i686-cmake mingw-w64-i686-libxml2 mingw-w64-i686-pkg-config mingw-w64-i686-libzip"
     # Newer llvm breaks doxygen, use old version for now
-    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-llvm-5.0.0-3-any.pkg.tar.xz http://repo.msys2.org/mingw/i686/mingw-w64-i686-clang-5.0.0-3-any.pkg.tar.xz"
+    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-llvm-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst http://repo.msys2.org/mingw/i686/mingw-w64-i686-clang-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst"
     # set the specific version of doxygen (06-Jun-2018), need to look at this later.
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-doxygen-1.8.14-2-any.pkg.tar.xz"
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-graphviz-2.40.1-4-any.pkg.tar.xz"
@@ -72,7 +73,7 @@ build_script:
     - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy pacman"
     - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Su"
     # Newer llvm breaks doxygen, use old version for now
-    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-llvm-5.0.0-3-any.pkg.tar.xz http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-clang-5.0.0-3-any.pkg.tar.xz"
+    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-llvm-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-clang-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst"
     # set the specific version of doxygen, need to look at this later.
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-doxygen-1.8.14-2-any.pkg.tar.xz"
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-graphviz-2.40.1-4-any.pkg.tar.xz"
