@@ -30,6 +30,8 @@ build_script:
     - set PATH=%OPT_PATH%%PATH%
     - set GENERATOR=Unix Makefiles
     - set MINGW_TOOLCHAIN_VERSION=10.0.0-3
+    - set DOXYGEN_VERSION=1.8.18-1
+    - set GRAPHVIZ_VERSION=2.40.1-13
     - cd C:\projects\libiio
     - set folder-path=C:\projects\libiio\build-mingw-win32\%configuration%
     # MinGW 32 bit
@@ -53,8 +55,8 @@ build_script:
     # Newer llvm breaks doxygen, use old version for now
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-llvm-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst http://repo.msys2.org/mingw/i686/mingw-w64-i686-clang-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst"
     # set the specific version of doxygen (06-Jun-2018), need to look at this later.
-    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-doxygen-1.8.14-2-any.pkg.tar.xz"
-    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-graphviz-2.40.1-4-any.pkg.tar.xz"
+    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-doxygen-%DOXYGEN_VERSION%-any.pkg.tar.zst"
+    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/i686/mingw-w64-i686-graphviz-%GRAPHVIZ_VERSION%-any.pkg.tar.zst"
     # Download a 32-bit version of windres.exe
     - appveyor DownloadFile http://swdownloads.analog.com/cse/build/windres.exe.gz -FileName C:\windres.exe.gz
     - C:\msys64\usr\bin\bash -lc "cd /c ; gunzip windres.exe.gz"
@@ -75,8 +77,8 @@ build_script:
     # Newer llvm breaks doxygen, use old version for now
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-llvm-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-clang-%MINGW_TOOLCHAIN_VERSION%-any.pkg.tar.zst"
     # set the specific version of doxygen, need to look at this later.
-    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-doxygen-1.8.14-2-any.pkg.tar.xz"
-    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-graphviz-2.40.1-4-any.pkg.tar.xz"
+    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-doxygen-%DOXYGEN_VERSION%-any.pkg.tar.zst"
+    - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-graphviz-%GRAPHVIZ_VERSION%-any.pkg.tar.zst"
     - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
 
     # Move the tests folder
