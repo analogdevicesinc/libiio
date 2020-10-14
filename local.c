@@ -286,7 +286,8 @@ static int device_check_ready(const struct iio_device *dev, short events,
 			.events = POLLIN,
 		}
 	};
-	unsigned int rw_timeout_ms = dev->ctx->pdata->rw_timeout_ms;
+	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
+	unsigned int rw_timeout_ms = pdata->rw_timeout_ms;
 	int timeout_rel;
 	int ret;
 
@@ -1900,7 +1901,9 @@ static int add_debug(void *d, const char *path)
 
 static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
-	ctx->pdata->rw_timeout_ms = timeout;
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	pdata->rw_timeout_ms = timeout;
 	return 0;
 }
 
