@@ -587,17 +587,18 @@ int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 	return fd;
 }
 
-static char * network_get_description(struct addrinfo *res, size_t *len)
+static char * __network_get_description(struct addrinfo *res)
 {
 	char *description;
+	unsigned int len;
 
 #ifdef HAVE_IPV6
-	*len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
+	len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
 #else
-	*len = INET_ADDRSTRLEN + 1;
+	len = INET_ADDRSTRLEN + 1;
 #endif
 
-	description = malloc(*len);
+	description = malloc(len);
 	if (!description) {
 		errno = ENOMEM;
 		return NULL;
@@ -631,11 +632,18 @@ static char * network_get_description(struct addrinfo *res, size_t *len)
 		inet_ntop(AF_INET, &in->sin_addr, description, INET_ADDRSTRLEN);
 #else
 		char *tmp = inet_ntoa(in->sin_addr);
-		iio_strlcpy(description, tmp, *len);
+		iio_strlcpy(description, tmp, len);
 #endif
 	}
 
 	return description;
+}
+
+static char *network_get_description(const struct iio_context *ctx)
+{
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return __network_get_description(pdata->addrinfo);
 }
 
 static int network_open(const struct iio_device *dev,
@@ -1223,6 +1231,7 @@ static const struct iio_backend_ops network_ops = {
 	.get_trigger = network_get_trigger,
 	.set_trigger = network_set_trigger,
 	.shutdown = network_shutdown,
+	.get_description = network_get_description,
 	.get_version = network_get_version,
 	.set_timeout = network_set_timeout,
 	.set_kernel_buffers_count = network_set_kernel_buffers_count,
@@ -1348,7 +1357,7 @@ struct iio_context * network_create_context(const char *host)
 	struct iio_context *ctx;
 	struct iiod_client *iiod_client;
 	struct iio_context_pdata *pdata;
-	size_t len, uri_len;
+	size_t uri_len;
 	unsigned int i;
 	int fd, ret;
 	char *description, *uri;
@@ -1416,7 +1425,7 @@ struct iio_context * network_create_context(const char *host)
 		goto err_close_socket;
 	}
 
-	description = network_get_description(res, &len);
+	description = __network_get_description(res);
 	if (!description)
 		goto err_free_pdata;
 
@@ -1446,7 +1455,7 @@ struct iio_context * network_create_context(const char *host)
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 
-	uri_len = len;
+	uri_len = strlen(description);
 	if (host && host[0])
 		uri_len = strnlen(host, MAXHOSTNAMELEN);
 	uri_len += sizeof ("ip:");
