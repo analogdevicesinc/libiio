@@ -70,6 +70,8 @@ struct iio_backend_ops {
 
 	void (*shutdown)(struct iio_context *ctx);
 
+	char * (*get_description)(const struct iio_context *ctx);
+
 	int (*get_version)(const struct iio_context *ctx, unsigned int *major,
 			unsigned int *minor, char git_tag[8]);
 
