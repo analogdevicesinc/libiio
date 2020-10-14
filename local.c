@@ -1928,6 +1928,25 @@ static struct iio_context * local_clone(
 	return local_create_context();
 }
 
+static char * local_get_description(const struct iio_context *ctx)
+{
+	char *description;
+	unsigned int len;
+	struct utsname uts;
+
+	uname(&uts);
+	len = strlen(uts.sysname) + strlen(uts.nodename) + strlen(uts.release)
+		+ strlen(uts.version) + strlen(uts.machine);
+	description = malloc(len + 5); /* 4 spaces + EOF */
+	if (!description)
+		return NULL;
+
+	iio_snprintf(description, len + 5, "%s %s %s %s %s", uts.sysname,
+			uts.nodename, uts.release, uts.version, uts.machine);
+
+	return description;
+}
+
 static const struct iio_backend_ops local_ops = {
 	.clone = local_clone,
 	.open = local_open,
@@ -1945,6 +1964,7 @@ static const struct iio_backend_ops local_ops = {
 	.get_trigger = local_get_trigger,
 	.set_trigger = local_set_trigger,
 	.shutdown = local_shutdown,
+	.get_description = local_get_description,
 	.set_timeout = local_set_timeout,
 	.cancel = local_cancel,
 };
@@ -2050,18 +2070,9 @@ struct iio_context * local_create_context(void)
 	struct iio_context *ctx;
 	char *description;
 	int ret = -ENOMEM;
-	unsigned int len;
 	struct utsname uts;
 
-	uname(&uts);
-	len = strlen(uts.sysname) + strlen(uts.nodename) + strlen(uts.release)
-		+ strlen(uts.version) + strlen(uts.machine);
-	description = malloc(len + 5); /* 4 spaces + EOF */
-	if (!description)
-		goto err_set_errno;
-
-	iio_snprintf(description, len + 5, "%s %s %s %s %s", uts.sysname,
-			uts.nodename, uts.release, uts.version, uts.machine);
+	description = local_get_description(NULL);
 
 	ctx = iio_context_create_from_backend(&local_backend, description);
 	free(description);
@@ -2087,6 +2098,7 @@ struct iio_context * local_create_context(void)
 		goto err_context_destroy;
 #endif
 
+	uname(&uts);
 	ret = iio_context_add_attr(ctx, "local,kernel", uts.release);
 	if (ret < 0)
 		goto err_context_destroy;
