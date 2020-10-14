@@ -115,7 +115,7 @@ static int serial_get_version(const struct iio_context *ctx,
 			major, minor, git_tag);
 }
 
-static char * serial_get_description(struct sp_port *port)
+static char * __serial_get_description(struct sp_port *port)
 {
 	char *description, *name, *desc;
 	size_t desc_len;
@@ -133,6 +133,13 @@ static char * serial_get_description(struct sp_port *port)
 	iio_snprintf(description, desc_len, "%s: %s", name, desc);
 
 	return description;
+}
+
+static char * serial_get_description(const struct iio_context *ctx)
+{
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return __serial_get_description(pdata->port);
 }
 
 static int serial_open(const struct iio_device *dev,
@@ -347,6 +354,7 @@ static const struct iio_backend_ops serial_ops = {
 	.write_channel_attr = serial_write_chn_attr,
 	.set_kernel_buffers_count = serial_set_kernel_buffers_count,
 	.shutdown = serial_shutdown,
+	.get_description = serial_get_description,
 	.set_timeout = serial_set_timeout,
 };
 
@@ -422,7 +430,7 @@ static struct iio_context * serial_create_context(const char *port_name,
 	/* Empty the buffers */
 	sp_flush(port, SP_BUF_BOTH);
 
-	description = serial_get_description(port);
+	description = __serial_get_description(port);
 	if (!description)
 		goto err_close_port;
 
