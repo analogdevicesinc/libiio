@@ -99,7 +99,7 @@ namespace iio
         private static extern uint iio_context_get_attrs_count(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_context_get_attr(IntPtr ctx, uint index, IntPtr name_ptr, IntPtr value_ptr);
+        private static extern int iio_context_get_attr(IntPtr ctx, uint index, out IntPtr name_ptr, out IntPtr value_ptr);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_context_find_device(IntPtr ctx, [In] string name);
@@ -199,19 +199,16 @@ namespace iio
             backend_version = new Version(major, minor, builder.ToString());
 
             attrs = new Dictionary<string, string>();
+            uint nbAttrs = iio_context_get_attrs_count(ctx);
 
-            for (uint i = 0; i < iio_context_get_attrs_count(ctx); i++)
+            for (uint i = 0; i < nbAttrs; i++)
             {
-                string attr_name = "";
-                GCHandle name_handle = GCHandle.Alloc(attr_name, GCHandleType.Pinned);
-                IntPtr name_ptr = GCHandle.ToIntPtr(name_handle);
-                string attr_value = "";
-                GCHandle value_handle = GCHandle.Alloc(attr_value, GCHandleType.Pinned);
-                IntPtr value_ptr = GCHandle.ToIntPtr(value_handle);
+                IntPtr name_ptr;
+                IntPtr value_ptr;
 
-                iio_context_get_attr(ctx, i, name_ptr, value_ptr);
-                attr_name = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(name_ptr));
-                attr_value = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(value_ptr));
+                iio_context_get_attr(ctx, i, out name_ptr, out value_ptr);
+                string attr_name = Marshal.PtrToStringAnsi(name_ptr);
+                string attr_value = Marshal.PtrToStringAnsi(value_ptr);
 
                 attrs[attr_name] = attr_value;
             }
