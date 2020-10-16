@@ -100,6 +100,7 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_CO2] = "co2",
 	[IIO_MOD_ETHANOL] = "ethanol",
 	[IIO_MOD_H2] = "h2",
+	[IIO_MOD_O2] = "h2",
 	[IIO_MOD_VOC] = "voc",
 	[IIO_MOD_PM1] = "pm1",
 	[IIO_MOD_PM2P5] = "pm2p5",
