@@ -173,6 +173,7 @@ class ChannelModifier(Enum):
     IIO_MOD_PM10 = 41
     IIO_MOD_ETHANOL = 42
     IIO_MOD_H2 = 43
+    IIO_MOD_O2 = 44
 
 
 class ChannelType(Enum):
