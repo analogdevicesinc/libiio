@@ -474,24 +474,30 @@ version_lt() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" != "$1";
 version_ge() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" = "$1"; }
 
 get_codename() {
-	lsb_release -c -s
+	local VERSION_CODENAME
+	eval $(grep -w VERSION_CODENAME /etc/os-release)
+	echo "$VERSION_CODENAME"
 }
 
 get_dist_id() {
-	lsb_release -i -s
+	local ID
+	eval $(grep -w ID /etc/os-release)
+	echo "$ID"
 }
 
 get_version() {
-	lsb_release -r -s
+	local VERSION_ID
+	eval $(grep -w VERSION_ID /etc/os-release)
+	echo "$VERSION_ID"
 }
 
 is_ubuntu_at_least_ver() {
-	[ "$(get_dist_id)" = "Ubuntu" ] || return 1
+	[ "$(get_dist_id)" = "ubuntu" ] || return 1
 	version_ge "$(get_version)" "$1"
 }
 
 is_centos_at_least_ver() {
-	[ "$(get_dist_id)" = "CentOS" ] || return 1
+	[ "$(get_dist_id)" = "centos" ] || return 1
 	version_ge "$(get_version)" "$1"
 }
 
