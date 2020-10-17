@@ -42,7 +42,7 @@ handle_centos() {
 	# FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
 	yum -y groupinstall 'Development Tools'
 	yum -y install cmake libxml2-devel libusb1-devel libaio-devel \
-		bzip2 gzip rpm rpm-build redhat-lsb-core
+		bzip2 gzip rpm rpm-build
 
 	# needed for building python with pyenv
 	yum install -y  gcc gcc-c++ make git patch openssl-devel zlib-devel readline-devel sqlite-devel bzip2-devel
@@ -95,7 +95,7 @@ handle_default() {
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cmake graphviz \
 		libaio-dev libavahi-client-dev \
 		libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar \
-		bzip2 gzip flex bison git lsb-release libncurses5-dev libcdk5-dev
+		bzip2 gzip flex bison git libncurses5-dev libcdk5-dev
 
 	# Most of these should be here, but are needed for building python by pyenv
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential \
