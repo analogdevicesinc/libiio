@@ -4,6 +4,7 @@ python: "3.6"
 
 env:
   global:
+  - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
   # SSHHOST
   - secure: "NEXUEA+ccm/I21ujCPuKYIHFb8Gogunr3nYysCRpTBNT40PsU9VFIy5vbmMxPAkCaMwk8XZ0rMHE3uaNGbBAGfoDL9v0Ban5wG/jA1JkmOAWUpFrUsbQeejXNRA04QcZ/4VeL6TgFegV2T6V0tLB4M6/X316dIPhS9Tat1ZUC8s="
   # SSHUSER
@@ -23,13 +24,11 @@ matrix:
       env:
         - ARCH=arm
         - OS_VERSION=jessie
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - compiler: "gcc"
       dist: xenial
       env:
         - ARCH=arm
         - OS_VERSION=stretch
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - compiler: "gcc"
       os: linux
       env:
@@ -52,43 +51,32 @@ matrix:
       os: linux
       dist: xenial
       env:
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
         # GH_DOC_TOKEN used to deploy docs
         - secure: "OrwnYeUITY2R7pn11WHqsO7c6F9fRY7G5fOh98GGXnw7dAIoSvUhjUE70ehaBzLH0CyO83KgaiyACP8eqRx9BYUd1McrqTFDmYJNVR+Wk01SSjJxaXzU4RMsJPhXH9l5U7BEH5dVk/IFLLaCwYnc35mlADHE2KCGNanvtnRU0gU="
     - os: linux
       env:
         - OS_TYPE=centos_docker
         - OS_VERSION=6
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
       env:
         - OS_TYPE=centos_docker
         - OS_VERSION=7
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
       dist: bionic
-      env:
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
       env:
         - OS_TYPE=centos_docker
         - OS_VERSION=8
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - os: linux
       env:
         - OS_TYPE=ubuntu_docker
         - OS_VERSION=focal
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - compiler: "gcc"
       os: osx
       osx_image: xcode10.1
-      env:
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
     - compiler: "gcc"
       os: osx
       osx_image: xcode11
-      env:
-        - EXTRA_SSH=-oHostKeyAlgorithms=+ssh-dss
 
     - stage: "Trigger Next In Pipeline"
       env:
