@@ -43,6 +43,12 @@ class Arguments:
         self.cyclic = args.cyclic
         self.device_name = args.device[0]
         self.channels = args.channel
+        self.sine_generation = args.sine_generation
+        self.sine_config = {
+            "fs": int(args.sampling_frequency),
+            "fc": int(args.tone_frequency),
+            "complex": args.complex,
+        }
 
     def _add_parser_arguments(self):
         self.parser.add_argument(
@@ -91,6 +97,37 @@ class Arguments:
         )
         self.parser.add_argument("device", type=str, nargs=1)
         self.parser.add_argument("channel", type=str, nargs="*")
+
+        # Sine wave generation
+        self.parser.add_argument(
+            "-sine",
+            "--sine-generation",
+            action="store_true",
+            help="Enable sine wave generation.",
+        )
+
+        self.parser.add_argument(
+            "-fs",
+            "--sampling-frequency",
+            type=int,
+            default=30720000,
+            metavar="",
+            help="Set assumed sampling frequency of data in Hz.",
+        )
+        self.parser.add_argument(
+            "-fc",
+            "--tone-frequency",
+            type=int,
+            default=1000000,
+            metavar="",
+            help="Set desired tone frequency of data in Hz.",
+        )
+        self.parser.add_argument(
+            "-cm",
+            "--complex",
+            action="store_true",
+            help="Enable complex data generation.",
+        )
 
 
 class ContextBuilder:
@@ -217,36 +254,37 @@ class DataSource:
 
     def __init__(self, arguments):
 
-        # FIXME:
         self.gen_source = "sinusoid"
-        self.complex_dev = False
-        self.fs = 2 ** 15
-        self.fc = 2 ** 5
-        self.num_channels = 1
+        self.complex_dev = arguments.sine_config["complex"]
+        self.fs = arguments.sine_config["fs"]
+        self.fc = arguments.sine_config["fc"]
+        self.num_channels = None
 
         self.data_np = self.gen_data()
         self.buffer_size = len(self.data_np)
 
     def _format(self, data_np):
+        if not self.num_channels:
+            raise Exception("Channel count must be set before data can be formatted")
         indx = 0
         stride = self.num_channels
         data = np.empty(stride * len(data_np), dtype=np.int16)
         if self.complex_dev:
-            for chan in data_np:
-                i = np.real(chan)
-                q = np.imag(chan)
+            for _ in range(self.num_channels // 2):
+                i = np.real(data_np)
+                q = np.imag(data_np)
                 data[indx::stride] = i.astype(int)
                 data[indx + 1 :: stride] = q.astype(int)
                 indx += 2
         else:
             data = np.empty(stride * len(data_np), dtype=np.int16)
-            for chan in data_np:
-                data[indx::stride] = chan.astype(int)
+            for _ in range(self.num_channels):
+                data[indx::stride] = data_np.astype(int)
                 indx += 1
         return data
 
     def _gen_sine(self):
-        """ Generate sinusoid with first and last samples are equivalent """
+        """ Generate sinusoid with first and last+1 samples are equivalent """
 
         fs = self.fs
         fc = self.fc
@@ -254,23 +292,29 @@ class DataSource:
         samples_per_period = float(fs) * 1 / float(fc)
 
         # determine where we have exact integer of periods
+        min_len = 2 ** 10
         max_len = 2 ** 20
         periods = 1
         while (periods * samples_per_period) <= max_len:
 
+            if (periods * samples_per_period) < min_len:
+                periods += 1
+                continue
+
             if int(periods * samples_per_period) == periods * samples_per_period:
                 break
+
             periods += 1
             if (periods * samples_per_period) >= max_len:
                 raise ("Cannot create a sinusoid without discontinuities")
 
         seq_len = periods * samples_per_period
         t = np.arange(0, (seq_len) * ts, ts)
-        i = np.cos(2 * np.pi * t * fc) * 2 ** 15
+        i = np.cos(2 * np.pi * t * fc) * 2 ** 14
         if self.complex_dev:
-            i += 1j * np.sin(2 * np.pi * t * fc) * 2 ** 14
+            i = i + 1j * np.sin(2 * np.pi * t * fc) * 2 ** 14
 
-        return self._format(i)
+        return i
 
     def gen_data(self):
         if self.gen_source == "sinusoid":
@@ -301,6 +345,7 @@ class DataWriter:
         self.buffer = buffer_builder.create()
         self.device = buffer_builder.dev
         self.arguments = arguments
+        self.data_source.num_channels = buffer_builder.num_channels
 
     def write(self):
         """Push data into the buffer."""
@@ -348,7 +393,7 @@ def main():
     """Module's main method."""
     arguments = Arguments()
     context_builder = ContextBuilder(arguments)
-    data_source = DataSource(arguments)
+    data_source = DataSource(arguments) if arguments.sine_generation else False
     writer = DataWriter(context_builder.create(), arguments, data_source)
     writer.write()
 
