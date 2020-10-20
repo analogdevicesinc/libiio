@@ -1012,7 +1012,6 @@ static int local_close(const struct iio_device *dev)
 	ret = 0;
 	ret1 = 0;
 	if (pdata->is_high_speed) {
-		unsigned int i;
 		if (pdata->addrs) {
 			for (i = 0; i < pdata->allocated_nb_blocks; i++)
 				munmap(pdata->addrs[i], pdata->blocks[i].size);
@@ -1198,7 +1197,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 		ptr += len + 1;
 
 	if (chn->name) {
-		size_t len = strlen(chn->name);
+		len = strlen(chn->name);
 		if (strncmp(chn->name, ptr, len) == 0 && ptr[len] == '_')
 			ptr += len + 1;
 	}
