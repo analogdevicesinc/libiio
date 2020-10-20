@@ -22,6 +22,7 @@ import time
 import sys
 import argparse
 import iio
+import numpy as np
 
 
 class Arguments:
@@ -160,7 +161,7 @@ class ContextBuilder:
 class BufferBuilder:
     """Class for creating the buffer."""
 
-    def __init__(self, ctx, arguments):
+    def __init__(self, ctx, arguments, data_source=None):
         """
         Class constructor.
 
@@ -173,6 +174,11 @@ class BufferBuilder:
         self.ctx = ctx
         self.arguments = arguments
         self.dev = None
+        self.num_channels = None
+        if data_source:
+            self.buffer_size = data_source.buffer_size
+        else:
+            self.buffer_size = self.arguments.buffer_size
 
     def _device(self):
         self.dev = self.ctx.find_device(self.arguments.device_name)
@@ -184,9 +190,11 @@ class BufferBuilder:
 
     def _channels(self):
         if len(self.arguments.channels) == 0:
+            self.num_channels = len(self.dev.channels)
             for channel in self.dev.channels:
                 channel.enabled = True
         else:
+            self.num_channels = len(self.arguments.channels)
             for channel_idx in self.arguments.channels:
                 self.dev.channels[int(channel_idx)].enabled = True
 
@@ -196,7 +204,7 @@ class BufferBuilder:
         """Create the IIO buffer."""
         self._device()
         self._channels()
-        buffer = iio.Buffer(self.dev, self.arguments.buffer_size, self.arguments.cyclic)
+        buffer = iio.Buffer(self.dev, self.buffer_size, self.arguments.cyclic)
 
         if buffer is None:
             raise Exception("Unable to create buffer!\n")
@@ -204,10 +212,81 @@ class BufferBuilder:
         return buffer
 
 
+class DataSource:
+    """ Class for generating waveforms and importing data files """
+
+    def __init__(self, arguments):
+
+        # FIXME:
+        self.gen_source = "sinusoid"
+        self.complex_dev = False
+        self.fs = 2 ** 15
+        self.fc = 2 ** 5
+        self.num_channels = 1
+
+        self.data_np = self.gen_data()
+        self.buffer_size = len(self.data_np)
+
+    def _format(self, data_np):
+        indx = 0
+        stride = self.num_channels
+        data = np.empty(stride * len(data_np), dtype=np.int16)
+        if self.complex_dev:
+            for chan in data_np:
+                i = np.real(chan)
+                q = np.imag(chan)
+                data[indx::stride] = i.astype(int)
+                data[indx + 1 :: stride] = q.astype(int)
+                indx += 2
+        else:
+            data = np.empty(stride * len(data_np), dtype=np.int16)
+            for chan in data_np:
+                data[indx::stride] = chan.astype(int)
+                indx += 1
+        return data
+
+    def _gen_sine(self):
+        """ Generate sinusoid with first and last samples are equivalent """
+
+        fs = self.fs
+        fc = self.fc
+        ts = 1 / float(fs)
+        samples_per_period = float(fs) * 1 / float(fc)
+
+        # determine where we have exact integer of periods
+        max_len = 2 ** 20
+        periods = 1
+        while (periods * samples_per_period) <= max_len:
+
+            if int(periods * samples_per_period) == periods * samples_per_period:
+                break
+            periods += 1
+            if (periods * samples_per_period) >= max_len:
+                raise ("Cannot create a sinusoid without discontinuities")
+
+        seq_len = periods * samples_per_period
+        t = np.arange(0, (seq_len) * ts, ts)
+        i = np.cos(2 * np.pi * t * fc) * 2 ** 15
+        if self.complex_dev:
+            i += 1j * np.sin(2 * np.pi * t * fc) * 2 ** 14
+
+        return self._format(i)
+
+    def gen_data(self):
+        if self.gen_source == "sinusoid":
+            return self._gen_sine()
+
+    def get_data_formated(self, data_np=None):
+        if data_np:
+            return self._format(data_np)
+        else:
+            return self._format(self.data_np)
+
+
 class DataWriter:
     """Class for writing samples to the device."""
 
-    def __init__(self, ctx, arguments):
+    def __init__(self, ctx, arguments, data_source=None):
         """
         Class constructor.
 
@@ -217,7 +296,8 @@ class DataWriter:
             arguments: type=Arguments
                 Contains the input arguments.
         """
-        buffer_builder = BufferBuilder(ctx, arguments)
+        self.data_source = data_source
+        buffer_builder = BufferBuilder(ctx, arguments, data_source)
         self.buffer = buffer_builder.create()
         self.device = buffer_builder.dev
         self.arguments = arguments
@@ -226,6 +306,13 @@ class DataWriter:
         """Push data into the buffer."""
         app_running = True
         num_samples = self.arguments.num_samples
+
+        if self.data_source:
+            data = self.data_source.get_data_formated()
+            if self.buffer.write(bytearray(data)) == 0:
+                raise Exception("Unable to push buffer!")
+
+            self.buffer.push()
 
         while app_running:
             bytes_to_read = (
@@ -261,7 +348,8 @@ def main():
     """Module's main method."""
     arguments = Arguments()
     context_builder = ContextBuilder(arguments)
-    writer = DataWriter(context_builder.create(), arguments)
+    data_source = DataSource(arguments)
+    writer = DataWriter(context_builder.create(), arguments, data_source)
     writer.write()
 
 
