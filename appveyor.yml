@@ -79,7 +79,7 @@ build_script:
     # set the specific version of doxygen, need to look at this later.
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-doxygen-%DOXYGEN_VERSION%-any.pkg.tar.zst"
     - C:\msys64\usr\bin\bash -lc "pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-graphviz-%GRAPHVIZ_VERSION%-any.pkg.tar.zst"
-    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
+    - C:\msys64\usr\bin\bash -lc "cmake -G '%GENERATOR%' -DCMAKE_RC_COMPILER=/c/msys64/mingw64/bin/windres.exe -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_INSTALL_PREFIX=/mingw64 -DCMAKE_C_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=/mingw64/bin/x86_64-w64-mingw32-g++.exe -DPKG_CONFIG_EXECUTABLE:FILEPATH=/mingw64/bin/pkg-config.exe -DENABLE_IPV6:BOOL=OFF -DLIBSERIALPORT_LIBRARIES=/c/libs/64/libserialport.dll.a -DLIBSERIALPORT_INCLUDE_DIR=/c/include /c/projects/libiio && make -j3"
 
     # Move the tests folder
     - cd c:\projects\libiio
