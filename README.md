@@ -1,20 +1,61 @@
-# libiio
+<p align="center">
+<img src="doc/html/img/iio_logo.png" width="400" alt="libiio Logo"> </br>
+</p>
 
-Library for interfacing with Linux IIO devices
+<p align="center">
+  
+<a href="https://ez.analog.com/linux-software-drivers/f/q-a">
+<img alt="EngineerZone" src="https://img.shields.io/badge/Support-on%20EngineerZone-blue.svg">
+</a>
+
+<a href="https://wiki.analog.com/resources/tools-software/linux-software/libiio">
+<img alt="Analog Wiki" src="https://img.shields.io/badge/Wiki-on%20wiki.analog.com-blue.svg">
+</a>
+
+<a href="https://github.com/analogdevicesinc/libiio/blob/master/COPYING.txt">
+<img alt="Library License" src="https://img.shields.io/badge/license-LGPL2+-blue.svg">
+</a>
+
+<a href="https://github.com/analogdevicesinc/libiio/blob/master/COPYING_GPL.txt">
+<img alt="Tests/Examples License" src="https://img.shields.io/badge/license-GPL2+-blue.svg">
+</a>
+
+</p>
+
+
+<p align="center">
+
+<a href="https://github.com/analogdevicesinc/libiio/releases/latest">
+<img alt="Latest Release" src="https://img.shields.io/github/release/analogdevicesinc/libiio.svg">
+</a>
+
+<a href="https://github.com/analogdevicesinc/libiio/releases/latest">
+<img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/analogdevicesinc/libiio/total.svg">
+</a>
+
+<a href="https://scan.coverity.com/projects/analogdevicesinc-libiio">
+<img alt="Scans" src="https://img.shields.io/coverity/scan/4796.svg">
+</a>
+
+<a href="http://analogdevicesinc.github.io/libiio/">
+<img alt="Documentation" src="https://codedocs.xyz/analogdevicesinc/libiio.svg">
+</a>
+
+<a href="https://github.com/analogdevicesinc/libiio/issues">
+<img alt="Issues" src="https://img.shields.io/github/issues/analogdevicesinc/libiio.svg">
+</a>
+
+<a href="https://github.com/analogdevicesinc/libiio/issues?q=is%3Aissue+is%3Aclosed">
+<img alt="Closed Bugs" src="https://img.shields.io/github/issues-closed/analogdevicesinc/libiio.svg">
+</a>
+
+</p>
+
+## libiio: Library for interfacing with Linux IIO devices
 
 libiio is used to interface to the Linux Industrial Input/Output (IIO) Subsystem. The Linux IIO subsystem is intended to provide support for devices that in some sense are analog to digital or digital to analog converters (ADCs, DACs). This includes, but is not limited to ADCs, Accelerometers, Gyros, IMUs, Capacitance to Digital Converters (CDCs), Pressure Sensors, Color, Light and Proximity Sensors, Temperature Sensors, Magnetometers, DACs, DDS (Direct Digital Synthesis), PLLs (Phase Locked Loops), Variable/Programmable Gain Amplifiers (VGA, PGA), and RF transceivers. You can use libiio natively on an embedded Linux target (local mode), or use libiio to communicate remotely to that same target from a host Linux, Windows or MAC over USB or Ethernet or Serial.
 
 Although libiio was primarily developed by Analog Devices Inc., it is an active open source library, which many people have contributed to. The library is released under the GNU Lesser General Public License (LGPL), version 2.1 or (at your option) any later version, this open-source license allows anyone to use the library, on any vendors processor/FPGA/SoC, which may be controlling any vendors peripheral device (ADC, DAC, etc) either locally or remotely. This includes closed or open-source, commercial or non-commercial applications (subject to the LGPL license freedoms, obligations and restrictions). The examples and test applications (sometimes referred to as the iio-utils) are released separately under the GNU General Public License (GPL) version 2.0 (at your option) any later version.
-
-Library License : [![Library License](https://img.shields.io/badge/license-LGPL2+-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/master/COPYING.txt)
-Tests/Examples License : [![Application License](https://img.shields.io/badge/license-GPL2+-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/master/COPYING_GPL.txt)
-Latest Release : [![GitHub release](https://img.shields.io/github/release/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
-Downloads :  [![Github All Releases](https://img.shields.io/github/downloads/analogdevicesinc/libiio/total.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
-
-Scans : [![Coverity Scan Build Status](https://img.shields.io/coverity/scan/4796.svg)](https://scan.coverity.com/projects/analogdevicesinc-libiio)
-Release docs: [![Documentation](https://codedocs.xyz/analogdevicesinc/libiio.svg)](http://analogdevicesinc.github.io/libiio/)
-Issues : [![open bugs](https://img.shields.io/github/issues/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/issues)
-[![closed bugs](https://img.shields.io/github/issues-closed/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/issues?q=is%3Aissue+is%3Aclosed)
 
 Support:<br>
 If you have a question about libiio and an Analog Devices IIO kernel driver please ask on : [![EngineerZone](https://img.shields.io/badge/chat-on%20EngineerZone-blue.svg)](https://ez.analog.com/linux-device-drivers/linux-software-drivers). If you have a question about a non-ADI devices, please ask it on [github](https://github.com/analogdevicesinc/libiio/issues).
