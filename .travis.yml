@@ -77,6 +77,9 @@ matrix:
     - compiler: "gcc"
       os: osx
       osx_image: xcode11
+    - compiler: "gcc"
+      os: osx
+      osx_image: xcode12
 
     - stage: "Trigger Next In Pipeline"
       env:
