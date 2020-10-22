@@ -211,6 +211,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	d->poll = avahi_simple_poll_new();
 	if (!d->poll) {
+		iio_mutex_destroy(d->lock);
 		dnssd_free_all_discovery_data(d);
 		return -ENOMEM;
 	}
