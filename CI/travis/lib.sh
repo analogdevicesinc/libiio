@@ -4,7 +4,7 @@ if [ "$TRIGGER_NEXT_BUILD" = "true" ] && [ "$TRIGGERING_NEXT_BUILD" != "true" ] 
 	exit 0
 fi
 
-export TRAVIS_API_URL="https://api.travis-ci.org"
+export TRAVIS_API_URL="https://api.travis-ci.com"
 LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 
 HOMEBREW_NO_INSTALL_CLEANUP=1
@@ -145,7 +145,7 @@ trigger_build() {
 		-H "Travis-API-Version: 3" \
 		-H "Authorization: token $TRAVIS_API_TOKEN" \
 		-d "$body" \
-		"https://api.travis-ci.org/repo/$repo_slug/requests"
+		"${TRAVIS_API_URL}/repo/$repo_slug/requests"
 }
 
 trigger_adi_build() {
