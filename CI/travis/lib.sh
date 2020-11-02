@@ -452,16 +452,22 @@ run_docker_script() {
 ensure_command_exists() {
 	local cmd="$1"
 	local package="$2"
+	local yes_confirm
 	[ -n "$cmd" ] || return 1
 	[ -n "$package" ] || package="$cmd"
 	! command_exists "$cmd" || return 0
 	# go through known package managers
 	for pacman in apt-get brew yum ; do
 		command_exists $pacman || continue
-		"$pacman" install -y "$package" || {
+		if [ "$pacman" = "brew" ] ; then
+			yes_confirm=
+		else
+			yes_confirm="-y"
+		fi
+		"$pacman" install $yes_confirm "$package" || {
 			# Try an update if install doesn't work the first time
-			"$pacman" -y update && \
-				"$pacman" install -y "$package"
+			"$pacman" $yes_confirm update && \
+				"$pacman" install $yes_confirm "$package"
 		}
 		return $?
 	done
