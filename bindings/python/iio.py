@@ -462,7 +462,7 @@ _d_get_trigger = _lib.iio_device_get_trigger
 _d_get_trigger.restype = c_int
 _d_get_trigger.argtypes = (
     _DevicePtr,
-    _DevicePtr,
+    _POINTER(_DevicePtr),
 )
 _d_get_trigger.errcheck = _check_negative
 
@@ -1272,10 +1272,10 @@ class Trigger(_DeviceOrTrigger):
         super(Trigger, self).__init__(_device)
 
     def _get_rate(self):
-        return int(self._attrs["frequency"].value)
+        return int(self._attrs["sampling_frequency"].value)
 
     def _set_rate(self, value):
-        self._attrs["frequency"].value = str(value)
+        self._attrs["sampling_frequency"].value = str(value)
 
     frequency = property(
         _get_rate,
@@ -1307,11 +1307,12 @@ class Device(_DeviceOrTrigger):
         _d_set_trigger(self._device, trigger._device if trigger else None)
 
     def _get_trigger(self):
-        value = _Device()
+        value = _DevicePtr()
         _d_get_trigger(self._device, _byref(value))
+        trig = Trigger(value.contents)
 
         for dev in self.ctx()._devices:
-            if value == dev._device:
+            if trig.id == dev.id:
                 return dev
         return None
 
