@@ -1,30 +1,30 @@
 #!/bin/sh -e
 
-LIBNAME="$1"
-OS_TYPE="$2"
-
 export INSIDE_DOCKER="1"
-export TRAVIS_BUILD_DIR="/$LIBNAME"
 
-cd "/$LIBNAME"
+INSIDE_DOCKER_BUILD_DIR=/docker_build_dir
 
-if [ -d "/$LIBNAME/CI" ] ; then
-	CI="/$LIBNAME/CI"
-elif [ -d "/$LIBNAME/ci" ] ; then
-	CI="/$LIBNAME/ci"
+export TRAVIS_BUILD_DIR="$INSIDE_DOCKER_BUILD_DIR"
+
+cd "$INSIDE_DOCKER_BUILD_DIR"
+
+if [ -d "/$INSIDE_DOCKER_BUILD_DIR/CI" ] ; then
+	CI="/$INSIDE_DOCKER_BUILD_DIR/CI"
+elif [ -d "/$INSIDE_DOCKER_BUILD_DIR/ci" ] ; then
+	CI="/$INSIDE_DOCKER_BUILD_DIR/ci"
 else
 	echo "No CI/ci directory present"
 	exit 1
 fi
 
-if [ -f "/$LIBNAME/inside-travis-ci-docker-env" ] ; then
-	. "/$LIBNAME/inside-travis-ci-docker-env"
+if [ -f "$INSIDE_DOCKER_BUILD_DIR/inside-travis-ci-docker-env" ] ; then
+	. "$INSIDE_DOCKER_BUILD_DIR/inside-travis-ci-docker-env"
 fi
 
-"$CI/travis/before_install_linux" "$OS_TYPE"
+"$CI/travis/before_install_linux"
 
-"$CI/travis/make_linux" "$OS_TYPE"
+"$CI/travis/make_linux"
 
 # need to find this out inside the container
 . "$CI/travis/lib.sh"
-echo "$(get_ldist)" > "/${LIBNAME}/build/.LDIST"
+echo "$(get_ldist)" > "${INSIDE_DOCKER_BUILD_DIR}/build/.LDIST"

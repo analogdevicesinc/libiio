@@ -10,6 +10,10 @@ LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_NO_INSTALL_CLEANUP
 
+# This needs to be duplicated inside 'inside_docker.sh'
+# It's the common convention between host & container
+INSIDE_DOCKER_BUILD_DIR=/docker_build_dir
+
 # Add here all the common env-vars that should be propagated
 # to the docker image, simply by referencing the env-var name.
 # The values will be evaluated.
@@ -19,7 +23,7 @@ export HOMEBREW_NO_INSTALL_CLEANUP
 #
 # If these nothing should be passed, then clear or
 #'unset INSIDE_DOCKER_TRAVIS_CI_ENV' after this script is included
-INSIDE_DOCKER_TRAVIS_CI_ENV="TRAVIS TRAVIS_COMMIT TRAVIS_PULL_REQUEST OS_VERSION"
+INSIDE_DOCKER_TRAVIS_CI_ENV="TRAVIS TRAVIS_COMMIT TRAVIS_PULL_REQUEST OS_TYPE OS_VERSION"
 
 COMMON_SCRIPTS="inside_docker.sh"
 
@@ -439,9 +443,9 @@ run_docker_script() {
 	local DOCKER_SCRIPT="$(get_script_path $1)"
 	local DOCKER_IMAGE="$2"
 	local OS_TYPE="$3"
-	local MOUNTPOINT="${4:-docker_build_dir}"
+	local MOUNTPOINT="${4:-${INSIDE_DOCKER_BUILD_DIR}}"
 
-	__save_env_for_docker "${TRAVIS_BUILD_DIR}"
+	__save_env_for_docker "$(pwd)"
 
 	sudo docker run --rm=true \
 		-v "$(pwd):/${MOUNTPOINT}:rw" \

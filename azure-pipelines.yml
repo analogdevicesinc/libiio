@@ -1,0 +1,102 @@
+trigger:
+- main
+- master
+- staging/*
+- 20*
+
+pr:
+- main
+- master
+- 20*
+
+jobs:
+- job: centos_7_x86_64
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
+    OS_TYPE: centos_docker
+    OS_VERSION: 7
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_linux
+  - script: ./CI/travis/make_linux
+
+- job: centos_8_x86_64
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
+    OS_TYPE: centos_docker
+    OS_VERSION: 8
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_linux
+  - script: ./CI/travis/make_linux
+
+- job: ubuntu_16_04_x86_64
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_linux
+  - script: ./CI/travis/make_linux
+
+- job: ubuntu_18_04_x86_64
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_linux
+  - script: ./CI/travis/make_linux
+
+- job: ubuntu_20_04_x86_64
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_linux
+  - script: ./CI/travis/make_linux
+
+- job: macos_10_14
+  pool:
+    vmImage: 'macos-10.14'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_darwin
+  - script: ./CI/travis/make_darwin
+
+- job: macos_10_15
+  pool:
+    vmImage: 'macos-10.15'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - script: ./CI/travis/before_install_darwin
+  - script: ./CI/travis/make_darwin
+
+# FIXME: uncomment after this is resolved:
+#        https://github.com/actions/virtual-environments/issues/2072
+# Mac OS X 11.0 is definitely a big thing (with their switch to ARM,
+# so we should be quick to have it)
+#
+# - job: macos_11_0
+#  pool:
+#    vmImage: 'macos-11.0'
+#  steps:
+#  - checkout: self
+#    fetchDepth: 1
+#    clean: true
+#  - script: ./CI/travis/before_install_darwin
+#  - script: ./CI/travis/make_darwin
