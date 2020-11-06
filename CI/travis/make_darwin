@@ -15,10 +15,15 @@ build_osx() {
 	ls
 }
 
-cd $TRAVIS_BUILD_DIR/build
+mkdir -p build
+
+cd build
 build_osx "-DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON"
 
-cd $TRAVIS_BUILD_DIR/build_tar
+cd ..
+
+mkdir -p build_tar
+cd build_tar
 build_osx "-DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON"
 echo "### make package"
 make package

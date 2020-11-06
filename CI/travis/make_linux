@@ -112,8 +112,7 @@ handle_ubuntu_docker() {
 		"ubuntu:${OS_VERSION}"
 }
 
-LIBNAME="$1"
-OS_TYPE=${2:-default}
+OS_TYPE=${OS_TYPE:-default}
 
 handle_${OS_TYPE}
 
