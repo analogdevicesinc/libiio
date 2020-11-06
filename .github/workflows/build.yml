@@ -1,0 +1,81 @@
+name: Build the libiio matrix
+
+on:
+  push:
+    branches:
+      - 'staging/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - '20[1-9][0-9]_R[1-9]'
+
+jobs:
+  centos_7_x86_64:
+    runs-on: ubuntu-latest
+    env:
+      OS_TYPE: centos_docker
+      OS_VERSION: 7
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_linux
+    - name: Build
+      run: ./CI/travis/make_linux
+
+  centos_8_x86_64:
+    runs-on: ubuntu-latest
+    env:
+      OS_TYPE: centos_docker
+      OS_VERSION: 8
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_linux
+    - name: Build
+      run: ./CI/travis/make_linux
+
+  ubuntu_16_04_x86_64:
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_linux
+    - name: Build
+      run: ./CI/travis/make_linux
+
+  ubuntu_18_04_x86_64:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_linux
+    - name: Build
+      run: ./CI/travis/make_linux
+
+  ubuntu_20_04_x86_64:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_linux
+    - name: Build
+      run: ./CI/travis/make_linux
+
+  macos_10_15:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_darwin
+    - name: Build
+      run: ./CI/travis/make_darwin
+
+  macos_11_0:
+    runs-on: macos-11.0
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: ./CI/travis/before_install_darwin
+    - name: Build
+      run: ./CI/travis/make_darwin
