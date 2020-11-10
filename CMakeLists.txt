@@ -537,15 +537,6 @@ if(OSX_PACKAGE)
 endif()
 
 if(WITH_IIOD)
-	option(WITH_SYSTEMD "Enable installation of systemd service file for iiod" OFF)
-	set(SYSTEMD_UNIT_INSTALL_DIR /lib/systemd/system CACHE PATH "default install path for systemd unit files")
-
-	option(WITH_SYSVINIT "Enable installation of SysVinit script for iiod" OFF)
-	set(SYSVINIT_INSTALL_DIR /etc/init.d CACHE PATH "default install path for SysVinit scripts")
-
-	option(WITH_UPSTART "Enable installation of upstart config file for iiod" OFF)
-	set(UPSTART_CONF_INSTALL_DIR /etc/init CACHE PATH "default install path for upstart conf files")
-
 	if (NOT PTHREAD_LIBRARIES)
 		message(WARNING "IIOD requires threads support; disabling")
 		set(WITH_IIOD OFF CACHE BOOL "" FORCE)

@@ -1,6 +1,8 @@
 # iiod - Upstart script
 #
-# Copyright (C) 2016 Analog Devices Inc.
+# Copyright (C) 2016-2020 Analog Devices Inc.
+# Please report bugs to:
+# https://github.com/analogdevicesinc/libiio
 
 description "IIO Daemon"
 author      "Paul Cercueil <paul.cercueil@analog.com>"
@@ -10,4 +12,5 @@ stop on runlevel [!2345]
 
 respawn
 
+pre-start exec @CMAKE_INSTALL_FULL_SBINDIR@/iiod_create_ini
 exec @CMAKE_INSTALL_FULL_SBINDIR@/iiod -D

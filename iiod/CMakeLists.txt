@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 2.8.7)
 project(iiod C)
 
+message(STATUS "Building iiod" )
+
+option(WITH_SYSTEMD "Enable installation of systemd service file for iiod" OFF)
+option(WITH_SYSVINIT "Enable installation of SysVinit script for iiod" OFF)
+option(WITH_UPSTART "Enable installation of upstart config file for iiod" OFF)
+
+if ((WITH_SYSTEMD AND WITH_SYSVINIT) OR (WITH_SYSTEMD AND WITH_UPSTART) OR
+		(WITH_SYSVINIT AND WITH_UPSTART))
+		message(FATAL_ERROR "Multiple init systems enabled: only enable one")
+endif()
+if (NOT WITH_SYSTEMD AND NOT WITH_SYSVINIT AND NOT WITH_UPSTART)
+	message(STATUS "Init system not configured: use WITH_SYSTEMD, WITH_SYSVINIT or WITH_UPSTART")
+endif()
+
 include(FindBISON)
 include(FindFLEX)
 
@@ -62,14 +76,31 @@ add_definitions(-D_GNU_SOURCE=1)
 
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iiod RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/init/iiod_create_ini DESTINATION ${CMAKE_INSTALL_SBINDIR})
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/init/iiod_setup_gadgetfs DESTINATION ${CMAKE_INSTALL_SBINDIR})
 endif()
 
 if (WITH_SYSTEMD)
+	# Borrowed a portion of this from https://github.com/intel/hdcp/blob/master/config/systemdservice.cmake
+	# Copyright (c) 2018, Intel Corporation
+	pkg_check_modules(SYSTEMD "systemd")
+	if (SYSTEMD_FOUND AND "${SYSTEMD_SERVICES_INSTALL_DIR}" STREQUAL "")
+		execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE}
+			--variable=systemdsystemunitdir systemd
+			OUTPUT_VARIABLE SYSTEMD_SERVICES_INSTALL_DIR)
+		string(REGEX REPLACE "[ \t\n]+" "" SYSTEMD_SERVICES_INSTALL_DIR
+			"${SYSTEMD_SERVICES_INSTALL_DIR}")
+	else()
+		set(SYSTEMD_SERVICES_INSTALL_DIR /lib/systemd/system CACHE PATH "default install path for systemd unit files")
+	endif()
+	message(STATUS "Configured for the systemd init system, installing into " ${SYSTEMD_SERVICES_INSTALL_DIR})
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.service.cmakein ${PROJECT_BINARY_DIR}/init/iiod.service)
-	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.service DESTINATION ${SYSTEMD_UNIT_INSTALL_DIR})
+	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.service DESTINATION ${SYSTEMD_SERVICES_INSTALL_DIR})
 endif()
 
 if (WITH_SYSVINIT)
+	set(SYSVINIT_INSTALL_DIR /etc/init.d CACHE PATH "default install path for SysVinit scripts")
+	message(STATUS "Configured for the SysVinit system, installing into " ${SYSVINIT_INSTALL_DIR})
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.init.cmakein ${PROJECT_BINARY_DIR}/init/iiod)
 	install(FILES ${PROJECT_BINARY_DIR}/init/iiod
 	        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
@@ -77,6 +108,8 @@ if (WITH_SYSVINIT)
 endif()
 
 if (WITH_UPSTART)
+	set(UPSTART_CONF_INSTALL_DIR /etc/init CACHE PATH "default install path for upstart conf files")
+	message(STATUS "Configured for the Upstart init system, installing into "  ${UPSTART_CONF_INSTALL_DIR})
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.conf.cmakein ${PROJECT_BINARY_DIR}/init/iiod.conf)
 	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.conf DESTINATION ${UPSTART_CONF_INSTALL_DIR})
 endif()

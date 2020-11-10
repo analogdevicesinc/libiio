@@ -1,6 +1,8 @@
 # iiod - Systemd init script
 #
-# Copyright (C) 2016 Analog Devices Inc.
+# Copyright (C) 2016-2020 Analog Devices Inc.
+# reports bugs and issues to:
+# https://github.com/analogdevicesinc/libiio
 
 [Unit]
 Description=IIO Daemon
@@ -8,6 +10,7 @@ After=network.target
 ConditionPathExists=/sys/bus/iio
 
 [Service]
+ExecStartPre=-@CMAKE_INSTALL_FULL_SBINDIR@/iiod_create_ini
 ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod
 KillMode=process
 Restart=on-failure

@@ -1,0 +1,102 @@
+#!/bin/sh
+set -ue
+
+if [ $(id -u) -ne 0 ] ; then
+	echo "Please run as root"
+	exit 1
+fi
+
+message() {
+	[ -x /usr/bin/logger ] || return
+	if [ -z "$1" ]; then
+		return
+	fi
+	logger -t iiod_setup_usb "$@"
+#	echo $@
+}
+
+if [ ! -d "/sys/class/udc" ] ; then
+	message "no support for USB Device Controllers - aborting"
+	exit
+fi
+
+#if we do not support functionfs give up
+if [ $(grep functionfs /proc/filesystems | wc -c) -eq 0 ] ; then
+	message "no support for functionfs - aborting"
+	exit
+fi
+
+#if we do not support configfs give up
+if [ $(grep functionfs /proc/filesystems | wc -c) -eq 0 ] ; then
+	message "no support for configfs - aborting"
+	exit
+fi
+
+# Verify which USB Device Controller (UDC) drivers are available
+UDC_NAME="$(ls -1 /sys/class/udc | head -n1)"
+if [ ${#UDC_NAME} -eq 0 ] ; then
+	message "no support for USB Device Controllers - aborting"
+	exit
+fi
+
+GADGET=/sys/kernel/config/usb_gadget/ffs
+
+# see Universal Serial Bus Language Identifiers (LANGIDs), Revision 1.0, March 29, 2000
+# 0x409 = US English
+LANGUAGE=0x409
+
+# Default PID/VID See:
+# https://usb-ids.gowdy.us/
+VENDOR="Analog Devices Inc."
+VID=0x0456
+PRODUCT="Generic USB IIOD"
+PID="0xb671"
+
+if [ ! -d /sys/kernel/config/usb_gadget ] ; then
+	modprobe -q libcomposite
+fi
+
+if [ ! -d /sys/kernel/config/usb_gadget ] ; then
+	message "configure configfs"
+	mount configfs -t configfs /sys/kernel/config
+	mkdir -p ${GADGET}
+
+	echo "${VID}" > ${GADGET}/idVendor
+	echo "${PID}" > ${GADGET}/idProduct
+	mkdir -p ${GADGET}/strings/${LANGUAGE}
+	echo "${VENDOR}" > ${GADGET}/strings/${LANGUAGE}/manufacturer
+	echo "${PRODUCT}" > ${GADGET}/strings/${LANGUAGE}/product
+	if [ -f /etc/libiio.ini &&
+			$(grep serial /etc/libiio.ini | awk -F= '{print $2}' | wc -c) -gt 0 ] ; then
+		grep serial /etc/libiio.ini | awk -F= '{print $2}' >  ${GADGET}/strings/${LANGUAGE}/serialnumber
+	else
+		printf "%05x-%05x" $RANDOM $RANDOM > ${GADGET}/strings/${LANGUAGE}/serialnumber
+	fi
+
+	# Create gadget function(s)
+	mkdir -p ${GADGET}/functions/ffs.iio_ffs
+	# Create gadget
+	mkdir -p ${GADGET}/configs/c.1
+	mkdir -p ${GADGET}/configs/c.1/strings/${LANGUAGE}
+	# Create gadget configuration
+	echo "IIO" > ${GADGET}/configs/c.1/strings/${LANGUAGE}/configuration
+	# Communication Device Class (Abstract Control Model)
+	mkdir -p ${GADGET}/functions/acm.usb0
+
+	ln -s ${GADGET}/functions/ffs.iio_ffs ${GADGET}/configs/c.1/ffs.iio_ffs
+	ln -s ${GADGET}/functions/acm.usb0 ${GADGET}/configs/c.1
+else
+	if [ -d /sys/kernel/config/usb_gadget/*/strings/ ] ; then
+		message "Device already configured as /sys/kernel/config/usb_gadget/$(ls /sys/kernel/config/usb_gadget/)"
+		message "  Manufacture : $(cat /sys/kernel/config/usb_gadget/*/strings/*/manufacturer)"
+		message "  Product     : $(cat /sys/kernel/config/usb_gadget/*/strings/*/product)"
+		message "  VID:PID     : $(cat /sys/kernel/config/usb_gadget/*/idVendor):$(cat /sys/kernel/config/usb_gadget/*/idProduct)"
+	fi
+fi
+
+if [ ! -d /dev/iio_ffs ] ; then
+	message "enable functionfs"
+	mkdir /dev/iio_ffs
+	mount iio_ffs -t functionfs /dev/iio_ffs
+fi
+

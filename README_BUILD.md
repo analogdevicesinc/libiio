@@ -62,11 +62,20 @@ Cmake Options          | Depends on    | Description                     |
 `WITH_NETWORK_BACKEND` |               | Supports TCP/IP                 |
 `WITH_LOCAL_BACKEND`   | Linux         | Enables local support with iiod |
 
+Which init system to support (and install startup scripts for). You can choose
+none, or one of:
+
+Cmake Options          | Description                     |
+---------------------- | ------------------------------- |
+`WITH_SYSTEMD`         | For Systemd based systems.      |
+`WITH_SYSVINIT`        | For SysVinit based systems.     |
+`WITH_UPSTART`         | For Upstart based systems.      |
+
 
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DPYTHON_BINDINGS=ON -DWITH_SYSTEMD=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
