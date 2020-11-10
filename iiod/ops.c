@@ -428,20 +428,20 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 		unsigned int i;
 		char buf[129], *ptr = buf;
 		uint32_t *mask = demux ? thd->mask : dev->mask;
-		ssize_t ret, len;
+		ssize_t ret, length;
 
-		len = sizeof(buf);
+		length = sizeof(buf);
 		/* Send the current mask */
 		for (i = dev->nb_words; i > 0 && ptr < buf + sizeof(buf);
 				i--, ptr += 8) {
-			iio_snprintf(ptr, len, "%08x", mask[i - 1]);
-			len -= 8;
+			iio_snprintf(ptr, length, "%08x", mask[i - 1]);
+			length -= 8;
 		}
 
 		*ptr = '\n';
-		len--;
+		length--;
 
-		if (len < 0) {
+		if (length < 0) {
 			IIO_ERROR("send_data: string length error\n");
 			return -ENOSPC;
 		}
