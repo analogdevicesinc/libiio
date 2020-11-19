@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Buffersize requires an argument\n");
 				return EXIT_FAILURE;
 			}
-			buffer_size = sanitize_clamp("buffer size", optarg, 64, 4 * 1024 * 1024);
+			buffer_size = sanitize_clamp("buffer size", optarg, 1, SIZE_MAX);
 			break;
 		case 's':
 			if (!optarg) {
