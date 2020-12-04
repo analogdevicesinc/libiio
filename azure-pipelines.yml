@@ -1,0 +1,156 @@
+jobs:
+###########################################################
+# Builds
+###########################################################
+- job: LinuxBuilds
+  # Host Box
+  pool:
+    vmImage: 'ubuntu-16.04'
+  # Docker Images
+  strategy:
+    matrix:
+      ubuntu18:
+        image: tfcollins/test-ubuntu:18.04
+      ubuntu20:
+        image: tfcollins/test-ubuntu:20.04
+      fedora32:
+        image: tfcollins/test-fedora:32
+  container: $[ variables['image'] ]
+  steps:
+  - script: |
+      sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
+      sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git cmake doxygen graphviz libaio-dev libusb-1.0-0-dev libserialport-dev libavahi-client-dev libxml2-dev rpm tar bzip2 gzip flex bison git
+      sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-pip python3-setuptools python3-sphinx python3-sphinx-rtd-theme
+    displayName: "Setup Ubuntu"
+    condition: contains(variables['image'], 'ubuntu')
+  - script: |
+      mkdir build && cd build
+      cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
+      make
+      cd ..
+    displayName: Build
+  - script: |
+      cd build
+      cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DENABLE_PACKAGING=ON
+      make package
+    displayName: "Package"
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+      contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.rpm)'
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: drop
+  
+###########################################################
+- job: WindowsBuilds
+  # Host Box
+  strategy:
+    matrix:
+      VS2017:
+        vmImage: 'vs2017-win2016'
+        compiler: 'Visual Studio 15 2017 Win64'
+      VS2019:
+        vmImage: 'windows-2019'
+        compiler: 'Visual Studio 16 2019'
+  pool: 
+    vmImage: $[ variables['vmImage'] ]
+  steps:
+  - script: |
+      choco install -y wget
+      mkdir deps
+      cd deps
+      mkdir libxml
+      wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -q -O "libxml.7z"
+      7z x -y libxml.7z
+      rm libxml.7z
+      cd ..\..
+    displayName: Dependencies
+  - script: |
+      git submodule update --init
+      echo "Downloading deps..."
+      cd C:\
+      wget http://swdownloads.analog.com/cse/build/libiio-win-deps.zip -q -O "libiio-win-deps.zip"
+      7z x -y "C:\libiio-win-deps.zip"
+      choco install InnoSetup
+      set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
+    displayName: "Packaged Dependencies"
+  - script: |
+      mkdir build
+      cd build
+      cmake .. -G "$(compiler)" -DPYTHON_BINDINGS=ON -DLIBXML2_LIBRARIES="$(Agent.BuildDirectory)\\s\\deps\\lib\\libxml2.dll.a"
+      cmake --build . --config Release
+    displayName: Build
+
+###########################################################
+- job: macOSBuilds
+  # Host Box
+  strategy:
+    matrix:
+      macOS_10_14:
+        vmImage: 'macOS-10.14'
+      macOS_10_15:
+        vmImage: 'macOS-10.15'
+  pool: 
+    vmImage: $[ variables['vmImage'] ]
+  steps:
+  - script: |
+      brew install cmake doxygen libusb libxml2 ncurses cdk libserialport
+      pip3 install sphinx sphinx-rtd-theme
+    displayName: Dependencies
+  - script: |
+      mkdir build && cd build
+      cmake .. -DPYTHON_BINDINGS=ON
+      make
+      sudo make install
+      cd ..
+    displayName: Build
+  - script: |
+      cd build
+      cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
+      make
+    displayName: "Build With Doc"
+
+###########################################################
+- job: ARMBuilds
+  # Host Box
+  pool:
+    vmImage: 'ubuntu-16.04'
+  # Docker Images
+  strategy:
+    matrix:
+      ubuntu-ppc64le:
+        image: ppc64le/ubuntu
+        arch: ppc64le
+        build_script: ci-ubuntu.sh
+      ubuntu-x390x:
+        image: s390x/ubuntu
+        arch: s390x
+        build_script: ci-ubuntu.sh
+      ubuntu-arm64v8:
+        image: arm64v8/ubuntu
+        arch: aarch64
+        build_script: ci-ubuntu.sh
+      ubuntu-arm32v7:
+        image: arm32v7/ubuntu
+        arch: arm
+        build_script: ci-ubuntu.sh
+  steps:
+  - script: |
+      sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-arm-static
+      sudo apt-get install -y g++-arm-linux-gnueabihf libstdc++-4.8-dev-armhf-cross
+      sudo apt-get install -y g++-aarch64-linux-gnu libstdc++-4.8-dev-arm64-cross
+      sudo apt-get install -y qemu-system-ppc64
+      sudo apt-get install qemu
+      sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    displayName: "Setup"
+  - script: |
+      sudo docker run --rm -t --privileged -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
+    displayName: "Build"
+
+
+###########################################################
+# Deploy
+###########################################################
