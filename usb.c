@@ -918,8 +918,8 @@ struct iio_context * usb_create_context(unsigned int bus,
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to claim interface %u:%u:%u: %s (%i)\n",
-		      bus, address, intrfc, err_str, ret);
+		IIO_ERROR("Unable to claim interface %u:%u:%u: %s\n",
+		      bus, address, intrfc, err_str);
 		goto err_libusb_close;
 	}
 
@@ -927,8 +927,7 @@ struct iio_context * usb_create_context(unsigned int bus,
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to get config descriptor: %s (%i)\n",
-				err_str, ret);
+		IIO_ERROR("Unable to get config descriptor: %s\n", err_str);
 		goto err_libusb_close;
 	}
 
