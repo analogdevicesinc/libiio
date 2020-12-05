@@ -216,6 +216,10 @@ void iio_strerror(int err, char *buf, size_t len)
 #endif
 	if (ret != 0)
 		iio_snprintf(buf, len, "Unknown error %i", err);
+	else {
+		size_t i = strnlen(buf, len);
+		iio_snprintf(buf + i, len - i, " (%i)", err);
+	}
 }
 
 char *iio_strdup(const char *str)
