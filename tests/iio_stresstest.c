@@ -219,7 +219,7 @@ static void thread_err(int id, ssize_t ret, char * what)
 	if (ret < 0) {
 		char err_str[1024];
 		iio_strerror(-ret, err_str, sizeof(err_str)); \
-		fprintf(stderr, "%i : IIO ERROR : %s : %s (%zd)\n", id, what, err_str, ret); \
+		fprintf(stderr, "%i : IIO ERROR : %s : %s\n", id, what, err_str); \
 	}
 }
 

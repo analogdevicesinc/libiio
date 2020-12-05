@@ -469,7 +469,7 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 			char err_str[1024];
 			iio_strerror(errno, err_str, sizeof(err_str));
 			IIO_ERROR("Could not get/set O_NONBLOCK on STDIN_FILENO"
-					" %s (%d)\n", err_str, -errno);
+					" %s\n", err_str);
 		}
 
 		flags = fcntl(STDOUT_FILENO, F_GETFL);
@@ -479,7 +479,7 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 			char err_str[1024];
 			iio_strerror(errno, err_str, sizeof(err_str));
 			IIO_ERROR("Could not get/set O_NONBLOCK on STDOUT_FILENO"
-					" %s (%d)\n", err_str, -errno);
+					" %s\n", err_str);
 		}
 	}
 
@@ -517,7 +517,7 @@ static int main_server(struct iio_context *ctx, bool debug)
 	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 	if (ret < 0) {
 		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_WARNING("setsockopt SO_REUSEADDR : %s (%d)", err_str, -errno);
+		IIO_WARNING("setsockopt SO_REUSEADDR : %s\n", err_str);
 	}
 
 #ifdef HAVE_IPV6
@@ -588,30 +588,30 @@ static int main_server(struct iio_context *ctx, bool debug)
 		ret = setsockopt(new, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
 		if (ret < 0) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt SO_KEEPALIVE : %s (%d)", err_str, -errno);
+			IIO_WARNING("setsockopt SO_KEEPALIVE : %s", err_str);
 		}
 		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_probes,
 				sizeof(keepalive_probes));
 		if (ret < 0) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_KEEPCNT : %s (%d)", err_str, -errno);
+			IIO_WARNING("setsockopt TCP_KEEPCNT : %s", err_str);
 		}
 		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_time,
 				sizeof(keepalive_time));
 		if (ret < 0) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_KEEPIDLE : %s (%d)", err_str, -errno);
+			IIO_WARNING("setsockopt TCP_KEEPIDLE : %s", err_str);
 		}
 		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_intvl,
 				sizeof(keepalive_intvl));
 		if (ret < 0) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_KEEPINTVL : %s (%d)", err_str, -errno);
+			IIO_WARNING("setsockopt TCP_KEEPINTVL : %s", err_str);
 		}
 		ret = setsockopt(new, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
 		if (ret < 0) {
 			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_NODELAY : %s (%d)", err_str, -errno);
+			IIO_WARNING("setsockopt TCP_NODELAY : %s", err_str);
 		}
 
 		cdata->fd = new;

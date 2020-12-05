@@ -137,7 +137,7 @@ static void shutdown()
 		if (ret < 0) {
 			char buf[256];
 			iio_strerror(-ret, buf, sizeof(buf));
-			fprintf(stderr, "%s (%d) while Disassociate trigger\n", buf, ret);
+			fprintf(stderr, "%s while Disassociate trigger\n", buf);
 		}
 	}
 
@@ -355,7 +355,7 @@ int main (int argc, char **argv)
 			if (ret < 0) {
 				char buf[256];
 				iio_strerror(-ret, buf, sizeof(buf));
-				fprintf(stderr, "%s (%d) while processing buffer\n", buf, ret);
+				fprintf(stderr, "%s while processing buffer\n", buf);
 			}
 			printf("\n");
 			break;
