@@ -134,7 +134,7 @@ jobs:
         arch: aarch64
         build_script: ci-ubuntu.sh
       ubuntu-arm32v7:
-        image: arm32v7/ubuntu
+        image: arm32v7/ubuntu:bionic
         arch: arm
         build_script: ci-ubuntu.sh
   steps:
