@@ -310,8 +310,7 @@ int main(int argc, char **argv)
 			if (ret < 0) {
 				char buf[256];
 				iio_strerror(-(int)ret, buf, sizeof(buf));
-				fprintf(stderr, "sample rate not set : %s (%zd)\n",
-						buf, ret);
+				fprintf(stderr, "sample rate not set : %s\n", buf);
 			}
 		}
 
@@ -319,8 +318,7 @@ int main(int argc, char **argv)
 		if (ret < 0) {
 			char buf[256];
 			iio_strerror(-(int)ret, buf, sizeof(buf));
-			fprintf(stderr, "set triffer failed : %s (%zd)\n",
-					buf, ret);
+			fprintf(stderr, "set trigger failed : %s\n", buf);
 		}
 	}
 
@@ -414,8 +412,7 @@ int main(int argc, char **argv)
 			if (ret < 0) {
 				char buf[256];
 				iio_strerror(-(int)ret, buf, sizeof(buf));
-				fprintf(stderr, "buffer processing failed : %s (%zd)\n",
-						buf, ret);
+				fprintf(stderr, "buffer processing failed : %s\n", buf);
 			}
 		}
 

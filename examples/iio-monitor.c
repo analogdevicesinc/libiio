@@ -77,7 +77,7 @@ static void err_str(int ret)
 {
 	char buf[256];
 	iio_strerror(-ret, buf, sizeof(buf));
-	fprintf(stderr, "Error during read: %s (%d)\n", buf, ret);
+	fprintf(stderr, "Error during read: %s\n", buf);
 }
 
 static double get_channel_value(struct iio_channel *chn)

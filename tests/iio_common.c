@@ -388,8 +388,8 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		if (ret < 0) {
 			char err_str[1024];
 			iio_strerror(-(int)ret, err_str, sizeof(err_str));
-			fprintf(stderr, "IIO contexts set timeout failed : %s (%zd)\n",
-					err_str, ret);
+			fprintf(stderr, "IIO contexts set timeout failed : %s\n",
+					err_str);
 			iio_context_destroy(ctx);
 			return NULL;
 		}

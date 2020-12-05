@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 	else {
 		char err_str[1024];
 		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Unable to get backend version: %s (%i)\n", err_str, ret);
+		fprintf(stderr, "Unable to get backend version: %s\n", err_str);
 	}
 
 	printf("Backend description string: %s\n",
@@ -151,8 +151,8 @@ int main(int argc, char **argv)
 		else {
 			char err_str[1024];
 			iio_strerror(-ret, err_str, sizeof(err_str));
-			fprintf(stderr, "\tUnable to read IIO context attributes: %s (%i)\n",
-					err_str, ret);
+			fprintf(stderr, "\tUnable to read IIO context attributes: %s\n",
+					err_str);
 		}
 	}
 
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 					printf("value: %s\n", buf);
 				} else {
 					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s (%i)\n", buf, ret);
+					printf("ERROR: %s\n", buf);
 				}
 			}
 		}
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 					printf("value: %s\n", buf);
 				} else {
 					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s (%i)\n", buf, ret);
+					printf("ERROR: %s\n", buf);
 				}
 			}
 		}
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
 					printf("value: %s\n", buf);
 				} else {
 					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s (%i)\n", buf, ret);
+					printf("ERROR: %s\n", buf);
 				}
 			}
 		}
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
 					printf("value: %s\n", buf);
 				} else {
 					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s (%i)\n", buf, ret);
+					printf("ERROR: %s\n", buf);
 				}
 			}
 		}
@@ -315,7 +315,7 @@ int main(int argc, char **argv)
 			printf("\t\tNo trigger on this device\n");
 		} else if (ret < 0) {
 			iio_strerror(-ret, buf, BUF_SIZE);
-			printf("ERROR: checking for trigger : %s (%i)\n", buf, ret);
+			printf("ERROR: checking for trigger : %s\n", buf);
 		}
 	}
 
