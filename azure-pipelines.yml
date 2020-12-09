@@ -21,7 +21,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_linux
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_linux
+    displayName: "Build"
 
 - job: centos_8_x86_64
   pool:
@@ -34,7 +36,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_linux
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_linux
+    displayName: "Build"
 
 - job: ubuntu_16_04_x86_64
   pool:
@@ -44,7 +48,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_linux
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_linux
+    displayName: "Build"
 
 - job: ubuntu_18_04_x86_64
   pool:
@@ -54,7 +60,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_linux
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_linux
+    displayName: "Build"
 
 - job: ubuntu_20_04_x86_64
   pool:
@@ -64,7 +72,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_linux
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_linux
+    displayName: "Build"
 
 - job: macos_10_14
   pool:
@@ -74,7 +84,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_darwin
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_darwin
+    displayName: "Build"
 
 - job: macos_10_15
   pool:
@@ -84,7 +96,9 @@ jobs:
     fetchDepth: 1
     clean: true
   - script: ./CI/travis/before_install_darwin
+    displayName: "Install Dependencies"
   - script: ./CI/travis/make_darwin
+    displayName: "Build"
 
 # FIXME: uncomment after this is resolved:
 #        https://github.com/actions/virtual-environments/issues/2072
@@ -99,4 +113,6 @@ jobs:
 #    fetchDepth: 1
 #    clean: true
 #  - script: ./CI/travis/before_install_darwin
+#    displayName: "Install Dependencies"
 #  - script: ./CI/travis/make_darwin
+#    displayName: "Build"
