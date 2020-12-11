@@ -13,6 +13,23 @@ pr:
 - 20*
 
 jobs:
+- job: Coverity
+  variables:
+    PLATFORM: linux
+    BITS: 64
+    HOST: x86_64
+    CHECK_RULE: coverage
+    GCOV: 1
+    PKG_RULE: gzip
+    PYPI: yes
+    COVERITY_SCAN_PROJECT_NAME: 'analogdevicesinc/libiio'
+    COVERITY_SCAN_BRANCH_PATTERN: master
+    COVERITY_SCAN_NOTIFICATION_EMAIL: "cse-ci-notifications@analog.com"
+    COVERITY_SCAN_BUILD_COMMAND_PREPEND: "mkdir build && cd build && cmake -DWITH_EXAMPLES=ON .."
+    COVERITY_SCAN_BUILD_COMMAND: make
+  steps:
+  - script: |
+      echo "Coverity should run now"
 - job: LinuxBuilds
   strategy:
     matrix:
