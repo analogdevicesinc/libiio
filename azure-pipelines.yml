@@ -1,6 +1,3 @@
-variables:
-  branchName: $[ variables['Build.SourceBranchName'] ]
-
 trigger:
 - main
 - master
@@ -20,21 +17,21 @@ jobs:
         imageName: 'ubuntu-latest'
         OS_TYPE: 'centos_docker'
         OS_VERSION: 7
-        artifactName: 'libiio-Linux-CentOS-7-x86_64'
+        artifactName: 'Linux-CentOS-7-x86_64'
       centos_8_x86_64:
         imageName: 'ubuntu-latest'
         OS_TYPE: 'centos_docker'
         OS_VERSION: 8
-        artifactName: 'libiio-Linux-CentOS-8-x86_64'
+        artifactName: 'Linux-CentOS-8-x86_64'
       ubuntu_16_04_x86_64:
         imageName: 'ubuntu-16.04'
-        artifactName: 'libiio-Linux-Ubuntu-16.04-x86_64'
+        artifactName: 'Linux-Ubuntu-16.04-x86_64'
       ubuntu_18_04_x86_64:
         imageName: 'ubuntu-18.04'
-        artifactName: 'libiio-Linux-Ubuntu-18.04-x86_64'
+        artifactName: 'Linux-Ubuntu-18.04-x86_64'
       ubuntu_20_04_x86_64:
         imageName: 'ubuntu-20.04'
-        artifactName: 'libiio-Linux-Ubuntu-20.04-x86_64'
+        artifactName: 'Linux-Ubuntu-20.04-x86_64'
   pool:
     vmImage: $(imageName)
   steps:
@@ -54,24 +51,24 @@ jobs:
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: '$(artifactName)-$(branchName)'
+      artifactName: '$(artifactName)'
 
 - job: macOSBuilds
   strategy:
     matrix:
       macOS_10_14:
         imageName: 'macOS-10.14'
-        artifactName: 'libiio-macOS-10.14'
+        artifactName: 'macOS-10.14'
       macOS_10_15:
         imageName: 'macOS-10.15'
-        artifactName: 'libiio-macOS-10.15'
+        artifactName: 'macOS-10.15'
 # FIXME: uncomment after this is resolved:
 #        https://github.com/actions/virtual-environments/issues/2072
 # Mac OS X 11.0 is definitely a big thing (with their switch to ARM,
 # so we should be quick to have it)
 #      macOS_11_0:
 #        imageName: 'macOS-11.0'
-#        artifactName: 'libiio-macOS-11.0'
+#        artifactName: 'macOS-11.0'
   pool:
     vmImage: $(imageName)
   steps:
@@ -91,4 +88,4 @@ jobs:
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: '$(artifactName)-$(branchName)'
+      artifactName: '$(artifactName)'
