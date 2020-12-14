@@ -87,7 +87,7 @@ handle_default() {
 	cd ..
 
 	# make sure we are up to date (once)
-	if [ "$LDIST" = "DO_NOT_DEPLOY" ] ; then
+	if [ "$CHECK_AGAINST_KERNEL_HEADER" = "1" ] ; then
 		./CI/travis/check_kernel.sh
 	fi
 	echo "### All done building"
