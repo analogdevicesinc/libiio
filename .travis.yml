@@ -1,3 +1,5 @@
+# Note: some old files [for this] were removed inside the CI/travis folder
+
 language: c
 sudo: required
 python: "3.6"
