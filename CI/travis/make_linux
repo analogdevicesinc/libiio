@@ -9,7 +9,6 @@ handle_default() {
 	mkdir -p build
 	cd build
 
-	add_python_path
 	if command_exists python ; then
 		command -v python
 		python --version
@@ -18,6 +17,11 @@ handle_default() {
 			-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())") \
 			-DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))") \
 			-DPYTHON_EXECUTABLE=$(command -v python)"
+
+		# Add ~/.local dir to paths; this is where pip installs things (if no sudo)
+		export PATH="$PATH:$(readlink -f ~/.local/bin/)"
+		export PYTHONPATH="$(readlink -f ~/.local/lib/python*/site-packages/)"
+
 		if command_exists sphinx-build ; then
 			DOC_HELP="-DWITH_DOC=ON"
 		fi
