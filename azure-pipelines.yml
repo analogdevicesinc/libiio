@@ -32,6 +32,7 @@ jobs:
       ubuntu_20_04_x86_64:
         imageName: 'ubuntu-20.04'
         artifactName: 'Linux-Ubuntu-20.04-x86_64'
+        CHECK_AGAINST_KERNEL_HEADER: 1
   pool:
     vmImage: $(imageName)
   steps:
