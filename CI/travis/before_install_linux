@@ -13,26 +13,6 @@ install_sphinx() {
 	fi
 }
 
-install_pyenv() {
-	if ! command_exists pyenv ; then
-		echo installing pyenv
-		git clone git://github.com/yyuu/pyenv.git $HOME/.pyenv
-		export PATH="$HOME/.pyenv/bin:$PATH"
-		export PYENV_ROOT="$HOME/.pyenv"
-	fi
-}
-
-install_python() {
-	echo "### installing python"
-	command -v pyenv
-	add_python_path
-	pyenv install --list | grep "^[[:space:]]*[0-9]"
-	pyenv install 3.6.3
-	pyenv global 3.6.3
-	add_python_path
-}
-
-
 handle_centos() {
 	# needed for man2html and a few other popular tools
 	yum search epel-release
@@ -101,12 +81,10 @@ handle_default() {
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential \
 		libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
 		wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev \
-		libffi-dev liblzma-dev python-openssl git
+		libffi-dev liblzma-dev python-openssl git \
+		doxygen man2html python3 python3-pip
 
-	if ! is_arm ; then
-		install_pyenv
-		install_python
-		sudo apt-get install -y doxygen man2html
+	if is_python_at_least_ver "python" "3.6" ; then
 		install_sphinx
 	fi
 }

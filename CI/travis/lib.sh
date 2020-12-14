@@ -46,33 +46,6 @@ backtrace() {
 	fi
 }
 
-add_python_path() {
-	echo "adding Python to the path"
-	if [ -d "$HOME/.pyenv/bin" -a "$(echo "$PATH" | grep .pyenv/bin | wc -c)" -eq "0" ] ; then
-		echo "adding $HOME/.pyenv/bin to path"
-		export PATH="$HOME/.pyenv/bin:$PATH"
-	fi
-	if [ -z "${PYENV_SHELL}" ] ; then
-		echo init pyenv
-		eval "$(pyenv init -)"
-	fi
-	if [ -d /opt/pyenv/versions/3.6.3/bin -a "$(echo "$PATH" | grep opt/pyenv/versions | wc -c)" -eq "0" ] ; then
-		echo adding python on opt to PATH
-		export PATH="/opt/pyenv/versions/3.6.3/bin:$PATH"
-	fi
-	if [ -d /root/.pyenv/versions/3.6.3/bin -a "$(echo "$PATH" | grep root/.pyenv/versions | wc -c)" -eq "0" ] ; then
-		echo adding python on root/.pyenv to PATH
-		export PATH="/root/.pyenv/versions/3.6.3/bin:$PATH"
-	fi
-	if ! command_exists python ; then
-		echo No python on path
-		echo "$PATH"
-	else
-		python --version
-		command -v python
-	fi
-}
-
 get_script_path() {
 	local script="$1"
 
@@ -509,6 +482,15 @@ is_ubuntu_at_least_ver() {
 is_centos_at_least_ver() {
 	[ "$(get_dist_id)" = "centos" ] || return 1
 	version_ge "$(get_version)" "$1"
+}
+
+is_python_at_least_ver() {
+	local out python_exec
+
+	python_exec="$1"
+	command_exists "$python_exec" || return 1
+	out=$($python_exec --version)
+	version_ge "${out#* }" "$2"
 }
 
 is_arm() {
