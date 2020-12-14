@@ -107,6 +107,10 @@ handle_default() {
 	fi
 }
 
+handle_debian() {
+	handle_default
+}
+
 setup_build_type_env_vars
 
 handle_${BUILD_TYPE}

@@ -103,6 +103,10 @@ handle_centos() {
 	cd ..
 }
 
+handle_debian() {
+	handle_default
+}
+
 handle_generic_docker() {
 	run_docker_script inside_docker.sh
 }
