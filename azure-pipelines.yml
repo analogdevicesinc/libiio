@@ -16,12 +16,12 @@ jobs:
       centos_7_x86_64:
         imageName: 'ubuntu-latest'
         OS_TYPE: 'centos_docker'
-        OS_VERSION: 7
+        OS_VERSION: centos7
         artifactName: 'Linux-CentOS-7-x86_64'
       centos_8_x86_64:
         imageName: 'ubuntu-latest'
         OS_TYPE: 'centos_docker'
-        OS_VERSION: 8
+        OS_VERSION: centos8
         artifactName: 'Linux-CentOS-8-x86_64'
       ubuntu_16_04_x86_64:
         imageName: 'ubuntu-16.04'

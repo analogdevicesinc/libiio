@@ -81,12 +81,8 @@ handle_centos() {
 	yum -y install avahi-devel
 }
 
-handle_centos_docker() {
-	prepare_docker_image "centos:centos${OS_VERSION}"
-}
-
-handle_ubuntu_docker() {
-	prepare_docker_image "ubuntu:${OS_VERSION}"
+handle_generic_docker() {
+	prepare_docker_image
 }
 
 handle_default() {
@@ -111,6 +107,6 @@ handle_default() {
 	fi
 }
 
-OS_TYPE=${OS_TYPE:-default}
+setup_build_type_env_vars
 
-handle_${OS_TYPE}
+handle_${BUILD_TYPE}
