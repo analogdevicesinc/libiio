@@ -422,8 +422,15 @@ remove_old_pkgs() {
 }
 
 prepare_docker_image() {
-	local DOCKER_IMAGE="$1"
-	sudo apt-get -qq update
+	local DOCKER_IMAGE="${OS_TYPE}:${OS_VERSION}"
+	# If arch is specified, setup multiarch support
+	if [ -n "$OS_ARCH" ] ; then
+		sudo apt-get -qq update
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install -y qemu \
+			qemu binfmt-support qemu-user-static
+		sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+		DOCKER_IMAGE="${OS_ARCH}/${DOCKER_IMAGE}"
+	fi
 	echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
 	sudo service docker restart
 	sudo docker pull "$DOCKER_IMAGE"
@@ -441,9 +448,12 @@ __save_env_for_docker() {
 
 run_docker_script() {
 	local DOCKER_SCRIPT="$(get_script_path $1)"
-	local DOCKER_IMAGE="$2"
-	local OS_TYPE="$3"
-	local MOUNTPOINT="${4:-${INSIDE_DOCKER_BUILD_DIR}}"
+	local MOUNTPOINT="${INSIDE_DOCKER_BUILD_DIR}"
+	local DOCKER_IMAGE="${OS_TYPE}:${OS_VERSION}"
+
+	if [ -n "$OS_ARCH" ] ; then
+		DOCKER_IMAGE="${OS_ARCH}/${DOCKER_IMAGE}"
+	fi
 
 	__save_env_for_docker "$(pwd)"
 
@@ -524,6 +534,29 @@ print_github_api_rate_limits() {
 	echo_green '-----------------------------------------'
 	wget -q -O- https://api.github.com/rate_limit
 	echo_green '-----------------------------------------'
+}
+
+setup_build_type_env_vars() {
+	OS_TYPE=${OS_TYPE:-default}
+
+	# For a 'arm32_v7/debian_docker' string, OS TYPE becomes 'debian'
+	# This also works for just 'debian_docker'
+	# And we're extracting OS_ARCH if present
+	if [ "${OS_TYPE#*_}" = "docker" ] ; then
+		BUILD_TYPE=generic_docker
+		OS_TYPE=${OS_TYPE%_*}
+		OS_ARCH=${OS_TYPE%/*}
+		OS_TYPE=${OS_TYPE#*/}
+		if [ "$OS_ARCH" = "$OS_TYPE" ] ; then
+			OS_ARCH=
+		fi
+	else
+		BUILD_TYPE="$OS_TYPE"
+	fi
+
+	export OS_TYPE
+	export OS_ARCH
+	export BUILD_TYPE
 }
 
 ensure_command_exists sudo
