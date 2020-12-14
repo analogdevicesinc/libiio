@@ -10,6 +10,9 @@ LOCAL_BUILD_DIR=${LOCAL_BUILD_DIR:-build}
 HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_NO_INSTALL_CLEANUP
 
+PYTHON=python3
+export PYTHON
+
 # This needs to be duplicated inside 'inside_docker.sh'
 # It's the common convention between host & container
 INSIDE_DOCKER_BUILD_DIR=/docker_build_dir
