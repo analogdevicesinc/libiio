@@ -22,13 +22,6 @@ handle_centos() {
 	yum -y install cmake libxml2-devel libusb1-devel libaio-devel \
 		bzip2 gzip rpm rpm-build
 
-	# needed for building python with pyenv
-	yum install -y  gcc gcc-c++ make git patch openssl-devel zlib-devel readline-devel sqlite-devel bzip2-devel
-
-	# CentOS 6 & 7 don't work with doc, or the latest python.
-	# install_pyenv
-	# install_python
-
 	if [ "$(get_version | head -c 1)" = "7" ] ; then
 		# install Cmake3, and make it the default
 		yum -y install cmake3
@@ -65,18 +58,11 @@ handle_generic_docker() {
 
 handle_default() {
 	sudo apt-get -qq update
-	sudo apt-get install -y apt-utils
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cmake graphviz \
 		libaio-dev libavahi-client-dev libserialport-dev \
 		libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar \
-		bzip2 gzip flex bison git libncurses5-dev libcdk5-dev
-
-	# Most of these should be here, but are needed for building python by pyenv
-	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential \
-		libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
-		wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev \
-		libffi-dev liblzma-dev python3-openssl git \
-		doxygen man2html python3 python3-pip
+		bzip2 gzip flex bison git libncurses5-dev libcdk5-dev \
+		doxygen man2html python3 python3-pip python3-setuptools
 
 	if is_python_at_least_ver "$PYTHON" "3.6" ; then
 		install_sphinx
