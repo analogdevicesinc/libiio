@@ -93,7 +93,7 @@ handle_default() {
 	sudo apt-get -qq update
 	sudo apt-get install -y apt-utils
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cmake graphviz \
-		libaio-dev libavahi-client-dev \
+		libaio-dev libavahi-client-dev libserialport-dev \
 		libavahi-common-dev libusb-1.0-0-dev libxml2-dev rpm tar \
 		bzip2 gzip flex bison git libncurses5-dev libcdk5-dev
 
@@ -108,10 +108,6 @@ handle_default() {
 		install_python
 		sudo apt-get install -y doxygen man2html
 		install_sphinx
-	fi
-	
-	if [ `sudo apt-cache search libserialport-dev | wc -l` -gt 0 ] ; then
-		sudo apt-get install -y libserialport-dev
 	fi
 }
 
