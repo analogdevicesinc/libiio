@@ -7,19 +7,19 @@ if (RPMBUILD_CMD)
 	set(CPACK_PACKAGE_RELOCATABLE OFF)
 	set(CPACK_GENERATOR ${CPACK_GENERATOR};RPM)
 	set(CPACK_RPM_PACKAGE_REQUIRES "libaio >= 0.3.107, avahi >= 0.6.25, libusb1 >= 1.0.9, libxml2 >= 2.7.6")
-endif()
 
-# Add these for CentOS 7
-set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
-	/lib
-	/lib/udev
-	/lib/udev/rules.d
-	/usr/sbin
-	/usr/lib/python2.7
-	/usr/lib/python2.7/site-packages
-	/usr/lib/pkgconfig
-	/usr/lib64/pkgconfig
-)
+	# Add these for CentOS 7
+	set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
+		/lib
+		/lib/udev
+		/lib/udev/rules.d
+		/usr/sbin
+		/usr/lib/python2.7
+		/usr/lib/python2.7/site-packages
+		/usr/lib/pkgconfig
+		/usr/lib64/pkgconfig
+	)
+endif()
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 set(CPACK_PACKAGE_VERSION_MAJOR ${LIBIIO_VERSION_MAJOR})
