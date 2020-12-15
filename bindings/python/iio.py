@@ -44,7 +44,6 @@ from ctypes.util import find_library
 from enum import Enum
 from os import strerror as _strerror
 from platform import system as _system
-import weakref
 import abc
 
 if "Windows" in _system():
@@ -1301,7 +1300,7 @@ class Device(_DeviceOrTrigger):
             An new instance of this class
         """
         super(Device, self).__init__(_device)
-        self.ctx = weakref.ref(ctx)
+        self.ctx = ctx
 
     def _set_trigger(self, trigger):
         _d_set_trigger(self._device, trigger._device if trigger else None)
