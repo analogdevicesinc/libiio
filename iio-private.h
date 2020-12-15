@@ -83,7 +83,7 @@
 #define MAX_CTX_NAME   NAME_MAX  /* nominally "xml" */
 #define MAX_CTX_DESC   NAME_MAX  /* nominally "linux ..." */
 #define MAX_ATTR_NAME  NAME_MAX  /* encoded in the sysfs filename */
-#define MAX_ATTR_VALUE PAGESIZE  /* Linux page size, could be anything */
+#define MAX_ATTR_VALUE (8 * PAGESIZE)  /* 8x Linux page size, could be anything */
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
