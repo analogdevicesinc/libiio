@@ -89,3 +89,49 @@ jobs:
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
       artifactName: '$(artifactName)'
+
+- job: WindowsBuilds
+  strategy:
+    matrix:
+      VS2017:
+        imageName: 'vs2017-win2016'
+        COMPILER: 'Visual Studio 15 2017'
+        ARCH: 'x64'
+        artifactName: 'Windows-VS-15-2017-x64'
+      VS2019:
+        imageName: 'windows-2019'
+        COMPILER: 'Visual Studio 16 2019'
+        ARCH: 'x64'
+        artifactName: 'Windows-VS-16-2019-x64'
+  pool:
+    vmImage: $[ variables['imageName'] ]
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+  - task: PowerShell@2
+    inputs:
+      targetType: 'filePath'
+      filePath: .\CI\install_deps_win.ps1
+    displayName: Dependencies
+  - task: PowerShell@2
+    inputs:
+      targetType: 'filePath'
+      filePath: .\CI\build_win.ps1
+    displayName: Build
+  - task: CopyFiles@2
+    displayName: 'Copy libraries'
+    inputs:
+      sourceFolder: '$(Agent.BuildDirectory)/s/build/Release'
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+  - task: CopyFiles@2
+    displayName: 'Copy iio.h header'
+    inputs:
+      sourceFolder: '$(Agent.BuildDirectory)/s/'
+      contents: 'iio.h'
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+  - task: PublishPipelineArtifact@1
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: '$(artifactName)'
