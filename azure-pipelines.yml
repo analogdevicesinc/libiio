@@ -24,13 +24,19 @@ jobs:
         OS_VERSION: centos8
         artifactName: 'Linux-CentOS-8-x86_64'
       ubuntu_16_04_x86_64:
-        imageName: 'ubuntu-16.04'
+        imageName: 'ubuntu-latest'
+        OS_TYPE: 'ubuntu_docker'
+        OS_VERSION: xenial
         artifactName: 'Linux-Ubuntu-16.04-x86_64'
       ubuntu_18_04_x86_64:
-        imageName: 'ubuntu-18.04'
+        imageName: 'ubuntu-latest'
+        OS_TYPE: 'ubuntu_docker'
+        OS_VERSION: bionic
         artifactName: 'Linux-Ubuntu-18.04-x86_64'
       ubuntu_20_04_x86_64:
-        imageName: 'ubuntu-20.04'
+        imageName: 'ubuntu-latest'
+        OS_TYPE: 'ubuntu_docker'
+        OS_VERSION: focal
         artifactName: 'Linux-Ubuntu-20.04-x86_64'
         CHECK_AGAINST_KERNEL_HEADER: 1
       debian_buster_arm32v7:
