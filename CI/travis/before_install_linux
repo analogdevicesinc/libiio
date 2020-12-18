@@ -107,6 +107,10 @@ handle_default() {
 	fi
 }
 
+handle_ubuntu() {
+	handle_default
+}
+
 handle_debian() {
 	handle_default
 }

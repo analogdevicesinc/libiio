@@ -4,6 +4,8 @@ if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 
 . CI/travis/lib.sh
 
+INSIDE_DOCKER_TRAVIS_CI_ENV="$INSIDE_DOCKER_TRAVIS_CI_ENV CHECK_AGAINST_KERNEL_HEADER"
+
 handle_default() {
 	echo "### making build dir"
 	mkdir -p build
@@ -101,6 +103,10 @@ handle_centos() {
 	make
 	make package
 	cd ..
+}
+
+handle_ubuntu() {
+	handle_default
 }
 
 handle_debian() {
