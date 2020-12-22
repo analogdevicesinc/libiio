@@ -33,12 +33,14 @@ jobs:
         OS_TYPE: 'ubuntu_docker'
         OS_VERSION: bionic
         artifactName: 'Linux-Ubuntu-18.04-x86_64'
+        CI_BUILD_SPHINX_DOCS: 1
       ubuntu_20_04_x86_64:
         imageName: 'ubuntu-latest'
         OS_TYPE: 'ubuntu_docker'
         OS_VERSION: focal
         artifactName: 'Linux-Ubuntu-20.04-x86_64'
         CHECK_AGAINST_KERNEL_HEADER: 1
+        CI_BUILD_SPHINX_DOCS: 1
       debian_buster_arm32v7:
         imageName: 'ubuntu-latest'
         OS_TYPE: 'arm32v7/debian_docker'
