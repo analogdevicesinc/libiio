@@ -3,12 +3,19 @@
 . CI/travis/lib.sh
 
 install_sphinx() {
-	if command_exists $PYTHON ; then
-		$PYTHON --version
-		command -v $PYTHON
-		$PYTHON -m pip install sphinx
-		$PYTHON -m pip install sphinx-rtd-theme
+	if [ "$CI_BUILD_SPHINX_DOCS" != "1" ] ; then
+		return
 	fi
+
+	if ! is_python_at_least_ver "$PYTHON" "3.6" ; then
+		echo_red "Python version is too old no python interpreter installed"
+		return 1
+	fi
+
+	$PYTHON --version
+	command -v $PYTHON
+	$PYTHON -m pip install sphinx
+	$PYTHON -m pip install sphinx-rtd-theme
 }
 
 handle_centos() {
@@ -64,9 +71,7 @@ handle_default() {
 		bzip2 gzip flex bison git libncurses5-dev libcdk5-dev \
 		doxygen man2html python3 python3-pip python3-setuptools
 
-	if is_python_at_least_ver "$PYTHON" "3.6" ; then
-		install_sphinx
-	fi
+	install_sphinx
 }
 
 handle_ubuntu() {

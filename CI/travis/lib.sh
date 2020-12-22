@@ -508,7 +508,10 @@ is_python_at_least_ver() {
 
 is_arm() {
 	[ "$(dpkg --print-architecture)" = "armhf" ] || return 1
-	test "$(dpkg --print-architecture)" = "armhf"
+}
+
+is_arm64() {
+	[ "$(dpkg --print-architecture)" = "arm64" ] || return 1
 }
 
 print_github_api_rate_limits() {
