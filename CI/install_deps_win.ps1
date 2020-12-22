@@ -1,4 +1,6 @@
 
+$ARCH=$Env:ARCH
+
 git submodule update --init
 
 if (!(Test-Path deps)) {
@@ -7,7 +9,12 @@ if (!(Test-Path deps)) {
 cd deps
 
 mkdir libxml
-wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+
+if ( "$ARCH" -eq "x64" ) {
+	wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+} else {
+	wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86.7z -OutFile "libxml.7z"
+}
 7z x -y libxml.7z
 rm libxml.7z
 

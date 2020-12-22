@@ -110,12 +110,12 @@ jobs:
 - job: WindowsBuilds
   strategy:
     matrix:
-      VS2017:
-        imageName: 'vs2017-win2016'
-        COMPILER: 'Visual Studio 15 2017'
-        ARCH: 'x64'
-        artifactName: 'Windows-VS-15-2017-x64'
-      VS2019:
+      VS2019_Win32:
+        imageName: 'windows-2019'
+        COMPILER: 'Visual Studio 16 2019'
+        ARCH: 'Win32'
+        artifactName: 'Windows-VS-16-2019-Win32'
+      VS2019_Win64:
         imageName: 'windows-2019'
         COMPILER: 'Visual Studio 16 2019'
         ARCH: 'x64'
