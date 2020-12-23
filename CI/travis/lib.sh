@@ -417,7 +417,7 @@ __save_env_for_docker() {
 	for env in $INSIDE_DOCKER_TRAVIS_CI_ENV ; do
 		val="$(eval echo "\$${env}")"
 		if [ -n "$val" ] ; then
-			echo "export ${env}=${val}" >> "${env_file}"
+			echo "export ${env}=\"${val}\"" >> "${env_file}"
 		fi
 	done
 }
