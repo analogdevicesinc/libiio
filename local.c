@@ -1221,8 +1221,8 @@ static int read_device_name(struct iio_device *dev)
 		return 0;
 }
 
-static int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
-			    const char *type, const char *dev_id)
+int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
+		     const char *type, const char *dev_id)
 {
 	char **names, *name;
 

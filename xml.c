@@ -82,11 +82,11 @@ err_free:
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
 {
 	xmlAttr *attr;
-	char **attrs, *name = NULL;
+	char *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			name = iio_strdup((char *) attr->children->content);
+			name = (char *) attr->children->content;
 		} else {
 			IIO_WARNING("Unknown field \'%s\' in device %s\n",
 					attr->name, dev->id);
@@ -95,50 +95,19 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 
 	if (!name) {
 		IIO_ERROR("Incomplete attribute in device %s\n", dev->id);
-		goto err_free;
+		return -1;
 	}
 
 	switch(type) {
 		case IIO_ATTR_TYPE_DEBUG:
-			attrs = realloc(dev->debug_attrs.names,
-					(1 + dev->debug_attrs.num) * sizeof(char *));
-			break;
+			return add_iio_dev_attr(&dev->debug_attrs, name, " debug", dev->id);
 		case IIO_ATTR_TYPE_DEVICE:
-			attrs = realloc(dev->attrs.names,
-					(1 + dev->attrs.num) * sizeof(char *));
-			break;
+			return add_iio_dev_attr(&dev->attrs, name, " ", dev->id);
 		case IIO_ATTR_TYPE_BUFFER:
-			attrs = realloc(dev->buffer_attrs.names,
-					(1 + dev->buffer_attrs.num) * sizeof(char *));
-			break;
+			return add_iio_dev_attr(&dev->buffer_attrs, name, " buffer", dev->id);
 		default:
-			attrs = NULL;
-			break;
+			return -1;
 	}
-	if (!attrs)
-		goto err_free;
-
-	switch(type) {
-		case IIO_ATTR_TYPE_DEBUG:
-			attrs[dev->debug_attrs.num++] = name;
-			dev->debug_attrs.names = attrs;
-			break;
-		case IIO_ATTR_TYPE_DEVICE:
-			attrs[dev->attrs.num++] = name;
-			dev->attrs.names = attrs;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			attrs[dev->buffer_attrs.num++] = name;
-			dev->buffer_attrs.names = attrs;
-			break;
-	}
-
-	return 0;
-
-err_free:
-	if (name)
-		free(name);
-	return -1;
 }
 
 static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
