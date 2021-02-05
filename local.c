@@ -1221,9 +1221,29 @@ static int read_device_name(struct iio_device *dev)
 		return 0;
 }
 
+static int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
+			    const char *type, const char *dev_id)
+{
+	char **names, *name;
+
+	name = iio_strdup(attr);
+	if (!name)
+		return -ENOMEM;
+
+	names = realloc(attrs->names, (1 + attrs->num) * sizeof(char *));
+	if (!names) {
+		free(name);
+		return -ENOMEM;
+	}
+
+	names[attrs->num++] = name;
+	attrs->names = names;
+	IIO_DEBUG("Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev_id);
+	return 0;
+}
+
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
-	char **attrs, *name;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(device_attrs_blacklist); i++)
@@ -1233,20 +1253,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	if (!strcmp(attr, "name"))
 		return read_device_name(dev);
 
-	name = iio_strdup(attr);
-	if (!name)
-		return -ENOMEM;
-
-	attrs = realloc(dev->attrs.names, (1 + dev->attrs.num) * sizeof(char *));
-	if (!attrs) {
-		free(name);
-		return -ENOMEM;
-	}
-
-	attrs[dev->attrs.num++] = name;
-	dev->attrs.names = attrs;
-	IIO_DEBUG("Added attr \'%s\' to device \'%s\'\n", attr, dev->id);
-	return 0;
+	return add_iio_dev_attr(&dev->attrs, attr, " ", dev->id);
 }
 
 static int handle_protected_scan_element_attr(struct iio_channel *chn,
@@ -1642,27 +1649,13 @@ static int add_buffer_attr(void *d, const char *path)
 {
 	struct iio_device *dev = (struct iio_device *) d;
 	const char *name = strrchr(path, '/') + 1;
-	char **attrs, *attr;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(buffer_attrs_reserved); i++)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 
-	attr = iio_strdup(name);
-	if (!attr)
-		return -ENOMEM;
-
-	attrs = realloc(dev->buffer_attrs.names, (1 + dev->buffer_attrs.num) * sizeof(char *));
-	if (!attrs) {
-		free(attr);
-		return -ENOMEM;
-	}
-
-	attrs[dev->buffer_attrs.num++] = attr;
-	dev->buffer_attrs.names = attrs;
-	IIO_DEBUG("Added buffer attr \'%s\' to device \'%s\'\n", attr, dev->id);
-	return 0;
+	return add_iio_dev_attr(&dev->buffer_attrs, name, " buffer", dev->id);
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
@@ -1870,21 +1863,8 @@ static int add_debug_attr(void *d, const char *path)
 {
 	struct iio_device *dev = d;
 	const char *attr = strrchr(path, '/') + 1;
-	char **attrs, *name = iio_strdup(attr);
-	if (!name)
-		return -ENOMEM;
 
-	attrs = realloc(dev->debug_attrs.names,
-			(1 + dev->debug_attrs.num) * sizeof(char *));
-	if (!attrs) {
-		free(name);
-		return -ENOMEM;
-	}
-
-	attrs[dev->debug_attrs.num++] = name;
-	dev->debug_attrs.names = attrs;
-	IIO_DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);
-	return 0;
+	return add_iio_dev_attr(&dev->debug_attrs, attr, " debug", dev->id);
 }
 
 static int add_debug(void *d, const char *path)
