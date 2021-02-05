@@ -262,6 +262,27 @@ err_free_attrs_len:
 	return NULL;
 }
 
+int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
+		     const char *type, const char *dev_id)
+{
+	char **names, *name;
+
+	name = iio_strdup(attr);
+	if (!name)
+		return -ENOMEM;
+
+	names = realloc(attrs->names, (1 + attrs->num) * sizeof(char *));
+	if (!names) {
+		free(name);
+		return -ENOMEM;
+	}
+
+	names[attrs->num++] = name;
+	attrs->names = names;
+	IIO_DEBUG("Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev_id);
+	return 0;
+}
+
 const char * iio_device_get_id(const struct iio_device *dev)
 {
 	return dev->id;
