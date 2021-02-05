@@ -163,6 +163,11 @@ struct iio_channel {
 	unsigned int number;
 };
 
+struct iio_dev_attrs {
+	char **names;
+	unsigned int num;
+};
+
 struct iio_device {
 	const struct iio_context *ctx;
 	struct iio_device_pdata *pdata;
@@ -170,14 +175,9 @@ struct iio_device {
 
 	char *name, *id;
 
-	char **attrs;
-	unsigned int nb_attrs;
-
-	char **buffer_attrs;
-	unsigned int nb_buffer_attrs;
-
-	char **debug_attrs;
-	unsigned int nb_debug_attrs;
+	struct iio_dev_attrs attrs;
+	struct iio_dev_attrs buffer_attrs;
+	struct iio_dev_attrs debug_attrs;
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;

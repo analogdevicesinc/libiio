@@ -81,16 +81,16 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		len += strnlen(dev->name, MAX_DEV_NAME);
 	}
 
-	attrs_len = malloc(dev->nb_attrs * sizeof(*attrs_len));
+	attrs_len = malloc(dev->attrs.num * sizeof(*attrs_len));
 	if (!attrs_len)
 		return NULL;
 
-	attrs = malloc(dev->nb_attrs * sizeof(*attrs));
+	attrs = malloc(dev->attrs.num * sizeof(*attrs));
 	if (!attrs)
 		goto err_free_attrs_len;
 
-	for (i = 0; i < dev->nb_attrs; i++) {
-		char *xml = get_attr_xml(dev->attrs[i], &attrs_len[i], IIO_ATTR_TYPE_DEVICE);
+	for (i = 0; i < dev->attrs.num; i++) {
+		char *xml = get_attr_xml(dev->attrs.names[i], &attrs_len[i], IIO_ATTR_TYPE_DEVICE);
 		if (!xml)
 			goto err_free_attrs;
 		attrs[i] = xml;
@@ -114,17 +114,17 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		len += channels_len[j];
 	}
 
-	buffer_attrs_len = malloc(dev->nb_buffer_attrs *
+	buffer_attrs_len = malloc(dev->buffer_attrs.num *
 			sizeof(*buffer_attrs_len));
 	if (!buffer_attrs_len)
 		goto err_free_channels;
 
-	buffer_attrs = malloc(dev->nb_buffer_attrs * sizeof(*buffer_attrs));
+	buffer_attrs = malloc(dev->buffer_attrs.num * sizeof(*buffer_attrs));
 	if (!buffer_attrs)
 		goto err_free_buffer_attrs_len;
 
-	for (k = 0; k < dev->nb_buffer_attrs; k++) {
-		char *xml = get_attr_xml(dev->buffer_attrs[k],
+	for (k = 0; k < dev->buffer_attrs.num; k++) {
+		char *xml = get_attr_xml(dev->buffer_attrs.names[k],
 				&buffer_attrs_len[k], IIO_ATTR_TYPE_BUFFER);
 		if (!xml)
 			goto err_free_buffer_attrs;
@@ -132,17 +132,17 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 		len += buffer_attrs_len[k];
 	}
 
-	debug_attrs_len = malloc(dev->nb_debug_attrs *
+	debug_attrs_len = malloc(dev->debug_attrs.num *
 			sizeof(*debug_attrs_len));
 	if (!debug_attrs_len)
 		goto err_free_buffer_attrs;
 
-	debug_attrs = malloc(dev->nb_debug_attrs * sizeof(*debug_attrs));
+	debug_attrs = malloc(dev->debug_attrs.num * sizeof(*debug_attrs));
 	if (!debug_attrs)
 		goto err_free_debug_attrs_len;
 
-	for (k = 0; k < dev->nb_debug_attrs; k++) {
-		char *xml = get_attr_xml(dev->debug_attrs[k],
+	for (k = 0; k < dev->debug_attrs.num; k++) {
+		char *xml = get_attr_xml(dev->debug_attrs.names[k],
 				&debug_attrs_len[k], IIO_ATTR_TYPE_DEBUG);
 		if (!xml)
 			goto err_free_debug_attrs;
@@ -184,7 +184,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(channels);
 	free(channels_len);
 
-	for (i = 0; i < dev->nb_attrs; i++) {
+	for (i = 0; i < dev->attrs.num; i++) {
 		if (len > (ssize_t) attrs_len[i]) {
 			memcpy(ptr, attrs[i], attrs_len[i]); /* Flawfinder: ignore */
 			ptr += attrs_len[i];
@@ -196,7 +196,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(attrs);
 	free(attrs_len);
 
-	for (i = 0; i < dev->nb_buffer_attrs; i++) {
+	for (i = 0; i < dev->buffer_attrs.num; i++) {
 		if (len > (ssize_t) buffer_attrs_len[i]) {
 			memcpy(ptr, buffer_attrs[i], buffer_attrs_len[i]); /* Flawfinder: ignore */
 			ptr += buffer_attrs_len[i];
@@ -208,7 +208,7 @@ char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
 	free(buffer_attrs);
 	free(buffer_attrs_len);
 
-	for (i = 0; i < dev->nb_debug_attrs; i++) {
+	for (i = 0; i < dev->debug_attrs.num; i++) {
 		if (len > (ssize_t) debug_attrs_len[i]) {
 			memcpy(ptr, debug_attrs[i], debug_attrs_len[i]); /* Flawfinder: ignore */
 			ptr += debug_attrs_len[i];
@@ -304,24 +304,24 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev)
 {
-	return dev->nb_attrs;
+	return dev->attrs.num;
 }
 
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	if (index >= dev->nb_attrs)
+	if (index >= dev->attrs.num)
 		return NULL;
 	else
-		return dev->attrs[index];
+		return dev->attrs.names[index];
 }
 
 const char * iio_device_find_attr(const struct iio_device *dev,
 		const char *name)
 {
 	unsigned int i;
-	for (i = 0; i < dev->nb_attrs; i++) {
-		const char *attr = dev->attrs[i];
+	for (i = 0; i < dev->attrs.num; i++) {
+		const char *attr = dev->attrs.names[i];
 		if (!strcmp(attr, name))
 			return attr;
 	}
@@ -330,24 +330,24 @@ const char * iio_device_find_attr(const struct iio_device *dev,
 
 unsigned int iio_device_get_buffer_attrs_count(const struct iio_device *dev)
 {
-	return dev->nb_buffer_attrs;
+	return dev->buffer_attrs.num;
 }
 
 const char * iio_device_get_buffer_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	if (index >= dev->nb_buffer_attrs)
+	if (index >= dev->buffer_attrs.num)
 		return NULL;
 	else
-		return dev->buffer_attrs[index];
+		return dev->buffer_attrs.names[index];
 }
 
 const char * iio_device_find_buffer_attr(const struct iio_device *dev,
 		const char *name)
 {
 	unsigned int i;
-	for (i = 0; i < dev->nb_buffer_attrs; i++) {
-		const char *attr = dev->buffer_attrs[i];
+	for (i = 0; i < dev->buffer_attrs.num; i++) {
+		const char *attr = dev->buffer_attrs.names[i];
 		if (!strcmp(attr, name))
 			return attr;
 	}
@@ -358,8 +358,8 @@ const char * iio_device_find_debug_attr(const struct iio_device *dev,
 		const char *name)
 {
 	unsigned int i;
-	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		const char *attr = dev->debug_attrs[i];
+	for (i = 0; i < dev->debug_attrs.num; i++) {
+		const char *attr = dev->debug_attrs.names[i];
 		if (!strcmp(attr, name))
 			return attr;
 	}
@@ -548,18 +548,18 @@ int iio_device_set_trigger(const struct iio_device *dev,
 void free_device(struct iio_device *dev)
 {
 	unsigned int i;
-	for (i = 0; i < dev->nb_attrs; i++)
-		free(dev->attrs[i]);
-	if (dev->nb_attrs)
-		free(dev->attrs);
-	for (i = 0; i < dev->nb_buffer_attrs; i++)
-		free(dev->buffer_attrs[i]);
-	if (dev->nb_buffer_attrs)
-		free(dev->buffer_attrs);
-	for (i = 0; i < dev->nb_debug_attrs; i++)
-		free(dev->debug_attrs[i]);
-	if (dev->nb_debug_attrs)
-		free(dev->debug_attrs);
+	for (i = 0; i < dev->attrs.num; i++)
+		free(dev->attrs.names[i]);
+	if (dev->attrs.num)
+		free(dev->attrs.names);
+	for (i = 0; i < dev->buffer_attrs.num; i++)
+		free(dev->buffer_attrs.names[i]);
+	if (dev->buffer_attrs.num)
+		free(dev->buffer_attrs.names);
+	for (i = 0; i < dev->debug_attrs.num; i++)
+		free(dev->debug_attrs.names[i]);
+	if (dev->debug_attrs.num)
+		free(dev->debug_attrs.names);
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
 	if (dev->nb_channels)
@@ -795,16 +795,16 @@ ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
 
 unsigned int iio_device_get_debug_attrs_count(const struct iio_device *dev)
 {
-	return dev->nb_debug_attrs;
+	return dev->debug_attrs.num;
 }
 
 const char * iio_device_get_debug_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	if (index >= dev->nb_debug_attrs)
+	if (index >= dev->debug_attrs.num)
 		return NULL;
 	else
-		return dev->debug_attrs[index];
+		return dev->debug_attrs.names[index];
 }
 
 int iio_device_debug_attr_read_longlong(const struct iio_device *dev,
@@ -903,18 +903,18 @@ int iio_device_identify_filename(const struct iio_device *dev,
 		}
 	}
 
-	for (i = 0; i < dev->nb_attrs; i++) {
+	for (i = 0; i < dev->attrs.num; i++) {
 		/* Devices attributes are named after their filename */
-		if (!strcmp(dev->attrs[i], filename)) {
-			*attr = dev->attrs[i];
+		if (!strcmp(dev->attrs.names[i], filename)) {
+			*attr = dev->attrs.names[i];
 			*chn = NULL;
 			return 0;
 		}
 	}
 
-	for (i = 0; i < dev->nb_debug_attrs; i++) {
-		if (!strcmp(dev->debug_attrs[i], filename)) {
-			*attr = dev->debug_attrs[i];
+	for (i = 0; i < dev->debug_attrs.num; i++) {
+		if (!strcmp(dev->debug_attrs.names[i], filename)) {
+			*attr = dev->debug_attrs.names[i];
 			*chn = NULL;
 			return 0;
 		}

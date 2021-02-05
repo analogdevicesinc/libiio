@@ -516,16 +516,16 @@ static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			nb =  dev->nb_attrs;
-			attrs = dev->attrs;
+			nb =  dev->attrs.num;
+			attrs = dev->attrs.names;
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
-			nb =  dev->nb_debug_attrs;
-			attrs = dev->debug_attrs;
+			nb =  dev->debug_attrs.num;
+			attrs = dev->debug_attrs.names;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			nb =  dev->nb_buffer_attrs;
-			attrs = dev->buffer_attrs;
+			nb =  dev->buffer_attrs.num;
+			attrs = dev->buffer_attrs.names;
 			break;
 		default:
 			return -EINVAL;
@@ -607,16 +607,16 @@ static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			nb =  dev->nb_attrs;
-			attrs = dev->attrs;
+			nb =  dev->attrs.num;
+			attrs = dev->attrs.names;
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
-			nb =  dev->nb_debug_attrs;
-			attrs = dev->debug_attrs;
+			nb =  dev->debug_attrs.num;
+			attrs = dev->debug_attrs.names;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			nb =  dev->nb_buffer_attrs;
-			attrs = dev->buffer_attrs;
+			nb =  dev->buffer_attrs.num;
+			attrs = dev->buffer_attrs.names;
 			break;
 		default:
 			return -EINVAL;
@@ -1237,14 +1237,14 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	if (!name)
 		return -ENOMEM;
 
-	attrs = realloc(dev->attrs, (1 + dev->nb_attrs) * sizeof(char *));
+	attrs = realloc(dev->attrs.names, (1 + dev->attrs.num) * sizeof(char *));
 	if (!attrs) {
 		free(name);
 		return -ENOMEM;
 	}
 
-	attrs[dev->nb_attrs++] = name;
-	dev->attrs = attrs;
+	attrs[dev->attrs.num++] = name;
+	dev->attrs.names = attrs;
 	IIO_DEBUG("Added attr \'%s\' to device \'%s\'\n", attr, dev->id);
 	return 0;
 }
@@ -1583,10 +1583,10 @@ static int detect_global_attr(struct iio_device *dev, const char *attr,
 static int detect_and_move_global_attrs(struct iio_device *dev)
 {
 	unsigned int i;
-	char **ptr = dev->attrs;
+	char **ptr = dev->attrs.names;
 
-	for (i = 0; i < dev->nb_attrs; i++) {
-		const char *attr = dev->attrs[i];
+	for (i = 0; i < dev->attrs.num; i++) {
+		const char *attr = dev->attrs.names[i];
 		bool match;
 		int ret;
 
@@ -1601,17 +1601,17 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 		}
 
 		if (match) {
-			free(dev->attrs[i]);
-			dev->attrs[i] = NULL;
+			free(dev->attrs.names[i]);
+			dev->attrs.names[i] = NULL;
 		}
 	}
 
 	/* Find channels without an index */
-	for (i = 0; i < dev->nb_attrs; i++) {
-		const char *attr = dev->attrs[i];
+	for (i = 0; i < dev->attrs.num; i++) {
+		const char *attr = dev->attrs.names[i];
 		int ret;
 
-		if (!dev->attrs[i])
+		if (!dev->attrs.names[i])
 			continue;
 
 		if (is_channel(attr, false)) {
@@ -1619,20 +1619,20 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 			if (ret)
 				return ret;
 
-			free(dev->attrs[i]);
-			dev->attrs[i] = NULL;
+			free(dev->attrs.names[i]);
+			dev->attrs.names[i] = NULL;
 		}
 	}
 
-	for (i = 0; i < dev->nb_attrs; i++) {
-		if (dev->attrs[i])
-			*ptr++ = dev->attrs[i];
+	for (i = 0; i < dev->attrs.num; i++) {
+		if (dev->attrs.names[i])
+			*ptr++ = dev->attrs.names[i];
 	}
 
-	dev->nb_attrs = ptr - dev->attrs;
-	if (!dev->nb_attrs) {
-		free(dev->attrs);
-		dev->attrs = NULL;
+	dev->attrs.num = ptr - dev->attrs.names;
+	if (!dev->attrs.num) {
+		free(dev->attrs.names);
+		dev->attrs.names = NULL;
 	}
 
 	return 0;
@@ -1653,14 +1653,14 @@ static int add_buffer_attr(void *d, const char *path)
 	if (!attr)
 		return -ENOMEM;
 
-	attrs = realloc(dev->buffer_attrs, (1 + dev->nb_buffer_attrs) * sizeof(char *));
+	attrs = realloc(dev->buffer_attrs.names, (1 + dev->buffer_attrs.num) * sizeof(char *));
 	if (!attrs) {
 		free(attr);
 		return -ENOMEM;
 	}
 
-	attrs[dev->nb_buffer_attrs++] = attr;
-	dev->buffer_attrs = attrs;
+	attrs[dev->buffer_attrs.num++] = attr;
+	dev->buffer_attrs.names = attrs;
 	IIO_DEBUG("Added buffer attr \'%s\' to device \'%s\'\n", attr, dev->id);
 	return 0;
 }
@@ -1772,7 +1772,7 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 		if (ret < 0)
 			return ret;
 
-		qsort(dev->buffer_attrs, dev->nb_buffer_attrs, sizeof(char *),
+		qsort(dev->buffer_attrs.names, dev->buffer_attrs.num, sizeof(char *),
 			iio_buffer_attr_compare);
 	}
 
@@ -1839,7 +1839,7 @@ static int create_device(void *d, const char *path)
 		qsort(chn->attrs,  chn->nb_attrs, sizeof(struct iio_channel_attr),
 			iio_channel_attr_compare);
 	}
-	qsort(dev->attrs, dev->nb_attrs, sizeof(char *),
+	qsort(dev->attrs.names, dev->attrs.num, sizeof(char *),
 		iio_device_attr_compare);
 
 	dev->words = (dev->nb_channels + 31) / 32;
@@ -1874,15 +1874,15 @@ static int add_debug_attr(void *d, const char *path)
 	if (!name)
 		return -ENOMEM;
 
-	attrs = realloc(dev->debug_attrs,
-			(1 + dev->nb_debug_attrs) * sizeof(char *));
+	attrs = realloc(dev->debug_attrs.names,
+			(1 + dev->debug_attrs.num) * sizeof(char *));
 	if (!attrs) {
 		free(name);
 		return -ENOMEM;
 	}
 
-	attrs[dev->nb_debug_attrs++] = name;
-	dev->debug_attrs = attrs;
+	attrs[dev->debug_attrs.num++] = name;
+	dev->debug_attrs.names = attrs;
 	IIO_DEBUG("Added debug attr \'%s\' to device \'%s\'\n", name, dev->id);
 	return 0;
 }
