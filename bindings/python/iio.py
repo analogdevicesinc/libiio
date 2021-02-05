@@ -45,6 +45,7 @@ from enum import Enum
 from os import strerror as _strerror
 from platform import system as _system
 import abc
+import weakref
 
 if "Windows" in _system():
     from ctypes import get_last_error
@@ -1013,7 +1014,7 @@ class Buffer(object):
             raise
         self._length = samples_count * device.sample_size
         self._samples_count = samples_count
-        self._ctx = device.ctx()
+        self._ctx = weakref.ref(device.ctx)
         # Holds a reference to the corresponding IIO Context. This ensures that
         # every iio.Buffer object is destroyed before its corresponding IIO Context.
 
