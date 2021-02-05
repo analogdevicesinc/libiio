@@ -302,6 +302,27 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 	return NULL;
 }
 
+static const char * iio_device_get_dev_attr(const struct iio_dev_attrs *attrs,
+		unsigned int index)
+{
+	if (index >= attrs->num)
+		return NULL;
+	else
+		return attrs->names[index];
+}
+
+const char * iio_device_find_dev_attr(const struct iio_dev_attrs *attrs,
+		const char *name)
+{
+	unsigned int i;
+	for (i = 0; i < attrs->num; i++) {
+		const char *attr = attrs->names[i];
+		if (!strcmp(attr, name))
+			return attr;
+	}
+	return NULL;
+}
+
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev)
 {
 	return dev->attrs.num;
@@ -310,22 +331,13 @@ unsigned int iio_device_get_attrs_count(const struct iio_device *dev)
 const char * iio_device_get_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	if (index >= dev->attrs.num)
-		return NULL;
-	else
-		return dev->attrs.names[index];
+	return iio_device_get_dev_attr(&dev->attrs, index);
 }
 
 const char * iio_device_find_attr(const struct iio_device *dev,
 		const char *name)
 {
-	unsigned int i;
-	for (i = 0; i < dev->attrs.num; i++) {
-		const char *attr = dev->attrs.names[i];
-		if (!strcmp(attr, name))
-			return attr;
-	}
-	return NULL;
+	return iio_device_find_dev_attr(&dev->attrs, name);
 }
 
 unsigned int iio_device_get_buffer_attrs_count(const struct iio_device *dev)
@@ -336,34 +348,19 @@ unsigned int iio_device_get_buffer_attrs_count(const struct iio_device *dev)
 const char * iio_device_get_buffer_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	if (index >= dev->buffer_attrs.num)
-		return NULL;
-	else
-		return dev->buffer_attrs.names[index];
+	return iio_device_get_dev_attr(&dev->buffer_attrs, index);
 }
 
 const char * iio_device_find_buffer_attr(const struct iio_device *dev,
 		const char *name)
 {
-	unsigned int i;
-	for (i = 0; i < dev->buffer_attrs.num; i++) {
-		const char *attr = dev->buffer_attrs.names[i];
-		if (!strcmp(attr, name))
-			return attr;
-	}
-	return NULL;
+	return iio_device_find_dev_attr(&dev->buffer_attrs, name);
 }
 
 const char * iio_device_find_debug_attr(const struct iio_device *dev,
 		const char *name)
 {
-	unsigned int i;
-	for (i = 0; i < dev->debug_attrs.num; i++) {
-		const char *attr = dev->debug_attrs.names[i];
-		if (!strcmp(attr, name))
-			return attr;
-	}
-	return NULL;
+	return iio_device_find_dev_attr(&dev->debug_attrs, name);
 }
 
 bool iio_device_is_tx(const struct iio_device *dev)
@@ -545,21 +542,24 @@ int iio_device_set_trigger(const struct iio_device *dev,
 		return -ENOSYS;
 }
 
+static void free_iio_dev_attrs(struct iio_dev_attrs *attrs)
+{
+	unsigned int i;
+
+	for (i = 0; i <  attrs->num; i++)
+		free(attrs->names[i]);
+
+	free(attrs->names);
+}
+
 void free_device(struct iio_device *dev)
 {
 	unsigned int i;
-	for (i = 0; i < dev->attrs.num; i++)
-		free(dev->attrs.names[i]);
-	if (dev->attrs.num)
-		free(dev->attrs.names);
-	for (i = 0; i < dev->buffer_attrs.num; i++)
-		free(dev->buffer_attrs.names[i]);
-	if (dev->buffer_attrs.num)
-		free(dev->buffer_attrs.names);
-	for (i = 0; i < dev->debug_attrs.num; i++)
-		free(dev->debug_attrs.names[i]);
-	if (dev->debug_attrs.num)
-		free(dev->debug_attrs.names);
+
+	free_iio_dev_attrs(&dev->attrs);
+	free_iio_dev_attrs(&dev->buffer_attrs);
+	free_iio_dev_attrs(&dev->debug_attrs);
+
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
 	if (dev->nb_channels)
@@ -801,10 +801,7 @@ unsigned int iio_device_get_debug_attrs_count(const struct iio_device *dev)
 const char * iio_device_get_debug_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	if (index >= dev->debug_attrs.num)
-		return NULL;
-	else
-		return dev->debug_attrs.names[index];
+	return iio_device_get_dev_attr(&dev->debug_attrs, index);
 }
 
 int iio_device_debug_attr_read_longlong(const struct iio_device *dev,
