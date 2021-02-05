@@ -1221,27 +1221,6 @@ static int read_device_name(struct iio_device *dev)
 		return 0;
 }
 
-static int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
-			    const char *type, const char *dev_id)
-{
-	char **names, *name;
-
-	name = iio_strdup(attr);
-	if (!name)
-		return -ENOMEM;
-
-	names = realloc(attrs->names, (1 + attrs->num) * sizeof(char *));
-	if (!names) {
-		free(name);
-		return -ENOMEM;
-	}
-
-	names[attrs->num++] = name;
-	attrs->names = names;
-	IIO_DEBUG("Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev_id);
-	return 0;
-}
-
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	unsigned int i;
