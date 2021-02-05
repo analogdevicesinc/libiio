@@ -100,16 +100,16 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 
 	switch(type) {
 		case IIO_ATTR_TYPE_DEBUG:
-			attrs = realloc(dev->debug_attrs,
-					(1 + dev->nb_debug_attrs) * sizeof(char *));
+			attrs = realloc(dev->debug_attrs.names,
+					(1 + dev->debug_attrs.num) * sizeof(char *));
 			break;
 		case IIO_ATTR_TYPE_DEVICE:
-			attrs = realloc(dev->attrs,
-					(1 + dev->nb_attrs) * sizeof(char *));
+			attrs = realloc(dev->attrs.names,
+					(1 + dev->attrs.num) * sizeof(char *));
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			attrs = realloc(dev->buffer_attrs,
-					(1 + dev->nb_buffer_attrs) * sizeof(char *));
+			attrs = realloc(dev->buffer_attrs.names,
+					(1 + dev->buffer_attrs.num) * sizeof(char *));
 			break;
 		default:
 			attrs = NULL;
@@ -120,16 +120,16 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 
 	switch(type) {
 		case IIO_ATTR_TYPE_DEBUG:
-			attrs[dev->nb_debug_attrs++] = name;
-			dev->debug_attrs = attrs;
+			attrs[dev->debug_attrs.num++] = name;
+			dev->debug_attrs.names = attrs;
 			break;
 		case IIO_ATTR_TYPE_DEVICE:
-			attrs[dev->nb_attrs++] = name;
-			dev->attrs = attrs;
+			attrs[dev->attrs.num++] = name;
+			dev->attrs.names = attrs;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			attrs[dev->nb_buffer_attrs++] = name;
-			dev->buffer_attrs = attrs;
+			attrs[dev->buffer_attrs.num++] = name;
+			dev->buffer_attrs.names = attrs;
 			break;
 	}
 
