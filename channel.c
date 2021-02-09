@@ -177,168 +177,104 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 	}
 }
 
-static char *get_attr_xml(struct iio_channel_attr *attr, size_t *length)
+static ssize_t iio_snprintf_chan_attr_xml(char *str, ssize_t len,
+					  struct iio_channel_attr *attr)
 {
-	char *str;
-	size_t len;
+	if (!attr->filename)
+		return iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
 
-	len = strnlen(attr->name, MAX_ATTR_NAME);
-	len += sizeof("<attribute name=\"\" />") - 1;
-
-	if (attr->filename) {
-		len += strnlen(attr->filename, NAME_MAX);
-		len += sizeof(" filename=\"\"") - 1;
-	}
-
-	*length = len; /* just the chars */
-	len++;         /* room for terminating NULL */
-	str = malloc(len);
-	if (!str)
-		return NULL;
-
-	if (attr->filename)
-		iio_snprintf(str, len, "<attribute name=\"%s\" filename=\"%s\" />",
-				attr->name, attr->filename);
-	else
-		iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
-
-	return str;
+	return iio_snprintf(str, len,
+			    "<attribute name=\"%s\" filename=\"%s\" />",
+			    attr->name, attr->filename);
 }
 
-static char * get_scan_element(const struct iio_channel *chn, size_t *length)
+static ssize_t iio_snprintf_scan_element_xml(char *str, ssize_t len,
+					     const struct iio_channel *chn)
 {
-	char buf[1024], repeat[12] = "", *str;
 	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
+	char repeat[12] = "", scale[48] = "";
 
 	if (chn->format.repeat > 1)
 		iio_snprintf(repeat, sizeof(repeat), "X%u", chn->format.repeat);
 
-	iio_snprintf(buf, sizeof(buf), "<scan-element index=\"%li\" "
-			"format=\"%ce:%c%u/%u%s&gt;&gt;%u\" />",
+	if (chn->format.with_scale)
+		iio_snprintf(scale, sizeof(scale), "scale=\"%f\" ", chn->format.scale);
+
+	return iio_snprintf(str, len,
+			"<scan-element index=\"%li\" format=\"%ce:%c%u/%u%s&gt;&gt;%u\" %s/>",
 			chn->index, chn->format.is_be ? 'b' : 'l',
 			chn->format.is_signed ? 's' + processed : 'u' + processed,
 			chn->format.bits, chn->format.length, repeat,
-			chn->format.shift);
-
-	if (chn->format.with_scale) {
-		char *ptr = strrchr(buf, '\0');
-		iio_snprintf(ptr - 2, buf + sizeof(buf) - ptr + 2,
-				"scale=\"%f\" />", chn->format.scale);
-	}
-
-	str = iio_strdup(buf);
-	if (str)
-		*length = strlen(str);
-	return str;
+			chn->format.shift, scale);
 }
 
-/* Returns a string containing the XML representation of this channel */
-char * iio_channel_get_xml(const struct iio_channel *chn, size_t *length)
+ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
+				 const struct iio_channel *chn)
 {
-	ssize_t len;
-	char *ptr, *eptr, *str, **attrs, *scan_element = NULL;
-	size_t *attrs_len, scan_element_len = 0;
+	ssize_t ret, alen = 0;
 	unsigned int i;
 
-	len = sizeof("<channel id=\"\" type=\"\" ></channel>") - 1;
-	len += strnlen(chn->id, MAX_CHN_ID);
-	len += (chn->is_output ? sizeof("output") : sizeof("input")) - 1;
-	if (chn->name) {
-		len += sizeof(" name=\"\"") - 1;
-		len += strnlen(chn->name, MAX_CHN_NAME);
+	ret = iio_snprintf(ptr, len, "<channel id=\"%s\"", chn->id);
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
 	}
+	alen += ret;
+
+	if (chn->name) {
+		ret = iio_snprintf(ptr, len, " name=\"%s\"", chn->name);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+	}
+
+	ret = iio_snprintf(ptr, len, " type=\"%s\" >", chn->is_output ? "output" : "input");
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
+	}
+	alen += ret;
 
 	if (chn->is_scan_element) {
-		scan_element = get_scan_element(chn, &scan_element_len);
-		if (!scan_element)
-			return NULL;
-		else
-			len += scan_element_len;
-	}
-
-	attrs_len = malloc(chn->nb_attrs * sizeof(*attrs_len));
-	if (!attrs_len)
-		goto err_free_scan_element;
-
-	attrs = malloc(chn->nb_attrs * sizeof(*attrs));
-	if (!attrs)
-		goto err_free_attrs_len;
-
-	for (i = 0; i < chn->nb_attrs; i++) {
-		char *xml = get_attr_xml(&chn->attrs[i], &attrs_len[i]);
-		if (!xml)
-			goto err_free_attrs;
-		attrs[i] = xml;
-		len += attrs_len[i];
-	}
-
-	len++;  /* room for terminating NULL */
-	str = malloc(len);
-	if (!str)
-		goto err_free_attrs;
-	ptr = str;
-	eptr = str + len;
-
-	if (len > 0) {
-		ptr += iio_snprintf(str, len, "<channel id=\"%s\"", chn->id);
-		len = eptr - ptr;
-	}
-
-	if (chn->name && len > 0) {
-		ptr += iio_snprintf(ptr, len, " name=\"%s\"", chn->name);
-		len = eptr - ptr;
-	}
-
-	if (len > 0) {
-		ptr += iio_snprintf(ptr, len, " type=\"%s\" >", chn->is_output ? "output" : "input");
-		len = eptr - ptr;
-	}
-
-	if (chn->is_scan_element && len > (ssize_t) scan_element_len) {
-		memcpy(ptr, scan_element, scan_element_len); /* Flawfinder: ignore */
-		ptr += scan_element_len;
-		len -= scan_element_len;
-	}
-
-	for (i = 0; i < chn->nb_attrs; i++) {
-		if (len > (ssize_t) attrs_len[i]) {
-			memcpy(ptr, attrs[i], attrs_len[i]); /* Flawfinder: ignore */
-			ptr += attrs_len[i];
-			len -= attrs_len[i];
+		ret = iio_snprintf_scan_element_xml(ptr, len, chn);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
 		}
-		free(attrs[i]);
+		alen += ret;
 	}
 
-	free(scan_element);
-	free(attrs);
-	free(attrs_len);
-
-	if (len > 0) {
-		ptr += iio_strlcpy(ptr, "</channel>", len);
-		len -= sizeof("</channel>") -1;
+	for (i = 0; i < chn->nb_attrs; i++) {
+		ret = iio_snprintf_chan_attr_xml(ptr, len, &chn->attrs[i]);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
 	}
 
-	*length = ptr - str;
-
-	/* NULL char should be left, and that is it */
-	if (len != 1) {
-		IIO_ERROR("Internal libIIO error: iio_channel_get_xml str length issue\n");
-		free(str);
-		return NULL;
+	ret = iio_snprintf(ptr, len, "</channel>");
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
 	}
+	alen += ret;
 
-	return str;
-
-err_free_attrs:
-	while (i--)
-		free(attrs[i]);
-	free(attrs);
-err_free_attrs_len:
-	free(attrs_len);
-err_free_scan_element:
-	if (chn->is_scan_element)
-		free(scan_element);
-	return NULL;
+	return alen;
 }
 
 const char * iio_channel_get_id(const struct iio_channel *chn)

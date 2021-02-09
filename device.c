@@ -24,242 +24,113 @@
 #include <stdio.h>
 #include <string.h>
 
-static char *get_attr_xml(const char *attr, size_t *length, enum iio_attr_type type)
+static ssize_t iio_snprintf_xml_attr(char *buf, ssize_t len, const char *attr,
+				     enum iio_attr_type type)
 {
-	size_t len;
-	char *str;
-
-	len = sizeof("<attribute name=\"\" />") - 1;
-	len += strnlen(attr, MAX_ATTR_NAME);
-
-	switch(type){
-		case IIO_ATTR_TYPE_DEVICE:
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			len += (sizeof("debug-") - 1);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			len += (sizeof("buffer-") - 1);
-			break;
-		default:
-			return NULL;
-	}
-
-	*length = len; /* just the chars */
-	len++; /* room for terminating NULL */
-	str = malloc(len);
-	if (!str)
-		return NULL;
-
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			iio_snprintf(str, len, "<attribute name=\"%s\" />", attr);
-			break;
+			return iio_snprintf(buf, len, "<attribute name=\"%s\" />", attr);
 		case IIO_ATTR_TYPE_DEBUG:
-			iio_snprintf(str, len, "<debug-attribute name=\"%s\" />", attr);
-			break;
+			return iio_snprintf(buf, len, "<debug-attribute name=\"%s\" />", attr);
 		case IIO_ATTR_TYPE_BUFFER:
-			iio_snprintf(str, len, "<buffer-attribute name=\"%s\" />", attr);
-			break;
+			return iio_snprintf(buf, len, "<buffer-attribute name=\"%s\" />", attr);
+		default:
+			return -EINVAL;
 	}
-
-	return str;
 }
 
-/* Returns a string containing the XML representation of this device */
-char * iio_device_get_xml(const struct iio_device *dev, size_t *length)
+ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
+				const struct iio_device *dev)
 {
-	ssize_t len;
-	char *ptr, *eptr, *str, **attrs, **channels, **buffer_attrs, **debug_attrs;
-	size_t *attrs_len, *channels_len, *buffer_attrs_len, *debug_attrs_len;
-	unsigned int i, j, k;
+	ssize_t ret, alen = 0;
+	unsigned int i;
 
-	len = sizeof("<device id=\"\" ></device>") - 1;
-	len += strnlen(dev->id, MAX_DEV_ID);
+	ret = iio_snprintf(ptr, len, "<device id=\"%s\"", dev->id);
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
+	}
+	alen += ret;
+
 	if (dev->name) {
-		len += sizeof(" name=\"\"") - 1;
-		len += strnlen(dev->name, MAX_DEV_NAME);
+		ret = iio_snprintf(ptr, len, " name=\"%s\"", dev->name);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
 	}
 
-	attrs_len = malloc(dev->attrs.num * sizeof(*attrs_len));
-	if (!attrs_len)
-		return NULL;
-
-	attrs = malloc(dev->attrs.num * sizeof(*attrs));
-	if (!attrs)
-		goto err_free_attrs_len;
-
-	for (i = 0; i < dev->attrs.num; i++) {
-		char *xml = get_attr_xml(dev->attrs.names[i], &attrs_len[i], IIO_ATTR_TYPE_DEVICE);
-		if (!xml)
-			goto err_free_attrs;
-		attrs[i] = xml;
-		len += attrs_len[i];
+	ret = iio_snprintf(ptr, len, " >");
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
 	}
-
-	channels_len = malloc(dev->nb_channels * sizeof(*channels_len));
-	if (!channels_len)
-		goto err_free_attrs;
-
-	channels = malloc(dev->nb_channels * sizeof(*channels));
-	if (!channels)
-		goto err_free_channels_len;
-
-	for (j = 0; j < dev->nb_channels; j++) {
-		char *xml = iio_channel_get_xml(dev->channels[j],
-				&channels_len[j]);
-		if (!xml)
-			goto err_free_channels;
-		channels[j] = xml;
-		len += channels_len[j];
-	}
-
-	buffer_attrs_len = malloc(dev->buffer_attrs.num *
-			sizeof(*buffer_attrs_len));
-	if (!buffer_attrs_len)
-		goto err_free_channels;
-
-	buffer_attrs = malloc(dev->buffer_attrs.num * sizeof(*buffer_attrs));
-	if (!buffer_attrs)
-		goto err_free_buffer_attrs_len;
-
-	for (k = 0; k < dev->buffer_attrs.num; k++) {
-		char *xml = get_attr_xml(dev->buffer_attrs.names[k],
-				&buffer_attrs_len[k], IIO_ATTR_TYPE_BUFFER);
-		if (!xml)
-			goto err_free_buffer_attrs;
-		buffer_attrs[k] = xml;
-		len += buffer_attrs_len[k];
-	}
-
-	debug_attrs_len = malloc(dev->debug_attrs.num *
-			sizeof(*debug_attrs_len));
-	if (!debug_attrs_len)
-		goto err_free_buffer_attrs;
-
-	debug_attrs = malloc(dev->debug_attrs.num * sizeof(*debug_attrs));
-	if (!debug_attrs)
-		goto err_free_debug_attrs_len;
-
-	for (k = 0; k < dev->debug_attrs.num; k++) {
-		char *xml = get_attr_xml(dev->debug_attrs.names[k],
-				&debug_attrs_len[k], IIO_ATTR_TYPE_DEBUG);
-		if (!xml)
-			goto err_free_debug_attrs;
-		debug_attrs[k] = xml;
-		len += debug_attrs_len[k];
-	}
-
-	len++;  /* room for terminating NULL */
-	str = malloc(len);
-	if (!str)
-		goto err_free_debug_attrs;
-	eptr = str + len;
-	ptr = str;
-
-	if (len > 0) {
-		ptr += iio_snprintf(str, len, "<device id=\"%s\"", dev->id);
-		len = eptr - ptr;
-	}
-
-	if (dev->name && len > 0) {
-		ptr += iio_snprintf(ptr, len, " name=\"%s\"", dev->name);
-		len = eptr - ptr;
-	}
-
-	if (len > 0) {
-		ptr += iio_strlcpy(ptr, " >", len);
-		len -= 2;
-	}
+	alen += ret;
 
 	for (i = 0; i < dev->nb_channels; i++) {
-		if (len > (ssize_t) channels_len[i]) {
-			memcpy(ptr, channels[i], channels_len[i]); /* Flawfinder: ignore */
-			ptr += channels_len[i];
-			len -= channels_len[i];
+		ret = iio_snprintf_channel_xml(ptr, len, dev->channels[i]);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
 		}
-		free(channels[i]);
+		alen += ret;
 	}
-
-	free(channels);
-	free(channels_len);
 
 	for (i = 0; i < dev->attrs.num; i++) {
-		if (len > (ssize_t) attrs_len[i]) {
-			memcpy(ptr, attrs[i], attrs_len[i]); /* Flawfinder: ignore */
-			ptr += attrs_len[i];
-			len -= attrs_len[i];
+		ret = iio_snprintf_xml_attr(ptr, len, dev->attrs.names[i],
+					    IIO_ATTR_TYPE_DEVICE);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
 		}
-		free(attrs[i]);
+		alen += ret;
 	}
-
-	free(attrs);
-	free(attrs_len);
 
 	for (i = 0; i < dev->buffer_attrs.num; i++) {
-		if (len > (ssize_t) buffer_attrs_len[i]) {
-			memcpy(ptr, buffer_attrs[i], buffer_attrs_len[i]); /* Flawfinder: ignore */
-			ptr += buffer_attrs_len[i];
-			len -= buffer_attrs_len[i];
+		ret = iio_snprintf_xml_attr(ptr, len, dev->buffer_attrs.names[i],
+					    IIO_ATTR_TYPE_BUFFER);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
 		}
-		free(buffer_attrs[i]);
+		alen += ret;
 	}
-
-	free(buffer_attrs);
-	free(buffer_attrs_len);
 
 	for (i = 0; i < dev->debug_attrs.num; i++) {
-		if (len > (ssize_t) debug_attrs_len[i]) {
-			memcpy(ptr, debug_attrs[i], debug_attrs_len[i]); /* Flawfinder: ignore */
-			ptr += debug_attrs_len[i];
-			len -= debug_attrs_len[i];
+		ret = iio_snprintf_xml_attr(ptr, len, dev->debug_attrs.names[i],
+					    IIO_ATTR_TYPE_DEBUG);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
 		}
-		free(debug_attrs[i]);
+		alen += ret;
 	}
 
-	free(debug_attrs);
-	free(debug_attrs_len);
-
-	if (len > 0) {
-		ptr += iio_strlcpy(ptr, "</device>", len);
-		len -= sizeof("</device>") - 1;
+	ret = iio_snprintf(ptr, len, "</device>");
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
 	}
+	alen += ret;
 
-	*length = ptr - str;
-
-	if (len != 1) {
-		IIO_ERROR("Internal libIIO error: iio_device_get_xml str length issue\n");
-		free(str);
-		return NULL;
-	}
-
-	return str;
-
-err_free_debug_attrs:
-	while (k--)
-		free(debug_attrs[k]);
-	free(debug_attrs);
-err_free_debug_attrs_len:
-	free(debug_attrs_len);
-err_free_buffer_attrs:
-	while (k--)
-		free(buffer_attrs[k]);
-	free(buffer_attrs);
-err_free_buffer_attrs_len:
-	free(buffer_attrs_len);
-err_free_channels:
-	while (j--)
-		free(channels[j]);
-	free(channels);
-err_free_channels_len:
-	free(channels_len);
-err_free_attrs:
-	while (i--)
-		free(attrs[i]);
-	free(attrs);
-err_free_attrs_len:
-	free(attrs_len);
-	return NULL;
+	return alen;
 }
 
 const char * iio_device_get_id(const struct iio_device *dev)

@@ -44,142 +44,92 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST buffer-attribute name CDATA #REQUIRED>"
 "]>";
 
+static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
+					const struct iio_context *ctx)
+{
+	ssize_t ret, alen = 0;
+	unsigned int i;
+
+	if (ctx->description)
+		ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" "
+				   "description=\"%s\" >",
+				   xml_header, ctx->name, ctx->description);
+	else
+		ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" >",
+				   xml_header, ctx->name);
+
+	if (ret < 0)
+		return ret;
+
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
+	}
+	alen += ret;
+
+	for (i = 0; i < ctx->nb_attrs; i++) {
+		ret = iio_snprintf(ptr, len,
+				   "<context-attribute name=\"%s\" value=\"%s\" />",
+				  ctx->attrs[i], ctx->values[i]);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+	}
+
+	for (i = 0; i < ctx->nb_devices; i++) {
+		ret = iio_snprintf_device_xml(ptr, len, ctx->devices[i]);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+	}
+
+	ret = iio_snprintf(ptr, len, "</context>");
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
+	}
+	alen += ret;
+
+	return alen;
+}
+
 /* Returns a string containing the XML representation of this context */
 char * iio_context_create_xml(const struct iio_context *ctx)
 {
 	ssize_t len;
-	size_t *devices_len = NULL;
-	char *str, *ptr, *eptr, **devices = NULL;
-	char ** ctx_attrs, **ctx_values;
-	unsigned int i;
+	char *str;
 
-	len = sizeof(xml_header) - 1;
-	len += strnlen(ctx->name, MAX_CTX_NAME);
-	len += sizeof("<context name=\"\" ></context>") - 1;
-
-	if (ctx->description) {
-		len += strnlen(ctx->description, MAX_CTX_DESC);
-		len += sizeof(" description=\"\"") - 1;
-	}
-
-	ctx_attrs = calloc(ctx->nb_attrs, sizeof(*ctx->attrs));
-	if (!ctx_attrs) {
-		errno = ENOMEM;
+	len = iio_snprintf_context_xml(NULL, 0, ctx);
+	if (len < 0) {
+		errno = -len;
 		return NULL;
-	}
-	ctx_values = calloc(ctx->nb_attrs, sizeof(*ctx->values));
-	if (!ctx_values) {
-		errno = ENOMEM;
-		goto err_free_ctx_attrs;
-	}
-
-	for (i = 0; i < ctx->nb_attrs; i++) {
-		ctx_attrs[i] = encode_xml_ndup(ctx->attrs[i]);
-		ctx_values[i] = encode_xml_ndup(ctx->values[i]);
-		if (!ctx_attrs[i] || !ctx_values[i])
-			goto err_free_ctx_attrs_values;
-
-		len += strnlen(ctx_attrs[i], MAX_ATTR_NAME);
-		len += strnlen(ctx_values[i], MAX_ATTR_VALUE);
-		len += sizeof("<context-attribute name=\"\" value=\"\" />") - 1;
-	}
-
-	if (ctx->nb_devices) {
-		devices_len = malloc(ctx->nb_devices * sizeof(*devices_len));
-		if (!devices_len) {
-			errno = ENOMEM;
-			goto err_free_ctx_attrs_values;
-		}
-
-		devices = calloc(ctx->nb_devices, sizeof(*devices));
-		if (!devices)
-			goto err_free_devices_len;
-
-		for (i = 0; i < ctx->nb_devices; i++) {
-			char *xml = iio_device_get_xml(ctx->devices[i],
-					&devices_len[i]);
-			if (!xml)
-				goto err_free_devices;
-			devices[i] = xml;
-			len += devices_len[i];
-		}
 	}
 
 	len++; /* room for terminating NULL */
 	str = malloc(len);
 	if (!str) {
 		errno = ENOMEM;
-		goto err_free_devices;
-	}
-	eptr = str + len;
-	ptr = str;
-
-	if (len > 0) {
-		if (ctx->description) {
-			ptr += iio_snprintf(str, len, "%s<context name=\"%s\" "
-					"description=\"%s\" >",
-					xml_header, ctx->name, ctx->description);
-		} else {
-			ptr += iio_snprintf(str, len, "%s<context name=\"%s\" >",
-					xml_header, ctx->name);
-		}
-		len = eptr - ptr;
+		return NULL;
 	}
 
-	for (i = 0; i < ctx->nb_attrs && len > 0; i++) {
-		ptr += iio_snprintf(ptr, len, "<context-attribute name=\"%s\" value=\"%s\" />",
-				ctx_attrs[i], ctx_values[i]);
-		free(ctx_attrs[i]);
-		free(ctx_values[i]);
-		len = eptr - ptr;
-	}
-
-	free(ctx_attrs);
-	free(ctx_values);
-
-	for (i = 0; i < ctx->nb_devices; i++) {
-		if (len > (ssize_t) devices_len[i]) {
-			memcpy(ptr, devices[i], devices_len[i]); /* Flawfinder: ignore */
-			ptr += devices_len[i];
-			len -= devices_len[i];
-		}
-		free(devices[i]);
-	}
-
-	free(devices);
-	free(devices_len);
-
-	if (len > 0) {
-		ptr += iio_strlcpy(ptr, "</context>", len);
-		len -= sizeof("</context>") - 1;
-	}
-
-	if (len != 1) {
-		IIO_ERROR("Internal libIIO error: iio_context_create_xml str length issue\n");
+	len = iio_snprintf_context_xml(str, len, ctx);
+	if (len < 0) {
+		errno = -len;
 		free(str);
 		return NULL;
 	}
 
 	return str;
-
-err_free_devices:
-	for (i = 0; i < ctx->nb_devices; i++)
-		free(devices[i]);
-	free(devices);
-err_free_devices_len:
-	free(devices_len);
-err_free_ctx_attrs_values:
-	for (i = 0; i < ctx->nb_attrs; i++) {
-		if (ctx_attrs[i])
-			free(ctx_attrs[i]);
-		if (ctx_values[i])
-			free(ctx_values[i]);
-	}
-
-	free(ctx_values);
-err_free_ctx_attrs:
-	free(ctx_attrs);
-	return NULL;
 }
 
 struct iio_context * iio_context_create_from_backend(
