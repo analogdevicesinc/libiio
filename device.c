@@ -39,6 +39,64 @@ static ssize_t iio_snprintf_xml_attr(char *buf, ssize_t len, const char *attr,
 	}
 }
 
+ssize_t iio_snprintf_xml_buffer_attrs(char *ptr, ssize_t len,
+				      const struct iio_device *dev)
+{
+	ssize_t ret, alen = 0;
+	unsigned int i, j;
+
+	if (!dev->nb_buffers)
+		return 0;
+
+	/* legacy buffer attributes */
+	for (i = 0; i < dev->buffer_attrs[0].num; i++) {
+		ret = iio_snprintf_xml_attr(ptr, len, dev->buffer_attrs[0].names[i],
+					    IIO_ATTR_TYPE_BUFFER);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+	}
+
+	for (j = 0; j < dev->nb_buffers; j++) {
+		ret = iio_snprintf(ptr, len, "<buffer index\"%u\">", j);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+
+		for (i = 0; i < dev->buffer_attrs[j].num; i++) {
+			const char *attr = dev->buffer_attrs[j].names[i];
+			ret = iio_snprintf(ptr, len,
+					   "<attribute name=\"%s\" />", attr);
+			if (ret < 0)
+				return ret;
+			if (ptr) {
+				ptr += ret;
+				len -= ret;
+			}
+			alen += ret;
+		}
+
+		ret = iio_snprintf(ptr, len, "<buffer/>");
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+	}
+
+	return alen;
+}
+
 ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 				const struct iio_device *dev)
 {
@@ -97,17 +155,14 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		alen += ret;
 	}
 
-	for (i = 0; i < dev->buffer_attrs.num; i++) {
-		ret = iio_snprintf_xml_attr(ptr, len, dev->buffer_attrs.names[i],
-					    IIO_ATTR_TYPE_BUFFER);
-		if (ret < 0)
-			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+	ret = iio_snprintf_xml_buffer_attrs(ptr, len, dev);
+	if (ret < 0)
+		return ret;
+	if (ptr) {
+		ptr += ret;
+		len -= ret;
 	}
+	alen += ret;
 
 	for (i = 0; i < dev->debug_attrs.num; i++) {
 		ret = iio_snprintf_xml_attr(ptr, len, dev->debug_attrs.names[i],
@@ -213,19 +268,25 @@ const char * iio_device_find_attr(const struct iio_device *dev,
 
 unsigned int iio_device_get_buffer_attrs_count(const struct iio_device *dev)
 {
-	return dev->buffer_attrs.num;
+	if (dev->nb_buffers == 0)
+		return 0;
+	return dev->buffer_attrs[0].num;
 }
 
 const char * iio_device_get_buffer_attr(const struct iio_device *dev,
 		unsigned int index)
 {
-	return iio_device_get_dev_attr(&dev->buffer_attrs, index);
+	if (dev->nb_buffers == 0)
+		return NULL;
+	return iio_device_get_dev_attr(&dev->buffer_attrs[0], index);
 }
 
 const char * iio_device_find_buffer_attr(const struct iio_device *dev,
 		const char *name)
 {
-	return iio_device_find_dev_attr(&dev->buffer_attrs, name);
+	if (dev->nb_buffers == 0)
+		return NULL;
+	return iio_device_find_dev_attr(&dev->buffer_attrs[0], name);
 }
 
 const char * iio_device_find_debug_attr(const struct iio_device *dev,
@@ -428,8 +489,11 @@ void free_device(struct iio_device *dev)
 	unsigned int i;
 
 	free_iio_dev_attrs(&dev->attrs);
-	free_iio_dev_attrs(&dev->buffer_attrs);
 	free_iio_dev_attrs(&dev->debug_attrs);
+
+	for (i = 0; i < dev->nb_buffers; i++)
+		free_iio_dev_attrs(&dev->buffer_attrs[i]);
+	free(dev->buffer_attrs);
 
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);

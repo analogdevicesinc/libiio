@@ -175,8 +175,10 @@ struct iio_device {
 
 	char *name, *id;
 
+	unsigned int nb_buffers;
+	struct iio_dev_attrs *buffer_attrs;
+
 	struct iio_dev_attrs attrs;
-	struct iio_dev_attrs buffer_attrs;
 	struct iio_dev_attrs debug_attrs;
 
 	struct iio_channel **channels;

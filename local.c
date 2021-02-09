@@ -517,7 +517,11 @@ static const struct iio_dev_attrs *local_get_iio_dev_attrs(
 		case IIO_ATTR_TYPE_DEBUG:
 			return &dev->debug_attrs;
 		case IIO_ATTR_TYPE_BUFFER:
-			return &dev->buffer_attrs;
+			if (dev->nb_buffers == 0) {
+				errno = EINVAL;
+				return NULL;
+			}
+			return &dev->buffer_attrs[0];
 		default:
 			errno = EINVAL;
 			return NULL;
@@ -1639,9 +1643,14 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 	return 0;
 }
 
+struct iio_dev_buffer_pair {
+	struct iio_device *dev;
+	struct iio_dev_attrs *buffer_attrs;
+};
+
 static int add_buffer_attr(void *d, const char *path)
 {
-	struct iio_device *dev = (struct iio_device *) d;
+	struct iio_dev_buffer_pair *ib = d;
 	const char *name = strrchr(path, '/') + 1;
 	unsigned int i;
 
@@ -1649,7 +1658,7 @@ static int add_buffer_attr(void *d, const char *path)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 
-	return add_iio_dev_attr(&dev->buffer_attrs, name, " buffer", dev->id);
+	return add_iio_dev_attr(ib->buffer_attrs, name, " buffer", ib->dev->id);
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
@@ -1747,20 +1756,69 @@ static int add_scan_elements(struct iio_device *dev, const char *devpath)
 	return 0;
 }
 
-static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
+static ssize_t count_buffers(struct iio_device *dev, const char *devpath)
+{
+	ssize_t ret, cnt;
+	unsigned int i;
+	struct stat st;
+	char buf[256];
+
+	cnt = 0;
+	for (i = 0; ; i++) {
+		ret = iio_snprintf(buf, sizeof(buf), "%s/buffer%u", devpath, i);
+		if (ret < 0)
+			return ret;
+		if (!stat(buf, &st) && S_ISDIR(st.st_mode))
+			cnt++;
+		else
+			break;
+	}
+
+	/* try the legacy buffer name */
+	if (cnt == 0) {
+		ret = iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
+		if (ret < 0)
+			return ret;
+		if (!stat(buf, &st) && S_ISDIR(st.st_mode))
+			cnt++;
+	}
+
+	return cnt;
+}
+
+static ssize_t add_buffer_attributes(struct iio_device *dev, int idx,
+				     const char *devpath)
 {
 	struct stat st;
-	char buf[1024];
+	char buf[256];
+	ssize_t ret;
 
-	iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
+	if (idx < 0)
+		ret = iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
+	else
+		ret = iio_snprintf(buf, sizeof(buf), "%s/buffer%d", devpath, idx);
+
+	if (ret < 0)
+		return ret;
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		int ret = foreach_in_dir(dev, buf, false, add_buffer_attr);
+		struct iio_dev_buffer_pair ib = {
+			.dev = dev,
+		};
+
+		if (idx < 0)
+			idx = 0;
+
+		ib.buffer_attrs = &dev->buffer_attrs[idx];
+
+		ret = foreach_in_dir(&ib, buf, false, add_buffer_attr);
 		if (ret < 0)
 			return ret;
 
-		qsort(dev->buffer_attrs.names, dev->buffer_attrs.num, sizeof(char *),
+		qsort(dev->buffer_attrs[idx].names, dev->buffer_attrs[idx].num, sizeof(char *),
 			iio_buffer_attr_compare);
+
+		return 1;
 	}
 
 	return 0;
@@ -1769,7 +1827,7 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 static int create_device(void *d, const char *path)
 {
 	uint32_t *mask = NULL;
-	unsigned int i;
+	unsigned int i, nb_buffers;
 	int ret;
 	struct iio_context *ctx = d;
 	struct iio_device *dev = zalloc(sizeof(*dev));
@@ -1798,9 +1856,32 @@ static int create_device(void *d, const char *path)
 	if (ret < 0)
 		goto err_free_device;
 
-	ret = add_buffer_attributes(dev, path);
+	ret = count_buffers(dev, path);
 	if (ret < 0)
 		goto err_free_device;
+	nb_buffers = ret;
+
+	dev->buffer_attrs = malloc(nb_buffers * sizeof(*dev->buffer_attrs));
+	if (!dev->buffer_attrs)
+		goto err_free_device;
+
+	for (i = 0; i < nb_buffers; i++) {
+		ret = add_buffer_attributes(dev, i, path);
+		if (ret < 0)
+			goto err_free_device;
+		if (ret == 0)
+			break;
+		dev->nb_buffers++;
+	}
+
+	/* check for systems with legacy buffers only */
+	if (dev->nb_buffers == 0) {
+		ret = add_buffer_attributes(dev, -1, path);
+		if (ret < 0)
+			goto err_free_device;
+		if (ret > 0)
+			dev->nb_buffers = 1;
+	}
 
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
