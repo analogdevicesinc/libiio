@@ -213,8 +213,10 @@ struct iio_context_info ** iio_scan_result_add(
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 
-char *iio_channel_get_xml(const struct iio_channel *chn, size_t *len);
-char *iio_device_get_xml(const struct iio_device *dev, size_t *len);
+ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen,
+				 const struct iio_channel *chn);
+ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
+				const struct iio_device *dev);
 
 char *encode_xml_ndup(const char * input);
 char *iio_context_create_xml(const struct iio_context *ctx);
