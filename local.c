@@ -507,30 +507,37 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	return (ssize_t) block.bytes_used;
 }
 
+static const struct iio_dev_attrs *local_get_iio_dev_attrs(
+		const struct iio_device *dev,
+		enum iio_attr_type type)
+{
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			return &dev->attrs;
+		case IIO_ATTR_TYPE_DEBUG:
+			return &dev->debug_attrs;
+		case IIO_ATTR_TYPE_BUFFER:
+			return &dev->buffer_attrs;
+		default:
+			errno = EINVAL;
+			return NULL;
+	}
+}
+
 static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 		char *dst, size_t len, enum iio_attr_type type)
 {
+	const struct iio_dev_attrs *iio_attrs;
 	unsigned int i, nb;
 	char **attrs;
 	char *ptr = dst;
 
-	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			nb =  dev->attrs.num;
-			attrs = dev->attrs.names;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			nb =  dev->debug_attrs.num;
-			attrs = dev->debug_attrs.names;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			nb =  dev->buffer_attrs.num;
-			attrs = dev->buffer_attrs.names;
-			break;
-		default:
-			return -EINVAL;
-			break;
-	}
+	iio_attrs = local_get_iio_dev_attrs(dev, type);
+	if (!iio_attrs)
+		return -errno;
+
+	attrs = iio_attrs->names;
+	nb = iio_attrs->num;
 
 	for (i = 0; len >= 4 && i < nb; i++) {
 		/* Recursive! */
@@ -601,27 +608,17 @@ static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
 static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
 		const char *src, size_t len, enum iio_attr_type type)
 {
+	const struct iio_dev_attrs *iio_attrs;
 	unsigned int i, nb;
 	char **attrs;
 	const char *ptr = src;
 
-	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			nb =  dev->attrs.num;
-			attrs = dev->attrs.names;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			nb =  dev->debug_attrs.num;
-			attrs = dev->debug_attrs.names;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			nb =  dev->buffer_attrs.num;
-			attrs = dev->buffer_attrs.names;
-			break;
-		default:
-			return -EINVAL;
-			break;
-	}
+	iio_attrs = local_get_iio_dev_attrs(dev, type);
+	if (!iio_attrs)
+		return -errno;
+
+	attrs = iio_attrs->names;
+	nb = iio_attrs->num;
 
 	/* First step: Verify that the buffer is in the correct format */
 	if (local_buffer_analyze(nb, src, len))
@@ -673,32 +670,42 @@ static ssize_t local_write_all_chn_attrs(const struct iio_channel *chn,
 	return ptr - src;
 }
 
+static ssize_t local_get_sysfs_name(char *buf, ssize_t len,
+				    const struct iio_device *dev,
+				    const char *attr,
+				    enum iio_attr_type type)
+{
+	switch (type) {
+		case IIO_ATTR_TYPE_DEVICE:
+			return iio_snprintf(buf, len,
+					    "/sys/bus/iio/devices/%s/%s",
+					    dev->id, attr);
+		case IIO_ATTR_TYPE_DEBUG:
+			return iio_snprintf(buf, len,
+					    "/sys/kernel/debug/iio/%s/%s",
+					    dev->id, attr);
+		case IIO_ATTR_TYPE_BUFFER:
+			return iio_snprintf(buf, len,
+					    "/sys/bus/iio/devices/%s/buffer/%s",
+					    dev->id, attr);
+		default:
+			return -EINVAL;
+	}
+}
+
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
-	char buf[1024];
+	char buf[256];
 	ssize_t ret;
 
 	if (!attr)
 		return local_read_all_dev_attrs(dev, dst, len, type);
 
-	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-					dev->id, attr);
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-					dev->id, attr);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s",
-					dev->id, attr);
-			break;
-		default:
-			return -EINVAL;
-	}
+	ret = local_get_sysfs_name(buf, sizeof(buf), dev, attr, type);
+	if (ret < 0)
+		return ret;
 
 	f = fopen(buf, "re");
 	if (!f)
@@ -726,28 +733,15 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
-	char buf[1024];
+	char buf[256];
 	ssize_t ret;
 
 	if (!attr)
 		return local_write_all_dev_attrs(dev, src, len, type);
 
-	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-					dev->id, attr);
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-					dev->id, attr);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s",
-					dev->id, attr);
-			break;
-		default:
-			return -EINVAL;
-	}
+	ret = local_get_sysfs_name(buf, sizeof(buf), dev, attr, type);
+	if (ret < 0)
+		return ret;
 
 	f = fopen(buf, "we");
 	if (!f)
