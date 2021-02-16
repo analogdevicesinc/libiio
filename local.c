@@ -999,6 +999,35 @@ err_close:
 	return ret;
 }
 
+static int local_close_high_speed(struct iio_device_pdata *pdata)
+{
+	char err_str[32];
+	unsigned int i;
+	int ret = 0;
+
+	if (!pdata->is_high_speed)
+		return 0;
+
+	if (pdata->addrs) {
+		for (i = 0; i < pdata->allocated_nb_blocks; i++)
+			munmap(pdata->addrs[i], pdata->blocks[i].size);
+	}
+	if (pdata->fd > -1)
+		ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+	if (ret) {
+		ret = -errno;
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Error during ioctl(): %s\n", err_str);
+	}
+	pdata->allocated_nb_blocks = 0;
+	free(pdata->addrs);
+	pdata->addrs = NULL;
+	free(pdata->blocks);
+	pdata->blocks = NULL;
+
+	return ret;
+}
+
 static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
@@ -1009,26 +1038,8 @@ static int local_close(const struct iio_device *dev)
 	if (pdata->fd == -1)
 		return -EBADF;
 
-	ret = 0;
+	ret = local_close_high_speed(pdata);
 	ret1 = 0;
-	if (pdata->is_high_speed) {
-		if (pdata->addrs) {
-			for (i = 0; i < pdata->allocated_nb_blocks; i++)
-				munmap(pdata->addrs[i], pdata->blocks[i].size);
-		}
-		if (pdata->fd > -1)
-			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
-		if (ret) {
-			ret = -errno;
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Error during ioctl(): %s\n", err_str);
-		}
-		pdata->allocated_nb_blocks = 0;
-		free(pdata->addrs);
-		pdata->addrs = NULL;
-		free(pdata->blocks);
-		pdata->blocks = NULL;
-	}
 
 	ret1 = close(pdata->fd);
 	if (ret1) {
