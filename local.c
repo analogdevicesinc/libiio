@@ -48,24 +48,6 @@
 
 #define NB_BLOCKS 4
 
-#define BLOCK_ALLOC_IOCTL   _IOWR('i', 0xa0, struct block_alloc_req)
-#define BLOCK_FREE_IOCTL      _IO('i', 0xa1)
-#define BLOCK_QUERY_IOCTL   _IOWR('i', 0xa2, struct block)
-#define BLOCK_ENQUEUE_IOCTL _IOWR('i', 0xa3, struct block)
-#define BLOCK_DEQUEUE_IOCTL _IOWR('i', 0xa4, struct block)
-
-#define BLOCK_FLAG_CYCLIC BIT(1)
-
-/* Forward declarations */
-static ssize_t local_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, enum iio_attr_type type);
-static ssize_t local_read_chn_attr(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len);
-static ssize_t local_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, size_t len, enum iio_attr_type type);
-static ssize_t local_write_chn_attr(const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len);
-
 struct block_alloc_req {
 	uint32_t type,
 		 size,
@@ -83,6 +65,55 @@ struct block {
 	uint64_t timestamp;
 };
 
+#define LEGACY_BLOCK_ALLOC_IOCTL		_IOWR('i', 0xa0, struct block_alloc_req)
+#define LEGACY_BLOCK_FREE_IOCTL			_IO('i', 0xa1)
+#define LEGACY_BLOCK_QUERY_IOCTL		_IOWR('i', 0xa2, struct block)
+#define LEGACY_BLOCK_ENQUEUE_IOCTL		_IOWR('i', 0xa3, struct block)
+#define LEGACY_BLOCK_DEQUEUE_IOCTL		_IOWR('i', 0xa4, struct block)
+
+#define IIO_BUFFER_GET_FD_IOCTL			_IOWR('i', 0x91, int)
+#define IIO_BUFFER_BLOCK_ALLOC_IOCTL		_IOWR('i', 0x92, struct block_alloc_req)
+#define IIO_BUFFER_BLOCK_FREE_IOCTL		_IO('i',   0x93)
+#define IIO_BUFFER_BLOCK_QUERY_IOCTL		_IOWR('i', 0x93, struct block)
+#define IIO_BUFFER_BLOCK_ENQUEUE_IOCTL		_IOWR('i', 0x94, struct block)
+#define IIO_BUFFER_BLOCK_DEQUEUE_IOCTL		_IOWR('i', 0x95, struct block)
+
+#define BLOCK_FLAG_CYCLIC BIT(1)
+
+struct iio_buffer_block_intf {
+	unsigned long alloc;
+	unsigned long free;
+	unsigned long query;
+	unsigned long enqueue;
+	unsigned long dequeue;
+};
+
+static const struct iio_buffer_block_intf iio_buffer_block_legacy_intf = {
+	.alloc = LEGACY_BLOCK_ALLOC_IOCTL,
+	.free = LEGACY_BLOCK_FREE_IOCTL,
+	.query = LEGACY_BLOCK_QUERY_IOCTL,
+	.enqueue = LEGACY_BLOCK_ENQUEUE_IOCTL,
+	.dequeue = LEGACY_BLOCK_DEQUEUE_IOCTL,
+};
+
+static const struct iio_buffer_block_intf iio_buffer_block_intf = {
+	.alloc = IIO_BUFFER_BLOCK_ALLOC_IOCTL,
+	.free = IIO_BUFFER_BLOCK_FREE_IOCTL,
+	.query = IIO_BUFFER_BLOCK_QUERY_IOCTL,
+	.enqueue = IIO_BUFFER_BLOCK_ENQUEUE_IOCTL,
+	.dequeue = IIO_BUFFER_BLOCK_DEQUEUE_IOCTL,
+};
+
+/* Forward declarations */
+static ssize_t local_read_dev_attr(const struct iio_device *dev,
+		const char *attr, char *dst, size_t len, enum iio_attr_type type);
+static ssize_t local_read_chn_attr(const struct iio_channel *chn,
+		const char *attr, char *dst, size_t len);
+static ssize_t local_write_dev_attr(const struct iio_device *dev,
+		const char *attr, const char *src, size_t len, enum iio_attr_type type);
+static ssize_t local_write_chn_attr(const struct iio_channel *chn,
+		const char *attr, const char *src, size_t len);
+
 struct iio_context_pdata {
 	unsigned int rw_timeout_ms;
 };
@@ -94,6 +125,7 @@ struct iio_device_pdata {
 	unsigned int max_nb_blocks;
 	unsigned int allocated_nb_blocks;
 
+	const struct iio_buffer_block_intf *block_intf;
 	struct block *blocks;
 	void **addrs;
 	int last_dequeued;
@@ -437,6 +469,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 {
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
+	const struct iio_buffer_block_intf *bintf = pdata->block_intf;
+
 	struct timespec start;
 	char err_str[1024];
 	int f = pdata->fd;
@@ -460,8 +494,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		}
 
 		last_block->bytes_used = bytes_used;
-		ret = (ssize_t) ioctl_nointr(f,
-				BLOCK_ENQUEUE_IOCTL, last_block);
+		ret = (ssize_t) ioctl_nointr(f, bintf->enqueue, last_block);
 		if (ret) {
 			ret = (ssize_t) -errno;
 			iio_strerror(errno, err_str, sizeof(err_str));
@@ -485,7 +518,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 			return ret;
 
 		memset(&block, 0, sizeof(block));
-		ret = (ssize_t) ioctl_nointr(f, BLOCK_DEQUEUE_IOCTL, &block);
+		ret = (ssize_t) ioctl_nointr(f, bintf->dequeue, &block);
 	} while (pdata->blocking && ret == -1 && errno == EAGAIN);
 
 	if (ret) {
@@ -807,10 +840,48 @@ static int channel_write_state(const struct iio_channel *chn, bool en)
 		return 0;
 }
 
+static int local_buffer_get_fd(const struct iio_device *dev,
+			       int buffer_idx)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	int ret, buf_fd = buffer_idx;
+
+	ret = ioctl_nointr(pdata->fd, IIO_BUFFER_GET_FD_IOCTL, &buf_fd);
+	if (ret < 0) {
+		pdata->block_intf = &iio_buffer_block_legacy_intf;
+		return 0;
+	}
+
+	if (buf_fd < 0)
+		return -EFAULT;
+
+	/**
+	 * In mainline Linux can use the FD from /dev/iio:deviceX only
+	 * to read from the IIO buffer, but not to write to it.
+	 * To use IIO buffers in mainline Linux, the recommended (new) method
+	 * is to request an FD for the IIO buffer, and use that for R/W.
+	 * In libiio context, we can close the old FD to /dev/iio:deviceX
+	 * and use the new FD for the IIO buffer to perform R/W.
+	 */
+	close(pdata->fd);
+	pdata->fd = buf_fd;
+
+	/**
+	 * Support for multibuffer and the new ioctl() interface should
+	 * have got into the kernel at about the same time, so we can
+	 * use this condition to configure the new ioctl() high-speed/mmap
+	 * interface vs the old one.
+	 */
+	pdata->block_intf = &iio_buffer_block_intf;
+
+	return 0;
+}
+
 static int enable_high_speed(const struct iio_device *dev)
 {
 	struct block_alloc_req req;
 	struct iio_device_pdata *pdata = dev->pdata;
+	const struct iio_buffer_block_intf *bintf = pdata->block_intf;
 	unsigned int nb_blocks;
 	unsigned int i;
 	int ret, fd = pdata->fd;
@@ -822,7 +893,7 @@ static int enable_high_speed(const struct iio_device *dev)
 	 * never fail if the device supports the high-speed interface, so we use it
 	 * here. Calling it when no blocks are allocated the ioctl has no effect.
 	 */
-	ret = ioctl_nointr(fd, BLOCK_FREE_IOCTL, NULL);
+	ret = ioctl_nointr(fd, bintf->free, NULL);
 	if (ret < 0)
 		return -ENOSYS;
 
@@ -851,7 +922,7 @@ static int enable_high_speed(const struct iio_device *dev)
 		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
 	req.count = nb_blocks;
 
-	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
+	ret = ioctl_nointr(fd, bintf->alloc, &req);
 	if (ret < 0) {
 		ret = -errno;
 		goto err_freemem;
@@ -868,13 +939,13 @@ static int enable_high_speed(const struct iio_device *dev)
 	/* mmap all the blocks */
 	for (i = 0; i < pdata->allocated_nb_blocks; i++) {
 		pdata->blocks[i].id = i;
-		ret = ioctl_nointr(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
+		ret = ioctl_nointr(fd, bintf->query, &pdata->blocks[i]);
 		if (ret) {
 			ret = -errno;
 			goto err_munmap;
 		}
 
-		ret = ioctl_nointr(fd, BLOCK_ENQUEUE_IOCTL, &pdata->blocks[i]);
+		ret = ioctl_nointr(fd, bintf->enqueue, &pdata->blocks[i]);
 		if (ret) {
 			ret = -errno;
 			goto err_munmap;
@@ -896,7 +967,7 @@ err_munmap:
 	for (; i > 0; i--)
 		munmap(pdata->addrs[i - 1], pdata->blocks[i - 1].size);
 err_block_free:
-	ioctl_nointr(fd, BLOCK_FREE_IOCTL, 0);
+	ioctl_nointr(fd, bintf->free, 0);
 	pdata->allocated_nb_blocks = 0;
 err_freemem:
 	free(pdata->addrs);
@@ -963,6 +1034,11 @@ static int local_open(const struct iio_device *dev,
 	pdata->cyclic_buffer_enqueued = false;
 	pdata->samples_count = samples_count;
 
+	/* we support only one buffer for now, until we extend libiio a bit more */
+	ret = local_buffer_get_fd(dev, 0);
+	if (ret < 0)
+		goto err_close;
+
 	ret = enable_high_speed(dev);
 	if (ret < 0 && ret != -ENOSYS)
 		goto err_close;
@@ -1001,6 +1077,7 @@ err_close:
 
 static int local_close_high_speed(struct iio_device_pdata *pdata)
 {
+	const struct iio_buffer_block_intf *bintf = pdata->block_intf;
 	char err_str[32];
 	unsigned int i;
 	int ret = 0;
@@ -1013,7 +1090,7 @@ static int local_close_high_speed(struct iio_device_pdata *pdata)
 			munmap(pdata->addrs[i], pdata->blocks[i].size);
 	}
 	if (pdata->fd > -1)
-		ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
+		ret = ioctl_nointr(pdata->fd, bintf->free, 0);
 	if (ret) {
 		ret = -errno;
 		iio_strerror(errno, err_str, sizeof(err_str));
