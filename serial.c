@@ -273,7 +273,7 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 	IIO_DEBUG("Write returned %li: %s\n", (long) ret, data);
 
 	if (ret < len) {
-		IIO_ERROR("sp_blocking_write has timedout");
+		IIO_ERROR("sp_blocking_write has timedout\n");
 		return -ETIMEDOUT;
 	}
 
@@ -289,7 +289,7 @@ static ssize_t serial_read_data(struct iio_context_pdata *pdata,
 	IIO_DEBUG("Read returned %li: %.*s\n", (long) ret, (int) ret, buf);
 
 	if (ret == 0) {
-		IIO_ERROR("sp_blocking_read_next has timedout");
+		IIO_ERROR("sp_blocking_read_next has timedout\n");
 		return -ETIMEDOUT;
 	}
 
@@ -310,7 +310,7 @@ static ssize_t serial_read_line(struct iio_context_pdata *pdata,
 					pdata->port, &buf[i], 1,
 					pdata->timeout_ms));
 		if (ret == 0) {
-			IIO_ERROR("sp_blocking_read_next has timedout");
+			IIO_ERROR("sp_blocking_read_next has timedout\n");
 			return -ETIMEDOUT;
 		}
 
