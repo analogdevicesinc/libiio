@@ -272,7 +272,7 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 
 	IIO_DEBUG("Write returned %li: %s\n", (long) ret, data);
 
-	if (ret == 0) {
+	if (ret < len) {
 		IIO_ERROR("sp_blocking_write has timedout");
 		return -ETIMEDOUT;
 	}
