@@ -48,8 +48,11 @@ set(IIO_EXAMPLES_TARGETS ad9361-iiostream ad9371-iiostream adrv9009-iiostream
                          dummy-iiostream
 )
 
+find_library(PTHREAD_LIBRARIES pthread)
 find_library(CURSES_LIBRARY curses)
 find_library(CDK_LIBRARY cdk)
+
+include(CheckSymbolExists)
 
 if (PTHREAD_LIBRARIES
     AND CURSES_LIBRARY
