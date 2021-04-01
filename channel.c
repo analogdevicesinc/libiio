@@ -401,12 +401,9 @@ void free_channel(struct iio_channel *chn)
 		free(chn->attrs[i].name);
 		free(chn->attrs[i].filename);
 	}
-	if (chn->nb_attrs)
-		free(chn->attrs);
-	if (chn->name)
-		free(chn->name);
-	if (chn->id)
-		free(chn->id);
+	free(chn->attrs);
+	free(chn->name);
+	free(chn->id);
 	free(chn);
 }
 

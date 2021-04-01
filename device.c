@@ -450,14 +450,10 @@ void free_device(struct iio_device *dev)
 
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
-	if (dev->nb_channels)
-		free(dev->channels);
-	if (dev->mask)
-		free(dev->mask);
-	if (dev->name)
-		free(dev->name);
-	if (dev->id)
-		free(dev->id);
+	free(dev->channels);
+	free(dev->mask);
+	free(dev->name);
+	free(dev->id);
 	free(dev);
 }
 

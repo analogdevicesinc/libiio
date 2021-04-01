@@ -464,8 +464,7 @@ static void usb_shutdown(struct iio_context *ctx)
 	for (i = 0; i < pdata->nb_ep_couples; i++)
 		if (pdata->io_endpoints[i].lock)
 			iio_mutex_destroy(pdata->io_endpoints[i].lock);
-	if (pdata->io_endpoints)
-		free(pdata->io_endpoints);
+	free(pdata->io_endpoints);
 
 	for (i = 0; i < nb_devices; i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -1042,8 +1041,7 @@ err_free_endpoints:
 	for (i = 0; i < pdata->nb_ep_couples; i++)
 		if (pdata->io_endpoints[i].lock)
 			iio_mutex_destroy(pdata->io_endpoints[i].lock);
-	if (pdata->io_endpoints)
-		free(pdata->io_endpoints);
+	free(pdata->io_endpoints);
 err_free_config_descriptor:
 	libusb_free_config_descriptor(conf_desc);
 err_libusb_close:

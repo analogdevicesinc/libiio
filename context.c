@@ -160,8 +160,7 @@ struct iio_context * iio_context_create_from_backend(
 	return ctx;
 
 err_free_pdata:
-	if (ctx->pdata)
-		free(ctx->pdata);
+	free(ctx->pdata);
 err_free_ctx:
 	free(ctx);
 	errno = -ret;
@@ -201,20 +200,14 @@ void iio_context_destroy(struct iio_context *ctx)
 		free(ctx->attrs[i]);
 		free(ctx->values[i]);
 	}
-	if (ctx->nb_attrs) {
-		free(ctx->attrs);
-		free(ctx->values);
-	}
+	free(ctx->attrs);
+	free(ctx->values);
 	for (i = 0; i < ctx->nb_devices; i++)
 		free_device(ctx->devices[i]);
-	if (ctx->nb_devices)
-		free(ctx->devices);
-	if (ctx->xml)
-		free(ctx->xml);
-	if (ctx->description)
-		free(ctx->description);
-	if (ctx->pdata)
-		free(ctx->pdata);
+	free(ctx->devices);
+	free(ctx->xml);
+	free(ctx->description);
+	free(ctx->pdata);
 	free(ctx);
 }
 

@@ -97,10 +97,8 @@ void iio_context_info_list_free(struct iio_context_info **list)
 	for (it = list; *it; it++) {
 		struct iio_context_info *info = *it;
 
-		if (info->description)
-			free(info->description);
-		if (info->uri)
-			free(info->uri);
+		free(info->description);
+		free(info->uri);
 		free(info);
 	}
 
