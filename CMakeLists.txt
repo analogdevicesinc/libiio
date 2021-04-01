@@ -35,6 +35,10 @@ endif()
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 
+if (NOT BUILD_SHARED_LIBS)
+	add_definitions(-DLIBIIO_STATIC=1)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	option(OSX_PACKAGE "Create a OSX package" ON)
 
