@@ -236,6 +236,8 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 		if (!strcmp((char *) attr->name, "name")) {
 			dev->name = iio_strdup(
 					(char *) attr->children->content);
+		} else if (!strcmp((char *) attr->name, "label")) {
+			dev->label = iio_strdup((char *) attr->children->content);
 		} else if (!strcmp((char *) attr->name, "id")) {
 			dev->id = iio_strdup((char *) attr->children->content);
 		} else {
