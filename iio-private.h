@@ -218,7 +218,6 @@ ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen,
 ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
 				const struct iio_device *dev);
 
-char *encode_xml_ndup(const char * input);
 char *iio_context_create_xml(const struct iio_context *ctx);
 int iio_context_init(struct iio_context *ctx);
 

@@ -23,16 +23,6 @@
 #include <libxml/tree.h>
 #include <string.h>
 
-/* 'input' must be in UTF-8 encoded, null terminated */
-char * encode_xml_ndup(const char * input)
-{
-	char * out;
-
-	out = (char *)xmlEncodeEntitiesReentrant(NULL, (const xmlChar *)input);
-
-	return out;
-}
-
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
