@@ -541,13 +541,13 @@ __api __check_ret __pure struct iio_device * iio_context_get_device(
 		const struct iio_context *ctx, unsigned int index);
 
 
-/** @brief Try to find a device structure by its name of ID
+/** @brief Try to find a device structure by its ID, label or name
  * @param ctx A pointer to an iio_context structure
- * @param name A NULL-terminated string corresponding to the name or the ID of
- * the device to search for
+ * @param name A NULL-terminated string corresponding to the ID, label or name
+ * of the device to search for
  * @return On success, a pointer to an iio_device structure
- * @return If the name or ID does not correspond to any known device, NULL is
- * returned */
+ * @return If the parameter does not correspond to the ID, label or name of
+ * any known device, NULL is returned */
 __api __check_ret __pure struct iio_device * iio_context_find_device(
 		const struct iio_context *ctx, const char *name);
 
