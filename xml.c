@@ -72,10 +72,8 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	return 0;
 
 err_free:
-	if (name)
-		free(name);
-	if (filename)
-		free(filename);
+	free(name);
+	free(filename);
 	return -1;
 }
 
