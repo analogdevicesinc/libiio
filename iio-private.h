@@ -188,7 +188,7 @@ struct iio_device {
 	struct iio_device_pdata *pdata;
 	void *userdata;
 
-	char *name, *id;
+	char *name, *id, *label;
 
 	struct iio_dev_attrs attrs;
 	struct iio_dev_attrs buffer_attrs;
