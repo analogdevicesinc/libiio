@@ -72,7 +72,9 @@ typedef ptrdiff_t ssize_t;
 #endif
 
 #ifdef _WIN32
-#   ifdef LIBIIO_EXPORTS
+#   ifdef LIBIIO_STATIC
+#	define __api
+#   elif defined(LIBIIO_EXPORTS)
 #	define __api __declspec(dllexport)
 #   else
 #	define __api __declspec(dllimport)
