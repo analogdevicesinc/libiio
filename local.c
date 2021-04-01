@@ -1221,6 +1221,22 @@ static int read_device_name(struct iio_device *dev)
 		return 0;
 }
 
+static int read_device_label(struct iio_device *dev)
+{
+	char buf[1024];
+	ssize_t ret = iio_device_attr_read(dev, "label", buf, sizeof(buf));
+	if (ret < 0)
+		return ret;
+	else if (ret == 0)
+		return -EIO;
+
+	dev->label = iio_strdup(buf);
+	if (!dev->label)
+		return -ENOMEM;
+	else
+		return 0;
+}
+
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	unsigned int i;
@@ -1231,6 +1247,8 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 
 	if (!strcmp(attr, "name"))
 		return read_device_name(dev);
+	if (!strcmp(attr, "label"))
+		return read_device_label(dev);
 
 	return add_iio_dev_attr(&dev->attrs, attr, " ", dev->id);
 }
