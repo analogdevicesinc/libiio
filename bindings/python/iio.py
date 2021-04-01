@@ -368,6 +368,10 @@ _d_get_name = _lib.iio_device_get_name
 _d_get_name.restype = c_char_p
 _d_get_name.argtypes = (_DevicePtr,)
 
+_d_get_label = _lib.iio_device_get_label
+_d_get_label.restype = c_char_p
+_d_get_label.argtypes = (_DevicePtr,)
+
 _d_attr_count = _lib.iio_device_get_attrs_count
 _d_attr_count.restype = c_uint
 _d_attr_count.argtypes = (_DevicePtr,)
@@ -1152,6 +1156,9 @@ class _DeviceOrTrigger(object):
         name_raw = _d_get_name(self._device)
         self._name = name_raw.decode("ascii") if name_raw is not None else None
 
+        label_raw = _d_get_label(self._device)
+        self._label = label_raw.decode("ascii") if label_raw is not None else None
+
     def reg_write(self, reg, value):
         """
         Set a value to one register of this device.
@@ -1228,6 +1235,9 @@ class _DeviceOrTrigger(object):
     )
     name = property(
         lambda self: self._name, None, None, "The name of this device.\n\ttype=str"
+    )
+    label = property(
+        lambda self: self._label, None, None, "The label of this device.\n\ttype=str",
     )
     attrs = property(
         lambda self: self._attrs,
