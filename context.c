@@ -237,7 +237,8 @@ struct iio_device * iio_context_find_device(const struct iio_context *ctx,
 	for (i = 0; i < ctx->nb_devices; i++) {
 		struct iio_device *dev = ctx->devices[i];
 		if (!strcmp(dev->id, name) ||
-				(dev->name && !strcmp(dev->name, name)))
+		    (dev->label && !strcmp(dev->label, name)) ||
+		    (dev->name && !strcmp(dev->name, name)))
 			return dev;
 	}
 	return NULL;
