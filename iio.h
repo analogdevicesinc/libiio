@@ -590,6 +590,14 @@ __api __check_ret __pure const char * iio_device_get_id(const struct iio_device 
 __api __check_ret __pure const char * iio_device_get_name(const struct iio_device *dev);
 
 
+/** @brief Retrieve the device label (e.g. <b><i>lo_pll0_rx_adf4351</i></b>)
+ * @param dev A pointer to an iio_device structure
+ * @return A pointer to a static NULL-terminated string
+ *
+ * <b>NOTE:</b> if the device has no label, NULL is returned. */
+__api __check_ret __pure const char * iio_device_get_label(const struct iio_device *dev);
+
+
 /** @brief Enumerate the channels of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of channels found */

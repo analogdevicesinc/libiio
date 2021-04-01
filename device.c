@@ -65,6 +65,17 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		alen += ret;
 	}
 
+	if (dev->label) {
+		ret = iio_snprintf(ptr, len, " label=\"%s\"", dev->label);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+	}
+
 	ret = iio_snprintf(ptr, len, " >");
 	if (ret < 0)
 		return ret;
@@ -158,6 +169,11 @@ const char * iio_device_get_id(const struct iio_device *dev)
 const char * iio_device_get_name(const struct iio_device *dev)
 {
 	return dev->name;
+}
+
+const char * iio_device_get_label(const struct iio_device *dev)
+{
+	return dev->label;
 }
 
 unsigned int iio_device_get_channels_count(const struct iio_device *dev)
@@ -452,6 +468,7 @@ void free_device(struct iio_device *dev)
 		free_channel(dev->channels[i]);
 	free(dev->channels);
 	free(dev->mask);
+	free(dev->label);
 	free(dev->name);
 	free(dev->id);
 	free(dev);
