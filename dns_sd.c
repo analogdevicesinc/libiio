@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
@@ -5,21 +6,10 @@
  * Author: Robin Getz <robin.getz@analog.com>
  *         Matej Kenda <matejken@gmail.com>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
  * Some of this is insipred from libavahi's example:
  * https://avahi.org/doxygen/html/client-browse-services_8c-example.html
  * which is also LGPL 2.1 or later.
- *
- * */
+ */
 
 #include "iio-lock.h"
 #include "iio-private.h"
