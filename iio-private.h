@@ -25,8 +25,8 @@
 #endif
 
 #include "iio-backend.h"
-
 #include "iio-config.h"
+#include "iio-debug.h"
 
 #include <stdbool.h>
 
@@ -35,14 +35,6 @@
 #define iio_sscanf sscanf_s
 #else
 #define iio_sscanf sscanf
-#endif
-
-#if defined(__MINGW32__)
-#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
-#elif defined(__GNUC__)
-#   define __iio_printf __attribute__((__format__(printf, 3, 4)))
-#else
-#   define __iio_printf
 #endif
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
