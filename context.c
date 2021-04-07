@@ -100,29 +100,24 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 }
 
 /* Returns a string containing the XML representation of this context */
-char * iio_context_create_xml(const struct iio_context *ctx)
+static char * iio_context_create_xml(const struct iio_context *ctx)
 {
 	ssize_t len;
 	char *str;
 
 	len = iio_snprintf_context_xml(NULL, 0, ctx);
-	if (len < 0) {
-		errno = -len;
-		return NULL;
-	}
+	if (len < 0)
+		return ERR_TO_PTR(len);
 
 	len++; /* room for terminating NULL */
 	str = malloc(len);
-	if (!str) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!str)
+		return ERR_TO_PTR(-ENOMEM);
 
 	len = iio_snprintf_context_xml(str, len, ctx);
 	if (len < 0) {
-		errno = -len;
 		free(str);
-		return NULL;
+		return ERR_TO_PTR(len);
 	}
 
 	return str;
@@ -290,8 +285,8 @@ int iio_context_init(struct iio_context *ctx)
 
 	if (!ctx->xml) {
 		ctx->xml = iio_context_create_xml(ctx);
-		if (!ctx->xml)
-			return -ENOMEM;
+		if (IS_ERR(ctx->xml))
+			return PTR_TO_ERR(ctx->xml);
 	}
 
 	return 0;
