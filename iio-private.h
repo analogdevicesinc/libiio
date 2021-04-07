@@ -113,6 +113,21 @@ static inline void *zalloc(size_t size)
 	return calloc(1, size);
 }
 
+static inline __check_ret bool IS_ERR(const void *ptr)
+{
+	return (uintptr_t)ptr >= (uintptr_t)-4095;
+}
+
+static inline __check_ret intptr_t PTR_TO_ERR(const void *ptr)
+{
+	return (intptr_t)ptr;
+}
+
+static inline __check_ret void * ERR_TO_PTR(intptr_t err)
+{
+	return (void *)err;
+}
+
 /*
  * If these structures are updated, the qsort functions defined in sort.c
  * may need to be updated.
