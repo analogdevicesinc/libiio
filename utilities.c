@@ -15,6 +15,7 @@
 
 #include <errno.h>
 #include <locale.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -314,4 +315,18 @@ wrong_str:
 	free(hostname);
 #endif
 	return NULL;
+}
+
+ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vsnprintf(buf, len, fmt, ap);
+	if (len && ret >= (ssize_t)len)
+		ret = -ERANGE;
+	va_end(ap);
+
+	return (ssize_t)ret;
 }
