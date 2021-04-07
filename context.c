@@ -34,6 +34,47 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST buffer-attribute name CDATA #REQUIRED>"
 "]>";
 
+static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
+{
+	ssize_t count = 0;
+	ssize_t ret;
+
+	for (; *str; str++) {
+		switch(*str) {
+		case '&':
+			ret = iio_snprintf(ptr, len, "%s", "&amp;");
+			break;
+		case '<':
+			ret = iio_snprintf(ptr, len, "%s", "&lt;");
+			break;
+		case '>':
+			ret = iio_snprintf(ptr, len, "%s", "&gt;");
+			break;
+		case '\'':
+			ret = iio_snprintf(ptr, len, "%s", "&apos;");
+			break;
+		case '"':
+			ret = iio_snprintf(ptr, len, "%s", "&quot;");
+			break;
+		default:
+			ret = iio_snprintf(ptr, len, "%c", *str);
+			break;
+		}
+
+		if (ret < 0)
+			return ret;
+
+		if (ptr) {
+			len -= ret;
+			ptr += ret;
+		}
+
+		count += ret;
+	}
+
+	return count;
+}
+
 static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 					const struct iio_context *ctx)
 {
@@ -59,8 +100,26 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 
 	for (i = 0; i < ctx->nb_attrs; i++) {
 		ret = iio_snprintf(ptr, len,
-				   "<context-attribute name=\"%s\" value=\"%s\" />",
-				  ctx->attrs[i], ctx->values[i]);
+				   "<context-attribute name=\"%s\" value=\"",
+				   ctx->attrs[i]);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+
+		ret = sanitize_xml(ptr, len, ctx->values[i]);
+		if (ret < 0)
+			return ret;
+		if (ptr) {
+			ptr += ret;
+			len -= ret;
+		}
+		alen += ret;
+
+		ret = iio_snprintf(ptr, len, "\" />");
 		if (ret < 0)
 			return ret;
 		if (ptr) {
