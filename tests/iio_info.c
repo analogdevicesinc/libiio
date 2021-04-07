@@ -163,9 +163,12 @@ int main(int argc, char **argv)
 	for (i = 0; i < nb_devices; i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
 		const char *name = iio_device_get_name(dev);
+		const char *label = iio_device_get_label(dev);
 		printf("\t%s:", iio_device_get_id(dev));
 		if (name)
 			printf(" %s", name);
+		if (label)
+			printf(" (label: %s)", label);
 		if (dev_is_buffer_capable(dev))
 			printf(" (buffer capable)");
 		printf("\n");
