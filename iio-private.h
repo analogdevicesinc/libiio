@@ -233,7 +233,6 @@ ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen,
 ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
 				const struct iio_device *dev);
 
-char *iio_context_create_xml(const struct iio_context *ctx);
 int iio_context_init(struct iio_context *ctx);
 
 bool iio_device_is_tx(const struct iio_device *dev);
