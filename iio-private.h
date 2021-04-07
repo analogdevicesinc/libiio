@@ -32,11 +32,17 @@
 
 #ifdef _MSC_BUILD
 #define inline __inline
-#define iio_snprintf sprintf_s
 #define iio_sscanf sscanf_s
 #else
-#define iio_snprintf snprintf
 #define iio_sscanf sscanf
+#endif
+
+#if defined(__MINGW32__)
+#   define __iio_printf __attribute__((__format__(ms_printf, 3, 4)))
+#elif defined(__GNUC__)
+#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
+#else
+#   define __iio_printf
 #endif
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
@@ -286,6 +292,8 @@ struct iio_context_pdata * iio_context_get_pdata(const struct iio_context *ctx);
 
 int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
 		     const char *type, const char *dev_id);
+
+ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 
 #undef __api
 
