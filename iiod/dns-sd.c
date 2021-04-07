@@ -259,7 +259,7 @@ static void start_avahi_thd(struct thread_pool *pool, void *d)
 		if (ret || !strcmp(host, "none"))
 			goto again;
 
-		iio_snprintf(label, sizeof(label), "%s%s", IIOD_ON, host);
+		snprintf(label, sizeof(label), "%s%s", IIOD_ON, host);
 
 		if (!avahi.name)
 			avahi.name = avahi_strdup(label);

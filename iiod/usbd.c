@@ -101,14 +101,14 @@ static int usb_open_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 	 * before opening the endpoints again. */
 	thread_pool_stop_and_wait(pdata->pool[pipe_id]);
 
-	iio_snprintf(buf, sizeof(buf), "%s/ep%u", pdata->ffs, pipe_id * 2 + 1);
+	snprintf(buf, sizeof(buf), "%s/ep%u", pdata->ffs, pipe_id * 2 + 1);
 	cpdata->ep_out = open(buf, O_WRONLY);
 	if (cpdata->ep_out < 0) {
 		err = -errno;
 		goto err_free_cpdata;
 	}
 
-	iio_snprintf(buf, sizeof(buf), "%s/ep%u", pdata->ffs, pipe_id * 2 + 2);
+	snprintf(buf, sizeof(buf), "%s/ep%u", pdata->ffs, pipe_id * 2 + 2);
 	cpdata->ep_in = open(buf, O_RDONLY);
 	if (cpdata->ep_in < 0) {
 		err = -errno;
@@ -357,7 +357,7 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		goto err_free_pdata_pool;
 	}
 
-	iio_snprintf(buf, sizeof(buf), "%s/ep0", ffs);
+	snprintf(buf, sizeof(buf), "%s/ep0", ffs);
 
 	pdata->ep0_fd = open(buf, O_RDWR);
 	if (pdata->ep0_fd < 0) {
