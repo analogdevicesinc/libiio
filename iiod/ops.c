@@ -343,7 +343,7 @@ static void print_value(struct parser_pdata *pdata, long value)
 		output(pdata, "\n");
 	} else {
 		char buf[128];
-		iio_snprintf(buf, sizeof(buf), "%li\n", value);
+		snprintf(buf, sizeof(buf), "%li\n", value);
 		output(pdata, buf);
 	}
 }
@@ -424,7 +424,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 		/* Send the current mask */
 		for (i = dev->nb_words; i > 0 && ptr < buf + sizeof(buf);
 				i--, ptr += 8) {
-			iio_snprintf(ptr, length, "%08x", mask[i - 1]);
+			snprintf(ptr, length, "%08x", mask[i - 1]);
 			length -= 8;
 		}
 
@@ -830,7 +830,7 @@ static uint32_t *get_mask(const char *mask, size_t *len)
 	ptr = words + nb;
 	while (*mask) {
 		char buf[9];
-		iio_snprintf(buf, sizeof(buf), "%.*s", 8, mask);
+		snprintf(buf, sizeof(buf), "%.*s", 8, mask);
 		sscanf(buf, "%08x", --ptr);
 		mask += 8;
 		IIO_DEBUG("Mask[%lu]: 0x%08x\n",
@@ -1255,7 +1255,7 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 		ret = strlen(trigger->name);
 		print_value(pdata, ret);
 
-		iio_snprintf(buf, sizeof(buf), "%s\n", trigger->name);
+		snprintf(buf, sizeof(buf), "%s\n", trigger->name);
 		ret = write_all(pdata, buf, ret + 1);
 	} else {
 		print_value(pdata, ret);

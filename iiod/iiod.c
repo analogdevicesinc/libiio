@@ -88,7 +88,6 @@ static const char *options_descriptions[] = {
 	"Specify the number of USB pipes (ep couples) to use",
 };
 
-
 static void usage(void)
 {
 	unsigned int i;
