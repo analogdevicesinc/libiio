@@ -35,6 +35,8 @@
 #include <libaio.h>
 #endif
 
+#define IIOD_PORT 30431
+
 #ifndef __bswap_constant_16
 #define __bswap_constant_16(x) \
 	((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
