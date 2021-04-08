@@ -245,7 +245,6 @@ fail:
 static void start_avahi_thd(struct thread_pool *pool, void *d)
 {
 
-	struct pollfd pfd[2];
 	char label[AVAHI_LABEL_MAX];
 	char host[AVAHI_LABEL_MAX - sizeof(IIOD_ON)];
 	struct timespec ts;
@@ -254,14 +253,7 @@ static void start_avahi_thd(struct thread_pool *pool, void *d)
 	ts.tv_nsec = 0;
 	ts.tv_sec = 1;
 
-	pfd[1].fd = thread_pool_get_poll_fd(pool);
-	pfd[1].events = POLLIN;
-	pfd[1].revents = 0;
-
 	while(true) {
-		if (pfd[1].revents & POLLIN) /* STOP event */
-			break;
-
 		ret = gethostname(host, sizeof(host));
 		IIO_ERROR("host %s\n", host);
 		if (ret || !strncmp(host, "none", sizeof("none") - 1))
