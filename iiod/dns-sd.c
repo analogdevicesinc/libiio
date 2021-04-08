@@ -256,7 +256,7 @@ static void start_avahi_thd(struct thread_pool *pool, void *d)
 	while(true) {
 		ret = gethostname(host, sizeof(host));
 		IIO_ERROR("host %s\n", host);
-		if (ret || !strncmp(host, "none", sizeof("none") - 1))
+		if (ret || !strcmp(host, "none"))
 			goto again;
 
 		iio_snprintf(label, sizeof(label), "%s%s", IIOD_ON, host);
