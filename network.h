@@ -51,33 +51,25 @@
 #endif /* _WIN32 */
 
 #ifdef HAVE_DNS_SD
-#ifdef HAVE_AVAHI
-#include <avahi-common/address.h>
-#include <avahi-common/error.h>
-#include <avahi-common/simple-watch.h>
-#include <avahi-common/malloc.h>
-#include <avahi-client/client.h>
-#include <avahi-client/lookup.h>
-#define DNS_SD_ADDRESS_STR_MAX AVAHI_ADDRESS_STR_MAX
-#else /* !HAVE_AVAHI */
+
 #define DNS_SD_ADDRESS_STR_MAX (40) /* IPv6 Max = 4*8 + 7 + 1 for NUL */
-#endif /* HAVE_AVAHI */
 
 /* MacOS doesn't include ENOMEDIUM (No medium found) like Linux does */
 #ifndef ENOMEDIUM
 #define ENOMEDIUM ENOENT
 #endif
 
+struct AvahiSimplePoll;
+struct AvahiAddress;
+
 /* Common structure which all dns_sd_[*] files fill out
  * Anything that is dynamically allocated (malloc) needs to be managed
  */
 struct dns_sd_discovery_data {
 	struct iio_mutex *lock;
-#ifdef HAVE_AVAHI
-	AvahiSimplePoll *poll;
-	AvahiAddress *address;
+	struct AvahiSimplePoll *poll;
+	struct AvahiAddress *address;
 	uint16_t found, resolved;
-#endif /* HAVE_AVAHI */
 	char addr_str[DNS_SD_ADDRESS_STR_MAX];
 	char *hostname;
 	uint16_t port;
