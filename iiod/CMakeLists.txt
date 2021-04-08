@@ -60,6 +60,10 @@ endif ()
 
 add_definitions(-D_GNU_SOURCE=1)
 
+if (HAVE_AVAHI)
+	target_sources(iiod PRIVATE dns-sd.c)
+endif()
+
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iiod RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
 endif()
