@@ -220,9 +220,8 @@ static int main_server(struct iio_context *ctx, bool debug)
 		goto err_close_socket;
 	}
 
-#ifdef HAVE_AVAHI
-	start_avahi(main_thread_pool);
-#endif
+	if (HAVE_AVAHI)
+		start_avahi(main_thread_pool);
 
 	pfd[0].fd = fd;
 	pfd[0].events = POLLIN;
@@ -310,9 +309,8 @@ static int main_server(struct iio_context *ctx, bool debug)
 	}
 
 	IIO_DEBUG("Cleaning up\n");
-#ifdef HAVE_AVAHI
-	stop_avahi();
-#endif
+	if (HAVE_AVAHI)
+		stop_avahi();
 	close(fd);
 	return EXIT_SUCCESS;
 
@@ -324,10 +322,8 @@ err_close_socket:
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
-#ifdef WITH_IIOD_USBD
 	long nb_pipes = 3;
 	char *end;
-#endif
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
@@ -347,23 +343,27 @@ int main(int argc, char **argv)
 			interactive = true;
 			break;
 		case 'a':
-#ifdef WITH_AIO
+			if (!ENABLE_AIO) {
+				IIO_ERROR("IIOD was not compiled with AIO support.\n");
+				return EXIT_FAILURE;
+			}
+
 			use_aio = true;
 			break;
-#else
-			IIO_ERROR("IIOD was not compiled with AIO support.\n");
-			return EXIT_FAILURE;
-#endif
 		case 'F':
-#ifdef WITH_IIOD_USBD
+			if (!WITH_IIOD_USBD) {
+				IIO_ERROR("IIOD was not compiled with USB support.\n");
+				return EXIT_FAILURE;
+			}
+
 			ffs_mountpoint = optarg;
 			break;
-#else
-			IIO_ERROR("IIOD was not compiled with USB support.\n");
-			return EXIT_FAILURE;
-#endif
 		case 'n':
-#ifdef WITH_IIOD_USBD
+			if (!WITH_IIOD_USBD) {
+				IIO_ERROR("IIOD was not compiled with USB support.\n");
+				return EXIT_FAILURE;
+			}
+
 			errno = 0;
 			nb_pipes = strtol(optarg, &end, 10);
 			if (optarg == end || nb_pipes < 1 || errno == ERANGE) {
@@ -371,10 +371,6 @@ int main(int argc, char **argv)
 				return EXIT_FAILURE;
 			}
 			break;
-#else
-			IIO_ERROR("IIOD was not compiled with USB support.\n");
-			return EXIT_FAILURE;
-#endif
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
@@ -407,8 +403,7 @@ int main(int argc, char **argv)
 	set_handler(SIGINT, sig_handler);
 	set_handler(SIGTERM, sig_handler);
 
-	if (ffs_mountpoint) {
-#ifdef WITH_IIOD_USBD
+	if (WITH_IIOD_USBD && ffs_mountpoint) {
 		/* We pass use_aio == true directly, this is ensured to be true
 		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
@@ -420,7 +415,6 @@ int main(int argc, char **argv)
 			ret = EXIT_FAILURE;
 			goto out_destroy_thread_pool;
 		}
-#endif
 	}
 
 	if (interactive)
@@ -433,9 +427,7 @@ int main(int argc, char **argv)
 	 * the worker threads are signaled to shutdown.
 	 */
 
-#ifdef WITH_IIOD_USBD
 out_destroy_thread_pool:
-#endif
 	thread_pool_stop_and_wait(main_thread_pool);
 	thread_pool_destroy(main_thread_pool);
 

@@ -327,30 +327,20 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 
 struct iio_context * iio_create_context_from_uri(const char *uri)
 {
-#ifdef WITH_LOCAL_BACKEND
-	if (strcmp(uri, "local:") == 0) /* No address part */
+	if (WITH_LOCAL_BACKEND && strcmp(uri, "local:") == 0) /* No address part */
 		return iio_create_local_context();
-#endif
 
-#ifdef WITH_XML_BACKEND
-	if (strncmp(uri, "xml:", sizeof("xml:") - 1) == 0)
+	if (WITH_XML_BACKEND && strncmp(uri, "xml:", sizeof("xml:") - 1) == 0)
 		return iio_create_xml_context(uri + sizeof("xml:") - 1);
-#endif
 
-#ifdef WITH_NETWORK_BACKEND
-	if (strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
+	if (WITH_NETWORK_BACKEND && strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
 		return iio_create_network_context(uri+3);
-#endif
 
-#ifdef WITH_USB_BACKEND
-	if (strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
+	if (WITH_USB_BACKEND && strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
 		return usb_create_context_from_uri(uri);
-#endif
 
-#ifdef WITH_SERIAL_BACKEND
-	if (strncmp(uri, "serial:", sizeof("serial:") - 1) == 0)
+	if (WITH_SERIAL_BACKEND && strncmp(uri, "serial:", sizeof("serial:") - 1) == 0)
 		return serial_create_context_from_uri(uri);
-#endif
 
 	errno = ENOSYS;
 	return NULL;
@@ -372,42 +362,38 @@ struct iio_context * iio_create_default_context(void)
 
 struct iio_context * iio_create_local_context(void)
 {
-#ifdef WITH_LOCAL_BACKEND
-	return local_create_context();
-#else
+	if (WITH_LOCAL_BACKEND)
+		return local_create_context();
+
 	errno = ENOSYS;
 	return NULL;
-#endif
 }
 
 struct iio_context * iio_create_network_context(const char *hostname)
 {
-#ifdef WITH_NETWORK_BACKEND
-	return network_create_context(hostname);
-#else
+	if (WITH_NETWORK_BACKEND)
+		return network_create_context(hostname);
+
 	errno = ENOSYS;
 	return NULL;
-#endif
 }
 
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
-#ifdef WITH_XML_BACKEND
-	return xml_create_context_mem(xml, len);
-#else
+	if (WITH_XML_BACKEND)
+		return xml_create_context_mem(xml, len);
+
 	errno = ENOSYS;
 	return NULL;
-#endif
 }
 
 struct iio_context * iio_create_xml_context(const char *xml_file)
 {
-#ifdef WITH_XML_BACKEND
-	return xml_create_context(xml_file);
-#else
+	if (WITH_XML_BACKEND)
+		return xml_create_context(xml_file);
+
 	errno = ENOSYS;
 	return NULL;
-#endif
 }
 
 unsigned int iio_context_get_attrs_count(const struct iio_context *ctx)

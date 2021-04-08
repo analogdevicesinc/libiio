@@ -24,51 +24,47 @@ unsigned int iio_get_backends_count(void)
 {
 	unsigned int count = 0;
 
-#ifdef WITH_LOCAL_BACKEND
-	count++;
-#endif
-#ifdef WITH_XML_BACKEND
-	count++;
-#endif
-#ifdef WITH_NETWORK_BACKEND
-	count++;
-#endif
-#ifdef WITH_USB_BACKEND
-	count++;
-#endif
-#ifdef WITH_SERIAL_BACKEND
-	count++;
-#endif
+	count += WITH_LOCAL_BACKEND;
+	count += WITH_XML_BACKEND;
+	count += WITH_NETWORK_BACKEND;
+	count += WITH_USB_BACKEND;
+	count += WITH_SERIAL_BACKEND;
 
 	return count;
 }
 
 const char * iio_get_backend(unsigned int index)
 {
-#ifdef WITH_LOCAL_BACKEND
-	if (index == 0)
-		return "local";
-	index--;
-#endif
-#ifdef WITH_XML_BACKEND
-	if (index == 0)
-		return "xml";
-	index--;
-#endif
-#ifdef WITH_NETWORK_BACKEND
-	if (index == 0)
-		return "ip";
-	index--;
-#endif
-#ifdef WITH_USB_BACKEND
-	if (index == 0)
-		return "usb";
-	index--;
-#endif
-#ifdef WITH_SERIAL_BACKEND
-	if (index == 0)
-		return "serial";
-#endif
+	if (WITH_LOCAL_BACKEND) {
+		if (index == 0)
+			return "local";
+		index--;
+	}
+
+	if (WITH_XML_BACKEND) {
+		if (index == 0)
+			return "xml";
+		index--;
+	}
+
+	if (WITH_NETWORK_BACKEND) {
+		if (index == 0)
+			return "ip";
+		index--;
+	}
+
+	if (WITH_USB_BACKEND) {
+		if (index == 0)
+			return "usb";
+		index--;
+	}
+
+	if (WITH_SERIAL_BACKEND) {
+		if (index == 0)
+			return "serial";
+		index --;
+	}
+
 	return NULL;
 }
 

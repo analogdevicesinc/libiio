@@ -1376,8 +1376,7 @@ struct iio_context * network_create_context(const char *host)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-#ifdef HAVE_DNS_SD
-	if (!host || !host[0]) {
+	if (HAVE_DNS_SD && (!host || !host[0])) {
 		char addr_str[DNS_SD_ADDRESS_STR_MAX];
 		char port_str[6];
 		uint16_t port = IIOD_PORT;
@@ -1398,9 +1397,7 @@ struct iio_context * network_create_context(const char *host)
 
 		iio_snprintf(port_str, sizeof(port_str), "%hu", port);
 		ret = getaddrinfo(addr_str, port_str, &hints, &res);
-	} else
-#endif
-	{
+	} else {
 		ret = getaddrinfo(host, IIOD_PORT_STR, &hints, &res);
 	}
 

@@ -50,8 +50,6 @@
 #include <unistd.h>
 #endif /* _WIN32 */
 
-#ifdef HAVE_DNS_SD
-
 #define DNS_SD_ADDRESS_STR_MAX (40) /* IPv6 Max = 4*8 + 7 + 1 for NUL */
 
 /* MacOS doesn't include ENOMEDIUM (No medium found) like Linux does */
@@ -106,8 +104,6 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata);
 
 /* port knocks  */
 void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
-
-#endif /* HAVE_DNS_SD */
 
 /* Used everywhere */
 #define DEFAULT_TIMEOUT_MS 5000
