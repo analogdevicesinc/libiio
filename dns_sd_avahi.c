@@ -21,14 +21,20 @@
  *
  * */
 
+#include "debug.h"
 #include "iio-private.h"
 #include "network.h"
 #include "iio-lock.h"
 
 #include <time.h>
-
 #include <unistd.h>
-#include "debug.h"
+
+#include <avahi-common/address.h>
+#include <avahi-common/error.h>
+#include <avahi-common/simple-watch.h>
+#include <avahi-common/malloc.h>
+#include <avahi-client/client.h>
+#include <avahi-client/lookup.h>
 
 /*
  * Fundamentally, this builds up a linked list to manage
