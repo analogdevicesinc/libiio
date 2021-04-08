@@ -246,10 +246,11 @@ static void start_avahi_thd(struct thread_pool *pool, void *d)
 {
 
 	struct pollfd pfd[2];
-	int ret = ENOMEM;
 	char label[AVAHI_LABEL_MAX];
 	char host[AVAHI_LABEL_MAX - sizeof(IIOD_ON)];
 	struct timespec ts;
+	int ret;
+
 	ts.tv_nsec = 0;
 	ts.tv_sec = 1;
 
