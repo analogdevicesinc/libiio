@@ -19,9 +19,7 @@
 #include "debug.h"
 #include "iio-private.h"
 #include "sort.h"
-#ifdef WITH_LOCAL_CONFIG
 #include "libini/ini.h"
-#endif
 
 
 #include <dirent.h>
@@ -1985,7 +1983,6 @@ static void init_scan_elements(struct iio_context *ctx)
 	}
 }
 
-#ifdef WITH_LOCAL_CONFIG
 static int populate_context_attrs(struct iio_context *ctx, const char *file)
 {
 	struct INI *ini;
@@ -2039,7 +2036,6 @@ out_close_ini:
 	ini_close(ini);
 	return ret;
 }
-#endif
 
 struct iio_context * local_create_context(void)
 {
@@ -2068,11 +2064,11 @@ struct iio_context * local_create_context(void)
 
 	init_scan_elements(ctx);
 
-#ifdef WITH_LOCAL_CONFIG
-	ret = populate_context_attrs(ctx, "/etc/libiio.ini");
-	if (ret < 0)
-		goto err_context_destroy;
-#endif
+	if (WITH_LOCAL_CONFIG) {
+		ret = populate_context_attrs(ctx, "/etc/libiio.ini");
+		if (ret < 0)
+			goto err_context_destroy;
+	}
 
 	uname(&uts);
 	ret = iio_context_add_attr(ctx, "local,kernel", uts.release);

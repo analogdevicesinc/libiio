@@ -23,12 +23,8 @@
 #include <string.h>
 
 struct iio_scan_context {
-#ifdef WITH_USB_BACKEND
 	struct iio_scan_backend_context *usb_ctx;
-#endif
-#ifdef HAVE_DNS_SD
 	struct iio_scan_backend_context *dnssd_ctx;
-#endif
 	bool scan_local;
 };
 
@@ -49,8 +45,7 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 {
 	struct iio_scan_result scan_result = { 0, NULL };
 
-#ifdef WITH_LOCAL_BACKEND
-	if (ctx->scan_local) {
+	if (WITH_LOCAL_BACKEND && ctx->scan_local) {
 		int ret = local_context_scan(&scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
@@ -58,10 +53,8 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 			return ret;
 		}
 	}
-#endif
 
-#ifdef WITH_USB_BACKEND
-	if (ctx->usb_ctx) {
+	if (WITH_USB_BACKEND && ctx->usb_ctx) {
 		int ret = usb_context_scan(ctx->usb_ctx, &scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
@@ -69,10 +62,8 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 			return ret;
 		}
 	}
-#endif
 
-#ifdef HAVE_DNS_SD
-	if (ctx->dnssd_ctx) {
+	if (HAVE_DNS_SD && ctx->dnssd_ctx) {
 		int ret = dnssd_context_scan(ctx->dnssd_ctx, &scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
@@ -80,7 +71,6 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 			return ret;
 		}
 	}
-#endif
 
 	*info = scan_result.info;
 
@@ -154,28 +144,21 @@ struct iio_scan_context * iio_create_scan_context(
 	if (!backend || strstr(backend, "local"))
 		ctx->scan_local = true;
 
-#ifdef WITH_USB_BACKEND
-	if (!backend || strstr(backend, "usb"))
+	if (WITH_USB_BACKEND && (!backend || strstr(backend, "usb")))
 		ctx->usb_ctx = usb_context_scan_init();
-#endif
-#ifdef HAVE_DNS_SD
-	if (!backend || strstr(backend, "ip"))
+
+	if (HAVE_DNS_SD && (!backend || strstr(backend, "ip")))
 		ctx->dnssd_ctx = dnssd_context_scan_init();
-#endif
 
 	return ctx;
 }
 
 void iio_scan_context_destroy(struct iio_scan_context *ctx)
 {
-#ifdef WITH_USB_BACKEND
-	if (ctx->usb_ctx)
+	if (WITH_USB_BACKEND && ctx->usb_ctx)
 		usb_context_scan_free(ctx->usb_ctx);
-#endif
-#ifdef HAVE_DNS_SD
-	if (ctx->dnssd_ctx)
+	if (HAVE_DNS_SD && ctx->dnssd_ctx)
 		dnssd_context_scan_free(ctx->dnssd_ctx);
-#endif
 	free(ctx);
 }
 

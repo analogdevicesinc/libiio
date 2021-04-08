@@ -7,16 +7,20 @@
 
 #define LOG_LEVEL @LOG_LEVEL@_L
 
-#cmakedefine WITH_LOCAL_BACKEND
-#cmakedefine WITH_XML_BACKEND
-#cmakedefine WITH_NETWORK_BACKEND
-#cmakedefine WITH_USB_BACKEND
-#cmakedefine WITH_SERIAL_BACKEND
+#cmakedefine01 WITH_LOCAL_BACKEND
+#cmakedefine01 WITH_XML_BACKEND
+#cmakedefine01 WITH_NETWORK_BACKEND
+#cmakedefine01 WITH_USB_BACKEND
+#cmakedefine01 WITH_SERIAL_BACKEND
 
 #cmakedefine WITH_NETWORK_GET_BUFFER
 #cmakedefine WITH_NETWORK_EVENTFD
-#cmakedefine WITH_IIOD_USBD
-#cmakedefine WITH_LOCAL_CONFIG
+#cmakedefine01 WITH_IIOD_USBD
+#cmakedefine01 WITH_LOCAL_CONFIG
+#cmakedefine01 HAVE_DNS_SD
+#cmakedefine01 HAVE_AVAHI
+#cmakedefine01 ENABLE_AIO
+
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
 #cmakedefine HAS_STRNDUP
@@ -24,8 +28,6 @@
 #cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP
 #cmakedefine HAVE_IPV6
-#cmakedefine HAVE_DNS_SD
-#cmakedefine HAVE_AVAHI
 #cmakedefine NO_THREADS
 #cmakedefine HAS_LIBUSB_GETVERSION
 
