@@ -9,10 +9,10 @@
 
 #include <CFNetwork/CFNetwork.h>
 
+#include "debug.h"
+#include "dns_sd.h"
 #include "iio-lock.h"
 #include "iio-private.h"
-#include "network.h"
-#include "debug.h"
 
 /*
  Implementation for DNS SD discovery for macOS using CFNetServices.

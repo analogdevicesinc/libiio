@@ -7,8 +7,8 @@
  *         Robin Getz
  */
 
-#ifndef __IIO_NET_PRIVATE_H
-#define __IIO_NET_PRIVATE_H
+#ifndef __IIO_DNS_SD_H
+#define __IIO_DNS_SD_H
 
 #include "iio-config.h"
 #include <errno.h>
@@ -99,4 +99,4 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
 #define DEFAULT_TIMEOUT_MS 5000
 #define IIOD_PORT 30431
 
-#endif /* __IIO_NET_PRIVATE_H */
+#endif /* __IIO_DNS_SD_H */

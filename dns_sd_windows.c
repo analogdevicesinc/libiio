@@ -14,10 +14,10 @@
 #include <winsock2.h>
 #include <iphlpapi.h>
 
+#include "debug.h"
+#include "dns_sd.h"
 #include "iio-private.h"
 #include "mdns.h"
-#include "network.h"
-#include "debug.h"
 
 static int new_discovery_data(struct dns_sd_discovery_data** data)
 {
