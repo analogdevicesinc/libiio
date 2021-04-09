@@ -2,6 +2,10 @@ message(STATUS "cmake version: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 2.8.7)
 project(libiio C)
 
+if (MINGW)
+	set(WIN32 ON)
+endif()
+
 set(LIBIIO_VERSION_MAJOR 0)
 set(LIBIIO_VERSION_MINOR 21)
 set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
