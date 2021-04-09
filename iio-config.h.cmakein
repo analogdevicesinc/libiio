@@ -14,7 +14,7 @@
 #cmakedefine01 WITH_SERIAL_BACKEND
 
 #cmakedefine WITH_NETWORK_GET_BUFFER
-#cmakedefine WITH_NETWORK_EVENTFD
+#cmakedefine01 WITH_NETWORK_EVENTFD
 #cmakedefine01 WITH_IIOD_USBD
 #cmakedefine01 WITH_LOCAL_CONFIG
 #cmakedefine01 HAVE_DNS_SD

@@ -7,6 +7,7 @@
  */
 
 #include "debug.h"
+#include "iio-config.h"
 #include "iio-private.h"
 #include "network.h"
 
@@ -33,8 +34,7 @@ int set_blocking_mode(int fd, bool blocking)
 	return ret < 0 ? -errno : 0;
 }
 
-#if defined(WITH_NETWORK_EVENTFD)
-
+#if WITH_NETWORK_EVENTFD
 #include <sys/eventfd.h>
 
 int create_cancel_fd(struct iio_network_io_context *io_ctx)
@@ -45,14 +45,7 @@ int create_cancel_fd(struct iio_network_io_context *io_ctx)
 	return 0;
 }
 
-void cleanup_cancel(struct iio_network_io_context *io_ctx)
-{
-	close(io_ctx->cancel_fd[0]);
-}
-
-#define CANCEL_WR_FD 0
-
-#else
+#else /* WITH_NETWORK_EVENTFD */
 
 int create_cancel_fd(struct iio_network_io_context *io_ctx)
 {
@@ -79,16 +72,14 @@ err_close:
 	close(io_ctx->cancel_fd[1]);
 	return ret;
 }
+#endif /* WITH_NETWORK_EVENTFD */
 
 void cleanup_cancel(struct iio_network_io_context *io_ctx)
 {
 	close(io_ctx->cancel_fd[0]);
-	close(io_ctx->cancel_fd[1]);
+	if (!WITH_NETWORK_EVENTFD)
+		close(io_ctx->cancel_fd[1]);
 }
-
-#define CANCEL_WR_FD 1
-
-#endif
 
 int setup_cancel(struct iio_network_io_context *io_ctx)
 {
@@ -100,6 +91,8 @@ int setup_cancel(struct iio_network_io_context *io_ctx)
 
 	return create_cancel_fd(io_ctx);
 }
+
+#define CANCEL_WR_FD (!WITH_NETWORK_EVENTFD)
 
 void do_cancel(struct iio_network_io_context *io_ctx)
 {

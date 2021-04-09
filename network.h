@@ -10,8 +10,6 @@
 #ifndef __IIO_NETWORK_H
 #define __IIO_NETWORK_H
 
-#include "iio-config.h"
-
 #include <stdbool.h>
 
 struct addrinfo;
@@ -22,13 +20,8 @@ struct iio_network_io_context {
 	/* Only buffer IO contexts can be cancelled. */
 	bool cancellable;
 	bool cancelled;
-#if defined(_WIN32)
 	void * events[2];
-#elif defined(WITH_NETWORK_EVENTFD)
-	int cancel_fd[1]; /* eventfd */
-#else
-	int cancel_fd[2]; /* pipe */
-#endif
+	int cancel_fd[2];
 	unsigned int timeout_ms;
 };
 
