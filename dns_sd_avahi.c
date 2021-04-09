@@ -12,8 +12,8 @@
  */
 
 #include "debug.h"
+#include "dns_sd.h"
 #include "iio-private.h"
-#include "network.h"
 #include "iio-lock.h"
 
 #include <time.h>

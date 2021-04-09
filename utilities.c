@@ -9,9 +9,9 @@
 /* Force the XSI version of strerror_r */
 #undef _GNU_SOURCE
 
+#include "dns_sd.h"
 #include "iio-config.h"
 #include "iio-private.h"
-#include "network.h"
 
 #include <errno.h>
 #include <locale.h>

@@ -11,11 +11,10 @@
  * which is also LGPL 2.1 or later.
  */
 
+#include "debug.h"
+#include "dns_sd.h"
 #include "iio-lock.h"
 #include "iio-private.h"
-#include "network.h"
-
-#include "debug.h"
 
 /* Some functions for handling common linked list operations */
 static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)

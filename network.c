@@ -6,12 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "debug.h"
+#include "dns_sd.h"
 #include "iio-config.h"
 #include "iio-private.h"
-#include "network.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
-#include "debug.h"
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
