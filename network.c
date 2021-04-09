@@ -956,7 +956,7 @@ static ssize_t network_do_splice(struct iio_device_pdata *pdata, size_t len,
 err_close_pipe:
 	close(pipefd[0]);
 	close(pipefd[1]);
-	return ret < 0 ? ret : len;
+	return ret < 0 ? ret : (ssize_t)len;
 }
 
 static ssize_t network_get_buffer(const struct iio_device *dev,
