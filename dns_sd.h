@@ -50,7 +50,7 @@ struct dns_sd_discovery_data {
 
 /* This functions is implemented in network.c, but used in dns_sd.c
  */
-int create_socket(const struct addrinfo *addrinfo, unsigned int timeout);
+int create_socket(const struct addrinfo *addrinfo);
 
 /* These functions are common, and implemented in dns_sd_[*].c  based on the
  * implementations: avahi (linux), bonjour (mac), or ServiceDiscovery (Win10)
@@ -79,7 +79,6 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata);
 void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
 
 /* Used everywhere */
-#define DEFAULT_TIMEOUT_MS 5000
 #define IIOD_PORT 30431
 
 #endif /* __IIO_DNS_SD_H */
