@@ -16,6 +16,8 @@
 #include "iio-private.h"
 #include "iio-lock.h"
 
+#include <errno.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 

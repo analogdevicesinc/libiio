@@ -7,12 +7,14 @@
  *         Robin Getz <robin.getz@analog.com>
  */
 
-#include <CFNetwork/CFNetwork.h>
-
 #include "debug.h"
 #include "dns_sd.h"
 #include "iio-lock.h"
 #include "iio-private.h"
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <CFNetwork/CFNetwork.h>
 
 /*
  Implementation for DNS SD discovery for macOS using CFNetServices.

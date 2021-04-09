@@ -10,35 +10,17 @@
 #ifndef __IIO_DNS_SD_H
 #define __IIO_DNS_SD_H
 
-#include "iio-config.h"
-#include <errno.h>
-#include <fcntl.h>
 #include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
-#include <ws2tcpip.h>
-#define close(s) closesocket(s)
-/* winsock2.h defines ERROR, we don't want that */
-#undef ERROR
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN (MAX_COMPUTERNAME_LENGTH+1)
 #endif /* MAXHOSTNAMELEN */
-#else /* !_WIN32 */
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <net/if.h>
-#include <sys/mman.h>
+#else
 #include <sys/param.h>
-#include <sys/socket.h>
-#include <poll.h>
-#include <netdb.h>
-#include <unistd.h>
-#endif /* _WIN32 */
+#endif
 
 #define DNS_SD_ADDRESS_STR_MAX (40) /* IPv6 Max = 4*8 + 7 + 1 for NUL */
 
@@ -47,6 +29,7 @@
 #define ENOMEDIUM ENOENT
 #endif
 
+struct addrinfo;
 struct AvahiSimplePoll;
 struct AvahiAddress;
 
