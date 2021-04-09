@@ -13,6 +13,25 @@
 #include "iio-lock.h"
 #include "iiod-client.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/types.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <net/if.h>
+#include <netinet/tcp.h>
+#include <poll.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 

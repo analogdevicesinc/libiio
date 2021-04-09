@@ -16,6 +16,22 @@
 #include "iio-lock.h"
 #include "iio-private.h"
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <errno.h>
+#include <netdb.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
+#ifdef _WIN32
+#define close(s) closesocket(s)
+#endif
+
 /* Some functions for handling common linked list operations */
 static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 {
