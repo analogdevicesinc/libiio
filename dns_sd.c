@@ -187,7 +187,7 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 					gai_strerror(ret));
 		} else {
 			for (rp = res; rp != NULL; rp = rp->ai_next) {
-				fd = create_socket(rp, DEFAULT_TIMEOUT_MS);
+				fd = create_socket(rp);
 				if (fd < 0) {
 					IIO_DEBUG("Unable to open %s%s socket ('%s:%d' %s)\n",
 							rp->ai_family == AF_INET ? "ipv4" : "",

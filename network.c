@@ -53,6 +53,8 @@ struct iio_network_io_context {
 	unsigned int timeout_ms;
 };
 
+#define DEFAULT_TIMEOUT_MS 5000
+
 struct iio_context_pdata {
 	struct iio_network_io_context io_ctx;
 	struct addrinfo *addrinfo;
@@ -571,8 +573,9 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	return 0;
 }
 
-int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
+int create_socket(const struct addrinfo *addrinfo)
 {
+	const unsigned int timeout = DEFAULT_TIMEOUT_MS;
 	int ret, fd, yes = 1;
 
 	fd = do_create_socket(addrinfo);
@@ -666,7 +669,7 @@ static int network_open(const struct iio_device *dev,
 	if (ppdata->io_ctx.fd >= 0)
 		goto out_mutex_unlock;
 
-	ret = create_socket(pdata->addrinfo, DEFAULT_TIMEOUT_MS);
+	ret = create_socket(pdata->addrinfo);
 	if (ret < 0) {
 		IIO_ERROR("Create socket: %d\n", ret);
 		goto out_mutex_unlock;
@@ -1419,7 +1422,7 @@ struct iio_context * network_create_context(const char *host)
 		return NULL;
 	}
 
-	fd = create_socket(res, DEFAULT_TIMEOUT_MS);
+	fd = create_socket(res);
 	if (fd < 0) {
 		errno = -fd;
 		goto err_free_addrinfo;
