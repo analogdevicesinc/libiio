@@ -308,6 +308,11 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	list(APPEND LIBIIO_CFILES network.c)
+	if (WIN32)
+		list(APPEND LIBIIO_CFILES network-windows.c)
+	else()
+		list(APPEND LIBIIO_CFILES network-unix.c)
+	endif()
 
 	find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 	find_library(AVAHI_COMMON_LIBRARIES avahi-common)

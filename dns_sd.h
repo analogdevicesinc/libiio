@@ -29,6 +29,9 @@
 #define ENOMEDIUM ENOENT
 #endif
 
+/* Used everywhere */
+#define IIOD_PORT 30431
+
 struct addrinfo;
 struct AvahiSimplePoll;
 struct AvahiAddress;
@@ -77,8 +80,5 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata);
 
 /* port knocks  */
 void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
-
-/* Used everywhere */
-#define IIOD_PORT 30431
 
 #endif /* __IIO_DNS_SD_H */
