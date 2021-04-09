@@ -24,6 +24,10 @@
 #include <sys/sysctl.h>
 #endif
 
+#ifdef _WIN32
+#include <sysinfoapi.h>
+#endif
+
 #include "iio_common.h"
 
 #define MY_NAME "iio_stresstest"
