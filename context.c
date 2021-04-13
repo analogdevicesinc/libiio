@@ -386,8 +386,9 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	if (params)
 		params2 = *params;
 
-	if (WITH_LOCAL_BACKEND && strcmp(uri, "local:") == 0) /* No address part */
-		return iio_create_local_context();
+	if (WITH_LOCAL_BACKEND && !strcmp(uri, "local:")) { /* No address part */
+		return local_create_context(&params2);
+	}
 
 	if (WITH_XML_BACKEND && !strncmp(uri, "xml:", sizeof("xml:") - 1)) {
 		return xml_create_context(&params2, uri + sizeof("xml:") - 1);
@@ -422,8 +423,10 @@ struct iio_context * iio_create_default_context(void)
 
 struct iio_context * iio_create_local_context(void)
 {
+	struct iio_context_params params = default_params;
+
 	if (WITH_LOCAL_BACKEND)
-		return local_create_context();
+		return local_create_context(&params);
 
 	errno = ENOSYS;
 	return NULL;
