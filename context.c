@@ -41,6 +41,11 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 
 const struct iio_context_params default_params = {
 	.timeout_ms = 0,
+
+	.out = NULL, /* stdout */
+	.err = NULL, /* stderr */
+	.log_level = (enum iio_log_level)DEFAULT_LOG_LEVEL,
+	.stderr_level = LEVEL_WARNING,
 };
 
 static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
@@ -390,6 +395,11 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 
 	if (params)
 		params2 = *params;
+
+	if (!params2.log_level)
+		params2.log_level = default_params.log_level;
+	if (!params2.stderr_level)
+		params2.stderr_level = default_params.stderr_level;
 
 	if (WITH_LOCAL_BACKEND && !strcmp(uri, "local:")) { /* No address part */
 		if (!params2.timeout_ms)
