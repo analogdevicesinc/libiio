@@ -58,6 +58,11 @@ if (ENABLE_AIO)
 	target_link_libraries(iiod ${LIBAIO_LIBRARIES})
 endif ()
 
+if (WITH_ZSTD)
+	include_directories(${LIBZSTD_INCLUDE_DIR})
+	target_link_libraries(iiod ${LIBZSTD_LIBRARIES})
+endif()
+
 add_definitions(-D_GNU_SOURCE=1)
 
 if (HAVE_AVAHI)

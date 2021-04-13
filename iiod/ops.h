@@ -60,6 +60,9 @@ struct parser_pdata {
 #endif
 	struct thread_pool *pool;
 
+	const void *xml_zstd;
+	size_t xml_zstd_len;
+
 	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf, size_t len);
 	ssize_t (*readfd)(struct parser_pdata *pdata, void *buf, size_t len);
 };
@@ -67,11 +70,13 @@ struct parser_pdata {
 extern bool server_demux; /* Defined in iiod.c */
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-	bool is_socket, bool use_aio, struct thread_pool *pool);
+		 bool is_socket, bool use_aio, struct thread_pool *pool,
+		 const void *xml_zstd, size_t xml_zstd_len);
 
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		bool debug, bool use_aio, unsigned int nb_pipes,
-		struct thread_pool *pool);
+		struct thread_pool *pool,
+		const void *xml_zstd, size_t xml_zstd_len);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
