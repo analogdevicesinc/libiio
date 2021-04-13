@@ -20,6 +20,7 @@
 #cmakedefine01 HAVE_DNS_SD
 #cmakedefine01 HAVE_AVAHI
 #cmakedefine01 ENABLE_AIO
+#cmakedefine01 WITH_ZSTD
 
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP

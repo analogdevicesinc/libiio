@@ -32,6 +32,10 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	return PRINT;
 }
 
+<INITIAL>ZPRINT|zprint {
+	return ZPRINT;
+}
+
 <INITIAL>EXIT|exit|QUIT|quit {
 	return EXIT;
 }

@@ -28,6 +28,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#if WITH_ZSTD
+#include <zstd.h>
+#endif
 
 #define MY_NAME "iiod"
 
@@ -35,6 +38,8 @@ struct client_data {
 	int fd;
 	bool debug;
 	struct iio_context *ctx;
+	const void *xml_zstd;
+	size_t xml_zstd_len;
 };
 
 bool server_demux;
@@ -105,7 +110,8 @@ static void client_thd(struct thread_pool *pool, void *d)
 	struct client_data *cdata = d;
 
 	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug,
-			true, false, pool);
+			true, false, pool,
+			cdata->xml_zstd, cdata->xml_zstd_len);
 
 	IIO_INFO("Client exited\n");
 	close(cdata->fd);
@@ -125,7 +131,8 @@ static void sig_handler(int sig)
 	thread_pool_stop(main_thread_pool);
 }
 
-static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
+static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio,
+			    const void *xml_zstd, size_t xml_zstd_len)
 {
 	int flags;
 
@@ -152,11 +159,12 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio)
 	}
 
 	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
-			false, use_aio, main_thread_pool);
+			false, use_aio, main_thread_pool, xml_zstd, xml_zstd_len);
 	return EXIT_SUCCESS;
 }
 
-static int main_server(struct iio_context *ctx, bool debug)
+static int main_server(struct iio_context *ctx, bool debug,
+		       const void *xml_zstd, size_t xml_zstd_len)
 {
 	int ret, fd = -1, yes = 1,
 	    keepalive_time = 10,
@@ -284,6 +292,8 @@ static int main_server(struct iio_context *ctx, bool debug)
 		cdata->fd = new;
 		cdata->ctx = ctx;
 		cdata->debug = debug;
+		cdata->xml_zstd = xml_zstd;
+		cdata->xml_zstd_len = xml_zstd_len;
 
 		IIO_INFO("New client connected from %s\n",
 				inet_ntoa(caddr.sin_addr));
@@ -309,6 +319,35 @@ err_close_socket:
 	return EXIT_FAILURE;
 }
 
+static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
+{
+#if WITH_ZSTD
+	const char *xml = iio_context_get_xml(ctx);
+	size_t len, xml_len = strlen(xml);
+	void *buf;
+	size_t ret;
+
+	len = ZSTD_compressBound(xml_len);
+	buf = malloc(len);
+	if (!buf)
+		return NULL;
+
+	ret = ZSTD_compress(buf, len, xml, xml_len, 3);
+	if (ZSTD_isError(ret)) {
+		IIO_WARNING("Unable to compress XML string: %s\n",
+			    ZSTD_getErrorName(xml_len));
+		free(buf);
+		return NULL;
+	}
+
+	*out_len = ret;
+
+	return buf;
+#else
+	return NULL;
+#endif
+}
+
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
@@ -318,6 +357,8 @@ int main(int argc, char **argv)
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
 	char err_str[1024];
+	void *xml_zstd;
+	size_t xml_zstd_len = 0;
 	int ret;
 
 	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:",
@@ -380,6 +421,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	xml_zstd = get_xml_zstd_data(ctx, &xml_zstd_len);
+
 	main_thread_pool = thread_pool_new();
 	if (!main_thread_pool) {
 		iio_strerror(errno, err_str, sizeof(err_str));
@@ -398,7 +441,7 @@ int main(int argc, char **argv)
 		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
 				debug, true, (unsigned int) nb_pipes,
-				main_thread_pool);
+				main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to start USB daemon: %s\n", err_str);
@@ -408,9 +451,9 @@ int main(int argc, char **argv)
 	}
 
 	if (interactive)
-		ret = main_interactive(ctx, debug, use_aio);
+		ret = main_interactive(ctx, debug, use_aio, xml_zstd, xml_zstd_len);
 	else
-		ret = main_server(ctx, debug);
+		ret = main_server(ctx, debug, xml_zstd, xml_zstd_len);
 
 	/*
 	 * In case we got here through an error in the main thread make sure all
@@ -422,6 +465,7 @@ out_destroy_thread_pool:
 	thread_pool_destroy(main_thread_pool);
 
 out_destroy_context:
+	free(xml_zstd);
 	iio_context_destroy(ctx);
 
 	return ret;

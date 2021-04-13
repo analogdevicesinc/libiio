@@ -283,6 +283,19 @@ else()
 	message(STATUS "Looking for libserialport : Failed; building without serial")
 endif()
 
+option(WITH_ZSTD "Support for ZSTD compressed metadata" OFF)
+if (WITH_ZSTD)
+	find_library(LIBZSTD_LIBRARIES zstd)
+	find_path(LIBZSTD_INCLUDE_DIR zstd.h)
+
+	if (NOT LIBZSTD_LIBRARIES OR NOT LIBZSTD_INCLUDE_DIR)
+		message(SEND_ERROR "Unable to find libzstd")
+	endif()
+
+	list(APPEND LIBS_TO_LINK ${LIBZSTD_LIBRARIES})
+	include_directories(${LIBZSTD_INCLUDE_DIR})
+endif (WITH_ZSTD)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 if(WITH_NETWORK_BACKEND)
