@@ -1886,10 +1886,9 @@ static void local_cancel(const struct iio_device *dev)
 	}
 }
 
-static struct iio_context * local_clone(
-		const struct iio_context *ctx __attribute__((unused)))
+static struct iio_context * local_clone(const struct iio_context *ctx)
 {
-	return local_create_context();
+	return local_create_context(&ctx->params);
 }
 
 static char * local_get_description(const struct iio_context *ctx)
@@ -2027,7 +2026,7 @@ out_close_ini:
 	return ret;
 }
 
-struct iio_context * local_create_context(void)
+struct iio_context * local_create_context(const struct iio_context_params *params)
 {
 	struct iio_context *ctx;
 	char *description;
@@ -2040,6 +2039,8 @@ struct iio_context * local_create_context(void)
 	free(description);
 	if (!ctx)
 		goto err_set_errno;
+
+	ctx->params = *params;
 
 	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
