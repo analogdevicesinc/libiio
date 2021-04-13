@@ -435,6 +435,18 @@ __api __check_ret struct iio_context * iio_create_network_context(const char *ho
  *  For example <i>"serial:/dev/ttyUSB0,115200"</i> <b>or</b> <i>"serial:/dev/ttyUSB0,115200,8n1"</i>*/
 __api __check_ret struct iio_context * iio_create_context_from_uri(const char *uri);
 
+/** @brief Create a context from a URI description
+ * @param params A pointer to a iio_context_params structure that contains
+ *   context creation information; can be NULL
+ * @param uri a URI describing the context location
+ * @return On success, a pointer to a iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * <b>NOTE:</b> Refer to iio_create_context_from_uri for information about
+ * possible URI strings. */
+__api __check_ret struct iio_context *
+iio_create_context(const struct iio_context_params *params, const char *uri);
+
 
 /** @brief Duplicate a pre-existing IIO context
  * @param ctx A pointer to an iio_context structure

@@ -375,6 +375,12 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 
 struct iio_context * iio_create_context_from_uri(const char *uri)
 {
+	return iio_create_context(NULL, uri);
+}
+
+struct iio_context * iio_create_context(const struct iio_context_params *params,
+					const char *uri)
+{
 	if (WITH_LOCAL_BACKEND && strcmp(uri, "local:") == 0) /* No address part */
 		return iio_create_local_context();
 
