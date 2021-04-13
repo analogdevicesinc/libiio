@@ -20,6 +20,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #if (defined(_WIN32) || defined(__MBED__))
 #ifndef _SSIZE_T_DEFINED
@@ -85,6 +86,27 @@ struct iio_scan_context;
 struct iio_scan_block;
 
 /**
+ * @enum iio_log_level
+ * @brief Level of verbosity of libiio's log output.
+ */
+enum iio_log_level {
+	/* @brief No log output from the library */
+	LEVEL_NOLOG = 1,
+
+	/* @brief Only print error messages */
+	LEVEL_ERROR = 2,
+
+	/* @brief Also print warnings */
+	LEVEL_WARNING = 3,
+
+	/* @brief Also print noteworthy information */
+	LEVEL_INFO = 4,
+
+	/* @brief Also print debug messages */
+	LEVEL_DEBUG = 5,
+};
+
+/**
  * @struct iio_context_params
  * @brief IIO context creation information
  *
@@ -94,6 +116,22 @@ struct iio_scan_block;
 struct iio_context_params {
 	/** @brief Timeout for I/O operations. If zero, the default timeout is used. */
 	unsigned int timeout_ms;
+
+	/** @brief Handle to the standard output. If NULL, defaults to stdout. */
+	FILE *out;
+
+	/** @brief Handle to the error output. If NULL, defaults to stderr. */
+	FILE *err;
+
+	/** @brief Log level to use.
+	 * Defaults to the log level that was specified at compilation. */
+	enum iio_log_level log_level;
+
+	/** @brief Under this log level (included), messages are sent to
+	 * the error output ; above this log level (excluded), messages are
+	 * sent to the standard output.
+	 * If zero, defaults to LEVEL_WARNING. */
+	enum iio_log_level stderr_level;
 };
 
 /**

@@ -66,6 +66,13 @@ if (NOT LOG_LEVEL)
 	set_property(CACHE LOG_LEVEL PROPERTY STRINGS NoLog Error Warning Info Debug)
 endif()
 
+set(LEVEL_NoLog 1)
+set(LEVEL_Error 2)
+set(LEVEL_Warning 3)
+set(LEVEL_Info 4)
+set(LEVEL_Debug 5)
+set(DEFAULT_LOG_LEVEL ${LEVEL_${LOG_LEVEL}})
+
 if (MSVC)
 	add_compile_options(/W4 /wd4200 /wd4127 /wd4100)
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
