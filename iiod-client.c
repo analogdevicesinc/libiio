@@ -8,6 +8,7 @@
 
 #include "debug.h"
 #include "iiod-client.h"
+#include "iio-config.h"
 #include "iio-lock.h"
 #include "iio-private.h"
 
@@ -15,6 +16,9 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
+#if WITH_ZSTD
+#include <zstd.h>
+#endif
 
 struct iiod_client {
 	struct iio_context_pdata *pdata;
@@ -504,18 +508,29 @@ out_unlock:
 	return ret;
 }
 
-struct iio_context * iiod_client_create_context(
-		struct iiod_client *client, void *desc)
+static struct iio_context *
+iiod_client_create_context_private(struct iiod_client *client,
+				   void *desc, bool zstd)
 {
+	const char *cmd = zstd ? "ZPRINT\r\n" : "PRINT\r\n";
 	struct iio_context *ctx = NULL;
 	size_t xml_len;
 	char *xml;
 	int ret;
 
 	iio_mutex_lock(client->lock);
-	ret = iiod_client_exec_command(client, desc, "PRINT\r\n");
-	if (ret < 0)
+	ret = iiod_client_exec_command(client, desc, cmd);
+	if (ret < 0) {
+		if (ret == -EINVAL && zstd) {
+			/* If the ZPRINT command does not exist, try again
+			 * with the regular PRINT command. */
+			iio_mutex_unlock(client->lock);
+
+			return iiod_client_create_context_private(client, desc, false);
+		}
+
 		goto out_unlock;
+	}
 
 	xml_len = (size_t) ret;
 	xml = malloc(xml_len + 1);
@@ -529,6 +544,41 @@ struct iio_context * iiod_client_create_context(
 	if (ret < 0)
 		goto out_free_xml;
 
+#if WITH_ZSTD
+	if (zstd) {
+		unsigned long long len;
+		char *xml_zstd;
+
+		IIO_DEBUG("Received ZSTD-compressed XML string.\n");
+
+		len = ZSTD_getFrameContentSize(xml, xml_len);
+		if (len == ZSTD_CONTENTSIZE_UNKNOWN ||
+		    len == ZSTD_CONTENTSIZE_ERROR) {
+			ret = -EIO;
+			goto out_free_xml;
+		}
+
+		xml_zstd = malloc(len);
+		if (!xml_zstd) {
+			ret = -ENOMEM;
+			goto out_free_xml;
+		}
+
+		xml_len = ZSTD_decompress(xml_zstd, len, xml, xml_len);
+		if (ZSTD_isError(xml_len)) {
+			IIO_ERROR("Unable to decompress ZSTD data: %s\n",
+				  ZSTD_getErrorName(xml_len));
+			ret = -EIO;
+			free(xml_zstd);
+			goto out_free_xml;
+		}
+
+		/* Free compressed data, make "xml" point to uncompressed data */
+		free(xml);
+		xml = xml_zstd;
+	}
+#endif
+
 	ctx = iio_create_xml_context_mem(xml, xml_len);
 	if (!ctx)
 		ret = -errno;
@@ -540,6 +590,11 @@ out_unlock:
 	if (!ctx)
 		errno = -ret;
 	return ctx;
+}
+
+struct iio_context * iiod_client_create_context(struct iiod_client *client, void *desc)
+{
+	return iiod_client_create_context_private(client, desc, WITH_ZSTD);
 }
 
 int iiod_client_open_unlocked(struct iiod_client *client, void *desc,
