@@ -1082,6 +1082,30 @@ struct iio_context * network_create_context(const char *host)
 		ret = getaddrinfo(addr_str, port_str, &hints, &res);
 	} else {
 		ret = getaddrinfo(host, IIOD_PORT_STR, &hints, &res);
+		/*
+		 * It might be an avahi hostname which means that getaddrinfo() will only work if
+		 * nss-mdns is installed on the host and /etc/nsswitch.conf is correctly configured
+		 * which might be not the case for some minimalist distros. In this case,
+		 * as a last resort, let's try to resolve the host with avahi...
+		 */
+		if (ret && HAVE_DNS_SD) {
+			char addr_str[DNS_SD_ADDRESS_STR_MAX];
+
+			IIO_DEBUG("'getaddrinfo()' failed: %s. Trying dnssd as a last resort...\n",
+				  gai_strerror(ret));
+
+			ret = dnssd_resolve_host(host, addr_str, sizeof(addr_str));
+			if (ret) {
+				char buf[256];
+
+				iio_strerror(-ret, buf, sizeof(buf));
+				IIO_DEBUG("Unable to find host: %s\n", buf);
+				errno = -ret;
+				return NULL;
+			}
+
+			ret = getaddrinfo(addr_str, IIOD_PORT_STR, &hints, &res);
+		}
 	}
 
 	if (ret) {

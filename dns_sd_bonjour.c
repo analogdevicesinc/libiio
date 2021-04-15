@@ -240,3 +240,8 @@ exit:
 	iio_mutex_destroy(d->lock);
 	return ret;
 }
+
+int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len)
+{
+	return -ENOENT;
+}

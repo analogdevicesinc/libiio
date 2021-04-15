@@ -81,4 +81,7 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata);
 /* port knocks  */
 void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
 
+/* Use dnssd to resolve a given hostname */
+int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len);
+
 #endif /* __IIO_DNS_SD_H */
