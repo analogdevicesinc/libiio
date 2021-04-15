@@ -58,6 +58,38 @@ void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
 	free(d);
 }
 
+static void avahi_process_resolved(struct dns_sd_discovery_data *ddata, const AvahiAddress *addr,
+				   const char *host_name, const uint16_t port)
+{
+       /* Avahi is multi-threaded, so lock the list */
+       iio_mutex_lock(ddata->lock);
+       ddata->resolved++;
+
+       /* Find empty data to store things*/
+       while (ddata->next)
+               ddata = ddata->next;
+
+       /* link a new placeholder to the list */
+       avahi_address_snprint(ddata->addr_str,
+                       sizeof(ddata->addr_str), addr);
+       memcpy(ddata->address, addr, sizeof(*ddata->address)); /* Flawfinder: ignore */
+       ddata->port = port;
+       ddata->hostname = strdup(host_name);
+       ddata->resolved = true;
+       /* link a new, empty placeholder to the list */
+       if (!new_discovery_data(&ddata->next)) {
+               /* duplicate poll & lock info,
+                * since we don't know which might be discarded */
+               ddata->next->poll = ddata->poll;
+               ddata->next->lock = ddata->lock;
+       } else {
+               IIO_ERROR("Avahi Resolver : memory failure\n");
+       }
+       iio_mutex_unlock(ddata->lock);
+
+       IIO_DEBUG("\t\t%s:%u (%s)\n", host_name, port, ddata->addr_str);
+}
+
 /*
  * libavahi callbacks for browser and resolver
  * for more info, check out libavahi docs at:
@@ -90,36 +122,9 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 							resolver))));
 		break;
 	case AVAHI_RESOLVER_FOUND: {
-		/* Avahi is multi-threaded, so lock the list */
-		iio_mutex_lock(ddata->lock);
-		ddata->resolved++;
-
-		/* Find empty data to store things*/
-		while (ddata->next)
-			ddata = ddata->next;
-
-		/* link a new placeholder to the list */
-		avahi_address_snprint(ddata->addr_str,
-				sizeof(ddata->addr_str), address);
-		memcpy(ddata->address, address, sizeof(*address));
-		ddata->port = port;
-		ddata->hostname = strdup(host_name);
-		ddata->resolved = true;
-		/* link a new, empty placeholder to the list */
-		if (!new_discovery_data(&ddata->next)) {
-			/* duplicate poll & lock info,
-			 * since we don't know which might be discarded */
-			ddata->next->poll = ddata->poll;
-			ddata->next->lock = ddata->lock;
-		} else {
-			IIO_ERROR("Avahi Resolver : memory failure\n");
-		}
-		iio_mutex_unlock(ddata->lock);
-
+		avahi_process_resolved(ddata, address, host_name, port);
 		IIO_DEBUG("Avahi Resolver : service '%s' of type '%s' in domain '%s':\n",
 				name, type, domain);
-		IIO_DEBUG("\t\t%s:%u (%s)\n", host_name, port, ddata->addr_str);
-
 		break;
 		}
 	}
