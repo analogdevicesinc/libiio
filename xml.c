@@ -369,7 +369,7 @@ static int parse_context_attr(struct iio_context *ctx, xmlNode *n)
 static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *root)
 {
 	xmlNode *n;
-	int err = -ENOMEM;
+	int err;
 
 	for (n = root->children; n; n = n->next) {
 		struct iio_device *dev;
@@ -377,9 +377,9 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 		if (!strcmp((char *) n->name, "context-attribute")) {
 			err = parse_context_attr(ctx, n);
 			if (err)
-				goto err_set_errno;
-			else
-				continue;
+				return err;
+
+			continue;
 		} else if (strcmp((char *) n->name, "device")) {
 			if (strcmp((char *) n->name, "text"))
 				IIO_WARNING("Unknown children \'%s\' in "
@@ -391,25 +391,17 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 		if (IS_ERR(dev)) {
 			err = PTR_TO_ERR(dev);
 			IIO_ERROR("Unable to create device: %d\n", err);
-			goto err_set_errno;
+			return err;
 		}
 
 		err = iio_context_add_device(ctx, dev);
 		if (err) {
 			free(dev);
-			goto err_set_errno;
+			return err;
 		}
 	}
 
-	err = iio_context_init(ctx);
-	if (err)
-		goto err_set_errno;
-
-	return 0;
-
-err_set_errno:
-	errno = -err;
-	return err;
+	return iio_context_init(ctx);
 }
 
 static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
@@ -418,6 +410,7 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	struct iio_context *ctx;
 	xmlNode *root;
 	xmlAttr *attr;
+	int err;
 
 	root = xmlDocGetRootElement(doc);
 	if (strcmp((char *) root->name, "context")) {
@@ -438,8 +431,10 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	if (!ctx)
 		return NULL;
 
-	if (iio_populate_xml_context_helper(ctx, root)) {
+	err = iio_populate_xml_context_helper(ctx, root);
+	if (err) {
 		iio_context_destroy(ctx);
+		errno = -err;
 		return NULL;
 	}
 
