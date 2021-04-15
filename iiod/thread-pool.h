@@ -9,6 +9,8 @@
 #ifndef __THREAD_POOL_H__
 #define __THREAD_POOL_H__
 
+#include <stdbool.h>
+
 struct thread_pool;
 
 struct thread_pool * thread_pool_new(void);
@@ -16,6 +18,7 @@ struct thread_pool * thread_pool_new(void);
 int thread_pool_get_poll_fd(const struct thread_pool *pool);
 void thread_pool_stop(struct thread_pool *pool);
 void thread_pool_stop_and_wait(struct thread_pool *pool);
+bool thread_pool_is_stopped(const struct thread_pool *pool);
 
 void thread_pool_destroy(struct thread_pool *pool);
 

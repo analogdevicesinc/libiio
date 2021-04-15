@@ -31,6 +31,7 @@ struct thread_pool {
 	pthread_cond_t thread_count_cond;
 	unsigned int thread_count;
 	int stop_fd;
+	bool stop;
 };
 
 struct thread_body_data {
@@ -130,6 +131,8 @@ struct thread_pool * thread_pool_new(void)
 		return NULL;
 	}
 
+	pool->stop = false;
+
 	pthread_mutex_init(&pool->thread_count_lock, NULL);
 	pthread_cond_init(&pool->thread_count_cond, NULL);
 	pool->thread_count = 0;
@@ -146,6 +149,8 @@ void thread_pool_stop(struct thread_pool *pool)
 {
 	uint64_t e = 1;
 	int ret;
+
+	pool->stop = true;
 
 	do {
 		ret = write(pool->stop_fd, &e, sizeof(e));
@@ -168,6 +173,11 @@ void thread_pool_stop_and_wait(struct thread_pool *pool)
 	do {
 		ret = read(pool->stop_fd, &e, sizeof(e));
 	} while (ret != -1 || errno == EINTR);
+}
+
+bool thread_pool_is_stopped(const struct thread_pool *pool)
+{
+	return pool->stop;
 }
 
 void thread_pool_destroy(struct thread_pool *pool)
