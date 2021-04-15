@@ -18,12 +18,17 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	xmlAttr *attr;
 	char *name = NULL, *filename = NULL;
 	struct iio_channel_attr *attrs;
+	int err = -ENOMEM;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
 			name = iio_strdup((char *) attr->children->content);
+			if (!name)
+				goto err_free;
 		} else if (!strcmp((char *) attr->name, "filename")) {
 			filename = iio_strdup((char *) attr->children->content);
+			if (!filename)
+				goto err_free;
 		} else {
 			IIO_WARNING("Unknown field \'%s\' in channel %s\n",
 					attr->name, chn->id);
@@ -32,6 +37,7 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 
 	if (!name) {
 		IIO_ERROR("Incomplete attribute in channel %s\n", chn->id);
+		err = -EINVAL;
 		goto err_free;
 	}
 
@@ -54,7 +60,7 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 err_free:
 	free(name);
 	free(filename);
-	return -1;
+	return err;
 }
 
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
@@ -73,7 +79,7 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 
 	if (!name) {
 		IIO_ERROR("Incomplete attribute in device %s\n", dev->id);
-		return -1;
+		return -EINVAL;
 	}
 
 	switch(type) {
@@ -84,7 +90,7 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 		case IIO_ATTR_TYPE_BUFFER:
 			return add_iio_dev_attr(&dev->buffer_attrs, name, " buffer", dev->id);
 		default:
-			return -1;
+			return -EINVAL;
 	}
 }
 
