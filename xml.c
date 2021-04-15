@@ -171,9 +171,12 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 {
 	xmlAttr *attr;
-	struct iio_channel *chn = zalloc(sizeof(*chn));
+	struct iio_channel *chn;
+	int err = -ENOMEM;
+
+	chn = zalloc(sizeof(*chn));
 	if (!chn)
-		return NULL;
+		return ERR_TO_PTR(-ENOMEM);
 
 	chn->dev = dev;
 
@@ -185,8 +188,12 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 		      *content = (const char *) attr->children->content;
 		if (!strcmp(name, "name")) {
 			chn->name = iio_strdup(content);
+			if (!chn->name)
+				goto err_free_channel;
 		} else if (!strcmp(name, "id")) {
 			chn->id = iio_strdup(content);
+			if (!chn->id)
+				goto err_free_channel;
 		} else if (!strcmp(name, "type")) {
 			if (!strcmp(content, "output"))
 				chn->is_output = true;
@@ -200,16 +207,20 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 
 	if (!chn->id) {
 		IIO_ERROR("Incomplete <attribute>\n");
+		err = -EINVAL;
 		goto err_free_channel;
 	}
 
 	for (n = n->children; n; n = n->next) {
 		if (!strcmp((char *) n->name, "attribute")) {
-			if (add_attr_to_channel(chn, n) < 0)
+			err = add_attr_to_channel(chn, n);
+			if (err < 0)
 				goto err_free_channel;
 		} else if (!strcmp((char *) n->name, "scan-element")) {
 			chn->is_scan_element = true;
-			setup_scan_element(chn, n);
+			err = setup_scan_element(chn, n);
+			if (err < 0)
+				goto err_free_channel;
 		} else if (strcmp((char *) n->name, "text")) {
 			IIO_WARNING("Unknown children \'%s\' in <channel>\n",
 					n->name);
@@ -223,7 +234,7 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 
 err_free_channel:
 	free_channel(chn);
-	return NULL;
+	return ERR_TO_PTR(err);
 }
 
 static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
@@ -258,7 +269,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 		if (!strcmp((char *) n->name, "channel")) {
 			struct iio_channel **chns,
 					   *chn = create_channel(dev, n);
-			if (!chn) {
+			if (IS_ERR(chn)) {
 				IIO_ERROR("Unable to create channel\n");
 				goto err_free_device;
 			}
