@@ -254,3 +254,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data** ddata)
 
 	return 0;
 }
+
+int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len)
+{
+	return -ENOENT;
+}
