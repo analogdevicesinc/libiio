@@ -240,9 +240,12 @@ err_free_channel:
 static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 {
 	xmlAttr *attr;
-	struct iio_device *dev = zalloc(sizeof(*dev));
+	struct iio_device *dev;
+	int err = -ENOMEM;
+
+	dev = zalloc(sizeof(*dev));
 	if (!dev)
-		return NULL;
+		return ERR_TO_PTR(-ENOMEM);
 
 	dev->ctx = ctx;
 
@@ -250,10 +253,16 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 		if (!strcmp((char *) attr->name, "name")) {
 			dev->name = iio_strdup(
 					(char *) attr->children->content);
+			if (!dev->name)
+				goto err_free_device;
 		} else if (!strcmp((char *) attr->name, "label")) {
 			dev->label = iio_strdup((char *) attr->children->content);
+			if (!dev->label)
+				goto err_free_device;
 		} else if (!strcmp((char *) attr->name, "id")) {
 			dev->id = iio_strdup((char *) attr->children->content);
+			if (!dev->id)
+				goto err_free_device;
 		} else {
 			IIO_WARNING("Unknown attribute \'%s\' in <device>\n",
 					attr->name);
@@ -262,6 +271,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 
 	if (!dev->id) {
 		IIO_ERROR("Unable to read device ID\n");
+		err = -EINVAL;
 		goto err_free_device;
 	}
 
@@ -270,13 +280,15 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			struct iio_channel **chns,
 					   *chn = create_channel(dev, n);
 			if (IS_ERR(chn)) {
-				IIO_ERROR("Unable to create channel\n");
+				err = PTR_TO_ERR(chn);
+				IIO_ERROR("Unable to create channel: %d\n", err);
 				goto err_free_device;
 			}
 
 			chns = realloc(dev->channels, (1 + dev->nb_channels) *
 					sizeof(struct iio_channel *));
 			if (!chns) {
+				err = -ENOMEM;
 				IIO_ERROR("Unable to allocate memory\n");
 				free(chn);
 				goto err_free_device;
@@ -285,13 +297,16 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			chns[dev->nb_channels++] = chn;
 			dev->channels = chns;
 		} else if (!strcmp((char *) n->name, "attribute")) {
-			if (add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE) < 0)
+			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE);
+			if (err < 0)
 				goto err_free_device;
 		} else if (!strcmp((char *) n->name, "debug-attribute")) {
-			if (add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG) < 0)
+			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG);
+			if (err < 0)
 				goto err_free_device;
 		} else if (!strcmp((char *) n->name, "buffer-attribute")) {
-			if (add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER) < 0)
+			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER);
+			if (err < 0)
 				goto err_free_device;
 		} else if (strcmp((char *) n->name, "text")) {
 			IIO_WARNING("Unknown children \'%s\' in <device>\n",
@@ -304,7 +319,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 	if (dev->words) {
 		dev->mask = calloc(dev->words, sizeof(*dev->mask));
 		if (!dev->mask) {
-			errno = ENOMEM;
+			err = -ENOMEM;
 			goto err_free_device;
 		}
 	}
@@ -313,7 +328,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 
 err_free_device:
 	free_device(dev);
-	return NULL;
+	return ERR_TO_PTR(err);
 }
 
 static struct iio_context * xml_clone(const struct iio_context *ctx)
@@ -373,8 +388,9 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 		}
 
 		dev = create_device(ctx, n);
-		if (!dev) {
-			IIO_ERROR("Unable to create device\n");
+		if (IS_ERR(dev)) {
+			err = PTR_TO_ERR(dev);
+			IIO_ERROR("Unable to create device: %d\n", err);
 			goto err_set_errno;
 		}
 
