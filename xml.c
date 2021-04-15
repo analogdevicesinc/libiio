@@ -88,9 +88,10 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 	}
 }
 
-static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
+static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
+	int err;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		const char *name = (const char *) attr->name,
@@ -102,12 +103,12 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			errno = 0;
 			value = strtoll(content, &end, 0);
 			if (end == content || value < 0 || errno == ERANGE)
-				return;
+				return -EINVAL;
 			chn->index = (long) value;
 		} else if (!strcmp(name, "format")) {
 			char e, s;
 			if (strchr(content, 'X')) {
-				iio_sscanf(content, "%ce:%c%u/%uX%u>>%u",
+				err = iio_sscanf(content, "%ce:%c%u/%uX%u>>%u",
 #ifdef _MSC_BUILD
 					&e, (unsigned int)sizeof(e),
 					&s, (unsigned int)sizeof(s),
@@ -118,9 +119,11 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 					&chn->format.length,
 					&chn->format.repeat,
 					&chn->format.shift);
+				if (err != 6)
+					return -EINVAL;
 			} else {
 				chn->format.repeat = 1;
-				iio_sscanf(content, "%ce:%c%u/%u>>%u",
+				err = iio_sscanf(content, "%ce:%c%u/%u>>%u",
 #ifdef _MSC_BUILD
 					&e, (unsigned int)sizeof(e),
 					&s, (unsigned int)sizeof(s),
@@ -130,6 +133,8 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 					&chn->format.bits,
 					&chn->format.length,
 					&chn->format.shift);
+				if (err != 5)
+					return -EINVAL;
 			}
 			chn->format.is_be = e == 'b';
 			chn->format.is_signed = (s == 's' || s == 'S');
@@ -143,7 +148,7 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			value = strtof(content, &end);
 			if (end == content || errno == ERANGE) {
 				chn->format.with_scale = false;
-				return;
+				return -EINVAL;
 			}
 
 			chn->format.with_scale = true;
@@ -153,6 +158,8 @@ static void setup_scan_element(struct iio_channel *chn, xmlNode *n)
 					name);
 		}
 	}
+
+	return 0;
 }
 
 static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
