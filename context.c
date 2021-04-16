@@ -216,6 +216,12 @@ err_free_ctx:
 	return NULL;
 }
 
+const struct iio_context_params *
+iio_context_get_params(const struct iio_context *ctx)
+{
+	return &ctx->params;
+}
+
 struct iio_context_pdata * iio_context_get_pdata(const struct iio_context *ctx)
 {
 	return ctx->pdata;
