@@ -159,6 +159,8 @@ struct iio_context {
 	char **attrs;
 	char **values;
 	unsigned int nb_attrs;
+
+	struct iio_context_params params;
 };
 
 struct iio_channel {

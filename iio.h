@@ -85,6 +85,17 @@ struct iio_scan_context;
 struct iio_scan_block;
 
 /**
+ * @struct iio_context_params
+ * @brief IIO context creation information
+ *
+ * This structure contains parameters that can affect how the IIO context is
+ * created.
+ */
+struct iio_context_params {
+	int __empty__;
+};
+
+/**
  * @enum iio_chan_type
  * @brief IIO channel type
  *
@@ -551,6 +562,13 @@ __api __check_ret __pure struct iio_device * iio_context_find_device(
  * @return On error, a negative errno code is returned */
 __api __check_ret int iio_context_set_timeout(
 		struct iio_context *ctx, unsigned int timeout_ms);
+
+
+/** @brief Get a pointer to the params structure
+ * @param ctx A pointer to an iio_context structure
+ * @return A pointer to the context's iio_context_params structure */
+__api __cnst const struct iio_context_params *
+iio_context_get_params(const struct iio_context *ctx);
 
 
 /** @} *//* ------------------------------------------------------------------*/
