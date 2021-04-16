@@ -34,6 +34,10 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST buffer-attribute name CDATA #REQUIRED>"
 "]>";
 
+const struct iio_context_params default_params = {
+	0,
+};
+
 static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
 {
 	ssize_t count = 0;
@@ -214,6 +218,12 @@ err_free_ctx:
 	free(ctx);
 	errno = -ret;
 	return NULL;
+}
+
+const struct iio_context_params *
+iio_context_get_params(const struct iio_context *ctx)
+{
+	return &ctx->params;
 }
 
 struct iio_context_pdata * iio_context_get_pdata(const struct iio_context *ctx)
