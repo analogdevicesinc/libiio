@@ -289,8 +289,8 @@ int iio_context_add_attr(struct iio_context *ctx,
 
 struct iio_context_pdata * iio_context_get_pdata(const struct iio_context *ctx);
 
-int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
-		     const char *type, const char *dev_id);
+int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
+		     const char *attr, const char *type);
 
 ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 

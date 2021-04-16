@@ -130,8 +130,8 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 	return alen;
 }
 
-int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
-		     const char *type, const char *dev_id)
+int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
+		     const char *attr, const char *type)
 {
 	char **names, *name;
 
@@ -147,7 +147,7 @@ int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
 
 	names[attrs->num++] = name;
 	attrs->names = names;
-	IIO_DEBUG("Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev_id);
+	IIO_DEBUG("Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev->id);
 	return 0;
 }
 
