@@ -1231,7 +1231,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	if (!strcmp(attr, "label"))
 		return read_device_label(dev);
 
-	return add_iio_dev_attr(&dev->attrs, attr, " ", dev->id);
+	return add_iio_dev_attr(dev, &dev->attrs, attr, "");
 }
 
 static int handle_protected_scan_element_attr(struct iio_channel *chn,
@@ -1633,7 +1633,7 @@ static int add_buffer_attr(void *d, const char *path)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 
-	return add_iio_dev_attr(&dev->buffer_attrs, name, " buffer", dev->id);
+	return add_iio_dev_attr(dev, &dev->buffer_attrs, name, " buffer");
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
@@ -1842,7 +1842,7 @@ static int add_debug_attr(void *d, const char *path)
 	struct iio_device *dev = d;
 	const char *attr = strrchr(path, '/') + 1;
 
-	return add_iio_dev_attr(&dev->debug_attrs, attr, " debug", dev->id);
+	return add_iio_dev_attr(dev, &dev->debug_attrs, attr, " debug");
 }
 
 static int add_debug(void *d, const char *path)

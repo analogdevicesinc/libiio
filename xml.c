@@ -84,11 +84,11 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 
 	switch(type) {
 		case IIO_ATTR_TYPE_DEBUG:
-			return add_iio_dev_attr(&dev->debug_attrs, name, " debug", dev->id);
+			return add_iio_dev_attr(dev, &dev->debug_attrs, name, " debug");
 		case IIO_ATTR_TYPE_DEVICE:
-			return add_iio_dev_attr(&dev->attrs, name, " ", dev->id);
+			return add_iio_dev_attr(dev, &dev->attrs, name, "");
 		case IIO_ATTR_TYPE_BUFFER:
-			return add_iio_dev_attr(&dev->buffer_attrs, name, " buffer", dev->id);
+			return add_iio_dev_attr(dev, &dev->buffer_attrs, name, " buffer");
 		default:
 			return -EINVAL;
 	}
