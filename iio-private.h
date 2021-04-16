@@ -75,20 +75,26 @@
 #define MAX_ATTR_NAME  NAME_MAX  /* encoded in the sysfs filename */
 #define MAX_ATTR_VALUE (8 * PAGESIZE)  /* 8x Linux page size, could be anything */
 
+#ifdef _MSC_BUILD
+/* Windows only runs on little-endian systems */
+#define is_little_endian() true
+#else
+#define is_little_endian() (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#endif
+
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
  * iio_be32toh/iio_htobe32 are just clones of ntohl/htonl. */
 static inline uint32_t iio_be32toh(uint32_t word)
 {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	if (!is_little_endian())
+		return word;
+
 #ifdef __GNUC__
 	return __builtin_bswap32(word);
 #else
 	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) |
 		((word >> 8) & 0xff00) | ((word >> 24) & 0xff);
-#endif
-#else
-	return word;
 #endif
 }
 

@@ -409,11 +409,7 @@ static void shift_bits(uint8_t *dst, size_t shift, size_t len, bool left)
 	size_t i, shift_bytes = shift / 8;
 	shift %= 8;
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	if (!left)
-#else
-	if (left)
-#endif
+	if (is_little_endian() ^ left)
 	{
 		if (shift_bytes) {
 			memmove(dst, dst + shift_bytes, len - shift_bytes);
@@ -421,15 +417,15 @@ static void shift_bits(uint8_t *dst, size_t shift, size_t len, bool left)
 		}
 		if (shift) {
 			for (i = 0; i < len; i++) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-				dst[i] >>= shift;
-				if (i < len - 1)
-					dst[i] |= dst[i + 1] << (8 - shift);
-#else
-				dst[i] <<= shift;
-				if (i < len - 1)
-					dst[i] |= dst[i + 1] >> (8 - shift);
-#endif
+				if (is_little_endian()) {
+					dst[i] >>= shift;
+					if (i < len - 1)
+						dst[i] |= dst[i + 1] << (8 - shift);
+				} else {
+					dst[i] <<= shift;
+					if (i < len - 1)
+						dst[i] |= dst[i + 1] >> (8 - shift);
+				}
 			}
 		}
 	} else {
@@ -439,15 +435,15 @@ static void shift_bits(uint8_t *dst, size_t shift, size_t len, bool left)
 		}
 		if (shift) {
 			for (i = len; i > 0; i--) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-				dst[i - 1] <<= shift;
-				if (i > 1)
-					dst[i - 1] |= dst[i - 2] >> (8 - shift);
-#else
-				dst[i - 1] >>= shift;
-				if (i > 1)
-					dst[i - 1] |= dst[i - 2] << (8 - shift);
-#endif
+				if (is_little_endian()) {
+					dst[i - 1] <<= shift;
+					if (i > 1)
+						dst[i - 1] |= dst[i - 2] >> (8 - shift);
+				} else {
+					dst[i - 1] >>= shift;
+					if (i > 1)
+						dst[i - 1] |= dst[i - 2] << (8 - shift);
+				}
 			}
 		}
 	}
@@ -458,22 +454,22 @@ static void sign_extend(uint8_t *dst, size_t bits, size_t len)
 	size_t upper_bytes = ((len * 8 - bits) / 8);
 	uint8_t msb, msb_bit = 1 << ((bits - 1) % 8);
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	msb = dst[len - 1 - upper_bytes] & msb_bit;
-	if (upper_bytes)
-		memset(dst + len - upper_bytes, msb ? 0xff : 0x00, upper_bytes);
-	if (msb)
-		dst[len - 1 - upper_bytes] |= ~(msb_bit - 1);
-	else
-		dst[len - 1 - upper_bytes] &= (msb_bit - 1);
-#else
-	/* XXX: untested */
-	msb = dst[upper_bytes] & msb_bit;
-	if (upper_bytes)
-		memset(dst, msb ? 0xff : 0x00, upper_bytes);
-	if (msb)
-		dst[upper_bytes] |= ~(msb_bit - 1);
-#endif
+	if (is_little_endian()) {
+		msb = dst[len - 1 - upper_bytes] & msb_bit;
+		if (upper_bytes)
+			memset(dst + len - upper_bytes, msb ? 0xff : 0x00, upper_bytes);
+		if (msb)
+			dst[len - 1 - upper_bytes] |= ~(msb_bit - 1);
+		else
+			dst[len - 1 - upper_bytes] &= (msb_bit - 1);
+	} else {
+		/* XXX: untested */
+		msb = dst[upper_bytes] & msb_bit;
+		if (upper_bytes)
+			memset(dst, msb ? 0xff : 0x00, upper_bytes);
+		if (msb)
+			dst[upper_bytes] |= ~(msb_bit - 1);
+	}
 }
 
 static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
@@ -497,11 +493,7 @@ void iio_channel_convert(const struct iio_channel *chn,
 	unsigned int len = chn->format.length / 8;
 	ptrdiff_t end = len * chn->format.repeat;
 	uintptr_t end_ptr = src_ptr + end;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	bool swap = chn->format.is_be;
-#else
-	bool swap = !chn->format.is_be;
-#endif
+	bool swap = is_little_endian() ^ !chn->format.is_be;
 
 	for (src_ptr = (uintptr_t) src; src_ptr < end_ptr;
 			src_ptr += len, dst_ptr += len) {
@@ -533,11 +525,7 @@ void iio_channel_convert_inverse(const struct iio_channel *chn,
 	unsigned int len = chn->format.length / 8;
 	ptrdiff_t end = len * chn->format.repeat;
 	uintptr_t end_ptr = dst_ptr + end;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	bool swap = chn->format.is_be;
-#else
-	bool swap = !chn->format.is_be;
-#endif
+	bool swap = is_little_endian() ^ !chn->format.is_be;
 	uint8_t buf[1024];
 
 	/* Somehow I doubt we will have samples of 8192 bits each. */
