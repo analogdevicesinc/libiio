@@ -398,8 +398,9 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		return network_create_context(&params2, uri + 3);
 	}
 
-	if (WITH_USB_BACKEND && strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
-		return usb_create_context_from_uri(uri);
+	if (WITH_USB_BACKEND && !strncmp(uri, "usb:", sizeof("usb:") - 1)) {
+		return usb_create_context_from_uri(&params2, uri);
+	}
 
 	if (WITH_SERIAL_BACKEND && !strncmp(uri, "serial:", sizeof("serial:") - 1)) {
 		return serial_create_context_from_uri(&params2, uri);
