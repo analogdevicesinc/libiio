@@ -381,11 +381,17 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 struct iio_context * iio_create_context(const struct iio_context_params *params,
 					const char *uri)
 {
+	struct iio_context_params params2 = { 0 };
+
+	if (params)
+		params2 = *params;
+
 	if (WITH_LOCAL_BACKEND && strcmp(uri, "local:") == 0) /* No address part */
 		return iio_create_local_context();
 
-	if (WITH_XML_BACKEND && strncmp(uri, "xml:", sizeof("xml:") - 1) == 0)
-		return iio_create_xml_context(uri + sizeof("xml:") - 1);
+	if (WITH_XML_BACKEND && !strncmp(uri, "xml:", sizeof("xml:") - 1)) {
+		return xml_create_context(&params2, uri + sizeof("xml:") - 1);
+	}
 
 	if (WITH_NETWORK_BACKEND && strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
 		return iio_create_network_context(uri+3);
@@ -435,7 +441,7 @@ struct iio_context * iio_create_network_context(const char *hostname)
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
 	if (WITH_XML_BACKEND)
-		return xml_create_context_mem(xml, len);
+		return xml_create_context_mem(&default_params, xml, len);
 
 	errno = ENOSYS;
 	return NULL;
@@ -444,7 +450,7 @@ struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 struct iio_context * iio_create_xml_context(const char *xml_file)
 {
 	if (WITH_XML_BACKEND)
-		return xml_create_context(xml_file);
+		return xml_create_context(&default_params, xml_file);
 
 	errno = ENOSYS;
 	return NULL;
