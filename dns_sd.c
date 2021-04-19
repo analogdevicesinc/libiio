@@ -84,13 +84,14 @@ struct iio_scan_backend_context {
 static int dnssd_fill_context_info(struct iio_context_info *info,
 		char *hostname, char *addr_str, int port)
 {
+	const struct iio_context_params *params = &default_params;
 	struct iio_context *ctx;
 	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];
 	char description[255], *p;
 	const char *hw_model, *serial;
 	unsigned int i;
 
-	ctx = network_create_context(addr_str);
+	ctx = network_create_context(params, addr_str);
 	if (!ctx) {
 		IIO_ERROR("No context at %s\n", addr_str);
 		return -ENOMEM;
