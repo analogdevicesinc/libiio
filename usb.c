@@ -804,8 +804,8 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 	return 0;
 }
 
-struct iio_context * usb_create_context(unsigned int bus,
-		uint16_t address, uint16_t intrfc)
+static struct iio_context * usb_create_context(unsigned int bus,
+					       uint16_t address, uint16_t intrfc)
 {
 	libusb_context *usb_ctx;
 	libusb_device_handle *hdl = NULL;
