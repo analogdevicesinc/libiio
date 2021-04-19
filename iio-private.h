@@ -249,8 +249,6 @@ struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);
 struct iio_context * xml_create_context_mem(const char *xml, size_t len);
 struct iio_context * xml_create_context(const char *xml_file);
-struct iio_context * usb_create_context(unsigned int bus, uint16_t address,
-		uint16_t intrfc);
 struct iio_context * usb_create_context_from_uri(const char *uri);
 struct iio_context * serial_create_context_from_uri(const char *uri);
 
