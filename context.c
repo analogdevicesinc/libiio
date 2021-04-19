@@ -35,7 +35,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "]>";
 
 static const struct iio_context_params default_params = {
-	0,
+	.timeout_ms = 0,
 };
 
 const struct iio_context_params *get_default_params(void)
