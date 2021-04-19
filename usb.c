@@ -835,7 +835,7 @@ static struct iio_context * usb_create_context(unsigned int bus,
 		goto err_free_pdata;
 	}
 
-	pdata->iiod_client = iiod_client_new(pdata, &usb_iiod_client_ops);
+	pdata->iiod_client = iiod_client_new(NULL, pdata, &usb_iiod_client_ops);
 	if (!pdata->iiod_client) {
 		IIO_ERROR("Unable to create IIOD client\n");
 		ret = -errno;

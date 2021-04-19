@@ -14,6 +14,7 @@
 struct iio_mutex;
 struct iiod_client;
 struct iiod_client_pdata;
+struct iio_context_params;
 struct iio_context_pdata;
 
 struct iiod_client_ops {
@@ -31,7 +32,8 @@ struct iiod_client_ops {
 void iiod_client_mutex_lock(struct iiod_client *client);
 void iiod_client_mutex_unlock(struct iiod_client *client);
 
-struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
+struct iiod_client * iiod_client_new(const struct iio_context_params *params,
+				     struct iio_context_pdata *pdata,
 				     const struct iiod_client_ops *ops);
 void iiod_client_destroy(struct iiod_client *client);
 

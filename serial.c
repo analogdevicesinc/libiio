@@ -456,7 +456,8 @@ static struct iio_context * serial_create_context(const char *port_name,
 	pdata->port = port;
 	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 
-	pdata->iiod_client = iiod_client_new(pdata, &serial_iiod_client_ops);
+	pdata->iiod_client = iiod_client_new(NULL, pdata,
+					     &serial_iiod_client_ops);
 	if (!pdata->iiod_client)
 		goto err_free_pdata;
 
