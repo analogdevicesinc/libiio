@@ -75,4 +75,16 @@ iio_prm_printf(const struct iio_context_params *params,
 #define chn_info(chn, ...)	dev_info(__chn_dev_or_null(chn), __VA_ARGS__)
 #define chn_dbg(chn, ...)	dev_dbg(__chn_dev_or_null(chn), __VA_ARGS__)
 
+#define prm_perror(params, err, ...) do {				\
+	char _buf[1024];						\
+	int _err = (err);						\
+	iio_strerror(_err, _buf, sizeof(_buf));				\
+	prm_err(params, __FIRST(__VA_ARGS__, 0)				\
+		__OTHERS(": %s (%u)\n",__VA_ARGS__, _buf), _err);	\
+	errno = _err;							\
+} while (0)
+#define ctx_perror(ctx, err, ...)	prm_perror(__ctx_params_or_null(ctx), err, __VA_ARGS__)
+#define dev_perror(dev, err, ...)	ctx_perror(__dev_ctx_or_null(dev), err, __VA_ARGS__)
+#define chn_perror(dev, err, ...)	dev_perror(__chn_dev_or_null(chn), err, __VA_ARGS__)
+
 #endif /* __IIO_DEBUG_H__ */
