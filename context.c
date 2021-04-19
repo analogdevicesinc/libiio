@@ -394,8 +394,9 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		return xml_create_context(&params2, uri + sizeof("xml:") - 1);
 	}
 
-	if (WITH_NETWORK_BACKEND && strncmp(uri, "ip:", sizeof("ip:") - 1) == 0)
-		return iio_create_network_context(uri+3);
+	if (WITH_NETWORK_BACKEND && !strncmp(uri, "ip:", sizeof("ip:") - 1)) {
+		return network_create_context(&params2, uri + 3);
+	}
 
 	if (WITH_USB_BACKEND && strncmp(uri, "usb:", sizeof("usb:") - 1) == 0)
 		return usb_create_context_from_uri(uri);
@@ -435,8 +436,10 @@ struct iio_context * iio_create_local_context(void)
 
 struct iio_context * iio_create_network_context(const char *hostname)
 {
+	struct iio_context_params params = default_params;
+
 	if (WITH_NETWORK_BACKEND)
-		return network_create_context(hostname);
+		return network_create_context(&params, hostname);
 
 	errno = ENOSYS;
 	return NULL;

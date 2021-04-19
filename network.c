@@ -1045,7 +1045,8 @@ static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
 }
 #endif
 
-struct iio_context * network_create_context(const char *host)
+struct iio_context * network_create_context(const struct iio_context_params *params,
+					    const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
@@ -1144,7 +1145,7 @@ struct iio_context * network_create_context(const char *host)
 	if (!description)
 		goto err_free_pdata;
 
-	iiod_client = iiod_client_new(NULL, pdata, &network_iiod_client_ops);
+	iiod_client = iiod_client_new(params, pdata, &network_iiod_client_ops);
 	if (!iiod_client)
 		goto err_free_description;
 
@@ -1169,6 +1170,7 @@ struct iio_context * network_create_context(const char *host)
 	ctx->name = "network";
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
+	ctx->params = *params;
 
 	uri_len = strlen(description);
 	if (host && host[0])
