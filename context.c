@@ -35,7 +35,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "]>";
 
 const struct iio_context_params default_params = {
-	0,
+	.timeout_ms = 0,
 };
 
 static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
