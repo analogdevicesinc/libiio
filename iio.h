@@ -92,7 +92,8 @@ struct iio_scan_block;
  * created.
  */
 struct iio_context_params {
-	int __empty__;
+	/** @brief Timeout for I/O operations. If zero, the default timeout is used. */
+	unsigned int timeout_ms;
 };
 
 /**
