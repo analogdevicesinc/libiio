@@ -84,7 +84,7 @@ struct iio_backend {
 	unsigned int			sizeof_context_pdata;
 };
 
-__api struct iio_context * iio_context_create_from_backend(
+struct iio_context * iio_context_create_from_backend(
 		const struct iio_backend *backend,
 		const char *description);
 
