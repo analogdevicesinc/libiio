@@ -1684,7 +1684,7 @@ static int foreach_in_dir(void *d, const char *path, bool is_dir,
 
 	while (true) {
 		struct stat st;
-		char buf[1024];
+		char buf[PATH_MAX];
 
 		errno = 0;
 		entry = readdir(dir);
