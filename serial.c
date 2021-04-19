@@ -18,13 +18,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#define DEFAULT_TIMEOUT_MS 1000
-
 struct iio_context_pdata {
 	struct sp_port *port;
 	struct iiod_client *iiod_client;
 
-	unsigned int timeout_ms;
+	struct iio_context_params params;
 };
 
 struct iio_device_pdata {
@@ -258,8 +256,12 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 				 struct iiod_client_pdata *io_data,
 				 const char *data, size_t len)
 {
-	ssize_t ret = (ssize_t) libserialport_to_errno(sp_blocking_write(
-				pdata->port, data, len, pdata->timeout_ms));
+	unsigned int timeout_ms = pdata->params.timeout_ms;
+	enum sp_return sp_ret;
+	ssize_t ret;
+
+	sp_ret = sp_blocking_write(pdata->port, data, len, timeout_ms);
+	ret = (ssize_t) libserialport_to_errno(sp_ret);
 
 	IIO_DEBUG("Write returned %li: %s\n", (long) ret, data);
 
@@ -278,8 +280,12 @@ static ssize_t serial_read_data(struct iio_context_pdata *pdata,
 				struct iiod_client_pdata *io_data,
 				char *buf, size_t len)
 {
-	ssize_t ret = (ssize_t) libserialport_to_errno(sp_blocking_read_next(
-				pdata->port, buf, len, pdata->timeout_ms));
+	unsigned int timeout_ms = pdata->params.timeout_ms;
+	enum sp_return sp_ret;
+	ssize_t ret;
+
+	sp_ret = sp_blocking_read_next(pdata->port, buf, len, timeout_ms);
+	ret = (ssize_t) libserialport_to_errno(sp_ret);
 
 	IIO_DEBUG("Read returned %li: %.*s\n", (long) ret, (int) ret, buf);
 
@@ -295,6 +301,8 @@ static ssize_t serial_read_line(struct iio_context_pdata *pdata,
 				struct iiod_client_pdata *io_data,
 				char *buf, size_t len)
 {
+	unsigned int timeout_ms = pdata->params.timeout_ms;
+	enum sp_return sp_ret;
 	size_t i;
 	bool found = false;
 	int ret;
@@ -302,9 +310,9 @@ static ssize_t serial_read_line(struct iio_context_pdata *pdata,
 	IIO_DEBUG("Readline size 0x%lx\n", (unsigned long) len);
 
 	for (i = 0; i < len - 1; i++) {
-		ret = libserialport_to_errno(sp_blocking_read_next(
-					pdata->port, &buf[i], 1,
-					pdata->timeout_ms));
+		sp_ret = sp_blocking_read_next(pdata->port, &buf[i], 1, timeout_ms);
+
+		ret = libserialport_to_errno(sp_ret);
 		if (ret == 0) {
 			IIO_ERROR("sp_blocking_read_next has timedout\n");
 			return -ETIMEDOUT;
@@ -351,7 +359,9 @@ static int serial_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	pdata->timeout_ms = timeout;
+	ctx->params.timeout_ms = timeout;
+	pdata->params.timeout_ms = timeout;
+
 	return 0;
 }
 
@@ -455,7 +465,7 @@ static struct iio_context * serial_create_context(
 	}
 
 	pdata->port = port;
-	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
+	pdata->params = *params;
 
 	pdata->iiod_client = iiod_client_new(params, pdata,
 					     &serial_iiod_client_ops);
@@ -470,6 +480,7 @@ static struct iio_context * serial_create_context(
 	ctx->ops = &serial_ops;
 	ctx->pdata = pdata;
 	ctx->description = description;
+	ctx->params = pdata->params;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
