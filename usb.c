@@ -806,7 +806,8 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 	return 0;
 }
 
-static struct iio_context * usb_create_context(unsigned int bus,
+static struct iio_context * usb_create_context(const struct iio_context_params *params,
+					       unsigned int bus,
 					       uint16_t address, uint16_t intrfc)
 {
 	libusb_context *usb_ctx;
@@ -835,7 +836,7 @@ static struct iio_context * usb_create_context(unsigned int bus,
 		goto err_free_pdata;
 	}
 
-	pdata->iiod_client = iiod_client_new(NULL, pdata, &usb_iiod_client_ops);
+	pdata->iiod_client = iiod_client_new(params, pdata, &usb_iiod_client_ops);
 	if (!pdata->iiod_client) {
 		IIO_ERROR("Unable to create IIOD client\n");
 		ret = -errno;
@@ -994,6 +995,7 @@ static struct iio_context * usb_create_context(unsigned int bus,
 	ctx->name = "usb";
 	ctx->ops = &usb_ops;
 	ctx->pdata = pdata;
+	ctx->params = *params;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -1047,7 +1049,9 @@ err_set_errno:
 	return NULL;
 }
 
-struct iio_context * usb_create_context_from_uri(const char *uri)
+struct iio_context *
+usb_create_context_from_uri(const struct iio_context_params *params,
+			    const char *uri)
 {
 	long bus, address, intrfc;
 	char *end;
@@ -1123,7 +1127,7 @@ struct iio_context * usb_create_context_from_uri(const char *uri)
 		iio_context_info_list_free(info);
 		iio_scan_context_destroy(scan_ctx);
 	}
-	return usb_create_context((unsigned int) bus,
+	return usb_create_context(params, (unsigned int) bus,
 			(uint16_t) address, (uint16_t) intrfc);
 
 err_bad_uri:

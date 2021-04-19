@@ -260,7 +260,8 @@ struct iio_context * xml_create_context_mem(const struct iio_context_params *par
 					    const char *xml, size_t len);
 struct iio_context * xml_create_context(const struct iio_context_params *params,
 					const char *xml_file);
-struct iio_context * usb_create_context_from_uri(const char *uri);
+struct iio_context * usb_create_context_from_uri(const struct iio_context_params *params,
+						 const char *uri);
 struct iio_context * serial_create_context_from_uri(const struct iio_context_params *params,
 						    const char *uri);
 
