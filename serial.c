@@ -402,7 +402,8 @@ static int apply_settings(struct sp_port *port, unsigned int baud_rate,
 	return libserialport_to_errno(sp_set_flowcontrol(port, flow));
 }
 
-static struct iio_context * serial_create_context(const char *port_name,
+static struct iio_context * serial_create_context(
+		const struct iio_context_params *params, const char *port_name,
 		unsigned int baud_rate, unsigned int bits, unsigned int stop,
 		enum sp_parity parity, enum sp_flowcontrol flow)
 {
@@ -456,7 +457,7 @@ static struct iio_context * serial_create_context(const char *port_name,
 	pdata->port = port;
 	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 
-	pdata->iiod_client = iiod_client_new(NULL, pdata,
+	pdata->iiod_client = iiod_client_new(params, pdata,
 					     &serial_iiod_client_ops);
 	if (!pdata->iiod_client)
 		goto err_free_pdata;
@@ -633,7 +634,9 @@ static int serial_parse_params(const char *params,
 	return 0;
 }
 
-struct iio_context * serial_create_context_from_uri(const char *uri)
+struct iio_context *
+serial_create_context_from_uri(const struct iio_context_params *params,
+			       const char *uri)
 {
 	struct iio_context *ctx = NULL;
 	char *comma, *uri_dup;
@@ -665,7 +668,8 @@ struct iio_context * serial_create_context_from_uri(const char *uri)
 	if (ret)
 		goto err_free_dup;
 
-	ctx = serial_create_context(uri_dup, baud_rate, bits, stop, parity, flow);
+	ctx = serial_create_context(params, uri_dup, baud_rate,
+				    bits, stop, parity, flow);
 
 	free(uri_dup);
 	return ctx;
