@@ -255,8 +255,10 @@ int write_double(char *buf, size_t len, double val);
 
 struct iio_context * local_create_context(void);
 struct iio_context * network_create_context(const char *hostname);
-struct iio_context * xml_create_context_mem(const char *xml, size_t len);
-struct iio_context * xml_create_context(const char *xml_file);
+struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
+					    const char *xml, size_t len);
+struct iio_context * xml_create_context(const struct iio_context_params *params,
+					const char *xml_file);
 struct iio_context * usb_create_context_from_uri(const char *uri);
 struct iio_context * serial_create_context_from_uri(const char *uri);
 

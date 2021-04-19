@@ -333,7 +333,7 @@ err_free_device:
 
 static struct iio_context * xml_clone(const struct iio_context *ctx)
 {
-	return xml_create_context_mem(ctx->xml, strlen(ctx->xml));
+	return xml_create_context_mem(&ctx->params, ctx->xml, strlen(ctx->xml));
 }
 
 static const struct iio_backend_ops xml_ops = {
@@ -404,7 +404,9 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 	return iio_context_init(ctx);
 }
 
-static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
+static struct iio_context *
+iio_create_xml_context_helper(const struct iio_context_params *params,
+			      xmlDoc *doc)
 {
 	const char *description = NULL;
 	struct iio_context *ctx;
@@ -431,6 +433,8 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	if (!ctx)
 		return NULL;
 
+	ctx->params = *params;
+
 	err = iio_populate_xml_context_helper(ctx, root);
 	if (err) {
 		iio_context_destroy(ctx);
@@ -441,7 +445,8 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 	return ctx;
 }
 
-struct iio_context * xml_create_context(const char *xml_file)
+struct iio_context * xml_create_context(const struct iio_context_params *params,
+					const char *xml_file)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
@@ -455,12 +460,13 @@ struct iio_context * xml_create_context(const char *xml_file)
 		return NULL;
 	}
 
-	ctx = iio_create_xml_context_helper(doc);
+	ctx = iio_create_xml_context_helper(params, doc);
 	xmlFreeDoc(doc);
 	return ctx;
 }
 
-struct iio_context * xml_create_context_mem(const char *xml, size_t len)
+struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
+					    const char *xml, size_t len)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
@@ -474,7 +480,7 @@ struct iio_context * xml_create_context_mem(const char *xml, size_t len)
 		return NULL;
 	}
 
-	ctx = iio_create_xml_context_helper(doc);
+	ctx = iio_create_xml_context_helper(params, doc);
 	xmlFreeDoc(doc);
 	return ctx;
 }
