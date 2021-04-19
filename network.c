@@ -1144,7 +1144,7 @@ struct iio_context * network_create_context(const char *host)
 	if (!description)
 		goto err_free_pdata;
 
-	iiod_client = iiod_client_new(pdata, &network_iiod_client_ops);
+	iiod_client = iiod_client_new(NULL, pdata, &network_iiod_client_ops);
 	if (!iiod_client)
 		goto err_free_description;
 

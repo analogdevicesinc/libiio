@@ -21,6 +21,7 @@
 #endif
 
 struct iiod_client {
+	const struct iio_context_params *params;
 	struct iio_context_pdata *pdata;
 	const struct iiod_client_ops *ops;
 	struct iio_mutex *lock;
@@ -145,7 +146,8 @@ static ssize_t iiod_client_read_all(struct iiod_client *client,
 	return (ssize_t) (ptr - (uintptr_t) dst);
 }
 
-struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
+struct iiod_client * iiod_client_new(const struct iio_context_params *params,
+				     struct iio_context_pdata *pdata,
 				     const struct iiod_client_ops *ops)
 {
 	struct iiod_client *client;
@@ -162,6 +164,7 @@ struct iiod_client * iiod_client_new(struct iio_context_pdata *pdata,
 		goto err_free_client;
 	}
 
+	client->params = params;
 	client->pdata = pdata;
 	client->ops = ops;
 	return client;
@@ -599,9 +602,15 @@ iiod_client_create_context_private(struct iiod_client *client,
 	}
 #endif
 
-	ctx = iio_create_xml_context_mem(xml, xml_len);
-	if (!ctx)
+	ctx = xml_create_context_mem(client->params, xml, xml_len);
+	if (!ctx) {
 		ret = -errno;
+	} else {
+		/* If the context creation suceeded, update our "params" pointer
+		 * to point to the context's params, as we know their lifetime
+		 * is bigger than ours. */
+		client->params = &ctx->params;
+	}
 
 out_free_xml:
 	free(xml);
