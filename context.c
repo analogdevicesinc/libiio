@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <string.h>
 
+#define LOCAL_BACKEND_TIMEOUT_MS	1000
+
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device | context-attribute)*>"
@@ -387,6 +389,8 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		params2 = *params;
 
 	if (WITH_LOCAL_BACKEND && !strcmp(uri, "local:")) { /* No address part */
+		if (!params2.timeout_ms)
+			params2.timeout_ms = LOCAL_BACKEND_TIMEOUT_MS;
 		return local_create_context(&params2);
 	}
 
@@ -427,6 +431,8 @@ struct iio_context * iio_create_default_context(void)
 struct iio_context * iio_create_local_context(void)
 {
 	struct iio_context_params params = default_params;
+
+	params.timeout_ms = LOCAL_BACKEND_TIMEOUT_MS;
 
 	if (WITH_LOCAL_BACKEND)
 		return local_create_context(&params);
