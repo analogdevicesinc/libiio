@@ -32,8 +32,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define DEFAULT_TIMEOUT_MS 1000
-
 #define NB_BLOCKS 4
 
 #define BLOCK_ALLOC_IOCTL   _IOWR('i', 0xa0, struct block_alloc_req)
@@ -69,10 +67,6 @@ struct block {
 		 flags,
 		 offset;
 	uint64_t timestamp;
-};
-
-struct iio_context_pdata {
-	unsigned int rw_timeout_ms;
 };
 
 struct iio_device_pdata {
@@ -274,8 +268,7 @@ static int device_check_ready(const struct iio_device *dev, short events,
 			.events = POLLIN,
 		}
 	};
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
-	unsigned int rw_timeout_ms = pdata->rw_timeout_ms;
+	unsigned int rw_timeout_ms = dev->ctx->params.timeout_ms;
 	int timeout_rel;
 	int ret;
 
@@ -1865,9 +1858,8 @@ static int add_debug(void *d, const char *path)
 
 static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	ctx->params.timeout_ms = timeout;
 
-	pdata->rw_timeout_ms = timeout;
 	return 0;
 }
 
@@ -1937,7 +1929,6 @@ static const struct iio_backend local_backend = {
 	.name = "local",
 	.uri_prefix = "local:",
 	.ops = &local_ops,
-	.sizeof_context_pdata = sizeof(struct iio_context_pdata),
 };
 
 static void init_data_scale(struct iio_channel *chn)
@@ -2041,8 +2032,6 @@ struct iio_context * local_create_context(const struct iio_context_params *param
 		goto err_set_errno;
 
 	ctx->params = *params;
-
-	local_set_timeout(ctx, DEFAULT_TIMEOUT_MS);
 
 	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
 	if (ret < 0)
