@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
@@ -263,13 +263,14 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 	sp_ret = sp_blocking_write(pdata->port, data, len, timeout_ms);
 	ret = (ssize_t) libserialport_to_errno(sp_ret);
 
-	IIO_DEBUG("Write returned %li: %s\n", (long) ret, data);
+	prm_dbg(&pdata->params, "Write returned %li: %s\n", (long) ret, data);
 
 	if (ret < 0) {
-		IIO_ERROR("sp_blocking_write returned %i\n", (int) ret);
+		prm_err(&pdata->params, "sp_blocking_write returned %i\n",
+			(int) ret);
 		return ret;
 	} else if ((size_t) ret < len) {
-		IIO_ERROR("sp_blocking_write has timedout\n");
+		prm_err(&pdata->params, "sp_blocking_write has timed out\n");
 		return -ETIMEDOUT;
 	}
 
@@ -287,10 +288,11 @@ static ssize_t serial_read_data(struct iio_context_pdata *pdata,
 	sp_ret = sp_blocking_read_next(pdata->port, buf, len, timeout_ms);
 	ret = (ssize_t) libserialport_to_errno(sp_ret);
 
-	IIO_DEBUG("Read returned %li: %.*s\n", (long) ret, (int) ret, buf);
+	prm_dbg(&pdata->params, "Read returned %li: %.*s\n",
+		(long) ret, (int) ret, buf);
 
 	if (ret == 0) {
-		IIO_ERROR("sp_blocking_read_next has timedout\n");
+		prm_err(&pdata->params, "sp_blocking_read_next has timed out\n");
 		return -ETIMEDOUT;
 	}
 
@@ -307,23 +309,24 @@ static ssize_t serial_read_line(struct iio_context_pdata *pdata,
 	bool found = false;
 	int ret;
 
-	IIO_DEBUG("Readline size 0x%lx\n", (unsigned long) len);
+	prm_dbg(&pdata->params, "Readline size 0x%lx\n", (unsigned long) len);
 
 	for (i = 0; i < len - 1; i++) {
 		sp_ret = sp_blocking_read_next(pdata->port, &buf[i], 1, timeout_ms);
 
 		ret = libserialport_to_errno(sp_ret);
 		if (ret == 0) {
-			IIO_ERROR("sp_blocking_read_next has timedout\n");
+			prm_err(&pdata->params, "sp_blocking_read_next has timed out\n");
 			return -ETIMEDOUT;
 		}
 
 		if (ret < 0) {
-			IIO_ERROR("sp_blocking_read_next returned %i\n", ret);
+			prm_err(&pdata->params, "sp_blocking_read_next returned %i\n",
+				ret);
 			return (ssize_t) ret;
 		}
 
-		IIO_DEBUG("Character: %c\n", buf[i]);
+		prm_dbg(&pdata->params, "Character: %c\n", buf[i]);
 
 		if (buf[i] != '\n')
 			found = true;
@@ -539,7 +542,8 @@ err_free_uri:
  *     "115200"
  *     ""
  */
-static int serial_parse_options(const char *options, unsigned int *baud_rate,
+static int serial_parse_options(const struct iio_context_params *params,
+				const char *options, unsigned int *baud_rate,
 				unsigned int *bits, unsigned int *stop,
 				enum sp_parity *parity, enum sp_flowcontrol *flow)
 {
@@ -563,7 +567,7 @@ static int serial_parse_options(const char *options, unsigned int *baud_rate,
 
 	/* 110 baud to 1,000,000 baud */
 	if (options == end || *baud_rate < 110 || *baud_rate > 1000001) {
-		IIO_ERROR("Invalid baud rate\n");
+		prm_err(params, "Invalid baud rate\n");
 		return -EINVAL;
 	}
 
@@ -578,7 +582,7 @@ static int serial_parse_options(const char *options, unsigned int *baud_rate,
 	errno = 0;
 	*bits = strtoul(options, &end, 10);
 	if (options == end || *bits > 9 || *bits < 5 || errno == ERANGE) {
-		IIO_ERROR("Invalid number of bits\n");
+		prm_err(params, "Invalid number of bits\n");
 		return -EINVAL;
 	}
 
@@ -595,7 +599,7 @@ static int serial_parse_options(const char *options, unsigned int *baud_rate,
 		}
 	}
 	if (parity_options[i].flag == '\0') {
-		IIO_ERROR("Invalid Parity character\n");
+		prm_err(params, "Invalid parity character\n");
 		return -EINVAL;
 	}
 
@@ -615,7 +619,7 @@ static int serial_parse_options(const char *options, unsigned int *baud_rate,
 	errno = 0;
 	*stop = strtoul(options, &end, 10);
 	if (options == end || !*stop || *stop > 2 || errno == ERANGE) {
-		IIO_ERROR("Invalid number of stop bits\n");
+		prm_err(params, "Invalid number of stop bits\n");
 		return -EINVAL;
 	}
 
@@ -632,13 +636,13 @@ static int serial_parse_options(const char *options, unsigned int *baud_rate,
 		}
 	}
 	if (flow_options[i].flag == '\0') {
-		IIO_ERROR("Invalid Flow Control character\n");
+		prm_err(params, "Invalid flow control character\n");
 		return -EINVAL;
 	}
 
 	/* We should have a '\0' after the flow character */
 	if (end[1]) {
-		IIO_ERROR("Invalid characters after Flow Control flag\n");
+		prm_err(params, "Invalid characters after flow control flag\n");
 		return -EINVAL;
 	}
 
@@ -669,11 +673,11 @@ serial_create_context_from_uri(const struct iio_context_params *params,
 	comma = strchr(uri_dup, ',');
 	if (comma) {
 		*comma = '\0';
-		ret = serial_parse_options((char *)((uintptr_t) comma + 1),
+		ret = serial_parse_options(params, (char *)((uintptr_t) comma + 1),
 					   &baud_rate, &bits, &stop,
 					   &parity, &flow);
 	} else {
-		ret = serial_parse_options(NULL, &baud_rate, &bits,
+		ret = serial_parse_options(params, NULL, &baud_rate, &bits,
 					   &stop, &parity, &flow);
 	}
 
@@ -689,7 +693,7 @@ serial_create_context_from_uri(const struct iio_context_params *params,
 err_free_dup:
 	free(uri_dup);
 err_bad_uri:
-	IIO_ERROR("Bad URI: \'%s\'\n", uri);
+	prm_err(params, "Bad URI: \'%s\'\n", uri);
 	errno = EINVAL;
 	return NULL;
 }
