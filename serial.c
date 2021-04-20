@@ -539,9 +539,9 @@ err_free_uri:
  *     "115200"
  *     ""
  */
-static int serial_parse_params(const char *params,
-		unsigned int *baud_rate, unsigned int *bits, unsigned int *stop,
-		enum sp_parity *parity, enum sp_flowcontrol *flow)
+static int serial_parse_options(const char *options, unsigned int *baud_rate,
+				unsigned int *bits, unsigned int *stop,
+				enum sp_parity *parity, enum sp_flowcontrol *flow)
 {
 	char *end, ch;
 	unsigned int i;
@@ -553,16 +553,16 @@ static int serial_parse_params(const char *params,
 	*stop = 1;
 	*flow = SP_FLOWCONTROL_NONE;
 
-	if (!params || !params[0])
+	if (!options || !options[0])
 		return 0;
 
 	errno = 0;
-	*baud_rate = strtoul(params, &end, 10);
-	if (params == end || errno == ERANGE)
+	*baud_rate = strtoul(options, &end, 10);
+	if (options == end || errno == ERANGE)
 		return -EINVAL;
 
 	/* 110 baud to 1,000,000 baud */
-	if (params == end || *baud_rate < 110 || *baud_rate > 1000001) {
+	if (options == end || *baud_rate < 110 || *baud_rate > 1000001) {
 		IIO_ERROR("Invalid baud rate\n");
 		return -EINVAL;
 	}
@@ -573,11 +573,11 @@ static int serial_parse_params(const char *params,
 	if (!*end)
 		return 0;
 
-	params = (const char *)(end);
+	options = (const char *)(end);
 
 	errno = 0;
-	*bits = strtoul(params, &end, 10);
-	if (params == end || *bits > 9 || *bits < 5 || errno == ERANGE) {
+	*bits = strtoul(options, &end, 10);
+	if (options == end || *bits > 9 || *bits < 5 || errno == ERANGE) {
 		IIO_ERROR("Invalid number of bits\n");
 		return -EINVAL;
 	}
@@ -603,18 +603,18 @@ static int serial_parse_params(const char *params,
 	if (*end == ',')
 		end++;
 
-	params = (const char *)(end);
+	options = (const char *)(end);
 
-	if (!*params)
+	if (!*options)
 		return 0;
 
-	params = (const char *)(end);
-	if (!*params)
+	options = (const char *)(end);
+	if (!*options)
 		return 0;
 
 	errno = 0;
-	*stop = strtoul(params, &end, 10);
-	if (params == end || !*stop || *stop > 2 || errno == ERANGE) {
+	*stop = strtoul(options, &end, 10);
+	if (options == end || !*stop || *stop > 2 || errno == ERANGE) {
 		IIO_ERROR("Invalid number of stop bits\n");
 		return -EINVAL;
 	}
@@ -669,11 +669,12 @@ serial_create_context_from_uri(const struct iio_context_params *params,
 	comma = strchr(uri_dup, ',');
 	if (comma) {
 		*comma = '\0';
-		ret = serial_parse_params((char *)((uintptr_t) comma + 1),
-			&baud_rate, &bits, &stop, &parity, &flow);
+		ret = serial_parse_options((char *)((uintptr_t) comma + 1),
+					   &baud_rate, &bits, &stop,
+					   &parity, &flow);
 	} else {
-		ret = serial_parse_params(NULL,
-				&baud_rate, &bits, &stop, &parity, &flow);
+		ret = serial_parse_options(NULL, &baud_rate, &bits,
+					   &stop, &parity, &flow);
 	}
 
 	if (ret)
