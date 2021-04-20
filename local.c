@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 #include "sort.h"
 #include "libini/ini.h"
@@ -204,8 +204,8 @@ static int set_channel_name(struct iio_channel *chn)
 		if (!name)
 			return -ENOMEM;
 		iio_strlcpy(name, attr0, prefix_len);
-		IIO_DEBUG("Setting name of channel %s to %s\n", chn->id, name);
 		chn->name = name;
+		chn_dbg(chn, "Setting name of channel %s to %s\n", chn->id, name);
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->nb_attrs; i++)
@@ -419,7 +419,6 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	struct block block;
 	struct iio_device_pdata *pdata = dev->pdata;
 	struct timespec start;
-	char err_str[1024];
 	int f = pdata->fd;
 	ssize_t ret;
 
@@ -444,10 +443,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		ret = (ssize_t) ioctl_nointr(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
-			ret = (ssize_t) -errno;
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Unable to enqueue block: %s\n", err_str);
-			return ret;
+			dev_perror(dev, errno, "Unable to enqueue block");
+			return (ssize_t) -errno;
 		}
 
 		if (pdata->cyclic) {
@@ -473,8 +470,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		ret = (ssize_t) -errno;
 		if ((!pdata->blocking && ret != -EAGAIN) ||
 				(pdata->blocking && ret != -ETIMEDOUT)) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Unable to dequeue block: %s\n", err_str);
+			dev_perror(dev, errno, "Unable to dequeue block");
 		}
 		return ret;
 	}
@@ -777,7 +773,7 @@ static int channel_write_state(const struct iio_channel *chn, bool en)
 	ssize_t ret;
 
 	if (!chn->pdata->enable_fn) {
-		IIO_ERROR("Libiio bug: No \"en\" attribute parsed\n");
+		chn_err(chn, "Libiio bug: No \"en\" attribute parsed\n");
 		return -EINVAL;
 	}
 
@@ -809,10 +805,10 @@ static int enable_high_speed(const struct iio_device *dev)
 
 	if (pdata->cyclic) {
 		nb_blocks = 1;
-		IIO_DEBUG("Enabling cyclic mode\n");
+		dev_dbg(dev, "Enabling cyclic mode\n");
 	} else {
 		nb_blocks = pdata->max_nb_blocks;
-		IIO_DEBUG("Cyclic mode not enabled\n");
+		dev_dbg(dev, "Cyclic mode not enabled\n");
 	}
 
 	pdata->blocks = calloc(nb_blocks, sizeof(*pdata->blocks));
@@ -952,7 +948,7 @@ static int local_open(const struct iio_device *dev,
 
 	if (!pdata->is_high_speed) {
 		unsigned long size = samples_count * pdata->max_nb_blocks;
-		IIO_WARNING("High-speed mode not enabled\n");
+		dev_warn(dev, "High-speed mode not enabled\n");
 
 		/* Cyclic mode is only supported in high-speed mode */
 		if (cyclic) {
@@ -984,7 +980,6 @@ static int local_close(const struct iio_device *dev)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	unsigned int i;
-	char err_str[32];
 	int ret, ret1;
 
 	if (pdata->fd == -1)
@@ -1001,8 +996,7 @@ static int local_close(const struct iio_device *dev)
 			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
 		if (ret) {
 			ret = -errno;
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Error during ioctl(): %s\n", err_str);
+			dev_perror(dev, errno, "Error during ioctl()");
 		}
 		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
@@ -1014,8 +1008,7 @@ static int local_close(const struct iio_device *dev)
 	ret1 = close(pdata->fd);
 	if (ret1) {
 		ret1 = -errno;
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Error during close() of main FD: %s\n", err_str);
+		dev_perror(dev, errno, "Error during close() of main FD");
 		if (ret == 0)
 			ret = ret1;
 	}
@@ -1028,9 +1021,7 @@ static int local_close(const struct iio_device *dev)
 
 		if (ret1) {
 			ret1 = -errno;
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Error during close() of cancel FD): %s\n",
-				  err_str);
+			dev_perror(dev, errno, "Error during close() of cancel FD");
 			if (ret == 0)
 				ret = ret1;
 		}
@@ -1039,8 +1030,7 @@ static int local_close(const struct iio_device *dev)
 	ret1 = local_buffer_enabled_set(dev, false);
 	if (ret1) {
 		ret1 = -errno;
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Error during buffer disable: %s\n", err_str);
+		dev_perror(dev, errno, "Error during buffer disable");
 		if (ret == 0)
 			ret = ret1;
 	}
@@ -1056,9 +1046,7 @@ static int local_close(const struct iio_device *dev)
 			continue;
 
 		ret1 = -errno;
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Error during channel[%u] disable: %s\n",
-			  i, err_str);
+		dev_perror(dev, errno, "Error during channel[%u] disable", i);
 		if (ret == 0)
 			ret = ret1;
 	}
@@ -1290,8 +1278,8 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 
 	} else if (!strcmp(name, "en")) {
 		if (chn->pdata->enable_fn) {
-			IIO_ERROR("Libiio bug: \"en\" attribute already parsed for channel %s!\n",
-					chn->id);
+			chn_err(chn, "Libiio bug: \"en\" attribute already "
+				"parsed for channel %s!\n", chn->id);
 			return -EINVAL;
 		}
 
@@ -1336,7 +1324,8 @@ static int add_protected_attr(struct iio_channel *chn, char *name, char *fn)
 	attrs[pdata->nb_protected_attrs++].filename = fn;
 	pdata->protected_attrs = attrs;
 
-	IIO_DEBUG("Add protected attr \'%s\' to channel \'%s\'\n", name, chn->id);
+	chn_dbg(chn, "Add protected attr \'%s\' to channel \'%s\'\n",
+		name, chn->id);
 	return 0;
 }
 
@@ -1384,7 +1373,9 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	attrs[chn->nb_attrs].filename = fn;
 	attrs[chn->nb_attrs++].name = name;
 	chn->attrs = attrs;
-	IIO_DEBUG("Added attr \'%s\' to channel \'%s\'\n", name, chn->id);
+
+	chn_dbg(chn, "Added attr \'%s\' to channel \'%s\'\n",
+		name, chn->id);
 	return 0;
 
 err_free_fn:
@@ -1404,7 +1395,8 @@ static int add_channel_to_device(struct iio_device *dev,
 
 	channels[dev->nb_channels++] = chn;
 	dev->channels = channels;
-	IIO_DEBUG("Added %s channel \'%s\' to device \'%s\'\n",
+
+	dev_dbg(dev, "Added %s channel \'%s\' to device \'%s\'\n",
 		chn->is_output ? "output" : "input", chn->id, dev->id);
 
 	return 0;
@@ -1526,7 +1518,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	if (strncmp(chn->id, attr, len))
 		return 0;
 
-	IIO_DEBUG("Found match: %s and %s\n", chn->id, attr);
+	chn_dbg(chn, "Found match: %s and %s\n", chn->id, attr);
 	if (chn->id[len] >= '0' && chn->id[len] <= '9') {
 		if (chn->name) {
 			size_t name_len = strlen(chn->name);
@@ -1687,16 +1679,14 @@ static int foreach_in_dir(const struct iio_context *ctx,
 				break;
 
 			ret = -errno;
-			iio_strerror(errno, buf, sizeof(buf));
-			IIO_ERROR("Unable to open directory %s: %s\n", path, buf);
+			ctx_perror(ctx, -ret, "Unable to open directory");
 			goto out_close_dir;
 		}
 
 		iio_snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
-			iio_strerror(errno, buf, sizeof(buf));
-			IIO_ERROR("Unable to stat file: %s\n", buf);
+			ctx_perror(ctx, -ret, "Unable to stat file");
 			goto out_close_dir;
 		}
 
@@ -1876,9 +1866,7 @@ static void local_cancel(const struct iio_device *dev)
 	ret = write(pdata->cancel_fd, &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
-		char err_str[1024];
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to signal cancellation event: %s\n", err_str);
+		dev_perror(dev, errno, "Unable to signal cancellation event");
 	}
 }
 
