@@ -15,6 +15,7 @@
 #include <string.h>
 
 #define LOCAL_BACKEND_TIMEOUT_MS	1000
+#define USB_BACKEND_TIMEOUT_MS		5000
 #define SERIAL_BACKEND_TIMEOUT_MS	1000
 
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
@@ -404,6 +405,8 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	}
 
 	if (WITH_USB_BACKEND && !strncmp(uri, "usb:", sizeof("usb:") - 1)) {
+		if (!params2.timeout_ms)
+			params2.timeout_ms = USB_BACKEND_TIMEOUT_MS;
 		return usb_create_context_from_uri(&params2, uri);
 	}
 

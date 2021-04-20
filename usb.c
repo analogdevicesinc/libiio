@@ -18,8 +18,6 @@
 
 #include "debug.h"
 
-#define DEFAULT_TIMEOUT_MS 5000
-
 /* Endpoint for non-streaming operations */
 #define EP_OPS		1
 
@@ -409,8 +407,10 @@ static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 	ret = iiod_client_set_timeout(pdata->iiod_client,
 			&pdata->io_ctx, remote_timeout);
-	if (!ret)
+	if (!ret) {
 		pdata->timeout_ms = timeout;
+		ctx->params.timeout_ms = timeout;
+	}
 
 	return ret;
 }
@@ -959,8 +959,8 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	pdata->ctx = usb_ctx;
 	pdata->hdl = hdl;
-	pdata->timeout_ms = DEFAULT_TIMEOUT_MS;
 	pdata->intrfc = intrfc;
+	pdata->timeout_ms = params->timeout_ms;
 
 	ret = usb_io_context_init(&pdata->io_ctx);
 	if (ret)
