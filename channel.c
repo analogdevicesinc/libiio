@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 
 #include <errno.h>

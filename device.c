@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 
 #include <inttypes.h>
@@ -147,7 +147,8 @@ int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
 
 	names[attrs->num++] = name;
 	attrs->names = names;
-	IIO_DEBUG("Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev->id);
+
+	dev_dbg(dev, "Added%s attr \'%s\' to device \'%s\'\n", type, attr, dev->id);
 	return 0;
 }
 

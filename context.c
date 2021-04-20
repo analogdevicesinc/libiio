@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
+#include "iio-debug.h"
 #include "iio-config.h"
 #include "iio-private.h"
 #include "sort.h"
@@ -528,13 +528,15 @@ int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev)
 			(ctx->nb_devices + 1) * sizeof(struct iio_device *));
 
 	if (!devices) {
-		IIO_ERROR("Unable to allocate memory\n");
+		ctx_err(ctx, "Unable to allocate memory\n");
 		return -ENOMEM;
 	}
 
 	devices[ctx->nb_devices++] = dev;
 	ctx->devices = devices;
-	IIO_DEBUG("Added device \'%s\' to context \'%s\'\n", dev->id, ctx->name);
+
+	ctx_dbg(ctx, "Added device \'%s\' to context \'%s\'\n",
+		dev->id, ctx->name);
 	return 0;
 }
 
