@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 
 #include <errno.h>
@@ -30,13 +30,13 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 			if (!filename)
 				goto err_free;
 		} else {
-			IIO_WARNING("Unknown field \'%s\' in channel %s\n",
-					attr->name, chn->id);
+			chn_warn(chn, "Unknown field \'%s\' in channel %s\n",
+				 attr->name, chn->id);
 		}
 	}
 
 	if (!name) {
-		IIO_ERROR("Incomplete attribute in channel %s\n", chn->id);
+		chn_err(chn, "Incomplete attribute in channel %s\n", chn->id);
 		err = -EINVAL;
 		goto err_free;
 	}
@@ -72,13 +72,13 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 		if (!strcmp((char *) attr->name, "name")) {
 			name = (char *) attr->children->content;
 		} else {
-			IIO_WARNING("Unknown field \'%s\' in device %s\n",
-					attr->name, dev->id);
+			dev_warn(dev, "Unknown field \'%s\' in device %s\n",
+				 attr->name, dev->id);
 		}
 	}
 
 	if (!name) {
-		IIO_ERROR("Incomplete attribute in device %s\n", dev->id);
+		dev_err(dev, "Incomplete attribute in device %s\n", dev->id);
 		return -EINVAL;
 	}
 
@@ -160,8 +160,8 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			chn->format.with_scale = true;
 			chn->format.scale = value;
 		} else {
-			IIO_WARNING("Unknown attribute \'%s\' in <scan-element>\n",
-					name);
+			chn_warn(chn, "Unknown attribute \'%s\' in <scan-element>\n",
+				 name);
 		}
 	}
 
@@ -198,15 +198,15 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 			if (!strcmp(content, "output"))
 				chn->is_output = true;
 			else if (strcmp(content, "input"))
-				IIO_WARNING("Unknown channel type %s\n", content);
+				dev_warn(dev, "Unknown channel type %s\n", content);
 		} else {
-			IIO_WARNING("Unknown attribute \'%s\' in <channel>\n",
-					name);
+			dev_warn(dev, "Unknown attribute \'%s\' in <channel>\n",
+				 name);
 		}
 	}
 
 	if (!chn->id) {
-		IIO_ERROR("Incomplete <attribute>\n");
+		dev_err(dev, "Incomplete <attribute>\n");
 		err = -EINVAL;
 		goto err_free_channel;
 	}
@@ -222,8 +222,8 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 			if (err < 0)
 				goto err_free_channel;
 		} else if (strcmp((char *) n->name, "text")) {
-			IIO_WARNING("Unknown children \'%s\' in <channel>\n",
-					n->name);
+			dev_warn(dev, "Unknown children \'%s\' in <channel>\n",
+				 n->name);
 			continue;
 		}
 	}
@@ -264,13 +264,13 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			if (!dev->id)
 				goto err_free_device;
 		} else {
-			IIO_WARNING("Unknown attribute \'%s\' in <device>\n",
-					attr->name);
+			ctx_warn(ctx, "Unknown attribute \'%s\' in <device>\n",
+				 attr->name);
 		}
 	}
 
 	if (!dev->id) {
-		IIO_ERROR("Unable to read device ID\n");
+		ctx_err(ctx, "Unable to read device ID\n");
 		err = -EINVAL;
 		goto err_free_device;
 	}
@@ -281,7 +281,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 					   *chn = create_channel(dev, n);
 			if (IS_ERR(chn)) {
 				err = PTR_TO_ERR(chn);
-				IIO_ERROR("Unable to create channel: %d\n", err);
+				dev_perror(dev, -err, "Unable to create channel");
 				goto err_free_device;
 			}
 
@@ -289,7 +289,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 					sizeof(struct iio_channel *));
 			if (!chns) {
 				err = -ENOMEM;
-				IIO_ERROR("Unable to allocate memory\n");
+				dev_err(dev, "Unable to allocate memory\n");
 				free(chn);
 				goto err_free_device;
 			}
@@ -309,8 +309,8 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			if (err < 0)
 				goto err_free_device;
 		} else if (strcmp((char *) n->name, "text")) {
-			IIO_WARNING("Unknown children \'%s\' in <device>\n",
-					n->name);
+			dev_warn(dev, "Unknown children \'%s\' in <device>\n",
+				 n->name);
 			continue;
 		}
 	}
@@ -382,15 +382,15 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 			continue;
 		} else if (strcmp((char *) n->name, "device")) {
 			if (strcmp((char *) n->name, "text"))
-				IIO_WARNING("Unknown children \'%s\' in "
-						"<context>\n", n->name);
+				ctx_warn(ctx, "Unknown children \'%s\' in "
+					 "<context>\n", n->name);
 			continue;
 		}
 
 		dev = create_device(ctx, n);
 		if (IS_ERR(dev)) {
 			err = PTR_TO_ERR(dev);
-			IIO_ERROR("Unable to create device: %d\n", err);
+			ctx_perror(ctx, -err, "Unable to create device");
 			return err;
 		}
 
@@ -416,7 +416,7 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 
 	root = xmlDocGetRootElement(doc);
 	if (strcmp((char *) root->name, "context")) {
-		IIO_ERROR("Unrecognized XML file\n");
+		prm_err(params, "Unrecognized XML file\n");
 		errno = EINVAL;
 		return NULL;
 	}
@@ -425,13 +425,15 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 		if (!strcmp((char *) attr->name, "description"))
 			description = (const char *)attr->children->content;
 		else if (strcmp((char *) attr->name, "name"))
-			IIO_WARNING("Unknown parameter \'%s\' in <context>\n",
-					(char *) attr->children->content);
+			prm_warn(params, "Unknown parameter \'%s\' in <context>\n",
+				 (char *) attr->children->content);
 	}
 
 	ctx = iio_context_create_from_backend(&xml_backend, description);
-	if (!ctx)
+	if (!ctx) {
+		prm_err(params, "Unable to allocate memory for context\n");
 		return NULL;
+	}
 
 	ctx->params = *params;
 
@@ -455,7 +457,7 @@ struct iio_context * xml_create_context(const struct iio_context_params *params,
 
 	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
-		IIO_ERROR("Unable to parse XML file\n");
+		prm_err(params, "Unable to parse XML file\n");
 		errno = EINVAL;
 		return NULL;
 	}
@@ -475,7 +477,7 @@ struct iio_context * xml_create_context_mem(const struct iio_context_params *par
 
 	doc = xmlReadMemory(xml, (int) len, NULL, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
-		IIO_ERROR("Unable to parse XML file\n");
+		prm_err(params, "Unable to parse XML file\n");
 		errno = EINVAL;
 		return NULL;
 	}
