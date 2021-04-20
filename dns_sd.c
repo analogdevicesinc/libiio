@@ -15,6 +15,7 @@
 #include "dns_sd.h"
 #include "iio-lock.h"
 #include "iio-private.h"
+#include "network.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -31,6 +32,8 @@
 #ifdef _WIN32
 #define close(s) closesocket(s)
 #endif
+
+#define DEFAULT_TIMEOUT_MS 5000
 
 static void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
 {
@@ -173,7 +176,13 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 			       struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d, *ndata;
+	unsigned int timeout_ms;
 	int i, ret;
+
+	if (params->timeout_ms)
+		timeout_ms = params->timeout_ms;
+	else
+		timeout_ms = DEFAULT_TIMEOUT_MS;
 
 	d = *ddata;
 	iio_mutex_lock(d->lock);
@@ -197,7 +206,7 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 					gai_strerror(ret));
 		} else {
 			for (rp = res; rp != NULL; rp = rp->ai_next) {
-				fd = create_socket(rp);
+				fd = create_socket(rp, timeout_ms);
 				if (fd < 0) {
 					IIO_DEBUG("Unable to open %s%s socket ('%s:%d' %s)\n",
 							rp->ai_family == AF_INET ? "ipv4" : "",
