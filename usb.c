@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "iio-debug.h"
 #include "iio-lock.h"
 #include "iio-private.h"
 #include "iiod-client.h"
@@ -15,8 +16,6 @@
 #include <libusb.h>
 #include <stdbool.h>
 #include <string.h>
-
-#include "debug.h"
 
 /* Endpoint for non-streaming operations */
 #define EP_OPS		1
@@ -259,10 +258,7 @@ static int usb_open(const struct iio_device *dev,
 
 	ret = usb_open_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
 	if (ret) {
-		char err_str[1024];
-
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Failed to open pipe: %s\n", err_str);
+		dev_perror(dev, -ret, "Failed to open pipe");
 		usb_free_ep_unlocked(dev);
 		goto out_unlock;
 	}
@@ -519,7 +515,7 @@ static int iio_usb_match_device(struct libusb_device *dev,
 	if (ret < 0)
 		return ret;
 
-	IIO_DEBUG("Found IIO interface on device %u:%u using interface %u\n",
+	prm_dbg(NULL, "Found IIO interface on device %u:%u using interface %u\n",
 			libusb_get_bus_number(dev),
 			libusb_get_device_address(dev), i - 1);
 
@@ -818,42 +814,41 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	libusb_device **device_list;
 	struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
-	char err_str[1024];
 	uint16_t i;
 	int ret;
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
-		IIO_ERROR("Unable to allocate pdata\n");
+		prm_err(params, "Unable to allocate pdata\n");
 		ret = -ENOMEM;
 		goto err_set_errno;
 	}
 
 	pdata->ep_lock = iio_mutex_create();
 	if (!pdata->ep_lock) {
-		IIO_ERROR("Unable to create mutex\n");
+		prm_err(params, "Unable to create mutex\n");
 		ret = -ENOMEM;
 		goto err_free_pdata;
 	}
 
 	pdata->iiod_client = iiod_client_new(params, pdata, &usb_iiod_client_ops);
 	if (!pdata->iiod_client) {
-		IIO_ERROR("Unable to create IIOD client\n");
 		ret = -errno;
+		prm_perror(params, -ret, "Unable to create IIOD client");
 		goto err_destroy_ep_mutex;
 	}
 
 	ret = libusb_init(&usb_ctx);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		IIO_ERROR("Unable to init libusb: %i\n", ret);
+		prm_perror(params, -ret, "Unable to init libusb");
 		goto err_destroy_iiod_client;
 	}
 
 	ret = (int) libusb_get_device_list(usb_ctx, &device_list);
 	if (ret < 0) {
 		ret = -(int) libusb_to_errno(ret);
-		IIO_ERROR("Unable to get usb device list: %i\n", ret);
+		prm_perror(params, -ret, "Unable to get usb device list");
 		goto err_destroy_iiod_client;
 	}
 
@@ -876,7 +871,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 			 * we find such a device skip it and keep looking.
 			 */
 			if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
-				IIO_WARNING("Skipping broken USB device. Please upgrade libusb.\n");
+				prm_warn(params, "Skipping broken USB device. Please upgrade libusb.\n");
 				usb_dev = NULL;
 				continue;
 			}
@@ -894,7 +889,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		IIO_ERROR("Unable to open device\n");
+		prm_perror(params, -ret, "Unable to open device\n");
 		goto err_libusb_exit;
 	}
 
@@ -905,17 +900,15 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	ret = libusb_claim_interface(hdl, intrfc);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to claim interface %u:%u:%u: %s\n",
-		      bus, address, intrfc, err_str);
+		prm_perror(params, -ret, "Unable to claim interface %u:%u:%u",
+			   bus, address, intrfc);
 		goto err_libusb_close;
 	}
 
 	ret = libusb_get_active_config_descriptor(usb_dev, &conf_desc);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to get config descriptor: %s\n", err_str);
+		prm_perror(params, -ret, "Unable to get config descriptor");
 		goto err_libusb_close;
 	}
 
@@ -923,18 +916,19 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	ret = usb_verify_eps(iface);
 	if (ret) {
-		IIO_ERROR("Invalid configuration of endpoints\n");
+		prm_perror(params, -ret, "Invalid configuration of endpoints");
 		goto err_free_config_descriptor;
 	}
 
 	pdata->nb_ep_couples = iface->bNumEndpoints / 2;
 
-	IIO_DEBUG("Found %hhu usable i/o endpoint couples\n", pdata->nb_ep_couples);
+	prm_dbg(params, "Found %hhu usable i/o endpoint couples\n",
+		pdata->nb_ep_couples);
 
 	pdata->io_endpoints = calloc(pdata->nb_ep_couples,
 			sizeof(*pdata->io_endpoints));
 	if (!pdata->io_endpoints) {
-		IIO_ERROR("Unable to allocate endpoints\n");
+		prm_err(params, "Unable to allocate endpoints\n");
 		ret = -ENOMEM;
 		goto err_free_config_descriptor;
 	}
@@ -946,12 +940,12 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 		ep->addr_out = iface->endpoint[i * 2 + 1].bEndpointAddress;
 		ep->pipe_id = i;
 
-		IIO_DEBUG("Couple %i with endpoints 0x%x / 0x%x\n", i,
-				ep->addr_in, ep->addr_out);
+		prm_dbg(params, "Couple %i with endpoints 0x%x / 0x%x\n", i,
+			ep->addr_in, ep->addr_out);
 
 		ep->lock = iio_mutex_create();
 		if (!ep->lock) {
-			IIO_ERROR("Unable to create mutex\n");
+			prm_err(params, "Unable to create mutex\n");
 			ret = -ENOMEM;
 			goto err_free_endpoints;
 		}
@@ -972,15 +966,13 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	ret = usb_reset_pipes(pdata);
 	if (ret) {
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Failed to reset pipes: %s\n", err_str);
+		prm_perror(params, -ret, "Failed to reset pipes");
 		goto err_io_context_exit;
 	}
 
 	ret = usb_open_pipe(pdata, 0);
 	if (ret) {
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		IIO_ERROR("Failed to open control pipe: %s\n", err_str);
+		prm_perror(params, -ret, "Failed to open control pipe");
 		goto err_io_context_exit;
 	}
 
@@ -1002,7 +994,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
-			IIO_ERROR("Unable to allocate memory\n");
+			prm_err(params, "Unable to allocate memory\n");
 			ret = -ENOMEM;
 			goto err_context_destroy;
 		}
@@ -1137,7 +1129,7 @@ err_bad_uri:
 	} else
 		errno = EINVAL;
 
-	IIO_ERROR("Bad URI: \'%s\'\n", uri);
+	prm_err(params, "Bad URI: \'%s\'\n", uri);
 	return NULL;
 }
 
