@@ -49,8 +49,6 @@
 #define close(s) closesocket(s)
 #endif
 
-#define DEFAULT_TIMEOUT_MS 5000
-
 struct iio_context_pdata {
 	struct iiod_client_pdata io_ctx;
 	struct addrinfo *addrinfo;
@@ -296,13 +294,20 @@ static int network_open(const struct iio_device *dev,
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
 	struct iio_device_pdata *ppdata = dev->pdata;
+	unsigned int timeout_ms;
 	int ret = -EBUSY;
+
+	/*
+	 * Use the timeout that was set when creating the context.
+	 * See commit 9eff490 for more info.
+	 */
+	timeout_ms = pdata->io_ctx.params->timeout_ms;
 
 	iio_mutex_lock(ppdata->lock);
 	if (ppdata->io_ctx.fd >= 0)
 		goto out_mutex_unlock;
 
-	ret = create_socket(pdata->addrinfo, DEFAULT_TIMEOUT_MS);
+	ret = create_socket(pdata->addrinfo, timeout_ms);
 	if (ret < 0) {
 		IIO_ERROR("Create socket: %d\n", ret);
 		goto out_mutex_unlock;
@@ -311,7 +316,7 @@ static int network_open(const struct iio_device *dev,
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
 	ppdata->io_ctx.cancellable = false;
-	ppdata->io_ctx.timeout_ms = DEFAULT_TIMEOUT_MS;
+	ppdata->io_ctx.timeout_ms = timeout_ms;
 
 	ret = iiod_client_open_unlocked(pdata->iiod_client,
 			&ppdata->io_ctx, dev, samples_count, cyclic);
@@ -1006,7 +1011,7 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 	struct iio_context *ctx;
 	struct iiod_client *iiod_client;
 	struct iio_context_pdata *pdata;
-	unsigned int i, timeout_ms = DEFAULT_TIMEOUT_MS;
+	unsigned int i;
 	size_t uri_len;
 	int fd, ret;
 	char *description, *uri;
@@ -1083,7 +1088,7 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 		return NULL;
 	}
 
-	fd = create_socket(res, timeout_ms);
+	fd = create_socket(res, params->timeout_ms);
 	if (fd < 0) {
 		errno = -fd;
 		goto err_free_addrinfo;
@@ -1104,9 +1109,10 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 		goto err_free_description;
 
 	pdata->iiod_client = iiod_client;
-	pdata->io_ctx.fd = fd;
 	pdata->addrinfo = res;
-	pdata->io_ctx.timeout_ms = timeout_ms;
+	pdata->io_ctx.fd = fd;
+	pdata->io_ctx.params = params;
+	pdata->io_ctx.timeout_ms = params->timeout_ms;
 
 	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
 	if (pdata->msg_trunc_supported)
@@ -1125,6 +1131,10 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 	ctx->params = *params;
+
+	/* pdata->io_ctx.params points to the 'params' function argument,
+	 * switch it to our local one now */
+	pdata->io_ctx.params = &ctx->params;
 
 	uri_len = strlen(description);
 	if (host && host[0])
@@ -1160,7 +1170,8 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 		}
 
 		dev->pdata->io_ctx.fd = -1;
-		dev->pdata->io_ctx.timeout_ms = timeout_ms;
+		dev->pdata->io_ctx.params = &ctx->params;
+		dev->pdata->io_ctx.timeout_ms = params->timeout_ms;
 #ifdef WITH_NETWORK_GET_BUFFER
 		dev->pdata->memfd = -1;
 #endif
@@ -1192,7 +1203,7 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 
 	free(uri);
 	iiod_client_set_timeout(pdata->iiod_client, &pdata->io_ctx,
-			calculate_remote_timeout(timeout_ms));
+			calculate_remote_timeout(params->timeout_ms));
 	return ctx;
 
 err_free_uri:
