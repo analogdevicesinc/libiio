@@ -10,6 +10,8 @@
 #ifndef __IIO_NETWORK_H
 #define __IIO_NETWORK_H
 
+#include "iio.h"
+
 #include <stdbool.h>
 
 struct addrinfo;
@@ -22,7 +24,9 @@ struct iiod_client_pdata {
 	bool cancelled;
 	void * events[2];
 	int cancel_fd[2];
+
 	unsigned int timeout_ms;
+	const struct iio_context_params *params;
 };
 
 int setup_cancel(struct iiod_client_pdata *io_ctx);
