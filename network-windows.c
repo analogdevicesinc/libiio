@@ -129,3 +129,41 @@ int set_socket_timeout(int fd, unsigned int timeout)
 	else
 		return 0;
 }
+
+int do_select(int fd, unsigned int timeout)
+{
+	struct timeval tv;
+	struct timeval *ptv;
+	fd_set set;
+	int ret;
+
+#ifdef _MSC_BUILD
+	/*
+	 * This is so stupid, but studio emits a signed/unsigned mismatch
+	 * on their own FD_ZERO macro, so turn the warning off/on
+	 */
+#pragma warning(disable : 4389)
+#endif
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+#ifdef _MSC_BUILD
+#pragma warning(default: 4389)
+#endif
+
+	if (timeout != 0) {
+		tv.tv_sec = timeout / 1000;
+		tv.tv_usec = (timeout % 1000) * 1000;
+		ptv = &tv;
+	} else {
+		ptv = NULL;
+	}
+
+	ret = select(fd + 1, NULL, &set, &set, ptv);
+	if (ret < 0)
+		return -WSAGetLastError();
+
+	if (ret == 0)
+		return -WSAETIMEDOUT;
+
+	return 0;
+}

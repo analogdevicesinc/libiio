@@ -201,3 +201,25 @@ int set_socket_timeout(int fd, unsigned int timeout)
 	else
 		return 0;
 }
+
+int do_select(int fd, unsigned int timeout)
+{
+	struct pollfd pfd;
+	int ret;
+
+	pfd.fd = fd;
+	pfd.events = POLLOUT | POLLERR;
+	pfd.revents = 0;
+
+	do {
+		ret = poll(&pfd, 1, timeout);
+	} while (ret == -1 && errno == EINTR);
+
+	if (ret < 0)
+		return -errno;
+
+	if (ret == 0)
+		return -ETIMEDOUT;
+
+	return 0;
+}

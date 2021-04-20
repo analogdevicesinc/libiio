@@ -31,6 +31,7 @@ void do_cancel(struct iiod_client_pdata *io_ctx);
 int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read);
 
 int do_create_socket(const struct addrinfo *addrinfo);
+int do_select(int fd, unsigned int timeout);
 
 int set_blocking_mode(int s, bool blocking);
 int set_socket_timeout(int fd, unsigned int timeout);
