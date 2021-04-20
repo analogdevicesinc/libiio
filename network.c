@@ -35,7 +35,6 @@
 #include <netdb.h>
 #include <net/if.h>
 #include <netinet/tcp.h>
-#include <poll.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -48,9 +47,6 @@
 
 #ifdef _WIN32
 #define close(s) closesocket(s)
-#define NETWORK_ERR_TIMEOUT WSAETIMEDOUT
-#else
-#define NETWORK_ERR_TIMEOUT ETIMEDOUT
 #endif
 
 #define DEFAULT_TIMEOUT_MS 5000
@@ -179,13 +175,6 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 {
 	int ret, error;
 	socklen_t len;
-#ifdef _WIN32
-	struct timeval tv;
-	struct timeval *ptv;
-	fd_set set;
-#else
-	struct pollfd pfd;
-#endif
 
 	ret = set_blocking_mode(fd, false);
 	if (ret < 0)
@@ -198,43 +187,9 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 			return ret;
 	}
 
-#ifdef _WIN32
-#ifdef _MSC_BUILD
-	/* This is so stupid, but studio emits a signed/unsigned mismatch
-	 * on their own FD_ZERO macro, so turn the warning off/on
-	 */
-#pragma warning(disable : 4389)
-#endif
-	FD_ZERO(&set);
-	FD_SET(fd, &set);
-#ifdef _MSC_BUILD
-#pragma warning(default: 4389)
-#endif
-
-	if (timeout != 0) {
-		tv.tv_sec = timeout / 1000;
-		tv.tv_usec = (timeout % 1000) * 1000;
-		ptv = &tv;
-	} else {
-		ptv = NULL;
-	}
-
-	ret = select(fd + 1, NULL, &set, &set, ptv);
-#else
-	pfd.fd = fd;
-	pfd.events = POLLOUT | POLLERR;
-	pfd.revents = 0;
-
-	do {
-		ret = poll(&pfd, 1, timeout);
-	} while (ret == -1 && errno == EINTR);
-#endif
-
+	ret = do_select(fd, timeout);
 	if (ret < 0)
-		return network_get_error();
-
-	if (ret == 0)
-		return -NETWORK_ERR_TIMEOUT;
+		return ret;
 
 	/* Verify that we don't have an error */
 	len = sizeof(error);
