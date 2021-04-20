@@ -1664,8 +1664,9 @@ static int add_scan_element(void *d, const char *path)
 	return add_attr_or_channel_helper((struct iio_device *) d, path, true);
 }
 
-static int foreach_in_dir(void *d, const char *path, bool is_dir,
-		int (*callback)(void *, const char *))
+static int foreach_in_dir(const struct iio_context *ctx,
+			  void *d, const char *path, bool is_dir,
+			  int (*callback)(void *, const char *))
 {
 	struct dirent *entry;
 	DIR *dir;
@@ -1717,13 +1718,14 @@ out_close_dir:
 
 static int add_scan_elements(struct iio_device *dev, const char *devpath)
 {
+	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct stat st;
 	char buf[1024];
 
 	iio_snprintf(buf, sizeof(buf), "%s/scan_elements", devpath);
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		int ret = foreach_in_dir(dev, buf, false, add_scan_element);
+		int ret = foreach_in_dir(ctx, dev, buf, false, add_scan_element);
 		if (ret < 0)
 			return ret;
 	}
@@ -1733,13 +1735,14 @@ static int add_scan_elements(struct iio_device *dev, const char *devpath)
 
 static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 {
+	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct stat st;
 	char buf[1024];
 
 	iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		int ret = foreach_in_dir(dev, buf, false, add_buffer_attr);
+		int ret = foreach_in_dir(ctx, dev, buf, false, add_buffer_attr);
 		if (ret < 0)
 			return ret;
 
@@ -1778,7 +1781,7 @@ static int create_device(void *d, const char *path)
 		return -ENOMEM;
 	}
 
-	ret = foreach_in_dir(dev, path, false, add_attr_or_channel);
+	ret = foreach_in_dir(ctx, dev, path, false, add_attr_or_channel);
 	if (ret < 0)
 		goto err_free_device;
 
@@ -1850,10 +1853,11 @@ static int add_debug(void *d, const char *path)
 	struct iio_context *ctx = d;
 	const char *name = strrchr(path, '/') + 1;
 	struct iio_device *dev = iio_context_find_device(ctx, name);
+
 	if (!dev)
 		return -ENODEV;
-	else
-		return foreach_in_dir(dev, path, false, add_debug_attr);
+
+	return foreach_in_dir(ctx, dev, path, false, add_debug_attr);
 }
 
 static int local_set_timeout(struct iio_context *ctx, unsigned int timeout)
@@ -2033,14 +2037,15 @@ struct iio_context * local_create_context(const struct iio_context_params *param
 
 	ctx->params = *params;
 
-	ret = foreach_in_dir(ctx, "/sys/bus/iio/devices", true, create_device);
+	ret = foreach_in_dir(ctx, ctx, "/sys/bus/iio/devices",
+			     true, create_device);
 	if (ret < 0)
 		goto err_context_destroy;
 
 	qsort(ctx->devices, ctx->nb_devices, sizeof(struct iio_device *),
 		iio_device_compare);
 
-	foreach_in_dir(ctx, "/sys/kernel/debug/iio", true, add_debug);
+	foreach_in_dir(ctx, ctx, "/sys/kernel/debug/iio", true, add_debug);
 
 	init_scan_elements(ctx);
 
@@ -2127,12 +2132,13 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	char *desc, *uri, *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	int ret;
 
-	ret = foreach_in_dir(&exists, "/sys/bus/iio", true, check_device);
+	ret = foreach_in_dir(NULL, &exists, "/sys/bus/iio", true, check_device);
 	if (ret < 0 || !exists)
 		return 0;
 
 	names[0] = '\0';
-	ret = foreach_in_dir(&names, "/sys/bus/iio/devices", true, build_names);
+	ret = foreach_in_dir(NULL, &names, "/sys/bus/iio/devices",
+			     true, build_names);
 	if (ret < 0)
 		return 0;
 
