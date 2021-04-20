@@ -15,6 +15,7 @@
 #include <string.h>
 
 #define LOCAL_BACKEND_TIMEOUT_MS	1000
+#define NETWORK_BACKEND_TIMEOUT_MS	5000
 #define USB_BACKEND_TIMEOUT_MS		5000
 #define SERIAL_BACKEND_TIMEOUT_MS	1000
 
@@ -401,6 +402,8 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	}
 
 	if (WITH_NETWORK_BACKEND && !strncmp(uri, "ip:", sizeof("ip:") - 1)) {
+		if (!params2.timeout_ms)
+			params2.timeout_ms = NETWORK_BACKEND_TIMEOUT_MS;
 		return network_create_context(&params2, uri + 3);
 	}
 
@@ -450,6 +453,8 @@ struct iio_context * iio_create_local_context(void)
 struct iio_context * iio_create_network_context(const char *hostname)
 {
 	struct iio_context_params params = default_params;
+
+	params.timeout_ms = NETWORK_BACKEND_TIMEOUT_MS;
 
 	if (WITH_NETWORK_BACKEND)
 		return network_create_context(&params, hostname);
