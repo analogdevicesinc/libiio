@@ -35,6 +35,7 @@
 struct addrinfo;
 struct AvahiSimplePoll;
 struct AvahiAddress;
+struct iio_context_params;
 
 /* Common structure which all dns_sd_[*] files fill out
  * Anything that is dynamically allocated (malloc) needs to be managed
@@ -50,6 +51,10 @@ struct dns_sd_discovery_data {
 	struct dns_sd_discovery_data *next;
 };
 
+struct dns_sd_cb_data {
+	struct dns_sd_discovery_data *d;
+	const struct iio_context_params *params;
+};
 
 /* This functions is implemented in network.c, but used in dns_sd.c
  */
@@ -60,25 +65,31 @@ int create_socket(const struct addrinfo *addrinfo);
  */
 
 /* Resolves all IIO hosts on the available networks, and passes back a linked list */
-int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata);
+int dnssd_find_hosts(const struct iio_context_params *params,
+		     struct dns_sd_discovery_data **ddata);
 
 /* Deallocates complete list of discovery data */
-void dnssd_free_all_discovery_data(struct dns_sd_discovery_data *d);
+void dnssd_free_all_discovery_data(const struct iio_context_params *params,
+				   struct dns_sd_discovery_data *d);
 
 /* These functions are common, and found in dns_sd.c, but are used in the
  * dns_sd_[*].c implementations or network.c
  */
 
 /* Passed back the first (random) IIOD service resolved by DNS DS. */
-int dnssd_discover_host(char *addr_str, size_t addr_len, uint16_t *port);
+int dnssd_discover_host(const struct iio_context_params *params,
+			char *addr_str, size_t addr_len, uint16_t *port);
 
 /* remove duplicates from the list */
-void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata);
+void remove_dup_discovery_data(const struct iio_context_params *params,
+			       struct dns_sd_discovery_data **ddata);
 
 /* port knocks  */
-void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
+void port_knock_discovery_data(const struct iio_context_params *params,
+			       struct dns_sd_discovery_data **ddata);
 
 /* Use dnssd to resolve a given hostname */
-int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len);
+int dnssd_resolve_host(const struct iio_context_params *params,
+		       const char *hostname, char *ip_addr, const int addr_len);
 
 #endif /* __IIO_DNS_SD_H */

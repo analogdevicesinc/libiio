@@ -1031,7 +1031,7 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 		char port_str[6];
 		uint16_t port = IIOD_PORT;
 
-		ret = dnssd_discover_host(addr_str, sizeof(addr_str), &port);
+		ret = dnssd_discover_host(params, addr_str, sizeof(addr_str), &port);
 		if (ret < 0) {
 			char buf[1024];
 			iio_strerror(-ret, buf, sizeof(buf));
@@ -1061,7 +1061,7 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 			IIO_DEBUG("'getaddrinfo()' failed: %s. Trying dnssd as a last resort...\n",
 				  gai_strerror(ret));
 
-			ret = dnssd_resolve_host(host, addr_str, sizeof(addr_str));
+			ret = dnssd_resolve_host(params, host, addr_str, sizeof(addr_str));
 			if (ret) {
 				char buf[256];
 
