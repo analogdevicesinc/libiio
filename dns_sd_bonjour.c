@@ -32,12 +32,6 @@ static int new_discovery_data(struct dns_sd_discovery_data **data)
 	return 0;
 }
 
-void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
-{
-	free(d->hostname);
-	free(d);
-}
-
 static void __cfnet_browser_cb (
 	CFNetServiceBrowserRef	browser,
 	CFOptionFlags 			flags,
