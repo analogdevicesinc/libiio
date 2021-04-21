@@ -62,9 +62,6 @@ int create_socket(const struct addrinfo *addrinfo);
 /* Resolves all IIO hosts on the available networks, and passes back a linked list */
 int dnssd_find_hosts(struct dns_sd_discovery_data ** ddata);
 
-/* Frees memory of one entry on the list */
-void dnssd_free_discovery_data(struct dns_sd_discovery_data *d);
-
 /* Deallocates complete list of discovery data */
 void dnssd_free_all_discovery_data(struct dns_sd_discovery_data *d);
 

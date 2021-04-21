@@ -31,12 +31,6 @@ static int new_discovery_data(struct dns_sd_discovery_data** data)
 	return 0;
 }
 
-void dnssd_free_discovery_data(struct dns_sd_discovery_data* d)
-{
-	free(d->hostname);
-	free(d);
-}
-
 static int
 open_client_sockets(int* sockets, int max_sockets) {
 	// When sending, each socket can only send to one network interface

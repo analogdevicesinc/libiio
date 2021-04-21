@@ -51,13 +51,6 @@ static int new_discovery_data(struct dns_sd_discovery_data **data)
 	return 0;
 }
 
-void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
-{
-	free(d->hostname);
-	free(d->address);
-	free(d);
-}
-
 static void avahi_process_resolved(struct dns_sd_discovery_data *ddata, const AvahiAddress *addr,
 				   const char *host_name, const uint16_t port)
 {

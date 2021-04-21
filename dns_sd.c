@@ -32,6 +32,13 @@
 #define close(s) closesocket(s)
 #endif
 
+static void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
+{
+	free(d->hostname);
+	free(d->address);
+	free(d);
+}
+
 /* Some functions for handling common linked list operations */
 static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 {
