@@ -40,7 +40,8 @@ static void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
 }
 
 /* Some functions for handling common linked list operations */
-static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
+static void dnssd_remove_node(const struct iio_context_params *params,
+			      struct dns_sd_discovery_data **ddata, int n)
 {
 	struct dns_sd_discovery_data *d, *ndata, *ldata, *tdata;
 	int i;
@@ -81,10 +82,10 @@ struct iio_scan_backend_context {
 	struct addrinfo *res;
 };
 
-static int dnssd_fill_context_info(struct iio_context_info *info,
-		char *hostname, char *addr_str, int port)
+static int dnssd_fill_context_info(const struct iio_context_params *params,
+				   struct iio_context_info *info,
+				   char *hostname, char *addr_str, int port)
 {
-	const struct iio_context_params *params = &default_params;
 	struct iio_context *ctx;
 	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];
 	char description[255], *p;
@@ -168,7 +169,8 @@ void dnssd_context_scan_free(struct iio_scan_backend_context *ctx)
  * This is sort of silly, but we have seen non-iio devices advertised
  * and discovered on the network. Oh well....
  */
-void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
+void port_knock_discovery_data(const struct iio_context_params *params,
+			       struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d, *ndata;
 	int i, ret;
@@ -216,7 +218,7 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 		if (found) {
 			i++;
 		} else {
-			dnssd_remove_node(&d, i);
+			dnssd_remove_node(params, &d, i);
 		}
 	}
 	iio_mutex_unlock(d->lock);
@@ -225,7 +227,8 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata)
 	return;
 }
 
-void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
+void remove_dup_discovery_data(const struct iio_context_params *params,
+			       struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d, *ndata, *mdata;
 	int i, j;
@@ -245,7 +248,7 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 					!strcmp(mdata->addr_str, ndata->addr_str)){
 				IIO_DEBUG("Removing duplicate in list: '%s'\n",
 						ndata->hostname);
-				dnssd_remove_node(&d, j);
+				dnssd_remove_node(params, &d, j);
 			}
 			j++;
 		}
@@ -259,11 +262,12 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 		struct iio_scan_result *scan_result)
 {
+	const struct iio_context_params *params = &default_params;
 	struct iio_context_info **info;
 	struct dns_sd_discovery_data *ddata, *ndata;
 	int ret = 0;
 
-	ret = dnssd_find_hosts(&ddata);
+	ret = dnssd_find_hosts(params, &ddata);
 
 	/* if we return an error when no devices are found, then other scans will fail */
 	if (ret == -ENXIO) {
@@ -282,7 +286,7 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 			break;
 		}
 
-		ret = dnssd_fill_context_info(*info,
+		ret = dnssd_fill_context_info(params, *info,
 				ndata->hostname, ndata->addr_str,ndata->port);
 		if (ret < 0) {
 			IIO_DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
@@ -291,16 +295,17 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 	}
 
 fail:
-	dnssd_free_all_discovery_data(ddata);
+	dnssd_free_all_discovery_data(params, ddata);
 	return ret;
 }
 
-int dnssd_discover_host(char *addr_str, size_t addr_len, uint16_t *port)
+int dnssd_discover_host(const struct iio_context_params *params, char *addr_str,
+			size_t addr_len, uint16_t *port)
 {
 	struct dns_sd_discovery_data *ddata;
 	int ret = 0;
 
-	ret = dnssd_find_hosts(&ddata);
+	ret = dnssd_find_hosts(params, &ddata);
 
 	if (ret < 0)
 		goto host_fail;
@@ -311,14 +316,15 @@ int dnssd_discover_host(char *addr_str, size_t addr_len, uint16_t *port)
 	}
 
 host_fail:
-	dnssd_free_all_discovery_data(ddata);
+	dnssd_free_all_discovery_data(params, ddata);
 
 	/* negative error codes, 0 for no data */
 	return ret;
 }
 
-void dnssd_free_all_discovery_data(struct dns_sd_discovery_data *d)
+void dnssd_free_all_discovery_data(const struct iio_context_params *params,
+				   struct dns_sd_discovery_data *d)
 {
 	while (d)
-		dnssd_remove_node(&d, 0);
+		dnssd_remove_node(params, &d, 0);
 }

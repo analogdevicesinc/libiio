@@ -50,11 +50,13 @@ static struct dns_sd_discovery_data *new_discovery_data(void)
 	return d;
 }
 
-static void avahi_process_resolved(struct dns_sd_discovery_data *ddata,
+static void avahi_process_resolved(struct dns_sd_cb_data *adata,
 				   const AvahiAddress *addr,
 				   const char *host_name,
 				   const uint16_t port)
 {
+	struct dns_sd_discovery_data *ddata = adata->d;
+
 	/* Avahi is multi-threaded, so lock the list */
 	iio_mutex_lock(ddata->lock);
 	ddata->resolved++;
@@ -106,7 +108,7 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 				AvahiLookupResultFlags flags,
 				void *d)
 {
-	struct dns_sd_discovery_data *ddata = d;
+	struct dns_sd_cb_data *adata = d;
 	AvahiClient *client;
 	int err;
 
@@ -126,7 +128,7 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 			  avahi_strerror(err));
 		break;
 	case AVAHI_RESOLVER_FOUND: {
-		avahi_process_resolved(ddata, address, host_name, port);
+		avahi_process_resolved(adata, address, host_name, port);
 		IIO_DEBUG("Avahi Resolver : service '%s' of type '%s' in domain '%s':\n",
 			  name, type, domain);
 		break;
@@ -144,7 +146,8 @@ static void avahi_host_resolver(AvahiHostNameResolver *resolver,
 				AvahiLookupResultFlags flags,
 				void *d)
 {
-	struct dns_sd_discovery_data *ddata = d;
+	struct dns_sd_cb_data *adata = d;
+	struct dns_sd_discovery_data *ddata = adata->d;
 	AvahiClient *client;
 	int err;
 
@@ -157,7 +160,7 @@ static void avahi_host_resolver(AvahiHostNameResolver *resolver,
 			  host_name, avahi_strerror(err));
 		break;
 	case AVAHI_RESOLVER_FOUND:
-		avahi_process_resolved(ddata, address, host_name, IIOD_PORT);
+		avahi_process_resolved(adata, address, host_name, IIOD_PORT);
 		break;
 	}
 
@@ -175,7 +178,8 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
 			       AvahiLookupResultFlags flags,
 			       void *d)
 {
-	struct dns_sd_discovery_data *ddata = (struct dns_sd_discovery_data *) d;
+	struct dns_sd_cb_data *adata = d;
+	struct dns_sd_discovery_data *ddata = adata->d;
 	struct AvahiClient *client = avahi_service_browser_get_client(browser);
 	unsigned int i;
 	struct timespec ts;
@@ -199,7 +203,7 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
 		if(!avahi_service_resolver_new(client, iface,
 					       proto, name, type, domain,
 					       AVAHI_PROTO_UNSPEC, 0,
-					       __avahi_resolver_cb, d)) {
+					       __avahi_resolver_cb, adata)) {
 			IIO_ERROR("Failed to resolve service '%s\n", name);
 		} else {
 			iio_mutex_lock(ddata->lock);
@@ -233,9 +237,11 @@ static void __avahi_browser_cb(AvahiServiceBrowser *browser,
  * The returned value is zero on success, negative error code on failure.
  */
 
-int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
+int dnssd_find_hosts(const struct iio_context_params *params,
+		     struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d;
+	struct dns_sd_cb_data adata;
 	AvahiClient *client;
 	AvahiServiceBrowser *browser;
 	int ret = 0;
@@ -244,16 +250,19 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	if (!d)
 		return -ENOMEM;
 
+	adata.params = params;
+	adata.d = d;
+
 	d->lock = iio_mutex_create();
 	if (!d->lock) {
-		dnssd_free_all_discovery_data(d);
+		dnssd_free_all_discovery_data(params, d);
 		return -ENOMEM;
 	}
 
 	d->poll = avahi_simple_poll_new();
 	if (!d->poll) {
 		iio_mutex_destroy(d->lock);
-		dnssd_free_all_discovery_data(d);
+		dnssd_free_all_discovery_data(params, d);
 		return -ENOMEM;
 	}
 
@@ -268,7 +277,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	browser = avahi_service_browser_new(client,
 					    AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
 					    "_iio._tcp", NULL, 0,
-					    __avahi_browser_cb, d);
+					    __avahi_browser_cb, &adata);
 	if (!browser) {
 		ret = avahi_client_errno(client);
 		IIO_ERROR("Unable to create Avahi DNS-SD browser: %s\n",
@@ -280,8 +289,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	avahi_simple_poll_loop(d->poll);
 
 	if (d->resolved) {
-		port_knock_discovery_data(&d);
-		remove_dup_discovery_data(&d);
+		port_knock_discovery_data(params, &d);
+		remove_dup_discovery_data(params, &d);
 	} else
 		ret = -ENXIO;
 
@@ -296,10 +305,11 @@ err_free_poll:
 	return ret;
 }
 
-static void avahi_resolve_host(struct dns_sd_discovery_data *d,
+static void avahi_resolve_host(struct dns_sd_cb_data *adata,
 			       const char *hostname,
 			       const AvahiProtocol proto)
 {
+	struct dns_sd_discovery_data *d = adata->d;
 	AvahiClient *client;
 	AvahiHostNameResolver *resolver;
 	int ret;
@@ -315,8 +325,9 @@ static void avahi_resolve_host(struct dns_sd_discovery_data *d,
 		goto err_free_poll;
 	}
 
-	resolver = avahi_host_name_resolver_new(client, AVAHI_IF_UNSPEC, proto, hostname, proto, 0,
-						avahi_host_resolver, d);
+	resolver = avahi_host_name_resolver_new(client, AVAHI_IF_UNSPEC, proto,
+						hostname, proto, 0,
+						avahi_host_resolver, adata);
 	if (!resolver) {
 		ret = avahi_client_errno(client);
 		IIO_ERROR("Unable to create Avahi DNS-SD browser: %s\n",
@@ -333,11 +344,13 @@ err_free_poll:
 	avahi_simple_poll_free(d->poll);
 }
 
-int dnssd_resolve_host(const char *hostname,
+int dnssd_resolve_host(const struct iio_context_params *params,
+		       const char *hostname,
 		       char *ip_addr,
 		       const int addr_len)
 {
 	struct dns_sd_discovery_data *d;
+	struct dns_sd_cb_data adata;
 	int ret = 0;
 
 	if (!hostname || hostname[0] == '\0')
@@ -352,6 +365,10 @@ int dnssd_resolve_host(const char *hostname,
 		ret = -ENOMEM;
 		goto err_free_data;
 	}
+
+	adata.params = params;
+	adata.d = d;
+
 	/*
 	 * The reason not to use AVAHI_PROTO_UNSPEC is that avahi sometimes resolves the host
 	 * to an ipv6 link local address which is not suitable to be used by connect. In fact,
@@ -359,14 +376,14 @@ int dnssd_resolve_host(const char *hostname,
 	 * might really want to use ipv6 and have their environment correctly configured. Hence,
 	 * we try to resolve both in ipv4 and ipv6...
 	 */
-	avahi_resolve_host(d, hostname, AVAHI_PROTO_INET);
+	avahi_resolve_host(&adata, hostname, AVAHI_PROTO_INET);
 #ifdef HAVE_IPV6
-	avahi_resolve_host(d, hostname, AVAHI_PROTO_INET6);
+	avahi_resolve_host(&adata, hostname, AVAHI_PROTO_INET6);
 #endif
 
 	if (d->resolved) {
-		port_knock_discovery_data(&d);
-		remove_dup_discovery_data(&d);
+		port_knock_discovery_data(params, &d);
+		remove_dup_discovery_data(params, &d);
 	} else {
 		ret = -ENXIO;
 		goto err_mutex_destroy;
@@ -383,6 +400,6 @@ int dnssd_resolve_host(const char *hostname,
 err_mutex_destroy:
 	iio_mutex_destroy(d->lock);
 err_free_data:
-	dnssd_free_all_discovery_data(d);
+	dnssd_free_all_discovery_data(params, d);
 	return ret;
 }

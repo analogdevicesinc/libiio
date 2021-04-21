@@ -133,7 +133,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			  size_t length,
 			  void *user_data)
 {
-	struct dns_sd_discovery_data *dd = user_data;
+	struct dns_sd_cb_data *cb_data = user_data;
+	struct dns_sd_discovery_data *dd = cb_data->d;
 	char addrbuffer[64];
 	char servicebuffer[64];
 	char namebuffer[256];
@@ -183,13 +184,15 @@ quit:
 	return 0;
 }
 
-int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
+int dnssd_find_hosts(const struct iio_context_params *params,
+		     struct dns_sd_discovery_data **ddata)
 {
 	WORD versionWanted = MAKEWORD(1, 1);
 	WSADATA wsaData;
 	const char service[] = "_iio._tcp.local";
 	size_t records, capacity = 2048;
 	unsigned int i, isock, num_sockets;
+	struct dns_sd_cb_data cb_data;
 	void *buffer;
 	int sockets[32];
 	int transaction_id[32];
@@ -235,6 +238,9 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 		transaction_id[isock] = ret;
 	}
 
+	cb_data.d = *ddata;
+	cb_data.params = params;
+
 	/* This is a simple implementation that loops for 10 seconds or as long as we get replies
 	 * A real world implementation would probably use select, poll or similar syscall to wait
 	 * until data is available on a socket and then read it */
@@ -250,7 +256,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 				records += mdns_query_recv(sockets[isock],
 							   buffer, capacity,
-							   query_callback, *ddata,
+							   query_callback, &cb_data,
 							   transaction_id[isock]);
 			}
 		} while (records);
@@ -274,7 +280,8 @@ out_wsa_cleanup:
 	return ret;
 }
 
-int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len)
+int dnssd_resolve_host(const struct iio_context_params *params,
+		       const char *hostname, char *ip_addr, const int addr_len)
 {
 	return -ENOENT;
 }
