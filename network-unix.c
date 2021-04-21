@@ -6,8 +6,8 @@
  * Author: Paul Cercueil
  */
 
-#include "debug.h"
 #include "iio-config.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 #include "network.h"
 
@@ -103,9 +103,7 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
-		char err_str[1024];
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to signal cancellation event: %s\n", err_str);
+		prm_perror(io_ctx->params, errno, "Unable to signal cancellation event");
 	}
 }
 
