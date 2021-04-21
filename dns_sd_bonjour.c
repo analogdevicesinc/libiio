@@ -27,7 +27,9 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 			       void *info)
 {
 	const CFNetServiceRef netService = (CFNetServiceRef)domainOrService;
-	struct dns_sd_discovery_data *dd = info;
+	struct dns_sd_cb_data *bdata = info;
+	struct dns_sd_discovery_data *dd = bdata->d;
+	const struct iio_context_params *params = bdata->params;
 	char address_v4[DNS_SD_ADDRESS_STR_MAX+1] = "";
 	char address_v6[DNS_SD_ADDRESS_STR_MAX+1] = "";
 	char hostname[MAXHOSTNAMELEN];
@@ -160,11 +162,13 @@ stop_browsing:
 	CFNetServiceBrowserStopSearch(browser, &anError);
 }
 
-int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
+int dnssd_find_hosts(const struct iio_context_params *params,
+		     struct dns_sd_discovery_data **ddata)
 {
 	CFNetServiceClientContext clientContext = { 0 };
 	CFNetServiceBrowserRef serviceBrowser;
 	struct dns_sd_discovery_data *d;
+	struct dns_sd_cb_data bdata;
 	CFRunLoopRunResult runRes;
 	CFRunLoopRef runLoop;
 	CFStringRef type;
@@ -181,18 +185,21 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	d->lock = iio_mutex_create();
 	if (!d->lock) {
-		dnssd_free_all_discovery_data(d);
+		dnssd_free_all_discovery_data(params, d);
 		return -ENOMEM;
 	}
 
-	clientContext.info = d;
+	bdata.d = d;
+	bdata.params = params;
+
+	clientContext.info = &bdata;
 	serviceBrowser = CFNetServiceBrowserCreate(kCFAllocatorDefault,
 						   __cfnet_browser_cb,
 						   &clientContext);
 
 	if (serviceBrowser == NULL) {
 		IIO_ERROR("DNS SD: Failed to create service browser.\n");
-		dnssd_free_all_discovery_data(d);
+		dnssd_free_all_discovery_data(params, d);
 		ret = -ENOMEM;
 		goto exit;
 	}
@@ -236,8 +243,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 			}
 		}
 
-		port_knock_discovery_data(&d);
-		remove_dup_discovery_data(&d);
+		port_knock_discovery_data(params, &d);
+		remove_dup_discovery_data(params, &d);
 		*ddata = d;
 	}
 
@@ -253,7 +260,8 @@ exit:
 	return ret;
 }
 
-int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len)
+int dnssd_resolve_host(const struct iio_context_params *params,
+		       const char *hostname, char *ip_addr, const int addr_len)
 {
 	return -ENOENT;
 }
