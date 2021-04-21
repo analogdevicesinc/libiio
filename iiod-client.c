@@ -6,9 +6,9 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
 #include "iiod-client.h"
 #include "iio-config.h"
+#include "iio-debug.h"
 #include "iio-lock.h"
 #include "iio-private.h"
 
@@ -50,7 +50,7 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client,
 		ret = client->ops->read_line(client->pdata,
 				desc, buf, sizeof(buf));
 		if (ret < 0) {
-			IIO_ERROR("READ LINE: %zd\n", ret);
+			prm_err(client->params, "READ LINE: %zd\n", ret);
 			return ret;
 		}
 
@@ -572,7 +572,7 @@ iiod_client_create_context_private(struct iiod_client *client,
 		unsigned long long len;
 		char *xml_zstd;
 
-		IIO_DEBUG("Received ZSTD-compressed XML string.\n");
+		prm_dbg(client->params, "Received ZSTD-compressed XML string.\n");
 
 		len = ZSTD_getFrameContentSize(xml, xml_len);
 		if (len == ZSTD_CONTENTSIZE_UNKNOWN ||
@@ -589,8 +589,8 @@ iiod_client_create_context_private(struct iiod_client *client,
 
 		xml_len = ZSTD_decompress(xml_zstd, len, xml, xml_len);
 		if (ZSTD_isError(xml_len)) {
-			IIO_ERROR("Unable to decompress ZSTD data: %s\n",
-				  ZSTD_getErrorName(xml_len));
+			prm_err(client->params, "Unable to decompress ZSTD data: %s\n",
+				ZSTD_getErrorName(xml_len));
 			ret = -EIO;
 			free(xml_zstd);
 			goto out_free_xml;
@@ -649,7 +649,7 @@ int iiod_client_open_unlocked(struct iiod_client *client,
 	len -= iio_strlcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n", len);
 
 	if (len < 0) {
-		IIO_ERROR("strlength problem in iiod_client_open_unlocked\n");
+		prm_err(client->params, "strlength problem in iiod_client_open_unlocked\n");
 		return -ENOMEM;
 	}
 
@@ -680,18 +680,18 @@ static int iiod_client_read_mask(struct iiod_client *client,
 
 	ret = iiod_client_read_all(client, desc, buf, words * 8 + 1);
 	if (ret < 0) {
-		IIO_ERROR("READ ALL: %zd\n", ret);
+		prm_err(NULL, "READ ALL: %zd\n", ret);
 		goto out_buf_free;
 	} else
 		ret = 0;
 
 	buf[words*8] = '\0';
 
-	IIO_DEBUG("Reading mask\n");
+	prm_dbg(client->params, "Reading mask\n");
 
 	for (i = words, ptr = buf; i > 0; i--) {
 		iio_sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
-		IIO_DEBUG("mask[%lu] = 0x%08" PRIx32 "\n",
+		prm_dbg(client->params, "mask[%lu] = 0x%08" PRIx32 "\n",
 				(unsigned long)(i - 1), mask[i - 1]);
 
 		ptr = (char *) ((uintptr_t) ptr + 8);
@@ -721,7 +721,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 
 	ret = iiod_client_write_all(client, desc, buf, strlen(buf));
 	if (ret < 0) {
-		IIO_ERROR("WRITE ALL: %zd\n", ret);
+		prm_err(client->params, "WRITE ALL: %zd\n", ret);
 		return ret;
 	}
 
@@ -730,7 +730,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 
 		ret = iiod_client_read_integer(client, desc, &to_read);
 		if (ret < 0) {
-			IIO_ERROR("READ INTEGER: %zd\n", ret);
+			prm_err(client->params, "READ INTEGER: %zd\n", ret);
 			return ret;
 		}
 		if (to_read < 0)
@@ -741,7 +741,7 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 		if (mask) {
 			ret = iiod_client_read_mask(client, desc, mask, words);
 			if (ret < 0) {
-				IIO_ERROR("READ ALL: %zd\n", ret);
+				prm_err(client->params, "READ ALL: %zd\n", ret);
 				return ret;
 			}
 
