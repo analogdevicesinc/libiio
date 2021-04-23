@@ -37,10 +37,8 @@
 #define iio_sscanf sscanf
 #endif
 
-#if defined(__MINGW32__)
-#   define __iio_printf __attribute__((__format__(ms_printf, 3, 4)))
-#elif defined(__GNUC__)
-#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
+#if defined(__GNUC__)
+#   define __iio_printf __attribute__((__format__(printf, 3, 4)))
 #else
 #   define __iio_printf
 #endif
