@@ -11,8 +11,8 @@
  * which is also LGPL 2.1 or later.
  */
 
-#include "debug.h"
 #include "dns_sd.h"
+#include "iio-debug.h"
 #include "iio-lock.h"
 #include "iio-private.h"
 #include "network.h"
@@ -70,8 +70,10 @@ static void dnssd_remove_node(const struct iio_context_params *params,
 			ldata = ndata;
 			i++;
 		}
-		if (i < n)
-			IIO_ERROR("dnssd_remove_node call when %i exceeds list length (%i)\n", n, i);
+		if (i < n) {
+			prm_err(params, "dnssd_remove_node call when %i exceeds "
+				"list length (%i)\n", n, i);
+		}
 	}
 
 	*ddata = d;
@@ -97,7 +99,7 @@ static int dnssd_fill_context_info(const struct iio_context_params *params,
 
 	ctx = network_create_context(params, addr_str);
 	if (!ctx) {
-		IIO_ERROR("No context at %s\n", addr_str);
+		prm_err(params, "No context at %s\n", addr_str);
 		return -ENOMEM;
 	}
 
@@ -201,23 +203,25 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 
 		/* getaddrinfo() returns a list of address structures */
 		if (ret) {
-			IIO_DEBUG("Unable to find host ('%s'): %s\n",
-					ndata->hostname,
-					gai_strerror(ret));
+			prm_dbg(params, "Unable to find host ('%s'): %s\n",
+				ndata->hostname,
+				gai_strerror(ret));
 		} else {
 			for (rp = res; rp != NULL; rp = rp->ai_next) {
 				fd = create_socket(rp, timeout_ms);
 				if (fd < 0) {
-					IIO_DEBUG("Unable to open %s%s socket ('%s:%d' %s)\n",
-							rp->ai_family == AF_INET ? "ipv4" : "",
-							rp->ai_family == AF_INET6? "ipv6" : "",
-					ndata->hostname, ndata->port, ndata->addr_str);
+					prm_dbg(params, "Unable to open %s%s socket ('%s:%d' %s)\n",
+						rp->ai_family == AF_INET ? "ipv4" : "",
+						rp->ai_family == AF_INET6? "ipv6" : "",
+						ndata->hostname, ndata->port,
+						ndata->addr_str);
 				} else {
 					close(fd);
-					IIO_DEBUG("Something %s%s at '%s:%d' %s)\n",
-							rp->ai_family == AF_INET ? "ipv4" : "",
-							rp->ai_family == AF_INET6? "ipv6" : "",
-							ndata->hostname, ndata->port, ndata->addr_str);
+					prm_dbg(params, "Something %s%s at '%s:%d' %s)\n",
+						rp->ai_family == AF_INET ? "ipv4" : "",
+						rp->ai_family == AF_INET6? "ipv6" : "",
+						ndata->hostname, ndata->port,
+						ndata->addr_str);
 					found = true;
 				}
 			}
@@ -255,8 +259,8 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 		for (j = i + 1, mdata = ndata->next; mdata->next != NULL; mdata = mdata->next) {
 			if (!strcmp(mdata->hostname, ndata->hostname) &&
 					!strcmp(mdata->addr_str, ndata->addr_str)){
-				IIO_DEBUG("Removing duplicate in list: '%s'\n",
-						ndata->hostname);
+				prm_dbg(params, "Removing duplicate in list: '%s'\n",
+					ndata->hostname);
 				dnssd_remove_node(params, &d, j);
 			}
 			j++;
@@ -290,7 +294,7 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
 		info = iio_scan_result_add(scan_result, 1);
 		if (!info) {
-			IIO_ERROR("Out of memory when adding new scan result\n");
+			prm_err(params, "Out of memory when adding new scan result\n");
 			ret = -ENOMEM;
 			break;
 		}
@@ -298,7 +302,8 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 		ret = dnssd_fill_context_info(params, *info,
 				ndata->hostname, ndata->addr_str,ndata->port);
 		if (ret < 0) {
-			IIO_DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
+			prm_dbg(params, "Failed to add %s (%s) err: %d\n",
+				ndata->hostname, ndata->addr_str, ret);
 			break;
 		}
 	}
