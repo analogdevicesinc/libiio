@@ -14,8 +14,8 @@
 #include <winsock2.h>
 #include <iphlpapi.h>
 
-#include "debug.h"
 #include "dns_sd.h"
+#include "iio-debug.h"
 #include "iio-private.h"
 #include "mdns.h"
 
@@ -46,7 +46,8 @@ static bool is_localhost4(const struct sockaddr_in *saddr)
 		saddr->sin_addr.S_un.S_un_b.s_b4 == 1;
 }
 
-static int open_client_sockets(int *sockets, unsigned int max_sockets)
+static int open_client_sockets(const struct iio_context_params *params,
+			       int *sockets, unsigned int max_sockets)
 {
 	IP_ADAPTER_UNICAST_ADDRESS *unicast;
 	IP_ADAPTER_ADDRESSES *adapter_address = 0;
@@ -77,7 +78,7 @@ static int open_client_sockets(int *sockets, unsigned int max_sockets)
 
 	if (!adapter_address || (ret != NO_ERROR)) {
 		free(adapter_address);
-		IIO_ERROR("Failed to get network adapter addresses\n");
+		prm_err(params, "Failed to get network adapter addresses\n");
 		return num_sockets;
 	}
 
@@ -135,13 +136,14 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 {
 	struct dns_sd_cb_data *cb_data = user_data;
 	struct dns_sd_discovery_data *dd = cb_data->d;
+	const struct iio_context_params *params = cb_data->params;
 	char addrbuffer[64];
 	char servicebuffer[64];
 	char namebuffer[256];
 	mdns_record_srv_t srv;
 
 	if (!dd) {
-		IIO_ERROR("DNS SD: Missing info structure. Stop browsing.\n");
+		prm_err(params, "DNS SD: Missing info structure. Stop browsing.\n");
 		goto quit;
 	}
 
@@ -153,8 +155,9 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 
 	srv = mdns_record_parse_srv(data, size, offset, length,
 				    namebuffer, sizeof(namebuffer));
-	IIO_DEBUG("%s : SRV %.*s priority %d weight %d port %d\n", addrbuffer,
-		  MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
+	prm_dbg(params, "%s : SRV %.*s priority %d weight %d port %d\n",
+		addrbuffer, MDNS_STRING_FORMAT(srv.name), srv.priority,
+		srv.weight, srv.port);
 
 	/* Go to the last element in the list */
 	while (dd->next)
@@ -172,13 +175,13 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	iio_strlcpy(dd->addr_str, addrbuffer, DNS_SD_ADDRESS_STR_MAX);
 	dd->port = srv.port;
 
-	IIO_DEBUG("DNS SD: added %s (%s:%d)\n",
-		  dd->hostname, dd->addr_str, dd->port);
+	prm_dbg(params, "DNS SD: added %s (%s:%d)\n",
+		dd->hostname, dd->addr_str, dd->port);
 
 	/* A list entry was filled, prepare new item on the list */
 	dd->next = zalloc(sizeof(*dd->next));
 	if (!dd->next)
-		IIO_ERROR("DNS SD mDNS Resolver : memory failure\n");
+		prm_err(params, "DNS SD mDNS Resolver : memory failure\n");
 
 quit:
 	return 0;
@@ -203,7 +206,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 		return -WSAGetLastError();
 	}
 
-	IIO_DEBUG("DNS SD: Start service discovery.\n");
+	prm_dbg(params, "DNS SD: Start service discovery.\n");
 
 	*ddata = zalloc(sizeof(**ddata));
 	if (!*ddata)
@@ -214,26 +217,26 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	if (!buffer)
 		goto out_wsa_cleanup;
 
-	IIO_DEBUG("Sending DNS-SD discovery\n");
+	prm_dbg(params, "Sending DNS-SD discovery\n");
 
-	ret = open_client_sockets(sockets, ARRAY_SIZE(sockets));
+	ret = open_client_sockets(params, sockets, ARRAY_SIZE(sockets));
 	if (ret <= 0) {
-		IIO_ERROR("Failed to open any client sockets\n");
+		prm_err(params, "Failed to open any client sockets\n");
 		goto out_free_buffer;
 	}
 
 	num_sockets = (unsigned int)ret;
-	IIO_DEBUG("Opened %d socket%s for mDNS query\n",
-		  num_sockets, (num_sockets > 1) ? "s" : "");
+	prm_dbg(params, "Opened %d socket%s for mDNS query\n",
+		num_sockets, (num_sockets > 1) ? "s" : "");
 
-	IIO_DEBUG("Sending mDNS query: %s\n", service);
+	prm_dbg(params, "Sending mDNS query: %s\n", service);
 
 	for (isock = 0; isock < num_sockets; isock++) {
 		ret = mdns_query_send(sockets[isock], MDNS_RECORDTYPE_PTR,
 				      service, sizeof(service)-1, buffer,
 				      capacity);
 		if (ret <= 0)
-			IIO_ERROR("Failed to send mDNS query: errno %d\n", errno);
+			prm_perror(params, errno, "Failed to send mDNS query");
 
 		transaction_id[isock] = ret;
 	}
@@ -244,7 +247,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	/* This is a simple implementation that loops for 10 seconds or as long as we get replies
 	 * A real world implementation would probably use select, poll or similar syscall to wait
 	 * until data is available on a socket and then read it */
-	IIO_DEBUG("Reading mDNS query replies\n");
+	prm_dbg(params, "Reading mDNS query replies\n");
 
 	for (i = 0; i < 10; i++) {
 		do {
@@ -270,7 +273,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	for (isock = 0; isock < num_sockets; ++isock)
 		mdns_socket_close(sockets[isock]);
 
-	IIO_DEBUG("Closed socket%s\n", (num_sockets > 1) ? "s" : "");
+	prm_dbg(params, "Closed socket%s\n", (num_sockets > 1) ? "s" : "");
 
 	ret = 0;
 out_free_buffer:
