@@ -6,11 +6,11 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "debug.h"
 #include "dns-sd.h"
 #include "ops.h"
 #include "thread-pool.h"
 
-#include "../debug.h"
 #include "../iio.h"
 
 #include <avahi-common/thread-watch.h>

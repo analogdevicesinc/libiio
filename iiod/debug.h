@@ -6,10 +6,10 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef __IIOD_DEBUG_H__
+#define __IIOD_DEBUG_H__
 
-#include "iio-config.h"
+#include "../iio-config.h"
 
 #include <stdio.h>
 
@@ -90,4 +90,4 @@
 #define IIO_ERROR(...) do { } while (0)
 #endif
 
-#endif
+#endif /* __IIOD_DEBUG_H__ */
