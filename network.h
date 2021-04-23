@@ -14,7 +14,7 @@
 
 struct addrinfo;
 
-struct iio_network_io_context {
+struct iiod_client_pdata {
 	int fd;
 
 	/* Only buffer IO contexts can be cancelled. */
@@ -25,10 +25,10 @@ struct iio_network_io_context {
 	unsigned int timeout_ms;
 };
 
-int setup_cancel(struct iio_network_io_context *io_ctx);
-void cleanup_cancel(struct iio_network_io_context *io_ctx);
-void do_cancel(struct iio_network_io_context *io_ctx);
-int wait_cancellable(struct iio_network_io_context *io_ctx, bool read);
+int setup_cancel(struct iiod_client_pdata *io_ctx);
+void cleanup_cancel(struct iiod_client_pdata *io_ctx);
+void do_cancel(struct iiod_client_pdata *io_ctx);
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read);
 
 int do_create_socket(const struct addrinfo *addrinfo);
 

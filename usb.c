@@ -33,7 +33,7 @@ struct iio_usb_ep_couple {
 	struct iio_mutex *lock;
 };
 
-struct iio_usb_io_context {
+struct iiod_client_pdata {
 	struct iio_usb_ep_couple *ep;
 
 	struct iio_mutex *lock;
@@ -56,14 +56,14 @@ struct iio_context_pdata {
 
 	unsigned int timeout_ms;
 
-	struct iio_usb_io_context io_ctx;
+	struct iiod_client_pdata io_ctx;
 };
 
 struct iio_device_pdata {
 	struct iio_mutex *lock;
 
 	bool opened;
-	struct iio_usb_io_context io_ctx;
+	struct iiod_client_pdata io_ctx;
 };
 
 static const unsigned int libusb_to_errno_codes[] = {
@@ -102,7 +102,7 @@ static unsigned int libusb_to_errno(int error)
 	}
 }
 
-static int usb_io_context_init(struct iio_usb_io_context *io_ctx)
+static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
 	io_ctx->lock = iio_mutex_create();
 	if (!io_ctx->lock)
@@ -111,7 +111,7 @@ static int usb_io_context_init(struct iio_usb_io_context *io_ctx)
 	return 0;
 }
 
-static void usb_io_context_exit(struct iio_usb_io_context *io_ctx)
+static void usb_io_context_exit(struct iiod_client_pdata *io_ctx)
 {
 	if (io_ctx->lock) {
 		iio_mutex_destroy(io_ctx->lock);
@@ -564,7 +564,7 @@ static void LIBUSB_CALL sync_transfer_cb(struct libusb_transfer *transfer)
 }
 
 static int usb_sync_transfer(struct iio_context_pdata *pdata,
-	struct iio_usb_io_context *io_ctx, unsigned int ep_type,
+	struct iiod_client_pdata *io_ctx, unsigned int ep_type,
 	char *data, size_t len, int *transferred)
 {
 	unsigned char ep;
@@ -669,7 +669,8 @@ unlock:
 }
 
 static ssize_t write_data_sync(struct iio_context_pdata *pdata,
-		void *ep, const char *data, size_t len)
+			       struct iiod_client_pdata *ep,
+			       const char *data, size_t len)
 {
 	int transferred, ret;
 
@@ -682,7 +683,8 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 }
 
 static ssize_t read_data_sync(struct iio_context_pdata *pdata,
-		void *ep, char *buf, size_t len)
+			      struct iiod_client_pdata *ep,
+			      char *buf, size_t len)
 {
 	int transferred, ret;
 
