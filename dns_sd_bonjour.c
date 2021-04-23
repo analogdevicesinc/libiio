@@ -7,8 +7,8 @@
  *         Robin Getz <robin.getz@analog.com>
  */
 
-#include "debug.h"
 #include "dns_sd.h"
+#include "iio-debug.h"
 #include "iio-lock.h"
 #include "iio-private.h"
 
@@ -45,57 +45,57 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 	SInt32 port;
 
 	if ((flags & kCFNetServiceFlagIsDomain) != 0) {
-		IIO_ERROR("DNS SD: FATAL! Callback called for domain, not service.\n");
+		prm_err(params, "DNS SD: FATAL! Callback called for domain, not service.\n");
 		goto stop_browsing;
 	}
 
 	if (dd == NULL) {
-		IIO_ERROR("DNS SD: Missing info structure. Stop browsing.\n");
+		prm_err(params, "DNS SD: Missing info structure. Stop browsing.\n");
 		goto stop_browsing;
 	}
 
 	if ((flags & kCFNetServiceFlagRemove) != 0) {
-		IIO_DEBUG("DNS SD: Callback to remove service. Ignore.\n");
+		prm_dbg(params, "DNS SD: Callback to remove service. Ignore.\n");
 		return;
 	}
 
 	iio_mutex_lock(dd->lock);
 
 	if (netService == NULL) {
-		IIO_DEBUG("DNS SD: Net service is null.\n");
+		prm_dbg(params, "DNS SD: Net service is null.\n");
 		goto verify_flags;
 	}
 
 	if (!CFNetServiceResolveWithTimeout(netService, 10.0, &anError)) {
-		IIO_DEBUG("DNS SD: Resolve error: %ld.%d\n",
-			  anError.domain, anError.error);
+		prm_dbg(params, "DNS SD: Resolve error: %ld.%d\n",
+			anError.domain, anError.error);
 		goto exit;
 	}
 
 	targetHost = CFNetServiceGetTargetHost(netService);
 	if (targetHost == NULL) {
-		IIO_DEBUG("DNS SD: No valid target host for service.\n");
+		prm_dbg(params, "DNS SD: No valid target host for service.\n");
 		goto exit;
 	}
 
 	if (!CFStringGetCString(targetHost, hostname,
 				sizeof(hostname), kCFStringEncodingASCII)) {
-		IIO_ERROR("DNS SD: Could not translate hostname\n");
+		prm_err(params, "DNS SD: Could not translate hostname\n");
 		goto exit;
 	}
 
 	svcName = CFNetServiceGetName(netService);
 	if (!CFStringGetCString(svcName, name,
 				sizeof(name), kCFStringEncodingASCII)) {
-		IIO_ERROR("DNS SD: Could not translate service name\n");
+		prm_err(params, "DNS SD: Could not translate service name\n");
 		goto exit;
 	}
 
 	port = CFNetServiceGetPortNumber(netService);
 	addrArr = CFNetServiceGetAddressing(netService);
 	if (addrArr == NULL) {
-		IIO_WARNING("DNS SD: No valid addresses for service %s.\n",
-			    name);
+		prm_warn(params, "DNS SD: No valid addresses for service %s.\n",
+			 name);
 		goto exit;
 	}
 
@@ -118,8 +118,8 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 	}
 
 	if (!have_v4 && !have_v6) {
-		IIO_WARNING("DNS SD: Can't resolve valid address for "
-			    "service %s.\n", name);
+		prm_warn(params, "DNS SD: Can't resolve valid address for "
+			 "service %s.\n", name);
 		goto exit;
 	}
 
@@ -135,7 +135,8 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 	else if(have_v6)
 		iio_strlcpy(dd->addr_str, address_v6, sizeof(dd->addr_str));
 
-	IIO_DEBUG("DNS SD: added %s (%s:%d)\n", hostname, dd->addr_str, port);
+	prm_dbg(params, "DNS SD: added %s (%s:%d)\n",
+		hostname, dd->addr_str, port);
 
 	if (have_v4 || have_v6) {
 		/* A list entry was filled, prepare new item on the list. */
@@ -144,13 +145,13 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 			/* duplicate lock */
 			dd->next->lock = dd->lock;
 		} else {
-			IIO_ERROR("DNS SD Bonjour Resolver : memory failure\n");
+			prm_err(params, "DNS SD Bonjour Resolver : memory failure\n");
 		}
 	}
 
 verify_flags:
 	if ((flags & kCFNetServiceFlagMoreComing) == 0) {
-		IIO_DEBUG("DNS SD: No more entries coming.\n");
+		prm_dbg(params, "DNS SD: No more entries coming.\n");
 		CFNetServiceBrowserStopSearch(browser, &anError);
 	}
 
@@ -177,7 +178,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	Boolean result;
 	int ret = 0;
 
-	IIO_DEBUG("DNS SD: Start service discovery.\n");
+	prm_dbg(params, "DNS SD: Start service discovery.\n");
 
 	d = zalloc(sizeof(*d));
 	if (!d)
@@ -198,7 +199,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 						   &clientContext);
 
 	if (serviceBrowser == NULL) {
-		IIO_ERROR("DNS SD: Failed to create service browser.\n");
+		prm_err(params, "DNS SD: Failed to create service browser.\n");
 		dnssd_free_all_discovery_data(params, d);
 		ret = -ENOMEM;
 		goto exit;
@@ -214,9 +215,9 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 						      domain, type, &error);
 
 	if (result == false) {
-		IIO_ERROR("DNS SD: CFNetServiceBrowserSearchForServices "
-			  "failed (domain = %ld, error = %d)\n",
-			  (long)error.domain, error.error);
+		prm_err(params, "DNS SD: CFNetServiceBrowserSearchForServices "
+			"failed (domain = %ld, error = %d)\n",
+			(long)error.domain, error.error);
 
 		ret = -ENXIO;
 	} else {
@@ -224,22 +225,22 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 
 		if (runRes != kCFRunLoopRunHandledSource && runRes != kCFRunLoopRunTimedOut) {
 			if (runRes == kCFRunLoopRunFinished) {
-				IIO_ERROR("DNS SD: CFRunLoopRunInMode completed "
-					  "kCFRunLoopRunFinished (%d)\n", runRes);
+				prm_err(params, "DNS SD: CFRunLoopRunInMode completed "
+					"kCFRunLoopRunFinished (%d)\n", runRes);
 			} else if (runRes == kCFRunLoopRunStopped) {
-				IIO_ERROR("DNS SD: CFRunLoopRunInMode completed "
-					  "kCFRunLoopRunStopped (%d)\n", runRes);
+				prm_err(params, "DNS SD: CFRunLoopRunInMode completed "
+					"kCFRunLoopRunStopped (%d)\n", runRes);
 			} else {
-				IIO_ERROR("DNS SD: CFRunLoopRunInMode completed "
-					  "for unknown reason (%d)\n", runRes);
+				prm_err(params, "DNS SD: CFRunLoopRunInMode completed "
+					"for unknown reason (%d)\n", runRes);
 			}
 		} else {
 			if (runRes == kCFRunLoopRunHandledSource) {
-				IIO_DEBUG("DNS SD: CFRunLoopRunInMode completed "
-					  "kCFRunLoopRunHandledSource (%d)\n", runRes);
+				prm_dbg(params, "DNS SD: CFRunLoopRunInMode completed "
+					"kCFRunLoopRunHandledSource (%d)\n", runRes);
 			} else {
-				IIO_DEBUG("DNS SD: CFRunLoopRunInMode completed "
-					  "kCFRunLoopRunTimedOut (%d)\n", runRes);
+				prm_dbg(params, "DNS SD: CFRunLoopRunInMode completed "
+					"kCFRunLoopRunTimedOut (%d)\n", runRes);
 			}
 		}
 
@@ -252,8 +253,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	CFRelease(serviceBrowser);
 	serviceBrowser = NULL;
 
-	IIO_DEBUG("DNS SD: Completed service discovery, "
-		  "return code : %d\n", ret);
+	prm_dbg(params, "DNS SD: Completed service discovery, "
+		"return code : %d\n", ret);
 
 exit:
 	iio_mutex_destroy(d->lock);
