@@ -30,7 +30,7 @@ int set_blocking_mode(int s, bool blocking)
 	return 0;
 }
 
-int setup_cancel(struct iio_network_io_context *io_ctx)
+int setup_cancel(struct iiod_client_pdata *io_ctx)
 {
 	io_ctx->events[0] = WSACreateEvent();
 	if (io_ctx->events[0] == WSA_INVALID_EVENT)
@@ -45,18 +45,18 @@ int setup_cancel(struct iio_network_io_context *io_ctx)
 	return 0;
 }
 
-void cleanup_cancel(struct iio_network_io_context *io_ctx)
+void cleanup_cancel(struct iiod_client_pdata *io_ctx)
 {
 	WSACloseEvent(io_ctx->events[0]);
 	WSACloseEvent(io_ctx->events[1]);
 }
 
-void do_cancel(struct iio_network_io_context *io_ctx)
+void do_cancel(struct iiod_client_pdata *io_ctx)
 {
 	WSASetEvent(io_ctx->events[1]);
 }
 
-int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
 {
 	long wsa_events = FD_CLOSE;
 	DWORD ret;

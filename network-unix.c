@@ -37,7 +37,7 @@ int set_blocking_mode(int fd, bool blocking)
 #if WITH_NETWORK_EVENTFD
 #include <sys/eventfd.h>
 
-int create_cancel_fd(struct iio_network_io_context *io_ctx)
+int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 {
 	io_ctx->cancel_fd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (io_ctx->cancel_fd[0] < 0)
@@ -47,7 +47,7 @@ int create_cancel_fd(struct iio_network_io_context *io_ctx)
 
 #else /* WITH_NETWORK_EVENTFD */
 
-int create_cancel_fd(struct iio_network_io_context *io_ctx)
+int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 {
 	int ret;
 
@@ -74,14 +74,14 @@ err_close:
 }
 #endif /* WITH_NETWORK_EVENTFD */
 
-void cleanup_cancel(struct iio_network_io_context *io_ctx)
+void cleanup_cancel(struct iiod_client_pdata *io_ctx)
 {
 	close(io_ctx->cancel_fd[0]);
 	if (!WITH_NETWORK_EVENTFD)
 		close(io_ctx->cancel_fd[1]);
 }
 
-int setup_cancel(struct iio_network_io_context *io_ctx)
+int setup_cancel(struct iiod_client_pdata *io_ctx)
 {
 	int ret;
 
@@ -94,7 +94,7 @@ int setup_cancel(struct iio_network_io_context *io_ctx)
 
 #define CANCEL_WR_FD (!WITH_NETWORK_EVENTFD)
 
-void do_cancel(struct iio_network_io_context *io_ctx)
+void do_cancel(struct iiod_client_pdata *io_ctx)
 {
 	uint64_t event = 1;
 	int ret;
@@ -108,7 +108,7 @@ void do_cancel(struct iio_network_io_context *io_ctx)
 	}
 }
 
-int wait_cancellable(struct iio_network_io_context *io_ctx, bool read)
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
 {
 	struct pollfd pfd[2];
 	int ret;

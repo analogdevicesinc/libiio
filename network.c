@@ -48,14 +48,14 @@
 #define DEFAULT_TIMEOUT_MS 5000
 
 struct iio_context_pdata {
-	struct iio_network_io_context io_ctx;
+	struct iiod_client_pdata io_ctx;
 	struct addrinfo *addrinfo;
 	struct iiod_client *iiod_client;
 	bool msg_trunc_supported;
 };
 
 struct iio_device_pdata {
-	struct iio_network_io_context io_ctx;
+	struct iiod_client_pdata io_ctx;
 #ifdef WITH_NETWORK_GET_BUFFER
 	int memfd;
 	void *mmap_addr;
@@ -65,7 +65,7 @@ struct iio_device_pdata {
 	struct iio_mutex *lock;
 };
 
-static ssize_t network_recv(struct iio_network_io_context *io_ctx,
+static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 		void *data, size_t len, int flags)
 {
 	ssize_t ret;
@@ -95,7 +95,7 @@ static ssize_t network_recv(struct iio_network_io_context *io_ctx,
 	return ret;
 }
 
-static ssize_t network_send(struct iio_network_io_context *io_ctx,
+static ssize_t network_send(struct iiod_client_pdata *io_ctx,
 		const void *data, size_t len, int flags)
 {
 	ssize_t ret;
@@ -126,7 +126,7 @@ static ssize_t network_send(struct iio_network_io_context *io_ctx,
 	return ret;
 }
 
-static ssize_t write_all(struct iio_network_io_context *io_ctx,
+static ssize_t write_all(struct iiod_client_pdata *io_ctx,
 		const void *src, size_t len)
 {
 	uintptr_t ptr = (uintptr_t) src;
@@ -140,7 +140,7 @@ static ssize_t write_all(struct iio_network_io_context *io_ctx,
 	return (ssize_t)(ptr - (uintptr_t) src);
 }
 
-static ssize_t write_command(struct iio_network_io_context *io_ctx,
+static ssize_t write_command(struct iiod_client_pdata *io_ctx,
 		const char *cmd)
 {
 	ssize_t ret;
@@ -456,7 +456,7 @@ static ssize_t network_write(const struct iio_device *dev,
 
 #ifdef WITH_NETWORK_GET_BUFFER
 
-static ssize_t read_all(struct iio_network_io_context *io_ctx,
+static ssize_t read_all(struct iiod_client_pdata *io_ctx,
 		void *dst, size_t len)
 {
 	uintptr_t ptr = (uintptr_t) dst;
@@ -472,7 +472,7 @@ static ssize_t read_all(struct iio_network_io_context *io_ctx,
 	return (ssize_t)(ptr - (uintptr_t) dst);
 }
 
-static int read_integer(struct iio_network_io_context *io_ctx, long *val)
+static int read_integer(struct iiod_client_pdata *io_ctx, long *val)
 {
 	unsigned int i;
 	char buf[1024], *ptr;
@@ -501,7 +501,7 @@ static int read_integer(struct iio_network_io_context *io_ctx, long *val)
 	return 0;
 }
 
-static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
+static ssize_t network_read_mask(struct iiod_client_pdata *io_ctx,
 		uint32_t *mask, size_t words)
 {
 	long read_len;
@@ -541,7 +541,7 @@ static ssize_t network_read_mask(struct iio_network_io_context *io_ctx,
 	return (ssize_t) read_len;
 }
 
-static ssize_t read_error_code(struct iio_network_io_context *io_ctx)
+static ssize_t read_error_code(struct iiod_client_pdata *io_ctx)
 {
 	/*
 	 * The server returns two integer codes.
@@ -923,28 +923,31 @@ static const struct iio_backend_ops network_ops = {
 };
 
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
-		void *io_data, const char *src, size_t len)
+				  struct iiod_client_pdata *io_data,
+				  const char *src, size_t len)
 {
-	struct iio_network_io_context *io_ctx = io_data;
+	struct iiod_client_pdata *io_ctx = io_data;
 
 	return network_send(io_ctx, src, len, 0);
 }
 
 static ssize_t network_read_data(struct iio_context_pdata *pdata,
-		void *io_data, char *dst, size_t len)
+				 struct iiod_client_pdata *io_data,
+				 char *dst, size_t len)
 {
-	struct iio_network_io_context *io_ctx = io_data;
+	struct iiod_client_pdata *io_ctx = io_data;
 
 	return network_recv(io_ctx, dst, len, 0);
 }
 
 static ssize_t network_read_line(struct iio_context_pdata *pdata,
-		void *io_data, char *dst, size_t len)
+				 struct iiod_client_pdata *io_data,
+				 char *dst, size_t len)
 {
 	bool found = false;
 	size_t i;
 #ifdef __linux__
-	struct iio_network_io_context *io_ctx = io_data;
+	struct iiod_client_pdata *io_ctx = io_data;
 	ssize_t ret;
 	size_t bytes_read = 0;
 
@@ -1019,7 +1022,7 @@ static const struct iiod_client_ops network_iiod_client_ops = {
  * applications this is not something that can be detected at compile time. If
  * we want to support WSL we have to have a runtime workaround.
  */
-static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
+static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
 {
 	int ret;
 
@@ -1028,7 +1031,7 @@ static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
 	return ret != -EFAULT && ret != -EINVAL;
 }
 #else
-static bool msg_trunc_supported(struct iio_network_io_context *io_ctx)
+static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
 {
 	return false;
 }
