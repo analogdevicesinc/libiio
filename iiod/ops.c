@@ -121,6 +121,21 @@ struct sample_cb_info {
  * clients */
 static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 
+static unsigned int get_channel_number(const struct iio_channel *chn)
+{
+	const struct iio_device *dev = iio_channel_get_device(chn);
+	const struct iio_channel *other;
+	unsigned int i = 0;
+
+	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
+		other = iio_device_get_channel(dev, i);
+		if (other == chn)
+			break;
+	}
+
+	return i;
+}
+
 #if WITH_AIO
 static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	bool do_read)
@@ -869,6 +884,48 @@ static void remove_thd_entry(struct ThdEntry *t)
 	free_thd_entry(t);
 }
 
+static ssize_t get_dev_sample_size_mask(const struct iio_device *dev,
+					const uint32_t *mask, size_t words)
+{
+	unsigned int i, len, number,
+		     nb_channels = iio_device_get_channels_count(dev);
+	const struct iio_channel *prev = NULL;
+	const struct iio_channel *chn;
+	const struct iio_data_format *fmt;
+	long index;
+	ssize_t size = 0;
+
+	if (words != (nb_channels + 31) / 32)
+		return -EINVAL;
+
+	for (i = 0; i < nb_channels; i++) {
+		chn = iio_device_get_channel(dev, i);
+		number = get_channel_number(chn);
+		fmt = iio_channel_get_data_format(chn);
+		index = iio_channel_get_index(chn);
+		len = fmt->length / 8 * fmt->repeat;
+
+		if (index < 0)
+			break;
+		if (!TEST_BIT(mask, number))
+			continue;
+
+		if (prev && index == iio_channel_get_index(prev)) {
+			prev = chn;
+			continue;
+		}
+
+		if (size % len)
+			size += 2 * len - (size % len);
+		else
+			size += len;
+
+		prev = chn;
+	}
+
+	return size;
+}
+
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic)
 {
@@ -899,7 +956,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->mask = words;
 	thd->nb = 0;
 	thd->samples_count = samples_count;
-	thd->sample_size = iio_device_get_sample_size_mask(dev, words, len);
+	thd->sample_size = get_dev_sample_size_mask(dev, words, len);
 	thd->pdata = pdata;
 	thd->dev = dev;
 	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
