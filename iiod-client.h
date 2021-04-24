@@ -22,6 +22,7 @@ struct iiod_client_ops {
 			void *desc, char *dst, size_t len);
 	ssize_t (*read_line)(struct iio_context_pdata *pdata,
 			void *desc, char *dst, size_t len);
+	int (*consume)(struct iio_context_pdata *pdata);
 };
 
 void iiod_client_mutex_lock(struct iiod_client *client);
