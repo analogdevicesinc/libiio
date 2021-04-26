@@ -136,6 +136,21 @@ static unsigned int get_channel_number(const struct iio_channel *chn)
 	return i;
 }
 
+static inline const char *dev_label_or_name_or_id(const struct iio_device *dev)
+{
+	const char *name;
+
+	name = iio_device_get_label(dev);
+	if (name)
+		return name;
+
+	name = iio_device_get_name(dev);
+	if (name)
+		return name;
+
+	return iio_device_get_id(dev);
+}
+
 #if WITH_AIO
 static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	bool do_read)
@@ -542,7 +557,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	ssize_t ret = 0;
 
 	IIO_DEBUG("R/W thread started for device %s\n",
-			dev->name ? dev->name : dev->id);
+		  dev_label_or_name_or_id(dev));
 
 	while (true) {
 		bool has_readers = false, has_writers = false,
@@ -602,7 +617,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			}
 
 			IIO_DEBUG("IIO device %s reopened with new mask:\n",
-					dev->id);
+				  dev_label_or_name_or_id(dev));
 			for (i = 0; i < nb_words; i++)
 				IIO_DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
@@ -759,7 +774,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	pthread_mutex_unlock(&devlist_lock);
 
 	IIO_DEBUG("Stopping R/W thread for device %s\n",
-			dev->name ? dev->name : dev->id);
+		  dev_label_or_name_or_id(dev));
 
 	dev_entry_put(entry);
 }
