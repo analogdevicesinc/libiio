@@ -95,6 +95,7 @@ struct DevEntry {
 	struct iio_device *dev;
 	struct iio_buffer *buf;
 	unsigned int sample_size, nb_clients;
+	unsigned int samples_count;
 	bool update_mask;
 	bool cyclic;
 	bool closed;
@@ -507,7 +508,7 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 	if (dev->sample_size == thd->sample_size) {
 		/* Short path: Receive directly in the buffer */
 
-		size_t len = dev->buf->length;
+		size_t len = dev->sample_size * dev->samples_count;
 		if (thd->nb < len)
 			len = thd->nb;
 
@@ -630,6 +631,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			entry->update_mask = false;
 
 			entry->sample_size = iio_device_get_sample_size(dev);
+			entry->samples_count = samples_count;
 			mask_updated = true;
 		}
 
