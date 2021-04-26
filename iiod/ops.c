@@ -10,7 +10,6 @@
 #include "parser.h"
 #include "thread-pool.h"
 #include "../debug.h"
-#include "../iio-private.h"
 
 #include <errno.h>
 #include <limits.h>

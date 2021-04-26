@@ -7,7 +7,6 @@
  */
 
 #include "../debug.h"
-#include "../iio-private.h"
 #include "ops.h"
 #include "thread-pool.h"
 
