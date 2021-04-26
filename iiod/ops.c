@@ -712,8 +712,17 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 			pthread_mutex_lock(&entry->thdlist_lock);
 
-			/* Reset the size of the buffer to its maximum size */
-			entry->buf->data_length = entry->buf->length;
+			/* Reset the size of the buffer to its maximum size.
+			 *
+			 * XXX(pcercuei): There is no way to perform this with
+			 * the public libiio API. However, it probably does not
+			 * matter; we only need to reset the size of the buffer
+			 * if the buffer was used for receiving samples, and
+			 * to date there is no IIO device that supports both
+			 * receiving and sending samples.
+			 *
+			 * entry->buf->data_length = entry->buf->length;
+			 */
 
 			/* Same comment as above */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
