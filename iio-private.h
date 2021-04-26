@@ -11,21 +11,7 @@
 
 /* Include public interface */
 #include "iio.h"
-
-#ifdef _WIN32
-#   ifdef LIBIIO_EXPORTS
-#	define __api __declspec(dllexport)
-#   else
-#	define __api __declspec(dllimport)
-#   endif
-#elif __GNUC__ >= 4
-#   define __api __attribute__((visibility ("default")))
-#else
-#   define __api
-#endif
-
 #include "iio-backend.h"
-
 #include "iio-config.h"
 
 #include <stdbool.h>
@@ -272,8 +258,7 @@ void dnssd_context_scan_free(struct iio_scan_backend_context *ctx);
 int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 		struct iio_scan_result *scan_result);
 
-/* This function is not part of the API, but is used by the IIO daemon */
-__api ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
+ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
 
 void iio_channel_init_finalize(struct iio_channel *chn);
@@ -294,7 +279,5 @@ int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
 		     const char *type, const char *dev_id);
 
 ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
-
-#undef __api
 
 #endif /* __IIO_PRIVATE_H__ */
