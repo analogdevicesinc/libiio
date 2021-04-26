@@ -381,8 +381,10 @@ static void print_value(struct parser_pdata *pdata, long value)
 static ssize_t send_sample(const struct iio_channel *chn,
 		void *src, size_t length, void *d)
 {
+	unsigned int number = get_channel_number(chn);
 	struct sample_cb_info *info = d;
-	if (chn->index < 0 || !TEST_BIT(info->mask, chn->number))
+
+	if (iio_channel_get_index(chn) < 0 || !TEST_BIT(info->mask, number))
 		return 0;
 	if (info->nb_bytes < length)
 		return 0;
@@ -408,8 +410,10 @@ static ssize_t send_sample(const struct iio_channel *chn,
 static ssize_t receive_sample(const struct iio_channel *chn,
 		void *dst, size_t length, void *d)
 {
+	unsigned int number = get_channel_number(chn);
 	struct sample_cb_info *info = d;
-	if (chn->index < 0 || !TEST_BIT(info->mask, chn->number))
+
+	if (iio_channel_get_index(chn) < 0 || !TEST_BIT(info->mask, number))
 		return 0;
 	if (info->cpt == info->nb_bytes)
 		return 0;
@@ -436,6 +440,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 {
 	struct parser_pdata *pdata = thd->pdata;
 	bool demux = server_demux && dev->sample_size != thd->sample_size;
+	void *start;
 
 	if (demux)
 		len = (len / dev->sample_size) * thd->sample_size;
@@ -475,7 +480,8 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	if (!demux) {
 		/* Short path */
-		return write_all(pdata, dev->buf->buffer, len);
+		start = iio_buffer_start(dev->buf);
+		return write_all(pdata, start, len);
 	} else {
 		struct sample_cb_info info = {
 			.pdata = pdata,
@@ -505,7 +511,7 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 		if (thd->nb < len)
 			len = thd->nb;
 
-		return read_all(pdata, dev->buf->buffer, len);
+		return read_all(pdata, iio_buffer_start(dev->buf), len);
 	} else {
 		/* Long path: Mux the samples to the buffer */
 
@@ -586,14 +592,15 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			if (entry->buf)
 				iio_buffer_destroy(entry->buf);
 
-			for (i = 0; i < dev->nb_channels; i++) {
-				struct iio_channel *chn = dev->channels[i];
-				long index = chn->index;
+			for (i = 0; i < iio_device_get_channels_count(dev); i++) {
+				struct iio_channel *chn = iio_device_get_channel(dev, i);
+				unsigned int number = get_channel_number(chn);
+				long index = iio_channel_get_index(chn);
 
 				if (index < 0)
 					continue;
 
-				if (TEST_BIT(entry->mask, chn->number))
+				if (TEST_BIT(entry->mask, number))
 					iio_channel_enable(chn);
 				else
 					iio_channel_disable(chn);
@@ -955,7 +962,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	if (!dev)
 		return -ENODEV;
 
-	nb_channels = dev->nb_channels;
+	nb_channels = iio_device_get_channels_count(dev);
 	if (len != ((nb_channels + 31) / 32) * 8)
 		return -EINVAL;
 
@@ -1322,12 +1329,13 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 
 	ret = iio_device_get_trigger(dev, &trigger);
 	if (!ret && trigger) {
+		const char *name = iio_device_get_name(trigger);
 		char buf[256];
 
-		ret = strlen(trigger->name);
+		ret = strlen(name);
 		print_value(pdata, ret);
 
-		snprintf(buf, sizeof(buf), "%s\n", trigger->name);
+		snprintf(buf, sizeof(buf), "%s\n", name);
 		ret = write_all(pdata, buf, ret + 1);
 	} else {
 		print_value(pdata, ret);
