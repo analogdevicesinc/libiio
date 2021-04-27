@@ -193,30 +193,30 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	void *buffer;
 	int sockets[32];
 	int transaction_id[32];
-	int ret;
+	int ret = -ENOMEM;
 
 	if (WSAStartup(versionWanted, &wsaData)) {
 		printf("Failed to initialize WinSock\n");
-		return -1;
+		return -WSAGetLastError();
 	}
 
 	IIO_DEBUG("DNS SD: Start service discovery.\n");
 
 	*ddata = zalloc(sizeof(**ddata));
 	if (!*ddata)
-		return -ENOMEM;
+		goto out_wsa_cleanup;
 
 
 	buffer = malloc(capacity);
 	if (!buffer)
-		return -ENOMEM;
+		goto out_wsa_cleanup;
 
 	IIO_DEBUG("Sending DNS-SD discovery\n");
 
 	ret = open_client_sockets(sockets, ARRAY_SIZE(sockets));
 	if (ret <= 0) {
 		IIO_ERROR("Failed to open any client sockets\n");
-		return ret;
+		goto out_free_buffer;
 	}
 
 	num_sockets = (unsigned int)ret;
@@ -266,10 +266,12 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	IIO_DEBUG("Closed socket%s\n", (num_sockets > 1) ? "s" : "");
 
+	ret = 0;
+out_free_buffer:
 	free(buffer);
+out_wsa_cleanup:
 	WSACleanup();
-
-	return 0;
+	return ret;
 }
 
 int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len)
