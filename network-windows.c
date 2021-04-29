@@ -8,6 +8,7 @@
 
 #include "network.h"
 
+#include <errno.h>
 #include <ws2tcpip.h>
 #define close(s) closesocket(s)
 #ifndef MAXHOSTNAMELEN

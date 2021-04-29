@@ -16,11 +16,11 @@
 #include "iio-lock.h"
 #include "iio-private.h"
 
+#include <errno.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
-#include <errno.h>
 #include <netdb.h>
 #include <string.h>
 #include <sys/socket.h>
