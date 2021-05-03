@@ -17,40 +17,6 @@
 
 #include <stdbool.h>
 
-#ifdef _MSC_BUILD
-#define inline __inline
-#define iio_sscanf sscanf_s
-#else
-#define iio_sscanf sscanf
-#endif
-
-#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
-#define BIT(x) (1 << (x))
-#define BIT_MASK(bit) BIT((bit) % 32)
-#define BIT_WORD(bit) ((bit) / 32)
-#define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
-		& BIT_MASK(bit)))
-#define SET_BIT(addr, bit) \
-	*(((uint32_t *) addr) + BIT_WORD(bit)) |= BIT_MASK(bit)
-#define CLEAR_BIT(addr, bit) \
-	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
-
-/* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
- * {NAME_MAX} : Maximum number of bytes in a filename
- * {PATH_MAX} : Maximum number of bytes in a pathname
- * {PAGESIZE} : Size in bytes of a page
- * Too bad we work on non-POSIX systems
- */
-#ifndef NAME_MAX
-#define NAME_MAX 256
-#endif
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
-#ifndef PAGESIZE
-#define PAGESIZE 4096
-#endif
-
 #define MAX_CHN_ID     NAME_MAX  /* encoded in the sysfs filename */
 #define MAX_CHN_NAME   NAME_MAX  /* encoded in the sysfs filename */
 #define MAX_DEV_ID     NAME_MAX  /* encoded in the sysfs filename */
@@ -86,12 +52,6 @@ static inline uint32_t iio_be32toh(uint32_t word)
 static inline uint32_t iio_htobe32(uint32_t word)
 {
 	return iio_be32toh(word);
-}
-
-/* Allocate zeroed out memory */
-static inline void *zalloc(size_t size)
-{
-	return calloc(1, size);
 }
 
 static inline __check_ret bool IS_ERR(const void *ptr)
@@ -266,8 +226,6 @@ int iio_context_add_attr(struct iio_context *ctx,
 
 int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
 		     const char *attr, const char *type);
-
-ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 
 __cnst const struct iio_context_params *get_default_params(void);
 
