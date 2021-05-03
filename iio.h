@@ -64,19 +64,25 @@ typedef ptrdiff_t ssize_t;
 #define __check_ret
 #endif
 
-#ifdef _WIN32
-#   ifdef LIBIIO_STATIC
-#	define __api
-#   elif defined(LIBIIO_EXPORTS)
-#	define __api __declspec(dllexport)
-#   else
-#	define __api __declspec(dllimport)
-#   endif
-#elif __GNUC__ >= 4 && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
-#   define __api __attribute__((visibility ("default")))
+#if !defined(_WIN32) && __GNUC__ >= 4 && \
+	!defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
+#  define __iio_api_export __attribute__((visibility ("default")))
+#  define __iio_api_import
+#elif defined(_WIN32) && !defined(LIBIIO_STATIC)
+#  define __iio_api_export __declspec(dllexport)
+#  define __iio_api_import __declspec(dllimport)
 #else
-#   define __api
+#  define __iio_api_export
+#  define __iio_api_import
 #endif
+
+#ifdef LIBIIO_EXPORTS
+#  define __iio_api __iio_api_export
+#else
+#  define __iio_api __iio_api_import
+#endif
+
+#define __api __iio_api
 
 #endif /* DOXYGEN */
 
