@@ -56,6 +56,10 @@ static const struct f_options flow_options[] = {
 	{'\0', SP_FLOWCONTROL_NONE},
 };
 
+static struct iio_context *
+serial_create_context_from_args(const struct iio_context_params *params,
+				const char *args);
+
 static char flow_char(enum sp_flowcontrol fc)
 {
 	unsigned int i;
@@ -369,6 +373,7 @@ static int serial_set_timeout(struct iio_context *ctx, unsigned int timeout)
 }
 
 static const struct iio_backend_ops serial_ops = {
+	.create = serial_create_context_from_args,
 	.get_version = serial_get_version,
 	.open = serial_open,
 	.close = serial_close,
@@ -382,6 +387,14 @@ static const struct iio_backend_ops serial_ops = {
 	.shutdown = serial_shutdown,
 	.get_description = serial_get_description,
 	.set_timeout = serial_set_timeout,
+};
+
+const struct iio_backend iio_serial_backend = {
+	.api_version = IIO_BACKEND_API_V1,
+	.name = "serial",
+	.uri_prefix = "serial:",
+	.ops = &serial_ops,
+	.default_timeout_ms = 1000,
 };
 
 static const struct iiod_client_ops serial_iiod_client_ops = {
@@ -649,9 +662,9 @@ static int serial_parse_options(const struct iio_context_params *params,
 	return 0;
 }
 
-struct iio_context *
-serial_create_context_from_uri(const struct iio_context_params *params,
-			       const char *uri)
+static struct iio_context *
+serial_create_context_from_args(const struct iio_context_params *params,
+				const char *args)
 {
 	struct iio_context *ctx = NULL;
 	char *comma, *uri_dup;
@@ -660,11 +673,7 @@ serial_create_context_from_uri(const struct iio_context_params *params,
 	enum sp_flowcontrol flow;
 	int ret;
 
-	if (strncmp(uri, "serial:", sizeof("serial:") - 1) != 0)
-		goto err_bad_uri;
-
-	uri_dup = iio_strdup((const char *)
-			((uintptr_t) uri + sizeof("serial:") - 1));
+	uri_dup = iio_strdup(args);
 	if (!uri_dup) {
 		errno = ENOMEM;
 		return NULL;
@@ -692,8 +701,7 @@ serial_create_context_from_uri(const struct iio_context_params *params,
 
 err_free_dup:
 	free(uri_dup);
-err_bad_uri:
-	prm_err(params, "Bad URI: \'%s\'\n", uri);
+	prm_err(params, "Bad URI: \'serial:%s\'\n", args);
 	errno = EINVAL;
 	return NULL;
 }

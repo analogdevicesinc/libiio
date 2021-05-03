@@ -196,8 +196,6 @@ struct iio_context * xml_create_context_mem(const struct iio_context_params *par
 					    const char *xml, size_t len);
 struct iio_context * xml_create_context(const struct iio_context_params *params,
 					const char *xml_file);
-struct iio_context * serial_create_context_from_uri(const struct iio_context_params *params,
-						    const char *uri);
 
 int local_context_scan(struct iio_scan_result *scan_result);
 
@@ -224,6 +222,7 @@ int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
 __cnst const struct iio_context_params *get_default_params(void);
 
 extern const struct iio_backend iio_ip_backend;
+extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;
 
 #endif /* __IIO_PRIVATE_H__ */
