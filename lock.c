@@ -7,6 +7,7 @@
  */
 
 #include "iio-config.h"
+#include "iio-lock.h"
 
 #ifdef _WIN32
 #include <windows.h>
