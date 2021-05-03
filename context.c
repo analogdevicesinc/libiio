@@ -588,3 +588,73 @@ int iio_context_add_attr(struct iio_context *ctx,
 	ctx->nb_attrs++;
 	return 0;
 }
+
+struct iio_context *
+iio_create_context_from_xml(const struct iio_context_params *params,
+			    const char *xml, size_t xml_len,
+			    const struct iio_backend *backend,
+			    const char *description, const char **ctx_attrs,
+			    const char **ctx_values, unsigned int nb_ctx_attrs)
+{
+	struct iio_context *ctx;
+	char *new_description;
+	unsigned int i;
+	ssize_t len;
+	int ret;
+
+	if (!WITH_XML_BACKEND) {
+		errno = ENOSYS;
+		return NULL;
+	}
+
+	ctx = xml_create_context_mem(params, xml, xml_len);
+	if (!ctx)
+		return NULL;
+
+	if (backend) {
+		ctx->name = backend->name;
+		ctx->ops = backend->ops;
+	}
+
+	for (i = 0; i < nb_ctx_attrs; i++) {
+		ret = iio_context_add_attr(ctx, ctx_attrs[i], ctx_values[i]);
+		if (ret < 0) {
+			prm_perror(params, -ret, "Unable to add context attribute\n");
+			goto err_context_destroy;
+		}
+	}
+
+	if (ctx->description) {
+		len = iio_snprintf(NULL, 0, "%s %s",
+				   ctx->description, description);
+		if (len < 0) {
+			prm_perror(params, -len, "Unable to set context description\n");
+			goto err_context_destroy;
+		}
+
+		new_description = malloc(len + 1);
+		if (!new_description) {
+			prm_err(params, "Unable to alloc memory\n");
+			goto err_context_destroy;
+		}
+
+		iio_snprintf(new_description, len + 1, "%s %s",
+			     ctx->description, description);
+	} else {
+		new_description = iio_strdup(description);
+		if (!new_description) {
+			prm_err(params, "Unable to alloc memory\n");
+			goto err_context_destroy;
+		}
+	}
+
+	free(ctx->description);
+	ctx->description = new_description;
+	ctx->params = *params;
+
+	return ctx;
+
+err_context_destroy:
+	iio_context_destroy(ctx);
+	return NULL;
+}
