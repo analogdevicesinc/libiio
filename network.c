@@ -893,6 +893,13 @@ static const struct iio_backend_ops network_ops = {
 	.cancel = network_cancel,
 };
 
+static const struct iio_backend network_backend = {
+	.api_version = IIO_BACKEND_API_V1,
+	.name = "network",
+	.uri_prefix = "ip:",
+	.ops = &network_ops,
+};
+
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
 				  struct iiod_client_pdata *io_data,
 				  const char *src, size_t len)
@@ -1016,9 +1023,11 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 	struct iiod_client *iiod_client;
 	struct iio_context_pdata *pdata;
 	unsigned int i;
-	size_t uri_len;
 	int fd, ret;
-	char *description, *uri;
+	char *description;
+	const char *ctx_attrs[] = { "ip,ip-addr", "uri" };
+	const char *ctx_values[2];
+	char uri[MAXHOSTNAMELEN + 3];
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -1124,17 +1133,22 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 	else
 		prm_dbg(params, "MSG_TRUNC is NOT supported\n");
 
+	if (host && host[0])
+		iio_snprintf(uri, sizeof(uri), "ip:%s", host);
+	else
+		iio_snprintf(uri, sizeof(uri), "ip:%s\n", description);
+
+	ctx_values[0] = description;
+	ctx_values[1] = uri;
+
 	prm_dbg(params, "Creating context...\n");
 	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
-					 NULL, description,
-					 NULL, NULL, 0);
+					 &network_backend, description,
+					 ctx_attrs, ctx_values,
+					 ARRAY_SIZE(ctx_values));
 	if (!ctx)
 		goto err_destroy_iiod_client;
 
-	/* Override the name and low-level functions of the XML context
-	 * with those corresponding to the network context */
-	ctx->name = "network";
-	ctx->ops = &network_ops;
 	ctx->pdata = pdata;
 	ctx->params = *params;
 
@@ -1142,37 +1156,13 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 	 * switch it to our local one now */
 	pdata->io_ctx.params = &ctx->params;
 
-	uri_len = strlen(description);
-	if (host && host[0])
-		uri_len = strnlen(host, MAXHOSTNAMELEN);
-	uri_len += sizeof ("ip:");
-
-	uri = malloc(uri_len);
-	if (!uri) {
-		ret = -ENOMEM;
-		goto err_network_shutdown;
-	}
-
-	ret = iio_context_add_attr(ctx, "ip,ip-addr", description);
-	if (ret < 0)
-		goto err_free_uri;
-
-	if (host && host[0])
-		iio_snprintf(uri, uri_len, "ip:%s", host);
-	else
-		iio_snprintf(uri, uri_len, "ip:%s\n", description);
-
-	ret = iio_context_add_attr(ctx, "uri", uri);
-	if (ret < 0)
-		goto err_free_uri;
-
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
 
 		dev->pdata = zalloc(sizeof(*dev->pdata));
 		if (!dev->pdata) {
 			ret = -ENOMEM;
-			goto err_free_uri;
+			goto err_network_shutdown;
 		}
 
 		dev->pdata->io_ctx.fd = -1;
@@ -1185,35 +1175,14 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 		dev->pdata->lock = iio_mutex_create();
 		if (!dev->pdata->lock) {
 			ret = -ENOMEM;
-			goto err_free_uri;
+			goto err_network_shutdown;
 		}
 	}
 
-	if (ctx->description) {
-		size_t desc_len = strlen(description);
-		size_t new_size = desc_len + strlen(ctx->description) + 2;
-		char *ptr, *new_description = realloc(description, new_size);
-		if (!new_description) {
-			ret = -ENOMEM;
-			goto err_free_uri;
-		}
-
-		ptr = strrchr(new_description, '\0');
-		iio_snprintf(ptr, new_size - desc_len, " %s", ctx->description);
-		free(ctx->description);
-
-		ctx->description = new_description;
-	} else {
-		ctx->description = description;
-	}
-
-	free(uri);
 	iiod_client_set_timeout(pdata->iiod_client, &pdata->io_ctx,
 			calculate_remote_timeout(params->timeout_ms));
 	return ctx;
 
-err_free_uri:
-	free(uri);
 err_network_shutdown:
 	free(description);
 	iio_context_destroy(ctx);
