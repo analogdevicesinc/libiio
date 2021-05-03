@@ -15,7 +15,6 @@
 #include <string.h>
 
 #define LOCAL_BACKEND_TIMEOUT_MS	1000
-#define SERIAL_BACKEND_TIMEOUT_MS	1000
 
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
@@ -390,6 +389,7 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 
 static const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_NETWORK_BACKEND, &iio_ip_backend),
+	IF_ENABLED(WITH_SERIAL_BACKEND, &iio_serial_backend),
 	IF_ENABLED(WITH_USB_BACKEND, &iio_usb_backend),
 };
 
@@ -416,12 +416,6 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 
 	if (WITH_XML_BACKEND && !strncmp(uri, "xml:", sizeof("xml:") - 1)) {
 		return xml_create_context(&params2, uri + sizeof("xml:") - 1);
-	}
-
-	if (WITH_SERIAL_BACKEND && !strncmp(uri, "serial:", sizeof("serial:") - 1)) {
-		if (!params2.timeout_ms)
-			params2.timeout_ms = SERIAL_BACKEND_TIMEOUT_MS;
-		return serial_create_context_from_uri(&params2, uri);
 	}
 
 	for (i = 0; !backend && i < ARRAY_SIZE(iio_backends); i++) {
