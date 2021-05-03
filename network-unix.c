@@ -8,7 +8,6 @@
 
 #include "iio-config.h"
 #include "iio-debug.h"
-#include "iio-private.h"
 #include "network.h"
 
 #include <errno.h>
