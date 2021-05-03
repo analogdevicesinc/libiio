@@ -192,8 +192,6 @@ int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
 
 struct iio_context * local_create_context(const struct iio_context_params *params);
-struct iio_context * network_create_context(const struct iio_context_params *params,
-					    const char *hostname);
 struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
 					    const char *xml, size_t len);
 struct iio_context * xml_create_context(const struct iio_context_params *params,
@@ -225,6 +223,7 @@ int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
 
 __cnst const struct iio_context_params *get_default_params(void);
 
+extern const struct iio_backend iio_ip_backend;
 extern const struct iio_backend iio_usb_backend;
 
 #endif /* __IIO_PRIVATE_H__ */
