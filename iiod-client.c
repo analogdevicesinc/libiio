@@ -533,7 +533,13 @@ out_unlock:
 
 static struct iio_context *
 iiod_client_create_context_private(struct iiod_client *client,
-				   struct iiod_client_pdata *desc, bool zstd)
+				   struct iiod_client_pdata *desc,
+				   const struct iio_backend *backend,
+				   const char *description,
+				   const char **ctx_attrs,
+				   const char **ctx_values,
+				   unsigned int nb_ctx_attrs,
+				   bool zstd)
 {
 	const char *cmd = zstd ? "ZPRINT\r\n" : "PRINT\r\n";
 	struct iio_context *ctx = NULL;
@@ -543,17 +549,18 @@ iiod_client_create_context_private(struct iiod_client *client,
 
 	iio_mutex_lock(client->lock);
 	ret = iiod_client_exec_command(client, desc, cmd);
-	if (ret < 0) {
-		if (ret == -EINVAL && zstd) {
-			/* If the ZPRINT command does not exist, try again
-			 * with the regular PRINT command. */
-			iio_mutex_unlock(client->lock);
+	if (ret == -EINVAL && zstd) {
+		/* If the ZPRINT command does not exist, try again
+		 * with the regular PRINT command. */
+		iio_mutex_unlock(client->lock);
 
-			return iiod_client_create_context_private(client, desc, false);
-		}
-
-		goto out_unlock;
+		return iiod_client_create_context_private(client, desc,
+							  backend, description,
+							  ctx_attrs, ctx_values,
+							  nb_ctx_attrs, false);
 	}
+	if (ret < 0)
+		goto out_unlock;
 
 	xml_len = (size_t) ret;
 	xml = malloc(xml_len + 1);
@@ -602,7 +609,9 @@ iiod_client_create_context_private(struct iiod_client *client,
 	}
 #endif
 
-	ctx = xml_create_context_mem(client->params, xml, xml_len);
+	ctx = iio_create_context_from_xml(client->params, xml, xml_len,
+					  backend, description,
+					  ctx_attrs, ctx_values, nb_ctx_attrs);
 	if (!ctx) {
 		ret = -errno;
 	} else {
@@ -622,9 +631,17 @@ out_unlock:
 }
 
 struct iio_context * iiod_client_create_context(struct iiod_client *client,
-						struct iiod_client_pdata *desc)
+						struct iiod_client_pdata *desc,
+						const struct iio_backend *backend,
+						const char *description,
+						const char **ctx_attrs,
+						const char **ctx_values,
+						unsigned int nb_ctx_attrs)
 {
-	return iiod_client_create_context_private(client, desc, WITH_ZSTD);
+	return iiod_client_create_context_private(client, desc, backend,
+						  description, ctx_attrs,
+						  ctx_values, nb_ctx_attrs,
+						  WITH_ZSTD);
 }
 
 int iiod_client_open_unlocked(struct iiod_client *client,
