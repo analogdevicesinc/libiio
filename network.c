@@ -10,10 +10,11 @@
 #include "iio-debug.h"
 #include "iio-backend.h"
 #include "iio-config.h"
-#include "iio-private.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
 #include "network.h"
+
+#include <iio.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -161,7 +162,7 @@ static ssize_t write_command(struct iiod_client_pdata *io_ctx,
 
 static void network_cancel(const struct iio_device *dev)
 {
-	struct iio_device_pdata *ppdata = dev->pdata;
+	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
 
 	do_cancel(&ppdata->io_ctx);
 
@@ -293,11 +294,25 @@ static char *network_get_description(const struct iio_context *ctx)
 	return __network_get_description(pdata->addrinfo, params);
 }
 
+static bool network_device_is_tx(const struct iio_device *dev)
+{
+	unsigned int i;
+
+	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
+		struct iio_channel *ch = iio_device_get_channel(dev, i);
+		if (iio_channel_is_output(ch) && iio_channel_is_enabled(ch))
+			return true;
+	}
+
+	return false;
+}
+
 static int network_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
-	struct iio_device_pdata *ppdata = dev->pdata;
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
 	unsigned int timeout_ms;
 	int ret = -EBUSY;
 
@@ -337,7 +352,7 @@ static int network_open(const struct iio_device *dev,
 
 	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
 	ppdata->io_ctx.cancellable = true;
-	ppdata->is_tx = iio_device_is_tx(dev);
+	ppdata->is_tx = network_device_is_tx(dev);
 	ppdata->is_cyclic = cyclic;
 	ppdata->wait_for_err_code = false;
 #ifdef WITH_NETWORK_GET_BUFFER
@@ -358,8 +373,9 @@ out_mutex_unlock:
 
 static int network_close(const struct iio_device *dev)
 {
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(dev->ctx);
-	struct iio_device_pdata *pdata = dev->pdata;
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	int ret = -EBADF;
 
 	iio_mutex_lock(pdata->lock);
@@ -398,8 +414,9 @@ static int network_close(const struct iio_device *dev)
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(dev->ctx);
-	struct iio_device_pdata *pdata = dev->pdata;
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	ssize_t ret;
 
 	iio_mutex_lock(pdata->lock);
@@ -413,8 +430,9 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 static ssize_t network_write(const struct iio_device *dev,
 		const void *src, size_t len)
 {
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(dev->ctx);
-	struct iio_device_pdata *pdata = dev->pdata;
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	ssize_t ret;
 
 	iio_mutex_lock(pdata->lock);
@@ -545,7 +563,7 @@ static ssize_t read_error_code(struct iiod_client_pdata *io_ctx)
 static ssize_t write_rwbuf_command(const struct iio_device *dev,
 		const char *cmd)
 {
-	struct iio_device_pdata *pdata = dev->pdata;
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 
 	if (pdata->wait_for_err_code) {
 		ssize_t ret = read_error_code(&pdata->io_ctx);
@@ -627,7 +645,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		void **addr_ptr, size_t bytes_used,
 		uint32_t *mask, size_t words)
 {
-	struct iio_device_pdata *pdata = dev->pdata;
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	ssize_t ret, read = 0;
 	int memfd;
 
@@ -644,7 +662,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 	if (memfd < 0)
 		return -ENOSYS;
 
-	if (!addr_ptr || words != (dev->nb_channels + 31) / 32) {
+	if (!addr_ptr ||
+	    words != (iio_device_get_channels_count(dev) + 31) / 32) {
 		close(memfd);
 		return -EINVAL;
 	}
@@ -656,7 +675,8 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		char buf[1024];
 
 		iio_snprintf(buf, sizeof(buf), "WRITEBUF %s %lu\r\n",
-				dev->id, (unsigned long) bytes_used);
+			     iio_device_get_id(dev),
+			     (unsigned long) bytes_used);
 
 		iio_mutex_lock(pdata->lock);
 
@@ -689,7 +709,7 @@ static ssize_t network_get_buffer(const struct iio_device *dev,
 		size_t len = pdata->mmap_len;
 
 		iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
-				dev->id, (unsigned long) len);
+			     iio_device_get_id(dev), (unsigned long) len);
 
 		iio_mutex_lock(pdata->lock);
 		ret = write_rwbuf_command(dev, buf);
@@ -739,7 +759,8 @@ err_unlock:
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, enum iio_attr_type type)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_read_attr(pdata->iiod_client,
 			&pdata->io_ctx, dev, NULL, attr, dst, len, type);
@@ -748,7 +769,8 @@ static ssize_t network_read_dev_attr(const struct iio_device *dev,
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src, size_t len, enum iio_attr_type type)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_write_attr(pdata->iiod_client,
 			&pdata->io_ctx, dev, NULL, attr, src, len, type);
@@ -757,25 +779,30 @@ static ssize_t network_write_dev_attr(const struct iio_device *dev,
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(chn->dev->ctx);
+	const struct iio_device *dev = iio_channel_get_device(chn);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, chn->dev, chn, attr, dst, len, false);
+			&pdata->io_ctx, dev, chn, attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(chn->dev->ctx);
+	const struct iio_device *dev = iio_channel_get_device(chn);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, chn->dev, chn, attr, src, len, false);
+			&pdata->io_ctx, dev, chn, attr, src, len, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_get_trigger(pdata->iiod_client,
 			&pdata->io_ctx, dev, trigger);
@@ -784,7 +811,8 @@ static int network_get_trigger(const struct iio_device *dev,
 static int network_set_trigger(const struct iio_device *dev,
 		const struct iio_device *trigger)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_set_trigger(pdata->iiod_client,
 			&pdata->io_ctx, dev, trigger);
@@ -802,7 +830,7 @@ static void network_shutdown(struct iio_context *ctx)
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
-		struct iio_device_pdata *dpdata = dev->pdata;
+		struct iio_device_pdata *dpdata = iio_device_get_pdata(dev);
 
 		if (dpdata) {
 			network_close(dev);
@@ -856,7 +884,8 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 static int network_set_kernel_buffers_count(const struct iio_device *dev,
 		unsigned int nb_blocks)
 {
-	struct iio_context_pdata *pdata = iio_context_get_pdata(dev->ctx);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_set_kernel_buffers_count(pdata->iiod_client,
 			 &pdata->io_ctx, dev, nb_blocks);
@@ -1149,31 +1178,33 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 	if (!ctx)
 		goto err_destroy_iiod_client;
 
-	ctx->pdata = pdata;
-	ctx->params = *params;
+	iio_context_set_pdata(ctx, pdata);
 
 	/* pdata->io_ctx.params points to the 'params' function argument,
 	 * switch it to our local one now */
-	pdata->io_ctx.params = &ctx->params;
+	pdata->io_ctx.params = iio_context_get_params(ctx);
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
+		struct iio_device_pdata *ppdata;
 
-		dev->pdata = zalloc(sizeof(*dev->pdata));
-		if (!dev->pdata) {
+		ppdata = zalloc(sizeof(*ppdata));
+		if (!ppdata) {
 			ret = -ENOMEM;
 			goto err_network_shutdown;
 		}
 
-		dev->pdata->io_ctx.fd = -1;
-		dev->pdata->io_ctx.params = &ctx->params;
-		dev->pdata->io_ctx.timeout_ms = params->timeout_ms;
+		iio_device_set_pdata(dev, ppdata);
+
+		ppdata->io_ctx.fd = -1;
+		ppdata->io_ctx.timeout_ms = params->timeout_ms;
+		ppdata->io_ctx.params = pdata->io_ctx.params;
 #ifdef WITH_NETWORK_GET_BUFFER
-		dev->pdata->memfd = -1;
+		ppdata->memfd = -1;
 #endif
 
-		dev->pdata->lock = iio_mutex_create();
-		if (!dev->pdata->lock) {
+		ppdata->lock = iio_mutex_create();
+		if (!ppdata->lock) {
 			ret = -ENOMEM;
 			goto err_network_shutdown;
 		}
