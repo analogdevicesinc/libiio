@@ -112,6 +112,13 @@ iio_channel_get_pdata(const struct iio_channel *chn);
 __api void
 iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *data);
 
+__api struct iio_context *
+iio_create_context_from_xml(const struct iio_context_params *params,
+			    const char *xml, size_t len,
+			    const struct iio_backend *backend,
+			    const char *description, const char **ctx_attr,
+			    const char **ctx_values, unsigned int nb_ctx_attrs);
+
 #undef __api
 
 #endif /* __IIO_BACKEND_H__ */
