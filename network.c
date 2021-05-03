@@ -73,6 +73,10 @@ struct iio_device_pdata {
 	struct iio_mutex *lock;
 };
 
+static struct iio_context *
+network_create_context(const struct iio_context_params *params,
+		       const char *host);
+
 static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 		void *data, size_t len, int flags)
 {
@@ -899,6 +903,7 @@ static struct iio_context * network_clone(const struct iio_context *ctx)
 }
 
 static const struct iio_backend_ops network_ops = {
+	.create = network_create_context,
 	.clone = network_clone,
 	.open = network_open,
 	.close = network_close,
@@ -922,11 +927,12 @@ static const struct iio_backend_ops network_ops = {
 	.cancel = network_cancel,
 };
 
-static const struct iio_backend network_backend = {
+const struct iio_backend iio_ip_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "network",
 	.uri_prefix = "ip:",
 	.ops = &network_ops,
+	.default_timeout_ms = 5000,
 };
 
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
@@ -1044,8 +1050,8 @@ static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
 }
 #endif
 
-struct iio_context * network_create_context(const struct iio_context_params *params,
-					    const char *host)
+static struct iio_context * network_create_context(const struct iio_context_params *params,
+						   const char *host)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
@@ -1172,7 +1178,7 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 
 	prm_dbg(params, "Creating context...\n");
 	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
-					 &network_backend, description,
+					 &iio_ip_backend, description,
 					 ctx_attrs, ctx_values,
 					 ARRAY_SIZE(ctx_values));
 	if (!ctx)
