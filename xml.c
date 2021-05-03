@@ -13,6 +13,10 @@
 #include <libxml/tree.h>
 #include <string.h>
 
+static struct iio_context *
+xml_create_context(const struct iio_context_params *params,
+		   const char *xml_file);
+
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -337,10 +341,11 @@ static struct iio_context * xml_clone(const struct iio_context *ctx)
 }
 
 static const struct iio_backend_ops xml_ops = {
+	.create = xml_create_context,
 	.clone = xml_clone,
 };
 
-static const struct iio_backend xml_backend = {
+const struct iio_backend iio_xml_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "xml",
 	.uri_prefix = "xml:",
@@ -429,7 +434,7 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 				 (char *) attr->children->content);
 	}
 
-	ctx = iio_context_create_from_backend(&xml_backend, description);
+	ctx = iio_context_create_from_backend(&iio_xml_backend, description);
 	if (!ctx) {
 		prm_err(params, "Unable to allocate memory for context\n");
 		return NULL;
@@ -447,8 +452,9 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	return ctx;
 }
 
-struct iio_context * xml_create_context(const struct iio_context_params *params,
-					const char *xml_file)
+static struct iio_context *
+xml_create_context(const struct iio_context_params *params,
+		   const char *xml_file)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;

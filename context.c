@@ -390,6 +390,7 @@ static const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_NETWORK_BACKEND, &iio_ip_backend),
 	IF_ENABLED(WITH_SERIAL_BACKEND, &iio_serial_backend),
 	IF_ENABLED(WITH_USB_BACKEND, &iio_usb_backend),
+	IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
 };
 
 struct iio_context * iio_create_context(const struct iio_context_params *params,
@@ -406,10 +407,6 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		params2.log_level = default_params.log_level;
 	if (!params2.stderr_level)
 		params2.stderr_level = default_params.stderr_level;
-
-	if (WITH_XML_BACKEND && !strncmp(uri, "xml:", sizeof("xml:") - 1)) {
-		return xml_create_context(&params2, uri + sizeof("xml:") - 1);
-	}
 
 	for (i = 0; !backend && i < ARRAY_SIZE(iio_backends); i++) {
 		if (!iio_backends[i])
