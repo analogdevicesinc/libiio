@@ -799,3 +799,13 @@ const struct iio_device * iio_channel_get_device(const struct iio_channel *chn)
 {
 	return chn->dev;
 }
+
+struct iio_channel_pdata * iio_channel_get_pdata(const struct iio_channel *chn)
+{
+	return chn->pdata;
+}
+
+void iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *d)
+{
+	chn->pdata = d;
+}
