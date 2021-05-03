@@ -99,6 +99,10 @@ static unsigned int libusb_to_errno(int error)
 	}
 }
 
+static struct iio_context *
+usb_create_context_from_args(const struct iio_context_params *params,
+			     const char *args);
+
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
 	io_ctx->lock = iio_mutex_create();
@@ -535,6 +539,7 @@ static void usb_cancel(const struct iio_device *dev)
 }
 
 static const struct iio_backend_ops usb_ops = {
+	.create = usb_create_context_from_args,
 	.get_version = usb_get_version,
 	.open = usb_open,
 	.close = usb_close,
@@ -551,6 +556,14 @@ static const struct iio_backend_ops usb_ops = {
 	.shutdown = usb_shutdown,
 
 	.cancel = usb_cancel,
+};
+
+const struct iio_backend iio_usb_backend = {
+	.api_version = IIO_BACKEND_API_V1,
+	.name = "usb",
+	.uri_prefix = "usb:",
+	.ops = &usb_ops,
+	.default_timeout_ms = 5000,
 };
 
 static void LIBUSB_CALL sync_transfer_cb(struct libusb_transfer *transfer)
@@ -1042,22 +1055,17 @@ err_set_errno:
 	return NULL;
 }
 
-struct iio_context *
-usb_create_context_from_uri(const struct iio_context_params *params,
-			    const char *uri)
+static struct iio_context *
+usb_create_context_from_args(const struct iio_context_params *params,
+			     const char *args)
 {
 	long bus, address, intrfc;
 	char *end;
-	const char *ptr;
+	const char *ptr = args;
 	/* keep MSVS happy by setting these to NULL */
 	struct iio_scan_context *scan_ctx = NULL;
 	struct iio_context_info **info = NULL;
 	bool scan = false;
-
-	if (strncmp(uri, "usb:", sizeof("usb:") - 1) != 0)
-		goto err_bad_uri;
-
-	ptr = (const char *) ((uintptr_t) uri + sizeof("usb:") - 1);
 
 	/* if uri is just "usb:" that means search for the first one */
 	if (!*ptr) {
@@ -1130,7 +1138,7 @@ err_bad_uri:
 	} else
 		errno = EINVAL;
 
-	prm_err(params, "Bad URI: \'%s\'\n", uri);
+	prm_err(params, "Bad URI: \'usb:%s\'\n", args);
 	return NULL;
 }
 
