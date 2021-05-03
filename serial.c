@@ -475,15 +475,15 @@ static struct iio_context * serial_create_context(
 	if (!pdata->iiod_client)
 		goto err_free_pdata;
 
-	ctx = iiod_client_create_context(pdata->iiod_client, NULL);
+	ctx = iiod_client_create_context(pdata->iiod_client, NULL,
+					 NULL, description,
+					 NULL, NULL, 0);
 	if (!ctx)
 		goto err_destroy_iiod_client;
 
 	ctx->name = "serial";
 	ctx->ops = &serial_ops;
 	ctx->pdata = pdata;
-	ctx->description = description;
-	ctx->params = pdata->params;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);

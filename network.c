@@ -8,6 +8,7 @@
 
 #include "dns_sd.h"
 #include "iio-debug.h"
+#include "iio-backend.h"
 #include "iio-config.h"
 #include "iio-private.h"
 #include "iio-lock.h"
@@ -1124,7 +1125,9 @@ struct iio_context * network_create_context(const struct iio_context_params *par
 		prm_dbg(params, "MSG_TRUNC is NOT supported\n");
 
 	prm_dbg(params, "Creating context...\n");
-	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx);
+	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
+					 NULL, description,
+					 NULL, NULL, 0);
 	if (!ctx)
 		goto err_destroy_iiod_client;
 

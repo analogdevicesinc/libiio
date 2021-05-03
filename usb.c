@@ -976,7 +976,8 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 		goto err_io_context_exit;
 	}
 
-	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx);
+	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
+					 NULL, "", NULL, NULL, 0);
 	if (!ctx) {
 		ret = -errno;
 		goto err_reset_pipes;

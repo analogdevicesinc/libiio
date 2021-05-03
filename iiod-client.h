@@ -9,13 +9,10 @@
 #ifndef _IIOD_CLIENT_H
 #define _IIOD_CLIENT_H
 
-#include "iio-private.h"
+#include "iio-backend.h"
 
-struct iio_mutex;
 struct iiod_client;
 struct iiod_client_pdata;
-struct iio_context_params;
-struct iio_context_pdata;
 
 struct iiod_client_ops {
 	ssize_t (*write)(struct iio_context_pdata *pdata,
@@ -96,6 +93,11 @@ ssize_t iiod_client_write_unlocked(struct iiod_client *client,
 				   const void *src, size_t len);
 
 struct iio_context * iiod_client_create_context(struct iiod_client *client,
-						struct iiod_client_pdata *desc);
+						struct iiod_client_pdata *desc,
+						const struct iio_backend *backend,
+						const char *description,
+						const char **ctx_attrs,
+						const char **ctx_values,
+						unsigned int nb_ctx_attrs);
 
 #endif /* _IIOD_CLIENT_H */
