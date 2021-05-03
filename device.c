@@ -1081,3 +1081,13 @@ const struct iio_context * iio_device_get_context(const struct iio_device *dev)
 {
 	return dev->ctx;
 }
+
+struct iio_device_pdata * iio_device_get_pdata(const struct iio_device *dev)
+{
+	return dev->pdata;
+}
+
+void iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *d)
+{
+	dev->pdata = d;
+}

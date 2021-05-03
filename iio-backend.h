@@ -8,10 +8,18 @@
 #ifndef __IIO_BACKEND_H__
 #define __IIO_BACKEND_H__
 
+#include <iio.h>
+
 #include <stdbool.h>
+
+#define __api __iio_api
 
 struct iio_device;
 struct iio_context;
+struct iio_channel;
+struct iio_context_pdata;
+struct iio_device_pdata;
+struct iio_channel_pdata;
 
 enum iio_backend_api_ver {
 	IIO_BACKEND_API_V1 = 1,
@@ -85,5 +93,25 @@ struct iio_backend {
 struct iio_context * iio_context_create_from_backend(
 		const struct iio_backend *backend,
 		const char *description);
+
+__api struct iio_context_pdata *
+iio_context_get_pdata(const struct iio_context *ctx);
+
+__api void
+iio_context_set_pdata(struct iio_context *ctx, struct iio_context_pdata *data);
+
+__api struct iio_device_pdata *
+iio_device_get_pdata(const struct iio_device *dev);
+
+__api void
+iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *data);
+
+__api struct iio_channel_pdata *
+iio_channel_get_pdata(const struct iio_channel *chn);
+
+__api void
+iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *data);
+
+#undef __api
 
 #endif /* __IIO_BACKEND_H__ */

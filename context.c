@@ -238,6 +238,11 @@ struct iio_context_pdata * iio_context_get_pdata(const struct iio_context *ctx)
 	return ctx->pdata;
 }
 
+void iio_context_set_pdata(struct iio_context *ctx, struct iio_context_pdata *d)
+{
+	ctx->pdata = d;
+}
+
 const char * iio_context_get_xml(const struct iio_context *ctx)
 {
 	return ctx->xml;
