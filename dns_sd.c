@@ -93,16 +93,16 @@ static int dnssd_fill_context_info(const struct iio_context_params *params,
 	const char *hw_model, *serial;
 	unsigned int i;
 
-	ctx = network_create_context(params, addr_str);
-	if (!ctx) {
-		prm_err(params, "No context at %s\n", addr_str);
-		return -ENOMEM;
-	}
-
 	if (port == IIOD_PORT)
 		iio_snprintf(uri, sizeof(uri), "ip:%s", hostname);
 	else
 		iio_snprintf(uri, sizeof(uri), "ip:%s:%d", hostname, port);
+
+	ctx = iio_create_context(params, uri);
+	if (!ctx) {
+		prm_err(params, "No context at %s\n", addr_str);
+		return -ENOMEM;
+	}
 
 	hw_model = iio_context_get_attr_value(ctx, "hw_model");
 	serial = iio_context_get_attr_value(ctx, "hw_serial");
