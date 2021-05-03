@@ -193,8 +193,6 @@ int write_double(char *buf, size_t len, double val);
 
 struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
 					    const char *xml, size_t len);
-struct iio_context * xml_create_context(const struct iio_context_params *params,
-					const char *xml_file);
 
 int local_context_scan(struct iio_scan_result *scan_result);
 
@@ -224,5 +222,6 @@ extern const struct iio_backend iio_ip_backend;
 extern const struct iio_backend iio_local_backend;
 extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;
+extern const struct iio_backend iio_xml_backend;
 
 #endif /* __IIO_PRIVATE_H__ */
