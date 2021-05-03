@@ -14,6 +14,40 @@
 
 #define __api __iio_api
 
+/* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
+ * {NAME_MAX} : Maximum number of bytes in a filename
+ * {PATH_MAX} : Maximum number of bytes in a pathname
+ * {PAGESIZE} : Size in bytes of a page
+ * Too bad we work on non-POSIX systems
+ */
+#ifndef NAME_MAX
+#  define NAME_MAX 256
+#endif
+#ifndef PATH_MAX
+#  define PATH_MAX 4096
+#endif
+#ifndef PAGESIZE
+#  define PAGESIZE 4096
+#endif
+
+#ifdef _MSC_BUILD
+#define inline __inline
+#define iio_sscanf sscanf_s
+#else
+#define iio_sscanf sscanf
+#endif
+
+#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define BIT(x) (1 << (x))
+#define BIT_MASK(bit) BIT((bit) % 32)
+#define BIT_WORD(bit) ((bit) / 32)
+#define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
+		& BIT_MASK(bit)))
+#define SET_BIT(addr, bit) \
+	*(((uint32_t *) addr) + BIT_WORD(bit)) |= BIT_MASK(bit)
+#define CLEAR_BIT(addr, bit) \
+	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
+
 struct iio_device;
 struct iio_context;
 struct iio_channel;
@@ -112,12 +146,28 @@ iio_channel_get_pdata(const struct iio_channel *chn);
 __api void
 iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *data);
 
+#if defined(__MINGW32__)
+#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
+#elif defined(__GNUC__)
+#   define __iio_printf __attribute__((__format__(printf, 3, 4)))
+#else
+#   define __iio_printf
+#endif
+
+ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
+
 __api struct iio_context *
 iio_create_context_from_xml(const struct iio_context_params *params,
 			    const char *xml, size_t len,
 			    const struct iio_backend *backend,
 			    const char *description, const char **ctx_attr,
 			    const char **ctx_values, unsigned int nb_ctx_attrs);
+
+/* Allocate zeroed out memory */
+static inline void *zalloc(size_t size)
+{
+	return calloc(1, size);
+}
 
 #undef __api
 
