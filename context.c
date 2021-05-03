@@ -14,8 +14,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define LOCAL_BACKEND_TIMEOUT_MS	1000
-
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device | context-attribute)*>"
@@ -388,6 +386,7 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 }
 
 static const struct iio_backend *iio_backends[] = {
+	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IF_ENABLED(WITH_NETWORK_BACKEND, &iio_ip_backend),
 	IF_ENABLED(WITH_SERIAL_BACKEND, &iio_serial_backend),
 	IF_ENABLED(WITH_USB_BACKEND, &iio_usb_backend),
@@ -407,12 +406,6 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		params2.log_level = default_params.log_level;
 	if (!params2.stderr_level)
 		params2.stderr_level = default_params.stderr_level;
-
-	if (WITH_LOCAL_BACKEND && !strcmp(uri, "local:")) { /* No address part */
-		if (!params2.timeout_ms)
-			params2.timeout_ms = LOCAL_BACKEND_TIMEOUT_MS;
-		return local_create_context(&params2);
-	}
 
 	if (WITH_XML_BACKEND && !strncmp(uri, "xml:", sizeof("xml:") - 1)) {
 		return xml_create_context(&params2, uri + sizeof("xml:") - 1);

@@ -51,6 +51,8 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		const char *attr, const char *src, size_t len, enum iio_attr_type type);
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len);
+static struct iio_context *
+local_create_context(const struct iio_context_params *params, const char *args);
 
 struct block_alloc_req {
 	uint32_t type,
@@ -1872,7 +1874,7 @@ static void local_cancel(const struct iio_device *dev)
 
 static struct iio_context * local_clone(const struct iio_context *ctx)
 {
-	return local_create_context(&ctx->params);
+	return local_create_context(&ctx->params, "");
 }
 
 static char * local_get_description(const struct iio_context *ctx)
@@ -1895,6 +1897,7 @@ static char * local_get_description(const struct iio_context *ctx)
 }
 
 static const struct iio_backend_ops local_ops = {
+	.create = local_create_context,
 	.clone = local_clone,
 	.open = local_open,
 	.close = local_close,
@@ -1916,11 +1919,12 @@ static const struct iio_backend_ops local_ops = {
 	.cancel = local_cancel,
 };
 
-static const struct iio_backend local_backend = {
+const struct iio_backend iio_local_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "local",
 	.uri_prefix = "local:",
 	.ops = &local_ops,
+	.default_timeout_ms = 1000,
 };
 
 static void init_data_scale(struct iio_channel *chn)
@@ -2009,7 +2013,8 @@ out_close_ini:
 	return ret;
 }
 
-struct iio_context * local_create_context(const struct iio_context_params *params)
+static struct iio_context *
+local_create_context(const struct iio_context_params *params, const char *args)
 {
 	struct iio_context *ctx;
 	char *description;
@@ -2018,7 +2023,7 @@ struct iio_context * local_create_context(const struct iio_context_params *param
 
 	description = local_get_description(NULL);
 
-	ctx = iio_context_create_from_backend(&local_backend, description);
+	ctx = iio_context_create_from_backend(&iio_local_backend, description);
 	free(description);
 	if (!ctx)
 		goto err_set_errno;
