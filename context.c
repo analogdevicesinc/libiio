@@ -451,43 +451,33 @@ struct iio_context * iio_create_default_context(void)
 
 struct iio_context * iio_create_local_context(void)
 {
-	struct iio_context_params params = default_params;
+	return iio_create_context_from_uri("local:");
+}
 
-	params.timeout_ms = LOCAL_BACKEND_TIMEOUT_MS;
+static struct iio_context *
+iio_create_context_from_uri_arg(const char *backend, const char *arg)
+{
+	char uri[1024];
 
-	if (WITH_LOCAL_BACKEND)
-		return local_create_context(&params);
+	iio_snprintf(uri, sizeof(uri), "%s:%s", backend, arg);
 
-	errno = ENOSYS;
-	return NULL;
+	return iio_create_context_from_uri(uri);
 }
 
 struct iio_context * iio_create_network_context(const char *hostname)
 {
-	struct iio_context_params params = default_params;
+	return iio_create_context_from_uri_arg("ip", hostname);
+}
 
-	params.timeout_ms = NETWORK_BACKEND_TIMEOUT_MS;
-
-	if (WITH_NETWORK_BACKEND)
-		return network_create_context(&params, hostname);
-
-	errno = ENOSYS;
-	return NULL;
+struct iio_context * iio_create_xml_context(const char *xml_file)
+{
+	return iio_create_context_from_uri_arg("xml", xml_file);
 }
 
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
 	if (WITH_XML_BACKEND)
 		return xml_create_context_mem(&default_params, xml, len);
-
-	errno = ENOSYS;
-	return NULL;
-}
-
-struct iio_context * iio_create_xml_context(const char *xml_file)
-{
-	if (WITH_XML_BACKEND)
-		return xml_create_context(&default_params, xml_file);
 
 	errno = ENOSYS;
 	return NULL;
