@@ -64,6 +64,24 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBsd")
 	set(CMAKE_REQUIRED_DEFINITIONS -D__BSD_VISIBLE=1)
 endif()
 
+include(GNUInstallDirs)
+
+if (BUILD_SHARED_LIBS)
+	option(WITH_MODULES "Enable support for dynamically-loaded modules" OFF)
+	if (WITH_MODULES)
+		target_sources(iio PRIVATE dynamic.c)
+		if (WIN32)
+			target_sources(iio PRIVATE dynamic-windows.c)
+		else()
+			target_sources(iio PRIVATE dynamic-unix.c)
+			target_link_libraries(iio PRIVATE dl)
+		endif()
+
+		file(TO_NATIVE_PATH "${CMAKE_INSTALL_FULL_LIBDIR}/libiio/" IIO_MODULES_DIR)
+		string(REPLACE "\\" "\\\\" IIO_MODULES_DIR ${IIO_MODULES_DIR})
+	endif()
+endif()
+
 option(WITH_EXAMPLES "Build examples" OFF)
 option(WITH_TESTS "Build the test programs" ON)
 if (WITH_TESTS)
@@ -433,8 +451,6 @@ set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${VERSION}")
 option(CSHARP_BINDINGS "Install C# bindings" OFF)
 option(PYTHON_BINDINGS "Install Python bindings" OFF)
 add_subdirectory(bindings)
-
-include(GNUInstallDirs)
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)

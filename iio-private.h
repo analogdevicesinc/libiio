@@ -77,6 +77,7 @@ static inline __check_ret void * ERR_TO_PTR(intptr_t err)
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
+struct iio_module;
 
 struct iio_channel_attr {
 	char *name;
@@ -99,6 +100,8 @@ struct iio_context {
 	unsigned int nb_attrs;
 
 	struct iio_context_params params;
+
+	struct iio_module *lib;
 };
 
 struct iio_channel {
@@ -164,6 +167,12 @@ struct iio_scan_result {
 	struct iio_context_info **info;
 };
 
+struct iio_module * iio_open_module(const char *path);
+void iio_release_module(struct iio_module *module);
+
+const struct iio_backend *
+iio_module_get_backend(struct iio_module *module, const char *symbol);
+
 struct iio_context_info *
 iio_scan_result_add(struct iio_scan_result *scan_result);
 
@@ -193,6 +202,9 @@ int write_double(char *buf, size_t len, double val);
 
 struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
 					    const char *xml, size_t len);
+struct iio_context *
+iio_create_dynamic_context(const struct iio_context_params *params,
+			   const char *uri);
 
 int local_context_scan(struct iio_scan_result *scan_result);
 

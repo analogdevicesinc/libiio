@@ -259,6 +259,8 @@ const char * iio_context_get_description(const struct iio_context *ctx)
 void iio_context_destroy(struct iio_context *ctx)
 {
 	unsigned int i;
+	void *lib = ctx->lib;
+
 	if (ctx->ops->shutdown)
 		ctx->ops->shutdown(ctx);
 
@@ -275,6 +277,9 @@ void iio_context_destroy(struct iio_context *ctx)
 	free(ctx->description);
 	free(ctx->pdata);
 	free(ctx);
+
+	if (WITH_MODULES && lib)
+		iio_release_module(lib);
 }
 
 unsigned int iio_context_get_devices_count(const struct iio_context *ctx)
@@ -425,6 +430,9 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		return backend->ops->create(&params2,
 					    uri + strlen(backend->uri_prefix));
 	}
+
+	if (WITH_MODULES)
+		return iio_create_dynamic_context(&params2, uri);
 
 	errno = ENOSYS;
 	return NULL;
