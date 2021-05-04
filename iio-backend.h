@@ -14,6 +14,11 @@
 
 #define __api __iio_api
 
+#define __api_export_if(x)	___api_export_if(x)
+#define ___api_export_if(x)	___api_export_if_##x
+#define ___api_export_if_0
+#define ___api_export_if_1	__iio_api_export
+
 /* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
  * {NAME_MAX} : Maximum number of bytes in a filename
  * {PATH_MAX} : Maximum number of bytes in a pathname
