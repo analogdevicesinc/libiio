@@ -215,8 +215,6 @@ ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
-char *iio_strdup(const char *str);
-size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
 char * iio_getenv (char * envvar);
 
 int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
