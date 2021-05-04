@@ -1,14 +1,16 @@
 message(STATUS "cmake version: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 3.10)
-project(libiio C)
+
+cmake_policy(SET CMP0048 NEW) # project() sets the VERSION variables
+project(libiio LANGUAGES C VERSION 1.0)
 
 if (MINGW)
 	set(WIN32 ON)
 endif()
 
-set(LIBIIO_VERSION_MAJOR 1)
-set(LIBIIO_VERSION_MINOR 0)
-set(VERSION "${LIBIIO_VERSION_MAJOR}.${LIBIIO_VERSION_MINOR}")
+set(LIBIIO_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(LIBIIO_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(VERSION "${PROJECT_VERSION}")
 if (WIN32)
 	string(TIMESTAMP BUILD_YEAR "%Y")
 endif()
