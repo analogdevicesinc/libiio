@@ -7,6 +7,7 @@
  */
 
 #include "iio-debug.h"
+#include "iio-config.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
 
@@ -387,6 +388,7 @@ static const struct iio_backend_ops serial_ops = {
 	.set_timeout = serial_set_timeout,
 };
 
+__api_export_if(WITH_SERIAL_BACKEND_DYNAMIC)
 const struct iio_backend iio_serial_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "serial",
