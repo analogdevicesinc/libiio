@@ -7,7 +7,6 @@
  */
 
 #include "iio-debug.h"
-#include "iio-private.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
 
@@ -139,7 +138,7 @@ static int serial_open(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
-	struct iio_device_pdata *pdata = dev->pdata;
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	int ret = -EBUSY;
 
 	iiod_client_mutex_lock(ctx_pdata->iiod_client);
@@ -160,7 +159,7 @@ static int serial_close(const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
-	struct iio_device_pdata *pdata = dev->pdata;
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	int ret = -EBADF;
 
 	iiod_client_mutex_lock(ctx_pdata->iiod_client);
@@ -232,7 +231,7 @@ static ssize_t serial_read_chn_attr(const struct iio_channel *chn,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_read_attr(pdata->iiod_client, NULL,
-			chn->dev, chn, attr, dst, len, false);
+			dev, chn, attr, dst, len, false);
 }
 
 static ssize_t serial_write_chn_attr(const struct iio_channel *chn,
@@ -356,7 +355,7 @@ static void serial_shutdown(struct iio_context *ctx)
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		const struct iio_device *dev = iio_context_get_device(ctx, i);
-		struct iio_device_pdata *pdata = dev->pdata;
+		struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 
 		free(pdata);
 	}
@@ -366,7 +365,6 @@ static int serial_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	ctx->params.timeout_ms = timeout;
 	pdata->params.timeout_ms = timeout;
 
 	return 0;
@@ -436,6 +434,7 @@ static struct iio_context * serial_create_context(
 	struct sp_port *port;
 	struct iio_context_pdata *pdata;
 	struct iio_context *ctx;
+	const char *ctx_uri = "uri";
 	char *description;
 	size_t uri_len;
 	unsigned int i;
@@ -488,32 +487,31 @@ static struct iio_context * serial_create_context(
 	if (!pdata->iiod_client)
 		goto err_free_pdata;
 
-	ctx = iiod_client_create_context(pdata->iiod_client, NULL,
-					 NULL, description,
-					 NULL, NULL, 0);
-	if (!ctx)
-		goto err_destroy_iiod_client;
-
-	ctx->name = "serial";
-	ctx->ops = &serial_ops;
-	ctx->pdata = pdata;
-
-	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
-		struct iio_device *dev = iio_context_get_device(ctx, i);
-
-		dev->pdata = zalloc(sizeof(*dev->pdata));
-		if (!dev->pdata) {
-			ret = -ENOMEM;
-			goto err_context_destroy;
-		}
-	}
-
 	iio_snprintf(uri, uri_len, "serial:%s,%u,%u%c%u%c",
 			port_name, baud_rate, bits,
 			parity_char(parity), stop, flow_char(flow));
-	ret = iio_context_add_attr(ctx, "uri", uri);
-	if (ret < 0)
-		goto err_context_destroy;
+
+	ctx = iiod_client_create_context(pdata->iiod_client, NULL,
+					 &iio_serial_backend, description,
+					 &ctx_uri, (const char **)&uri, 1);
+	if (!ctx)
+		goto err_destroy_iiod_client;
+
+	iio_context_set_pdata(ctx, pdata);
+
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		struct iio_device *dev = iio_context_get_device(ctx, i);
+		struct iio_device_pdata *ppdata;
+
+		ppdata = zalloc(sizeof(*ppdata));
+		if (!ppdata) {
+			ret = -ENOMEM;
+			goto err_context_destroy;
+		}
+
+		iio_device_set_pdata(dev, ppdata);
+	}
+
 	free(uri);
 
 	return ctx;
