@@ -27,29 +27,33 @@ endif ()
 
 set(IIOD_CFILES iiod.c ops.c thread-pool.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
 
-find_library(LIBAIO_LIBRARIES aio)
-find_path(LIBAIO_INCLUDE_DIR libaio.h)
+option(WITH_AIO "Build IIOD with async. I/O support" ON)
+if (WITH_AIO)
+	find_library(LIBAIO_LIBRARIES aio)
+	find_path(LIBAIO_INCLUDE_DIR libaio.h)
 
-if (LIBAIO_LIBRARIES AND LIBAIO_INCLUDE_DIR)
-	option(WITH_AIO "Build IIOD with async. I/O support" ON)
-endif ()
+	if (NOT LIBAIO_LIBRARIES OR NOT LIBAIO_INCLUDE_DIR)
+		message(SEND_ERROR "Unable to find libaio dependency.\n"
+			"If you want to disable async. I/O support, set WITH_AIO=OFF.")
+	endif ()
 
-include(CheckTypeSize)
-set(CMAKE_EXTRA_INCLUDE_FILES linux/usb/functionfs.h)
-check_type_size("struct usb_functionfs_descs_head_v2" FUNCTIONFS_V2)
-set(CMAKE_EXTRA_INCLUDE_FILES)
+	message(STATUS "Looking for libaio: Found")
 
-if (HAVE_FUNCTIONFS_V2)
-	OPTION(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ${WITH_AIO})
-
+	option(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ON)
 	if (WITH_IIOD_USBD)
-		if (NOT WITH_AIO)
-			message(SEND_ERROR "USB support in IIOD requires async. I/O support")
-		endif (NOT WITH_AIO)
+		include(CheckTypeSize)
+		set(CMAKE_EXTRA_INCLUDE_FILES linux/usb/functionfs.h)
+		check_type_size("struct usb_functionfs_descs_head_v2" FUNCTIONFS_V2)
+		set(CMAKE_EXTRA_INCLUDE_FILES)
+
+		if (NOT HAVE_FUNCTIONFS_V2)
+			message(SEND_ERROR "Linux kernel headers are too old.\n"
+				"If you want to disable USB support, set WITH_IIOD_USBD=OFF.")
+		endif()
 
 		set(IIOD_CFILES ${IIOD_CFILES} usbd.c)
-	endif (WITH_IIOD_USBD)
-endif (HAVE_FUNCTIONFS_V2)
+	endif()
+endif()
 
 add_executable(iiod ${IIOD_CFILES})
 set_target_properties(iiod PROPERTIES

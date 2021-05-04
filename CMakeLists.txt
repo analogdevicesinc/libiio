@@ -37,7 +37,7 @@ if (NOT CMAKE_BUILD_TYPE)
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 if (NOT BUILD_SHARED_LIBS)
 	add_definitions(-DLIBIIO_STATIC=1)
@@ -136,18 +136,21 @@ option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
 if (ENABLE_IPV6)
 	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
 	if (NOT HAVE_IPV6)
-		message(WARNING "IPv6 is not available in your system.")
+		message(SEND_ERROR "IPv6 is not available in your system.")
 	endif()
 endif()
 
-#Handle FreeBSD libusb and Linux libusb-1.0 libraries
-find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
-find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
-if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
-	message(STATUS "Looking for libusb-1.0 : Found")
-	option(WITH_USB_BACKEND "Enable the libusb backend" ON)
+option(WITH_USB_BACKEND "Enable the libusb backend" ON)
+if (WITH_USB_BACKEND)
+	#Handle FreeBSD libusb and Linux libusb-1.0 libraries
+	find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+	find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
+	if (NOT LIBUSB_LIBRARIES OR NOT LIBUSB_INCLUDE_DIR)
+		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
+			"If you want to disable the USB backend, set WITH_USB_BACKEND=OFF.")
+	else()
+		message(STATUS "Looking for libusb-1.0 : Found")
 
-	if(WITH_USB_BACKEND)
 		set(IIOD_CLIENT 1)
 		set(NEED_LIBXML2 1)
 		set(NEED_THREADS 1)
@@ -158,13 +161,10 @@ if (LIBUSB_LIBRARIES AND LIBUSB_INCLUDE_DIR)
 		set(TEMP1 ${CMAKE_REQUIRED_INCLUDES})
 		list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBUSB_LIBRARIES})
 		list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBUSB_INCLUDE_DIR})
-		check_symbol_exists(libusb_get_version libusb.h
-				HAS_LIBUSB_GETVERSION)
+		check_symbol_exists(libusb_get_version libusb.h HAS_LIBUSB_GETVERSION)
 		set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
-			set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
+		set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
 	endif()
-else()
-	message(STATUS "Looking for libusb-1.0 : Failed; building without usb")
 endif()
 
 # make sure all check_symbol_exists are before this point, otherwise they fail
@@ -250,31 +250,31 @@ if(WITH_LOCAL_BACKEND)
 	endif()
 endif()
 
-find_library(LIBSERIALPORT_LIBRARIES serialport)
-find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
-if (LIBSERIALPORT_LIBRARIES AND LIBSERIALPORT_INCLUDE_DIR)
-	option(WITH_SERIAL_BACKEND "Enable the serial backend" ON)
+option(WITH_SERIAL_BACKEND "Enable the serial backend" ON)
+if (WITH_SERIAL_BACKEND)
+	find_library(LIBSERIALPORT_LIBRARIES serialport)
+	find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
+	if (NOT LIBSERIALPORT_LIBRARIES OR NOT LIBSERIALPORT_INCLUDE_DIR)
+		message(SEND_ERROR "Unable to find libserialport dependency.\n"
+			"If you want to disable the serial backend, set WITH_SERIAL_BACKEND=OFF.")
+	else()
+		message(STATUS "Looking for libserialport : Found")
 
-	if (WITH_SERIAL_BACKEND)
 		file(STRINGS ${LIBSERIALPORT_INCLUDE_DIR}/libserialport.h LIBSERIALPORT_VERSION_STR REGEX "SP_PACKAGE_VERSION_STRING")
 		string(REGEX REPLACE "#define SP_PACKAGE_VERSION_STRING \"(.*)\"" "\\1" LIBSERIALPORT_VERSION ${LIBSERIALPORT_VERSION_STR})
 		if ("${LIBSERIALPORT_VERSION}" VERSION_LESS 0.1.1)
-			message(WARNING "The installed version of libserialport is too old. The minimum version supported is 0.1.1. Disabling Serial support.")
-			SET(WITH_SERIAL_BACKEND OFF)
-		else()
-			message(STATUS "Looking for libserialport : Found")
-			list(APPEND LIBIIO_CFILES serial.c)
-			list(APPEND LIBS_TO_LINK ${LIBSERIALPORT_LIBRARIES})
-
-			set(NEED_THREADS 1)
-			set(IIOD_CLIENT 1)
-			set(NEED_LIBXML2 1)
-
-			include_directories(${LIBSERIALPORT_INCLUDE_DIR})
+			message(SEND_ERROR "The installed version of libserialport is too old. The minimum version supported is 0.1.1.")
 		endif()
+
+		list(APPEND LIBIIO_CFILES serial.c)
+		list(APPEND LIBS_TO_LINK ${LIBSERIALPORT_LIBRARIES})
+
+		set(NEED_THREADS 1)
+		set(IIOD_CLIENT 1)
+		set(NEED_LIBXML2 1)
+
+		include_directories(${LIBSERIALPORT_INCLUDE_DIR})
 	endif()
-else()
-	message(STATUS "Looking for libserialport : Failed; building without serial")
 endif()
 
 option(WITH_ZSTD "Support for ZSTD compressed metadata" OFF)
@@ -283,7 +283,8 @@ if (WITH_ZSTD)
 	find_path(LIBZSTD_INCLUDE_DIR zstd.h)
 
 	if (NOT LIBZSTD_LIBRARIES OR NOT LIBZSTD_INCLUDE_DIR)
-		message(SEND_ERROR "Unable to find libzstd")
+		message(SEND_ERROR "Unable to find libzstd dependency.\n"
+			"If you want to disable ZSTD compression support, set WITH_ZSTD=OFF.")
 	endif()
 
 	list(APPEND LIBS_TO_LINK ${LIBZSTD_LIBRARIES})
@@ -299,12 +300,15 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-		include(CheckCSourceCompiles)
-		check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
+		option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
+		if (WITH_NETWORK_GET_BUFFER)
+			include(CheckCSourceCompiles)
+			check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
 
-		if (HAS_O_TMPFILE)
-			option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
-		endif(HAS_O_TMPFILE)
+			if (NOT HAS_O_TMPFILE)
+				message(SEND_ERROR "Zero-copy requires the O_TMPFILE flag, which is not available on the system.")
+			endif()
+		endif()
 
 		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }" WITH_NETWORK_EVENTFD)
 	endif()
@@ -321,34 +325,37 @@ if(WITH_NETWORK_BACKEND)
 		list(APPEND LIBIIO_CFILES network-unix.c)
 	endif()
 
-	find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
-	find_library(AVAHI_COMMON_LIBRARIES avahi-common)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	option(HAVE_DNS_SD "Enable DNS-SD (ZeroConf) support" ON)
+	if (NOT HAVE_DNS_SD)
+		message(STATUS "Building without DNS-SD (ZeroConf) support")
+	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		find_library(CORE_SERVICES CoreServices)
 
 		message(STATUS "Building with CFNetServices, an Apple DNS SD implementation")
-		set(HAVE_DNS_SD ON)
 
 		list(APPEND LIBIIO_CFILES dns_sd_bonjour.c dns_sd.c)
 		list(APPEND LIBS_TO_LINK ${CORE_SERVICES} )
 
-	elseif(AVAHI_CLIENT_LIBRARIES AND AVAHI_COMMON_LIBRARIES)
-		message(STATUS "Building with Avahi, a DNS SD implementation")
-		set(HAVE_DNS_SD ON)
-		set(HAVE_AVAHI ON)
-		
-		list(APPEND LIBIIO_CFILES dns_sd_avahi.c dns_sd.c)
-		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
-		list(APPEND LIBS_TO_LINK ${AVAHI_LIBRARIES})
 	elseif(WIN32)
-		set(HAVE_DNS_SD ON)
 		list(APPEND LIBIIO_CFILES dns_sd_windows.c dns_sd.c)
 		if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 			set_source_files_properties(dns_sd_windows.c PROPERTIES COMPILE_FLAGS "-Wno-unused-function")
 		endif()
 		message(STATUS "Building with mdns, A Public domain mDNS/DNS-SD library in C ")
 	else()
-		message(STATUS "Building without DNS-SD (Zeroconf) support")
+		find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
+		find_library(AVAHI_COMMON_LIBRARIES avahi-common)
+		if (NOT AVAHI_CLIENT_LIBRARIES OR NOT AVAHI_COMMON_LIBRARIES)
+			message(SEND_ERROR "Unable to find libavahi-common / libavahi-client dependencies.\n"
+				"If you want to disable DNS-SD (ZeroConf) support, set HAVE_DNS_SD=OFF.")
+		endif()
+
+		message(STATUS "Building with Avahi, a DNS-SD (ZeroConf) implementation")
+		set(HAVE_AVAHI ON)
+
+		list(APPEND LIBIIO_CFILES dns_sd_avahi.c dns_sd.c)
+		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
+		list(APPEND LIBS_TO_LINK ${AVAHI_LIBRARIES})
 	endif()
 
 	set(NEED_THREADS 1)
@@ -358,44 +365,47 @@ else()
 	message(STATUS "Building without network support")
 endif()
 
-# Since libxml2-2.9.2, libxml2 provides its own LibXml2-config.cmake, with all
-# variables correctly set.
-# So, try first to find the CMake module provided by libxml2 package, then fallback
-# on the CMake's FindLibXml2.cmake module (which can lack some definition, especially
-# in static build case).
-find_package(LibXml2 QUIET NO_MODULE)
-if(DEFINED LIBXML2_VERSION_STRING)
-	set(LIBXML2_FOUND ON)
-	set(LIBXML2_INCLUDE_DIR ${LIBXML2_INCLUDE_DIRS})
-else()
-	include(FindLibXml2)
-endif()
 
-if (LIBXML2_FOUND)
-	option(WITH_XML_BACKEND "Enable the XML backend" ON)
-
-	if (WITH_XML_BACKEND)
-		list(APPEND LIBIIO_CFILES xml.c)
-
-		include_directories(${LIBXML2_INCLUDE_DIR})
-		list(APPEND LIBS_TO_LINK ${LIBXML2_LIBRARIES})
+option(WITH_XML_BACKEND "Enable the XML backend" ON)
+if (WITH_XML_BACKEND)
+	# Since libxml2-2.9.2, libxml2 provides its own LibXml2-config.cmake, with all
+	# variables correctly set.
+	# So, try first to find the CMake module provided by libxml2 package, then fallback
+	# on the CMake's FindLibXml2.cmake module (which can lack some definition, especially
+	# in static build case).
+	find_package(LibXml2 QUIET NO_MODULE)
+	if(DEFINED LIBXML2_VERSION_STRING)
+		set(LIBXML2_FOUND ON)
+		set(LIBXML2_INCLUDE_DIR ${LIBXML2_INCLUDE_DIRS})
+	else()
+		include(FindLibXml2)
 	endif()
+
+	if (NOT LIBXML2_FOUND)
+		message(SEND_ERROR "Unable to find libxml2 dependency.\n"
+			"If you want to disable the XML backend, set WITH_XML_BACKEND=OFF.")
+	endif()
+
+	list(APPEND LIBIIO_CFILES xml.c)
+
+	include_directories(${LIBXML2_INCLUDE_DIR})
+	list(APPEND LIBS_TO_LINK ${LIBXML2_LIBRARIES})
+elseif(NEED_LIBXML2)
+	message(SEND_ERROR "Enabled backends require the XML backend to be enabled as well.\n"
+		"If you want to enable the XML backend, set WITH_XML_BACKEND=ON.")
 endif()
 
-if (NEED_LIBXML2 AND NOT (LIBXML2_FOUND AND WITH_XML_BACKEND))
-	message(SEND_ERROR "The selected backends require libxml2 and the XML backend to be enabled")
-endif()
-
-if (NEED_THREADS)
+option(NO_THREADS "Disable multi-threading support" OFF)
+if (NEED_THREADS AND NOT NO_THREADS)
 	if (NOT WIN32)
 		find_library(PTHREAD_LIBRARIES pthread)
 
-		if (PTHREAD_LIBRARIES)
-			list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
-		else()
-			message(WARNING "pthread library not found; support for threads will be disabled")
-			set(NO_THREADS ON)
+		if (NOT PTHREAD_LIBRARIES)
+			message(SEND_ERROR "Unable to find pthread dependency.\n"
+				"If you want to disable multi-threading support, set NO_THREADS=ON.")
 		endif()
+
+		list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
 	endif()
 
 	list(APPEND LIBIIO_CFILES lock.c)
@@ -569,8 +579,8 @@ if(WITH_IIOD)
 	set(UPSTART_CONF_INSTALL_DIR /etc/init CACHE PATH "default install path for upstart conf files")
 
 	if (NOT PTHREAD_LIBRARIES)
-		message(WARNING "IIOD requires threads support; disabling")
-		set(WITH_IIOD OFF CACHE BOOL "" FORCE)
+		message(SEND_ERROR "IIOD requires pthread support\n."
+			"If you want to disable IIOD, set WITH_IIOD=OFF.")
 	else()
 		add_subdirectory(iiod)
 	endif()
