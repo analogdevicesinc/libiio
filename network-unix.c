@@ -17,6 +17,7 @@
 #include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 int set_blocking_mode(int fd, bool blocking)
