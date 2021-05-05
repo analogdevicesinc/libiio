@@ -24,7 +24,7 @@ find_library(LIBAIO_LIBRARIES aio)
 find_path(LIBAIO_INCLUDE_DIR libaio.h)
 
 if (LIBAIO_LIBRARIES AND LIBAIO_INCLUDE_DIR)
-	option(ENABLE_AIO "Build IIOD with async. I/O support" ON)
+	option(WITH_AIO "Build IIOD with async. I/O support" ON)
 endif ()
 
 include(CheckTypeSize)
@@ -33,12 +33,12 @@ check_type_size("struct usb_functionfs_descs_head_v2" FUNCTIONFS_V2)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
 if (HAVE_FUNCTIONFS_V2)
-	OPTION(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ${ENABLE_AIO})
+	OPTION(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ${WITH_AIO})
 
 	if (WITH_IIOD_USBD)
-		if (NOT ENABLE_AIO)
+		if (NOT WITH_AIO)
 			message(SEND_ERROR "USB support in IIOD requires async. I/O support")
-		endif (NOT ENABLE_AIO)
+		endif (NOT WITH_AIO)
 
 		set(IIOD_CFILES ${IIOD_CFILES} usbd.c)
 	endif (WITH_IIOD_USBD)
@@ -52,8 +52,7 @@ set_target_properties(iiod PROPERTIES
 )
 target_link_libraries(iiod iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
 
-if (ENABLE_AIO)
-	add_definitions(-DWITH_AIO=1)
+if (WITH_AIO)
 	include_directories(${LIBAIO_INCLUDE_DIR})
 	target_link_libraries(iiod ${LIBAIO_LIBRARIES})
 endif ()
