@@ -373,7 +373,7 @@ int main(int argc, char **argv)
 			interactive = true;
 			break;
 		case 'a':
-			if (!ENABLE_AIO) {
+			if (!WITH_AIO) {
 				IIO_ERROR("IIOD was not compiled with AIO support.\n");
 				return EXIT_FAILURE;
 			}
