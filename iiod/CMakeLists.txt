@@ -9,8 +9,6 @@ flex_target(lexer
 bison_target(parser
 	${CMAKE_CURRENT_SOURCE_DIR}/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
 add_flex_bison_dependency(lexer parser)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_LIBRARIES ${PTHREAD_LIBRARIES})
@@ -19,13 +17,21 @@ check_symbol_exists(pthread_setname_np "pthread.h" HAS_PTHREAD_SETNAME_NP)
 set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_DEFINITIONS)
 
-if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCC)
+add_executable(iiod iiod.c ops.c thread-pool.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
+set_target_properties(iiod PROPERTIES
+	C_STANDARD 99
+	C_STANDARD_REQUIRED ON
+	C_EXTENSIONS OFF
+)
+target_link_libraries(iiod LINK_PRIVATE iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
+target_include_directories(iiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(iiod PRIVATE _GNU_SOURCE)
+
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	# flex sometimes generates code which generate sign comparison errors
 	set_source_files_properties(${FLEX_lexer_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 	set_source_files_properties(${BISON_parser_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif ()
-
-set(IIOD_CFILES iiod.c ops.c thread-pool.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
 
 option(WITH_AIO "Build IIOD with async. I/O support" ON)
 if (WITH_AIO)
@@ -51,29 +57,17 @@ if (WITH_AIO)
 				"If you want to disable USB support, set WITH_IIOD_USBD=OFF.")
 		endif()
 
-		set(IIOD_CFILES ${IIOD_CFILES} usbd.c)
+		target_sources(iiod PRIVATE usbd.c)
 	endif()
+
+	target_include_directories(iiod PRIVATE ${LIBAIO_INCLUDE_DIR})
+	target_link_libraries(iiod LINK_PRIVATE ${LIBAIO_LIBRARIES})
 endif()
-
-add_executable(iiod ${IIOD_CFILES})
-set_target_properties(iiod PROPERTIES
-	C_STANDARD 99
-	C_STANDARD_REQUIRED ON
-	C_EXTENSIONS OFF
-)
-target_link_libraries(iiod iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
-
-if (WITH_AIO)
-	include_directories(${LIBAIO_INCLUDE_DIR})
-	target_link_libraries(iiod ${LIBAIO_LIBRARIES})
-endif ()
 
 if (WITH_ZSTD)
-	include_directories(${LIBZSTD_INCLUDE_DIR})
-	target_link_libraries(iiod ${LIBZSTD_LIBRARIES})
+	target_include_directories(iiod PRIVATE ${LIBZSTD_INCLUDE_DIR})
+	target_link_libraries(iiod LINK_PRIVATE ${LIBZSTD_LIBRARIES})
 endif()
-
-add_definitions(-D_GNU_SOURCE=1)
 
 if (HAVE_AVAHI)
 	target_sources(iiod PRIVATE dns-sd.c)
