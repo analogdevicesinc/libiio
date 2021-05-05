@@ -25,14 +25,47 @@ endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
-if (NOT BUILD_SHARED_LIBS)
-	add_definitions(-DLIBIIO_STATIC=1)
+add_library(iio backend.c channel.c device.c context.c buffer.c utilities.c scan.c sort.c
+	${CMAKE_CURRENT_BINARY_DIR}/iio-config.h
+)
+set_target_properties(iio PROPERTIES
+	VERSION ${PROJECT_VERSION}
+	SOVERSION ${PROJECT_VERSION_MAJOR}
+	FRAMEWORK TRUE
+	PUBLIC_HEADER iio.h
+	C_STANDARD 99
+	C_STANDARD_REQUIRED ON
+	C_EXTENSIONS OFF
+)
+if (MSVC)
+	set_target_properties(iio PROPERTIES PREFIX lib)
 endif()
 
-option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
-option(WITH_TESTS "Build the test programs" ON)
-option(WITH_EXAMPLES "Build examples" OFF)
+target_include_directories(iio PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 
+target_compile_definitions(iio PRIVATE LIBIIO_EXPORTS)
+
+target_compile_definitions(iio PUBLIC
+	# Request Posix 2008.09
+	_POSIX_C_SOURCE=200809L __XSI_VISIBLE=500
+
+	# Per http://www.mingw.org/wiki/Use_more_recent_defined_functions
+	$<$<PLATFORM_ID:MinGW>:_WIN32_WINNT=0x600 WINVER=0x600>
+
+	# full Single Unix Standard v3 (SUSv3) conformance (the Unix API)
+	$<$<PLATFORM_ID:Darwin>:_DARWIN_C_SOURCE>
+
+	# Set -DLIBIIO_STATIC if building statically
+	$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:LIBIIO_STATIC>
+)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBsd")
+	target_compile_definitions(iio PUBLIC __BSD_VISIBLE)
+	set(CMAKE_REQUIRED_DEFINITIONS -D__BSD_VISIBLE=1)
+endif()
+
+option(WITH_EXAMPLES "Build examples" OFF)
+option(WITH_TESTS "Build the test programs" ON)
 if (WITH_TESTS)
 	set(NEED_THREADS 1)
 endif()
@@ -50,7 +83,7 @@ set(LEVEL_Debug 5)
 set(DEFAULT_LOG_LEVEL ${LEVEL_${LOG_LEVEL}})
 
 if (MSVC)
-	add_compile_options(/W4 /wd4200 /wd4127 /wd4100)
+	target_compile_options(iio PRIVATE /W4 /wd4200 /wd4127 /wd4100)
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
 	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
 	# C4100: unreferenced parameter; same as -Wno-unused-parameter
@@ -60,54 +93,25 @@ if (MSVC)
 
 elseif (CMAKE_COMPILER_IS_GNUCC)
 	if (NOT WIN32)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+		target_compile_options(iio PUBLIC -fvisibility=hidden)
 	endif()
-
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter")
 
 	include(CheckCCompilerFlag)
 	check_c_compiler_flag(-Wpedantic HAS_WPEDANTIC)
-	if (HAS_WPEDANTIC)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic")
-	endif()
 	check_c_compiler_flag(-Wshadow HAS_WSHADOW)
-	if (HAS_WSHADOW)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow")
-	endif()
-	# cmake 2.8 doesn't support C_STANDARD defined in set_target_properties
-	if (${CMAKE_VERSION} VERSION_LESS "3.2")
-		check_c_compiler_flag(-std=c99 HAS_C99)
-		if (HAS_C99)
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-		endif()
-	endif()
 
-	# Per http://www.mingw.org/wiki/Use_more_recent_defined_functions
-	if (MINGW)
-		# Build for Vista and above
-		# check mingw-w64-headers/include/w32api.h or windows sdkddkver.h
-		# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
-		# using a hex value is bad - but stops from loading the otherwise unnecessary headers
-		set(CMAKE_C_FLAGS "-D_WIN32_WINNT=0x600 ${CMAKE_C_FLAGS}")
-		set(CMAKE_C_FLAGS "-DWINVER=0x600 ${CMAKE_C_FLAGS}")
-	endif()
+	target_compile_options(iio PRIVATE -Wall -Wextra -Wno-unused-parameter
+		$<$<BOOL:HAS_WPEDANTIC>:-Wpedantic>
+		$<$<BOOL:HAS_WSHADOW>:-Wshadow>
+	)
+
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter")
+	target_compile_options(iio PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
 else()
 	message(STATUS "Unknown compiler, please report upstream")
 	message(STATUS "CMAKE_C_COMPILER_ID : " ${CMAKE_C_COMPILER_ID})
 	message(STATUS "CFLAGS set to " ${CMAKE_C_FLAGS})
 endif()
-
-# based on host, set these on macos
-if(APPLE)
-	#full Single Unix Standard v3 (SUSv3) conformance (the Unix API)
-	add_definitions(-D_DARWIN_C_SOURCE)
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBSD")
-	set(CMAKE_REQUIRED_DEFINITIONS "-D__BSD_VISIBLE")
-	add_definitions(-D__BSD_VISIBLE=1)
-endif()
-add_definitions(-D_POSIX_C_SOURCE=200809L -D__XSI_VISIBLE=500 -DLIBIIO_EXPORTS=1)
 
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
@@ -138,7 +142,9 @@ if (WITH_USB_BACKEND)
 		set(NEED_LIBXML2 1)
 		set(NEED_THREADS 1)
 
-		include_directories(${LIBUSB_INCLUDE_DIR})
+		target_include_directories(iio PRIVATE ${LIBUSB_INCLUDE_DIR})
+		target_sources(iio PRIVATE usb.c)
+		target_link_libraries(iio PRIVATE ${LIBUSB_LIBRARIES})
 
 		set(TEMP ${CMAKE_REQUIRED_LIBRARIES})
 		set(TEMP1 ${CMAKE_REQUIRED_INCLUDES})
@@ -155,18 +161,20 @@ endif()
 if (MSVC)
 	if(DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR})
 		message(STATUS "Running in an AppVeyor environment, setting -Werror")
-		add_compile_options(/WX)
+		target_compile_options(iio PRIVATE /WX)
 	endif()
-elseif (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	option(WITH_GCOV "Build with gcov profiling flags" OFF)
 	if (WITH_GCOV)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
+		target_compile_options(iio PRIVATE -fprofile-arcs -ftest-coverage)
+
+		# TODO: Use cmake_link_options() in CMake 3.13+
 		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 		SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}  -fprofile-arcs -ftest-coverage")
 	endif()
 	if(DEFINED ENV{CI} AND (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR}))
 		message(STATUS "Running in CI environment (Travis or AppVeyor), setting -Werror")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+		target_compile_options(iio PRIVATE -Werror)
 	endif()
 endif()
 
@@ -180,14 +188,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	if (WITH_IIOD)
 		set(NEED_THREADS 1)
 	endif()
-endif()
-
-set(LIBIIO_CFILES backend.c channel.c device.c context.c buffer.c utilities.c scan.c sort.c)
-set(LIBIIO_HEADERS iio.h)
-
-if(WITH_USB_BACKEND)
-	list(APPEND LIBIIO_CFILES usb.c)
-	list(APPEND LIBS_TO_LINK ${LIBUSB_LIBRARIES})
 endif()
 
 # Get the GIT hash of the latest commit
@@ -219,17 +219,17 @@ set(LIBIIO_VERSION ${VERSION}.g${LIBIIO_VERSION_GIT})
 file(WRITE ${CMAKE_BINARY_DIR}/.version ${LIBIIO_VERSION})
 
 if(WITH_LOCAL_BACKEND)
-	list(APPEND LIBIIO_CFILES local.c)
+	target_sources(iio PRIVATE local.c)
 
 	# Link with librt if present
 	find_library(LIBRT_LIBRARIES rt)
 	if (LIBRT_LIBRARIES)
-		list(APPEND LIBS_TO_LINK ${LIBRT_LIBRARIES})
+		target_link_libraries(iio PRIVATE ${LIBRT_LIBRARIES})
 	endif()
 
 	option(WITH_LOCAL_CONFIG "Read local context attributes from /etc/libiio.ini" ON)
 	if (WITH_LOCAL_CONFIG)
-		list(APPEND LIBIIO_CFILES ./libini/libini.c)
+		target_sources(iio PRIVATE libini/libini.c)
 	endif()
 endif()
 
@@ -248,8 +248,9 @@ if (WITH_SERIAL_BACKEND)
 			message(SEND_ERROR "The installed version of libserialport is too old. The minimum version supported is 0.1.1.")
 		endif()
 
-		list(APPEND LIBIIO_CFILES serial.c)
-		list(APPEND LIBS_TO_LINK ${LIBSERIALPORT_LIBRARIES})
+		target_sources(iio PRIVATE serial.c)
+		target_link_libraries(iio PRIVATE ${LIBSERIALPORT_LIBRARIES})
+		target_include_directories(iio PRIVATE ${LIBSERIALPORT_INCLUDE_DIR})
 
 		set(NEED_THREADS 1)
 		set(IIOD_CLIENT 1)
@@ -269,16 +270,15 @@ if (WITH_ZSTD)
 			"If you want to disable ZSTD compression support, set WITH_ZSTD=OFF.")
 	endif()
 
-	list(APPEND LIBS_TO_LINK ${LIBZSTD_LIBRARIES})
-	include_directories(${LIBZSTD_INCLUDE_DIR})
+	target_link_libraries(iio PRIVATE ${LIBZSTD_LIBRARIES})
+	target_include_directories(iio PRIVATE ${LIBZSTD_INCLUDE_DIR})
 endif (WITH_ZSTD)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-
+option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 if(WITH_NETWORK_BACKEND)
 	message(STATUS "Building with Network back end support")
 	if (WIN32)
-		list(APPEND LIBS_TO_LINK wsock32 iphlpapi ws2_32)
+		target_link_libraries(iio PRIVATE wsock32 iphlpapi ws2_32)
 	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -305,30 +305,33 @@ if(WITH_NETWORK_BACKEND)
 		endif()
 	endif()
 
-	list(APPEND LIBIIO_CFILES network.c)
+	target_sources(iio PRIVATE network.c)
 	if (WIN32)
-		list(APPEND LIBIIO_CFILES network-windows.c)
+		target_sources(iio PRIVATE network-windows.c)
 	else()
-		list(APPEND LIBIIO_CFILES network-unix.c)
+		target_sources(iio PRIVATE network-unix.c)
 	endif()
 
 	option(HAVE_DNS_SD "Enable DNS-SD (ZeroConf) support" ON)
 	if (NOT HAVE_DNS_SD)
 		message(STATUS "Building without DNS-SD (ZeroConf) support")
+
 	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		find_library(CORE_SERVICES CoreServices)
 
 		message(STATUS "Building with CFNetServices, an Apple DNS SD implementation")
 
-		list(APPEND LIBIIO_CFILES dns_sd_bonjour.c dns_sd.c)
-		list(APPEND LIBS_TO_LINK ${CORE_SERVICES} )
+		target_sources(iio PRIVATE dns_sd.c dns_sd_bonjour.c)
+		target_link_libraries(iio PRIVATE ${CORE_SERVICES})
 
 	elseif(WIN32)
-		list(APPEND LIBIIO_CFILES dns_sd_windows.c dns_sd.c)
-		if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+		if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 			set_source_files_properties(dns_sd_windows.c PROPERTIES COMPILE_FLAGS "-Wno-unused-function")
 		endif()
 		message(STATUS "Building with mdns, A Public domain mDNS/DNS-SD library in C ")
+
+		target_sources(iio PRIVATE dns_sd.c dns_sd_windows.c)
+
 	else()
 		find_library(AVAHI_CLIENT_LIBRARIES avahi-client)
 		find_library(AVAHI_COMMON_LIBRARIES avahi-common)
@@ -340,9 +343,10 @@ if(WITH_NETWORK_BACKEND)
 		message(STATUS "Building with Avahi, a DNS-SD (ZeroConf) implementation")
 		set(HAVE_AVAHI ON)
 
-		list(APPEND LIBIIO_CFILES dns_sd_avahi.c dns_sd.c)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
-		list(APPEND LIBS_TO_LINK ${AVAHI_LIBRARIES})
+
+		target_sources(iio PRIVATE dns_sd.c dns_sd_avahi.c)
+		target_link_libraries(iio PRIVATE ${AVAHI_LIBRARIES})
 	endif()
 
 	set(NEED_THREADS 1)
@@ -374,10 +378,10 @@ if (WITH_XML_BACKEND)
 			"If you want to disable the XML backend, set WITH_XML_BACKEND=OFF.")
 	endif()
 
-	list(APPEND LIBIIO_CFILES xml.c)
+	target_sources(iio PRIVATE xml.c)
 
-	include_directories(${LIBXML2_INCLUDE_DIR})
-	list(APPEND LIBS_TO_LINK ${LIBXML2_LIBRARIES})
+	target_include_directories(iio PRIVATE ${LIBXML2_INCLUDE_DIR})
+	target_link_libraries(iio PRIVATE ${LIBXML2_LIBRARIES})
 elseif(NEED_LIBXML2)
 	message(SEND_ERROR "Enabled backends require the XML backend to be enabled as well.\n"
 		"If you want to enable the XML backend, set WITH_XML_BACKEND=ON.")
@@ -396,11 +400,11 @@ if (NEED_THREADS AND NOT NO_THREADS)
 		list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
 	endif()
 
-	list(APPEND LIBIIO_CFILES lock.c)
+	target_sources(iio PRIVATE lock.c)
 endif()
 
 if (IIOD_CLIENT)
-	list(APPEND LIBIIO_CFILES iiod-client.c)
+	target_sources(iio PRIVATE iiod-client.c)
 endif()
 
 if(WITH_TESTS)
@@ -422,22 +426,6 @@ if (WIN32)
 	set(LIBIIO_ORIGINAL_FILENAME libiio.dll)
 	set(LIBIIO_RC ${CMAKE_CURRENT_BINARY_DIR}/properties.rc)
 	configure_file(properties.rc.cmakein ${LIBIIO_RC} @ONLY)
-endif()
-
-add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS} ${LIBIIO_RC})
-set_target_properties(iio PROPERTIES
-	VERSION ${VERSION}
-	SOVERSION ${LIBIIO_VERSION_MAJOR}
-	FRAMEWORK TRUE
-	PUBLIC_HEADER ${LIBIIO_HEADERS}
-	C_STANDARD 99
-	C_STANDARD_REQUIRED ON
-	C_EXTENSIONS OFF
-)
-target_link_libraries(iio LINK_PRIVATE ${LIBS_TO_LINK})
-
-if (MSVC)
-	set_target_properties(iio PROPERTIES OUTPUT_NAME libiio)
 endif()
 
 option(CSHARP_BINDINGS "Install C# bindings" OFF)
