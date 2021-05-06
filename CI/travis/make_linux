@@ -44,6 +44,13 @@ handle_default() {
 
 	FLAGS="-DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DWITH_EXAMPLES=ON ${PYTHON_HELP} ${DOC_HELP} ${MAN_HELP}"
 
+	# Ubuntu Xenial's libserialport and libzstd are too old
+	if [ "${OS_VERSION}" = xenial ] ; then
+		FLAGS="${FLAGS} -DWITH_SERIAL_BACKEND=OFF"
+	else
+		FLAGS="${FLAGS} -DWITH_ZSTD=ON"
+	fi
+
 	echo "### cmake ${FLAGS}"
 	cmake ${FLAGS} ..
 
@@ -103,7 +110,13 @@ handle_centos() {
 	echo "handle centos"
 	mkdir -p build
 	cd build
-	cmake -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON ..
+
+	FLAGS="-DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON"
+
+	# CentOS 7's kernel headers are too old for USB support in IIOD
+	[ "${OS_VERSION}" = centos7 ] && FLAGS="${FLAGS} -DWITH_IIOD_USBD=OFF"
+
+	cmake ${FLAGS} ..
 	make
 	make package
 	cd ..
