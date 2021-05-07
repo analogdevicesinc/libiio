@@ -135,13 +135,6 @@ check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 
-if (NOT WIN32)
-	find_library(PTHREAD_LIBRARIES pthread)
-	set(CMAKE_REQUIRED_LIBRARIES ${PTHREAD_LIBRARIES})
-	check_symbol_exists(pthread_setname_np "pthread.h" HAS_PTHREAD_SETNAME_NP)
-	set(CMAKE_REQUIRED_LIBRARIES)
-endif()
-
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
 if (ENABLE_IPV6)
 	check_symbol_exists(in6addr_any "netinet/in.h" HAVE_IPV6)
@@ -398,6 +391,8 @@ endif()
 
 if (NEED_THREADS)
 	if (NOT WIN32)
+		find_library(PTHREAD_LIBRARIES pthread)
+
 		if (PTHREAD_LIBRARIES)
 			list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
 		else()
