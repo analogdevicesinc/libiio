@@ -23,6 +23,14 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
+/*
+ * Old OSes (CentOS 7, Ubuntu 16.04) require this for the
+ * IN6_IS_ADDR_LINKLOCAL() macro to work.
+ */
+#define __USE_MISC
+#include <netinet/in.h>
+#undef __USE_MISC
+
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <net/if.h>
