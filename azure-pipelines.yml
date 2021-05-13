@@ -1,12 +1,14 @@
 trigger:
 - main
 - master
+- dev
 - staging/*
 - 20*
 
 pr:
 - main
 - master
+- dev
 - 20*
 
 jobs:
