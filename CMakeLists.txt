@@ -368,6 +368,7 @@ if(WITH_NETWORK_BACKEND)
 	set(NEED_LIBXML2 1)
 else()
 	message(STATUS "Building without network support")
+	set(HAVE_DNS_SD OFF)
 endif()
 
 
