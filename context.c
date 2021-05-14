@@ -210,16 +210,10 @@ struct iio_context * iio_context_create_from_backend(
 	}
 
 	ret = -ENOMEM;
-	if (backend->sizeof_context_pdata) {
-		ctx->pdata = zalloc(backend->sizeof_context_pdata);
-		if (!ctx->pdata)
-			goto err_free_ctx;
-	}
-
 	if (description) {
 		ctx->description = iio_strdup(description);
 		if (!ctx->description)
-			goto err_free_pdata;
+			goto err_free_ctx;
 	}
 
 	ctx->name = backend->name;
@@ -227,8 +221,6 @@ struct iio_context * iio_context_create_from_backend(
 
 	return ctx;
 
-err_free_pdata:
-	free(ctx->pdata);
 err_free_ctx:
 	free(ctx);
 	errno = -ret;
