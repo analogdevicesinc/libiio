@@ -38,7 +38,7 @@ int set_blocking_mode(int fd, bool blocking)
 #if WITH_NETWORK_EVENTFD
 #include <sys/eventfd.h>
 
-int create_cancel_fd(struct iiod_client_pdata *io_ctx)
+static int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 {
 	io_ctx->cancel_fd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (io_ctx->cancel_fd[0] < 0)
@@ -48,7 +48,7 @@ int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 
 #else /* WITH_NETWORK_EVENTFD */
 
-int create_cancel_fd(struct iiod_client_pdata *io_ctx)
+static int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 {
 	int ret;
 
