@@ -390,10 +390,16 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 	return iio_create_context(NULL, uri);
 }
 
+static const struct iio_backend *iio_backends[] = {
+	NULL, /* empty for now */
+};
+
 struct iio_context * iio_create_context(const struct iio_context_params *params,
 					const char *uri)
 {
 	struct iio_context_params params2 = { 0 };
+	const struct iio_backend *backend = NULL;
+	unsigned int i;
 
 	if (params)
 		params2 = *params;
@@ -429,6 +435,24 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		if (!params2.timeout_ms)
 			params2.timeout_ms = SERIAL_BACKEND_TIMEOUT_MS;
 		return serial_create_context_from_uri(&params2, uri);
+	}
+
+	for (i = 0; !backend && i < ARRAY_SIZE(iio_backends); i++) {
+		if (!iio_backends[i])
+			continue;
+
+		if (!strncmp(uri, iio_backends[i]->uri_prefix,
+			     strlen(iio_backends[i]->uri_prefix))) {
+			backend = iio_backends[i];
+		}
+	}
+
+	if (backend) {
+		if (!params2.timeout_ms)
+			params2.timeout_ms = backend->default_timeout_ms;
+
+		return backend->ops->create(&params2,
+					    uri + strlen(backend->uri_prefix));
 	}
 
 	errno = ENOSYS;
