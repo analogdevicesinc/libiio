@@ -124,6 +124,7 @@ struct iio_backend {
 	const char			*name;
 	const char			*uri_prefix;
 	const struct iio_backend_ops	*ops;
+	unsigned int			default_timeout_ms;
 };
 
 struct iio_context * iio_context_create_from_backend(
