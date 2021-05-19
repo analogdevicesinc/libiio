@@ -9,6 +9,7 @@
 #ifndef __OPS_H__
 #define __OPS_H__
 
+#include "../iio-config.h"
 #include "queue.h"
 
 #include <endian.h>
