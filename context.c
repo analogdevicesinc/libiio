@@ -34,6 +34,15 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST buffer-attribute name CDATA #REQUIRED>"
 "]>";
 
+static const struct iio_context_params default_params = {
+	0,
+};
+
+const struct iio_context_params *get_default_params(void)
+{
+	return &default_params;
+}
+
 static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
 {
 	ssize_t count = 0;

@@ -297,6 +297,8 @@ int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
 
 ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 
+__cnst const struct iio_context_params *get_default_params(void);
+
 #undef __api
 
 #endif /* __IIO_PRIVATE_H__ */
