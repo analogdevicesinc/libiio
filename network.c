@@ -27,9 +27,13 @@
  * Old OSes (CentOS 7, Ubuntu 16.04) require this for the
  * IN6_IS_ADDR_LINKLOCAL() macro to work.
  */
+#ifndef _GNU_SOURCE
 #define __USE_MISC
 #include <netinet/in.h>
 #undef __USE_MISC
+#else
+#include <netinet/in.h>
+#endif
 
 #include <arpa/inet.h>
 #include <netdb.h>

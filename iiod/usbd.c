@@ -6,7 +6,6 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "../iio-private.h"
 #include "debug.h"
 #include "ops.h"
 #include "thread-pool.h"

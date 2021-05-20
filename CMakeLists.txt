@@ -310,19 +310,24 @@ if(WITH_NETWORK_BACKEND)
 		option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
 		if (WITH_NETWORK_GET_BUFFER)
 			include(CheckCSourceCompiles)
-			check_c_source_compiles("#include <fcntl.h>\nint main(void) { return O_TMPFILE; }" HAS_O_TMPFILE)
+			check_c_source_compiles("#define _GNU_SOURCE=1\n#include <fcntl.h>\nint main(void) { return O_TMPFILE; }"
+				HAS_O_TMPFILE)
 
 			if (NOT HAS_O_TMPFILE)
 				message(SEND_ERROR "Zero-copy requires the O_TMPFILE flag, which is not available on the system.")
 			endif()
 		endif()
 
-		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }" WITH_NETWORK_EVENTFD)
-	endif()
+		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }"
+			WITH_NETWORK_EVENTFD)
+		if (NOT WITH_NETWORK_EVENTFD)
+			check_c_source_compiles("#define _GNU_SOURCE=1\n#include <unistd.h>\n#include <fcntl.h>\nint main(void) { int fd[2]; return pipe2(fd, O_CLOEXEC | O_NONBLOCK); }"
+				HAS_PIPE2)
+		endif()
 
-	if(NOT WIN32)
-		include(CheckCSourceCompiles)
-		check_c_source_compiles("#include <unistd.h>\n#include <fcntl.h>\nint main(void) { int fd[2]; return pipe2(fd, O_CLOEXEC | O_NONBLOCK); }" HAS_PIPE2)
+		if (WITH_NETWORK_GET_BUFFER OR HAS_PIPE2)
+			add_definitions(-D_GNU_SOURCE=1)
+		endif()
 	endif()
 
 	list(APPEND LIBIIO_CFILES network.c)
@@ -370,6 +375,7 @@ if(WITH_NETWORK_BACKEND)
 	set(NEED_LIBXML2 1)
 else()
 	message(STATUS "Building without network support")
+	set(HAVE_DNS_SD OFF)
 endif()
 
 
