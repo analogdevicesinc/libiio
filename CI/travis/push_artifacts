@@ -1,0 +1,3 @@
+#!/bin/bash
+
+scp -2 -o HostKeyAlgorithms=+ssh-dss -v -i $1 $2 sshacs@analog.ssh.upload.akamai.com:/336936/cse/azure_builds_Test
