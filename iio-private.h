@@ -209,8 +209,8 @@ struct iio_scan_result {
 	struct iio_context_info **info;
 };
 
-struct iio_context_info ** iio_scan_result_add(
-	struct iio_scan_result *scan_result, size_t num);
+struct iio_context_info *
+iio_scan_result_add(struct iio_scan_result *scan_result);
 
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);

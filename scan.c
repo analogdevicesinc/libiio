@@ -86,33 +86,27 @@ void iio_context_info_list_free(struct iio_context_info **list)
 	free(list);
 }
 
-struct iio_context_info ** iio_scan_result_add(
-		struct iio_scan_result *scan_result, size_t num)
+struct iio_context_info *
+iio_scan_result_add(struct iio_scan_result *scan_result)
 {
 	struct iio_context_info **info;
-	size_t old_size, new_size;
-	size_t i;
+	size_t size = scan_result->size;
 
-	old_size = scan_result->size;
-	new_size = old_size + num;
-
-	info = realloc(scan_result->info, (new_size + 1) * sizeof(*info));
+	info = realloc(scan_result->info, (size + 2) * sizeof(*info));
 	if (!info)
 		return NULL;
 
 	scan_result->info = info;
-	scan_result->size = new_size;
+	scan_result->size = size + 1;
 
-	for (i = old_size; i < new_size; i++) {
-		/* Make sure iio_context_info_list_free won't overflow */
-		info[i + 1] = NULL;
+	/* Make sure iio_context_info_list_free won't overflow */
+	info[size + 1] = NULL;
 
-		info[i] = zalloc(sizeof(**info));
-		if (!info[i])
-			return NULL;
-	}
+	info[size] = zalloc(sizeof(**info));
+	if (!info[size])
+		return NULL;
 
-	return &info[old_size];
+	return info[size];
 }
 
 struct iio_scan_context * iio_create_scan_context(
