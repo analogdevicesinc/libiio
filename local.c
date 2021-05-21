@@ -2132,7 +2132,7 @@ static int check_device(void *d, const char *path)
 
 int local_context_scan(struct iio_scan_result *scan_result)
 {
-	struct iio_context_info **info;
+	struct iio_context_info *info;
 	bool exists = false;
 	char *desc, *uri, *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	int ret;
@@ -2169,12 +2169,13 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	if (!uri)
 		goto err_free_desc;
 
-	info = iio_scan_result_add(scan_result, 1);
+	info = iio_scan_result_add(scan_result);
 	if (!info)
 		goto err_free_uri;
 
-	info[0]->description = desc;
-	info[0]->uri = uri;
+	info->description = desc;
+	info->uri = uri;
+
 	return 0;
 
 err_free_uri:

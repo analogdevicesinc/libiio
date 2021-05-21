@@ -1202,7 +1202,7 @@ static int usb_fill_context_info(struct iio_context_info *info,
 
 int usb_context_scan(struct iio_scan_result *scan_result)
 {
-	struct iio_context_info **info;
+	struct iio_context_info *info;
 	libusb_device **device_list;
 	libusb_context *ctx;
 	unsigned int i;
@@ -1228,12 +1228,12 @@ int usb_context_scan(struct iio_scan_result *scan_result)
 			continue;
 
 		if (!iio_usb_match_device(dev, hdl, &intrfc)) {
-			info = iio_scan_result_add(scan_result, 1);
+			info = iio_scan_result_add(scan_result);
 			if (!info)
 				ret = -ENOMEM;
 			else
-				ret = usb_fill_context_info(*info, dev, hdl,
-						intrfc);
+				ret = usb_fill_context_info(info, dev, hdl,
+							    intrfc);
 		}
 
 		libusb_close(hdl);

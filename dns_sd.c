@@ -235,8 +235,8 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 
 int dnssd_context_scan(struct iio_scan_result *scan_result)
 {
-	struct iio_context_info **info;
 	struct dns_sd_discovery_data *ddata, *ndata;
+	struct iio_context_info *info;
 	int ret = 0;
 
 	ret = dnssd_find_hosts(&ddata);
@@ -251,14 +251,14 @@ int dnssd_context_scan(struct iio_scan_result *scan_result)
 		goto fail;
 
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
-		info = iio_scan_result_add(scan_result, 1);
+		info = iio_scan_result_add(scan_result);
 		if (!info) {
 			IIO_ERROR("Out of memory when adding new scan result\n");
 			ret = -ENOMEM;
 			break;
 		}
 
-		ret = dnssd_fill_context_info(*info,
+		ret = dnssd_fill_context_info(info,
 				ndata->hostname, ndata->addr_str,ndata->port);
 		if (ret < 0) {
 			IIO_DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
