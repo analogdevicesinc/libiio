@@ -15,7 +15,7 @@
 
 struct iio_scan_context {
 	struct iio_scan_backend_context *usb_ctx;
-	struct iio_scan_backend_context *dnssd_ctx;
+	bool scan_network;
 	bool scan_local;
 };
 
@@ -54,8 +54,8 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 		}
 	}
 
-	if (HAVE_DNS_SD && ctx->dnssd_ctx) {
-		int ret = dnssd_context_scan(ctx->dnssd_ctx, &scan_result);
+	if (HAVE_DNS_SD && ctx->scan_network) {
+		int ret = dnssd_context_scan(&scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
 				iio_context_info_list_free(scan_result.info);
@@ -138,8 +138,8 @@ struct iio_scan_context * iio_create_scan_context(
 	if (WITH_USB_BACKEND && (!backend || strstr(backend, "usb")))
 		ctx->usb_ctx = usb_context_scan_init();
 
-	if (HAVE_DNS_SD && (!backend || strstr(backend, "ip")))
-		ctx->dnssd_ctx = dnssd_context_scan_init();
+	if (!backend || strstr(backend, "ip"))
+		ctx->scan_network = true;
 
 	return ctx;
 }
@@ -148,8 +148,6 @@ void iio_scan_context_destroy(struct iio_scan_context *ctx)
 {
 	if (WITH_USB_BACKEND && ctx->usb_ctx)
 		usb_context_scan_free(ctx->usb_ctx);
-	if (HAVE_DNS_SD && ctx->dnssd_ctx)
-		dnssd_context_scan_free(ctx->dnssd_ctx);
 	free(ctx);
 }
 

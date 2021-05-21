@@ -77,10 +77,6 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
  * DNS Service Discovery is turned on
  */
 
-struct iio_scan_backend_context {
-	struct addrinfo *res;
-};
-
 static int dnssd_fill_context_info(struct iio_context_info *info,
 		char *hostname, char *addr_str, int port)
 {
@@ -142,24 +138,6 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 	}
 
 	return 0;
-}
-
-struct iio_scan_backend_context * dnssd_context_scan_init(void)
-{
-	struct iio_scan_backend_context *ctx;
-
-	ctx = malloc(sizeof(*ctx));
-	if (!ctx) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	return ctx;
-}
-
-void dnssd_context_scan_free(struct iio_scan_backend_context *ctx)
-{
-	free(ctx);
 }
 
 /*
@@ -255,8 +233,7 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 	*ddata = d;
 }
 
-int dnssd_context_scan(struct iio_scan_backend_context *ctx,
-		struct iio_scan_result *scan_result)
+int dnssd_context_scan(struct iio_scan_result *scan_result)
 {
 	struct iio_context_info **info;
 	struct dns_sd_discovery_data *ddata, *ndata;
