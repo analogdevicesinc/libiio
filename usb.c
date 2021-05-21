@@ -1200,48 +1200,23 @@ static int usb_fill_context_info(struct iio_context_info *info,
 	return 0;
 }
 
-struct iio_scan_backend_context {
-	libusb_context *ctx;
-};
-
-struct iio_scan_backend_context * usb_context_scan_init(void)
-{
-	struct iio_scan_backend_context *ctx;
-	int ret;
-
-	ctx = malloc(sizeof(*ctx));
-	if (!ctx) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	ret = libusb_init(&ctx->ctx);
-	if (ret) {
-		free(ctx);
-		errno = (int) libusb_to_errno(ret);
-		return NULL;
-	}
-
-	return ctx;
-}
-
-void usb_context_scan_free(struct iio_scan_backend_context *ctx)
-{
-	libusb_exit(ctx->ctx);
-	free(ctx);
-}
-
-int usb_context_scan(struct iio_scan_backend_context *ctx,
-		struct iio_scan_result *scan_result)
+int usb_context_scan(struct iio_scan_result *scan_result)
 {
 	struct iio_context_info **info;
 	libusb_device **device_list;
+	libusb_context *ctx;
 	unsigned int i;
 	int ret;
 
-	ret = (int) libusb_get_device_list(ctx->ctx, &device_list);
+	ret = libusb_init(&ctx);
 	if (ret < 0)
 		return -(int) libusb_to_errno(ret);
+
+	ret = (int) libusb_get_device_list(ctx, &device_list);
+	if (ret < 0) {
+		ret = -(int) libusb_to_errno(ret);
+		goto cleanup_libusb_exit;
+	}
 
 	for (i = 0; device_list[i]; i++) {
 		struct libusb_device_handle *hdl;
@@ -1270,5 +1245,7 @@ int usb_context_scan(struct iio_scan_backend_context *ctx,
 
 cleanup_free_device_list:
 	libusb_free_device_list(device_list, true);
+cleanup_libusb_exit:
+	libusb_exit(ctx);
 	return ret;
 }

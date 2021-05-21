@@ -124,7 +124,6 @@ static inline __check_ret void * ERR_TO_PTR(intptr_t err)
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
-struct iio_scan_backend_context;
 
 struct iio_channel_attr {
 	char *name;
@@ -246,11 +245,7 @@ struct iio_context * serial_create_context_from_uri(const char *uri);
 
 int local_context_scan(struct iio_scan_result *scan_result);
 
-struct iio_scan_backend_context * usb_context_scan_init(void);
-void usb_context_scan_free(struct iio_scan_backend_context *ctx);
-
-int usb_context_scan(struct iio_scan_backend_context *ctx,
-		struct iio_scan_result *scan_result);
+int usb_context_scan(struct iio_scan_result *scan_result);
 
 int dnssd_context_scan(struct iio_scan_result *scan_result);
 
