@@ -48,7 +48,7 @@ handle_default() {
 	if [ "${OS_VERSION}" = xenial ] ; then
 		FLAGS="${FLAGS} -DWITH_SERIAL_BACKEND=OFF"
 	else
-		FLAGS="${FLAGS} -DWITH_ZSTD=ON"
+		FLAGS="${FLAGS} -DWITH_SERIAL_BACKEND=ON -DWITH_ZSTD=ON"
 	fi
 
 	echo "### cmake ${FLAGS}"
