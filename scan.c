@@ -14,7 +14,7 @@
 #include <string.h>
 
 struct iio_scan_context {
-	struct iio_scan_backend_context *usb_ctx;
+	bool scan_usb;
 	bool scan_network;
 	bool scan_local;
 };
@@ -45,8 +45,8 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 		}
 	}
 
-	if (WITH_USB_BACKEND && ctx->usb_ctx) {
-		int ret = usb_context_scan(ctx->usb_ctx, &scan_result);
+	if (WITH_USB_BACKEND && ctx->scan_usb) {
+		int ret = usb_context_scan(&scan_result);
 		if (ret < 0) {
 			if (scan_result.info)
 				iio_context_info_list_free(scan_result.info);
@@ -135,8 +135,8 @@ struct iio_scan_context * iio_create_scan_context(
 	if (!backend || strstr(backend, "local"))
 		ctx->scan_local = true;
 
-	if (WITH_USB_BACKEND && (!backend || strstr(backend, "usb")))
-		ctx->usb_ctx = usb_context_scan_init();
+	if (!backend || strstr(backend, "usb"))
+		ctx->scan_usb = true;
 
 	if (!backend || strstr(backend, "ip"))
 		ctx->scan_network = true;
@@ -146,8 +146,6 @@ struct iio_scan_context * iio_create_scan_context(
 
 void iio_scan_context_destroy(struct iio_scan_context *ctx)
 {
-	if (WITH_USB_BACKEND && ctx->usb_ctx)
-		usb_context_scan_free(ctx->usb_ctx);
 	free(ctx);
 }
 
