@@ -28,11 +28,30 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 add_library(iio backend.c channel.c device.c context.c buffer.c utilities.c scan.c sort.c
 	${CMAKE_CURRENT_BINARY_DIR}/iio-config.h
 )
+
+option(LIBIIO_COMPAT "Add compatibility layer for libiio 0.x" ON)
+if (LIBIIO_COMPAT)
+	add_library(iio-compat compat.c)
+	target_link_libraries(iio-compat PRIVATE iio)
+	target_compile_definitions(iio-compat PRIVATE LIBIIO_COMPAT_EXPORTS)
+	set(IIO_COMPAT_LIB iio-compat)
+
+	set_target_properties(iio-compat PROPERTIES
+		OUTPUT_NAME iio
+		NO_SONAME ON
+	)
+	if (NOT WIN32)
+		set_target_properties(iio-compat PROPERTIES SUFFIX .so.0)
+	endif()
+endif()
+
 set_target_properties(iio PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
-	FRAMEWORK TRUE
 	PUBLIC_HEADER iio.h
+)
+set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES
+	FRAMEWORK TRUE
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
@@ -46,7 +65,7 @@ if (WIN32)
 	)
 endif()
 if (MSVC)
-	set_target_properties(iio PROPERTIES PREFIX lib)
+	set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES PREFIX lib)
 endif()
 
 target_include_directories(iio PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
