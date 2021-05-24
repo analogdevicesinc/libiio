@@ -79,23 +79,47 @@ if (HAVE_AVAHI)
 	target_sources(iiod PRIVATE dns-sd.c)
 endif()
 
+include(GNUInstallDirs)
 if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iiod RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
 endif()
 
+option(WITH_SYSTEMD "Enable installation of systemd service file for iiod" OFF)
 if (WITH_SYSTEMD)
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.service.cmakein ${PROJECT_BINARY_DIR}/init/iiod.service)
-	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.service DESTINATION ${SYSTEMD_UNIT_INSTALL_DIR})
+	set(SYSTEMD_UNIT_INSTALL_DIR /lib/systemd/system CACHE PATH
+		"default install path for systemd unit files"
+	)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.service.cmakein
+		${PROJECT_BINARY_DIR}/init/iiod.service
+	)
+	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.service
+		DESTINATION ${SYSTEMD_UNIT_INSTALL_DIR}
+	)
 endif()
 
+option(WITH_SYSVINIT "Enable installation of SysVinit script for iiod" OFF)
 if (WITH_SYSVINIT)
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.init.cmakein ${PROJECT_BINARY_DIR}/init/iiod)
+	set(SYSVINIT_INSTALL_DIR /etc/init.d CACHE PATH
+		"default install path for SysVinit scripts"
+	)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.init.cmakein
+		${PROJECT_BINARY_DIR}/init/iiod
+	)
 	install(FILES ${PROJECT_BINARY_DIR}/init/iiod
 	        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-	        DESTINATION ${SYSVINIT_INSTALL_DIR})
+	        DESTINATION ${SYSVINIT_INSTALL_DIR}
+	)
 endif()
 
+option(WITH_UPSTART "Enable installation of upstart config file for iiod" OFF)
 if (WITH_UPSTART)
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.conf.cmakein ${PROJECT_BINARY_DIR}/init/iiod.conf)
-	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.conf DESTINATION ${UPSTART_CONF_INSTALL_DIR})
+	set(UPSTART_CONF_INSTALL_DIR /etc/init CACHE PATH
+		"default install path for upstart conf files"
+	)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.conf.cmakein
+		${PROJECT_BINARY_DIR}/init/iiod.conf
+	)
+	install(FILES ${PROJECT_BINARY_DIR}/init/iiod.conf
+		DESTINATION ${UPSTART_CONF_INSTALL_DIR}
+	)
 endif()
