@@ -257,13 +257,12 @@ if(WITH_LOCAL_BACKEND)
 	endif()
 endif()
 
-option(WITH_SERIAL_BACKEND "Enable the serial backend" ON)
+option(WITH_SERIAL_BACKEND "Enable the serial backend" OFF)
 if (WITH_SERIAL_BACKEND)
 	find_library(LIBSERIALPORT_LIBRARIES serialport)
 	find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
 	if (NOT LIBSERIALPORT_LIBRARIES OR NOT LIBSERIALPORT_INCLUDE_DIR)
-		message(SEND_ERROR "Unable to find libserialport dependency.\n"
-			"If you want to disable the serial backend, set WITH_SERIAL_BACKEND=OFF.")
+		message(SEND_ERROR "Unable to find libserialport dependency.\n")
 	else()
 		message(STATUS "Looking for libserialport : Found")
 

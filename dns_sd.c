@@ -17,11 +17,11 @@
 #include "iio-private.h"
 #include "network.h"
 
+#include <errno.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
-#include <errno.h>
 #include <netdb.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -82,10 +82,6 @@ static void dnssd_remove_node(const struct iio_context_params *params,
 /* The only way to support scan context from the network is when
  * DNS Service Discovery is turned on
  */
-
-struct iio_scan_backend_context {
-	struct addrinfo *res;
-};
 
 static int dnssd_fill_context_info(const struct iio_context_params *params,
 				   struct iio_context_info *info,
@@ -149,24 +145,6 @@ static int dnssd_fill_context_info(const struct iio_context_params *params,
 	}
 
 	return 0;
-}
-
-struct iio_scan_backend_context * dnssd_context_scan_init(void)
-{
-	struct iio_scan_backend_context *ctx;
-
-	ctx = malloc(sizeof(*ctx));
-	if (!ctx) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	return ctx;
-}
-
-void dnssd_context_scan_free(struct iio_scan_backend_context *ctx)
-{
-	free(ctx);
 }
 
 /*
@@ -272,12 +250,11 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 	*ddata = d;
 }
 
-int dnssd_context_scan(struct iio_scan_backend_context *ctx,
-		struct iio_scan_result *scan_result)
+int dnssd_context_scan(struct iio_scan_result *scan_result)
 {
 	const struct iio_context_params *params = get_default_params();
-	struct iio_context_info **info;
 	struct dns_sd_discovery_data *ddata, *ndata;
+	struct iio_context_info *info;
 	int ret = 0;
 
 	ret = dnssd_find_hosts(params, &ddata);
@@ -292,14 +269,14 @@ int dnssd_context_scan(struct iio_scan_backend_context *ctx,
 		goto fail;
 
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
-		info = iio_scan_result_add(scan_result, 1);
+		info = iio_scan_result_add(scan_result);
 		if (!info) {
 			prm_err(params, "Out of memory when adding new scan result\n");
 			ret = -ENOMEM;
 			break;
 		}
 
-		ret = dnssd_fill_context_info(params, *info,
+		ret = dnssd_fill_context_info(params, info,
 				ndata->hostname, ndata->addr_str,ndata->port);
 		if (ret < 0) {
 			prm_dbg(params, "Failed to add %s (%s) err: %d\n",

@@ -117,7 +117,6 @@ static inline __check_ret void * ERR_TO_PTR(intptr_t err)
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
-struct iio_scan_backend_context;
 
 struct iio_channel_attr {
 	char *name;
@@ -205,8 +204,8 @@ struct iio_scan_result {
 	struct iio_context_info **info;
 };
 
-struct iio_context_info ** iio_scan_result_add(
-	struct iio_scan_result *scan_result, size_t num);
+struct iio_context_info *
+iio_scan_result_add(struct iio_scan_result *scan_result);
 
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
@@ -246,17 +245,9 @@ struct iio_context * serial_create_context_from_uri(const struct iio_context_par
 
 int local_context_scan(struct iio_scan_result *scan_result);
 
-struct iio_scan_backend_context * usb_context_scan_init(void);
-void usb_context_scan_free(struct iio_scan_backend_context *ctx);
+int usb_context_scan(struct iio_scan_result *scan_result);
 
-int usb_context_scan(struct iio_scan_backend_context *ctx,
-		struct iio_scan_result *scan_result);
-
-struct iio_scan_backend_context * dnssd_context_scan_init(void);
-void dnssd_context_scan_free(struct iio_scan_backend_context *ctx);
-
-int dnssd_context_scan(struct iio_scan_backend_context *ctx,
-		struct iio_scan_result *scan_result);
+int dnssd_context_scan(struct iio_scan_result *scan_result);
 
 ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
