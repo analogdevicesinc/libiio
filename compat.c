@@ -10,11 +10,7 @@
 
 #include "iio-compat.h"
 
-/*
- * Dummy function with a call to a libiio 1.x function to force the linker to
- * link with libiio.so.1
- */
-int __foo(void)
+struct iio_context * iio_create_local_context(void)
 {
-	iio_library_get_version(NULL, NULL, NULL);
+	return iio_create_context_from_uri("local:");
 }

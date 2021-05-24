@@ -30,6 +30,12 @@
  * @{ */
 
 
+/** @brief Create a context from local IIO devices (Linux only)
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately */
+__api __check_ret struct iio_context * iio_create_local_context(void);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 
 #undef __api
