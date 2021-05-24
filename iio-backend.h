@@ -71,6 +71,8 @@ enum iio_attr_type {
 };
 
 struct iio_backend_ops {
+	int (*scan)(const struct iio_context_params *params,
+		    struct iio_scan *ctx);
 	struct iio_context * (*create)(const struct iio_context_params *params,
 				       const char *uri);
 	struct iio_context * (*clone)(const struct iio_context *ctx);
