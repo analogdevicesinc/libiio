@@ -404,6 +404,8 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 {
 	struct iio_context_params params2 = { 0 };
 	const struct iio_backend *backend = NULL;
+	struct iio_context *ctx;
+	char *uri_dup = NULL;
 	unsigned int i;
 
 	if (params)
@@ -413,6 +415,12 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		params2.log_level = default_params.log_level;
 	if (!params2.stderr_level)
 		params2.stderr_level = default_params.stderr_level;
+
+	if (!uri) {
+		uri_dup = iio_getenv("IIOD_REMOTE");
+
+		uri = uri_dup ? uri_dup : "local:";
+	}
 
 	for (i = 0; !backend && i < ARRAY_SIZE(iio_backends); i++) {
 		if (!iio_backends[i])
@@ -428,15 +436,18 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		if (!params2.timeout_ms)
 			params2.timeout_ms = backend->default_timeout_ms;
 
-		return backend->ops->create(&params2,
-					    uri + strlen(backend->uri_prefix));
+		ctx = backend->ops->create(&params2,
+					   uri + strlen(backend->uri_prefix));
+	} else if (WITH_MODULES) {
+		ctx = iio_create_dynamic_context(&params2, uri);
+	} else {
+		errno = ENOSYS;
+		ctx = NULL;
 	}
 
-	if (WITH_MODULES)
-		return iio_create_dynamic_context(&params2, uri);
+	free(uri_dup);
 
-	errno = ENOSYS;
-	return NULL;
+	return ctx;
 }
 
 struct iio_context * iio_create_default_context(void)

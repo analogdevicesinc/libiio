@@ -487,7 +487,9 @@ __api __check_ret struct iio_context * iio_create_context_from_uri(const char *u
 /** @brief Create a context from a URI description
  * @param params A pointer to a iio_context_params structure that contains
  *   context creation information; can be NULL
- * @param uri a URI describing the context location
+ * @param uri a URI describing the context location. If NULL, the backend will
+ *   be created using the URI string present in the IIOD_REMOTE environment
+ *   variable, or if not set, a local backend is created.
  * @return On success, a pointer to a iio_context structure
  * @return On failure, NULL is returned and errno is set appropriately
  *
