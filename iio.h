@@ -417,16 +417,6 @@ __api __check_ret __cnst const char * iio_get_backend(unsigned int index);
 __api __check_ret struct iio_context * iio_create_default_context(void);
 
 
-/** @brief Create a context from a XML file
- * @param xml_file Path to the XML file to open
- * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately
- *
- * <b>NOTE:</b> The format of the XML must comply to the one returned by
- * iio_context_get_xml. */
-__api __check_ret struct iio_context * iio_create_xml_context(const char *xml_file);
-
-
 /** @brief Create a context from XML data in memory
  * @param xml Pointer to the XML data in memory
  * @param len Length of the XML string in memory (excluding the final \0)
