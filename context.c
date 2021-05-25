@@ -450,20 +450,6 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	return ctx;
 }
 
-struct iio_context * iio_create_default_context(void)
-{
-	char *hostname = iio_getenv("IIOD_REMOTE");
-	struct iio_context * ctx;
-
-	if (hostname) {
-		ctx = iio_create_context_from_uri(hostname);
-		free(hostname);
-		return ctx;
-	}
-
-	return iio_create_context_from_uri("local:");
-}
-
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
 	if (WITH_XML_BACKEND)

@@ -405,18 +405,6 @@ __api __check_ret __cnst const char * iio_get_backend(unsigned int index);
  * @brief Contains the representation of an IIO context */
 
 
-/** @brief Create a context from local or remote IIO devices
- * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately
- *
- * <b>NOTE:</b> This function will create a network context if the IIOD_REMOTE
- * environment variable is set to the hostname where the IIOD server runs. If
- * set to an empty string, the server will be discovered using ZeroConf.
- * If the environment variable is not set, a local context will be created
- * instead. */
-__api __check_ret struct iio_context * iio_create_default_context(void);
-
-
 /** @brief Create a context from XML data in memory
  * @param xml Pointer to the XML data in memory
  * @param len Length of the XML string in memory (excluding the final \0)
