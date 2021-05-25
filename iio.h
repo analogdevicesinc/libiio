@@ -429,13 +429,6 @@ __api __check_ret struct iio_context * iio_create_xml_context_mem(
 		const char *xml, size_t len);
 
 
-/** @brief Create a context from the network
- * @param host Hostname, IPv4 or IPv6 address where the IIO Daemon is running
- * @return On success, a pointer to an iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately */
-__api __check_ret struct iio_context * iio_create_network_context(const char *host);
-
-
 /** @brief Create a context from a URI description
  * @param uri A URI describing the context location
  * @return On success, a pointer to a iio_context structure

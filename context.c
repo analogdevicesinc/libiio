@@ -464,21 +464,6 @@ struct iio_context * iio_create_default_context(void)
 	return iio_create_context_from_uri("local:");
 }
 
-static struct iio_context *
-iio_create_context_from_uri_arg(const char *backend, const char *arg)
-{
-	char uri[1024];
-
-	iio_snprintf(uri, sizeof(uri), "%s:%s", backend, arg);
-
-	return iio_create_context_from_uri(uri);
-}
-
-struct iio_context * iio_create_network_context(const char *hostname)
-{
-	return iio_create_context_from_uri_arg("ip", hostname);
-}
-
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
 	if (WITH_XML_BACKEND)

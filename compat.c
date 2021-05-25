@@ -26,6 +26,11 @@ struct iio_context * iio_create_xml_context(const char *xml_file)
 	return create_context_with_arg("xml:", xml_file);
 }
 
+struct iio_context * iio_create_network_context(const char *hostname)
+{
+	return create_context_with_arg("ip:", hostname);
+}
+
 struct iio_context * iio_create_local_context(void)
 {
 	return iio_create_context_from_uri("local:");
