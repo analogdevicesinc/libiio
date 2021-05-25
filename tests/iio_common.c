@@ -101,7 +101,7 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 	if (rtn && ret == 1) {
 		fprintf(stderr, "Using auto-detected IIO context at URI \"%s\"\n",
 		iio_context_info_get_uri(info[0]));
-		ctx = iio_create_context_from_uri(iio_context_info_get_uri(info[0]));
+		ctx = iio_create_context(NULL, iio_context_info_get_uri(info[0]));
 	} else {
 		if (rtn) {
 			out = stderr;
@@ -260,7 +260,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	struct iio_context *ctx = NULL;
 	int c;
 	enum backend backend = IIO_LOCAL;
-	const char *arg = NULL;
+	const char *arg = NULL, *prefix = NULL;
 	bool do_scan = false, detect_context = false;
 	char buf[128];
 	struct option *opts;
@@ -295,6 +295,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			}
 			backend = IIO_NETWORK;
 			arg = optarg;
+			prefix = "ip";
 			break;
 		case 'x':
 			if (backend != IIO_LOCAL) {
@@ -307,6 +308,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			}
 			backend = IIO_XML;
 			arg = optarg;
+			prefix = "xml";
 			break;
 		case 'u':
 			if (backend != IIO_LOCAL) {
@@ -361,18 +363,22 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	if (do_scan) {
 		autodetect_context(false, name, arg);
 		return NULL;
-	} else if (detect_context || backend == IIO_AUTO)
+	} else if (detect_context || backend == IIO_AUTO) {
 		ctx = autodetect_context(true, name, arg);
-	else if (!arg && backend != IIO_LOCAL)
+	} else if (prefix) {
+		int ret = iio_snprintf(buf, sizeof(buf), "%s:%s", prefix, arg);
+		if (ret < 0)
+			errno = -ret;
+		else if (ret >= sizeof(buf))
+			errno = EINVAL;
+		else
+			ctx = iio_create_context(NULL, buf);
+	} else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
-	else if (backend == IIO_XML)
-		ctx = iio_create_xml_context(arg);
-	else if (backend == IIO_NETWORK)
-		ctx = iio_create_network_context(arg);
 	else if (backend == IIO_URI)
-		ctx = iio_create_context_from_uri(arg);
+		ctx = iio_create_context(NULL, arg);
 	else
-		ctx = iio_create_default_context();
+		ctx = iio_create_context(NULL, NULL);
 
 	if (!ctx && !do_scan && !detect_context) {
 		char err_str[1024];
