@@ -249,11 +249,10 @@ static void *client_thread(void *data)
 		gettimeofday(&start, NULL);
 		do {
 			errno = 0;
-			if (info->uri_index) {
-				ctx = iio_create_context_from_uri(info->argv[info->uri_index]);
-			} else {
-				ctx = iio_create_default_context();
-			}
+			if (info->uri_index)
+				ctx = iio_create_context(NULL, info->argv[info->uri_index]);
+			else
+				ctx = iio_create_context(NULL, NULL);
 			r_errno = errno;
 			gettimeofday(&end, NULL);
 
@@ -449,7 +448,7 @@ int main(int argc, char **argv)
 	if (info.arg_index + 1 >= argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n");
 		if (info.uri_index) {
-			struct iio_context *ctx = iio_create_context_from_uri(info.argv[info.uri_index]);
+			struct iio_context *ctx = iio_create_context(NULL, info.argv[info.uri_index]);
 			if (ctx) {
 				fprintf(stderr, "checking uri %s\n", info.argv[info.uri_index]);
 				i = iio_context_set_timeout(ctx, 500);
@@ -485,7 +484,7 @@ int main(int argc, char **argv)
 	}
 
 	if (info.uri_index) {
-		struct iio_context *ctx = iio_create_context_from_uri(info.argv[info.uri_index]);
+		struct iio_context *ctx = iio_create_context(NULL, info.argv[info.uri_index]);
 		if (!ctx) {
 			fprintf(stderr, "need valid uri\n");
 			usage(MY_NAME, options, options_descriptions);
