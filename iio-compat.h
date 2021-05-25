@@ -36,6 +36,16 @@
 __api __check_ret struct iio_context * iio_create_local_context(void);
 
 
+/** @brief Create a context from a XML file
+ * @param xml_file Path to the XML file to open
+ * @return On success, A pointer to an iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * <b>NOTE:</b> The format of the XML must comply to the one returned by
+ * iio_context_get_xml. */
+__api __check_ret struct iio_context * iio_create_xml_context(const char *xml_file);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 
 #undef __api

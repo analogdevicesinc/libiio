@@ -479,11 +479,6 @@ struct iio_context * iio_create_network_context(const char *hostname)
 	return iio_create_context_from_uri_arg("ip", hostname);
 }
 
-struct iio_context * iio_create_xml_context(const char *xml_file)
-{
-	return iio_create_context_from_uri_arg("xml", xml_file);
-}
-
 struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 {
 	if (WITH_XML_BACKEND)
