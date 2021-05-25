@@ -35,3 +35,8 @@ struct iio_context * iio_create_local_context(void)
 {
 	return iio_create_context_from_uri("local:");
 }
+
+struct iio_context * iio_create_default_context(void)
+{
+	return iio_create_context_from_uri(NULL);
+}
