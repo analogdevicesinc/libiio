@@ -13,7 +13,7 @@ BEGIN
             VALUE "LegalCopyright",     "Copyright 2015-@BUILD_YEAR@ ADI and other contributors"
             VALUE "LegalTrademarks",    "http://www.gnu.org/licenses/lgpl-2.1.html"
             VALUE "ProductName",        "libiio"
-            VALUE "ProductVersion",     "@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@-g@LIBIIO_VERSION_GIT@"
+            VALUE "ProductVersion",     "@VERSION@-g@LIBIIO_VERSION_GIT@"
             VALUE "OriginalFilename",   "@LIBIIO_ORIGINAL_FILENAME@"
         END
     END
