@@ -349,11 +349,9 @@ __api __check_ret __cnst const char * iio_get_backend(unsigned int index);
  * @return On success, A pointer to an iio_context structure
  * @return On failure, NULL is returned and errno is set appropriately
  *
- * <b>NOTE:</b> This function will create a network context if the IIOD_REMOTE
- * environment variable is set to the hostname where the IIOD server runs. If
- * set to an empty string, the server will be discovered using ZeroConf.
- * If the environment variable is not set, a local context will be created
- * instead. */
+ * <b>NOTE:</b> This function will create a context with the URI
+ * provided in the IIOD_REMOTE environment variable. If not set, a local
+ * context will be created instead. */
 __api __check_ret struct iio_context * iio_create_default_context(void);
 
 
