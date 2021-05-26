@@ -172,6 +172,6 @@ stages:
         displayName: 'Download rsa key'
         inputs:
           secureFile: 'id_rsa'
-      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -vv -i $(key.secureFilePath) -r /home/vsts/work/1/a/* sshacs@analog.ssh.upload.akamai.com:/336936/cse/azure_builds_Test
+      - bash: echo "bla bla bla" ; chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -vv -i $(key.secureFilePath) -r /home/vsts/work/1/a/* sshacs@analog.ssh.upload.akamai.com:/336936/cse/azure_builds_Test
         condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
         displayName: "Push artifacts to SW Downloads"
