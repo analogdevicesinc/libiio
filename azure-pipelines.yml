@@ -9,78 +9,80 @@ pr:
 - master
 - 20*
 
-jobs:
-- job: LinuxBuilds
-  strategy:
-    matrix:
-      centos_7_x86_64:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'centos_docker'
-        OS_VERSION: centos7
-        artifactName: 'Linux-CentOS-7-x86_64'
-      centos_8_x86_64:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'centos_docker'
-        OS_VERSION: centos8
-        artifactName: 'Linux-CentOS-8-x86_64'
-      ubuntu_16_04_x86_64:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'ubuntu_docker'
-        OS_VERSION: xenial
-        artifactName: 'Linux-Ubuntu-16.04-x86_64'
-      ubuntu_18_04_x86_64:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'ubuntu_docker'
-        OS_VERSION: bionic
-        artifactName: 'Linux-Ubuntu-18.04-x86_64'
-        CI_BUILD_SPHINX_DOCS: 1
-      ubuntu_20_04_x86_64:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'ubuntu_docker'
-        OS_VERSION: focal
-        artifactName: 'Linux-Ubuntu-20.04-x86_64'
-        CHECK_AGAINST_KERNEL_HEADER: 1
-        CI_BUILD_SPHINX_DOCS: 1
-      debian_buster_arm32v7:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'arm32v7/debian_docker'
-        OS_VERSION: 'buster'
-        artifactName: 'Linux-Debian-Buster-ARM'
-      debian_buster_arm64v8:
-        imageName: 'ubuntu-latest'
-        OS_TYPE: 'arm64v8/debian_docker'
-        OS_VERSION: 'buster'
-        artifactName: 'Linux-Debian-Buster-ARM64'
-  pool:
-    vmImage: $(imageName)
-  steps:
-  - checkout: self
-    fetchDepth: 1
-    clean: true
-  - script: ./CI/travis/before_install_linux
-    displayName: "Install Dependencies"
-  - script: ./CI/travis/make_linux
-    displayName: "Build"
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-      contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.rpm)'
-      targetFolder: '$(Build.ArtifactStagingDirectory)'
-  - task: PublishPipelineArtifact@1
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-    inputs:
-      targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: '$(artifactName)'
+stages:
+- stage: Builds
+  jobs:
+  - job: LinuxBuilds
+    strategy:
+      matrix:
+        centos_7_x86_64:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'centos_docker'
+          OS_VERSION: centos7
+          artifactName: 'Linux-CentOS-7-x86_64'
+        centos_8_x86_64:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'centos_docker'
+          OS_VERSION: centos8
+          artifactName: 'Linux-CentOS-8-x86_64'
+        ubuntu_16_04_x86_64:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'ubuntu_docker'
+          OS_VERSION: xenial
+          artifactName: 'Linux-Ubuntu-16.04-x86_64'
+        ubuntu_18_04_x86_64:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'ubuntu_docker'
+          OS_VERSION: bionic
+          artifactName: 'Linux-Ubuntu-18.04-x86_64'
+          CI_BUILD_SPHINX_DOCS: 1
+        ubuntu_20_04_x86_64:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'ubuntu_docker'
+          OS_VERSION: focal
+          artifactName: 'Linux-Ubuntu-20.04-x86_64'
+          CHECK_AGAINST_KERNEL_HEADER: 1
+          CI_BUILD_SPHINX_DOCS: 1
+        debian_buster_arm32v7:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'arm32v7/debian_docker'
+          OS_VERSION: 'buster'
+          artifactName: 'Linux-Debian-Buster-ARM'
+        debian_buster_arm64v8:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'arm64v8/debian_docker'
+          OS_VERSION: 'buster'
+          artifactName: 'Linux-Debian-Buster-ARM64'
+    pool:
+      vmImage: $(imageName)
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - script: ./CI/travis/before_install_linux
+      displayName: "Install Dependencies"
+    - script: ./CI/travis/make_linux
+      displayName: "Build"
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.rpm)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
 
-- job: macOSBuilds
-  strategy:
-    matrix:
-      macOS_10_14:
-        imageName: 'macOS-10.14'
-        artifactName: 'macOS-10.14'
-      macOS_10_15:
-        imageName: 'macOS-10.15'
-        artifactName: 'macOS-10.15'
+  - job: macOSBuilds
+    strategy:
+      matrix:
+        macOS_10_14:
+          imageName: 'macOS-10.14'
+          artifactName: 'macOS-10.14'
+        macOS_10_15:
+          imageName: 'macOS-10.15'
+          artifactName: 'macOS-10.15'
 # FIXME: uncomment after this is resolved:
 #        https://github.com/actions/virtual-environments/issues/2072
 # Mac OS X 11.0 is definitely a big thing (with their switch to ARM,
@@ -88,69 +90,90 @@ jobs:
 #      macOS_11_0:
 #        imageName: 'macOS-11.0'
 #        artifactName: 'macOS-11.0'
-  pool:
-    vmImage: $(imageName)
-  steps:
-  - checkout: self
-    fetchDepth: 1
-    clean: true
-  - script: ./CI/travis/before_install_darwin
-    displayName: "Install Dependencies"
-  - script: ./CI/travis/make_darwin
-    displayName: "Build"
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-      contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
-      targetFolder: '$(Build.ArtifactStagingDirectory)'
-  - task: PublishPipelineArtifact@1
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-    inputs:
-      targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: '$(artifactName)'
+    pool:
+      vmImage: $(imageName)
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - script: ./CI/travis/before_install_darwin
+      displayName: "Install Dependencies"
+    - script: ./CI/travis/make_darwin
+      displayName: "Build"
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+        contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
 
-- job: WindowsBuilds
-  strategy:
-    matrix:
-      VS2019_Win32:
-        imageName: 'windows-2019'
-        COMPILER: 'Visual Studio 16 2019'
-        ARCH: 'Win32'
-        artifactName: 'Windows-VS-16-2019-Win32'
-      VS2019_Win64:
-        imageName: 'windows-2019'
-        COMPILER: 'Visual Studio 16 2019'
-        ARCH: 'x64'
-        artifactName: 'Windows-VS-16-2019-x64'
-  pool:
-    vmImage: $[ variables['imageName'] ]
-  steps:
-  - checkout: self
-    fetchDepth: 1
-    clean: true
-  - task: PowerShell@2
-    inputs:
-      targetType: 'filePath'
-      filePath: .\CI\install_deps_win.ps1
-    displayName: Dependencies
-  - task: PowerShell@2
-    inputs:
-      targetType: 'filePath'
-      filePath: .\CI\build_win.ps1
-    displayName: Build
-  - task: CopyFiles@2
-    displayName: 'Copy libraries'
-    inputs:
-      sourceFolder: '$(Agent.BuildDirectory)/s/build/Release'
-      targetFolder: '$(Build.ArtifactStagingDirectory)'
-  - task: CopyFiles@2
-    displayName: 'Copy iio.h header'
-    inputs:
-      sourceFolder: '$(Agent.BuildDirectory)/s/'
-      contents: 'iio.h'
-      targetFolder: '$(Build.ArtifactStagingDirectory)'
-  - task: PublishPipelineArtifact@1
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-    inputs:
-      targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: '$(artifactName)'
+  - job: WindowsBuilds
+    strategy:
+      matrix:
+        VS2019_Win32:
+          imageName: 'windows-2019'
+          COMPILER: 'Visual Studio 16 2019'
+          ARCH: 'Win32'
+          artifactName: 'Windows-VS-16-2019-Win32'
+        VS2019_Win64:
+          imageName: 'windows-2019'
+          COMPILER: 'Visual Studio 16 2019'
+          ARCH: 'x64'
+          artifactName: 'Windows-VS-16-2019-x64'
+    pool:
+      vmImage: $[ variables['imageName'] ]
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - task: PowerShell@2
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\install_deps_win.ps1
+      displayName: Dependencies
+    - task: PowerShell@2
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\build_win.ps1
+      displayName: Build
+    - task: CopyFiles@2
+      displayName: 'Copy libraries'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/Release'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy iio.h header'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/'
+        contents: 'iio.h'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
+
+- stage: PushArtifacts
+  dependsOn: Builds
+  jobs:
+  - job: PushToSWDownloads
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          path: /home/vsts/work/1/a
+      - task: DownloadSecureFile@1
+        name: key
+        displayName: 'Download rsa key'
+        inputs:
+          secureFile: 'id_rsa'
+      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -vv -i $(key.secureFilePath) -r /home/vsts/work/1/a/* @MAPPED_VAR
+        env:
+          MAPPED_VAR: $(SERVER_ADDRESS)
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+        displayName: "Push artifacts to SW Downloads"
