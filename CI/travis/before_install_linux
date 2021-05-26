@@ -76,6 +76,13 @@ handle_default() {
 
 handle_ubuntu() {
 	handle_default
+
+	if [ "${OS_VERSION}" = xenial ] ; then
+		# Use Bionic's release of CMake on Xenial
+		sudo bash -c "echo 'deb http://archive.ubuntu.com/ubuntu bionic main' >> /etc/apt/sources.list"
+		sudo apt-get -qq update
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install -t bionic -y cmake
+	fi
 }
 
 handle_debian() {
