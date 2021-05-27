@@ -36,6 +36,7 @@ struct addrinfo;
 struct AvahiSimplePoll;
 struct AvahiAddress;
 struct iio_context_params;
+struct iio_scan;
 
 /* Common structure which all dns_sd_[*] files fill out
  * Anything that is dynamically allocated (malloc) needs to be managed
@@ -87,5 +88,8 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 /* Use dnssd to resolve a given hostname */
 int dnssd_resolve_host(const struct iio_context_params *params,
 		       const char *hostname, char *ip_addr, const int addr_len);
+
+int dnssd_context_scan(const struct iio_context_params *params,
+		       struct iio_scan *ctx);
 
 #endif /* __IIO_DNS_SD_H */

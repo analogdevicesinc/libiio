@@ -41,4 +41,6 @@
 #cmakedefine NO_THREADS
 #cmakedefine HAS_LIBUSB_GETVERSION
 
+#define IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
+
 #endif /* IIO_CONFIG_H */
