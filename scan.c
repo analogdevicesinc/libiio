@@ -13,82 +13,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-struct iio_scan_context {
-	bool scan_usb;
-	bool scan_network;
-	bool scan_local;
-};
-
 struct iio_scan {
 	struct iio_scan_result scan_result;
 };
-
-const char * iio_context_info_get_description(
-		const struct iio_context_info *info)
-{
-	return info->description;
-}
-
-const char * iio_context_info_get_uri(
-		const struct iio_context_info *info)
-{
-	return info->uri;
-}
-
-ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
-		struct iio_context_info ***info)
-{
-	struct iio_scan_result scan_result = { 0, NULL };
-
-	if (WITH_LOCAL_BACKEND && ctx->scan_local) {
-		int ret = local_context_scan(&scan_result);
-		if (ret < 0) {
-			if (scan_result.info)
-				iio_context_info_list_free(scan_result.info);
-			return ret;
-		}
-	}
-
-	if (WITH_USB_BACKEND && ctx->scan_usb) {
-		int ret = usb_context_scan(&scan_result);
-		if (ret < 0) {
-			if (scan_result.info)
-				iio_context_info_list_free(scan_result.info);
-			return ret;
-		}
-	}
-
-	if (HAVE_DNS_SD && ctx->scan_network) {
-		int ret = dnssd_context_scan(&scan_result);
-		if (ret < 0) {
-			if (scan_result.info)
-				iio_context_info_list_free(scan_result.info);
-			return ret;
-		}
-	}
-
-	*info = scan_result.info;
-
-	return (ssize_t) scan_result.size;
-}
-
-void iio_context_info_list_free(struct iio_context_info **list)
-{
-	struct iio_context_info **it;
-
-	if (!list)
-		return;
-
-	for (it = list; *it; it++) {
-		struct iio_context_info *info = *it;
-
-		free(info->description);
-		free(info->uri);
-		free(info);
-	}
-
-	free(list);
-}
 
 struct iio_context_info *
 iio_scan_result_add(struct iio_scan_result *scan_result)
@@ -96,55 +23,18 @@ iio_scan_result_add(struct iio_scan_result *scan_result)
 	struct iio_context_info **info;
 	size_t size = scan_result->size;
 
-	info = realloc(scan_result->info, (size + 2) * sizeof(*info));
+	info = realloc(scan_result->info, (size + 1) * sizeof(*info));
 	if (!info)
 		return NULL;
 
 	scan_result->info = info;
 	scan_result->size = size + 1;
 
-	/* Make sure iio_context_info_list_free won't overflow */
-	info[size + 1] = NULL;
-
 	info[size] = zalloc(sizeof(**info));
 	if (!info[size])
 		return NULL;
 
 	return info[size];
-}
-
-struct iio_scan_context * iio_create_scan_context(
-		const char *backend, unsigned int flags)
-{
-	struct iio_scan_context *ctx;
-
-	/* "flags" must be zero for now */
-	if (flags != 0) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	ctx = calloc(1, sizeof(*ctx));
-	if (!ctx) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	if (!backend || strstr(backend, "local"))
-		ctx->scan_local = true;
-
-	if (!backend || strstr(backend, "usb"))
-		ctx->scan_usb = true;
-
-	if (!backend || strstr(backend, "ip"))
-		ctx->scan_network = true;
-
-	return ctx;
-}
-
-void iio_scan_context_destroy(struct iio_scan_context *ctx)
-{
-	free(ctx);
 }
 
 static bool has_backend(const char *backends, const char *backend)
