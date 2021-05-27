@@ -164,7 +164,7 @@ struct iio_context_info {
 
 struct iio_scan_result {
 	size_t size;
-	struct iio_context_info **info;
+	struct iio_context_info *info;
 };
 
 struct iio_module * iio_open_module(const char *path);
