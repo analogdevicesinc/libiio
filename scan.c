@@ -14,7 +14,8 @@
 #include <string.h>
 
 struct iio_scan {
-	struct iio_scan_result scan_result;
+	struct iio_context_info *info;
+	size_t count;
 };
 
 static bool has_backend(const char *backends, const char *backend)
@@ -77,48 +78,48 @@ void iio_scan_destroy(struct iio_scan *ctx)
 {
 	unsigned int i;
 
-	for (i = 0; i < ctx->scan_result.size; i++) {
-		free(ctx->scan_result.info[i].description);
-		free(ctx->scan_result.info[i].uri);
+	for (i = 0; i < ctx->count; i++) {
+		free(ctx->info[i].description);
+		free(ctx->info[i].uri);
 	}
 
-	free(ctx->scan_result.info);
+	free(ctx->info);
 	free(ctx);
 }
 
 size_t iio_scan_get_results_count(const struct iio_scan *ctx)
 {
-	return ctx->scan_result.size;
+	return ctx->count;
 }
 
 const char *
 iio_scan_get_description(const struct iio_scan *ctx, size_t idx)
 {
-	if (idx >= ctx->scan_result.size)
+	if (idx >= ctx->count)
 		return NULL;
 
-	return ctx->scan_result.info[idx].description;
+	return ctx->info[idx].description;
 }
 
 const char * iio_scan_get_uri(const struct iio_scan *ctx, size_t idx)
 {
-	if (idx >= ctx->scan_result.size)
+	if (idx >= ctx->count)
 		return NULL;
 
-	return ctx->scan_result.info[idx].uri;
+	return ctx->info[idx].uri;
 }
 
 int iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char *uri)
 {
 	struct iio_context_info *info;
-	size_t size = ctx->scan_result.size;
+	size_t size = ctx->count;
 
-	info = realloc(ctx->scan_result.info, (size + 1) * sizeof(*info));
+	info = realloc(ctx->info, (size + 1) * sizeof(*info));
 	if (!info)
 		return -ENOMEM;
 
-	ctx->scan_result.info = info;
-	ctx->scan_result.size = size + 1;
+	ctx->info = info;
+	ctx->count = size + 1;
 
 	info = &info[size];
 	info->description = iio_strdup(desc);

@@ -162,11 +162,6 @@ struct iio_context_info {
 	char *uri;
 };
 
-struct iio_scan_result {
-	size_t size;
-	struct iio_context_info *info;
-};
-
 struct iio_module * iio_open_module(const char *path);
 void iio_release_module(struct iio_module *module);
 
