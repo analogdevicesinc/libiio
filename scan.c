@@ -86,14 +86,6 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		}
 	}
 
-	if (WITH_LOCAL_BACKEND && has_backend(backends, "local")) {
-		ret = local_context_scan(&ctx->scan_result);
-		if (ret < 0) {
-			prm_perror(params, -ret,
-				   "Unable to scan local context(s)");
-		}
-	}
-
 	if (HAVE_DNS_SD && has_backend(backends, "ip")) {
 		ret = dnssd_context_scan(&ctx->scan_result);
 		if (ret < 0) {
