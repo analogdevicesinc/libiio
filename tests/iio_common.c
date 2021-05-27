@@ -72,36 +72,30 @@ char *cmn_strndup(const char *str, size_t n)
 
 struct iio_context * autodetect_context(bool rtn, const char * name, const char * scan)
 {
-	struct iio_scan_context *scan_ctx;
-	struct iio_context_info **info;
+	struct iio_scan *scan_ctx;
 	struct iio_context *ctx = NULL;
 	unsigned int i;
-	ssize_t ret;
+	size_t results;
 	FILE *out;
 
-	scan_ctx = iio_create_scan_context(scan, 0);
+	scan_ctx = iio_scan(NULL, scan);
 	if (!scan_ctx) {
-		fprintf(stderr, "Unable to create scan context\n");
+		char *err_str = xmalloc(BUF_SIZE, name);
+		iio_strerror(errno, err_str, BUF_SIZE);
+		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
+		free (err_str);
 		return NULL;
 	}
 
-	ret = iio_scan_context_get_info_list(scan_ctx, &info);
-	if (ret < 0) {
-		char *err_str = xmalloc(BUF_SIZE, name);
-		iio_strerror(-(int)ret, err_str, BUF_SIZE);
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
-		free (err_str);
+	results = iio_scan_get_results_count(scan_ctx);
+	if (results == 0) {
+		fprintf(stderr, "No IIO context found.\n");
 		goto err_free_ctx;
 	}
-
-	if (ret == 0) {
-		fprintf(stderr, "No IIO context found.\n");
-		goto err_free_info_list;
-	}
-	if (rtn && ret == 1) {
+	if (rtn && results == 1) {
 		fprintf(stderr, "Using auto-detected IIO context at URI \"%s\"\n",
-		iio_context_info_get_uri(info[0]));
-		ctx = iio_create_context(NULL, iio_context_info_get_uri(info[0]));
+			iio_scan_get_uri(scan_ctx, 0));
+		ctx = iio_create_context(NULL, iio_scan_get_uri(scan_ctx, 0));
 	} else {
 		if (rtn) {
 			out = stderr;
@@ -110,17 +104,15 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 			out = stdout;
 			fprintf(out, "Available contexts:\n");
 		}
-		for (i = 0; i < (size_t) ret; i++) {
-			fprintf(out, "\t%u: %s [%s]\n",
-					i, iio_context_info_get_description(info[i]),
-					iio_context_info_get_uri(info[i]));
+		for (i = 0; i < results; i++) {
+			fprintf(out, "\t%u: %s [%s]\n", i,
+					iio_scan_get_description(scan_ctx, i),
+					iio_scan_get_uri(scan_ctx, i));
 		}
 	}
 
-err_free_info_list:
-	iio_context_info_list_free(info);
 err_free_ctx:
-	iio_scan_context_destroy(scan_ctx);
+	iio_scan_destroy(scan_ctx);
 
 	return ctx;
 }
