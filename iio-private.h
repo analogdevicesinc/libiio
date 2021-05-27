@@ -173,9 +173,6 @@ void iio_release_module(struct iio_module *module);
 const struct iio_backend *
 iio_module_get_backend(struct iio_module *module, const char *symbol);
 
-struct iio_context_info *
-iio_scan_result_add(struct iio_scan_result *scan_result);
-
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 

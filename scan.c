@@ -17,22 +17,6 @@ struct iio_scan {
 	struct iio_scan_result scan_result;
 };
 
-struct iio_context_info *
-iio_scan_result_add(struct iio_scan_result *scan_result)
-{
-	struct iio_context_info *info;
-	size_t size = scan_result->size;
-
-	info = realloc(scan_result->info, (size + 1) * sizeof(*info));
-	if (!info)
-		return NULL;
-
-	scan_result->info = info;
-	scan_result->size = size + 1;
-
-	return &info[size];
-}
-
 static bool has_backend(const char *backends, const char *backend)
 {
 	return !backends || iio_list_has_elem(backends, backend);
