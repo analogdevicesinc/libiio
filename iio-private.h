@@ -157,11 +157,6 @@ struct iio_buffer {
 	bool is_output, dev_is_high_speed;
 };
 
-struct iio_context_info {
-	char *description;
-	char *uri;
-};
-
 struct iio_module * iio_open_module(const char *path);
 void iio_release_module(struct iio_module *module);
 
