@@ -1063,32 +1063,22 @@ usb_create_context_from_args(const struct iio_context_params *params,
 	char *end;
 	const char *ptr = args;
 	/* keep MSVS happy by setting these to NULL */
-	struct iio_scan_context *scan_ctx = NULL;
-	struct iio_context_info **info = NULL;
-	bool scan = false;
+	struct iio_scan *scan_ctx = NULL;
+	bool scan;
 
 	/* if uri is just "usb:" that means search for the first one */
-	if (!*ptr) {
-		ssize_t ret;
-
-		scan_ctx = iio_create_scan_context("usb", 0);
-		if (!scan_ctx) {
-			errno = ENOMEM;
+	scan = !*ptr;
+	if (scan) {
+		scan_ctx = iio_scan(params, "usb");
+		if (!scan_ctx)
 			goto err_bad_uri;
-		}
 
-		ret = iio_scan_context_get_info_list(scan_ctx, &info);
-		if (ret < 0) {
-			iio_scan_context_destroy(scan_ctx);
-			errno = ENOMEM;
-			goto err_bad_uri;
-		}
-		scan = true;
-		if (ret == 0 || ret > 1) {
+		if (iio_scan_get_results_count(scan_ctx) != 1) {
 			errno = ENXIO;
 			goto err_bad_uri;
 		}
-		ptr = iio_context_info_get_uri(info[0]);
+
+		ptr = iio_scan_get_uri(scan_ctx, 0);
 		ptr += sizeof("usb:") - 1;
 	}
 
@@ -1124,18 +1114,16 @@ usb_create_context_from_args(const struct iio_context_params *params,
 		goto err_bad_uri;
 	}
 
-	if (scan) {
-		iio_context_info_list_free(info);
-		iio_scan_context_destroy(scan_ctx);
-	}
+	if (scan)
+		iio_scan_destroy(scan_ctx);
+
 	return usb_create_context(params, (unsigned int) bus,
 			(uint16_t) address, (uint16_t) intrfc);
 
 err_bad_uri:
-	if (scan) {
-		iio_context_info_list_free(info);
-		iio_scan_context_destroy(scan_ctx);
-	} else
+	if (scan)
+		iio_scan_destroy(scan_ctx);
+	else
 		errno = EINVAL;
 
 	prm_err(params, "Bad URI: \'usb:%s\'\n", args);
