@@ -147,3 +147,25 @@ const char * iio_scan_get_uri(const struct iio_scan *ctx, size_t idx)
 
 	return ctx->scan_result.info[idx].uri;
 }
+
+int iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char *uri)
+{
+	struct iio_context_info *info;
+	size_t size = ctx->scan_result.size;
+
+	info = realloc(ctx->scan_result.info, (size + 1) * sizeof(*info));
+	if (!info)
+		return -ENOMEM;
+
+	ctx->scan_result.info = info;
+	ctx->scan_result.size = size + 1;
+
+	info = &info[size];
+	info->description = iio_strdup(desc);
+	info->uri = iio_strdup(uri);
+
+	if (!info->description || !info->uri)
+		return -ENOMEM;
+
+	return 0;
+}
