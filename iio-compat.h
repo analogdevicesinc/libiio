@@ -65,6 +65,39 @@ __api __check_ret struct iio_context * iio_create_network_context(const char *ho
 __api __check_ret struct iio_context * iio_create_xml_context(const char *xml_file);
 
 
+/** @brief Create a context from a URI description
+ * @param uri A URI describing the context location
+ * @return On success, a pointer to a iio_context structure
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * <b>NOTE:</b> The following URIs are supported based on compile time backend
+ * support:
+ * - Local backend, "local:"\n
+ *   Does not have an address part. For example <i>"local:"</i>
+ * - XML backend, "xml:"\n Requires a path to the XML file for the address part.
+ *   For example <i>"xml:/home/user/file.xml"</i>
+ * - Network backend, "ip:"\n Requires a hostname, IPv4, or IPv6 to connect to
+ *   a specific running IIO Daemon or no address part for automatic discovery
+ *   when library is compiled with ZeroConf support. For example
+ *   <i>"ip:192.168.2.1"</i>, <b>or</b> <i>"ip:localhost"</i>, <b>or</b> <i>"ip:"</i>
+ *   <b>or</b> <i>"ip:plutosdr.local"</i>
+ * - USB backend, "usb:"\n When more than one usb device is attached, requires
+ *   bus, address, and interface parts separated with a dot. For example
+ *   <i>"usb:3.32.5"</i>. Where there is only one USB device attached, the shorthand
+ *   <i>"usb:"</i> can be used.
+ * - Serial backend, "serial:"\n Requires:
+ *     - a port (/dev/ttyUSB0),
+ *     - baud_rate (default <b>115200</b>)
+ *     - serial port configuration
+ *        - data bits (5 6 7 <b>8</b> 9)
+ *        - parity ('<b>n</b>' none, 'o' odd, 'e' even, 'm' mark, 's' space)
+ *        - stop bits (<b>1</b> 2)
+ *        - flow control ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR)
+ *
+ *  For example <i>"serial:/dev/ttyUSB0,115200"</i> <b>or</b> <i>"serial:/dev/ttyUSB0,115200,8n1"</i>*/
+__api __check_ret struct iio_context * iio_create_context_from_uri(const char *uri);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 
 #undef __api

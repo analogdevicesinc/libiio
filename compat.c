@@ -11,6 +11,11 @@
 #include "iio-backend.h"
 #include "iio-compat.h"
 
+struct iio_context * iio_create_context_from_uri(const char *uri)
+{
+	return iio_create_context(NULL, uri);
+}
+
 static struct iio_context *
 create_context_with_arg(const char *prefix, const char *arg)
 {
