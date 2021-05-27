@@ -94,14 +94,6 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		}
 	}
 
-	if (WITH_USB_BACKEND && has_backend(backends, "usb")) {
-		ret = usb_context_scan(&ctx->scan_result);
-		if (ret < 0) {
-			prm_perror(params, -ret,
-				   "Unable to scan USB context(s)");
-		}
-	}
-
 	if (HAVE_DNS_SD && has_backend(backends, "ip")) {
 		ret = dnssd_context_scan(&ctx->scan_result);
 		if (ret < 0) {

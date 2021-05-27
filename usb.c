@@ -102,6 +102,8 @@ static unsigned int libusb_to_errno(int error)
 static struct iio_context *
 usb_create_context_from_args(const struct iio_context_params *params,
 			     const char *args);
+static int usb_context_scan(const struct iio_context_params *params,
+			    struct iio_scan *scan);
 
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
@@ -539,6 +541,7 @@ static void usb_cancel(const struct iio_device *dev)
 }
 
 static const struct iio_backend_ops usb_ops = {
+	.scan = usb_context_scan,
 	.create = usb_create_context_from_args,
 	.get_version = usb_get_version,
 	.open = usb_open,
@@ -1130,9 +1133,10 @@ err_bad_uri:
 	return NULL;
 }
 
-static int usb_fill_context_info(struct iio_context_info *info,
-		struct libusb_device *dev, struct libusb_device_handle *hdl,
-		unsigned int intrfc)
+static int usb_add_context_info(struct iio_scan *scan,
+				struct libusb_device *dev,
+				struct libusb_device_handle *hdl,
+				unsigned int intrfc)
 {
 	struct libusb_device_descriptor desc;
 	char manufacturer[64], product[64], serial[64];
@@ -1182,20 +1186,12 @@ static int usb_fill_context_info(struct iio_context_info *info,
 		"%04x:%04x (%s %s), serial=%s", desc.idVendor,
 		desc.idProduct, manufacturer, product, serial);
 
-	info->uri = iio_strdup(uri);
-	if (!info->uri)
-		return -ENOMEM;
-
-	info->description = iio_strdup(description);
-	if (!info->description)
-		return -ENOMEM;
-
-	return 0;
+	return iio_scan_add_result(scan, description, uri);
 }
 
-int usb_context_scan(struct iio_scan_result *scan_result)
+static int usb_context_scan(const struct iio_context_params *params,
+			    struct iio_scan *scan)
 {
-	struct iio_context_info *info;
 	libusb_device **device_list;
 	libusb_context *ctx;
 	unsigned int i;
@@ -1220,14 +1216,8 @@ int usb_context_scan(struct iio_scan_result *scan_result)
 		if (ret)
 			continue;
 
-		if (!iio_usb_match_device(dev, hdl, &intrfc)) {
-			info = iio_scan_result_add(scan_result);
-			if (!info)
-				ret = -ENOMEM;
-			else
-				ret = usb_fill_context_info(info, dev, hdl,
-							    intrfc);
-		}
+		if (!iio_usb_match_device(dev, hdl, &intrfc))
+			ret = usb_add_context_info(scan, dev, hdl, intrfc);
 
 		libusb_close(hdl);
 		if (ret < 0)
