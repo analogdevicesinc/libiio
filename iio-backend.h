@@ -156,6 +156,9 @@ iio_channel_get_pdata(const struct iio_channel *chn);
 __api void
 iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *data);
 
+__api int
+iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char *uri);
+
 #if defined(__MINGW32__)
 #   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
 #elif defined(__GNUC__)
