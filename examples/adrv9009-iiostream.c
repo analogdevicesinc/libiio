@@ -212,7 +212,7 @@ int main (__notused int argc, __notused char **argv)
 	trxcfg.lo_hz = GHZ(2.5);
 
 	printf("* Acquiring IIO context\n");
-	IIO_ENSURE((ctx = iio_create_default_context()) && "No context");
+	IIO_ENSURE((ctx = iio_create_context(NULL, NULL)) && "No context");
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring ADRV9009 streaming devices\n");

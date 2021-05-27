@@ -326,7 +326,7 @@ static struct iio_context *show_contexts_screen(void)
 		}
 
 		if (uri) {
-			ctx = iio_create_context_from_uri(uri);
+			ctx = iio_create_context(NULL, uri);
 			if (ctx == NULL) {
 				char *msg[] = { "</16>Failed to create IIO context.<!16>" };
 				popupLabel(screen, (CDK_CSTRING2)msg, 1);
