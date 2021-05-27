@@ -86,14 +86,6 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		}
 	}
 
-	if (HAVE_DNS_SD && has_backend(backends, "ip")) {
-		ret = dnssd_context_scan(&ctx->scan_result);
-		if (ret < 0) {
-			prm_perror(params, -ret,
-				   "Unable to scan network context(s)");
-		}
-	}
-
 	return ctx;
 }
 

@@ -208,8 +208,6 @@ struct iio_context *
 iio_create_dynamic_context(const struct iio_context_params *params,
 			   const char *uri);
 
-int dnssd_context_scan(struct iio_scan_result *scan_result);
-
 ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		const uint32_t *mask, size_t words);
 

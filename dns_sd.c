@@ -83,9 +83,9 @@ static void dnssd_remove_node(const struct iio_context_params *params,
  * DNS Service Discovery is turned on
  */
 
-static int dnssd_fill_context_info(const struct iio_context_params *params,
-				   struct iio_context_info *info,
-				   char *hostname, char *addr_str, int port)
+static int dnssd_add_scan_result(const struct iio_context_params *params,
+				 struct iio_scan *scan_ctx,
+				 char *hostname, char *addr_str, int port)
 {
 	struct iio_context *ctx;
 	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];
@@ -134,17 +134,7 @@ static int dnssd_fill_context_info(const struct iio_context_params *params,
 
 	iio_context_destroy(ctx);
 
-	info->uri = iio_strdup(uri);
-	if (!info->uri)
-		return -ENOMEM;
-
-	info->description = iio_strdup(description);
-	if (!info->description) {
-		free(info->uri);
-		return -ENOMEM;
-	}
-
-	return 0;
+	return iio_scan_add_result(scan_ctx, description, uri);
 }
 
 /*
@@ -250,11 +240,10 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 	*ddata = d;
 }
 
-int dnssd_context_scan(struct iio_scan_result *scan_result)
+int dnssd_context_scan(const struct iio_context_params *params,
+		       struct iio_scan *ctx)
 {
-	const struct iio_context_params *params = get_default_params();
 	struct dns_sd_discovery_data *ddata, *ndata;
-	struct iio_context_info *info;
 	int ret = 0;
 
 	ret = dnssd_find_hosts(params, &ddata);
@@ -269,15 +258,8 @@ int dnssd_context_scan(struct iio_scan_result *scan_result)
 		goto fail;
 
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
-		info = iio_scan_result_add(scan_result);
-		if (!info) {
-			prm_err(params, "Out of memory when adding new scan result\n");
-			ret = -ENOMEM;
-			break;
-		}
-
-		ret = dnssd_fill_context_info(params, info,
-				ndata->hostname, ndata->addr_str,ndata->port);
+		ret = dnssd_add_scan_result(params, ctx, ndata->hostname,
+					    ndata->addr_str,ndata->port);
 		if (ret < 0) {
 			prm_dbg(params, "Failed to add %s (%s) err: %d\n",
 				ndata->hostname, ndata->addr_str, ret);

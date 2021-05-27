@@ -904,6 +904,7 @@ static struct iio_context * network_clone(const struct iio_context *ctx)
 }
 
 static const struct iio_backend_ops network_ops = {
+	.scan = IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
 	.clone = network_clone,
 	.open = network_open,
