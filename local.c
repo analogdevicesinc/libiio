@@ -53,6 +53,8 @@ static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len);
 static struct iio_context *
 local_create_context(const struct iio_context_params *params, const char *args);
+static int local_context_scan(const struct iio_context_params *params,
+			      struct iio_scan *ctx);
 
 struct block_alloc_req {
 	uint32_t type,
@@ -1897,6 +1899,7 @@ static char * local_get_description(const struct iio_context *ctx)
 }
 
 static const struct iio_backend_ops local_ops = {
+	.scan = local_context_scan,
 	.create = local_create_context,
 	.clone = local_clone,
 	.open = local_open,
@@ -2118,11 +2121,12 @@ static int check_device(void *d, const char *path)
 	return 0;
 }
 
-int local_context_scan(struct iio_scan_result *scan_result)
+static int local_context_scan(const struct iio_context_params *params,
+			      struct iio_scan *ctx)
 {
-	struct iio_context_info *info;
+	char *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	bool exists = false;
-	char *desc, *uri, *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
+	const char *desc;
 	int ret;
 
 	ret = foreach_in_dir(NULL, &exists, "/sys/bus/iio", true, check_device);
@@ -2147,29 +2151,10 @@ int local_context_scan(struct iio_scan_result *scan_result)
 		} else
 			iio_snprintf(buf, sizeof(buf), "(Local IIO devices on %s)", machine);
 		free(machine);
-		desc = iio_strdup(buf);
+		desc = buf;
 	} else {
-		desc = iio_strdup("(Local IIO devices)");
+		desc = "(Local IIO devices)";
 	}
-	if (!desc)
-		return -ENOMEM;
 
-	uri = iio_strdup("local:");
-	if (!uri)
-		goto err_free_desc;
-
-	info = iio_scan_result_add(scan_result);
-	if (!info)
-		goto err_free_uri;
-
-	info->description = desc;
-	info->uri = uri;
-
-	return 0;
-
-err_free_uri:
-	free(uri);
-err_free_desc:
-	free(desc);
-	return -ENOMEM;
+	return iio_scan_add_result(ctx, desc, "local:");
 }
