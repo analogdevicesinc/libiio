@@ -418,7 +418,11 @@ __api __check_ret struct iio_context * iio_create_xml_context_mem(
 
 
 /** @brief Create a context from a URI description
- * @param uri A URI describing the context location
+ * @param params A pointer to a iio_context_params structure that contains
+ *   context creation information; can be NULL
+ * @param uri a URI describing the context location. If NULL, the backend will
+ *   be created using the URI string present in the IIOD_REMOTE environment
+ *   variable, or if not set, a local backend is created.
  * @return On success, a pointer to a iio_context structure
  * @return On failure, NULL is returned and errno is set appropriately
  *
@@ -447,19 +451,6 @@ __api __check_ret struct iio_context * iio_create_xml_context_mem(
  *        - flow control ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR)
  *
  *  For example <i>"serial:/dev/ttyUSB0,115200"</i> <b>or</b> <i>"serial:/dev/ttyUSB0,115200,8n1"</i>*/
-__api __check_ret struct iio_context * iio_create_context_from_uri(const char *uri);
-
-/** @brief Create a context from a URI description
- * @param params A pointer to a iio_context_params structure that contains
- *   context creation information; can be NULL
- * @param uri a URI describing the context location. If NULL, the backend will
- *   be created using the URI string present in the IIOD_REMOTE environment
- *   variable, or if not set, a local backend is created.
- * @return On success, a pointer to a iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately
- *
- * <b>NOTE:</b> Refer to iio_create_context_from_uri for information about
- * possible URI strings. */
 __api __check_ret struct iio_context *
 iio_create_context(const struct iio_context_params *params, const char *uri);
 
