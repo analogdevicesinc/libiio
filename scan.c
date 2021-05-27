@@ -13,6 +13,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+struct iio_context_info {
+	char *description;
+	char *uri;
+};
+
 struct iio_scan {
 	struct iio_context_info *info;
 	size_t count;
