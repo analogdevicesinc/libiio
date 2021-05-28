@@ -390,7 +390,7 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 	return iio_create_context(NULL, uri);
 }
 
-static const struct iio_backend *iio_backends[] = {
+const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IF_ENABLED(WITH_NETWORK_BACKEND, &iio_ip_backend),
 	IF_ENABLED(WITH_SERIAL_BACKEND && !WITH_SERIAL_BACKEND_DYNAMIC,
@@ -398,6 +398,7 @@ static const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_USB_BACKEND, &iio_usb_backend),
 	IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
 };
+const unsigned int iio_backends_size = ARRAY_SIZE(iio_backends);
 
 struct iio_context * iio_create_context(const struct iio_context_params *params,
 					const char *uri)

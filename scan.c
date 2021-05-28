@@ -41,16 +41,49 @@ static bool has_backend(const char *backends, const char *backend)
 struct iio_scan * iio_scan(const struct iio_context_params *params,
 			   const char *backends)
 {
+	const struct iio_context_params *default_params = get_default_params();
+	struct iio_context_params params2 = { 0 };
 	struct iio_scan *ctx;
+	unsigned int i;
+	char buf[256];
+	size_t len;
 	int ret;
 
 	if (!params)
-		params = get_default_params();
+		params = default_params;
+	params2 = *params;
+	if (!params2.log_level)
+		params2.log_level = default_params->log_level;
+	if (!params2.stderr_level)
+		params2.stderr_level = default_params->stderr_level;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (!ctx) {
 		errno = ENOMEM;
 		return NULL;
+	}
+
+	for (i = 0; i < iio_backends_size; i++) {
+		if (!iio_backends[i] || !iio_backends[i]->ops->scan)
+			continue;
+
+		len = strlen(iio_backends[i]->uri_prefix);
+
+		snprintf(buf, sizeof(buf), "%.*s",
+			 (int)(len - 1), iio_backends[i]->uri_prefix);
+
+		if (has_backend(backends, buf)) {
+			if (params->timeout_ms)
+				params2.timeout_ms = params->timeout_ms;
+			else
+				params2.timeout_ms = iio_backends[i]->default_timeout_ms;
+
+			ret = iio_backends[i]->ops->scan(&params2, ctx);
+			if (ret < 0) {
+				prm_perror(&params2, -ret,
+					   "Unable to scan %s context(s)", buf);
+			}
+		}
 	}
 
 	if (WITH_LOCAL_BACKEND && has_backend(backends, "local")) {
