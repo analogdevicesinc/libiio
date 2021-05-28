@@ -238,4 +238,7 @@ extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;
 extern const struct iio_backend iio_xml_backend;
 
+extern const struct iio_backend *iio_backends[];
+extern const unsigned int iio_backends_size;
+
 #endif /* __IIO_PRIVATE_H__ */
