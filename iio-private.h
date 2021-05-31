@@ -77,6 +77,7 @@ static inline __check_ret void * ERR_TO_PTR(intptr_t err)
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
+struct iio_directory;
 struct iio_module;
 
 struct iio_channel_attr {
@@ -162,6 +163,10 @@ void iio_release_module(struct iio_module *module);
 
 const struct iio_backend *
 iio_module_get_backend(struct iio_module *module, const char *symbol);
+
+struct iio_directory * iio_open_dir(const char *path);
+void iio_close_dir(struct iio_directory *dir);
+const char * iio_dir_get_next_file_name(struct iio_directory *dir);
 
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
