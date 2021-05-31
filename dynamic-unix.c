@@ -8,7 +8,13 @@
 
 #include "iio-private.h"
 
+#include <dirent.h>
 #include <dlfcn.h>
+#include <errno.h>
+
+struct iio_directory {
+	DIR *directory;
+};
 
 struct iio_module * iio_open_module(const char *path)
 {
@@ -24,4 +30,38 @@ const struct iio_backend *
 iio_module_get_backend(struct iio_module *module, const char *symbol)
 {
 	return dlsym(module, symbol);
+}
+
+struct iio_directory * iio_open_dir(const char *path)
+{
+	struct iio_directory *entry;
+
+	entry = malloc(sizeof(*entry));
+	if (!entry)
+		return ERR_TO_PTR(-ENOMEM);
+
+	entry->directory = opendir(path);
+	if (!entry->directory) {
+		free(entry);
+		return ERR_TO_PTR(-errno);
+	}
+
+	return entry;
+}
+
+void iio_close_dir(struct iio_directory *dir)
+{
+	closedir(dir->directory);
+	free(dir);
+}
+
+const char * iio_dir_get_next_file_name(struct iio_directory *dir)
+{
+	struct dirent *dirent;
+
+	dirent = readdir(dir->directory);
+	if (!dirent)
+		return NULL;
+
+	return dirent->d_name;
 }
