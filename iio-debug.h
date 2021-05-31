@@ -9,6 +9,8 @@
 #ifndef __IIO_DEBUG_H__
 #define __IIO_DEBUG_H__
 
+#include "iio-config.h"
+
 #include <iio.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -41,7 +43,7 @@ iio_prm_printf(const struct iio_context_params *params,
 			out = params->err ? params->err : stderr;
 		else
 			out = params->out ? params->out : stdout;
-	} else if (!params && msg_level <= LEVEL_INFO) {
+	} else if (!params && msg_level <= DEFAULT_LOG_LEVEL) {
 		out = msg_level <= LEVEL_WARNING ? stderr : stdout;
 	}
 
