@@ -76,6 +76,16 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		}
 	}
 
+	if (WITH_MODULES) {
+		params2.timeout_ms = params->timeout_ms;
+
+		ret = iio_dynamic_scan(&params2, ctx, backends);
+		if (ret < 0) {
+			prm_perror(&params2, -ret,
+				   "Error while scanning dynamic context(s)");
+		}
+	}
+
 	return ctx;
 }
 
