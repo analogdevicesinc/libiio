@@ -82,7 +82,7 @@ iio_prm_printf(const struct iio_context_params *params,
 	int _err = (err);						\
 	iio_strerror(_err, _buf, sizeof(_buf));				\
 	prm_err(params, __FIRST(__VA_ARGS__, 0)				\
-		__OTHERS(": %s (%u)\n",__VA_ARGS__, _buf), _err);	\
+		__OTHERS(": %s\n",__VA_ARGS__, _buf));			\
 	errno = _err;							\
 } while (0)
 #define ctx_perror(ctx, err, ...)	prm_perror(__ctx_params_or_null(ctx), err, __VA_ARGS__)
