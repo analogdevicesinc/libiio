@@ -37,6 +37,14 @@ set_target_properties(iio PROPERTIES
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
 )
+if (WIN32)
+	# On Windows, DLLs aren't suffixed with the library's version;
+	# therefore the libiio 1.x DLL needs to have a different name
+	# than the compatibility library.
+	set_target_properties(iio PROPERTIES
+		OUTPUT_NAME iio${PROJECT_VERSION_MAJOR}
+	)
+endif()
 if (MSVC)
 	set_target_properties(iio PROPERTIES PREFIX lib)
 endif()
