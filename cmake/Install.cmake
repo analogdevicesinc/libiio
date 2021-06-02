@@ -55,7 +55,6 @@ if(WITH_DOC)
 		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "NO")
 	endif()
 
-	set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${VERSION}")
 	set(CMAKE_API_DEST_DIR "${PROJECT_NAME}")
 
 	configure_file(

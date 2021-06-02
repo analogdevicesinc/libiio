@@ -428,6 +428,8 @@ if (WIN32)
 	configure_file(properties.rc.cmakein ${LIBIIO_RC} @ONLY)
 endif()
 
+set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${VERSION}")
+
 option(CSHARP_BINDINGS "Install C# bindings" OFF)
 option(PYTHON_BINDINGS "Install Python bindings" OFF)
 add_subdirectory(bindings)
