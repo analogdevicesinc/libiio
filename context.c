@@ -395,7 +395,8 @@ const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_NETWORK_BACKEND, &iio_ip_backend),
 	IF_ENABLED(WITH_SERIAL_BACKEND && !WITH_SERIAL_BACKEND_DYNAMIC,
 		   &iio_serial_backend),
-	IF_ENABLED(WITH_USB_BACKEND, &iio_usb_backend),
+	IF_ENABLED(WITH_USB_BACKEND && !WITH_USB_BACKEND_DYNAMIC,
+		   &iio_usb_backend),
 	IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
 };
 const unsigned int iio_backends_size = ARRAY_SIZE(iio_backends);
