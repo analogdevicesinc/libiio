@@ -12,6 +12,8 @@
 #ifndef __IIO_H__
 #define __IIO_H__
 
+#ifndef DOXYGEN
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,6 +77,8 @@ typedef ptrdiff_t ssize_t;
 #else
 #   define __api
 #endif
+
+#endif /* DOXYGEN */
 
 struct iio_context;
 struct iio_device;
