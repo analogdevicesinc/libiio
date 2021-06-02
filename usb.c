@@ -421,14 +421,13 @@ static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	unsigned int remote_timeout = usb_calculate_remote_timeout(timeout);
+
 	int ret;
 
 	ret = iiod_client_set_timeout(pdata->iiod_client,
 			&pdata->io_ctx, remote_timeout);
-	if (!ret) {
+	if (!ret)
 		pdata->timeout_ms = timeout;
-		ctx->params.timeout_ms = timeout;
-	}
 
 	return ret;
 }
