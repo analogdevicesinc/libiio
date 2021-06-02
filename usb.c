@@ -7,6 +7,7 @@
  */
 
 #include "iio-backend.h"
+#include "iio-config.h"
 #include "iio-debug.h"
 #include "iio-lock.h"
 #include "iiod-client.h"
@@ -578,6 +579,7 @@ static const struct iio_backend_ops usb_ops = {
 	.cancel = usb_cancel,
 };
 
+__api_export_if(WITH_USB_BACKEND_DYNAMIC)
 const struct iio_backend iio_usb_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "usb",
