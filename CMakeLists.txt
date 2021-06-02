@@ -198,6 +198,10 @@ if (WITH_USB_BACKEND)
 		check_symbol_exists(libusb_get_version libusb.h HAS_LIBUSB_GETVERSION)
 		set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
 		set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
+
+		if (NOT HAS_LIBUSB_GETVERSION)
+			message(SEND_ERROR "Libusb >= 1.0.10 is required.")
+		endif()
 	endif()
 endif()
 

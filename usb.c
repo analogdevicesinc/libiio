@@ -740,6 +740,7 @@ static int usb_verify_eps(const struct libusb_interface_descriptor *iface)
 static int usb_populate_context_attrs(struct iio_context *ctx,
 		libusb_device *dev, libusb_device_handle *hdl)
 {
+	struct libusb_version const *ver = libusb_get_version();
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct libusb_device_descriptor dev_desc;
 	char buffer[64];
@@ -799,23 +800,11 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 		}
 	}
 
-#ifdef HAS_LIBUSB_GETVERSION
-	/*
-	 * libusb_get_version was added 2012-04-17: v1.0.10,
-	 * before LIBUSB_API_VERSION was added - Jan 8, 2014
-	 * so, you can't use that to determine if it is here
-	 */
-	{
-	struct libusb_version const *ver = libusb_get_version();
 	iio_snprintf(buffer, sizeof(buffer), "%i.%i.%i.%i%s",
 			ver->major, ver->minor, ver->micro,
 			ver->nano, ver->rc);
-	ret = iio_context_add_attr(ctx, "usb,libusb", buffer);
-	if (ret < 0)
-		return ret;
-	}
-#endif
-	return 0;
+
+	return iio_context_add_attr(ctx, "usb,libusb", buffer);
 }
 
 static struct iio_context * usb_create_context(const struct iio_context_params *params,
