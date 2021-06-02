@@ -826,6 +826,73 @@ static int usb_populate_context_attrs(struct iio_context *ctx,
 	return iio_context_add_attr(ctx, "usb,libusb", buffer);
 }
 
+static int usb_get_string(libusb_device_handle *hdl, uint8_t idx,
+			  char *buffer, size_t length)
+{
+	int ret;
+
+	ret = libusb_get_string_descriptor_ascii(hdl, idx,
+						 (unsigned char *) buffer,
+						 (int) length);
+	if (ret < 0) {
+		buffer[0] = '\0';
+		return -(int) libusb_to_errno(ret);
+	}
+
+	return 0;
+}
+
+static int usb_get_description(struct libusb_device_handle *hdl,
+			       const struct libusb_device_descriptor *desc,
+			       char *buffer, size_t length)
+{
+	char manufacturer[64], product[64], serial[64];
+	ssize_t ret;
+
+	manufacturer[0] = '\0';
+	if (desc->iManufacturer > 0) {
+		usb_get_string(hdl, desc->iManufacturer,
+			       manufacturer, sizeof(manufacturer));
+	}
+
+	product[0] = '\0';
+	if (desc->iProduct > 0) {
+		usb_get_string(hdl, desc->iProduct,
+			       product, sizeof(product));
+	}
+
+	serial[0] = '\0';
+	if (desc->iSerialNumber > 0) {
+		usb_get_string(hdl, desc->iSerialNumber,
+			       serial, sizeof(serial));
+	}
+
+	ret = iio_snprintf(buffer, length,
+			   "%04x:%04x (%s %s), serial=%s", desc->idVendor,
+			   desc->idProduct, manufacturer, product, serial);
+	if (ret < 0)
+		return (int) ret;
+
+	return 0;
+}
+
+static struct iio_context *
+usb_create_context_with_attrs(libusb_device *usb_dev,
+			      struct iio_context_pdata *pdata)
+{
+	struct libusb_device_descriptor dev_desc;
+	char description[256];
+
+	libusb_get_device_descriptor(usb_dev, &dev_desc);
+
+	usb_get_description(pdata->hdl, &dev_desc,
+			    description, sizeof(description));
+
+	return iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
+					  &iio_usb_backend, description,
+					  NULL, NULL, 0);
+}
+
 static struct iio_context * usb_create_context(const struct iio_context_params *params,
 					       unsigned int bus,
 					       uint16_t address, uint16_t intrfc)
@@ -1000,18 +1067,13 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 		goto err_io_context_exit;
 	}
 
-	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
-					 NULL, "", NULL, NULL, 0);
+	ctx = usb_create_context_with_attrs(usb_dev, pdata);
 	if (!ctx) {
 		ret = -errno;
 		goto err_reset_pipes;
 	}
 
 	libusb_free_config_descriptor(conf_desc);
-
-	ctx->name = "usb";
-	ctx->ops = &usb_ops;
-	ctx->params = *params;
 
 	iio_context_set_pdata(ctx, pdata);
 
@@ -1151,52 +1213,19 @@ static int usb_add_context_info(struct iio_scan *scan,
 				unsigned int intrfc)
 {
 	struct libusb_device_descriptor desc;
-	char manufacturer[64], product[64], serial[64];
 	char uri[sizeof("usb:127.255.255")];
-	char description[sizeof(manufacturer) + sizeof(product) +
-		sizeof(serial) + sizeof("0000:0000 ( ), serial=")];
+	char description[256];
 	int ret;
 
 	libusb_get_device_descriptor(dev, &desc);
 
+	ret = usb_get_description(hdl, &desc, description, sizeof(description));
+	if (ret)
+		return ret;
+
 	iio_snprintf(uri, sizeof(uri), "usb:%d.%d.%u",
 		libusb_get_bus_number(dev), libusb_get_device_address(dev),
 		intrfc);
-
-	if (desc.iManufacturer == 0) {
-		manufacturer[0] = '\0';
-	} else {
-		ret = libusb_get_string_descriptor_ascii(hdl,
-			desc.iManufacturer,
-			(unsigned char *) manufacturer,
-			sizeof(manufacturer));
-		if (ret < 0)
-			manufacturer[0] = '\0';
-	}
-
-	if (desc.iProduct == 0) {
-		product[0] = '\0';
-	} else {
-		ret = libusb_get_string_descriptor_ascii(hdl,
-			desc.iProduct, (unsigned char *) product,
-			sizeof(product));
-		if (ret < 0)
-			product[0] = '\0';
-	}
-
-	if (desc.iSerialNumber == 0) {
-		serial[0] = '\0';
-	} else {
-		ret = libusb_get_string_descriptor_ascii(hdl,
-			desc.iSerialNumber, (unsigned char *) serial,
-			sizeof(serial));
-		if (ret < 0)
-			serial[0] = '\0';
-	}
-
-	iio_snprintf(description, sizeof(description),
-		"%04x:%04x (%s %s), serial=%s", desc.idVendor,
-		desc.idProduct, manufacturer, product, serial);
 
 	return iio_scan_add_result(scan, description, uri);
 }
