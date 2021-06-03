@@ -392,7 +392,8 @@ struct iio_context * iio_create_context_from_uri(const char *uri)
 
 const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
-	IF_ENABLED(WITH_NETWORK_BACKEND, &iio_ip_backend),
+	IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
+		   &iio_ip_backend),
 	IF_ENABLED(WITH_SERIAL_BACKEND && !WITH_SERIAL_BACKEND_DYNAMIC,
 		   &iio_serial_backend),
 	IF_ENABLED(WITH_USB_BACKEND && !WITH_USB_BACKEND_DYNAMIC,
