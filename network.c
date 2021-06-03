@@ -929,6 +929,7 @@ static const struct iio_backend_ops network_ops = {
 	.cancel = network_cancel,
 };
 
+__api_export_if(WITH_NETWORK_BACKEND_DYNAMIC)
 const struct iio_backend iio_ip_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "network",
