@@ -15,8 +15,8 @@
 #include <iphlpapi.h>
 
 #include "dns_sd.h"
+#include "iio-backend.h"
 #include "iio-debug.h"
-#include "iio-private.h"
 #include "mdns.h"
 
 #ifdef HAVE_IPV6

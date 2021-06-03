@@ -12,9 +12,9 @@
  */
 
 #include "dns_sd.h"
+#include "iio-backend.h"
 #include "iio-debug.h"
 #include "iio-lock.h"
-#include "iio-private.h"
 #include "network.h"
 
 #include <errno.h>
@@ -115,7 +115,8 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 	} else if (serial) {
 		iio_snprintf(description, sizeof(description), "%s %s", addr_str, serial);
 	} else if (iio_context_get_devices_count(ctx) == 0) {
-		iio_snprintf(description, sizeof(description), "%s", ctx->description);
+		iio_snprintf(description, sizeof(description), "%s",
+			     iio_context_get_description(ctx));
 	} else {
 		iio_snprintf(description, sizeof(description), "%s (", addr_str);
 		p = description + strlen(description);

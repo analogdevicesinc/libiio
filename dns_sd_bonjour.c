@@ -8,9 +8,9 @@
  */
 
 #include "dns_sd.h"
+#include "iio-backend.h"
 #include "iio-debug.h"
 #include "iio-lock.h"
-#include "iio-private.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
