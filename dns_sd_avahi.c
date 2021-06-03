@@ -12,8 +12,8 @@
  */
 
 #include "dns_sd.h"
+#include "iio-backend.h"
 #include "iio-debug.h"
-#include "iio-private.h"
 #include "iio-lock.h"
 
 #include <errno.h>
