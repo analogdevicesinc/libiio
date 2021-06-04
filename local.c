@@ -114,6 +114,9 @@ static int ioctl_nointr(int fd, unsigned long request, void *data)
 		ret = ioctl(fd, request, data);
 	} while (ret == -1 && errno == EINTR);
 
+	if (ret == -1)
+		ret = -errno;
+
 	return ret;
 }
 
@@ -451,8 +454,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		ret = (ssize_t) ioctl_nointr(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
-			ret = (ssize_t) -errno;
-			iio_strerror(errno, err_str, sizeof(err_str));
+			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to enqueue block: %s\n", err_str);
 			return ret;
 		}
@@ -474,13 +476,12 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 
 		memset(&block, 0, sizeof(block));
 		ret = (ssize_t) ioctl_nointr(f, BLOCK_DEQUEUE_IOCTL, &block);
-	} while (pdata->blocking && ret == -1 && errno == EAGAIN);
+	} while (pdata->blocking && ret == -EAGAIN);
 
 	if (ret) {
-		ret = (ssize_t) -errno;
 		if ((!pdata->blocking && ret != -EAGAIN) ||
 				(pdata->blocking && ret != -ETIMEDOUT)) {
-			iio_strerror(errno, err_str, sizeof(err_str));
+			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to dequeue block: %s\n", err_str);
 		}
 		return ret;
@@ -840,10 +841,8 @@ static int enable_high_speed(const struct iio_device *dev)
 	req.count = nb_blocks;
 
 	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
-	if (ret < 0) {
-		ret = -errno;
+	if (ret < 0)
 		goto err_freemem;
-	}
 
 	if (req.count == 0) {
 		ret = -ENOMEM;
@@ -857,16 +856,12 @@ static int enable_high_speed(const struct iio_device *dev)
 	for (i = 0; i < pdata->allocated_nb_blocks; i++) {
 		pdata->blocks[i].id = i;
 		ret = ioctl_nointr(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
-		if (ret) {
-			ret = -errno;
+		if (ret)
 			goto err_munmap;
-		}
 
 		ret = ioctl_nointr(fd, BLOCK_ENQUEUE_IOCTL, &pdata->blocks[i]);
-		if (ret) {
-			ret = -errno;
+		if (ret)
 			goto err_munmap;
-		}
 
 		pdata->addrs[i] = mmap(0, pdata->blocks[i].size,
 				PROT_READ | PROT_WRITE,
@@ -1007,8 +1002,7 @@ static int local_close(const struct iio_device *dev)
 		if (pdata->fd > -1)
 			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
 		if (ret) {
-			ret = -errno;
-			iio_strerror(errno, err_str, sizeof(err_str));
+			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Error during ioctl(): %s\n", err_str);
 		}
 		pdata->allocated_nb_blocks = 0;
