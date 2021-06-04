@@ -1039,8 +1039,7 @@ static int local_close(const struct iio_device *dev)
 
 	ret1 = local_buffer_enabled_set(dev, false);
 	if (ret1) {
-		ret1 = -errno;
-		iio_strerror(errno, err_str, sizeof(err_str));
+		iio_strerror(-ret1, err_str, sizeof(err_str));
 		IIO_ERROR("Error during buffer disable: %s\n", err_str);
 		if (ret == 0)
 			ret = ret1;
