@@ -403,10 +403,16 @@ static ssize_t local_write(const struct iio_device *dev,
 		return ret;
 }
 
-static ssize_t local_buffer_enabled_set(const struct iio_device *dev, bool en)
+static int local_buffer_enabled_set(const struct iio_device *dev, bool en)
 {
-	return local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
-				    2, false);
+	int ret;
+
+	ret = (int) local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
+					 2, false);
+	if (ret < 0)
+		return ret;
+
+	return 0;
 }
 
 static int local_set_kernel_buffers_count(const struct iio_device *dev,
