@@ -101,6 +101,8 @@ class _Channel(Structure):
 class _Buffer(Structure):
     pass
 
+class ContextParams(Structure):
+    pass # TODO
 
 class DataFormat(Structure):
     """Represents the data format of an IIO channel."""
@@ -217,6 +219,7 @@ _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _BufferPtr = _POINTER(_Buffer)
 _DataFormatPtr = _POINTER(DataFormat)
+_ContextParamsPtr = _POINTER(ContextParams)
 
 if "Windows" in _system():
     _iiolib = "libiio.dll"
@@ -266,27 +269,10 @@ _context_info_get_uri = _lib.iio_context_info_get_uri
 _context_info_get_uri.argtypes = (_ContextInfoPtr,)
 _context_info_get_uri.restype = c_char_p
 
-_new_local = _lib.iio_create_local_context
-_new_local.restype = _ContextPtr
-_new_local.errcheck = _check_null
-
-_new_xml = _lib.iio_create_xml_context
-_new_xml.restype = _ContextPtr
-_new_xml.argtypes = (c_char_p,)
-_new_xml.errcheck = _check_null
-
-_new_network = _lib.iio_create_network_context
-_new_network.restype = _ContextPtr
-_new_network.argtypes = (c_char_p,)
-_new_network.errcheck = _check_null
-
-_new_default = _lib.iio_create_default_context
-_new_default.restype = _ContextPtr
-_new_default.errcheck = _check_null
-
-_new_uri = _lib.iio_create_context_from_uri
-_new_uri.restype = _ContextPtr
-_new_uri.errcheck = _check_null
+_new_ctx = _lib.iio_create_context
+_new_ctx.restype = _ContextPtr
+_new_ctx.errcheck = _check_null
+_new_ctx.argtypes = (_ContextParamsPtr, c_char_p)
 
 _destroy = _lib.iio_context_destroy
 _destroy.argtypes = (_ContextPtr,)
@@ -1352,9 +1338,9 @@ class Context(object):
         self._context = None
 
         if _context is None:
-            self._context = _new_default()
+            self._context = _new_ctx(None, None)
         elif _isstring(_context):
-            self._context = _new_uri(_context.encode("ascii"))
+            self._context = _new_ctx(None, _context.encode("ascii"))
         else:
             self._context = _context
 
@@ -1464,7 +1450,7 @@ class LocalContext(Context):
         returns: type=iio.LocalContext
             An new instance of this class
         """
-        ctx = _new_local()
+        ctx = _new_ctx(None, "local:")
         super(LocalContext, self).__init__(ctx)
 
 
@@ -1481,7 +1467,7 @@ class XMLContext(Context):
         returns: type=iio.XMLContext
             An new instance of this class
         """
-        ctx = _new_xml(xmlfile.encode("ascii"))
+        ctx = _new_ctx(None, "xml:" + xmlfile.encode("ascii"))
         super(XMLContext, self).__init__(ctx)
 
 
@@ -1498,7 +1484,7 @@ class NetworkContext(Context):
         returns: type=iio.NetworkContext
             An new instance of this class
         """
-        ctx = _new_network(hostname.encode("ascii") if hostname is not None else None)
+        ctx = _new_ctx(None, "ip:" + (hostname.encode("ascii") if hostname is not None else ""))
         super(NetworkContext, self).__init__(ctx)
 
 
