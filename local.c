@@ -110,6 +110,9 @@ static int ioctl_nointr(int fd, unsigned long request, void *data)
 		ret = ioctl(fd, request, data);
 	} while (ret == -1 && errno == EINTR);
 
+	if (ret == -1)
+		ret = -errno;
+
 	return ret;
 }
 
@@ -395,10 +398,16 @@ static ssize_t local_write(const struct iio_device *dev,
 		return ret;
 }
 
-static ssize_t local_buffer_enabled_set(const struct iio_device *dev, bool en)
+static int local_buffer_enabled_set(const struct iio_device *dev, bool en)
 {
-	return local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
-				    2, false);
+	int ret;
+
+	ret = (int) local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
+					 2, false);
+	if (ret < 0)
+		return ret;
+
+	return 0;
 }
 
 static int local_set_kernel_buffers_count(const struct iio_device *dev,
@@ -445,8 +454,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		ret = (ssize_t) ioctl_nointr(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
-			dev_perror(dev, errno, "Unable to enqueue block");
-			return (ssize_t) -errno;
+			dev_perror(dev, -ret, "Unable to enqueue block");
+			return ret;
 		}
 
 		if (pdata->cyclic) {
@@ -466,13 +475,12 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 
 		memset(&block, 0, sizeof(block));
 		ret = (ssize_t) ioctl_nointr(f, BLOCK_DEQUEUE_IOCTL, &block);
-	} while (pdata->blocking && ret == -1 && errno == EAGAIN);
+	} while (pdata->blocking && ret == -EAGAIN);
 
 	if (ret) {
-		ret = (ssize_t) -errno;
 		if ((!pdata->blocking && ret != -EAGAIN) ||
 				(pdata->blocking && ret != -ETIMEDOUT)) {
-			dev_perror(dev, errno, "Unable to dequeue block");
+			dev_perror(dev, -ret, "Unable to dequeue block");
 		}
 		return ret;
 	}
@@ -831,10 +839,8 @@ static int enable_high_speed(const struct iio_device *dev)
 	req.count = nb_blocks;
 
 	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
-	if (ret < 0) {
-		ret = -errno;
+	if (ret < 0)
 		goto err_freemem;
-	}
 
 	if (req.count == 0) {
 		ret = -ENOMEM;
@@ -848,16 +854,12 @@ static int enable_high_speed(const struct iio_device *dev)
 	for (i = 0; i < pdata->allocated_nb_blocks; i++) {
 		pdata->blocks[i].id = i;
 		ret = ioctl_nointr(fd, BLOCK_QUERY_IOCTL, &pdata->blocks[i]);
-		if (ret) {
-			ret = -errno;
+		if (ret)
 			goto err_munmap;
-		}
 
 		ret = ioctl_nointr(fd, BLOCK_ENQUEUE_IOCTL, &pdata->blocks[i]);
-		if (ret) {
-			ret = -errno;
+		if (ret)
 			goto err_munmap;
-		}
 
 		pdata->addrs[i] = mmap(0, pdata->blocks[i].size,
 				PROT_READ | PROT_WRITE,
@@ -997,8 +999,7 @@ static int local_close(const struct iio_device *dev)
 		if (pdata->fd > -1)
 			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
 		if (ret) {
-			ret = -errno;
-			dev_perror(dev, errno, "Error during ioctl()");
+			dev_perror(dev, -ret, "Error during ioctl()");
 		}
 		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
@@ -1031,8 +1032,7 @@ static int local_close(const struct iio_device *dev)
 
 	ret1 = local_buffer_enabled_set(dev, false);
 	if (ret1) {
-		ret1 = -errno;
-		dev_perror(dev, errno, "Error during buffer disable");
+		dev_perror(dev, -ret1, "Error during buffer disable");
 		if (ret == 0)
 			ret = ret1;
 	}
