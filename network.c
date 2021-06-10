@@ -897,9 +897,10 @@ static int network_set_kernel_buffers_count(const struct iio_device *dev,
 
 static struct iio_context * network_clone(const struct iio_context *ctx)
 {
+	const struct iio_context_params *params = iio_context_get_params(ctx);
 	const char *addr = iio_context_get_attr_value(ctx, "ip,ip-addr");
 
-	return iio_create_network_context(addr);
+	return network_create_context(params, addr);
 }
 
 static const struct iio_backend_ops network_ops = {
