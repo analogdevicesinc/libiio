@@ -254,9 +254,8 @@ static void * read_thd(void *d)
 static struct iio_context *show_contexts_screen(void)
 {
 	struct iio_context *ctx = NULL;
-	struct iio_scan_context *scan_ctx;
-	struct iio_context_info **info;
-	int num_contexts;
+	struct iio_scan *scan_ctx;
+	size_t num_contexts;
 	CDKSCREEN *screen;
 	CDKSCROLL *list;
 	const char *uri;
@@ -265,10 +264,6 @@ static struct iio_context *show_contexts_screen(void)
 	char **items;
 	int ret;
 
-	scan_ctx = iio_create_scan_context(NULL, 0);
-	if (!scan_ctx)
-		return NULL;
-
 	screen = initCDKScreen(win);
 	if (!screen) {
 		fprintf(stderr, "out of memory\n");
@@ -276,11 +271,11 @@ static struct iio_context *show_contexts_screen(void)
 	}
 
 	do {
-		ret = iio_scan_context_get_info_list(scan_ctx, &info);
-		if (ret < 0)
+		scan_ctx = iio_scan(NULL, NULL);
+		if (!scan_ctx)
 			break;
 
-		num_contexts = ret;
+		num_contexts = iio_scan_get_results_count(scan_ctx);
 
 		items = calloc(num_contexts + 1, sizeof(*items));
 		if (!items) {
@@ -290,9 +285,9 @@ static struct iio_context *show_contexts_screen(void)
 
 		for (i = 0; i < num_contexts; i++) {
 			ret = asprintf(&items[i], "</%d>%s<!%d> </%d>[%s]<!%d>", YELLOW,
-				iio_context_info_get_description(info[i]),
+				iio_scan_get_description(scan_ctx, i),
 				YELLOW, BLUE,
-				iio_context_info_get_uri(info[i]),
+				iio_scan_get_uri(scan_ctx, i),
 				BLUE);
 			if (ret < 0) {
 				fprintf(stderr, "asprintf failed, out of memory?\n");
@@ -314,7 +309,7 @@ static struct iio_context *show_contexts_screen(void)
 
 		ret = activateCDKScroll(list, NULL);
 		if (ret < num_contexts) {
-			uri = iio_context_info_get_uri(info[ret]);
+			uri = iio_scan_get_uri(scan_ctx, ret);
 			free_uri = FALSE;
 		} else if (ret == num_contexts) {
 			uri = getString(screen,
@@ -337,7 +332,7 @@ static struct iio_context *show_contexts_screen(void)
 		}
 
 		destroyCDKScroll(list);
-		iio_context_info_list_free(info);
+		iio_scan_destroy(scan_ctx);
 		for (i = 0; i < num_contexts; i++)
 			free(items[i]);
 		free(items);
@@ -347,8 +342,6 @@ static struct iio_context *show_contexts_screen(void)
 	destroyCDKScreen(screen);
 
 scan_err:
-	iio_scan_context_destroy(scan_ctx);
-
 	return ctx;
 }
 
