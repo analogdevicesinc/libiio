@@ -90,7 +90,6 @@ struct iio_context;
 struct iio_device;
 struct iio_channel;
 struct iio_buffer;
-struct iio_scan;
 
 struct iio_context_info;
 struct iio_scan_context;
@@ -250,59 +249,12 @@ enum iio_modifier {
 /* ------------------------- Scan functions ----------------------------------*/
 /** @defgroup Scan Functions for scanning available contexts
  * @{
- * @struct iio_scan
- * @brief Structure holding scanning information
- *
  * @struct iio_scan_context
  * @brief The scanning context
  *
  * @struct iio_context_info
  * @brief The information related to a discovered context
  */
-
-/** @brief Scan backends for IIO contexts
- * @param params A pointer to a iio_context_params structure that contains
- *   context creation information; can be NULL
- * @param backends a NULL-terminated string containing a comma-separated list
- *   of the backends to be scanned for contexts. If NULL, all the available
- *   backends are scanned.
- * @return On success, a pointer to an iio_scan structure
- * @return On failure, NULL is returned and errno is set appropriately */
-__api __check_ret struct iio_scan *
-iio_scan(const struct iio_context_params *params, const char *backends);
-
-
-/** @brief Destroy the given scan context
- * @param ctx A pointer to an iio_scan structure
- *
- * <b>NOTE:</b> After that function, the iio_scan pointer shall be invalid. */
-__api void iio_scan_destroy(struct iio_scan *ctx);
-
-
-/** @brief Get number of results of a scan operation
- * @param ctx A pointer to an iio_scan structure
- * @return The number of results of the scan operation
- */
-__api __check_ret __pure size_t
-iio_scan_get_results_count(const struct iio_scan *ctx);
-
-
-/** @brief Get description of scanned context
- * @param ctx A pointer to an iio_scan structure
- * @param idx The index of the scanned context
- * @return On success, a pointer to a NULL-terminated string
- * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char *
-iio_scan_get_description(const struct iio_scan *ctx, size_t idx);
-
-
-/** @brief Get URI of scanned context
- * @param ctx A pointer to an iio_scan structure
- * @param idx The index of the scanned context
- * @return On success, a pointer to a NULL-terminated string
- * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char *
-iio_scan_get_uri(const struct iio_scan *ctx, size_t idx);
 
 
 /** @brief Create a scan context
