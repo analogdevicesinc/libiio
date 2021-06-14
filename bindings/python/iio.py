@@ -78,7 +78,11 @@ def _isstring(argument):
 # pylint: enable=basestring-builtin
 
 
-class _Scan(Structure):
+class _ScanContext(Structure):
+    pass
+
+
+class _ContextInfo(Structure):
     pass
 
 
@@ -208,7 +212,8 @@ class ChannelType(Enum):
 
 
 # pylint: disable=invalid-name
-_ScanPtr = _POINTER(_Scan)
+_ScanContextPtr = _POINTER(_ScanContext)
+_ContextInfoPtr = _POINTER(_ContextInfo)
 _ContextPtr = _POINTER(_Context)
 _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
@@ -232,27 +237,13 @@ _get_backend.argtypes = (c_uint,)
 _get_backend.restype = c_char_p
 _get_backend.errcheck = _check_null
 
-_scan = _lib.iio_scan
-_scan.argtypes = (_ContextParamsPtr, c_char_p)
-_scan.restype = _ScanPtr
-_scan.errcheck = _check_null
+_create_scan_context = _lib.iio_create_scan_context
+_create_scan_context.argtypes = (c_char_p, c_uint)
+_create_scan_context.restype = _ScanContextPtr
+_create_scan_context.errcheck = _check_null
 
-_scan_destroy = _lib.iio_scan_destroy
-_scan_destroy.argtypes = (_ScanPtr,)
-
-_scan_get_results_count = _lib.iio_scan_get_results_count
-_scan_get_results_count.argtypes = (_ScanPtr,)
-_scan_get_results_count.restype = c_size_t
-
-_scan_get_description = _lib.iio_scan_get_description
-_scan_get_description.argtypes = (_ScanPtr, c_size_t)
-_scan_get_description.restype = c_char_p
-_scan_get_description.errcheck = _check_null
-
-_scan_get_uri = _lib.iio_scan_get_uri
-_scan_get_uri.argtypes = (_ScanPtr, c_size_t)
-_scan_get_uri.restype = c_char_p
-_scan_get_uri.errcheck = _check_null
+_destroy_scan_context = _lib.iio_scan_context_destroy
+_destroy_scan_context.argtypes = (_ScanContextPtr,)
 
 _iio_has_backend = _lib.iio_has_backend
 _iio_has_backend.argtypes = (c_char_p,)
@@ -261,6 +252,22 @@ _iio_has_backend.restype = c_bool
 _iio_strerror = _lib.iio_strerror
 _iio_strerror.argtypes = (c_int, c_char_p, c_uint)
 _iio_strerror.restype = None
+
+_get_context_info_list = _lib.iio_scan_context_get_info_list
+_get_context_info_list.argtypes = (_ScanContextPtr, _POINTER(_POINTER(_ContextInfoPtr)))
+_get_context_info_list.restype = c_ssize_t
+_get_context_info_list.errcheck = _check_negative
+
+_context_info_list_free = _lib.iio_context_info_list_free
+_context_info_list_free.argtypes = (_POINTER(_ContextInfoPtr),)
+
+_context_info_get_description = _lib.iio_context_info_get_description
+_context_info_get_description.argtypes = (_ContextInfoPtr,)
+_context_info_get_description.restype = c_char_p
+
+_context_info_get_uri = _lib.iio_context_info_get_uri
+_context_info_get_uri.argtypes = (_ContextInfoPtr,)
+_context_info_get_uri.restype = c_char_p
 
 _new_ctx = _lib.iio_create_context
 _new_ctx.restype = _ContextPtr
@@ -1484,14 +1491,16 @@ class NetworkContext(Context):
 def scan_contexts():
     """Scan Context."""
     scan_ctx = dict()
+    ptr = _POINTER(_ContextInfoPtr)()
 
-    ctx = _scan(None, None)
-    ctx_nb = _scan_get_results_count(ctx)
+    ctx = _create_scan_context(None, 0)
+    ctx_nb = _get_context_info_list(ctx, _byref(ptr))
 
     for i in range(0, ctx_nb):
-        uri = _scan_get_uri(ctx, i).decode("ascii")
-        desc = _scan_get_description(ctx, i).decode("ascii")
-        scan_ctx[uri] = desc
+        scan_ctx[
+            _context_info_get_uri(ptr[i]).decode("ascii")
+        ] = _context_info_get_description(ptr[i]).decode("ascii")
 
-    _scan_destroy(ctx)
+    _context_info_list_free(ptr)
+    _destroy_scan_context(ctx)
     return scan_ctx
