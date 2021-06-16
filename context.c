@@ -70,6 +70,32 @@ static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
 	return count;
 }
 
+ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
+					  const char *before, char *param,
+					  const char *after)
+{
+	ssize_t ret, alen = 0;
+
+	/* Print before */
+	ret = iio_snprintf(ptr, len, "%s", before);
+	if (ret < 0)
+		return ret;
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	
+	/* Print param */
+	ret = sanitize_xml(ptr, len, param);
+	if (ret < 0)
+		return ret;
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	
+	/* Print after */
+	ret = iio_snprintf(ptr, len, "%s", after);
+	if (ret < 0)
+		return ret;
+
+	return alen + ret;
+}
+
 static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 					const struct iio_context *ctx)
 {
@@ -91,18 +117,15 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 
 	for (i = 0; i < ctx->nb_attrs; i++) {
 		ret = iio_snprintf(ptr, len,
-				   "<context-attribute name=\"%s\" value=\"",
+				   "<context-attribute name=\"%s\" ",
 				   ctx->attrs[i]);
 		if (ret < 0)
 			return ret;
 
-		iio_update_xml_indexes(ret, &ptr, &len, &alen);
-		ret = sanitize_xml(ptr, len, ctx->values[i]);
-		if (ret < 0)
-			return ret;
-		
-		iio_update_xml_indexes(ret, &ptr, &len, &alen);
-		ret = iio_snprintf(ptr, len, "\" />");
+		ret = iio_xml_print_and_sanitized_param(ptr, len,
+							"value=\"",
+							ctx->values[i],
+							"\" />");
 		if (ret < 0)
 			return ret;
 
