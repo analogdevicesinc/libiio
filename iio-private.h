@@ -271,4 +271,14 @@ int add_iio_dev_attr(struct iio_dev_attrs *attrs, const char *attr,
 
 ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 
+static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
+					  ssize_t *alen)
+{
+	if (*ptr) {
+		*ptr += ret;
+		*len -= ret;
+	}
+	*alen += ret;
+}
+
 #endif /* __IIO_PRIVATE_H__ */

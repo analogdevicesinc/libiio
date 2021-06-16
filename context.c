@@ -64,12 +64,7 @@ static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
 		if (ret < 0)
 			return ret;
 
-		if (ptr) {
-			len -= ret;
-			ptr += ret;
-		}
-
-		count += ret;
+		iio_update_xml_indexes(ret, &ptr, &len, &count);
 	}
 
 	return count;
@@ -92,11 +87,7 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 	if (ret < 0)
 		return ret;
 
-	if (ptr) {
-		ptr += ret;
-		len -= ret;
-	}
-	alen += ret;
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 	for (i = 0; i < ctx->nb_attrs; i++) {
 		ret = iio_snprintf(ptr, len,
@@ -104,48 +95,33 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 				   ctx->attrs[i]);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
 
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 		ret = sanitize_xml(ptr, len, ctx->values[i]);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
-
+		
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 		ret = iio_snprintf(ptr, len, "\" />");
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
 		ret = iio_snprintf_device_xml(ptr, len, ctx->devices[i]);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	ret = iio_snprintf(ptr, len, "</context>");
 	if (ret < 0)
 		return ret;
-	alen += ret;
 
-	return alen;
+	return alen + ret;
 }
 
 /* Returns a string containing the XML representation of this context */

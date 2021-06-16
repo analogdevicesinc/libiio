@@ -207,60 +207,39 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 	ret = iio_snprintf(ptr, len, "<channel id=\"%s\"", chn->id);
 	if (ret < 0)
 		return ret;
-	if (ptr) {
-		ptr += ret;
-		len -= ret;
-	}
-	alen += ret;
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 	if (chn->name) {
 		ret = iio_snprintf(ptr, len, " name=\"%s\"", chn->name);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	ret = iio_snprintf(ptr, len, " type=\"%s\" >", chn->is_output ? "output" : "input");
 	if (ret < 0)
 		return ret;
-	if (ptr) {
-		ptr += ret;
-		len -= ret;
-	}
-	alen += ret;
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 	if (chn->is_scan_element) {
 		ret = iio_snprintf_scan_element_xml(ptr, len, chn);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	for (i = 0; i < chn->nb_attrs; i++) {
 		ret = iio_snprintf_chan_attr_xml(ptr, len, &chn->attrs[i]);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	ret = iio_snprintf(ptr, len, "</channel>");
 	if (ret < 0)
 		return ret;
-	alen += ret;
 
-	return alen;
+	return alen + ret;
 }
 
 const char * iio_channel_get_id(const struct iio_channel *chn)
