@@ -170,12 +170,23 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 static ssize_t iio_snprintf_chan_attr_xml(char *str, ssize_t len,
 					  struct iio_channel_attr *attr)
 {
+	ssize_t ret, alen = 0;
+
 	if (!attr->filename)
 		return iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
 
-	return iio_snprintf(str, len,
-			    "<attribute name=\"%s\" filename=\"%s\" />",
-			    attr->name, attr->filename);
+	ret = iio_snprintf(str, len, "<attribute name=\"%s\" ", attr->name);
+	if (ret < 0)
+		return ret;
+
+	iio_update_xml_indexes(ret, &str, &len, &alen);
+
+	ret = iio_xml_print_and_sanitized_param(str, len, "filename=\"",
+						attr->filename, "\" />");
+	if (ret < 0)
+		return ret;
+
+	return alen + ret;
 }
 
 static ssize_t iio_snprintf_scan_element_xml(char *str, ssize_t len,
@@ -204,7 +215,9 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 	ssize_t ret, alen = 0;
 	unsigned int i;
 
-	ret = iio_snprintf(ptr, len, "<channel id=\"%s\"", chn->id);
+
+	ret = iio_xml_print_and_sanitized_param(ptr, len, "<channel id=\"",
+						chn->id, "\"");
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
