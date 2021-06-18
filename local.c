@@ -1799,7 +1799,10 @@ static int create_device(void *d, const char *path)
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 
-		set_channel_name(chn);
+		ret = set_channel_name(chn);
+		if (ret < 0)
+			goto err_free_scan_elements;
+
 		ret = handle_scan_elements(chn);
 		free_protected_attrs(chn);
 		if (ret < 0)
