@@ -176,7 +176,7 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 
 	chn = zalloc(sizeof(*chn));
 	if (!chn)
-		return ERR_TO_PTR(-ENOMEM);
+		return ERR_PTR(-ENOMEM);
 
 	chn->dev = dev;
 
@@ -234,7 +234,7 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 
 err_free_channel:
 	free_channel(chn);
-	return ERR_TO_PTR(err);
+	return ERR_PTR(err);
 }
 
 static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
@@ -245,7 +245,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 
 	dev = zalloc(sizeof(*dev));
 	if (!dev)
-		return ERR_TO_PTR(-ENOMEM);
+		return ERR_PTR(-ENOMEM);
 
 	dev->ctx = ctx;
 
@@ -280,7 +280,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			struct iio_channel **chns,
 					   *chn = create_channel(dev, n);
 			if (IS_ERR(chn)) {
-				err = PTR_TO_ERR(chn);
+				err = PTR_ERR(chn);
 				IIO_ERROR("Unable to create channel: %d\n", err);
 				goto err_free_device;
 			}
@@ -328,7 +328,8 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 
 err_free_device:
 	free_device(dev);
-	return ERR_TO_PTR(err);
+
+	return ERR_PTR(err);
 }
 
 static struct iio_context * xml_clone(const struct iio_context *ctx)
@@ -389,7 +390,7 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 
 		dev = create_device(ctx, n);
 		if (IS_ERR(dev)) {
-			err = PTR_TO_ERR(dev);
+			err = PTR_ERR(dev);
 			IIO_ERROR("Unable to create device: %d\n", err);
 			return err;
 		}

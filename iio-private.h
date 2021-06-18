@@ -106,14 +106,14 @@ static inline __check_ret bool IS_ERR(const void *ptr)
 	return (uintptr_t)ptr >= (uintptr_t)-4095;
 }
 
-static inline __check_ret intptr_t PTR_TO_ERR(const void *ptr)
+static inline __check_ret int PTR_ERR(const void *ptr)
 {
-	return (intptr_t)ptr;
+	return (int)(intptr_t) ptr;
 }
 
-static inline __check_ret void * ERR_TO_PTR(intptr_t err)
+static inline __check_ret void * ERR_PTR(int err)
 {
-	return (void *)err;
+	return (void *)(intptr_t) err;
 }
 
 /*
