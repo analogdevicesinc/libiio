@@ -1491,8 +1491,7 @@ static int add_channel(struct iio_device *dev, const char *name,
 
 	ret = add_channel_to_device(dev, chn);
 	if (ret) {
-		free(chn->pdata->enable_fn);
-		free(chn->pdata);
+		local_free_channel_pdata(chn);
 		free_channel(chn);
 	}
 	return ret;
