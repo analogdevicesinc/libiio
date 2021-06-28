@@ -38,12 +38,12 @@ struct iio_directory * iio_open_dir(const char *path)
 
 	entry = malloc(sizeof(*entry));
 	if (!entry)
-		return ERR_TO_PTR(-ENOMEM);
+		return ERR_PTR(-ENOMEM);
 
 	entry->directory = opendir(path);
 	if (!entry->directory) {
 		free(entry);
-		return ERR_TO_PTR(-errno);
+		return ERR_PTR(-errno);
 	}
 
 	return entry;

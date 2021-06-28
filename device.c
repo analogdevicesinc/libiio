@@ -38,52 +38,36 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 	ret = iio_snprintf(ptr, len, "<device id=\"%s\"", dev->id);
 	if (ret < 0)
 		return ret;
-	if (ptr) {
-		ptr += ret;
-		len -= ret;
-	}
-	alen += ret;
 
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	if (dev->name) {
 		ret = iio_snprintf(ptr, len, " name=\"%s\"", dev->name);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+	
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	if (dev->label) {
 		ret = iio_snprintf(ptr, len, " label=\"%s\"", dev->label);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	ret = iio_snprintf(ptr, len, " >");
 	if (ret < 0)
 		return ret;
-	if (ptr) {
-		ptr += ret;
-		len -= ret;
-	}
-	alen += ret;
+	
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		ret = iio_snprintf_channel_xml(ptr, len, dev->channels[i]);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	for (i = 0; i < dev->attrs.num; i++) {
@@ -91,11 +75,8 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 					    IIO_ATTR_TYPE_DEVICE);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+		
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	for (i = 0; i < dev->buffer_attrs.num; i++) {
@@ -103,11 +84,8 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 					    IIO_ATTR_TYPE_BUFFER);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	for (i = 0; i < dev->debug_attrs.num; i++) {
@@ -115,19 +93,15 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 					    IIO_ATTR_TYPE_DEBUG);
 		if (ret < 0)
 			return ret;
-		if (ptr) {
-			ptr += ret;
-			len -= ret;
-		}
-		alen += ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
 	ret = iio_snprintf(ptr, len, "</device>");
 	if (ret < 0)
 		return ret;
-	alen += ret;
 
-	return alen;
+	return alen + ret;
 }
 
 int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,

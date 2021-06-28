@@ -1410,33 +1410,41 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 		char *id, const char *attr, const char *path,
 		bool is_scan_element)
 {
-	struct iio_channel *chn = zalloc(sizeof(*chn));
+	struct iio_channel *chn;
+	int err = -ENOMEM;
+
+	chn = zalloc(sizeof(*chn));
 	if (!chn)
-		return NULL;
+		return ERR_PTR(-ENOMEM);
 
 	chn->pdata = zalloc(sizeof(*chn->pdata));
 	if (!chn->pdata)
 		goto err_free_chn;
 
-	if (!strncmp(attr, "out_", 4))
+	if (!strncmp(attr, "out_", 4)) {
 		chn->is_output = true;
-	else if (strncmp(attr, "in_", 3))
+	} else if (strncmp(attr, "in_", 3)) {
+		err = -EINVAL;
 		goto err_free_chn_pdata;
+	}
 
 	chn->dev = dev;
 	chn->id = id;
 	chn->is_scan_element = is_scan_element;
 	chn->index = -ENOENT;
 
-	if (!add_attr_to_channel(chn, attr, path, is_scan_element))
-		return chn;
+	err = add_attr_to_channel(chn, attr, path, is_scan_element);
+	if (err)
+		goto err_free_chn_pdata;
+
+	return chn;
 
 err_free_chn_pdata:
 	free(chn->pdata->enable_fn);
 	free(chn->pdata);
 err_free_chn:
 	free(chn);
-	return NULL;
+	return ERR_PTR(err);
 }
 
 static int add_channel(struct iio_device *dev, const char *name,
@@ -1464,17 +1472,16 @@ static int add_channel(struct iio_device *dev, const char *name,
 	}
 
 	chn = create_channel(dev, channel_id, name, path, dir_is_scan_elements);
-	if (!chn) {
+	if (IS_ERR(chn)) {
 		free(channel_id);
-		return -ENXIO;
+		return PTR_ERR(chn);
 	}
 
 	iio_channel_init_finalize(chn);
 
 	ret = add_channel_to_device(dev, chn);
 	if (ret) {
-		free(chn->pdata->enable_fn);
-		free(chn->pdata);
+		local_free_channel_pdata(chn);
 		free_channel(chn);
 	}
 	return ret;
@@ -1790,7 +1797,10 @@ static int create_device(void *d, const char *path)
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 
-		set_channel_name(chn);
+		ret = set_channel_name(chn);
+		if (ret < 0)
+			goto err_free_scan_elements;
+
 		ret = handle_scan_elements(chn);
 		free_protected_attrs(chn);
 		if (ret < 0)

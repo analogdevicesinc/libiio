@@ -1110,7 +1110,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		 * which might be not the case for some minimalist distros. In this case,
 		 * as a last resort, let's try to resolve the host with avahi...
 		 */
-		if (ret && HAVE_DNS_SD) {
+		if (HAVE_DNS_SD && ret) {
 			char addr_str[DNS_SD_ADDRESS_STR_MAX];
 
 			prm_dbg(params, "'getaddrinfo()' failed: %s. Trying dnssd as a last resort...\n",

@@ -129,7 +129,7 @@ static char* get_ch_name(const char* type, int id)
 }
 
 /* returns ad9371 phy device */
-static struct iio_device* get_ad9371_phy(struct iio_context *ctx)
+static struct iio_device* get_ad9371_phy(void)
 {
 	struct iio_device *dev =  iio_context_find_device(ctx, "ad9371-phy");
 	IIO_ENSURE(dev && "No ad9371-phy found");
@@ -137,7 +137,7 @@ static struct iio_device* get_ad9371_phy(struct iio_context *ctx)
 }
 
 /* finds AD9371 streaming IIO devices */
-static bool get_ad9371_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_device **dev)
+static bool get_ad9371_stream_dev(enum iodev d, struct iio_device **dev)
 {
 	switch (d) {
 	case TX: *dev = iio_context_find_device(ctx, "axi-ad9371-tx-hpc"); return *dev != NULL;
@@ -147,7 +147,7 @@ static bool get_ad9371_stream_dev(struct iio_context *ctx, enum iodev d, struct 
 }
 
 /* finds AD9371 streaming IIO channels */
-static bool get_ad9371_stream_ch(__notused struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, char modify, struct iio_channel **chn)
+static bool get_ad9371_stream_ch(enum iodev d, struct iio_device *dev, int chid, char modify, struct iio_channel **chn)
 {
 	*chn = iio_device_find_channel(dev, modify ? get_ch_name_mod("voltage", chid, modify) : get_ch_name("voltage", chid), d == TX);
 	if (!*chn)
@@ -156,41 +156,41 @@ static bool get_ad9371_stream_ch(__notused struct iio_context *ctx, enum iodev d
 }
 
 /* finds AD9371 phy IIO configuration channel with id chid */
-static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid, struct iio_channel **chn)
+static bool get_phy_chan(enum iodev d, int chid, struct iio_channel **chn)
 {
 	switch (d) {
-	case RX: *chn = iio_device_find_channel(get_ad9371_phy(ctx), get_ch_name("voltage", chid), false); return *chn != NULL;
-	case TX: *chn = iio_device_find_channel(get_ad9371_phy(ctx), get_ch_name("voltage", chid), true);  return *chn != NULL;
+	case RX: *chn = iio_device_find_channel(get_ad9371_phy(), get_ch_name("voltage", chid), false); return *chn != NULL;
+	case TX: *chn = iio_device_find_channel(get_ad9371_phy(), get_ch_name("voltage", chid), true);  return *chn != NULL;
 	default: IIO_ENSURE(0); return false;
 	}
 }
 
 /* finds AD9371 local oscillator IIO configuration channels */
-static bool get_lo_chan(struct iio_context *ctx, enum iodev d, struct iio_channel **chn)
+static bool get_lo_chan(enum iodev d, struct iio_channel **chn)
 {
 	switch (d) {
 	 // LO chan is always output, i.e. true
-	case RX: *chn = iio_device_find_channel(get_ad9371_phy(ctx), get_ch_name("altvoltage", 0), true); return *chn != NULL;
-	case TX: *chn = iio_device_find_channel(get_ad9371_phy(ctx), get_ch_name("altvoltage", 1), true); return *chn != NULL;
+	case RX: *chn = iio_device_find_channel(get_ad9371_phy(), get_ch_name("altvoltage", 0), true); return *chn != NULL;
+	case TX: *chn = iio_device_find_channel(get_ad9371_phy(), get_ch_name("altvoltage", 1), true); return *chn != NULL;
 	default: IIO_ENSURE(0); return false;
 	}
 }
 
 /* applies streaming configuration through IIO */
-bool cfg_ad9371_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, enum iodev type, int chid)
+bool cfg_ad9371_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 {
 	struct iio_channel *chn = NULL;
 
 	// Configure phy and lo channels
 	printf("* Acquiring AD9371 phy %s channel %d\n", type == TX ? "TX" : "RX", chid);
-	if (!get_phy_chan(ctx, type, chid, &chn)) {	return false; }
+	if (!get_phy_chan(type, chid, &chn)) {	return false; }
 
 	rd_ch_lli(chn, "rf_bandwidth");
 	rd_ch_lli(chn, "sampling_frequency");
 
 	// Configure LO channel
 	printf("* Acquiring AD9371 %s lo channel\n", type == TX ? "TX" : "RX");
-	if (!get_lo_chan(ctx, type, &chn)) { return false; }
+	if (!get_lo_chan(type, &chn)) { return false; }
 	wr_ch_lli(chn, type == TX ? "TX_LO_frequency" : "RX_LO_frequency" , cfg->lo_hz);
 	return true;
 }
@@ -224,18 +224,18 @@ int main (__notused int argc, __notused char **argv)
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9371 streaming devices\n");
-	IIO_ENSURE(get_ad9371_stream_dev(ctx, TX, &tx) && "No tx dev found");
-	IIO_ENSURE(get_ad9371_stream_dev(ctx, RX, &rx) && "No rx dev found");
+	IIO_ENSURE(get_ad9371_stream_dev(TX, &tx) && "No tx dev found");
+	IIO_ENSURE(get_ad9371_stream_dev(RX, &rx) && "No rx dev found");
 
 	printf("* Configuring AD9371 for streaming\n");
-	IIO_ENSURE(cfg_ad9371_streaming_ch(ctx, &rxcfg, RX, 0) && "RX port 0 not found");
-	IIO_ENSURE(cfg_ad9371_streaming_ch(ctx, &txcfg, TX, 0) && "TX port 0 not found");
+	IIO_ENSURE(cfg_ad9371_streaming_ch(&rxcfg, RX, 0) && "RX port 0 not found");
+	IIO_ENSURE(cfg_ad9371_streaming_ch(&txcfg, TX, 0) && "TX port 0 not found");
 
 	printf("* Initializing AD9371 IIO streaming channels\n");
-	IIO_ENSURE(get_ad9371_stream_ch(ctx, RX, rx, 0, 'i', &rx0_i) && "RX chan i not found");
-	IIO_ENSURE(get_ad9371_stream_ch(ctx, RX, rx, 0, 'q', &rx0_q) && "RX chan q not found");
-	IIO_ENSURE(get_ad9371_stream_ch(ctx, TX, tx, 0, 0, &tx0_i) && "TX chan i not found");
-	IIO_ENSURE(get_ad9371_stream_ch(ctx, TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
+	IIO_ENSURE(get_ad9371_stream_ch(RX, rx, 0, 'i', &rx0_i) && "RX chan i not found");
+	IIO_ENSURE(get_ad9371_stream_ch(RX, rx, 0, 'q', &rx0_q) && "RX chan q not found");
+	IIO_ENSURE(get_ad9371_stream_ch(TX, tx, 0, 0, &tx0_i) && "TX chan i not found");
+	IIO_ENSURE(get_ad9371_stream_ch(TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);

@@ -41,7 +41,7 @@ struct iio_directory * iio_open_dir(const char *path)
 
 	dir = zalloc(sizeof(*dir));
 	if (!dir)
-		return ERR_TO_PTR(-ENOMEM);
+		return ERR_PTR(-ENOMEM);
 
 	iio_snprintf(buf, sizeof(buf), "%s\\*", path);
 
@@ -50,9 +50,9 @@ struct iio_directory * iio_open_dir(const char *path)
 	dir->file = FindFirstFileA(buf, &fdata);
 	if (dir->file == INVALID_HANDLE_VALUE) {
 		if (GetLastError() == ERROR_FILE_NOT_FOUND)
-			return ERR_TO_PTR(-ENOENT);
+			return ERR_PTR(-ENOENT);
 		else
-			return ERR_TO_PTR(-EIO);
+			return ERR_PTR(-EIO);
 	}
 
 	return dir;

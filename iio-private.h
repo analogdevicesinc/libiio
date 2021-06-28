@@ -59,14 +59,14 @@ static inline __check_ret bool IS_ERR(const void *ptr)
 	return (uintptr_t)ptr >= (uintptr_t)-4095;
 }
 
-static inline __check_ret intptr_t PTR_TO_ERR(const void *ptr)
+static inline __check_ret int PTR_ERR(const void *ptr)
 {
-	return (intptr_t)ptr;
+	return (int)(intptr_t) ptr;
 }
 
-static inline __check_ret void * ERR_TO_PTR(intptr_t err)
+static inline __check_ret void * ERR_PTR(int err)
 {
-	return (void *)err;
+	return (void *)(intptr_t) err;
 }
 
 /*
@@ -228,5 +228,19 @@ extern const struct iio_backend iio_xml_backend;
 
 extern const struct iio_backend *iio_backends[];
 extern const unsigned int iio_backends_size;
+
+ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
+					  const char *before, char *param,
+					  const char *after);
+
+static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
+					  ssize_t *alen)
+{
+	if (*ptr) {
+		*ptr += ret;
+		*len -= ret;
+	}
+	*alen += ret;
+}
 
 #endif /* __IIO_PRIVATE_H__ */

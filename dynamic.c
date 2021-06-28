@@ -32,7 +32,7 @@ get_iio_backend(const struct iio_context_params *params,
 	lib = iio_open_module(buf);
 	if (!lib) {
 		prm_dbg(params, "Unable to open plug-in\n");
-		return ERR_TO_PTR(-ENOSYS);
+		return ERR_PTR(-ENOSYS);
 	}
 
 	iio_snprintf(buf, sizeof(buf), "iio_%s_backend", name);
@@ -41,7 +41,7 @@ get_iio_backend(const struct iio_context_params *params,
 	if (!backend) {
 		prm_err(params, "No \'%s\' symbol\n", buf);
 		iio_release_module(lib);
-		return ERR_TO_PTR(-EINVAL);
+		return ERR_PTR(-EINVAL);
 	}
 
 	*libp = lib;
@@ -72,7 +72,7 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 
 	backend = get_iio_backend(params, buf, &lib);
 	if (IS_ERR(backend)) {
-		errno = (int) -PTR_TO_ERR(backend);
+		errno = -PTR_ERR(backend);
 		return NULL;
 	}
 
@@ -113,7 +113,7 @@ int iio_dynamic_scan(const struct iio_context_params *params,
 
 	dir = iio_open_dir(IIO_MODULES_DIR);
 	if (IS_ERR(dir)) {
-		ret = (int) PTR_TO_ERR(dir);
+		ret = PTR_ERR(dir);
 
 		if (ret != -ENOENT)
 			prm_perror(params, -ret, "Unable to open modules directory");
@@ -143,7 +143,7 @@ int iio_dynamic_scan(const struct iio_context_params *params,
 		backend = get_iio_backend(params, buf, &lib);
 		if (IS_ERR(backend)) {
 			iio_close_dir(dir);
-			return (int) PTR_TO_ERR(backend);
+			return PTR_ERR(backend);
 		}
 
 		prm_dbg(params, "Found backend: %s\n", backend->name);
