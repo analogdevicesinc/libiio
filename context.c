@@ -81,13 +81,13 @@ ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
-	
+
 	/* Print param */
 	ret = sanitize_xml(ptr, len, param);
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
-	
+
 	/* Print after */
 	ret = iio_snprintf(ptr, len, "%s", after);
 	if (ret < 0)
@@ -121,6 +121,8 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 				   ctx->attrs[i]);
 		if (ret < 0)
 			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 		ret = iio_xml_print_and_sanitized_param(ptr, len,
 							"value=\"",
