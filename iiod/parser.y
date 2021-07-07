@@ -96,8 +96,7 @@ Line:
 		YYACCEPT;
 	}
 	| EXIT END {
-		struct parser_pdata *pdata = yyget_extra(scanner);
-		pdata->stop = true;
+		/* Ignore EXIT command which isn't used anymore */
 		YYACCEPT;
 	}
 	| HELP END {
@@ -105,8 +104,6 @@ Line:
 		output(pdata, "Available commands:\n\n"
 		"\tHELP\n"
 		"\t\tPrint this help message\n"
-		"\tEXIT\n"
-		"\t\tClose the current session\n"
 		"\tPRINT\n"
 		"\t\tDisplays a XML string corresponding to the current IIO context\n"
 		"\tZPRINT\n"
@@ -446,6 +443,11 @@ Line:
 void yyerror(yyscan_t scanner, const char *msg)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
+
+	/* Avoid errors on EOF */
+	if (pdata->stop)
+		return;
+
 	if (pdata->verbose) {
 		output(pdata, "ERROR: ");
 		output(pdata, msg);
@@ -465,8 +467,10 @@ ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size)
 	ret = read_line(pdata, buf, max_size);
 	if (ret < 0)
 		return ret;
-	if (ret == 0)
+	if (ret == 0) {
+		pdata->stop = true;
 		return -EIO;
+	}
 
 	if ((size_t) ret == max_size)
 		buf[max_size - 1] = '\0';

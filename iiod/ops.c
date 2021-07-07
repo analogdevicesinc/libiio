@@ -1400,8 +1400,10 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 			poll_nointr(pfd, 2);
 
 			if (pfd[1].revents & POLLIN ||
-					pfd[0].revents & POLLRDHUP)
+					pfd[0].revents & POLLRDHUP) {
+				pdata->stop = true;
 				return 0;
+			}
 
 			/* First read from the socket, without advancing the
 			 * read offset */
