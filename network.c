@@ -389,8 +389,6 @@ static int network_close(const struct iio_device *dev)
 			ret = iiod_client_close_unlocked(
 					ctx_pdata->iiod_client,
 					&pdata->io_ctx, dev);
-
-			write_command(&pdata->io_ctx, "\r\nEXIT\r\n");
 		} else {
 			ret = 0;
 		}
@@ -827,10 +825,7 @@ static void network_shutdown(struct iio_context *ctx)
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	unsigned int i;
 
-	iiod_client_mutex_lock(pdata->iiod_client);
-	write_command(&pdata->io_ctx, "\r\nEXIT\r\n");
 	close(pdata->io_ctx.fd);
-	iiod_client_mutex_unlock(pdata->iiod_client);
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
