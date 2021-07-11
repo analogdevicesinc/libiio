@@ -9,7 +9,9 @@
 # Short-Description: IIO Daemon
 ### END INIT INFO
 # Debian init.d script for the IIO Daemon
-# Copyright (C) 2016 Analog Devices Inc.
+# Copyright (C) 2016-2020 Analog Devices Inc.
+# Please report bugs to:
+# https://github.com/analogdevicesinc/libiio
 
 . /lib/lsb/init-functions
 
@@ -23,7 +25,21 @@ fi
 case "$1" in
 	start)
 		log_daemon_msg "Starting IIO Daemon" "iiod" || true
+		@CMAKE_INSTALL_FULL_SBINDIR@/iiod_create_ini
+
+		# Test if we need to enable USB Gadget
+		START_UDC=0
+		grep -q iio_ffs /proc/mounts && IIOD_OPTS="${IIOD_OPTS} -F /dev/iio_ffs" && START_UDC=1
+
 		if start-stop-daemon -S -b -q -m -p /var/run/iiod.pid -x @CMAKE_INSTALL_FULL_SBINDIR@/iiod -- $IIOD_OPTS; then
+			if [ $START_UDC -eq 1 ] ; then
+				for _ in $(seq 1 10) ; do
+					sleep 1
+					if echo $UDC_NAME > ${GADGET}/UDC ; then
+						break
+					fi
+				done
+			fi
 			log_end_msg 0 || true
 		else
 			log_end_msg 1 || true
@@ -32,6 +48,11 @@ case "$1" in
 
 	stop)
 		log_daemon_msg "Stopping IIO Daemon" "iiod" || true
+
+		# if we started USB, make sure to stop it
+		GADGET=/sys/kernel/config/usb_gadget/ffs
+		[ -e ${GADGET}/UDC ] && echo "" > ${GADGET}/UDC
+
 		if start-stop-daemon -K -q -p /var/run/iiod.pid; then
 			log_end_msg 0 || true
 		else
