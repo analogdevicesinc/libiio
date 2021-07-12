@@ -856,15 +856,6 @@ static void network_shutdown(struct iio_context *ctx)
 	freeaddrinfo(pdata->addrinfo);
 }
 
-static int network_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor, char git_tag[8])
-{
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-
-	return iiod_client_get_version(pdata->iiod_client,
-			&pdata->io_ctx, major, minor, git_tag);
-}
-
 static unsigned int calculate_remote_timeout(unsigned int timeout)
 {
 	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
@@ -927,7 +918,6 @@ static const struct iio_backend_ops network_ops = {
 	.set_trigger = network_set_trigger,
 	.shutdown = network_shutdown,
 	.get_description = network_get_description,
-	.get_version = network_get_version,
 	.set_timeout = network_set_timeout,
 	.set_kernel_buffers_count = network_set_kernel_buffers_count,
 
