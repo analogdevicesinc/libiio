@@ -24,7 +24,8 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
 "<!ELEMENT buffer-attribute EMPTY>"
-"<!ATTLIST context name CDATA #REQUIRED description CDATA #IMPLIED>"
+"<!ATTLIST context name CDATA #REQUIRED version-major CDATA #REQUIRED "
+"version-minor CDATA #REQUIRED version-git CDATA #REQUIRED description CDATA #IMPLIED>"
 "<!ATTLIST context-attribute name CDATA #REQUIRED value CDATA #REQUIRED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED label CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
@@ -95,13 +96,13 @@ ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
-	
+
 	/* Print param */
 	ret = sanitize_xml(ptr, len, param);
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
-	
+
 	/* Print after */
 	ret = iio_snprintf(ptr, len, "%s", after);
 	if (ret < 0)
@@ -114,16 +115,30 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 					const struct iio_context *ctx)
 {
 	ssize_t ret, alen = 0;
-	unsigned int i;
+	unsigned int i, major, minor;
+	char git_tag[64];
 
-	if (ctx->description)
-		ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" "
-				   "description=\"%s\" >",
-				   xml_header, ctx->name, ctx->description);
-	else
-		ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" >",
-				   xml_header, ctx->name);
+	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
+	if (ret < 0)
+		return ret;
 
+	ret = iio_snprintf(ptr, len,
+			   "%s<context name=\"%s\" version-major=\"%u\" "
+			   "version-minor=\"%u\" version-git=\"%s\" ",
+			   xml_header, ctx->name, major, minor, git_tag);
+	if (ret < 0)
+		return ret;
+
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+	if (ctx->description) {
+		ret = iio_xml_print_and_sanitized_param(ptr, len,
+							"description=\"",
+							ctx->description,
+							"\" >");
+	} else {
+		ret = iio_snprintf(ptr, len, ">");
+	}
 	if (ret < 0)
 		return ret;
 
@@ -135,6 +150,8 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 				   ctx->attrs[i]);
 		if (ret < 0)
 			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 		ret = iio_xml_print_and_sanitized_param(ptr, len,
 							"value=\"",
@@ -274,6 +291,7 @@ void iio_context_destroy(struct iio_context *ctx)
 	free(ctx->devices);
 	free(ctx->xml);
 	free(ctx->description);
+	free(ctx->git_tag);
 	free(ctx->pdata);
 	free(ctx);
 
@@ -359,8 +377,16 @@ int iio_context_init(struct iio_context *ctx)
 int iio_context_get_version(const struct iio_context *ctx,
 		unsigned int *major, unsigned int *minor, char git_tag[8])
 {
-	if (ctx->ops->get_version)
-		return ctx->ops->get_version(ctx, major, minor, git_tag);
+	if (ctx->git_tag) {
+		if (major)
+			*major = ctx->major;
+		if (minor)
+			*minor = ctx->minor;
+		if (git_tag)
+			iio_strlcpy(git_tag, ctx->git_tag, 8);
+
+		return 0;
+	}
 
 	iio_library_get_version(major, minor, git_tag);
 	return 0;

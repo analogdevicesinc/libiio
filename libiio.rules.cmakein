@@ -1,1 +1,1 @@
-SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '@CMAKE_INSTALL_FULL_BINDIR@/iio_info -s | grep %s{idVendor}:%s{idProduct}'", RESULT!="", MODE="666"
+SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '@CMAKE_INSTALL_FULL_BINDIR@/iio_info -S usb | grep %s{idVendor}:%s{idProduct}'", RESULT!="", MODE="666"

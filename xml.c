@@ -414,10 +414,12 @@ static struct iio_context *
 iio_create_xml_context_helper(const struct iio_context_params *params,
 			      xmlDoc *doc)
 {
-	const char *description = NULL;
+	const char *description = NULL, *git_tag = NULL, *content;
 	struct iio_context *ctx;
+	long major = 0, minor = 0;
 	xmlNode *root;
 	xmlAttr *attr;
+	char *end;
 	int err;
 
 	root = xmlDocGetRootElement(doc);
@@ -428,11 +430,24 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	}
 
 	for (attr = root->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "description"))
-			description = (const char *)attr->children->content;
-		else if (strcmp((char *) attr->name, "name"))
+		content = (const char *) attr->children->content;
+
+		if (!strcmp((char *) attr->name, "description")) {
+			description = content;
+		} else if (!strcmp((char *) attr->name, "version-major")) {
+			major = strtol(content, &end, 10);
+			if (*end != '\0')
+				prm_warn(params, "invalid format for major version\n");
+		} else if (!strcmp((char *) attr->name, "version-minor")) {
+			minor = strtol(content, &end, 10);
+			if (*end != '\0')
+				prm_warn(params, "invalid format for minor version\n");
+		} else if (!strcmp((char *) attr->name, "version-git")) {
+			git_tag = content;
+		} else if (strcmp((char *) attr->name, "name")) {
 			prm_warn(params, "Unknown parameter \'%s\' in <context>\n",
-				 (char *) attr->children->content);
+				 content);
+		}
 	}
 
 	ctx = iio_context_create_from_backend(&iio_xml_backend, description);
@@ -442,6 +457,18 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	}
 
 	ctx->params = *params;
+
+	if (git_tag) {
+		ctx->major = major;
+		ctx->minor = minor;
+
+		ctx->git_tag = iio_strdup(git_tag);
+		if (!ctx->git_tag) {
+			iio_context_destroy(ctx);
+			errno = ENOMEM;
+			return NULL;
+		}
+	}
 
 	err = iio_populate_xml_context_helper(ctx, root);
 	if (err) {

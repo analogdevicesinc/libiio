@@ -91,6 +91,10 @@ struct iio_context {
 	const char *name;
 	char *description;
 
+	unsigned int major;
+	unsigned int minor;
+	char *git_tag;
+
 	struct iio_device **devices;
 	unsigned int nb_devices;
 

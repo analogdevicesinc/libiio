@@ -38,11 +38,6 @@ iiod_client_new(const struct iio_context_params *params,
 
 __api void iiod_client_destroy(struct iiod_client *client);
 
-__api int iiod_client_get_version(struct iiod_client *client,
-				  struct iiod_client_pdata *desc,
-				  unsigned int *major, unsigned int *minor,
-				  char *git_tag);
-
 __api int iiod_client_get_trigger(struct iiod_client *client,
 				  struct iiod_client_pdata *desc,
 				  const struct iio_device *dev,

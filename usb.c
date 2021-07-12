@@ -123,15 +123,6 @@ static void usb_io_context_exit(struct iiod_client_pdata *io_ctx)
 	}
 }
 
-static int usb_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor, char git_tag[8])
-{
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-
-	return iiod_client_get_version(pdata->iiod_client,
-			&pdata->io_ctx, major, minor, git_tag);
-}
-
 static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
 {
 	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
@@ -561,7 +552,6 @@ static void usb_cancel(const struct iio_device *dev)
 static const struct iio_backend_ops usb_ops = {
 	.scan = usb_context_scan,
 	.create = usb_create_context_from_args,
-	.get_version = usb_get_version,
 	.open = usb_open,
 	.close = usb_close,
 	.read = usb_read,
