@@ -96,15 +96,6 @@ static inline int libserialport_to_errno(enum sp_return ret)
 	}
 }
 
-static int serial_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor, char git_tag[8])
-{
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-
-	return iiod_client_get_version(pdata->iiod_client, NULL,
-			major, minor, git_tag);
-}
-
 static char * __serial_get_description(struct sp_port *port)
 {
 	char *description, *name, *desc;
@@ -356,7 +347,6 @@ static int serial_set_timeout(struct iio_context *ctx, unsigned int timeout)
 }
 
 static const struct iio_backend_ops serial_ops = {
-	.get_version = serial_get_version,
 	.open = serial_open,
 	.close = serial_close,
 	.read = serial_read,

@@ -177,58 +177,6 @@ void iiod_client_destroy(struct iiod_client *client)
 	free(client);
 }
 
-int iiod_client_get_version(struct iiod_client *client,
-			    struct iiod_client_pdata *desc,
-			    unsigned int *major, unsigned int *minor,
-			    char *git_tag)
-{
-	struct iio_context_pdata *pdata = client->pdata;
-	const struct iiod_client_ops *ops = client->ops;
-	char buf[256], *ptr = buf, *end;
-	long maj, min;
-	int ret;
-
-	iio_mutex_lock(client->lock);
-
-	ret = (int) ops->write(pdata, desc, "VERSION\r\n", sizeof("VERSION\r\n") - 1);
-	if (ret < 0) {
-		iio_mutex_unlock(client->lock);
-		return ret;
-	}
-
-	ret = (int) ops->read_line(pdata, desc, buf, sizeof(buf));
-	iio_mutex_unlock(client->lock);
-
-	if (ret < 0)
-		return ret;
-
-	errno = 0;
-	maj = strtol(ptr, &end, 10);
-	if (ptr == end || errno == ERANGE)
-		return -EIO;
-
-	ptr = end + 1;
-	errno = 0;
-	min = strtol(ptr, &end, 10);
-	if (ptr == end || errno == ERANGE)
-		return -EIO;
-
-	ptr = end + 1;
-	if (buf + ret < ptr + 8)
-		return -EIO;
-
-	/* Strip the \n */
-	ptr[buf + ret - ptr - 1] = '\0';
-
-	if (major)
-		*major = (unsigned int) maj;
-	if (minor)
-		*minor = (unsigned int) min;
-	if (git_tag)
-		iio_strlcpy(git_tag, ptr, 8);
-	return 0;
-}
-
 int iiod_client_get_trigger(struct iiod_client *client,
 			    struct iiod_client_pdata *desc,
 			    const struct iio_device *dev,
