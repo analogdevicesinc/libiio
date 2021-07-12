@@ -272,6 +272,7 @@ void iio_context_destroy(struct iio_context *ctx)
 	free(ctx->devices);
 	free(ctx->xml);
 	free(ctx->description);
+	free(ctx->git_tag);
 	free(ctx->pdata);
 	free(ctx);
 }
