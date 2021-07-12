@@ -24,7 +24,8 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
 "<!ELEMENT buffer-attribute EMPTY>"
-"<!ATTLIST context name CDATA #REQUIRED description CDATA #IMPLIED>"
+"<!ATTLIST context name CDATA #REQUIRED version-major CDATA #REQUIRED "
+"version-minor CDATA #REQUIRED version-git CDATA #REQUIRED description CDATA #IMPLIED>"
 "<!ATTLIST context-attribute name CDATA #REQUIRED value CDATA #REQUIRED>"
 "<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED label CDATA #IMPLIED>"
 "<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>"
@@ -100,10 +101,17 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 					const struct iio_context *ctx)
 {
 	ssize_t ret, alen = 0;
-	unsigned int i;
+	unsigned int i, major, minor;
+	char git_tag[64];
 
-	ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" ",
-			   xml_header, ctx->name);
+	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
+	if (ret < 0)
+		return ret;
+
+	ret = iio_snprintf(ptr, len,
+			   "%s<context name=\"%s\" version-major=\"%u\" "
+			   "version-minor=\"%u\" version-git=\"%s\" ",
+			   xml_header, ctx->name, major, minor, git_tag);
 	if (ret < 0)
 		return ret;
 
