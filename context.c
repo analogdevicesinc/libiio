@@ -355,6 +355,17 @@ int iio_context_init(struct iio_context *ctx)
 int iio_context_get_version(const struct iio_context *ctx,
 		unsigned int *major, unsigned int *minor, char git_tag[8])
 {
+	if (ctx->git_tag) {
+		if (major)
+			*major = ctx->major;
+		if (minor)
+			*minor = ctx->minor;
+		if (git_tag)
+			iio_strlcpy(git_tag, ctx->git_tag, 8);
+
+		return 0;
+	}
+
 	if (ctx->ops->get_version)
 		return ctx->ops->get_version(ctx, major, minor, git_tag);
 
