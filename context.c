@@ -102,14 +102,21 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 	ssize_t ret, alen = 0;
 	unsigned int i;
 
-	if (ctx->description)
-		ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" "
-				   "description=\"%s\" >",
-				   xml_header, ctx->name, ctx->description);
-	else
-		ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" >",
-				   xml_header, ctx->name);
+	ret = iio_snprintf(ptr, len, "%s<context name=\"%s\" ",
+			   xml_header, ctx->name);
+	if (ret < 0)
+		return ret;
 
+	iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+	if (ctx->description) {
+		ret = iio_xml_print_and_sanitized_param(ptr, len,
+							"description=\"",
+							ctx->description,
+							"\" >");
+	} else {
+		ret = iio_snprintf(ptr, len, ">");
+	}
 	if (ret < 0)
 		return ret;
 
