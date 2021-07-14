@@ -55,6 +55,11 @@ if (WITH_AIO)
 	endif()
 endif()
 
+option(WITH_IIOD_SERIAL "Add serial (UART) support" ON)
+if (WITH_IIOD_SERIAL)
+	set(IIOD_CFILES ${IIOD_CFILES} serial.c)
+endif()
+
 add_executable(iiod ${IIOD_CFILES})
 set_target_properties(iiod PROPERTIES
 	C_STANDARD 99
