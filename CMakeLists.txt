@@ -497,8 +497,15 @@ else ()
 	target_sources(iio PRIVATE lock.c)
 endif()
 
+if (IIOD_CLIENT OR WITH_IIOD)
+	add_library(iiod-responder STATIC iiod-responder.c)
+	target_include_directories(iiod-responder PRIVATE include)
+	set_target_properties(iiod-responder PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 if (IIOD_CLIENT)
 	target_sources(iio PRIVATE iiod-client.c)
+	target_link_libraries(iio PRIVATE iiod-responder)
 endif()
 
 if(WITH_TESTS)
