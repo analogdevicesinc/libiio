@@ -353,17 +353,6 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-		option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
-		if (WITH_NETWORK_GET_BUFFER)
-			include(CheckCSourceCompiles)
-			check_c_source_compiles("#define _GNU_SOURCE=1\n#include <fcntl.h>\nint main(void) { return O_TMPFILE; }"
-				HAS_O_TMPFILE)
-
-			if (NOT HAS_O_TMPFILE)
-				message(SEND_ERROR "Zero-copy requires the O_TMPFILE flag, which is not available on the system.")
-			endif()
-		endif()
-
 		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }"
 			WITH_NETWORK_EVENTFD)
 		if (NOT WITH_NETWORK_EVENTFD)
@@ -371,7 +360,7 @@ if(WITH_NETWORK_BACKEND)
 				HAS_PIPE2)
 		endif()
 
-		if (WITH_NETWORK_GET_BUFFER OR HAS_PIPE2)
+		if (HAS_PIPE2)
 			add_definitions(-D_GNU_SOURCE=1)
 		endif()
 	endif()
