@@ -867,25 +867,19 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 		return nb - ret;
 }
 
-static uint32_t *get_mask(const char *mask, size_t *len)
+static void get_mask(const char *mask, size_t len, uint32_t *words)
 {
-	size_t nb = (*len + 7) / 8;
-	uint32_t *ptr, *words = calloc(nb, sizeof(*words));
-	if (!words)
-		return NULL;
+	size_t nb = (len + 7) / 8;
+	uint32_t *ptr = words + nb;
+	char buf[9];
 
-	ptr = words + nb;
 	while (*mask) {
-		char buf[9];
 		snprintf(buf, sizeof(buf), "%.*s", 8, mask);
 		sscanf(buf, "%08x", --ptr);
 		mask += 8;
 		IIO_DEBUG("Mask[%lu]: 0x%08x\n",
 				(unsigned long) (words - ptr) / 4, *ptr);
 	}
-
-	*len = nb;
-	return words;
 }
 
 static void free_thd_entry(struct ThdEntry *t)
@@ -959,26 +953,13 @@ static ssize_t get_dev_sample_size_mask(const struct iio_device *dev,
 }
 
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
-		size_t samples_count, const char *mask, bool cyclic)
+			   size_t samples_count, uint32_t *words,
+			   size_t nb_words, bool cyclic)
 {
 	int ret = -ENOMEM;
 	struct DevEntry *entry;
 	struct ThdEntry *thd;
-	size_t len = strlen(mask);
-	uint32_t *words;
-	unsigned int nb_channels;
 	unsigned int cyclic_retry = 500;
-
-	if (!dev)
-		return -ENODEV;
-
-	nb_channels = iio_device_get_channels_count(dev);
-	if (len != ((nb_channels + 31) / 32) * 8)
-		return -EINVAL;
-
-	words = get_mask(mask, &len);
-	if (!words)
-		return -ENOMEM;
 
 	thd = zalloc(sizeof(*thd));
 	if (!thd)
@@ -988,7 +969,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->mask = words;
 	thd->nb = 0;
 	thd->samples_count = samples_count;
-	thd->sample_size = get_dev_sample_size_mask(dev, words, len);
+	thd->sample_size = get_dev_sample_size_mask(dev, words, nb_words);
 	thd->pdata = pdata;
 	thd->dev = dev;
 	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -1083,14 +1064,14 @@ retry:
 
 	entry->ref_count = 2; /* One for thread, one for the client */
 
-	entry->mask = malloc(len * sizeof(*words));
+	entry->mask = malloc(nb_words * sizeof(*words));
 	if (!entry->mask) {
 		pthread_mutex_unlock(&devlist_lock);
 		goto err_free_entry;
 	}
 
 	entry->cyclic = cyclic;
-	entry->nb_words = len;
+	entry->nb_words = nb_words;
 	entry->update_mask = true;
 	entry->dev = dev;
 	entry->buf = NULL;
@@ -1161,7 +1142,29 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic)
 {
-	int ret = open_dev_helper(pdata, dev, samples_count, mask, cyclic);
+	size_t nb_channels, nb_words, len = strlen(mask);
+	uint32_t *words;
+	int ret;
+
+	if (!dev)
+		return -ENODEV;
+
+	nb_channels = iio_device_get_channels_count(dev);
+	nb_words = (nb_channels + 31) / 32;
+	if (len != nb_words * 8)
+		return -EINVAL;
+
+	words = malloc(sizeof(*words) * nb_words);
+	if (!words)
+		return -ENOMEM;
+
+	get_mask(mask, len, words);
+
+	ret = open_dev_helper(pdata, dev, samples_count, words, nb_words,
+			      cyclic);
+	if (ret < 0)
+		free(words);
+
 	print_value(pdata, ret);
 	return ret;
 }
