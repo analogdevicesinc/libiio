@@ -61,6 +61,8 @@ struct iio_context_pdata {
 struct iio_device_pdata {
 	bool opened;
 	struct iiod_client_pdata io_ctx;
+
+	struct iiod_client_io *client_io;
 };
 
 static const unsigned int libusb_to_errno_codes[] = {
@@ -275,9 +277,12 @@ static int usb_open(const struct iio_device *dev,
 
 	iiod_client_mutex_lock(client);
 
-	ret = iiod_client_open_unlocked(client, dev, samples_count, cyclic);
-	if (ret)
+	pdata->client_io = iiod_client_open_unlocked(client, dev,
+						     samples_count, cyclic);
+	if (IS_ERR(pdata->client_io)) {
+		ret = PTR_ERR(pdata->client_io);
 		goto err_unlock_client;
+	}
 
 	timeout = usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
 
@@ -294,7 +299,7 @@ static int usb_open(const struct iio_device *dev,
 	return 0;
 
 err_usb_close:
-	iiod_client_close_unlocked(client, dev);
+	iiod_client_close_unlocked(pdata->client_io);
 err_unlock_client:
 	iiod_client_mutex_unlock(client);
 	iiod_client_destroy(client);
@@ -321,7 +326,7 @@ static int usb_close(const struct iio_device *dev)
 		goto out_unlock;
 
 	iiod_client_mutex_lock(client);
-	ret = iiod_client_close_unlocked(client, dev);
+	ret = iiod_client_close_unlocked(pdata->client_io);
 	pdata->opened = false;
 
 	iiod_client_mutex_unlock(client);
