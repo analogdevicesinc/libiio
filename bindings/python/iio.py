@@ -1406,18 +1406,18 @@ class Context(object):
         """
         return Context(_clone(self._context))
 
-    def find_device(self, name_or_id):
+    def find_device(self, name_or_id_or_label):
         """
 
-        Find a IIO device by its name or ID.
+        Find a IIO device by its name, ID or label.
 
-        :param name_or_id: type=str
-            The name or ID of the device to find
+        :param name_or_id_or_label: type=str
+            The name, ID or label of the device to find
 
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        return next((x for x in self.devices if name_or_id in [x.name, x.id]), None,)
+        return next((x for x in self.devices if name_or_id_or_label in [x.name, x.id, x.label]), None,)
 
     name = property(
         lambda self: self._name, None, None, "Name of this IIO context.\n\ttype=str"
