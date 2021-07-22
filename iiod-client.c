@@ -667,11 +667,11 @@ out_buf_free:
 	return (int) ret;
 }
 
-ssize_t iiod_client_read_unlocked(struct iiod_client *client,
-				  struct iiod_client_pdata *desc,
-				  const struct iio_device *dev,
-				  void *dst, size_t len,
-				  uint32_t *mask, size_t words)
+static ssize_t iiod_client_read_unlocked(struct iiod_client *client,
+					 struct iiod_client_pdata *desc,
+					 const struct iio_device *dev,
+					 void *dst, size_t len,
+					 uint32_t *mask, size_t words)
 {
 	unsigned int nb_channels = iio_device_get_channels_count(dev);
 	uintptr_t ptr = (uintptr_t) dst;
@@ -725,10 +725,26 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 	return read;
 }
 
-ssize_t iiod_client_write_unlocked(struct iiod_client *client,
-				   struct iiod_client_pdata *desc,
-				   const struct iio_device *dev,
-				   const void *src, size_t len)
+ssize_t iiod_client_read(struct iiod_client *client,
+			 struct iiod_client_pdata *desc,
+			 const struct iio_device *dev,
+			 void *dst, size_t len,
+			 uint32_t *mask, size_t words)
+{
+	ssize_t ret;
+
+	iiod_client_mutex_lock(client);
+	ret = iiod_client_read_unlocked(client, desc, dev, dst,
+					len, mask, words);
+	iiod_client_mutex_unlock(client);
+
+	return ret;
+}
+
+static ssize_t iiod_client_write_unlocked(struct iiod_client *client,
+					  struct iiod_client_pdata *desc,
+					  const struct iio_device *dev,
+					  const void *src, size_t len)
 {
 	ssize_t ret;
 	char buf[1024];
@@ -758,4 +774,18 @@ ssize_t iiod_client_write_unlocked(struct iiod_client *client,
 		return (ssize_t) val;
 
 	return (ssize_t) len;
+}
+
+ssize_t iiod_client_write(struct iiod_client *client,
+			  struct iiod_client_pdata *desc,
+			  const struct iio_device *dev,
+			  const void *src, size_t len)
+{
+	ssize_t ret;
+
+	iiod_client_mutex_lock(client);
+	ret = iiod_client_write_unlocked(client, desc, dev, src, len);
+	iiod_client_mutex_unlock(client);
+
+	return ret;
 }
