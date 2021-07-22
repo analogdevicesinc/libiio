@@ -28,11 +28,12 @@ struct iio_usb_ep_couple {
 	uint16_t pipe_id;
 	bool in_use;
 
-	struct iio_mutex *lock;
+	const struct iio_device *dev;
 };
 
 struct iiod_client_pdata {
 	struct iio_usb_ep_couple *ep;
+	struct iiod_client *iiod_client;
 
 	struct iio_mutex *lock;
 	bool cancelled;
@@ -43,8 +44,6 @@ struct iio_context_pdata {
 	libusb_context *ctx;
 	libusb_device_handle *hdl;
 	uint16_t intrfc;
-
-	struct iiod_client *iiod_client;
 
 	/* Lock for endpoint reservation */
 	struct iio_mutex *ep_lock;
@@ -58,8 +57,6 @@ struct iio_context_pdata {
 };
 
 struct iio_device_pdata {
-	struct iio_mutex *lock;
-
 	bool opened;
 	struct iiod_client_pdata io_ctx;
 };
@@ -99,6 +96,8 @@ static unsigned int libusb_to_errno(int error)
 		return EIO;
 	}
 }
+
+static const struct iiod_client_ops usb_iiod_client_ops;
 
 static struct iio_context *
 usb_create_context_from_args(const struct iio_context_params *params,
@@ -213,9 +212,9 @@ static int usb_reserve_ep_unlocked(const struct iio_device *dev)
 
 		if (!ep->in_use) {
 			ep->in_use = true;
-
+			ep->dev = dev;
 			ppdata->io_ctx.ep = ep;
-			ppdata->lock = ep->lock;
+
 			return 0;
 		}
 	}
@@ -227,14 +226,14 @@ static void usb_free_ep_unlocked(const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
 	unsigned int i;
 
 	for (i = 0; i < pdata->nb_ep_couples; i++) {
 		struct iio_usb_ep_couple *ep = &pdata->io_endpoints[i];
 
-		if (ep->lock == ppdata->lock) {
+		if (ep->dev == dev) {
 			ep->in_use = false;
+			ep->dev = NULL;
 			return;
 		}
 	}
@@ -246,7 +245,8 @@ static int usb_open(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
-	struct iiod_client *client = ctx_pdata->iiod_client;
+	const struct iio_context_params *params = iio_context_get_params(ctx);
+	struct iiod_client *client;
 	unsigned int timeout;
 	int ret = -EBUSY;
 
@@ -267,21 +267,27 @@ static int usb_open(const struct iio_device *dev,
 		goto err_free_ep;
 	}
 
-	iio_mutex_lock(pdata->lock);
+	client = iiod_client_new(params, ctx_pdata, &usb_iiod_client_ops);
+	if (!client)
+		goto err_close_pipe;
+
+	iiod_client_mutex_lock(client);
 
 	ret = iiod_client_open_unlocked(client, &pdata->io_ctx,
 					dev, samples_count, cyclic);
 	if (ret)
-		goto err_close_pipe;
+		goto err_unlock_client;
 
 	timeout = usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
 
-	ret = iiod_client_set_timeout(client, &pdata->io_ctx, timeout);
+	ret = iiod_client_set_timeout(ctx_pdata->io_ctx.iiod_client,
+				      &ctx_pdata->io_ctx, timeout);
 	if (ret)
 		goto err_usb_close;
 
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(client);
 
+	pdata->io_ctx.iiod_client = client;
 	pdata->opened = true;
 	iio_mutex_unlock(ctx_pdata->ep_lock);
 
@@ -289,8 +295,10 @@ static int usb_open(const struct iio_device *dev,
 
 err_usb_close:
 	iiod_client_close_unlocked(client, &pdata->io_ctx, dev);
+err_unlock_client:
+	iiod_client_mutex_unlock(client);
+	iiod_client_destroy(client);
 err_close_pipe:
-	iio_mutex_unlock(pdata->lock);
 	usb_close_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
 err_free_ep:
 	usb_free_ep_unlocked(dev);
@@ -305,18 +313,19 @@ static int usb_close(const struct iio_device *dev)
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 	int ret = -EBADF;
 
 	iio_mutex_lock(ctx_pdata->ep_lock);
 	if (!pdata->opened)
 		goto out_unlock;
 
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_close_unlocked(ctx_pdata->iiod_client, &pdata->io_ctx,
-			dev);
+	iiod_client_mutex_lock(client);
+	ret = iiod_client_close_unlocked(client, &pdata->io_ctx, dev);
 	pdata->opened = false;
 
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(client);
+	iiod_client_destroy(client);
 
 	usb_close_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
 
@@ -330,15 +339,14 @@ out_unlock:
 static ssize_t usb_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 	ssize_t ret;
 
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_read_unlocked(ctx_pdata->iiod_client,
-			&pdata->io_ctx, dev, dst, len, mask, words);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_lock(client);
+	ret = iiod_client_read_unlocked(client, &pdata->io_ctx,
+					dev, dst, len, mask, words);
+	iiod_client_mutex_unlock(client);
 
 	return ret;
 }
@@ -346,15 +354,14 @@ static ssize_t usb_read(const struct iio_device *dev, void *dst, size_t len,
 static ssize_t usb_write(const struct iio_device *dev,
 		const void *src, size_t len)
 {
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 	ssize_t ret;
 
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_write_unlocked(ctx_pdata->iiod_client,
-			&pdata->io_ctx, dev, src, len);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_lock(client);
+	ret = iiod_client_write_unlocked(client, &pdata->io_ctx,
+					 dev, src, len);
+	iiod_client_mutex_unlock(client);
 
 	return ret;
 }
@@ -364,10 +371,10 @@ static ssize_t usb_read_dev_attr(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, NULL, attr,
-			dst, len, type);
+	return iiod_client_read_attr(client, &pdata->io_ctx, dev, NULL, attr,
+				     dst, len, type);
 }
 
 static ssize_t usb_write_dev_attr(const struct iio_device *dev,
@@ -375,10 +382,10 @@ static ssize_t usb_write_dev_attr(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, NULL, attr,
-			src, len, type);
+	return iiod_client_write_attr(client, &pdata->io_ctx, dev, NULL, attr,
+				      src, len, type);
 }
 
 static ssize_t usb_read_chn_attr(const struct iio_channel *chn,
@@ -387,10 +394,10 @@ static ssize_t usb_read_chn_attr(const struct iio_channel *chn,
 	const struct iio_device *dev = iio_channel_get_device(chn);
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, chn, attr,
-			dst, len, false);
+	return iiod_client_read_attr(client, &pdata->io_ctx, dev, chn, attr,
+				     dst, len, false);
 }
 
 static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
@@ -399,10 +406,10 @@ static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
 	const struct iio_device *dev = iio_channel_get_device(chn);
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, chn, attr,
-			src, len, false);
+	return iiod_client_write_attr(client, &pdata->io_ctx, dev, chn, attr,
+				      src, len, false);
 }
 
 static int usb_set_kernel_buffers_count(const struct iio_device *dev,
@@ -410,20 +417,21 @@ static int usb_set_kernel_buffers_count(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_set_kernel_buffers_count(pdata->iiod_client,
-			&pdata->io_ctx, dev, nb_blocks);
+	return iiod_client_set_kernel_buffers_count(client, &pdata->io_ctx,
+						    dev, nb_blocks);
 }
 
 static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	unsigned int remote_timeout = usb_calculate_remote_timeout(timeout);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
 	int ret;
 
-	ret = iiod_client_set_timeout(pdata->iiod_client,
-			&pdata->io_ctx, remote_timeout);
+	ret = iiod_client_set_timeout(client, &pdata->io_ctx, remote_timeout);
 	if (!ret)
 		pdata->timeout_ms = timeout;
 
@@ -435,9 +443,9 @@ static int usb_get_trigger(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_get_trigger(pdata->iiod_client,
-			&pdata->io_ctx, dev, trigger);
+	return iiod_client_get_trigger(client, &pdata->io_ctx, dev, trigger);
 }
 
 static int usb_set_trigger(const struct iio_device *dev,
@@ -445,9 +453,9 @@ static int usb_set_trigger(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_set_trigger(pdata->iiod_client,
-			&pdata->io_ctx, dev, trigger);
+	return iiod_client_set_trigger(client, &pdata->io_ctx, dev, trigger);
 }
 
 
@@ -464,9 +472,8 @@ static void usb_shutdown(struct iio_context *ctx)
 
 	iio_mutex_destroy(pdata->ep_lock);
 
-	for (i = 0; i < pdata->nb_ep_couples; i++)
-		if (pdata->io_endpoints[i].lock)
-			iio_mutex_destroy(pdata->io_endpoints[i].lock);
+	iiod_client_destroy(pdata->io_ctx.iiod_client);
+
 	free(pdata->io_endpoints);
 
 	for (i = 0; i < nb_devices; i++) {
@@ -476,8 +483,6 @@ static void usb_shutdown(struct iio_context *ctx)
 		usb_io_context_exit(&ppdata->io_ctx);
 		free(ppdata);
 	}
-
-	iiod_client_destroy(pdata->iiod_client);
 
 	usb_reset_pipes(pdata); /* Close everything */
 
@@ -833,6 +838,7 @@ usb_create_context_with_attrs(libusb_device *usb_dev,
 		version,
 		lib_version,
 	};
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
 	libusb_get_device_descriptor(usb_dev, &dev_desc);
 
@@ -859,7 +865,7 @@ usb_create_context_with_attrs(libusb_device *usb_dev,
 		     libusb_version->micro, libusb_version->nano,
 		     libusb_version->rc);
 
-	return iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
+	return iiod_client_create_context(client, &pdata->io_ctx,
 					  &iio_usb_backend, description,
 					  attr_names,
 					  (const char **) attr_values,
@@ -895,18 +901,11 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 		goto err_free_pdata;
 	}
 
-	pdata->iiod_client = iiod_client_new(params, pdata, &usb_iiod_client_ops);
-	if (!pdata->iiod_client) {
-		ret = -errno;
-		prm_perror(params, -ret, "Unable to create IIOD client");
-		goto err_destroy_ep_mutex;
-	}
-
 	ret = libusb_init(&usb_ctx);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
 		prm_perror(params, -ret, "Unable to init libusb");
-		goto err_destroy_iiod_client;
+		goto err_destroy_ep_mutex;
 	}
 
 	ret = (int) libusb_get_device_list(usb_ctx, &device_list);
@@ -1006,13 +1005,6 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 		prm_dbg(params, "Couple %i with endpoints 0x%x / 0x%x\n", i,
 			ep->addr_in, ep->addr_out);
-
-		ep->lock = iio_mutex_create();
-		if (!ep->lock) {
-			prm_err(params, "Unable to create mutex\n");
-			ret = -ENOMEM;
-			goto err_free_endpoints;
-		}
 	}
 
 	pdata->ctx = usb_ctx;
@@ -1028,16 +1020,24 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	pdata->io_ctx.ep = &pdata->io_endpoints[0];
 	pdata->io_ctx.ep->in_use = true;
 
+	pdata->io_ctx.iiod_client = iiod_client_new(params, pdata,
+						    &usb_iiod_client_ops);
+	if (!pdata->io_ctx.iiod_client) {
+		prm_err(params, "Unable to allocate memory\n");
+		ret = -ENOMEM;
+		goto err_io_context_exit;
+	}
+
 	ret = usb_reset_pipes(pdata);
 	if (ret) {
 		prm_perror(params, -ret, "Failed to reset pipes");
-		goto err_io_context_exit;
+		goto err_free_iiod_client;
 	}
 
 	ret = usb_open_pipe(pdata, 0);
 	if (ret) {
 		prm_perror(params, -ret, "Failed to open control pipe");
-		goto err_io_context_exit;
+		goto err_free_iiod_client;
 	}
 
 	ctx = usb_create_context_with_attrs(usb_dev, pdata);
@@ -1077,12 +1077,11 @@ err_context_destroy:
 
 err_reset_pipes:
 	usb_reset_pipes(pdata); /* Close everything */
+err_free_iiod_client:
+	iiod_client_destroy(pdata->io_ctx.iiod_client);
 err_io_context_exit:
 	usb_io_context_exit(&pdata->io_ctx);
 err_free_endpoints:
-	for (i = 0; i < pdata->nb_ep_couples; i++)
-		if (pdata->io_endpoints[i].lock)
-			iio_mutex_destroy(pdata->io_endpoints[i].lock);
 	free(pdata->io_endpoints);
 err_free_config_descriptor:
 	libusb_free_config_descriptor(conf_desc);
@@ -1090,8 +1089,6 @@ err_libusb_close:
 	libusb_close(hdl);
 err_libusb_exit:
 	libusb_exit(usb_ctx);
-err_destroy_iiod_client:
-	iiod_client_destroy(pdata->iiod_client);
 err_destroy_ep_mutex:
 	iio_mutex_destroy(pdata->ep_lock);
 err_free_pdata:
