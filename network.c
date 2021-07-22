@@ -64,7 +64,7 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	struct iiod_client_pdata io_ctx;
-	struct iio_mutex *lock;
+	struct iiod_client *iiod_client;
 };
 
 static struct iio_context *
@@ -272,6 +272,7 @@ static int network_open(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
+	struct iiod_client *client = ppdata->iiod_client;
 	unsigned int timeout_ms;
 	int ret = -EBUSY;
 
@@ -281,7 +282,8 @@ static int network_open(const struct iio_device *dev,
 	 */
 	timeout_ms = pdata->io_ctx.params->timeout_ms;
 
-	iio_mutex_lock(ppdata->lock);
+	iiod_client_mutex_lock(client);
+
 	if (ppdata->io_ctx.fd >= 0)
 		goto out_mutex_unlock;
 
@@ -296,8 +298,8 @@ static int network_open(const struct iio_device *dev,
 	ppdata->io_ctx.cancellable = false;
 	ppdata->io_ctx.timeout_ms = timeout_ms;
 
-	ret = iiod_client_open_unlocked(pdata->iiod_client,
-			&ppdata->io_ctx, dev, samples_count, cyclic);
+	ret = iiod_client_open_unlocked(client, &ppdata->io_ctx, dev,
+					samples_count, cyclic);
 	if (ret < 0) {
 		dev_perror(dev, -ret, "Unable to open device");
 		goto err_close_socket;
@@ -312,7 +314,7 @@ static int network_open(const struct iio_device *dev,
 	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
 	ppdata->io_ctx.cancellable = true;
 
-	iio_mutex_unlock(ppdata->lock);
+	iiod_client_mutex_unlock(client);
 
 	return 0;
 
@@ -320,24 +322,22 @@ err_close_socket:
 	close(ppdata->io_ctx.fd);
 	ppdata->io_ctx.fd = -1;
 out_mutex_unlock:
-	iio_mutex_unlock(ppdata->lock);
+	iiod_client_mutex_unlock(client);
 	return ret;
 }
 
 static int network_close(const struct iio_device *dev)
 {
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iiod_client *client = pdata->iiod_client;
 	int ret = -EBADF;
 
-	iio_mutex_lock(pdata->lock);
+	iiod_client_mutex_lock(client);
 
 	if (pdata->io_ctx.fd >= 0) {
 		if (!pdata->io_ctx.cancelled) {
-			ret = iiod_client_close_unlocked(
-					ctx_pdata->iiod_client,
-					&pdata->io_ctx, dev);
+			ret = iiod_client_close_unlocked(client,
+							 &pdata->io_ctx, dev);
 		} else {
 			ret = 0;
 		}
@@ -347,22 +347,20 @@ static int network_close(const struct iio_device *dev)
 		pdata->io_ctx.fd = -1;
 	}
 
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(client);
 	return ret;
 }
 
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	ssize_t ret;
 
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_read_unlocked(ctx_pdata->iiod_client,
+	iiod_client_mutex_lock(pdata->iiod_client);
+	ret = iiod_client_read_unlocked(pdata->iiod_client,
 			&pdata->io_ctx, dev, dst, len, mask, words);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(pdata->iiod_client);
 
 	return ret;
 }
@@ -370,15 +368,13 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 static ssize_t network_write(const struct iio_device *dev,
 		const void *src, size_t len)
 {
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	ssize_t ret;
 
-	iio_mutex_lock(pdata->lock);
-	ret = iiod_client_write_unlocked(ctx_pdata->iiod_client,
+	iiod_client_mutex_lock(pdata->iiod_client);
+	ret = iiod_client_write_unlocked(pdata->iiod_client,
 			&pdata->io_ctx, dev, src, len);
-	iio_mutex_unlock(pdata->lock);
+	iiod_client_mutex_unlock(pdata->iiod_client);
 
 	return ret;
 }
@@ -458,7 +454,10 @@ static void network_shutdown(struct iio_context *ctx)
 
 		if (dpdata) {
 			network_close(dev);
-			iio_mutex_destroy(dpdata->lock);
+
+			if (dpdata->iiod_client)
+				iiod_client_destroy(dpdata->iiod_client);
+
 			free(dpdata);
 		}
 	}
@@ -798,7 +797,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	/* pdata->io_ctx.params points to the 'params' function argument,
 	 * switch it to our local one now */
-	pdata->io_ctx.params = iio_context_get_params(ctx);
+	params = iio_context_get_params(ctx);
+	pdata->io_ctx.params = params;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -814,10 +814,10 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 		ppdata->io_ctx.fd = -1;
 		ppdata->io_ctx.timeout_ms = params->timeout_ms;
-		ppdata->io_ctx.params = pdata->io_ctx.params;
+		ppdata->io_ctx.params = params;
 
-		ppdata->lock = iio_mutex_create();
-		if (!ppdata->lock) {
+		ppdata->iiod_client = iiod_client_new(params, pdata, &network_iiod_client_ops);
+		if (!ppdata->iiod_client) {
 			ret = -ENOMEM;
 			goto err_network_shutdown;
 		}
