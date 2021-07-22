@@ -843,7 +843,7 @@ static struct iio_context * usb_create_context(unsigned int bus,
 	if (ret < 0) {
 		ret = -(int) libusb_to_errno(ret);
 		IIO_ERROR("Unable to get usb device list: %i\n", ret);
-		goto err_destroy_iiod_client;
+		goto err_libusb_exit;
 	}
 
 	usb_dev = NULL;
