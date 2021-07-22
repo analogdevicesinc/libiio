@@ -53,6 +53,21 @@
 #define CLEAR_BIT(addr, bit) \
 	*(((uint32_t *) addr) + BIT_WORD(bit)) &= ~BIT_MASK(bit)
 
+static inline __check_ret bool IS_ERR(const void *ptr)
+{
+	return (uintptr_t) ptr >= (uintptr_t) -4095;
+}
+
+static inline __check_ret int PTR_ERR(const void *ptr)
+{
+	return (int)(intptr_t) ptr;
+}
+
+static inline __check_ret void * ERR_PTR(int err)
+{
+	return (void *)(intptr_t) err;
+}
+
 struct iio_device;
 struct iio_context;
 struct iio_channel;

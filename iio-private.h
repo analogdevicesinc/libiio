@@ -54,21 +54,6 @@ static inline uint32_t iio_htobe32(uint32_t word)
 	return iio_be32toh(word);
 }
 
-static inline __check_ret bool IS_ERR(const void *ptr)
-{
-	return (uintptr_t)ptr >= (uintptr_t)-4095;
-}
-
-static inline __check_ret int PTR_ERR(const void *ptr)
-{
-	return (int)(intptr_t) ptr;
-}
-
-static inline __check_ret void * ERR_PTR(int err)
-{
-	return (void *)(intptr_t) err;
-}
-
 /*
  * If these structures are updated, the qsort functions defined in sort.c
  * may need to be updated.
