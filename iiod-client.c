@@ -27,6 +27,15 @@ struct iiod_client {
 	struct iio_mutex *lock;
 };
 
+struct iiod_client_io {
+	struct iiod_client *client;
+	bool cyclic;
+	size_t samples_count;
+	size_t buffer_size;
+
+	const struct iio_device *dev;
+};
+
 void iiod_client_mutex_lock(struct iiod_client *client)
 {
 	iio_mutex_lock(client->lock);
@@ -574,13 +583,44 @@ struct iio_context * iiod_client_create_context(struct iiod_client *client,
 						  WITH_ZSTD);
 }
 
-int iiod_client_open_unlocked(struct iiod_client *client,
+static struct iiod_client_io *
+iiod_client_create_io_context(struct iiod_client *client,
 			      const struct iio_device *dev,
 			      size_t samples_count, bool cyclic)
 {
+	struct iiod_client_io *io;
+
+	io = zalloc(sizeof(*io));
+	if (!io)
+		return NULL;
+
+	io->client = client;
+	io->dev = dev;
+	io->samples_count = samples_count;
+	io->cyclic = cyclic;
+
+	return io;
+}
+
+static void iiod_client_io_destroy(struct iiod_client_io *io)
+{
+	free(io);
+}
+
+struct iiod_client_io *
+iiod_client_open_unlocked(struct iiod_client *client,
+			  const struct iio_device *dev,
+			  size_t samples_count, bool cyclic)
+{
+	struct iiod_client_io *io;
 	char buf[1024], *ptr;
 	size_t i;
 	ssize_t len;
+	int ret;
+
+	io = iiod_client_create_io_context(client, dev, samples_count, cyclic);
+	if (!io)
+		return ERR_PTR(-ENOMEM);
 
 	len = sizeof(buf);
 	len -= iio_snprintf(buf, len, "OPEN %s %lu ",
@@ -596,19 +636,34 @@ int iiod_client_open_unlocked(struct iiod_client *client,
 
 	if (len < 0) {
 		prm_err(client->params, "strlength problem in iiod_client_open_unlocked\n");
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto err_destroy_io;
 	}
 
-	return iiod_client_exec_command(client, buf);
+	ret = iiod_client_exec_command(client, buf);
+	if (ret < 0)
+		goto err_destroy_io;
+
+	return io;
+
+err_destroy_io:
+	iiod_client_io_destroy(io);
+
+	return ERR_PTR(ret);
 }
 
-int iiod_client_close_unlocked(struct iiod_client *client,
-			       const struct iio_device *dev)
+int iiod_client_close_unlocked(struct iiod_client_io *io)
 {
 	char buf[1024];
+	int ret;
 
-	iio_snprintf(buf, sizeof(buf), "CLOSE %s\r\n", iio_device_get_id(dev));
-	return iiod_client_exec_command(client, buf);
+	iio_snprintf(buf, sizeof(buf), "CLOSE %s\r\n",
+		     iio_device_get_id(io->dev));
+	ret = iiod_client_exec_command(io->client, buf);
+
+	iiod_client_io_destroy(io);
+
+	return ret;
 }
 
 static int iiod_client_read_mask(struct iiod_client *client,

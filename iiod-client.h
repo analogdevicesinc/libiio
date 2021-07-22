@@ -14,6 +14,7 @@
 #define __api __iio_api
 
 struct iiod_client;
+struct iiod_client_io;
 struct iiod_client_pdata;
 
 struct iiod_client_ops {
@@ -62,12 +63,12 @@ __api ssize_t iiod_client_write_attr(struct iiod_client *client,
 				     const char *attr, const char *src,
 				     size_t len, enum iio_attr_type type);
 
-__api int iiod_client_open_unlocked(struct iiod_client *client,
-				    const struct iio_device *dev,
-				    size_t samples_count, bool cyclic);
+__api struct iiod_client_io *
+iiod_client_open_unlocked(struct iiod_client *client,
+			  const struct iio_device *dev,
+			  size_t samples_count, bool cyclic);
 
-__api int iiod_client_close_unlocked(struct iiod_client *client,
-				     const struct iio_device *dev);
+__api int iiod_client_close_unlocked(struct iiod_client_io *io);
 
 __api ssize_t iiod_client_read(struct iiod_client *client,
 			       const struct iio_device *dev,

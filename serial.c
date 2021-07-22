@@ -27,6 +27,8 @@ struct iio_context_pdata {
 
 struct iio_device_pdata {
 	bool opened;
+
+	struct iiod_client_io *client_io;
 };
 
 struct p_options {
@@ -137,9 +139,10 @@ static int serial_open(const struct iio_device *dev,
 	if (pdata->opened)
 		goto out_unlock;
 
-	ret = iiod_client_open_unlocked(ctx_pdata->iiod_client,
-					dev, samples_count, cyclic);
-
+	pdata->client_io = iiod_client_open_unlocked(ctx_pdata->iiod_client,
+						     dev, samples_count,
+						     cyclic);
+	ret = PTR_ERR_OR_ZERO(pdata->client_io);
 	pdata->opened = !ret;
 
 out_unlock:
@@ -158,7 +161,7 @@ static int serial_close(const struct iio_device *dev)
 	if (!pdata->opened)
 		goto out_unlock;
 
-	ret = iiod_client_close_unlocked(ctx_pdata->iiod_client, dev);
+	ret = iiod_client_close_unlocked(pdata->client_io);
 	pdata->opened = false;
 
 out_unlock:

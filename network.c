@@ -65,6 +65,7 @@ struct iio_context_pdata {
 struct iio_device_pdata {
 	struct iiod_client_pdata io_ctx;
 	struct iiod_client *iiod_client;
+	struct iiod_client_io *client_io;
 };
 
 static struct iio_context *
@@ -298,8 +299,10 @@ static int network_open(const struct iio_device *dev,
 	ppdata->io_ctx.cancellable = false;
 	ppdata->io_ctx.timeout_ms = timeout_ms;
 
-	ret = iiod_client_open_unlocked(client, dev, samples_count, cyclic);
-	if (ret < 0) {
+	ppdata->client_io = iiod_client_open_unlocked(client, dev,
+						      samples_count, cyclic);
+	if (IS_ERR(ppdata->client_io)) {
+		ret = PTR_ERR(ppdata->client_io);
 		dev_perror(dev, -ret, "Unable to open device");
 		goto err_close_socket;
 	}
@@ -335,7 +338,7 @@ static int network_close(const struct iio_device *dev)
 
 	if (pdata->io_ctx.fd >= 0) {
 		if (!pdata->io_ctx.cancelled)
-			ret = iiod_client_close_unlocked(client, dev);
+			ret = iiod_client_close_unlocked(pdata->client_io);
 		else
 			ret = 0;
 
