@@ -68,6 +68,11 @@ static inline __check_ret void * ERR_PTR(int err)
 	return (void *)(intptr_t) err;
 }
 
+static inline __check_ret int PTR_ERR_OR_ZERO(const void *ptr)
+{
+	return IS_ERR(ptr) ? PTR_ERR(ptr) : 0;
+}
+
 struct iio_device;
 struct iio_context;
 struct iio_channel;
