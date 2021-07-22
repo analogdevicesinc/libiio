@@ -80,16 +80,16 @@ __api int iiod_client_close_unlocked(struct iiod_client *client,
 				     struct iiod_client_pdata *desc,
 				     const struct iio_device *dev);
 
-__api ssize_t iiod_client_read_unlocked(struct iiod_client *client,
-					struct iiod_client_pdata *desc,
-					const struct iio_device *dev,
-					void *dst, size_t len,
-					uint32_t *mask, size_t words);
+__api ssize_t iiod_client_read(struct iiod_client *client,
+			       struct iiod_client_pdata *desc,
+			       const struct iio_device *dev,
+			       void *dst, size_t len,
+			       uint32_t *mask, size_t words);
 
-__api ssize_t iiod_client_write_unlocked(struct iiod_client *client,
-					 struct iiod_client_pdata *desc,
-					 const struct iio_device *dev,
-					 const void *src, size_t len);
+__api ssize_t iiod_client_write(struct iiod_client *client,
+				struct iiod_client_pdata *desc,
+				const struct iio_device *dev,
+				const void *src, size_t len);
 
 __api struct iio_context *
 iiod_client_create_context(struct iiod_client *client,

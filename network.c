@@ -355,28 +355,18 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 		uint32_t *mask, size_t words)
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
-	ssize_t ret;
 
-	iiod_client_mutex_lock(pdata->iiod_client);
-	ret = iiod_client_read_unlocked(pdata->iiod_client,
-			&pdata->io_ctx, dev, dst, len, mask, words);
-	iiod_client_mutex_unlock(pdata->iiod_client);
-
-	return ret;
+	return iiod_client_read(pdata->iiod_client, &pdata->io_ctx,
+				dev, dst, len, mask, words);
 }
 
 static ssize_t network_write(const struct iio_device *dev,
 		const void *src, size_t len)
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
-	ssize_t ret;
 
-	iiod_client_mutex_lock(pdata->iiod_client);
-	ret = iiod_client_write_unlocked(pdata->iiod_client,
-			&pdata->io_ctx, dev, src, len);
-	iiod_client_mutex_unlock(pdata->iiod_client);
-
-	return ret;
+	return iiod_client_write(pdata->iiod_client, &pdata->io_ctx,
+				 dev, src, len);
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,

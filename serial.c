@@ -171,14 +171,9 @@ static ssize_t serial_read(const struct iio_device *dev, void *dst, size_t len,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	ssize_t ret;
 
-	iiod_client_mutex_lock(pdata->iiod_client);
-	ret = iiod_client_read_unlocked(pdata->iiod_client, NULL,
-			dev, dst, len, mask, words);
-	iiod_client_mutex_unlock(pdata->iiod_client);
-
-	return ret;
+	return iiod_client_read(pdata->iiod_client, NULL,
+				dev, dst, len, mask, words);
 }
 
 static ssize_t serial_write(const struct iio_device *dev,
@@ -186,13 +181,8 @@ static ssize_t serial_write(const struct iio_device *dev,
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	ssize_t ret;
 
-	iiod_client_mutex_lock(pdata->iiod_client);
-	ret = iiod_client_write_unlocked(pdata->iiod_client, NULL, dev, src, len);
-	iiod_client_mutex_unlock(pdata->iiod_client);
-
-	return ret;
+	return iiod_client_write(pdata->iiod_client, NULL, dev, src, len);
 }
 
 static ssize_t serial_read_dev_attr(const struct iio_device *dev,
