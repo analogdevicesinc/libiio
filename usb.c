@@ -269,21 +269,20 @@ static int usb_open(const struct iio_device *dev,
 		goto err_free_ep;
 	}
 
-	client = iiod_client_new(params, ctx_pdata, &usb_iiod_client_ops);
+	client = iiod_client_new(params, ctx_pdata, &pdata->io_ctx,
+				 &usb_iiod_client_ops);
 	if (!client)
 		goto err_close_pipe;
 
 	iiod_client_mutex_lock(client);
 
-	ret = iiod_client_open_unlocked(client, &pdata->io_ctx,
-					dev, samples_count, cyclic);
+	ret = iiod_client_open_unlocked(client, dev, samples_count, cyclic);
 	if (ret)
 		goto err_unlock_client;
 
 	timeout = usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
 
-	ret = iiod_client_set_timeout(ctx_pdata->io_ctx.iiod_client,
-				      &ctx_pdata->io_ctx, timeout);
+	ret = iiod_client_set_timeout(ctx_pdata->io_ctx.iiod_client, timeout);
 	if (ret)
 		goto err_usb_close;
 
@@ -296,7 +295,7 @@ static int usb_open(const struct iio_device *dev,
 	return 0;
 
 err_usb_close:
-	iiod_client_close_unlocked(client, &pdata->io_ctx, dev);
+	iiod_client_close_unlocked(client, dev);
 err_unlock_client:
 	iiod_client_mutex_unlock(client);
 	iiod_client_destroy(client);
@@ -323,7 +322,7 @@ static int usb_close(const struct iio_device *dev)
 		goto out_unlock;
 
 	iiod_client_mutex_lock(client);
-	ret = iiod_client_close_unlocked(client, &pdata->io_ctx, dev);
+	ret = iiod_client_close_unlocked(client, dev);
 	pdata->opened = false;
 
 	iiod_client_mutex_unlock(client);
@@ -344,8 +343,7 @@ static ssize_t usb_read(const struct iio_device *dev, void *dst, size_t len,
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read(client, &pdata->io_ctx,
-				dev, dst, len, mask, words);
+	return iiod_client_read(client, dev, dst, len, mask, words);
 }
 
 static ssize_t usb_write(const struct iio_device *dev,
@@ -354,7 +352,7 @@ static ssize_t usb_write(const struct iio_device *dev,
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_write(client, &pdata->io_ctx, dev, src, len);
+	return iiod_client_write(client, dev, src, len);
 }
 
 static ssize_t usb_read_dev_attr(const struct iio_device *dev,
@@ -364,8 +362,7 @@ static ssize_t usb_read_dev_attr(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read_attr(client, &pdata->io_ctx, dev, NULL, attr,
-				     dst, len, type);
+	return iiod_client_read_attr(client, dev, NULL, attr, dst, len, type);
 }
 
 static ssize_t usb_write_dev_attr(const struct iio_device *dev,
@@ -375,8 +372,7 @@ static ssize_t usb_write_dev_attr(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_write_attr(client, &pdata->io_ctx, dev, NULL, attr,
-				      src, len, type);
+	return iiod_client_write_attr(client, dev, NULL, attr, src, len, type);
 }
 
 static ssize_t usb_read_chn_attr(const struct iio_channel *chn,
@@ -387,8 +383,7 @@ static ssize_t usb_read_chn_attr(const struct iio_channel *chn,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read_attr(client, &pdata->io_ctx, dev, chn, attr,
-				     dst, len, false);
+	return iiod_client_read_attr(client, dev, chn, attr, dst, len, false);
 }
 
 static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
@@ -399,8 +394,7 @@ static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_write_attr(client, &pdata->io_ctx, dev, chn, attr,
-				      src, len, false);
+	return iiod_client_write_attr(client, dev, chn, attr, src, len, false);
 }
 
 static int usb_set_kernel_buffers_count(const struct iio_device *dev,
@@ -410,8 +404,7 @@ static int usb_set_kernel_buffers_count(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_set_kernel_buffers_count(client, &pdata->io_ctx,
-						    dev, nb_blocks);
+	return iiod_client_set_kernel_buffers_count(client, dev, nb_blocks);
 }
 
 static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
@@ -422,7 +415,7 @@ static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 	int ret;
 
-	ret = iiod_client_set_timeout(client, &pdata->io_ctx, remote_timeout);
+	ret = iiod_client_set_timeout(client, remote_timeout);
 	if (!ret)
 		pdata->timeout_ms = timeout;
 
@@ -436,7 +429,7 @@ static int usb_get_trigger(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_get_trigger(client, &pdata->io_ctx, dev, trigger);
+	return iiod_client_get_trigger(client, dev, trigger);
 }
 
 static int usb_set_trigger(const struct iio_device *dev,
@@ -446,7 +439,7 @@ static int usb_set_trigger(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_set_trigger(client, &pdata->io_ctx, dev, trigger);
+	return iiod_client_set_trigger(client, dev, trigger);
 }
 
 
@@ -856,7 +849,7 @@ usb_create_context_with_attrs(libusb_device *usb_dev,
 		     libusb_version->micro, libusb_version->nano,
 		     libusb_version->rc);
 
-	return iiod_client_create_context(client, &pdata->io_ctx,
+	return iiod_client_create_context(client,
 					  &iio_usb_backend, description,
 					  attr_names,
 					  (const char **) attr_values,
@@ -1014,6 +1007,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	pdata->io_ctx.ctx_pdata = pdata;
 
 	pdata->io_ctx.iiod_client = iiod_client_new(params, pdata,
+						    &pdata->io_ctx,
 						    &usb_iiod_client_ops);
 	if (!pdata->io_ctx.iiod_client) {
 		prm_err(params, "Unable to allocate memory\n");
