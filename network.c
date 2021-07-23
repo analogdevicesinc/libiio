@@ -298,8 +298,7 @@ static int network_open(const struct iio_device *dev,
 	ppdata->io_ctx.cancellable = false;
 	ppdata->io_ctx.timeout_ms = timeout_ms;
 
-	ret = iiod_client_open_unlocked(client, &ppdata->io_ctx, dev,
-					samples_count, cyclic);
+	ret = iiod_client_open_unlocked(client, dev, samples_count, cyclic);
 	if (ret < 0) {
 		dev_perror(dev, -ret, "Unable to open device");
 		goto err_close_socket;
@@ -335,12 +334,10 @@ static int network_close(const struct iio_device *dev)
 	iiod_client_mutex_lock(client);
 
 	if (pdata->io_ctx.fd >= 0) {
-		if (!pdata->io_ctx.cancelled) {
-			ret = iiod_client_close_unlocked(client,
-							 &pdata->io_ctx, dev);
-		} else {
+		if (!pdata->io_ctx.cancelled)
+			ret = iiod_client_close_unlocked(client, dev);
+		else
 			ret = 0;
-		}
 
 		cleanup_cancel(&pdata->io_ctx);
 		close(pdata->io_ctx.fd);
@@ -356,8 +353,7 @@ static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 
-	return iiod_client_read(pdata->iiod_client, &pdata->io_ctx,
-				dev, dst, len, mask, words);
+	return iiod_client_read(pdata->iiod_client, dev, dst, len, mask, words);
 }
 
 static ssize_t network_write(const struct iio_device *dev,
@@ -365,8 +361,7 @@ static ssize_t network_write(const struct iio_device *dev,
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 
-	return iiod_client_write(pdata->iiod_client, &pdata->io_ctx,
-				 dev, src, len);
+	return iiod_client_write(pdata->iiod_client, dev, src, len);
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
@@ -375,8 +370,8 @@ static ssize_t network_read_dev_attr(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, NULL, attr, dst, len, type);
+	return iiod_client_read_attr(pdata->iiod_client, dev, NULL,
+				     attr, dst, len, type);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
@@ -385,8 +380,8 @@ static ssize_t network_write_dev_attr(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, NULL, attr, src, len, type);
+	return iiod_client_write_attr(pdata->iiod_client, dev, NULL,
+				      attr, src, len, type);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
@@ -396,8 +391,8 @@ static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_read_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, chn, attr, dst, len, false);
+	return iiod_client_read_attr(pdata->iiod_client, dev, chn,
+				     attr, dst, len, false);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
@@ -407,8 +402,8 @@ static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_write_attr(pdata->iiod_client,
-			&pdata->io_ctx, dev, chn, attr, src, len, false);
+	return iiod_client_write_attr(pdata->iiod_client, dev, chn,
+				      attr, src, len, false);
 }
 
 static int network_get_trigger(const struct iio_device *dev,
@@ -417,8 +412,7 @@ static int network_get_trigger(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_get_trigger(pdata->iiod_client,
-			&pdata->io_ctx, dev, trigger);
+	return iiod_client_get_trigger(pdata->iiod_client, dev, trigger);
 }
 
 static int network_set_trigger(const struct iio_device *dev,
@@ -427,8 +421,7 @@ static int network_set_trigger(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_set_trigger(pdata->iiod_client,
-			&pdata->io_ctx, dev, trigger);
+	return iiod_client_set_trigger(pdata->iiod_client, dev, trigger);
 }
 
 static void network_shutdown(struct iio_context *ctx)
@@ -473,7 +466,7 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 		unsigned int remote_timeout = calculate_remote_timeout(timeout);
 
 		ret = iiod_client_set_timeout(pdata->iiod_client,
-			&pdata->io_ctx, remote_timeout);
+					      remote_timeout);
 		if (!ret)
 			pdata->io_ctx.timeout_ms = timeout;
 	}
@@ -492,7 +485,7 @@ static int network_set_kernel_buffers_count(const struct iio_device *dev,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_set_kernel_buffers_count(pdata->iiod_client,
-			 &pdata->io_ctx, dev, nb_blocks);
+						    dev, nb_blocks);
 }
 
 static struct iio_context * network_clone(const struct iio_context *ctx)
@@ -746,7 +739,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	if (!description)
 		goto err_free_pdata;
 
-	iiod_client = iiod_client_new(params, pdata, &network_iiod_client_ops);
+	iiod_client = iiod_client_new(params, pdata, &pdata->io_ctx,
+				      &network_iiod_client_ops);
 	if (!iiod_client)
 		goto err_free_description;
 
@@ -772,7 +766,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	ctx_values[1] = uri;
 
 	prm_dbg(params, "Creating context...\n");
-	ctx = iiod_client_create_context(pdata->iiod_client, &pdata->io_ctx,
+	ctx = iiod_client_create_context(pdata->iiod_client,
 					 &iio_ip_backend, description,
 					 ctx_attrs, ctx_values,
 					 ARRAY_SIZE(ctx_values));
@@ -803,14 +797,15 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		ppdata->io_ctx.params = params;
 		ppdata->io_ctx.ctx_pdata = pdata;
 
-		ppdata->iiod_client = iiod_client_new(params, pdata, &network_iiod_client_ops);
+		ppdata->iiod_client = iiod_client_new(params, pdata, &ppdata->io_ctx,
+						      &network_iiod_client_ops);
 		if (!ppdata->iiod_client) {
 			ret = -ENOMEM;
 			goto err_network_shutdown;
 		}
 	}
 
-	iiod_client_set_timeout(pdata->iiod_client, &pdata->io_ctx,
+	iiod_client_set_timeout(pdata->iiod_client,
 			calculate_remote_timeout(params->timeout_ms));
 	return ctx;
 
