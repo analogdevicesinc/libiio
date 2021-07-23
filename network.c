@@ -545,31 +545,26 @@ const struct iio_backend iio_ip_backend = {
 };
 
 static ssize_t network_write_data(struct iio_context_pdata *pdata,
-				  struct iiod_client_pdata *io_data,
+				  struct iiod_client_pdata *io_ctx,
 				  const char *src, size_t len)
 {
-	struct iiod_client_pdata *io_ctx = io_data;
-
 	return network_send(io_ctx, src, len, 0);
 }
 
 static ssize_t network_read_data(struct iio_context_pdata *pdata,
-				 struct iiod_client_pdata *io_data,
+				 struct iiod_client_pdata *io_ctx,
 				 char *dst, size_t len)
 {
-	struct iiod_client_pdata *io_ctx = io_data;
-
 	return network_recv(io_ctx, dst, len, 0);
 }
 
 static ssize_t network_read_line(struct iio_context_pdata *pdata,
-				 struct iiod_client_pdata *io_data,
+				 struct iiod_client_pdata *io_ctx,
 				 char *dst, size_t len)
 {
 	bool found = false;
 	size_t i;
 #ifdef __linux__
-	struct iiod_client_pdata *io_ctx = io_data;
 	ssize_t ret;
 	size_t bytes_read = 0;
 
@@ -613,7 +608,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		return bytes_read;
 #else
 	for (i = 0; i < len - 1; i++) {
-		ssize_t ret = network_read_data(pdata, io_data, dst + i, 1);
+		ssize_t ret = network_read_data(pdata, io_ctx, dst + i, 1);
 
 		if (ret < 0)
 			return ret;
