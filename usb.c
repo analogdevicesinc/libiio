@@ -269,8 +269,7 @@ static int usb_open(const struct iio_device *dev,
 		goto err_free_ep;
 	}
 
-	client = iiod_client_new(params, ctx_pdata, &pdata->io_ctx,
-				 &usb_iiod_client_ops);
+	client = iiod_client_new(params, &pdata->io_ctx, &usb_iiod_client_ops);
 	if (!client)
 		goto err_close_pipe;
 
@@ -685,8 +684,7 @@ unlock:
 	return ret;
 }
 
-static ssize_t write_data_sync(struct iio_context_pdata *pdata,
-			       struct iiod_client_pdata *ep,
+static ssize_t write_data_sync(struct iiod_client_pdata *ep,
 			       const char *data, size_t len)
 {
 	int transferred, ret;
@@ -699,8 +697,7 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 		return (ssize_t) transferred;
 }
 
-static ssize_t read_data_sync(struct iio_context_pdata *pdata,
-			      struct iiod_client_pdata *ep,
+static ssize_t read_data_sync(struct iiod_client_pdata *ep,
 			      char *buf, size_t len)
 {
 	int transferred, ret;
@@ -1006,8 +1003,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	pdata->io_ctx.ctx_pdata = pdata;
 
-	pdata->io_ctx.iiod_client = iiod_client_new(params, pdata,
-						    &pdata->io_ctx,
+	pdata->io_ctx.iiod_client = iiod_client_new(params, &pdata->io_ctx,
 						    &usb_iiod_client_ops);
 	if (!pdata->io_ctx.iiod_client) {
 		prm_err(params, "Unable to allocate memory\n");

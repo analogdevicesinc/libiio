@@ -236,10 +236,10 @@ static int serial_set_kernel_buffers_count(const struct iio_device *dev,
 						    dev, nb_blocks);
 }
 
-static ssize_t serial_write_data(struct iio_context_pdata *pdata,
-				 struct iiod_client_pdata *io_data,
+static ssize_t serial_write_data(struct iiod_client_pdata *io_data,
 				 const char *data, size_t len)
 {
+	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
 	unsigned int timeout_ms = pdata->params.timeout_ms;
 	enum sp_return sp_ret;
 	ssize_t ret;
@@ -261,10 +261,10 @@ static ssize_t serial_write_data(struct iio_context_pdata *pdata,
 	return ret;
 }
 
-static ssize_t serial_read_data(struct iio_context_pdata *pdata,
-				struct iiod_client_pdata *io_data,
+static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 				char *buf, size_t len)
 {
+	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
 	unsigned int timeout_ms = pdata->params.timeout_ms;
 	enum sp_return sp_ret;
 	ssize_t ret;
@@ -283,10 +283,10 @@ static ssize_t serial_read_data(struct iio_context_pdata *pdata,
 	return ret;
 }
 
-static ssize_t serial_read_line(struct iio_context_pdata *pdata,
-				struct iiod_client_pdata *io_data,
+static ssize_t serial_read_line(struct iiod_client_pdata *io_data,
 				char *buf, size_t len)
 {
+	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
 	unsigned int timeout_ms = pdata->params.timeout_ms;
 	enum sp_return sp_ret;
 	size_t i;
@@ -463,7 +463,8 @@ static struct iio_context * serial_create_context(
 	pdata->port = port;
 	pdata->params = *params;
 
-	pdata->iiod_client = iiod_client_new(params, pdata, NULL,
+	pdata->iiod_client = iiod_client_new(params,
+					     (struct iiod_client_pdata *) pdata,
 					     &serial_iiod_client_ops);
 	if (!pdata->iiod_client)
 		goto err_free_pdata;
