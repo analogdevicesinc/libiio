@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "iio-backend.h"
 #include "iio-config.h"
 #include "iio-lock.h"
 
@@ -13,6 +14,7 @@
 #include <pthread.h>
 #endif
 
+#include <errno.h>
 #include <stdlib.h>
 
 struct iio_mutex {
@@ -29,6 +31,14 @@ struct iio_cond {
 #else
 	pthread_cond_t cond;
 #endif
+};
+
+struct iio_thrd {
+#ifndef NO_THREADS
+	pthread_t thid;
+#endif
+	void *d;
+	int (*func)(void *);
 };
 
 struct iio_mutex * iio_mutex_create(void)
@@ -100,4 +110,59 @@ void iio_cond_signal(struct iio_cond *cond)
 #ifndef NO_THREADS
 	pthread_cond_signal(&cond->cond);
 #endif
+}
+
+#ifndef NO_THREADS
+static void * iio_thrd_wrapper(void *d)
+{
+	struct iio_thrd *thrd = d;
+
+	return (void *)(intptr_t) thrd->func(thrd->d);
+}
+#endif
+
+struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
+				  void *d, const char *name)
+{
+	struct iio_thrd *iio_thrd;
+	int ret;
+
+	if (!thrd)
+		return ERR_PTR(-EINVAL);
+
+	iio_thrd = malloc(sizeof(*iio_thrd));
+	if (!iio_thrd)
+		return ERR_PTR(-ENOMEM);
+
+	iio_thrd->d = d;
+	iio_thrd->func = thrd;
+
+#ifndef NO_THREADS
+	ret = pthread_create(&iio_thrd->thid, NULL,
+			     iio_thrd_wrapper, iio_thrd);
+	if (ret) {
+		free(iio_thrd);
+		return ERR_PTR(ret);
+	}
+
+	/* TODO: Set name */
+#endif
+
+	return iio_thrd;
+}
+
+int iio_thrd_join_and_destroy(struct iio_thrd *thrd)
+{
+	void *retval = NULL;
+	int ret;
+
+#ifndef NO_THREADS
+	ret = pthread_join(thrd->thid, &retval);
+	if (ret < 0)
+		return ret;
+#endif
+
+	free(thrd);
+
+	return (int)(intptr_t) retval;
 }

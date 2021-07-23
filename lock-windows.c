@@ -6,9 +6,11 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "iio-backend.h"
 #include "iio-config.h"
 #include "iio-lock.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <windows.h>
 
@@ -18,6 +20,13 @@ struct iio_mutex {
 
 struct iio_cond {
 	CONDITION_VARIABLE cond;
+};
+
+struct iio_thrd {
+	HANDLE thid;
+
+	void *d;
+	int (*func)(void *d);
 };
 
 struct iio_mutex * iio_mutex_create(void)
@@ -73,4 +82,51 @@ void iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock)
 void iio_cond_signal(struct iio_cond *cond)
 {
 	WakeConditionVariable(&cond->cond);
+}
+
+static DWORD iio_thrd_wrapper(void *d)
+{
+	struct iio_thrd *thrd = d;
+
+	return (DWORD) thrd->func(thrd->d);
+}
+
+struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
+				  void *d, const char *name)
+{
+	struct iio_thrd *iio_thrd;
+
+	if (!thrd)
+		return ERR_PTR(-EINVAL);
+
+	iio_thrd = malloc(sizeof(*iio_thrd));
+	if (!iio_thrd)
+		return ERR_PTR(-ENOMEM);
+
+	iio_thrd->func = thrd;
+	iio_thrd->d = d;
+
+	iio_thrd->thid = CreateThread(NULL, 0,
+				      (LPTHREAD_START_ROUTINE) iio_thrd_wrapper,
+				      d, 0, NULL);
+	if (!iio_thrd->thid) {
+		free(iio_thrd);
+		return ERR_PTR(-(int) GetLastError());
+	}
+
+	/* TODO: set name */
+	//SetThreadDescription(thrd->thid, name);
+
+	return iio_thrd;
+}
+
+int iio_thrd_join_and_destroy(struct iio_thrd *thrd)
+{
+	DWORD ret = 0;
+
+	WaitForSingleObject(thrd->thid, INFINITE);
+	GetExitCodeThread(thrd->thid, &ret);
+	free(thrd);
+
+	return (int) ret;
 }
