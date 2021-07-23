@@ -589,7 +589,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 
 		/* Advance the read offset to the byte following the \n if
 		 * found, or after the last character read otherwise */
-		if (pdata->msg_trunc_supported)
+		if (io_ctx->ctx_pdata->msg_trunc_supported)
 			ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
 		else
 			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
@@ -765,6 +765,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	pdata->io_ctx.fd = fd;
 	pdata->io_ctx.params = params;
 	pdata->io_ctx.timeout_ms = params->timeout_ms;
+	pdata->io_ctx.ctx_pdata = pdata;
 
 	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
 	if (pdata->msg_trunc_supported)
@@ -810,6 +811,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		ppdata->io_ctx.fd = -1;
 		ppdata->io_ctx.timeout_ms = params->timeout_ms;
 		ppdata->io_ctx.params = params;
+		ppdata->io_ctx.ctx_pdata = pdata;
 
 		ppdata->iiod_client = iiod_client_new(params, pdata, &network_iiod_client_ops);
 		if (!ppdata->iiod_client) {
