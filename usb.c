@@ -246,6 +246,8 @@ static int usb_open(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iiod_client *client = ctx_pdata->iiod_client;
+	unsigned int timeout;
 	int ret = -EBUSY;
 
 	iio_mutex_lock(ctx_pdata->ep_lock);
@@ -253,43 +255,48 @@ static int usb_open(const struct iio_device *dev,
 	pdata->io_ctx.cancelled = false;
 
 	if (pdata->opened)
-		goto out_unlock;
+		goto err_unlock;
 
 	ret = usb_reserve_ep_unlocked(dev);
 	if (ret)
-		goto out_unlock;
+		goto err_unlock;
 
 	ret = usb_open_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
 	if (ret) {
 		dev_perror(dev, -ret, "Failed to open pipe");
-		usb_free_ep_unlocked(dev);
-		goto out_unlock;
+		goto err_free_ep;
 	}
 
 	iio_mutex_lock(pdata->lock);
 
-	ret = iiod_client_open_unlocked(ctx_pdata->iiod_client, &pdata->io_ctx,
-			dev, samples_count, cyclic);
+	ret = iiod_client_open_unlocked(client, &pdata->io_ctx,
+					dev, samples_count, cyclic);
+	if (ret)
+		goto err_close_pipe;
 
-	if (!ret) {
-		unsigned int remote_timeout =
-			usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
+	timeout = usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
 
-		ret = iiod_client_set_timeout(ctx_pdata->iiod_client,
-				&pdata->io_ctx, remote_timeout);
-	}
-
-	pdata->opened = !ret;
+	ret = iiod_client_set_timeout(client, &pdata->io_ctx, timeout);
+	if (ret)
+		goto err_usb_close;
 
 	iio_mutex_unlock(pdata->lock);
 
-	if (ret) {
-		usb_close_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
-		usb_free_ep_unlocked(dev);
-	}
-
-out_unlock:
+	pdata->opened = true;
 	iio_mutex_unlock(ctx_pdata->ep_lock);
+
+	return 0;
+
+err_usb_close:
+	iiod_client_close_unlocked(client, &pdata->io_ctx, dev);
+err_close_pipe:
+	iio_mutex_unlock(pdata->lock);
+	usb_close_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
+err_free_ep:
+	usb_free_ep_unlocked(dev);
+err_unlock:
+	iio_mutex_unlock(ctx_pdata->ep_lock);
+
 	return ret;
 }
 
