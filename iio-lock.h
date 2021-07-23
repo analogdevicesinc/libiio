@@ -15,6 +15,7 @@
 
 struct iio_mutex;
 struct iio_cond;
+struct iio_thrd;
 
 __api struct iio_mutex *iio_mutex_create(void);
 __api void iio_mutex_destroy(struct iio_mutex *lock);
@@ -27,6 +28,10 @@ __api void iio_cond_destroy(struct iio_cond *cond);
 
 __api void iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock);
 __api void iio_cond_signal(struct iio_cond *cond);
+
+__api struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
+					void *d, const char *name);
+__api int iio_thrd_join_and_destroy(struct iio_thrd *thrd);
 
 #undef __api
 
