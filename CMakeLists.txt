@@ -474,7 +474,11 @@ endif()
 
 option(NO_THREADS "Disable multi-threading support" OFF)
 if (NEED_THREADS)
-	if (NOT NO_THREADS AND NOT WIN32)
+	if (NO_THREADS)
+		target_sources(iio PRIVATE lock.c)
+	elseif (WIN32)
+		target_sources(iio PRIVATE lock-windows.c)
+	else ()
 		find_library(PTHREAD_LIBRARIES pthread)
 
 		if (NOT PTHREAD_LIBRARIES)
@@ -483,9 +487,9 @@ if (NEED_THREADS)
 		endif()
 
 		list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
-	endif()
 
-	target_sources(iio PRIVATE lock.c)
+		target_sources(iio PRIVATE lock.c)
+	endif()
 endif()
 
 if (IIOD_CLIENT)

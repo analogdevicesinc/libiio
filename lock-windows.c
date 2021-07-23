@@ -2,26 +2,22 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2015 Analog Devices, Inc.
+ * Copyright (C) 2015-2021 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
 #include "iio-config.h"
 #include "iio-lock.h"
 
-#ifndef NO_THREADS
-#include <pthread.h>
-#endif
-
 #include <stdlib.h>
+#include <windows.h>
 
 struct iio_mutex {
-#ifdef NO_THREADS
-	int foo; /* avoid complaints about empty structure */
-#else
-	pthread_mutex_t lock;
-#endif
-#endif
+	CRITICAL_SECTION lock;
+};
+
+struct iio_cond {
+	CONDITION_VARIABLE cond;
 };
 
 struct iio_mutex * iio_mutex_create(void)
@@ -31,30 +27,23 @@ struct iio_mutex * iio_mutex_create(void)
 	if (!lock)
 		return NULL;
 
-#ifndef NO_THREADS
-	pthread_mutex_init(&lock->lock, NULL);
-#endif
+	InitializeCriticalSection(&lock->lock);
+
 	return lock;
 }
 
 void iio_mutex_destroy(struct iio_mutex *lock)
 {
-#ifndef NO_THREADS
-	pthread_mutex_destroy(&lock->lock);
-#endif
+	DeleteCriticalSection(&lock->lock);
 	free(lock);
 }
 
 void iio_mutex_lock(struct iio_mutex *lock)
 {
-#ifndef NO_THREADS
-	pthread_mutex_lock(&lock->lock);
-#endif
+	EnterCriticalSection(&lock->lock);
 }
 
 void iio_mutex_unlock(struct iio_mutex *lock)
 {
-#ifndef NO_THREADS
-	pthread_mutex_unlock(&lock->lock);
-#endif
+	LeaveCriticalSection(&lock->lock);
 }
