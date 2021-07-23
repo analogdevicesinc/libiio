@@ -47,3 +47,30 @@ void iio_mutex_unlock(struct iio_mutex *lock)
 {
 	LeaveCriticalSection(&lock->lock);
 }
+
+struct iio_cond * iio_cond_create(void)
+{
+	struct iio_cond *cond = malloc(sizeof(*cond));
+
+	if (!cond)
+		return NULL;
+
+	InitializeConditionVariable(&cond->cond);
+
+	return cond;
+}
+
+void iio_cond_destroy(struct iio_cond *cond)
+{
+	free(cond);
+}
+
+void iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock)
+{
+	SleepConditionVariableCS(&cond->cond, &lock->lock, INFINITE);
+}
+
+void iio_cond_signal(struct iio_cond *cond)
+{
+	WakeConditionVariable(&cond->cond);
+}
