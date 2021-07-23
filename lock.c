@@ -21,6 +21,13 @@ struct iio_mutex {
 #else
 	pthread_mutex_t lock;
 #endif
+};
+
+struct iio_cond {
+#ifdef NO_THREADS
+	int foo; /* avoid complaints about empty structure */
+#else
+	pthread_cond_t cond;
 #endif
 };
 
@@ -56,5 +63,41 @@ void iio_mutex_unlock(struct iio_mutex *lock)
 {
 #ifndef NO_THREADS
 	pthread_mutex_unlock(&lock->lock);
+#endif
+}
+
+struct iio_cond * iio_cond_create(void)
+{
+	struct iio_cond *cond = malloc(sizeof(*cond));
+
+	if (!cond)
+		return NULL;
+
+#ifndef NO_THREADS
+	pthread_cond_init(&cond->cond, NULL);
+#endif
+
+	return cond;
+}
+
+void iio_cond_destroy(struct iio_cond *cond)
+{
+#ifndef NO_THREADS
+	pthread_cond_destroy(&cond->cond);
+#endif
+	free(cond);
+}
+
+void iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock)
+{
+#ifndef NO_THREADS
+	pthread_cond_wait(&cond->cond, &lock->lock);
+#endif
+}
+
+void iio_cond_signal(struct iio_cond *cond)
+{
+#ifndef NO_THREADS
+	pthread_cond_signal(&cond->cond);
 #endif
 }
