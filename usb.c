@@ -38,6 +38,8 @@ struct iiod_client_pdata {
 	struct iio_mutex *lock;
 	bool cancelled;
 	struct libusb_transfer *transfer;
+
+	struct iio_context_pdata *ctx_pdata;
 };
 
 struct iio_context_pdata {
@@ -707,8 +709,8 @@ static ssize_t write_data_sync(struct iio_context_pdata *pdata,
 {
 	int transferred, ret;
 
-	ret = usb_sync_transfer(pdata, ep, LIBUSB_ENDPOINT_OUT, (char *) data,
-			len, &transferred);
+	ret = usb_sync_transfer(ep->ctx_pdata, ep, LIBUSB_ENDPOINT_OUT,
+				(char *) data, len, &transferred);
 	if (ret)
 		return ret;
 	else
@@ -721,8 +723,8 @@ static ssize_t read_data_sync(struct iio_context_pdata *pdata,
 {
 	int transferred, ret;
 
-	ret = usb_sync_transfer(pdata, ep, LIBUSB_ENDPOINT_IN, buf, len,
-			&transferred);
+	ret = usb_sync_transfer(ep->ctx_pdata, ep, LIBUSB_ENDPOINT_IN,
+				buf, len, &transferred);
 	if (ret)
 		return ret;
 	else
@@ -1020,6 +1022,8 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	pdata->io_ctx.ep = &pdata->io_endpoints[0];
 	pdata->io_ctx.ep->in_use = true;
 
+	pdata->io_ctx.ctx_pdata = pdata;
+
 	pdata->io_ctx.iiod_client = iiod_client_new(params, pdata,
 						    &usb_iiod_client_ops);
 	if (!pdata->io_ctx.iiod_client) {
@@ -1066,6 +1070,8 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 		ret = usb_io_context_init(&ppdata->io_ctx);
 		if (ret)
 			goto err_context_destroy;
+
+		ppdata->io_ctx.ctx_pdata = pdata;
 	}
 
 	return ctx;
