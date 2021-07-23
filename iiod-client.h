@@ -17,14 +17,11 @@ struct iiod_client;
 struct iiod_client_pdata;
 
 struct iiod_client_ops {
-	ssize_t (*write)(struct iio_context_pdata *pdata,
-			 struct iiod_client_pdata *desc,
+	ssize_t (*write)(struct iiod_client_pdata *desc,
 			 const char *src, size_t len);
-	ssize_t (*read)(struct iio_context_pdata *pdata,
-			struct iiod_client_pdata *desc,
+	ssize_t (*read)(struct iiod_client_pdata *desc,
 			char *dst, size_t len);
-	ssize_t (*read_line)(struct iio_context_pdata *pdata,
-			     struct iiod_client_pdata *desc,
+	ssize_t (*read_line)(struct iiod_client_pdata *desc,
 			     char *dst, size_t len);
 };
 
@@ -33,7 +30,6 @@ __api void iiod_client_mutex_unlock(struct iiod_client *client);
 
 __api struct iiod_client *
 iiod_client_new(const struct iio_context_params *params,
-		struct iio_context_pdata *pdata,
 		struct iiod_client_pdata *desc,
 		const struct iiod_client_ops *ops);
 

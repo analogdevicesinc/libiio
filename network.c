@@ -527,22 +527,19 @@ const struct iio_backend iio_ip_backend = {
 	.default_timeout_ms = 5000,
 };
 
-static ssize_t network_write_data(struct iio_context_pdata *pdata,
-				  struct iiod_client_pdata *io_ctx,
+static ssize_t network_write_data(struct iiod_client_pdata *io_ctx,
 				  const char *src, size_t len)
 {
 	return network_send(io_ctx, src, len, 0);
 }
 
-static ssize_t network_read_data(struct iio_context_pdata *pdata,
-				 struct iiod_client_pdata *io_ctx,
+static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
 				 char *dst, size_t len)
 {
 	return network_recv(io_ctx, dst, len, 0);
 }
 
-static ssize_t network_read_line(struct iio_context_pdata *pdata,
-				 struct iiod_client_pdata *io_ctx,
+static ssize_t network_read_line(struct iiod_client_pdata *io_ctx,
 				 char *dst, size_t len)
 {
 	bool found = false;
@@ -591,7 +588,7 @@ static ssize_t network_read_line(struct iio_context_pdata *pdata,
 		return bytes_read;
 #else
 	for (i = 0; i < len - 1; i++) {
-		ssize_t ret = network_read_data(pdata, io_ctx, dst + i, 1);
+		ssize_t ret = network_read_data(io_ctx, dst + i, 1);
 
 		if (ret < 0)
 			return ret;
@@ -739,7 +736,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	if (!description)
 		goto err_free_pdata;
 
-	iiod_client = iiod_client_new(params, pdata, &pdata->io_ctx,
+	iiod_client = iiod_client_new(params, &pdata->io_ctx,
 				      &network_iiod_client_ops);
 	if (!iiod_client)
 		goto err_free_description;
@@ -797,7 +794,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		ppdata->io_ctx.params = params;
 		ppdata->io_ctx.ctx_pdata = pdata;
 
-		ppdata->iiod_client = iiod_client_new(params, pdata, &ppdata->io_ctx,
+		ppdata->iiod_client = iiod_client_new(params, &ppdata->io_ctx,
 						      &network_iiod_client_ops);
 		if (!ppdata->iiod_client) {
 			ret = -ENOMEM;
