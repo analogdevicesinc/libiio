@@ -906,7 +906,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	if (ret < 0) {
 		ret = -(int) libusb_to_errno(ret);
 		prm_perror(params, -ret, "Unable to get usb device list");
-		goto err_destroy_iiod_client;
+		goto err_libusb_exit;
 	}
 
 	usb_dev = NULL;

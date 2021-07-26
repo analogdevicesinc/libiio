@@ -473,8 +473,8 @@ elseif(NEED_LIBXML2)
 endif()
 
 option(NO_THREADS "Disable multi-threading support" OFF)
-if (NEED_THREADS AND NOT NO_THREADS)
-	if (NOT WIN32)
+if (NEED_THREADS)
+	if (NOT NO_THREADS AND NOT WIN32)
 		find_library(PTHREAD_LIBRARIES pthread)
 
 		if (NOT PTHREAD_LIBRARIES)

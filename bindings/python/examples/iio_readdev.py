@@ -214,6 +214,7 @@ class DataReader:
         """
         buffer_builder = BufferBuilder(ctx, arguments)
         self.buffer = buffer_builder.create()
+        self.device = buffer_builder.dev
         self.arguments = arguments
 
     def read(self):
@@ -224,7 +225,7 @@ class DataReader:
 
             if self.arguments.num_samples > 0:
                 sys.stdout.buffer.write(
-                    samples[: min(self.arguments.num_samples, len(samples))]
+                    samples[: min(self.arguments.num_samples * self.device.sample_size, len(samples))]
                 )
                 self.arguments.num_samples -= min(
                     self.arguments.num_samples, len(samples)

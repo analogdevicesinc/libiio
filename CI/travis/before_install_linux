@@ -26,23 +26,43 @@ handle_centos() {
 
 	# FIXME: see about adding `libserialport-dev` from EPEL ; maybe libusb-1.0.0-devel...
 	yum -y groupinstall 'Development Tools'
-	yum -y install cmake libxml2-devel libusb1-devel libaio-devel \
-		bzip2 gzip rpm rpm-build libzstd-devel
 
 	if [ "$(get_version | head -c 1)" = "7" ] ; then
-		# install Cmake3, and make it the default
-		yum -y install cmake3
-		alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake 10 \
-			--slave /usr/local/bin/ctest ctest /usr/bin/ctest \
-			--slave /usr/local/bin/cpack cpack /usr/bin/cpack \
-			--slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake \
-			--family cmake
-		alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
-			--slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
-			--slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
-			--slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
-			--family cmake
-	fi
+                yum -y install cmake libxml2-devel libusb1-devel libaio-devel \
+                bzip2 gzip rpm rpm-build libzstd-devel
+
+                # install Cmake3, and make it the default
+                yum -y install cmake3
+                alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake 10 \
+                        --slave /usr/local/bin/ctest ctest /usr/bin/ctest \
+                        --slave /usr/local/bin/cpack cpack /usr/bin/cpack \
+                        --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake \
+                        --family cmake
+                alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
+                        --slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
+                        --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
+                        --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
+                        --family cmake
+        fi
+
+	if [ "$(get_version | head -c 1)" = "8" ] ; then
+		yum -y install wget
+		wget https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2.tar.gz
+		tar -zxvf cmake-3.15.2.tar.gz
+		cd cmake-3.15.2
+		./bootstrap
+		make
+		make install
+		cd ..
+		yum -y install epel-release
+		yum -y install libzstd
+
+		yum -y install dnf
+		dnf -y --enablerepo=powertools install doxygen
+
+		yum -y install libxml2-devel libusb1-devel libaio-devel \
+			bzip2 gzip rpm rpm-build libzstd-devel
+	fi	
 
 	if is_centos_at_least_ver "8" ; then
 		# On CentOS 8, avahi-devel & doxygen are in this repo; enable it
