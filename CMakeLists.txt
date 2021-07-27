@@ -365,7 +365,7 @@ if (WITH_SERIAL_BACKEND)
 	endif()
 endif()
 
-option(WITH_ZSTD "Support for ZSTD compressed metadata" OFF)
+option(WITH_ZSTD "Support for ZSTD compressed metadata" ON)
 if (WITH_ZSTD)
 	find_library(LIBZSTD_LIBRARIES zstd)
 	find_path(LIBZSTD_INCLUDE_DIR zstd.h)
@@ -527,6 +527,11 @@ if (WITH_IIOD)
 	endif()
 
 	add_subdirectory(iiod)
+endif()
+
+if ((WITH_IIOD OR IIOD_CLIENT) AND NOT WITH_ZSTD)
+	message(WARNING "IIOD async. API requires ZSTD support, consider enabling it.\n"
+		"If you want to enable libzstd support, set WITH_ZSTD=ON.")
 endif()
 
 if (WIN32)
