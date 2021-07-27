@@ -36,6 +36,8 @@ iiod_client_new(const struct iio_context_params *params,
 
 __api void iiod_client_destroy(struct iiod_client *client);
 
+__api bool iiod_client_uses_binary_interface(const struct iiod_client *client);
+
 __api int iiod_client_get_trigger(struct iiod_client *client,
 				  const struct iio_device *dev,
 				  const struct iio_device **trigger);
@@ -88,6 +90,30 @@ iiod_client_create_context(struct iiod_client *client,
 			   const char **ctx_attrs,
 			   const char **ctx_values,
 			   unsigned int nb_ctx_attrs);
+
+__api struct iiod_client_buffer_pdata *
+iiod_client_create_buffer(struct iiod_client *client,
+			  const struct iio_device *dev, unsigned int idx,
+			  struct iio_channels_mask *mask);
+__api void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata);
+__api int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
+				    size_t nb_samples, bool enable);
+
+__api struct iio_block_pdata *
+iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
+			 size_t size, void **data);
+__api void iiod_client_free_block(struct iio_block_pdata *block);
+
+__api int iiod_client_enqueue_block(struct iio_block_pdata *block,
+				    size_t bytes_used, bool cyclic);
+
+__api int iiod_client_dequeue_block(struct iio_block_pdata *block,
+				    bool nonblock);
+
+__api ssize_t iiod_client_readbuf(struct iiod_client_buffer_pdata *pdata,
+				  void *dst, size_t len);
+__api ssize_t iiod_client_writebuf(struct iiod_client_buffer_pdata *pdata,
+				   const void *src, size_t len);
 
 #undef __api
 
