@@ -80,6 +80,7 @@ ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size);
 %token CYCLIC
 %token SET
 %token BUFFERS_COUNT
+%token BINARY
 
 %token <word> WORD
 %token <dev> DEVICE
@@ -93,6 +94,11 @@ ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size);
 
 Line:
 	END {
+		YYACCEPT;
+	}
+	| BINARY END {
+		struct parser_pdata *pdata = yyget_extra(scanner);
+		enable_binary(pdata);
 		YYACCEPT;
 	}
 	| EXIT END {
@@ -110,6 +116,8 @@ Line:
 		"\t\tGet a compressed XML string corresponding to the current IIO context\n"
 		"\tVERSION\n"
 		"\t\tGet the version of libiio in use\n"
+		"\tBINARY\n"
+		"\t\tEnable binary protocol\n"
 		"\tTIMEOUT <timeout_ms>\n"
 		"\t\tSet the timeout (in ms) for I/O operations\n"
 		"\tOPEN <device> <samples_count> <mask> [CYCLIC]\n"

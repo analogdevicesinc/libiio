@@ -45,6 +45,8 @@
 #define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
 		& BIT_MASK(bit)))
 
+struct iio_task;
+struct iiod_io;
 struct thread_pool;
 extern struct thread_pool *main_thread_pool;
 
@@ -54,12 +56,34 @@ enum iio_attr_type {
 	IIO_ATTR_TYPE_BUFFER,
 };
 
+struct block_entry {
+	SLIST_ENTRY(block_entry) entry;
+	struct iio_block *block;
+	struct iiod_io *io;
+	uint64_t bytes_used;
+	uint16_t client_id;
+	bool cyclic;
+};
+
+struct buffer_entry {
+	SLIST_ENTRY(buffer_entry) entry;
+	struct iio_device *dev;
+	struct iio_buffer *buf;
+	struct iio_task *enqueue_task, *dequeue_task;
+	uint32_t *words;
+	uint16_t idx;
+};
+
 struct parser_pdata {
 	struct iio_context *ctx;
-	bool stop, verbose;
+	bool stop, binary, verbose;
 	int fd_in, fd_out;
+	int resp_fd[2];
 
 	SLIST_HEAD(ParserDataThdHead, ThdEntry) thdlist_head;
+
+	SLIST_HEAD(BufferList, buffer_entry) bufferlist;
+	SLIST_HEAD(BlockList, block_entry) blocklist;
 
 	/* Used as temporaries placements by the lexer */
 	struct iio_device *dev;
@@ -73,6 +97,7 @@ struct parser_pdata {
 	pthread_mutex_t aio_mutex;
 #endif
 	struct thread_pool *pool;
+	struct iiod_io *io;
 
 	const void *xml_zstd;
 	size_t xml_zstd_len;
@@ -100,6 +125,10 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 			bool debug, struct thread_pool *pool,
 			const void *xml_zstd, size_t xml_zstd_len);
 
+int binary_parse(struct parser_pdata *pdata);
+
+void enable_binary(struct parser_pdata *pdata);
+
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 		size_t samples_count, const char *mask, bool cyclic);
 int close_dev(struct parser_pdata *pdata, struct iio_device *dev);
@@ -126,6 +155,7 @@ int set_buffers_count(struct parser_pdata *pdata,
 		struct iio_device *dev, long value);
 
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
+ssize_t read_all(struct parser_pdata *pdata, void *dst, size_t len);
 ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len);
 
 static __inline__ void output(struct parser_pdata *pdata, const char *text)

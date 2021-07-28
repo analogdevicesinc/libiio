@@ -44,6 +44,10 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	return HELP;
 }
 
+<INITIAL>BINARY|binary {
+	return BINARY;
+}
+
 <INITIAL>TIMEOUT|timeout {
 	return TIMEOUT;
 }
