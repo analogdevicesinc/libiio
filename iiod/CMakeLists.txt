@@ -20,13 +20,18 @@ set(CMAKE_C_FLAGS "${TMP_FLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_DEFINITIONS)
 
-add_executable(iiod iiod.c ops.c thread-pool.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
+add_executable(iiod
+	iiod.c ops.c responder.c thread-pool.c
+	${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS}
+)
 set_target_properties(iiod PROPERTIES
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
 )
-target_link_libraries(iiod LINK_PRIVATE iio ${PTHREAD_LIBRARIES} ${AVAHI_COMMON_LIBRARIES} ${AVAHI_CLIENT_LIBRARIES})
+target_link_libraries(iiod LINK_PRIVATE iio iiod-responder
+	${PTHREAD_LIBRARIES} ${AVAHI_COMMON_LIBRARIES} ${AVAHI_CLIENT_LIBRARIES}
+)
 target_include_directories(iiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(iiod PRIVATE _GNU_SOURCE)
 

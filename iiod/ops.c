@@ -346,8 +346,7 @@ ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len)
 	return ptr - (uintptr_t) src;
 }
 
-static ssize_t read_all(struct parser_pdata *pdata,
-		void *dst, size_t len)
+ssize_t read_all(struct parser_pdata *pdata, void *dst, size_t len)
 {
 	uintptr_t ptr = (uintptr_t) dst;
 
@@ -1573,13 +1572,12 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		 struct thread_pool *pool, const void *xml_zstd,
 		 size_t xml_zstd_len)
 {
+	struct parser_pdata pdata = { 0 };
 	yyscan_t scanner;
-	struct parser_pdata pdata;
 	unsigned int i;
 	int ret;
 
 	pdata.ctx = ctx;
-	pdata.stop = false;
 	pdata.fd_in = fd_in;
 	pdata.fd_out = fd_out;
 	pdata.verbose = verbose;
@@ -1630,9 +1628,12 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		if (verbose)
 			output(&pdata, "iio-daemon > ");
 		ret = yyparse(scanner);
-	} while (!pdata.stop && ret >= 0);
+	} while (!pdata.stop && !pdata.binary && ret >= 0);
 
 	yylex_destroy(scanner);
+
+	if (pdata.binary)
+		binary_parse(&pdata);
 
 	/* Close all opened devices */
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++)
@@ -1644,4 +1645,11 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		close(pdata.aio_eventfd);
 	}
 #endif
+}
+
+void enable_binary(struct parser_pdata *pdata)
+{
+	pdata->binary = true;
+
+	print_value(pdata, 0);
 }
