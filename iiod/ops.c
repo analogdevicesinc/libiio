@@ -1363,6 +1363,8 @@ int set_timeout(struct parser_pdata *pdata, unsigned int timeout)
 int set_buffers_count(struct parser_pdata *pdata,
 		struct iio_device *dev, long value)
 {
+	unsigned int i, nb = (unsigned int) value;
+	struct timespec wait;
 	int ret = -EINVAL;
 
 	if (!dev) {
@@ -1370,9 +1372,24 @@ int set_buffers_count(struct parser_pdata *pdata,
 		goto err_print_value;
 	}
 
-	if (value >= 1)
-		ret = iio_device_set_kernel_buffers_count(
-				dev, (unsigned int) value);
+	if (nb >= 1) {
+		/*
+		 * Avoid the same race condition described in open_dev_helper().
+		 * We must be sure that the buffer has not been enabled in order
+		 * to set the number of kernel buffers.
+		 */
+		for (i = 0; i < 500; i++) {
+			ret = iio_device_set_kernel_buffers_count(dev, nb);
+			if (ret != -EBUSY)
+				break;
+
+			wait.tv_sec = 0;
+			wait.tv_nsec = (100 * 1000);
+			do {
+				ret = nanosleep(&wait, &wait);
+			} while (ret == -1 && errno == EINTR);
+		}
+	}
 err_print_value:
 	print_value(pdata, ret);
 	return ret;
