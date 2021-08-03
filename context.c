@@ -392,6 +392,30 @@ int iio_context_get_version(const struct iio_context *ctx,
 	return 0;
 }
 
+unsigned int iio_context_get_version_major(const struct iio_context *ctx)
+{
+	if (ctx && ctx->git_tag)
+		return ctx->major;
+
+	return LIBIIO_VERSION_MAJOR;
+}
+
+unsigned int iio_context_get_version_minor(const struct iio_context *ctx)
+{
+	if (ctx && ctx->git_tag)
+		return ctx->minor;
+
+	return LIBIIO_VERSION_MINOR;
+}
+
+const char * iio_context_get_version_tag(const struct iio_context *ctx)
+{
+	if (ctx && ctx->git_tag)
+		return ctx->git_tag;
+
+	return LIBIIO_VERSION_GIT;
+}
+
 int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	if (ctx->ops->set_timeout)

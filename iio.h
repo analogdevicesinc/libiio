@@ -428,6 +428,33 @@ __api __check_ret int iio_context_get_version(const struct iio_context *ctx,
 		unsigned int *major, unsigned int *minor, char git_tag[8]);
 
 
+/** @brief Get the major number of the library version
+ * @param ctx Optional pointer to an iio_context structure
+ * @return The major number
+ *
+ * NOTE: If ctx is non-null, it will return the major version of the remote
+ * library, if running remotely. */
+__api __pure unsigned int iio_context_get_version_major(const struct iio_context *ctx);
+
+
+/** @brief Get the minor number of the library version
+ * @param ctx Optional pointer to an iio_context structure
+ * @return The minor number
+ *
+ * NOTE: If ctx is non-null, it will return the minor version of the remote
+ * library, if running remotely. */
+__api __pure unsigned int iio_context_get_version_minor(const struct iio_context *ctx);
+
+
+/** @brief Get the git hash string of the library version
+ * @param ctx Optional pointer to an iio_context structure
+ * @return A NULL-terminated string that contains the git tag or hash
+ *
+ * NOTE: If ctx is non-null, it will return the git tag or hash of the remote
+ * library, if running remotely. */
+__api __pure const char * iio_context_get_version_tag(const struct iio_context *ctx);
+
+
 /** @brief Obtain a XML representation of the given context
  * @param ctx A pointer to an iio_context structure
  * @return A pointer to a static NULL-terminated string */
