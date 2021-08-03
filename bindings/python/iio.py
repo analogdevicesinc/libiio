@@ -283,22 +283,17 @@ _get_xml = _lib.iio_context_get_xml
 _get_xml.restype = c_char_p
 _get_xml.argtypes = (_ContextPtr,)
 
-_get_library_version = _lib.iio_library_get_version
-_get_library_version.argtypes = (
-    _POINTER(c_uint),
-    _POINTER(c_uint),
-    c_char_p,
-)
+_get_version_major = _lib.iio_context_get_version_major
+_get_version_major.restype = c_uint
+_get_version_major.argtypes = (_ContextPtr,)
 
-_get_version = _lib.iio_context_get_version
-_get_version.restype = c_int
-_get_version.argtypes = (
-    _ContextPtr,
-    _POINTER(c_uint),
-    _POINTER(c_uint),
-    c_char_p,
-)
-_get_version.errcheck = _check_negative
+_get_version_minor = _lib.iio_context_get_version_minor
+_get_version_minor.restype = c_uint
+_get_version_minor.argtypes = (_ContextPtr,)
+
+_get_version_tag = _lib.iio_context_get_version_tag
+_get_version_tag.restype = c_char_p
+_get_version_tag.argtypes = (_ContextPtr,)
 
 _get_attrs_count = _lib.iio_context_get_attrs_count
 _get_attrs_count.restype = c_uint
@@ -629,12 +624,9 @@ _buffer_set_blocking_mode.argtypes = (_BufferPtr, c_bool)
 # pylint: enable=invalid-name
 
 
-def _get_lib_version():
-    major = c_uint()
-    minor = c_uint()
-    buf = create_string_buffer(8)
-    _get_library_version(_byref(major), _byref(minor), buf)
-    return (major.value, minor.value, buf.value.decode("ascii"))
+def _get_lib_version(ctx = None):
+    return (_get_version_major(ctx), _get_version_minor(ctx),
+            _get_version_tag(ctx).decode("ascii"))
 
 
 def _has_backend(backend):
@@ -1355,12 +1347,7 @@ class Context(object):
         self._name = _get_name(self._context).decode("ascii")
         self._description = _get_description(self._context).decode("ascii")
         self._xml = _get_xml(self._context).decode("ascii")
-
-        major = c_uint()
-        minor = c_uint()
-        buf = create_string_buffer(8)
-        _get_version(self._context, _byref(major), _byref(minor), buf)
-        self._version = (major.value, minor.value, buf.value.decode("ascii"))
+        self._version = _get_lib_version(self._context)
 
     def __del__(self):
         """Destroy this context."""
