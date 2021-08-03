@@ -210,3 +210,25 @@ const char * iio_context_info_get_uri(const struct iio_context_info *info)
 {
 	return info->uri;
 }
+
+int iio_context_get_version(const struct iio_context *ctx,
+			    unsigned int *major, unsigned int *minor,
+			    char git_tag[8])
+{
+	const char *tag = iio_context_get_version_tag(ctx);
+
+	if (git_tag)
+		iio_strlcpy(git_tag, tag, 8);
+	if (major)
+		*major = iio_context_get_version_major(ctx);
+	if (minor)
+		*minor = iio_context_get_version_minor(ctx);
+
+	return 0;
+}
+
+void iio_library_get_version(unsigned int *major, unsigned int *minor,
+			     char git_tag[8])
+{
+	iio_context_get_version(NULL, major, minor, git_tag);
+}

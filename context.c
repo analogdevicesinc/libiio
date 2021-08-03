@@ -115,17 +115,15 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 					const struct iio_context *ctx)
 {
 	ssize_t ret, alen = 0;
-	unsigned int i, major, minor;
-	char git_tag[64];
-
-	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
-	if (ret < 0)
-		return ret;
+	unsigned int i;
 
 	ret = iio_snprintf(ptr, len,
 			   "%s<context name=\"%s\" version-major=\"%u\" "
 			   "version-minor=\"%u\" version-git=\"%s\" ",
-			   xml_header, ctx->name, major, minor, git_tag);
+			   xml_header, ctx->name,
+			   iio_context_get_version_major(ctx),
+			   iio_context_get_version_minor(ctx),
+			   iio_context_get_version_tag(ctx));
 	if (ret < 0)
 		return ret;
 
@@ -371,24 +369,6 @@ int iio_context_init(struct iio_context *ctx)
 			return PTR_ERR(ctx->xml);
 	}
 
-	return 0;
-}
-
-int iio_context_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor, char git_tag[8])
-{
-	if (ctx->git_tag) {
-		if (major)
-			*major = ctx->major;
-		if (minor)
-			*minor = ctx->minor;
-		if (git_tag)
-			iio_strlcpy(git_tag, ctx->git_tag, 8);
-
-		return 0;
-	}
-
-	iio_library_get_version(major, minor, git_tag);
 	return 0;
 }
 

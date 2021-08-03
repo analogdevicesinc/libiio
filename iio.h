@@ -301,14 +301,6 @@ iio_scan_get_uri(const struct iio_scan *ctx, size_t idx);
  * @{ */
 
 
-/** @brief Get the version of the libiio library
- * @param major A pointer to an unsigned integer (NULL accepted)
- * @param minor A pointer to an unsigned integer (NULL accepted)
- * @param git_tag A pointer to a 8-characters buffer (NULL accepted) */
-__api void iio_library_get_version(unsigned int *major,
-		unsigned int *minor, char git_tag[8]);
-
-
 /** @brief Get a string description of an error code
  * @param err The error code
  * @param dst A pointer to the memory area where the NULL-terminated string
@@ -415,17 +407,6 @@ __api __check_ret struct iio_context * iio_context_clone(const struct iio_contex
  *
  * <b>NOTE:</b> After that function, the iio_context pointer shall be invalid. */
 __api void iio_context_destroy(struct iio_context *ctx);
-
-
-/** @brief Get the version of the backend in use
- * @param ctx A pointer to an iio_context structure
- * @param major A pointer to an unsigned integer (NULL accepted)
- * @param minor A pointer to an unsigned integer (NULL accepted)
- * @param git_tag A pointer to a 8-characters buffer (NULL accepted)
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-__api __check_ret int iio_context_get_version(const struct iio_context *ctx,
-		unsigned int *major, unsigned int *minor, char git_tag[8]);
 
 
 /** @brief Get the major number of the library version
