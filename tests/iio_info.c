@@ -65,16 +65,16 @@ int main(int argc, char **argv)
 {
 	char **argw;
 	struct iio_context *ctx;
-	int c;
-	unsigned int i, major, minor;
-	char git_tag[8];
-	int ret;
+	unsigned int i;
+	int ret, c;
 	struct option *opts;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	iio_library_get_version(&major, &minor, git_tag);
-	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
+	printf("Library version: %u.%u (git tag: %s)\n",
+	       iio_context_get_version_major(NULL),
+	       iio_context_get_version_minor(NULL),
+	       iio_context_get_version_tag(NULL));
 
 	printf("Compiled with backends:");
 	for (i = 0; i < iio_get_backends_count(); i++)
@@ -125,15 +125,10 @@ int main(int argc, char **argv)
 	printf("IIO context created with %s backend.\n",
 			iio_context_get_name(ctx));
 
-	ret = iio_context_get_version(ctx, &major, &minor, git_tag);
-	if (!ret)
-		printf("Backend version: %u.%u (git tag: %s)\n",
-				major, minor, git_tag);
-	else {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str));
-		fprintf(stderr, "Unable to get backend version: %s\n", err_str);
-	}
+	printf("Backend version: %u.%u (git tag: %s)\n",
+	       iio_context_get_version_major(ctx),
+	       iio_context_get_version_minor(ctx),
+	       iio_context_get_version_tag(ctx));
 
 	printf("Backend description string: %s\n",
 			iio_context_get_description(ctx));
