@@ -195,6 +195,27 @@ __api struct iio_context_info *
 iio_scan_block_get_info(struct iio_scan_block *blk, unsigned int index);
 
 
+/** @brief Get the version of the libiio library
+ * @param major A pointer to an unsigned integer (NULL accepted)
+ * @param minor A pointer to an unsigned integer (NULL accepted)
+ * @param git_tag A pointer to a 8-characters buffer (NULL accepted) */
+__api void iio_library_get_version(unsigned int *major,
+		unsigned int *minor, char git_tag[8]);
+
+
+/** @brief Get the version of the backend in use
+ * @param ctx A pointer to an iio_context structure
+ * @param major A pointer to an unsigned integer (NULL accepted)
+ * @param minor A pointer to an unsigned integer (NULL accepted)
+ * @param git_tag A pointer to a 8-characters buffer (NULL accepted)
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api __check_ret int iio_context_get_version(const struct iio_context *ctx,
+					      unsigned int *major,
+					      unsigned int *minor,
+					      char git_tag[8]);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 
 #undef __api

@@ -183,18 +183,6 @@ int write_double(char *buf, size_t len, double val)
 #endif
 }
 
-void iio_library_get_version(unsigned int *major,
-		unsigned int *minor, char git_tag[8])
-{
-	if (major)
-		*major = LIBIIO_VERSION_MAJOR;
-	if (minor)
-		*minor = LIBIIO_VERSION_MINOR;
-	if (git_tag) {
-		iio_strlcpy(git_tag, LIBIIO_VERSION_GIT, 8);
-	}
-}
-
 void iio_strerror(int err, char *buf, size_t len)
 {
 #if defined(_WIN32)
