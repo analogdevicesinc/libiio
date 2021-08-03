@@ -229,10 +229,12 @@ int main (int argc, char **argv)
 	// Listen to ctrl+c and assert
 	signal(SIGINT, handle_sig);
 
-	unsigned int i, j, major, minor;
-	char git_tag[8];
-	iio_library_get_version(&major, &minor, git_tag);
-	printf("Library version: %u.%u (git tag: %s)\n", major, minor, git_tag);
+	unsigned int i, j,
+		     major = iio_context_get_version_major(NULL),
+		     minor = iio_context_get_version_minor(NULL);
+
+	printf("Library version: %u.%u (git tag: %s)\n", major, minor,
+	       iio_context_get_version_tag(NULL));
 
 	/* check for struct iio_data_format.repeat support
 	 * 0.8 has repeat support, so anything greater than that */
