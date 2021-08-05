@@ -402,7 +402,7 @@ endif()
 
 option(NO_THREADS "Disable multi-threading support" OFF)
 if (NEED_THREADS)
-	if (NOT NO_THREADS AND NOT WIN32)
+	if (NOT NO_THREADS AND NOT WIN32 AND NOT ANDROID)
 		find_library(PTHREAD_LIBRARIES pthread)
 
 		if (NOT PTHREAD_LIBRARIES)
