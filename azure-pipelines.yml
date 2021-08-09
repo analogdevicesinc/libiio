@@ -1,8 +1,13 @@
 trigger:
-- main
-- master
-- staging/*
-- 20*
+  branches:
+    include:
+    - main
+    - master
+    - staging/*
+    - 20*
+  tags:
+    include:
+    - v*
 
 pr:
 - main
@@ -177,3 +182,27 @@ stages:
         env:
           MAPPED_VAR: $(SERVER_ADDRESS)
         displayName: "Push artifacts to SW Downloads"
+  - job: PushToGithubRelease
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          path: '$(Build.ArtifactStagingDirectory)'
+      - bash: ./CI/travis/archive_artifacts.sh
+        env:
+          SOURCE_DIRECTORY: $(Build.ArtifactStagingDirectory)
+        displayName: "Archive artifacts"
+      - task: GithubRelease@0
+        displayName: 'Attach artifacts to GitHub Release'
+        inputs:
+          gitHubConnection: libiio-release
+          repositoryName: $(Build.Repository.Name)
+          action: create
+          target: $(Build.SourceVersion)
+          tag: $(Build.SourceBranchName)
+          title: "$(Build.SourceBranchName): Version <edit>"
+          assets: $(Build.ArtifactStagingDirectory)/*
+          addChangeLog: true
+          isDraft: true
