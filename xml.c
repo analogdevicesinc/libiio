@@ -34,8 +34,8 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 			if (!filename)
 				goto err_free;
 		} else {
-			chn_warn(chn, "Unknown field \'%s\' in channel %s\n",
-				 attr->name, chn->id);
+			chn_dbg(chn, "Unknown field \'%s\' in channel %s\n",
+				attr->name, chn->id);
 		}
 	}
 
@@ -76,8 +76,8 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 		if (!strcmp((char *) attr->name, "name")) {
 			name = (char *) attr->children->content;
 		} else {
-			dev_warn(dev, "Unknown field \'%s\' in device %s\n",
-				 attr->name, dev->id);
+			dev_dbg(dev, "Unknown field \'%s\' in device %s\n",
+				attr->name, dev->id);
 		}
 	}
 
@@ -164,8 +164,8 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			chn->format.with_scale = true;
 			chn->format.scale = value;
 		} else {
-			chn_warn(chn, "Unknown attribute \'%s\' in <scan-element>\n",
-				 name);
+			chn_dbg(chn, "Unknown attribute \'%s\' in <scan-element>\n",
+				name);
 		}
 	}
 
@@ -202,10 +202,10 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 			if (!strcmp(content, "output"))
 				chn->is_output = true;
 			else if (strcmp(content, "input"))
-				dev_warn(dev, "Unknown channel type %s\n", content);
+				dev_dbg(dev, "Unknown channel type %s\n", content);
 		} else {
-			dev_warn(dev, "Unknown attribute \'%s\' in <channel>\n",
-				 name);
+			dev_dbg(dev, "Unknown attribute \'%s\' in <channel>\n",
+				name);
 		}
 	}
 
@@ -226,8 +226,8 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 			if (err < 0)
 				goto err_free_channel;
 		} else if (strcmp((char *) n->name, "text")) {
-			dev_warn(dev, "Unknown children \'%s\' in <channel>\n",
-				 n->name);
+			dev_dbg(dev, "Unknown children \'%s\' in <channel>\n",
+				n->name);
 			continue;
 		}
 	}
@@ -268,8 +268,8 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			if (!dev->id)
 				goto err_free_device;
 		} else {
-			ctx_warn(ctx, "Unknown attribute \'%s\' in <device>\n",
-				 attr->name);
+			ctx_dbg(ctx, "Unknown attribute \'%s\' in <device>\n",
+				attr->name);
 		}
 	}
 
@@ -313,8 +313,8 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 			if (err < 0)
 				goto err_free_device;
 		} else if (strcmp((char *) n->name, "text")) {
-			dev_warn(dev, "Unknown children \'%s\' in <device>\n",
-				 n->name);
+			dev_dbg(dev, "Unknown children \'%s\' in <device>\n",
+				n->name);
 			continue;
 		}
 	}
@@ -388,8 +388,8 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 			continue;
 		} else if (strcmp((char *) n->name, "device")) {
 			if (strcmp((char *) n->name, "text"))
-				ctx_warn(ctx, "Unknown children \'%s\' in "
-					 "<context>\n", n->name);
+				ctx_dbg(ctx, "Unknown children \'%s\' in "
+					"<context>\n", n->name);
 			continue;
 		}
 
@@ -445,8 +445,8 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 		} else if (!strcmp((char *) attr->name, "version-git")) {
 			git_tag = content;
 		} else if (strcmp((char *) attr->name, "name")) {
-			prm_warn(params, "Unknown parameter \'%s\' in <context>\n",
-				 content);
+			prm_dbg(params, "Unknown parameter \'%s\' in <context>\n",
+				content);
 		}
 	}
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_readdev iio_reg iio_writedev)
-if (PTHREAD_LIBRARIES)
+if (PTHREAD_LIBRARIES OR ANDROID)
 	LIST(APPEND IIO_TESTS_TARGETS iio_adi_xflow_check iio_stresstest)
 endif()
 

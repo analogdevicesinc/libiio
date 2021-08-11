@@ -463,7 +463,7 @@ endif()
 
 option(NO_THREADS "Disable multi-threading support" OFF)
 if (NEED_THREADS)
-	if (NO_THREADS)
+	if (NO_THREADS OR ANDROID)
 		target_sources(iio PRIVATE lock.c)
 	elseif (WIN32)
 		target_sources(iio PRIVATE lock-windows.c)
