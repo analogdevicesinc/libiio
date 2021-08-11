@@ -366,6 +366,9 @@ int iio_context_get_version(const struct iio_context *ctx,
 		return 0;
 	}
 
+	if (ctx->ops->get_version)
+		return ctx->ops->get_version(ctx, major, minor, git_tag);
+
 	iio_library_get_version(major, minor, git_tag);
 	return 0;
 }
