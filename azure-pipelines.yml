@@ -161,6 +161,7 @@ stages:
   dependsOn: Builds
   jobs:
   - job: PushToSWDownloads
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -175,5 +176,4 @@ stages:
       - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -vv -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
         env:
           MAPPED_VAR: $(SERVER_ADDRESS)
-        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
         displayName: "Push artifacts to SW Downloads"
