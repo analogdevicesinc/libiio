@@ -339,6 +339,10 @@ _get_device.restype = _DevicePtr
 _get_device.argtypes = (_ContextPtr, c_uint)
 _get_device.errcheck = _check_null
 
+_find_device = _lib.iio_context_find_device
+_find_device.restype = _DevicePtr
+_find_device.argtypes = (_ContextPtr, c_char_p)
+
 _set_timeout = _lib.iio_context_set_timeout
 _set_timeout.restype = c_int
 _set_timeout.argtypes = (
@@ -1117,7 +1121,8 @@ class Buffer(object):
 
 
 class _DeviceOrTrigger(object):
-    def __init__(self, _device):
+    def __init__(self, _ctx, _device):
+        self._ctx = _ctx
         self._device = _device
         self._context = _d_get_context(_device)
         self._attrs = {
@@ -1256,7 +1261,7 @@ class _DeviceOrTrigger(object):
 class Trigger(_DeviceOrTrigger):
     """Contains the representation of an IIO device that can act as a trigger."""
 
-    def __init__(self, _device):
+    def __init__(self, ctx, _device):
         """
         Initialize a new instance of the Trigger class.
 
@@ -1266,7 +1271,7 @@ class Trigger(_DeviceOrTrigger):
         returns: type=iio.Trigger
             An new instance of this class
         """
-        super(Trigger, self).__init__(_device)
+        super(Trigger, self).__init__(ctx, _device)
 
     def _get_rate(self):
         return int(self._attrs["sampling_frequency"].value)
@@ -1297,7 +1302,7 @@ class Device(_DeviceOrTrigger):
         returns: type=iio.Device
             An new instance of this class
         """
-        super(Device, self).__init__(_device)
+        super(Device, self).__init__(ctx, _device)
         self.ctx = ctx
 
     def _set_trigger(self, trigger):
@@ -1308,7 +1313,7 @@ class Device(_DeviceOrTrigger):
         _d_get_trigger(self._device, _byref(value))
         trig = Trigger(value.contents)
 
-        for dev in self.ctx()._devices:
+        for dev in self.ctx.devices:
             if trig.id == dev.id:
                 return dev
         return None
@@ -1326,7 +1331,7 @@ class Device(_DeviceOrTrigger):
         Context for the device.
         type: iio.Context
         """
-        return self.ctx()
+        return self.ctx
 
 
 class Context(object):
@@ -1360,14 +1365,6 @@ class Context(object):
             _get_attr(self._context, index, _byref(str1), _byref(str2))
             self._attrs[str1.value.decode("ascii")] = str2.value.decode("ascii")
 
-        # TODO(pcercuei): Use a dictionary for the devices.
-        self._devices = [
-            Trigger(dev) if _d_is_trigger(dev) else Device(self, dev)
-            for dev in [
-                _get_device(self._context, x)
-                for x in range(0, _devices_count(self._context))
-            ]
-        ]
         self._name = _get_name(self._context).decode("ascii")
         self._description = _get_description(self._context).decode("ascii")
         self._xml = _get_xml(self._context).decode("ascii")
@@ -1412,7 +1409,8 @@ class Context(object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        return next((x for x in self.devices if name_or_id_or_label in [x.name, x.id, x.label]), None,)
+        dev = _find_device(self._context, name_or_id_or_label.encode("ascii"))
+        return None if dev is None else Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev)
 
     name = property(
         lambda self: self._name, None, None, "Name of this IIO context.\n\ttype=str"
@@ -1442,7 +1440,13 @@ class Context(object):
         "List of context-specific attributes\n\ttype=dict of str objects",
     )
     devices = property(
-        lambda self: self._devices,
+        lambda self: [
+            Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev)
+            for dev in [
+                _get_device(self._context, x)
+                for x in range(0, _devices_count(self._context))
+            ]
+        ],
         None,
         None,
         "List of devices contained in this context.\n\ttype=list of iio.Device and iio.Trigger objects",
