@@ -426,6 +426,10 @@ _d_get_context = _lib.iio_device_get_context
 _d_get_context.restype = _ContextPtr
 _d_get_context.argtypes = (_DevicePtr,)
 
+_d_find_channel = _lib.iio_device_find_channel
+_d_find_channel.restype = _ChannelPtr
+_d_find_channel.argtypes = (_DevicePtr, c_char_p, c_bool)
+
 _d_reg_write = _lib.iio_device_reg_write
 _d_reg_write.restype = c_int
 _d_reg_write.argtypes = (_DevicePtr, c_uint, c_uint)
@@ -818,7 +822,7 @@ class DeviceBufferAttr(DeviceAttr):
 class Channel(object):
     """Represents a channel of an IIO device."""
 
-    def __init__(self, _channel):
+    def __init__(self, dev, _channel):
         """
         Initialize a new instance of the Channel class.
 
@@ -829,6 +833,7 @@ class Channel(object):
             An new instance of this class
         """
         self._channel = _channel
+        self._dev = dev
         self._attrs = {
             name: ChannelAttr(_channel, name)
             for name in [
@@ -926,8 +931,7 @@ class Channel(object):
         Corresponding device for the channel.
         type: iio.Device
         """
-        c_dev = _channel_get_device(self._channel)
-        return Device(_d_get_context(c_dev), c_dev)
+        return self._dev
 
     @property
     def index(self):
@@ -1138,12 +1142,6 @@ class _DeviceOrTrigger(object):
             ]
         }
 
-        # TODO(pcercuei): Use a dictionary for the channels.
-        chans = [
-            Channel(_get_channel(self._device, x))
-            for x in range(0, _channels_count(self._device))
-        ]
-        self._channels = sorted(chans, key=lambda c: c.id)
         self._id = _d_get_id(self._device).decode("ascii")
 
         name_raw = _d_get_name(self._device)
@@ -1190,14 +1188,8 @@ class _DeviceOrTrigger(object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        return next(
-            (
-                x
-                for x in self.channels
-                if name_or_id == x.name or name_or_id == x.id and x.output == is_output
-            ),
-            None,
-        )
+        chn = _d_find_channel(self._device, name_or_id.encode("ascii"), is_output)
+        return None if chn is None else Channel(self, chn)
 
     def set_kernel_buffers_count(self, count):
         """
@@ -1251,7 +1243,10 @@ class _DeviceOrTrigger(object):
         "List of buffer attributes for this IIO device.\n\ttype=dict of iio.DeviceBufferAttr",
     )
     channels = property(
-        lambda self: self._channels,
+        lambda self: sorted([
+            Channel(self, _get_channel(self._device, x))
+            for x in range(0, _channels_count(self._device))
+        ], key=lambda c: c.id),
         None,
         None,
         "List of channels available with this IIO device.\n\ttype=list of iio.Channel objects",
