@@ -1018,9 +1018,10 @@ class Buffer(object):
             raise
         self._length = samples_count * device.sample_size
         self._samples_count = samples_count
-        self._ctx = device.ctx()
-        # Holds a reference to the corresponding IIO Context. This ensures that
-        # every iio.Buffer object is destroyed before its corresponding IIO Context.
+
+        # Hold a reference to the device, to ensure that every iio.Buffer object
+        # is destroyed before its corresponding IIO context.
+        self._dev = device
 
     def __del__(self):
         """Destroy this buffer."""
@@ -1101,7 +1102,7 @@ class Buffer(object):
         Device for the buffer.
         type: iio.Device
         """
-        return Device(self._ctx, _buffer_get_device(self._buffer))
+        return self._dev
 
     @property
     def poll_fd(self):
