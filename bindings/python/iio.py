@@ -1195,7 +1195,7 @@ class _DeviceOrTrigger(object):
             The IIO Device
         """
         chn = _d_find_channel(self._device, name_or_id.encode("ascii"), is_output)
-        return None if chn is None else Channel(self, chn)
+        return None if bool(chn) is False else Channel(self, chn)
 
     def set_kernel_buffers_count(self, count):
         """
@@ -1411,7 +1411,7 @@ class Context(object):
             The IIO Device
         """
         dev = _find_device(self._context, name_or_id_or_label.encode("ascii"))
-        return None if dev is None else Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev)
+        return None if bool(dev) is False else Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev)
 
     name = property(
         lambda self: self._name, None, None, "Name of this IIO context.\n\ttype=str"
