@@ -221,10 +221,8 @@ stages:
       - task: DownloadPipelineArtifact@2
         inputs:
           path: '$(Build.ArtifactStagingDirectory)'
-      - bash: ./CI/travis/archive_artifacts.sh
-        env:
-          SOURCE_DIRECTORY: $(Build.ArtifactStagingDirectory)
-        displayName: "Archive artifacts"
+      - bash: ./CI/travis/prepare_assets.sh
+        displayName: "Prepare assets for release"
       - task: GithubRelease@0
         displayName: 'Attach artifacts to GitHub Release'
         inputs:
@@ -233,7 +231,7 @@ stages:
           action: create
           target: $(Build.SourceVersion)
           tag: $(Build.SourceBranchName)
-          title: "$(Build.SourceBranchName): Version <edit>"
+          title: "Libiio release $(Build.SourceBranchName)"
           assets: $(Build.ArtifactStagingDirectory)/*
           addChangeLog: true
           isDraft: true
