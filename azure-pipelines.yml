@@ -110,6 +110,11 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build_tar/'
+        contents: '$(Agent.BuildDirectory)/s/build_tar/?(*.gz)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PublishPipelineArtifact@1
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
@@ -135,6 +140,9 @@ stages:
     - checkout: self
       fetchDepth: 1
       clean: true
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
     - task: PowerShell@2
       inputs:
         targetType: 'filePath'
@@ -148,7 +156,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy libraries'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build/Release'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/Release'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy iio.h header'
@@ -156,6 +164,29 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/'
         contents: 'iio.h'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy .exe files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/tests/Release'
+        contents: '*.exe'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy .tar.gz files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/bindings/python'
+        contents: '*.gz'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy libiio-sharp.dll file'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/bindings/csharp'
+        contents: 'libiio-sharp.dll'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PowerShell@2
+      displayName: 'Copy dependencies'
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\publish_deps.ps1
     - task: PublishPipelineArtifact@1
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:

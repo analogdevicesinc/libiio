@@ -4,7 +4,6 @@ LIBIIO_BUILD_CONF="-DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON"
 
 if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 
-
 build_osx() {
 	FLAGS=$1
 	echo "### cmake ${FLAGS}"
@@ -17,16 +16,24 @@ build_osx() {
 	ls
 }
 
+change_artefact_name() {
+	old_name=`find . -name '*.pkg' | cut -b 3-26`
+	name=`echo ${old_name} | cut -b 1-20`
+	new_name="${name}-${ARTIFACTNAME}.pkg"
+	mv ./${old_name} ./${new_name}
+}
+
 mkdir -p build
 
 cd build
 build_osx "-DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON ${LIBIIO_BUILD_CONF}"
+change_artefact_name
 
 cd ..
 
 mkdir -p build_tar
 cd build_tar
-build_osx "-DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON ${LIBIIO_BUILD_CONF}"
+build_osx "-DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME} ${LIBIIO_BUILD_CONF}"
 echo "### make package"
 make package
 echo "### files are"
