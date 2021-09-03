@@ -8,7 +8,7 @@ AppSupportURL="http://www.analog.com"
 AppUpdatesURL="http://www.analog.com"
 AppCopyright="Copyright 2015-@BUILD_YEAR@ ADI and other contributors"
 CreateAppDir=no
-LicenseFile="C:\projects\libiio\COPYING.txt"
+LicenseFile="D:\a\1\s\COPYING.txt"
 OutputBaseFilename=libiio-setup
 OutputDir="C:\"
 Compression=lzma
@@ -26,45 +26,40 @@ Name: "dutch"; MessagesFile: "compiler:Languages\Dutch.isl"
 Name: "finnish"; MessagesFile: "compiler:Languages\Finnish.isl"
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "german"; MessagesFile: "compiler:Languages\German.isl"
-Name: "greek"; MessagesFile: "compiler:Languages\Greek.isl"
 Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"
-Name: "hungarian"; MessagesFile: "compiler:Languages\Hungarian.isl"
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 Name: "norwegian"; MessagesFile: "compiler:Languages\Norwegian.isl"
 Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
 Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
-Name: "scottishgaelic"; MessagesFile: "compiler:Languages\ScottishGaelic.isl"
-Name: "serbiancyrillic"; MessagesFile: "compiler:Languages\SerbianCyrillic.isl"
-Name: "serbianlatin"; MessagesFile: "compiler:Languages\SerbianLatin.isl"
 Name: "slovenian"; MessagesFile: "compiler:Languages\Slovenian.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Files]
-Source: "C:\projects\libiio\build-win32\Release\libiio.dll"; DestDir: "{sys}"; Flags: 32bit replacesameversion
-Source: "C:\projects\libiio\build-win64\Release\libiio.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\libiio.dll"; DestDir: "{sys}"; Flags: 32bit replacesameversion
+Source: "D:\a\1\a\Windows-VS-16-2019-x64\libiio.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
 
-Source: "C:\projects\libiio\build-win32\tests\Release\*.exe"; DestDir: "{sys}"; Check: not Is64BitInstallMode; Flags: replacesameversion
-Source: "C:\projects\libiio\build-win64\tests\Release\*.exe"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\*.exe"; DestDir: "{sys}"; Check: not Is64BitInstallMode; Flags: replacesameversion
+Source: "D:\a\1\a\Windows-VS-16-2019-x64\*.exe"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
 
-Source: "C:\projects\libiio\build-win32\Release\libiio.lib"; DestDir: "{pf32}\Microsoft Visual Studio 12.0\VC\lib"; Check: not Is64BitInstallMode
-Source: "C:\projects\libiio\build-win64\Release\libiio.lib"; DestDir: "{pf32}\Microsoft Visual Studio 12.0\VC\lib\amd64"; Check: Is64BitInstallMode
-Source: "C:\projects\libiio\iio.h"; DestDir: "{pf32}\Microsoft Visual Studio 12.0\VC\include"
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\libiio.lib"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\lib"; Check: not Is64BitInstallMode
+Source: "D:\a\1\a\Windows-VS-16-2019-x64\libiio.lib"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\lib\amd64"; Check: Is64BitInstallMode
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\iio.h"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\include"
 
-Source: "C:\libs\32\libxml2.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
-Source: "C:\libs\64\libxml2.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\libxml2.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
+Source: "D:\a\1\a\Windows-VS-16-2019-x64\libxml2.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 
-Source: "C:\libs\32\libusb-1.0.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
-Source: "C:\libs\64\libusb-1.0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\libusb-1.0.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
+Source: "D:\a\1\a\Windows-VS-16-2019-x64\libusb-1.0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 
-Source: "C:\libs\32\libserialport-0.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
-Source: "C:\libs\64\libserialport-0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\libserialport-0.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
+Source: "D:\a\1\a\Windows-VS-16-2019-x64\libserialport-0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 
-Source: "C:\projects\libiio\build-win32\bindings\csharp\libiio-sharp.dll"; DestDir: "{cf}\libiio"; Flags: replacesameversion
+Source: "D:\a\1\a\Windows-VS-16-2019-Win32\libiio-sharp.dll"; DestDir: "{commoncf}\libiio"; Flags: replacesameversion
 
-Source: "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x86\Microsoft.VC120.CRT\msvcr120.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
-Source: "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\x64\Microsoft.VC120.CRT\msvcr120.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+Source: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x86\Microsoft.VC142.CRT\msvcp140.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit
+Source: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT\msvcp140.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 
