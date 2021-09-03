@@ -10,7 +10,7 @@ if ($ARCH -eq "Win32") {
 	cp .\libiio.iss.cmakein .\build-win32
 	cd build-win32
 
-	cmake -G "$COMPILER" -A "$ARCH" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=OFF -DWITH_SERIAL_BACKEND=OFF -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="$src_dir\deps\lib\libxml2.dll.a" ..
+	cmake -G "$COMPILER" -A "$ARCH" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" ..
 	cmake --build . --config Release
 	cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
@@ -25,7 +25,7 @@ if ($ARCH -eq "Win32") {
 	cp .\libiio.iss.cmakein .\build-x64
         cd build-x64
 
-        cmake -G "$COMPILER" -A "$ARCH" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=OFF -DWITH_SERIAL_BACKEND=OFF -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="$src_dir\deps\lib\libxml2.dll.a" ..
+        cmake -G "$COMPILER" -A "$ARCH" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" ..
         cmake --build . --config Release
 	cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
