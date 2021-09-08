@@ -94,8 +94,8 @@ handle_default() {
 
 	echo "### make package"
 	make package
-	if [ -n "${GH_DOC_TOKEN}" ] && \
-			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
+	
+	if [ -f "./generateDocumentationAndDeploy.sh" ] ; then
 		sh generateDocumentationAndDeploy.sh
 	fi
 	cd ..
@@ -133,6 +133,10 @@ handle_debian() {
 
 handle_generic_docker() {
 	run_docker_script inside_docker.sh
+}
+
+handle_doxygen() {
+	handle_default
 }
 
 setup_build_type_env_vars
