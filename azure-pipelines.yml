@@ -40,14 +40,12 @@ stages:
           OS_TYPE: 'ubuntu_docker'
           OS_VERSION: bionic
           artifactName: 'Linux-Ubuntu-18.04-x86_64'
-          CI_BUILD_SPHINX_DOCS: 1
         ubuntu_20_04_x86_64:
           imageName: 'ubuntu-latest'
           OS_TYPE: 'ubuntu_docker'
           OS_VERSION: focal
           artifactName: 'Linux-Ubuntu-20.04-x86_64'
           CHECK_AGAINST_KERNEL_HEADER: 1
-          CI_BUILD_SPHINX_DOCS: 1
         debian_buster_arm32v7:
           imageName: 'ubuntu-latest'
           OS_TYPE: 'arm32v7/debian_docker'
@@ -58,23 +56,31 @@ stages:
           OS_TYPE: 'arm64v8/debian_docker'
           OS_VERSION: 'buster'
           artifactName: 'Linux-Debian-Buster-ARM64'
+        doxygen:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'doxygen'
+          OS_VERSION: focal
+          artifactName: 'Libiio-documentation'
+          CI_BUILD_SPHINX_DOCS: 1
     pool:
       vmImage: $(imageName)
     steps:
     - checkout: self
       fetchDepth: 1
       clean: true
+      persistCredentials: true
     - script: ./CI/travis/before_install_linux
       displayName: "Install Dependencies"
     - script: ./CI/travis/make_linux
       displayName: "Build"
     - task: CopyFiles@2
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['CI_BUILD_SPHINX_DOCS'], '1'))
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.rpm)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PublishPipelineArtifact@1
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['CI_BUILD_SPHINX_DOCS'], '1'))
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
