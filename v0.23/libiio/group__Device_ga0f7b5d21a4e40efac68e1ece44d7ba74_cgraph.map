@@ -1,4 +1,4 @@
 <map id="iio_device_attr_read_longlong" name="iio_device_attr_read_longlong">
-<area shape="rect" id="node1" title="Read the content of the given device&#45;specific attribute." alt="" coords="5,5,160,47"/>
-<area shape="rect" id="node2" href="$group__Device.html#gaf0233eb0ef4a64ad70ebaef6328b0494" title="Read the content of the given device&#45;specific attribute." alt="" coords="208,13,363,39"/>
+<area shape="rect" id="node1" title="Read the content of the given device&#45;specific attribute." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node2" href="$group__Device.html#gaf0233eb0ef4a64ad70ebaef6328b0494" title="Read the content of the given device&#45;specific attribute." alt="" coords="192,13,331,39"/>
 </map>

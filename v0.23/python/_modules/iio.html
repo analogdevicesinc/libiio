@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iio &mdash; libiio-py 0.23.gb814d31 documentation</title>
+  <title>iio &mdash; libiio-py 0.23.g87fa532 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -13,6 +13,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -83,7 +84,7 @@
 <span class="c1"># The way the methods and classes are used, violate this, but there</span>
 <span class="c1">#   isn&#39;t a good way to do things otherwise</span>
 <span class="c1"># pylint: disable=protected-access</span>
-<span class="kn">from</span> <span class="nn">ctypes</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">Structure</span><span class="p">,</span>
     <span class="n">c_char_p</span><span class="p">,</span>
     <span class="n">c_uint</span><span class="p">,</span>
@@ -103,16 +104,16 @@
     <span class="n">memmove</span> <span class="k">as</span> <span class="n">_memmove</span><span class="p">,</span>
     <span class="n">byref</span> <span class="k">as</span> <span class="n">_byref</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="k">import</span> <span class="n">find_library</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">strerror</span> <span class="k">as</span> <span class="n">_strerror</span>
-<span class="kn">from</span> <span class="nn">platform</span> <span class="k">import</span> <span class="n">system</span> <span class="k">as</span> <span class="n">_system</span>
+<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="kn">import</span> <span class="n">find_library</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">strerror</span> <span class="k">as</span> <span class="n">_strerror</span>
+<span class="kn">from</span> <span class="nn">platform</span> <span class="kn">import</span> <span class="n">system</span> <span class="k">as</span> <span class="n">_system</span>
 <span class="kn">import</span> <span class="nn">abc</span>
 
 <span class="k">if</span> <span class="s2">&quot;Windows&quot;</span> <span class="ow">in</span> <span class="n">_system</span><span class="p">():</span>
-    <span class="kn">from</span> <span class="nn">ctypes</span> <span class="k">import</span> <span class="n">get_last_error</span>
+    <span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="n">get_last_error</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">ctypes</span> <span class="k">import</span> <span class="n">get_errno</span>
+    <span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="n">get_errno</span>
 <span class="c1"># pylint: enable=ungrouped-imports</span>
 
 <span class="c1"># ctypes requires the errcheck to take three arguments, but we don&#39;t use them</span>
@@ -663,14 +664,6 @@
 <span class="n">_channel_get_type</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
 <span class="n">_channel_get_type</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
 
-<span class="n">_channel_convert</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_convert</span>
-<span class="n">_channel_convert</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="n">_channel_convert</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">)</span>
-
-<span class="n">_channel_convert_inverse</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_convert_inverse</span>
-<span class="n">_channel_convert_inverse</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="n">_channel_convert_inverse</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">)</span>
-
 <span class="n">_create_buffer</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_create_buffer</span>
 <span class="n">_create_buffer</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_BufferPtr</span>
 <span class="n">_create_buffer</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
@@ -752,12 +745,12 @@
 
 
 <span class="k">class</span> <span class="nc">_Attr</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name_ascii</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">filename</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
@@ -788,7 +781,7 @@
 <span class="k">class</span> <span class="nc">ChannelAttr</span><span class="p">(</span><span class="n">_Attr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents an attribute of a channel.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the ChannelAttr class.</span>
 
@@ -817,7 +810,7 @@
 <span class="k">class</span> <span class="nc">DeviceAttr</span><span class="p">(</span><span class="n">_Attr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents an attribute of an IIO device.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the DeviceAttr class.</span>
 
@@ -844,7 +837,7 @@
 <div class="viewcode-block" id="DeviceDebugAttr"><a class="viewcode-back" href="../device.html#iio.DeviceDebugAttr">[docs]</a><span class="k">class</span> <span class="nc">DeviceDebugAttr</span><span class="p">(</span><span class="n">DeviceAttr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents a debug attribute of an IIO device.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the DeviceDebugAttr class.</span>
 
@@ -870,7 +863,7 @@
 <div class="viewcode-block" id="DeviceBufferAttr"><a class="viewcode-back" href="../device.html#iio.DeviceBufferAttr">[docs]</a><span class="k">class</span> <span class="nc">DeviceBufferAttr</span><span class="p">(</span><span class="n">DeviceAttr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents a buffer attribute of an IIO device.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the DeviceBufferAttr class.</span>
 
@@ -896,7 +889,7 @@
 <div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../channel.html#iio.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Represents a channel of an IIO device.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">_channel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">_channel</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Channel class.</span>
 
@@ -1034,39 +1027,13 @@
 <span class="sd">        Type for the channel.</span>
 <span class="sd">        type: iio.ChannelType(Enum)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">ChannelType</span><span class="p">(</span><span class="n">_channel_get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span>
-
-<div class="viewcode-block" id="Channel.convert"><a class="viewcode-back" href="../channel.html#iio.Channel.convert">[docs]</a>    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert src and saves the result in dst, using current channel&#39;s data format.</span>
-
-<span class="sd">        :param dst: type=list</span>
-<span class="sd">            The variable where the result is stored.</span>
-<span class="sd">        :param src: type=list</span>
-<span class="sd">            Data to be converted.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
-        <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
-        <span class="n">_channel_convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">src_ptr</span><span class="p">,</span> <span class="n">dst_ptr</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Channel.convert_inverse"><a class="viewcode-back" href="../channel.html#iio.Channel.convert_inverse">[docs]</a>    <span class="k">def</span> <span class="nf">convert_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert the sample from host format to hardware format.</span>
-
-<span class="sd">        :param dst: type=list</span>
-<span class="sd">            The variable where the result is stored.</span>
-<span class="sd">        :param src: type=list</span>
-<span class="sd">            Data to be converted.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
-        <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
-        <span class="n">_channel_convert_inverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">src_ptr</span><span class="p">,</span> <span class="n">dst_ptr</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">ChannelType</span><span class="p">(</span><span class="n">_channel_get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Buffer"><a class="viewcode-back" href="../buffer.html#iio.Buffer">[docs]</a><span class="k">class</span> <span class="nc">Buffer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The class used for all I/O operations.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">samples_count</span><span class="p">,</span> <span class="n">cyclic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">samples_count</span><span class="p">,</span> <span class="n">cyclic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Buffer class.</span>
 
@@ -1093,12 +1060,12 @@
         <span class="c1"># is destroyed before its corresponding IIO context.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dev</span> <span class="o">=</span> <span class="n">device</span>
 
-    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Destroy this buffer.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">_buffer_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Size of this buffer, in bytes.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length</span>
 
@@ -1192,7 +1159,7 @@
 
 
 <span class="k">class</span> <span class="nc">_DeviceOrTrigger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span> <span class="o">=</span> <span class="n">_ctx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">_device</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">_d_get_context</span><span class="p">(</span><span class="n">_device</span><span class="p">)</span>
@@ -1332,7 +1299,7 @@
 <div class="viewcode-block" id="Trigger"><a class="viewcode-back" href="../trigger.html#iio.Trigger">[docs]</a><span class="k">class</span> <span class="nc">Trigger</span><span class="p">(</span><span class="n">_DeviceOrTrigger</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO device that can act as a trigger.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Trigger class.</span>
 
@@ -1361,7 +1328,7 @@
 <div class="viewcode-block" id="Device"><a class="viewcode-back" href="../device.html#iio.Device">[docs]</a><span class="k">class</span> <span class="nc">Device</span><span class="p">(</span><span class="n">_DeviceOrTrigger</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO device.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">_device</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Device class.</span>
 
@@ -1395,6 +1362,10 @@
         <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;Contains the configured trigger for this IIO device.</span><span class="se">\n\t</span><span class="s2">type=iio.Trigger&quot;</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">hwmon</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;hwmon&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;Contains True if the device is a hardware-monitoring device, False if it is a IIO device.</span><span class="se">\n\t</span><span class="s2">type=bool&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1408,7 +1379,7 @@
 <div class="viewcode-block" id="Context"><a class="viewcode-back" href="../context.html#iio.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Contains the representation of an IIO context.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_context</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_context</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Context class, using the local or the network backend of the IIO library.</span>
 
@@ -1446,7 +1417,7 @@
         <span class="n">_get_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">_byref</span><span class="p">(</span><span class="n">major</span><span class="p">),</span> <span class="n">_byref</span><span class="p">(</span><span class="n">minor</span><span class="p">),</span> <span class="n">buf</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="p">(</span><span class="n">major</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">minor</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Destroy this context.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">_destroy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">)</span>
@@ -1527,7 +1498,7 @@
 <div class="viewcode-block" id="LocalContext"><a class="viewcode-back" href="../context.html#iio.LocalContext">[docs]</a><span class="k">class</span> <span class="nc">LocalContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Local IIO Context.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Context class, using the local backend of the IIO library.</span>
 
@@ -1541,7 +1512,7 @@
 <div class="viewcode-block" id="XMLContext"><a class="viewcode-back" href="../context.html#iio.XMLContext">[docs]</a><span class="k">class</span> <span class="nc">XMLContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;XML IIO Context.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmlfile</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmlfile</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Context class, using the XML backend of the IIO library.</span>
 
@@ -1558,7 +1529,7 @@
 <div class="viewcode-block" id="NetworkContext"><a class="viewcode-back" href="../context.html#iio.NetworkContext">[docs]</a><span class="k">class</span> <span class="nc">NetworkContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Network IIO Context.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a new instance of the Context class, using the network backend of the IIO library.</span>
 

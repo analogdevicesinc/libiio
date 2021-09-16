@@ -1,5 +1,5 @@
 <map id="iio_device_debug_attr_read_longlong" name="iio_device_debug_attr_read_longlong">
-<area shape="rect" id="node1" title="Read the content of the given debug attribute." alt="" coords="219,35,384,76"/>
-<area shape="rect" id="node2" href="$group__Debug.html#gadffd69effb8ff8ddb504ea9492a29529" title="Read the content of the given debug attribute." alt="" coords="5,5,171,47"/>
-<area shape="rect" id="node3" href="$group__Debug.html#ga70829552f676ef9fc74e755933da05d8" title="Get the value of a hardware register." alt="" coords="12,71,164,98"/>
+<area shape="rect" id="node1" title="Read the content of the given debug attribute." alt="" coords="201,35,349,76"/>
+<area shape="rect" id="node2" href="$group__Debug.html#gadffd69effb8ff8ddb504ea9492a29529" title="Read the content of the given debug attribute." alt="" coords="5,5,153,47"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga70829552f676ef9fc74e755933da05d8" title="Get the value of a hardware register." alt="" coords="11,71,148,98"/>
 </map>

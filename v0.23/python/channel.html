@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Channels &mdash; libiio-py 0.23.gb814d31 documentation</title>
+  <title>Channels &mdash; libiio-py 0.23.g87fa532 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,6 +14,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -75,76 +76,44 @@
            <div itemprop="articleBody">
              
   <section id="channels">
-<h1>Channels<a class="headerlink" href="#channels" title="Permalink to this headline"></a></h1>
+<h1>Channels<a class="headerlink" href="#channels" title="Permalink to this heading"></a></h1>
 <section id="members">
-<h2>Members<a class="headerlink" href="#members" title="Permalink to this headline"></a></h2>
+<h2>Members<a class="headerlink" href="#members" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="iio.Channel">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel" title="Permalink to this definition"></a></dt>
 <dd><p>Represents a channel of an IIO device.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.attrs">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.Channel.attrs" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.Channel.attrs" title="Permalink to this definition"></a></dt>
 <dd><p>List of attributes for this channel.
 type=dict of iio.ChannelAttr</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="iio.Channel.convert">
-<span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel.convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel.convert" title="Permalink to this definition"></a></dt>
-<dd><p>Convert src and saves the result in dst, using current channel’s data format.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dst</strong> – type=list
-The variable where the result is stored.</p></li>
-<li><p><strong>src</strong> – type=list
-Data to be converted.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="iio.Channel.convert_inverse">
-<span class="sig-name descname"><span class="pre">convert_inverse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel.convert_inverse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel.convert_inverse" title="Permalink to this definition"></a></dt>
-<dd><p>Convert the sample from host format to hardware format.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dst</strong> – type=list
-The variable where the result is stored.</p></li>
-<li><p><strong>src</strong> – type=list
-Data to be converted.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.data_format">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">data_format</span></span><a class="headerlink" href="#iio.Channel.data_format" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_format</span></span><a class="headerlink" href="#iio.Channel.data_format" title="Permalink to this definition"></a></dt>
 <dd><p>Channel data format.
 type: iio.DataFormat</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.device">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#iio.Channel.device" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#iio.Channel.device" title="Permalink to this definition"></a></dt>
 <dd><p>Corresponding device for the channel.
 type: iio.Device</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.enabled">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">enabled</span></span><a class="headerlink" href="#iio.Channel.enabled" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">enabled</span></span><a class="headerlink" href="#iio.Channel.enabled" title="Permalink to this definition"></a></dt>
 <dd><p>Configured state of the channel
 type=bool</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.id">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#iio.Channel.id" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#iio.Channel.id" title="Permalink to this definition"></a></dt>
 <dd><p>An identifier of this channel.
 Note that it is possible that two channels have the same ID, if one is an input channel and the other is an output channel.
 type=str</p>
@@ -152,27 +121,27 @@ type=str</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.index">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#iio.Channel.index" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#iio.Channel.index" title="Permalink to this definition"></a></dt>
 <dd><p>Index for the channel.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.modifier">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">modifier</span></span><a class="headerlink" href="#iio.Channel.modifier" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">modifier</span></span><a class="headerlink" href="#iio.Channel.modifier" title="Permalink to this definition"></a></dt>
 <dd><p>Channel modifier.
 type: iio.ChannelModifier(Enum)</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.name">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.Channel.name" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.Channel.name" title="Permalink to this definition"></a></dt>
 <dd><p>The name of this channel.
 type=str</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.output">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#iio.Channel.output" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#iio.Channel.output" title="Permalink to this definition"></a></dt>
 <dd><p>Contains True if the channel is an output channel, False otherwise.
 type=bool</p>
 </dd></dl>
@@ -200,7 +169,7 @@ native format to their host format</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.scan_element">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">scan_element</span></span><a class="headerlink" href="#iio.Channel.scan_element" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scan_element</span></span><a class="headerlink" href="#iio.Channel.scan_element" title="Permalink to this definition"></a></dt>
 <dd><p>Contains True if the channel is a scan element, False otherwise.
 If a channel is a scan element, then it is possible to enable it and use it for I/O operations.
 type=bool</p>
@@ -208,7 +177,7 @@ type=bool</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="iio.Channel.type">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#iio.Channel.type" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#iio.Channel.type" title="Permalink to this definition"></a></dt>
 <dd><p>Type for the channel.
 type: iio.ChannelType(Enum)</p>
 </dd></dl>
@@ -241,22 +210,22 @@ host format to their native format</p></li>
 </section>
 <hr class="docutils" />
 <section id="channel-attributes">
-<h2>Channel attributes<a class="headerlink" href="#channel-attributes" title="Permalink to this headline"></a></h2>
+<h2>Channel attributes<a class="headerlink" href="#channel-attributes" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="iio.DataFormat">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">DataFormat</span></span><a class="reference internal" href="_modules/iio.html#DataFormat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.DataFormat" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">DataFormat</span></span><a class="reference internal" href="_modules/iio.html#DataFormat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.DataFormat" title="Permalink to this definition"></a></dt>
 <dd><p>Represents the data format of an IIO channel.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="iio.ChannelModifier">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelModifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#ChannelModifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.ChannelModifier" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelModifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#ChannelModifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.ChannelModifier" title="Permalink to this definition"></a></dt>
 <dd><p>Contains the modifier type of an IIO channel.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="iio.ChannelType">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#ChannelType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.ChannelType" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#ChannelType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.ChannelType" title="Permalink to this definition"></a></dt>
 <dd><p>Contains the type of an IIO channel.</p>
 </dd></dl>
 

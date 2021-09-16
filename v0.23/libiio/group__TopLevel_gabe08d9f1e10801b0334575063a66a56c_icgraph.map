@@ -1,4 +1,4 @@
 <map id="iio_get_backends_count" name="iio_get_backends_count">
-<area shape="rect" id="node1" title="Get the number of available backends." alt="" coords="183,5,360,32"/>
-<area shape="rect" id="node2" href="$group__TopLevel.html#ga8cf6a3818d471333f4115f3d0d8d95a2" title="Check if the specified backend is available." alt="" coords="5,5,135,32"/>
+<area shape="rect" id="node1" title="Get the number of available backends." alt="" coords="172,5,333,32"/>
+<area shape="rect" id="node2" href="$group__TopLevel.html#ga8cf6a3818d471333f4115f3d0d8d95a2" title="Check if the specified backend is available." alt="" coords="5,5,124,32"/>
 </map>

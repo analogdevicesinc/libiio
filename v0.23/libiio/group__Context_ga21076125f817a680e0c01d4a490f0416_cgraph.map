@@ -1,7 +1,7 @@
 <map id="iio_create_default_context" name="iio_create_default_context">
-<area shape="rect" id="node1" title="Create a context from local or remote IIO devices." alt="" coords="5,27,144,69"/>
-<area shape="rect" id="node2" href="$group__Context.html#gafdcee40508700fa395370b6c636e16fe" title="Create a context from a URI description." alt="" coords="192,57,335,98"/>
-<area shape="rect" id="node3" href="$group__Context.html#gaf31acec2d0f9f498870cc52a1d49783e" title="Create a context from local IIO devices (Linux only)" alt="" coords="383,5,563,32"/>
-<area shape="rect" id="node4" href="$group__Context.html#ga8adf2ef4d2b62aa34201469cd7049617" title="Create a context from the network." alt="" coords="399,57,546,98"/>
-<area shape="rect" id="node5" href="$group__Context.html#ga9925a84e596c3003e30b1cdd2b65d029" title="Create a context from a XML file." alt="" coords="385,123,560,149"/>
+<area shape="rect" id="node1" title="Create a context from local or remote IIO devices." alt="" coords="5,27,129,69"/>
+<area shape="rect" id="node2" href="$group__Context.html#gafdcee40508700fa395370b6c636e16fe" title="Create a context from a URI description." alt="" coords="177,57,305,98"/>
+<area shape="rect" id="node3" href="$group__Context.html#gaf31acec2d0f9f498870cc52a1d49783e" title="Create a context from local IIO devices (Linux only)" alt="" coords="353,5,516,32"/>
+<area shape="rect" id="node4" href="$group__Context.html#ga8adf2ef4d2b62aa34201469cd7049617" title="Create a context from the network." alt="" coords="369,57,500,98"/>
+<area shape="rect" id="node5" href="$group__Context.html#ga9925a84e596c3003e30b1cdd2b65d029" title="Create a context from a XML file." alt="" coords="357,123,513,149"/>
 </map>

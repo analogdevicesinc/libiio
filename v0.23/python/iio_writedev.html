@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iio_writedev &mdash; libiio-py 0.23.gb814d31 documentation</title>
+  <title>iio_writedev &mdash; libiio-py 0.23.g87fa532 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,6 +14,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -82,7 +83,7 @@
            <div itemprop="articleBody">
              
   <section id="iio-writedev">
-<h1>iio_writedev<a class="headerlink" href="#iio-writedev" title="Permalink to this headline"></a></h1>
+<h1>iio_writedev<a class="headerlink" href="#iio-writedev" title="Permalink to this heading"></a></h1>
 <div class="line-block">
 <div class="line">iio_writedev is part of the Libiio package, a library that has been developed to ease the development of software interfacing Linux Industrial I/O (IIO) devices.</div>
 <div class="line">This tool is written using the libiio Python bindings. It works in the same way as the base iio_writedev works. You can find more informations about it on this <a class="reference external" href="https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_writedev">page</a>.</div>
@@ -102,13 +103,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="iio_writedev.Arguments">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">Arguments</span></span><a class="reference internal" href="_modules/iio_writedev.html#Arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.Arguments" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">Arguments</span></span><a class="reference internal" href="_modules/iio_writedev.html#Arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.Arguments" title="Permalink to this definition"></a></dt>
 <dd><p>Class for parsing the input arguments.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="iio_writedev.BufferBuilder">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">BufferBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#BufferBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.BufferBuilder" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">BufferBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#BufferBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.BufferBuilder" title="Permalink to this definition"></a></dt>
 <dd><p>Class for creating the buffer.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="iio_writedev.BufferBuilder.create">
@@ -120,7 +121,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.<
 
 <dl class="py class">
 <dt class="sig sig-object py" id="iio_writedev.ContextBuilder">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">ContextBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#ContextBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.ContextBuilder" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">ContextBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#ContextBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.ContextBuilder" title="Permalink to this definition"></a></dt>
 <dd><p>Class for creating the requested context.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="iio_writedev.ContextBuilder.create">
@@ -132,7 +133,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.<
 
 <dl class="py class">
 <dt class="sig sig-object py" id="iio_writedev.DataWriter">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">DataWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#DataWriter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.DataWriter" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio_writedev.</span></span><span class="sig-name descname"><span class="pre">DataWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio_writedev.html#DataWriter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio_writedev.DataWriter" title="Permalink to this definition"></a></dt>
 <dd><p>Class for writing samples to the device.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="iio_writedev.DataWriter.write">

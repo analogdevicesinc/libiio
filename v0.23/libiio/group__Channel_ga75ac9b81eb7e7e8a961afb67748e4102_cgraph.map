@@ -1,4 +1,4 @@
 <map id="iio_channel_attr_read_double" name="iio_channel_attr_read_double">
-<area shape="rect" id="node1" title="Read the content of the given channel&#45;specific attribute." alt="" coords="5,5,168,47"/>
-<area shape="rect" id="node2" href="$group__Channel.html#ga2c2ca5696d1341067051eb390d5014ae" title="Read the content of the given channel&#45;specific attribute." alt="" coords="216,13,379,39"/>
+<area shape="rect" id="node1" title="Read the content of the given channel&#45;specific attribute." alt="" coords="5,5,151,47"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga2c2ca5696d1341067051eb390d5014ae" title="Read the content of the given channel&#45;specific attribute." alt="" coords="199,13,344,39"/>
 </map>

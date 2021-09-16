@@ -1,4 +1,4 @@
 <map id="iio_buffer_push_partial" name="iio_buffer_push_partial">
-<area shape="rect" id="node1" title="Send a given number of samples to the hardware." alt="" coords="5,5,176,32"/>
-<area shape="rect" id="node2" href="$group__Buffer.html#gae7033c625d128667a56cf482aa3149bd" title="Send the samples to the hardware." alt="" coords="224,5,345,32"/>
+<area shape="rect" id="node1" title="Send a given number of samples to the hardware." alt="" coords="5,5,157,32"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#gae7033c625d128667a56cf482aa3149bd" title="Send the samples to the hardware." alt="" coords="205,5,315,32"/>
 </map>

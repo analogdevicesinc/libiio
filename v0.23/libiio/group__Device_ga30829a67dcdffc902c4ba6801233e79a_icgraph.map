@@ -1,7 +1,7 @@
 <map id="iio_device_attr_write_raw" name="iio_device_attr_write_raw">
-<area shape="rect" id="node1" title="Set the value of the given device&#45;specific attribute." alt="" coords="453,64,643,91"/>
-<area shape="rect" id="node2" href="$group__Device.html#gaaa2d1867c15ef8f8424164d0ccea4dd8" title="Set the value of the given device&#45;specific attribute." alt="" coords="247,64,405,91"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga9f53f9d1c3dc9f87191943fcbd1a7324" title="Set the value of the given device&#45;specific attribute." alt="" coords="5,5,199,32"/>
-<area shape="rect" id="node4" href="$group__Device.html#gacdaf529f12b46ba2a5290bbc590c8b9e" title="Set the value of the given device&#45;specific attribute." alt="" coords="23,57,181,98"/>
-<area shape="rect" id="node5" href="$group__Device.html#ga3fcba684f6b07d3f6295759bb788c4d2" title="Set the value of the given device&#45;specific attribute." alt="" coords="23,122,181,163"/>
+<area shape="rect" id="node1" title="Set the value of the given device&#45;specific attribute." alt="" coords="415,64,584,91"/>
+<area shape="rect" id="node2" href="$group__Device.html#gaaa2d1867c15ef8f8424164d0ccea4dd8" title="Set the value of the given device&#45;specific attribute." alt="" coords="225,64,367,91"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga9f53f9d1c3dc9f87191943fcbd1a7324" title="Set the value of the given device&#45;specific attribute." alt="" coords="5,5,177,32"/>
+<area shape="rect" id="node4" href="$group__Device.html#gacdaf529f12b46ba2a5290bbc590c8b9e" title="Set the value of the given device&#45;specific attribute." alt="" coords="21,57,162,98"/>
+<area shape="rect" id="node5" href="$group__Device.html#ga3fcba684f6b07d3f6295759bb788c4d2" title="Set the value of the given device&#45;specific attribute." alt="" coords="21,122,162,163"/>
 </map>

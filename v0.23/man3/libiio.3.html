@@ -4,7 +4,7 @@ Content-type: text/html; charset=UTF-8
 <HTML><HEAD><TITLE>Man page of INTRO</TITLE>
 </HEAD><BODY>
 <H1>INTRO</H1>
-Section: Misc. Reference Manual Pages (3LIBIIO)<BR>Updated: 16 September 2021<BR><A HREF="#index">Index</A>
+Section: Misc. Reference Manual Pages (3LIBIIO)<BR>Updated: 21 February 2022<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -294,7 +294,7 @@ Retrieve a pointer to the iio_context structure
 <DT><B>iio_device_get_id</B>
 
 <DD>
-Retrieve the device ID 
+Get whether or not the device is a hardware monitoring device
 <DT><B>iio_device_get_name</B>
 
 <DD>
@@ -580,7 +580,7 @@ Get a pointer to a channel's data format structure
 <DT><B>iio_channel_get_type</B>
 
 <DD>
-Get the type of the given channel
+Get the type of the given hwmon channel
 <DT><B>iio_channel_get_modifier</B>
 
 <DD>
@@ -659,16 +659,6 @@ Associate a pointer to an iio_buffer structure
 
 <DD>
 Retrieve a previously associated pointer of an iio_buffer structure
-</DL>
-<P>
-
-<P>
-Debug Debug and low-level functions
-
-<DL COMPACT>
-<DT><DT><I>Function</I><DD>
-<DD>
-<I>Description</I>
 <DT><B>iio_device_get_sample_size</B>
 
 <DD>
@@ -760,86 +750,8 @@ Get the value of a hardware register
 </DL>
 <P>
 
-<A NAME="lbAH">&nbsp;</A>
-<H2>DIAGNOSTICS</H2>
-
-All error codes are returned as negative number return codes.
-In these cases, the value can be passed to the
-<I>iio_strerror</I>
-
-routine.
-<A NAME="lbAI">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<B><A HREF="../man1/iio_attr.1.html">iio_attr</A></B>(1),
-
-<B><A HREF="../man1/iio_info.1.html">iio_info</A></B>(1),
-
-<B><A HREF="../man1/iio_readdev.1.html">iio_readdev</A></B>(1),
-
-<B><A HREF="../man1/iio_writedev.1.html">iio_writedev</A></B>(1),
-
-<B><A HREF="../man1/iio_reg.1.html">iio_reg</A></B>(1)
-
 <P>
-
-
-libiio home page:
-<BR>
-
-<B><A HREF="https://wiki.analog.com/resources/tools-software/linux-software/libiio">https://wiki.analog.com/resources/tools-software/linux-software/libiio</A></B>
-
-<P>
-
-libiio code:
-<BR>
-
-<B><A HREF="https://github.com/analogdevicesinc/libiio">https://github.com/analogdevicesinc/libiio</A></B>
-
-<P>
-
-Doxygen for libiio:
-<BR>
-
-<B><A HREF="https://analogdevicesinc.github.io/libiio/">https://analogdevicesinc.github.io/libiio/</A></B>
-
-<P>
-
-Kernel Doc:
-<BR>
-
-<B><A HREF="https://www.kernel.org/doc/html/latest/driver-api/iio/index.html">https://www.kernel.org/doc/html/latest/driver-api/iio/index.html</A></B>
-
-<B><A HREF="https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-bus-iio">https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-bus-iio</A></B>
-
-<A NAME="lbAJ">&nbsp;</A>
-<H2>BUGS</H2>
-
-
-All bugs are tracked at:
-<B><A HREF="https://github.com/analogdevicesinc/libiio/issues">https://github.com/analogdevicesinc/libiio/issues</A></B>
-
-
-
-<A NAME="lbAK">&nbsp;</A>
-<H2>LICENSE</H2>
-
-The
-<I>libiio</I>
-
-source code and resulting binaries (libraries) are released and distributed under the GNU Lesser General Public License, v2.1 or (at your option) any later version.
-<BR>
-
-The
-<I>libiio</I>
-
-test and example application(s) source code and resulting binaries (executables) are released and distributed under the GNU General Public License, v2.0  or (at your option) any later version.
-<BR>
-
-The
-<I>libiio</I>
-
-man pages are released and distributed under the Creative Commons Attribution-ShareAlike 4.0 International Public License.
+Hwmon Compatibility with hardware monitoring (hwmon) devices
 <P>
 
 <HR>
@@ -851,15 +763,11 @@ man pages are released and distributed under the Creative Commons Attribution-Sh
 <DT><A HREF="#lbAE">DESCRIPTION</A><DD>
 <DT><A HREF="#lbAF">DATA TYPES</A><DD>
 <DT><A HREF="#lbAG">LIST OF ROUTINES</A><DD>
-<DT><A HREF="#lbAH">DIAGNOSTICS</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
-<DT><A HREF="#lbAJ">BUGS</A><DD>
-<DT><A HREF="#lbAK">LICENSE</A><DD>
 </DL>
 <HR>
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 10:47:10 GMT, September 16, 2021
+Time: 16:36:12 GMT, February 21, 2022
 </BODY>
 </HTML>

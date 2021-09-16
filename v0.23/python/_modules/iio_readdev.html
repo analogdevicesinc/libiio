@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iio_readdev &mdash; libiio-py 0.23.gb814d31 documentation</title>
+  <title>iio_readdev &mdash; libiio-py 0.23.g87fa532 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -13,6 +13,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -96,7 +97,7 @@
 <div class="viewcode-block" id="Arguments"><a class="viewcode-back" href="../iio_readdev.html#iio_readdev.Arguments">[docs]</a><span class="k">class</span> <span class="nc">Arguments</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for parsing the input arguments.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Arguments class constructor.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;iio_readdev&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_parser_arguments</span><span class="p">()</span>
@@ -160,7 +161,7 @@
 <div class="viewcode-block" id="ContextBuilder"><a class="viewcode-back" href="../iio_readdev.html#iio_readdev.ContextBuilder">[docs]</a><span class="k">class</span> <span class="nc">ContextBuilder</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for creating the requested context.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class constructor.</span>
 
@@ -225,7 +226,7 @@
 <div class="viewcode-block" id="BufferBuilder"><a class="viewcode-back" href="../iio_readdev.html#iio_readdev.BufferBuilder">[docs]</a><span class="k">class</span> <span class="nc">BufferBuilder</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for creating the buffer.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class constructor.</span>
 
@@ -272,7 +273,7 @@
 <div class="viewcode-block" id="DataReader"><a class="viewcode-back" href="../iio_readdev.html#iio_readdev.DataReader">[docs]</a><span class="k">class</span> <span class="nc">DataReader</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for reading samples from the device.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class constructor.</span>
 

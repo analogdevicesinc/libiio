@@ -1,5 +1,5 @@
 <map id="iio.Channel.is_enabled" name="iio.Channel.is_enabled">
-<area shape="rect" id="node1" title="Returns whether or not the channel has been enabled." alt="" coords="185,31,355,57"/>
-<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4539e8e210e3f94f9121cf7e0fbad457" title="Extract the samples corresponding to this channel from the given iio.IOBuffer object." alt="" coords="7,5,135,32"/>
-<area shape="rect" id="node3" href="$classiio_1_1Channel.html#a7eda7ca0cbf91d49d52d7ea8bef0151c" title="Write the specified array of samples corresponding to this channel into the given iio...." alt="" coords="5,56,137,83"/>
+<area shape="rect" id="node1" title="Returns whether or not the channel has been enabled." alt="" coords="172,31,325,57"/>
+<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4539e8e210e3f94f9121cf7e0fbad457" title="Extract the samples corresponding to this channel from the given iio.IOBuffer object." alt="" coords="7,5,123,32"/>
+<area shape="rect" id="node3" href="$classiio_1_1Channel.html#a7eda7ca0cbf91d49d52d7ea8bef0151c" title="Write the specified array of samples corresponding to this channel into the given iio...." alt="" coords="5,56,124,83"/>
 </map>

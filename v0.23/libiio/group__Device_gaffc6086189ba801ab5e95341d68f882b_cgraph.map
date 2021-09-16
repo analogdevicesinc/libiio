@@ -1,4 +1,4 @@
 <map id="iio_device_find_channel" name="iio_device_find_channel">
-<area shape="rect" id="node1" title="Try to find a channel structure by its name of ID." alt="" coords="5,5,183,32"/>
-<area shape="rect" id="node2" href="$group__Channel.html#ga3c24e9c93e2217c9506073d04b878461" title="Return True if the given channel is an output channel." alt="" coords="231,5,393,32"/>
+<area shape="rect" id="node1" title="Try to find a channel structure by its name of ID." alt="" coords="5,5,165,32"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga3c24e9c93e2217c9506073d04b878461" title="Return True if the given channel is an output channel." alt="" coords="213,5,360,32"/>
 </map>

@@ -1,5 +1,5 @@
 <map id="iio_device_debug_attr_write_double" name="iio_device_debug_attr_write_double">
-<area shape="rect" id="node1" title="Set the value of the given debug attribute." alt="" coords="5,5,171,47"/>
-<area shape="rect" id="node2" href="$group__Debug.html#gaea7f639edb7efd15b718be4c7faaeae5" title="Set the value of the given debug attribute." alt="" coords="219,5,384,47"/>
-<area shape="rect" id="node3" href="$group__Debug.html#ga1eac5d59a58b6c8e2db892adce7a05a3" title="Set the value of the given debug attribute." alt="" coords="432,5,597,47"/>
+<area shape="rect" id="node1" title="Set the value of the given debug attribute." alt="" coords="5,5,153,47"/>
+<area shape="rect" id="node2" href="$group__Debug.html#gaea7f639edb7efd15b718be4c7faaeae5" title="Set the value of the given debug attribute." alt="" coords="201,5,349,47"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga1eac5d59a58b6c8e2db892adce7a05a3" title="Set the value of the given debug attribute." alt="" coords="397,5,545,47"/>
 </map>

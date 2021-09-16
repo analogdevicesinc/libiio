@@ -1,5 +1,5 @@
 <map id="iio_create_local_context" name="iio_create_local_context">
-<area shape="rect" id="node1" title="Create a context from local IIO devices (Linux only)" alt="" coords="383,42,563,69"/>
-<area shape="rect" id="node2" href="$group__Context.html#gafdcee40508700fa395370b6c636e16fe" title="Create a context from a URI description." alt="" coords="192,5,335,47"/>
-<area shape="rect" id="node3" href="$group__Context.html#ga21076125f817a680e0c01d4a490f0416" title="Create a context from local or remote IIO devices." alt="" coords="5,35,144,76"/>
+<area shape="rect" id="node1" title="Create a context from local IIO devices (Linux only)" alt="" coords="353,42,516,69"/>
+<area shape="rect" id="node2" href="$group__Context.html#gafdcee40508700fa395370b6c636e16fe" title="Create a context from a URI description." alt="" coords="177,5,305,47"/>
+<area shape="rect" id="node3" href="$group__Context.html#ga21076125f817a680e0c01d4a490f0416" title="Create a context from local or remote IIO devices." alt="" coords="5,35,129,76"/>
 </map>

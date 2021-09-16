@@ -1,7 +1,7 @@
 <map id="iio_device_buffer_attr_write_raw" name="iio_device_buffer_attr_write_raw">
-<area shape="rect" id="node1" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="427,71,589,112"/>
-<area shape="rect" id="node2" href="$group__Device.html#ga8a12066003b7ef442e95bfbc22b4370b" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="216,71,379,112"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga3fad39798014287c24c36bac4a67648e" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,5,168,47"/>
-<area shape="rect" id="node4" href="$group__Device.html#ga10d47af8de4ad1f9dc4b63ce0aa0ff7d" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,71,168,112"/>
-<area shape="rect" id="node5" href="$group__Device.html#gac05869aa707121328dd72cdad10cedf2" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,136,168,177"/>
+<area shape="rect" id="node1" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="392,71,537,112"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga8a12066003b7ef442e95bfbc22b4370b" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="199,71,344,112"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga3fad39798014287c24c36bac4a67648e" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,5,151,47"/>
+<area shape="rect" id="node4" href="$group__Device.html#ga10d47af8de4ad1f9dc4b63ce0aa0ff7d" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,71,151,112"/>
+<area shape="rect" id="node5" href="$group__Device.html#gac05869aa707121328dd72cdad10cedf2" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,136,151,177"/>
 </map>

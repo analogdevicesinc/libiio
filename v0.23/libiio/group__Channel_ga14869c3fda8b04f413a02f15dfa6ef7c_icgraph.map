@@ -1,5 +1,5 @@
 <map id="iio_channel_get_attrs_count" name="iio_channel_get_attrs_count">
-<area shape="rect" id="node1" title="Enumerate the channel&#45;specific attributes of the given channel." alt="" coords="243,23,404,65"/>
-<area shape="rect" id="node2" href="$group__Channel.html#gab9c28b0cd94c0607bcc7cac16219eb48" title="Read the content of all channel&#45;specific attributes." alt="" coords="7,5,193,32"/>
-<area shape="rect" id="node3" href="$group__Channel.html#ga6df693ee4f0c329d957f7c7ca3588f3f" title="Set the values of all channel&#45;specific attributes." alt="" coords="5,56,195,83"/>
+<area shape="rect" id="node1" title="Enumerate the channel&#45;specific attributes of the given channel." alt="" coords="221,23,368,65"/>
+<area shape="rect" id="node2" href="$group__Channel.html#gab9c28b0cd94c0607bcc7cac16219eb48" title="Read the content of all channel&#45;specific attributes." alt="" coords="7,5,172,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga6df693ee4f0c329d957f7c7ca3588f3f" title="Set the values of all channel&#45;specific attributes." alt="" coords="5,56,173,83"/>
 </map>

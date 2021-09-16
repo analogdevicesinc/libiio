@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Examples &mdash; libiio-py 0.23.gb814d31 documentation</title>
+  <title>Examples &mdash; libiio-py 0.23.g87fa532 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,6 +14,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -81,9 +82,9 @@
            <div itemprop="articleBody">
              
   <section id="examples">
-<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline"></a></h1>
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h1>
 <section id="complete-application-examples">
-<h2>Complete Application Examples<a class="headerlink" href="#complete-application-examples" title="Permalink to this headline"></a></h2>
+<h2>Complete Application Examples<a class="headerlink" href="#complete-application-examples" title="Permalink to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="iio_readdev.html">iio_readdev</a></li>
@@ -94,7 +95,7 @@
 </div>
 </section>
 <section id="code-snippets">
-<h2>Code Snippets<a class="headerlink" href="#code-snippets" title="Permalink to this headline"></a></h2>
+<h2>Code Snippets<a class="headerlink" href="#code-snippets" title="Permalink to this heading"></a></h2>
 <p>Scan contexts and list channels of each device</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">iio</span>
 
@@ -103,9 +104,9 @@
     <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="n">ctx</span><span class="o">.</span><span class="n">devices</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{} - {} - {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctxname</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">chan</span><span class="o">.</span><span class="n">_id</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> - </span><span class="si">{}</span><span class="s2"> - </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctxname</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">chan</span><span class="o">.</span><span class="n">_id</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{} - {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctxname</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> - </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctxname</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 </pre></div>
 </div>
 </section>

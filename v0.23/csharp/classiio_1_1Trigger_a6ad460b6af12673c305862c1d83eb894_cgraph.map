@@ -1,5 +1,5 @@
 <map id="iio.Trigger.get_rate" name="iio.Trigger.get_rate">
-<area shape="rect" id="node1" title="Get the currently configured frequency of this trigger." alt="" coords="5,5,148,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a62af2e28fdc64d0e1818d2b98d476de7" title="Read the value of this attribute as a long." alt="" coords="196,5,329,32"/>
-<area shape="rect" id="node3" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="377,5,476,32"/>
+<area shape="rect" id="node1" title="Get the currently configured frequency of this trigger." alt="" coords="5,5,135,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a62af2e28fdc64d0e1818d2b98d476de7" title="Read the value of this attribute as a long." alt="" coords="183,5,303,32"/>
+<area shape="rect" id="node3" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="351,5,440,32"/>
 </map>

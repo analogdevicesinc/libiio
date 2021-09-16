@@ -1,4 +1,4 @@
 <map id="iio.Attr.read_long" name="iio.Attr.read_long">
-<area shape="rect" id="node1" title="Read the value of this attribute as a long." alt="" coords="196,5,329,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Trigger.html#a6ad460b6af12673c305862c1d83eb894" title="Get the currently configured frequency of this trigger." alt="" coords="5,5,148,32"/>
+<area shape="rect" id="node1" title="Read the value of this attribute as a long." alt="" coords="183,5,303,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Trigger.html#a6ad460b6af12673c305862c1d83eb894" title="Get the currently configured frequency of this trigger." alt="" coords="5,5,135,32"/>
 </map>

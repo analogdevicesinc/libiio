@@ -1,4 +1,4 @@
 <map id="iio_device_debug_attr_write_longlong" name="iio_device_debug_attr_write_longlong">
-<area shape="rect" id="node1" title="Set the value of the given debug attribute." alt="" coords="205,5,371,47"/>
-<area shape="rect" id="node2" href="$group__Debug.html#ga70829552f676ef9fc74e755933da05d8" title="Get the value of a hardware register." alt="" coords="5,13,157,39"/>
+<area shape="rect" id="node1" title="Set the value of the given debug attribute." alt="" coords="191,5,339,47"/>
+<area shape="rect" id="node2" href="$group__Debug.html#ga70829552f676ef9fc74e755933da05d8" title="Get the value of a hardware register." alt="" coords="5,13,143,39"/>
 </map>

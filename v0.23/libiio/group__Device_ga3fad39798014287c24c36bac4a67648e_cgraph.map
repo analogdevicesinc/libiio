@@ -1,5 +1,5 @@
 <map id="iio_device_buffer_attr_write_bool" name="iio_device_buffer_attr_write_bool">
-<area shape="rect" id="node1" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,5,168,47"/>
-<area shape="rect" id="node2" href="$group__Device.html#ga8a12066003b7ef442e95bfbc22b4370b" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="216,5,379,47"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga982e2bcb890aab88eabf833a00ba841a" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="427,5,589,47"/>
+<area shape="rect" id="node1" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="5,5,151,47"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga8a12066003b7ef442e95bfbc22b4370b" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="199,5,344,47"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga982e2bcb890aab88eabf833a00ba841a" title="Set the value of the given buffer&#45;specific attribute." alt="" coords="392,5,537,47"/>
 </map>

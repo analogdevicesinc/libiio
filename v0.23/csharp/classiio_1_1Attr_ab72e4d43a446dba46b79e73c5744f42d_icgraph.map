@@ -1,7 +1,7 @@
 <map id="iio.Attr.read" name="iio.Attr.read">
-<area shape="rect" id="node1" title="Read the value of this attribute as a string." alt="" coords="393,56,492,83"/>
-<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a65fc421c1d058a28a7f9c4447ae6c955" title="Read the value of this attribute as a bool." alt="" coords="204,5,337,32"/>
-<area shape="rect" id="node3" href="$classiio_1_1Attr.html#a49505a94b503df2c16e27c2265ae855b" title="Read the value of this attribute as a double." alt="" coords="196,56,345,83"/>
-<area shape="rect" id="node4" href="$classiio_1_1Attr.html#a62af2e28fdc64d0e1818d2b98d476de7" title="Read the value of this attribute as a long." alt="" coords="204,107,337,133"/>
-<area shape="rect" id="node5" href="$classiio_1_1Trigger.html#a6ad460b6af12673c305862c1d83eb894" title="Get the currently configured frequency of this trigger." alt="" coords="5,107,148,133"/>
+<area shape="rect" id="node1" title="Read the value of this attribute as a string." alt="" coords="365,56,455,83"/>
+<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a65fc421c1d058a28a7f9c4447ae6c955" title="Read the value of this attribute as a bool." alt="" coords="190,5,310,32"/>
+<area shape="rect" id="node3" href="$classiio_1_1Attr.html#a49505a94b503df2c16e27c2265ae855b" title="Read the value of this attribute as a double." alt="" coords="183,56,317,83"/>
+<area shape="rect" id="node4" href="$classiio_1_1Attr.html#a62af2e28fdc64d0e1818d2b98d476de7" title="Read the value of this attribute as a long." alt="" coords="190,107,310,133"/>
+<area shape="rect" id="node5" href="$classiio_1_1Trigger.html#a6ad460b6af12673c305862c1d83eb894" title="Get the currently configured frequency of this trigger." alt="" coords="5,107,135,133"/>
 </map>

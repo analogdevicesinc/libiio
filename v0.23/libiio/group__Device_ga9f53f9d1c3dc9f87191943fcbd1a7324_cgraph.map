@@ -1,5 +1,5 @@
 <map id="iio_device_attr_write_bool" name="iio_device_attr_write_bool">
-<area shape="rect" id="node1" title="Set the value of the given device&#45;specific attribute." alt="" coords="5,5,199,32"/>
-<area shape="rect" id="node2" href="$group__Device.html#gaaa2d1867c15ef8f8424164d0ccea4dd8" title="Set the value of the given device&#45;specific attribute." alt="" coords="247,5,405,32"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga30829a67dcdffc902c4ba6801233e79a" title="Set the value of the given device&#45;specific attribute." alt="" coords="453,5,643,32"/>
+<area shape="rect" id="node1" title="Set the value of the given device&#45;specific attribute." alt="" coords="5,5,177,32"/>
+<area shape="rect" id="node2" href="$group__Device.html#gaaa2d1867c15ef8f8424164d0ccea4dd8" title="Set the value of the given device&#45;specific attribute." alt="" coords="225,5,367,32"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga30829a67dcdffc902c4ba6801233e79a" title="Set the value of the given device&#45;specific attribute." alt="" coords="415,5,584,32"/>
 </map>

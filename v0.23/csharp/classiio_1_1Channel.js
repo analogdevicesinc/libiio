@@ -100,6 +100,7 @@ var classiio_1_1Channel =
     [ "name", "classiio_1_1Channel.html#a57bb7c9c27737dfe72b4bccc08d5c128", null ],
     [ "output", "classiio_1_1Channel.html#ab69db8b456b298489ad5d094b99f6930", null ],
     [ "scan_element", "classiio_1_1Channel.html#a0a9079a13b55719bfa36b8d041883ecd", null ],
+    [ "format", "classiio_1_1Channel.html#a1b9214d70d53b882c863908754c39887", null ],
     [ "modifier", "classiio_1_1Channel.html#ade4aa6fcb830ef383db4695e8b65ade0", null ],
     [ "type", "classiio_1_1Channel.html#a0a8e7a2aef01d07302fdc71975d274d2", null ]
 ];

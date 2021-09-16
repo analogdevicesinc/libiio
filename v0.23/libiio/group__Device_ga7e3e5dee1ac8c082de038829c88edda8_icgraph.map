@@ -1,4 +1,4 @@
 <map id="iio_device_is_trigger" name="iio_device_is_trigger">
-<area shape="rect" id="node1" title="Return True if the given device is a trigger." alt="" coords="219,5,375,32"/>
-<area shape="rect" id="node2" href="$group__Device.html#ga3b8d1e621357f0755925d98555f53d9a" title="Associate a trigger to a given device." alt="" coords="5,5,171,32"/>
+<area shape="rect" id="node1" title="Return True if the given device is a trigger." alt="" coords="201,5,341,32"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga3b8d1e621357f0755925d98555f53d9a" title="Associate a trigger to a given device." alt="" coords="5,5,153,32"/>
 </map>

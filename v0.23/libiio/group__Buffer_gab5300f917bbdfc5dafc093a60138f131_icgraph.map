@@ -1,8 +1,8 @@
 <map id="iio_buffer_end" name="iio_buffer_end">
-<area shape="rect" id="node1" title="Get the address that follows the last sample in a buffer." alt="" coords="383,100,497,127"/>
-<area shape="rect" id="node2" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer." alt="" coords="220,100,335,127"/>
-<area shape="rect" id="node3" href="$group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30" title="Demultiplex and convert the samples of a given channel." alt="" coords="23,5,155,32"/>
-<area shape="rect" id="node4" href="$group__Channel.html#gacd227a6861960ea2fb49d957f62887dd" title="Demultiplex the samples of a given channel." alt="" coords="7,63,170,89"/>
-<area shape="rect" id="node5" href="$group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2" title="Convert and multiplex the samples of a given channel." alt="" coords="21,125,157,152"/>
-<area shape="rect" id="node6" href="$group__Channel.html#ga350e81855764c159c6aefa12fb78e1c2" title="Multiplex the samples of a given channel." alt="" coords="5,188,172,215"/>
+<area shape="rect" id="node1" title="Get the address that follows the last sample in a buffer." alt="" coords="356,100,459,127"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer." alt="" coords="204,100,308,127"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30" title="Demultiplex and convert the samples of a given channel." alt="" coords="21,5,140,32"/>
+<area shape="rect" id="node4" href="$group__Channel.html#gacd227a6861960ea2fb49d957f62887dd" title="Demultiplex the samples of a given channel." alt="" coords="7,63,154,89"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2" title="Convert and multiplex the samples of a given channel." alt="" coords="19,125,142,152"/>
+<area shape="rect" id="node6" href="$group__Channel.html#ga350e81855764c159c6aefa12fb78e1c2" title="Multiplex the samples of a given channel." alt="" coords="5,188,156,215"/>
 </map>

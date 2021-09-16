@@ -4,7 +4,7 @@ Content-type: text/html; charset=UTF-8
 <HTML><HEAD><TITLE>Man page of iio_attr</TITLE>
 </HEAD><BODY>
 <H1>iio_attr</H1>
-Section: LibIIO Utilities (1)<BR>Updated: 16 September 2021<BR><A HREF="#index">Index</A>
+Section: LibIIO Utilities (1)<BR>Updated: 21 February 2022<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="ixAAB"></A>
@@ -96,10 +96,13 @@ Read and Write IIO Context attributes
 
 <DD>
 Read and Write IIO Debug attributes
-<DT><B>-S, --Scan</B>
+<DT><B>-S, --scan</B>
 
 <DD>
-Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip:usb'. If no argument is given, it checks all that are availble.
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip,usb'.
+Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456:b673'.
+vid,pid are hexadecimal numbers (no prefix needed), &quot;*&quot; (match any for pid only)
+If no argument is given, it checks all that are availble.
 <DT><B>-h, --help</B>
 
 <DD>
@@ -229,6 +232,6 @@ All bugs are tracked at:
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 10:47:10 GMT, September 16, 2021
+Time: 16:36:12 GMT, February 21, 2022
 </BODY>
 </HTML>
