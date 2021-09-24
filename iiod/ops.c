@@ -1459,8 +1459,9 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 }
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-		 bool is_socket, bool use_aio, struct thread_pool *pool,
-		 const void *xml_zstd, size_t xml_zstd_len)
+		 bool is_socket, bool is_usb, bool use_aio,
+		 struct thread_pool *pool, const void *xml_zstd,
+		 size_t xml_zstd_len)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
@@ -1479,6 +1480,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 
 	pdata.fd_in_is_socket = is_socket;
 	pdata.fd_out_is_socket = is_socket;
+	pdata.is_usb = is_usb;
 
 	SLIST_INIT(&pdata.thdlist_head);
 

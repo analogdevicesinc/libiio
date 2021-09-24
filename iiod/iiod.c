@@ -109,7 +109,7 @@ static void client_thd(struct thread_pool *pool, void *d)
 	struct client_data *cdata = d;
 
 	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug,
-			true, false, pool,
+			true, false, false, pool,
 			cdata->xml_zstd, cdata->xml_zstd_len);
 
 	IIO_INFO("Client exited\n");
@@ -158,7 +158,8 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio,
 	}
 
 	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
-			false, use_aio, main_thread_pool, xml_zstd, xml_zstd_len);
+			false, false, use_aio, main_thread_pool,
+			xml_zstd, xml_zstd_len);
 	return EXIT_SUCCESS;
 }
 
