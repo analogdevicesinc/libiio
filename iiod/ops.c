@@ -1397,12 +1397,12 @@ err_print_value:
 
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 {
+	size_t bytes_read = 0;
 	ssize_t ret;
+	bool found;
 
 	if (pdata->fd_in_is_socket) {
 		struct pollfd pfd[2];
-		bool found;
-		size_t bytes_read = 0;
 
 		pfd[0].fd = pdata->fd_in;
 		pfd[0].events = POLLIN | POLLRDHUP;
@@ -1445,15 +1445,33 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 
 			bytes_read += to_trunc;
 		} while (!found && len);
-
-		/* No \n found? Just garbage data */
-		if (!found)
-			ret = -EIO;
-		else
-			ret = bytes_read;
-	} else {
+	} else if (pdata->is_usb) {
 		ret = pdata->readfd(pdata, buf, len);
+
+		found = buf[ret - 1] == '\n';
+	} else {
+		while (len) {
+			ret = pdata->readfd(pdata, buf, 1);
+			if (ret < 0)
+			      return ret;
+
+			bytes_read++;
+
+			if (*buf == '\n')
+			      break;
+
+			len--;
+			buf++;
+		}
+
+		found = !!len;
 	}
+
+	/* No \n found? Just garbage data */
+	if (!found)
+		ret = -EIO;
+	else
+		ret = bytes_read;
 
 	return ret;
 }
