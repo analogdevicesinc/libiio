@@ -66,6 +66,7 @@ struct parser_pdata {
 	struct iio_channel *chn;
 	bool channel_is_output;
 	bool fd_in_is_socket, fd_out_is_socket;
+	bool is_usb;
 #if WITH_AIO
 	io_context_t aio_ctx;
 	int aio_eventfd;
@@ -88,7 +89,7 @@ static inline void *zalloc(size_t size)
 }
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-		 bool is_socket, bool use_aio, struct thread_pool *pool,
+		 bool is_socket, bool is_usb, bool use_aio, struct thread_pool *pool,
 		 const void *xml_zstd, size_t xml_zstd_len);
 
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
