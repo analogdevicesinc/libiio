@@ -549,7 +549,7 @@ static int serial_parse_params(const char *params,
 		return -EINVAL;
 
 	/* 110 baud to 1,000,000 baud */
-	if (params == end || *baud_rate < 110 || *baud_rate > 1000001) {
+	if (params == end || *baud_rate < 110 || *baud_rate > 4000000) {
 		IIO_ERROR("Invalid baud rate\n");
 		return -EINVAL;
 	}
