@@ -20,7 +20,7 @@ rm libxml.7z
 
 echo "Downloading deps..."
 cd C:\
-wget http://swdownloads.analog.com/cse/build/libiio-win-deps.zip -OutFile "libiio-win-deps.zip"
+wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
 7z x -y "C:\libiio-win-deps.zip"
 
 # Note: InnoSetup is already installed on Azure images; so don't run this step

@@ -13,7 +13,7 @@ if ($ARCH -eq "Win32") {
 cd $src_dir
 mkdir dependencies
 cd dependencies
-wget http://swdownloads.analog.com/cse/build/libiio-win-deps.zip -OutFile "libiio-win-deps.zip"
+wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
 7z x -y "libiio-win-deps.zip"
 
 if ($ARCH -eq "Win32") {
