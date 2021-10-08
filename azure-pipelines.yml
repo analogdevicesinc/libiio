@@ -234,7 +234,7 @@ stages:
         displayName: 'Download rsa key'
         inputs:
           secureFile: 'id_rsa'
-      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -vv -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
+      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
         env:
           MAPPED_VAR: $(SERVER_ADDRESS)
         displayName: "Push artifacts to SW Downloads"
