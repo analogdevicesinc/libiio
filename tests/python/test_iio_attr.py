@@ -3,16 +3,21 @@ from invoke import task
 import logging
 from shutil import which
 import pytest
+import itertools
 
 # Check if iio_attr exists
 iio_attr = which("iio_attr") is None
 
 
+def permute(l):
+    return list(itertools.permutations(l))
+
+
 @task
 def cli_interface(con, command, hide=False):
     logging.debug("Running command: %s", " ".join(command))
-    out = con.run(" ".join(command), hide=hide, pty=True, in_stream=False)
-    return out.return_code, out.stdout.strip()
+    out = con.run(" ".join(command), warn=True, hide=hide, pty=True, in_stream=False)
+    return out.return_code, out.stdout.strip(), out.stderr.strip()
 
 
 @pytest.mark.skipif(iio_attr, reason="iio_attr not found on path")
@@ -74,6 +79,37 @@ Options:
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."""
 
-    ec, so = cli_interface(con, ["iio_attr", "--help"])
+    ec, so, se = cli_interface(con, ["iio_attr", "--help"])
     assert 0 == ec
     assert expected == so
+    assert "" == se
+
+
+@pytest.mark.iio_hardware(["ad9361", "adrv9361"])
+@pytest.mark.skipif(iio_attr, reason="iio_attr not found on path")
+def test_incomplete(iio_uri):
+    con = invoke.Context()
+    expected = "must specify one of -d, -c, -C, -B or -D."
+    ec, so, se = cli_interface(con, ["iio_attr", "-u", iio_uri])
+    assert 1 == ec
+    assert expected == se
+    assert "" == so
+
+
+@pytest.mark.iio_hardware("adrv9361")
+@pytest.mark.parametrize("args", permute(["-d", "-u"]))
+@pytest.mark.skipif(iio_attr, reason="iio_attr not found on path")
+def test_device_list(iio_uri, args):
+    con = invoke.Context()
+    expected = """IIO context has 5 devices:
+\tiio:device0, ad9361-phy: found 18 device attributes
+\tiio:device1, xadc: found 1 device attributes
+\tiio:device2, cf-ad9361-dds-core-lpc: found 0 device attributes
+\tiio:device3, cf-ad9361-lpc: found 0 device attributes
+\tiio_sysfs_trigger: found 2 device attributes"""
+    args = list(args)
+    args.insert(args.index("-u") + 1, iio_uri)
+    ec, so, se = cli_interface(con, ["iio_attr"] + args)
+    assert 0 == ec
+    assert expected == so
+    assert "" == se
