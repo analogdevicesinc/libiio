@@ -1,0 +1,3 @@
+pytest
+pyinvoke
+pytest-libiio
