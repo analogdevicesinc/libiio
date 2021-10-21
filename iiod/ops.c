@@ -1401,6 +1401,9 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 	ssize_t ret;
 	bool found;
 
+	if (pdata->is_usb)
+	      return pdata->readfd(pdata, buf, len);
+
 	if (pdata->fd_in_is_socket) {
 		struct pollfd pfd[2];
 
@@ -1445,10 +1448,6 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 
 			bytes_read += to_trunc;
 		} while (!found && len);
-	} else if (pdata->is_usb) {
-		ret = pdata->readfd(pdata, buf, len);
-
-		found = buf[ret - 1] == '\n';
 	} else {
 		while (len) {
 			ret = pdata->readfd(pdata, buf, 1);
@@ -1467,13 +1466,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		found = !!len;
 	}
 
-	/* No \n found? Just garbage data */
-	if (!found)
-		ret = -EIO;
-	else
-		ret = bytes_read;
-
-	return ret;
+	return found ? (ssize_t) bytes_read : -EIO;
 }
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
