@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * */
 
-#ifndef IIO_TESTS_COMMON_H
-#define IIO_TESTS_COMMON_H
+#ifndef IIO_UTILS_COMMON_H
+#define IIO_UTILS_COMMON_H
 
 #include <getopt.h>
 
@@ -73,4 +73,4 @@ void free_argw(int argc, char * argw[]);
 #endif
 
 
-#endif /* IIO_TESTS_COMMON_H */
+#endif /* IIO_UTILS_COMMON_H */

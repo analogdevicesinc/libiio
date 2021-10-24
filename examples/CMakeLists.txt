@@ -81,13 +81,13 @@ if(HAS_CDK_CSTRING2)
     target_link_libraries(
         iio-monitor iio ${PTHREAD_LIBRARIES} ${CURSES_LIBRARY} ${CDK_LIBRARY}
     )
-    set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio-monitor)
+    set(IIO_UTIL_TARGETS ${IIO_UTIL_TARGETS} iio-monitor)
 else()
     message(STATUS "Curses Development Kit (CDK) missing or too old, skipping iio-monitor")
 endif ()
 
 set_target_properties(
-    ${IIO_TESTS_TARGETS} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
+    ${IIO_UTIL_TARGETS} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
                                     C_EXTENSIONS OFF
 )
 

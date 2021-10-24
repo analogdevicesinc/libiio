@@ -44,7 +44,7 @@ target_link_libraries(iio_readdev iio iio_tests_helper)
 target_link_libraries(iio_reg     iio iio_tests_helper)
 target_link_libraries(iio_writedev iio iio_tests_helper)
 
-set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_readdev iio_reg iio_writedev)
+set(IIO_UTIL_TARGETS iio_genxml iio_info iio_attr iio_readdev iio_reg iio_writedev)
 
 if(PTHREAD_LIBRARIES OR ANDROID)
 	project(iio_adi_xflow_check C)
@@ -53,13 +53,13 @@ if(PTHREAD_LIBRARIES OR ANDROID)
 	add_executable(iio_stresstest iio_stresstest.c)
 	target_link_libraries(iio_adi_xflow_check iio iio_tests_helper ${PTHREAD_LIBRARIES})
 	target_link_libraries(iio_stresstest iio iio_tests_helper ${PTHREAD_LIBRARIES})
-	set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio_adi_xflow_check iio_stresstest)
+	set(IIO_UTIL_TARGETS ${IIO_UTIL_TARGETS} iio_adi_xflow_check iio_stresstest)
 
 	target_link_libraries(iio_readdev  ${PTHREAD_LIBRARIES})
 	target_link_libraries(iio_writedev ${PTHREAD_LIBRARIES})
 endif()
 
-set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
+set_target_properties(${IIO_UTIL_TARGETS} PROPERTIES
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
@@ -67,11 +67,11 @@ set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
 
 if(NOT SKIP_INSTALL_ALL)
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${OSX_INSTALL_FRAMEWORKSDIR}/iio.framework/Tools)
+		install(TARGETS ${IIO_UTIL_TARGETS} RUNTIME DESTINATION ${OSX_INSTALL_FRAMEWORKSDIR}/iio.framework/Tools)
 	else()
-		install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+		install(TARGETS ${IIO_UTIL_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 endif()
 
 # Make the test targets available to the main CMakeLists.txt
-set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} PARENT_SCOPE)
+set(IIO_UTIL_TARGETS ${IIO_UTIL_TARGETS} PARENT_SCOPE)

@@ -54,10 +54,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
-option(WITH_TESTS "Build the test programs" ON)
+option(WITH_UTILS "Build the libiio command line utility programs" ON)
 option(WITH_EXAMPLES "Build examples" OFF)
 
-if (WITH_TESTS)
+if (WITH_UTILS)
 	set(NEED_THREADS 1)
 endif()
 
@@ -433,8 +433,8 @@ if(NOT SKIP_INSTALL_ALL)
 	install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
-if(WITH_TESTS)
-	add_subdirectory(tests)
+if(WITH_UTILS)
+	add_subdirectory(utilities)
 endif()
 if(WITH_EXAMPLES)
 	add_subdirectory(examples)
@@ -546,7 +546,7 @@ if(OSX_PACKAGE)
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
 	set(COPY_TOOLS_COMMAND)
-	foreach(_tool ${IIO_TESTS_TARGETS})
+	foreach(_tool ${IIO_UTIL_TARGETS})
 		list(APPEND COPY_TOOLS_COMMAND
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_tool}> ${LIBIIO_FRAMEWORK_DIR}/Tools)
 	endforeach()
@@ -561,7 +561,7 @@ if(OSX_PACKAGE)
 		COMMAND ${PRODUCTBUILD_EXECUTABLE}
 			--distribution ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_PKG}
 		COMMAND ${CMAKE_COMMAND} -E remove ${LIBIIO_TEMP_PKG}
-		DEPENDS iio ${IIO_TESTS_TARGETS} ${LIBIIO_DISTRIBUTION_XML}
+		DEPENDS iio ${IIO_UTIL_TARGETS} ${LIBIIO_DISTRIBUTION_XML}
 	)
 
 	if (PKGBUILD_EXECUTABLE AND PRODUCTBUILD_EXECUTABLE)

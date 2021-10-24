@@ -46,7 +46,7 @@ Cmake Options       | Default | Description                                    |
 `PYTHON_BINDINGS`   | OFF | Install PYTHON bindings                            |
 `WITH_DOC`          | OFF | Generate documentation with Doxygen and Sphinx     |
 `WITH_MAN`          | OFF | Generate and install man pages                     |
-`WITH_TESTS`        |  ON | Build the test programs                            |
+`WITH_UTIL`         |  ON | Build the command line utilties                    |
 `WITH_LOCAL_CONFIG` |  ON | Read local context attributes from /etc/libiio.ini |
 `ENABLE_PACKAGING`  | OFF | Create .deb/.rpm/.tar.gz via 'make package'        |
 `INSTALL_UDEV_RULE` |  ON | Install a udev rule for detection of USB devices   |

@@ -33,7 +33,7 @@ if (WITH_MAN)
 			OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man3/libiio.3.html
 		)
 	endif()
-	if (WITH_TESTS)
+	if (WITH_UTIL)
 		list(APPEND MAN1 iio_attr.1 iio_info.1 iio_readdev.1 iio_reg.1 iio_writedev.1)
 		foreach(_page ${MAN1})
 			configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/${_page}.in
