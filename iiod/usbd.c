@@ -71,7 +71,7 @@ static void usbd_client_thread(struct thread_pool *pool, void *d)
 	struct usbd_client_pdata *pdata = d;
 
 	interpreter(pdata->pdata->ctx, pdata->ep_in, pdata->ep_out,
-			pdata->pdata->debug, false,
+			pdata->pdata->debug, false, true,
 			pdata->pdata->use_aio, pool,
 			pdata->pdata->xml_zstd, pdata->pdata->xml_zstd_len);
 

@@ -109,6 +109,10 @@ handle_debian() {
 	handle_default
 }
 
+handle_doxygen() {
+	handle_default
+}
+
 setup_build_type_env_vars
 
 handle_${BUILD_TYPE}

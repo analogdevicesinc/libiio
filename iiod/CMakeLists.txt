@@ -64,6 +64,11 @@ if (WITH_AIO)
 	target_link_libraries(iiod LINK_PRIVATE ${LIBAIO_LIBRARIES})
 endif()
 
+option(WITH_IIOD_SERIAL "Add serial (UART) support" ON)
+if (WITH_IIOD_SERIAL)
+	target_sources(iiod PRIVATE serial.c)
+endif()
+
 if (WITH_ZSTD)
 	target_include_directories(iiod PRIVATE ${LIBZSTD_INCLUDE_DIR})
 	target_link_libraries(iiod LINK_PRIVATE ${LIBZSTD_LIBRARIES})

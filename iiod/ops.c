@@ -1397,12 +1397,15 @@ err_print_value:
 
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 {
+	size_t bytes_read = 0;
 	ssize_t ret;
+	bool found;
+
+	if (pdata->is_usb)
+	      return pdata->readfd(pdata, buf, len);
 
 	if (pdata->fd_in_is_socket) {
 		struct pollfd pfd[2];
-		bool found;
-		size_t bytes_read = 0;
 
 		pfd[0].fd = pdata->fd_in;
 		pfd[0].events = POLLIN | POLLRDHUP;
@@ -1447,22 +1450,31 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 
 			bytes_read += to_trunc;
 		} while (!found && len);
-
-		/* No \n found? Just garbage data */
-		if (!found)
-			ret = -EIO;
-		else
-			ret = bytes_read;
 	} else {
-		ret = pdata->readfd(pdata, buf, len);
+		while (len) {
+			ret = pdata->readfd(pdata, buf, 1);
+			if (ret < 0)
+			      return ret;
+
+			bytes_read++;
+
+			if (*buf == '\n')
+			      break;
+
+			len--;
+			buf++;
+		}
+
+		found = !!len;
 	}
 
-	return ret;
+	return found ? (ssize_t) bytes_read : -EIO;
 }
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
-		 bool is_socket, bool use_aio, struct thread_pool *pool,
-		 const void *xml_zstd, size_t xml_zstd_len)
+		 bool is_socket, bool is_usb, bool use_aio,
+		 struct thread_pool *pool, const void *xml_zstd,
+		 size_t xml_zstd_len)
 {
 	yyscan_t scanner;
 	struct parser_pdata pdata;
@@ -1481,6 +1493,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 
 	pdata.fd_in_is_socket = is_socket;
 	pdata.fd_out_is_socket = is_socket;
+	pdata.is_usb = is_usb;
 
 	SLIST_INIT(&pdata.thdlist_head);
 

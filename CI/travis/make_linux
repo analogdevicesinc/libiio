@@ -5,6 +5,7 @@ if [ "x${COVERITY_SCAN_PROJECT_NAME}" != "x" ] ; then exit 0; fi
 . CI/travis/lib.sh
 
 INSIDE_DOCKER_TRAVIS_CI_ENV="$INSIDE_DOCKER_TRAVIS_CI_ENV CHECK_AGAINST_KERNEL_HEADER CI_BUILD_SPHINX_DOCS"
+CPACK_HELP="-DCPACK_SYSTEM_NAME=${ARTIFACTNAME}"
 
 handle_default() {
 	echo "### making build dir"
@@ -42,7 +43,7 @@ handle_default() {
 		MAN_HELP="-DWITH_MAN=ON"
 	fi
 
-	FLAGS="-DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DWITH_EXAMPLES=ON ${PYTHON_HELP} ${DOC_HELP} ${MAN_HELP}"
+	FLAGS="-DENABLE_PACKAGING=ON -DDEB_DETECT_DEPENDENCIES=ON -DWITH_EXAMPLES=ON ${PYTHON_HELP} ${DOC_HELP} ${MAN_HELP} ${CPACK_HELP}"
 
 	# Ubuntu Xenial's libserialport and libzstd are too old
 	if [ "${OS_VERSION}" = xenial ] ; then
@@ -93,8 +94,8 @@ handle_default() {
 
 	echo "### make package"
 	make package
-	if [ -n "${GH_DOC_TOKEN}" ] && \
-			[ -f "./generateDocumentationAndDeploy.sh" ] ; then
+	
+	if [ -f "./generateDocumentationAndDeploy.sh" ] ; then
 		sh generateDocumentationAndDeploy.sh
 	fi
 	cd ..
@@ -111,7 +112,7 @@ handle_centos() {
 	mkdir -p build
 	cd build
 
-	FLAGS="-DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON"
+	FLAGS="-DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON ${CPACK_HELP}"
 
 	# CentOS 7's kernel headers are too old for USB support in IIOD
 	[ "${OS_VERSION}" = centos7 ] && FLAGS="${FLAGS} -DWITH_IIOD_USBD=OFF"
@@ -132,6 +133,10 @@ handle_debian() {
 
 handle_generic_docker() {
 	run_docker_script inside_docker.sh
+}
+
+handle_doxygen() {
+	handle_default
 }
 
 setup_build_type_env_vars

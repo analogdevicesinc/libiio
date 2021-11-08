@@ -208,7 +208,7 @@ namespace iio
         public readonly string name;
 
         /// <summary>The label of this device.</summary>
-        public readonly string label { get; private set; };
+        public string label { get; private set; }
 
         /// <summary>A <c>list</c> of all the attributes that this device has.</summary>
         public readonly List<Attr> attrs;

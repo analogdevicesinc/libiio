@@ -79,6 +79,7 @@ static const struct option options[] = {
 	  {"aio", no_argument, 0, 'a'},
 	  {"ffs", required_argument, 0, 'F'},
 	  {"nb-pipes", required_argument, 0, 'n'},
+	  {"serial", required_argument, 0, 's'},
 	  {0, 0, 0, 0},
 };
 
@@ -91,6 +92,7 @@ static const char *options_descriptions[] = {
 	"Use asynchronous I/O.",
 	"Use the given FunctionFS mountpoint to serve over USB",
 	"Specify the number of USB pipes (ep couples) to use",
+	"Run " MY_NAME " on the specified UART.",
 };
 
 static void usage(void)
@@ -109,7 +111,7 @@ static void client_thd(struct thread_pool *pool, void *d)
 	struct client_data *cdata = d;
 
 	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug,
-			true, false, pool,
+			true, false, false, pool,
 			cdata->xml_zstd, cdata->xml_zstd_len);
 
 	IIO_INFO("Client exited\n");
@@ -158,7 +160,8 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio,
 	}
 
 	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
-			false, use_aio, main_thread_pool, xml_zstd, xml_zstd_len);
+			false, false, use_aio, main_thread_pool,
+			xml_zstd, xml_zstd_len);
 	return EXIT_SUCCESS;
 }
 
@@ -355,12 +358,13 @@ int main(int argc, char **argv)
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
+	char *uart_params = NULL;
 	char err_str[1024];
 	void *xml_zstd;
 	size_t xml_zstd_len = 0;
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:",
+	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -400,6 +404,15 @@ int main(int argc, char **argv)
 				IIO_ERROR("--nb-pipes: Invalid parameter\n");
 				return EXIT_FAILURE;
 			}
+			break;
+		case 's':
+			if (!WITH_IIOD_SERIAL) {
+				IIO_ERROR("IIOD was not compiled with serial support.\n");
+				return EXIT_FAILURE;
+
+			}
+
+			uart_params = optarg;
 			break;
 		case 'h':
 			usage();
@@ -444,6 +457,18 @@ int main(int argc, char **argv)
 		if (ret) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to start USB daemon: %s\n", err_str);
+			ret = EXIT_FAILURE;
+			goto out_destroy_thread_pool;
+		}
+	}
+
+	if (WITH_IIOD_SERIAL && uart_params) {
+		ret = start_serial_daemon(ctx, uart_params,
+					  debug, main_thread_pool,
+					  xml_zstd, xml_zstd_len);
+		if (ret) {
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			IIO_ERROR("Unable to start serial daemon: %s\n", err_str);
 			ret = EXIT_FAILURE;
 			goto out_destroy_thread_pool;
 		}

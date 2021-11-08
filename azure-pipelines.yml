@@ -1,9 +1,14 @@
 trigger:
-- main
-- master
-- dev
-- staging/*
-- 20*
+  branches:
+    include:
+    - main
+    - master
+    - dev
+    - staging/*
+    - 20*
+  tags:
+    include:
+    - v*
 
 pr:
 - main
@@ -37,14 +42,12 @@ stages:
           OS_TYPE: 'ubuntu_docker'
           OS_VERSION: bionic
           artifactName: 'Linux-Ubuntu-18.04-x86_64'
-          CI_BUILD_SPHINX_DOCS: 1
         ubuntu_20_04_x86_64:
           imageName: 'ubuntu-latest'
           OS_TYPE: 'ubuntu_docker'
           OS_VERSION: focal
           artifactName: 'Linux-Ubuntu-20.04-x86_64'
           CHECK_AGAINST_KERNEL_HEADER: 1
-          CI_BUILD_SPHINX_DOCS: 1
         debian_buster_arm32v7:
           imageName: 'ubuntu-latest'
           OS_TYPE: 'arm32v7/debian_docker'
@@ -55,23 +58,31 @@ stages:
           OS_TYPE: 'arm64v8/debian_docker'
           OS_VERSION: 'buster'
           artifactName: 'Linux-Debian-Buster-ARM64'
+        doxygen:
+          imageName: 'ubuntu-latest'
+          OS_TYPE: 'doxygen'
+          OS_VERSION: focal
+          artifactName: 'Libiio-documentation'
+          CI_BUILD_SPHINX_DOCS: 1
     pool:
       vmImage: $(imageName)
     steps:
     - checkout: self
       fetchDepth: 1
       clean: true
+      persistCredentials: true
     - script: ./CI/travis/before_install_linux
       displayName: "Install Dependencies"
     - script: ./CI/travis/make_linux
       displayName: "Build"
     - task: CopyFiles@2
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['CI_BUILD_SPHINX_DOCS'], '1'))
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.rpm)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PublishPipelineArtifact@1
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['CI_BUILD_SPHINX_DOCS'], '1'))
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
@@ -107,6 +118,11 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build_tar/'
+        contents: '$(Agent.BuildDirectory)/s/build_tar/?(*.gz)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PublishPipelineArtifact@1
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
@@ -132,6 +148,9 @@ stages:
     - checkout: self
       fetchDepth: 1
       clean: true
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
     - task: PowerShell@2
       inputs:
         targetType: 'filePath'
@@ -145,7 +164,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy libraries'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build/Release'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/Release'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy iio.h header'
@@ -153,6 +172,29 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/'
         contents: 'iio.h'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy .exe files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/tests/Release'
+        contents: '*.exe'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy .tar.gz files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/bindings/python'
+        contents: '*.gz'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy libiio-sharp.dll file'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/bindings/csharp'
+        contents: 'libiio-sharp.dll'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PowerShell@2
+      displayName: 'Copy dependencies'
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\publish_deps.ps1
     - task: PublishPipelineArtifact@1
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
@@ -162,7 +204,27 @@ stages:
 - stage: PushArtifacts
   dependsOn: Builds
   jobs:
+  - job: GenerateSetupExe
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
+    pool:
+      vmImage: 'windows-2019'
+    steps:
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          path: '$(Build.ArtifactStagingDirectory)'
+      - task: PowerShell@2
+        inputs:
+          targetType: 'filePath'
+          filePath: .\CI\generate_exe.ps1
+        displayName: "Generate libiio-setup.exe"
+      - task: PublishPipelineArtifact@1
+        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)'
+          artifactName: 'Libiio-Setup-Exe'
   - job: PushToSWDownloads
+    dependsOn: GenerateSetupExe
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -174,8 +236,29 @@ stages:
         displayName: 'Download rsa key'
         inputs:
           secureFile: 'id_rsa'
-      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -vv -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
+      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
         env:
           MAPPED_VAR: $(SERVER_ADDRESS)
-        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
         displayName: "Push artifacts to SW Downloads"
+  - job: PushToGithubRelease
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          path: '$(Build.ArtifactStagingDirectory)'
+      - bash: ./CI/travis/prepare_assets.sh
+        displayName: "Prepare assets for release"
+      - task: GithubRelease@0
+        displayName: 'Attach artifacts to GitHub Release'
+        inputs:
+          gitHubConnection: libiio-release
+          repositoryName: $(Build.Repository.Name)
+          action: create
+          target: $(Build.SourceVersion)
+          tag: $(Build.SourceBranchName)
+          title: "Libiio release $(Build.SourceBranchName)"
+          assets: $(Build.ArtifactStagingDirectory)/*
+          addChangeLog: true
+          isDraft: true

@@ -152,6 +152,36 @@ namespace iio
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
+        public struct DataFormat
+        {
+            /// <summary>Total length of the sample, in bits</summary>
+            public uint length;
+
+            /// <summary>Length of valuable data in the sample, in bits</summary>
+            public uint bits;
+
+            /// <summary>Right-shift to apply when converting sample</summary>
+            public uint shift;
+
+            /// <summary>True if the sample is signed</summary>
+            [MarshalAs(UnmanagedType.I1)] public bool is_signed;
+
+            /// <summary>True if the sample if fully defined, sign-extended, etc.</summary>
+            [MarshalAs(UnmanagedType.I1)] public bool is_fully_defined;
+
+            /// <summary>True if the sample is in big-endian format</summary>
+            [MarshalAs(UnmanagedType.I1)] public bool is_be;
+
+            /// <summary>True if the sample should be scaled when converted</summary>
+            [MarshalAs(UnmanagedType.I1)] public bool with_scale;
+
+            /// <summary>Scale to apply if with_scale is True</summary>
+            public double scale;
+
+            /// <summary>Number of times length repeats</summary>
+            public uint repeat;
+        }
+
         internal IntPtr chn;
         private uint sample_size;
 
@@ -251,14 +281,20 @@ namespace iio
         /// <summary>The type of this channel.</summary>
         public ChannelType type { get; private set; }
 
+        /// <summary>Represents the format of a data sample.</summary>
+        public DataFormat format { get; private set; }
+
         internal Channel(IntPtr chn)
         {
+            IntPtr fmt_struct = iio_channel_get_data_format(chn);
+            uint nb_attrs = iio_channel_get_attrs_count(chn);
+
             this.chn = chn;
             attrs = new List<Attr>();
-            sample_size = (uint)Marshal.ReadInt32(iio_channel_get_data_format(this.chn)) / 8;
             modifier = (ChannelModifier) iio_channel_get_modifier(chn);
             type = (ChannelType) iio_channel_get_type(chn);
-            uint nb_attrs = iio_channel_get_attrs_count(chn);
+            format = (DataFormat)Marshal.PtrToStructure(fmt_struct, typeof(DataFormat));
+            sample_size = format.length / 8;
 
             for (uint i = 0; i < nb_attrs; i++)
             {
