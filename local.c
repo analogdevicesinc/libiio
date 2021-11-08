@@ -439,7 +439,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	int f = pdata->fd;
 	ssize_t ret;
 
-	if (!pdata->is_high_speed)
+	if (!WITH_LOCAL_MMAP_API || !pdata->is_high_speed)
 		return -ENOSYS;
 	if (f == -1)
 		return -EBADF;
@@ -958,11 +958,13 @@ static int local_open(const struct iio_device *dev,
 	pdata->cyclic_buffer_enqueued = false;
 	pdata->samples_count = samples_count;
 
-	ret = enable_high_speed(dev);
-	if (ret < 0 && ret != -ENOSYS)
-		goto err_close;
+	if (WITH_LOCAL_MMAP_API) {
+		ret = enable_high_speed(dev);
+		if (ret < 0 && ret != -ENOSYS)
+			goto err_close;
 
-	pdata->is_high_speed = !ret;
+		pdata->is_high_speed = !ret;
+	}
 
 	if (!pdata->is_high_speed) {
 		unsigned long size = samples_count * pdata->max_nb_blocks;
