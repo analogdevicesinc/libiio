@@ -169,8 +169,12 @@ endif()
 # make sure all check_symbol_exists are before this point, otherwise they fail
 # on some versions of compilers
 if (MSVC)
-	if(DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR})
-		message(STATUS "Running in an AppVeyor environment, setting -Werror")
+	# why can't different CIs use the same flags?
+	# Travis CI      : CI=True & TRAVIS=True
+	# Appveyor       : CI=True & APPVEYOR=True
+	# Azure Pipelines: TF_BUILD=True
+	if(DEFINED ENV{TF_BUILD} OR (DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR}))
+		message(STATUS "Running in an Azure or AppVeyor environment, setting -Werror")
 		add_compile_options(/WX)
 	endif()
 elseif (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -180,10 +184,13 @@ elseif (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 		SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}  -fprofile-arcs -ftest-coverage")
 	endif()
-	if(DEFINED ENV{CI} AND (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR}))
-		message(STATUS "Running in CI environment (Travis or AppVeyor), setting -Werror")
+	if(DEFINED ENV{TF_BUILD} OR (DEFINED ENV{CI} AND (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR})))
+		message(STATUS "Running in CI environment (Azure, Travis or AppVeyor), setting -Werror")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 	endif()
+else()
+	message(STATUS "Unknown compiler ${CMAKE_C_COMPILER_ID}")
+	message(STATUS "GCC ${CMAKE_COMPILER_IS_GNUCC}")
 endif()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
