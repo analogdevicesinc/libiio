@@ -181,8 +181,6 @@ if (WITH_USB_BACKEND)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
 			"If you want to disable the USB backend, set WITH_USB_BACKEND=OFF.")
 	else()
-		message(STATUS "Looking for libusb-1.0 : Found")
-
 		set(IIOD_CLIENT 1)
 		set(NEED_LIBXML2 1)
 		set(NEED_THREADS 1)
@@ -301,8 +299,6 @@ if (WITH_SERIAL_BACKEND)
 	if (NOT LIBSERIALPORT_LIBRARIES OR NOT LIBSERIALPORT_INCLUDE_DIR)
 		message(SEND_ERROR "Unable to find libserialport dependency.\n")
 	else()
-		message(STATUS "Looking for libserialport : Found")
-
 		file(STRINGS ${LIBSERIALPORT_INCLUDE_DIR}/libserialport.h LIBSERIALPORT_VERSION_STR REGEX "SP_PACKAGE_VERSION_STRING")
 		string(REGEX REPLACE "#define SP_PACKAGE_VERSION_STRING \"(.*)\"" "\\1" LIBSERIALPORT_VERSION ${LIBSERIALPORT_VERSION_STR})
 		if ("${LIBSERIALPORT_VERSION}" VERSION_LESS 0.1.1)
@@ -347,7 +343,6 @@ endif (WITH_ZSTD)
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 if(WITH_NETWORK_BACKEND)
-	message(STATUS "Building with Network back end support")
 	if (WIN32)
 		target_link_libraries(iio PRIVATE wsock32 iphlpapi ws2_32)
 	endif()
@@ -388,21 +383,16 @@ if(WITH_NETWORK_BACKEND)
 
 	option(HAVE_DNS_SD "Enable DNS-SD (ZeroConf) support" ON)
 	if (NOT HAVE_DNS_SD)
-		message(STATUS "Building without DNS-SD (ZeroConf) support")
-
 	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		find_library(CORE_SERVICES CoreServices)
 
-		message(STATUS "Building with CFNetServices, an Apple DNS SD implementation")
-
 		target_sources(${IIO_NETWORK_LIB} PRIVATE dns_sd.c dns_sd_bonjour.c)
 		target_link_libraries(${IIO_NETWORK_LIB} PRIVATE ${CORE_SERVICES})
-
+		set(HAVE_BONJOUR ON)
 	elseif(WIN32)
 		if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 			set_source_files_properties(dns_sd_windows.c PROPERTIES COMPILE_FLAGS "-Wno-unused-function")
 		endif()
-		message(STATUS "Building with mdns, A Public domain mDNS/DNS-SD library in C ")
 
 		target_sources(${IIO_NETWORK_LIB} PRIVATE dns_sd.c dns_sd_windows.c)
 
@@ -414,20 +404,15 @@ if(WITH_NETWORK_BACKEND)
 				"If you want to disable DNS-SD (ZeroConf) support, set HAVE_DNS_SD=OFF.")
 		endif()
 
-		message(STATUS "Building with Avahi, a DNS-SD (ZeroConf) implementation")
-		set(HAVE_AVAHI ON)
-
-		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
-
 		target_sources(${IIO_NETWORK_LIB} PRIVATE dns_sd.c dns_sd_avahi.c)
 		target_link_libraries(${IIO_NETWORK_LIB} PRIVATE ${AVAHI_LIBRARIES})
+		set(HAVE_AVAHI ON)
 	endif()
 
 	set(NEED_THREADS 1)
 	set(IIOD_CLIENT 1)
 	set(NEED_LIBXML2 1)
 else()
-	message(STATUS "Building without network support")
 	set(HAVE_DNS_SD OFF)
 endif()
 
@@ -518,3 +503,37 @@ add_subdirectory(man)
 include(cmake/Install.cmake)
 
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
+
+list(APPEND IIO_FEATURES_${WITH_XML_BACKEND} xml)
+list(APPEND IIO_FEATURES_${WITH_ZSTD} zstd)
+list(APPEND IIO_FEATURES_${WITH_NETWORK_BACKEND} network)
+list(APPEND IIO_FEATURES_${HAVE_DNS_SD} dns-sd)
+list(APPEND IIO_FEATURES_${HAVE_AVAHI} avahi)
+list(APPEND IIO_FEATURES_${HAVE_BONJOUR} bonjour)
+list(APPEND IIO_FEATURES_${ENABLE_IPV6} ipv6)
+list(APPEND IIO_FEATURES_${WITH_SERIAL_BACKEND} serial)
+list(APPEND IIO_FEATURES_${WITH_LOCAL_BACKEND} local)
+list(APPEND IIO_FEATURES_${WITH_USB_BACKEND} usb)
+list(APPEND IIO_FEATURES_${WITH_TESTS} utils)
+list(APPEND IIO_FEATURES_${WITH_EXAMPLES} examples)
+list(APPEND IIO_FEATURES_${WITH_IIOD} iiod)
+list(APPEND IIO_FEATURES_${WITH_MODULES} modules)
+list(APPEND IIO_FEATURES_${WITH_USB_BACKEND_DYNAMIC} usb-dynamic)
+list(APPEND IIO_FEATURES_${WITH_NETWORK_BACKEND_DYNAMIC} network-dynamic)
+list(APPEND IIO_FEATURES_${WITH_SERIAL_BACKEND_DYNAMIC} serial-dynamic)
+#add iiod settings
+list(APPEND IIO_FEATURES_ON ${IIOD_FEATURES_ON})
+list(APPEND IIO_FEATURES_OFF ${IIOD_FEATURES_OFF})
+list(APPEND IIO_FEATURES_${WITH_DOC} doc)
+#add man page settings
+list(APPEND IIO_FEATURES_ON ${IIOM_FEATURES_ON})
+list(APPEND IIO_FEATURES_OFF ${IIOM_FEATURES_OFF})
+#add binding settings
+list(APPEND IIO_FEATURES_ON ${IIOB_FEATURES_ON})
+list(APPEND IIO_FEATURES_OFF ${IIOB_FEATURES_OFF})
+
+string(REPLACE ";" " " IIO_FEATURES_ON "${IIO_FEATURES_ON}")
+string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
+
+message(STATUS "Features enabled : ${IIO_FEATURES_ON}")
+message(STATUS "Features disabled: ${IIO_FEATURES_OFF}")
