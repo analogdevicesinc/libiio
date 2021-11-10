@@ -405,7 +405,7 @@ if(WITH_NETWORK_BACKEND)
 		endif()
 
 		target_sources(${IIO_NETWORK_LIB} PRIVATE dns_sd.c dns_sd_avahi.c)
-		target_link_libraries(${IIO_NETWORK_LIB} PRIVATE ${AVAHI_LIBRARIES})
+		target_link_libraries(${IIO_NETWORK_LIB} PRIVATE ${AVAHI_COMMON_LIBRARIES} ${AVAHI_CLIENT_LIBRARIES})
 		set(HAVE_AVAHI ON)
 	endif()
 
