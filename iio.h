@@ -84,6 +84,16 @@ struct iio_context_info;
 struct iio_scan_context;
 struct iio_scan_block;
 
+#define	IIO_CHAN_TYPE_UNKNOWN INT_MAX
+
+#if defined __has_include
+#  if __has_include(<linux/iio/types.h>)
+#    include <linux/iio/types.h>
+#    define __IIO_TYPE_DEFINED__
+#  endif
+#endif
+
+#ifndef __IIO_TYPE_DEFINED__
 /**
  * @enum iio_chan_type
  * @brief IIO channel type
@@ -127,7 +137,6 @@ enum iio_chan_type {
 	IIO_POSITIONRELATIVE,
 	IIO_PHASE,
 	IIO_MASSCONCENTRATION,
-	IIO_CHAN_TYPE_UNKNOWN = INT_MAX
 };
 
 /**
@@ -184,6 +193,8 @@ enum iio_modifier {
 	IIO_MOD_H2,
 	IIO_MOD_O2,
 };
+
+#endif  /* !__IIO_TYPE_DEFINED__ */
 
 /* ---------------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/

@@ -25,7 +25,7 @@ do
 	echo looking for ${enum}
 	rm -f /tmp/kernel_${enum} /tmp/libiio_${enum}
 	sed "0,/${enum}/d" ${KERNEL_TYPES}  | sed -n '/}/q;p' > /tmp/kernel_${enum}
-	sed "0,/^enum.*${enum}/d" ${IIOH} | sed -n '/}/q;p' | grep -v IIO_CHAN_TYPE_UNKNOWN > /tmp/libiio_${enum}
+	sed "0,/^enum.*${enum}/d" ${IIOH} | sed -n '/}/q;p' > /tmp/libiio_${enum}
 	echo Differences in ${enum}
 	# diff exit status of 1 means a difference, not an error
 	set +e
