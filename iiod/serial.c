@@ -6,7 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "../debug.h"
+#include "debug.h"
 #include "ops.h"
 #include "thread-pool.h"
 
