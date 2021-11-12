@@ -360,7 +360,7 @@ static int serial_get_trigger(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_get_trigger(pdata->iiod_client, NULL, dev, trigger);
+	return iiod_client_get_trigger(pdata->iiod_client, dev, trigger);
 }
 
 static int serial_set_trigger(const struct iio_device *dev,
@@ -369,7 +369,7 @@ static int serial_set_trigger(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_set_trigger(pdata->iiod_client, NULL, dev, trigger);
+	return iiod_client_set_trigger(pdata->iiod_client, dev, trigger);
 }
 
 static const struct iio_backend_ops serial_ops = {
