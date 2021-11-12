@@ -228,7 +228,14 @@ stages:
     steps:
       - task: DownloadPipelineArtifact@2
         inputs:
-          path: /home/vsts/work/1/a
+          path: '$(Build.ArtifactStagingDirectory)'
+      - script: |
+              cd $(Build.ArtifactStagingDirectory)
+              zip -r ./Windows-VS-16-2019-Win32.zip ./Windows-VS-16-2019-Win32
+              rm -r ./Windows-VS-16-2019-Win32
+              zip -r ./Windows-VS-16-2019-x64.zip ./Windows-VS-16-2019-x64
+              rm -r ./Windows-VS-16-2019-x64
+        displayName: "Archive windows artifacts"
       - task: DownloadSecureFile@1
         name: key
         displayName: 'Download rsa key'
