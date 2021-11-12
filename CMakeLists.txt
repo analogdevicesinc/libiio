@@ -296,9 +296,10 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		include(CheckCSourceCompiles)
+
 		option(WITH_NETWORK_GET_BUFFER "Enable experimental zero-copy transfers" OFF)
 		if (WITH_NETWORK_GET_BUFFER)
-			include(CheckCSourceCompiles)
 			check_c_source_compiles("#define _GNU_SOURCE=1\n#include <fcntl.h>\nint main(void) { return O_TMPFILE; }"
 				HAS_O_TMPFILE)
 
