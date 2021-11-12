@@ -59,7 +59,7 @@ if(PTHREAD_LIBRARIES OR ANDROID)
 	target_link_libraries(iio_writedev ${PTHREAD_LIBRARIES})
 endif()
 
-set_target_properties(${IIO_TESTS_TARGETS} PROPERTIES
+set_target_properties(${IIO_TESTS_TARGETS} iio_tests_helper PROPERTIES
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
