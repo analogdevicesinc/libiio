@@ -85,13 +85,17 @@ struct iio_scan_context;
 struct iio_scan_block;
 
 /**
- * @enum iio_chan_type
+ * @enum libiio_chan_type
  * @brief IIO channel type
  *
  * A IIO channel has a type specifying the type of data associated with the
  * channel.
+ *
+ * This is a copy of iio_chan_type found in the kernel include file
+ * 'usr/include/linux/iio/types.h'. It may not be an exact copy when the kernel
+ * includes are way older or newer than libiio.
  */
-enum iio_chan_type {
+enum libiio_chan_type {
 	IIO_VOLTAGE,
 	IIO_CURRENT,
 	IIO_POWER,
@@ -131,13 +135,17 @@ enum iio_chan_type {
 };
 
 /**
- * @enum iio_modifier
+ * @enum libiio_modifier
  * @brief IIO channel modifier
  *
  * In a addition to a type a IIO channel can optionally have a channel modifier
  * further specifying the data type of of the channel.
+ *
+ * This is a copy of iio_modifier found in the kernel include file
+ * 'usr/include/linux/iio/types.h'. It may not be an exact copy when the kernel
+ * includes are way older or newer than libiio.
  */
-enum iio_modifier {
+enum libiio_modifier {
 	IIO_NO_MOD,
 	IIO_MOD_X,
 	IIO_MOD_Y,
@@ -1356,14 +1364,14 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
 /** @brief Get the type of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The type of the channel */
-__api __check_ret __pure enum iio_chan_type iio_channel_get_type(
+__api __check_ret __pure enum libiio_chan_type iio_channel_get_type(
 		const struct iio_channel *chn);
 
 
 /** @brief Get the modifier type of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The modifier type of the channel */
-__api __check_ret __pure enum iio_modifier iio_channel_get_modifier(
+__api __check_ret __pure enum libiio_modifier iio_channel_get_modifier(
 		const struct iio_channel *chn);
 
 

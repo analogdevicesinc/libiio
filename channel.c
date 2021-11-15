@@ -146,7 +146,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 				(chn->id[len] < '0' || chn->id[len] > '9'))
 			continue;
 
-		chn->type = (enum iio_chan_type) i;
+		chn->type = (enum libiio_chan_type) i;
 	}
 
 	mod = strchr(chn->id, '_');
@@ -162,7 +162,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 		if (strncmp(modifier_names[i], mod, len) != 0)
 			continue;
 
-		chn->modifier = (enum iio_modifier) i;
+		chn->modifier = (enum libiio_modifier) i;
 		break;
 	}
 }
@@ -275,12 +275,12 @@ bool iio_channel_is_scan_element(const struct iio_channel *chn)
 	return chn->is_scan_element;
 }
 
-enum iio_modifier iio_channel_get_modifier(const struct iio_channel *chn)
+enum libiio_modifier iio_channel_get_modifier(const struct iio_channel *chn)
 {
 	return chn->modifier;
 }
 
-enum iio_chan_type iio_channel_get_type(const struct iio_channel *chn)
+enum libiio_chan_type iio_channel_get_type(const struct iio_channel *chn)
 {
 	return chn->type;
 }

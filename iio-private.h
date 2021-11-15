@@ -160,8 +160,8 @@ struct iio_channel {
 	struct iio_data_format format;
 	char *name, *id;
 	long index;
-	enum iio_modifier modifier;
-	enum iio_chan_type type;
+	enum libiio_modifier modifier;
+	enum libiio_chan_type type;
 
 	struct iio_channel_attr *attrs;
 	unsigned int nb_attrs;
