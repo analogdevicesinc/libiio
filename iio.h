@@ -244,10 +244,14 @@ enum iio_event_direction {
  *
  * <b>NOTE:</b> Libiio version 0.20 and above can handle multiple
  * strings, for instance "local:usb:", "ip:usb:", "local:usb:ip:", and
- * require a colon as the delimiter. If NULL, the local, USB and IP
- * backends will be scanned.
+ * require a colon as the delimiter.
  * Libiio version 0.24 and above prefer a comma instead of colon as the
- * delimiter. */
+ * delimiter, and handle specifying backend-specific information. For
+ * instance, "local,usb=0456:*" will scan the local backend and limit
+ * scans on USB to vendor ID 0x0456, and accept all product IDs. The
+ * "usb=0456:b673" string would limit the scan to the device with this
+ * particular VID/PID. Both IDs are expected in hexadecimal, no 0x
+ * prefix needed. */
 __api __check_ret struct iio_scan_context * iio_create_scan_context(
 		const char *backend, unsigned int flags);
 

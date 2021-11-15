@@ -249,7 +249,7 @@ struct iio_context * serial_create_context_from_uri(const char *uri);
 
 int local_context_scan(struct iio_scan_result *scan_result);
 
-int usb_context_scan(struct iio_scan_result *scan_result);
+int usb_context_scan(struct iio_scan_result *scan_result, const char *args);
 
 int dnssd_context_scan(struct iio_scan_result *scan_result);
 
