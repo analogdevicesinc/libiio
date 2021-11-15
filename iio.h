@@ -199,8 +199,12 @@ enum iio_modifier {
 
 /** @brief Create a scan context
  * @param backend A NULL-terminated string containing the backend(s) to use for
- * scanning (example: pre version 0.20 :  "local", "ip", or "usb"; post version
- * 0.20 can handle multiple, including "local:usb:", "ip:usb:", "local:usb:ip:").
+ * scanning (example: post version 0.20 can handle multiple, including "local:usb:",
+ * "ip:usb:", "local:usb:ip:"; post version 0.25 usb can be limited to a specific
+ * vendor ID (vid) or product ID (pid), by adding vid,pid in the same string
+ * for example : "usb=0456,*" would limit checks on USB to vendor ID 0x0456, but
+ * accept all product IDs. "usb=456,b673" would only search for the specific
+ * vid/pid. Both ID's are given in hexadecimal (no  prefix needed)).
  * If NULL, all the available backends are used.
  * @param flags Unused for now. Set to 0.
  * @return on success, a pointer to a iio_scan_context structure

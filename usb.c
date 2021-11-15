@@ -1200,13 +1200,70 @@ static int usb_fill_context_info(struct iio_context_info *info,
 	return 0;
 }
 
-int usb_context_scan(struct iio_scan_result *scan_result)
+#define SCAN_WILDCARD "*"
+#define SCAN_DELIMITER ','
+
+static int parse_value(const char *str)
+{
+	uint32_t val;
+	char *ptr;
+
+	/* if it is null or '*' accept any */
+	if (str == NULL || !strncmp(str, SCAN_WILDCARD, sizeof(SCAN_WILDCARD)))
+		return 0;
+	/* if it's empty, that's not valid */
+	if (*str == '\0')
+		return -1;
+
+	val = strtoul(str, &ptr, 16);
+
+	if (ptr == str)
+		return -1;
+
+	/* should be either ":" or end of string */
+	if (*ptr != SCAN_DELIMITER && *ptr != '\0')
+		return -1;
+
+	if (val > 0xFFFF)
+		return -1;
+
+	return val;
+}
+
+int usb_context_scan(struct iio_scan_result *scan_result,
+		char *pid_vid)
 {
 	struct iio_context_info *info;
 	libusb_device **device_list;
 	libusb_context *ctx;
 	unsigned int i;
 	int ret;
+	uint16_t scan_usb_vid = 0, scan_usb_pid = 0;
+	char *ptr;
+
+	/* string must be either: "usb" or "usb=vid," or "usb=vid,*"
+	 * or "usb=vid,pid" format. Both ID's are given in hexadecimal.
+	 * No leading 0x is required
+	 */
+	if (!pid_vid)
+		return -ENODEV;
+
+	if (!strncmp(pid_vid, "usb=", sizeof("usb=") - 1) ) {
+		ret = parse_value(&pid_vid[4]);
+		if (ret < 0)
+			return -ENODEV;
+		scan_usb_vid = (uint16_t)ret;
+		ptr = strchr(&pid_vid[4], SCAN_DELIMITER);
+		if (ptr) {
+			if (ptr[1] != '\0') {
+				ret = parse_value(&ptr[1]);
+				if (ret < 0)
+					return -ENODEV;
+				scan_usb_pid = (uint16_t)ret;
+			}
+		} else
+			return -ENODEV;
+	}
 
 	ret = libusb_init(&ctx);
 	if (ret < 0)
@@ -1222,6 +1279,21 @@ int usb_context_scan(struct iio_scan_result *scan_result)
 		struct libusb_device_handle *hdl;
 		struct libusb_device *dev = device_list[i];
 		unsigned int intrfc = 0;
+		struct libusb_device_descriptor device_descriptor;
+
+		/* If we are given a pid or vid, use that to qualify for things,
+		 * this avoids open/closing random devices & potentially locking
+		 * (blocking them) from other applications
+		 */
+		if(scan_usb_vid || scan_usb_pid) {
+			ret = libusb_get_device_descriptor(dev, &device_descriptor);
+			if (ret)
+				continue;
+			if (scan_usb_vid && scan_usb_vid != device_descriptor.idVendor)
+				continue;
+			if (scan_usb_pid && scan_usb_pid != device_descriptor.idProduct)
+				continue;
+		}
 
 		ret = libusb_open(dev, &hdl);
 		if (ret)

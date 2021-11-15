@@ -14,9 +14,7 @@
 #include <string.h>
 
 struct iio_scan_context {
-	bool scan_usb;
-	bool scan_network;
-	bool scan_local;
+	char *backendopts;
 };
 
 const char * iio_context_info_get_description(
@@ -31,35 +29,45 @@ const char * iio_context_info_get_uri(
 	return info->uri;
 }
 
+#define SCAN_DELIMIT ":"
+
 ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 		struct iio_context_info ***info)
 {
 	struct iio_scan_result scan_result = { 0, NULL };
+	char *token, *rest=NULL;
+	ssize_t ret;
 
-	if (WITH_LOCAL_BACKEND && ctx->scan_local) {
-		int ret = local_context_scan(&scan_result);
-		if (ret < 0) {
+	for (token = iio_strtok_r(ctx->backendopts, SCAN_DELIMIT, &rest);
+			token; token = iio_strtok_r(NULL, SCAN_DELIMIT, &rest)) {
+
+		/* Since tokens are all null terminated, it's safe to use strcmp on them */
+		if (WITH_LOCAL_BACKEND && !strcmp(token, "local")) {
+			ret = local_context_scan(&scan_result);
+			if (ret < 0) {
+				if (scan_result.info)
+					iio_context_info_list_free(scan_result.info);
+				return ret;
+			}
+		} else if (WITH_USB_BACKEND && (!strcmp(token, "usb") ||
+					!strncmp(token, "usb=", sizeof("usb=") - 1))) {
+			ret = usb_context_scan(&scan_result, token);
+			if (ret < 0) {
+				if (scan_result.info)
+					iio_context_info_list_free(scan_result.info);
+				return ret;
+			}
+		} else if (HAVE_DNS_SD && !strcmp(token, "ip")) {
+			ret = dnssd_context_scan(&scan_result);
+			if (ret < 0) {
+				if (scan_result.info)
+					iio_context_info_list_free(scan_result.info);
+				return ret;
+			}
+		} else {
 			if (scan_result.info)
 				iio_context_info_list_free(scan_result.info);
-			return ret;
-		}
-	}
-
-	if (WITH_USB_BACKEND && ctx->scan_usb) {
-		int ret = usb_context_scan(&scan_result);
-		if (ret < 0) {
-			if (scan_result.info)
-				iio_context_info_list_free(scan_result.info);
-			return ret;
-		}
-	}
-
-	if (HAVE_DNS_SD && ctx->scan_network) {
-		int ret = dnssd_context_scan(&scan_result);
-		if (ret < 0) {
-			if (scan_result.info)
-				iio_context_info_list_free(scan_result.info);
-			return ret;
+			return -ENODEV;
 		}
 	}
 
@@ -113,6 +121,7 @@ struct iio_scan_context * iio_create_scan_context(
 		const char *backend, unsigned int flags)
 {
 	struct iio_scan_context *ctx;
+	char *ptr, *ptr2, *ptr3;
 
 	/* "flags" must be zero for now */
 	if (flags != 0) {
@@ -126,20 +135,49 @@ struct iio_scan_context * iio_create_scan_context(
 		return NULL;
 	}
 
-	if (!backend || strstr(backend, "local"))
-		ctx->scan_local = true;
+	ctx->backendopts = iio_strndup(backend ? backend : "local:usb:ip:", PATH_MAX);
+	if (!ctx->backendopts) {
+		free(ctx);
+		errno = ENOMEM;
+		return NULL;
+	}
 
-	if (!backend || strstr(backend, "usb"))
-		ctx->scan_usb = true;
+	/* while we hope people use usb=vid,pid ; iit's common to use
+	 * usb=vid:pid ; so fix it up
+	 */
+	ptr = ctx->backendopts;
+	while ((ptr = strstr(ptr, "usb="))) {
+		uint32_t val;
 
-	if (!backend || strstr(backend, "ip"))
-		ctx->scan_network = true;
+		val = strtoul(&ptr[sizeof("usb=") - 1], &ptr2, 16);
+		if (val < 0xFFFF && val > 0 && ptr2) {
+			if (ptr2[0] == ':' ) {
+				if (ptr2[1] == '*' || ptr2[1] == '\0') {
+					ptr2[0] = ',';
+				} else {
+					val = strtoul(&ptr2[1], &ptr3, 16);
+					if (val < 0xFFFF && val > 0) {
+						ptr2[0] = ',';
+						ptr = ptr3 - sizeof("usb=");
+					}
+				}
+			}
+
+		}
+		ptr = ptr + sizeof("usb=");
+	}
 
 	return ctx;
 }
 
 void iio_scan_context_destroy(struct iio_scan_context *ctx)
 {
+	if (!ctx)
+		return;
+
+	if (ctx->backendopts)
+		free(ctx->backendopts);
+
 	free(ctx);
 }
 
