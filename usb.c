@@ -1200,13 +1200,57 @@ static int usb_fill_context_info(struct iio_context_info *info,
 	return 0;
 }
 
-int usb_context_scan(struct iio_scan_result *scan_result)
+static int parse_vid_pid(const char *vid_pid, uint16_t *vid, uint16_t *pid)
+{
+	unsigned long val;
+	char *ptr;
+
+	/*
+	 * vid_pid string must be either:
+	 * - NULL: scan everything,
+	 * - "vid:*": scan all devices with the given VID,
+	 * - "vid:pid": scan the device with the given VID/PID.
+	 * IDs are given in hexadecimal, and the 0x prefix is not required.
+	 */
+
+	*vid = 0;
+	*pid = 0;
+
+	if (!vid_pid)
+		return 0;
+
+	val = strtoul(vid_pid, &ptr, 16);
+	if (ptr == vid_pid || val > 0xFFFF || *ptr != ':')
+		return -EINVAL;
+
+	*vid = (uint16_t) val;
+
+	vid_pid = ptr + 1;
+
+	if (*vid_pid == '*')
+		return vid_pid[1] == '\0' ? 0 : -EINVAL;
+
+	val = strtoul(vid_pid, &ptr, 16);
+	if (ptr == vid_pid || val > 0xFFFF || *ptr != '\0')
+		return -EINVAL;
+
+	*pid = (uint16_t) val;
+
+	return 0;
+}
+
+int usb_context_scan(struct iio_scan_result *scan_result, const char *args)
 {
 	struct iio_context_info *info;
 	libusb_device **device_list;
 	libusb_context *ctx;
+	uint16_t vid, pid;
 	unsigned int i;
 	int ret;
+
+	ret = parse_vid_pid(args, &vid, &pid);
+	if (ret)
+		return ret;
 
 	ret = libusb_init(&ctx);
 	if (ret < 0)
@@ -1222,6 +1266,21 @@ int usb_context_scan(struct iio_scan_result *scan_result)
 		struct libusb_device_handle *hdl;
 		struct libusb_device *dev = device_list[i];
 		unsigned int intrfc = 0;
+		struct libusb_device_descriptor device_descriptor;
+
+		/* If we are given a pid or vid, use that to qualify for things,
+		 * this avoids open/closing random devices & potentially locking
+		 * (blocking them) from other applications
+		 */
+		if(vid || pid) {
+			ret = libusb_get_device_descriptor(dev, &device_descriptor);
+			if (ret)
+				continue;
+			if (vid && vid != device_descriptor.idVendor)
+				continue;
+			if (pid && pid != device_descriptor.idProduct)
+				continue;
+		}
 
 		ret = libusb_open(dev, &hdl);
 		if (ret)

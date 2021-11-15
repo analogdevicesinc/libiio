@@ -42,8 +42,10 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 		/* Since tokens are all null terminated, it's safe to use strcmp on them */
 		if (WITH_LOCAL_BACKEND && !strcmp(token, "local")) {
 			ret = local_context_scan(&scan_result);
-		} else if (WITH_USB_BACKEND && !strcmp(token, "usb")) {
-			ret = usb_context_scan(&scan_result);
+		} else if (WITH_USB_BACKEND && (!strcmp(token, "usb") ||
+						!strncmp(token, "usb=", sizeof("usb=") - 1))) {
+			token = token[3] == '=' ? token + 4 : NULL;
+			ret = usb_context_scan(&scan_result, token);
 		} else if (HAVE_DNS_SD && !strcmp(token, "ip")) {
 			ret = dnssd_context_scan(&scan_result);
 		} else {
@@ -108,6 +110,7 @@ struct iio_scan_context * iio_create_scan_context(
 		const char *backend, unsigned int flags)
 {
 	struct iio_scan_context *ctx;
+	char *ptr, *ptr2;
 	unsigned int i, len;
 
 	/* "flags" must be zero for now */
@@ -135,6 +138,18 @@ struct iio_scan_context * iio_create_scan_context(
 		for (i = 0; i < len; i++)
 			if (ctx->backendopts[i] == ':')
 				ctx->backendopts[i] = ',';
+
+		/* The only place where a colon is accepted is in the usb arguments:
+		 * usb=vid:pid */
+		for (ptr = strstr(ctx->backendopts, "usb="); ptr;
+		     ptr = strstr(ptr, "usb=")) {
+			ptr += sizeof("usb=");
+			strtoul(ptr, &ptr2, 16);
+
+			/* The USB backend will take care of errors */
+			if (ptr2 != ptr && *ptr2 == ',')
+				*ptr2 = ':';
+		}
 	}
 
 	return ctx;
