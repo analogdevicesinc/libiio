@@ -35,7 +35,7 @@
 #endif
 
 static const struct option options[] = {
-	{"scan", no_argument, 0, 's'},
+	{"scan", optional_argument, 0, 's'},
 	{0, 0, 0, 0},
 };
 
@@ -59,7 +59,7 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 	return false;
 }
 
-#define MY_OPTS "s"
+#define MY_OPTS "s::"
 
 int main(int argc, char **argv)
 {
@@ -103,8 +103,16 @@ int main(int argc, char **argv)
 					&& argw[optind][0] != '-')
 				optind++;
 			break;
+			/* the above are all common */
 		case 's':
-			autodetect_context(false, MY_NAME, NULL);
+			if (optarg) {
+				autodetect_context(false, MY_NAME, optarg);
+			} else {
+				if (argc > optind && argv[optind] && argv[optind][0] != '-')
+					autodetect_context(false, MY_NAME, argv[optind++]);
+				else
+					autodetect_context(false, MY_NAME, NULL);
+			}
 			return EXIT_SUCCESS;
 		case '?':
 			printf("Unknown argument '%c'\n", c);

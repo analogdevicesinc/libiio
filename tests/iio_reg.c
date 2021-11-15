@@ -82,6 +82,7 @@ int main(int argc, char **argv)
 	int c;
 	char * name;
 	struct option *opts;
+	bool do_scan = false;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -102,6 +103,8 @@ int main(int argc, char **argv)
 		case 'T':
 			break;
 		case 'S':
+			do_scan = true;
+			/* FALLTHRU */
 		case 'a':
 			if (!optarg && argc > optind && argv[optind] != NULL
 					&& argv[optind][0] != '-')
@@ -113,6 +116,9 @@ int main(int argc, char **argv)
 		}
 	}
 	free(opts);
+
+	if (do_scan)
+		return EXIT_SUCCESS;
 
 	if ((argc - optind) < 2 || (argc - optind) > 3) {
 		usage(MY_NAME, options, options_descriptions);
