@@ -79,7 +79,10 @@ with no address part
 .RE
 .TP
 .B \-S, \-\-scan
-Scan for available backends
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip,usb'.
+Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456:b673'.
+vid,pid are hexadecimal numbers (no prefix needed), "*" (match any for pid only)
+If no argument is given, it checks all that are availble.
 .TP
 .B \-a, \-\-auto
 Scan for available contexts and if only one is available use it.
