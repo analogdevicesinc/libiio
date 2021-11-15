@@ -76,7 +76,12 @@ Buffer timeout in milliseconds. 0 = no timeout. Default is 0.
 .TP
 .B \-a, \-\-auto
 Scan for available contexts and if only one is available use it.
-
+.TP
+.B \-S, \-\-scan
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip,usb'.
+Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456:b673'.
+vid,pid are hexadecimal numbers (no prefix needed), "*" (match any for pid only)
+If no argument is given, it checks all that are availble.
 .SH RETURN VALUE
 If the specified device is not found, a non-zero exit code is returned.
 
