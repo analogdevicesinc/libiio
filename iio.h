@@ -84,6 +84,13 @@ struct iio_context_info;
 struct iio_scan_context;
 struct iio_scan_block;
 
+/*
+ * <linux/iio/types.h> header guard to protect these enums from being defined
+ * twice
+ */
+#ifndef _IIO_TYPES_H_
+#define _IIO_TYPES_H_
+
 /**
  * @enum iio_chan_type
  * @brief IIO channel type
@@ -184,6 +191,37 @@ enum iio_modifier {
 	IIO_MOD_H2,
 	IIO_MOD_O2,
 };
+
+/**
+ * @enum iio_event_type
+ * @brief IIO event type
+ *
+ * Some IIO devices can deliver events. The type of the event can be specified
+ * by one of the iio_event_type values.
+ */
+enum iio_event_type {
+	IIO_EV_TYPE_THRESH,
+	IIO_EV_TYPE_MAG,
+	IIO_EV_TYPE_ROC,
+	IIO_EV_TYPE_THRESH_ADAPTIVE,
+	IIO_EV_TYPE_MAG_ADAPTIVE,
+	IIO_EV_TYPE_CHANGE,
+};
+
+/**
+ * @enum iio_event_direction
+ * @brief IIO event direction
+ *
+ * When applicable, this enum specifies the direction of the iio_event_type.
+ */
+enum iio_event_direction {
+	IIO_EV_DIR_EITHER,
+	IIO_EV_DIR_RISING,
+	IIO_EV_DIR_FALLING,
+	IIO_EV_DIR_NONE,
+};
+
+#endif /* _IIO_TYPES_H_ */
 
 /* ---------------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
