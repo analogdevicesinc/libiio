@@ -229,6 +229,24 @@ char *iio_strdup(const char *str)
 #endif
 }
 
+/* strndup conforms to POSIX.1-2008; but Windows does not provided it
+ */
+char *iio_strndup(const char *str, size_t n)
+{
+#ifdef HAS_STRNDUP
+	return strndup(str, n);
+#else
+	size_t len = strnlen(str, n + 1);
+	char *buf = malloc(len + 1);
+	if (buf) {
+		/* len = size of buf, so memcpy is OK */
+		memcpy(buf, str, len); /* Flawfinder: ignore */
+		buf[len] = 0;
+	}
+	return buf;
+#endif
+}
+
 /* strlcpy is designed to be safer, more consistent, and less error prone
  * replacements for strncpy, since it guarantees to NUL-terminate the result.
  *
