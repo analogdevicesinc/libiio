@@ -133,19 +133,19 @@ jobs:
     strategy:
       matrix:
         ubuntu-ppc64le:
-          image: ppc64le/ubuntu
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
           arch: ppc64le
           build_script: ci-ubuntu.sh
         ubuntu-x390x:
-          image: s390x/ubuntu
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
           arch: s390x
           build_script: ci-ubuntu.sh
         ubuntu-arm64v8:
-          image: arm64v8/ubuntu
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
           arch: aarch64
           build_script: ci-ubuntu.sh
         ubuntu-arm32v7:
-          image: arm32v7/ubuntu
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
           arch: arm
           build_script: ci-ubuntu.sh
     steps:
