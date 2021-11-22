@@ -261,6 +261,7 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strdup(const char *str);
 char *iio_strndup(const char *str, size_t n);
+char *iio_strtok_r(char *str, const char *delim, char **saveptr);
 size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
 char * iio_getenv (char * envvar);
 

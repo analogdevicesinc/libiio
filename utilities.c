@@ -213,6 +213,17 @@ void iio_strerror(int err, char *buf, size_t len)
 	}
 }
 
+char *iio_strtok_r(char *str, const char *delim, char **saveptr)
+{
+#if defined(_WIN32)
+	return strtok_s(str, delim, saveptr);
+#elif defined(HAS_STRTOK_R)
+	return strtok_r(str, delim, saveptr);
+#else
+#error Need a implentation of strtok_r for this platform
+#endif
+}
+
 char *iio_strdup(const char *str)
 {
 #if defined(_WIN32)

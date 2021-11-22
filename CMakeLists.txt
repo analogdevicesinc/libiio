@@ -130,6 +130,7 @@ include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
 check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
+check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
