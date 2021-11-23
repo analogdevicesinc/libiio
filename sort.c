@@ -81,3 +81,20 @@ int iio_buffer_attr_compare(const void *p1, const void *p2)
 	return strcmp(tmp1, tmp2);
 }
 
+int iio_context_info_compare(const void *p1, const void *p2)
+{
+	int ret;
+	const struct iio_context_info *tmp1 = *(struct iio_context_info **)p1;
+	const struct iio_context_info *tmp2 = *(struct iio_context_info **)p2;
+
+	if(!tmp1->uri)
+		return 1;
+	if (!tmp2->uri)
+		return 0;
+
+	ret = strcmp(tmp1->uri, tmp2->uri);
+	if (ret)
+		return ret;
+
+	return strcmp(tmp1->description, tmp2->description);
+}
