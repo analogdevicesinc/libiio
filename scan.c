@@ -8,6 +8,7 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
+#include "sort.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -33,7 +34,9 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 		struct iio_context_info ***info)
 {
 	struct iio_scan_result scan_result = { 0, NULL };
+	struct iio_context_info *out;
 	char *token, *rest=NULL;
+	size_t i, j = 0;
 	ssize_t ret;
 
 	for (token = iio_strtok_r(ctx->backendopts, ",", &rest);
@@ -57,6 +60,38 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 
 	*info = scan_result.info;
 
+	if (scan_result.size > 1) {
+		qsort(scan_result.info, scan_result.size,
+		      sizeof(struct iio_context_info *),
+		      iio_context_info_compare);
+
+		/* there might be duplicates */
+		for (i = 1; i < scan_result.size; i++) {
+			/* ipv6 and ipv4 can have the same uri, but have different descriptions,
+			 * so check both if necessary
+			 */
+			if ((!strcmp(scan_result.info[i - 1]->uri,
+				     scan_result.info[i]->uri)) &&
+			    (!strcmp(scan_result.info[i - 1]->description,
+				     scan_result.info[i]->description))) {
+				out = scan_result.info[i - 1];
+				j++;
+				free(out->description);
+				free(out->uri);
+				out->description = NULL;
+				out->uri = NULL;
+			}
+		}
+		if (j) {
+			/* Force all the nulls to the end */
+			qsort(scan_result.info, scan_result.size,
+					sizeof(struct iio_context_info *),
+					iio_context_info_compare);
+			return (ssize_t) scan_result.size - j;
+		}
+	}
+
+
 	return (ssize_t) scan_result.size;
 
 err_free_scan_result_info:
@@ -67,17 +102,12 @@ err_free_scan_result_info:
 
 void iio_context_info_list_free(struct iio_context_info **list)
 {
-	struct iio_context_info **it;
+	unsigned int i;
 
-	if (!list)
-		return;
-
-	for (it = list; *it; it++) {
-		struct iio_context_info *info = *it;
-
-		free(info->description);
-		free(info->uri);
-		free(info);
+	for (i = 0; list && list[i]; i++) {
+		free(list[i]->description);
+		free(list[i]->uri);
+		free(list[i]);
 	}
 
 	free(list);
