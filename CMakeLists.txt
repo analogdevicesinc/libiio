@@ -348,6 +348,8 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		include(CheckCSourceCompiles)
+
 		check_c_source_compiles("#include <sys/eventfd.h>\nint main(void) { return eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }"
 			WITH_NETWORK_EVENTFD)
 		if (NOT WITH_NETWORK_EVENTFD)

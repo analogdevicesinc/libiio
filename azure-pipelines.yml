@@ -90,19 +90,12 @@ stages:
   - job: macOSBuilds
     strategy:
       matrix:
-        macOS_10_14:
-          imageName: 'macOS-10.14'
-          artifactName: 'macOS-10.14'
         macOS_10_15:
           imageName: 'macOS-10.15'
           artifactName: 'macOS-10.15'
-# FIXME: uncomment after this is resolved:
-#        https://github.com/actions/virtual-environments/issues/2072
-# Mac OS X 11.0 is definitely a big thing (with their switch to ARM,
-# so we should be quick to have it)
-#      macOS_11_0:
-#        imageName: 'macOS-11.0'
-#        artifactName: 'macOS-11.0'
+        macOS_11:
+          imageName: 'macOS-11'
+          artifactName: 'macOS-11'
     pool:
       vmImage: $(imageName)
     steps:
@@ -230,7 +223,14 @@ stages:
     steps:
       - task: DownloadPipelineArtifact@2
         inputs:
-          path: /home/vsts/work/1/a
+          path: '$(Build.ArtifactStagingDirectory)'
+      - script: |
+              cd $(Build.ArtifactStagingDirectory)
+              zip -r ./Windows-VS-16-2019-Win32.zip ./Windows-VS-16-2019-Win32
+              rm -r ./Windows-VS-16-2019-Win32
+              zip -r ./Windows-VS-16-2019-x64.zip ./Windows-VS-16-2019-x64
+              rm -r ./Windows-VS-16-2019-x64
+        displayName: "Archive windows artifacts"
       - task: DownloadSecureFile@1
         name: key
         displayName: 'Download rsa key'

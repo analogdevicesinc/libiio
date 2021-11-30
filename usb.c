@@ -971,7 +971,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	pdata->nb_ep_couples = iface->bNumEndpoints / 2;
 
-	prm_dbg(params, "Found %hhu usable i/o endpoint couples\n",
+	prm_dbg(params, "Found %hu usable i/o endpoint couples\n",
 		pdata->nb_ep_couples);
 
 	pdata->io_endpoints = calloc(pdata->nb_ep_couples,
