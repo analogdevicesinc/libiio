@@ -23,6 +23,7 @@
 #define IIO_TESTS_COMMON_H
 
 #include <getopt.h>
+#include <stdint.h>
 
 /*
  * internal buffers need to be big enough for attributes
@@ -61,6 +62,8 @@ void usage(char *name, const struct option *options, const char *options_descrip
 
 char ** dup_argv(char * name, int argc, char * argv[]);
 void free_argw(int argc, char * argw[]);
+
+uint64_t get_time_us(void);
 
 /* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
  * {NAME_MAX} : Maximum number of bytes in a filename
