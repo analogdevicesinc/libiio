@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +43,7 @@
 
 #define SAMPLES_PER_READ 256
 #define DEFAULT_FREQ_HZ  100
+#define REFILL_PER_BENCHMARK 10
 
 static const struct option options[] = {
 	  {"trigger", required_argument, 0, 't'},
@@ -49,6 +51,7 @@ static const struct option options[] = {
 	  {"samples", required_argument, 0, 's' },
 	  {"auto", no_argument, 0, 'a'},
 	  {"cyclic", no_argument, 0, 'c'},
+	  {"benchmark", no_argument, 0, 'B'},
 	  {0, 0, 0, 0},
 };
 
@@ -61,6 +64,8 @@ static const char *options_descriptions[] = {
 	"Number of samples to write, 0 = infinite. Default is 0.",
 	"Scan for available contexts and if only one is available use it.",
 	"Use cyclic buffer mode.",
+	"Benchmark throughput."
+		"\n\t\t\tStatistics will be printed on the standard input.",
 };
 
 static struct iio_context *ctx;
@@ -196,7 +201,7 @@ static ssize_t read_sample(const struct iio_channel *chn,
 	return (ssize_t) nb;
 }
 
-#define MY_OPTS "t:b:s:T:ac"
+#define MY_OPTS "t:b:s:T:acB"
 
 int main(int argc, char **argv)
 {
@@ -207,9 +212,10 @@ int main(int argc, char **argv)
 	int c;
 	struct iio_device *dev;
 	ssize_t sample_size;
-	bool cyclic_buffer = false;
+	bool mib, cyclic_buffer = false, benchmark = false;
 	ssize_t ret;
 	struct option *opts;
+	uint64_t before, after, rate, total;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -249,6 +255,9 @@ int main(int argc, char **argv)
 			}
 			buffer_size = sanitize_clamp("buffer size", optarg, 1, SIZE_MAX);
 			break;
+		case 'B':
+			benchmark = true;
+			break;
 		case 's':
 			if (!optarg) {
 				fprintf(stderr, "Number of samples requires argument\n");
@@ -274,6 +283,12 @@ int main(int argc, char **argv)
 
 	if (!ctx)
 		return EXIT_FAILURE;
+
+	if (benchmark && cyclic_buffer) {
+		fprintf(stderr, "Cannot benchmark in cyclic mode.\n");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
 
 	setup_sig_handler();
 
@@ -381,10 +396,12 @@ int main(int argc, char **argv)
 	_setmode(_fileno( stdin ), _O_BINARY);
 #endif
 
-	while (app_running) {
-		/* If there are only the samples we requested, we don't need to
-		 * demux */
-		if (iio_buffer_step(buffer) == sample_size) {
+	for (i = 0, total = 0; app_running; ) {
+		if (benchmark) {
+			before = get_time_us();
+		} else if (iio_buffer_step(buffer) == sample_size) {
+			/* If there are only the samples we requested, we don't
+			 * need to demux */
 			void *start = iio_buffer_start(buffer);
 			size_t write_len, len = (intptr_t) iio_buffer_end(buffer)
 				- (intptr_t) start;
@@ -423,6 +440,25 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Unable to push buffer: %s\n", buf);
 			break;
 		}
+
+		if (benchmark) {
+			after = get_time_us();
+			rate = buffer_size * sample_size * 1000000ull / (after - before);
+
+			total += rate;
+
+			if (++i == REFILL_PER_BENCHMARK) {
+				mib = rate > 1000000;
+
+				fprintf(stderr, "\33[2K\rThroughput: %" PRIu64 " %ciB/s",
+				       total / (REFILL_PER_BENCHMARK * 1000 * (mib ? 1000 : 1)),
+				       mib ? 'M' : 'K');
+
+				i = 0;
+				total = 0;
+			}
+		}
+
 
 		while(cyclic_buffer && app_running) {
 #ifdef _WIN32
