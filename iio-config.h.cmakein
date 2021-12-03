@@ -18,6 +18,7 @@
 #cmakedefine01 WITH_IIOD_USBD
 #cmakedefine01 WITH_IIOD_SERIAL
 #cmakedefine01 WITH_LOCAL_CONFIG
+#cmakedefine01 WITH_HWMON
 #cmakedefine01 WITH_AIO
 #cmakedefine01 HAVE_DNS_SD
 #cmakedefine01 HAVE_AVAHI
