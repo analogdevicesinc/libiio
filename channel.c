@@ -51,6 +51,18 @@ static const char * const iio_chan_type_name_spec[] = {
 	[IIO_MASSCONCENTRATION] = "massconcentration",
 };
 
+static const char * const hwmon_chan_type_name_spec[] = {
+	[HWMON_VOLTAGE] = "in",
+	[HWMON_FAN] = "fan",
+	[HWMON_PWM] = "pwm",
+	[HWMON_TEMP] = "temp",
+	[HWMON_CURRENT] = "curr",
+	[HWMON_POWER] = "power",
+	[HWMON_ENERGY] = "energy",
+	[HWMON_HUMIDITY] = "humidity",
+	[HWMON_INTRUSION] = "intrusion",
+};
+
 static const char * const modifier_names[] = {
 	[IIO_MOD_X] = "x",
 	[IIO_MOD_Y] = "y",
@@ -124,6 +136,28 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p)
 	return IIO_NO_MOD;
 }
 
+static int iio_channel_find_type(const char *id,
+			const char *const *name_spec, size_t size)
+{
+	unsigned int i;
+	size_t len;
+
+	for (i = 0; i < size; i++) {
+		len = strlen(name_spec[i]);
+		if (strncmp(name_spec[i], id, len) != 0)
+		      continue;
+
+		/* Type must be followed by one of a '\0', a '_', or a digit */
+		if (id[len] != '\0' && id[len] != '_' &&
+				(id[len] < '0' || id[len] > '9'))
+			continue;
+
+		return i;
+	}
+
+	return -EINVAL;
+}
+
 /*
  * Initializes all auto-detected fields of the channel struct. Must be called
  * after the channel has been otherwise fully initialized.
@@ -133,21 +167,18 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 	unsigned int i;
 	size_t len;
 	char *mod;
+	int type;
 
-	chn->type = IIO_CHAN_TYPE_UNKNOWN;
-	chn->modifier = IIO_NO_MOD;
-
-	for (i = 0; i < ARRAY_SIZE(iio_chan_type_name_spec); i++) {
-		len = strlen(iio_chan_type_name_spec[i]);
-		if (strncmp(iio_chan_type_name_spec[i], chn->id, len) != 0)
-			continue;
-		/* Type must be followed by one of a '\0', a '_', or a digit */
-		if (chn->id[len] != '\0' && chn->id[len] != '_' &&
-				(chn->id[len] < '0' || chn->id[len] > '9'))
-			continue;
-
-		chn->type = (enum iio_chan_type) i;
+	if (iio_device_is_hwmon(chn->dev)) {
+		type = iio_channel_find_type(chn->id, hwmon_chan_type_name_spec,
+					ARRAY_SIZE(hwmon_chan_type_name_spec));
+	} else {
+		type = iio_channel_find_type(chn->id, iio_chan_type_name_spec,
+					ARRAY_SIZE(iio_chan_type_name_spec));
 	}
+
+	chn->type = (type >= 0) ? type : IIO_CHAN_TYPE_UNKNOWN;
+	chn->modifier = IIO_NO_MOD;
 
 	mod = strchr(chn->id, '_');
 	if (!mod)
