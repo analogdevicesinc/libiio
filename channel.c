@@ -158,6 +158,14 @@ static int iio_channel_find_type(const char *id,
 	return -EINVAL;
 }
 
+#if WITH_HWMON
+bool iio_channel_is_hwmon(const char *id)
+{
+	return iio_channel_find_type(id, hwmon_chan_type_name_spec,
+				ARRAY_SIZE(hwmon_chan_type_name_spec)) >= 0;
+}
+#endif /* WITH_HWMON */
+
 /*
  * Initializes all auto-detected fields of the channel struct. Must be called
  * after the channel has been otherwise fully initialized.
