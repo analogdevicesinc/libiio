@@ -11,6 +11,7 @@ ConditionPathExists=/sys/bus/iio
 
 [Service]
 ExecStartPre=-@CMAKE_INSTALL_FULL_SBINDIR@/iiod_create_ini
+ExecStartPre=-@CMAKE_INSTALL_FULL_SBINDIR@/iiod_setup_gadgetfs
 ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod
 KillMode=process
 Restart=on-failure

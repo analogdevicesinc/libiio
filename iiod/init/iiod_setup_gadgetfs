@@ -27,7 +27,7 @@ if [ $(grep functionfs /proc/filesystems | wc -c) -eq 0 ] ; then
 fi
 
 #if we do not support configfs give up
-if [ $(grep functionfs /proc/filesystems | wc -c) -eq 0 ] ; then
+if [ $(grep configfs /proc/filesystems | wc -c) -eq 0 ] ; then
 	message "no support for configfs - aborting"
 	exit
 fi
@@ -51,6 +51,7 @@ VENDOR="Analog Devices Inc."
 VID=0x0456
 PRODUCT="Generic USB IIOD"
 PID="0xb671"
+RANDOM=0x1234
 
 if [ ! -d /sys/kernel/config/usb_gadget ] ; then
 	modprobe -q libcomposite
@@ -66,8 +67,8 @@ if [ ! -d /sys/kernel/config/usb_gadget ] ; then
 	mkdir -p ${GADGET}/strings/${LANGUAGE}
 	echo "${VENDOR}" > ${GADGET}/strings/${LANGUAGE}/manufacturer
 	echo "${PRODUCT}" > ${GADGET}/strings/${LANGUAGE}/product
-	if [ -f /etc/libiio.ini &&
-			$(grep serial /etc/libiio.ini | awk -F= '{print $2}' | wc -c) -gt 0 ] ; then
+	if [ -f /etc/libiio.ini ] &&
+			[ $(grep serial /etc/libiio.ini | awk -F= '{print $2}' | wc -c) -gt 0 ] ; then
 		grep serial /etc/libiio.ini | awk -F= '{print $2}' >  ${GADGET}/strings/${LANGUAGE}/serialnumber
 	else
 		printf "%05x-%05x" $RANDOM $RANDOM > ${GADGET}/strings/${LANGUAGE}/serialnumber
@@ -100,3 +101,4 @@ if [ ! -d /dev/iio_ffs ] ; then
 	mount iio_ffs -t functionfs /dev/iio_ffs
 fi
 
+echo $UDC_NAME > ${GADGET}/UDC
