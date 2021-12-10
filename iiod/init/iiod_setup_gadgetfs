@@ -75,17 +75,19 @@ if [ ! -d /sys/kernel/config/usb_gadget ] ; then
 	fi
 
 	# Create gadget function(s)
-	mkdir -p ${GADGET}/functions/ffs.iio_ffs
+	#mkdir -p ${GADGET}/functions/ffs.iio_ffs
 	# Create gadget
 	mkdir -p ${GADGET}/configs/c.1
 	mkdir -p ${GADGET}/configs/c.1/strings/${LANGUAGE}
 	# Create gadget configuration
-	echo "IIO" > ${GADGET}/configs/c.1/strings/${LANGUAGE}/configuration
+	echo "ACM/ECM" > ${GADGET}/configs/c.1/strings/${LANGUAGE}/configuration
 	# Communication Device Class (Abstract Control Model)
 	mkdir -p ${GADGET}/functions/acm.usb0
+	mkdir -p ${GADGET}/functions/ecm.usb0
 
-	ln -s ${GADGET}/functions/ffs.iio_ffs ${GADGET}/configs/c.1/ffs.iio_ffs
+	#ln -s ${GADGET}/functions/ffs.iio_ffs ${GADGET}/configs/c.1/ffs.iio_ffs
 	ln -s ${GADGET}/functions/acm.usb0 ${GADGET}/configs/c.1
+	ln -s ${GADGET}/functions/ecm.usb0 ${GADGET}/configs/c.1
 else
 	if [ -d /sys/kernel/config/usb_gadget/*/strings/ ] ; then
 		message "Device already configured as /sys/kernel/config/usb_gadget/$(ls /sys/kernel/config/usb_gadget/)"
@@ -95,10 +97,10 @@ else
 	fi
 fi
 
-if [ ! -d /dev/iio_ffs ] ; then
-	message "enable functionfs"
-	mkdir /dev/iio_ffs
-	mount iio_ffs -t functionfs /dev/iio_ffs
-fi
+#if [ ! -d /dev/iio_ffs ] ; then
+#	message "enable functionfs"
+#	mkdir /dev/iio_ffs
+#	mount iio_ffs -t functionfs /dev/iio_ffs
+#fi
 
 echo $UDC_NAME > ${GADGET}/UDC
