@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: LGPL-2.1+
+#
 # iiod - Systemd init script
 #
-# Copyright (C) 2016 Analog Devices Inc.
+# Copyright (C) 2016-2021 Analog Devices Inc.
 
 [Unit]
 Description=IIO Daemon
