@@ -30,7 +30,12 @@ namespace IIOCSharp
     {
         static void Main(string[] args)
         {
-            Context ctx = new Context("10.44.2.241");
+            // VS 2019 update:
+            // 1. First install Visual Analog IIO Plugin: https://wiki.analog.com/_media/resources/tools-software/linux-software/libiio/clients/va_iiopluginsetup.zip
+            // 2. Add to project references DLL: libiio-sharp.dll (installed in step 1)
+            // 3. In case of an exception, go to Project properties -> Build -> change Platform target to: x64.
+            // 4. If still not working, install also: https://github.com/analogdevicesinc/libiio/releases and https://github.com/analogdevicesinc/libad9361-iio/releases
+            Context ctx = new Context("ip:192.168.2.1"); // added "ip:" prefix
             if (ctx == null)
             {
                 Console.WriteLine("Unable to create IIO context");
