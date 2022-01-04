@@ -62,10 +62,12 @@ jobs:
       matrix:
         VS2017:
           vmImage: "vs2017-win2016"
-          compiler: "Visual Studio 15 2017 Win64"
+          COMPILER: "Visual Studio 15 2017 Win64"
+          ARCH: 'x64'
         VS2019:
           vmImage: "windows-2019"
-          compiler: "Visual Studio 16 2019"
+          COMPILER: "Visual Studio 16 2019"
+          ARCH: 'x64'
     pool:
       vmImage: $[ variables['vmImage'] ]
     steps:
@@ -88,7 +90,10 @@ jobs:
           choco install InnoSetup
           set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
         displayName: "Packaged Dependencies"
-      - script: .\CI\build_win.ps1
+      - task: PowerShell@2
+        inputs:
+          targetType: 'filePath'
+          filePath: .\CI\build_win.ps1
         displayName: Build
 
   ###########################################################
