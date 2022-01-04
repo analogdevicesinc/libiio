@@ -6,7 +6,8 @@
 
 [Unit]
 Description=IIO Daemon
-After=network.target
+Requires=systemd-udev-settle.service
+After=network.target systemd-udev-settle.service
 ConditionPathExists=/sys/bus/iio
 
 [Service]
