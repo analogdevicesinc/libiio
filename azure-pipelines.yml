@@ -88,11 +88,7 @@ jobs:
           choco install InnoSetup
           set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
         displayName: "Packaged Dependencies"
-      - script: |
-          mkdir build
-          cd build
-          cmake .. -G "$(compiler)" -DPYTHON_BINDINGS=ON -DLIBXML2_LIBRARIES="$(Agent.BuildDirectory)\\s\\deps\\lib\\libxml2.dll.a"
-          cmake --build . --config Release
+      - script: .\CI\build_win.ps1
         displayName: Build
 
   ###########################################################
