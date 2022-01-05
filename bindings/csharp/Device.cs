@@ -210,6 +210,9 @@ namespace iio
         /// <summary>The label of this device.</summary>
         public string label { get; private set; }
 
+        /// <summary>True if the device is a hardware monitoring device, False if it is a IIO device.</summary>
+        public bool hwmon { get; private set; }
+
         /// <summary>A <c>list</c> of all the attributes that this device has.</summary>
         public readonly List<Attr> attrs;
 
@@ -271,6 +274,7 @@ namespace iio
             IntPtr label_ptr = iio_device_get_label(dev);
 
             label = label_ptr == IntPtr.Zero ? "" : Marshal.PtrToStringAnsi(label_ptr);
+            hwmon = id[0] == 'h';
         }
 
         /// <summary>Get the <see cref="iio.Channel"/> object of the specified name.</summary>
