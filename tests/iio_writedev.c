@@ -209,6 +209,7 @@ int main(int argc, char **argv)
 	unsigned int i, nb_channels;
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
+	unsigned int refill_per_benchmark = REFILL_PER_BENCHMARK;
 	int c;
 	struct iio_device *dev;
 	ssize_t sample_size;
@@ -445,14 +446,19 @@ int main(int argc, char **argv)
 			after = get_time_us();
 			total += after - before;
 
-			if (++i == REFILL_PER_BENCHMARK) {
+			if (++i == refill_per_benchmark) {
 				rate = buffer_size * sample_size *
-					REFILL_PER_BENCHMARK * 1000000ull / total;
+					refill_per_benchmark * 1000000ull / total;
 				mib = rate > 1048576;
 
 				fprintf(stderr, "\33[2K\rThroughput: %" PRIu64 " %ciB/s",
 					rate / (1024 * (mib ? 1024 : 1)),
 					mib ? 'M' : 'K');
+
+				/* Print every 100ms more or less */
+				refill_per_benchmark = refill_per_benchmark * 100000 / total;
+				if (refill_per_benchmark < REFILL_PER_BENCHMARK)
+					refill_per_benchmark = REFILL_PER_BENCHMARK;
 
 				i = 0;
 				total = 0;
