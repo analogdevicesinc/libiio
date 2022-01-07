@@ -291,9 +291,4 @@ static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
 
 bool iio_channel_is_hwmon(const char *id);
 
-static inline bool iio_device_is_hwmon(const struct iio_device *dev)
-{
-	return WITH_HWMON && dev->id[0] == 'h';
-}
-
 #endif /* __IIO_PRIVATE_H__ */
