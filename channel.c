@@ -177,7 +177,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 	char *mod;
 	int type;
 
-	if (iio_device_is_hwmon(chn->dev)) {
+	if (WITH_HWMON && iio_device_is_hwmon(chn->dev)) {
 		type = iio_channel_find_type(chn->id, hwmon_chan_type_name_spec,
 					ARRAY_SIZE(hwmon_chan_type_name_spec));
 	} else {

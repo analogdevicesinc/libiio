@@ -1620,6 +1620,18 @@ hwmon_channel_get_type(const struct iio_channel *chn)
 	return (enum hwmon_chan_type) iio_channel_get_type(chn);
 }
 
+/**
+ * @brief Get whether or not the device is a hardware monitoring device
+ * @param dev A pointer to an iio_device structure
+ * @return True if the device is a hardware monitoring device,
+ * false if it is a IIO device */
+static inline bool iio_device_is_hwmon(const struct iio_device *dev)
+{
+	const char *id = iio_device_get_id(dev);
+
+	return id[0] == 'h';
+}
+
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Low-level functions -----------------------------*/
