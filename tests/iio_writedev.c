@@ -443,16 +443,16 @@ int main(int argc, char **argv)
 
 		if (benchmark) {
 			after = get_time_us();
-			rate = buffer_size * sample_size * 1000000ull / (after - before);
-
-			total += rate;
+			total += after - before;
 
 			if (++i == REFILL_PER_BENCHMARK) {
-				mib = rate > 1000000;
+				rate = buffer_size * sample_size *
+					REFILL_PER_BENCHMARK * 1000000ull / total;
+				mib = rate > 1048576;
 
 				fprintf(stderr, "\33[2K\rThroughput: %" PRIu64 " %ciB/s",
-				       total / (REFILL_PER_BENCHMARK * 1000 * (mib ? 1000 : 1)),
-				       mib ? 'M' : 'K');
+					rate / (1024 * (mib ? 1024 : 1)),
+					mib ? 'M' : 'K');
 
 				i = 0;
 				total = 0;
