@@ -670,8 +670,13 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-					dev->id, attr);
+			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
+				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
+							dev->id, attr);
+			} else {
+				iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+							dev->id, attr);
+			}
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
@@ -719,8 +724,13 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
+				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
 					dev->id, attr);
+			} else {
+				iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
+					dev->id, attr);
+			}
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
@@ -1116,9 +1126,12 @@ static int local_set_trigger(const struct iio_device *dev,
 		return 0;
 }
 
-static bool is_channel(const char *attr, bool strict)
+static bool is_channel(const struct iio_device *dev, const char *attr, bool strict)
 {
 	char *ptr = NULL;
+
+	if (WITH_HWMON && iio_device_is_hwmon(dev))
+		return iio_channel_is_hwmon(attr);
 	if (!strncmp(attr, "in_timestamp_", sizeof("in_timestamp_") - 1))
 		return true;
 	if (!strncmp(attr, "in_", 3))
@@ -1137,15 +1150,23 @@ static bool is_channel(const char *attr, bool strict)
 	return false;
 }
 
-static char * get_channel_id(const char *attr)
+static char * get_channel_id(struct iio_device *dev, const char *attr)
 {
-	char *res, *ptr;
+	char *res, *ptr = strchr(attr, '_');
 	size_t len;
 
-	attr = strchr(attr, '_') + 1;
-	ptr = strchr(attr, '_');
-	if (find_channel_modifier(ptr + 1, &len) != IIO_NO_MOD)
-		ptr += len + 1;
+	if (!WITH_HWMON || !iio_device_is_hwmon(dev)) {
+		attr = ptr + 1;
+		ptr = strchr(attr, '_');
+		if (find_channel_modifier(ptr + 1, &len) != IIO_NO_MOD)
+			ptr += len + 1;
+	} else if (!ptr) {
+		/*
+		 * Attribute is 'pwmX' without underscore: the attribute name
+		 * is our channel ID.
+		 */
+		return iio_strdup(attr);
+	}
 
 	res = malloc(ptr - attr + 1);
 	if (!res)
@@ -1158,10 +1179,19 @@ static char * get_channel_id(const char *attr)
 
 static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
-	char *ptr = strchr(attr, '_') + 1;
+	char *ptr = strchr(attr, '_');
 	size_t len;
 
-	ptr = strchr(ptr, '_') + 1;
+	if (WITH_HWMON && iio_device_is_hwmon(chn->dev)) {
+		/*
+		 * PWM hwmon devices can have an attribute named directly after
+		 * the channel's ID; in that particular case we don't need to
+		 * strip the prefix.
+		 */
+		return iio_strdup(ptr ? ptr + 1 : attr);
+	}
+
+	ptr = strchr(ptr + 1, '_') + 1;
 	if (find_channel_modifier(ptr, &len) != IIO_NO_MOD)
 		ptr += len + 1;
 
@@ -1417,11 +1447,13 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	if (!chn->pdata)
 		goto err_free_chn;
 
-	if (!strncmp(attr, "out_", 4)) {
-		chn->is_output = true;
-	} else if (strncmp(attr, "in_", 3)) {
-		err = -EINVAL;
-		goto err_free_chn_pdata;
+	if (!WITH_HWMON || !iio_device_is_hwmon(dev)) {
+		if (!strncmp(attr, "out_", 4)) {
+			chn->is_output = true;
+		} else if (strncmp(attr, "in_", 3)) {
+			err = -EINVAL;
+			goto err_free_chn_pdata;
+		}
 	}
 
 	chn->dev = dev;
@@ -1451,7 +1483,7 @@ static int add_channel(struct iio_device *dev, const char *name,
 	unsigned int i;
 	int ret;
 
-	channel_id = get_channel_id(name);
+	channel_id = get_channel_id(dev, name);
 	if (!channel_id)
 		return -ENOMEM;
 
@@ -1598,7 +1630,7 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 		if (!dev->attrs.names[i])
 			continue;
 
-		if (is_channel(attr, false)) {
+		if (is_channel(dev, attr, false)) {
 			ret = add_channel(dev, attr, attr, false);
 			if (ret)
 				return ret;
@@ -1645,7 +1677,7 @@ static int add_attr_or_channel_helper(struct iio_device *dev,
 		iio_snprintf(buf, sizeof(buf), "scan_elements/%s", name);
 		path = buf;
 	} else {
-		if (!is_channel(name, true))
+		if (!is_channel(dev, name, true))
 			return add_attr_to_device(dev, name);
 		path = name;
 	}
@@ -2029,6 +2061,7 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	char *description;
 	int ret = -ENOMEM;
 	struct utsname uts;
+	bool no_iio;
 
 	description = local_get_description(NULL);
 
@@ -2041,8 +2074,20 @@ local_create_context(const struct iio_context_params *params, const char *args)
 
 	ret = foreach_in_dir(ctx, ctx, "/sys/bus/iio/devices",
 			     true, create_device);
+	no_iio = ret == -ENOENT;
+	if (WITH_HWMON && no_iio)
+	      ret = 0; /* Not an error, unless we also have no hwmon devices */
 	if (ret < 0)
-		goto err_context_destroy;
+	      goto err_context_destroy;
+
+	if (WITH_HWMON) {
+		ret = foreach_in_dir(ctx, ctx, "/sys/class/hwmon",
+				     true, create_device);
+		if (ret == -ENOENT && !no_iio)
+			ret = 0; /* IIO devices but no hwmon devices - not an error */
+		if (ret < 0)
+			goto err_context_destroy;
+	}
 
 	qsort(ctx->devices, ctx->nb_devices, sizeof(struct iio_device *),
 		iio_device_compare);

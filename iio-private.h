@@ -232,4 +232,6 @@ static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
 	*alen += ret;
 }
 
+bool iio_channel_is_hwmon(const char *id);
+
 #endif /* __IIO_PRIVATE_H__ */

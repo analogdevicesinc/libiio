@@ -25,6 +25,7 @@
 #include <inttypes.h>
 #include <getopt.h>
 #include <string.h>
+#include <time.h>
 
 #include "iio_common.h"
 #include "gen_code.h"
@@ -429,3 +430,15 @@ void usage(char *name, const struct option *options,
 	exit(0);
 }
 
+uint64_t get_time_us(void)
+{
+	struct timespec tp;
+
+#ifdef _WIN32
+	timespec_get(&tp, TIME_UTC);
+#else
+	clock_gettime(CLOCK_REALTIME, &tp);
+#endif
+
+	return tp.tv_sec * 1000000ull + tp.tv_nsec / 1000;
+}

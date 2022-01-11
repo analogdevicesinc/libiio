@@ -224,13 +224,8 @@ stages:
       - task: DownloadPipelineArtifact@2
         inputs:
           path: '$(Build.ArtifactStagingDirectory)'
-      - script: |
-              cd $(Build.ArtifactStagingDirectory)
-              zip -r ./Windows-VS-16-2019-Win32.zip ./Windows-VS-16-2019-Win32
-              rm -r ./Windows-VS-16-2019-Win32
-              zip -r ./Windows-VS-16-2019-x64.zip ./Windows-VS-16-2019-x64
-              rm -r ./Windows-VS-16-2019-x64
-        displayName: "Archive windows artifacts"
+      - bash: ./CI/travis/prepare_assets.sh swdownloads
+        displayName: "Prepare artifacts for SWDownloads"
       - task: DownloadSecureFile@1
         name: key
         displayName: 'Download rsa key'
@@ -248,7 +243,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         inputs:
           path: '$(Build.ArtifactStagingDirectory)'
-      - bash: ./CI/travis/prepare_assets.sh
+      - bash: ./CI/travis/prepare_assets.sh release
         displayName: "Prepare assets for release"
       - task: GithubRelease@0
         displayName: 'Attach artifacts to GitHub Release'

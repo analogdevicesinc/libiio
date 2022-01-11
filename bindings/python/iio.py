@@ -1296,6 +1296,10 @@ class Device(_DeviceOrTrigger):
         None,
         "Contains the configured trigger for this IIO device.\n\ttype=iio.Trigger",
     )
+    hwmon = property(
+        lambda self: self._id[:5] == "hwmon", None, None,
+        "Contains True if the device is a hardware-monitoring device, False if it is a IIO device.\n\ttype=bool",
+    )
 
     @property
     def context(self):

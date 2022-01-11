@@ -141,6 +141,13 @@ struct iio_context_params {
 	enum iio_log_level stderr_level;
 };
 
+/*
+ * <linux/iio/types.h> header guard to protect these enums from being defined
+ * twice
+ */
+#ifndef _IIO_TYPES_H_
+#define _IIO_TYPES_H_
+
 /**
  * @enum iio_chan_type
  * @brief IIO channel type
@@ -241,6 +248,37 @@ enum iio_modifier {
 	IIO_MOD_H2,
 	IIO_MOD_O2,
 };
+
+/**
+ * @enum iio_event_type
+ * @brief IIO event type
+ *
+ * Some IIO devices can deliver events. The type of the event can be specified
+ * by one of the iio_event_type values.
+ */
+enum iio_event_type {
+	IIO_EV_TYPE_THRESH,
+	IIO_EV_TYPE_MAG,
+	IIO_EV_TYPE_ROC,
+	IIO_EV_TYPE_THRESH_ADAPTIVE,
+	IIO_EV_TYPE_MAG_ADAPTIVE,
+	IIO_EV_TYPE_CHANGE,
+};
+
+/**
+ * @enum iio_event_direction
+ * @brief IIO event direction
+ *
+ * When applicable, this enum specifies the direction of the iio_event_type.
+ */
+enum iio_event_direction {
+	IIO_EV_DIR_EITHER,
+	IIO_EV_DIR_RISING,
+	IIO_EV_DIR_FALLING,
+	IIO_EV_DIR_NONE,
+};
+
+#endif /* _IIO_TYPES_H_ */
 
 /* ---------------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
@@ -1535,6 +1573,55 @@ __api void iio_buffer_set_data(struct iio_buffer *buf, void *data);
  * @param buf A pointer to an iio_buffer structure
  * @return The pointer previously associated if present, or NULL */
 __api void * iio_buffer_get_data(const struct iio_buffer *buf);
+
+/** @} *//* ------------------------------------------------------------------*/
+/* ---------------------------- HWMON support --------------------------------*/
+/** @defgroup Hwmon Compatibility with hardware monitoring (hwmon) devices
+ * @{
+ * @enum hwmon_chan_type
+ * @brief Hwmon channel type
+ *
+ * Libiio support hardware-monitoring (hwmon) devices as well. This enum
+ * specifies the type of data associated with the hwmon channel.
+ *
+ * NOTE: as of 2021 only the current hwmon API is supported. The old
+ * and deprecated APIs are not supported, and won't be supported unless we
+ * have a case where updating a hwmon driver is not possible.
+ */
+enum hwmon_chan_type {
+	HWMON_VOLTAGE,
+	HWMON_FAN,
+	HWMON_PWM,
+	HWMON_TEMP,
+	HWMON_CURRENT,
+	HWMON_POWER,
+	HWMON_ENERGY,
+	HWMON_HUMIDITY,
+	HWMON_INTRUSION,
+	HWMON_CHAN_TYPE_UNKNOWN = IIO_CHAN_TYPE_UNKNOWN,
+};
+
+/**
+ * @brief Get the type of the given hwmon channel
+ * @param chn A pointer to an iio_channel structure
+ * @return The type of the hwmon channel */
+static inline enum hwmon_chan_type
+hwmon_channel_get_type(const struct iio_channel *chn)
+{
+	return (enum hwmon_chan_type) iio_channel_get_type(chn);
+}
+
+/**
+ * @brief Get whether or not the device is a hardware monitoring device
+ * @param dev A pointer to an iio_device structure
+ * @return True if the device is a hardware monitoring device,
+ * false if it is a IIO device */
+static inline bool iio_device_is_hwmon(const struct iio_device *dev)
+{
+	const char *id = iio_device_get_id(dev);
+
+	return id[0] == 'h';
+}
 
 
 /** @} *//* ------------------------------------------------------------------*/

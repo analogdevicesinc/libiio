@@ -1,14 +1,18 @@
+# SPDX-License-Identifier: LGPL-2.1+
+#
 # iiod - Systemd init script
 #
-# Copyright (C) 2016 Analog Devices Inc.
+# Copyright (C) 2016-2021 Analog Devices Inc.
 
 [Unit]
 Description=IIO Daemon
-After=network.target
+Requires=systemd-udev-settle.service
+After=network.target systemd-udev-settle.service
 ConditionPathExists=/sys/bus/iio
 
 [Service]
-ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod
+EnvironmentFile=-/etc/default/iiod
+ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod $IIOD_EXTRA_OPTS
 KillMode=process
 Restart=on-failure
 
