@@ -1,3 +1,6 @@
+# If you make changes to builds or artifacts, please check and update the following files if needed:
+# README.md, CI/travis/prepare_assets.sh, artifact_manifest.txt.cmakein, CI/publish_deps.ps1
+
 trigger:
   branches:
     include:
@@ -10,104 +13,56 @@ trigger:
     - v*
 
 pr:
-- main
-- master
-- 20*
+  branches:
+    include:
+    - main
+    - master
+    - 20*
 
 stages:
 - stage: Builds
+  #############################################
+  # Builds
+  #############################################
   jobs:
   - job: LinuxBuilds
+    # Host Box
+    pool:
+      vmImage: 'ubuntu-latest'
+    # Docker Images
     strategy:
       matrix:
-        centos_7_x86_64:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'centos_docker'
-          OS_VERSION: centos7
-          artifactName: 'Linux-CentOS-7-x86_64'
-        ubuntu_16_04_x86_64:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'ubuntu_docker'
-          OS_VERSION: xenial
-          artifactName: 'Linux-Ubuntu-16.04-x86_64'
-        ubuntu_18_04_x86_64:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'ubuntu_docker'
-          OS_VERSION: bionic
-          artifactName: 'Linux-Ubuntu-18.04-x86_64'
-        ubuntu_20_04_x86_64:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'ubuntu_docker'
-          OS_VERSION: focal
-          artifactName: 'Linux-Ubuntu-20.04-x86_64'
-          CHECK_AGAINST_KERNEL_HEADER: 1
-        debian_buster_arm32v7:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'arm32v7/debian_docker'
-          OS_VERSION: 'buster'
-          artifactName: 'Linux-Debian-Buster-ARM'
-        debian_buster_arm64v8:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'arm64v8/debian_docker'
-          OS_VERSION: 'buster'
-          artifactName: 'Linux-Debian-Buster-ARM64'
-        doxygen:
-          imageName: 'ubuntu-latest'
-          OS_TYPE: 'doxygen'
-          OS_VERSION: focal
-          artifactName: 'Libiio-documentation'
-          CI_BUILD_SPHINX_DOCS: 1
-    pool:
-      vmImage: $(imageName)
+        ubuntu_18_04:
+          image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-18.04'
+        ubuntu_20_04:
+          image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-20.04'
+        fedora34:
+          image: 'tfcollins/libiio_fedora_34-ci:latest'
+          artifactName: 'Linux-Fedora-34'
+    container: $[ variables['image'] ]
     steps:
     - checkout: self
       fetchDepth: 1
       clean: true
       persistCredentials: true
-    - script: ./CI/travis/before_install_linux
-      displayName: "Install Dependencies"
-    - script: ./CI/travis/make_linux
-      displayName: "Build"
+    - script: |
+        mkdir build && cd build
+        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        make
+        make package
+      displayName: 'Build'
+    - script: |
+        cd $(Agent.BuildDirectory)/s/build/
+        sh generateDocumentationAndDeploy.sh
+      displayName: 'Documentation'
+      condition: eq(variables['artifactName'], 'Linux-Fedora-34')
     - task: CopyFiles@2
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['CI_BUILD_SPHINX_DOCS'], '1'))
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.rpm)'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: PublishPipelineArtifact@1
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['CI_BUILD_SPHINX_DOCS'], '1'))
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: '$(artifactName)'
-
-  - job: macOSBuilds
-    strategy:
-      matrix:
-        macOS_10_15:
-          imageName: 'macOS-10.15'
-          artifactName: 'macOS-10.15'
-        macOS_11:
-          imageName: 'macOS-11'
-          artifactName: 'macOS-11'
-    pool:
-      vmImage: $(imageName)
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-    - script: ./CI/travis/before_install_darwin
-      displayName: "Install Dependencies"
-    - script: ./CI/travis/make_darwin
-      displayName: "Build"
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-        contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build_tar/'
-        contents: '$(Agent.BuildDirectory)/s/build_tar/?(*.gz)'
+        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PublishPipelineArtifact@1
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
@@ -115,21 +70,23 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
 
+  #############################################
   - job: WindowsBuilds
+    # Host Box
     strategy:
       matrix:
-        VS2019_Win32:
-          imageName: 'windows-2019'
-          COMPILER: 'Visual Studio 16 2019'
-          ARCH: 'Win32'
-          artifactName: 'Windows-VS-16-2019-Win32'
-        VS2019_Win64:
-          imageName: 'windows-2019'
+        VS2022:
+          vmImage: 'windows-2022'
+          COMPILER: 'Visual Studio 17 2022'
+          ARCH: 'x64'
+          artifactName: 'Windows-VS-2022-x64'
+        VS2019:
+          vmImage: 'windows-2019'
           COMPILER: 'Visual Studio 16 2019'
           ARCH: 'x64'
-          artifactName: 'Windows-VS-16-2019-x64'
+          artifactName: 'Windows-VS-2019-x64'
     pool:
-      vmImage: $[ variables['imageName'] ]
+      vmImage: $[ variables['vmImage'] ]
     steps:
     - checkout: self
       fetchDepth: 1
@@ -138,15 +95,27 @@ stages:
       inputs:
         versionSpec: '3.9'
     - task: PowerShell@2
+      displayName: 'Dependencies'
       inputs:
-        targetType: 'filePath'
-        filePath: .\CI\install_deps_win.ps1
-      displayName: Dependencies
+        targetType: inline
+        script: |
+          git submodule update --init
+          if ( !( Test-Path deps ) ) {
+            mkdir deps
+          }
+          cd deps
+          mkdir libxml
+          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          7z x -y libxml.7z
+          rm libxml.7z
+          cd C:\
+          wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+          7z x -y "C:\libiio-win-deps.zip"
     - task: PowerShell@2
       inputs:
         targetType: 'filePath'
         filePath: .\CI\build_win.ps1
-      displayName: Build
+      displayName: 'Build'
     - task: CopyFiles@2
       displayName: 'Copy libraries'
       inputs:
@@ -187,66 +156,183 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
 
-- stage: PushArtifacts
+  #############################################
+  - job: macOSBuilds
+    # Host Box
+    strategy:
+      matrix:
+        macOS_10_15:
+          vmImage: 'macOS-10.15'
+          artifactName: 'macOS-10.15'
+        macOS_11:
+          vmImage: 'macOS-11'
+          artifactName: 'macOS-11'
+    pool:
+      vmImage: $[ variables['vmImage'] ]
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - script: |
+          brew install cmake doxygen libusb libxml2 ncurses cdk libserialport
+          pip3 install sphinx sphinx-rtd-theme
+      displayName: 'Dependencies'
+    - script: |
+        mkdir build && cd build
+        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON
+        make
+        sudo make install
+        cd ..
+      displayName: 'Build'
+    - script: |
+        mkdir build_tar && cd build_tar
+        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        make
+        make package
+        cd ..
+      displayName: 'Build tar'
+    - script: |
+        cd build
+        cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
+        make
+        cd ..
+      displayName: 'Build With Doc'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+        contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build_tar/'
+        contents: '$(Agent.BuildDirectory)/s/build_tar/?(*.gz)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
+
+  #############################################
+  - job: ARMBuilds
+    # Host Box
+    pool:
+      vmImage: "ubuntu-latest"
+    # Docker Images
+    strategy:
+      matrix:
+        ubuntu-ppc64le:
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          arch: ppc64le
+          build_script: ci-ubuntu.sh
+          artifactName: 'Ubuntu-ppc64le'
+        ubuntu-x390x:
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          arch: s390x
+          build_script: ci-ubuntu.sh
+          artifactName: 'Ubuntu-x390x'
+        ubuntu-arm64v8:
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          arch: aarch64
+          build_script: ci-ubuntu.sh
+          artifactName: 'Ubuntu-arm64v8'
+        ubuntu-arm32v7:
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          arch: arm
+          build_script: ci-ubuntu.sh
+          artifactName: 'Ubuntu-arm32v7'
+    steps:
+    - script: |
+        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-arm-static
+        sudo apt-get install -y g++-arm-linux-gnueabihf libstdc++-4.8-dev-armhf-cross
+        sudo apt-get install -y g++-aarch64-linux-gnu libstdc++-4.8-dev-arm64-cross
+        sudo apt-get install -y qemu-system-ppc64
+        sudo apt-get install qemu
+        sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      displayName: 'Setup'
+    - script: |
+        sudo docker run --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
+      displayName: 'Build'
+    - task: CopyFiles@2
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
+
+  #############################################
+- stage: ManageArtifacts
   dependsOn: Builds
+  #############################################
+  # Deploy
+  #############################################
   jobs:
   - job: GenerateSetupExe
     condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
     pool:
       vmImage: 'windows-2019'
     steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          path: '$(Build.ArtifactStagingDirectory)'
-      - task: PowerShell@2
-        inputs:
-          targetType: 'filePath'
-          filePath: .\CI\generate_exe.ps1
-        displayName: "Generate libiio-setup.exe"
-      - task: PublishPipelineArtifact@1
-        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-        inputs:
-          targetPath: '$(Build.ArtifactStagingDirectory)'
-          artifactName: 'Libiio-Setup-Exe'
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        path: '$(Build.ArtifactStagingDirectory)'
+    - task: PowerShell@2
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\generate_exe.ps1
+      displayName: 'Generate libiio-setup.exe'
+    - task: PublishPipelineArtifact@1
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'Libiio-Setup-Exe'
+
+  #############################################  
   - job: PushToSWDownloads
     dependsOn: GenerateSetupExe
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          path: '$(Build.ArtifactStagingDirectory)'
-      - bash: ./CI/travis/prepare_assets.sh swdownloads
-        displayName: "Prepare artifacts for SWDownloads"
-      - task: DownloadSecureFile@1
-        name: key
-        displayName: 'Download rsa key'
-        inputs:
-          secureFile: 'id_rsa'
-      - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
-        env:
-          MAPPED_VAR: $(SERVER_ADDRESS)
-        displayName: "Push artifacts to SW Downloads"
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        path: '$(Build.ArtifactStagingDirectory)'
+    - bash: ./CI/travis/prepare_assets.sh swdownloads
+      displayName: "Prepare artifacts for SWDownloads"
+    - task: DownloadSecureFile@1
+      name: key
+      displayName: 'Download rsa key'
+      inputs:
+        secureFile: 'id_rsa'
+    - bash: chmod 600 $(key.secureFilePath) ; scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i $(key.secureFilePath) -r /home/vsts/work/1/a/* $MAPPED_VAR
+      env:
+        MAPPED_VAR: $(SERVER_ADDRESS)
+      displayName: 'Push artifacts to SW Downloads'
+
+  ##############################################
   - job: PushToGithubRelease
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          path: '$(Build.ArtifactStagingDirectory)'
-      - bash: ./CI/travis/prepare_assets.sh release
-        displayName: "Prepare assets for release"
-      - task: GithubRelease@0
-        displayName: 'Attach artifacts to GitHub Release'
-        inputs:
-          gitHubConnection: libiio-release
-          repositoryName: $(Build.Repository.Name)
-          action: create
-          target: $(Build.SourceVersion)
-          tag: $(Build.SourceBranchName)
-          title: "Libiio release $(Build.SourceBranchName)"
-          assets: $(Build.ArtifactStagingDirectory)/*
-          addChangeLog: true
-          isDraft: true
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        path: '$(Build.ArtifactStagingDirectory)'
+    - bash: ./CI/travis/prepare_assets.sh release
+      displayName: 'Prepare assets for release'
+    - task: GithubRelease@0
+      displayName: 'Attach artifacts to GitHub Release'
+      inputs:
+        gitHubConnection: libiio-release
+        repositoryName: $(Build.Repository.Name)
+        action: create
+        target: $(Build.SourceVersion)
+        tag: $(Build.SourceBranchName)
+        title: "Libiio release $(Build.SourceBranchName)"
+        assets: $(Build.ArtifactStagingDirectory)/*
+        addChangeLog: true
+        isDraft: true
