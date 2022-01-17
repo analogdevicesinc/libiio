@@ -104,6 +104,7 @@ static const char * const device_attrs_blacklist[] = {
 static const char * const buffer_attrs_reserved[] = {
 	"length",
 	"enable",
+	"watermark",
 };
 
 static int ioctl_nointr(int fd, unsigned long request, void *data)
@@ -922,6 +923,15 @@ static int local_open(const struct iio_device *dev,
 	ret = local_write_dev_attr(dev, "buffer/length",
 			buf, strlen(buf) + 1, false);
 	if (ret < 0)
+		return ret;
+
+	/*
+	 * Set watermark to the buffer size; the driver will adjust to its
+	 * maximum if it's too high without issueing an error.
+	 */
+	ret = local_write_dev_attr(dev, "buffer/watermark",
+				   buf, strlen(buf) + 1, false);
+	if (ret < 0 && ret != -ENOENT)
 		return ret;
 
 	pdata->cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
