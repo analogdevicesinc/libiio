@@ -1673,6 +1673,13 @@ struct iio_data_format {
 };
 
 
+/** @brief Get a mask of the currently enabled channels
+ * @param dev A pointer to an iio_device structure
+ * @return A pointer to an iio_channels_mask structure */
+__api __pure const struct iio_channels_mask *
+iio_device_get_channels_mask(const struct iio_device *dev);
+
+
 /** @brief Get the current sample size
  * @param dev A pointer to an iio_device structure
  * @param mask A pointer to an iio_channels_mask structure. If NULL, the current
