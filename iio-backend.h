@@ -106,7 +106,7 @@ struct iio_backend_ops {
 			unsigned int nb_blocks);
 	ssize_t (*get_buffer)(const struct iio_device *dev,
 			void **addr_ptr, size_t bytes_used,
-			uint32_t *mask, size_t words);
+			struct iio_channels_mask *mask);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 			const char *attr, char *dst, size_t len, enum iio_attr_type);
