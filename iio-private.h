@@ -140,7 +140,7 @@ struct iio_buffer {
 	void *buffer, *userdata;
 	size_t length, data_length;
 
-	uint32_t *mask;
+	struct iio_channels_mask *mask;
 	unsigned int dev_sample_size;
 	unsigned int sample_size;
 	bool dev_is_high_speed;
