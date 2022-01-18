@@ -20,7 +20,7 @@ static bool device_is_high_speed(const struct iio_device *dev)
 	 * -EBADF or -EINVAL otherwise. */
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	return !!ops->get_buffer &&
-		(ops->get_buffer(dev, NULL, 0, NULL, 0) != -ENOSYS);
+		(ops->get_buffer(dev, NULL, 0, NULL) != -ENOSYS);
 }
 
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
@@ -29,7 +29,6 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	ssize_t ret = -EINVAL;
 	struct iio_buffer *buf;
 	ssize_t sample_size = iio_device_get_sample_size(dev, NULL);
-	size_t words = dev->mask->words;
 	size_t mask_size;
 
 	if (!sample_size || !samples_count)
@@ -50,7 +49,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	buf->length = sample_size * samples_count;
 	buf->dev = dev;
 
-	mask_size = sizeof(*buf->mask) + words * sizeof(uint32_t);
+	mask_size = sizeof(*buf->mask) + dev->mask->words * sizeof(uint32_t);
 
 	buf->mask = zalloc(mask_size);
 	if (!buf->mask) {
@@ -75,7 +74,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		buf->buffer = NULL;
 		if (iio_device_is_tx(dev)) {
 			ret = dev->ctx->ops->get_buffer(dev, &buf->buffer,
-					buf->length, buf->mask->mask, words);
+					buf->length, buf->mask);
 			if (ret < 0)
 				goto err_close_device;
 		}
@@ -134,7 +133,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (buffer->dev_is_high_speed) {
 		read = dev->ctx->ops->get_buffer(dev, &buffer->buffer,
-				buffer->length, buffer->mask->mask, mask->words);
+						 buffer->length, mask);
 	} else {
 		read = iio_device_read_raw(dev, buffer->buffer,
 					   buffer->length, mask);
@@ -160,7 +159,7 @@ ssize_t iio_buffer_push(struct iio_buffer *buffer)
 		void *buf;
 
 		ret = dev->ctx->ops->get_buffer(dev, &buf,
-				buffer->data_length, buffer->mask->mask, mask->words);
+						buffer->data_length, mask);
 		if (ret >= 0) {
 			buffer->buffer = buf;
 			ret = (ssize_t) buffer->data_length;
