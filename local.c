@@ -848,8 +848,7 @@ static int enable_high_speed(const struct iio_device *dev)
 
 	req.id = 0;
 	req.type = 0;
-	req.size = pdata->samples_count *
-		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
+	req.size = pdata->samples_count * iio_device_get_sample_size(dev);
 	req.count = nb_blocks;
 
 	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
