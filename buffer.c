@@ -29,6 +29,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	ssize_t ret = -EINVAL;
 	struct iio_buffer *buf;
 	ssize_t sample_size = iio_device_get_sample_size(dev);
+	size_t words = dev->mask->words;
 
 	if (!sample_size || !samples_count)
 		goto err_set_errno;
@@ -47,7 +48,8 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	buf->dev_sample_size = (unsigned int) sample_size;
 	buf->length = sample_size * samples_count;
 	buf->dev = dev;
-	buf->mask = calloc(dev->words, sizeof(*buf->mask));
+
+	buf->mask = zalloc(words * sizeof(uint32_t));
 	if (!buf->mask) {
 		ret = -ENOMEM;
 		goto err_free_buf;
@@ -57,7 +59,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	 * While input buffers will erase this as soon as the refill function
 	 * is used, it is useful for output buffers, as it permits
 	 * iio_buffer_foreach_sample to be used. */
-	memcpy(buf->mask, dev->mask, dev->words * sizeof(*buf->mask));
+	memcpy(buf->mask, dev->mask->mask, words * sizeof(uint32_t));
 
 	ret = iio_device_open(dev, samples_count, cyclic);
 	if (ret < 0)
@@ -70,7 +72,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		buf->buffer = NULL;
 		if (iio_device_is_tx(dev)) {
 			ret = dev->ctx->ops->get_buffer(dev, &buf->buffer,
-					buf->length, buf->mask, dev->words);
+					buf->length, buf->mask, words);
 			if (ret < 0)
 				goto err_close_device;
 		}
@@ -82,7 +84,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		}
 	}
 
-	ret = iio_device_get_sample_size_mask(dev, buf->mask, dev->words);
+	ret = iio_device_get_sample_size_mask(dev, buf->mask, words);
 	if (ret < 0)
 		goto err_close_device;
 
@@ -124,19 +126,20 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read;
 	const struct iio_device *dev = buffer->dev;
+	const struct iio_channels_mask *mask = dev->mask;
 	ssize_t ret;
 
 	if (buffer->dev_is_high_speed) {
 		read = dev->ctx->ops->get_buffer(dev, &buffer->buffer,
-				buffer->length, buffer->mask, dev->words);
+				buffer->length, buffer->mask, mask->words);
 	} else {
 		read = iio_device_read_raw(dev, buffer->buffer, buffer->length,
-				buffer->mask, dev->words);
+					   buffer->mask, mask->words);
 	}
 
 	if (read >= 0) {
 		buffer->data_length = read;
-		ret = iio_device_get_sample_size_mask(dev, buffer->mask, dev->words);
+		ret = iio_device_get_sample_size_mask(dev, buffer->mask, mask->words);
 		if (ret < 0)
 			return ret;
 		buffer->sample_size = (unsigned int)ret;
@@ -147,12 +150,13 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 ssize_t iio_buffer_push(struct iio_buffer *buffer)
 {
 	const struct iio_device *dev = buffer->dev;
+	const struct iio_channels_mask *mask = dev->mask;
 	ssize_t ret;
 
 	if (buffer->dev_is_high_speed) {
 		void *buf;
 		ret = dev->ctx->ops->get_buffer(dev, &buf,
-				buffer->data_length, buffer->mask, dev->words);
+				buffer->data_length, buffer->mask, mask->words);
 		if (ret >= 0) {
 			buffer->buffer = buf;
 			ret = (ssize_t) buffer->data_length;
