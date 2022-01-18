@@ -612,6 +612,7 @@ iiod_client_open_unlocked(struct iiod_client *client,
 			  const struct iio_device *dev,
 			  size_t samples_count, bool cyclic)
 {
+	const struct iio_channels_mask *mask = dev->mask;
 	struct iiod_client_io *io;
 	char buf[1024], *ptr;
 	size_t i;
@@ -627,9 +628,9 @@ iiod_client_open_unlocked(struct iiod_client *client,
 			iio_device_get_id(dev), (unsigned long) samples_count);
 	ptr = buf + strlen(buf);
 
-	for (i = dev->words; i > 0; i--, ptr += 8) {
+	for (i = mask->words; i > 0; i--, ptr += 8) {
 		len -= iio_snprintf(ptr, len, "%08" PRIx32,
-				dev->mask[i - 1]);
+				mask->mask[i - 1]);
 	}
 
 	len -= iio_strlcpy(ptr, cyclic ? " CYCLIC\r\n" : "\r\n", len);

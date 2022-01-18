@@ -400,19 +400,19 @@ const struct iio_data_format * iio_channel_get_data_format(
 bool iio_channel_is_enabled(const struct iio_channel *chn)
 {
 	return chn->index >= 0 && chn->dev->mask &&
-		TEST_BIT(chn->dev->mask, chn->number);
+		iio_channels_mask_test_bit(chn->dev->mask, chn->number);
 }
 
 void iio_channel_enable(struct iio_channel *chn)
 {
 	if (chn->is_scan_element && chn->index >= 0 && chn->dev->mask)
-		SET_BIT(chn->dev->mask, chn->number);
+		iio_channels_mask_set_bit(chn->dev->mask, chn->number);
 }
 
 void iio_channel_disable(struct iio_channel *chn)
 {
 	if (chn->index >= 0 && chn->dev->mask)
-		CLEAR_BIT(chn->dev->mask, chn->number);
+		iio_channels_mask_clear_bit(chn->dev->mask, chn->number);
 }
 
 void free_channel(struct iio_channel *chn)

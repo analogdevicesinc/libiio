@@ -313,10 +313,10 @@ static ssize_t local_read(const struct iio_device *dev,
 
 	if (pdata->fd == -1)
 		return -EBADF;
-	if (words != dev->words)
+	if (words != dev->mask->words)
 		return -EINVAL;
 
-	memcpy(mask, dev->mask, words);
+	memcpy(mask, dev->mask->mask, words);
 
 	if (len == 0)
 		return 0;
@@ -1795,7 +1795,6 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 
 static int create_device(void *d, const char *path)
 {
-	uint32_t *mask = NULL;
 	unsigned int i;
 	int ret;
 	struct iio_context *ctx = d;
@@ -1858,17 +1857,6 @@ static int create_device(void *d, const char *path)
 	}
 	qsort(dev->attrs.names, dev->attrs.num, sizeof(char *),
 		iio_device_attr_compare);
-
-	dev->words = (dev->nb_channels + 31) / 32;
-	if (dev->words) {
-		mask = calloc(dev->words, sizeof(*mask));
-		if (!mask) {
-			ret = -ENOMEM;
-			goto err_free_device;
-		}
-	}
-
-	dev->mask = mask;
 
 	ret = iio_context_add_device(ctx, dev);
 	if (!ret)

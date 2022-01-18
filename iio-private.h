@@ -132,8 +132,7 @@ struct iio_device {
 	struct iio_channel **channels;
 	unsigned int nb_channels;
 
-	uint32_t *mask;
-	size_t words;
+	struct iio_channels_mask *mask;
 };
 
 struct iio_buffer {

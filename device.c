@@ -248,11 +248,12 @@ bool iio_device_is_tx(const struct iio_device *dev)
 int iio_device_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
+	const struct iio_channels_mask *mask = dev->mask;
 	unsigned int i;
 	bool has_channels = false;
 
-	for (i = 0; !has_channels && i < dev->words; i++)
-		has_channels = !!dev->mask[i];
+	for (i = 0; !has_channels && i < mask->words; i++)
+		has_channels = !!mask->mask[i];
 	if (!has_channels)
 		return -EINVAL;
 
@@ -476,7 +477,7 @@ ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 
 ssize_t iio_device_get_sample_size(const struct iio_device *dev)
 {
-	return iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
+	return iio_device_get_sample_size_mask(dev, dev->mask->mask, dev->mask->words);
 }
 
 int iio_device_attr_read_longlong(const struct iio_device *dev,
