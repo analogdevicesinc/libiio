@@ -668,31 +668,31 @@ int iiod_client_close_unlocked(struct iiod_client_io *io)
 }
 
 static int iiod_client_read_mask(struct iiod_client *client,
-				 uint32_t *mask, size_t words)
+				 struct iio_channels_mask *mask)
 {
 	size_t i;
 	ssize_t ret;
 	char *buf, *ptr;
 
-	buf = malloc(words * 8 + 1);
+	buf = malloc(mask->words * 8 + 1);
 	if (!buf)
 		return -ENOMEM;
 
-	ret = iiod_client_read_all(client, buf, words * 8 + 1);
+	ret = iiod_client_read_all(client, buf, mask->words * 8 + 1);
 	if (ret < 0) {
 		prm_err(NULL, "READ ALL: %zd\n", ret);
 		goto out_buf_free;
 	} else
 		ret = 0;
 
-	buf[words*8] = '\0';
+	buf[mask->words * 8] = '\0';
 
 	prm_dbg(client->params, "Reading mask\n");
 
-	for (i = words, ptr = buf; i > 0; i--) {
-		iio_sscanf(ptr, "%08" PRIx32, &mask[i - 1]);
+	for (i = mask->words, ptr = buf; i > 0; i--) {
+		iio_sscanf(ptr, "%08" PRIx32, &mask->mask[i - 1]);
 		prm_dbg(client->params, "mask[%lu] = 0x%08" PRIx32 "\n",
-				(unsigned long)(i - 1), mask[i - 1]);
+				(unsigned long)(i - 1), mask->mask[i - 1]);
 
 		ptr = (char *) ((uintptr_t) ptr + 8);
 	}
@@ -705,14 +705,13 @@ out_buf_free:
 static ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 					 const struct iio_device *dev,
 					 void *dst, size_t len,
-					 uint32_t *mask, size_t words)
+					 struct iio_channels_mask *mask)
 {
-	unsigned int nb_channels = iio_device_get_channels_count(dev);
 	uintptr_t ptr = (uintptr_t) dst;
 	char buf[1024];
 	ssize_t ret, read = 0;
 
-	if (!len || words != (nb_channels + 31) / 32)
+	if (!len || (mask && mask->words != dev->mask->words))
 		return -EINVAL;
 
 	iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
@@ -738,7 +737,7 @@ static ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 			break;
 
 		if (mask) {
-			ret = iiod_client_read_mask(client, mask, words);
+			ret = iiod_client_read_mask(client, mask);
 			if (ret < 0) {
 				prm_err(client->params, "READ ALL: %zd\n", ret);
 				return ret;
@@ -762,12 +761,12 @@ static ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 ssize_t iiod_client_read(struct iiod_client *client,
 			 const struct iio_device *dev,
 			 void *dst, size_t len,
-			 uint32_t *mask, size_t words)
+			 struct iio_channels_mask *mask)
 {
 	ssize_t ret;
 
 	iiod_client_mutex_lock(client);
-	ret = iiod_client_read_unlocked(client, dev, dst, len, mask, words);
+	ret = iiod_client_read_unlocked(client, dev, dst, len, mask);
 	iiod_client_mutex_unlock(client);
 
 	return ret;

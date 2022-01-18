@@ -136,8 +136,8 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 		read = dev->ctx->ops->get_buffer(dev, &buffer->buffer,
 				buffer->length, buffer->mask->mask, mask->words);
 	} else {
-		read = iio_device_read_raw(dev, buffer->buffer, buffer->length,
-					   buffer->mask->mask, mask->words);
+		read = iio_device_read_raw(dev, buffer->buffer,
+					   buffer->length, mask);
 	}
 
 	if (read >= 0) {

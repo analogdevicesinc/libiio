@@ -351,12 +351,12 @@ out_unlock:
 }
 
 static ssize_t usb_read(const struct iio_device *dev, void *dst, size_t len,
-		uint32_t *mask, size_t words)
+			struct iio_channels_mask *mask)
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read(client, dev, dst, len, mask, words);
+	return iiod_client_read(client, dev, dst, len, mask);
 }
 
 static ssize_t usb_write(const struct iio_device *dev,

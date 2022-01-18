@@ -73,7 +73,7 @@ __api int iiod_client_close_unlocked(struct iiod_client_io *io);
 __api ssize_t iiod_client_read(struct iiod_client *client,
 			       const struct iio_device *dev,
 			       void *dst, size_t len,
-			       uint32_t *mask, size_t words);
+			       struct iio_channels_mask *mask);
 
 __api ssize_t iiod_client_write(struct iiod_client *client,
 				const struct iio_device *dev,

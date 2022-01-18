@@ -202,7 +202,7 @@ int iio_device_open(const struct iio_device *dev,
 int iio_device_close(const struct iio_device *dev);
 int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking);
 ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len, uint32_t *mask, size_t words);
+		void *dst, size_t len, struct iio_channels_mask *mask);
 ssize_t iio_device_write_raw(const struct iio_device *dev,
 		const void *src, size_t len);
 int iio_device_get_poll_fd(const struct iio_device *dev);
