@@ -629,7 +629,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				IIO_DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
 
-			entry->sample_size = iio_device_get_sample_size(dev);
+			entry->sample_size = iio_device_get_sample_size(dev, NULL);
 			entry->samples_count = samples_count;
 			mask_updated = true;
 		}

@@ -392,7 +392,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	sample_size = iio_device_get_sample_size(dev);
+	sample_size = iio_device_get_sample_size(dev, NULL);
 	/* Zero isn't normally an error code, but in this case it is an error */
 	if (sample_size == 0) {
 		fprintf(stderr, "Unable to get sample size, returned 0\n");

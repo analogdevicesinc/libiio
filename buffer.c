@@ -28,7 +28,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 {
 	ssize_t ret = -EINVAL;
 	struct iio_buffer *buf;
-	ssize_t sample_size = iio_device_get_sample_size(dev);
+	ssize_t sample_size = iio_device_get_sample_size(dev, NULL);
 	size_t words = dev->mask->words;
 	size_t mask_size;
 
@@ -87,7 +87,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		}
 	}
 
-	ret = iio_device_get_sample_size_mask(dev, buf->mask->mask, words);
+	ret = iio_device_get_sample_size(dev, buf->mask);
 	if (ret < 0)
 		goto err_close_device;
 
@@ -142,7 +142,7 @@ ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 
 	if (read >= 0) {
 		buffer->data_length = read;
-		ret = iio_device_get_sample_size_mask(dev, mask->mask, mask->words);
+		ret = iio_device_get_sample_size(dev, mask);
 		if (ret < 0)
 			return ret;
 		buffer->sample_size = (unsigned int)ret;

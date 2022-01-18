@@ -220,9 +220,6 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 int iio_dynamic_scan(const struct iio_context_params *params,
 		     struct iio_scan *ctx, const char *backends);
 
-ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
-		const uint32_t *mask, size_t words);
-
 void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
