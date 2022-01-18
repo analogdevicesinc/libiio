@@ -344,11 +344,11 @@ static int network_close(const struct iio_device *dev)
 }
 
 static ssize_t network_read(const struct iio_device *dev, void *dst, size_t len,
-		uint32_t *mask, size_t words)
+			    struct iio_channels_mask *mask)
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
 
-	return iiod_client_read(pdata->iiod_client, dev, dst, len, mask, words);
+	return iiod_client_read(pdata->iiod_client, dev, dst, len, mask);
 }
 
 static ssize_t network_write(const struct iio_device *dev,

@@ -303,7 +303,8 @@ static int device_check_ready(const struct iio_device *dev, short events,
 }
 
 static ssize_t local_read(const struct iio_device *dev,
-		void *dst, size_t len, uint32_t *mask, size_t words)
+			  void *dst, size_t len,
+			  struct iio_channels_mask *mask)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	uintptr_t ptr = (uintptr_t) dst;
@@ -313,10 +314,10 @@ static ssize_t local_read(const struct iio_device *dev,
 
 	if (pdata->fd == -1)
 		return -EBADF;
-	if (words != dev->mask->words)
-		return -EINVAL;
 
-	memcpy(mask, dev->mask->mask, words);
+	ret = iio_channels_mask_copy(mask, dev->mask);
+	if (ret < 0)
+		return ret;
 
 	if (len == 0)
 		return 0;

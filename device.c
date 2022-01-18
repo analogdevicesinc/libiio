@@ -287,11 +287,11 @@ int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking)
 		return -ENOSYS;
 }
 
-ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len, uint32_t *mask, size_t words)
+ssize_t iio_device_read_raw(const struct iio_device *dev, void *dst, size_t len,
+			    struct iio_channels_mask *mask)
 {
 	if (dev->ctx->ops->read)
-		return dev->ctx->ops->read(dev, dst, len, mask, words);
+		return dev->ctx->ops->read(dev, dst, len, mask);
 	else
 		return -ENOSYS;
 }

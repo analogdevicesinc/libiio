@@ -91,7 +91,7 @@ struct iio_backend_ops {
 				       const char *uri);
 	struct iio_context * (*clone)(const struct iio_context *ctx);
 	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
-			uint32_t *mask, size_t words);
+			struct iio_channels_mask *mask);
 	ssize_t (*write)(const struct iio_device *dev,
 			const void *src, size_t len);
 	int (*open)(const struct iio_device *dev,
