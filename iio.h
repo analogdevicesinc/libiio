@@ -89,6 +89,7 @@ typedef ptrdiff_t ssize_t;
 struct iio_context;
 struct iio_device;
 struct iio_channel;
+struct iio_channels_mask;
 struct iio_buffer;
 struct iio_scan;
 
@@ -1674,12 +1675,16 @@ struct iio_data_format {
 
 /** @brief Get the current sample size
  * @param dev A pointer to an iio_device structure
+ * @param mask A pointer to an iio_channels_mask structure. If NULL, the current
+ *   channel mask of the iio_device object is used.
  * @return On success, the sample size in bytes
  * @return On error, a negative errno code is returned
  *
  * <b>NOTE:</b> The sample size is not constant and will change when channels
  * get enabled or disabled. */
-__api __check_ret ssize_t iio_device_get_sample_size(const struct iio_device *dev);
+__api __check_ret ssize_t
+iio_device_get_sample_size(const struct iio_device *dev,
+			   const struct iio_channels_mask *mask);
 
 
 /** @brief Get the index of the given channel

@@ -440,14 +440,16 @@ void free_device(struct iio_device *dev)
 	free(dev);
 }
 
-ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
-		const uint32_t *mask, size_t words)
+ssize_t iio_device_get_sample_size(const struct iio_device *dev,
+				   const struct iio_channels_mask *mask)
 {
 	ssize_t size = 0;
 	unsigned int i;
 	const struct iio_channel *prev = NULL;
 
-	if (words != (dev->nb_channels + 31) / 32)
+	if (!mask)
+		mask = dev->mask;
+	else if (mask->words != dev->mask->words)
 		return -EINVAL;
 
 	for (i = 0; i < dev->nb_channels; i++) {
@@ -457,7 +459,7 @@ ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 
 		if (chn->index < 0)
 			break;
-		if (!TEST_BIT(mask, chn->number))
+		if (!iio_channels_mask_test_bit(mask, chn->number))
 			continue;
 
 		if (prev && chn->index == prev->index) {
@@ -473,11 +475,6 @@ ssize_t iio_device_get_sample_size_mask(const struct iio_device *dev,
 		prev = chn;
 	}
 	return size;
-}
-
-ssize_t iio_device_get_sample_size(const struct iio_device *dev)
-{
-	return iio_device_get_sample_size_mask(dev, dev->mask->mask, dev->mask->words);
 }
 
 int iio_device_attr_read_longlong(const struct iio_device *dev,
