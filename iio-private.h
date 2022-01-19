@@ -152,6 +152,35 @@ struct iio_context_info {
 	char *uri;
 };
 
+struct iio_channels_mask {
+	size_t words;
+	uint32_t mask[];
+};
+
+struct iio_channels_mask *iio_create_channels_mask(unsigned int nb_channels);
+
+int iio_channels_mask_copy(struct iio_channels_mask *dst,
+			   const struct iio_channels_mask *src);
+
+static inline bool
+iio_channels_mask_test_bit(const struct iio_channels_mask *mask,
+			   unsigned int bit)
+{
+	return mask->mask[BIT_WORD(bit)] & BIT_MASK(bit);
+}
+
+static inline void
+iio_channels_mask_set_bit(struct iio_channels_mask *mask, unsigned int bit)
+{
+	mask->mask[BIT_WORD(bit)] |= BIT_MASK(bit);
+}
+
+static inline void
+iio_channels_mask_clear_bit(struct iio_channels_mask *mask, unsigned int bit)
+{
+	mask->mask[BIT_WORD(bit)] &= ~BIT_MASK(bit);
+}
+
 struct iio_module * iio_open_module(const struct iio_context_params *params,
 				    const char *name);
 void iio_release_module(struct iio_module *module);
