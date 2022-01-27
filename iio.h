@@ -282,6 +282,34 @@ enum iio_event_direction {
 #endif /* _IIO_TYPES_H_ */
 
 /* ---------------------------------------------------------------------------*/
+/* ---------------------------- Error handling -------------------------------*/
+/** @defgroup Functions for handling pointer-encoded errors
+ * @{
+ * @brief Encode an error code into a pointer
+ * @param err The error code to be encoded. Must be negative.
+ * @return The error-encoding pointer. */
+static inline __check_ret void *iio_ptr(int err)
+{
+	return (void *)(intptr_t) err;
+}
+
+/** @brief Returns the encoded error code if present, otherwise zero.
+ * @param ptr Pointer that is either valid or error-encoding
+ * @return The error code if present, otherwise zero. */
+static inline __check_ret int iio_err(const void *ptr)
+{
+	return (uintptr_t) ptr >= (uintptr_t) -4095 ? (int)(intptr_t) ptr : 0;
+}
+
+/** @brief Type-cast an error-encoding pointer.
+ * @param ptr Error-encoding pointer
+ * @return An error-encoding pointer that can be used as a different type. */
+static inline __check_ret void *iio_err_cast(const void *ptr)
+{
+	return (void *) ptr;
+}
+
+/** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
 /** @defgroup Scan Functions for scanning available contexts
  * @{
