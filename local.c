@@ -930,7 +930,7 @@ static int local_open(const struct iio_device *dev,
 	 */
 	ret = local_write_dev_attr(dev, "buffer/watermark",
 				   buf, strlen(buf) + 1, false);
-	if (ret < 0 && ret != -ENOENT)
+	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
 		return ret;
 
 	pdata->cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
