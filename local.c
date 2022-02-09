@@ -1976,7 +1976,6 @@ static const struct iio_backend_ops local_ops = {
 	.get_trigger = local_get_trigger,
 	.set_trigger = local_set_trigger,
 	.shutdown = local_shutdown,
-	.get_description = local_get_description,
 	.set_timeout = local_set_timeout,
 	.cancel = local_cancel,
 };
