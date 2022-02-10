@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 release_artifacts() {
-	local rpm_assets='CentOS-7-x86_64 CentOS-8-x86_64'
+	local rpm_assets='CentOS-7-x86_64'
 	cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
 	for i in $rpm_assets; do
 		cd "${i}"
@@ -40,7 +40,7 @@ release_artifacts() {
 }
 
 swdownloads_artifacts() {
-        local linux_dist='CentOS-7-x86_64 CentOS-8-x86_64 Ubuntu-16.04-x86_64 Ubuntu-18.04-x86_64
+        local linux_dist='CentOS-7-x86_64 Ubuntu-16.04-x86_64 Ubuntu-18.04-x86_64
                                 Ubuntu-20.04-x86_64 Debian-Buster-ARM Debian-Buster-ARM64'
         for distribution in $linux_dist; do
 		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
