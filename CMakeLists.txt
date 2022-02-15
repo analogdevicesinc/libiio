@@ -25,7 +25,7 @@ endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
-add_library(iio backend.c channel.c device.c context.c buffer.c mask.c utilities.c scan.c sort.c
+add_library(iio backend.c channel.c device.c context.c buffer.c mask.c utilities.c scan.c sort.c task.c
 	${CMAKE_CURRENT_BINARY_DIR}/iio-config.h
 )
 
