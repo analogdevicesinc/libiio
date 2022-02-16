@@ -35,14 +35,12 @@
 #endif
 
 static const struct option options[] = {
-	{"scan", no_argument, 0, 's'},
 	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	"[-x <xml_file>]\n"
 		"\t\t\t\t[-u <uri>]",
-	"Scan for available backends.",
 };
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
@@ -59,7 +57,7 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 	return false;
 }
 
-#define MY_OPTS "s"
+#define MY_OPTS ""
 
 int main(int argc, char **argv)
 {
@@ -87,7 +85,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS,	/* Flawfinder: ignore */
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS "s", /* Flawfinder: ignore */
 					opts, NULL)) != -1) {
 		switch (c) {
 			/* All these are handled in the common */

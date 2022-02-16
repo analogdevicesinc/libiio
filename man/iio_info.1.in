@@ -78,7 +78,7 @@ normally returned from
 with no address part
 .RE
 .TP
-.B \-s, \-\-scan
+.B \-S, \-\-scan
 Scan for available backends
 .TP
 .B \-a, \-\-auto
