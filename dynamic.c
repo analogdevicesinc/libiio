@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "dynamic.h"
 #include "iio-backend.h"
 #include "iio-config.h"
 #include "iio-debug.h"
@@ -16,32 +17,91 @@
 #include <string.h>
 #include <sys/types.h>
 
-static const struct iio_backend *
-get_iio_backend(const struct iio_context_params *params,
-		const char *name, struct iio_module **libp)
+struct iio_module {
+	const struct iio_context_params *params;
+	void *lib;
+	char *name;
+};
+
+struct iio_module * iio_open_module(const struct iio_context_params *params,
+				    const char *name)
 {
-	const struct iio_backend *backend;
 	char buf[PATH_MAX];
-	struct iio_module *lib;
+	struct iio_module *module;
+	int err = -ENOMEM;
+
+	module = zalloc(sizeof(*module));
+	if (!module)
+		return ERR_PTR(-ENOMEM);
+
+	module->name = strdup(name);
+	if (!module->name)
+		goto err_free_module;
+
+	module->params = params;
 
 	iio_snprintf(buf, sizeof(buf),
 		     IIO_MODULES_DIR "libiio-%s" IIO_LIBRARY_SUFFIX, name);
 
 	prm_dbg(params, "Looking for plugin: \'%s\'\n", buf);
 
-	lib = iio_open_module(buf);
-	if (!lib) {
-		prm_dbg(params, "Unable to open plug-in\n");
-		return ERR_PTR(-ENOSYS);
+	module->lib = iio_dlopen(buf);
+	if (!module->lib) {
+		prm_err(params, "Unable to open plug-in\n");
+		err = -ENOSYS;
+		goto err_free_name;
 	}
 
-	iio_snprintf(buf, sizeof(buf), "iio_%s_backend", name);
+	return module;
 
-	backend = iio_module_get_backend(lib, buf);
+err_free_name:
+	free(module->name);
+err_free_module:
+	free(module);
+	return ERR_PTR(err);
+}
+
+void iio_release_module(struct iio_module *module)
+{
+	iio_dlclose(module->lib);
+	free(module->name);
+	free(module);
+}
+
+const struct iio_backend * iio_module_get_backend(struct iio_module *module)
+{
+	const struct iio_backend *backend;
+	char buf[1024];
+
+	iio_snprintf(buf, sizeof(buf), "iio_%s_backend", module->name);
+
+	backend = iio_dlsym(module->lib, buf);
 	if (!backend) {
-		prm_err(params, "No \'%s\' symbol\n", buf);
-		iio_release_module(lib);
+		prm_err(module->params, "No \'%s\' symbol\n", buf);
 		return ERR_PTR(-EINVAL);
+	}
+
+	return backend;
+}
+
+static const struct iio_backend *
+get_iio_backend(const struct iio_context_params *params,
+		const char *name, struct iio_module **libp)
+{
+	const struct iio_backend *backend;
+	struct iio_module *lib;
+
+	lib = iio_open_module(params, name);
+	if (IS_ERR(lib)) {
+		prm_dbg(params, "Unable to open plug-in\n");
+		return (void *) lib;
+	}
+
+	backend = iio_module_get_backend(lib);
+	if (IS_ERR(backend)) {
+		prm_err(params, "Module is not a backend\n");
+		iio_release_module(lib);
+		return (void *) backend;
 	}
 
 	*libp = lib;
