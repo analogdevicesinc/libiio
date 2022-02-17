@@ -36,8 +36,8 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 	char *token, *rest=NULL;
 	ssize_t ret;
 
-	for (token = iio_strtok_r(ctx->backendopts, ":", &rest);
-			token; token = iio_strtok_r(NULL, ":", &rest)) {
+	for (token = iio_strtok_r(ctx->backendopts, ",", &rest);
+			token; token = iio_strtok_r(NULL, ",", &rest)) {
 
 		/* Since tokens are all null terminated, it's safe to use strcmp on them */
 		if (WITH_LOCAL_BACKEND && !strcmp(token, "local")) {
@@ -108,6 +108,7 @@ struct iio_scan_context * iio_create_scan_context(
 		const char *backend, unsigned int flags)
 {
 	struct iio_scan_context *ctx;
+	unsigned int i, len;
 
 	/* "flags" must be zero for now */
 	if (flags != 0) {
@@ -121,11 +122,19 @@ struct iio_scan_context * iio_create_scan_context(
 		return NULL;
 	}
 
-	ctx->backendopts = iio_strndup(backend ? backend : "local:usb:ip", PATH_MAX);
+	ctx->backendopts = iio_strndup(backend ? backend : "local,usb,ip", PATH_MAX);
 	if (!ctx->backendopts) {
 		free(ctx);
 		errno = ENOMEM;
 		return NULL;
+	}
+
+	if (backend) {
+		/* Replace the colon separator with a comma. */
+		len = strlen(ctx->backendopts);
+		for (i = 0; i < len; i++)
+			if (ctx->backendopts[i] == ':')
+				ctx->backendopts[i] = ',';
 	}
 
 	return ctx;
