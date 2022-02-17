@@ -1,3 +1,6 @@
+# https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.2#erroractionpreference
+$ErrorActionPreference = "Stop"
+$ErrorView = "NormalView"
 
 $COMPILER=$Env:COMPILER
 $ARCH=$Env:ARCH
@@ -12,6 +15,9 @@ if ($ARCH -eq "Win32") {
 
 	cmake -G "$COMPILER" -A "$ARCH" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\32\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\32\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\32\\libserialport.dll.a" -DLIBUSB_INCLUDE_DIR="C:\\include\\libusb-1.0" -DLIBXML2_INCLUDE_DIR="C:\\include\\libxml2" ..
 	cmake --build . --config Release
+	if ( $LASTEXITCODE -ne 0 ) {
+		throw "[*] cmake build failure"
+	}
 	cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 	cd ../bindings/python
@@ -27,6 +33,9 @@ if ($ARCH -eq "Win32") {
 
         cmake -G "$COMPILER" -A "$ARCH" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" -DLIBUSB_INCLUDE_DIR="C:\\include\\libusb-1.0" -DLIBXML2_INCLUDE_DIR="C:\\include\\libxml2" ..
         cmake --build . --config Release
+	if ( $LASTEXITCODE -ne 0 ) {
+		throw "[*] cmake build failure"
+	}
 	cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 	cd ../bindings/python
