@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "dynamic.h"
 #include "iio-backend.h"
 #include "iio-private.h"
 
@@ -17,20 +18,19 @@ struct iio_directory {
 	HANDLE file;
 };
 
-struct iio_module * iio_open_module(const char *path)
+void * iio_dlopen(const char *path)
 {
-	return (struct iio_module *) LoadLibrary(TEXT(path));
+	return LoadLibrary(TEXT(path));
 }
 
-void iio_release_module(struct iio_module *module)
+void iio_dlclose(void *lib)
 {
 	FreeLibrary((void *) module);
 }
 
-const struct iio_backend *
-iio_module_get_backend(struct iio_module *module, const char *symbol)
+const void * iio_dlsym(void *lib, const char *symbol)
 {
-	return (const void *) GetProcAddress((void *) module, symbol);
+	return (const void *) GetProcAddress(lib, symbol);
 }
 
 struct iio_directory * iio_open_dir(const char *path)

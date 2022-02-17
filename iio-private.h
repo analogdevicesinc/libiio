@@ -152,11 +152,11 @@ struct iio_context_info {
 	char *uri;
 };
 
-struct iio_module * iio_open_module(const char *path);
+struct iio_module * iio_open_module(const struct iio_context_params *params,
+				    const char *name);
 void iio_release_module(struct iio_module *module);
 
-const struct iio_backend *
-iio_module_get_backend(struct iio_module *module, const char *symbol);
+const struct iio_backend * iio_module_get_backend(struct iio_module *module);
 
 struct iio_directory * iio_open_dir(const char *path);
 void iio_close_dir(struct iio_directory *dir);

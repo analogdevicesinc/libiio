@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "dynamic.h"
 #include "iio-private.h"
 
 #include <dirent.h>
@@ -16,20 +17,19 @@ struct iio_directory {
 	DIR *directory;
 };
 
-struct iio_module * iio_open_module(const char *path)
+void * iio_dlopen(const char *path)
 {
 	return dlopen(path, RTLD_LAZY | RTLD_LOCAL);
 }
 
-void iio_release_module(struct iio_module *module)
+void iio_dlclose(void *lib)
 {
-	dlclose((void *) module);
+	dlclose(lib);
 }
 
-const struct iio_backend *
-iio_module_get_backend(struct iio_module *module, const char *symbol)
+const void * iio_dlsym(void *lib, const char *symbol)
 {
-	return dlsym(module, symbol);
+	return dlsym(lib, symbol);
 }
 
 struct iio_directory * iio_open_dir(const char *path)
