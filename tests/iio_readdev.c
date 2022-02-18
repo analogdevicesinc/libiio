@@ -198,14 +198,14 @@ int main(int argc, char **argv)
 	unsigned int i, j, nb_channels;
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	unsigned int refill_per_benchmark = REFILL_PER_BENCHMARK;
+	uint64_t refill_per_benchmark = REFILL_PER_BENCHMARK;
 	int c;
 	struct iio_device *dev;
 	ssize_t sample_size;
 	ssize_t ret;
 	struct option *opts;
 	bool mib, benchmark = false;
-	uint64_t before, after, rate, total;
+	uint64_t before = 0, after, rate, total;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
