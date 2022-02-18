@@ -164,7 +164,7 @@ struct iio_scan_context * iio_create_scan_context(
 
 	if (backend) {
 		/* Replace the colon separator with a comma. */
-		len = strlen(ctx->backendopts);
+		len = (unsigned int)strlen(ctx->backendopts);
 		for (i = 0; i < len; i++)
 			if (ctx->backendopts[i] == ':')
 				ctx->backendopts[i] = ',';
