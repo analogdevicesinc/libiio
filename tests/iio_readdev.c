@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 		unsigned int nb_devices = iio_context_get_devices_count(ctx);
 
 		for (i = 0; i < nb_devices; i++) {
-			const char *dev_id, *label, *name;
+			const char *dev_id = NULL, *label = NULL, *name = NULL;
 			bool hit;
 
 			dev = iio_context_get_device(ctx, i);
