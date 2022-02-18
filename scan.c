@@ -15,7 +15,6 @@
 
 struct iio_scan {
 	struct iio_context_info *info;
-	char *backends;
 	size_t count;
 };
 
@@ -24,10 +23,13 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 {
 	const struct iio_context_params *default_params = get_default_params();
 	struct iio_context_params params2 = { 0 };
-	struct iio_scan *ctx;
+	char *token, *rest, *rest2, *backend_name;
+	const struct iio_backend *backend = NULL;
+	struct iio_module *module;
 	const char *args, *uri;
+	struct iio_scan *ctx;
 	unsigned int i;
-	char *token, *rest = NULL;
+	char buf[1024];
 	size_t len;
 	int ret;
 
@@ -48,20 +50,20 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 	if (!backends)
 		backends = LIBIIO_SCAN_BACKENDS;
 
-	ctx->backends = iio_strdup(backends);
-	if (!ctx->backends) {
-		free(ctx);
-		errno = ENOMEM;
-		return NULL;
-	}
+	/* Copy the string into an intermediate buffer for strtok() usage */
+	iio_snprintf(buf, sizeof(buf), "%s", backends);
 
-	for (token = iio_strtok_r(ctx->backends, ",", &rest);
+	for (token = iio_strtok_r(buf, ",", &rest);
 	     token; token = iio_strtok_r(NULL, ",", &rest)) {
+		args = NULL;
+
 		for (i = 0; i < iio_backends_size; i++) {
-			if (!iio_backends[i] || !iio_backends[i]->ops->scan)
+			backend = iio_backends[i];
+
+			if (!backend || !backend->ops->scan)
 				continue;
 
-			uri = iio_backends[i]->uri_prefix;
+			uri = backend->uri_prefix;
 			len = strlen(uri) - 1; /* -1: to remove the colon of the URI */
 
 			if (strncmp(token, uri, len))
@@ -74,27 +76,57 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 			else
 				continue;
 
-			if (params->timeout_ms)
-				params2.timeout_ms = params->timeout_ms;
-			else
-				params2.timeout_ms = iio_backends[i]->default_timeout_ms;
-
-			ret = iio_backends[i]->ops->scan(&params2, ctx, args);
-			if (ret < 0) {
-				prm_perror(&params2, -ret,
-					   "Unable to scan %s context", token);
-			}
+			break;
 		}
-	}
 
-	if (WITH_MODULES) {
-		params2.timeout_ms = params->timeout_ms;
+		if (i == iio_backends_size)
+			backend = NULL;
 
-		ret = iio_dynamic_scan(&params2, ctx, backends);
+		if (WITH_MODULES && !backend) {
+			backend_name = iio_strtok_r(token, "=", &rest2);
+
+			module = iio_open_module(&params2, backend_name);
+			if (IS_ERR(module)) {
+				module = NULL;
+			} else {
+				backend = iio_module_get_backend(module);
+				if (IS_ERR(backend)) {
+					iio_release_module(module);
+					backend = NULL;
+					module = NULL;
+				}
+			}
+
+			args = iio_strtok_r(NULL, "=", &rest2);
+		} else {
+			module = NULL;
+		}
+
+		if (!backend) {
+			prm_warn(params, "No backend found for scan string \'%s\'\n",
+				 token);
+			continue;
+		}
+
+		if (!backend->ops || !backend->ops->scan) {
+			prm_warn(params, "Backend %s does not support scanning.\n",
+				 token);
+			continue;
+		}
+
+		if (params->timeout_ms)
+			params2.timeout_ms = params->timeout_ms;
+		else
+			params2.timeout_ms = backend->default_timeout_ms;
+
+		ret = backend->ops->scan(&params2, ctx, args);
 		if (ret < 0) {
 			prm_perror(&params2, -ret,
-				   "Error while scanning dynamic context(s)");
+				   "Unable to scan %s context", token);
 		}
+
+		if (WITH_MODULES && module)
+			iio_release_module(module);
 	}
 
 	return ctx;
@@ -110,7 +142,6 @@ void iio_scan_destroy(struct iio_scan *ctx)
 	}
 
 	free(ctx->info);
-	free(ctx->backends);
 	free(ctx);
 }
 
