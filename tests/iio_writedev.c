@@ -56,16 +56,16 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	"[-t <trigger>] "
+	("[-t <trigger>] "
 		"[-b <buffer-size>] [-s <samples>] "
-		"<iio_device> [<channel> ...]",
+		"<iio_device> [<channel> ...]"),
 	"Use the specified trigger.",
 	"Size of the transmit buffer. Default is 256.",
 	"Number of samples to write, 0 = infinite. Default is 0.",
 	"Scan for available contexts and if only one is available use it.",
 	"Use cyclic buffer mode.",
-	"Benchmark throughput."
-		"\n\t\t\tStatistics will be printed on the standard input.",
+	("Benchmark throughput."
+		"\n\t\t\tStatistics will be printed on the standard input."),
 };
 
 static struct iio_context *ctx;

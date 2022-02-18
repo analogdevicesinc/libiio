@@ -39,8 +39,8 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	"[-x <xml_file>]\n"
-		"\t\t\t\t[-u <uri>]",
+	("[-x <xml_file>]\n"
+		"\t\t\t\t[-u <uri>]"),
 };
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
