@@ -1,5 +1,0 @@
-#!/bin/sh -e
-
-. CI/travis/lib.sh
-
-brew_install_if_not_exists cmake doxygen libusb libxml2 ncurses cdk zstd

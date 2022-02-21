@@ -505,7 +505,7 @@ if(WITH_DOC)
 		${CMAKE_CURRENT_SOURCE_DIR}/bindings/csharp/Doxyfile.in
 		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp @ONLY)
 	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
+		${CMAKE_CURRENT_SOURCE_DIR}/CI/azure/generateDocumentationAndDeploy.sh.in
 		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc
 		DESTINATION ${CMAKE_HTML_DEST_DIR}/${CMAKE_API_DEST_DIR}
