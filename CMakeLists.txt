@@ -150,6 +150,7 @@ if (WITH_USB_BACKEND)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
 			"If you want to disable the USB backend, set WITH_USB_BACKEND=OFF.")
 	else()
+		list(APPEND LIBIIO_SCAN_BACKENDS usb)
 		set(IIOD_CLIENT 1)
 		set(NEED_LIBXML2 1)
 		set(NEED_THREADS 1)
@@ -250,6 +251,8 @@ if(WITH_LOCAL_BACKEND)
 
 	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
 	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" OFF)
+
+	list(APPEND LIBIIO_SCAN_BACKENDS local)
 endif()
 
 option(WITH_SERIAL_BACKEND "Enable the serial backend" OFF)
@@ -356,6 +359,10 @@ if(WITH_NETWORK_BACKEND)
 		list(APPEND LIBIIO_CFILES dns_sd_avahi.c dns_sd.c)
 		set(AVAHI_LIBRARIES ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_COMMON_LIBRARIES})
 		list(APPEND LIBS_TO_LINK ${AVAHI_LIBRARIES})
+	endif()
+
+	if (HAVE_DNS_SD)
+		list(APPEND LIBIIO_SCAN_BACKENDS ip)
 	endif()
 
 	set(NEED_THREADS 1)
@@ -611,6 +618,8 @@ if (WITH_USB_BACKEND AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
 		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/90-libiio.rules DESTINATION ${UDEV_RULES_INSTALL_DIR})
 	endif()
 endif()
+
+string(REPLACE ";" "," LIBIIO_SCAN_BACKENDS "${LIBIIO_SCAN_BACKENDS}")
 
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
 

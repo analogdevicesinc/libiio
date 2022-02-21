@@ -155,7 +155,7 @@ struct iio_scan_context * iio_create_scan_context(
 		return NULL;
 	}
 
-	ctx->backendopts = iio_strndup(backend ? backend : "local,usb,ip", PATH_MAX);
+	ctx->backendopts = iio_strndup(backend ? backend : LIBIIO_SCAN_BACKENDS, PATH_MAX);
 	if (!ctx->backendopts) {
 		free(ctx);
 		errno = ENOMEM;
