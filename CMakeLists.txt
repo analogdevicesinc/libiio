@@ -433,6 +433,7 @@ if (WIN32)
 	string(REPLACE "." "," LIBIIO_FILEVERSION ${VERSION})
 endif()
 
+configure_file(artifact_manifest.txt.cmakein ${CMAKE_CURRENT_BINARY_DIR}/artifact_manifest.txt @ONLY)
 configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)

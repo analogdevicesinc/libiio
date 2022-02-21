@@ -291,9 +291,44 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'Libiio-Setup-Exe'
 
+  #############################################
+  - job: CheckArtifacts
+    dependsOn: GenerateSetupExe
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
+    # Host Box
+    pool:
+      vmImage: 'ubuntu-latest'
+    # Docker Images
+    strategy:
+      matrix:
+        ubuntu_20_04:
+          image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
+          artifactName: 'Check artifacts'
+    container: $[ variables['image'] ]
+    steps:
+    - script: |
+        mkdir build && cd build
+        cmake ..
+        mkdir artifacts
+      displayName: 'Build artifact manifest'
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        path: '$(Agent.BuildDirectory)/s/build/artifacts'
+    - script: ./CI/travis/prepare_assets.sh check
+      displayName: 'Check files'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+        contents: 'artifact_manifest.txt'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'Artifact manifest'
+
   #############################################  
   - job: PushToSWDownloads
-    dependsOn: GenerateSetupExe
+    dependsOn: CheckArtifacts
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     pool:
       vmImage: 'ubuntu-latest'
@@ -315,6 +350,7 @@ stages:
 
   ##############################################
   - job: PushToGithubRelease
+    dependsOn: CheckArtifacts
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     pool:
       vmImage: 'ubuntu-latest'
