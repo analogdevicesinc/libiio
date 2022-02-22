@@ -33,6 +33,10 @@
 #define is_little_endian() (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #endif
 
+#define BIT(x) (1 << (x))
+#define BIT_MASK(bit) BIT((bit) % 32)
+#define BIT_WORD(bit) ((bit) / 32)
+
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
  * iio_be32toh/iio_htobe32 are just clones of ntohl/htonl. */

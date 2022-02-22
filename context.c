@@ -184,17 +184,17 @@ static char * iio_context_create_xml(const struct iio_context *ctx)
 
 	len = iio_snprintf_context_xml(NULL, 0, ctx);
 	if (len < 0)
-		return ERR_PTR((int) len);
+		return iio_ptr((int) len);
 
 	len++; /* room for terminating NULL */
 	str = malloc(len);
 	if (!str)
-		return ERR_PTR(-ENOMEM);
+		return iio_ptr(-ENOMEM);
 
 	len = iio_snprintf_context_xml(str, len, ctx);
 	if (len < 0) {
 		free(str);
-		return ERR_PTR((int) len);
+		return iio_ptr((int) len);
 	}
 
 	return str;
@@ -377,13 +377,12 @@ int iio_context_init(struct iio_context *ctx)
 	for (i = 0; i < ctx->nb_devices; i++)
 		reorder_channels(ctx->devices[i]);
 
-	if (!ctx->xml) {
-		ctx->xml = iio_context_create_xml(ctx);
-		if (IS_ERR(ctx->xml))
-			return PTR_ERR(ctx->xml);
-	}
+	if (ctx->xml)
+		return 0;
 
-	return 0;
+	ctx->xml = iio_context_create_xml(ctx);
+
+	return iio_err(ctx->xml);
 }
 
 unsigned int iio_context_get_version_major(const struct iio_context *ctx)

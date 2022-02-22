@@ -621,7 +621,7 @@ iiod_client_open_unlocked(struct iiod_client *client,
 
 	io = iiod_client_create_io_context(client, dev, samples_count, cyclic);
 	if (!io)
-		return ERR_PTR(-ENOMEM);
+		return iio_ptr(-ENOMEM);
 
 	len = sizeof(buf);
 	len -= iio_snprintf(buf, len, "OPEN %s %lu ",
@@ -650,7 +650,7 @@ iiod_client_open_unlocked(struct iiod_client *client,
 err_destroy_io:
 	iiod_client_io_destroy(io);
 
-	return ERR_PTR(ret);
+	return iio_ptr(ret);
 }
 
 int iiod_client_close_unlocked(struct iiod_client_io *io)

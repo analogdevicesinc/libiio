@@ -293,8 +293,8 @@ static int network_open(const struct iio_device *dev,
 
 	ppdata->client_io = iiod_client_open_unlocked(client, dev,
 						      samples_count, cyclic);
-	if (IS_ERR(ppdata->client_io)) {
-		ret = PTR_ERR(ppdata->client_io);
+	ret = iio_err(ppdata->client_io);
+	if (ret) {
 		dev_perror(dev, -ret, "Unable to open device");
 		goto err_close_socket;
 	}

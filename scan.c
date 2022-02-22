@@ -86,11 +86,11 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 			backend_name = iio_strtok_r(token, "=", &rest2);
 
 			module = iio_open_module(&params2, backend_name);
-			if (IS_ERR(module)) {
+			if (iio_err(module)) {
 				module = NULL;
 			} else {
 				backend = iio_module_get_backend(module);
-				if (IS_ERR(backend)) {
+				if (iio_err(backend)) {
 					iio_release_module(module);
 					backend = NULL;
 					module = NULL;

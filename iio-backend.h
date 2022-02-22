@@ -43,29 +43,6 @@
 #endif
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
-#define BIT(x) (1 << (x))
-#define BIT_MASK(bit) BIT((bit) % 32)
-#define BIT_WORD(bit) ((bit) / 32)
-
-static inline __check_ret bool IS_ERR(const void *ptr)
-{
-	return (uintptr_t) ptr >= (uintptr_t) -4095;
-}
-
-static inline __check_ret int PTR_ERR(const void *ptr)
-{
-	return (int)(intptr_t) ptr;
-}
-
-static inline __check_ret void * ERR_PTR(int err)
-{
-	return (void *)(intptr_t) err;
-}
-
-static inline __check_ret int PTR_ERR_OR_ZERO(const void *ptr)
-{
-	return IS_ERR(ptr) ? PTR_ERR(ptr) : 0;
-}
 
 struct iio_device;
 struct iio_context;

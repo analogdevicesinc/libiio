@@ -32,7 +32,7 @@ struct iio_module * iio_open_module(const struct iio_context_params *params,
 
 	module = zalloc(sizeof(*module));
 	if (!module)
-		return ERR_PTR(-ENOMEM);
+		return iio_ptr(-ENOMEM);
 
 	module->name = strdup(name);
 	if (!module->name)
@@ -58,7 +58,7 @@ err_free_name:
 	free(module->name);
 err_free_module:
 	free(module);
-	return ERR_PTR(err);
+	return iio_ptr(err);
 }
 
 void iio_release_module(struct iio_module *module)
@@ -78,7 +78,7 @@ const struct iio_backend * iio_module_get_backend(struct iio_module *module)
 	backend = iio_dlsym(module->lib, buf);
 	if (!backend) {
 		prm_err(module->params, "No \'%s\' symbol\n", buf);
-		return ERR_PTR(-EINVAL);
+		return iio_ptr(-EINVAL);
 	}
 
 	return backend;
@@ -90,18 +90,21 @@ get_iio_backend(const struct iio_context_params *params,
 {
 	const struct iio_backend *backend;
 	struct iio_module *lib;
+	int ret;
 
 	lib = iio_open_module(params, name);
-	if (IS_ERR(lib)) {
+	ret = iio_err(lib);
+	if (ret) {
 		prm_dbg(params, "Unable to open plug-in\n");
-		return (void *) lib;
+		return iio_err_cast(lib);
 	}
 
 	backend = iio_module_get_backend(lib);
-	if (IS_ERR(backend)) {
+	ret = iio_err(backend);
+	if (ret) {
 		prm_err(params, "Module is not a backend\n");
 		iio_release_module(lib);
-		return (void *) backend;
+		return iio_err_cast(backend);
 	}
 
 	*libp = lib;
@@ -119,6 +122,7 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 	const char *ptr;
 	char buf[256];
 	struct iio_module *lib;
+	int ret;
 
 	ptr = strchr(uri, ':');
 
@@ -131,8 +135,9 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 	iio_snprintf(buf, sizeof(buf), "%.*s", (int) (ptr - uri), uri);
 
 	backend = get_iio_backend(params, buf, &lib);
-	if (IS_ERR(backend)) {
-		errno = -PTR_ERR(backend);
+	ret = iio_err(backend);
+	if (ret) {
+		errno = -ret;
 		return NULL;
 	}
 

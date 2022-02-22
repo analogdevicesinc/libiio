@@ -1453,7 +1453,7 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 
 	chn = zalloc(sizeof(*chn));
 	if (!chn)
-		return ERR_PTR(-ENOMEM);
+		return iio_ptr(-ENOMEM);
 
 	chn->pdata = zalloc(sizeof(*chn->pdata));
 	if (!chn->pdata)
@@ -1484,7 +1484,7 @@ err_free_chn_pdata:
 	free(chn->pdata);
 err_free_chn:
 	free(chn);
-	return ERR_PTR(err);
+	return iio_ptr(err);
 }
 
 static int add_channel(struct iio_device *dev, const char *name,
@@ -1512,9 +1512,10 @@ static int add_channel(struct iio_device *dev, const char *name,
 	}
 
 	chn = create_channel(dev, channel_id, name, path, dir_is_scan_elements);
-	if (IS_ERR(chn)) {
+	ret = iio_err(chn);
+	if (ret) {
 		free(channel_id);
-		return PTR_ERR(chn);
+		return ret;
 	}
 
 	iio_channel_init_finalize(chn);
