@@ -288,10 +288,9 @@ static int usb_open(const struct iio_device *dev,
 
 	pdata->client_io = iiod_client_open_unlocked(client, dev,
 						     samples_count, cyclic);
-	if (IS_ERR(pdata->client_io)) {
-		ret = PTR_ERR(pdata->client_io);
+	ret = iio_err(pdata->client_io);
+	if (ret)
 		goto err_unlock_client;
-	}
 
 	timeout = usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
 

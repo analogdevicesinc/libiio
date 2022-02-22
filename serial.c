@@ -135,7 +135,7 @@ static int serial_open(const struct iio_device *dev,
 	pdata->client_io = iiod_client_open_unlocked(ctx_pdata->iiod_client,
 						     dev, samples_count,
 						     cyclic);
-	ret = PTR_ERR_OR_ZERO(pdata->client_io);
+	ret = iio_err(pdata->client_io);
 	pdata->opened = !ret;
 
 out_unlock:

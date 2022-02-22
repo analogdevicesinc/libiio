@@ -97,11 +97,11 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 	struct iio_thrd *iio_thrd;
 
 	if (!thrd)
-		return ERR_PTR(-EINVAL);
+		return iio_ptr(-EINVAL);
 
 	iio_thrd = malloc(sizeof(*iio_thrd));
 	if (!iio_thrd)
-		return ERR_PTR(-ENOMEM);
+		return iio_ptr(-ENOMEM);
 
 	iio_thrd->func = thrd;
 	iio_thrd->d = d;
@@ -111,7 +111,7 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 				      d, 0, NULL);
 	if (!iio_thrd->thid) {
 		free(iio_thrd);
-		return ERR_PTR(-(int) GetLastError());
+		return iio_ptr(-(int) GetLastError());
 	}
 
 	/* TODO: set name */
