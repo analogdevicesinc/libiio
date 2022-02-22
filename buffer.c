@@ -26,24 +26,19 @@ static bool device_is_high_speed(const struct iio_device *dev)
 struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
-	ssize_t ret = -EINVAL;
 	struct iio_buffer *buf;
-	ssize_t sample_size = iio_device_get_sample_size(dev, NULL);
+	ssize_t ret, sample_size = iio_device_get_sample_size(dev, NULL);
 	size_t mask_size;
 
 	if (!sample_size || !samples_count)
-		goto err_set_errno;
+		return iio_ptr(-EINVAL);
 
-	if (sample_size < 0) {
-		ret = sample_size;
-		goto err_set_errno;
-	}
+	if (sample_size < 0)
+		return iio_ptr((int) sample_size);
 
 	buf = malloc(sizeof(*buf));
-	if (!buf) {
-		ret = -ENOMEM;
-		goto err_set_errno;
-	}
+	if (!buf)
+		return iio_ptr(-ENOMEM);
 
 	buf->dev_sample_size = (unsigned int) sample_size;
 	buf->length = sample_size * samples_count;
@@ -100,9 +95,7 @@ err_free_mask:
 	free(buf->mask);
 err_free_buf:
 	free(buf);
-err_set_errno:
-	errno = -(int)ret;
-	return NULL;
+	return iio_ptr((int) ret);
 }
 
 void iio_buffer_destroy(struct iio_buffer *buffer)
