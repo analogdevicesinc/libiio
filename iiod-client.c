@@ -550,8 +550,9 @@ iiod_client_create_context_private(struct iiod_client *client,
 	ctx = iio_create_context_from_xml(client->params, xml, xml_len,
 					  backend, description,
 					  ctx_attrs, ctx_values, nb_ctx_attrs);
-	if (!ctx) {
-		ret = -errno;
+	ret = iio_err(ctx);
+	if (ret) {
+		ctx = NULL;
 	} else {
 		/* If the context creation suceeded, update our "params" pointer
 		 * to point to the context's params, as we know their lifetime

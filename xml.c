@@ -416,8 +416,7 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	root = xmlDocGetRootElement(doc);
 	if (strcmp((char *) root->name, "context")) {
 		prm_err(params, "Unrecognized XML file\n");
-		errno = EINVAL;
-		return NULL;
+		return iio_ptr(-EINVAL);
 	}
 
 	for (attr = root->properties; attr; attr = attr->next) {
@@ -442,9 +441,10 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	}
 
 	ctx = iio_context_create_from_backend(&iio_xml_backend, description);
-	if (!ctx) {
+	err = iio_err(ctx);
+	if (err) {
 		prm_err(params, "Unable to allocate memory for context\n");
-		return NULL;
+		return iio_ptr(err);
 	}
 
 	ctx->params = *params;
@@ -456,16 +456,14 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 		ctx->git_tag = iio_strdup(git_tag);
 		if (!ctx->git_tag) {
 			iio_context_destroy(ctx);
-			errno = ENOMEM;
-			return NULL;
+			return iio_ptr(-ENOMEM);
 		}
 	}
 
 	err = iio_populate_xml_context_helper(ctx, root);
 	if (err) {
 		iio_context_destroy(ctx);
-		errno = -err;
-		return NULL;
+		return iio_ptr(err);
 	}
 
 	return ctx;
@@ -483,8 +481,7 @@ xml_create_context(const struct iio_context_params *params,
 	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		prm_err(params, "Unable to parse XML file\n");
-		errno = EINVAL;
-		return NULL;
+		return iio_ptr(-EINVAL);
 	}
 
 	ctx = iio_create_xml_context_helper(params, doc);
@@ -503,8 +500,7 @@ struct iio_context * xml_create_context_mem(const struct iio_context_params *par
 	doc = xmlReadMemory(xml, (int) len, NULL, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
 		prm_err(params, "Unable to parse XML file\n");
-		errno = EINVAL;
-		return NULL;
+		return iio_ptr(-EINVAL);
 	}
 
 	ctx = iio_create_xml_context_helper(params, doc);

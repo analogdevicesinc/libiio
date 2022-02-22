@@ -2064,11 +2064,14 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	bool no_iio;
 
 	description = local_get_description(NULL);
+	if (!description)
+		return iio_ptr(-ENOMEM);
 
 	ctx = iio_context_create_from_backend(&iio_local_backend, description);
 	free(description);
-	if (!ctx)
-		goto err_set_errno;
+	ret = iio_err(ctx);
+	if (ret)
+		return iio_err_cast(ctx);
 
 	ctx->params = *params;
 
@@ -2119,9 +2122,7 @@ local_create_context(const struct iio_context_params *params, const char *args)
 
 err_context_destroy:
 	iio_context_destroy(ctx);
-err_set_errno:
-	errno = -ret;
-	return NULL;
+	return iio_ptr(ret);
 }
 
 #define BUF_SIZE 128

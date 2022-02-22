@@ -419,7 +419,7 @@ __api __check_ret __cnst const char * iio_get_backend(unsigned int index);
  * @param xml Pointer to the XML data in memory
  * @param len Length of the XML string in memory (excluding the final \0)
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately
+ * @return On failure, a pointer-encoded error is returned
  *
  * <b>NOTE:</b> The format of the XML must comply to the one returned by
  * iio_context_get_xml */
@@ -434,7 +434,7 @@ __api __check_ret struct iio_context * iio_create_xml_context_mem(
  *   be created using the URI string present in the IIOD_REMOTE environment
  *   variable, or if not set, a local backend is created.
  * @return On success, a pointer to a iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately
+ * @return On failure, a pointer-encoded error is returned
  *
  * <b>NOTE:</b> The following URIs are supported based on compile time backend
  * support:
@@ -468,7 +468,7 @@ iio_create_context(const struct iio_context_params *params, const char *uri);
 /** @brief Duplicate a pre-existing IIO context
  * @param ctx A pointer to an iio_context structure
  * @return On success, A pointer to an iio_context structure
- * @return On failure, NULL is returned and errno is set appropriately
+ * @return On failure, a pointer-encoded error is returned
  *
  * <b>NOTE:</b> This function is not supported on 'usb:' contexts, since libusb
  * can only claim the interface once. "Function not implemented" is the expected errno.
