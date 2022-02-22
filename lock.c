@@ -46,7 +46,7 @@ struct iio_mutex * iio_mutex_create(void)
 	struct iio_mutex *lock = malloc(sizeof(*lock));
 
 	if (!lock)
-		return NULL;
+		return iio_ptr(-ENOMEM);
 
 #ifndef NO_THREADS
 	pthread_mutex_init(&lock->lock, NULL);
@@ -81,7 +81,7 @@ struct iio_cond * iio_cond_create(void)
 	struct iio_cond *cond = malloc(sizeof(*cond));
 
 	if (!cond)
-		return NULL;
+		return iio_ptr(-ENOMEM);
 
 #ifndef NO_THREADS
 	pthread_cond_init(&cond->cond, NULL);

@@ -176,7 +176,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	CFStringRef domain;
 	CFStreamError error;
 	Boolean result;
-	int ret = 0;
+	int ret;
 
 	prm_dbg(params, "DNS SD: Start service discovery.\n");
 
@@ -185,9 +185,10 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 		return -ENOMEM;
 
 	d->lock = iio_mutex_create();
-	if (!d->lock) {
+	ret = iio_err(d->lock);
+	if (ret) {
 		dnssd_free_all_discovery_data(params, d);
-		return -ENOMEM;
+		return ret;
 	}
 
 	bdata.d = d;

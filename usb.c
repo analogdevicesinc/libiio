@@ -115,10 +115,8 @@ static ssize_t read_data_sync(struct iiod_client_pdata *ep,
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
 	io_ctx->lock = iio_mutex_create();
-	if (!io_ctx->lock)
-		return -ENOMEM;
 
-	return 0;
+	return iio_err(io_ctx->lock);
 }
 
 static void usb_io_context_exit(struct iiod_client_pdata *io_ctx)
@@ -883,9 +881,9 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	}
 
 	pdata->ep_lock = iio_mutex_create();
-	if (!pdata->ep_lock) {
+	ret = iio_err(pdata->ep_lock);
+	if (ret) {
 		prm_err(params, "Unable to create mutex\n");
-		ret = -ENOMEM;
 		goto err_free_pdata;
 	}
 
