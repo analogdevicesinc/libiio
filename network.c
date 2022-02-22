@@ -732,7 +732,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	iiod_client = iiod_client_new(params, &pdata->io_ctx,
 				      &network_iiod_client_ops);
-	if (!iiod_client)
+	ret = iio_err(iiod_client);
+	if (ret)
 		goto err_free_description;
 
 	pdata->iiod_client = iiod_client;
@@ -761,7 +762,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 					 &iio_ip_backend, description,
 					 ctx_attrs, ctx_values,
 					 ARRAY_SIZE(ctx_values));
-	if (!ctx)
+	ret = iio_err(ctx);
+	if (ret)
 		goto err_destroy_iiod_client;
 
 	iio_context_set_pdata(ctx, pdata);
@@ -790,10 +792,9 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 		ppdata->iiod_client = iiod_client_new(params, &ppdata->io_ctx,
 						      &network_iiod_client_ops);
-		if (!ppdata->iiod_client) {
-			ret = -ENOMEM;
+		ret = iio_err(ppdata->iiod_client);
+		if (ret)
 			goto err_network_shutdown;
-		}
 	}
 
 	iiod_client_set_timeout(pdata->iiod_client,

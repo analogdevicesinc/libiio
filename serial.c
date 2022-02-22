@@ -110,10 +110,8 @@ static char * serial_get_description(struct sp_port *port)
 
 	desc_len = sizeof(": \0") + strlen(name) + strlen(desc);
 	description = malloc(desc_len);
-	if (!description) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!description)
+		return iio_ptr(-ENOMEM);
 
 	iio_snprintf(description, desc_len, "%s: %s", name, desc);
 
@@ -445,33 +443,28 @@ static struct iio_context * serial_create_context(
 	}
 
 	ret = libserialport_to_errno(sp_get_port_by_name(port_name, &port));
-	if (ret) {
-		errno = -ret;
+	if (ret)
 		goto err_free_uri;
-	}
 
 	ret = libserialport_to_errno(sp_open(port, SP_MODE_READ_WRITE));
-	if (ret) {
-		errno = -ret;
+	if (ret)
 		goto err_free_port;
-	}
 
 	ret = apply_settings(port, baud_rate, bits, stop, parity, flow);
-	if (ret) {
-		errno = -ret;
+	if (ret)
 		goto err_close_port;
-	}
 
 	/* Empty the buffers */
 	sp_flush(port, SP_BUF_BOTH);
 
 	description = serial_get_description(port);
-	if (!description)
+	ret = iio_err(description);
+	if (ret)
 		goto err_close_port;
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
-		errno = ENOMEM;
+		ret = -ENOMEM;
 		goto err_free_description;
 	}
 
@@ -481,7 +474,8 @@ static struct iio_context * serial_create_context(
 	pdata->iiod_client = iiod_client_new(params,
 					     (struct iiod_client_pdata *) pdata,
 					     &serial_iiod_client_ops);
-	if (!pdata->iiod_client)
+	ret = iio_err(pdata->iiod_client);
+	if (ret)
 		goto err_free_pdata;
 
 	iio_snprintf(uri, uri_len, "serial:%s,%u,%u%c%u%c",
@@ -491,7 +485,8 @@ static struct iio_context * serial_create_context(
 	ctx = iiod_client_create_context(pdata->iiod_client,
 					 &iio_serial_backend, description,
 					 &ctx_uri, (const char **)&uri, 1);
-	if (!ctx)
+	ret = iio_err(ctx);
+	if (ret)
 		goto err_destroy_iiod_client;
 
 	iio_context_set_pdata(ctx, pdata);
@@ -531,6 +526,7 @@ err_free_port:
 	sp_free_port(port);
 err_free_uri:
 	free(uri);
+	errno = -ret;
 	return NULL;
 }
 

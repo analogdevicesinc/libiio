@@ -279,7 +279,8 @@ static int usb_open(const struct iio_device *dev,
 	}
 
 	client = iiod_client_new(params, &pdata->io_ctx, &usb_iiod_client_ops);
-	if (!client)
+	ret = iio_err(client);
+	if (ret)
 		goto err_close_pipe;
 
 	iiod_client_mutex_lock(client);
@@ -1010,9 +1011,9 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	pdata->io_ctx.iiod_client = iiod_client_new(params, &pdata->io_ctx,
 						    &usb_iiod_client_ops);
-	if (!pdata->io_ctx.iiod_client) {
-		prm_err(params, "Unable to allocate memory\n");
-		ret = -ENOMEM;
+	ret = iio_err(pdata->io_ctx.iiod_client);
+	if (ret) {
+		prm_perror(params, -ret, "Unable to create IIOD client");
 		goto err_io_context_exit;
 	}
 
@@ -1029,10 +1030,9 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	}
 
 	ctx = usb_create_context_with_attrs(usb_dev, pdata);
-	if (!ctx) {
-		ret = -errno;
+	ret = iio_err(ctx);
+	if (ret)
 		goto err_reset_pipes;
-	}
 
 	libusb_free_config_descriptor(conf_desc);
 
