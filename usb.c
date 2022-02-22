@@ -1098,12 +1098,14 @@ usb_create_context_from_args(const struct iio_context_params *params,
 	/* keep MSVS happy by setting these to NULL */
 	struct iio_scan *scan_ctx = NULL;
 	bool scan;
+	int err;
 
 	/* if uri is just "usb:" that means search for the first one */
 	scan = !*ptr;
 	if (scan) {
 		scan_ctx = iio_scan(params, "usb");
-		if (!scan_ctx)
+		err = iio_err(scan_ctx);
+		if (err)
 			goto err_bad_uri;
 
 		if (iio_scan_get_results_count(scan_ctx) != 1) {
