@@ -248,7 +248,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	struct dns_sd_cb_data adata;
 	AvahiClient *client;
 	AvahiServiceBrowser *browser;
-	int ret = 0;
+	int ret;
 
 	d = new_discovery_data();
 	if (!d)
@@ -258,9 +258,10 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	adata.d = d;
 
 	d->lock = iio_mutex_create();
-	if (!d->lock) {
+	ret = iio_err(d->lock);
+	if (ret) {
 		dnssd_free_all_discovery_data(params, d);
-		return -ENOMEM;
+		return ret;
 	}
 
 	d->poll = avahi_simple_poll_new();
@@ -357,7 +358,7 @@ int dnssd_resolve_host(const struct iio_context_params *params,
 {
 	struct dns_sd_discovery_data *d;
 	struct dns_sd_cb_data adata;
-	int ret = 0;
+	int ret;
 
 	if (!hostname || hostname[0] == '\0')
 		return -EINVAL;
@@ -367,10 +368,9 @@ int dnssd_resolve_host(const struct iio_context_params *params,
 		return -ENOMEM;
 
 	d->lock = iio_mutex_create();
-	if (!d->lock) {
-		ret = -ENOMEM;
+	ret = iio_err(d->lock);
+	if (ret)
 		goto err_free_data;
-	}
 
 	adata.params = params;
 	adata.d = d;

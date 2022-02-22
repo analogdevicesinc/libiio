@@ -152,6 +152,7 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 				     const struct iiod_client_ops *ops)
 {
 	struct iiod_client *client;
+	int err;
 
 	client = malloc(sizeof(*client));
 	if (!client) {
@@ -160,8 +161,9 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 	}
 
 	client->lock = iio_mutex_create();
-	if (!client->lock) {
-		errno = ENOMEM;
+	err = iio_err(client->lock);
+	if (err) {
+		errno = -err;
 		goto err_free_client;
 	}
 
