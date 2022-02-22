@@ -42,10 +42,8 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		params2.stderr_level = default_params->stderr_level;
 
 	ctx = calloc(1, sizeof(*ctx));
-	if (!ctx) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!ctx)
+		return iio_ptr(-ENOMEM);
 
 	if (!backends)
 		backends = LIBIIO_SCAN_BACKENDS;

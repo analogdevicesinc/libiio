@@ -324,7 +324,7 @@ static inline __check_ret void *iio_err_cast(const void *ptr)
  *   of the backends to be scanned for contexts. If NULL, all the available
  *   backends are scanned.
  * @return On success, a pointer to an iio_scan structure
- * @return On failure, NULL is returned and errno is set appropriately
+ * @return On failure, a pointer-encoded error is returned
  *
  * <b>NOTE:</b> It is possible to provide backend-specific information.
  * For instance, "local,usb=0456:*" will scan the local backend and

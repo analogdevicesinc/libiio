@@ -78,11 +78,13 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 	unsigned int i;
 	size_t results;
 	FILE *out;
+	int err;
 
 	scan_ctx = iio_scan(NULL, scan);
-	if (!scan_ctx) {
+	err = iio_err(scan_ctx);
+	if (err) {
 		char *err_str = xmalloc(BUF_SIZE, name);
-		iio_strerror(errno, err_str, BUF_SIZE);
+		iio_strerror(err, err_str, BUF_SIZE);
 		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
 		free (err_str);
 		return NULL;
