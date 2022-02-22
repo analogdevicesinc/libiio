@@ -1452,7 +1452,7 @@ __api __check_ret __pure const struct iio_device * iio_buffer_get_device(
  * @param samples_count The number of samples that the buffer should contain
  * @param cyclic If True, enable cyclic mode
  * @return On success, a pointer to an iio_buffer structure
- * @return On error, NULL is returned, and errno is set to the error code
+ * @return On failure, NULL is returned and errno is set appropriately
  *
  * <b>NOTE:</b> Channels that have to be written to / read from must be enabled
  * before creating the buffer. */
