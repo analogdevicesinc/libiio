@@ -155,17 +155,13 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 	int err;
 
 	client = malloc(sizeof(*client));
-	if (!client) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!client)
+		return iio_ptr(-ENOMEM);
 
 	client->lock = iio_mutex_create();
 	err = iio_err(client->lock);
-	if (err) {
-		errno = -err;
+	if (err)
 		goto err_free_client;
-	}
 
 	client->params = params;
 	client->ops = ops;
@@ -175,7 +171,7 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 
 err_free_client:
 	free(client);
-	return NULL;
+	return iio_ptr(err);
 }
 
 void iiod_client_destroy(struct iiod_client *client)
@@ -567,9 +563,7 @@ out_free_xml:
 	free(xml);
 out_unlock:
 	iio_mutex_unlock(client->lock);
-	if (!ctx)
-		errno = -ret;
-	return ctx;
+	return ctx ? ctx : iio_ptr(ret);
 }
 
 struct iio_context * iiod_client_create_context(struct iiod_client *client,
