@@ -207,16 +207,12 @@ struct iio_context * iio_context_create_from_backend(
 	struct iio_context *ctx;
 	int ret;
 
-	if (!backend) {
-		errno = EINVAL;
-		return NULL;
-	}
+	if (!backend)
+		return iio_ptr(-EINVAL);
 
 	ctx = zalloc(sizeof(*ctx));
-	if (!ctx) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!ctx)
+		return iio_ptr(-ENOMEM);
 
 	ret = -ENOMEM;
 	if (description) {
@@ -232,8 +228,7 @@ struct iio_context * iio_context_create_from_backend(
 
 err_free_ctx:
 	free(ctx);
-	errno = -ret;
-	return NULL;
+	return iio_ptr(ret);
 }
 
 const struct iio_context_params *
@@ -419,12 +414,10 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 
 struct iio_context * iio_context_clone(const struct iio_context *ctx)
 {
-	if (ctx->ops->clone) {
+	if (ctx->ops->clone)
 		return ctx->ops->clone(ctx);
-	} else {
-		errno = ENOSYS;
-		return NULL;
-	}
+
+	return iio_ptr(-ENOSYS);
 }
 
 struct iio_context * iio_create_context_from_uri(const char *uri)
@@ -449,7 +442,7 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 {
 	struct iio_context_params params2 = { 0 };
 	const struct iio_backend *backend = NULL;
-	struct iio_context *ctx;
+	struct iio_context *ctx = NULL;
 	char *uri_dup = NULL;
 	unsigned int i;
 
@@ -486,8 +479,7 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	} else if (WITH_MODULES) {
 		ctx = iio_create_dynamic_context(&params2, uri);
 	} else {
-		errno = ENOSYS;
-		ctx = NULL;
+		ctx = iio_ptr(-ENOSYS);
 	}
 
 	free(uri_dup);
@@ -500,8 +492,7 @@ struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
 	if (WITH_XML_BACKEND)
 		return xml_create_context_mem(&default_params, xml, len);
 
-	errno = ENOSYS;
-	return NULL;
+	return iio_ptr(-ENOSYS);
 }
 
 unsigned int iio_context_get_attrs_count(const struct iio_context *ctx)
@@ -613,14 +604,12 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 	ssize_t len;
 	int ret;
 
-	if (!WITH_XML_BACKEND) {
-		errno = ENOSYS;
-		return NULL;
-	}
+	if (!WITH_XML_BACKEND)
+		return iio_ptr(-ENOSYS);
 
 	ctx = xml_create_context_mem(params, xml, xml_len);
-	if (!ctx)
-		return NULL;
+	if (iio_err(ctx))
+		return ctx;
 
 	if (backend) {
 		ctx->name = backend->name;
@@ -639,13 +628,14 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 		len = iio_snprintf(NULL, 0, "%s %s",
 				   ctx->description, description);
 		if (len < 0) {
-			prm_perror(params, -(int) len,
-				   "Unable to set context description\n");
+			ret = (int) len;
+			prm_perror(params, -ret, "Unable to set context description\n");
 			goto err_context_destroy;
 		}
 
 		new_description = malloc(len + 1);
 		if (!new_description) {
+			ret = -ENOMEM;
 			prm_err(params, "Unable to alloc memory\n");
 			goto err_context_destroy;
 		}
@@ -655,6 +645,7 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 	} else {
 		new_description = iio_strdup(description);
 		if (!new_description) {
+			ret = -ENOMEM;
 			prm_err(params, "Unable to alloc memory\n");
 			goto err_context_destroy;
 		}
@@ -668,5 +659,5 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 
 err_context_destroy:
 	iio_context_destroy(ctx);
-	return NULL;
+	return iio_ptr(ret);
 }

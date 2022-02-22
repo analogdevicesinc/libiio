@@ -437,10 +437,8 @@ static struct iio_context * serial_create_context(
 
 	uri_len = sizeof("serial:,1000000,8n1n") + strnlen(port_name, PATH_MAX);
 	uri = malloc(uri_len);
-	if (!uri) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!uri)
+		return iio_ptr(-ENOMEM);
 
 	ret = libserialport_to_errno(sp_get_port_by_name(port_name, &port));
 	if (ret)
@@ -511,8 +509,7 @@ static struct iio_context * serial_create_context(
 err_context_destroy:
 	free(uri);
 	iio_context_destroy(ctx);
-	errno = -ret;
-	return NULL;
+	return iio_ptr(ret);
 
 err_destroy_iiod_client:
 	iiod_client_destroy(pdata->iiod_client);
@@ -526,8 +523,7 @@ err_free_port:
 	sp_free_port(port);
 err_free_uri:
 	free(uri);
-	errno = -ret;
-	return NULL;
+	return iio_ptr(ret);
 }
 
 /* Take string, in "[baud rate],[data bits][parity][stop bits][flow control]"
@@ -665,10 +661,8 @@ serial_create_context_from_args(const struct iio_context_params *params,
 	int ret;
 
 	uri_dup = iio_strdup(args);
-	if (!uri_dup) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!uri_dup)
+		return iio_ptr(-ENOMEM);
 
 	comma = strchr(uri_dup, ',');
 	if (comma) {
@@ -693,6 +687,5 @@ serial_create_context_from_args(const struct iio_context_params *params,
 err_free_dup:
 	free(uri_dup);
 	prm_err(params, "Bad URI: \'serial:%s\'\n", args);
-	errno = EINVAL;
-	return NULL;
+	return iio_ptr(-EINVAL);
 }

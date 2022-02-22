@@ -647,8 +647,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
 	if (ret < 0) {
 		prm_perror(params, -ret, "WSAStartup failed");
-		errno = -ret;
-		return NULL;
+		return iio_ptr(ret);
 	}
 #endif
 
@@ -666,13 +665,11 @@ static struct iio_context * network_create_context(const struct iio_context_para
 			char buf[1024];
 			iio_strerror(-ret, buf, sizeof(buf));
 			prm_dbg(params, "Unable to find host: %s\n", buf);
-			errno = -ret;
-			return NULL;
+			return iio_ptr(ret);
 		}
 		if (!strlen(addr_str)) {
 			prm_dbg(params, "No DNS Service Discovery hosts on network\n");
-			errno = ENOENT;
-			return NULL;
+			return iio_ptr(-ENOENT);
 		}
 
 		iio_snprintf(port_str, sizeof(port_str), "%hu", port);
@@ -697,8 +694,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 				iio_strerror(-ret, buf, sizeof(buf));
 				prm_dbg(params, "Unable to find host: %s\n", buf);
-				errno = -ret;
-				return NULL;
+				return iio_ptr(ret);
 			}
 
 			ret = getaddrinfo(addr_str, IIOD_PORT_STR, &hints, &res);
@@ -707,27 +703,24 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	if (ret) {
 		prm_err(params, "Unable to find host: %s\n", gai_strerror(ret));
-#ifndef _WIN32
-		if (ret != EAI_SYSTEM)
-			errno = -ret;
-#endif
-		return NULL;
+		return iio_ptr(ret);
 	}
 
 	fd = create_socket(res, params->timeout_ms);
 	if (fd < 0) {
-		errno = -fd;
+		ret = fd;
 		goto err_free_addrinfo;
 	}
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
-		errno = ENOMEM;
+		ret = -ENOMEM;
 		goto err_close_socket;
 	}
 
 	description = network_get_description(res, params);
-	if (!description)
+	ret = iio_err(description);
+	if (ret)
 		goto err_free_pdata;
 
 	iiod_client = iiod_client_new(params, &pdata->io_ctx,
@@ -804,8 +797,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 err_network_shutdown:
 	free(description);
 	iio_context_destroy(ctx);
-	errno = -ret;
-	return NULL;
+	return iio_ptr(ret);
 
 err_destroy_iiod_client:
 	iiod_client_destroy(iiod_client);
@@ -817,5 +809,5 @@ err_close_socket:
 	close(fd);
 err_free_addrinfo:
 	freeaddrinfo(res);
-	return NULL;
+	return iio_ptr(ret);
 }

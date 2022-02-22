@@ -128,22 +128,19 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 
 	if (!ptr) {
 		prm_err(params, "Invalid URI: %s\n", uri);
-		errno = EINVAL;
-		return NULL;
+		return iio_ptr(-EINVAL);
 	}
 
 	iio_snprintf(buf, sizeof(buf), "%.*s", (int) (ptr - uri), uri);
 
 	backend = get_iio_backend(params, buf, &lib);
 	ret = iio_err(backend);
-	if (ret) {
-		errno = -ret;
-		return NULL;
-	}
+	if (ret)
+		return iio_err_cast(backend);
 
 	if (!backend->ops || !backend->ops->create) {
 		prm_err(params, "Backend has no create function\n");
-		errno = EINVAL;
+		ret = -EINVAL;
 		goto out_release_module;
 	}
 
@@ -154,7 +151,8 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 
 	uri += strlen(backend->uri_prefix);
 	ctx = (*backend->ops->create)(&params2, uri);
-	if (!ctx)
+	ret = iio_err(ctx);
+	if (ret)
 		goto out_release_module;
 
 	ctx->lib = lib;
@@ -162,5 +160,5 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 
 out_release_module:
 	iio_release_module(lib);
-	return NULL;
+	return iio_ptr(ret);
 }
