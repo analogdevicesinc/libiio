@@ -14,8 +14,8 @@ cmake -G "$COMPILER" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DENABLE_IPV6=OFF -DWITH_US
 cmake --build . --config Release
 cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
-cd ../bindings/python
-python.exe setup.py.cmakein sdist
+cd bindings/python
+python.exe setup.py sdist
 Get-ChildItem dist\pylibiio-*.tar.gz | Rename-Item -NewName "libiio-py39-amd64.tar.gz"
 mv .\dist\*.gz .
 rm .\dist\*.gz
