@@ -53,17 +53,17 @@ stages:
         make
         make package
       displayName: 'Build'
-    - script: |
-        cd $(Agent.BuildDirectory)/s/build/
-        sh generateDocumentationAndDeploy.sh
-      displayName: 'Documentation'
-      condition: eq(variables['artifactName'], 'Linux-Fedora-34')
     - task: CopyFiles@2
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - script: |
+        cd $(Agent.BuildDirectory)/s/build/
+        sh generateDocumentationAndDeploy.sh
+      displayName: 'Documentation'
+      condition: eq(variables['artifactName'], 'Linux-Fedora-34')
     - task: PublishPipelineArtifact@1
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
