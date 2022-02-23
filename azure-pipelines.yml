@@ -136,7 +136,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy .tar.gz files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/bindings/python'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/bindings/python'
         contents: '*.gz'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
