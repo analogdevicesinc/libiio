@@ -16,6 +16,7 @@
 
 #include "debug.h"
 #include "dns_sd.h"
+#include "iio-lock.h"
 #include "iio-private.h"
 #include "mdns.h"
 
@@ -189,6 +190,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	WSADATA wsaData;
 	const char service[] = "_iio._tcp.local";
 	size_t records, capacity = 2048;
+	struct dns_sd_discovery_data *d;
 	unsigned int i, isock, num_sockets;
 	void *buffer;
 	int sockets[32];
@@ -202,14 +204,19 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	IIO_DEBUG("DNS SD: Start service discovery.\n");
 
-	*ddata = zalloc(sizeof(**ddata));
-	if (!*ddata)
+	d = zalloc(sizeof(*d));
+	if (!d)
 		goto out_wsa_cleanup;
+	/* pass the structure back, so it can be freed if err */
+	*ddata = d;
 
+	d->lock = iio_mutex_create();
+	if (!d->lock)
+		goto out_wsa_cleanup;
 
 	buffer = malloc(capacity);
 	if (!buffer)
-		goto out_wsa_cleanup;
+		goto out_destroy_lock;
 
 	IIO_DEBUG("Sending DNS-SD discovery\n");
 
@@ -250,7 +257,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 				records += mdns_query_recv(sockets[isock],
 							   buffer, capacity,
-							   query_callback, *ddata,
+							   query_callback, d,
 							   transaction_id[isock]);
 			}
 		} while (records);
@@ -266,9 +273,14 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	IIO_DEBUG("Closed socket%s\n", (num_sockets > 1) ? "s" : "");
 
+	port_knock_discovery_data(&d);
+	remove_dup_discovery_data(&d);
+
 	ret = 0;
 out_free_buffer:
 	free(buffer);
+out_destroy_lock:
+	iio_mutex_destroy(d->lock);
 out_wsa_cleanup:
 	WSACleanup();
 	return ret;
