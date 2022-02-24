@@ -101,13 +101,16 @@ static unsigned int libusb_to_errno(int error)
 	}
 }
 
-static const struct iiod_client_ops usb_iiod_client_ops;
-
+/* Forward declarations */
 static struct iio_context *
 usb_create_context_from_args(const struct iio_context_params *params,
 			     const char *args);
 static int usb_context_scan(const struct iio_context_params *params,
 			    struct iio_scan *scan);
+static ssize_t write_data_sync(struct iiod_client_pdata *ep,
+			       const char *data, size_t len);
+static ssize_t read_data_sync(struct iiod_client_pdata *ep,
+			      char *buf, size_t len);
 
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
@@ -242,6 +245,12 @@ static void usb_free_ep_unlocked(const struct iio_device *dev)
 		}
 	}
 }
+
+static const struct iiod_client_ops usb_iiod_client_ops = {
+	.write = write_data_sync,
+	.read = read_data_sync,
+	.read_line = read_data_sync,
+};
 
 static int usb_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
@@ -714,12 +723,6 @@ static ssize_t read_data_sync(struct iiod_client_pdata *ep,
 	else
 		return transferred;
 }
-
-static const struct iiod_client_ops usb_iiod_client_ops = {
-	.write = write_data_sync,
-	.read = read_data_sync,
-	.read_line = read_data_sync,
-};
 
 static int usb_verify_eps(const struct libusb_interface_descriptor *iface)
 {
