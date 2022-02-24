@@ -230,19 +230,19 @@ struct option * add_common_options(const struct option * longopts)
 static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
 	"Use the XML backend with the provided XML file.",
-	"Use the context at the provided URI."
+	("Use the context at the provided URI."
 		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
 		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
 		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
-		"\n\t\t\t    'local:' (Linux only)",
-	"Scan for available backends."
+		"\n\t\t\t    'local:' (Linux only)"),
+	("Scan for available backends."
 		"\n\t\t\toptional arg of specific backend(s)"
-		"\n\t\t\t    'ip', 'usb' or 'ip:usb'",
-	"Scan for available contexts and if a single context is"
+		"\n\t\t\t    'ip', 'usb' or 'ip:usb'"),
+	("Scan for available contexts and if a single context is"
 		"\n\t\t\tavailable use it. <arg> filters backend(s)"
-		"\n\t\t\t    'ip', 'usb' or 'ip:usb:'",
-	"Context timeout in milliseconds."
-		"\n\t\t\t0 = no timeout (wait forever)",
+		"\n\t\t\t    'ip', 'usb' or 'ip:usb:'"),
+	("Context timeout in milliseconds."
+		"\n\t\t\t0 = no timeout (wait forever)"),
 };
 
 

@@ -206,8 +206,8 @@ int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 	return fd;
 }
 
-static char * __network_get_description(struct addrinfo *res,
-					const struct iio_context_params *params)
+static char * network_get_description(struct addrinfo *res,
+				      const struct iio_context_params *params)
 {
 	char *description;
 	unsigned int len;
@@ -257,14 +257,6 @@ static char * __network_get_description(struct addrinfo *res,
 	}
 
 	return description;
-}
-
-static char *network_get_description(const struct iio_context *ctx)
-{
-	const struct iio_context_params *params = iio_context_get_params(ctx);
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-
-	return __network_get_description(pdata->addrinfo, params);
 }
 
 static int network_open(const struct iio_device *dev,
@@ -514,7 +506,6 @@ static const struct iio_backend_ops network_ops = {
 	.get_trigger = network_get_trigger,
 	.set_trigger = network_set_trigger,
 	.shutdown = network_shutdown,
-	.get_description = network_get_description,
 	.set_timeout = network_set_timeout,
 	.set_kernel_buffers_count = network_set_kernel_buffers_count,
 
@@ -735,7 +726,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		goto err_close_socket;
 	}
 
-	description = __network_get_description(res, params);
+	description = network_get_description(res, params);
 	if (!description)
 		goto err_free_pdata;
 

@@ -295,7 +295,14 @@ enum iio_event_direction {
  *   of the backends to be scanned for contexts. If NULL, all the available
  *   backends are scanned.
  * @return On success, a pointer to an iio_scan structure
- * @return On failure, NULL is returned and errno is set appropriately */
+ * @return On failure, NULL is returned and errno is set appropriately
+ *
+ * <b>NOTE:</b> It is possible to provide backend-specific information.
+ * For instance, "local,usb=0456:*" will scan the local backend and
+ * limit scans on USB to vendor ID 0x0456, and accept all product IDs.
+ * The "usb=0456:b673" string would limit the scan to the device with
+ * this particular VID/PID. Both IDs are expected in hexadecimal, no 0x
+ * prefix needed. */
 __api __check_ret struct iio_scan *
 iio_scan(const struct iio_context_params *params, const char *backends);
 

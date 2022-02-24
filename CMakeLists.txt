@@ -162,6 +162,7 @@ include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
 check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
+check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
@@ -181,6 +182,7 @@ if (WITH_USB_BACKEND)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
 			"If you want to disable the USB backend, set WITH_USB_BACKEND=OFF.")
 	else()
+		list(APPEND LIBIIO_SCAN_BACKENDS usb)
 		set(IIOD_CLIENT 1)
 		set(NEED_LIBXML2 1)
 		set(NEED_THREADS 1)
@@ -218,8 +220,12 @@ endif()
 # make sure all check_symbol_exists are before this point, otherwise they fail
 # on some versions of compilers
 if (MSVC)
-	if(DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR})
-		message(STATUS "Running in an AppVeyor environment, setting -Werror")
+	# why can't different CIs use the same flags?
+	# Travis CI      : CI=True & TRAVIS=True
+	# Appveyor       : CI=True & APPVEYOR=True
+	# Azure Pipelines: TF_BUILD=True
+	if(DEFINED ENV{TF_BUILD} OR (DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR}))
+		message(STATUS "Running in an Azure or AppVeyor environment, setting -Werror")
 		target_compile_options(iio PRIVATE /WX)
 	endif()
 elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -231,10 +237,13 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 		SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}  -fprofile-arcs -ftest-coverage")
 	endif()
-	if(DEFINED ENV{CI} AND (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR}))
-		message(STATUS "Running in CI environment (Travis or AppVeyor), setting -Werror")
+	if(DEFINED ENV{TF_BUILD} OR (DEFINED ENV{CI} AND (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR})))
+		message(STATUS "Running in CI environment (Azure, Travis or AppVeyor), setting -Werror")
 		target_compile_options(iio PRIVATE -Werror)
 	endif()
+else()
+	message(STATUS "Unknown compiler ${CMAKE_C_COMPILER_ID}")
+	message(STATUS "GCC ${CMAKE_COMPILER_IS_GNUCC}")
 endif()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -291,7 +300,10 @@ if(WITH_LOCAL_BACKEND)
 		target_sources(iio PRIVATE libini/libini.c)
 	endif()
 
+	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
 	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" OFF)
+
+	list(APPEND LIBIIO_SCAN_BACKENDS local)
 endif()
 
 option(WITH_SERIAL_BACKEND "Enable the serial backend" OFF)
@@ -413,6 +425,10 @@ if(WITH_NETWORK_BACKEND)
 		set(HAVE_AVAHI ON)
 	endif()
 
+	if (HAVE_DNS_SD)
+		list(APPEND LIBIIO_SCAN_BACKENDS ip)
+	endif()
+
 	set(NEED_THREADS 1)
 	set(IIOD_CLIENT 1)
 	set(NEED_LIBXML2 1)
@@ -506,6 +522,8 @@ add_subdirectory(man)
 
 include(cmake/Install.cmake)
 
+string(REPLACE ";" "," LIBIIO_SCAN_BACKENDS "${LIBIIO_SCAN_BACKENDS}")
+
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
 
 list(APPEND IIO_FEATURES_${WITH_XML_BACKEND} xml)
@@ -517,6 +535,7 @@ list(APPEND IIO_FEATURES_${HAVE_BONJOUR} bonjour)
 list(APPEND IIO_FEATURES_${ENABLE_IPV6} ipv6)
 list(APPEND IIO_FEATURES_${WITH_SERIAL_BACKEND} serial)
 list(APPEND IIO_FEATURES_${WITH_LOCAL_BACKEND} local)
+list(APPEND IIO_FEATURES_${WITH_LOCAL_MMAP_API} local-mmap)
 list(APPEND IIO_FEATURES_${WITH_HWMON} hwmon)
 list(APPEND IIO_FEATURES_${WITH_USB_BACKEND} usb)
 list(APPEND IIO_FEATURES_${WITH_TESTS} utils)

@@ -242,7 +242,7 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 }
 
 int dnssd_context_scan(const struct iio_context_params *params,
-		       struct iio_scan *ctx)
+		       struct iio_scan *ctx, const char *args)
 {
 	struct dns_sd_discovery_data *ddata, *ndata;
 	int ret = 0;

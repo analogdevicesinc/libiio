@@ -237,10 +237,8 @@ sftp_upload() {
 	if [ -n "${LATE}" ] ; then
 		sftp_cmd_pipe <<-EOF
 			cd ${DEPLOY_TO}
-
 			put ${FROM} ${TO}
 			ls -l ${TO}
-
 			symlink ${TO} ${LATE}
 			ls -l ${LATE}
 			bye
@@ -248,7 +246,6 @@ sftp_upload() {
 	else
 		sftp_cmd_pipe <<-EOF
 			cd ${DEPLOY_TO}
-
 			put ${FROM} ${TO}
 			ls -l ${TO}
 			bye
@@ -423,7 +420,7 @@ __save_env_for_docker() {
 }
 
 run_docker_script() {
-	local DOCKER_SCRIPT="$(get_script_path $1)"
+	local DOCKER_SCRIPT="$(get_script_path "$1")"
 	local MOUNTPOINT="${INSIDE_DOCKER_BUILD_DIR}"
 	local DOCKER_IMAGE="${OS_TYPE}:${OS_VERSION}"
 

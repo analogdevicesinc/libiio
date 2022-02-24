@@ -1,9 +1,0 @@
-#!/bin/sh -e
-
-TRIGGERING_NEXT_BUILD=true
-
-. CI/travis/lib.sh
-
-should_trigger_next_builds "$TRAVIS_BRANCH" || exit 0
-
-trigger_adi_build "libad9361-iio" "$TRAVIS_BRANCH"

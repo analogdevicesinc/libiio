@@ -201,6 +201,17 @@ void iio_strerror(int err, char *buf, size_t len)
 	}
 }
 
+char *iio_strtok_r(char *str, const char *delim, char **saveptr)
+{
+#if defined(_WIN32)
+	return strtok_s(str, delim, saveptr);
+#elif defined(HAS_STRTOK_R)
+	return strtok_r(str, delim, saveptr);
+#else
+#error Need a implentation of strtok_r for this platform
+#endif
+}
+
 char *iio_strdup(const char *str)
 {
 #if defined(_WIN32)
@@ -213,6 +224,24 @@ char *iio_strdup(const char *str)
 
 	if (buf)
 		memcpy(buf, str, len + 1);
+	return buf;
+#endif
+}
+
+/* strndup conforms to POSIX.1-2008; but Windows does not provided it
+ */
+char *iio_strndup(const char *str, size_t n)
+{
+#ifdef HAS_STRNDUP
+	return strndup(str, n);
+#else
+	size_t len = strnlen(str, n + 1);
+	char *buf = malloc(len + 1);
+	if (buf) {
+		/* len = size of buf, so memcpy is OK */
+		memcpy(buf, str, len); /* Flawfinder: ignore */
+		buf[len] = 0;
+	}
 	return buf;
 #endif
 }

@@ -92,7 +92,7 @@ enum iio_attr_type {
 
 struct iio_backend_ops {
 	int (*scan)(const struct iio_context_params *params,
-		    struct iio_scan *ctx);
+		    struct iio_scan *ctx, const char *args);
 	struct iio_context * (*create)(const struct iio_context_params *params,
 				       const char *uri);
 	struct iio_context * (*clone)(const struct iio_context *ctx);
@@ -130,8 +130,6 @@ struct iio_backend_ops {
 			const struct iio_device *trigger);
 
 	void (*shutdown)(struct iio_context *ctx);
-
-	char * (*get_description)(const struct iio_context *ctx);
 
 	int (*get_version)(const struct iio_context *ctx, unsigned int *major,
 			unsigned int *minor, char git_tag[8]);

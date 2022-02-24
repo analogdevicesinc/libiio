@@ -13,6 +13,8 @@
 
 #define IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
 
+#define LIBIIO_SCAN_BACKENDS	"@LIBIIO_SCAN_BACKENDS@"
+
 #cmakedefine01 WITH_LOCAL_BACKEND
 #cmakedefine01 WITH_XML_BACKEND
 #cmakedefine01 WITH_NETWORK_BACKEND
@@ -28,6 +30,7 @@
 #cmakedefine01 WITH_IIOD_USBD
 #cmakedefine01 WITH_IIOD_SERIAL
 #cmakedefine01 WITH_LOCAL_CONFIG
+#cmakedefine01 WITH_LOCAL_MMAP_API
 #cmakedefine01 WITH_HWMON
 #cmakedefine01 WITH_AIO
 #cmakedefine01 HAVE_DNS_SD
@@ -37,6 +40,7 @@
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
 #cmakedefine HAS_STRNDUP
+#cmakedefine HAS_STRTOK_R
 #cmakedefine HAS_STRERROR_R
 #cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP

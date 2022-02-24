@@ -13,20 +13,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-struct iio_context_info {
-	char *description;
-	char *uri;
-};
-
 struct iio_scan {
 	struct iio_context_info *info;
+	char *backends;
 	size_t count;
 };
-
-static bool has_backend(const char *backends, const char *backend)
-{
-	return !backends || iio_list_has_elem(backends, backend);
-}
 
 struct iio_scan * iio_scan(const struct iio_context_params *params,
 			   const char *backends)
@@ -34,8 +25,9 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 	const struct iio_context_params *default_params = get_default_params();
 	struct iio_context_params params2 = { 0 };
 	struct iio_scan *ctx;
+	const char *args, *uri;
 	unsigned int i;
-	char buf[256];
+	char *token, *rest = NULL;
 	size_t len;
 	int ret;
 
@@ -53,25 +45,44 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		return NULL;
 	}
 
-	for (i = 0; i < iio_backends_size; i++) {
-		if (!iio_backends[i] || !iio_backends[i]->ops->scan)
-			continue;
+	if (!backends)
+		backends = LIBIIO_SCAN_BACKENDS;
 
-		len = strlen(iio_backends[i]->uri_prefix);
+	ctx->backends = iio_strdup(backends);
+	if (!ctx->backends) {
+		free(ctx);
+		errno = ENOMEM;
+		return NULL;
+	}
 
-		snprintf(buf, sizeof(buf), "%.*s",
-			 (int)(len - 1), iio_backends[i]->uri_prefix);
+	for (token = iio_strtok_r(ctx->backends, ",", &rest);
+	     token; token = iio_strtok_r(NULL, ",", &rest)) {
+		for (i = 0; i < iio_backends_size; i++) {
+			if (!iio_backends[i] || !iio_backends[i]->ops->scan)
+				continue;
 
-		if (has_backend(backends, buf)) {
+			uri = iio_backends[i]->uri_prefix;
+			len = strlen(uri) - 1; /* -1: to remove the colon of the URI */
+
+			if (strncmp(token, uri, len))
+				continue;
+
+			if (token[len] == '\0')
+				args = NULL;
+			else if (token[len] == '=')
+				args = token + len + 1;
+			else
+				continue;
+
 			if (params->timeout_ms)
 				params2.timeout_ms = params->timeout_ms;
 			else
 				params2.timeout_ms = iio_backends[i]->default_timeout_ms;
 
-			ret = iio_backends[i]->ops->scan(&params2, ctx);
+			ret = iio_backends[i]->ops->scan(&params2, ctx, args);
 			if (ret < 0) {
 				prm_perror(&params2, -ret,
-					   "Unable to scan %s context(s)", buf);
+					   "Unable to scan %s context", token);
 			}
 		}
 	}
@@ -99,6 +110,7 @@ void iio_scan_destroy(struct iio_scan *ctx)
 	}
 
 	free(ctx->info);
+	free(ctx->backends);
 	free(ctx);
 }
 

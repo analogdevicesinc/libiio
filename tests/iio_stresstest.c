@@ -107,8 +107,8 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	"[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>] [-s <samples>]"
-		"<iio_device> [<channel> ...]",
+	("[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>] [-s <samples>]"
+		"<iio_device> [<channel> ...]"),
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",

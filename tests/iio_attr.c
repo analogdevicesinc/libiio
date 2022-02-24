@@ -321,11 +321,11 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	"-d [device] [attr] [value]\n"
+	("-d [device] [attr] [value]\n"
 		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
 		"\t\t\t\t-B [device] [attr] [value]\n"
 		"\t\t\t\t-D [device] [attr] [value]\n"
-		"\t\t\t\t-C [attr]",
+		"\t\t\t\t-C [attr]"),
 	/* help */
 	"Ignore case distinctions.",
 	"Return result only.",

@@ -195,17 +195,17 @@ static ssize_t print_sample(const struct iio_channel *chn,
 int main(int argc, char **argv)
 {
 	char **argw;
-	unsigned int i, nb_channels;
+	unsigned int i, j, nb_channels;
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
-	unsigned int refill_per_benchmark = REFILL_PER_BENCHMARK;
+	uint64_t refill_per_benchmark = REFILL_PER_BENCHMARK;
 	int c;
 	struct iio_device *dev;
 	ssize_t sample_size;
 	ssize_t ret;
 	struct option *opts;
 	bool mib, benchmark = false;
-	uint64_t before, after, rate, total;
+	uint64_t before = 0, after, rate, total;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -263,7 +263,7 @@ int main(int argc, char **argv)
 	}
 	free(opts);
 
-	if (argc == optind) {
+	if (argc < optind || argc > optind + 2) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
@@ -271,6 +271,48 @@ int main(int argc, char **argv)
 
 	if (!ctx)
 		return EXIT_FAILURE;
+
+	if (!argw[optind]) {
+		unsigned int nb_devices = iio_context_get_devices_count(ctx);
+
+		for (i = 0; i < nb_devices; i++) {
+			const char *dev_id = NULL, *label = NULL, *name = NULL;
+			bool hit;
+
+			dev = iio_context_get_device(ctx, i);
+			nb_channels = iio_device_get_channels_count(dev);
+
+			if (!nb_channels)
+				continue;
+
+			hit = false;
+			for (j = 0; j < nb_channels; j++) {
+				struct iio_channel *ch = iio_device_get_channel(dev, j);
+
+				if (!iio_channel_is_scan_element(ch) ||
+						iio_channel_is_output(ch))
+					continue;
+
+				hit = true;
+
+				dev_id = iio_device_get_id(dev);
+				label = iio_device_get_label(dev);
+				name = iio_device_get_name(dev);
+
+				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s %s\n",
+						iio_context_get_attr_value(ctx, "uri"),
+						label ? label : name ? name : dev_id,
+						iio_channel_get_id(ch));
+			}
+			if (hit)
+				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s\n",
+						iio_context_get_attr_value(ctx, "uri"),
+						label ? label : name ? name : dev_id);
+		}
+		iio_context_destroy(ctx);
+		usage(MY_NAME, options, options_descriptions);
+		return EXIT_FAILURE;
+	}
 
 	setup_sig_handler();
 
@@ -332,7 +374,6 @@ int main(int argc, char **argv)
 		}
 	} else {
 		for (i = 0; i < nb_channels; i++) {
-			unsigned int j;
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
 			for (j = optind + 1; j < (unsigned int) argc; j++) {
 				const char *n = iio_channel_get_name(ch);

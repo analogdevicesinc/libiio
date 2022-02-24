@@ -25,6 +25,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
 endif()
 
+configure_file(artifact_manifest.txt.cmakein ${CMAKE_CURRENT_BINARY_DIR}/artifact_manifest.txt @ONLY)
 configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
@@ -67,7 +68,7 @@ if(WITH_DOC)
 		${CMAKE_CURRENT_SOURCE_DIR}/bindings/csharp/Doxyfile.in
 		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp @ONLY)
 	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/CI/travis/generateDocumentationAndDeploy.sh.in
+		${CMAKE_CURRENT_SOURCE_DIR}/CI/azure/generateDocumentationAndDeploy.sh.in
 		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc
 		DESTINATION ${CMAKE_HTML_DEST_DIR}/${CMAKE_API_DEST_DIR}

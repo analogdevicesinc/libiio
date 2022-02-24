@@ -54,7 +54,7 @@ static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 static struct iio_context *
 local_create_context(const struct iio_context_params *params, const char *args);
 static int local_context_scan(const struct iio_context_params *params,
-			      struct iio_scan *ctx);
+			      struct iio_scan *ctx, const char *args);
 
 struct block_alloc_req {
 	uint32_t type,
@@ -102,6 +102,7 @@ static const char * const device_attrs_blacklist[] = {
 static const char * const buffer_attrs_reserved[] = {
 	"length",
 	"enable",
+	"watermark",
 };
 
 static int ioctl_nointr(int fd, unsigned long request, void *data)
@@ -435,7 +436,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	int f = pdata->fd;
 	ssize_t ret;
 
-	if (!pdata->is_high_speed)
+	if (!WITH_LOCAL_MMAP_API || !pdata->is_high_speed)
 		return -ENOSYS;
 	if (f == -1)
 		return -EBADF;
@@ -842,8 +843,7 @@ static int enable_high_speed(const struct iio_device *dev)
 
 	req.id = 0;
 	req.type = 0;
-	req.size = pdata->samples_count *
-		iio_device_get_sample_size_mask(dev, dev->mask, dev->words);
+	req.size = pdata->samples_count * iio_device_get_sample_size(dev);
 	req.count = nb_blocks;
 
 	ret = ioctl_nointr(fd, BLOCK_ALLOC_IOCTL, &req);
@@ -918,6 +918,15 @@ static int local_open(const struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
+	/*
+	 * Set watermark to the buffer size; the driver will adjust to its
+	 * maximum if it's too high without issueing an error.
+	 */
+	ret = local_write_dev_attr(dev, "buffer/watermark",
+				   buf, strlen(buf) + 1, false);
+	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
+		return ret;
+
 	pdata->cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (pdata->cancel_fd == -1)
 		return -errno;
@@ -952,11 +961,13 @@ static int local_open(const struct iio_device *dev,
 	pdata->cyclic_buffer_enqueued = false;
 	pdata->samples_count = samples_count;
 
-	ret = enable_high_speed(dev);
-	if (ret < 0 && ret != -ENOSYS)
-		goto err_close;
+	if (WITH_LOCAL_MMAP_API) {
+		ret = enable_high_speed(dev);
+		if (ret < 0 && ret != -ENOSYS)
+			goto err_close;
 
-	pdata->is_high_speed = !ret;
+		pdata->is_high_speed = !ret;
+	}
 
 	if (!pdata->is_high_speed) {
 		unsigned long size = samples_count * pdata->max_nb_blocks;
@@ -1955,7 +1966,6 @@ static const struct iio_backend_ops local_ops = {
 	.get_trigger = local_get_trigger,
 	.set_trigger = local_set_trigger,
 	.shutdown = local_shutdown,
-	.get_description = local_get_description,
 	.set_timeout = local_set_timeout,
 	.cancel = local_cancel,
 };
@@ -2173,7 +2183,7 @@ static int check_device(void *d, const char *path)
 }
 
 static int local_context_scan(const struct iio_context_params *params,
-			      struct iio_scan *ctx)
+			      struct iio_scan *ctx, const char *args)
 {
 	char *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	bool exists = false;

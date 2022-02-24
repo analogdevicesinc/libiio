@@ -90,6 +90,6 @@ int dnssd_resolve_host(const struct iio_context_params *params,
 		       const char *hostname, char *ip_addr, const int addr_len);
 
 int dnssd_context_scan(const struct iio_context_params *params,
-		       struct iio_scan *ctx);
+		       struct iio_scan *ctx, const char *args);
 
 #endif /* __IIO_DNS_SD_H */

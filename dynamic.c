@@ -154,7 +154,7 @@ int iio_dynamic_scan(const struct iio_context_params *params,
 			params2.timeout_ms = backend->default_timeout_ms;
 
 		if (backend->ops && backend->ops->scan) {
-			ret = backend->ops->scan(&params2, ctx);
+			ret = backend->ops->scan(&params2, ctx, NULL); /* TODO: Support args */
 			if (ret < 0) {
 				prm_perror(params, -ret,
 					   "Unable to scan %s context(s)", buf);

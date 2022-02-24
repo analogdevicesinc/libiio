@@ -24,6 +24,11 @@ if (MSVC)
 	target_include_directories(iio_tests_helper PUBLIC ../deps/wingetopt/src)
 	target_compile_definitions(iio_tests_helper PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
+set_target_properties(iio_tests_helper PROPERTIES
+	C_STANDARD 99
+	C_STANDARD_REQUIRED ON
+	C_EXTENSIONS OFF
+)
 
 foreach (test ${IIO_TESTS_TARGETS})
 	project(${test} LANGUAGES C)

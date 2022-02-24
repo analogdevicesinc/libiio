@@ -145,7 +145,7 @@ Line:
 		const char *xml = iio_context_get_xml(pdata->ctx);
 		if (!pdata->verbose) {
 			char buf[128];
-			sprintf(buf, "%lu\n", (unsigned long) strlen(xml));
+			snprintf(buf, sizeof(buf), "%lu\n", (unsigned long) strlen(xml));
 			output(pdata, buf);
 		}
 		output(pdata, xml);
@@ -157,7 +157,7 @@ Line:
 		if (pdata->xml_zstd) {
 			if (!pdata->verbose) {
 				char buf[128];
-				sprintf(buf, "%lu\n", (unsigned long)pdata->xml_zstd_len);
+				snprintf(buf, sizeof(buf), "%lu\n", (unsigned long)pdata->xml_zstd_len);
 				output(pdata, buf);
 			}
 			if (write_all(pdata, pdata->xml_zstd, pdata->xml_zstd_len) <= 0)
@@ -166,7 +166,7 @@ Line:
 			YYACCEPT;
 		} else {
 			char buf[128];
-			sprintf(buf, "%d\n", -EINVAL);
+			snprintf(buf, sizeof(buf), "%d\n", -EINVAL);
 			output(pdata, buf);
 			YYABORT;
 		}
@@ -454,7 +454,7 @@ void yyerror(yyscan_t scanner, const char *msg)
 		output(pdata, "\n");
 	} else {
 		char buf[128];
-		sprintf(buf, "%i\n", -EINVAL);
+		snprintf(buf, sizeof(buf), "%i\n", -EINVAL);
 		output(pdata, buf);
 	}
 }
