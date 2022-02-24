@@ -12,6 +12,9 @@ cd build-x64
 
 cmake -G "$COMPILER" -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DENABLE_IPV6=OFF -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON -DLIBXML2_LIBRARIES="C:\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libs\\64\\libserialport.dll.a" -DLIBUSB_INCLUDE_DIR="C:\\include\\libusb-1.0" -DLIBXML2_INCLUDE_DIR="C:\\include\\libxml2" ..
 cmake --build . --config Release
+if ( $LASTEXITCODE -ne 0 ) {
+		throw "[*] cmake build failure"
+	}
 cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 cd bindings/python
