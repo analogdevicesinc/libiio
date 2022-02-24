@@ -38,15 +38,15 @@ namespace iio
         }
 
         internal Version(IntPtr ctx)
-        {
-            Version(iio_context_get_version_major(ctx),
-                    iio_context_get_version_minor(ctx),
-                    Marshal.PtrToStringAnsi(iio_context_get_version_tag(ctx)));
+	    : this(iio_context_get_version_major(ctx),
+                   iio_context_get_version_minor(ctx),
+                   Marshal.PtrToStringAnsi(iio_context_get_version_tag(ctx)))
+	{
         }
 
         internal Version()
+	    : this(IntPtr.Zero)
         {
-            Version(IntPtr.Zero);
         }
     }
 
