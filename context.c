@@ -626,7 +626,8 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 		len = iio_snprintf(NULL, 0, "%s %s",
 				   ctx->description, description);
 		if (len < 0) {
-			prm_perror(params, -len, "Unable to set context description\n");
+			prm_perror(params, -(int) len,
+				   "Unable to set context description\n");
 			goto err_context_destroy;
 		}
 
