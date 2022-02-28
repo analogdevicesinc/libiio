@@ -263,8 +263,8 @@ int main(int argc, char **argv)
 	}
 	free(opts);
 
-	if (argc < optind || argc > optind + 2) {
-		fprintf(stderr, "Incorrect number of arguments.\n\n");
+	if (argc < optind) {
+		fprintf(stderr, "Too few arguments.\n\n");
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
