@@ -126,6 +126,21 @@ err_free_ctx:
 	return ctx;
 }
 
+int iio_device_enable_channel(const struct iio_device *dev, const char * channel, bool type)
+{
+	struct iio_channel *ch;
+
+	ch = iio_device_find_channel(dev, channel, type);
+	if (!ch)
+		return -ENXIO;
+
+	if (iio_channel_is_enabled(ch))
+		return -EBUSY;
+
+	iio_channel_enable(ch);
+	return 0;
+}
+
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max)
 {

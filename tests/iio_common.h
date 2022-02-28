@@ -47,6 +47,7 @@ char *cmn_strndup(const char *str, size_t n);
 struct iio_context * autodetect_context(bool rtn, const char *name, const char *scan);
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
+int iio_device_enable_channel(const struct iio_device *dev, const char * channel, bool type);
 
 /* optstring is a string containing the legitimate option characters.
  * If such a character is followed by a colon, the option  requires  an  argument.
