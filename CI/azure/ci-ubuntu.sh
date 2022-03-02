@@ -7,6 +7,6 @@ DEBIAN_FRONTEND=noninteractive apt install -y bison flex cmake git build-essenti
 DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-sphinx python3-setuptools
 echo "$PWD"
 mkdir build && cd build
-cmake .. -DPYTHON_BINDINGS=ON -DENABLE_PACKAGING=ON -DCPACK_SYSTEM_NAME="{ARTIFACTNAME}"
+cmake .. -DWITH_HWMON=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EXAMPLES=ON -DPYTHON_BINDINGS=ON -DENABLE_PACKAGING=ON -DCPACK_SYSTEM_NAME="{ARTIFACTNAME}"
 make
 make package
