@@ -54,7 +54,6 @@ stages:
         make package
       displayName: 'Build'
     - task: CopyFiles@2
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
@@ -169,7 +168,6 @@ stages:
         filePath: .\CI\generate_exe.ps1
       displayName: 'Generate libiio-setup.exe'
     - task: PublishPipelineArtifact@1
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'Libiio-Setup-Exe'
@@ -271,7 +269,6 @@ stages:
         sudo docker run --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
       displayName: 'Build'
     - task: CopyFiles@2
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz)'
