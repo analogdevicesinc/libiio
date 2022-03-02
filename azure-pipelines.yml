@@ -169,7 +169,6 @@ stages:
         filePath: .\CI\generate_exe.ps1
       displayName: 'Generate libiio-setup.exe'
     - task: PublishPipelineArtifact@1
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'Libiio-Setup-Exe'
