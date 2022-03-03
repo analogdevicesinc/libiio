@@ -1,0 +1,59 @@
+# Set up a cron that runs midnight daily
+# Coverity limits to 4 times a day, so, only do it once a day on master
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight Build for Coverity
+  branches:
+    include:
+    - coverity-dev
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+- job: Coverity
+  variables:
+    PLATFORM: linux
+    BITS: 64
+    HOST: x86_64
+    CHECK_RULE: coverage
+    GCOV: 1
+    PKG_RULE: gzip
+    PYPI: yes
+    COVERITY_SCAN_PROJECT_NAME: 'analogdevicesinc/libiio'
+    COVERITY_SCAN_BRANCH_PATTERN: master
+    COVERITY_SCAN_NOTIFICATION_EMAIL: "cse-ci-notifications@analog.com"
+    COVERITY_SCAN_BUILD_COMMAND: make
+    # Do not change - the tool expects this
+    COVERITY_SCAN_RESULT_DIR: cov-int
+  container: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    clean: true
+    persistCredentials: true
+  - script: |
+      wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$(COVERITY_SCAN_TOKEN)&project=${COVERITY_SCAN_PROJECT_NAME}" -O cov-analysis-linux64.tar.gz
+      mkdir cov-analysis-linux64
+      tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
+    displayName: 'Download Coverity Tool'
+  - script: |
+      mkdir build && cd build
+      cmake .. -DWITH_HWMON=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EXAMPLES=ON
+    displayName: 'Configure with CMake'
+  - script: |
+      export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
+      cd build
+      cov-build --dir ${COVERITY_SCAN_RESULT_DIR} ${COVERITY_SCAN_BUILD_COMMAND}
+    displayName: 'Build with cov-build'
+  - script: |
+      cd build
+      tar czvf libiio.tgz ${COVERITY_SCAN_RESULT_DIR}
+      curl \
+        --form project=${COVERITY_SCAN_PROJECT_NAME} \
+        --form token=$(COVERITY_SCAN_TOKEN) \
+        --form email=${COVERITY_SCAN_NOTIFICATION_EMAIL} \
+        --form file=@libiio.tgz \
+        --form version=$(Build.SourceVersion) \
+          https://scan.coverity.com/builds?project=${COVERITY_SCAN_PROJECT_NAME}
+    displayName: 'Try to send to Coverity'
