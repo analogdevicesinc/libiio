@@ -263,8 +263,8 @@ int main(int argc, char **argv)
 	}
 	free(opts);
 
-	if (argc < optind || argc > optind + 2) {
-		fprintf(stderr, "Incorrect number of arguments.\n\n");
+	if (argc < optind) {
+		fprintf(stderr, "Too few arguments.\n\n");
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
@@ -373,17 +373,16 @@ int main(int argc, char **argv)
 			}
 		}
 	} else {
-		for (i = 0; i < nb_channels; i++) {
-			struct iio_channel *ch = iio_device_get_channel(dev, i);
-			for (j = optind + 1; j < (unsigned int) argc; j++) {
-				const char *n = iio_channel_get_name(ch);
-				if ((!strcmp(argw[j], iio_channel_get_id(ch)) ||
-						(n && !strcmp(n, argw[j]))) &&
-						!iio_channel_is_output(ch)) {
-					iio_channel_enable(ch);
-					nb_active_channels++;
-				}
+		for (j = optind + 1; j < (unsigned int) argc; j++) {
+			ret = iio_device_enable_channel(dev, argw[j], false);
+			if (ret < 0) {
+				char buf[256];
+				iio_strerror(-(int) ret, buf, sizeof(buf));
+				fprintf(stderr, "Bad channel name \"%s\" : %s\n", argw[j], buf);
+				iio_context_destroy(ctx);
+				return EXIT_FAILURE;
 			}
+			nb_active_channels++;
 		}
 	}
 

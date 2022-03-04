@@ -258,7 +258,11 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 	IIO_DEBUG("Serving over UART on %s at %u bps, %u bits\n",
 		  dev, uart_bps, uart_bits);
 
-	return thread_pool_add_thread(pool, serial_main, pdata, "iiod_serial_thd");
+	err = thread_pool_add_thread(pool, serial_main, pdata, "iiod_serial_thd");
+	if (err)
+		goto err_close_fd;
+
+	return 0;
 
 err_close_fd:
 	close(fd);

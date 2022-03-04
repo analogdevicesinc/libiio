@@ -17,6 +17,7 @@
 #include "dns_sd.h"
 #include "iio-backend.h"
 #include "iio-debug.h"
+#include "iio-lock.h"
 #include "mdns.h"
 
 #ifdef HAVE_IPV6
@@ -194,6 +195,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	WSADATA wsaData;
 	const char service[] = "_iio._tcp.local";
 	size_t records, capacity = 2048;
+	struct dns_sd_discovery_data *d;
 	unsigned int i, isock, num_sockets;
 	struct dns_sd_cb_data cb_data;
 	void *buffer;
@@ -208,14 +210,20 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 
 	prm_dbg(params, "DNS SD: Start service discovery.\n");
 
-	*ddata = zalloc(sizeof(**ddata));
-	if (!*ddata)
+	d = zalloc(sizeof(*d));
+	if (!d)
 		goto out_wsa_cleanup;
+	/* pass the structure back, so it can be freed if err */
+	*ddata = d;
 
+	d->lock = iio_mutex_create();
+	ret = iio_err(d->lock);
+	if (ret)
+		goto out_wsa_cleanup;
 
 	buffer = malloc(capacity);
 	if (!buffer)
-		goto out_wsa_cleanup;
+		goto out_destroy_lock;
 
 	prm_dbg(params, "Sending DNS-SD discovery\n");
 
@@ -241,7 +249,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 		transaction_id[isock] = ret;
 	}
 
-	cb_data.d = *ddata;
+	cb_data.d = d;
 	cb_data.params = params;
 
 	/* This is a simple implementation that loops for 10 seconds or as long as we get replies
@@ -275,9 +283,14 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 
 	prm_dbg(params, "Closed socket%s\n", (num_sockets > 1) ? "s" : "");
 
+	port_knock_discovery_data(&d);
+	remove_dup_discovery_data(&d);
+
 	ret = 0;
 out_free_buffer:
 	free(buffer);
+out_destroy_lock:
+	iio_mutex_destroy(d->lock);
 out_wsa_cleanup:
 	WSACleanup();
 	return ret;
