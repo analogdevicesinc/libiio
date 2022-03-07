@@ -11,7 +11,7 @@ pool:
   vmImage: ubuntu-latest
 
 jobs:
-- job: Coverity Linux Build
+- job: Coverity_Linux_Build
   variables:
     PLATFORM: linux
     BITS: 64
@@ -57,7 +57,7 @@ jobs:
         --form version=$(Build.SourceVersion) \
           https://scan.coverity.com/builds?project=${COVERITY_SCAN_PROJECT_NAME}
     displayName: 'Try to send to Coverity'
-- job: Coverity Windows Build
+- job: Coverity_Windows_Build
   variables:
     PLATFORM: Windows
     BITS: 64
@@ -72,12 +72,8 @@ jobs:
     COVERITY_SCAN_BUILD_COMMAND: cmake --build . --config Release
     # Do not change - the tool expects this
     COVERITY_SCAN_RESULT_DIR: cov-int
-  # Host Box
-  strategy:
-    VS2022:
-      COMPILER: 'Visual Studio 17 2022'
-      ARCH: 'x64'
-      artifactName: 'Windows-VS-2022-x64'
+    # Host Box
+    COMPILER: 'Visual Studio 17 2022'
   pool:
     vmImage: 'windows-2022'
   steps:
@@ -103,7 +99,7 @@ jobs:
         wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
         7z x -y "C:\libiio-win-deps.zip"
   - task: PowerShell@2
-        displayName: 'Download Coverity Tool'
+    displayName: 'Download Coverity Tool'
     inputs:
       targetType: inline
       script: |
@@ -122,7 +118,7 @@ jobs:
       targetType: inline
       script: |
         cov-build --dir ${COVERITY_SCAN_RESULT_DIR} ${COVERITY_SCAN_BUILD_COMMAND}
-  -task: PowerShell@2
+  - task: PowerShell@2
     displayName: 'Try to send to Coverity'
     inputs:
       targetType: inline
