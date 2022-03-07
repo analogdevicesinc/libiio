@@ -103,7 +103,10 @@ jobs:
     inputs:
       targetType: inline
       script: |
-        wget -q https://scan.coverity.com/download/cxx/win64 --post-data "token=$(COVERITY_SCAN_TOKEN_WIN)&project=${COVERITY_SCAN_PROJECT_NAME}" -O cov-analysis-linux64.tar.gz
+        curl -d "token=$(COVERITY_SCAN_TOKEN_WIN)&project=${COVERITY_SCAN_PROJECT_NAME}" -L https://scan.coverity.com/download/cxx/win64 -o cov-analysis-win64.zip
+        7z x cov-analysis-win64.zip
+        del cov-analysis-win64.zip
+        move cov-analysis-win64* cov-analysis-win64
   - task: PowerShell@2
     displayName: 'Configure with CMake'
     inputs:
