@@ -7,6 +7,7 @@
  */
 
 #include "iio-private.h"
+#include "local.h"
 #include "sort.h"
 #include "deps/libini/ini.h"
 
@@ -95,14 +96,6 @@ struct iio_channel_pdata {
 	unsigned int nb_protected_attrs;
 };
 
-struct iio_buffer_pdata {
-	const struct iio_device *dev;
-	int fd, cancel_fd;
-	unsigned int idx;
-	bool multi_buffer;
-	size_t size;
-};
-
 static const char * const device_attrs_blacklist[] = {
 	"dev",
 	"uevent",
@@ -114,7 +107,7 @@ static const char * const buffer_attrs_reserved[] = {
 	"watermark",
 };
 
-static int ioctl_nointr(int fd, unsigned long request, void *data)
+int ioctl_nointr(int fd, unsigned long request, void *data)
 {
 	int ret;
 
@@ -292,7 +285,11 @@ static int device_check_ready(const struct iio_device *dev, int fd, int cancel_f
 		return 0;
 
 	do {
-		timeout_rel = get_rel_timeout_ms(start, rw_timeout_ms);
+		if (start)
+			timeout_rel = get_rel_timeout_ms(start, rw_timeout_ms);
+		else
+			timeout_rel = 0; /* non-blocking */
+
 		ret = poll(pollfd, 2, timeout_rel);
 	} while (ret == -1 && errno == EINTR);
 
@@ -302,12 +299,19 @@ static int device_check_ready(const struct iio_device *dev, int fd, int cancel_f
 	if (ret < 0)
 		return -errno;
 	if (!ret)
-		return -ETIMEDOUT;
+		return start ? -ETIMEDOUT : -EBUSY;
 	if (pollfd[0].revents & POLLNVAL)
 		return -EBADF;
 	if (!(pollfd[0].revents & events))
 		return -EIO;
 	return 0;
+}
+
+int buffer_check_ready(struct iio_buffer_pdata *pdata, int fd,
+		       short events, struct timespec *start)
+{
+	return device_check_ready(pdata->dev, fd, pdata->cancel_fd,
+				  events, start);
 }
 
 static int
@@ -359,6 +363,9 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 			       size_t nb_samples, bool enable)
 {
 	int ret;
+
+	if (pdata->dmabuf_supported != !nb_samples)
+		return -EINVAL;
 
 	if (nb_samples) {
 		ret = local_set_buffer_size(pdata, nb_samples);
@@ -2026,6 +2033,38 @@ static void local_free_buffer(struct iio_buffer_pdata *pdata)
 	free(pdata);
 }
 
+static struct iio_block_pdata *
+local_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
+{
+	if (WITH_LOCAL_DMABUF_API)
+		return local_create_dmabuf(pdata, size, data);
+
+	return iio_ptr(-ENOSYS);
+}
+
+static void local_free_block(struct iio_block_pdata *pdata)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
+		local_free_dmabuf(pdata);
+}
+
+static int local_enqueue_block(struct iio_block_pdata *pdata,
+			       size_t bytes_used, bool cyclic)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
+		return local_enqueue_dmabuf(pdata, bytes_used, cyclic);
+
+	return -ENOSYS;
+}
+
+int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
+		return local_dequeue_dmabuf(pdata, nonblock);
+
+	return -ENOSYS;
+}
+
 static const struct iio_backend_ops local_ops = {
 	.scan = local_context_scan,
 	.create = local_create_context,
@@ -2047,6 +2086,11 @@ static const struct iio_backend_ops local_ops = {
 	.shutdown = local_shutdown,
 	.set_timeout = local_set_timeout,
 	.cancel = local_cancel,
+
+	.create_block = local_create_block,
+	.free_block = local_free_block,
+	.enqueue_block = local_enqueue_block,
+	.dequeue_block = local_dequeue_block,
 
 	.create_buffer = local_create_buffer,
 	.free_buffer = local_free_buffer,
