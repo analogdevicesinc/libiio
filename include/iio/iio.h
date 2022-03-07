@@ -93,6 +93,7 @@ struct iio_channel;
 struct iio_channels_mask;
 struct iio_buffer;
 struct iio_scan;
+struct iio_stream;
 
 /**
  * @enum iio_log_level
@@ -1495,6 +1496,40 @@ __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
  * @param block A pointer to an iio_block structure
  * @return A pointer to an iio_buffer structure */
 __api struct iio_buffer * iio_block_get_buffer(const struct iio_block *block);
+
+
+/** @} *//* ------------------------------------------------------------------*/
+/* ------------------------- Stream functions --------------------------------*/
+/** @defgroup Stream Stream
+ * @{
+ * @struct iio_stream
+ * @brief A helper object to simplify reading/writing to a iio_buffer */
+
+
+/** @brief Create a iio_stream object for the given iio_buffer
+ * @param buffer A pointer to an iio_buffer structure
+ * @param nb_blocks The number of iio_block objects to create, internally.
+ *   In doubt, a good value is 4.
+ * @param samples_count The size of the iio_block objects, in samples
+ * @return On success, a pointer to an iio_stream structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret struct iio_stream *
+iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
+			 size_t samples_count);
+
+
+/** @brief Destroy the given stream object
+ * @param stream A pointer to an iio_stream structure */
+__api void
+iio_stream_destroy(struct iio_stream *stream);
+
+
+/** @brief Get a pointer to the next data block
+ * @param stream A pointer to an iio_stream structure
+ * @return On success, a pointer to an iio_block structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret const struct iio_block *
+iio_stream_get_next_block(struct iio_stream *stream);
 
 
 /** @} *//* ------------------------------------------------------------------*/
