@@ -33,6 +33,8 @@
 
 #define NB_BLOCKS 4
 
+#define IIO_BUFFER_GET_FD_IOCTL		_IOWR('i', 0x91, int)
+
 #define BLOCK_ALLOC_IOCTL   _IOWR('i', 0xa0, struct block_alloc_req)
 #define BLOCK_FREE_IOCTL      _IO('i', 0xa1)
 #define BLOCK_QUERY_IOCTL   _IOWR('i', 0xa2, struct block)
@@ -93,6 +95,14 @@ struct iio_channel_pdata {
 	unsigned int nb_protected_attrs;
 };
 
+struct iio_buffer_pdata {
+	const struct iio_device *dev;
+	int fd, cancel_fd;
+	unsigned int idx;
+	bool multi_buffer;
+	size_t size;
+};
+
 static const char * const device_attrs_blacklist[] = {
 	"dev",
 	"uevent",
@@ -148,7 +158,6 @@ static void local_shutdown(struct iio_context *ctx)
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
 
-		iio_device_close(dev);
 		local_free_pdata(dev);
 	}
 }
@@ -263,15 +272,15 @@ static int get_rel_timeout_ms(struct timespec *start, unsigned int timeout_rel)
 	return (int) timeout_rel;
 }
 
-static int device_check_ready(const struct iio_device *dev, short events,
-	struct timespec *start)
+static int device_check_ready(const struct iio_device *dev, int fd, int cancel_fd,
+			      short events, struct timespec *start)
 {
 	struct pollfd pollfd[2] = {
 		{
-			.fd = dev->pdata->fd,
+			.fd = fd,
 			.events = events,
 		}, {
-			.fd = dev->pdata->cancel_fd,
+			.fd = cancel_fd,
 			.events = POLLIN,
 		}
 	};
@@ -301,9 +310,71 @@ static int device_check_ready(const struct iio_device *dev, short events,
 	return 0;
 }
 
-static ssize_t local_read(const struct iio_device *dev,
-			  void *dst, size_t len,
-			  struct iio_channels_mask *mask)
+static int
+local_set_buffer_size(const struct iio_buffer_pdata *pdata, size_t nb_samples)
+{
+	char buf[32];
+	ssize_t ret;
+
+	iio_snprintf(buf, sizeof(buf), "%zu", nb_samples);
+
+	ret = local_write_dev_attr(pdata->dev, pdata->idx, "length",
+				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
+	if (ret < 0)
+		return (int) ret;
+
+	return 0;
+}
+
+static int
+local_set_watermark(const struct iio_buffer_pdata *pdata, size_t nb_samples)
+{
+	char buf[32];
+	ssize_t ret;
+
+	iio_snprintf(buf, sizeof(buf), "%zu", nb_samples);
+
+	ret = local_write_dev_attr(pdata->dev, pdata->idx, "watermark",
+				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
+	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
+		return (int) ret;
+
+	return 0;
+}
+
+static int local_do_enable_buffer(struct iio_buffer_pdata *pdata, bool enable)
+{
+	int ret;
+
+	ret = (int) local_write_dev_attr(pdata->dev, pdata->idx, "enable",
+					 enable ? "1" : "0",
+					 2, IIO_ATTR_TYPE_BUFFER);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int local_enable_buffer(struct iio_buffer_pdata *pdata,
+			       size_t nb_samples, bool enable)
+{
+	int ret;
+
+	if (nb_samples) {
+		ret = local_set_buffer_size(pdata, nb_samples);
+		if (ret)
+			return ret;
+
+		ret = local_set_watermark(pdata, nb_samples);
+		if (ret)
+			return ret;
+	}
+
+	return local_do_enable_buffer(pdata, true);
+}
+
+static ssize_t local_do_read(const struct iio_device *dev, int fd, int cancel_fd,
+			     void *dst, size_t len, struct iio_channels_mask *mask)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	uintptr_t ptr = (uintptr_t) dst;
@@ -311,12 +382,14 @@ static ssize_t local_read(const struct iio_device *dev,
 	ssize_t readsize;
 	ssize_t ret;
 
-	if (pdata->fd == -1)
+	if (fd == -1)
 		return -EBADF;
 
-	ret = iio_channels_mask_copy(mask, dev->mask);
-	if (ret < 0)
-		return ret;
+	if (mask) {
+		ret = iio_channels_mask_copy(mask, dev->mask);
+		if (ret < 0)
+			return ret;
+	}
 
 	if (len == 0)
 		return 0;
@@ -324,12 +397,12 @@ static ssize_t local_read(const struct iio_device *dev,
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	while (len > 0) {
-		ret = device_check_ready(dev, POLLIN, &start);
+		ret = device_check_ready(dev, fd, cancel_fd, POLLIN, &start);
 		if (ret < 0)
 			break;
 
 		do {
-			ret = read(pdata->fd, (void *) ptr, len);
+			ret = read(fd, (void *) ptr, len);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1) {
@@ -353,8 +426,24 @@ static ssize_t local_read(const struct iio_device *dev,
 		return ret;
 }
 
-static ssize_t local_write(const struct iio_device *dev,
-		const void *src, size_t len)
+static ssize_t local_read(const struct iio_device *dev,
+			  void *dst, size_t len,
+			  struct iio_channels_mask *mask)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+
+	return local_do_read(dev, pdata->fd, pdata->cancel_fd, dst, len, mask);
+}
+
+static ssize_t local_readbuf(struct iio_buffer_pdata *buffer,
+			     void *dst, size_t len)
+{
+	return local_do_read(buffer->dev, buffer->fd, buffer->cancel_fd,
+			     dst, len, NULL);
+}
+
+static ssize_t local_do_write(const struct iio_device *dev, int fd,
+			      int cancel_fd, const void *src, size_t len)
 {
 	struct iio_device_pdata *pdata = dev->pdata;
 	uintptr_t ptr = (uintptr_t) src;
@@ -362,7 +451,7 @@ static ssize_t local_write(const struct iio_device *dev,
 	ssize_t writtensize;
 	ssize_t ret;
 
-	if (pdata->fd == -1)
+	if (fd == -1)
 		return -EBADF;
 
 	if (len == 0)
@@ -371,12 +460,12 @@ static ssize_t local_write(const struct iio_device *dev,
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	while (len > 0) {
-		ret = device_check_ready(dev, POLLOUT, &start);
+		ret = device_check_ready(dev, fd, cancel_fd, POLLOUT, &start);
 		if (ret < 0)
 			break;
 
 		do {
-			ret = write(pdata->fd, (void *) ptr, len);
+			ret = write(fd, (void *) ptr, len);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1) {
@@ -399,6 +488,22 @@ static ssize_t local_write(const struct iio_device *dev,
 		return writtensize;
 	else
 		return ret;
+}
+
+static ssize_t
+local_write(const struct iio_device *dev, const void *src, size_t len)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+
+	return local_do_write(dev, pdata->fd, pdata->cancel_fd, src, len);
+}
+
+static ssize_t
+local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
+{
+	const struct iio_device *dev = buffer->dev;
+
+	return local_do_write(dev, buffer->fd, buffer->cancel_fd, src, len);
 }
 
 static int local_buffer_enabled_set(const struct iio_device *dev, bool en)
@@ -472,7 +577,8 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	do {
-		ret = (ssize_t) device_check_ready(dev, POLLIN | POLLOUT, &start);
+		ret = (ssize_t) device_check_ready(dev, pdata->fd, pdata->cancel_fd,
+						   POLLIN | POLLOUT, &start);
 		if (ret < 0)
 			return ret;
 
@@ -628,8 +734,10 @@ static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 				    src, len, IIO_ATTR_TYPE_DEVICE);
 }
 
-static int channel_write_state(const struct iio_channel *chn, bool en)
+static int channel_write_state(const struct iio_channel *chn,
+			       unsigned int idx, bool en)
 {
+	enum iio_attr_type type = idx ? IIO_ATTR_TYPE_BUFFER : IIO_ATTR_TYPE_DEVICE;
 	ssize_t ret;
 
 	if (!chn->pdata->enable_fn) {
@@ -637,7 +745,8 @@ static int channel_write_state(const struct iio_channel *chn, bool en)
 		return -EINVAL;
 	}
 
-	ret = local_write_chn_attr(chn, chn->pdata->enable_fn, en ? "1" : "0", 2);
+	ret = local_write_dev_attr(chn->dev, idx, chn->pdata->enable_fn,
+				   en ? "1" : "0", 2, type);
 	if (ret < 0)
 		return (int) ret;
 	else
@@ -736,6 +845,20 @@ err_freemem:
 	return ret;
 }
 
+static int channel_read_state(const struct iio_channel *chn, unsigned int idx)
+{
+	enum iio_attr_type type = idx ? IIO_ATTR_TYPE_BUFFER : IIO_ATTR_TYPE_DEVICE;
+	char buf[8];
+	int err;
+
+	err = local_read_dev_attr(chn->dev, idx, chn->pdata->enable_fn,
+				  buf, sizeof(buf), type);
+	if (err < 0)
+		return err;
+
+	return buf[0] == '1';
+}
+
 static int local_close(const struct iio_device *dev);
 
 static int local_open(const struct iio_device *dev,
@@ -785,7 +908,7 @@ static int local_open(const struct iio_device *dev,
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
 		if (chn->index >= 0 && !iio_channel_is_enabled(chn, mask)) {
-			ret = channel_write_state(chn, false);
+			ret = channel_write_state(chn, 0, false);
 			if (ret < 0)
 				goto err_close;
 		}
@@ -794,7 +917,7 @@ static int local_open(const struct iio_device *dev,
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
 		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
-			ret = channel_write_state(chn, true);
+			ret = channel_write_state(chn, 0, true);
 			if (ret < 0)
 				goto err_close;
 		}
@@ -906,7 +1029,7 @@ static int local_close(const struct iio_device *dev)
 		if (!chn->pdata->enable_fn)
 			continue;
 
-		ret1 = channel_write_state(chn, false);
+		ret1 = channel_write_state(chn, 0, false);
 		if (ret1 == 0)
 			continue;
 
@@ -1765,6 +1888,19 @@ static void local_cancel(const struct iio_device *dev)
 	}
 }
 
+static void local_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+	const struct iio_device *dev = pdata->dev;
+	uint64_t event = 1;
+	int ret;
+
+	ret = write(pdata->cancel_fd, &event, sizeof(event));
+	if (ret == -1) {
+		/* If this happens something went very seriously wrong */
+		dev_perror(dev, -errno, "Unable to signal cancellation event");
+	}
+}
+
 static struct iio_context * local_clone(const struct iio_context *ctx)
 {
 	return local_create_context(&ctx->params, "");
@@ -1789,6 +1925,107 @@ static char * local_get_description(const struct iio_context *ctx)
 	return description;
 }
 
+static struct iio_buffer_pdata *
+local_create_buffer(const struct iio_device *dev, unsigned int idx,
+		    struct iio_channels_mask *mask)
+{
+	struct iio_buffer_pdata *pdata;
+	const struct iio_channel *chn;
+	char buf[1024];
+	int err, fd, cancel_fd, new_fd = idx;
+	unsigned int i;
+
+	pdata = zalloc(sizeof(*pdata));
+	if (!pdata)
+		return iio_ptr(-ENOMEM);
+
+	pdata->dev = dev;
+
+	cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+	if (cancel_fd == -1) {
+		err = -errno;
+		goto err_free_pdata;
+	}
+
+	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
+	fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
+	if (fd == -1) {
+		err = -errno;
+		goto err_close_eventfd;
+	}
+
+	err = ioctl_nointr(fd, IIO_BUFFER_GET_FD_IOCTL, &new_fd);
+	if (err == 0) {
+		close(fd);
+		fd = new_fd;
+		pdata->multi_buffer = true;
+	} else if (idx > 0) {
+		goto err_close;
+	}
+
+	pdata->cancel_fd = cancel_fd;
+	pdata->fd = fd;
+	pdata->idx = idx;
+
+	/* Disable buffer */
+	err = local_do_enable_buffer(pdata, false);
+	if (err < 0)
+		goto err_close;
+
+	/* Disable all channels */
+	for (i = 0; i < dev->nb_channels; i++) {
+		chn = dev->channels[i];
+		if (chn->index >= 0) {
+			err = channel_write_state(chn, idx, false);
+			if (err < 0)
+				goto err_close;
+		}
+	}
+
+	/* Enable channels */
+	for (i = 0; i < dev->nb_channels; i++) {
+		chn = dev->channels[i];
+		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
+			err = channel_write_state(chn, idx, true);
+			if (err < 0)
+				goto err_close;
+		}
+	}
+
+	/* Finally, update the channels mask by reading the hardware again,
+	 * since some channels may be coupled together. */
+	for (i = 0; i < dev->nb_channels; i++) {
+		chn = dev->channels[i];
+		if (chn->index >= 0) {
+			err = channel_read_state(chn, idx);
+			if (err < 0)
+				goto err_close;
+
+			if (err > 0)
+				iio_channel_enable(chn, mask);
+		}
+	}
+
+	return pdata;
+
+err_close:
+	close(fd);
+err_close_eventfd:
+	close(cancel_fd);
+err_free_pdata:
+	free(pdata);
+	return iio_ptr(err);
+}
+
+static void local_free_buffer(struct iio_buffer_pdata *pdata)
+{
+	close(pdata->fd);
+	close(pdata->cancel_fd);
+	local_do_enable_buffer(pdata, false);
+
+	free(pdata);
+}
+
 static const struct iio_backend_ops local_ops = {
 	.scan = local_context_scan,
 	.create = local_create_context,
@@ -1810,6 +2047,14 @@ static const struct iio_backend_ops local_ops = {
 	.shutdown = local_shutdown,
 	.set_timeout = local_set_timeout,
 	.cancel = local_cancel,
+
+	.create_buffer = local_create_buffer,
+	.free_buffer = local_free_buffer,
+	.enable_buffer = local_enable_buffer,
+	.cancel_buffer = local_cancel_buffer,
+
+	.readbuf = local_readbuf,
+	.writebuf = local_writebuf,
 };
 
 const struct iio_backend iio_local_backend = {
