@@ -64,11 +64,14 @@ static inline uint32_t iio_htobe32(uint32_t word)
  * may need to be updated.
  */
 
+struct iio_buffer_pdata;
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
 struct iio_directory;
 struct iio_module;
+struct iio_mutex;
+struct iio_task;
 
 struct iio_channel_attr {
 	char *name;
@@ -142,6 +145,8 @@ struct iio_device {
 
 struct iio_buffer {
 	const struct iio_device *dev;
+	struct iio_buffer_pdata *pdata;
+
 	void *buffer, *userdata;
 	size_t length, data_length;
 
@@ -149,6 +154,16 @@ struct iio_buffer {
 	unsigned int dev_sample_size;
 	unsigned int sample_size;
 	bool dev_is_high_speed;
+
+	unsigned int idx;
+
+	struct iio_task *worker;
+
+	size_t block_size;
+
+	/* Mutex to protext nb_blocks. Should really be an atomic... */
+	struct iio_mutex *lock;
+	unsigned int nb_blocks;
 };
 
 struct iio_context_info {
@@ -262,5 +277,7 @@ static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
 }
 
 bool iio_channel_is_hwmon(const char *id);
+
+int iio_block_io(struct iio_block *block);
 
 #endif /* __IIO_PRIVATE_H__ */

@@ -47,6 +47,8 @@
 struct iio_device;
 struct iio_context;
 struct iio_channel;
+struct iio_block_pdata;
+struct iio_buffer_pdata;
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
@@ -108,6 +110,29 @@ struct iio_backend_ops {
 			unsigned int *minor, char git_tag[8]);
 
 	int (*set_timeout)(struct iio_context *ctx, unsigned int timeout);
+
+	struct iio_buffer_pdata *(*create_buffer)(const struct iio_device *dev,
+						  unsigned int idx,
+						  struct iio_channels_mask *mask);
+	void (*free_buffer)(struct iio_buffer_pdata *pdata);
+	int (*enable_buffer)(struct iio_buffer_pdata *pdata,
+			     size_t nb_samples, bool enable);
+	void (*cancel_buffer)(struct iio_buffer_pdata *pdata);
+
+	ssize_t (*readbuf)(struct iio_buffer_pdata *pdata,
+			   void *dst, size_t len);
+	ssize_t (*writebuf)(struct iio_buffer_pdata *pdata,
+			    const void *src, size_t len);
+
+	struct iio_block_pdata *(*create_block)(struct iio_buffer_pdata *pdata,
+						size_t size, void **data);
+	void (*free_block)(struct iio_block_pdata *pdata);
+
+	int (*enqueue_block)(struct iio_block_pdata *pdata,
+			     size_t bytes_used, bool cyclic);
+	int (*dequeue_block)(struct iio_block_pdata *pdata, bool nonblock);
+
+	int (*get_dmabuf_fd)(struct iio_block_pdata *pdata);
 };
 
 /**

@@ -10,7 +10,13 @@
 #include "iio-private.h"
 
 #include <errno.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 #include <string.h>
+
+#undef iio_device_create_buffer
+#undef iio_buffer_cancel
+#undef iio_buffer_destroy
 
 static bool device_is_high_speed(const struct iio_device *dev)
 {
@@ -199,7 +205,9 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 		  start = ptr,
 		  end = ptr + buffer->data_length;
 	const struct iio_device *dev = buffer->dev;
-	ssize_t processed = 0;
+	const struct iio_channel *chn;
+	unsigned int i, length;
+	ssize_t ret, processed = 0;
 
 	if (buffer->sample_size == 0)
 		return -EINVAL;
@@ -208,11 +216,9 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 		return 0;
 
 	while (end - ptr >= (size_t) buffer->sample_size) {
-		unsigned int i;
-
 		for (i = 0; i < dev->nb_channels; i++) {
-			const struct iio_channel *chn = dev->channels[i];
-			unsigned int length = chn->format.length / 8;
+			chn = dev->channels[i];
+			length = chn->format.length / 8;
 
 			if (chn->index < 0)
 				break;
@@ -224,15 +230,11 @@ ssize_t iio_buffer_foreach_sample(struct iio_buffer *buffer,
 			if ((ptr - start) % length)
 				ptr += length - ((ptr - start) % length);
 
-			/* Test if the client wants samples from this channel */
-			if (iio_channels_mask_test_bit(dev->mask, chn->number)) {
-				ssize_t ret = callback(chn,
-						(void *) ptr, length, d);
-				if (ret < 0)
-					return ret;
-				else
-					processed += ret;
-			}
+			ret = callback(chn, (void *) ptr, length, d);
+			if (ret < 0)
+				return ret;
+			else
+				processed += ret;
 
 			if (i == dev->nb_channels - 1 || dev->channels[
 					i + 1]->index != chn->index)
@@ -316,4 +318,154 @@ void iio_buffer_cancel(struct iio_buffer *buf)
 
 	if (ops->cancel)
 		ops->cancel(buf->dev);
+}
+
+void _iio_buffer_cancel(struct iio_buffer *buf)
+{
+	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
+
+	iio_task_stop(buf->worker);
+
+	if (ops->cancel_buffer)
+		ops->cancel_buffer(buf->pdata);
+
+	iio_task_flush(buf->worker);
+}
+
+static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
+{
+	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
+	size_t sample_size, nb_samples = 0;
+
+	if (buf->block_size) {
+		sample_size = iio_device_get_sample_size(buf->dev, buf->mask);
+		nb_samples = buf->block_size / sample_size;
+	}
+
+	if (ops->enable_buffer)
+		return ops->enable_buffer(buf->pdata, nb_samples, enabled);
+
+	return -ENOSYS;
+}
+
+int iio_buffer_enable(struct iio_buffer *buffer)
+{
+	int err;
+
+	if (buffer->nb_blocks == 0) {
+		dev_err(buffer->dev,
+			"Cannot enable buffer before creating blocks.\n");
+		return -EINVAL;
+	}
+
+	err = iio_buffer_set_enabled(buffer, true);
+	if (err < 0 && err != -ENOSYS)
+		return err;
+
+	iio_task_start(buffer->worker);
+
+	return 0;
+}
+
+int iio_buffer_disable(struct iio_buffer *buffer)
+{
+	int err;
+
+	err = iio_buffer_set_enabled(buffer, false);
+	if (err < 0 && err != -ENOSYS)
+		return err;
+
+	iio_task_stop(buffer->worker);
+
+	return 0;
+}
+
+static int iio_buffer_enqueue_worker(void *_, void *d)
+{
+	return iio_block_io(d);
+}
+
+struct iio_buffer *
+_iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
+			  const struct iio_channels_mask *mask)
+{
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+	struct iio_buffer *buf;
+	ssize_t sample_size;
+	int err;
+
+	if (!ops->create_buffer)
+		return iio_ptr(-ENOSYS);
+
+	sample_size = iio_device_get_sample_size(dev, mask);
+	if (sample_size < 0)
+		return iio_ptr((int) sample_size);
+	if (!sample_size)
+		return iio_ptr(-EINVAL);
+
+	buf = zalloc(sizeof(*buf));
+	if (!buf)
+		return iio_ptr(-ENOMEM);
+
+	buf->dev = dev;
+	buf->idx = idx;
+
+	buf->mask = iio_create_channels_mask(dev->nb_channels);
+	if (!buf->mask) {
+		err = -ENOMEM;
+		goto err_free_buf;
+	}
+
+	err = iio_channels_mask_copy(buf->mask, mask);
+	if (err)
+		goto err_free_mask;
+
+	buf->lock = iio_mutex_create();
+	err = iio_err(buf->lock);
+	if (err)
+		goto err_free_mask;
+
+	buf->worker = iio_task_create(iio_buffer_enqueue_worker, NULL,
+				      "iio_buffer_enqueue_worker");
+	err = iio_err(buf->worker);
+	if (err < 0)
+		goto err_free_mutex;
+
+	buf->pdata = ops->create_buffer(dev, idx, buf->mask);
+	err = iio_err(buf->pdata);
+	if (err < 0)
+		goto err_destroy_worker;
+
+	return buf;
+
+err_destroy_worker:
+	iio_task_destroy(buf->worker);
+err_free_mutex:
+	iio_mutex_destroy(buf->lock);
+err_free_mask:
+	iio_channels_mask_destroy(buf->mask);
+err_free_buf:
+	free(buf);
+	return iio_ptr(err);
+}
+
+void _iio_buffer_destroy(struct iio_buffer *buf)
+{
+	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
+
+	_iio_buffer_cancel(buf);
+
+	if (ops->free_buffer)
+		ops->free_buffer(buf->pdata);
+
+	iio_task_destroy(buf->worker);
+	iio_mutex_destroy(buf->lock);
+	iio_channels_mask_destroy(buf->mask);
+	free(buf);
+}
+
+const struct iio_channels_mask *
+iio_buffer_get_channels_mask(struct iio_buffer *buf)
+{
+	return buf->mask;
 }

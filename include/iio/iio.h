@@ -86,6 +86,7 @@ typedef ptrdiff_t ssize_t;
 
 #endif /* DOXYGEN */
 
+struct iio_block;
 struct iio_context;
 struct iio_device;
 struct iio_channel;
@@ -1168,6 +1169,18 @@ __api __check_ret struct iio_buffer * iio_device_create_buffer(const struct iio_
 		size_t samples_count, bool cyclic);
 
 
+/** @brief Create an input or output buffer associated to the given device
+ * @param dev A pointer to an iio_device structure
+ * @param idx The index of the hardware buffer. Should be 0 in most cases.
+ * @param mask A pointer to an iio_channels_mask structure
+ * @return On success, a pointer to an iio_buffer structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret struct iio_buffer *
+_iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
+			  const struct iio_channels_mask *mask);
+#define iio_device_create_buffer(dev, idx, mask) _iio_device_create_buffer(dev, idx, mask)
+
+
 /** @brief Destroy the given buffer
  * @param buf A pointer to an iio_buffer structure
  *
@@ -1317,6 +1330,172 @@ __api void iio_buffer_set_data(struct iio_buffer *buf, void *data);
  * @param buf A pointer to an iio_buffer structure
  * @return The pointer previously associated if present, or NULL */
 __api void * iio_buffer_get_data(const struct iio_buffer *buf);
+
+
+/** @brief Destroy the given buffer
+ * @param buf A pointer to an iio_buffer structure */
+__api void _iio_buffer_destroy(struct iio_buffer *buf);
+#define iio_buffer_destroy(buf) _iio_buffer_destroy(buf)
+
+
+/** @brief Cancel all buffer operations
+ * @param buf The buffer for which operations should be canceled
+ *
+ * This function cancels all outstanding buffer operations previously scheduled.
+ * This means that any pending iio_block_enqueue() or iio_block_dequeue()
+ * operation will abort and return immediately, any further invocation of these
+ * functions on the same buffer will return immediately with an error.
+ *
+ * Usually iio_block_dequeue() will block until all data has been transferred
+ * or a timeout occurs. This can depending on the configuration take a
+ * significant amount of time. _iio_buffer_cancel() is useful to bypass these
+ * conditions if the buffer operation is supposed to be stopped in response to
+ * an external event (e.g. user input).
+ *
+ * To be able to transfer additional data after calling this function the buffer
+ * should be destroyed and then re-created.
+ *
+ * This function can be called multiple times for the same buffer, but all but
+ * the first invocation will be without additional effect.
+ *
+ * This function is thread-safe, but not signal-safe, i.e. it must not be called
+ * from a signal handler.
+ */
+__api void _iio_buffer_cancel(struct iio_buffer *buf);
+#define iio_buffer_cancel(buf) _iio_buffer_cancel(buf)
+
+
+/** @brief Enable the buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, 0
+ * @return On error, a negative error code is returned */
+__api __check_ret int iio_buffer_enable(struct iio_buffer *buf);
+
+
+/** @brief Disable the buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, 0
+ * @return On error, a negative error code is returned */
+__api int iio_buffer_disable(struct iio_buffer *buf);
+
+
+/** @brief Retrieve a mask of the channels enabled for the given buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return A pointer to an iio_channels_mask structure
+ *
+ * <b>NOTE:</b> The mask returned may contain more enabled channels than
+ * the mask used for creating the buffer. */
+__api const struct iio_channels_mask *
+iio_buffer_get_channels_mask(struct iio_buffer *buf);
+
+
+/** @} *//* ------------------------------------------------------------------*/
+/* -------------------------- Block functions --------------------------------*/
+/** @defgroup Block Block
+ * @{
+ * @struct iio_block
+ * @brief A block of memory containing data samples */
+
+
+/** @brief Create a data block for the given buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @param size The size of the block to create, in bytes
+ * @return On success, a pointer to an iio_block structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret struct iio_block *
+iio_buffer_create_block(struct iio_buffer *buffer, size_t size);
+
+
+/** @brief Destroy the given block
+ * @param block A pointer to an iio_block structure */
+__api void iio_block_destroy(struct iio_block *block);
+
+
+/** @brief Get the start address of the block
+ * @param buf A pointer to an iio_block structure
+ * @return A pointer corresponding to the start address of the block */
+__api void *iio_block_start(const struct iio_block *block);
+
+
+/** @brief Find the first sample of a channel in a block
+ * @param buf A pointer to an iio_block structure
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to the first sample found, or to the end of the block if
+ * no sample for the given channel is present in the block
+ *
+ * <b>NOTE:</b> This function, coupled with iio_block_end, can be used to
+ * iterate on all the samples of a given channel present in the block, doing
+ * the following:
+ *
+ * @verbatim
+ for (void *ptr = iio_block_first(block, chn);
+      ptr < iio_block_end(block);
+      ptr += iio_device_get_sample_size(dev, mask)) {
+    ....
+ }
+ @endverbatim
+
+ The iio_channel passed as argument must be from the iio_device that was used to
+ create the iio_buffer and then the iio_block, otherwise the result is
+ undefined. */
+__api void *iio_block_first(const struct iio_block *block,
+			    const struct iio_channel *chn);
+
+
+/** @brief Get the address after the last sample in a block
+ * @param block A pointer to an iio_block structure
+ * @return A pointer corresponding to the address that follows the last sample
+ * present in the buffer */
+__api void *iio_block_end(const struct iio_block *block);
+
+
+/** @brief Call the supplied callback for each sample found in a block
+ * @param block A pointer to an iio_block structure
+ * @param callback A pointer to a function to call for each sample found
+ * @param data A user-specified pointer that will be passed to the callback
+ * @return number of bytes processed.
+ *
+ * <b>NOTE:</b> The callback receives four arguments:
+ * * A pointer to the iio_channel structure corresponding to the sample,
+ * * A pointer to the sample itself,
+ * * The length of the sample in bytes,
+ * * The user-specified pointer passed to iio_block_foreach_sample. */
+__api __check_ret ssize_t
+iio_block_foreach_sample(const struct iio_block *block,
+			 const struct iio_channels_mask *mask,
+			 ssize_t (*callback)(const struct iio_channel *chn,
+					     void *src, size_t bytes, void *d),
+			 void *data);
+
+
+/** @brief Enqueue the given iio_block to the buffer's queue
+ * @param block A pointer to an iio_block structure
+ * @param bytes_used The size of the data from the iio_block to be written,
+ *   in bytes
+ * @param cyclic If True, enable cyclic mode. The block's content will be
+ * repeated on the hardware's output until the buffer is cancelled or destroyed.
+ * @return On success, 0 is returned
+ * @return On error, a negative error code is returned
+ *
+ * <b>NOTE:</b> After iio_block_enqueue is called, the block's data must not be
+ * accessed until iio_block_dequeue successfully returns. */
+__api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic);
+
+
+/** @brief Dequeue the given iio_block from the buffer's queue
+ * @param block A pointer to an iio_block structure
+ * @param nonblock if True, the operation won't block and return -EBUSY if
+ *   the block is not ready for dequeue.
+ * @return On success, 0 is returned
+ * @return On error, a negative error code is returned */
+__api int iio_block_dequeue(struct iio_block *block, bool nonblock);
+
+
+/** @brief Retrieve a pointer to the iio_buffer structure
+ * @param block A pointer to an iio_block structure
+ * @return A pointer to an iio_buffer structure */
+__api struct iio_buffer * iio_block_get_buffer(const struct iio_block *block);
+
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ---------------------------- HWMON support --------------------------------*/
