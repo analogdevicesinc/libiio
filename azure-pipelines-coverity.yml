@@ -107,7 +107,7 @@ jobs:
         Invoke-WebRequest `
           -Uri "https://scan.coverity.com/download/cxx/win_64" `
           -Body @{
-            project = "analogdevicesinc-libiio"
+            project = "analogdevicesinc/libiio"
             token = "${env:COVERITY_SCAN_TOKEN}"
           } `
           -OutFile "cov-analysis-win64.zip"
