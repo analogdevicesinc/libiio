@@ -103,10 +103,12 @@ jobs:
     inputs:
       targetType: inline
       script: |
-        curl -d "token=$(COVERITY_SCAN_TOKEN_WIN)&project=${COVERITY_SCAN_PROJECT_NAME}" -L https://scan.coverity.com/download/cxx/win64 -o cov-analysis-win64.zip
-        7z x cov-analysis-win64.zip
+        cd $(Agent.ToolsDirectory)
+        curl -d "token=$(COVERITY_SCAN_TOKEN)&project=analogdevicesinc-libiio" -L https://scan.coverity.com/download/cxx/win64 -o cov-analysis-win64.zip
+        unzip cov-analysis-win64.zip
         del cov-analysis-win64.zip
         move cov-analysis-win64* cov-analysis-win64
+        $env:Path = "$(Agent.ToolsDirectory)/cov-analysis-win64" + $env:Path
   - task: PowerShell@2
     displayName: 'Configure with CMake'
     inputs:
