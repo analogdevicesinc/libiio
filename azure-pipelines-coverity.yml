@@ -108,7 +108,7 @@ jobs:
           -Uri "https://scan.coverity.com/download/cxx/win_64" `
           -Body @{
             project = "analogdevicesinc-libiio"
-            token = "$(COVERITY_SCAN_TOKEN)"
+            token = "${env:COVERITY_SCAN_TOKEN}"
           } `
           -OutFile "cov-analysis-win64.zip"
         unzip cov-analysis-win64.zip
