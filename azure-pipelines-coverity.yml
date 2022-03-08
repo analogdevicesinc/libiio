@@ -104,7 +104,13 @@ jobs:
       targetType: inline
       script: |
         cd $(Agent.ToolsDirectory)
-        curl -d "token=$(COVERITY_SCAN_TOKEN)&project=analogdevicesinc-libiio" -L https://scan.coverity.com/download/cxx/win64 -o cov-analysis-win64.zip
+        Invoke-WebRequest `
+          -Uri "https://scan.coverity.com/download/cxx/win_64" `
+          -Body @{
+            project = "analogdevicesinc-libiio"
+            token = "$(COVERITY_SCAN_TOKEN)"
+          } `
+          -OutFile "cov-analysis-win64.zip"
         unzip cov-analysis-win64.zip
         del cov-analysis-win64.zip
         move cov-analysis-win64* cov-analysis-win64
