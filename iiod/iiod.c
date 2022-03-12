@@ -72,6 +72,7 @@ static const struct option options[] = {
 	  {"nb-pipes", required_argument, 0, 'n'},
 	  {"serial", required_argument, 0, 's'},
 	  {"port", required_argument, 0, 'p'},
+	  {"uri", required_argument, 0, 'u'},
 	  {0, 0, 0, 0},
 };
 
@@ -86,6 +87,11 @@ static const char *options_descriptions[] = {
 	"Specify the number of USB pipes (ep couples) to use",
 	"Run " MY_NAME " on the specified UART.",
 	"Port to listen on (default = " STRINGIFY(IIOD_PORT) ").",
+	("Use the context at the provided URI."
+		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
+		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
+		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
+		"\n\t\t\t    'local:' (default)"),
 };
 
 static void usage(void)
@@ -369,6 +375,7 @@ int main(int argc, char **argv)
 	bool debug = false, interactive = false, use_aio = false;
 	long nb_pipes = 3, val;
 	char *end;
+	const char *arg = "local:";
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
@@ -379,7 +386,7 @@ int main(int argc, char **argv)
 	uint16_t port = IIOD_PORT;
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:p:",
+	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:p:u:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -437,6 +444,9 @@ int main(int argc, char **argv)
 			}
 			port = (uint16_t)val;
 			break;
+		case 'u':
+			arg = optarg;
+			break;
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
@@ -449,7 +459,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ctx = iio_create_local_context();
+	ctx = iio_create_context_from_uri(arg);
+
 	if (!ctx) {
 		iio_strerror(errno, err_str, sizeof(err_str));
 		IIO_ERROR("Unable to create local context: %s\n", err_str);
