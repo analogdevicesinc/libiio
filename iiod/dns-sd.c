@@ -38,6 +38,7 @@ static struct avahi_data {
 	AvahiClient *client;
 	AvahiEntryGroup *group;
 	char * name;
+	uint16_t port;
 } avahi;
 
 static void create_services(AvahiClient *c);
@@ -85,8 +86,8 @@ static void __avahi_group_cb(AvahiEntryGroup *group,
 
 	switch (state) {
 		case AVAHI_ENTRY_GROUP_ESTABLISHED :
-			IIO_INFO("Avahi: Service '%s' successfully established.\n",
-					avahi.name);
+			IIO_INFO("Avahi: Service '%s:%hu' successfully established.\n",
+					avahi.name, avahi.port);
 			break;
 		case AVAHI_ENTRY_GROUP_COLLISION : {
 			char *n;
@@ -94,8 +95,8 @@ static void __avahi_group_cb(AvahiEntryGroup *group,
 			n = avahi_alternative_service_name(avahi.name);
 			avahi_free(avahi.name);
 			avahi.name = n;
-			IIO_INFO("Avahi: Group Service name collision, renaming service to '%s'\n",
-					avahi.name);
+			IIO_INFO("Avahi: Group Service name collision, renaming service to '%s:%hu'\n",
+					avahi.name, avahi.port);
 			create_services(avahi_entry_group_get_client(group));
 			break;
 		}
@@ -208,7 +209,7 @@ static void create_services(AvahiClient *c)
 
 	ret = avahi_entry_group_add_service(avahi.group,
 			AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-			0, avahi.name, "_iio._tcp", NULL, NULL, IIOD_PORT, NULL);
+			0, avahi.name, "_iio._tcp", NULL, NULL, avahi.port, NULL);
 	if (ret < 0) {
 		if (ret == AVAHI_ERR_COLLISION) {
 			char *n;
@@ -231,8 +232,8 @@ static void create_services(AvahiClient *c)
 		goto fail;
 	}
 
-	IIO_INFO("Avahi: Registered '%s' to ZeroConf server %s\n",
-			avahi.name, avahi_client_get_version_string(c));
+	IIO_INFO("Avahi: Registered '%s:%hu' to ZeroConf server %s\n",
+			avahi.name, avahi.port, avahi_client_get_version_string(c));
 
 	return;
 
@@ -296,7 +297,7 @@ again:
 	}
 }
 
-void start_avahi(struct thread_pool *pool)
+void start_avahi(struct thread_pool *pool, uint16_t port)
 {
 	int ret;
 	char err_str[1024];
@@ -307,6 +308,7 @@ void start_avahi(struct thread_pool *pool)
 	avahi.client = NULL;
 	avahi.group = NULL;
 	avahi.name = NULL;
+	avahi.port = port;
 
 	/* In case dbus, or avahi deamon are not started, we create a thread
 	 * that tries a few times to attach, if it can't within the first
