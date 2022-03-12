@@ -45,11 +45,6 @@
 #include <unistd.h>
 #endif
 
-#define _STRINGIFY(x) #x
-#define STRINGIFY(x) _STRINGIFY(x)
-
-#define IIOD_PORT_STR STRINGIFY(IIOD_PORT)
-
 #ifdef _WIN32
 #define close(s) closesocket(s)
 #define NETWORK_ERR_TIMEOUT WSAETIMEDOUT
@@ -1050,7 +1045,10 @@ struct iio_context * network_create_context(const char *host)
 	size_t uri_len;
 	unsigned int i;
 	int fd, ret;
-	char *description, *uri;
+	char *description, *uri, *end, *port = NULL;
+	char port_str[6];
+	uint16_t port_num = IIOD_PORT;
+
 #ifdef _WIN32
 	WSADATA wsaData;
 
@@ -1061,6 +1059,60 @@ struct iio_context * network_create_context(const char *host)
 		return NULL;
 	}
 #endif
+	/* ipv4 addresses are simply ip:port, e.g. 192.168.1.67:80
+	 * Because IPv6 addresses contain colons, and URLs use colons to separate
+	 * the host from the port number, RFC2732 (Format for Literal IPv6
+	 * Addresses in URL's) specifies that an IPv6 address used as the
+	 * host-part of a URL (our in our case the URI) should be enclosed
+	 * in square brackets, e.g.
+	 * [2001:db8:4006:812::200e] or [2001:db8:4006:812::200e]:8080
+	 * A compressed form allows one string of 0s to be replaced by ‘::'
+	 * e.g.: [FF01:0:0:0:0:0:0:1A2] can be represented by [FF01::1A2]
+	 *
+	 * RFC1123 (Requirements for Internet Hosts) requires valid hostnames to
+	 * only contain the ASCII letters 'a' through 'z' (in a case-insensitive
+	 * manner), the digits '0' through '9', and the hyphen ('-').
+	 *
+	 * We need to distinguish between:
+	 *   - ipv4       192.168.1.67                       Default Port
+	 *   - ipv4:port  192.168.1.67:50000                 Custom Port
+	 *   - ipv6       2001:db8:4006:812::200e            Default Port
+	 *   - [ip6]:port [2001:db8:4006:812::200e]:50000    Custom Port
+	 *
+	 *   We shouldn't test for ipv6 all the time, but it makes it easier.
+	 */
+	if (host) {
+		char *first_colon = strchr(host, ':');
+		char *last_colon = strrchr(host, ':');
+
+		if (!first_colon) {
+			/* IPv4 default address, no port, fall through */
+		} else if (first_colon == last_colon) {
+			/* Single colon, IPv4 non default port */
+			*first_colon = '\0';
+			port = first_colon + 1;
+		} else if (*(last_colon - 1) == ']') {
+			/* IPv6 address with port number starting at (last_colon + 1) */
+			host++;
+			*(last_colon - 1) = '\0';
+			port = last_colon + 1;
+		} else {
+			/* IPv6 address with default port number */
+		}
+	}
+	if (port) {
+		unsigned long int tmp;
+		tmp = strtoul(port, &end, 0);
+		if (port == end || tmp > 0xFFFF) {
+			errno = ENOENT;
+			return NULL;
+		}
+
+		port_num = (uint16_t)tmp;
+	} else {
+		port = port_str;
+		iio_snprintf(port_str, sizeof(port_str), "%hu", port_num);
+	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -1068,10 +1120,8 @@ struct iio_context * network_create_context(const char *host)
 
 	if (HAVE_DNS_SD && (!host || !host[0])) {
 		char addr_str[DNS_SD_ADDRESS_STR_MAX];
-		char port_str[6];
-		uint16_t port = IIOD_PORT;
 
-		ret = dnssd_discover_host(addr_str, sizeof(addr_str), &port);
+		ret = dnssd_discover_host(addr_str, sizeof(addr_str), &port_num);
 		if (ret < 0) {
 			char buf[1024];
 			iio_strerror(-ret, buf, sizeof(buf));
@@ -1085,10 +1135,9 @@ struct iio_context * network_create_context(const char *host)
 			return NULL;
 		}
 
-		iio_snprintf(port_str, sizeof(port_str), "%hu", port);
-		ret = getaddrinfo(addr_str, port_str, &hints, &res);
+		ret = getaddrinfo(addr_str, port, &hints, &res);
 	} else {
-		ret = getaddrinfo(host, IIOD_PORT_STR, &hints, &res);
+		ret = getaddrinfo(host, port, &hints, &res);
 		/*
 		 * It might be an avahi hostname which means that getaddrinfo() will only work if
 		 * nss-mdns is installed on the host and /etc/nsswitch.conf is correctly configured
@@ -1111,7 +1160,7 @@ struct iio_context * network_create_context(const char *host)
 				return NULL;
 			}
 
-			ret = getaddrinfo(addr_str, IIOD_PORT_STR, &hints, &res);
+			ret = getaddrinfo(addr_str, port, &hints, &res);
 		}
 	}
 
