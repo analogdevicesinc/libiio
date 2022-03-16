@@ -39,7 +39,7 @@ struct ThdEntry {
 	struct iio_device *dev;
 	struct DevEntry *entry;
 
-	uint32_t *mask;
+	struct iio_channels_mask *mask;
 	bool active, is_writer, new_client, wait_for_open;
 };
 
@@ -93,12 +93,15 @@ struct DevEntry {
 
 	struct iio_device *dev;
 	struct iio_buffer *buf;
+	struct iio_block **blocks;
 	unsigned int sample_size, nb_clients;
 	unsigned int samples_count;
 	bool update_mask;
 	bool cyclic;
 	bool closed;
 	bool cancelled;
+
+	unsigned int nb_blocks, curr_block;
 
 	/* Linked list of ThdEntry structures corresponding
 	 * to all the threads who opened the device */
@@ -107,14 +110,12 @@ struct DevEntry {
 
 	pthread_cond_t rw_ready_cond;
 
-	uint32_t *mask;
-	size_t nb_words;
+	struct iio_channels_mask *mask;
 };
 
 struct sample_cb_info {
 	struct parser_pdata *pdata;
 	unsigned int nb_bytes, cpt;
-	uint32_t *mask;
 };
 
 /* Protects iio_device_{set,get}_data() from concurrent access from multiple
@@ -381,11 +382,8 @@ static void print_value(struct parser_pdata *pdata, long value)
 static ssize_t send_sample(const struct iio_channel *chn,
 		void *src, size_t length, void *d)
 {
-	unsigned int number = get_channel_number(chn);
 	struct sample_cb_info *info = d;
 
-	if (iio_channel_get_index(chn) < 0 || !TEST_BIT(info->mask, number))
-		return 0;
 	if (info->nb_bytes < length)
 		return 0;
 
@@ -410,11 +408,8 @@ static ssize_t send_sample(const struct iio_channel *chn,
 static ssize_t receive_sample(const struct iio_channel *chn,
 		void *dst, size_t length, void *d)
 {
-	unsigned int number = get_channel_number(chn);
 	struct sample_cb_info *info = d;
 
-	if (iio_channel_get_index(chn) < 0 || !TEST_BIT(info->mask, number))
-		return 0;
 	if (info->cpt == info->nb_bytes)
 		return 0;
 
@@ -440,6 +435,13 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 {
 	struct parser_pdata *pdata = thd->pdata;
 	bool demux = server_demux && dev->sample_size != thd->sample_size;
+	unsigned int i, nb_channels = iio_device_get_channels_count(dev->dev);
+	unsigned int nb_words = (nb_channels + 31) / 32;
+	struct iio_block *block = dev->blocks[dev->curr_block];
+	const struct iio_channels_mask *mask;
+	const struct iio_channel *chn;
+	uint32_t *words;
+	ssize_t ret, length;
 	void *start;
 
 	if (demux)
@@ -450,21 +452,33 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 	print_value(pdata, len);
 
 	if (thd->new_client) {
-		unsigned int i;
 		char buf[129], *ptr = buf;
-		uint32_t *mask = demux ? thd->mask : dev->mask;
-		ssize_t ret, length;
+
+		mask = demux ? thd->mask : dev->mask;
+
+		words = calloc(nb_words, 4);
+		if (!words)
+			return -ENOMEM;
+
+		for (i = 0; i < nb_channels; i++) {
+			chn = iio_device_get_channel(dev->dev, i);
+
+			if (iio_channel_is_enabled(chn, mask))
+				words[BIT_WORD(i)] |= BIT_MASK(i);
+		}
 
 		length = sizeof(buf);
 		/* Send the current mask */
-		for (i = dev->nb_words; i > 0 && ptr < buf + sizeof(buf);
+		for (i = nb_words; i > 0 && ptr < buf + sizeof(buf);
 				i--, ptr += 8) {
-			snprintf(ptr, length, "%08x", mask[i - 1]);
+			snprintf(ptr, length, "%08x", words[i - 1]);
 			length -= 8;
 		}
 
 		*ptr = '\n';
 		length--;
+
+		free(words);
 
 		if (length < 0) {
 			IIO_ERROR("send_data: string length error\n");
@@ -480,23 +494,25 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 	if (!demux) {
 		/* Short path */
-		start = iio_buffer_start(dev->buf);
+		start = iio_block_start(block);
 		return write_all(pdata, start, len);
 	} else {
 		struct sample_cb_info info = {
 			.pdata = pdata,
 			.cpt = 0,
 			.nb_bytes = len,
-			.mask = thd->mask,
 		};
 
-		return iio_buffer_foreach_sample(dev->buf, send_sample, &info);
+		return iio_block_foreach_sample(block, thd->mask,
+						send_sample, &info);
 	}
 }
 
 static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 {
 	struct parser_pdata *pdata = thd->pdata;
+	struct iio_block *block = dev->blocks[dev->curr_block];
+	void *ptr;
 
 	/* Inform that no error occurred, and that we'll start reading data */
 	if (thd->new_client) {
@@ -511,7 +527,9 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 		if (thd->nb < len)
 			len = thd->nb;
 
-		return read_all(pdata, iio_buffer_start(dev->buf), len);
+		ptr = iio_block_start(block);
+
+		return read_all(pdata, ptr, len);
 	} else {
 		/* Long path: Mux the samples to the buffer */
 
@@ -519,11 +537,10 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 			.pdata = pdata,
 			.cpt = 0,
 			.nb_bytes = thd->nb,
-			.mask = thd->mask,
 		};
 
-		return iio_buffer_foreach_sample(dev->buf,
-				receive_sample, &info);
+		return iio_block_foreach_sample(block, thd->mask,
+						receive_sample, &info);
 	}
 }
 
@@ -554,13 +571,81 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 	thd_entry_event_signal(thd);
 }
 
+static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
+				 struct iio_channels_mask *mask)
+{
+	size_t buf_size;
+	const unsigned int nb_blocks = 4;
+	unsigned int i;
+	int err;
+
+	entry->blocks = calloc(nb_blocks, sizeof(*entry->blocks));
+	if (!entry->blocks)
+		return -ENOMEM;
+
+	entry->buf = iio_device_create_buffer(entry->dev, 0, mask);
+	err = iio_err(entry->buf);
+	if (err)
+		goto err_free_blocks_array;
+
+	buf_size = samples_count * iio_device_get_sample_size(entry->dev, mask);
+
+	for (i = 0; i < nb_blocks; i++) {
+		entry->blocks[i] = iio_buffer_create_block(entry->buf, buf_size);
+		err = iio_err(entry->blocks[i]);
+		if (err)
+			goto err_free_blocks;
+	}
+
+	entry->nb_blocks = nb_blocks;
+	entry->curr_block = 0;
+
+	return 0;
+
+err_free_blocks:
+	for (; i; i--)
+	      iio_block_destroy(entry->blocks[i - 1]);
+	iio_buffer_destroy(entry->buf);
+	entry->buf = NULL;
+err_free_blocks_array:
+	free(entry->blocks);
+	entry->blocks = NULL;
+	return err;
+}
+
+static void free_buf_and_blocks(struct DevEntry *entry)
+{
+	unsigned int i;
+
+	if (entry->buf) {
+		IIO_DEBUG("Disable buffer...\n");
+		iio_buffer_disable(entry->buf);
+		IIO_DEBUG("Disabled\n");
+	}
+
+	for (i = 0; i < entry->nb_blocks; i++)
+		if (entry->blocks[i])
+			iio_block_destroy(entry->blocks[i]);
+
+	if (entry->buf) {
+		iio_buffer_destroy(entry->buf);
+		IIO_DEBUG("Buffer destroyed.\n");
+		entry->buf = NULL;
+	}
+
+	free(entry->blocks);
+	entry->nb_blocks = 0;
+}
+
 static void rw_thd(struct thread_pool *pool, void *d)
 {
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd, *next_thd;
 	struct iio_device *dev = entry->dev;
-	unsigned int nb_words = entry->nb_words;
-	ssize_t ret = 0;
+	unsigned int i, nb_channels = iio_device_get_channels_count(dev);
+	struct iio_channel *chn;
+	struct iio_block *block;
+	ssize_t nb_bytes, ret = 0;
 
 	IIO_DEBUG("R/W thread started for device %s\n",
 		  dev_label_or_name_or_id(dev));
@@ -580,40 +665,46 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			unsigned int i;
 			unsigned int samples_count = 0;
 
-			memset(entry->mask, 0, nb_words * sizeof(*entry->mask));
+			free_buf_and_blocks(entry);
+
+			for (i = 0; i < nb_channels; i++) {
+				chn = iio_device_get_channel(dev, i);
+				iio_channel_disable(chn, entry->mask);
+			}
+
 			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
-				for (i = 0; i < nb_words; i++)
-					entry->mask[i] |= thd->mask[i];
+				for (i = 0; i < nb_channels; i++) {
+					chn = iio_device_get_channel(dev, i);
+
+					if (iio_channel_is_enabled(chn, thd->mask))
+						iio_channel_enable(chn, entry->mask);
+				}
 
 				if (thd->samples_count > samples_count)
 					samples_count = thd->samples_count;
 			}
 
-			if (entry->buf)
-				iio_buffer_destroy(entry->buf);
-
-			for (i = 0; i < iio_device_get_channels_count(dev); i++) {
-				struct iio_channel *chn = iio_device_get_channel(dev, i);
-				unsigned int number = get_channel_number(chn);
-				long index = iio_channel_get_index(chn);
-
-				if (index < 0)
-					continue;
-
-				if (TEST_BIT(entry->mask, number))
-					iio_channel_enable(chn);
-				else
-					iio_channel_disable(chn);
-			}
-
-			entry->buf = iio_device_create_buffer(dev,
-					samples_count, entry->cyclic);
-			if (!entry->buf) {
-				ret = -errno;
+			ret = create_buf_and_blocks(entry, samples_count, entry->mask);
+			if (ret) {
 				IIO_ERROR("Unable to create buffer\n");
 				break;
 			}
 			entry->cancelled = false;
+
+			/* Enqueue empty blocks, to make sure they can be queued with data */
+			for (i = 0; !ret && i < entry->nb_blocks; i++)
+				ret = iio_block_enqueue(entry->blocks[i], 0, false);
+
+			if (i < entry->nb_blocks) {
+				IIO_ERROR("Unable to enqueue blocks\n");
+				break;
+			}
+
+			ret = iio_buffer_enable(entry->buf);
+			if (ret) {
+				IIO_ERROR("Unable to enable buffer\n");
+				break;
+			}
 
 			/* Signal the threads that we opened the device */
 			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
@@ -623,13 +714,11 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				}
 			}
 
-			IIO_DEBUG("IIO device %s reopened with new mask:\n",
+			IIO_DEBUG("IIO device %s reopened with new mask\n",
 				  dev_label_or_name_or_id(dev));
-			for (i = 0; i < nb_words; i++)
-				IIO_DEBUG("Mask[%i] = 0x%08x\n", i, entry->mask[i]);
 			entry->update_mask = false;
 
-			entry->sample_size = iio_device_get_sample_size(dev, NULL);
+			entry->sample_size = iio_device_get_sample_size(dev, entry->mask);
 			entry->samples_count = samples_count;
 			mask_updated = true;
 		}
@@ -657,33 +746,32 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		if (!has_readers && !has_writers)
 			continue;
 
+		block = entry->blocks[entry->curr_block];
+
+		ret = iio_block_dequeue(block, false);
+
+		pthread_mutex_lock(&entry->thdlist_lock);
+
+		if (ret < 0) {
+			IIO_ERROR("Unable to dequeue block: %d\n", (int) ret);
+			break;
+		}
+
+		/*
+		 * When the last client disconnects the buffer is
+		 * cancelled and iio_buffer_refill() returns an error. A
+		 * new client might have connected before we got here
+		 * though, in that case the rw thread has to stay active
+		 * and a new buffer is created. If the list is still empty the loop
+		 * will exit normally.
+		 */
+		if (entry->cancelled) {
+			pthread_mutex_unlock(&entry->thdlist_lock);
+			continue;
+		}
+
 		if (has_readers) {
-			ssize_t nb_bytes;
-
-			ret = iio_buffer_refill(entry->buf);
-
-			pthread_mutex_lock(&entry->thdlist_lock);
-
-			/*
-			 * When the last client disconnects the buffer is
-			 * cancelled and iio_buffer_refill() returns an error. A
-			 * new client might have connected before we got here
-			 * though, in that case the rw thread has to stay active
-			 * and a new buffer is created. If the list is still empty the loop
-			 * will exit normally.
-			 */
-			if (entry->cancelled) {
-				pthread_mutex_unlock(&entry->thdlist_lock);
-				continue;
-			}
-
-			if (ret < 0) {
-				IIO_ERROR("Reading from device failed: %i\n",
-						(int) ret);
-				break;
-			}
-
-			nb_bytes = ret;
+			nb_bytes = iio_block_end(block) - iio_block_start(block);
 
 			/* We don't use SLIST_FOREACH here. As soon as a thread is
 			 * signaled, its "thd" structure might be freed;
@@ -704,15 +792,11 @@ static void rw_thd(struct thread_pool *pool, void *d)
 					signal_thread(thd, (ret < 0) ?
 							ret : (ssize_t) thd->nb);
 			}
-
-			pthread_mutex_unlock(&entry->thdlist_lock);
 		}
 
+		nb_bytes = 0;
+
 		if (has_writers) {
-			ssize_t nb_bytes = 0;
-
-			pthread_mutex_lock(&entry->thdlist_lock);
-
 			/* Reset the size of the buffer to its maximum size.
 			 *
 			 * XXX(pcercuei): There is no way to perform this with
@@ -743,19 +827,22 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				if (ret < 0)
 					signal_thread(thd, ret);
 			}
+		}
 
-			ret = iio_buffer_push_partial(entry->buf,
-				nb_bytes / sample_size);
-			if (entry->cancelled) {
-				pthread_mutex_unlock(&entry->thdlist_lock);
-				continue;
-			}
-			if (ret < 0) {
-				IIO_ERROR("Writing to device failed: %i\n",
-						(int) ret);
-				break;
-			}
+		ret = iio_block_enqueue(block, nb_bytes, entry->cyclic);
+		entry->curr_block = (entry->curr_block + 1) % entry->nb_blocks;
 
+		if (entry->cancelled) {
+			pthread_mutex_unlock(&entry->thdlist_lock);
+			continue;
+		}
+
+		if (ret < 0) {
+			IIO_ERROR("Unable to enqueue block: %d\n", (int) ret);
+			break;
+		}
+
+		if (has_writers) {
 			/* Signal threads which completed their RW command */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
 					thd; thd = next_thd) {
@@ -764,9 +851,9 @@ static void rw_thd(struct thread_pool *pool, void *d)
 						thd->nb < sample_size)
 					signal_thread(thd, thd->nb);
 			}
-
-			pthread_mutex_unlock(&entry->thdlist_lock);
 		}
+
+		pthread_mutex_unlock(&entry->thdlist_lock);
 	}
 
 	/* Signal all remaining threads */
@@ -776,10 +863,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		thd->wait_for_open = false;
 		signal_thread(thd, ret);
 	}
-	if (entry->buf) {
-		iio_buffer_destroy(entry->buf);
-		entry->buf = NULL;
-	}
+	free_buf_and_blocks(entry);
 	entry->closed = true;
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
@@ -953,23 +1037,36 @@ static ssize_t get_dev_sample_size_mask(const struct iio_device *dev,
 }
 
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
-			   size_t samples_count, uint32_t *words,
-			   size_t nb_words, bool cyclic)
+			   size_t samples_count, uint32_t *words, bool cyclic)
 {
 	int ret = -ENOMEM;
 	struct DevEntry *entry;
 	struct ThdEntry *thd;
 	unsigned int cyclic_retry = 500;
+	unsigned int i, nb_channels = iio_device_get_channels_count(dev);
+	struct iio_channels_mask *mask;
+	const struct iio_channel *chn;
+
+	mask = iio_create_channels_mask(nb_channels);
+	if (!mask)
+		return -ENOMEM;
+
+	for (i = 0; i < nb_channels; i++) {
+		chn = iio_device_get_channel(dev, i);
+
+		if (TEST_BIT(words, i))
+			iio_channel_enable(chn, mask);
+	}
 
 	thd = zalloc(sizeof(*thd));
 	if (!thd)
-		goto err_free_words;
+		goto err_free_mask;
 
+	thd->mask = mask;
 	thd->wait_for_open = true;
-	thd->mask = words;
 	thd->nb = 0;
 	thd->samples_count = samples_count;
-	thd->sample_size = get_dev_sample_size_mask(dev, words, nb_words);
+	thd->sample_size = iio_device_get_sample_size(dev, mask);
 	thd->pdata = pdata;
 	thd->dev = dev;
 	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -1064,14 +1161,13 @@ retry:
 
 	entry->ref_count = 2; /* One for thread, one for the client */
 
-	entry->mask = malloc(nb_words * sizeof(*words));
+	entry->mask = iio_create_channels_mask(nb_channels);
 	if (!entry->mask) {
 		pthread_mutex_unlock(&devlist_lock);
 		goto err_free_entry;
 	}
 
 	entry->cyclic = cyclic;
-	entry->nb_words = nb_words;
 	entry->update_mask = true;
 	entry->dev = dev;
 	entry->buf = NULL;
@@ -1117,8 +1213,8 @@ err_free_entry:
 err_free_thd:
 	close(thd->eventfd);
 	free(thd);
-err_free_words:
-	free(words);
+err_free_mask:
+	iio_channels_mask_destroy(mask);
 	return ret;
 }
 
@@ -1160,10 +1256,8 @@ int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
 
 	get_mask(mask, len, words);
 
-	ret = open_dev_helper(pdata, dev, samples_count, words, nb_words,
-			      cyclic);
-	if (ret < 0)
-		free(words);
+	ret = open_dev_helper(pdata, dev, samples_count, words, cyclic);
+	free(words);
 
 	print_value(pdata, ret);
 	return ret;
