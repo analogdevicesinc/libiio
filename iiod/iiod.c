@@ -460,8 +460,8 @@ int main(int argc, char **argv)
 	}
 
 	ctx = iio_create_context(NULL, uri);
-	if (!ctx) {
-		iio_strerror(errno, err_str, sizeof(err_str));
+	if (iio_err(ctx)) {
+		iio_strerror(-iio_err(ctx), err_str, sizeof(err_str));
 		IIO_ERROR("Unable to create local context: %s\n", err_str);
 		return EXIT_FAILURE;
 	}
