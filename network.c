@@ -65,6 +65,14 @@ struct iio_device_pdata {
 	struct iiod_client_io *client_io;
 };
 
+struct iio_buffer_pdata {
+	struct iiod_client_pdata io_ctx;
+	struct iiod_client_buffer_pdata *pdata;
+
+	const struct iio_device *dev;
+	struct iiod_client *iiod_client;
+};
+
 static struct iio_context *
 network_create_context(const struct iio_context_params *params,
 		       const char *host);
@@ -143,13 +151,36 @@ static ssize_t network_send(struct iiod_client_pdata *io_ctx, const void *data,
 	return ret;
 }
 
-static void network_cancel(const struct iio_device *dev)
+static void network_cancel(struct iiod_client_pdata *io_ctx)
+{
+	if (!io_ctx->cancelled) {
+		do_cancel(io_ctx);
+		io_ctx->cancelled = true;
+	}
+}
+
+static void network_cancel_legacy(const struct iio_device *dev)
 {
 	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
 
-	do_cancel(&ppdata->io_ctx);
+	network_cancel(&ppdata->io_ctx);
+}
 
-	ppdata->io_ctx.cancelled = true;
+static void network_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+	network_cancel(&pdata->io_ctx);
+}
+
+static ssize_t
+network_readbuf(struct iio_buffer_pdata *pdata, void *dst, size_t len)
+{
+	return iiod_client_readbuf(pdata->pdata, dst, len);
+}
+
+static ssize_t
+network_writebuf(struct iio_buffer_pdata *pdata, const void *src, size_t len)
+{
+	return iiod_client_writebuf(pdata->pdata, src, len);
 }
 
 /* The purpose of this function is to provide a version of connect()
@@ -490,11 +521,7 @@ static void network_shutdown(struct iio_context *ctx)
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	unsigned int i;
 
-	do_cancel(&pdata->io_ctx);
-	pdata->io_ctx.cancelled = true;
-
-	close(pdata->io_ctx.fd);
-	cleanup_cancel(&pdata->io_ctx);
+	network_cancel(&pdata->io_ctx);
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -551,6 +578,69 @@ static struct iio_context * network_clone(const struct iio_context *ctx)
 	return network_create_context(params, addr);
 }
 
+static struct iio_buffer_pdata *
+network_create_buffer(const struct iio_device *dev, unsigned int idx,
+		      struct iio_channels_mask *mask)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	const struct iio_context_params *params = iio_context_get_params(ctx);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iio_buffer_pdata *buf;
+	int ret;
+
+	buf = zalloc(sizeof(*buf));
+	if (!buf)
+		return iio_ptr(-ENOMEM);
+
+	buf->io_ctx.params = params;
+	buf->io_ctx.ctx_pdata = pdata;
+	buf->dev = dev;
+
+	buf->iiod_client = network_setup_iiod_client(dev, &buf->io_ctx);
+	ret = iio_err(buf->iiod_client);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to create IIOD client");
+		goto err_free_buf;
+	}
+
+	buf->pdata = iiod_client_create_buffer(buf->iiod_client, dev,
+					       idx, mask);
+	ret = iio_err(buf->pdata);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to create buffer");
+		goto err_free_iiod_client;
+	}
+
+	return buf;
+
+err_free_iiod_client:
+	network_cancel_buffer(buf);
+	network_free_iiod_client(buf->iiod_client, &buf->io_ctx);
+err_free_buf:
+	free(buf);
+	return iio_ptr(ret);
+}
+
+void network_free_buffer(struct iio_buffer_pdata *pdata)
+{
+	iiod_client_free_buffer(pdata->pdata);
+	iiod_client_destroy(pdata->iiod_client);
+	cleanup_cancel(&pdata->io_ctx);
+	free(pdata);
+}
+
+int network_enable_buffer(struct iio_buffer_pdata *pdata,
+			  size_t block_size, bool enable)
+{
+	return iiod_client_enable_buffer(pdata->pdata, block_size, enable);
+}
+
+struct iio_block_pdata * network_create_block(struct iio_buffer_pdata *pdata,
+					      size_t size, void **data)
+{
+	return iiod_client_create_block(pdata->pdata, size, data);
+}
+
 static const struct iio_backend_ops network_ops = {
 	.scan = IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
@@ -569,7 +659,20 @@ static const struct iio_backend_ops network_ops = {
 	.set_timeout = network_set_timeout,
 	.set_kernel_buffers_count = network_set_kernel_buffers_count,
 
-	.cancel = network_cancel,
+	.cancel = network_cancel_legacy,
+
+	.create_buffer = network_create_buffer,
+	.free_buffer = network_free_buffer,
+	.enable_buffer = network_enable_buffer,
+	.cancel_buffer = network_cancel_buffer,
+
+	.readbuf = network_readbuf,
+	.writebuf = network_writebuf,
+
+	.create_block = network_create_block,
+	.free_block = iiod_client_free_block,
+	.enqueue_block = iiod_client_enqueue_block,
+	.dequeue_block = iiod_client_dequeue_block,
 };
 
 __api_export_if(WITH_NETWORK_BACKEND_DYNAMIC)
@@ -821,8 +924,7 @@ err_network_shutdown:
 	return iio_ptr(ret);
 
 err_destroy_iiod_client:
-	do_cancel(&pdata->io_ctx);
-	pdata->io_ctx.cancelled = true;
+	network_cancel(&pdata->io_ctx);
 	iiod_client_destroy(iiod_client);
 err_cleanup_cancel:
 	cleanup_cancel(&pdata->io_ctx);
