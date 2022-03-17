@@ -105,18 +105,20 @@ err_free_ctx:
 	return ctx;
 }
 
-int iio_device_enable_channel(const struct iio_device *dev, const char * channel, bool type)
+int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
+			      bool type, struct iio_channels_mask *mask)
 {
-	struct iio_channel *ch;
+	const struct iio_channel *ch;
 
 	ch = iio_device_find_channel(dev, channel, type);
 	if (!ch)
 		return -ENXIO;
 
-	if (iio_channel_is_enabled(ch))
+	if (iio_channel_is_enabled(ch, mask))
 		return -EBUSY;
 
-	iio_channel_enable(ch);
+	iio_channel_enable(ch, mask);
+
 	return 0;
 }
 

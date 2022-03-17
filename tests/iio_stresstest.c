@@ -220,9 +220,12 @@ static void *client_thread(void *data)
 	struct info *info = data;
 	struct iio_context *ctx;
 	struct iio_buffer *buffer;
-	unsigned int i, duration;
+	struct iio_stream *stream;
+	const struct iio_block *block;
+	unsigned int i, nb_channels, duration;
 	const struct iio_device *dev;
-	struct iio_channel *ch;
+	const struct iio_channel *ch;
+	struct iio_channels_mask *mask;
 	struct timeval start, end;
 	int id = -1, stamp, r_errno;
 	ssize_t ret;
@@ -283,15 +286,23 @@ static void *client_thread(void *data)
 			goto thread_fail;
 		}
 
+		nb_channels = iio_device_get_channels_count(dev);
+		mask = iio_create_channels_mask(nb_channels);
+		if (!mask) {
+			fprintf(stderr, "Unable to create channels mask\n");
+			iio_context_destroy(ctx);
+			goto thread_fail;
+		}
+
 		if (info->argc == info->arg_index + 2) {
 			/* Enable all channels */
 			for (i = 0; i < iio_device_get_channels_count(dev); i++) {
 				ch = iio_device_get_channel(dev, i);
-				iio_channel_enable(ch);
+				iio_channel_enable(ch, mask);
 			}
 		} else {
 			for (i = info->arg_index + 2; i < (unsigned int) info->argc; i++)
-				iio_device_enable_channel(dev, info->argv[i], false);
+				iio_device_enable_channel(dev, info->argv[i], false, mask);
 		}
 
 		if (info->verbose == VERYVERBOSE)
@@ -310,14 +321,24 @@ static void *client_thread(void *data)
 				nanosleep(&wait, &wait);
 				continue;
 			}
-	
+
+			stream = iio_buffer_create_stream(buffer, 4, info->buffer_size);
+			ret = iio_err(stream);
+			if (ret) {
+				thread_err(id, ret, "iio_buffer_create_stream failed");
+				iio_buffer_destroy(buffer);
+				continue;
+			}
+
 			while (threads_running || i == 0) {
-				ret = iio_buffer_refill(buffer);
-				thread_err(id, ret, "iio_buffer_refill failed");
-				if (ret < 0) {
+				block = iio_stream_get_next_block(stream);
+				ret = iio_err(block);
+				if (ret) {
+					thread_err(id, ret, "iio_stream_get_next_block failed");
 					threads_running = 0;
 					break;
 				}
+
 				info->refills[id]++;
 				i = 1;
 
@@ -329,6 +350,7 @@ static void *client_thread(void *data)
 				else if (rand() % 10 == 0)
 					break;
 			}
+			iio_stream_destroy(stream);
 			iio_buffer_destroy(buffer);
 
 			/* depending on backend, do more */
@@ -343,6 +365,7 @@ static void *client_thread(void *data)
 			}
 		}
 
+		iio_channels_mask_destroy(mask);
 		iio_context_destroy(ctx);
 		if (info->verbose == VERYVERBOSE)
 			printf("%2d: Stopping\n", id);
@@ -371,11 +394,12 @@ int main(int argc, char **argv)
 {
 	sigset_t set, oldset;
 	struct info info;
-	unsigned int i, j, duration;
+	unsigned int i, j, nb_channels, duration;
 	const struct iio_device *dev;
 	struct iio_buffer *buffer;
 	struct iio_context *ctx;
 	struct iio_channel *ch;
+	struct iio_channels_mask *mask;
 	const char *name;
 	int c, pret, option_index;
 	struct timeval start, end, s_loop;
@@ -457,17 +481,28 @@ int main(int argc, char **argv)
 					if (!iio_device_get_buffer_attrs_count(dev))
 						continue;
 
+					nb_channels = iio_device_get_channels_count(dev);
+					mask = iio_create_channels_mask(nb_channels);
+					if (!mask) {
+						fprintf(stderr, "Unable to create channels mask\n");
+						continue;
+					}
+
 					for (j = 0; j < iio_device_get_channels_count(dev); j++) {
 						ch = iio_device_get_channel(dev, j);
 
 						if (!iio_channel_is_output(ch))
-							iio_channel_enable(ch);
+							iio_channel_enable(ch, mask);
 					}
-					buffer = iio_device_create_buffer(dev, info.buffer_size, false);
+
+					buffer = iio_device_create_buffer(dev, 0, mask);
 					if (!iio_err(buffer)) {
 						iio_buffer_destroy(buffer);
+
 						printf("try : %s\n", name);
 					}
+
+					iio_channels_mask_destroy(mask);
 				}
 
 				iio_context_destroy(ctx);

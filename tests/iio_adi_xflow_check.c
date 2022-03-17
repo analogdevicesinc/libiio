@@ -123,6 +123,9 @@ int main(int argc, char **argv)
 	static struct xflow_pthread_data xflow_pthread_data;
 	unsigned int i, nb_channels;
 	struct iio_buffer *buffer;
+	struct iio_stream *stream;
+	const struct iio_block *block;
+	struct iio_channels_mask *mask;
 	pthread_t monitor_thread;
 	const char *device_name;
 	struct iio_device *dev;
@@ -207,11 +210,18 @@ int main(int argc, char **argv)
 	}
 
 	nb_channels = iio_device_get_channels_count(dev);
+	mask = iio_create_channels_mask(nb_channels);
+	if (!mask) {
+		fprintf(stderr, "Unable to create channels mask\n");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
+
 	for (i = 0; i < nb_channels; i++) {
 		struct iio_channel *ch = iio_device_get_channel(dev, i);
 		if (!iio_channel_is_scan_element(ch))
 			continue;
-		iio_channel_enable(ch);
+		iio_channel_enable(ch, mask);
 		if (iio_channel_is_output(ch))
 			n_tx++;
 		else
@@ -226,10 +236,19 @@ int main(int argc, char **argv)
 	printf("Monitoring %s for underflows/overflows\n",
 		iio_device_get_name(dev));
 
-	buffer = iio_device_create_buffer(dev, buffer_size, false);
+	buffer = iio_device_create_buffer(dev, 0, mask);
 	ret = iio_err(buffer);
 	if (ret) {
-		IIO_PERROR(ret, "Unable to allocate buffer");
+		IIO_PERROR(ret, "Unable to create buffer");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
+
+	stream = iio_buffer_create_stream(buffer, 4, buffer_size);
+	ret = iio_err(stream);
+	if (ret) {
+		IIO_PERROR(ret, "Unable to create stream");
+		iio_buffer_destroy(buffer);
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -243,20 +262,12 @@ int main(int argc, char **argv)
 		IIO_PERROR(ret, "Failed to create monitor thread");
 
 	while (app_running) {
-		if (device_is_tx) {
-			ret = iio_buffer_push(buffer);
-			if (ret < 0) {
-				IIO_PERROR(ret, "Unable to push buffer");
-				app_running = false;
-				break;
-			}
-		} else {
-			ret = iio_buffer_refill(buffer);
-			if (ret < 0) {
-				IIO_PERROR(ret, "Unable to refill buffer");
-				app_running = false;
-				break;
-			}
+		block = iio_stream_get_next_block(stream);
+		ret = iio_err(block);
+		if (ret) {
+			IIO_PERROR(ret, "Unable to swap buffers");
+			app_running = false;
+			break;
 		}
 	}
 
