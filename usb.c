@@ -64,6 +64,12 @@ struct iio_device_pdata {
 	struct iiod_client_io *client_io;
 };
 
+struct iio_buffer_pdata {
+	struct iiod_client_pdata io_ctx;
+	const struct iio_device *dev;
+	struct iiod_client_buffer_pdata *pdata;
+};
+
 static const unsigned int libusb_to_errno_codes[] = {
 	[- LIBUSB_ERROR_INVALID_PARAM]	= EINVAL,
 	[- LIBUSB_ERROR_ACCESS]		= EACCES,
@@ -197,11 +203,11 @@ static int usb_close_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 	return 0;
 }
 
-static int usb_reserve_ep_unlocked(const struct iio_device *dev)
+static int usb_reserve_ep_unlocked(const struct iio_device *dev,
+				   struct iiod_client_pdata *io_ctx)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
 	unsigned int i;
 
 	for (i = 0; i < pdata->nb_ep_couples; i++) {
@@ -210,7 +216,7 @@ static int usb_reserve_ep_unlocked(const struct iio_device *dev)
 		if (!ep->in_use) {
 			ep->in_use = true;
 			ep->dev = dev;
-			ppdata->io_ctx.ep = ep;
+			io_ctx->ep = ep;
 
 			return 0;
 		}
@@ -260,7 +266,7 @@ static int usb_open(const struct iio_device *dev,
 	if (pdata->opened)
 		goto err_unlock;
 
-	ret = usb_reserve_ep_unlocked(dev);
+	ret = usb_reserve_ep_unlocked(dev, &pdata->io_ctx);
 	if (ret)
 		goto err_unlock;
 
@@ -527,15 +533,105 @@ static int iio_usb_match_device(struct libusb_device *dev,
 	return ret;
 }
 
-static void usb_cancel(const struct iio_device *dev)
+static void usb_cancel(struct iiod_client_pdata *io_ctx)
+{
+	iio_mutex_lock(io_ctx->lock);
+
+	if (io_ctx->transfer && !io_ctx->cancelled)
+		libusb_cancel_transfer(io_ctx->transfer);
+	io_ctx->cancelled = true;
+
+	iio_mutex_unlock(io_ctx->lock);
+}
+
+static void usb_cancel_legacy(const struct iio_device *dev)
 {
 	struct iio_device_pdata *ppdata = iio_device_get_pdata(dev);
 
-	iio_mutex_lock(ppdata->io_ctx.lock);
-	if (ppdata->io_ctx.transfer && !ppdata->io_ctx.cancelled)
-		libusb_cancel_transfer(ppdata->io_ctx.transfer);
-	ppdata->io_ctx.cancelled = true;
-	iio_mutex_unlock(ppdata->io_ctx.lock);
+	usb_cancel(&ppdata->io_ctx);
+}
+
+static void usb_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+	usb_cancel(&pdata->io_ctx);
+}
+
+static struct iio_buffer_pdata *
+usb_create_buffer(const struct iio_device *dev, unsigned int idx,
+		  struct iio_channels_mask *mask)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
+	struct iio_buffer_pdata *buf;
+	int ret;
+
+	buf = zalloc(sizeof(*buf));
+	if (!buf)
+		return iio_ptr(-ENOMEM);
+
+	iio_mutex_lock(ctx_pdata->ep_lock);
+
+	buf->dev = dev;
+	buf->io_ctx.cancelled = false;
+
+	ret = usb_reserve_ep_unlocked(dev, &buf->io_ctx);
+	if (ret)
+		goto err_unlock;
+
+	ret = usb_open_pipe(ctx_pdata, buf->io_ctx.ep->pipe_id);
+	if (ret) {
+		dev_perror(dev, ret, "Failed to open pipe");
+		goto err_free_ep;
+	}
+
+	buf->pdata = iiod_client_create_buffer(buf->io_ctx.iiod_client,
+					       dev, idx, mask);
+	ret = iio_err(buf->pdata);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to create IIOD client");
+		goto err_close_pipe;
+	}
+
+	iio_mutex_unlock(ctx_pdata->ep_lock);
+
+	return buf;
+
+err_close_pipe:
+	usb_close_pipe(ctx_pdata, buf->io_ctx.ep->pipe_id);
+err_free_ep:
+	usb_free_ep_unlocked(dev);
+err_unlock:
+	iio_mutex_unlock(ctx_pdata->ep_lock);
+	free(buf);
+
+	return iio_ptr(ret);
+}
+
+static void usb_free_buffer(struct iio_buffer_pdata *buf)
+{
+	const struct iio_context *ctx = iio_device_get_context(buf->dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
+
+	iiod_client_free_buffer(buf->pdata);
+
+	iio_mutex_lock(ctx_pdata->ep_lock);
+	usb_close_pipe(ctx_pdata, buf->io_ctx.ep->pipe_id);
+	usb_free_ep_unlocked(buf->dev);
+	iio_mutex_unlock(ctx_pdata->ep_lock);
+
+	free(buf);
+}
+
+static int usb_enable_buffer(struct iio_buffer_pdata *pdata,
+			     size_t nb_samples, bool enable)
+{
+	return iiod_client_enable_buffer(pdata->pdata, nb_samples, enable);
+}
+
+static struct iio_block_pdata *
+usb_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
+{
+	return iiod_client_create_block(pdata->pdata, size, data);
 }
 
 static const struct iio_backend_ops usb_ops = {
@@ -555,7 +651,17 @@ static const struct iio_backend_ops usb_ops = {
 	.set_timeout = usb_set_timeout,
 	.shutdown = usb_shutdown,
 
-	.cancel = usb_cancel,
+	.cancel = usb_cancel_legacy,
+
+	.create_buffer = usb_create_buffer,
+	.free_buffer = usb_free_buffer,
+	.enable_buffer = usb_enable_buffer,
+	.cancel_buffer = usb_cancel_buffer,
+
+	.create_block = usb_create_block,
+	.free_block = iiod_client_free_block,
+	.enqueue_block = iiod_client_enqueue_block,
+	.dequeue_block = iiod_client_dequeue_block,
 };
 
 __api_export_if(WITH_USB_BACKEND_DYNAMIC)
