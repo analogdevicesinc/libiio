@@ -67,7 +67,11 @@ static int open_client_sockets(int *sockets, unsigned int max_sockets)
 			return -ENOMEM;
 
 		ret = GetAdaptersAddresses(AF_UNSPEC,
-					   GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_ANYCAST, 0,
+					   GAA_FLAG_SKIP_MULTICAST
+#ifndef HAVE_IPV6
+					   | GAA_FLAG_SKIP_ANYCAST
+#endif
+					   , 0,
 					   adapter_address, &address_size);
 		if (ret != ERROR_BUFFER_OVERFLOW)
 			break;
@@ -126,12 +130,12 @@ static int open_client_sockets(int *sockets, unsigned int max_sockets)
 	return num_sockets;
 }
 
-
 static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
-			  mdns_entry_type_t entry, uint16_t transaction_id,
+			  mdns_entry_type_t entry, uint16_t query_id,
 			  uint16_t rtype, uint16_t rclass, uint32_t ttl,
-			  const void *data, size_t size, size_t offset,
-			  size_t length,
+			  const void *data, size_t size, size_t name_offset,
+			  size_t name_length,
+			  size_t record_offset, size_t record_length,
 			  void *user_data)
 {
 	struct dns_sd_discovery_data *dd = user_data;
@@ -151,7 +155,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	getnameinfo(from, (socklen_t)addrlen, addrbuffer, NI_MAXHOST,
 		    servicebuffer, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
 
-	srv = mdns_record_parse_srv(data, size, offset, length,
+	srv = mdns_record_parse_srv(data, size, name_offset, name_length,
 				    namebuffer, sizeof(namebuffer));
 	IIO_DEBUG("%s : SRV %.*s priority %d weight %d port %d\n", addrbuffer,
 		  MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
@@ -232,10 +236,11 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	IIO_DEBUG("Sending mDNS query: %s\n", service);
 
+	/* Walk through all the open interfaces/sockets, and send a query */
 	for (isock = 0; isock < num_sockets; isock++) {
 		ret = mdns_query_send(sockets[isock], MDNS_RECORDTYPE_PTR,
 				      service, sizeof(service)-1, buffer,
-				      capacity);
+				      capacity, 0);
 		if (ret <= 0)
 			IIO_ERROR("Failed to send mDNS query: errno %d\n", errno);
 
