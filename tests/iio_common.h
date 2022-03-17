@@ -9,7 +9,7 @@
 #ifndef IIO_TESTS_COMMON_H
 #define IIO_TESTS_COMMON_H
 
-#include <getopt.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 /*
@@ -28,13 +28,19 @@ enum backend {
 	IIO_AUTO,
 };
 
+struct iio_channels_mask;
+struct iio_context;
+struct iio_device;
+struct option;
+
 void * xmalloc(size_t n, const char *name);
 char *cmn_strndup(const char *str, size_t n);
 
 struct iio_context * autodetect_context(bool rtn, const char *name, const char *scan);
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
-int iio_device_enable_channel(const struct iio_device *dev, const char * channel, bool type);
+int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
+			      bool type, struct iio_channels_mask *mask);
 
 /* optstring is a string containing the legitimate option characters.
  * If such a character is followed by a colon, the option  requires  an  argument.

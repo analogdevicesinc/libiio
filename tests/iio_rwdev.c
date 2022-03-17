@@ -205,9 +205,13 @@ int main(int argc, char **argv)
 	uint64_t refill_per_benchmark = REFILL_PER_BENCHMARK;
 	struct iio_device *dev, *trigger;
 	struct iio_channel *ch;
-	ssize_t sample_size;
+	ssize_t sample_size, hw_sample_size;
 	bool hit, mib, is_write = false, cyclic_buffer = false,
 	     benchmark = false, do_write = false;
+	struct iio_stream *stream;
+	const struct iio_block *block;
+	struct iio_channels_mask *mask;
+	const struct iio_channels_mask *hw_mask;
 	struct option *opts;
 	uint64_t before = 0, after, rate, total;
 	size_t rw_len, len, nb;
@@ -301,7 +305,6 @@ int main(int argc, char **argv)
 		for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 			dev = iio_context_get_device(ctx, i);
 			nb_channels = iio_device_get_channels_count(dev);
-
 			if (!nb_channels)
 				continue;
 
@@ -364,22 +367,28 @@ int main(int argc, char **argv)
 	}
 
 	nb_channels = iio_device_get_channels_count(dev);
+	mask = iio_create_channels_mask(nb_channels);
+	if (!mask) {
+		fprintf(stderr, "Unable to create channels mask\n");
+		goto err_free_ctx;
+	}
 
 	if (argc == optind + 1) {
 		/* Enable all channels */
 		for (i = 0; i < nb_channels; i++) {
-			struct iio_channel *ch = iio_device_get_channel(dev, i);
+			ch = iio_device_get_channel(dev, i);
+
 			if (is_write == iio_channel_is_output(ch)) {
-				iio_channel_enable(ch);
+				iio_channel_enable(ch, mask);
 				nb_active_channels++;
 			}
 		}
 	} else {
 		for (j = optind + 1; j < (unsigned int) argc; j++) {
-			ret = iio_device_enable_channel(dev, argw[j], is_write);
+			ret = iio_device_enable_channel(dev, argw[j], is_write, mask);
 			if (ret < 0) {
-				dev_perror(dev, ret, "Unable to enable channel");
-				goto err_free_ctx;
+				dev_perror(dev, ret, "Bad channel name \"%s\"", argw[j]);
+				goto err_free_mask;
 			}
 			nb_active_channels++;
 		}
@@ -387,24 +396,34 @@ int main(int argc, char **argv)
 
 	if (!nb_active_channels) {
 		fprintf(stderr, "No %sput channels found\n", is_write ? "out" : "in");
-		goto err_free_ctx;
+		goto err_free_mask;
 	}
 
-	sample_size = iio_device_get_sample_size(dev, NULL);
+	sample_size = iio_device_get_sample_size(dev, mask);
 	/* Zero isn't normally an error code, but in this case it is an error */
 	if (sample_size == 0) {
 		fprintf(stderr, "Unable to get sample size, returned 0\n");
-		goto err_free_ctx;
+		goto err_free_mask;
 	} else if (sample_size < 0) {
 		dev_perror(dev, (int) sample_size, "Unable to get sample size");
-		goto err_free_ctx;
+		goto err_free_mask;
 	}
 
-	buffer = iio_device_create_buffer(dev, buffer_size, cyclic_buffer);
+	buffer = iio_device_create_buffer(dev, 0, mask);
 	ret = iio_err(buffer);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to allocate buffer");
-		goto err_free_ctx;
+		goto err_free_mask;
+	}
+
+	hw_mask = iio_buffer_get_channels_mask(buffer);
+	hw_sample_size = iio_device_get_sample_size(dev, hw_mask);
+
+	stream = iio_buffer_create_stream(buffer, 4, buffer_size);
+	ret = iio_err(stream);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to create stream");
+		goto err_destroy_buffer;
 	}
 
 #ifdef _WIN32
@@ -419,16 +438,10 @@ int main(int argc, char **argv)
 		if (benchmark)
 			before = get_time_us();
 
-		ret = 0;
-		if (!is_write)
-			ret = (int) iio_buffer_refill(buffer);
-		else if (do_write)
-			ret = (int) iio_buffer_push(buffer);
-		if (ret < 0) {
-			if (app_running) {
-				dev_perror(dev, ret, "Unable to %s buffer",
-					   is_write ? "push" : "refill");
-			}
+		block = iio_stream_get_next_block(stream);
+		ret = iio_err(block);
+		if (ret && app_running) {
+			dev_perror(dev, ret, "Unable to get next block");
 			break;
 		}
 
@@ -455,8 +468,8 @@ int main(int argc, char **argv)
 			}
 		}
 
-		if (do_write) {
-			while(cyclic_buffer && app_running) {
+		if (do_write && cyclic_buffer) {
+			while(app_running) {
 #ifdef _WIN32
 				Sleep(1000);
 #else
@@ -464,7 +477,7 @@ int main(int argc, char **argv)
 #endif
 			}
 
-			continue;
+			break;
 		}
 
 		do_write = is_write;
@@ -474,9 +487,9 @@ int main(int argc, char **argv)
 
 		/* If there are only the samples we requested, we don't need to
 		 * demux */
-		if (iio_buffer_step(buffer) == sample_size) {
-			start = iio_buffer_start(buffer);
-			len = (intptr_t) iio_buffer_end(buffer) - (intptr_t) start;
+		if (hw_sample_size == sample_size) {
+			start = iio_block_start(block);
+			len = (intptr_t) iio_block_end(block) - (intptr_t) start;
 
 			if (num_samples && len > num_samples * sample_size)
 				len = num_samples * sample_size;
@@ -487,7 +500,7 @@ int main(int argc, char **argv)
 				else
 					nb = fwrite(start, 1, len, stdout);
 				if (!nb)
-					goto err_destroy_buffer;
+					goto err_destroy_stream;
 
 				len -= nb;
 				start = (void *)((intptr_t) start + nb);
@@ -499,16 +512,20 @@ int main(int argc, char **argv)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
-			ret = (int) iio_buffer_foreach_sample(buffer,
-							      transfer_sample,
-							      &is_write);
+			ret = (int) iio_block_foreach_sample(block, mask,
+							     transfer_sample,
+							     &is_write);
 			if (ret < 0)
 				dev_perror(dev, ret, "Buffer processing failed");
 		}
 	}
 
+err_destroy_stream:
+	iio_stream_destroy(stream);
 err_destroy_buffer:
 	iio_buffer_destroy(buffer);
+err_free_mask:
+	iio_channels_mask_destroy(mask);
 err_free_ctx:
 	if (ctx)
 		iio_context_destroy(ctx);
