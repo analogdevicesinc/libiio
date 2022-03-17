@@ -745,19 +745,7 @@ __api __check_ret __pure const char * iio_device_find_buffer_attr(
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_attr_read,
- * it is now possible to read all of the attributes of a device.
- *
- * The buffer is filled with one block of data per attribute of the device,
- * by the order they appear in the iio_device structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, it corresponds to the errno code that were
- * returned when reading the attribute; if positive, it corresponds to the
- * length of the data read. In that case, the rest of the block contains
- * the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
@@ -817,18 +805,7 @@ __api __check_ret int iio_device_attr_read_double(const struct iio_device *dev,
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_device_attr_write,
- * it is now possible to write all of the attributes of a device.
- *
- * The buffer must contain one block of data per attribute of the device,
- * by the order they appear in the iio_device structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, the attribute is not written; if positive,
- * it corresponds to the length of the data to write. In that case, the rest
- * of the block must contain the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
 
@@ -843,22 +820,6 @@ __api __check_ret ssize_t iio_device_attr_write(const struct iio_device *dev,
  * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_attr_write_raw(const struct iio_device *dev,
 		const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the values of all device-specific attributes
- * @param dev A pointer to an iio_device structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the device-specific attributes are written in one single
- * command. */
-__api __check_ret int iio_device_attr_write_all(struct iio_device *dev,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data);
 
 
 /** @brief Set the value of the given device-specific attribute
@@ -901,38 +862,9 @@ __api __check_ret int iio_device_attr_write_double(const struct iio_device *dev,
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to
- * iio_device_buffer_attr_read, it is now possible to read all of the attributes
- * of a device.
- *
- * The buffer is filled with one block of data per attribute of the buffer,
- * by the order they appear in the iio_device structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, it corresponds to the errno code that were
- * returned when reading the attribute; if positive, it corresponds to the
- * length of the data read. In that case, the rest of the block contains
- * the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
-
-/** @brief Read the content of all buffer-specific attributes
- * @param dev A pointer to an iio_device structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the buffer-specific attributes are read in one single
- * command. */
-__api __check_ret int iio_device_buffer_attr_read_all(struct iio_device *dev,
-		int (*cb)(struct iio_device *dev, const char *attr,
-			const char *value, size_t len, void *d),
-		void *data);
-
 
 /** @brief Read the content of the given buffer-specific attribute
  * @param dev A pointer to an iio_device structure
@@ -973,19 +905,7 @@ __api __check_ret int iio_device_buffer_attr_read_double(const struct iio_device
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to
- * iio_device_buffer_attr_write, it is now possible to write all of the
- * attributes of a device.
- *
- * The buffer must contain one block of data per attribute of the buffer,
- * by the order they appear in the iio_device structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, the attribute is not written; if positive,
- * it corresponds to the length of the data to write. In that case, the rest
- * of the block must contain the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_buffer_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
 
@@ -1000,22 +920,6 @@ __api __check_ret ssize_t iio_device_buffer_attr_write(const struct iio_device *
  * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_buffer_attr_write_raw(const struct iio_device *dev,
 		const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the values of all buffer-specific attributes
- * @param dev A pointer to an iio_device structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the buffer-specific attributes are written in one single
- * command. */
-__api __check_ret int iio_device_buffer_attr_write_all(struct iio_device *dev,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data);
 
 
 /** @brief Set the value of the given buffer-specific attribute
@@ -1193,37 +1097,9 @@ __api __check_ret __pure const char * iio_channel_attr_get_filename(
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_read,
- * it is now possible to read all of the attributes of a channel.
- *
- * The buffer is filled with one block of data per attribute of the channel,
- * by the order they appear in the iio_channel structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, it corresponds to the errno code that were
- * returned when reading the attribute; if positive, it corresponds to the
- * length of the data read. In that case, the rest of the block contains
- * the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
-
-
-/** @brief Read the content of all channel-specific attributes
- * @param chn A pointer to an iio_channel structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the channel-specific attributes are read in one single
- * command. */
-__api __check_ret int iio_channel_attr_read_all(struct iio_channel *chn,
-		int (*cb)(struct iio_channel *chn,
-			const char *attr, const char *val, size_t len, void *d),
-		void *data);
 
 
 /** @brief Read the content of the given channel-specific attribute
@@ -1265,18 +1141,7 @@ __api __check_ret int iio_channel_attr_read_double(const struct iio_channel *chn
  * attribute
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to iio_channel_attr_write,
- * it is now possible to write all of the attributes of a channel.
- *
- * The buffer must contain one block of data per attribute of the channel,
- * by the order they appear in the iio_channel structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, the attribute is not written; if positive,
- * it corresponds to the length of the data to write. In that case, the rest
- * of the block must contain the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 		const char *attr, const char *src);
 
@@ -1291,22 +1156,6 @@ __api __check_ret ssize_t iio_channel_attr_write(const struct iio_channel *chn,
  * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 		const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the values of all channel-specific attributes
- * @param chn A pointer to an iio_channel structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the channel-specific attributes are written in one single
- * command. */
-__api __check_ret int iio_channel_attr_write_all(struct iio_channel *chn,
-		ssize_t (*cb)(struct iio_channel *chn,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data);
 
 
 /** @brief Set the value of the given channel-specific attribute
@@ -1794,37 +1643,9 @@ __api __check_ret __pure const char * iio_device_find_debug_attr(
  * corresponding to the value read will be stored
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to
- * iio_device_debug_attr_read, it is now possible to read all of the debug
- * attributes of a device.
- *
- * The buffer is filled with one block of data per debug attribute of the
- * device, by the order they appear in the iio_device structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, it corresponds to the errno code that were
- * returned when reading the debug attribute; if positive, it corresponds
- * to the length of the data read. In that case, the rest of the block contains
- * the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
-
-
-/** @brief Read the content of all debug attributes
- * @param dev A pointer to an iio_device structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the debug attributes are read in one single command. */
-__api __check_ret int iio_device_debug_attr_read_all(struct iio_device *dev,
-		int (*cb)(struct iio_device *dev, const char *attr,
-			const char *value, size_t len, void *d),
-		void *data);
 
 
 /** @brief Set the value of the given debug attribute
@@ -1833,19 +1654,7 @@ __api __check_ret int iio_device_debug_attr_read_all(struct iio_device *dev,
  * debug attribute
  * @param src A NULL-terminated string to set the debug attribute to
  * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b>By passing NULL as the "attr" argument to
- * iio_device_debug_attr_write, it is now possible to write all of the
- * debug attributes of a device.
- *
- * The buffer must contain one block of data per debug attribute of the device,
- * by the order they appear in the iio_device structure.
- *
- * The first four bytes of one block correspond to a 32-bit signed value in
- * network order. If negative, the debug attribute is not written; if positive,
- * it corresponds to the length of the data to write. In that case, the rest
- * of the block must contain the data. */
+ * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
 		const char *attr, const char *src);
 

@@ -308,6 +308,9 @@ ssize_t iio_device_write_raw(const struct iio_device *dev,
 ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
+	if (!attr)
+		return -EINVAL;
+
 	if (dev->ctx->ops->read_device_attr)
 		return dev->ctx->ops->read_device_attr(dev,
 				attr, dst, len, IIO_ATTR_TYPE_DEVICE);
@@ -318,6 +321,9 @@ ssize_t iio_device_attr_read(const struct iio_device *dev,
 ssize_t iio_device_attr_write_raw(const struct iio_device *dev,
 		const char *attr, const void *src, size_t len)
 {
+	if (!attr)
+		return -EINVAL;
+
 	if (dev->ctx->ops->write_device_attr)
 		return dev->ctx->ops->write_device_attr(dev,
 				attr, src, len, IIO_ATTR_TYPE_DEVICE);
@@ -334,6 +340,9 @@ ssize_t iio_device_attr_write(const struct iio_device *dev,
 ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
+	if (!attr)
+		return -EINVAL;
+
 	if (dev->ctx->ops->read_device_attr)
 		return dev->ctx->ops->read_device_attr(dev,
 				attr, dst, len, IIO_ATTR_TYPE_BUFFER);
@@ -344,6 +353,9 @@ ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
 ssize_t iio_device_buffer_attr_write_raw(const struct iio_device *dev,
 		const char *attr, const void *src, size_t len)
 {
+	if (!attr)
+		return -EINVAL;
+
 	if (dev->ctx->ops->write_device_attr)
 		return dev->ctx->ops->write_device_attr(dev,
 				attr, src, len, IIO_ATTR_TYPE_BUFFER);
@@ -640,6 +652,9 @@ int iio_device_buffer_attr_write_bool(const struct iio_device *dev,
 ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
+	if (!attr)
+		return -EINVAL;
+
 	if (dev->ctx->ops->read_device_attr)
 		return dev->ctx->ops->read_device_attr(dev,
 				attr, dst, len, IIO_ATTR_TYPE_DEBUG);
@@ -650,6 +665,9 @@ ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
 ssize_t iio_device_debug_attr_write_raw(const struct iio_device *dev,
 		const char *attr, const void *src, size_t len)
 {
+	if (!attr)
+		return -EINVAL;
+
 	if (dev->ctx->ops->write_device_attr)
 		return dev->ctx->ops->write_device_attr(dev,
 				attr, src, len, IIO_ATTR_TYPE_DEBUG);
@@ -821,238 +839,6 @@ int iio_device_reg_read(struct iio_device *dev,
 	if (!ret)
 		*value = (uint32_t) val;
 	return ret;
-}
-
-static int read_each_attr(struct iio_device *dev, enum iio_attr_type type,
-		int (*cb)(struct iio_device *dev,
-			const char *attr, const char *val, size_t len, void *d),
-		void *data)
-{
-	int ret, buf_size;
-	char *buf, *ptr;
-	unsigned int i, count;
-
-	/* We need a big buffer here; 1 MiB should be enough */
-	buf = malloc(0x100000);
-	if (!buf)
-		return -ENOMEM;
-
-	switch(type){
-		case IIO_ATTR_TYPE_DEVICE:
-			count = iio_device_get_attrs_count(dev);
-			ret = (int) iio_device_attr_read(dev,
-					NULL, buf, 0x100000);
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			count = iio_device_get_debug_attrs_count(dev);
-			ret = (int) iio_device_debug_attr_read(dev,
-					NULL, buf, 0x100000);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			count = iio_device_get_buffer_attrs_count(dev);
-			ret = (int) iio_device_buffer_attr_read(dev,
-					NULL, buf, 0x100000);
-			break;
-		default:
-			ret = -EINVAL;
-			count = 0;
-			break;
-	}
-
-	if (ret < 0)
-		goto err_free_buf;
-
-	ptr = buf;
-	buf_size = ret;
-
-	for (i = 0; i < count; i++) {
-		const char *attr;
-		int32_t len;
-
-		if (buf_size < 4) {
-			ret = -EPROTO;
-			break;
-		}
-
-		len = (int32_t) iio_be32toh(*(uint32_t *) ptr);
-		ptr += 4;
-		buf_size -= 4;
-
-		if (len > 0 && buf_size < len) {
-			ret = -EPROTO;
-			break;
-		}
-
-		switch(type){
-			case IIO_ATTR_TYPE_DEVICE:
-				attr = iio_device_get_attr(dev, i);
-				break;
-			case IIO_ATTR_TYPE_DEBUG:
-				attr = iio_device_get_debug_attr(dev, i);
-				break;
-			case IIO_ATTR_TYPE_BUFFER:
-				attr = iio_device_get_buffer_attr(dev, i);
-				break;
-			default:
-				attr = NULL;
-				break;
-		}
-
-		if (len > 0) {
-			ret = cb(dev, attr, ptr, (size_t) len, data);
-			if (ret < 0)
-				goto err_free_buf;
-
-			if (len & 0x3)
-				len = ((len >> 2) + 1) << 2;
-			ptr += len;
-			if (len >= buf_size)
-				buf_size = 0;
-			else
-				buf_size -= len;
-		}
-	}
-
-err_free_buf:
-	free(buf);
-	return ret < 0 ? ret : 0;
-}
-
-static int write_each_attr(struct iio_device *dev, enum iio_attr_type type,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data)
-{
-	char *buf, *ptr;
-	unsigned int i, count;
-	size_t len = 0x100000;
-	int ret;
-
-	/* We need a big buffer here; 1 MiB should be enough */
-	buf = malloc(len);
-	if (!buf)
-		return -ENOMEM;
-
-	ptr = buf;
-
-	switch(type){
-		case IIO_ATTR_TYPE_DEVICE:
-			count = iio_device_get_attrs_count(dev);
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			count = iio_device_get_debug_attrs_count(dev);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			count = iio_device_get_buffer_attrs_count(dev);
-			break;
-		default:
-			ret = -EINVAL;
-			goto err_free_buf;
-	}
-
-	for (i = 0; i < count; i++) {
-		const char *attr;
-
-		switch(type){
-			case IIO_ATTR_TYPE_DEVICE:
-				attr = iio_device_get_attr(dev, i);
-				break;
-			case IIO_ATTR_TYPE_DEBUG:
-				attr = iio_device_get_debug_attr(dev, i);
-				break;
-			case IIO_ATTR_TYPE_BUFFER:
-				attr = iio_device_get_buffer_attr(dev, i);
-				break;
-			default:
-				attr = NULL;
-				break;
-		}
-
-		ret = (int) cb(dev, attr, ptr + 4, len - 4, data);
-		if (ret < 0)
-			goto err_free_buf;
-
-		*(int32_t *) ptr = (int32_t) iio_htobe32((uint32_t) ret);
-		ptr += 4;
-		len -= 4;
-
-		if (ret > 0) {
-			if (ret & 0x3)
-				ret = ((ret >> 2) + 1) << 2;
-			ptr += ret;
-			len -= ret;
-		}
-	}
-
-	switch(type){
-		case IIO_ATTR_TYPE_DEVICE:
-			ret = (int) iio_device_attr_write_raw(dev,
-					NULL, buf, ptr - buf);
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			ret = (int) iio_device_debug_attr_write_raw(dev,
-					NULL, buf, ptr - buf);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			ret = (int) iio_device_buffer_attr_write_raw(dev,
-					NULL, buf, ptr - buf);
-			break;
-		default:
-			ret = -EINVAL;
-			break;
-	}
-
-err_free_buf:
-	free(buf);
-	return ret < 0 ? ret : 0;
-}
-
-int iio_device_debug_attr_read_all(struct iio_device *dev,
-		int (*cb)(struct iio_device *dev,
-			const char *attr, const char *val, size_t len, void *d),
-		void *data)
-{
-	return read_each_attr(dev, IIO_ATTR_TYPE_DEBUG, cb, data);
-}
-
-int iio_device_buffer_attr_read_all(struct iio_device *dev,
-		int (*cb)(struct iio_device *dev,
-			const char *attr, const char *val, size_t len, void *d),
-		void *data)
-{
-	return read_each_attr(dev, IIO_ATTR_TYPE_BUFFER, cb, data);
-}
-
-int iio_device_attr_read_all(struct iio_device *dev,
-		int (*cb)(struct iio_device *dev,
-			const char *attr, const char *val, size_t len, void *d),
-		void *data)
-{
-	return read_each_attr(dev, IIO_ATTR_TYPE_DEVICE ,cb, data);
-}
-
-int iio_device_debug_attr_write_all(struct iio_device *dev,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data)
-{
-	return write_each_attr(dev, IIO_ATTR_TYPE_DEBUG, cb, data);
-}
-
-int iio_device_buffer_attr_write_all(struct iio_device *dev,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data)
-{
-	return write_each_attr(dev, IIO_ATTR_TYPE_BUFFER, cb, data);
-}
-
-int iio_device_attr_write_all(struct iio_device *dev,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data)
-{
-	return write_each_attr(dev, IIO_ATTR_TYPE_DEVICE, cb, data);
 }
 
 const struct iio_context * iio_device_get_context(const struct iio_device *dev)
