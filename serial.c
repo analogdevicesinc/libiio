@@ -33,6 +33,10 @@ struct iio_device_pdata {
 	struct iiod_client_io *client_io;
 };
 
+struct iio_buffer_pdata {
+	struct iiod_client_buffer_pdata *pdata;
+};
+
 struct p_options {
 	char flag;
 	enum sp_parity parity;
@@ -317,6 +321,49 @@ static int serial_set_trigger(const struct iio_device *dev,
 	return iiod_client_set_trigger(pdata->iiod_client, dev, trigger);
 }
 
+static struct iio_buffer_pdata *
+serial_create_buffer(const struct iio_device *dev, unsigned int idx,
+		     struct iio_channels_mask *mask)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iio_buffer_pdata *buf;
+	int ret;
+
+	buf = zalloc(sizeof(*buf));
+	if (!buf)
+		return iio_ptr(-ENOMEM);
+
+	buf->pdata = iiod_client_create_buffer(pdata->iiod_client,
+					       dev, idx, mask);
+	ret = iio_err(buf->pdata);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to create IIOD client");
+		free(buf);
+		return iio_ptr(ret);
+	}
+
+	return buf;
+}
+
+static void serial_free_buffer(struct iio_buffer_pdata *buf)
+{
+	iiod_client_free_buffer(buf->pdata);
+	free(buf);
+}
+
+static int serial_enable_buffer(struct iio_buffer_pdata *buf,
+				size_t nb_samples, bool enable)
+{
+	return iiod_client_enable_buffer(buf->pdata, nb_samples, enable);
+}
+
+static struct iio_block_pdata *
+serial_create_block(struct iio_buffer_pdata *buf, size_t size, void **data)
+{
+	return iiod_client_create_block(buf->pdata, size, data);
+}
+
 static const struct iio_backend_ops serial_ops = {
 	.create = serial_create_context_from_args,
 	.open = serial_open,
@@ -331,6 +378,15 @@ static const struct iio_backend_ops serial_ops = {
 	.shutdown = serial_shutdown,
 	.get_trigger = serial_get_trigger,
 	.set_trigger = serial_set_trigger,
+
+	.create_buffer = serial_create_buffer,
+	.free_buffer = serial_free_buffer,
+	.enable_buffer = serial_enable_buffer,
+
+	.create_block = serial_create_block,
+	.free_block = iiod_client_free_block,
+	.enqueue_block = iiod_client_enqueue_block,
+	.dequeue_block = iiod_client_dequeue_block,
 };
 
 __api_export_if(WITH_SERIAL_BACKEND_DYNAMIC)
