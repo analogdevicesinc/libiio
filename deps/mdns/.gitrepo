@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/mjansson/mdns
+	branch = main
+	commit = c36996e067202691c562e2ea1ee59f9494c87231
+	parent = e175f25bbf6b131f3cdb52a4b6662412dbdd286a
+	method = merge
+	cmdver = 0.4.3
