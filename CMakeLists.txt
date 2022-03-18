@@ -253,7 +253,7 @@ if(WITH_LOCAL_BACKEND)
 
 	option(WITH_LOCAL_CONFIG "Read local context attributes from /etc/libiio.ini" ON)
 	if (WITH_LOCAL_CONFIG)
-		list(APPEND LIBIIO_CFILES ./libini/libini.c)
+		list(APPEND LIBIIO_CFILES ./deps/libini/libini.c)
 	endif()
 
 	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
