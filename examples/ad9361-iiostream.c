@@ -292,8 +292,8 @@ int main (int argc, char **argv)
 		}
 
 		// Sample counter increment and status output
-		nrx += nbytes_rx / iio_device_get_sample_size(rx);
-		ntx += nbytes_tx / iio_device_get_sample_size(tx);
+		nrx += nbytes_rx / iio_device_get_sample_size(rx, NULL);
+		ntx += nbytes_tx / iio_device_get_sample_size(tx, NULL);
 		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
 	}
 

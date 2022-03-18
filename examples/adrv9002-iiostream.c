@@ -297,8 +297,8 @@ int main(void)
 		goto clean;
 	}
 
-	tx_sample_sz = iio_device_get_sample_size(tx);
-	rx_sample_sz = iio_device_get_sample_size(rx);
+	tx_sample_sz = iio_device_get_sample_size(tx, NULL);
+	rx_sample_sz = iio_device_get_sample_size(rx, NULL);
 
 	stream(rx_sample_sz, tx_sample_sz);
 
