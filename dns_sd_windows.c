@@ -18,7 +18,7 @@
 #include "dns_sd.h"
 #include "iio-lock.h"
 #include "iio-private.h"
-#include "mdns.h"
+#include "deps/mdns/mdns.h"
 
 #ifdef HAVE_IPV6
 static const unsigned char localhost[] = {
