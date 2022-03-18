@@ -43,8 +43,6 @@
 #define BLOCK_FLAG_CYCLIC BIT(1)
 
 /* Forward declarations */
-static ssize_t local_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, enum iio_attr_type type);
 static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len);
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
@@ -494,181 +492,12 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	return (ssize_t) block.bytes_used;
 }
 
-static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
-		char *dst, size_t len, enum iio_attr_type type)
-{
-	unsigned int i, nb;
-	char **attrs;
-	char *ptr = dst;
-
-	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			nb =  dev->attrs.num;
-			attrs = dev->attrs.names;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			nb =  dev->debug_attrs.num;
-			attrs = dev->debug_attrs.names;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			nb =  dev->buffer_attrs.num;
-			attrs = dev->buffer_attrs.names;
-			break;
-		default:
-			return -EINVAL;
-			break;
-	}
-
-	for (i = 0; len >= 4 && i < nb; i++) {
-		/* Recursive! */
-		ssize_t ret = local_read_dev_attr(dev, attrs[i],
-				ptr + 4, len - 4, type);
-		*(uint32_t *) ptr = iio_htobe32(ret);
-
-		/* Align the length to 4 bytes */
-		if (ret > 0 && ret & 3)
-			ret = ((ret >> 2) + 1) << 2;
-		ptr += 4 + (ret < 0 ? 0 : ret);
-		len -= 4 + (ret < 0 ? 0 : ret);
-	}
-
-	return ptr - dst;
-}
-
-static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
-		char *dst, size_t len)
-{
-	unsigned int i;
-	char *ptr = dst;
-
-	for (i = 0; len >= 4 && i < chn->nb_attrs; i++) {
-		/* Recursive! */
-		ssize_t ret = local_read_chn_attr(chn,
-				chn->attrs[i].name, ptr + 4, len - 4);
-		*(uint32_t *) ptr = iio_htobe32(ret);
-
-		/* Align the length to 4 bytes */
-		if (ret > 0 && ret & 3)
-			ret = ((ret >> 2) + 1) << 2;
-		ptr += 4 + (ret < 0 ? 0 : ret);
-		len -= 4 + (ret < 0 ? 0 : ret);
-	}
-
-	return ptr - dst;
-}
-
-static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
-{
-	while (nb--) {
-		int32_t val;
-
-		if (len < 4)
-			return -EINVAL;
-
-		val = (int32_t) iio_be32toh(*(uint32_t *) src);
-		src += 4;
-		len -= 4;
-
-		if (val > 0) {
-			if ((uint32_t) val > len)
-				return -EINVAL;
-
-			/* Align the length to 4 bytes */
-			if (val & 3)
-				val = ((val >> 2) + 1) << 2;
-			len -= val;
-			src += val;
-		}
-	}
-
-	/* We should have analyzed the whole buffer by now */
-	return !len ? 0 : -EINVAL;
-}
-
-static ssize_t local_write_all_dev_attrs(const struct iio_device *dev,
-		const char *src, size_t len, enum iio_attr_type type)
-{
-	unsigned int i, nb;
-	char **attrs;
-	const char *ptr = src;
-
-	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			nb =  dev->attrs.num;
-			attrs = dev->attrs.names;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			nb =  dev->debug_attrs.num;
-			attrs = dev->debug_attrs.names;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			nb =  dev->buffer_attrs.num;
-			attrs = dev->buffer_attrs.names;
-			break;
-		default:
-			return -EINVAL;
-			break;
-	}
-
-	/* First step: Verify that the buffer is in the correct format */
-	if (local_buffer_analyze(nb, src, len))
-		return -EINVAL;
-
-	/* Second step: write the attributes */
-	for (i = 0; i < nb; i++) {
-		int32_t val = (int32_t) iio_be32toh(*(uint32_t *) ptr);
-		ptr += 4;
-
-		if (val > 0) {
-			local_write_dev_attr(dev, attrs[i], ptr, val, type);
-
-			/* Align the length to 4 bytes */
-			if (val & 3)
-				val = ((val >> 2) + 1) << 2;
-			ptr += val;
-		}
-	}
-
-	return ptr - src;
-}
-
-static ssize_t local_write_all_chn_attrs(const struct iio_channel *chn,
-		const char *src, size_t len)
-{
-	unsigned int i, nb = chn->nb_attrs;
-	const char *ptr = src;
-
-	/* First step: Verify that the buffer is in the correct format */
-	if (local_buffer_analyze(nb, src, len))
-		return -EINVAL;
-
-	/* Second step: write the attributes */
-	for (i = 0; i < nb; i++) {
-		int32_t val = (int32_t) iio_be32toh(*(uint32_t *) ptr);
-		ptr += 4;
-
-		if (val > 0) {
-			local_write_chn_attr(chn, chn->attrs[i].name, ptr, val);
-
-			/* Align the length to 4 bytes */
-			if (val & 3)
-				val = ((val >> 2) + 1) << 2;
-			ptr += val;
-		}
-	}
-
-	return ptr - src;
-}
-
 static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
-
-	if (!attr)
-		return local_read_all_dev_attrs(dev, dst, len, type);
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
@@ -721,9 +550,6 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	char buf[1024];
 	ssize_t ret;
 
-	if (!attr)
-		return local_write_all_dev_attrs(dev, src, len, type);
-
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
 			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
@@ -771,9 +597,6 @@ static const char * get_filename(const struct iio_channel *chn,
 static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
-	if (!attr)
-		return local_read_all_chn_attrs(chn, dst, len);
-
 	attr = get_filename(chn, attr);
 	return local_read_dev_attr(chn->dev, attr, dst, len, false);
 }
@@ -781,9 +604,6 @@ static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
-	if (!attr)
-		return local_write_all_chn_attrs(chn, src, len);
-
 	attr = get_filename(chn, attr);
 	return local_write_dev_attr(chn->dev, attr, src, len, false);
 }
