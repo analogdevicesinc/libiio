@@ -313,11 +313,15 @@ ssize_t iiod_client_read_attr(struct iiod_client *client,
 			      const struct iio_device *dev,
 			      const struct iio_channel *chn,
 			      const char *attr, char *dest,
-			      size_t len, enum iio_attr_type type)
+			      size_t len, enum iio_attr_type type,
+			      unsigned int buf_id)
 {
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
 	ssize_t ret;
+
+	if (buf_id > 0)
+		return -ENOSYS;
 
 	if (attr) {
 		if (chn) {
@@ -396,13 +400,17 @@ ssize_t iiod_client_write_attr(struct iiod_client *client,
 			       const struct iio_device *dev,
 			       const struct iio_channel *chn,
 			       const char *attr, const char *src,
-			       size_t len, enum iio_attr_type type)
+			       size_t len, enum iio_attr_type type,
+			       unsigned int buf_id)
 {
 	const struct iiod_client_ops *ops = client->ops;
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
 	ssize_t ret;
 	int resp;
+
+	if (buf_id > 0)
+		return -ENOSYS;
 
 	if (attr) {
 		if (chn) {
