@@ -1,3 +1,0 @@
-[submodule "deps/wingetopt"]
-	path = deps/wingetopt
-	url = https://github.com/alex85k/wingetopt.git
