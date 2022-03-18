@@ -355,23 +355,27 @@ static ssize_t network_write(const struct iio_device *dev,
 }
 
 static ssize_t network_read_dev_attr(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len, enum iio_attr_type type)
+				     unsigned int buf_id, const char *attr,
+				     char *dst, size_t len,
+				     enum iio_attr_type type)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_read_attr(pdata->iiod_client, dev, NULL,
-				     attr, dst, len, type);
+				     attr, dst, len, type, buf_id);
 }
 
 static ssize_t network_write_dev_attr(const struct iio_device *dev,
-		const char *attr, const char *src, size_t len, enum iio_attr_type type)
+				      unsigned int buf_id, const char *attr,
+				      const char *src, size_t len,
+				      enum iio_attr_type type)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_write_attr(pdata->iiod_client, dev, NULL,
-				      attr, src, len, type);
+				      attr, src, len, type, buf_id);
 }
 
 static ssize_t network_read_chn_attr(const struct iio_channel *chn,
@@ -382,7 +386,7 @@ static ssize_t network_read_chn_attr(const struct iio_channel *chn,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_read_attr(pdata->iiod_client, dev, chn,
-				     attr, dst, len, false);
+				     attr, dst, len, false, 0);
 }
 
 static ssize_t network_write_chn_attr(const struct iio_channel *chn,
@@ -393,7 +397,7 @@ static ssize_t network_write_chn_attr(const struct iio_channel *chn,
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
 	return iiod_client_write_attr(pdata->iiod_client, dev, chn,
-				      attr, src, len, false);
+				      attr, src, len, false, 0);
 }
 
 static int network_get_trigger(const struct iio_device *dev,

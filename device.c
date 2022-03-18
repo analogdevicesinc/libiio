@@ -312,7 +312,7 @@ ssize_t iio_device_attr_read_raw(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->read_device_attr)
-		return dev->ctx->ops->read_device_attr(dev,
+		return dev->ctx->ops->read_device_attr(dev, 0,
 				attr, dst, len, IIO_ATTR_TYPE_DEVICE);
 	else
 		return -ENOSYS;
@@ -325,7 +325,7 @@ ssize_t iio_device_attr_write_raw(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->write_device_attr)
-		return dev->ctx->ops->write_device_attr(dev,
+		return dev->ctx->ops->write_device_attr(dev, 0,
 				attr, src, len, IIO_ATTR_TYPE_DEVICE);
 	else
 		return -ENOSYS;
@@ -344,7 +344,7 @@ ssize_t iio_device_buffer_attr_read_raw(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->read_device_attr)
-		return dev->ctx->ops->read_device_attr(dev,
+		return dev->ctx->ops->read_device_attr(dev, 0,
 				attr, dst, len, IIO_ATTR_TYPE_BUFFER);
 	else
 		return -ENOSYS;
@@ -357,7 +357,7 @@ ssize_t iio_device_buffer_attr_write_raw(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->write_device_attr)
-		return dev->ctx->ops->write_device_attr(dev,
+		return dev->ctx->ops->write_device_attr(dev, 0,
 				attr, src, len, IIO_ATTR_TYPE_BUFFER);
 	else
 		return -ENOSYS;
@@ -668,7 +668,7 @@ ssize_t iio_device_debug_attr_read_raw(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->read_device_attr)
-		return dev->ctx->ops->read_device_attr(dev,
+		return dev->ctx->ops->read_device_attr(dev, 0,
 				attr, dst, len, IIO_ATTR_TYPE_DEBUG);
 	else
 		return -ENOSYS;
@@ -681,7 +681,7 @@ ssize_t iio_device_debug_attr_write_raw(const struct iio_device *dev,
 		return -EINVAL;
 
 	if (dev->ctx->ops->write_device_attr)
-		return dev->ctx->ops->write_device_attr(dev,
+		return dev->ctx->ops->write_device_attr(dev, 0,
 				attr, src, len, IIO_ATTR_TYPE_DEBUG);
 	else
 		return -ENOSYS;
