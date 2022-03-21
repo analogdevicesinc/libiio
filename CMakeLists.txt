@@ -57,15 +57,16 @@ set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES
 	C_EXTENSIONS OFF
 )
 if (WIN32)
+	if (MSVC)
+		set(LIBIIO_WIN32_PREFIX lib)
+	endif()
+
 	# On Windows, DLLs aren't suffixed with the library's version;
 	# therefore the libiio 1.x DLL needs to have a different name
 	# than the compatibility library.
 	set_target_properties(iio PROPERTIES
-		OUTPUT_NAME iio${PROJECT_VERSION_MAJOR}
+		OUTPUT_NAME ${LIBIIO_WIN32_PREFIX}iio${PROJECT_VERSION_MAJOR}
 	)
-endif()
-if (MSVC)
-	set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES PREFIX lib)
 endif()
 
 target_include_directories(iio PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
