@@ -404,8 +404,8 @@ static int local_buffer_enabled_set(const struct iio_device *dev, bool en)
 {
 	int ret;
 
-	ret = (int) local_write_dev_attr(dev, "buffer/enable", en ? "1" : "0",
-					 2, false);
+	ret = (int) local_write_dev_attr(dev, "buffer/enable",
+					 en ? "1" : "0", 2, IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0)
 		return ret;
 
@@ -598,14 +598,16 @@ static ssize_t local_read_chn_attr(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
 	attr = get_filename(chn, attr);
-	return local_read_dev_attr(chn->dev, attr, dst, len, false);
+	return local_read_dev_attr(chn->dev, attr,
+				   dst, len, IIO_ATTR_TYPE_DEVICE);
 }
 
 static ssize_t local_write_chn_attr(const struct iio_channel *chn,
 		const char *attr, const char *src, size_t len)
 {
 	attr = get_filename(chn, attr);
-	return local_write_dev_attr(chn->dev, attr, src, len, false);
+	return local_write_dev_attr(chn->dev, attr,
+				    src, len, IIO_ATTR_TYPE_DEVICE);
 }
 
 static int channel_write_state(const struct iio_channel *chn, bool en)
@@ -735,7 +737,7 @@ static int local_open(const struct iio_device *dev,
 
 	iio_snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
 	ret = local_write_dev_attr(dev, "buffer/length",
-			buf, strlen(buf) + 1, false);
+				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0)
 		return ret;
 
@@ -744,7 +746,7 @@ static int local_open(const struct iio_device *dev,
 	 * maximum if it's too high without issueing an error.
 	 */
 	ret = local_write_dev_attr(dev, "buffer/watermark",
-				   buf, strlen(buf) + 1, false);
+				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
 		return ret;
 
@@ -805,7 +807,8 @@ static int local_open(const struct iio_device *dev,
 		 * refilling the iio_buffer. */
 		iio_snprintf(buf, sizeof(buf), "%lu", size);
 		ret = local_write_dev_attr(dev, "buffer/length",
-				buf, strlen(buf) + 1, false);
+					   buf, strlen(buf) + 1,
+					   IIO_ATTR_TYPE_DEVICE);
 		if (ret < 0)
 			goto err_close;
 	}
@@ -922,8 +925,10 @@ static int local_get_trigger(const struct iio_device *dev,
 {
 	char buf[1024];
 	unsigned int i;
-	ssize_t nb = local_read_dev_attr(dev, "trigger/current_trigger",
-			buf, sizeof(buf), false);
+	ssize_t nb;
+
+	nb = local_read_dev_attr(dev, "trigger/current_trigger",
+				 buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 	if (nb < 0) {
 		*trigger = NULL;
 		return (int) nb;
@@ -950,8 +955,9 @@ static int local_set_trigger(const struct iio_device *dev,
 {
 	ssize_t nb;
 	const char *value = trigger ? trigger->name : "";
-	nb = local_write_dev_attr(dev, "trigger/current_trigger",
-			value, strlen(value) + 1, false);
+
+	nb = local_write_dev_attr(dev, "trigger/current_trigger", value,
+				  strlen(value) + 1, IIO_ATTR_TYPE_DEVICE);
 	if (nb < 0)
 		return (int) nb;
 	else
@@ -1092,7 +1098,8 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 	int ret;
 
 	if (!strcmp(name, "index")) {
-		ret = local_read_dev_attr(dev, path, buf, sizeof(buf), false);
+		ret = local_read_dev_attr(dev, path, buf, sizeof(buf),
+					  IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
 			char *end;
 			long long value;
@@ -1105,7 +1112,8 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			chn->index = (long) value;
 		}
 	} else if (!strcmp(name, "type")) {
-		ret = local_read_dev_attr(dev, path, buf, sizeof(buf), false);
+		ret = local_read_dev_attr(dev, path, buf, sizeof(buf),
+					  IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
 			char endian, sign;
 
