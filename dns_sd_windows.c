@@ -283,8 +283,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 
 	prm_dbg(params, "Closed socket%s\n", (num_sockets > 1) ? "s" : "");
 
-	port_knock_discovery_data(&d);
-	remove_dup_discovery_data(&d);
+	port_knock_discovery_data(params, &d);
+	remove_dup_discovery_data(params, &d);
 
 	ret = 0;
 out_free_buffer:
