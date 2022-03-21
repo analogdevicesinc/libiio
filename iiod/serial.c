@@ -262,6 +262,8 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 	if (err)
 		goto err_close_fd;
 
+	free(dev);
+
 	return 0;
 
 err_close_fd:

@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/pcercuei/libini.git
+	branch = master
+	commit = e22154361dfc63778a1ca4f153f085c5236ed8f7
+	parent = 1af7eab6e37f80f7cf469c9e86e0e1cd4524b1ba
+	method = merge
+	cmdver = 0.4.3

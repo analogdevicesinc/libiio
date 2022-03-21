@@ -9,7 +9,7 @@
 #include "iio-debug.h"
 #include "iio-private.h"
 #include "sort.h"
-#include "libini/ini.h"
+#include "deps/libini/ini.h"
 
 
 #include <dirent.h>

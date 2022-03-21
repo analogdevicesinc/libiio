@@ -22,10 +22,12 @@ extern "C" {
 #endif
 
 #ifdef _WIN32
-#   ifdef LIBINI_EXPORTS
+#   ifdef ini_EXPORTS
 #	define __api __declspec(dllexport)
-#   else
+#   elif !defined(libini_STATIC)
 #	define __api __declspec(dllimport)
+#	else
+#	define __api
 #   endif
 #elif __GNUC__ >= 4
 #   define __api __attribute__((visibility ("default")))
