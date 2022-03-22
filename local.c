@@ -1045,7 +1045,9 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 static int read_device_name(struct iio_device *dev)
 {
 	char buf[1024];
-	ssize_t ret = iio_device_attr_read(dev, "name", buf, sizeof(buf));
+	ssize_t ret;
+
+	ret = iio_device_attr_read_raw(dev, "name", buf, sizeof(buf));
 	if (ret < 0)
 		return ret;
 	else if (ret == 0)
@@ -1061,7 +1063,9 @@ static int read_device_name(struct iio_device *dev)
 static int read_device_label(struct iio_device *dev)
 {
 	char buf[1024];
-	ssize_t ret = iio_device_attr_read(dev, "label", buf, sizeof(buf));
+	ssize_t ret;
+
+	ret = iio_device_attr_read_raw(dev, "label", buf, sizeof(buf));
 	if (ret < 0)
 		return ret;
 	else if (ret == 0)
@@ -1803,7 +1807,7 @@ static void init_data_scale(struct iio_channel *chn)
 	float value;
 
 	chn->format.with_scale = false;
-	ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
+	ret = iio_channel_attr_read_raw(chn, "scale", buf, sizeof(buf));
 	if (ret < 0)
 		return;
 
