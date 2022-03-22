@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_buffer_attr(dev, j);
-				ret = (int) iio_device_buffer_attr_read_raw(dev,
+				ret = (int) iio_device_buffer_attr_read_raw(dev, 0,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",

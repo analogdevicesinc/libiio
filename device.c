@@ -338,35 +338,39 @@ ssize_t iio_device_attr_write_string(const struct iio_device *dev,
 }
 
 ssize_t iio_device_buffer_attr_read_raw(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len)
+					unsigned int buf_id, const char *attr,
+					char *dst, size_t len)
 {
 	if (!attr)
 		return -EINVAL;
 
 	if (dev->ctx->ops->read_device_attr)
-		return dev->ctx->ops->read_device_attr(dev, 0,
+		return dev->ctx->ops->read_device_attr(dev, buf_id,
 				attr, dst, len, IIO_ATTR_TYPE_BUFFER);
 	else
 		return -ENOSYS;
 }
 
 ssize_t iio_device_buffer_attr_write_raw(const struct iio_device *dev,
-		const char *attr, const void *src, size_t len)
+					 unsigned int buf_id, const char *attr,
+					 const void *src, size_t len)
 {
 	if (!attr)
 		return -EINVAL;
 
 	if (dev->ctx->ops->write_device_attr)
-		return dev->ctx->ops->write_device_attr(dev, 0,
+		return dev->ctx->ops->write_device_attr(dev, buf_id,
 				attr, src, len, IIO_ATTR_TYPE_BUFFER);
 	else
 		return -ENOSYS;
 }
 
 ssize_t iio_device_buffer_attr_write_string(const struct iio_device *dev,
+					    unsigned int buf_id,
 					    const char *attr, const char *src)
 {
-	return iio_device_buffer_attr_write_raw(dev, attr, src, strlen(src) + 1);
+	return iio_device_buffer_attr_write_raw(dev, buf_id, attr, src,
+						strlen(src) + 1);
 }
 
 void iio_device_set_data(struct iio_device *dev, void *data)
@@ -579,13 +583,15 @@ int iio_device_attr_write_bool(const struct iio_device *dev,
 }
 
 int iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
-		const char *attr, long long *val)
+					 unsigned int buf_id,
+					 const char *attr, long long *val)
 {
 	char *end, buf[1024];
 	long long value;
 	ssize_t ret;
 
-	ret = iio_device_buffer_attr_read_raw(dev, attr, buf, sizeof(buf));
+	ret = iio_device_buffer_attr_read_raw(dev, buf_id, attr,
+					      buf, sizeof(buf));
 	if (ret < 0)
 		return (int) ret;
 
@@ -598,12 +604,13 @@ int iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
 }
 
 int iio_device_buffer_attr_read_bool(const struct iio_device *dev,
-		const char *attr, bool *val)
+				     unsigned int buf_id,
+				     const char *attr, bool *val)
 {
 	long long value;
 	int ret;
 
-	ret = iio_device_buffer_attr_read_longlong(dev, attr, &value);
+	ret = iio_device_buffer_attr_read_longlong(dev, buf_id, attr, &value);
 	if (ret < 0)
 		return ret;
 
@@ -612,12 +619,14 @@ int iio_device_buffer_attr_read_bool(const struct iio_device *dev,
 }
 
 int iio_device_buffer_attr_read_double(const struct iio_device *dev,
-		const char *attr, double *val)
+				       unsigned int buf_id,
+				       const char *attr, double *val)
 {
 	char buf[1024];
 	ssize_t ret;
 
-	ret = iio_device_buffer_attr_read_raw(dev, attr, buf, sizeof(buf));
+	ret = iio_device_buffer_attr_read_raw(dev, buf_id, attr,
+					      buf, sizeof(buf));
 	if (ret < 0)
 		return (int) ret;
 	else
@@ -625,38 +634,40 @@ int iio_device_buffer_attr_read_double(const struct iio_device *dev,
 }
 
 int iio_device_buffer_attr_write_longlong(const struct iio_device *dev,
-		const char *attr, long long val)
+					  unsigned int buf_id,
+					  const char *attr, long long val)
 {
 	ssize_t ret;
 	char buf[1024];
 
 	iio_snprintf(buf, sizeof(buf), "%lld", val);
-	ret = iio_device_buffer_attr_write_string(dev, attr, buf);
+	ret = iio_device_buffer_attr_write_string(dev, buf_id, attr, buf);
 
 	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_buffer_attr_write_double(const struct iio_device *dev,
-		const char *attr, double val)
+					unsigned int buf_id,
+					const char *attr, double val)
 {
 	ssize_t ret;
 	char buf[1024];
 
 	ret = (ssize_t) write_double(buf, sizeof(buf), val);
 	if (!ret)
-		ret = iio_device_buffer_attr_write_string(dev, attr, buf);
+		ret = iio_device_buffer_attr_write_string(dev, buf_id,
+							  attr, buf);
 	return (int) (ret < 0 ? ret : 0);
 }
 
 int iio_device_buffer_attr_write_bool(const struct iio_device *dev,
-		const char *attr, bool val)
+				      unsigned int buf_id,
+				      const char *attr, bool val)
 {
 	ssize_t ret;
+	const char *value = val ? "1" : "0";
 
-	if (val)
-		ret = iio_device_buffer_attr_write_string(dev, attr, "1");
-	else
-		ret = iio_device_buffer_attr_write_string(dev, attr, "0");
+	ret = iio_device_buffer_attr_write_string(dev, buf_id, attr, value);
 
 	return (int) (ret < 0 ? ret : 0);
 }

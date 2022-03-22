@@ -796,6 +796,7 @@ iio_device_attr_write_raw(const struct iio_device *dev,
 
 /** @brief Read the content of the given buffer-specific attribute
  * @param dev A pointer to an iio_device structure
+ * @param buf_id The index of the hardware buffer (generally 0)
  * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param dst A pointer to the memory area where the NULL-terminated string
@@ -805,25 +806,28 @@ iio_device_attr_write_raw(const struct iio_device *dev,
  * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t
 iio_device_buffer_attr_read_raw(const struct iio_device *dev,
+				unsigned int buf_id,
 				const char *attr, char *dst, size_t len);
 
 
 /** @brief Read the content of the given buffer-specific attribute
  * @param dev A pointer to an iio_device structure
+ * @param buf_id The index of the hardware buffer (generally 0)
  * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param ptr A pointer to the variable where the value should be stored
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-#define iio_device_buffer_attr_read(buf, attr, ptr)			\
+#define iio_device_buffer_attr_read(dev, buf_id, attr, ptr)		\
 	_Generic((ptr),							\
 		 bool *: iio_device_buffer_attr_read_bool,		\
 		 long long *: iio_device_buffer_attr_read_longlong,	\
-		 double *: iio_device_buffer_attr_read_double)(buf, attr, ptr)
+		 double *: iio_device_buffer_attr_read_double)(dev, buf_id, attr, ptr)
 
 
 /** @brief Set the value of the given buffer-specific attribute
  * @param dev A pointer to an iio_device structure
+ * @param buf_id The index of the hardware buffer (generally 0)
  * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param src A pointer to the data to be written
@@ -832,23 +836,25 @@ iio_device_buffer_attr_read_raw(const struct iio_device *dev,
  * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t
 iio_device_buffer_attr_write_raw(const struct iio_device *dev,
-				 const char *attr, const void *src, size_t len);
+				 unsigned int buf_id, const char *attr,
+				 const void *src, size_t len);
 
 
 /** @brief Set the value of the given buffer-specific attribute
  * @param dev A pointer to an iio_device structure
+ * @param buf_id The index of the hardware buffer (generally 0)
  * @param attr A NULL-terminated string corresponding to the name of the
  * attribute
  * @param val A long long value to set the attribute to
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-#define iio_device_buffer_attr_write(buf, attr, val)			\
+#define iio_device_buffer_attr_write(dev, buf_id, attr, val)		\
 	_Generic((val),							\
 		 const char *: iio_device_buffer_attr_write_string,	\
 		 char *: iio_device_buffer_attr_write_string,		\
 		 bool: iio_device_buffer_attr_write_bool,		\
 		 long long: iio_device_buffer_attr_write_longlong,	\
-		 double: iio_device_buffer_attr_write_double)(buf, attr, val)
+		 double: iio_device_buffer_attr_write_double)(dev, buf_id, attr, val)
 
 
 /** @brief Associate a pointer to an iio_device structure
@@ -1608,24 +1614,31 @@ iio_device_attr_write_double(const struct iio_device *dev,
 			     const char *attr, double val);
 __api __check_ret int
 iio_device_buffer_attr_read_bool(const struct iio_device *dev,
+				 unsigned int buf_id,
 				 const char *attr, bool *val);
 __api __check_ret int
 iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
+				     unsigned int buf_id,
 				     const char *attr, long long *val);
 __api __check_ret int
 iio_device_buffer_attr_read_double(const struct iio_device *dev,
+				   unsigned int buf_id,
 				   const char *attr, double *val);
 __api __check_ret ssize_t
 iio_device_buffer_attr_write_string(const struct iio_device *dev,
+				    unsigned int buf_id,
 				    const char *attr, const char *src);
 __api __check_ret int
 iio_device_buffer_attr_write_bool(const struct iio_device *dev,
+				  unsigned int buf_id,
 				  const char *attr, bool val);
 __api __check_ret int
 iio_device_buffer_attr_write_longlong(const struct iio_device *dev,
+				      unsigned int buf_id,
 				      const char *attr, long long val);
 __api __check_ret int
 iio_device_buffer_attr_write_double(const struct iio_device *dev,
+				    unsigned int buf_id,
 				    const char *attr, double val);
 __api __check_ret int
 iio_channel_attr_read_bool(const struct iio_channel *chn,

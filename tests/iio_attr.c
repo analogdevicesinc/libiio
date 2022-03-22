@@ -164,7 +164,7 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 
 	if (!wbuf || quiet == ATTR_VERBOSE ) {
 		gen_function("device_buffer", "dev", attr, NULL);
-		ret = iio_device_buffer_attr_read_raw(dev, attr, buf, BUF_SIZE);
+		ret = iio_device_buffer_attr_read_raw(dev, 0, attr, buf, BUF_SIZE);
 
 		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
@@ -185,7 +185,7 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 
 	if (wbuf) {
 		gen_function("device_buffer", "dev", attr, wbuf);
-		ret = iio_device_buffer_attr_write_string(dev, attr, wbuf);
+		ret = iio_device_buffer_attr_write_string(dev, 0, attr, wbuf);
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
