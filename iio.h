@@ -750,22 +750,6 @@ __api __check_ret ssize_t iio_device_attr_read(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len);
 
 
-/** @brief Read the content of all device-specific attributes
- * @param dev A pointer to an iio_device structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the device-specific attributes are read in one single
- * command. */
-__api __check_ret int iio_device_attr_read_all(struct iio_device *dev,
-		int (*cb)(struct iio_device *dev, const char *attr,
-			const char *value, size_t len, void *d),
-		void *data);
-
-
 /** @brief Read the content of the given device-specific attribute
  * @param dev A pointer to an iio_device structure
  * @param attr A NULL-terminated string corresponding to the name of the
@@ -1669,21 +1653,6 @@ __api __check_ret ssize_t iio_device_debug_attr_write(const struct iio_device *d
  * @return On error, a negative errno code is returned */
 __api __check_ret ssize_t iio_device_debug_attr_write_raw(const struct iio_device *dev,
 		const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the values of all debug attributes
- * @param dev A pointer to an iio_device structure
- * @param cb A pointer to a callback function
- * @param data A pointer that will be passed to the callback function
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> This function is especially useful when used with the network
- * backend, as all the debug attributes are written in one single command. */
-__api __check_ret int iio_device_debug_attr_write_all(struct iio_device *dev,
-		ssize_t (*cb)(struct iio_device *dev,
-			const char *attr, void *buf, size_t len, void *d),
-		void *data);
 
 
 /** @brief Read the content of the given debug attribute
