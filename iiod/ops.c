@@ -1205,7 +1205,7 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 				attr, buf, sizeof(buf) - 1);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			ret = iio_device_buffer_attr_read_raw(dev,
+			ret = iio_device_buffer_attr_read_raw(dev, 0,
 							attr, buf, sizeof(buf) - 1);
 			break;
 		default:
@@ -1247,7 +1247,7 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			ret = iio_device_debug_attr_write_raw(dev, attr, buf, len);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			ret = iio_device_buffer_attr_write_raw(dev, attr, buf, len);
+			ret = iio_device_buffer_attr_write_raw(dev, 0, attr, buf, len);
 			break;
 		default:
 			ret = -EINVAL;
