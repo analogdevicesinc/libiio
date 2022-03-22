@@ -91,7 +91,7 @@ static double get_channel_value(struct iio_channel *chn)
 	setlocale(LC_NUMERIC, "C");
 
 	if (channel_has_attr(chn, "input")) {
-		ret = iio_channel_attr_read(chn, "input", buf, sizeof(buf));
+		ret = iio_channel_attr_read_raw(chn, "input", buf, sizeof(buf));
 		if (ret < 0) {
 			err_str(ret);
 			val = 0;
@@ -104,7 +104,7 @@ static double get_channel_value(struct iio_channel *chn)
 			}
 		}
 	} else {
-		ret = iio_channel_attr_read(chn, "raw", buf, sizeof(buf));
+		ret = iio_channel_attr_read_raw(chn, "raw", buf, sizeof(buf));
 		if (ret < 0) {
 			err_str(ret);
 			val = 0;
@@ -117,7 +117,7 @@ static double get_channel_value(struct iio_channel *chn)
 			}
 		}
 		if (channel_has_attr(chn, "offset")) {
-			ret = iio_channel_attr_read(chn, "offset", buf, sizeof(buf));
+			ret = iio_channel_attr_read_raw(chn, "offset", buf, sizeof(buf));
 			if (ret < 0)
 				err_str(ret);
 			else {
@@ -129,7 +129,7 @@ static double get_channel_value(struct iio_channel *chn)
 		}
 
 		if (channel_has_attr(chn, "scale")) {
-			ret = iio_channel_attr_read(chn, "scale", buf, sizeof(buf));
+			ret = iio_channel_attr_read_raw(chn, "scale", buf, sizeof(buf));
 			if (ret < 0)
 				err_str(ret);
 			else {

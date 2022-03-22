@@ -100,7 +100,7 @@ static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 /* write attribute: string */
 static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
 {
-	errchk(iio_channel_attr_write(chn, what, str), what);
+	errchk(iio_channel_attr_write_string(chn, what, str), what);
 }
 
 /* helper function generating channel names */

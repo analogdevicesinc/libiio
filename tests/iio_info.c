@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
 				const char *attr = iio_channel_get_attr(ch, k);
-				ret = (int) iio_channel_attr_read(ch,
+				ret = (int) iio_channel_attr_read_raw(ch,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ", k, attr);
@@ -240,7 +240,7 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_attr(dev, j);
-				ret = (int) iio_device_attr_read(dev,
+				ret = (int) iio_device_attr_read_raw(dev,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				const char *attr = iio_device_get_buffer_attr(dev, j);
-				ret = (int) iio_device_buffer_attr_read(dev,
+				ret = (int) iio_device_buffer_attr_read_raw(dev,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
 				const char *attr =
 					iio_device_get_debug_attr(dev, j);
 
-				ret = (int) iio_device_debug_attr_read(dev,
+				ret = (int) iio_device_debug_attr_read_raw(dev,
 						attr, buf, BUF_SIZE);
 				printf("\t\t\t\tdebug attr %2u: %s ",
 						j, attr);

@@ -1198,14 +1198,14 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			ret = iio_device_attr_read(dev, attr, buf, sizeof(buf) - 1);
+			ret = iio_device_attr_read_raw(dev, attr, buf, sizeof(buf) - 1);
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
-			ret = iio_device_debug_attr_read(dev,
+			ret = iio_device_debug_attr_read_raw(dev,
 				attr, buf, sizeof(buf) - 1);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			ret = iio_device_buffer_attr_read(dev,
+			ret = iio_device_buffer_attr_read_raw(dev,
 							attr, buf, sizeof(buf) - 1);
 			break;
 		default:
@@ -1268,7 +1268,7 @@ ssize_t read_chn_attr(struct parser_pdata *pdata,
 	ssize_t ret = -ENODEV;
 
 	if (chn)
-		ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf) - 1);
+		ret = iio_channel_attr_read_raw(chn, attr, buf, sizeof(buf) - 1);
 	else if (pdata->dev)
 		ret = -ENXIO;
 	print_value(pdata, ret);

@@ -758,8 +758,9 @@ __api __check_ret __pure const char * iio_device_find_buffer_attr(
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_device_attr_read(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len);
+__api __check_ret ssize_t
+iio_device_attr_read_raw(const struct iio_device *dev,
+			 const char *attr, char *dst, size_t len);
 
 
 /** @brief Read the content of the given device-specific attribute
@@ -802,8 +803,9 @@ __api __check_ret int iio_device_attr_read_double(const struct iio_device *dev,
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_device_attr_write(const struct iio_device *dev,
-		const char *attr, const char *src);
+__api __check_ret ssize_t
+iio_device_attr_write_string(const struct iio_device *dev,
+			      const char *attr, const char *src);
 
 
 /** @brief Set the value of the given device-specific attribute
@@ -859,8 +861,9 @@ __api __check_ret int iio_device_attr_write_double(const struct iio_device *dev,
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_device_buffer_attr_read(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len);
+__api __check_ret ssize_t
+iio_device_buffer_attr_read_raw(const struct iio_device *dev,
+				const char *attr, char *dst, size_t len);
 
 /** @brief Read the content of the given buffer-specific attribute
  * @param dev A pointer to an iio_device structure
@@ -902,8 +905,9 @@ __api __check_ret int iio_device_buffer_attr_read_double(const struct iio_device
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_device_buffer_attr_write(const struct iio_device *dev,
-		const char *attr, const char *src);
+__api __check_ret ssize_t
+iio_device_buffer_attr_write_string(const struct iio_device *dev,
+				     const char *attr, const char *src);
 
 
 /** @brief Set the value of the given buffer-specific attribute
@@ -1094,8 +1098,9 @@ __api __check_ret __pure const char * iio_channel_attr_get_filename(
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_channel_attr_read(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len);
+__api __check_ret ssize_t
+iio_channel_attr_read_raw(const struct iio_channel *chn,
+			  const char *attr, char *dst, size_t len);
 
 
 /** @brief Read the content of the given channel-specific attribute
@@ -1138,8 +1143,9 @@ __api __check_ret int iio_channel_attr_read_double(const struct iio_channel *chn
  * @param src A NULL-terminated string to set the attribute to
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_channel_attr_write(const struct iio_channel *chn,
-		const char *attr, const char *src);
+__api __check_ret ssize_t
+iio_channel_attr_write_string(const struct iio_channel *chn,
+			       const char *attr, const char *src);
 
 
 /** @brief Set the value of the given channel-specific attribute
@@ -1640,8 +1646,9 @@ __api __check_ret __pure const char * iio_device_find_debug_attr(
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_device_debug_attr_read(const struct iio_device *dev,
-		const char *attr, char *dst, size_t len);
+__api __check_ret ssize_t
+iio_device_debug_attr_read_raw(const struct iio_device *dev,
+			       const char *attr, char *dst, size_t len);
 
 
 /** @brief Set the value of the given debug attribute
@@ -1651,8 +1658,9 @@ __api __check_ret ssize_t iio_device_debug_attr_read(const struct iio_device *de
  * @param src A NULL-terminated string to set the debug attribute to
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t iio_device_debug_attr_write(const struct iio_device *dev,
-		const char *attr, const char *src);
+__api __check_ret ssize_t
+iio_device_debug_attr_write_string(const struct iio_device *dev,
+				   const char *attr, const char *src);
 
 
 /** @brief Set the value of the given debug attribute

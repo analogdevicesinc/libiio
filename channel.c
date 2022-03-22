@@ -350,7 +350,7 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 	return NULL;
 }
 
-ssize_t iio_channel_attr_read(const struct iio_channel *chn,
+ssize_t iio_channel_attr_read_raw(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
 	if (!attr)
@@ -376,8 +376,8 @@ ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 		return -ENOSYS;
 }
 
-ssize_t iio_channel_attr_write(const struct iio_channel *chn,
-		const char *attr, const char *src)
+ssize_t iio_channel_attr_write_string(const struct iio_channel *chn,
+				      const char *attr, const char *src)
 {
 	return iio_channel_attr_write_raw(chn, attr, src, strlen(src) + 1);
 }
@@ -651,7 +651,9 @@ int iio_channel_attr_read_longlong(const struct iio_channel *chn,
 {
 	char *end, buf[1024];
 	long long value;
-	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
+	ssize_t ret;
+
+	ret = iio_channel_attr_read_raw(chn, attr, buf, sizeof(buf));
 	if (ret < 0)
 		return (int) ret;
 
@@ -679,7 +681,9 @@ int iio_channel_attr_read_double(const struct iio_channel *chn,
 		const char *attr, double *val)
 {
 	char buf[1024];
-	ssize_t ret = iio_channel_attr_read(chn, attr, buf, sizeof(buf));
+	ssize_t ret;
+
+	ret = iio_channel_attr_read_raw(chn, attr, buf, sizeof(buf));
 	if (ret < 0)
 		return (int) ret;
 	else
@@ -692,7 +696,7 @@ int iio_channel_attr_write_longlong(const struct iio_channel *chn,
 	int ret;
 	char buf[1024];
 	iio_snprintf(buf, sizeof(buf), "%lld", val);
-	ret = (int) iio_channel_attr_write(chn, attr, buf);
+	ret = (int) iio_channel_attr_write_string(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
@@ -704,7 +708,7 @@ int iio_channel_attr_write_double(const struct iio_channel *chn,
 
 	ret = write_double(buf, sizeof(buf), val);
 	if (!ret)
-		ret = (int) iio_channel_attr_write(chn, attr, buf);
+		ret = (int) iio_channel_attr_write_string(chn, attr, buf);
 	return ret < 0 ? ret : 0;
 }
 
