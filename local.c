@@ -738,6 +738,8 @@ static int local_open(const struct iio_device *dev,
 	int ret;
 	char buf[1024];
 	struct iio_device_pdata *pdata = dev->pdata;
+	const struct iio_channels_mask *mask = dev->mask;
+	struct iio_channel *chn;
 
 	if (pdata->fd != -1)
 		return -EBUSY;
@@ -774,8 +776,8 @@ static int local_open(const struct iio_device *dev,
 
 	/* Disable channels */
 	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *chn = dev->channels[i];
-		if (chn->index >= 0 && !iio_channel_is_enabled(chn)) {
+		chn = dev->channels[i];
+		if (chn->index >= 0 && !iio_channel_is_enabled(chn, mask)) {
 			ret = channel_write_state(chn, false);
 			if (ret < 0)
 				goto err_close;
@@ -783,8 +785,8 @@ static int local_open(const struct iio_device *dev,
 	}
 	/* Enable channels */
 	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *chn = dev->channels[i];
-		if (chn->index >= 0 && iio_channel_is_enabled(chn)) {
+		chn = dev->channels[i];
+		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
 			ret = channel_write_state(chn, true);
 			if (ret < 0)
 				goto err_close;
