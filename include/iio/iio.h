@@ -1050,22 +1050,24 @@ iio_channel_attr_write_raw(const struct iio_channel *chn,
 
 /** @brief Enable the given channel
  * @param chn A pointer to an iio_channel structure
- *
- * <b>NOTE:</b>Before creating an iio_buffer structure with
- * iio_device_create_buffer, it is required to enable at least one channel of
- * the device to read from. */
-__api void iio_channel_enable(struct iio_channel *chn);
+ * @param mask The channels mask to manipulate */
+__api void iio_channel_enable(const struct iio_channel *chn,
+			      struct iio_channels_mask *mask);
 
 
 /** @brief Disable the given channel
- * @param chn A pointer to an iio_channel structure */
-__api void iio_channel_disable(struct iio_channel *chn);
+ * @param chn A pointer to an iio_channel structure
+ * @param mask The channels mask to manipulate */
+__api void iio_channel_disable(const struct iio_channel *chn,
+			       struct iio_channels_mask *mask);
 
 
 /** @brief Returns True if the channel is enabled
  * @param chn A pointer to an iio_channel structure
  * @return True if the channel is enabled, False otherwise */
-__api __check_ret bool iio_channel_is_enabled(const struct iio_channel *chn);
+__api __check_ret bool
+iio_channel_is_enabled(const struct iio_channel *chn,
+		       const struct iio_channels_mask *mask);
 
 
 /** @brief Demultiplex the samples of a given channel

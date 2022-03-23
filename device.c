@@ -234,11 +234,12 @@ const char * iio_device_find_debug_attr(const struct iio_device *dev,
 
 bool iio_device_is_tx(const struct iio_device *dev)
 {
+	struct iio_channel *ch;
 	unsigned int i;
 
 	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *ch = dev->channels[i];
-		if (iio_channel_is_output(ch) && iio_channel_is_enabled(ch))
+		ch = dev->channels[i];
+		if (iio_channel_is_output(ch) && iio_channel_is_scan_element(ch))
 			return true;
 	}
 

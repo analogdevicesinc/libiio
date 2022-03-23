@@ -255,7 +255,7 @@ void * iio_buffer_first(const struct iio_buffer *buffer,
 	uintptr_t ptr = (uintptr_t) buffer->buffer,
 		  start = ptr;
 
-	if (!iio_channel_is_enabled(chn))
+	if (!iio_channel_is_enabled(chn, chn->dev->mask))
 		return iio_buffer_end(buffer);
 
 	for (i = 0; i < buffer->dev->nb_channels; i++) {
