@@ -456,12 +456,6 @@ void free_device(struct iio_device *dev)
 	free(dev);
 }
 
-const struct iio_channels_mask *
-iio_device_get_channels_mask(const struct iio_device *dev)
-{
-	return dev->mask;
-}
-
 ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 				   const struct iio_channels_mask *mask)
 {
