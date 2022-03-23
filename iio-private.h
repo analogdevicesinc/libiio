@@ -161,8 +161,6 @@ struct iio_channels_mask {
 	uint32_t mask[];
 };
 
-struct iio_channels_mask *iio_create_channels_mask(unsigned int nb_channels);
-
 int iio_channels_mask_copy(struct iio_channels_mask *dst,
 			   const struct iio_channels_mask *src);
 

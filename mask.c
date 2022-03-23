@@ -36,3 +36,8 @@ int iio_channels_mask_copy(struct iio_channels_mask *dst,
 
 	return 0;
 }
+
+void iio_channels_mask_destroy(struct iio_channels_mask *mask)
+{
+	free(mask);
+}
