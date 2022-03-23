@@ -1407,6 +1407,20 @@ struct iio_data_format {
 };
 
 
+/** @brief Create a new empty channels mask
+ * @param nb_channels The number of channels in the mask
+ * @return On success, a pointer to an iio_channels_mask structure
+ * @return On error, NULL is returned */
+__api struct iio_channels_mask *
+iio_create_channels_mask(unsigned int nb_channels);
+
+
+/** @brief Destroy a channels mask
+ * @param mask A pointer to an iio_channels_mask structure */
+__api void
+iio_channels_mask_destroy(struct iio_channels_mask *mask);
+
+
 /** @brief Get a mask of the currently enabled channels
  * @param dev A pointer to an iio_device structure
  * @return A pointer to an iio_channels_mask structure */
