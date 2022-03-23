@@ -33,16 +33,20 @@
 #define IIOD_PORT 30431
 
 struct addrinfo;
+#if HAVE_AVAHI
 struct AvahiSimplePoll;
 struct AvahiAddress;
+#endif
 
 /* Common structure which all dns_sd_[*] files fill out
  * Anything that is dynamically allocated (malloc) needs to be managed
  */
 struct dns_sd_discovery_data {
 	struct iio_mutex *lock;
+#if HAVE_AVAHI
 	struct AvahiSimplePoll *poll;
 	struct AvahiAddress *address;
+#endif
 	uint16_t found, resolved;
 	char addr_str[DNS_SD_ADDRESS_STR_MAX];
 	char *hostname;
@@ -80,5 +84,8 @@ void port_knock_discovery_data(struct dns_sd_discovery_data **ddata);
 
 /* Use dnssd to resolve a given hostname */
 int dnssd_resolve_host(const char *hostname, char *ip_addr, const int addr_len);
+
+/* dump discovery data, normally used for debugging */
+void dump_discovery_data(struct dns_sd_discovery_data **ddata);
 
 #endif /* __IIO_DNS_SD_H */

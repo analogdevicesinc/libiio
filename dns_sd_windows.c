@@ -11,8 +11,16 @@
 
 #include <stdio.h>
 #include <errno.h>
+
+#ifdef _WIN32
 #include <winsock2.h>
 #include <iphlpapi.h>
+#define sleep(x) Sleep(x * 1000)
+#else
+#include <netdb.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#endif
 
 #include "debug.h"
 #include "dns_sd.h"
@@ -20,64 +28,112 @@
 #include "iio-private.h"
 #include "deps/mdns/mdns.h"
 
+static struct dns_sd_discovery_data *new_discovery_data(void)
+{
+	struct dns_sd_discovery_data *d;
+
+	d = zalloc(sizeof(*d));
+	if (!d)
+		return NULL;
+
+	return d;
+}
+
+static mdns_string_t ipv4_address_to_string(char* buffer, size_t capacity, const struct sockaddr_in* addr,
+		size_t addrlen) {
+
+	char host[NI_MAXHOST] = {0};
+	char service[NI_MAXSERV] = {0};
+	ssize_t len = 0;
+	int ret = getnameinfo((const struct sockaddr*)addr, (socklen_t)addrlen, host, NI_MAXHOST,
+			service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
+
+	if (ret == 0) {
+		if (strncmp(service, "5353", sizeof"5353") && addr->sin_port != 0)
+			len = iio_snprintf(buffer, capacity, "%s:%s", host, service);
+		else
+			len = iio_snprintf(buffer, capacity, "%s", host);
+	} else {
+		IIO_ERROR("Unable to find host: %s\n", gai_strerror(ret));
+	}
+
+	if (len >= (ssize_t)capacity)
+		len = (ssize_t)capacity - 1;
+
+	mdns_string_t str;
+	str.str = buffer;
+	str.length = len;
+	return str;
+}
+
 #ifdef HAVE_IPV6
-static const unsigned char localhost[] = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 1
-};
-static const unsigned char localhost_mapped[] = {
-	0, 0, 0,    0,    0,    0, 0, 0,
-	0, 0, 0xff, 0xff, 0x7f, 0, 0, 1
-};
+static mdns_string_t ipv6_address_to_string(char* buffer, size_t capacity, const struct sockaddr_in6* addr,
+		size_t addrlen) {
 
-static bool is_localhost6(const struct sockaddr_in6 *saddr6)
-{
-	const uint8_t *addr = saddr6->sin6_addr.s6_addr;
+	char host[NI_MAXHOST] = {0};
+	char service[NI_MAXSERV] = {0};
+	ssize_t len = 0;
+	int ret = getnameinfo((const struct sockaddr*)addr, (socklen_t)addrlen, host, NI_MAXHOST,
+			service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
 
-	return !memcmp(addr, localhost, sizeof(localhost)) ||
-		!memcmp(addr, localhost_mapped, sizeof(localhost_mapped));
+	if (ret == 0) {
+		if (strncmp(service, "5353", sizeof"5353") && addr->sin6_port != 0)
+			len = iio_snprintf(buffer, capacity, "[%s]:%s", host, service);
+		else
+			len = iio_snprintf(buffer, capacity, "%s", host);
+	} else {
+		IIO_ERROR("Unable to find host: %s\n", gai_strerror(ret));
+	}
+
+	if (len >= (ssize_t)capacity)
+		len = (ssize_t)capacity - 1;
+
+	mdns_string_t str;
+	str.str = buffer;
+	str.length = len;
+	return str;
 }
 #endif
 
-static bool is_localhost4(const struct sockaddr_in *saddr)
-{
-	return saddr->sin_addr.S_un.S_un_b.s_b1 == 127 &&
-		saddr->sin_addr.S_un.S_un_b.s_b2 == 0 &&
-		saddr->sin_addr.S_un.S_un_b.s_b3 == 0 &&
-		saddr->sin_addr.S_un.S_un_b.s_b4 == 1;
+static mdns_string_t
+ip_address_to_string(char* buffer, size_t capacity, const struct sockaddr* addr, size_t addrlen) {
+#ifdef HAVE_IPV6
+	if (addr->sa_family == AF_INET6)
+		return ipv6_address_to_string(buffer, capacity, (const struct sockaddr_in6*)addr, addrlen);
+#endif
+	return ipv4_address_to_string(buffer, capacity, (const struct sockaddr_in*)addr, addrlen);
 }
 
-static int open_client_sockets(int *sockets, unsigned int max_sockets)
+/*
+ *  When sending, each socket can only send to one network interface
+ * Thus we need to open one socket for each interface and address family
+ */
+static int open_client_sockets(int *sockets, int max_sockets, int port)
 {
-	IP_ADAPTER_UNICAST_ADDRESS *unicast;
-	IP_ADAPTER_ADDRESSES *adapter_address = 0;
-	PIP_ADAPTER_ADDRESSES adapter;
+	int num_sockets = 0;
+
+#ifdef _WIN32
+	IP_ADAPTER_ADDRESSES* adapter_address = 0;
 	ULONG address_size = 8000;
-	unsigned int i, ret, num_retries = 4, num_sockets = 0;
-	struct sockaddr_in *saddr;
-	unsigned long param = 1;
-	int sock;
-
-	/* When sending, each socket can only send to one network interface
-	 * Thus we need to open one socket for each interface and address family */
-
+	unsigned int ret;
+	unsigned int num_retries = 4;
 	do {
-		adapter_address = malloc(address_size);
-		if (!adapter_address)
-			return -ENOMEM;
-
-		ret = GetAdaptersAddresses(AF_UNSPEC,
-					   GAA_FLAG_SKIP_MULTICAST
-#ifndef HAVE_IPV6
-					   | GAA_FLAG_SKIP_ANYCAST
+		adapter_address = (IP_ADAPTER_ADDRESSES*)malloc(address_size);
+		ret = GetAdaptersAddresses(
+#ifdef HAVE_IPV6
+				AF_UNSPEC,   /* Return both IPv4 and IPv6 addresses */
+#else
+				AF_INET,     /* Return only IPv4 addresses */
 #endif
-					   , 0,
-					   adapter_address, &address_size);
-		if (ret != ERROR_BUFFER_OVERFLOW)
+				GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_ANYCAST, 0,
+				adapter_address, &address_size);
+		if (ret == ERROR_BUFFER_OVERFLOW) {
+			free(adapter_address);
+			adapter_address = 0;
+			address_size *= 2;
+		} else {
 			break;
-
-		free(adapter_address);
-		adapter_address = 0;
+		}
 	} while (num_retries-- > 0);
 
 	if (!adapter_address || (ret != NO_ERROR)) {
@@ -86,36 +142,88 @@ static int open_client_sockets(int *sockets, unsigned int max_sockets)
 		return num_sockets;
 	}
 
-	for (adapter = adapter_address; adapter; adapter = adapter->Next) {
-		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO)
-			continue;
-		if (adapter->OperStatus != IfOperStatusUp)
-			continue;
+	int first_ipv4 = 1;
+	int first_ipv6 = 1;
+	(void)first_ipv6;
 
-		for (unicast = adapter->FirstUnicastAddress;
-		     unicast; unicast = unicast->Next) {
+	for (PIP_ADAPTER_ADDRESSES adapter = adapter_address; adapter; adapter = adapter->Next) {
+		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO) {
+			IIO_DEBUG("Skipping Tunnel %ws\n", adapter->FriendlyName);
+			continue;
+		}
+		if (adapter->OperStatus != IfOperStatusUp) {
+			IIO_DEBUG("Skipping down %ws\n", adapter->FriendlyName);
+			continue;
+		}
+
+		for (IP_ADAPTER_UNICAST_ADDRESS* unicast = adapter->FirstUnicastAddress; unicast;
+				unicast = unicast->Next) {
 			if (unicast->Address.lpSockaddr->sa_family == AF_INET) {
-				saddr = (struct sockaddr_in *)unicast->Address.lpSockaddr;
-
-				if (!is_localhost4(saddr) &&
-				    num_sockets < max_sockets) {
-					sock = mdns_socket_open_ipv4(saddr);
-					if (sock >= 0)
-						sockets[num_sockets++] = sock;
+				struct sockaddr_in* saddr = (struct sockaddr_in*)unicast->Address.lpSockaddr;
+				if ((saddr->sin_addr.S_un.S_un_b.s_b1 != 127) ||
+						(saddr->sin_addr.S_un.S_un_b.s_b2 != 0) ||
+						(saddr->sin_addr.S_un.S_un_b.s_b3 != 0) ||
+						(saddr->sin_addr.S_un.S_un_b.s_b4 != 1)) {
+					int log_addr = 0;
+					if (first_ipv4) {
+						first_ipv4 = 0;
+						log_addr = 1;
+					}
+					if (num_sockets < max_sockets) {
+						saddr->sin_port = htons((unsigned short)port);
+						int sock = mdns_socket_open_ipv4(saddr);
+						if (sock >= 0) {
+							sockets[num_sockets++] = sock;
+							log_addr = 1;
+						} else {
+							log_addr = 0;
+						}
+					}
+					if (log_addr) {
+						char buffer[128];
+						mdns_string_t addr = ipv4_address_to_string(buffer, sizeof(buffer), saddr,
+								sizeof(struct sockaddr_in));
+						(void)addr;
+						IIO_DEBUG("Local IPv4 address: %.*s\n", MDNS_STRING_FORMAT(addr));
+					}
+				} else {
+					IIO_DEBUG("Skipping local loopback %ws\n", adapter->FriendlyName);
 				}
 			}
 #ifdef HAVE_IPV6
 			else if (unicast->Address.lpSockaddr->sa_family == AF_INET6) {
-				struct sockaddr_in6 *saddr6;
-
-				saddr6 = (struct sockaddr_in6 *)unicast->Address.lpSockaddr;
-
-				if (unicast->DadState == NldsPreferred &&
-				    !is_localhost6(saddr6) &&
-				    num_sockets < max_sockets) {
-					sock = mdns_socket_open_ipv6(saddr6);
-					if (sock >= 0)
-						sockets[num_sockets++] = sock;
+				struct sockaddr_in6* saddr = (struct sockaddr_in6*)unicast->Address.lpSockaddr;
+				// Ignore link-local addresses
+				if (saddr->sin6_scope_id)
+					continue;
+				static const unsigned char localhost[] = {0, 0, 0, 0, 0, 0, 0, 0,
+								  0, 0, 0, 0, 0, 0, 0, 1};
+				static const unsigned char localhost_mapped[] = {0, 0, 0,    0,    0,    0, 0, 0,
+										 0, 0, 0xff, 0xff, 0x7f, 0, 0, 1};
+				if ((unicast->DadState == NldsPreferred) &&
+						memcmp(saddr->sin6_addr.s6_addr, localhost, 16) &&
+						memcmp(saddr->sin6_addr.s6_addr, localhost_mapped, 16)) {
+					int log_addr = 0;
+					if (first_ipv6) {
+						first_ipv6 = 0;
+						log_addr = 1;
+					}
+					if (num_sockets < max_sockets) {
+						saddr->sin6_port = htons((unsigned short)port);
+						int sock = mdns_socket_open_ipv6(saddr);
+						if (sock >= 0) {
+							sockets[num_sockets++] = sock;
+							log_addr = 1;
+						} else {
+							log_addr = 0;
+						}
+					}
+					if (log_addr) {
+						char buffer[128];
+						mdns_string_t addr = ipv6_address_to_string(buffer, sizeof(buffer), saddr,
+								sizeof(struct sockaddr_in6));
+						IIO_DEBUG("Local IPv6 address: %.*s\n", MDNS_STRING_FORMAT(addr));
+					}
 				}
 			}
 #endif
@@ -124,8 +232,103 @@ static int open_client_sockets(int *sockets, unsigned int max_sockets)
 
 	free(adapter_address);
 
-	for (i = 0; i < num_sockets; i++)
-		ioctlsocket(sockets[i], FIONBIO, &param);
+#else /* _WIN32 */
+
+	struct ifaddrs* ifaddr = 0;
+	struct ifaddrs* ifa = 0;
+
+	if (getifaddrs(&ifaddr) < 0)
+		IIO_ERROR("Unable to get interface addresses\n");
+
+	int first_ipv4 = 1;
+	int first_ipv6 = 1;
+	(void)first_ipv6;
+
+	for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_addr)
+			continue;
+		if (!(ifa->ifa_flags & IFF_UP)       || !(ifa->ifa_flags & IFF_MULTICAST) ||
+		     (ifa->ifa_flags & IFF_LOOPBACK) ||  (ifa->ifa_flags & IFF_POINTOPOINT)) {
+			if (!(ifa->ifa_flags & IFF_UP))
+				IIO_DEBUG("Skipping interface %s not up\n", ifa->ifa_name);
+			if (!(ifa->ifa_flags & IFF_MULTICAST))
+				IIO_DEBUG("Skipping interface %s MULTICAST\n", ifa->ifa_name);
+			if (ifa->ifa_flags & IFF_LOOPBACK)
+				IIO_DEBUG("Skipping interface %s loopback\n", ifa->ifa_name);
+			if (ifa->ifa_flags & IFF_POINTOPOINT)
+				IIO_DEBUG("Skipping interface %s pointtopoint\n", ifa->ifa_name);
+			continue;
+		}
+
+		if (ifa->ifa_addr->sa_family == AF_INET) {
+			struct sockaddr_in* saddr = (struct sockaddr_in*)ifa->ifa_addr;
+			if (saddr->sin_addr.s_addr != htonl(INADDR_LOOPBACK)) {
+				int log_addr = 0;
+				if (first_ipv4) {
+					first_ipv4 = 0;
+					log_addr = 1;
+				}
+				if (num_sockets < max_sockets) {
+					saddr->sin_port = htons(port);
+					int sock = mdns_socket_open_ipv4(saddr);
+					if (sock >= 0) {
+						sockets[num_sockets++] = sock;
+						log_addr = 1;
+					} else {
+						log_addr = 0;
+					}
+				}
+				if (log_addr) {
+					char buffer[128];
+					mdns_string_t addr = ipv4_address_to_string(buffer, sizeof(buffer), saddr,
+							sizeof(struct sockaddr_in));
+					(void)addr;
+					IIO_DEBUG("Local IPv4 address: %.*s on %s\n", MDNS_STRING_FORMAT(addr), ifa->ifa_name);
+				}
+			}
+		}
+#ifdef HAVE_IPV6
+		else if (ifa->ifa_addr->sa_family == AF_INET6) {
+			struct sockaddr_in6* saddr = (struct sockaddr_in6*)ifa->ifa_addr;
+			// Ignore link-local addresses
+			if (saddr->sin6_scope_id)
+				continue;
+			static const unsigned char localhost[] = {0, 0, 0, 0, 0, 0, 0, 0,
+								  0, 0, 0, 0, 0, 0, 0, 1};
+			static const unsigned char localhost_mapped[] = {0, 0, 0,    0,    0,    0, 0, 0,
+									 0, 0, 0xff, 0xff, 0x7f, 0, 0, 1};
+			if (memcmp(saddr->sin6_addr.s6_addr, localhost, 16) &&
+					memcmp(saddr->sin6_addr.s6_addr, localhost_mapped, 16)) {
+				int log_addr = 0;
+				if (first_ipv6) {
+					first_ipv6 = 0;
+					log_addr = 1;
+				}
+				if (num_sockets < max_sockets) {
+					saddr->sin6_port = htons(port);
+					int sock = mdns_socket_open_ipv6(saddr);
+					if (sock >= 0) {
+						sockets[num_sockets++] = sock;
+						log_addr = 1;
+					} else {
+						log_addr = 0;
+					}
+				}
+				if (log_addr) {
+					char buffer[128];
+					mdns_string_t addr = ipv6_address_to_string(buffer, sizeof(buffer), saddr,
+							sizeof(struct sockaddr_in6));
+					(void)addr;
+					IIO_DEBUG("Local IPv6 address: %.*s on %s\n", MDNS_STRING_FORMAT(addr), ifa->ifa_name);
+				}
+			}
+		}
+#endif
+	}
+
+	freeifaddrs(ifaddr);
+
+#endif
 
 	return num_sockets;
 }
@@ -138,79 +341,183 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			  size_t record_offset, size_t record_length,
 			  void *user_data)
 {
+	(void)sizeof(sock);
+	(void)sizeof(query_id);
+	(void)sizeof(name_length);
+
 	struct dns_sd_discovery_data *dd = user_data;
 	char addrbuffer[64];
-	char servicebuffer[64];
+	char entrybuffer[256];
 	char namebuffer[256];
-	mdns_record_srv_t srv;
+	mdns_record_txt_t txtbuffer[128];
 
-	if (!dd) {
-		IIO_ERROR("DNS SD: Missing info structure. Stop browsing.\n");
-		goto quit;
+	mdns_string_t fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer), from, addrlen);
+	const char* entrytype = (entry == MDNS_ENTRYTYPE_ANSWER) ?
+			"answer" :
+				((entry == MDNS_ENTRYTYPE_AUTHORITY) ? "authority" : "additional");
+	(void)entrytype;
+	mdns_string_t entrystr =
+			mdns_string_extract(data, size, &name_offset, entrybuffer, sizeof(entrybuffer));
+
+	if (!strstr(entrystr.str, "_iio._tcp.local"))
+		return 0;
+
+	if (rtype == MDNS_RECORDTYPE_PTR) {
+		mdns_string_t namestr = mdns_record_parse_ptr(data, size, record_offset, record_length,
+				namebuffer, sizeof(namebuffer));
+		(void)namestr;
+		IIO_DEBUG("%.*s : %s %.*s PTR %.*s rclass 0x%x ttl %u length %d\n",
+				MDNS_STRING_FORMAT(fromaddrstr), entrytype, MDNS_STRING_FORMAT(entrystr),
+				MDNS_STRING_FORMAT(namestr), rclass, ttl, (int)record_length);
+	} else if (rtype == MDNS_RECORDTYPE_SRV) {
+		bool found = false;
+		mdns_record_srv_t srv = mdns_record_parse_srv(data, size, record_offset, record_length,
+				namebuffer, sizeof(namebuffer));
+		IIO_DEBUG("%.*s : %s %.*s SRV %.*s priority %d weight %d port %d\n",
+				MDNS_STRING_FORMAT(fromaddrstr), entrytype, MDNS_STRING_FORMAT(entrystr),
+				MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
+
+		if (entry != MDNS_ENTRYTYPE_ANSWER)
+			return 0;
+
+		/* lock the list */
+		iio_mutex_lock(dd->lock);
+		dd->resolved++;
+
+		/* Either find a name match, or Go to the last element in the list */
+		while (dd->next) {
+			if (dd->hostname && !strncmp(dd->hostname, srv.name.str, srv.name.length - 1) &&
+					(!dd->port || dd->port == srv.port)) {
+				dd->port = srv.port;
+				IIO_DEBUG("DNS SD: updated  %s (%s:%d)\n", dd->hostname, dd->addr_str, dd->port);
+				found = true;
+			}
+			dd = dd->next;
+		}
+
+		if (!found) {
+			if (srv.name.length > 1) {
+				dd->hostname = iio_strndup(srv.name.str, srv.name.length - 1);
+				if (!dd->hostname)
+					return -ENOMEM;
+			}
+			/* Putting the server address here is bad form - the DNS server doesn't need
+			 * to be the device where IIO is running, we should wait for the A record, but
+			 * just in case we miss it...
+			 */
+			iio_strlcpy(dd->addr_str, fromaddrstr.str, fromaddrstr.length + 1);
+			dd->port = srv.port;
+			IIO_DEBUG("DNS SD: added %s (%s:%d)\n", dd->hostname, dd->addr_str, dd->port);
+
+			/* A list entry was filled, prepare new item on the list */
+			dd->next = new_discovery_data();
+			if (!dd->next) {
+				IIO_ERROR("DNS SD mDNS Resolver : memory failure\n");
+				return -ENOMEM;
+			}
+			/* duplicate lock */
+			dd->next->lock = dd->lock;
+		}
+		iio_mutex_unlock(dd->lock);
+	} else if (rtype == MDNS_RECORDTYPE_A) {
+		bool found = false;
+		struct sockaddr_in addr;
+				mdns_record_parse_a(data, size, record_offset, record_length, &addr);
+		mdns_string_t addrstr =
+				ipv4_address_to_string(namebuffer, sizeof(namebuffer), &addr, sizeof(addr));
+		IIO_DEBUG("%.*s : %s %.*s A %.*s\n", MDNS_STRING_FORMAT(fromaddrstr), entrytype,
+				MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(addrstr));
+
+		if (entry != MDNS_ENTRYTYPE_ANSWER)
+			return 0;
+
+		iio_mutex_lock(dd->lock);
+		dd->resolved++;
+		/* Find a match */
+		while (dd->next) {
+			if (dd->hostname && !strncmp(dd->hostname, entrystr.str, entrystr.length - 1)) {
+				iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
+				IIO_DEBUG("DNS SD: updated  %s (%s:%d)\n", dd->hostname, dd->addr_str, dd->port);
+				found = true;
+			}
+			dd = dd->next;
+		}
+
+		if (!found) {
+			dd->hostname = iio_strndup(entrystr.str, entrystr.length - 1);
+			if (!dd->hostname)
+				return -ENOMEM;
+			iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
+
+			/* A list entry was filled, prepare new item on the list */
+			dd->next = new_discovery_data();
+			if (!dd->next) {
+				IIO_ERROR("DNS SD mDNS Resolver : memory failure\n");
+				return -ENOMEM;
+			}
+			/* duplicate lock */
+			dd->next->lock = dd->lock;
+		}
+		iio_mutex_unlock(dd->lock);
 	}
-
-	if (rtype != MDNS_RECORDTYPE_SRV)
-		goto quit;
-
-	getnameinfo(from, (socklen_t)addrlen, addrbuffer, NI_MAXHOST,
-		    servicebuffer, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
-
-	srv = mdns_record_parse_srv(data, size, name_offset, name_length,
-				    namebuffer, sizeof(namebuffer));
-	IIO_DEBUG("%s : SRV %.*s priority %d weight %d port %d\n", addrbuffer,
-		  MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
-
-	/* Go to the last element in the list */
-	while (dd->next)
-		dd = dd->next;
-
-	if (srv.name.length > 1)
-	{
-		dd->hostname = malloc(srv.name.length);
-		if (!dd->hostname)
-			return -ENOMEM;
-
-		iio_strlcpy(dd->hostname, srv.name.str, srv.name.length);
+#ifdef HAVE_IPv6
+	else if (rtype == MDNS_RECORDTYPE_AAAA) {
+		struct sockaddr_in6 addr;
+		mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr);
+		mdns_string_t addrstr =
+				ipv6_address_to_string(namebuffer, sizeof(namebuffer), &addr, sizeof(addr));
+		IIO_DEBUG("%.*s : %s %.*s AAAA %.*s\n", MDNS_STRING_FORMAT(fromaddrstr), entrytype,
+				MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(addrstr));
 	}
-
-	iio_strlcpy(dd->addr_str, addrbuffer, DNS_SD_ADDRESS_STR_MAX);
-	dd->port = srv.port;
-
-	IIO_DEBUG("DNS SD: added %s (%s:%d)\n",
-		  dd->hostname, dd->addr_str, dd->port);
-
-	/* A list entry was filled, prepare new item on the list */
-	dd->next = zalloc(sizeof(*dd->next));
-	if (!dd->next)
-		IIO_ERROR("DNS SD mDNS Resolver : memory failure\n");
-
-quit:
+#endif
+	else if (rtype == MDNS_RECORDTYPE_TXT) {
+		size_t parsed = mdns_record_parse_txt(data, size, record_offset, record_length, txtbuffer,
+				sizeof(txtbuffer) / sizeof(mdns_record_txt_t));
+		for (size_t itxt = 0; itxt < parsed; ++itxt) {
+			if (txtbuffer[itxt].value.length) {
+				IIO_DEBUG("%.*s : %s %.*s TXT %.*s = %.*s\n", MDNS_STRING_FORMAT(fromaddrstr),
+						entrytype, MDNS_STRING_FORMAT(entrystr),
+						MDNS_STRING_FORMAT(txtbuffer[itxt].key),
+						MDNS_STRING_FORMAT(txtbuffer[itxt].value));
+			} else {
+				IIO_DEBUG("%.*s : %s %.*s TXT %.*s\n", MDNS_STRING_FORMAT(fromaddrstr), entrytype,
+						MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(txtbuffer[itxt].key));
+			}
+		}
+	} else {
+		IIO_DEBUG("%.*s : %s %.*s type %u rclass 0x%x ttl %u length %d\n",
+				MDNS_STRING_FORMAT(fromaddrstr), entrytype, MDNS_STRING_FORMAT(entrystr), rtype,
+				rclass, ttl, (int)record_length);
+	}
 	return 0;
 }
 
 int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 {
-	WORD versionWanted = MAKEWORD(1, 1);
-	WSADATA wsaData;
 	const char service[] = "_iio._tcp.local";
 	size_t records, capacity = 2048;
 	struct dns_sd_discovery_data *d;
-	unsigned int i, isock, num_sockets;
+	uint16_t isock, num_sockets;
 	void *buffer;
 	int sockets[32];
-	int transaction_id[32];
+	int query_id[32];
 	int ret = -ENOMEM;
 
+#ifdef _WIN32
+	WORD versionWanted = MAKEWORD(1, 1);
+	WSADATA wsaData;
 	if (WSAStartup(versionWanted, &wsaData)) {
-		printf("Failed to initialize WinSock\n");
+		IIO_ERROR("Failed to initialize WinSock\n");
 		return -WSAGetLastError();
 	}
+#endif
 
 	IIO_DEBUG("DNS SD: Start service discovery.\n");
 
-	d = zalloc(sizeof(*d));
+	d = new_discovery_data();
 	if (!d)
 		goto out_wsa_cleanup;
+
 	/* pass the structure back, so it can be freed if err */
 	*ddata = d;
 
@@ -224,61 +531,72 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 
 	IIO_DEBUG("Sending DNS-SD discovery\n");
 
-	ret = open_client_sockets(sockets, ARRAY_SIZE(sockets));
-	if (ret <= 0) {
+	num_sockets = (uint16_t)open_client_sockets(sockets, ARRAY_SIZE(sockets), MDNS_PORT);
+	if (num_sockets <= 0) {
 		IIO_ERROR("Failed to open any client sockets\n");
 		goto out_free_buffer;
 	}
 
-	num_sockets = (unsigned int)ret;
-	IIO_DEBUG("Opened %d socket%s for mDNS query\n",
-		  num_sockets, (num_sockets > 1) ? "s" : "");
+	IIO_DEBUG("Opened %d socket%s for DNS-SD\n", num_sockets, num_sockets > 1 ? "s" : "");
 
-	IIO_DEBUG("Sending mDNS query: %s\n", service);
+	IIO_DEBUG("Sending mDNS query");
+	struct mdns_query_t query[1];
+	query[0].type = MDNS_RECORDTYPE_PTR;
+	query[0].name = service;
+	query[0].length = strnlen(service, 20);
+	size_t count = 1;
 
-	/* Walk through all the open interfaces/sockets, and send a query */
-	for (isock = 0; isock < num_sockets; isock++) {
-		ret = mdns_query_send(sockets[isock], MDNS_RECORDTYPE_PTR,
-				      service, sizeof(service)-1, buffer,
-				      capacity, 0);
-		if (ret <= 0)
-			IIO_ERROR("Failed to send mDNS query: errno %d\n", errno);
-
-		transaction_id[isock] = ret;
+	for (isock = 0; isock < num_sockets; ++isock) {
+		query_id[isock] =
+				mdns_multiquery_send(sockets[isock], query, count, buffer, capacity, 0);
+		if (query_id[isock] < 0) {
+			char err_str[256];
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			IIO_ERROR("Failed to send mDNS query: %s\n", err_str);
+		}
 	}
 
-	/* This is a simple implementation that loops for 10 seconds or as long as we get replies
-	 * A real world implementation would probably use select, poll or similar syscall to wait
-	 * until data is available on a socket and then read it */
+	// This is a simple implementation that loops for 3 seconds or as long as we get replies
+	int res;
 	IIO_DEBUG("Reading mDNS query replies\n");
+	records = 0;
+	do {
+		struct timeval timeout;
+		timeout.tv_sec = 3;
+		timeout.tv_usec = 0;
 
-	for (i = 0; i < 10; i++) {
-		do {
-			records = 0;
+		int nfds = 0;
+		fd_set readfs;
+		FD_ZERO(&readfs);
+		for (isock = 0; isock < num_sockets; ++isock) {
+			if (sockets[isock] >= nfds)
+				nfds = sockets[isock] + 1;
+			FD_SET(sockets[isock], &readfs);
+		}
 
-			for (isock = 0; isock < num_sockets; isock++) {
-				if (transaction_id[isock] <= 0)
-					continue;
-
-				records += mdns_query_recv(sockets[isock],
-							   buffer, capacity,
-							   query_callback, d,
-							   transaction_id[isock]);
+		res = select(nfds, &readfs, 0, 0, &timeout);
+		if (res > 0) {
+			for (isock = 0; isock < num_sockets; ++isock) {
+				if (FD_ISSET(sockets[isock], &readfs)) {
+					size_t rec = mdns_query_recv(sockets[isock], buffer, capacity, query_callback,
+							d, query_id[isock]);
+					if (rec > 0)
+						records += rec;
+				}
+				FD_SET(sockets[isock], &readfs);
 			}
-		} while (records);
+		}
+	} while (res > 0);
 
-		if (records)
-			i = 0;
-
-		Sleep(100);
-	}
+	IIO_DEBUG("Read %zu records\n", records);
 
 	for (isock = 0; isock < num_sockets; ++isock)
 		mdns_socket_close(sockets[isock]);
+	IIO_DEBUG("Closed socket%s\n", num_sockets ? "s" : "");
 
 	IIO_DEBUG("Closed socket%s\n", (num_sockets > 1) ? "s" : "");
 
-	port_knock_discovery_data(&d);
+	dump_discovery_data(&d);
 	remove_dup_discovery_data(&d);
 
 	ret = 0;
@@ -287,7 +605,9 @@ out_free_buffer:
 out_destroy_lock:
 	iio_mutex_destroy(d->lock);
 out_wsa_cleanup:
-	WSACleanup();
+#ifdef _WIN32
+        WSACleanup();
+#endif
 	return ret;
 }
 

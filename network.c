@@ -22,6 +22,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#define sleep(x) Sleep(x * 1000)
 #else
 /*
  * Old OSes (CentOS 7, Ubuntu 16.04) require this for the
@@ -1138,6 +1139,21 @@ struct iio_context * network_create_context(const char *host)
 		ret = getaddrinfo(addr_str, port, &hints, &res);
 	} else {
 		ret = getaddrinfo(host, port, &hints, &res);
+#ifdef _WIN32
+		/* Yes, This is lame, but Windows is flakey with local addresses
+		 * WSANO_DATA = Valid name, no data record of requested type.
+		 * Normally when the host does not have the correct associated data
+		 * being resolved for. Just ask again.
+		 */
+		if (HAVE_DNS_SD && ret == WSANO_DATA) {
+			i = 0;
+			while (ret == WSANO_DATA && i < 5) {
+				sleep(1);
+				ret = getaddrinfo(host, port, &hints, &res);
+				i++;
+			}
+		}
+#endif
 		/*
 		 * It might be an avahi hostname which means that getaddrinfo() will only work if
 		 * nss-mdns is installed on the host and /etc/nsswitch.conf is correctly configured

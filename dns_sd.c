@@ -35,7 +35,9 @@
 static void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
 {
 	free(d->hostname);
+#if HAVE_AVAHI
 	free(d->address);
+#endif
 	free(d);
 }
 
@@ -98,9 +100,16 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 	}
 
 	ctx = network_create_context(uri);
+	/* Sometimes, on Windows local/private networks, numeric IP address
+	 * fails but hostname works (don't ask me why), so try both.
+	 */
 	if (!ctx) {
-		IIO_ERROR("No context at %s\n", uri);
-		return -ENOMEM;
+		iio_snprintf(uri, sizeof(uri), "%s:%hu", hostname,port);
+		ctx = network_create_context(uri);
+		if (!ctx) {
+			IIO_ERROR("No context at %s (%s)\n", uri, addr_str);
+			return -ENOMEM;
+		}
 	}
 
 	if (port == IIOD_PORT)
@@ -149,6 +158,18 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 	}
 
 	return 0;
+}
+
+void dump_discovery_data(struct dns_sd_discovery_data **ddata)
+{
+	struct dns_sd_discovery_data *d, *ndata;
+	int i;
+
+	d = *ddata;
+	iio_mutex_lock(d->lock);
+	for (i = 0, ndata = d; ndata->next != NULL; ndata = ndata->next, i++)
+		IIO_DEBUG("%i : %s address:%s port:%hu\n", i, ndata->hostname, ndata->addr_str, ndata->port);
+	iio_mutex_unlock(d->lock);
 }
 
 /*
@@ -273,7 +294,9 @@ int dnssd_context_scan(struct iio_scan_result *scan_result)
 		ret = dnssd_fill_context_info(info,
 				ndata->hostname, ndata->addr_str,ndata->port);
 		if (ret < 0) {
-			IIO_DEBUG("Failed to add %s (%s) err: %d\n", ndata->hostname, ndata->addr_str, ret);
+			char err_str[256];
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			IIO_ERROR("Failed to add %s (%s) : %s (%i)\n", ndata->hostname, ndata->addr_str, err_str, ret);
 			break;
 		}
 	}
