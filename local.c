@@ -405,8 +405,8 @@ static int local_buffer_enabled_set(const struct iio_device *dev, bool en)
 {
 	int ret;
 
-	ret = (int) local_write_dev_attr(dev, 0, "buffer/enable",
-					 en ? "1" : "0", 2, IIO_ATTR_TYPE_DEVICE);
+	ret = (int) local_write_dev_attr(dev, 0, "enable", en ? "1" : "0",
+					 2, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0)
 		return ret;
 
@@ -576,8 +576,15 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 					dev->id, attr);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s",
-					dev->id, attr);
+			if (buf_id > 0) {
+				iio_snprintf(buf, sizeof(buf),
+					     "/sys/bus/iio/devices/%s/buffer%u/%s",
+					     dev->id, buf_id, attr);
+			} else {
+				iio_snprintf(buf, sizeof(buf),
+					     "/sys/bus/iio/devices/%s/buffer/%s",
+					     dev->id, attr);
+			}
 			break;
 		default:
 			return -EINVAL;
@@ -749,8 +756,8 @@ static int local_open(const struct iio_device *dev,
 		return ret;
 
 	iio_snprintf(buf, sizeof(buf), "%lu", (unsigned long) samples_count);
-	ret = local_write_dev_attr(dev, 0, "buffer/length",
-				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_DEVICE);
+	ret = local_write_dev_attr(dev, 0, "length",
+				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0)
 		return ret;
 
@@ -758,8 +765,8 @@ static int local_open(const struct iio_device *dev,
 	 * Set watermark to the buffer size; the driver will adjust to its
 	 * maximum if it's too high without issueing an error.
 	 */
-	ret = local_write_dev_attr(dev, 0, "buffer/watermark",
-				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_DEVICE);
+	ret = local_write_dev_attr(dev, 0, "watermark",
+				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
 		return ret;
 
@@ -819,9 +826,9 @@ static int local_open(const struct iio_device *dev,
 		 * low-speed interface. This avoids losing samples when
 		 * refilling the iio_buffer. */
 		iio_snprintf(buf, sizeof(buf), "%lu", size);
-		ret = local_write_dev_attr(dev, 0, "buffer/length",
+		ret = local_write_dev_attr(dev, 0, "length",
 					   buf, strlen(buf) + 1,
-					   IIO_ATTR_TYPE_DEVICE);
+					   IIO_ATTR_TYPE_BUFFER);
 		if (ret < 0)
 			goto err_close;
 	}
