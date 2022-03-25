@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,9 @@
 #ifdef _WIN32
 #define snprintf sprintf_s
 #endif
+
+#define IIO_ERR(...) prm_err(NULL, MY_NAME ": " __VA_ARGS__)
+#define IIO_PERROR(err, ...) prm_perror(NULL, err, MY_NAME ": " __VA_ARGS__)
 
 enum verbosity {
 	ATTR_QUIET,
@@ -134,8 +138,7 @@ static int dump_device_attributes(const struct iio_device *dev,
 			else if (quiet == ATTR_VERBOSE)
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s\n", buf);
+			IIO_PERROR((int)ret, "Unable to read attribute");
 		}
 	}
 	if (wbuf) {
@@ -146,9 +149,7 @@ static int dump_device_attributes(const struct iio_device *dev,
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_device_attributes(dev, attr, NULL, quiet);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			IIO_PERROR((int)ret, "Unable to write attribute");
 		}
 	}
 	free(buf);
@@ -178,8 +179,7 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 			else  if (quiet == ATTR_VERBOSE)
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s\n", buf);
+			IIO_PERROR((int)ret, "Unable to read buffer attribute");
 		}
 	}
 
@@ -191,9 +191,7 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_buffer_attributes(dev, attr, NULL, quiet);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			IIO_PERROR((int)ret, "Unable to write buffer attribute");
 		}
 	}
 
@@ -224,8 +222,7 @@ static int dump_debug_attributes(const struct iio_device *dev,
 			else if (quiet == ATTR_VERBOSE)
 				printf("'%s'\n", buf);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s\n", buf);
+			IIO_PERROR((int)ret, "Unable to read debug attribute");
 		}
 	}
 
@@ -237,9 +234,7 @@ static int dump_debug_attributes(const struct iio_device *dev,
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_debug_attributes(dev, attr, NULL, quiet);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			IIO_PERROR((int)ret, "Unable to write debug attribute");
 		}
 	}
 
@@ -281,8 +276,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			else if (quiet == ATTR_VERBOSE)
 				printf("value '%s'\n", buf);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s\n", buf);
+			IIO_PERROR((int)ret, "Unable to read channel attribute");
 		}
 	}
 	if (wbuf) {
@@ -293,9 +287,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
 			dump_channel_attributes(dev, ch, attr, NULL, quiet);
 		} else {
-			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("error %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			IIO_PERROR((int)ret, "Unable to write channel attribute");
 		}
 	}
 	free(buf);
@@ -623,11 +615,7 @@ int main(int argc, char **argv)
 					gen_context_attr(key);
 				}
 			} else {
-				char *buf = xmalloc(BUF_SIZE, MY_NAME);
-				iio_strerror(errno, buf, BUF_SIZE);
-				fprintf(stderr, "Unable to get context attributes: %s\n",
-						buf);
-				free(buf);
+				IIO_PERROR(-errno, "Unable to get context attributes");
 			}
 		}
 	}
@@ -907,23 +895,23 @@ int main(int argc, char **argv)
 	if (gen_code)
 		gen_context_destroy();
 
-	if (!dev_found && device_index)
-		fprintf(stderr, "%s: Error : could not find device (%s)\n", MY_NAME, argw[device_index]);
-	else if (!ctx_found && search_context)
-		fprintf(stderr, "%s: Error : could not find Context Attributes\n", MY_NAME);
-	else if (!channel_found && channel_index) {
+	if (!dev_found && device_index) {
+		IIO_ERR("Could not find device (%s)\n", argw[device_index]);
+	} else if (!ctx_found && search_context) {
+		IIO_ERR("Could not find Context Attributes\n");
+	} else if (!channel_found && channel_index) {
 		if (input_only)
-			fprintf(stderr, "%s: Error : could not find Input channel (%s)\n", MY_NAME, argw[channel_index]);
+			IIO_ERR("Could not find Input channel (%s)\n", argw[channel_index]);
 		if (output_only)
-			fprintf(stderr, "%s: Error : could not find Output channel (%s)\n", MY_NAME, argw[channel_index]);
+			IIO_ERR("Could not find Output channel (%s)\n", argw[channel_index]);
 		if (scan_only)
-			fprintf(stderr, "%s: Error : could not find Scan channel (%s)\n", MY_NAME, argw[channel_index]);
+			IIO_ERR("Could not find Scan channel (%s)\n", argw[channel_index]);
 		if (!input_only && !output_only && !scan_only)
-			fprintf(stderr, "%s: Error : could not find channel (%s)\n", MY_NAME, argw[channel_index]);
+			IIO_ERR("Could not find channel (%s)\n", argw[channel_index]);
 	} else if (!attr_found && attr_index)
-		fprintf(stderr, "%s: Error : could not find attribute (%s)\n", MY_NAME, argw[attr_index]);
+		IIO_ERR("Could not find attribute (%s)\n", argw[attr_index]);
 	else if (!debug_found && search_debug && device_index) {
-		fprintf(stderr, "%s: Error : device (%s) had 0 debug attributes\n", MY_NAME, argw[device_index]);
+		IIO_ERR("Device (%s) had 0 debug attributes\n", argw[device_index]);
 	}
 
 	free_argw(argc, argw);

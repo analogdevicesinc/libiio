@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
@@ -199,13 +200,15 @@ int main(int argc, char **argv)
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
 	uint64_t refill_per_benchmark = REFILL_PER_BENCHMARK;
-	int c;
-	struct iio_device *dev;
+	struct iio_device *dev, *trigger;
+	struct iio_channel *ch;
 	ssize_t sample_size;
-	ssize_t ret;
 	struct option *opts;
-	bool mib, benchmark = false;
+	bool hit, mib, benchmark = false;
 	uint64_t before = 0, after, rate, total;
+	size_t read_len, len, nb;
+	void *start;
+	int c, ret;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -273,12 +276,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!argw[optind]) {
-		unsigned int nb_devices = iio_context_get_devices_count(ctx);
-
-		for (i = 0; i < nb_devices; i++) {
-			const char *dev_id = NULL, *label = NULL, *name = NULL;
-			bool hit;
-
+		for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 			dev = iio_context_get_device(ctx, i);
 			nb_channels = iio_device_get_channels_count(dev);
 
@@ -287,7 +285,7 @@ int main(int argc, char **argv)
 
 			hit = false;
 			for (j = 0; j < nb_channels; j++) {
-				struct iio_channel *ch = iio_device_get_channel(dev, j);
+				ch = iio_device_get_channel(dev, j);
 
 				if (!iio_channel_is_scan_element(ch) ||
 						iio_channel_is_output(ch))
@@ -295,19 +293,14 @@ int main(int argc, char **argv)
 
 				hit = true;
 
-				dev_id = iio_device_get_id(dev);
-				label = iio_device_get_label(dev);
-				name = iio_device_get_name(dev);
-
 				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s %s\n",
 						iio_context_get_attr_value(ctx, "uri"),
-						label ? label : name ? name : dev_id,
-						iio_channel_get_id(ch));
+						dev_name(dev), iio_channel_get_id(ch));
 			}
 			if (hit)
 				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s\n",
 						iio_context_get_attr_value(ctx, "uri"),
-						label ? label : name ? name : dev_id);
+						dev_name(dev));
 		}
 		usage(MY_NAME, options, options_descriptions);
 		goto err_free_ctx;
@@ -322,8 +315,7 @@ int main(int argc, char **argv)
 	}
 
 	if (trigger_name) {
-		struct iio_device *trigger = iio_context_find_device(
-				ctx, trigger_name);
+		trigger = iio_context_find_device(ctx, trigger_name);
 		if (!trigger) {
 			fprintf(stderr, "Trigger %s not found\n", trigger_name);
 			goto err_free_ctx;
@@ -342,19 +334,13 @@ int main(int argc, char **argv)
 				"sampling_frequency", DEFAULT_FREQ_HZ) < 0) {
 			ret = iio_device_attr_write_longlong(trigger,
 				"frequency", DEFAULT_FREQ_HZ);
-			if (ret < 0) {
-				char buf[256];
-				iio_strerror(-(int)ret, buf, sizeof(buf));
-				fprintf(stderr, "sample rate not set : %s\n", buf);
-			}
+			if (ret < 0)
+				dev_perror(trigger, ret, "Sample rate not set");
 		}
 
 		ret = iio_device_set_trigger(dev, trigger);
-		if (ret < 0) {
-			char buf[256];
-			iio_strerror(-(int)ret, buf, sizeof(buf));
-			fprintf(stderr, "set triffer failed : %s\n", buf);
-		}
+		if (ret < 0)
+			dev_perror(dev, ret, "Unable to set trigger");
 	}
 
 	nb_channels = iio_device_get_channels_count(dev);
@@ -372,9 +358,7 @@ int main(int argc, char **argv)
 		for (j = optind + 1; j < (unsigned int) argc; j++) {
 			ret = iio_device_enable_channel(dev, argw[j], false);
 			if (ret < 0) {
-				char buf[256];
-				iio_strerror(-(int) ret, buf, sizeof(buf));
-				fprintf(stderr, "Bad channel name \"%s\" : %s\n", argw[j], buf);
+				dev_perror(dev, ret, "Unable to enable channel");
 				goto err_free_ctx;
 			}
 			nb_active_channels++;
@@ -392,18 +376,14 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to get sample size, returned 0\n");
 		goto err_free_ctx;
 	} else if (sample_size < 0) {
-		char buf[256];
-		iio_strerror(errno, buf, sizeof(buf));
-		fprintf(stderr, "Unable to get sample size : %s\n", buf);
+		dev_perror(dev, (int) sample_size, "Unable to get sample size");
 		goto err_free_ctx;
 	}
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	ret = iio_err(buffer);
 	if (ret) {
-		char buf[256];
-		iio_strerror(-(int)ret, buf, sizeof(buf));
-		fprintf(stderr, "Unable to allocate buffer: %s\n", buf);
+		dev_perror(dev, ret, "Unable to allocate buffer");
 		goto err_free_ctx;
 	}
 
@@ -420,13 +400,10 @@ int main(int argc, char **argv)
 		if (benchmark)
 			before = get_time_us();
 
-		ret = iio_buffer_refill(buffer);
+		ret = (int) iio_buffer_refill(buffer);
 		if (ret < 0) {
-			if (app_running) {
-				char buf[256];
-				iio_strerror(-(int)ret, buf, sizeof(buf));
-				fprintf(stderr, "Unable to refill buffer: %s\n", buf);
-			}
+			if (app_running)
+				dev_perror(dev, ret, "Unable to refill buffer");
 			break;
 		}
 
@@ -458,15 +435,14 @@ int main(int argc, char **argv)
 		/* If there are only the samples we requested, we don't need to
 		 * demux */
 		if (iio_buffer_step(buffer) == sample_size) {
-			void *start = iio_buffer_start(buffer);
-			size_t read_len, len = (intptr_t) iio_buffer_end(buffer)
-				- (intptr_t) start;
+			start = iio_buffer_start(buffer);
+			len = (intptr_t) iio_buffer_end(buffer) - (intptr_t) start;
 
 			if (num_samples && len > num_samples * sample_size)
 				len = num_samples * sample_size;
 
 			for (read_len = len; len; ) {
-				size_t nb = fwrite(start, 1, len, stdout);
+				nb = fwrite(start, 1, len, stdout);
 				if (!nb)
 					goto err_destroy_buffer;
 
@@ -480,12 +456,9 @@ int main(int argc, char **argv)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
-			ret = iio_buffer_foreach_sample(buffer, print_sample, NULL);
-			if (ret < 0) {
-				char buf[256];
-				iio_strerror(-(int)ret, buf, sizeof(buf));
-				fprintf(stderr, "buffer processing failed : %s\n", buf);
-			}
+			ret = (int) iio_buffer_foreach_sample(buffer, print_sample, NULL);
+			if (ret < 0)
+				dev_perror(dev, ret, "Buffer processing failed");
 		}
 	}
 

@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,10 +46,11 @@ static const char *options_descriptions[] = {
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
 {
+	const struct iio_channel *chn;
 	unsigned int i;
 
 	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
-		struct iio_channel *chn = iio_device_get_channel(dev, i);
+		chn = iio_device_get_channel(dev, i);
 
 		if (iio_channel_is_scan_element(chn))
 			return true;
@@ -61,9 +63,14 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 
 int main(int argc, char **argv)
 {
-	char **argw;
+	char **argw, *buf;
 	struct iio_context *ctx;
-	unsigned int i;
+	const struct iio_device *dev, *trig;
+	const struct iio_channel *ch;
+	const struct iio_data_format *format;
+	char sign, repeat[12], err_str[1024];
+	const char *key, *value, *name, *label, *type_name, *attr;
+	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
 	int ret, c;
 	struct option *opts;
 
@@ -131,32 +138,27 @@ int main(int argc, char **argv)
 	printf("Backend description string: %s\n",
 			iio_context_get_description(ctx));
 
-	unsigned int nb_ctx_attrs = iio_context_get_attrs_count(ctx);
+	nb_ctx_attrs = iio_context_get_attrs_count(ctx);
 	if (nb_ctx_attrs > 0)
 		printf("IIO context has %u attributes:\n", nb_ctx_attrs);
 
 	for (i = 0; i < nb_ctx_attrs; i++) {
-		const char *key, *value;
-
 		ret = iio_context_get_attr(ctx, i, &key, &value);
 		if (ret == 0)
 			printf("\t%s: %s\n", key, value);
-		else {
-			char err_str[1024];
-			iio_strerror(-ret, err_str, sizeof(err_str));
-			fprintf(stderr, "\tUnable to read IIO context attributes: %s\n",
-					err_str);
-		}
+		else
+			ctx_perror(ctx, ret, "Unable to read IIO context attribute");
 	}
 
-	unsigned int nb_devices = iio_context_get_devices_count(ctx);
+	nb_devices = iio_context_get_devices_count(ctx);
 	printf("IIO context has %u devices:\n", nb_devices);
-	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	buf = xmalloc(BUF_SIZE, MY_NAME);
 
 	for (i = 0; i < nb_devices; i++) {
-		const struct iio_device *dev = iio_context_get_device(ctx, i);
-		const char *name = iio_device_get_name(dev);
-		const char *label = iio_device_get_label(dev);
+		dev = iio_context_get_device(ctx, i);
+		name = iio_device_get_name(dev);
+		label = iio_device_get_label(dev);
+
 		printf("\t%s:", iio_device_get_id(dev));
 		if (name)
 			printf(" %s", name);
@@ -166,13 +168,11 @@ int main(int argc, char **argv)
 			printf(" (buffer capable)");
 		printf("\n");
 
-		unsigned int nb_channels = iio_device_get_channels_count(dev);
+		nb_channels = iio_device_get_channels_count(dev);
 		printf("\t\t%u channels found:\n", nb_channels);
 
-		unsigned int j;
 		for (j = 0; j < nb_channels; j++) {
-			struct iio_channel *ch = iio_device_get_channel(dev, j);
-			const char *type_name;
+			ch = iio_device_get_channel(dev, j);
 
 			if (iio_channel_is_output(ch))
 				type_name = "output";
@@ -188,10 +188,10 @@ int main(int argc, char **argv)
 				printf(", WARN:iio_channel_get_type()=UNKNOWN");
 
 			if (iio_channel_is_scan_element(ch)) {
-				const struct iio_data_format *format =
-					iio_channel_get_data_format(ch);
-				char sign = format->is_signed ? 's' : 'u';
-				char repeat[12] = "";
+				format = iio_channel_get_data_format(ch);
+				sign = format->is_signed ? 's' : 'u';
+
+				repeat[0] = '\0';
 
 				if (format->is_fully_defined)
 					sign += 'A' - 'a';
@@ -210,48 +210,43 @@ int main(int argc, char **argv)
 				printf(")\n");
 			}
 
-			unsigned int nb_attrs = iio_channel_get_attrs_count(ch);
+			nb_attrs = iio_channel_get_attrs_count(ch);
 			if (!nb_attrs)
 				continue;
 
 			printf("\t\t\t%u channel-specific attributes found:\n",
 					nb_attrs);
 
-			unsigned int k;
 			for (k = 0; k < nb_attrs; k++) {
-				const char *attr = iio_channel_get_attr(ch, k);
+				attr = iio_channel_get_attr(ch, k);
 				ret = (int) iio_channel_attr_read_raw(ch,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ", k, attr);
 
-				if (ret > 0) {
+				if (ret > 0)
 					printf("value: %s\n", buf);
-				} else {
-					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s\n", buf);
-				}
+				else
+					ctx_perror(ctx, ret, "");
 			}
 		}
 
-		unsigned int nb_attrs = iio_device_get_attrs_count(dev);
+		nb_attrs = iio_device_get_attrs_count(dev);
 		if (nb_attrs) {
 			printf("\t\t%u device-specific attributes found:\n",
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
-				const char *attr = iio_device_get_attr(dev, j);
+				attr = iio_device_get_attr(dev, j);
 				ret = (int) iio_device_attr_read_raw(dev,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
 						j, attr);
 
-				if (ret > 0) {
+				if (ret > 0)
 					printf("value: %s\n", buf);
-				} else {
-					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s\n", buf);
-				}
+				else
+					ctx_perror(ctx, ret, "");
 			}
 		}
 
@@ -260,19 +255,17 @@ int main(int argc, char **argv)
 			printf("\t\t%u buffer-specific attributes found:\n",
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
-				const char *attr = iio_device_get_buffer_attr(dev, j);
+				attr = iio_device_get_buffer_attr(dev, j);
 				ret = (int) iio_device_buffer_attr_read_raw(dev, 0,
 						attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
 						j, attr);
 
-				if (ret > 0) {
+				if (ret > 0)
 					printf("value: %s\n", buf);
-				} else {
-					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s\n", buf);
-				}
+				else
+					ctx_perror(ctx, ret, "");
 			}
 		}
 
@@ -280,23 +273,19 @@ int main(int argc, char **argv)
 		if (nb_attrs) {
 			printf("\t\t%u debug attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
-				const char *attr =
-					iio_device_get_debug_attr(dev, j);
+				attr = iio_device_get_debug_attr(dev, j);
 
 				ret = (int) iio_device_debug_attr_read_raw(dev,
 						attr, buf, BUF_SIZE);
 				printf("\t\t\t\tdebug attr %2u: %s ",
 						j, attr);
-				if (ret > 0) {
+				if (ret > 0)
 					printf("value: %s\n", buf);
-				} else {
-					iio_strerror(-ret, buf, BUF_SIZE);
-					printf("ERROR: %s\n", buf);
-				}
+				else
+					ctx_perror(ctx, ret, "");
 			}
 		}
 
-		const struct iio_device *trig;
 		ret = iio_device_get_trigger(dev, &trig);
 		if (ret == 0) {
 			if (trig == NULL) {
@@ -310,8 +299,7 @@ int main(int argc, char **argv)
 		} else if (ret == -ENOENT) {
 			printf("\t\tNo trigger on this device\n");
 		} else if (ret < 0) {
-			iio_strerror(-ret, buf, BUF_SIZE);
-			printf("ERROR: checking for trigger : %s\n", buf);
+			ctx_perror(ctx, ret, "Unable to get trigger");
 		}
 	}
 

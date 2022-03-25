@@ -10,6 +10,7 @@
 
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -210,11 +211,8 @@ struct info {
 
 static void thread_err(int id, ssize_t ret, char * what)
 {
-	if (ret < 0) {
-		char err_str[1024];
-		iio_strerror(-ret, err_str, sizeof(err_str)); \
-		fprintf(stderr, "%i : IIO ERROR : %s : %s\n", id, what, err_str); \
-	}
+	if (ret < 0)
+		prm_perror(NULL, (int)ret, "%d: %s", id, what);
 }
 
 static void *client_thread(void *data)
@@ -222,8 +220,9 @@ static void *client_thread(void *data)
 	struct info *info = data;
 	struct iio_context *ctx;
 	struct iio_buffer *buffer;
-	unsigned int i, nb_channels, duration;
-	struct iio_device *dev;
+	unsigned int i, duration;
+	const struct iio_device *dev;
+	struct iio_channel *ch;
 	struct timeval start, end;
 	int id = -1, stamp, r_errno;
 	ssize_t ret;
@@ -284,23 +283,15 @@ static void *client_thread(void *data)
 			goto thread_fail;
 		}
 
-		nb_channels = iio_device_get_channels_count(dev);
-
 		if (info->argc == info->arg_index + 2) {
 			/* Enable all channels */
-			for (i = 0; i < nb_channels; i++)
-				iio_channel_enable(iio_device_get_channel(dev, i));
-		} else {
-			for (i = 0; i < nb_channels; i++) {
-				unsigned int j;
-				struct iio_channel *ch = iio_device_get_channel(dev, i);
-				for (j = info->arg_index + 2; j < (unsigned int) info->argc; j++) {
-					const char *n = iio_channel_get_name(ch);
-					if (!strcmp(info->argv[j], iio_channel_get_id(ch)) ||
-							(n && !strcmp(n, info->argv[j])))
-						iio_channel_enable(ch);
-				}
+			for (i = 0; i < iio_device_get_channels_count(dev); i++) {
+				ch = iio_device_get_channel(dev, i);
+				iio_channel_enable(ch);
 			}
+		} else {
+			for (i = info->arg_index + 2; i < (unsigned int) info->argc; i++)
+				iio_device_enable_channel(dev, info->argv[i], false);
 		}
 
 		if (info->verbose == VERYVERBOSE)
@@ -380,9 +371,13 @@ int main(int argc, char **argv)
 {
 	sigset_t set, oldset;
 	struct info info;
-	int option_index;
-	unsigned int i, duration;
-	int c, pret;
+	unsigned int i, j, duration;
+	const struct iio_device *dev;
+	struct iio_buffer *buffer;
+	struct iio_context *ctx;
+	struct iio_channel *ch;
+	const char *name;
+	int c, pret, option_index;
 	struct timeval start, end, s_loop;
 	void **ret;
 	size_t min_samples;
@@ -449,43 +444,45 @@ int main(int argc, char **argv)
 	if (info.arg_index + 1 >= argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n");
 		if (info.uri_index) {
-			struct iio_context *ctx = iio_create_context(NULL, info.argv[info.uri_index]);
+			ctx = iio_create_context(NULL, info.argv[info.uri_index]);
 			if (ctx) {
 				fprintf(stderr, "checking uri %s\n", info.argv[info.uri_index]);
 				i = iio_context_set_timeout(ctx, 500);
 				thread_err(-1, i, "iio_context_set_timeout fail");
-				unsigned int nb_devices = iio_context_get_devices_count(ctx);
-				for (i = 0; i < nb_devices; i++) {
-					unsigned int j;
-					const struct iio_device *dev = iio_context_get_device(ctx, i);
-					const char *name = iio_device_get_name(dev);
-					unsigned int nb_channels = iio_device_get_channels_count(dev);
+
+				for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+					dev = iio_context_get_device(ctx, i);
+					name = iio_device_get_name(dev);
+
 					if (!iio_device_get_buffer_attrs_count(dev))
 						continue;
-					for (j = 0; j < nb_channels; j++) {
-						struct iio_channel *ch = iio_device_get_channel(dev, j);
-						if (iio_channel_is_output(ch))
-							continue;
-						iio_channel_enable(ch);
+
+					for (j = 0; j < iio_device_get_channels_count(dev); j++) {
+						ch = iio_device_get_channel(dev, j);
+
+						if (!iio_channel_is_output(ch))
+							iio_channel_enable(ch);
 					}
-					struct iio_buffer *buffer = iio_device_create_buffer(dev, info.buffer_size, false);
+					buffer = iio_device_create_buffer(dev, info.buffer_size, false);
 					if (!iio_err(buffer)) {
 						iio_buffer_destroy(buffer);
 						printf("try : %s\n", name);
 					}
 				}
+
 				iio_context_destroy(ctx);
 			} else {
 				fprintf(stderr, "need valid uri\n");
 			}
 		}
+
 		fprintf(stderr, "\n");
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
 
 	if (info.uri_index) {
-		struct iio_context *ctx = iio_create_context(NULL, info.argv[info.uri_index]);
+		ctx = iio_create_context(NULL, info.argv[info.uri_index]);
 		if (!ctx) {
 			fprintf(stderr, "need valid uri\n");
 			usage(MY_NAME, options, options_descriptions);

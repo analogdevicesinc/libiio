@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <math.h>
 #include <pthread.h>
 #include <signal.h>
@@ -32,6 +33,8 @@
 
 
 #define MY_NAME "iio_adi_xflow_check"
+
+#define IIO_PERROR(err, ...) prm_perror(NULL, err, __VA_ARGS__)
 
 struct xflow_pthread_data {
 	struct iio_context *ctx;
@@ -70,31 +73,6 @@ static void set_handler(int signal_nb, void (*handler)(int))
 #endif
 }
 
-static struct iio_device *get_device(const struct iio_context *ctx,
-		const char *id)
-{
-
-	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
-	struct iio_device *device;
-
-	for (i = 0; i < nb_devices; i++) {
-		const char *name;
-		device = iio_context_get_device(ctx, i);
-		name = iio_device_get_name(device);
-		if (name && !strcmp(name, id))
-			break;
-		if (!strcmp(id, iio_device_get_id(device)))
-			break;
-	}
-
-	if (i < nb_devices)
-		return device;
-
-	fprintf(stderr, "Device %s not found\n", id);
-	return NULL;
-}
-
-
 static void *monitor_thread_fn(void *data)
 {
 	struct xflow_pthread_data *xflow_pthread_data = data;
@@ -105,7 +83,7 @@ static void *monitor_thread_fn(void *data)
 
 	ctx = xflow_pthread_data->ctx;
 
-	dev = get_device(ctx, xflow_pthread_data->device_name);
+	dev = iio_context_find_device(ctx, xflow_pthread_data->device_name);
 	if (!dev) {
 		fprintf(stderr, "Unable to find IIO device\n");
 		return (void *)-1;
@@ -116,16 +94,13 @@ static void *monitor_thread_fn(void *data)
 
 	/* Clear all status bits */
 	ret = iio_device_reg_write(dev, 0x80000088, 0x6);
-	if (ret) {
-		fprintf(stderr, "Failed to clearn DMA status register: %s\n",
-				strerror(-ret));
-	}
+	if (ret)
+		IIO_PERROR(ret, "Failed to clean DMA status register");
 
 	while (app_running) {
 		ret = iio_device_reg_read(dev, 0x80000088, &val);
 		if (ret) {
-			fprintf(stderr, "Failed to read status register: %s\n",
-					strerror(-ret));
+			IIO_PERROR(ret, "Failed to read status register");
 			continue;
 		}
 
@@ -141,8 +116,7 @@ static void *monitor_thread_fn(void *data)
 		if (val) {
 			ret = iio_device_reg_write(dev, 0x80000088, val);
 			if (ret)
-				fprintf(stderr, "Failed to clearn DMA status register: %s\n",
-						strerror(-ret));
+				IIO_PERROR(ret, "Failed to clean DMA status register");
 		}
 		sleep(1);
 	}
@@ -239,7 +213,7 @@ int main(int argc, char **argv)
 
 	device_name = argw[optind];
 
-	dev = get_device(ctx, device_name);
+	dev = iio_context_find_device(ctx, device_name);
 	if (!dev) {
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
@@ -268,7 +242,7 @@ int main(int argc, char **argv)
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
 	ret = iio_err(buffer);
 	if (ret) {
-		fprintf(stderr, "Unable to allocate buffer\n");
+		IIO_PERROR(ret, "Unable to allocate buffer");
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -278,25 +252,21 @@ int main(int argc, char **argv)
 
 	ret = pthread_create(&monitor_thread, NULL, monitor_thread_fn,
 			     (void *)&xflow_pthread_data);
-	if (ret) {
-		fprintf(stderr, "Failed to create monitor thread: %s\n",
-				strerror(-ret));
-	}
+	if (ret)
+		IIO_PERROR(ret, "Failed to create monitor thread");
 
 	while (app_running) {
 		if (device_is_tx) {
 			ret = iio_buffer_push(buffer);
 			if (ret < 0) {
-				fprintf(stderr, "Unable to push buffer: %s\n",
-						strerror(-ret));
+				IIO_PERROR(ret, "Unable to push buffer");
 				app_running = false;
 				break;
 			}
 		} else {
 			ret = iio_buffer_refill(buffer);
 			if (ret < 0) {
-				fprintf(stderr, "Unable to refill buffer: %s\n",
-						strerror(-ret));
+				IIO_PERROR(ret, "Unable to refill buffer");
 				app_running = false;
 				break;
 			}
