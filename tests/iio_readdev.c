@@ -29,6 +29,14 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <fcntl.h>
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "iio_common.h"
 
 #define MY_NAME "iio_readdev"
@@ -42,6 +50,8 @@ static const struct option options[] = {
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
 	  {"auto", no_argument, 0, 'a'},
+	  {"write", no_argument, 0, 'w'},
+	  {"cyclic", no_argument, 0, 'c'},
 	  {"benchmark", no_argument, 0, 'B'},
 	  {0, 0, 0, 0},
 };
@@ -50,9 +60,11 @@ static const char *options_descriptions[] = {
 	"[-t <trigger>] [-b <buffer-size>]"
 		"[-s <samples>] <iio_device> [<channel> ...]",
 	"Use the specified trigger.",
-	"Size of the capture buffer. Default is 256.",
-	"Number of samples to capture, 0 = infinite. Default is 0.",
+	"Size of the transfer buffer. Default is 256.",
+	"Number of samples to transfer, 0 = infinite. Default is 0.",
 	"Scan for available contexts and if only one is available use it.",
+	"Transmit to IIO device (TX) instead of receiving (RX).",
+	"Use cyclic buffer mode.",
 	"Benchmark throughput."
 		"\n\t\t\tStatistics will be printed on the standard input.",
 };
@@ -74,10 +86,6 @@ static void quit_all(int sig)
 }
 
 #ifdef _WIN32
-
-#include <windows.h>
-#include <io.h>
-#include <fcntl.h>
 
 BOOL WINAPI sig_handler_fn(DWORD dwCtrlType)
 {
@@ -178,10 +186,17 @@ static void setup_sig_handler(void)
 
 #endif
 
-static ssize_t print_sample(const struct iio_channel *chn,
+static ssize_t transfer_sample(const struct iio_channel *chn,
 		void *buf, size_t len, void *d)
 {
-	fwrite(buf, 1, len, stdout);
+	bool *is_write = d;
+	size_t nb;
+
+	if (*is_write)
+		nb = fread(buf, 1, len, stdin);
+	else
+		nb = fwrite(buf, 1, len, stdout);
+
 	if (num_samples != 0) {
 		num_samples--;
 		if (num_samples == 0) {
@@ -189,10 +204,11 @@ static ssize_t print_sample(const struct iio_channel *chn,
 			return -1;
 		}
 	}
-	return (ssize_t) len;
+	return (ssize_t) nb;
 }
 
-#define MY_OPTS "t:b:s:T:B"
+#define MY_OPTS "t:b:s:T:wcB"
+
 int main(int argc, char **argv)
 {
 	char **argw;
@@ -203,10 +219,11 @@ int main(int argc, char **argv)
 	struct iio_device *dev, *trigger;
 	struct iio_channel *ch;
 	ssize_t sample_size;
+	bool hit, mib, is_write = false, cyclic_buffer = false,
+	     benchmark = false, do_write = false;
 	struct option *opts;
-	bool hit, mib, benchmark = false;
 	uint64_t before = 0, after, rate, total;
-	size_t read_len, len, nb;
+	size_t rw_len, len, nb;
 	void *start;
 	int c, ret;
 
@@ -259,6 +276,12 @@ int main(int argc, char **argv)
 			}
 			num_samples = sanitize_clamp("number of samples", optarg, 0, SIZE_MAX);
 			break;
+		case 'c':
+			cyclic_buffer = true;
+			break;
+		case 'w':
+			is_write = true;
+			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			goto err_free_ctx;
@@ -275,6 +298,16 @@ int main(int argc, char **argv)
 		goto err_free_ctx;
 	}
 
+	if (!is_write && cyclic_buffer) {
+		fprintf(stderr, "Cyclic buffer can only be used on output buffers.\n");
+		goto err_free_ctx;
+	}
+
+	if (benchmark && cyclic_buffer) {
+		fprintf(stderr, "Cannot benchmark in cyclic mode.\n");
+		goto err_free_ctx;
+	}
+
 	if (!argw[optind]) {
 		for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 			dev = iio_context_get_device(ctx, i);
@@ -288,7 +321,7 @@ int main(int argc, char **argv)
 				ch = iio_device_get_channel(dev, j);
 
 				if (!iio_channel_is_scan_element(ch) ||
-						iio_channel_is_output(ch))
+						is_write ^ iio_channel_is_output(ch))
 					continue;
 
 				hit = true;
@@ -349,14 +382,14 @@ int main(int argc, char **argv)
 		/* Enable all channels */
 		for (i = 0; i < nb_channels; i++) {
 			struct iio_channel *ch = iio_device_get_channel(dev, i);
-			if (!iio_channel_is_output(ch)) {
+			if (is_write == iio_channel_is_output(ch)) {
 				iio_channel_enable(ch);
 				nb_active_channels++;
 			}
 		}
 	} else {
 		for (j = optind + 1; j < (unsigned int) argc; j++) {
-			ret = iio_device_enable_channel(dev, argw[j], false);
+			ret = iio_device_enable_channel(dev, argw[j], is_write);
 			if (ret < 0) {
 				dev_perror(dev, ret, "Unable to enable channel");
 				goto err_free_ctx;
@@ -366,7 +399,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!nb_active_channels) {
-		fprintf(stderr, "No input channels found.\n");
+		fprintf(stderr, "No %sput channels found\n", is_write ? "out" : "in");
 		goto err_free_ctx;
 	}
 
@@ -380,7 +413,7 @@ int main(int argc, char **argv)
 		goto err_free_ctx;
 	}
 
-	buffer = iio_device_create_buffer(dev, buffer_size, false);
+	buffer = iio_device_create_buffer(dev, buffer_size, cyclic_buffer);
 	ret = iio_err(buffer);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to allocate buffer");
@@ -392,22 +425,27 @@ int main(int argc, char **argv)
 	 * Deactivate the translation for the stdout. Otherwise, bytes that have
 	 * the same value as line feed character (LF) will be translated to CR-LF.
 	 */
-	_setmode(_fileno(stdout), _O_BINARY);
+	_setmode(_fileno(is_write ? stdin : stdout), _O_BINARY);
 #endif
-
 
 	for (i = 0, total = 0; app_running; ) {
 		if (benchmark)
 			before = get_time_us();
 
-		ret = (int) iio_buffer_refill(buffer);
+		ret = 0;
+		if (!is_write)
+			ret = (int) iio_buffer_refill(buffer);
+		else if (do_write)
+			ret = (int) iio_buffer_push(buffer);
 		if (ret < 0) {
-			if (app_running)
-				dev_perror(dev, ret, "Unable to refill buffer");
+			if (app_running) {
+				dev_perror(dev, ret, "Unable to %s buffer",
+					   is_write ? "push" : "refill");
+			}
 			break;
 		}
 
-		if (benchmark) {
+		if (benchmark && is_write == do_write) {
 			after = get_time_us();
 			total += after - before;
 
@@ -428,9 +466,24 @@ int main(int argc, char **argv)
 				i = 0;
 				total = 0;
 			}
+		}
+
+		if (do_write) {
+			while(cyclic_buffer && app_running) {
+#ifdef _WIN32
+				Sleep(1000);
+#else
+				sleep(1);
+#endif
+			}
 
 			continue;
 		}
+
+		do_write = is_write;
+
+		if (benchmark)
+			continue;
 
 		/* If there are only the samples we requested, we don't need to
 		 * demux */
@@ -441,8 +494,11 @@ int main(int argc, char **argv)
 			if (num_samples && len > num_samples * sample_size)
 				len = num_samples * sample_size;
 
-			for (read_len = len; len; ) {
-				nb = fwrite(start, 1, len, stdout);
+			for (rw_len = len; len; ) {
+				if (is_write)
+					nb = fread(start, 1, len, stdin);
+				else
+					nb = fwrite(start, 1, len, stdout);
 				if (!nb)
 					goto err_destroy_buffer;
 
@@ -451,12 +507,14 @@ int main(int argc, char **argv)
 			}
 
 			if (num_samples) {
-				num_samples -= read_len / sample_size;
+				num_samples -= rw_len / sample_size;
 				if (!num_samples)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
-			ret = (int) iio_buffer_foreach_sample(buffer, print_sample, NULL);
+			ret = (int) iio_buffer_foreach_sample(buffer,
+							      transfer_sample,
+							      &is_write);
 			if (ret < 0)
 				dev_perror(dev, ret, "Buffer processing failed");
 		}
