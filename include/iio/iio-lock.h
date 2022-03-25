@@ -9,7 +9,7 @@
 #ifndef _IIO_LOCK_H
 #define _IIO_LOCK_H
 
-#include <iio.h>
+#include <iio/iio.h>
 
 #define __api __iio_api
 

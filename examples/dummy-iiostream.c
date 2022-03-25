@@ -82,7 +82,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <inttypes.h>
-#include <iio.h>
+#include <iio/iio.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 

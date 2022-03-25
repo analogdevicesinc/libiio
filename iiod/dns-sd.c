@@ -11,7 +11,7 @@
 #include "ops.h"
 #include "thread-pool.h"
 
-#include "../iio.h"
+#include <iio/iio.h>
 
 #include <avahi-common/thread-watch.h>
 #include <avahi-common/error.h>

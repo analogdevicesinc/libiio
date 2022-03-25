@@ -20,7 +20,7 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <iio.h>
+#include <iio/iio.h>
 #include <math.h>
 #include <pthread.h>
 #include <signal.h>

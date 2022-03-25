@@ -8,13 +8,14 @@
  */
 
 #include "dns_sd.h"
-#include "iio-backend.h"
-#include "iio-debug.h"
-#include "iio-lock.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <CFNetwork/CFNetwork.h>
+
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 
 /*
  * Implementation for DNS SD discovery for macOS using CFNetServices.

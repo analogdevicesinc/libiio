@@ -12,9 +12,9 @@
 #include "dns_sd.h"
 #include "iio-config.h"
 #include "iio-private.h"
-#include "iio-debug.h"
 
 #include <errno.h>
+#include <iio/iio-debug.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>

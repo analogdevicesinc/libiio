@@ -6,10 +6,11 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-debug.h"
 #include "iio-config.h"
 #include "iio-private.h"
 #include "sort.h"
+
+#include <iio/iio-debug.h>
 
 #include <errno.h>
 #include <string.h>

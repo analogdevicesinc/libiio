@@ -20,7 +20,7 @@
  * */
 
 #include <getopt.h>
-#include <iio.h>
+#include <iio/iio.h>
 #include <stdio.h>
 #include <string.h>
 

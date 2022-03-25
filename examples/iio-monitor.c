@@ -32,12 +32,12 @@
 #endif
 
 #include <cdk.h>
+#include <iio/iio.h>
 #include <locale.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-#include <iio.h>
 
 #ifdef _MSC_BUILD
 #define inline __inline

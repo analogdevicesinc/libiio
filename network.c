@@ -7,14 +7,14 @@
  */
 
 #include "dns_sd.h"
-#include "iio-debug.h"
-#include "iio-backend.h"
 #include "iio-config.h"
-#include "iio-lock.h"
-#include "iiod-client.h"
 #include "network.h"
 
-#include <iio.h>
+#include <iio/iio.h>
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
+#include <iio/iiod-client.h>
 
 #include <errno.h>
 #include <fcntl.h>

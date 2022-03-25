@@ -9,16 +9,17 @@
  * which is Licensed under Public Domain
  */
 
+#include "dns_sd.h"
+#include "deps/mdns/mdns.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <winsock2.h>
 #include <iphlpapi.h>
 
-#include "dns_sd.h"
-#include "iio-backend.h"
-#include "iio-debug.h"
-#include "iio-lock.h"
-#include "deps/mdns/mdns.h"
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 
 #ifdef HAVE_IPV6
 static const unsigned char localhost[] = {

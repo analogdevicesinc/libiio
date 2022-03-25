@@ -9,11 +9,12 @@
 #ifndef __IIO_PRIVATE_H__
 #define __IIO_PRIVATE_H__
 
-/* Include public interface */
-#include "iio.h"
-#include "iio-backend.h"
 #include "iio-config.h"
-#include "iio-debug.h"
+
+/* Include public interface */
+#include <iio/iio.h>
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
 
 #include <stdbool.h>
 

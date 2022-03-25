@@ -20,7 +20,7 @@
  * */
 
 #include <errno.h>
-#include <iio.h>
+#include <iio/iio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>

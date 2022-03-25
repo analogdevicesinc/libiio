@@ -5,7 +5,7 @@
  * Copyright (C) 2021 Analog Devices, Inc.
  * Author: Nuno Sá <nuno.sa@analog.com>
  */
-#include <iio.h>
+#include <iio/iio.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <signal.h>

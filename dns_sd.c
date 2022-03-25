@@ -12,10 +12,11 @@
  */
 
 #include "dns_sd.h"
-#include "iio-backend.h"
-#include "iio-debug.h"
-#include "iio-lock.h"
 #include "network.h"
+
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 
 #include <errno.h>
 #ifdef _WIN32

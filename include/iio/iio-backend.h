@@ -8,7 +8,7 @@
 #ifndef __IIO_BACKEND_H__
 #define __IIO_BACKEND_H__
 
-#include <iio.h>
+#include <iio/iio.h>
 
 #include <stdbool.h>
 
