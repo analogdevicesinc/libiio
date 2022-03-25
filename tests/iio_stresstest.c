@@ -310,11 +310,12 @@ static void *client_thread(void *data)
 		while (threads_running || i == 0) {
 			info->buffers[id]++;
 			buffer = iio_device_create_buffer(dev, info->buffer_size, false);
-			if (!buffer) {
+			ret = iio_err(buffer);
+			if (ret) {
 				struct timespec wait;
 				wait.tv_sec = 0;
 				wait.tv_nsec = (1 * 1000);
-				thread_err(id, errno, "iio_device_create_buffer failed");
+				thread_err(id, ret, "iio_device_create_buffer failed");
 				nanosleep(&wait, &wait);
 				continue;
 			}
@@ -468,7 +469,7 @@ int main(int argc, char **argv)
 						iio_channel_enable(ch);
 					}
 					struct iio_buffer *buffer = iio_device_create_buffer(dev, info.buffer_size, false);
-					if (buffer) {
+					if (!iio_err(buffer)) {
 						iio_buffer_destroy(buffer);
 						printf("try : %s\n", name);
 					}

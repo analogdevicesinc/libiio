@@ -266,7 +266,8 @@ int main(int argc, char **argv)
 		iio_device_get_name(dev));
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
-	if (!buffer) {
+	ret = iio_err(buffer);
+	if (ret) {
 		fprintf(stderr, "Unable to allocate buffer\n");
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;

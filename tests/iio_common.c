@@ -268,13 +268,13 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		const struct option *options, const char *options_descriptions[])
 {
 	struct iio_context *ctx = NULL;
-	int c;
 	enum backend backend = IIO_LOCAL;
 	const char *arg = NULL, *prefix = NULL;
 	bool do_scan = false, detect_context = false;
 	char buf[128];
 	struct option *opts;
 	int timeout = -1;
+	int err, c;
 
 	/* Setting opterr to zero disables error messages from getopt_long */
 	opterr = 0;
@@ -390,13 +390,16 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	else
 		ctx = iio_create_context(NULL, NULL);
 
-	if (!ctx && !do_scan && !detect_context) {
+	err = iio_err(ctx);
+	if (err && !do_scan && !detect_context) {
 		char err_str[1024];
-		iio_strerror(errno, err_str, sizeof(err_str));
+		iio_strerror(-err, err_str, sizeof(err_str));
 		if (arg)
 			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, err_str);
 		else
 			fprintf(stderr, "Unable to create Local IIO context : %s\n", err_str);
+
+		ctx = NULL;
 	}
 
 	if (ctx && timeout >= 0) {
