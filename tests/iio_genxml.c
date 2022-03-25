@@ -110,7 +110,9 @@ int main(int argc, char **argv)
 		printf("Context re-creation from generated XML succeeded!\n");
 		iio_context_destroy(ctx);
 	}
+
 	free_argw(argc, argw);
 	free(xml);
+
 	return EXIT_SUCCESS;
 }

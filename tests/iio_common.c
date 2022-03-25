@@ -20,6 +20,7 @@
  * */
 
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <stdio.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -83,10 +84,7 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 	scan_ctx = iio_scan(NULL, scan);
 	err = iio_err(scan_ctx);
 	if (err) {
-		char *err_str = xmalloc(BUF_SIZE, name);
-		iio_strerror(err, err_str, BUF_SIZE);
-		fprintf(stderr, "Scanning for IIO contexts failed: %s\n", err_str);
-		free (err_str);
+		prm_perror(NULL, err, "Scanning for IIO contexts failed");
 		return NULL;
 	}
 
@@ -165,8 +163,12 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 
 char ** dup_argv(char * name, int argc, char * argv[])
 {
-	int i;
-	char** new_argv = xmalloc((argc + 1) * sizeof(char *), name);
+	unsigned int i;
+	char** new_argv;
+
+	new_argv = xmalloc((argc + 1) * sizeof(char *), name);
+	if (!new_argv)
+		goto err_oom;
 
 	for(i = 0; i < argc; i++) {
 		new_argv[i] = cmn_strndup(argv[i], NAME_MAX);
@@ -183,17 +185,18 @@ err_dup:
 
 	free(new_argv);
 
+err_oom:
 	fprintf(stderr, "out of memory\n");
 	exit(0);
 }
 
 void free_argw(int argc, char * argw[])
 {
-	int i;
+	unsigned int i;
 
-	for(i = 0; i < argc; i++) {
+	for(i = 0; i < argc; i++)
 		free(argw[i]);
-	}
+
 	free(argw);
 }
 
@@ -209,36 +212,32 @@ static const struct option common_options[] = {
 
 struct option * add_common_options(const struct option * longopts)
 {
-	int i = 0, j = 0;
+	unsigned int i = 0, j = 0;
 	struct option *opts;
 
-	while (longopts[i].name) {
+	while (longopts[i].name)
 		i++;
-	}
-	while (common_options[j].name) {
+	while (common_options[j].name)
 		j++;
-		i++;
-	}
+	i += j;
+
 	opts = calloc(i + 1, sizeof(struct option));
 	if (!opts) {
 		fprintf(stderr, "Out of memory\n");
 		return NULL;
 	}
-	i = 0, j = 0;
-	while (longopts[i].name) {
+
+	for (i = 0; longopts[i].name; i++) {
 		opts[i].name = longopts[i].name;
 		opts[i].has_arg = longopts[i].has_arg;
 		opts[i].flag = longopts[i].flag;
 		opts[i].val = longopts[i].val;
-		i++;
 	}
-	while (common_options[j].name) {
-		opts[i].name = common_options[j].name;
-		opts[i].has_arg = common_options[j].has_arg;
-		opts[i].flag = common_options[j].flag;
-		opts[i].val = common_options[j].val;
-		i++;
-		j++;
+	for (j = 0; common_options[j].name; j++) {
+		opts[i + j].name = common_options[j].name;
+		opts[i + j].has_arg = common_options[j].has_arg;
+		opts[i + j].flag = common_options[j].flag;
+		opts[i + j].val = common_options[j].val;
 	}
 
 	return opts;
@@ -271,7 +270,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	enum backend backend = IIO_LOCAL;
 	const char *arg = NULL, *prefix = NULL;
 	bool do_scan = false, detect_context = false;
-	char buf[128];
+	char buf[1024];
 	struct option *opts;
 	int timeout = -1;
 	int err, c;
@@ -376,11 +375,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	} else if (detect_context || backend == IIO_AUTO) {
 		ctx = autodetect_context(true, name, arg);
 	} else if (prefix) {
-		int ret = iio_snprintf(buf, sizeof(buf), "%s:%s", prefix, arg);
-		if (ret < 0)
-			errno = -ret;
-		else if (ret >= sizeof(buf))
-			errno = EINVAL;
+		err = iio_snprintf(buf, sizeof(buf), "%s:%s", prefix, arg);
+		if (err < 0)
+			ctx = iio_ptr(err);
+		else if (err >= sizeof(buf))
+			ctx = iio_ptr(-EINVAL);
 		else
 			ctx = iio_create_context(NULL, buf);
 	} else if (!arg && backend != IIO_LOCAL)
@@ -392,23 +391,18 @@ struct iio_context * handle_common_opts(char * name, int argc,
 
 	err = iio_err(ctx);
 	if (err && !do_scan && !detect_context) {
-		char err_str[1024];
-		iio_strerror(-err, err_str, sizeof(err_str));
 		if (arg)
-			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, err_str);
+			prm_perror(NULL, err, "Unable to create IIO context %s", arg);
 		else
-			fprintf(stderr, "Unable to create Local IIO context : %s\n", err_str);
+			prm_perror(NULL, err, "Unable to create local IIO context");
 
 		ctx = NULL;
 	}
 
 	if (ctx && timeout >= 0) {
-		ssize_t ret = iio_context_set_timeout(ctx, timeout);
-		if (ret < 0) {
-			char err_str[1024];
-			iio_strerror(-(int)ret, err_str, sizeof(err_str));
-			fprintf(stderr, "IIO contexts set timeout failed : %s\n",
-					err_str);
+		err = iio_context_set_timeout(ctx, timeout);
+		if (err < 0) {
+			ctx_perror(ctx, err, "IIO context set timeout failed");
 			iio_context_destroy(ctx);
 			return NULL;
 		}
@@ -461,4 +455,19 @@ uint64_t get_time_us(void)
 #endif
 
 	return tp.tv_sec * 1000000ull + tp.tv_nsec / 1000;
+}
+
+const char * dev_name(const struct iio_device *dev)
+{
+	const char *name;
+
+	name = iio_device_get_label(dev);
+	if (name)
+		return name;
+
+	name = iio_device_get_name(dev);
+	if (name)
+		return name;
+
+	return iio_device_get_id(dev);
 }

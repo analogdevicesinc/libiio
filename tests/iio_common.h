@@ -66,6 +66,8 @@ void free_argw(int argc, char * argw[]);
 
 uint64_t get_time_us(void);
 
+const char * dev_name(const struct iio_device *dev);
+
 /* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
  * {NAME_MAX} : Maximum number of bytes in a filename
  * {PATH_MAX} : Maximum number of bytes in a pathname
