@@ -6,11 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-backend.h"
 #include "iio-config.h"
-#include "iio-debug.h"
-#include "iio-lock.h"
-#include "iiod-client.h"
+
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
+#include <iio/iiod-client.h>
 
 #include <ctype.h>
 #include <errno.h>

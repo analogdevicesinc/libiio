@@ -7,11 +7,11 @@
  */
 
 #include "iio-config.h"
-#include "iio-debug.h"
 #include "network.h"
 
 #include <errno.h>
 #include <fcntl.h>
+#include <iio/iio-debug.h>
 #include <netdb.h>
 #include <poll.h>
 #include <string.h>

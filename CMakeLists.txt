@@ -45,10 +45,12 @@ if (LIBIIO_COMPAT)
 	endif()
 endif()
 
+set(IIO_PUBLIC_HEADERS include/iio/iio.h;include/iio/iio-debug.h;include/iio/iio-lock.h;include/iio/iiod-client.h)
+
 set_target_properties(iio PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
-	PUBLIC_HEADER iio.h
+	PUBLIC_HEADER "${IIO_PUBLIC_HEADERS}"
 )
 set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES
 	FRAMEWORK TRUE
@@ -69,7 +71,7 @@ if (WIN32)
 	)
 endif()
 
-target_include_directories(iio PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
+target_include_directories(iio PUBLIC include ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 
 target_compile_definitions(iio PRIVATE LIBIIO_EXPORTS)
 

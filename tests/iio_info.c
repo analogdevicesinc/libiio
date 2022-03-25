@@ -21,7 +21,7 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <iio.h>
+#include <iio/iio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

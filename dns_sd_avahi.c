@@ -12,9 +12,6 @@
  */
 
 #include "dns_sd.h"
-#include "iio-backend.h"
-#include "iio-debug.h"
-#include "iio-lock.h"
 
 #include <errno.h>
 #include <string.h>
@@ -27,6 +24,10 @@
 #include <avahi-common/malloc.h>
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
+
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 
 /*
  * Fundamentally, this builds up a linked list to manage

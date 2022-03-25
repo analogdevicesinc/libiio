@@ -9,7 +9,7 @@
 #ifndef _IIOD_CLIENT_H
 #define _IIOD_CLIENT_H
 
-#include "iio-backend.h"
+#include <iio/iio-backend.h>
 
 #define __api __iio_api
 

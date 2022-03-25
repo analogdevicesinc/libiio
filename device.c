@@ -6,9 +6,9 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-debug.h"
 #include "iio-private.h"
 
+#include <iio/iio-debug.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <stdio.h>

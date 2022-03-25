@@ -6,7 +6,6 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "../iio.h"
 #include "../iio-config.h"
 #include "debug.h"
 #include "dns-sd.h"
@@ -17,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <iio/iio.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <poll.h>

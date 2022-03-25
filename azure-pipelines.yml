@@ -122,10 +122,9 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/Release'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
-      displayName: 'Copy iio.h header'
+      displayName: 'Copy public headers'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/'
-        contents: 'iio.h'
+        sourceFolder: '$(Agent.BuildDirectory)/s/include'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy .exe files'

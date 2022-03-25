@@ -6,14 +6,13 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-debug.h"
 #include "iio-private.h"
 #include "sort.h"
 #include "deps/libini/ini.h"
 
-
 #include <dirent.h>
 #include <errno.h>
+#include <iio/iio-debug.h>
 #include <limits.h>
 #include <poll.h>
 #include <stdbool.h>

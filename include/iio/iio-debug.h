@@ -9,7 +9,7 @@
 #ifndef __IIO_DEBUG_H__
 #define __IIO_DEBUG_H__
 
-#include <iio.h>
+#include <iio/iio.h>
 
 #define __api __iio_api
 

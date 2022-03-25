@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <iio.h>
+#include <iio/iio.h>
 
 #include "iio_common.h"
 

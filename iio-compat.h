@@ -13,7 +13,7 @@
 #ifndef __LIBIIO_COMPAT_H__
 #define __LIBIIO_COMPAT_H__
 
-#include <iio.h>
+#include <iio/iio.h>
 
 #ifndef DOXYGEN
 #ifdef LIBIIO_COMPAT_EXPORTS

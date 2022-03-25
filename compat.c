@@ -8,7 +8,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-backend.h"
+#include <iio/iio-backend.h>
 #include "iio-compat.h"
 
 #include <errno.h>

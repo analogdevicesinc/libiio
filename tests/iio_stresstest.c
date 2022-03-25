@@ -9,7 +9,7 @@
 #define _DEFAULT_SOURCE
 
 #include <getopt.h>
-#include <iio.h>
+#include <iio/iio.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>

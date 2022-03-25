@@ -10,10 +10,10 @@
 #ifndef __IIO_NETWORK_H
 #define __IIO_NETWORK_H
 
-#include "iio.h"
-
 #include <stdbool.h>
 
+struct iio_context_params;
+struct iio_context_pdata;
 struct addrinfo;
 
 struct iiod_client_pdata {

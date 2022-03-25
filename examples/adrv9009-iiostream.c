@@ -20,12 +20,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#include <iio/iio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
-#include <iio.h>
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))

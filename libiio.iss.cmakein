@@ -42,7 +42,7 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Source: "D:\a\1\a\Windows-VS-2019-x64\libiio1.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
 Source: "D:\a\1\a\Windows-VS-2019-x64\*.exe"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
 Source: "D:\a\1\a\Windows-VS-2019-x64\libiio1.lib"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\lib\amd64"; Check: Is64BitInstallMode
-Source: "D:\a\1\a\Windows-VS-2019-x64\iio.h"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\include"
+Source: "D:\a\1\a\Windows-VS-2019-x64\iio\*.h"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\include\iio"
 Source: "D:\a\1\a\Windows-VS-2019-x64\libxml2.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "D:\a\1\a\Windows-VS-2019-x64\libusb-1.0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "D:\a\1\a\Windows-VS-2019-x64\libserialport-0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist

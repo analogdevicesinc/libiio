@@ -14,7 +14,7 @@
 
 #include <endian.h>
 #include <errno.h>
-#include <iio.h>
+#include <iio/iio.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
