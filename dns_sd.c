@@ -93,10 +93,16 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 	const char *hw_model, *serial;
 	unsigned int i;
 
-	if (port == IIOD_PORT)
+	if (port == IIOD_PORT) {
 		iio_snprintf(uri, sizeof(uri), "ip:%s", hostname);
-	else
-		iio_snprintf(uri, sizeof(uri), "ip:%s:%d", hostname, port);
+	} else {
+#ifdef HAVE_IPV6
+		if (strchr(addr_str, ':'))
+			iio_snprintf(uri, sizeof(uri), "ip:[%s]:%hu", hostname, port);
+		else
+#endif
+			iio_snprintf(uri, sizeof(uri), "ip:%s:%hu", hostname, port);
+	}
 
 	ctx = iio_create_context(params, uri);
 	if (!ctx) {
@@ -227,7 +233,8 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 	for (i = 0, ndata = d; ndata->next != NULL; ndata = ndata->next) {
 		for (j = i + 1, mdata = ndata->next; mdata->next != NULL; mdata = mdata->next) {
 			if (!strcmp(mdata->hostname, ndata->hostname) &&
-					!strcmp(mdata->addr_str, ndata->addr_str)){
+					!strcmp(mdata->addr_str, ndata->addr_str) &&
+					mdata->port == ndata->port){
 				prm_dbg(params, "Removing duplicate in list: '%s'\n",
 					ndata->hostname);
 				dnssd_remove_node(params, &d, j);
@@ -276,7 +283,7 @@ fail:
 int dnssd_discover_host(const struct iio_context_params *params, char *addr_str,
 			size_t addr_len, uint16_t *port)
 {
-	struct dns_sd_discovery_data *ddata;
+	struct dns_sd_discovery_data *ddata, *ndata;
 	int ret = 0;
 
 	ret = dnssd_find_hosts(params, &ddata);
@@ -284,9 +291,17 @@ int dnssd_discover_host(const struct iio_context_params *params, char *addr_str,
 	if (ret < 0)
 		goto host_fail;
 
-	if (ddata) {
-		*port = ddata->port;
-		iio_strlcpy(addr_str, ddata->addr_str, addr_len);
+	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
+		if (ndata->port == *port) {
+			*port = ndata->port;
+			iio_strlcpy(addr_str, ndata->addr_str, addr_len);
+			break;
+		}
+	}
+
+	if (!ndata->next) {
+		addr_str[0] = '\0';
+		*port = 0;
 	}
 
 host_fail:

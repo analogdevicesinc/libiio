@@ -34,6 +34,9 @@
 
 #define MY_NAME "iiod"
 
+#define _STRINGIFY(x) #x
+#define STRINGIFY(x) _STRINGIFY(x)
+
 struct client_data {
 	int fd;
 	bool debug;
@@ -49,24 +52,12 @@ struct thread_pool *main_thread_pool;
 
 static struct sockaddr_in sockaddr = {
 	.sin_family = AF_INET,
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	.sin_addr.s_addr = __bswap_constant_32(INADDR_ANY),
-	.sin_port = __bswap_constant_16(IIOD_PORT),
-#else
-	.sin_addr.s_addr = INADDR_ANY,
-	.sin_port = IIOD_PORT,
-#endif
 };
 
 #ifdef HAVE_IPV6
 static struct sockaddr_in6 sockaddr6 = {
 	.sin6_family = AF_INET6,
 	.sin6_addr = IN6ADDR_ANY_INIT,
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	.sin6_port = __bswap_constant_16(IIOD_PORT),
-#else
-	.sin6_port = IIOD_PORT,
-#endif
 };
 #endif /* HAVE_IPV6 */
 
@@ -80,6 +71,8 @@ static const struct option options[] = {
 	  {"ffs", required_argument, 0, 'F'},
 	  {"nb-pipes", required_argument, 0, 'n'},
 	  {"serial", required_argument, 0, 's'},
+	  {"port", required_argument, 0, 'p'},
+	  {"uri", required_argument, 0, 'u'},
 	  {0, 0, 0, 0},
 };
 
@@ -93,6 +86,12 @@ static const char *options_descriptions[] = {
 	"Use the given FunctionFS mountpoint to serve over USB",
 	"Specify the number of USB pipes (ep couples) to use",
 	"Run " MY_NAME " on the specified UART.",
+	"Port to listen on (default = " STRINGIFY(IIOD_PORT) ").",
+	("Use the context at the provided URI."
+		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
+		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
+		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
+		"\n\t\t\t    'local:' (default)"),
 };
 
 static void usage(void)
@@ -166,7 +165,8 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio,
 }
 
 static int main_server(struct iio_context *ctx, bool debug,
-		       const void *xml_zstd, size_t xml_zstd_len)
+		       const void *xml_zstd, size_t xml_zstd_len,
+		       uint16_t port)
 {
 	int ret, fd = -1, yes = 1,
 	    keepalive_time = 10,
@@ -180,7 +180,12 @@ static int main_server(struct iio_context *ctx, bool debug,
 			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
 			LIBIIO_VERSION_GIT);
 
+	sockaddr.sin_port = htons(port);
+	sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
 #ifdef HAVE_IPV6
+	sockaddr6.sin6_port = htons(port);
+
 	fd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0);
 #endif
 	ipv6 = (fd >= 0);
@@ -211,6 +216,21 @@ static int main_server(struct iio_context *ctx, bool debug,
 		goto err_close_socket;
 	}
 
+	/* if port == 0, the OS will return something in the ephemeral port range
+	 * which we need to find, to pass to avahi
+	 */
+	if (!port) {
+		struct sockaddr_in sin;
+		socklen_t len = sizeof(sin);
+		if (getsockname(fd, (struct sockaddr *)&sin, &len) == -1) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("getsockname failed : %s\n", err_str);
+			goto err_close_socket;
+		}
+		port = ntohs(sin.sin_port);
+		/* we don't use sockaddr or sockaddr6 anymore, so ignore those */
+	}
+
 	if (ipv6)
 		IIO_INFO("IPv6 support enabled\n");
 
@@ -221,7 +241,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 	}
 
 	if (HAVE_AVAHI)
-		start_avahi(main_thread_pool);
+		start_avahi(main_thread_pool, port);
 
 	pfd[0].fd = fd;
 	pfd[0].events = POLLIN;
@@ -353,8 +373,9 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
-	long nb_pipes = 3;
+	long nb_pipes = 3, val;
 	char *end;
+	const char *uri = "local:";
 	struct iio_context *ctx;
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
@@ -362,9 +383,10 @@ int main(int argc, char **argv)
 	char err_str[1024];
 	void *xml_zstd;
 	size_t xml_zstd_len = 0;
+	uint16_t port = IIOD_PORT;
 	int ret;
 
-	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:",
+	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:p:u:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -414,6 +436,17 @@ int main(int argc, char **argv)
 
 			uart_params = optarg;
 			break;
+		case 'p':
+			val = strtoul(optarg, &end, 10);
+			if (optarg == end || (end && *end != '\0') || val > 0xFFFF || val < 0) {
+				IIO_ERROR("IIOD invalid port number\n");
+				return EXIT_FAILURE;
+			}
+			port = (uint16_t)val;
+			break;
+		case 'u':
+			uri = optarg;
+			break;
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
@@ -426,7 +459,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ctx = iio_create_context(NULL, "local:");
+	ctx = iio_create_context(NULL, uri);
 	if (!ctx) {
 		iio_strerror(errno, err_str, sizeof(err_str));
 		IIO_ERROR("Unable to create local context: %s\n", err_str);
@@ -477,7 +510,7 @@ int main(int argc, char **argv)
 	if (interactive)
 		ret = main_interactive(ctx, debug, use_aio, xml_zstd, xml_zstd_len);
 	else
-		ret = main_server(ctx, debug, xml_zstd, xml_zstd_len);
+		ret = main_server(ctx, debug, xml_zstd, xml_zstd_len, port);
 
 	/*
 	 * In case we got here through an error in the main thread make sure all
