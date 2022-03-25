@@ -62,7 +62,7 @@ static const char *trigger_name = NULL;
 static size_t num_samples;
 
 static volatile sig_atomic_t app_running = true;
-static int exit_code = EXIT_SUCCESS;
+static int exit_code = EXIT_FAILURE;
 
 static void quit_all(int sig)
 {
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
 
 	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS,	/* Flawfinder: ignore */
@@ -235,14 +235,14 @@ int main(int argc, char **argv)
 		case 't':
 			if (!optarg) {
 				fprintf(stderr, "Trigger requires an argument\n");
-				return EXIT_FAILURE;
+				goto err_free_ctx;
 			}
 			trigger_name = optarg;
 			break;
 		case 'b':
 			if (!optarg) {
 				fprintf(stderr, "Buffersize requires an argument\n");
-				return EXIT_FAILURE;
+				goto err_free_ctx;
 			}
 			buffer_size = sanitize_clamp("buffer size", optarg, 1, SIZE_MAX);
 			break;
@@ -252,25 +252,25 @@ int main(int argc, char **argv)
 		case 's':
 			if (!optarg) {
 				fprintf(stderr, "Number of Samples requires an argument\n");
-				return EXIT_FAILURE;
+				goto err_free_ctx;
 			}
 			num_samples = sanitize_clamp("number of samples", optarg, 0, SIZE_MAX);
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
-			return EXIT_FAILURE;
+			goto err_free_ctx;
 		}
 	}
 	free(opts);
 
+	if (!ctx)
+		goto err_free_argw;
+
 	if (argc < optind) {
 		fprintf(stderr, "Too few arguments.\n\n");
 		usage(MY_NAME, options, options_descriptions);
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
-
-	if (!ctx)
-		return EXIT_FAILURE;
 
 	if (!argw[optind]) {
 		unsigned int nb_devices = iio_context_get_devices_count(ctx);
@@ -309,9 +309,8 @@ int main(int argc, char **argv)
 						iio_context_get_attr_value(ctx, "uri"),
 						label ? label : name ? name : dev_id);
 		}
-		iio_context_destroy(ctx);
 		usage(MY_NAME, options, options_descriptions);
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
 
 	setup_sig_handler();
@@ -319,8 +318,7 @@ int main(int argc, char **argv)
 	dev = iio_context_find_device(ctx, argw[optind]);
 	if (!dev) {
 		fprintf(stderr, "Device %s not found\n", argw[optind]);
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
 
 	if (trigger_name) {
@@ -328,14 +326,12 @@ int main(int argc, char **argv)
 				ctx, trigger_name);
 		if (!trigger) {
 			fprintf(stderr, "Trigger %s not found\n", trigger_name);
-			iio_context_destroy(ctx);
-			return EXIT_FAILURE;
+			goto err_free_ctx;
 		}
 
 		if (!iio_device_is_trigger(trigger)) {
 			fprintf(stderr, "Specified device is not a trigger\n");
-			iio_context_destroy(ctx);
-			return EXIT_FAILURE;
+			goto err_free_ctx;
 		}
 
 		/*
@@ -379,8 +375,7 @@ int main(int argc, char **argv)
 				char buf[256];
 				iio_strerror(-(int) ret, buf, sizeof(buf));
 				fprintf(stderr, "Bad channel name \"%s\" : %s\n", argw[j], buf);
-				iio_context_destroy(ctx);
-				return EXIT_FAILURE;
+				goto err_free_ctx;
 			}
 			nb_active_channels++;
 		}
@@ -388,30 +383,28 @@ int main(int argc, char **argv)
 
 	if (!nb_active_channels) {
 		fprintf(stderr, "No input channels found.\n");
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
 
 	sample_size = iio_device_get_sample_size(dev, NULL);
 	/* Zero isn't normally an error code, but in this case it is an error */
 	if (sample_size == 0) {
 		fprintf(stderr, "Unable to get sample size, returned 0\n");
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	} else if (sample_size < 0) {
 		char buf[256];
 		iio_strerror(errno, buf, sizeof(buf));
 		fprintf(stderr, "Unable to get sample size : %s\n", buf);
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
 
 	buffer = iio_device_create_buffer(dev, buffer_size, false);
-	if (!buffer) {
+	ret = iio_err(buffer);
+	if (ret) {
 		char buf[256];
-		iio_strerror(errno, buf, sizeof(buf));
+		iio_strerror(-(int)ret, buf, sizeof(buf));
 		fprintf(stderr, "Unable to allocate buffer: %s\n", buf);
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
+		goto err_free_ctx;
 	}
 
 #ifdef _WIN32
@@ -498,7 +491,10 @@ int main(int argc, char **argv)
 
 err_destroy_buffer:
 	iio_buffer_destroy(buffer);
-	iio_context_destroy(ctx);
+err_free_ctx:
+	if (ctx)
+		iio_context_destroy(ctx);
+err_free_argw:
 	free_argw(argc, argw);
 	return exit_code;
 }
