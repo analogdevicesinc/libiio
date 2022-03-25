@@ -9,11 +9,9 @@
 #ifndef __IIO_DEBUG_H__
 #define __IIO_DEBUG_H__
 
-#include "iio-config.h"
-
 #include <iio.h>
-#include <stdarg.h>
-#include <stdio.h>
+
+#define __api __iio_api
 
 #if defined(__MINGW32__)
 #   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
@@ -28,30 +26,15 @@
 #define __OTHERS(a, b, ...)	___OTHERS(a, __VA_ARGS__)
 
 
-static inline void __iio_printf
+/** @brief Print a message with the given priority
+ * @param params A pointer to a iio_context_params structure that contains
+ *   context creation information; can be NULL
+ * @param msg_level The priority of the message
+ * @fmt A printf-like format string, followed by its arguments if any. */
+__api __iio_printf void
 iio_prm_printf(const struct iio_context_params *params,
 	       enum iio_log_level msg_level,
-	       const char *fmt, ...)
-{
-	FILE *out = NULL;
-	va_list ap;
-
-	va_start(ap, fmt);
-
-	if (params && msg_level <= params->log_level) {
-		if (msg_level <= params->stderr_level)
-			out = params->err ? params->err : stderr;
-		else
-			out = params->out ? params->out : stdout;
-	} else if (!params && msg_level <= DEFAULT_LOG_LEVEL) {
-		out = msg_level <= LEVEL_WARNING ? stderr : stdout;
-	}
-
-	if (out)
-		vfprintf(out, fmt, ap);
-
-	va_end(ap);
-}
+	       const char *fmt, ...);
 
 #define __ctx_params_or_null(ctx)	((ctx) ? iio_context_get_params(ctx) : NULL)
 #define __dev_ctx_or_null(dev)	((dev) ? iio_device_get_context(dev) : NULL)
@@ -88,5 +71,7 @@ iio_prm_printf(const struct iio_context_params *params,
 #define ctx_perror(ctx, err, ...)	prm_perror(__ctx_params_or_null(ctx), err, __VA_ARGS__)
 #define dev_perror(dev, err, ...)	ctx_perror(__dev_ctx_or_null(dev), err, __VA_ARGS__)
 #define chn_perror(dev, err, ...)	dev_perror(__chn_dev_or_null(chn), err, __VA_ARGS__)
+
+#undef __api
 
 #endif /* __IIO_DEBUG_H__ */

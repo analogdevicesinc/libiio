@@ -12,6 +12,7 @@
 #include "dns_sd.h"
 #include "iio-config.h"
 #include "iio-private.h"
+#include "iio-debug.h"
 
 #include <errno.h>
 #include <locale.h>
@@ -367,4 +368,28 @@ bool iio_list_has_elem(const char *list, const char *elem)
 
 		list = ptr + 1;
 	}
+}
+
+void iio_prm_printf(const struct iio_context_params *params,
+		    enum iio_log_level msg_level,
+		    const char *fmt, ...)
+{
+	FILE *out = NULL;
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	if (params && msg_level <= params->log_level) {
+		if (msg_level <= params->stderr_level)
+			out = params->err ? params->err : stderr;
+		else
+			out = params->out ? params->out : stdout;
+	} else if (!params && msg_level <= DEFAULT_LOG_LEVEL) {
+		out = msg_level <= LEVEL_WARNING ? stderr : stdout;
+	}
+
+	if (out)
+		vfprintf(out, fmt, ap);
+
+	va_end(ap);
 }
