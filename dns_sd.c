@@ -78,7 +78,7 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
  */
 
 static int dnssd_fill_context_info(struct iio_context_info *info,
-		char *hostname, char *addr_str, int port)
+		char *hostname, char *addr_str, uint16_t port)
 {
 	struct iio_context *ctx;
 	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];
