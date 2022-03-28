@@ -285,7 +285,7 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 					   *chn = create_channel(dev, n);
 			err = iio_err(chn);
 			if (err) {
-				dev_perror(dev, -err, "Unable to create channel");
+				dev_perror(dev, err, "Unable to create channel");
 				goto err_free_device;
 			}
 
@@ -387,7 +387,7 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 		dev = create_device(ctx, n);
 		err = iio_err(dev);
 		if (err) {
-			ctx_perror(ctx, -err, "Unable to create device");
+			ctx_perror(ctx, err, "Unable to create device");
 			return err;
 		}
 

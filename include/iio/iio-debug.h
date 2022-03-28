@@ -62,7 +62,7 @@ iio_prm_printf(const struct iio_context_params *params,
 
 #define prm_perror(params, err, ...) do {				\
 	char _buf[1024];						\
-	int _err = (err);						\
+	int _err = -(err);						\
 	iio_strerror(_err, _buf, sizeof(_buf));				\
 	prm_err(params, __FIRST(__VA_ARGS__, 0)				\
 		__OTHERS(": %s\n",__VA_ARGS__, _buf));			\

@@ -457,7 +457,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 		ret = (ssize_t) ioctl_nointr(f,
 				BLOCK_ENQUEUE_IOCTL, last_block);
 		if (ret) {
-			dev_perror(dev, -ret, "Unable to enqueue block");
+			dev_perror(dev, ret, "Unable to enqueue block");
 			return ret;
 		}
 
@@ -483,7 +483,7 @@ static ssize_t local_get_buffer(const struct iio_device *dev,
 	if (ret) {
 		if ((!pdata->blocking && ret != -EAGAIN) ||
 				(pdata->blocking && ret != -ETIMEDOUT)) {
-			dev_perror(dev, -ret, "Unable to dequeue block");
+			dev_perror(dev, ret, "Unable to dequeue block");
 		}
 		return ret;
 	}
@@ -853,7 +853,7 @@ static int local_close(const struct iio_device *dev)
 		if (pdata->fd > -1)
 			ret = ioctl_nointr(pdata->fd, BLOCK_FREE_IOCTL, 0);
 		if (ret) {
-			dev_perror(dev, -ret, "Error during ioctl()");
+			dev_perror(dev, ret, "Error during ioctl()");
 		}
 		pdata->allocated_nb_blocks = 0;
 		free(pdata->addrs);
@@ -865,7 +865,7 @@ static int local_close(const struct iio_device *dev)
 	ret1 = close(pdata->fd);
 	if (ret1) {
 		ret1 = -errno;
-		dev_perror(dev, errno, "Error during close() of main FD");
+		dev_perror(dev, ret1, "Error during close() of main FD");
 		if (ret == 0)
 			ret = ret1;
 	}
@@ -878,7 +878,7 @@ static int local_close(const struct iio_device *dev)
 
 		if (ret1) {
 			ret1 = -errno;
-			dev_perror(dev, errno, "Error during close() of cancel FD");
+			dev_perror(dev, ret1, "Error during close() of cancel FD");
 			if (ret == 0)
 				ret = ret1;
 		}
@@ -886,7 +886,7 @@ static int local_close(const struct iio_device *dev)
 
 	ret1 = local_buffer_enabled_set(dev, false);
 	if (ret1) {
-		dev_perror(dev, -ret1, "Error during buffer disable");
+		dev_perror(dev, ret1, "Error during buffer disable");
 		if (ret == 0)
 			ret = ret1;
 	}
@@ -902,7 +902,7 @@ static int local_close(const struct iio_device *dev)
 			continue;
 
 		ret1 = -errno;
-		dev_perror(dev, errno, "Error during channel[%u] disable", i);
+		dev_perror(dev, ret1, "Error during channel[%u] disable", i);
 		if (ret == 0)
 			ret = ret1;
 	}
@@ -1574,14 +1574,14 @@ static int foreach_in_dir(const struct iio_context *ctx,
 				break;
 
 			ret = -errno;
-			ctx_perror(ctx, -ret, "Unable to open directory");
+			ctx_perror(ctx, ret, "Unable to open directory");
 			goto out_close_dir;
 		}
 
 		iio_snprintf(buf, sizeof(buf), "%s/%s", path, entry->d_name);
 		if (stat(buf, &st) < 0) {
 			ret = -errno;
-			ctx_perror(ctx, -ret, "Unable to stat file");
+			ctx_perror(ctx, ret, "Unable to stat file");
 			goto out_close_dir;
 		}
 
@@ -1752,7 +1752,7 @@ static void local_cancel(const struct iio_device *dev)
 	ret = write(pdata->cancel_fd, &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
-		dev_perror(dev, errno, "Unable to signal cancellation event");
+		dev_perror(dev, -errno, "Unable to signal cancellation event");
 	}
 }
 

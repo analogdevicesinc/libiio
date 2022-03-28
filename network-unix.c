@@ -102,7 +102,8 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
-		prm_perror(io_ctx->params, errno, "Unable to signal cancellation event");
+		prm_perror(io_ctx->params, -errno,
+			   "Unable to signal cancellation event");
 	}
 }
 
