@@ -275,7 +275,7 @@ static int usb_open(const struct iio_device *dev,
 
 	ret = usb_open_pipe(ctx_pdata, pdata->io_ctx.ep->pipe_id);
 	if (ret) {
-		dev_perror(dev, -ret, "Failed to open pipe");
+		dev_perror(dev, ret, "Failed to open pipe");
 		goto err_free_ep;
 	}
 
@@ -898,14 +898,14 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	ret = libusb_init(&usb_ctx);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		prm_perror(params, -ret, "Unable to init libusb");
+		prm_perror(params, ret, "Unable to init libusb");
 		goto err_destroy_ep_mutex;
 	}
 
 	ret = (int) libusb_get_device_list(usb_ctx, &device_list);
 	if (ret < 0) {
 		ret = -(int) libusb_to_errno(ret);
-		prm_perror(params, -ret, "Unable to get usb device list");
+		prm_perror(params, ret, "Unable to get usb device list");
 		goto err_libusb_exit;
 	}
 
@@ -946,7 +946,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		prm_perror(params, -ret, "Unable to open device\n");
+		prm_perror(params, ret, "Unable to open device\n");
 		goto err_libusb_exit;
 	}
 
@@ -957,7 +957,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	ret = libusb_claim_interface(hdl, intrfc);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		prm_perror(params, -ret, "Unable to claim interface %u:%u:%u",
+		prm_perror(params, ret, "Unable to claim interface %u:%u:%u",
 			   bus, address, intrfc);
 		goto err_libusb_close;
 	}
@@ -965,7 +965,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	ret = libusb_get_active_config_descriptor(usb_dev, &conf_desc);
 	if (ret) {
 		ret = -(int) libusb_to_errno(ret);
-		prm_perror(params, -ret, "Unable to get config descriptor");
+		prm_perror(params, ret, "Unable to get config descriptor");
 		goto err_libusb_close;
 	}
 
@@ -973,7 +973,7 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	ret = usb_verify_eps(iface);
 	if (ret) {
-		prm_perror(params, -ret, "Invalid configuration of endpoints");
+		prm_perror(params, ret, "Invalid configuration of endpoints");
 		goto err_free_config_descriptor;
 	}
 
@@ -1020,19 +1020,19 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 						    &usb_iiod_client_ops);
 	ret = iio_err(pdata->io_ctx.iiod_client);
 	if (ret) {
-		prm_perror(params, -ret, "Unable to create IIOD client");
+		prm_perror(params, ret, "Unable to create IIOD client");
 		goto err_io_context_exit;
 	}
 
 	ret = usb_reset_pipes(pdata);
 	if (ret) {
-		prm_perror(params, -ret, "Failed to reset pipes");
+		prm_perror(params, ret, "Failed to reset pipes");
 		goto err_free_iiod_client;
 	}
 
 	ret = usb_open_pipe(pdata, 0);
 	if (ret) {
-		prm_perror(params, -ret, "Failed to open control pipe");
+		prm_perror(params, ret, "Failed to open control pipe");
 		goto err_free_iiod_client;
 	}
 

@@ -119,7 +119,7 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 
 		ret = backend->ops->scan(&params2, ctx, args);
 		if (ret < 0) {
-			prm_perror(&params2, -ret,
+			prm_perror(&params2, ret,
 				   "Unable to scan %s context", token);
 		}
 

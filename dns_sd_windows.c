@@ -250,7 +250,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 				      service, sizeof(service)-1, buffer,
 				      capacity, 0);
 		if (ret <= 0)
-			prm_perror(params, errno, "Failed to send mDNS query");
+			prm_perror(params, -errno, "Failed to send mDNS query");
 
 		transaction_id[isock] = ret;
 	}

@@ -277,7 +277,7 @@ static int network_open(const struct iio_device *dev,
 
 	ret = create_socket(pdata->addrinfo, timeout_ms);
 	if (ret < 0) {
-		dev_perror(dev, -ret, "Unable to create socket");
+		dev_perror(dev, ret, "Unable to create socket");
 		goto out_mutex_unlock;
 	}
 
@@ -290,7 +290,7 @@ static int network_open(const struct iio_device *dev,
 						      samples_count, cyclic);
 	ret = iio_err(ppdata->client_io);
 	if (ret) {
-		dev_perror(dev, -ret, "Unable to open device");
+		dev_perror(dev, ret, "Unable to open device");
 		goto err_close_socket;
 	}
 
@@ -567,7 +567,7 @@ static ssize_t network_read_line(struct iiod_client_pdata *io_ctx,
 		else
 			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
 		if (ret < 0) {
-			prm_perror(io_ctx->params, -ret, "Unable to read line");
+			prm_perror(io_ctx->params, ret, "Unable to read line");
 			return ret;
 		}
 
@@ -575,7 +575,7 @@ static ssize_t network_read_line(struct iiod_client_pdata *io_ctx,
 	} while (!found && len);
 
 	if (!found) {
-		prm_perror(io_ctx->params, EIO, "Unable to read line");
+		prm_perror(io_ctx->params, -EIO, "Unable to read line");
 		return -EIO;
 	} else
 		return bytes_read;
@@ -648,7 +648,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
 	if (ret < 0) {
-		prm_perror(params, -ret, "WSAStartup failed");
+		prm_perror(params, ret, "WSAStartup failed");
 		return iio_ptr(ret);
 	}
 #endif
