@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_readdev iio_reg)
+set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_rwdev iio_reg)
 if (PTHREAD_LIBRARIES OR ANDROID)
 	LIST(APPEND IIO_TESTS_TARGETS iio_adi_xflow_check iio_stresstest)
 endif()
@@ -45,7 +45,7 @@ foreach (test ${IIO_TESTS_TARGETS})
 endforeach()
 
 if(PTHREAD_LIBRARIES)
-	set(IIO_TESTS_NEED_PTHREAD iio_readdev iio_adi_xflow_check iio_stresstest)
+	set(IIO_TESTS_NEED_PTHREAD iio_rwdev iio_adi_xflow_check iio_stresstest)
 
 	foreach(test ${IIO_TESTS_NEED_PTHREAD})
 		target_link_libraries(${test} LINK_PRIVATE ${PTHREAD_LIBRARIES})
