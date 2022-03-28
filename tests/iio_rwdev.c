@@ -1,5 +1,5 @@
 /*
- * iio_readdev - Part of the Industrial I/O (IIO) utilities
+ * iio_rwdev - Part of the Industrial I/O (IIO) utilities
  *
  * Copyright (C) 2014 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
@@ -39,7 +39,7 @@
 
 #include "iio_common.h"
 
-#define MY_NAME "iio_readdev"
+#define MY_NAME "iio_rwdev"
 
 #define SAMPLES_PER_READ 256
 #define DEFAULT_FREQ_HZ  100
