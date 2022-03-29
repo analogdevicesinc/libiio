@@ -53,6 +53,7 @@ stages:
         make
         make package
       displayName: 'Build'
+      failOnStderr: true
     - task: CopyFiles@2
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
@@ -62,6 +63,7 @@ stages:
         cd $(Agent.BuildDirectory)/s/build/
         sh generateDocumentationAndDeploy.sh
       displayName: 'Documentation'
+      failOnStderr: true
       condition: eq(variables['artifactName'], 'Linux-Fedora-34')
     - task: PublishPipelineArtifact@1
       inputs:
@@ -95,6 +97,7 @@ stages:
     - task: PowerShell@2
       displayName: 'Dependencies'
       inputs:
+        failOnStderr: true
         targetType: inline
         script: |
           git submodule update --init
@@ -111,6 +114,7 @@ stages:
           7z x -y "C:\libiio-win-deps.zip"
     - task: PowerShell@2
       inputs:
+        failOnStderr: true
         targetType: 'filePath'
         filePath: .\CI\build_win.ps1
       displayName: 'Build'
@@ -146,6 +150,7 @@ stages:
     - task: PowerShell@2
       displayName: 'Copy dependencies'
       inputs:
+        failOnStderr: true
         targetType: 'filePath'
         filePath: .\CI\publish_deps.ps1
     - task: PublishPipelineArtifact@1
@@ -164,6 +169,7 @@ stages:
         path: '$(Build.ArtifactStagingDirectory)'
     - task: PowerShell@2
       inputs:
+        failOnStderr: true
         targetType: 'filePath'
         filePath: .\CI\generate_exe.ps1
       displayName: 'Generate libiio-setup.exe'
@@ -193,6 +199,7 @@ stages:
           brew install cmake doxygen libusb libxml2 ncurses cdk libserialport
           pip3 install sphinx sphinx-rtd-theme
       displayName: 'Dependencies'
+      failOnStderr: true
     - script: |
         mkdir build && cd build
         cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON
@@ -200,6 +207,7 @@ stages:
         sudo make install
         cd ..
       displayName: 'Build'
+      failOnStderr: true
     - script: |
         mkdir build_tar && cd build_tar
         cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
@@ -207,12 +215,14 @@ stages:
         make package
         cd ..
       displayName: 'Build tar'
+      failOnStderr: true
     - script: |
         cd build
         cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
         make
         cd ..
       displayName: 'Build With Doc'
+      failOnStderr: 'true'
     - task: CopyFiles@2
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
@@ -265,9 +275,11 @@ stages:
         sudo apt-get install qemu
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       displayName: 'Setup'
+      failOnStderr: true
     - script: |
         sudo docker run --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
       displayName: 'Build'
+      failOnStderr: true
     - task: CopyFiles@2
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
@@ -303,6 +315,7 @@ stages:
         cmake ..
         mkdir artifacts
       displayName: 'Build artifact manifest'
+      failOnStderr: true
     - task: DownloadPipelineArtifact@2
       inputs:
         path: '$(Agent.BuildDirectory)/s/build/artifacts'
@@ -330,6 +343,7 @@ stages:
         path: '$(Build.ArtifactStagingDirectory)'
     - bash: ./CI/azure/prepare_assets.sh swdownloads
       displayName: "Prepare artifacts for SWDownloads"
+      failOnStderr: true
     - task: DownloadSecureFile@1
       name: key
       displayName: 'Download rsa key'
@@ -339,6 +353,7 @@ stages:
       env:
         MAPPED_VAR: $(SERVER_ADDRESS)
       displayName: 'Push artifacts to SW Downloads'
+      failOnStderr: true
 
   ##############################################
   - job: PushToGithubRelease
@@ -352,6 +367,7 @@ stages:
         path: '$(Build.ArtifactStagingDirectory)'
     - bash: ./CI/azure/prepare_assets.sh release
       displayName: 'Prepare assets for release'
+      failOnStderr: true
     - task: GithubRelease@0
       displayName: 'Attach artifacts to GitHub Release'
       inputs:
