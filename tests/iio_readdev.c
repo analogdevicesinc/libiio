@@ -209,6 +209,8 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
+	setup_sig_handler();
+
 	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
 	opts = add_common_options(options);
 	if (!opts) {
@@ -313,8 +315,6 @@ int main(int argc, char **argv)
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
-
-	setup_sig_handler();
 
 	dev = iio_context_find_device(ctx, argw[optind]);
 	if (!dev) {
