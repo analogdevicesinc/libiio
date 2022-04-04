@@ -20,6 +20,7 @@
 #include <sys/types.h>
 
 #ifdef _WIN32
+#include <netioapi.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
