@@ -451,7 +451,7 @@ uint64_t get_time_us(void)
 {
 	struct timespec tp;
 
-#ifdef _WIN32
+#ifdef _MSC_BUILD
 	timespec_get(&tp, TIME_UTC);
 #else
 	clock_gettime(CLOCK_REALTIME, &tp);
