@@ -30,8 +30,8 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 	struct dns_sd_discovery_data *dd = info;
 	char address_v4[DNS_SD_ADDRESS_STR_MAX+1] = "";
 	char address_v6[DNS_SD_ADDRESS_STR_MAX+1] = "";
-	char hostname[MAXHOSTNAMELEN];
-	char name[MAXHOSTNAMELEN];
+	char hostname[FQDN_LEN];
+	char name[FQDN_LEN];
 	bool have_v4 = false;
 	bool have_v6 = false;
 	struct sockaddr_in *sa;

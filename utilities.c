@@ -321,7 +321,7 @@ char * iio_getenv (char * envvar)
 	if (!hostname)
 		return NULL;
 
-	tmp = MAXHOSTNAMELEN + sizeof("serial:") + sizeof(":65535") - 2;
+	tmp = FQDN_LEN + sizeof("serial:") + sizeof(":65535") - 2;
 	len = strnlen(hostname, tmp);
 
 	/* Should be smaller than max length */
