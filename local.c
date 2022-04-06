@@ -2116,7 +2116,7 @@ struct iio_context * local_create_context(void)
 	if (WITH_LOCAL_CONFIG) {
 		ret = populate_context_attrs(ctx, "/etc/libiio.ini");
 		if (ret < 0)
-			goto err_context_destroy;
+			IIO_WARNING("Unable to read INI file: %d\n", ret);
 	}
 
 	uname(&uts);
