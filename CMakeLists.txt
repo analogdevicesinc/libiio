@@ -67,7 +67,9 @@ if (NOT LOG_LEVEL)
 endif()
 
 if (MSVC)
-	add_compile_options(/W4 /wd4200 /wd4127 /wd4100)
+	add_compile_options(/Zi /W4 /wd4200 /wd4127 /wd4100)
+	# Zi produces a separate PDB file that contains all the symbolic debugging information
+	# W4 displays level 1, 2, 3, and 4 (informational) warnings that aren't off by default
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
 	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
 	# C4100: unreferenced parameter; same as -Wno-unused-parameter
@@ -474,6 +476,8 @@ target_link_libraries(iio LINK_PRIVATE ${LIBS_TO_LINK})
 
 if (MSVC)
 	set_target_properties(iio PROPERTIES OUTPUT_NAME libiio)
+	target_link_options(iio PUBLIC /DEBUG)
+	# The linker puts debugging information into a program database (PDB) file
 endif()
 
 if(NOT SKIP_INSTALL_ALL)
