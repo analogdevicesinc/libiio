@@ -1218,7 +1218,7 @@ struct iio_context * network_create_context(const char *host)
 
 	uri_len = strlen(description);
 	if (host && host[0])
-		uri_len = strnlen(host, MAXHOSTNAMELEN);
+		uri_len = strnlen(host, FQDN_LEN);
 	uri_len += sizeof ("ip:");
 
 	uri = malloc(uri_len);
