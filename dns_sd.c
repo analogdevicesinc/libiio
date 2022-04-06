@@ -86,7 +86,7 @@ static void dnssd_remove_node(const struct iio_context_params *params,
 
 static int dnssd_add_scan_result(const struct iio_context_params *params,
 				 struct iio_scan *scan_ctx,
-				 char *hostname, char *addr_str, int port)
+				 char *hostname, char *addr_str, uint16_t port)
 {
 	struct iio_context *ctx;
 	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];

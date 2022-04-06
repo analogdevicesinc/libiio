@@ -1945,7 +1945,7 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	if (WITH_LOCAL_CONFIG) {
 		ret = populate_context_attrs(ctx, "/etc/libiio.ini");
 		if (ret < 0)
-			goto err_context_destroy;
+			prm_warn(params, "Unable to read INI file: %d\n", ret);
 	}
 
 	uname(&uts);
