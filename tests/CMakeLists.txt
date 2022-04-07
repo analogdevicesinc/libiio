@@ -23,6 +23,7 @@ if (MSVC)
 	target_sources(iio_tests_helper PRIVATE ../deps/wingetopt/src/getopt.c)
 	target_include_directories(iio_tests_helper PUBLIC ../deps/wingetopt/src)
 	target_compile_definitions(iio_tests_helper PRIVATE _CRT_SECURE_NO_WARNINGS)
+	target_link_options(iio_tests_helper PUBLIC /DEBUG)
 endif()
 set_target_properties(iio_tests_helper PROPERTIES
 	C_STANDARD 99
@@ -42,6 +43,9 @@ foreach (test ${IIO_TESTS_TARGETS})
 		target_compile_definitions(${test} PRIVATE IIO_CHECK_RET)
 	endif()
 	target_link_libraries(${test} LINK_PRIVATE iio iio_tests_helper)
+	if (MSVC)
+		target_link_options(${test} PUBLIC /DEBUG)
+	endif()
 endforeach()
 
 if(PTHREAD_LIBRARIES)

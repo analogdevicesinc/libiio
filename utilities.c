@@ -236,7 +236,7 @@ char *iio_strndup(const char *str, size_t n)
 #ifdef HAS_STRNDUP
 	return strndup(str, n);
 #else
-	size_t len = strnlen(str, n + 1);
+	size_t len = strnlen(str, n);
 	char *buf = malloc(len + 1);
 	if (buf) {
 		/* len = size of buf, so memcpy is OK */
@@ -310,7 +310,7 @@ char * iio_getenv (char * envvar)
 	if (!hostname)
 		return NULL;
 
-	tmp = MAXHOSTNAMELEN + sizeof("serial:") + sizeof(":65535") - 2;
+	tmp = FQDN_LEN + sizeof("serial:") + sizeof(":65535") - 2;
 	len = strnlen(hostname, tmp);
 
 	/* Should be smaller than max length */

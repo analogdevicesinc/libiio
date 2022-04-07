@@ -11,9 +11,6 @@
 #include <errno.h>
 #include <ws2tcpip.h>
 #define close(s) closesocket(s)
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN (MAX_COMPUTERNAME_LENGTH+1)
-#endif /* MAXHOSTNAMELEN */
 
 int set_blocking_mode(int s, bool blocking)
 {

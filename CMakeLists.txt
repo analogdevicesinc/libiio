@@ -60,6 +60,7 @@ set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES
 )
 if (WIN32)
 	if (MSVC)
+		target_link_options(iio PUBLIC /DEBUG)
 		set(LIBIIO_WIN32_PREFIX lib)
 	endif()
 
@@ -131,7 +132,9 @@ set(LEVEL_Debug 5)
 set(DEFAULT_LOG_LEVEL ${LEVEL_${LOG_LEVEL}})
 
 if (MSVC)
-	target_compile_options(iio PRIVATE /W4 /wd4200 /wd4127 /wd4100)
+	target_compile_options(iio PRIVATE /Zi /W4 /wd4200 /wd4127 /wd4100)
+	# Zi produces a separate PDB file that contains all the symbolic debugging information
+	# W4 displays level 1, 2, 3, and 4 (informational) warnings that aren't off by default
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
 	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
 	# C4100: unreferenced parameter; same as -Wno-unused-parameter

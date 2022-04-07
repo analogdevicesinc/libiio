@@ -89,7 +89,7 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 				 char *hostname, char *addr_str, uint16_t port)
 {
 	struct iio_context *ctx;
-	char uri[sizeof("ip:") + MAXHOSTNAMELEN + sizeof (":65535") + 1];
+	char uri[sizeof("ip:") + FQDN_LEN + sizeof (":65535") + 1];
 	char description[255], *p;
 	const char *hw_model, *serial;
 	unsigned int i;

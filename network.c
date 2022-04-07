@@ -640,7 +640,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	char *description, *end, *port = NULL;
 	const char *ctx_attrs[] = { "ip,ip-addr", "uri" };
 	const char *ctx_values[2];
-	char uri[MAXHOSTNAMELEN + 3];
+	char uri[FQDN_LEN + 3];
 	char port_str[6];
 	uint16_t port_num = IIOD_PORT;
 
