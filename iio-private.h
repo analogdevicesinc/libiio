@@ -139,22 +139,16 @@ struct iio_device {
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
-
-	struct iio_channels_mask *mask;
 };
 
 struct iio_buffer {
 	const struct iio_device *dev;
 	struct iio_buffer_pdata *pdata;
 
-	void *buffer, *userdata;
-	size_t length, data_length;
+	void *userdata;
+	size_t length;
 
 	struct iio_channels_mask *mask;
-	unsigned int dev_sample_size;
-	unsigned int sample_size;
-	bool dev_is_high_speed;
-
 	unsigned int idx;
 
 	struct iio_task *worker;
@@ -215,15 +209,6 @@ ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
 int iio_context_init(struct iio_context *ctx);
 
 bool iio_device_is_tx(const struct iio_device *dev);
-int iio_device_open(const struct iio_device *dev,
-		size_t samples_count, bool cyclic);
-int iio_device_close(const struct iio_device *dev);
-int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking);
-ssize_t iio_device_read_raw(const struct iio_device *dev,
-		void *dst, size_t len, struct iio_channels_mask *mask);
-ssize_t iio_device_write_raw(const struct iio_device *dev,
-		const void *src, size_t len);
-int iio_device_get_poll_fd(const struct iio_device *dev);
 
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
