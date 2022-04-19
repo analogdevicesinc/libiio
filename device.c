@@ -246,66 +246,6 @@ bool iio_device_is_tx(const struct iio_device *dev)
 	return false;
 }
 
-int iio_device_open(const struct iio_device *dev,
-		size_t samples_count, bool cyclic)
-{
-	const struct iio_channels_mask *mask = dev->mask;
-	unsigned int i;
-	bool has_channels = false;
-
-	for (i = 0; !has_channels && i < mask->words; i++)
-		has_channels = !!mask->mask[i];
-	if (!has_channels)
-		return -EINVAL;
-
-	if (dev->ctx->ops->open)
-		return dev->ctx->ops->open(dev, samples_count, cyclic);
-	else
-		return -ENOSYS;
-}
-
-int iio_device_close(const struct iio_device *dev)
-{
-	if (dev->ctx->ops->close)
-		return dev->ctx->ops->close(dev);
-	else
-		return -ENOSYS;
-}
-
-int iio_device_get_poll_fd(const struct iio_device *dev)
-{
-	if (dev->ctx->ops->get_fd)
-		return dev->ctx->ops->get_fd(dev);
-	else
-		return -ENOSYS;
-}
-
-int iio_device_set_blocking_mode(const struct iio_device *dev, bool blocking)
-{
-	if (dev->ctx->ops->set_blocking_mode)
-		return dev->ctx->ops->set_blocking_mode(dev, blocking);
-	else
-		return -ENOSYS;
-}
-
-ssize_t iio_device_read_raw(const struct iio_device *dev, void *dst, size_t len,
-			    struct iio_channels_mask *mask)
-{
-	if (dev->ctx->ops->read)
-		return dev->ctx->ops->read(dev, dst, len, mask);
-	else
-		return -ENOSYS;
-}
-
-ssize_t iio_device_write_raw(const struct iio_device *dev,
-		const void *src, size_t len)
-{
-	if (dev->ctx->ops->write)
-		return dev->ctx->ops->write(dev, src, len);
-	else
-		return -ENOSYS;
-}
-
 ssize_t iio_device_attr_read_raw(const struct iio_device *dev,
 		const char *attr, char *dst, size_t len)
 {
@@ -396,17 +336,6 @@ bool iio_device_is_trigger(const struct iio_device *dev)
 		!strncmp(id, "trigger", sizeof("trigger") - 1));
 }
 
-int iio_device_set_kernel_buffers_count(const struct iio_device *dev,
-		unsigned int nb_buffers)
-{
-	if (nb_buffers == 0)
-		return -EINVAL;
-	else if (dev->ctx->ops->set_kernel_buffers_count)
-		return dev->ctx->ops->set_kernel_buffers_count(dev, nb_buffers);
-	else
-		return -ENOSYS;
-}
-
 int iio_device_get_trigger(const struct iio_device *dev,
 		const struct iio_device **trigger)
 {
@@ -450,7 +379,6 @@ void free_device(struct iio_device *dev)
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
 	free(dev->channels);
-	free(dev->mask);
 	free(dev->label);
 	free(dev->name);
 	free(dev->id);
@@ -464,9 +392,7 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 	unsigned int i;
 	const struct iio_channel *prev = NULL;
 
-	if (!mask)
-		mask = dev->mask;
-	else if (mask->words != dev->mask->words)
+	if (mask->words != (dev->nb_channels + 31) / 32)
 		return -EINVAL;
 
 	for (i = 0; i < dev->nb_channels; i++) {

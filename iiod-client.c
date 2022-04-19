@@ -1209,16 +1209,7 @@ err_destroy_io:
 	return iio_ptr(ret);
 }
 
-struct iiod_client_io *
-iiod_client_open_unlocked(struct iiod_client *client,
-			  const struct iio_device *dev,
-			  size_t samples_count, bool cyclic)
-{
-	return iiod_client_open_with_mask(client, dev, dev->mask,
-					  samples_count, cyclic);
-}
-
-int iiod_client_close_unlocked(struct iiod_client_io *io)
+static int iiod_client_close_unlocked(struct iiod_client_io *io)
 {
 	char buf[1024];
 	int ret;
@@ -1284,7 +1275,7 @@ static ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 	if (iiod_client_uses_binary_interface(client))
 		return -ENOSYS;
 
-	if (!len || (mask && mask->words != dev->mask->words))
+	if (!len || (mask && mask->words != (dev->nb_channels + 31) / 32))
 		return -EINVAL;
 
 	iio_snprintf(buf, sizeof(buf), "READBUF %s %lu\r\n",
@@ -1331,10 +1322,9 @@ static ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 	return read;
 }
 
-ssize_t iiod_client_read(struct iiod_client *client,
-			 const struct iio_device *dev,
-			 void *dst, size_t len,
-			 struct iio_channels_mask *mask)
+static ssize_t
+iiod_client_read(struct iiod_client *client, const struct iio_device *dev,
+		 void *dst, size_t len, struct iio_channels_mask *mask)
 {
 	ssize_t ret;
 
@@ -1389,9 +1379,9 @@ static ssize_t iiod_client_write_unlocked(struct iiod_client *client,
 	return (ssize_t) len;
 }
 
-ssize_t iiod_client_write(struct iiod_client *client,
-			  const struct iio_device *dev,
-			  const void *src, size_t len)
+static ssize_t
+iiod_client_write(struct iiod_client *client, const struct iio_device *dev,
+		  const void *src, size_t len)
 {
 	ssize_t ret;
 

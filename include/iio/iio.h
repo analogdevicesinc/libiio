@@ -1144,166 +1144,13 @@ __api __check_ret __pure const struct iio_device * iio_buffer_get_device(
 
 /** @brief Create an input or output buffer associated to the given device
  * @param dev A pointer to an iio_device structure
- * @param samples_count The number of samples that the buffer should contain
- * @param cyclic If True, enable cyclic mode
- * @return On success, a pointer to an iio_buffer structure
- * @return On failure, NULL is returned and errno is set appropriately
- *
- * <b>NOTE:</b> Channels that have to be written to / read from must be enabled
- * before creating the buffer. */
-__api __check_ret struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
-		size_t samples_count, bool cyclic);
-
-
-/** @brief Create an input or output buffer associated to the given device
- * @param dev A pointer to an iio_device structure
  * @param idx The index of the hardware buffer. Should be 0 in most cases.
  * @param mask A pointer to an iio_channels_mask structure
  * @return On success, a pointer to an iio_buffer structure
  * @return On failure, a pointer-encoded error is returned */
 __api __check_ret struct iio_buffer *
-_iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
-			  const struct iio_channels_mask *mask);
-#define iio_device_create_buffer(dev, idx, mask) _iio_device_create_buffer(dev, idx, mask)
-
-
-/** @brief Destroy the given buffer
- * @param buf A pointer to an iio_buffer structure
- *
- * <b>NOTE:</b> After that function, the iio_buffer pointer shall be invalid. */
-__api void iio_buffer_destroy(struct iio_buffer *buf);
-
-/** @brief Get a pollable file descriptor
- *
- * Can be used to know when iio_buffer_refill() or iio_buffer_push() can be
- * called
- * @param buf A pointer to an iio_buffer structure
- * @return On success, valid file descriptor
- * @return On error, a negative errno code is returned
- */
-__api __check_ret int iio_buffer_get_poll_fd(struct iio_buffer *buf);
-
-/** @brief Make iio_buffer_refill() and iio_buffer_push() blocking or not
- *
- * After this function has been called with blocking == false,
- * iio_buffer_refill() and iio_buffer_push() will return -EAGAIN if no data is
- * ready.
- * A device is blocking by default.
- * @param buf A pointer to an iio_buffer structure
- * @param blocking true if the buffer API should be blocking, else false
- * @return On success, 0
- * @return On error, a negative errno code is returned
- */
-__api __check_ret int iio_buffer_set_blocking_mode(struct iio_buffer *buf, bool blocking);
-
-
-/** @brief Fetch more samples from the hardware
- * @param buf A pointer to an iio_buffer structure
- * @return On success, the number of bytes read is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> Only valid for input buffers */
-__api __check_ret ssize_t iio_buffer_refill(struct iio_buffer *buf);
-
-
-/** @brief Send the samples to the hardware
- * @param buf A pointer to an iio_buffer structure
- * @return On success, the number of bytes written is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> Only valid for output buffers */
-__api __check_ret ssize_t iio_buffer_push(struct iio_buffer *buf);
-
-
-/** @brief Send a given number of samples to the hardware
- * @param buf A pointer to an iio_buffer structure
- * @param samples_count The number of samples to submit
- * @return On success, the number of bytes written is returned
- * @return On error, a negative errno code is returned
- *
- * <b>NOTE:</b> Only valid for output buffers */
-__api __check_ret ssize_t iio_buffer_push_partial(struct iio_buffer *buf,
-		size_t samples_count);
-
-/** @brief Cancel all buffer operations
- * @param buf The buffer for which operations should be canceled
- *
- * This function cancels all outstanding buffer operations previously scheduled.
- * This means any pending iio_buffer_push() or iio_buffer_refill() operation
- * will abort and return immediately, any further invocations of these functions
- * on the same buffer will return immediately with an error.
- *
- * Usually iio_buffer_push() and iio_buffer_refill() will block until either all
- * data has been transferred or a timeout occurs. This can depending on the
- * configuration take a significant amount of time. iio_buffer_cancel() is
- * useful to bypass these conditions if the buffer operation is supposed to be
- * stopped in response to an external event (e.g. user input).
- *
- * To be able to capture additional data after calling this function the buffer
- * should be destroyed and then re-created.
- *
- * This function can be called multiple times for the same buffer, but all but
- * the first invocation will be without additional effect.
- *
- * This function is thread-safe, but not signal-safe, i.e. it must not be called
- * from a signal handler.
- */
-__api void iio_buffer_cancel(struct iio_buffer *buf);
-
-
-/** @brief Get the start address of the buffer
- * @param buf A pointer to an iio_buffer structure
- * @return A pointer corresponding to the start address of the buffer */
-__api void * iio_buffer_start(const struct iio_buffer *buf);
-
-
-/** @brief Find the first sample of a channel in a buffer
- * @param buf A pointer to an iio_buffer structure
- * @param chn A pointer to an iio_channel structure
- * @return A pointer to the first sample found, or to the end of the buffer if
- * no sample for the given channel is present in the buffer
- *
- * <b>NOTE:</b> This function, coupled with iio_buffer_step and iio_buffer_end,
- * can be used to iterate on all the samples of a given channel present in the
- * buffer, doing the following:
- *
- * @verbatim
- for (void *ptr = iio_buffer_first(buffer, chn); ptr < iio_buffer_end(buffer); ptr += iio_buffer_step(buffer)) {
-    ....
- }
- @endverbatim */
-__api void * iio_buffer_first(const struct iio_buffer *buf,
-		const struct iio_channel *chn);
-
-
-/** @brief Get the step size between two samples of one channel
- * @param buf A pointer to an iio_buffer structure
- * @return the difference between the addresses of two consecutive samples of
- * one same channel */
-__api __check_ret ptrdiff_t iio_buffer_step(const struct iio_buffer *buf);
-
-
-/** @brief Get the address that follows the last sample in a buffer
- * @param buf A pointer to an iio_buffer structure
- * @return A pointer corresponding to the address that follows the last sample
- * present in the buffer */
-__api void * iio_buffer_end(const struct iio_buffer *buf);
-
-
-/** @brief Call the supplied callback for each sample found in a buffer
- * @param buf A pointer to an iio_buffer structure
- * @param callback A pointer to a function to call for each sample found
- * @param data A user-specified pointer that will be passed to the callback
- * @return number of bytes processed.
- *
- * <b>NOTE:</b> The callback receives four arguments:
- * * A pointer to the iio_channel structure corresponding to the sample,
- * * A pointer to the sample itself,
- * * The length of the sample in bytes,
- * * The user-specified pointer passed to iio_buffer_foreach_sample. */
-__api __check_ret ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,
-		ssize_t (*callback)(const struct iio_channel *chn,
-			void *src, size_t bytes, void *d), void *data);
+iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
+			 const struct iio_channels_mask *mask);
 
 
 /** @brief Associate a pointer to an iio_buffer structure
@@ -1320,8 +1167,7 @@ __api void * iio_buffer_get_data(const struct iio_buffer *buf);
 
 /** @brief Destroy the given buffer
  * @param buf A pointer to an iio_buffer structure */
-__api void _iio_buffer_destroy(struct iio_buffer *buf);
-#define iio_buffer_destroy(buf) _iio_buffer_destroy(buf)
+__api void iio_buffer_destroy(struct iio_buffer *buf);
 
 
 /** @brief Cancel all buffer operations
@@ -1334,7 +1180,7 @@ __api void _iio_buffer_destroy(struct iio_buffer *buf);
  *
  * Usually iio_block_dequeue() will block until all data has been transferred
  * or a timeout occurs. This can depending on the configuration take a
- * significant amount of time. _iio_buffer_cancel() is useful to bypass these
+ * significant amount of time. iio_buffer_cancel() is useful to bypass these
  * conditions if the buffer operation is supposed to be stopped in response to
  * an external event (e.g. user input).
  *
@@ -1347,8 +1193,7 @@ __api void _iio_buffer_destroy(struct iio_buffer *buf);
  * This function is thread-safe, but not signal-safe, i.e. it must not be called
  * from a signal handler.
  */
-__api void _iio_buffer_cancel(struct iio_buffer *buf);
-#define iio_buffer_cancel(buf) _iio_buffer_cancel(buf)
+__api void iio_buffer_cancel(struct iio_buffer *buf);
 
 
 /** @brief Enable the buffer

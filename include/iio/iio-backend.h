@@ -69,23 +69,6 @@ struct iio_backend_ops {
 	struct iio_context * (*create)(const struct iio_context_params *params,
 				       const char *uri);
 	struct iio_context * (*clone)(const struct iio_context *ctx);
-	ssize_t (*read)(const struct iio_device *dev, void *dst, size_t len,
-			struct iio_channels_mask *mask);
-	ssize_t (*write)(const struct iio_device *dev,
-			const void *src, size_t len);
-	int (*open)(const struct iio_device *dev,
-			size_t samples_count, bool cyclic);
-	int (*close)(const struct iio_device *dev);
-	int (*get_fd)(const struct iio_device *dev);
-	int (*set_blocking_mode)(const struct iio_device *dev, bool blocking);
-
-	void (*cancel)(const struct iio_device *dev);
-
-	int (*set_kernel_buffers_count)(const struct iio_device *dev,
-			unsigned int nb_blocks);
-	ssize_t (*get_buffer)(const struct iio_device *dev,
-			void **addr_ptr, size_t bytes_used,
-			struct iio_channels_mask *mask);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 				    unsigned int buf_id, const char *attr,

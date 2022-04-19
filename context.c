@@ -352,25 +352,9 @@ static void reorder_channels(struct iio_device *dev)
 		dev->channels[i]->number = i;
 }
 
-static int iio_device_alloc_mask(struct iio_device *dev)
-{
-	dev->mask = iio_create_channels_mask(dev->nb_channels);
-
-	return dev->mask ? 0 : -ENOMEM;
-}
-
 int iio_context_init(struct iio_context *ctx)
 {
 	unsigned int i;
-	int ret;
-
-	for (i = 0; i < ctx->nb_devices; i++) {
-		if (ctx->devices[i]->nb_channels) {
-			ret = iio_device_alloc_mask(ctx->devices[i]);
-			if (ret)
-				return ret;
-		}
-	}
 
 	for (i = 0; i < ctx->nb_devices; i++)
 		reorder_channels(ctx->devices[i]);
