@@ -363,6 +363,10 @@ static int network_open(const struct iio_device *dev,
 	if (ret < 0)
 		goto err_close_socket;
 
+	ret = set_blocking_mode(ppdata->io_ctx.fd, false);
+	if (ret)
+		goto err_cleanup_cancel;
+
 	set_socket_timeout(ppdata->io_ctx.fd, pdata->io_ctx.timeout_ms);
 
 	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
@@ -378,6 +382,8 @@ static int network_open(const struct iio_device *dev,
 
 	return 0;
 
+err_cleanup_cancel:
+	cleanup_cancel(&ppdata->io_ctx);
 err_close_socket:
 	close(ppdata->io_ctx.fd);
 	ppdata->io_ctx.fd = -1;
