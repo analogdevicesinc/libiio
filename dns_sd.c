@@ -251,6 +251,26 @@ void remove_dup_discovery_data(struct dns_sd_discovery_data **ddata)
 		}
 		i++;
 	}
+
+	prev = NULL;
+	ndata = d;
+	i = 0;
+	while (ndata->next) {
+		if (!strcmp(ndata->addr_str, "127.0.0.1") ||
+				!strcmp(ndata->addr_str, "::1")) {
+			IIO_DEBUG("Removing localhost in list: %i '%s' '%s' port:%hu\n",
+				i, ndata->hostname, ndata->addr_str, ndata->port);
+			dnssd_remove_node(&d, i);
+			if (!prev)
+				ndata = d;
+			else
+				ndata = prev->next;
+			continue;
+		}
+		i++;
+		prev = ndata;
+		ndata = ndata->next;
+	}
 	iio_mutex_unlock(d->lock);
 
 	*ddata = d;
