@@ -335,7 +335,7 @@ wrong_str:
 	return NULL;
 }
 
-ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
+ssize_t __iio_printf2 iio_snprintf(char *buf, size_t len, const char *fmt, ...)
 {
 	va_list ap;
 	int ret;
@@ -372,6 +372,7 @@ bool iio_list_has_elem(const char *list, const char *elem)
 
 void iio_prm_printf(const struct iio_context_params *params,
 		    enum iio_log_level msg_level,
+		    const char *file, const char *func, const unsigned int line,
 		    const char *fmt, ...)
 {
 	FILE *out = NULL;
@@ -388,8 +389,11 @@ void iio_prm_printf(const struct iio_context_params *params,
 		out = msg_level <= LEVEL_WARNING ? stderr : stdout;
 	}
 
-	if (out)
+	if (out) {
 		vfprintf(out, fmt, ap);
+		if (file && func && line)
+			fprintf(out, "\t%s:%s() (line %i)\n", file, func, line);
+	}
 
 	va_end(ap);
 }

@@ -14,9 +14,9 @@
 #define __api __iio_api
 
 #if defined(__MINGW32__)
-#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
+#   define __iio_printf __attribute__((__format__(gnu_printf, 6, 7)))
 #elif defined(__GNUC__)
-#   define __iio_printf __attribute__((__format__(printf, 3, 4)))
+#   define __iio_printf __attribute__((__format__(printf, 6, 7)))
 #else
 #   define __iio_printf
 #endif
@@ -34,16 +34,17 @@
 __api __iio_printf void
 iio_prm_printf(const struct iio_context_params *params,
 	       enum iio_log_level msg_level,
+	       const char *file, const char *func, const unsigned int line,
 	       const char *fmt, ...);
 
 #define __ctx_params_or_null(ctx)	((ctx) ? iio_context_get_params(ctx) : NULL)
 #define __dev_ctx_or_null(dev)	((dev) ? iio_device_get_context(dev) : NULL)
 #define __chn_dev_or_null(chn)	((chn) ? iio_channel_get_device(chn) : NULL)
 
-#define prm_err(prm, ...)	iio_prm_printf((prm), LEVEL_ERROR, "ERROR: " __VA_ARGS__)
-#define prm_warn(prm, ...)	iio_prm_printf((prm), LEVEL_WARNING, "WARNING: " __VA_ARGS__)
-#define prm_info(prm, ...)	iio_prm_printf((prm), LEVEL_INFO, __VA_ARGS__)
-#define prm_dbg(prm, ...)	iio_prm_printf((prm), LEVEL_DEBUG, "DEBUG: " __VA_ARGS__)
+#define prm_err(prm, ...)	iio_prm_printf((prm), LEVEL_ERROR, __FILE__, __func__, __LINE__, "ERROR: " __VA_ARGS__)
+#define prm_warn(prm, ...)	iio_prm_printf((prm), LEVEL_WARNING, __FILE__, __func__, __LINE__, "WARNING: " __VA_ARGS__)
+#define prm_info(prm, ...)	iio_prm_printf((prm), LEVEL_INFO, __FILE__, __func__, __LINE__, __VA_ARGS__)
+#define prm_dbg(prm, ...)	iio_prm_printf((prm), LEVEL_DEBUG, __FILE__, __func__, __LINE__, "DEBUG: " __VA_ARGS__)
 
 #define ctx_err(ctx, ...)	prm_err(__ctx_params_or_null(ctx), __VA_ARGS__)
 #define ctx_warn(ctx, ...)	prm_warn(__ctx_params_or_null(ctx), __VA_ARGS__)

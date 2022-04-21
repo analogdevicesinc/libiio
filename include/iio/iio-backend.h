@@ -151,14 +151,14 @@ __api int
 iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char *uri);
 
 #if defined(__MINGW32__)
-#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
+#   define __iio_printf2 __attribute__((__format__(gnu_printf, 3, 4)))
 #elif defined(__GNUC__)
-#   define __iio_printf __attribute__((__format__(printf, 3, 4)))
+#   define __iio_printf2 __attribute__((__format__(printf, 3, 4)))
 #else
-#   define __iio_printf
+#   define __iio_printf2
 #endif
 
-__api __iio_printf ssize_t
+__api __iio_printf2 ssize_t
 iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 __api char *iio_strdup(const char *str);
 __api size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
