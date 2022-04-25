@@ -226,16 +226,33 @@ static char * network_get_description(struct addrinfo *res,
 	if (res->ai_family == AF_INET6) {
 		struct sockaddr_in6 *in = (struct sockaddr_in6 *) res->ai_addr;
 		char *ptr;
-		inet_ntop(AF_INET6, &in->sin6_addr,
+		const char *ptr2;
+
+		ptr2 = inet_ntop(AF_INET6, &in->sin6_addr,
 				description, INET6_ADDRSTRLEN);
+		if (!ptr2) {
+			prm_perror(params, -errno, "Unable to look up IPv6 address");
+			free(description);
+			return NULL;
+		}
 
 		if (IN6_IS_ADDR_LINKLOCAL(&in->sin6_addr)) {
 			ptr = if_indextoname(in->sin6_scope_id, description +
-					strlen(description) + 1);
+					strnlen(description, len) + 1);
 			if (!ptr) {
-				prm_err(params, "Unable to lookup interface of IPv6 address\n");
-				free(description);
-				return NULL;
+#ifdef _WIN32
+				if (errno == 0) {
+					/* Windows uses numerical interface identifiers */
+					ptr = description + strnlen(description, len) + 1;
+					iio_snprintf(ptr, IF_NAMESIZE, "%u", in->sin6_scope_id);
+				} else
+#endif
+				{
+					prm_err(params,
+						"Unable to lookup interface of IPv6 address\n");
+					free(description);
+					return NULL;
+				}
 			}
 
 			*(ptr - 1) = '%';
@@ -299,6 +316,10 @@ static int network_open(const struct iio_device *dev,
 	if (ret < 0)
 		goto err_close_socket;
 
+	ret = set_blocking_mode(ppdata->io_ctx.fd, false);
+	if (ret)
+		goto err_cleanup_cancel;
+
 	set_socket_timeout(ppdata->io_ctx.fd, pdata->io_ctx.timeout_ms);
 
 	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
@@ -308,6 +329,8 @@ static int network_open(const struct iio_device *dev,
 
 	return 0;
 
+err_cleanup_cancel:
+	cleanup_cancel(&ppdata->io_ctx);
 err_close_socket:
 	close(ppdata->io_ctx.fd);
 	ppdata->io_ctx.fd = -1;
@@ -731,6 +754,17 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		ret = getaddrinfo(addr_str, port, &hints, &res);
 	} else {
 		ret = getaddrinfo(host, port, &hints, &res);
+#ifdef _WIN32
+		/* Yes, This is lame, but Windows is flakey with local addresses
+		 * WSANO_DATA = Valid name, no data record of requested type.
+		 * Normally when the host does not have the correct associated data
+		 * being resolved for. Just ask again. Try a max of 2.5 seconds.
+		 */
+		for (i = 0; HAVE_DNS_SD && ret == WSANO_DATA && i < 10; i++) {
+			Sleep(250);
+			ret = getaddrinfo(host, port, &hints, &res);
+		}
+#endif
 		/*
 		 * It might be an avahi hostname which means that getaddrinfo() will only work if
 		 * nss-mdns is installed on the host and /etc/nsswitch.conf is correctly configured

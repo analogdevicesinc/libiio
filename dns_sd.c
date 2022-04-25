@@ -219,7 +219,7 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 void remove_dup_discovery_data(const struct iio_context_params *params,
 			       struct dns_sd_discovery_data **ddata)
 {
-	struct dns_sd_discovery_data *d, *ndata, *mdata;
+	struct dns_sd_discovery_data *d, *ndata, *mdata, *prev;
 	int i, j;
 
 	d = *ddata;
@@ -231,18 +231,52 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 		return;
 
 	iio_mutex_lock(d->lock);
+	/* since we are removing nodes in the linked list, we keep track of the
+	 * previous "good" node, so we always can link from the last to the next
+	 */
 	for (i = 0, ndata = d; ndata->next != NULL; ndata = ndata->next) {
+		prev = ndata;
 		for (j = i + 1, mdata = ndata->next; mdata->next != NULL; mdata = mdata->next) {
 			if (!strcmp(mdata->hostname, ndata->hostname) &&
 					!strcmp(mdata->addr_str, ndata->addr_str) &&
 					mdata->port == ndata->port){
-				prm_dbg(params, "Removing duplicate in list: '%s'\n",
-					ndata->hostname);
+				prm_dbg(params,
+					"Removing duplicate in list: %i '%s' '%s' port: %hu\n",
+					j, ndata->hostname, ndata->addr_str,
+					ndata->port);
 				dnssd_remove_node(params, &d, j);
+
+				/* back up one, so the mdata->next will point to the
+				 * next one to be tested.
+				 */
+				mdata = prev;
+				continue;
 			}
+			prev = mdata;
 			j++;
 		}
 		i++;
+	}
+
+	prev = NULL;
+	ndata = d;
+	i = 0;
+	while (ndata->next) {
+		if (!strcmp(ndata->addr_str, "127.0.0.1") ||
+				!strcmp(ndata->addr_str, "::1")) {
+			prm_dbg(params,
+				"Removing localhost in list: %i '%s' '%s' port: %hu\n",
+				i, ndata->hostname, ndata->addr_str, ndata->port);
+			dnssd_remove_node(params, &d, i);
+			if (!prev)
+				ndata = d;
+			else
+				ndata = prev->next;
+			continue;
+		}
+		i++;
+		prev = ndata;
+		ndata = ndata->next;
 	}
 	iio_mutex_unlock(d->lock);
 

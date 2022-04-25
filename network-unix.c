@@ -83,12 +83,6 @@ void cleanup_cancel(struct iiod_client_pdata *io_ctx)
 
 int setup_cancel(struct iiod_client_pdata *io_ctx)
 {
-	int ret;
-
-	ret = set_blocking_mode(io_ctx->fd, false);
-	if (ret)
-		return ret;
-
 	return create_cancel_fd(io_ctx);
 }
 
