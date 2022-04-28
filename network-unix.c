@@ -106,9 +106,6 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
 	struct pollfd pfd[2];
 	int ret;
 
-	if (!io_ctx->cancellable)
-		return 0;
-
 	memset(pfd, 0, sizeof(pfd));
 
 	pfd[0].fd = io_ctx->fd;
