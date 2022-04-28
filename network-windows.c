@@ -59,9 +59,6 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
 	long wsa_events = FD_CLOSE;
 	DWORD ret;
 
-	if (!io_ctx->cancellable)
-		return 0;
-
 	if (read)
 		wsa_events |= FD_READ;
 	else

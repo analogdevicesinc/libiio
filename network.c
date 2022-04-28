@@ -69,15 +69,22 @@ network_create_context(const struct iio_context_params *params,
 		       const char *host);
 
 static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
-		void *data, size_t len, int flags)
+			    void *data, size_t len, int flags)
 {
+	bool cancellable = true;
 	ssize_t ret;
 	int err;
 
+#ifdef __linux__
+	cancellable &= !(flags & MSG_DONTWAIT);
+#endif
+
 	while (1) {
-		ret = wait_cancellable(io_ctx, true);
-		if (ret < 0)
-			return ret;
+		if (cancellable) {
+			ret = wait_cancellable(io_ctx, true);
+			if (ret < 0)
+				return ret;
+		}
 
 		ret = recv(io_ctx->fd, data, (int) len, flags);
 		if (ret == 0)
@@ -87,7 +94,7 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 
 		err = network_get_error();
 		if (network_should_retry(err)) {
-			if (io_ctx->cancellable)
+			if (cancellable)
 				continue;
 			else
 				return -EPIPE;
@@ -116,14 +123,8 @@ static ssize_t network_send(struct iiod_client_pdata *io_ctx,
 			break;
 
 		err = network_get_error();
-		if (network_should_retry(err)) {
-			if (io_ctx->cancellable)
-				continue;
-			else
-				return -EPIPE;
-		} else if (!network_is_interrupted(err)) {
+		if (!network_should_retry(err) && !network_is_interrupted(err))
 			return (ssize_t) err;
-		}
 	}
 
 	return ret;
@@ -301,7 +302,6 @@ static int network_open(const struct iio_device *dev,
 
 	ppdata->io_ctx.fd = ret;
 	ppdata->io_ctx.cancelled = false;
-	ppdata->io_ctx.cancellable = false;
 	ppdata->io_ctx.timeout_ms = timeout_ms;
 
 	ppdata->client_io = iiod_client_open_unlocked(client, dev,
@@ -323,7 +323,6 @@ static int network_open(const struct iio_device *dev,
 	set_socket_timeout(ppdata->io_ctx.fd, pdata->io_ctx.timeout_ms);
 
 	ppdata->io_ctx.timeout_ms = pdata->io_ctx.timeout_ms;
-	ppdata->io_ctx.cancellable = true;
 
 	iiod_client_mutex_unlock(client);
 
@@ -447,7 +446,11 @@ static void network_shutdown(struct iio_context *ctx)
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	unsigned int i;
 
+	do_cancel(&pdata->io_ctx);
+	pdata->io_ctx.cancelled = true;
+
 	close(pdata->io_ctx.fd);
+	cleanup_cancel(&pdata->io_ctx);
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -812,18 +815,23 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	if (ret)
 		goto err_free_pdata;
 
-	iiod_client = iiod_client_new(params, &pdata->io_ctx,
-				      &network_iiod_client_ops);
-	ret = iio_err(iiod_client);
-	if (ret)
-		goto err_free_description;
-
-	pdata->iiod_client = iiod_client;
 	pdata->addrinfo = res;
 	pdata->io_ctx.fd = fd;
 	pdata->io_ctx.params = params;
 	pdata->io_ctx.timeout_ms = params->timeout_ms;
 	pdata->io_ctx.ctx_pdata = pdata;
+
+	ret = setup_cancel(&pdata->io_ctx);
+	if (ret)
+		goto err_free_description;
+
+	iiod_client = iiod_client_new(params, &pdata->io_ctx,
+				      &network_iiod_client_ops);
+	ret = iio_err(iiod_client);
+	if (ret)
+		goto err_cleanup_cancel;
+
+	pdata->iiod_client = iiod_client;
 
 	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
 	if (pdata->msg_trunc_supported)
@@ -889,7 +897,11 @@ err_network_shutdown:
 	return iio_ptr(ret);
 
 err_destroy_iiod_client:
+	do_cancel(&pdata->io_ctx);
+	pdata->io_ctx.cancelled = true;
 	iiod_client_destroy(iiod_client);
+err_cleanup_cancel:
+	cleanup_cancel(&pdata->io_ctx);
 err_free_description:
 	free(description);
 err_free_pdata:

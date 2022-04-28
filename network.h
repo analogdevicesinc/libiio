@@ -19,8 +19,6 @@ struct addrinfo;
 struct iiod_client_pdata {
 	int fd;
 
-	/* Only buffer IO contexts can be cancelled. */
-	bool cancellable;
 	bool cancelled;
 	void * events[2];
 	int cancel_fd[2];
