@@ -121,9 +121,6 @@ endif()
 
 option(WITH_EXAMPLES "Build examples" OFF)
 option(WITH_TESTS "Build the test programs" ON)
-if (WITH_TESTS)
-	set(NEED_THREADS 1)
-endif()
 
 if (NOT LOG_LEVEL)
 	set(LOG_LEVEL Info CACHE STRING "Log level" FORCE)
@@ -209,7 +206,6 @@ if (WITH_USB_BACKEND)
 		list(APPEND LIBIIO_SCAN_BACKENDS usb)
 		set(IIOD_CLIENT 1)
 		set(NEED_LIBXML2 1)
-		set(NEED_THREADS 1)
 
 		if (WITH_MODULES)
 			option(WITH_USB_BACKEND_DYNAMIC "Build USB backend as a module instead of built-in" ON)
@@ -277,9 +273,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	if (WITH_IIOD AND NOT WITH_LOCAL_BACKEND)
 		message(SEND_ERROR "IIOD can only be enabled if the local backend is enabled")
 	endif()
-	if (WITH_IIOD)
-		set(NEED_THREADS 1)
-	endif()
 endif()
 
 # Get the GIT hash of the latest commit
@@ -344,7 +337,6 @@ if (WITH_SERIAL_BACKEND)
 		endif()
 	endif()
 
-	set(NEED_THREADS 1)
 	set(IIOD_CLIENT 1)
 	set(NEED_LIBXML2 1)
 
@@ -453,7 +445,6 @@ if(WITH_NETWORK_BACKEND)
 		list(APPEND LIBIIO_SCAN_BACKENDS ip)
 	endif()
 
-	set(NEED_THREADS 1)
 	set(IIOD_CLIENT 1)
 	set(NEED_LIBXML2 1)
 else()
@@ -490,24 +481,20 @@ elseif(NEED_LIBXML2)
 		"If you want to enable the XML backend, set WITH_XML_BACKEND=ON.")
 endif()
 
-option(NO_THREADS "Disable multi-threading support" OFF)
-if (NEED_THREADS)
-	if (NO_THREADS OR ANDROID)
-		target_sources(iio PRIVATE lock.c)
-	elseif (WIN32)
-		target_sources(iio PRIVATE lock-windows.c)
-	else ()
+if (WIN32)
+	target_sources(iio PRIVATE lock-windows.c)
+else ()
+	if (NOT ANDROID)
 		find_library(PTHREAD_LIBRARIES pthread)
 
 		if (NOT PTHREAD_LIBRARIES)
-			message(SEND_ERROR "Unable to find pthread dependency.\n"
-				"If you want to disable multi-threading support, set NO_THREADS=ON.")
+			message(SEND_ERROR "Unable to find pthread dependency.")
 		endif()
 
-		list(APPEND LIBS_TO_LINK ${PTHREAD_LIBRARIES})
-
-		target_sources(iio PRIVATE lock.c)
+		target_link_libraries(iio PRIVATE ${PTHREAD_LIBRARIES})
 	endif()
+
+	target_sources(iio PRIVATE lock.c)
 endif()
 
 if (IIOD_CLIENT)
