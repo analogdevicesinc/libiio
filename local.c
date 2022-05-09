@@ -364,7 +364,7 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 {
 	int ret;
 
-	if (pdata->dmabuf_supported != !nb_samples)
+	if ((pdata->dmabuf_supported | pdata->mmap_supported) != !nb_samples)
 		return -EINVAL;
 
 	if (nb_samples) {
@@ -1948,10 +1948,17 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	pdata->dev = dev;
 
+	if (WITH_LOCAL_MMAP_API) {
+		pdata->pdata = local_alloc_mmap_buffer_impl();
+		err = iio_err(pdata->pdata);
+		if (err)
+			goto err_free_pdata;
+	}
+
 	cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (cancel_fd == -1) {
 		err = -errno;
-		goto err_free_pdata;
+		goto err_free_mmap_pdata;
 	}
 
 	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
@@ -2019,6 +2026,8 @@ err_close:
 	close(fd);
 err_close_eventfd:
 	close(cancel_fd);
+err_free_mmap_pdata:
+	free(pdata->pdata);
 err_free_pdata:
 	free(pdata);
 	return iio_ptr(err);
@@ -2026,6 +2035,7 @@ err_free_pdata:
 
 static void local_free_buffer(struct iio_buffer_pdata *pdata)
 {
+	free(pdata->pdata);
 	close(pdata->fd);
 	close(pdata->cancel_fd);
 	local_do_enable_buffer(pdata, false);
@@ -2036,8 +2046,24 @@ static void local_free_buffer(struct iio_buffer_pdata *pdata)
 static struct iio_block_pdata *
 local_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
 {
-	if (WITH_LOCAL_DMABUF_API)
-		return local_create_dmabuf(pdata, size, data);
+	struct iio_block_pdata *block;
+	int ret;
+
+	if (WITH_LOCAL_DMABUF_API) {
+		block = local_create_dmabuf(pdata, size, data);
+		ret = iio_err(block);
+
+		if (ret != -ENOSYS)
+			return block;
+	}
+
+	if (WITH_LOCAL_MMAP_API) {
+		block = local_create_mmap_block(pdata, size, data);
+		ret = iio_err(block);
+
+		if (ret != -ENOSYS)
+			return block;
+	}
 
 	return iio_ptr(-ENOSYS);
 }
@@ -2046,6 +2072,9 @@ static void local_free_block(struct iio_block_pdata *pdata)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
 		local_free_dmabuf(pdata);
+
+	if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
+		local_free_mmap_block(pdata);
 }
 
 static int local_enqueue_block(struct iio_block_pdata *pdata,
@@ -2054,6 +2083,9 @@ static int local_enqueue_block(struct iio_block_pdata *pdata,
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
 		return local_enqueue_dmabuf(pdata, bytes_used, cyclic);
 
+	if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
+		return local_enqueue_mmap_block(pdata, bytes_used, cyclic);
+
 	return -ENOSYS;
 }
 
@@ -2061,6 +2093,9 @@ int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
 		return local_dequeue_dmabuf(pdata, nonblock);
+
+	if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
+		return local_dequeue_mmap_block(pdata, nonblock);
 
 	return -ENOSYS;
 }

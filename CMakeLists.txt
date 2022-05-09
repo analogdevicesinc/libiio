@@ -317,12 +317,34 @@ if(WITH_LOCAL_BACKEND)
 		target_sources(iio PRIVATE deps/libini/libini.c)
 	endif()
 
-	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
 	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" OFF)
 
 	option(WITH_LOCAL_DMABUF_API "Add support for the DMABUF API" ON)
 	if (WITH_LOCAL_DMABUF_API)
 		target_sources(iio PRIVATE local-dmabuf.c)
+	endif()
+
+	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
+	if (WITH_LOCAL_MMAP_API)
+		target_sources(iio PRIVATE local-mmap.c)
+
+		find_library(LIBATOMIC_LIBRARIES atomic)
+		if (NOT LIBATOMIC_LIBRARIES)
+			# Workaround for some distributions, where the libatomic.so is
+			# hidden inside /usr/lib/gcc/, where CMake won't search.
+			# Point CMake to the .so.1 instead.
+
+			set(OLD_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+			set(CMAKE_FIND_LIBRARY_SUFFIXES ".so.1")
+			find_library(LIBATOMIC_LIBRARIES atomic)
+			set(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_LIBRARY_SUFFIXES})
+		endif()
+
+		if (LIBATOMIC_LIBRARIES)
+			target_link_libraries(iio PRIVATE ${LIBATOMIC_LIBRARIES})
+		else()
+			target_compile_options(iio PRIVATE -pthread)
+		endif()
 	endif()
 
 	list(APPEND LIBIIO_SCAN_BACKENDS local)
