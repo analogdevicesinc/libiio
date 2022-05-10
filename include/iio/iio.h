@@ -1072,48 +1072,33 @@ iio_channel_is_enabled(const struct iio_channel *chn,
 		       const struct iio_channels_mask *mask);
 
 
-/** @brief Demultiplex the samples of a given channel
- * @param chn A pointer to an iio_channel structure
- * @param buffer A pointer to an iio_buffer structure
- * @param dst A pointer to the memory area where the demultiplexed data will be
- * stored
- * @param len The available length of the memory area, in bytes
- * @return The size of the demultiplexed data, in bytes */
-__api __check_ret size_t iio_channel_read_raw(const struct iio_channel *chn,
-		struct iio_buffer *buffer, void *dst, size_t len);
-
-
 /** @brief Demultiplex and convert the samples of a given channel
  * @param chn A pointer to an iio_channel structure
- * @param buffer A pointer to an iio_buffer structure
+ * @param block A pointer to an iio_block structure
  * @param dst A pointer to the memory area where the converted data will be
  * stored
  * @param len The available length of the memory area, in bytes
+ * @param raw True to read samples in the hardware format, false to read
+ *     converted samples.
  * @return The size of the converted data, in bytes */
 __api __check_ret size_t iio_channel_read(const struct iio_channel *chn,
-		struct iio_buffer *buffer, void *dst, size_t len);
-
-
-/** @brief Multiplex the samples of a given channel
- * @param chn A pointer to an iio_channel structure
- * @param buffer A pointer to an iio_buffer structure
- * @param src A pointer to the memory area where the sequential data will
- * be read from
- * @param len The length of the memory area, in bytes
- * @return The number of bytes actually multiplexed */
-__api __check_ret size_t iio_channel_write_raw(const struct iio_channel *chn,
-		struct iio_buffer *buffer, const void *src, size_t len);
+					  const struct iio_block *block,
+					  void *dst, size_t len, bool raw);
 
 
 /** @brief Convert and multiplex the samples of a given channel
  * @param chn A pointer to an iio_channel structure
- * @param buffer A pointer to an iio_buffer structure
+ * @param block A pointer to an iio_block structure
  * @param src A pointer to the memory area where the sequential data will
  * be read from
  * @param len The length of the memory area, in bytes
+ * @param raw True if the samples are already in hardware format, false if they
+ *     need to be converted.
  * @return The number of bytes actually converted and multiplexed */
 __api __check_ret size_t iio_channel_write(const struct iio_channel *chn,
-		struct iio_buffer *buffer, const void *src, size_t len);
+					   struct iio_block *block,
+					   const void *src, size_t len,
+					   bool raw);
 
 
 /** @brief Associate a pointer to an iio_channel structure
