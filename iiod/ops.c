@@ -641,6 +641,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	struct DevEntry *entry = d;
 	struct ThdEntry *thd, *next_thd;
 	struct iio_device *dev = entry->dev;
+	struct iio_device_pdata *dev_pdata;
 	unsigned int i, nb_channels = iio_device_get_channels_count(dev);
 	struct iio_channel *chn;
 	struct iio_block *block;
@@ -869,8 +870,9 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	pthread_mutex_lock(&devlist_lock);
 	/* It is possible that a new thread has already started, make sure to
 	 * not overwrite it. */
-	if (iio_device_get_data(dev) == entry)
-		iio_device_set_data(dev, NULL);
+	dev_pdata = iio_device_get_data(dev);
+	if (dev_pdata->entry == entry)
+		dev_pdata->entry = NULL;
 	pthread_mutex_unlock(&devlist_lock);
 
 	IIO_DEBUG("Stopping R/W thread for device %s\n",
@@ -1045,6 +1047,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	unsigned int i, nb_channels = iio_device_get_channels_count(dev);
 	struct iio_channels_mask *mask;
 	const struct iio_channel *chn;
+	struct iio_device_pdata *dev_pdata;
 
 	mask = iio_create_channels_mask(nb_channels);
 	if (!mask)
@@ -1070,11 +1073,13 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	thd->dev = dev;
 	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 
+	dev_pdata = iio_device_get_data(dev);
+
 retry:
 	/* Atomically look up the thread and make sure that it is still active
 	 * or allocate new one. */
 	pthread_mutex_lock(&devlist_lock);
-	entry = iio_device_get_data(dev);
+	entry = dev_pdata->entry;
 	if (entry) {
 		if (cyclic || entry->cyclic) {
 			/* Only one client allowed in cyclic mode */
@@ -1185,7 +1190,7 @@ retry:
 	}
 
 	IIO_DEBUG("Adding new device thread to device list\n");
-	iio_device_set_data(dev, entry);
+	dev_pdata->entry = entry;
 	pthread_mutex_unlock(&devlist_lock);
 
 	pthread_mutex_lock(&entry->thdlist_lock);
