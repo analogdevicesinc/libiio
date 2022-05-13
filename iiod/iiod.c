@@ -396,6 +396,8 @@ static int init_device_pdata(struct iio_context *ctx)
 		if (!pdata)
 			goto err_free_pdata;
 
+		pdata->nb_blocks = 4;
+
 		iio_device_set_data(dev, pdata);
 	}
 

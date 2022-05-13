@@ -109,6 +109,7 @@ struct parser_pdata {
 
 struct iio_device_pdata {
 	struct DevEntry *entry;
+	unsigned int nb_blocks;
 };
 
 extern bool server_demux; /* Defined in iiod.c */
