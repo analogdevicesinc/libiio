@@ -370,6 +370,42 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 #endif
 }
 
+static void free_device_pdata(struct iio_context *ctx)
+{
+	unsigned int i;
+	struct iio_device *dev;
+	struct iio_device_pdata *pdata;
+
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		dev = iio_context_get_device(ctx, i);
+		pdata = iio_device_get_data(dev);
+		free(pdata);
+	}
+}
+
+static int init_device_pdata(struct iio_context *ctx)
+{
+	unsigned int i;
+	struct iio_device *dev;
+	struct iio_device_pdata *pdata;
+
+	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
+		dev = iio_context_get_device(ctx, i);
+
+		pdata = zalloc(sizeof(*pdata));
+		if (!pdata)
+			goto err_free_pdata;
+
+		iio_device_set_data(dev, pdata);
+	}
+
+	return 0;
+
+err_free_pdata:
+	free_device_pdata(ctx);
+	return -ENOMEM;
+}
+
 int main(int argc, char **argv)
 {
 	bool debug = false, interactive = false, use_aio = false;
@@ -466,6 +502,12 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	ret = init_device_pdata(ctx);
+	if (ret) {
+		ret = EXIT_FAILURE;
+		goto out_destroy_context;
+	}
+
 	xml_zstd = get_xml_zstd_data(ctx, &xml_zstd_len);
 
 	main_thread_pool = thread_pool_new();
@@ -473,7 +515,7 @@ int main(int argc, char **argv)
 		iio_strerror(errno, err_str, sizeof(err_str));
 		IIO_ERROR("Unable to create thread pool: %s\n", err_str);
 		ret = EXIT_FAILURE;
-		goto out_destroy_context;
+		goto out_free_device_pdata;
 	}
 
 	set_handler(SIGHUP, sig_handler);
@@ -520,6 +562,9 @@ int main(int argc, char **argv)
 out_destroy_thread_pool:
 	thread_pool_stop_and_wait(main_thread_pool);
 	thread_pool_destroy(main_thread_pool);
+
+out_free_device_pdata:
+	free_device_pdata(ctx);
 
 out_destroy_context:
 	free(xml_zstd);

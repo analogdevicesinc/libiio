@@ -49,6 +49,7 @@ struct iio_task;
 struct iiod_io;
 struct thread_pool;
 extern struct thread_pool *main_thread_pool;
+struct DevEntry;
 
 enum iio_attr_type {
 	IIO_ATTR_TYPE_DEVICE,
@@ -104,6 +105,10 @@ struct parser_pdata {
 
 	ssize_t (*writefd)(struct parser_pdata *pdata, const void *buf, size_t len);
 	ssize_t (*readfd)(struct parser_pdata *pdata, void *buf, size_t len);
+};
+
+struct iio_device_pdata {
+	struct DevEntry *entry;
 };
 
 extern bool server_demux; /* Defined in iiod.c */
