@@ -5,7 +5,11 @@
  * Copyright (C) 2021 Analog Devices, Inc.
  * Author: Nuno Sá <nuno.sa@analog.com>
  */
+
+#include "iiostream-common.h"
+
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <signal.h>
@@ -25,10 +29,15 @@
 /* helper macros */
 #define GHZ(x) ((long long)(x * 1000000000.0 + .5))
 
-static bool stop = false;
+#define BLOCK_SIZE (1024 * 1024)
+
 static struct iio_context *ctx = NULL;
 static struct iio_buffer *rxbuf = NULL;
 static struct iio_buffer *txbuf = NULL;
+static struct iio_stream *rxstream = NULL;
+static struct iio_stream *txstream = NULL;
+static struct iio_channels_mask *rxmask = NULL;
+static struct iio_channels_mask *txmask = NULL;
 static struct iio_channel *rx_chan[2] = { NULL, NULL };
 static struct iio_channel *tx_chan[2] = { NULL, NULL };
 
@@ -48,7 +57,7 @@ BOOL WINAPI sig_handler(DWORD dwCtrlType)
 	switch (dwCtrlType) {
 	case CTRL_C_EVENT:
 	case CTRL_CLOSE_EVENT:
-		stop = true;
+		stop_stream();
 		return true;
 	default:
 		return false;
@@ -67,7 +76,7 @@ static void sig_handler(int signum)
 {
 	if (signum == SIGINT || signum == SIGTERM) {
 		info("Exit....\n");
-		stop = true;
+		stop_stream();
 	}
 }
 
@@ -149,105 +158,60 @@ static void cleanup(void)
 {
 	int c;
 
+	if (rxstream)
+		iio_stream_destroy(rxstream);
+	if (txstream)
+		iio_stream_destroy(txstream);
+
 	if (rxbuf)
 		iio_buffer_destroy(rxbuf);
-
 	if (txbuf)
 		iio_buffer_destroy(txbuf);
 
-	for (c = 0; c < 2; c++) {
-		if (rx_chan[c])
-			iio_channel_disable(rx_chan[c]);
-
-		if (tx_chan[c])
-			iio_channel_disable(tx_chan[c]);
-	}
+	if (rxmask)
+		iio_channels_mask_destroy(rxmask);
+	if (txmask)
+		iio_channels_mask_destroy(txmask);
 
 	iio_context_destroy(ctx);
 }
 
-static int stream_channels_get_enable(const struct iio_device *dev, struct iio_channel **chan,
+static struct iio_channels_mask *
+stream_channels_get_mask(const struct iio_device *dev, struct iio_channel **chan,
 				      bool tx)
 {
-	int c;
 	const char * const channels[] = {
 		"voltage0_i", "voltage0_q", "voltage0", "voltage1"
 	};
+	unsigned int c, nb_channels = iio_device_get_channels_count(dev);
+	struct iio_channels_mask *mask;
+	const char *str;
+
+	mask = iio_create_channels_mask(nb_channels);
+	if (!mask)
+		return iio_ptr(-ENOMEM);
 
 	for (c = 0; c < 2; c++) {
-		const char *str = channels[tx * 2 + c];
+		str = channels[tx * 2 + c];
 
 		chan[c] = iio_device_find_channel(dev, str, tx);
 		if (!chan[c]) {
 			error("Could not find %s channel tx=%d\n", str, tx);
-			return -ENODEV;
+			return iio_ptr(-ENODEV);
 		}
 
-		iio_channel_enable(chan[c]);
+		iio_channel_enable(chan[c], mask);
 	}
 
-	return 0;
-}
-
-static void stream(ssize_t rx_sample, ssize_t tx_sample)
-{
-	const struct iio_channel *rx_i_chan = rx_chan[I_CHAN];
-	const struct iio_channel *tx_i_chan = tx_chan[I_CHAN];
-	ssize_t nrx = 0;
-	ssize_t ntx = 0;
-
-	while (!stop) {
-		ssize_t nbytes_rx, nbytes_tx;
-		int16_t *p_dat, *p_end;
-		ptrdiff_t p_inc;
-
-
-		nbytes_tx = iio_buffer_push(txbuf);
-		if (nbytes_tx < 0) {
-			error("Error pushing buf %zd\n", nbytes_tx);
-			return;
-		}
-
-		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) {
-			error("Error refilling buf %zd\n", nbytes_rx);
-			return;
-		}
-
-		/* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
-		p_inc = iio_buffer_step(rxbuf);
-		p_end = iio_buffer_end(rxbuf);
-		for (p_dat = iio_buffer_first(rxbuf, rx_i_chan); p_dat < p_end;
-		     p_dat += p_inc / sizeof(*p_dat)) {
-			/* Example: swap I and Q */
-			int16_t i = p_dat[0];
-			int16_t q = p_dat[1];
-
-			p_dat[0] = q;
-			p_dat[1] = i;
-		}
-
-		/* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
-		p_inc = iio_buffer_step(txbuf);
-		p_end = iio_buffer_end(txbuf);
-		for (p_dat = iio_buffer_first(txbuf, tx_i_chan); p_dat < p_end;
-		     p_dat += p_inc / sizeof(*p_dat)) {
-			p_dat[0] = 0; /* Real (I) */
-			p_dat[1] = 0; /* Imag (Q) */
-		}
-
-		nrx += nbytes_rx / rx_sample;
-		ntx += nbytes_tx / tx_sample;
-		info("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx / 1e6, ntx / 1e6);
-	}
+	return mask;
 }
 
 int main(void)
 {
 	struct iio_device *tx;
 	struct iio_device *rx;
-	ssize_t tx_sample_sz, rx_sample_sz;
-	int ret;
+	size_t tx_sample_sz, rx_sample_sz;
+	int ret = EXIT_FAILURE;
 
 	if (register_signals() < 0)
 		return EXIT_FAILURE;
@@ -263,45 +227,62 @@ int main(void)
 		goto clean;
 
 	tx = iio_context_find_device(ctx, "axi-adrv9002-tx-lpc");
-	if (!tx) {
-		ret = EXIT_FAILURE;
+	if (!tx)
 		goto clean;
-	}
 
 	rx = iio_context_find_device(ctx, "axi-adrv9002-rx-lpc");
-	if (!rx) {
-		ret = EXIT_FAILURE;
+	if (!rx)
+		goto clean;
+
+	rxmask = stream_channels_get_mask(rx, rx_chan, false);
+	if (iio_err(rxmask)) {
+		rxmask = NULL;
 		goto clean;
 	}
 
-	ret = stream_channels_get_enable(rx, rx_chan, false);
-	if (ret)
+	txmask = stream_channels_get_mask(tx, tx_chan, true);
+	if (iio_err(txmask)) {
+		txmask = NULL;
 		goto clean;
-
-	ret = stream_channels_get_enable(tx, tx_chan, true);
-	if (ret)
-		goto clean;
+	}
 
 	info("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 1024 * 1024, false);
-	if (!rxbuf) {
-		error("Could not create RX buffer: %s\n", strerror(errno));
-		ret = EXIT_FAILURE;
+	rxbuf = iio_device_create_buffer(rx, 0, rxmask);
+	if (iio_err(rxbuf)) {
+		rxbuf = NULL;
+		ctx_perror(ctx, iio_err(rxbuf), "Could not create RX buffer");
 		goto clean;
 	}
 
-	txbuf = iio_device_create_buffer(tx, 1024 * 1024, false);
-	if (!txbuf) {
-		error("Could not create TX buffer: %s\n", strerror(errno));
-		ret = EXIT_FAILURE;
+	txbuf = iio_device_create_buffer(tx, 0, txmask);
+	if (iio_err(txbuf)) {
+		txbuf = NULL;
+		ctx_perror(ctx, iio_err(txbuf), "Could not create TX buffer");
 		goto clean;
 	}
 
-	tx_sample_sz = iio_device_get_sample_size(tx, NULL);
-	rx_sample_sz = iio_device_get_sample_size(rx, NULL);
+	rxstream = iio_buffer_create_stream(rxbuf, 4, BLOCK_SIZE);
+	if (iio_err(rxstream)) {
+		rxstream = NULL;
+		ctx_perror(ctx, iio_err(rxstream), "Could not create RX stream");
+		goto clean;
+	}
 
-	stream(rx_sample_sz, tx_sample_sz);
+	txstream = iio_buffer_create_stream(txbuf, 4, BLOCK_SIZE);
+	if (iio_err(txstream)) {
+		txstream = NULL;
+		ctx_perror(ctx, iio_err(txstream), "Could not create TX stream");
+		goto clean;
+	}
 
+	tx_sample_sz = iio_device_get_sample_size(tx, rxmask);
+	rx_sample_sz = iio_device_get_sample_size(rx, txmask);
+
+	info("* Starting IO streaming (press CTRL+C to cancel)\n");
+	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE, rxstream, txstream,
+	       rx_chan[I_CHAN], tx_chan[I_CHAN]);
+
+	ret = EXIT_SUCCESS;
 clean:
 	cleanup();
 	return ret;

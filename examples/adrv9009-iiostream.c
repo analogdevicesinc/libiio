@@ -7,7 +7,10 @@
  * Copyright (C) 2019 Analog Devices Inc.
  **/
 
+#include "iiostream-common.h"
+
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -25,6 +28,8 @@
 	} \
 }
 
+#define BLOCK_SIZE (1024 * 1024)
+
 /* RX is input, TX is output */
 enum iodev { RX, TX };
 
@@ -38,27 +43,28 @@ static char tmpstr[64];
 
 /* IIO structs required for streaming */
 static struct iio_context *ctx   = NULL;
-static struct iio_channel *rx0_i = NULL;
-static struct iio_channel *rx0_q = NULL;
-static struct iio_channel *tx0_i = NULL;
-static struct iio_channel *tx0_q = NULL;
 static struct iio_buffer  *rxbuf = NULL;
 static struct iio_buffer  *txbuf = NULL;
-
-static bool stop;
+static struct iio_stream  *rxstream = NULL;
+static struct iio_stream  *txstream = NULL;
+static struct iio_channels_mask *rxmask = NULL;
+static struct iio_channels_mask *txmask = NULL;
 
 /* cleanup and exit */
 static void shutdown()
 {
+
+	printf("* Destroying streams\n");
+	if (rxstream) {iio_stream_destroy(rxstream); }
+	if (txstream) { iio_stream_destroy(txstream); }
+
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
 	if (txbuf) { iio_buffer_destroy(txbuf); }
 
-	printf("* Disabling streaming channels\n");
-	if (rx0_i) { iio_channel_disable(rx0_i); }
-	if (rx0_q) { iio_channel_disable(rx0_q); }
-	if (tx0_i) { iio_channel_disable(tx0_i); }
-	if (tx0_q) { iio_channel_disable(tx0_q); }
+	printf("* Destroying channel masks\n");
+	if (rxmask) { iio_channels_mask_destroy(rxmask); }
+	if (txmask) { iio_channels_mask_destroy(txmask); }
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
@@ -68,7 +74,7 @@ static void shutdown()
 static void handle_sig(int sig)
 {
 	printf("Waiting for process to finish... Got signal %d\n", sig);
-	stop = true;
+	stop_stream();
 }
 
 /* check return value of attr_write function */
@@ -181,16 +187,25 @@ bool cfg_adrv9009_streaming_ch(struct stream_cfg *cfg, int chid)
 /* simple configuration and streaming */
 int main (__notused int argc, __notused char **argv)
 {
-	// Streaming devices
+	// Streaming devices and channels
 	struct iio_device *tx;
 	struct iio_device *rx;
+	struct iio_channel *rx0_i = NULL;
+	struct iio_channel *rx0_q = NULL;
+	struct iio_channel *tx0_i = NULL;
+	struct iio_channel *tx0_q = NULL;
 
 	// RX and TX sample counters
 	size_t nrx = 0;
 	size_t ntx = 0;
 
+	// RX and TX sample size
+	size_t rx_sample_sz, tx_sample_sz;
+
 	// Stream configuration
 	struct stream_cfg trxcfg;
+
+	int err;
 
 	// Listen to ctrl+c and IIO_ENSURE
 	signal(SIGINT, handle_sig);
@@ -215,67 +230,57 @@ int main (__notused int argc, __notused char **argv)
 	IIO_ENSURE(get_adrv9009_stream_ch(TX, tx, 0, 0, &tx0_i) && "TX chan i not found");
 	IIO_ENSURE(get_adrv9009_stream_ch(TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
 
+	rxmask = iio_create_channels_mask(iio_device_get_channels_count(rx));
+	if (!rxmask)
+		shutdown();
+
+	txmask = iio_create_channels_mask(iio_device_get_channels_count(tx));
+	if (!txmask)
+		shutdown();
+
 	printf("* Enabling IIO streaming channels\n");
-	iio_channel_enable(rx0_i);
-	iio_channel_enable(rx0_q);
-	iio_channel_enable(tx0_i);
-	iio_channel_enable(tx0_q);
+	iio_channel_enable(rx0_i, rxmask);
+	iio_channel_enable(rx0_q, rxmask);
+	iio_channel_enable(tx0_i, txmask);
+	iio_channel_enable(tx0_q, txmask);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
-	if (!rxbuf) {
-		perror("Could not create RX buffer");
+	rxbuf = iio_device_create_buffer(rx, 0, rxmask);
+	err = iio_err(rxbuf);
+	if (err) {
+		rxbuf = NULL;
+		ctx_perror(ctx, err, "Could not create RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 1024*1024, false);
-	if (!txbuf) {
-		perror("Could not create TX buffer");
+	txbuf = iio_device_create_buffer(tx, 0, txmask);
+	err = iio_err(txbuf);
+	if (err) {
+		txbuf = NULL;
+		ctx_perror(ctx, err, "Could not create TX buffer");
 		shutdown();
 	}
+
+	rxstream = iio_buffer_create_stream(rxbuf, 4, BLOCK_SIZE);
+	if (iio_err(rxstream)) {
+		rxstream = NULL;
+		ctx_perror(ctx, iio_err(rxstream), "Could not create RX stream");
+		shutdown();
+	}
+
+	txstream = iio_buffer_create_stream(txbuf, 4, BLOCK_SIZE);
+	if (iio_err(txstream)) {
+		txstream = NULL;
+		ctx_perror(ctx, iio_err(txstream), "Could not create TX stream");
+		shutdown();
+	}
+
+	tx_sample_sz = iio_device_get_sample_size(tx, rxmask);
+	rx_sample_sz = iio_device_get_sample_size(rx, txmask);
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
-	while (!stop)
-	{
-		ssize_t nbytes_rx, nbytes_tx;
-		char *p_dat, *p_end;
-		ptrdiff_t p_inc;
 
-		// Schedule TX buffer
-		nbytes_tx = iio_buffer_push(txbuf);
-		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(); }
-
-		// Refill RX buffer
-		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) { printf("Error refilling buf %d\n",(int) nbytes_rx); shutdown(); }
-
-		// READ: Get pointers to RX buf and read IQ from RX buf port 0
-		p_inc = iio_buffer_step(rxbuf);
-		p_end = iio_buffer_end(rxbuf);
-		for (p_dat = iio_buffer_first(rxbuf, rx0_i); p_dat < p_end; p_dat += p_inc) {
-			// Example: swap I and Q
-			const int16_t i = ((int16_t*)p_dat)[0]; // Real (I)
-			const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
-			((int16_t*)p_dat)[0] = q;
-			((int16_t*)p_dat)[1] = i;
-		}
-
-		// WRITE: Get pointers to TX buf and write IQ to TX buf port 0
-		p_inc = iio_buffer_step(txbuf);
-		p_end = iio_buffer_end(txbuf);
-		for (p_dat = iio_buffer_first(txbuf, tx0_i); p_dat < p_end; p_dat += p_inc) {
-			// Example: fill with zeros
-			// 14-bit sample needs to be MSB aligned so shift by 2
-			// https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/basic_iq_datafiles#binary_format
-			((int16_t*)p_dat)[0] = 0 << 2; // Real (I)
-			((int16_t*)p_dat)[1] = 0 << 2; // Imag (Q)
-		}
-
-		// Sample counter increment and status output
-		nrx += nbytes_rx / iio_device_get_sample_size(rx, NULL);
-		ntx += nbytes_tx / iio_device_get_sample_size(tx, NULL);
-		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
-	}
-
+	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE,
+	       rxstream, txstream, rx0_i, tx0_i);
 	shutdown();
 
 	return 0;
