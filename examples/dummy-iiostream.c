@@ -70,6 +70,7 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <iio/iio.h>
+#include <iio/iio-debug.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -104,6 +105,8 @@ static struct iio_context *ctx;
 static struct iio_buffer  *rxbuf;
 static struct iio_channel **channels;
 static unsigned int channel_count;
+static struct iio_channels_mask *rxmask;
+static struct iio_stream *rxstream;
 
 static bool stop;
 static bool has_repeat;
@@ -114,6 +117,9 @@ static void shutdown()
 	int ret;
 
 	if (channels) { free(channels); }
+
+	printf("* Destroying stream\n");
+	if (rxstream) { iio_stream_destroy(rxstream); }
 
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
@@ -127,6 +133,10 @@ static void shutdown()
 			fprintf(stderr, "%s while Disassociate trigger\n", buf);
 		}
 	}
+
+	printf("* Destroying channel masks\n");
+	if (rxmask)
+		iio_channels_mask_destroy(rxmask);
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
@@ -208,6 +218,11 @@ static void parse_options(int argc, char *argv[])
 /* simple configuration and streaming */
 int main (int argc, char **argv)
 {
+	unsigned int i, j,
+		     major = iio_context_get_version_major(NULL),
+		     minor = iio_context_get_version_minor(NULL);
+	int err;
+
 	// Hardware trigger
 	struct iio_device *trigger;
 
@@ -215,10 +230,6 @@ int main (int argc, char **argv)
 
 	// Listen to ctrl+c and assert
 	signal(SIGINT, handle_sig);
-
-	unsigned int i, j,
-		     major = iio_context_get_version_major(NULL),
-		     minor = iio_context_get_version_minor(NULL);
 
 	printf("Library version: %u.%u (git tag: %s)\n", major, minor,
 	       iio_context_get_version_tag(NULL));
@@ -234,11 +245,17 @@ int main (int argc, char **argv)
 	printf("* Acquiring device %s\n", name);
 	dev = iio_context_find_device(ctx, name);
 	if (!dev) {
-		perror("No device found");
+		fprintf(stderr, "No device found");
 		shutdown();
 	}
 
 	printf("* Initializing IIO streaming channels:\n");
+	rxmask = iio_create_channels_mask(iio_device_get_channels_count(dev));
+	if (!rxmask) {
+		fprintf(stderr, "Unable to allocate channels mask\n");
+		shutdown();
+	}
+
 	for (i = 0; i < iio_device_get_channels_count(dev); ++i) {
 		struct iio_channel *chn = iio_device_get_channel(dev, i);
 		if (iio_channel_is_scan_element(chn)) {
@@ -252,7 +269,7 @@ int main (int argc, char **argv)
 	}
 	channels = calloc(channel_count, sizeof *channels);
 	if (!channels) {
-		perror("Channel array allocation failed");
+		fprintf(stderr, "Channel array allocation failed");
 		shutdown();
 	}
 	for (i = 0; i < channel_count; ++i) {
@@ -264,24 +281,34 @@ int main (int argc, char **argv)
 	printf("* Acquiring trigger %s\n", trigger_str);
 	trigger = iio_context_find_device(ctx, trigger_str);
 	if (!trigger || !iio_device_is_trigger(trigger)) {
-		perror("No trigger found (try setting up the iio-trig-hrtimer module)");
+		fprintf(stderr, "No trigger found (try setting up the iio-trig-hrtimer module)");
 		shutdown();
 	}
 
 	printf("* Enabling IIO streaming channels for buffered capture\n");
 	for (i = 0; i < channel_count; ++i)
-		iio_channel_enable(channels[i]);
+		iio_channel_enable(channels[i], rxmask);
 
 	printf("* Enabling IIO buffer trigger\n");
 	if (iio_device_set_trigger(dev, trigger)) {
-		perror("Could not set trigger\n");
+		fprintf(stderr, "Could not set trigger\n");
 		shutdown();
 	}
 
-	printf("* Creating non-cyclic IIO buffers with %d samples\n", buffer_length);
-	rxbuf = iio_device_create_buffer(dev, buffer_length, false);
-	if (!rxbuf) {
-		perror("Could not create buffer");
+	printf("* Creating non-cyclic RX IIO buffer\n");
+	rxbuf = iio_device_create_buffer(dev, 0, rxmask);
+	err = iio_err(rxbuf);
+	if (err) {
+		rxbuf = NULL;
+		ctx_perror(ctx, err, "Could not create buffer");
+		shutdown();
+	}
+
+	printf("* Creating IIO blocks of %u bytes\n", buffer_length);
+	rxstream = iio_buffer_create_stream(rxbuf, 4, buffer_length);
+	if (iio_err(rxstream)) {
+		rxstream = NULL;
+		ctx_perror(ctx, iio_err(rxstream), "Could not create RX stream");
 		shutdown();
 	}
 
@@ -290,7 +317,7 @@ int main (int argc, char **argv)
 	int64_t last_ts = 0;
 	while (!stop)
 	{
-		ssize_t nbytes_rx;
+		const struct iio_block *rxblock;
 		/* we use a char pointer, rather than a void pointer, for p_dat & p_end
 		 * to ensure the compiler understands the size is a byte, and then we
 		 * can do math on it.
@@ -299,19 +326,19 @@ int main (int argc, char **argv)
 		ptrdiff_t p_inc;
 		int64_t now_ts;
 
-		// Refill RX buffer
-		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) {
-			printf("Error refilling buf: %d\n", (int)nbytes_rx);
+		rxblock = iio_stream_get_next_block(rxstream);
+		err = iio_err(rxblock);
+		if (err) {
+			ctx_perror(ctx, err, "Unable to receive block");
 			shutdown();
 		}
 
-		p_inc = iio_buffer_step(rxbuf);
-		p_end = iio_buffer_end(rxbuf);
+		p_inc = iio_device_get_sample_size(dev, rxmask);
+		p_end = iio_block_end(rxblock);
 
 		// Print timestamp delta in ms
 		if (has_ts)
-			for (p_dat = iio_buffer_first(rxbuf, channels[channel_count-1]); p_dat < p_end; p_dat += p_inc) {
+			for (p_dat = iio_block_first(rxblock, channels[channel_count-1]); p_dat < p_end; p_dat += p_inc) {
 				now_ts = (((int64_t *)p_dat)[0]);
 				printf("[%04" PRId64 "] ", last_ts > 0 ? (now_ts - last_ts)/1000/1000 : 0);
 				last_ts = now_ts;
@@ -326,7 +353,7 @@ int main (int argc, char **argv)
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 
 				printf("%s ", iio_channel_get_id(channels[i]));
-				for (p_dat = iio_buffer_first(rxbuf, channels[i]); p_dat < p_end; p_dat += p_inc) {
+				for (p_dat = iio_block_first(rxblock, channels[i]); p_dat < p_end; p_dat += p_inc) {
 					for (j = 0; j < repeat; ++j) {
 						if (fmt->length/8 == sizeof(int16_t))
 							printf("%" PRIi16 " ", ((int16_t *)p_dat)[j]);
@@ -340,12 +367,9 @@ int main (int argc, char **argv)
 
 		case SAMPLE_CALLBACK: {
 			int ret;
-			ret = iio_buffer_foreach_sample(rxbuf, sample_cb, NULL);
-			if (ret < 0) {
-				char buf[256];
-				iio_strerror(-ret, buf, sizeof(buf));
-				fprintf(stderr, "%s while processing buffer\n", buf);
-			}
+			ret = iio_block_foreach_sample(rxblock, rxmask, sample_cb, NULL);
+			if (ret < 0)
+				dev_perror(dev, ret, "Unable to process buffer");
 			printf("\n");
 			break;
 		}
@@ -364,10 +388,9 @@ int main (int argc, char **argv)
 					shutdown();
 				}
 
-				if (buffer_read_method == CHANNEL_READ_RAW)
-					bytes = iio_channel_read_raw(channels[i], rxbuf, buf, sample_size * buffer_length);
-				else
-					bytes = iio_channel_read(channels[i], rxbuf, buf, sample_size * buffer_length);
+				bytes = iio_channel_read(channels[i], rxblock, buf,
+							 sample_size * buffer_length,
+							 buffer_read_method == CHANNEL_READ_RAW);
 
 				printf("%s ", iio_channel_get_id(channels[i]));
 				for (sample = 0; sample < bytes / sample_size; ++sample) {
