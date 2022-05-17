@@ -18,7 +18,7 @@ if ($COMPILER -eq "Visual Studio 16 2019") {
 cd $src_dir
 mkdir dependencies
 cd dependencies
-wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "libiio-win-deps.zip"
 7z x -y "libiio-win-deps.zip"
 
 cp .\libs\64\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
