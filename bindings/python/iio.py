@@ -966,18 +966,41 @@ class Channel(object):
         """
         return ChannelType(_channel_get_type(self._channel))
 
-    def convert(self, dst, src):
+    def convert(self, src, buffer):
         """
         Convert src and saves the result in dst, using current channel's data format.
 
-        :param dst: type=list
-            The variable where the result is stored.
         :param src: type=list
             Data to be converted.
+        :param buffer: type=iio.Buffer
+            Associated iio.Buffer with channel data.
+        :return: type=list
+            The converted data.
         """
-        src_ptr = cast((c_char * (len(src) * self.data_format.length))(*src), c_void_p)
-        dst_ptr = cast((c_char * (len(dst) * self.data_format.length))(*dst), c_void_p)
-        _channel_convert(self._channel, src_ptr, dst_ptr)
+        num_bytes = len(src)
+        src_array = (c_char * num_bytes)(*src)
+        src_ptr = cast(src_array, c_void_p)
+        dst_array = (c_char * num_bytes)()
+        dst_ptr = cast(dst_array, c_void_p)
+
+        bytes_per_sample = self.data_format.length // 8
+        buf_step = buffer.step
+
+        dst_offset = 0
+        src_offset = 0
+        start = _buffer_start(buffer._buffer)
+        end = _buffer_end(buffer._buffer)
+        blength = end - start
+        while src_offset < (blength):
+            dst_offset += bytes_per_sample
+            src_offset += buf_step
+            _channel_convert(
+                self._channel, dst_ptr.value + dst_offset, src_ptr.value + src_offset
+            )
+
+        _memmove(dst_array, dst_ptr, num_bytes)
+
+        return dst_array
 
     def convert_inverse(self, dst, src):
         """
