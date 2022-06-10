@@ -28,6 +28,7 @@ from ctypes import (
     create_string_buffer,
     c_double,
     cast,
+    sizeof,
     POINTER as _POINTER,
     CDLL as _cdll,
     memmove as _memmove,
@@ -62,6 +63,16 @@ def _check_negative(result, func, arguments):
     raise OSError(-result, _strerror(-result))
 
 
+def _check_ptr_err(result, func, arguments):
+    value = cast(result, c_void_p).value
+    value = 2 ** (8 * sizeof(c_void_p)) - value
+
+    if value < 4096:
+        raise OSError(value, _strerror(value))
+
+    return result
+
+
 # pylint: enable=unused-argument
 
 # Python 2 and Python 3 compatible _isstring function.
@@ -94,7 +105,17 @@ class _Channel(Structure):
     pass
 
 
+class _ChannelsMask(Structure):
+    pass
+
+
 class _Buffer(Structure):
+    pass
+
+class _Block(Structure):
+    pass
+
+class _Stream(Structure):
     pass
 
 class ContextParams(Structure):
@@ -212,9 +233,12 @@ _ScanPtr = _POINTER(_Scan)
 _ContextPtr = _POINTER(_Context)
 _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
+_ChannelsMaskPtr = _POINTER(_ChannelsMask)
 _BufferPtr = _POINTER(_Buffer)
+_BlockPtr = _POINTER(_Block)
 _DataFormatPtr = _POINTER(DataFormat)
 _ContextParamsPtr = _POINTER(ContextParams)
+_StreamPtr = _POINTER(_Stream)
 
 if "Windows" in _system():
     _iiolib = "libiio.dll"
@@ -222,7 +246,7 @@ else:
     # Non-windows, possibly Posix system
     _iiolib = "iio"
 
-_lib = _cdll(find_library(_iiolib), use_errno=True, use_last_error=True)
+_lib = _cdll("libiio.so.1", use_errno=True, use_last_error=True)
 
 _get_backends_count = _lib.iio_get_backends_count
 _get_backends_count.restype = c_uint
@@ -235,7 +259,7 @@ _get_backend.errcheck = _check_null
 _scan = _lib.iio_scan
 _scan.argtypes = (_ContextParamsPtr, c_char_p)
 _scan.restype = _ScanPtr
-_scan.errcheck = _check_null
+_scan.errcheck = _check_ptr_err
 
 _scan_destroy = _lib.iio_scan_destroy
 _scan_destroy.argtypes = (_ScanPtr,)
@@ -264,7 +288,7 @@ _iio_strerror.restype = None
 
 _new_ctx = _lib.iio_create_context
 _new_ctx.restype = _ContextPtr
-_new_ctx.errcheck = _check_null
+_new_ctx.errcheck = _check_ptr_err
 _new_ctx.argtypes = (_ContextParamsPtr, c_char_p)
 
 _destroy = _lib.iio_context_destroy
@@ -316,6 +340,7 @@ _get_device.errcheck = _check_null
 _find_device = _lib.iio_context_find_device
 _find_device.restype = _DevicePtr
 _find_device.argtypes = (_ContextPtr, c_char_p)
+_find_device.errcheck = _check_null
 
 _set_timeout = _lib.iio_context_set_timeout
 _set_timeout.restype = c_int
@@ -328,7 +353,7 @@ _set_timeout.errcheck = _check_negative
 _clone = _lib.iio_context_clone
 _clone.restype = _ContextPtr
 _clone.argtypes = (_ContextPtr,)
-_clone.errcheck = _check_null
+_clone.errcheck = _check_ptr_err
 
 _d_get_id = _lib.iio_device_get_id
 _d_get_id.restype = c_char_p
@@ -352,12 +377,12 @@ _d_get_attr.restype = c_char_p
 _d_get_attr.argtypes = (_DevicePtr,)
 _d_get_attr.errcheck = _check_null
 
-_d_read_attr = _lib.iio_device_attr_read
+_d_read_attr = _lib.iio_device_attr_read_raw
 _d_read_attr.restype = c_ssize_t
 _d_read_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
 _d_read_attr.errcheck = _check_negative
 
-_d_write_attr = _lib.iio_device_attr_write
+_d_write_attr = _lib.iio_device_attr_write_string
 _d_write_attr.restype = c_ssize_t
 _d_write_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_attr.errcheck = _check_negative
@@ -371,12 +396,12 @@ _d_get_debug_attr.restype = c_char_p
 _d_get_debug_attr.argtypes = (_DevicePtr,)
 _d_get_debug_attr.errcheck = _check_null
 
-_d_read_debug_attr = _lib.iio_device_debug_attr_read
+_d_read_debug_attr = _lib.iio_device_debug_attr_read_raw
 _d_read_debug_attr.restype = c_ssize_t
 _d_read_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
 _d_read_debug_attr.errcheck = _check_negative
 
-_d_write_debug_attr = _lib.iio_device_debug_attr_write
+_d_write_debug_attr = _lib.iio_device_debug_attr_write_string
 _d_write_debug_attr.restype = c_ssize_t
 _d_write_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_debug_attr.errcheck = _check_negative
@@ -390,12 +415,12 @@ _d_get_buffer_attr.restype = c_char_p
 _d_get_buffer_attr.argtypes = (_DevicePtr,)
 _d_get_buffer_attr.errcheck = _check_null
 
-_d_read_buffer_attr = _lib.iio_device_buffer_attr_read
+_d_read_buffer_attr = _lib.iio_device_buffer_attr_read_raw
 _d_read_buffer_attr.restype = c_ssize_t
 _d_read_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
 _d_read_buffer_attr.errcheck = _check_negative
 
-_d_write_buffer_attr = _lib.iio_device_buffer_attr_write
+_d_write_buffer_attr = _lib.iio_device_buffer_attr_write_string
 _d_write_buffer_attr.restype = c_ssize_t
 _d_write_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
 _d_write_buffer_attr.errcheck = _check_negative
@@ -407,6 +432,7 @@ _d_get_context.argtypes = (_DevicePtr,)
 _d_find_channel = _lib.iio_device_find_channel
 _d_find_channel.restype = _ChannelPtr
 _d_find_channel.argtypes = (_DevicePtr, c_char_p, c_bool)
+_d_find_channel.errcheck = _check_null
 
 _d_reg_write = _lib.iio_device_reg_write
 _d_reg_write.restype = c_int
@@ -429,7 +455,7 @@ _get_channel.errcheck = _check_null
 
 _get_sample_size = _lib.iio_device_get_sample_size
 _get_sample_size.restype = c_int
-_get_sample_size.argtypes = (_DevicePtr,)
+_get_sample_size.argtypes = (_DevicePtr, _ChannelsMaskPtr)
 _get_sample_size.errcheck = _check_negative
 
 _d_is_trigger = _lib.iio_device_is_trigger
@@ -451,11 +477,6 @@ _d_set_trigger.argtypes = (
     _DevicePtr,
 )
 _d_set_trigger.errcheck = _check_negative
-
-_d_set_buffers_count = _lib.iio_device_set_kernel_buffers_count
-_d_set_buffers_count.restype = c_int
-_d_set_buffers_count.argtypes = (_DevicePtr, c_uint)
-_d_set_buffers_count.errcheck = _check_negative
 
 _c_get_id = _lib.iio_channel_get_id
 _c_get_id.restype = c_char_p
@@ -491,21 +512,29 @@ _c_get_filename.argtypes = (
 )
 _c_get_filename.errcheck = _check_null
 
-_c_read_attr = _lib.iio_channel_attr_read
+_c_read_attr = _lib.iio_channel_attr_read_raw
 _c_read_attr.restype = c_ssize_t
 _c_read_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p, c_size_t)
 _c_read_attr.errcheck = _check_negative
 
-_c_write_attr = _lib.iio_channel_attr_write
+_c_write_attr = _lib.iio_channel_attr_write_string
 _c_write_attr.restype = c_ssize_t
 _c_write_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p)
 _c_write_attr.errcheck = _check_negative
 
+_create_channels_mask = _lib.iio_create_channels_mask
+_create_channels_mask.argtypes = (c_uint,)
+_create_channels_mask.restype = _ChannelsMaskPtr
+_create_channels_mask.errcheck = _check_null
+
+_channels_mask_destroy = _lib.iio_channels_mask_destroy
+_channels_mask_destroy.argtypes = (_ChannelsMaskPtr,)
+
 _c_enable = _lib.iio_channel_enable
-_c_enable.argtypes = (_ChannelPtr,)
+_c_enable.argtypes = (_ChannelPtr, _ChannelsMaskPtr)
 
 _c_disable = _lib.iio_channel_disable
-_c_disable.argtypes = (_ChannelPtr,)
+_c_disable.argtypes = (_ChannelPtr, _ChannelsMaskPtr)
 
 _c_is_enabled = _lib.iio_channel_is_enabled
 _c_is_enabled.restype = c_bool
@@ -518,15 +547,7 @@ _c_read.argtypes = (
     _BufferPtr,
     c_void_p,
     c_size_t,
-)
-
-_c_read_raw = _lib.iio_channel_read_raw
-_c_read_raw.restype = c_ssize_t
-_c_read_raw.argtypes = (
-    _ChannelPtr,
-    _BufferPtr,
-    c_void_p,
-    c_size_t,
+    c_bool,
 )
 
 _c_write = _lib.iio_channel_write
@@ -536,15 +557,7 @@ _c_write.argtypes = (
     _BufferPtr,
     c_void_p,
     c_size_t,
-)
-
-_c_write_raw = _lib.iio_channel_write_raw
-_c_write_raw.restype = c_ssize_t
-_c_write_raw.argtypes = (
-    _ChannelPtr,
-    _BufferPtr,
-    c_void_p,
-    c_size_t,
+    c_bool,
 )
 
 _channel_get_device = _lib.iio_channel_get_device
@@ -571,34 +584,34 @@ _create_buffer = _lib.iio_device_create_buffer
 _create_buffer.restype = _BufferPtr
 _create_buffer.argtypes = (
     _DevicePtr,
-    c_size_t,
-    c_bool,
+    c_uint,
+    _ChannelsMaskPtr,
 )
-_create_buffer.errcheck = _check_null
+_create_buffer.errcheck = _check_ptr_err
 
 _buffer_destroy = _lib.iio_buffer_destroy
 _buffer_destroy.argtypes = (_BufferPtr,)
 
-_buffer_refill = _lib.iio_buffer_refill
-_buffer_refill.restype = c_ssize_t
-_buffer_refill.argtypes = (_BufferPtr,)
-_buffer_refill.errcheck = _check_negative
+_buffer_enable = _lib.iio_buffer_enable
+_buffer_enable.restype = c_int
+_buffer_enable.argtypes = (_BufferPtr,)
+_buffer_enable.errcheck = _check_negative
 
-_buffer_push_partial = _lib.iio_buffer_push_partial
-_buffer_push_partial.restype = c_ssize_t
-_buffer_push_partial.argtypes = (
-    _BufferPtr,
-    c_uint,
-)
-_buffer_push_partial.errcheck = _check_negative
+_buffer_disable = _lib.iio_buffer_disable
+_buffer_disable.restype = c_int
+_buffer_disable.argtypes = (_BufferPtr,)
 
-_buffer_start = _lib.iio_buffer_start
-_buffer_start.restype = c_void_p
-_buffer_start.argtypes = (_BufferPtr,)
+_block_start = _lib.iio_block_start
+_block_start.restype = c_void_p
+_block_start.argtypes = (_BlockPtr,)
 
-_buffer_end = _lib.iio_buffer_end
-_buffer_end.restype = c_void_p
-_buffer_end.argtypes = (_BufferPtr,)
+_block_end = _lib.iio_block_end
+_block_end.restype = c_void_p
+_block_end.argtypes = (_BlockPtr,)
+
+_block_get_buffer = _lib.iio_block_get_buffer
+_block_get_buffer.restype = _BufferPtr
+_block_get_buffer.argtypes = (_BlockPtr,)
 
 _buffer_cancel = _lib.iio_buffer_cancel
 _buffer_cancel.restype = c_void_p
@@ -608,17 +621,40 @@ _buffer_get_device = _lib.iio_buffer_get_device
 _buffer_get_device.restype = _DevicePtr
 _buffer_get_device.argtypes = (_BufferPtr,)
 
-_buffer_get_poll_fd = _lib.iio_buffer_get_poll_fd
-_buffer_get_poll_fd.restype = c_int
-_buffer_get_poll_fd.argtypes = (_BufferPtr,)
+_buffer_get_channels_mask = _lib.iio_buffer_get_channels_mask
+_buffer_get_channels_mask.restype = _ChannelsMaskPtr
+_buffer_get_channels_mask.argtypes = (_BufferPtr,)
 
-_buffer_step = _lib.iio_buffer_step
-_buffer_step.restype = c_longlong
-_buffer_step.argtypes = (_BufferPtr,)
+_create_block = _lib.iio_buffer_create_block
+_create_block.restype = _BlockPtr
+_create_block.argtypes = (_BufferPtr, c_size_t)
+_create_block.errcheck = _check_ptr_err
 
-_buffer_set_blocking_mode = _lib.iio_buffer_set_blocking_mode
-_buffer_set_blocking_mode.restype = c_uint
-_buffer_set_blocking_mode.argtypes = (_BufferPtr, c_bool)
+_block_destroy = _lib.iio_block_destroy
+_block_destroy.argtypes = (_BlockPtr,)
+
+_block_enqueue = _lib.iio_block_enqueue
+_block_enqueue.restype = c_int
+_block_enqueue.argtypes = (_BlockPtr, c_size_t, c_bool)
+_block_enqueue.errcheck = _check_negative
+
+_block_dequeue = _lib.iio_block_dequeue
+_block_dequeue.restype = c_int
+_block_dequeue.argtypes = (_BlockPtr, c_bool)
+_block_dequeue.errcheck = _check_negative
+
+_create_stream = _lib.iio_buffer_create_stream
+_create_stream.restype = _StreamPtr
+_create_stream.argtypes = (_BufferPtr, c_size_t, c_size_t)
+_create_stream.errcheck = _check_ptr_err
+
+_stream_destroy = _lib.iio_stream_destroy
+_stream_destroy.argtypes = (_StreamPtr,)
+
+_stream_get_next_block = _lib.iio_stream_get_next_block
+_stream_get_next_block.restype = _BlockPtr
+_stream_get_next_block.argtypes = (_StreamPtr,)
+_stream_get_next_block.errcheck = _check_ptr_err
 
 
 # pylint: enable=invalid-name
@@ -786,7 +822,56 @@ class DeviceBufferAttr(DeviceAttr):
         _d_write_buffer_attr(self._device, self._name_ascii, value.encode("ascii"))
 
 
-class Channel(object):
+class _IIO_Object(object):
+    def __init__(self, hdl, parent):
+        self._hdl = hdl
+
+        # Hold a reference to the parent object, to ensure that every IIO object
+        # is destroyed before its parent.
+        self._parent = parent if parent else None
+
+    def __eq__(self, other):
+        return cast(self._hdl, c_void_p).value == cast(other._hdl, c_void_p).value
+
+class ChannelsMask(_IIO_Object):
+    """A bitmask where each bit corresponds to an enabled channel."""
+
+    def __init__(self, dev):
+        self._dev = dev
+        self._channels = list()
+
+        self._mask = _create_channels_mask(_channels_count(dev._device))
+        super(ChannelsMask, self).__init__(self._mask, dev)
+
+    def __del__(self):
+        _channels_mask_destroy(self._mask)
+
+    def _set_channels(self, channels):
+        for chn in self._dev.channels:
+            if chn in channels:
+                _c_enable(chn._channel, self._mask)
+            else:
+                _c_disable(chn._channel, self._mask)
+
+        self._channels = channels
+
+    channels = property(
+            lambda self: self._channels,
+            _set_channels,
+            None,
+            "List of enabled channels",
+    )
+
+    @property
+    def sample_size(self):
+        """
+        Return the sample size of the current channels mask.
+        type: int
+        """
+        return _get_sample_size(self._dev._device, self._mask)
+
+
+class Channel(_IIO_Object):
     """Represents a channel of an IIO device."""
 
     def __init__(self, dev, _channel):
@@ -800,7 +885,8 @@ class Channel(object):
             An new instance of this class
         """
         self._channel = _channel
-        self._dev = dev
+        super(Channel, self).__init__(self._channel, dev)
+
         self._attrs = {
             name: ChannelAttr(_channel, name)
             for name in [
@@ -815,12 +901,12 @@ class Channel(object):
         self._output = _c_is_output(self._channel)
         self._scan_element = _c_is_scan_element(self._channel)
 
-    def read(self, buf, raw=False):
+    def read(self, block, raw=False):
         """
-        Extract the samples corresponding to this channel from the given iio.Buffer object.
+        Extract the samples corresponding to this channel from the given iio.Block object.
 
-        :param buf: type=iio.Buffer
-            A valid instance of the iio.Buffer class
+        :param block: type=iio.Block
+            A valid instance of the iio.Block class
         :param raw: type=bool
             If set to True, the samples are not converted from their
             native format to their host format
@@ -831,18 +917,15 @@ class Channel(object):
         array = bytearray(buf._length)
         mytype = c_char * len(array)
         c_array = mytype.from_buffer(array)
-        if raw:
-            length = _c_read_raw(self._channel, buf._buffer, c_array, len(array))
-        else:
-            length = _c_read(self._channel, buf._buffer, c_array, len(array))
+        length = _c_read(self._channel, block._block, c_array, len(array), raw)
         return array[:length]
 
-    def write(self, buf, array, raw=False):
+    def write(self, block, array, raw=False):
         """
-        Write the specified array of samples corresponding to this channel into the given iio.Buffer object.
+        Write the specified array of samples corresponding to this channel into the given iio.Block object.
 
-        :param buf: type=iio.Buffer
-            A valid instance of the iio.Buffer class
+        :param buf: type=iio.Block
+            A valid instance of the iio.Block class
         :param array: type=bytearray
             The array containing the samples to copy
         :param raw: type=bool
@@ -854,9 +937,7 @@ class Channel(object):
         """
         mytype = c_char * len(array)
         c_array = mytype.from_buffer(array)
-        if raw:
-            return _c_write_raw(self._channel, buf._buffer, c_array, len(array))
-        return _c_write(self._channel, buf._buffer, c_array, len(array))
+        return _c_write(self._channel, block._block, c_array, len(array), raw)
 
     id = property(
         lambda self: self._id,
@@ -885,12 +966,6 @@ class Channel(object):
         None,
         "Contains True if the channel is a scan element, False otherwise.\n\tIf a channel is a scan element, then it is possible to enable it and use it for I/O operations.\n\ttype=bool",
     )
-    enabled = property(
-        lambda self: _c_is_enabled(self._channel),
-        lambda self, x: _c_enable(self._channel) if x else _c_disable(self._channel),
-        None,
-        "Configured state of the channel\n\ttype=bool",
-    )
 
     @property
     def device(self):
@@ -898,7 +973,7 @@ class Channel(object):
         Corresponding device for the channel.
         type: iio.Device
         """
-        return self._dev
+        return self._parent
 
     @property
     def index(self):
@@ -930,67 +1005,70 @@ class Channel(object):
         return ChannelType(_channel_get_type(self._channel))
 
 
-class Buffer(object):
-    """The class used for all I/O operations."""
+class Block(_IIO_Object):
+    """Represents a contiguous block of samples."""
 
-    def __init__(self, device, samples_count, cyclic=False):
+    def __init__(self, buffer, size, _block = None):
         """
-        Initialize a new instance of the Buffer class.
+        Initialize a new instance of the Block class.
 
-        :param device: type=iio.Device
-            The iio.Device object that represents the device where the I/O
-            operations will be performed
-        :param samples_count: type=int
-            The size of the buffer, in samples
-        :param circular: type=bool
-            If set to True, the buffer is circular
-
-        returns: type=iio.Buffer
-            An new instance of this class
+        :param buffer: type=iio.Buffer
+            The iio.Buffer object that represents the hardware buffer where
+            the samples will be enqueued to or dequeued from
+        :param size: type=int
+            The size of the block, in bytes
         """
-        try:
-            self._buffer = _create_buffer(device._device, samples_count, cyclic)
-        except Exception:
-            self._buffer = None
-            raise
-        self._length = samples_count * device.sample_size
-        self._samples_count = samples_count
+        self._block_created = _block is None
 
-        # Hold a reference to the device, to ensure that every iio.Buffer object
-        # is destroyed before its corresponding IIO context.
-        self._dev = device
+        if _block is not None:
+            self._block = _block
+        else:
+            try:
+                self._block = _create_block(buffer._buffer, size)
+            except Exception:
+                self._block = None
+                raise
+
+        super(Block, self).__init__(self._block, buffer)
+
+        self._size = size
+        self.enqueued = False
 
     def __del__(self):
-        """Destroy this buffer."""
-        if self._buffer is not None:
-            _buffer_destroy(self._buffer)
+        """Destroy this block."""
+        if self._block is not None and self._block_created:
+            _block_destroy(self._block)
 
     def __len__(self):
         """Size of this buffer, in bytes."""
-        return self._length
+        return self._size
 
-    def refill(self):
-        """Fetch a new set of samples from the hardware."""
-        _buffer_refill(self._buffer)
+    def enqueue(self, size = None, cyclic = False):
+        if not self._block_created:
+            raise
 
-    def push(self, samples_count=None):
-        """
-        Submit the samples contained in this buffer to the hardware.
+        _block_enqueue(self._block, size if size is not None else self._size, cyclic)
+        self.enqueued = True
 
-        :param samples_count: type=int
-            The number of samples to submit, default = full buffer
-        """
-        _buffer_push_partial(self._buffer, samples_count or self._samples_count)
+    def dequeue(self, nonblock = False):
+        if not self._block_created:
+            raise
+
+        _block_dequeue(self._block, nonblock)
+        self.enqueued = False
 
     def read(self):
         """
-        Retrieve the samples contained inside the Buffer object.
+        Retrieve the samples contained inside the Block object.
 
         returns: type=bytearray
             An array containing the samples
         """
-        start = _buffer_start(self._buffer)
-        end = _buffer_end(self._buffer)
+        if self.enqueued:
+            raise OSError(16, "Cannot read an enqueued block.")
+
+        start = _block_start(self._block)
+        end = _block_end(self._block)
         array = bytearray(end - start)
         mytype = c_char * len(array)
         c_array = mytype.from_buffer(array)
@@ -999,7 +1077,7 @@ class Buffer(object):
 
     def write(self, array):
         """
-        Copy the given array of samples inside the Buffer object.
+        Copy the given array of samples inside the Block object.
 
         :param array: type=bytearray
                 The array containing the samples to copy
@@ -1007,8 +1085,11 @@ class Buffer(object):
         returns: type=int
             The number of bytes written into the buffer
         """
-        start = _buffer_start(self._buffer)
-        end = _buffer_end(self._buffer)
+        if self.enqueued:
+            raise OSError(16, "Cannot write an enqueued block.")
+
+        start = _block_start(self._block)
+        end = _block_end(self._block)
         length = end - start
         if length > len(array):
             length = len(array)
@@ -1017,21 +1098,52 @@ class Buffer(object):
         _memmove(start, c_array, length)
         return length
 
+    @property
+    def buffer(self):
+        """
+        Buffer corresponding to this block object.
+        type: iio.Buffer
+        """
+        return self._parent
+
+
+class Buffer(_IIO_Object):
+    """Represents a hardware I/O buffer."""
+
+    def __init__(self, device, mask, idx=0):
+        """
+        Initialize a new instance of the Buffer class.
+
+        :param device: type=iio.Device
+            The iio.Device object that represents the device where the I/O
+            operations will be performed
+        :param mask: type=ChannelsMask
+            The mask of enabled channels
+        :param idx: type=int
+            The hardware index of the buffer to use. If unsure, leave it to 0
+
+        returns: type=iio.Buffer
+            An new instance of this class
+        """
+        try:
+            self._buffer = _create_buffer(device._device, idx, mask._mask)
+        except Exception:
+            self._buffer = None
+            raise
+
+        super(Buffer, self).__init__(self._buffer, device)
+
+        self._idx = idx
+        self._enabled = False
+
+    def __del__(self):
+        """Destroy this buffer."""
+        if self._buffer is not None:
+            _buffer_destroy(self._buffer)
+
     def cancel(self):
         """Cancel the current buffer."""
         _buffer_cancel(self._buffer)
-
-    def set_blocking_mode(self, blocking):
-        """
-        Set the buffer's blocking mode.
-
-        :param blocking: type=boolean
-            True if in blocking_mode else False.
-
-        returns: type=int
-            Return code from the C layer.
-        """
-        return _buffer_set_blocking_mode(self._buffer, c_bool(blocking))
 
     @property
     def device(self):
@@ -1039,28 +1151,54 @@ class Buffer(object):
         Device for the buffer.
         type: iio.Device
         """
-        return self._dev
+        return self._parent
 
-    @property
-    def poll_fd(self):
-        """
-        Poll_fd for the buffer.
-        type: int
-        """
-        return _buffer_get_poll_fd(self._buffer)
+    def _set_enabled(self, enabled):
+        if enabled:
+            _buffer_enable(self._buffer)
+        else:
+            _buffer_disable(self._buffer)
 
-    @property
-    def step(self):
-        """
-        Step size for the buffer.
-        type: int
-        """
-        return _buffer_step(self._buffer)
+    enabled = property(
+            lambda self: self._enabled,
+            _set_enabled,
+            None,
+            "Represents the state (enabled/disabled) of the hardware buffer.",
+    )
 
 
-class _DeviceOrTrigger(object):
+class Stream(_IIO_Object):
+    def __init__(self, buffer, samples_count, nb_blocks = 4):
+        try:
+            self._stream = _create_stream(buffer._buffer, nb_blocks, samples_count)
+        except Exception:
+            self._stream = None
+            raise
+
+        super(Stream, self).__init__(self._stream, buffer)
+
+        mask_hdl = _buffer_get_channels_mask(buffer._buffer)
+        sample_size = _get_sample_size(buffer.device._device, mask_hdl)
+
+        self._block_size = sample_size * samples_count
+        self._buffer = buffer
+
+    def __del__(self):
+        _stream_destroy(self._stream)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        next_hdl = _stream_get_next_block(self._stream)
+
+        return Block(self._buffer, self._block_size, next_hdl)
+
+
+class _DeviceOrTrigger(_IIO_Object):
     def __init__(self, _ctx, _device):
-        self._ctx = _ctx
+        super(_DeviceOrTrigger, self).__init__(_device, _ctx)
+
         self._device = _device
         self._context = _d_get_context(_device)
         self._attrs = {
@@ -1133,27 +1271,6 @@ class _DeviceOrTrigger(object):
         """
         chn = _d_find_channel(self._device, name_or_id.encode("ascii"), is_output)
         return None if bool(chn) is False else Channel(self, chn)
-
-    def set_kernel_buffers_count(self, count):
-        """
-
-        Set the number of kernel buffers to use with the specified device.
-
-        :param count: type=int
-            The number of kernel buffers
-
-        """
-        return _d_set_buffers_count(self._device, count)
-
-    @property
-    def sample_size(self):
-        """
-        Sample size of this device.
-        type: int
-
-        The sample size varies each time channels get enabled or disabled.
-        """
-        return _get_sample_size(self._device)
 
     id = property(
         lambda self: self._id,
@@ -1276,7 +1393,7 @@ class Device(_DeviceOrTrigger):
         return self.ctx
 
 
-class Context(object):
+class Context(_IIO_Object):
     """Contains the representation of an IIO context."""
 
     def __init__(self, _context=None):
@@ -1293,12 +1410,18 @@ class Context(object):
         """
         self._context = None
 
-        if _context is None:
-            self._context = _new_ctx(None, None)
-        elif _isstring(_context):
-            self._context = _new_ctx(None, _context.encode("ascii"))
-        else:
+        if _context is not None and not _isstring(_context):
             self._context = _context
+        else:
+            uri = None if _context is None else _context.encode("ascii")
+
+            try:
+                self._context = _new_ctx(None, uri)
+            except Exception:
+                self._context = None
+                raise
+
+        super(Context, self).__init__(self._context, None)
 
         self._attrs = {}
         for index in range(0, _get_attrs_count(self._context)):
