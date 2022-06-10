@@ -365,9 +365,11 @@ int iio_context_init(struct iio_context *ctx)
 	int ret;
 
 	for (i = 0; i < ctx->nb_devices; i++) {
-		ret = iio_device_alloc_mask(ctx->devices[i]);
-		if (ret)
-			return ret;
+		if (ctx->devices[i]->nb_channels) {
+			ret = iio_device_alloc_mask(ctx->devices[i]);
+			if (ret)
+				return ret;
+		}
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++)

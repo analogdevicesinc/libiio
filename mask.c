@@ -16,6 +16,9 @@ struct iio_channels_mask * iio_create_channels_mask(unsigned int nb_channels)
 	struct iio_channels_mask *mask;
 	size_t nb_words = (nb_channels + 31) / 32;
 
+	if (!nb_words)
+		return NULL;
+
 	mask = zalloc(sizeof(*mask) + nb_words * sizeof(uint32_t));
 	if (mask)
 		mask->words = nb_words;
