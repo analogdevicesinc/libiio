@@ -149,8 +149,14 @@ endif()
 
 option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 if (WITH_USB_BACKEND)
-	#Handle FreeBSD libusb and Linux libusb-1.0 libraries
-	find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+	find_package(PkgConfig)
+	if (PkgConfig_FOUND)
+		pkg_check_modules(LIBUSB libusb-1.0)
+		if (NOT LIBUSB_FOUND)
+			#Handle FreeBSD libusb and Linux libusb-1.0 libraries
+			find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+		endif()
+	endif()
 	find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 	if (NOT LIBUSB_LIBRARIES OR NOT LIBUSB_INCLUDE_DIR)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
