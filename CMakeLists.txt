@@ -43,7 +43,8 @@ if (NOT BUILD_SHARED_LIBS)
 	add_definitions(-DLIBIIO_STATIC=1)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+option(OSX_FRAMEWORK "Create a OSX_FRAMEWORK" ON)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND OSX_FRAMEWORK)
 	option(OSX_PACKAGE "Create a OSX package" ON)
 
 	set(OSX_INSTALL_FRAMEWORKSDIR "/Library/Frameworks" CACHE STRING "Installation directory for frameworks")
@@ -474,7 +475,7 @@ add_library(iio ${LIBIIO_CFILES} ${LIBIIO_HEADERS} ${LIBIIO_EXTRA_HEADERS} ${LIB
 set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}
 	SOVERSION ${LIBIIO_VERSION_MAJOR}
-	FRAMEWORK TRUE
+	FRAMEWORK ${OSX_FRAMEWORK}
 	PUBLIC_HEADER ${LIBIIO_HEADERS}
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
@@ -554,7 +555,7 @@ option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)
 
 # Create an installer if compiling for OSX
-if(OSX_PACKAGE)
+if(OSX_PACKAGE AND OSX_FRAMEWORK)
 	set(LIBIIO_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}.g${LIBIIO_VERSION_GIT}.pkg)
 	set(LIBIIO_TEMP_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${VERSION}-temp.pkg)
 	set(LIBIIO_DISTRIBUTION_XML ${CMAKE_CURRENT_BINARY_DIR}/Distribution.xml)
