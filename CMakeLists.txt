@@ -155,6 +155,8 @@ if (WITH_USB_BACKEND)
 		if (NOT LIBUSB_FOUND)
 			#Handle FreeBSD libusb and Linux libusb-1.0 libraries
 			find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+		else()
+			set(LIBUSB_LIBRARIES ${LIBUSB_LINK_LIBRARIES})
 		endif()
 	endif()
 	find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
