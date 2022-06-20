@@ -264,9 +264,9 @@ stages:
     steps:
     - script: |
         set -e
-        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-arm-static
-        sudo apt-get install -y g++-arm-linux-gnueabihf libstdc++-4.8-dev-armhf-cross
-        sudo apt-get install -y g++-aarch64-linux-gnu libstdc++-4.8-dev-arm64-cross
+        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
+        sudo apt-get install -y g++-arm-linux-gnueabihf
+        sudo apt-get install -y g++-aarch64-linux-gnu
         sudo apt-get install -y qemu-system-ppc64
         sudo apt-get install qemu
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
