@@ -190,7 +190,7 @@ stages:
       fetchDepth: 1
       clean: true
     - script: |
-          brew install cmake doxygen libusb libxml2 ncurses cdk libserialport
+          brew install doxygen libusb libxml2 ncurses cdk libserialport
           pip3 install sphinx sphinx-rtd-theme
       displayName: 'Dependencies'
     - script: |
