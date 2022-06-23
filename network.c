@@ -84,6 +84,7 @@ static const struct iiod_client_ops network_iiod_client_ops = {
 static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 			    void *data, size_t len, int flags)
 {
+	unsigned int timeout_ms = io_ctx->timeout_ms;
 	bool cancellable = true;
 	ssize_t ret;
 	int err;
@@ -94,7 +95,7 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 
 	while (1) {
 		if (cancellable) {
-			ret = wait_cancellable(io_ctx, true);
+			ret = wait_cancellable(io_ctx, true, timeout_ms);
 			if (ret < 0)
 				return ret;
 		}
@@ -121,11 +122,12 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 static ssize_t network_send(struct iiod_client_pdata *io_ctx,
 		const void *data, size_t len, int flags)
 {
+	unsigned int timeout_ms = io_ctx->timeout_ms;
 	ssize_t ret;
 	int err;
 
 	while (1) {
-		ret = wait_cancellable(io_ctx, false);
+		ret = wait_cancellable(io_ctx, false, timeout_ms);
 		if (ret < 0)
 			return ret;
 
