@@ -101,8 +101,10 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	}
 }
 
-int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
+int wait_cancellable(struct iiod_client_pdata *io_ctx,
+		     bool read, unsigned int timeout_ms)
 {
+	int timeout = timeout_ms > 0 ? (int) timeout_ms : -1;
 	struct pollfd pfd[2];
 	int ret;
 
@@ -117,21 +119,14 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
 	pfd[1].events = POLLIN;
 
 	do {
-		int timeout_ms;
-
-		if (io_ctx->timeout_ms > 0)
-			timeout_ms = (int) io_ctx->timeout_ms;
-		else
-			timeout_ms = -1;
-
 		do {
-			ret = poll(pfd, 2, timeout_ms);
+			ret = poll(pfd, 2, timeout);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1)
 			return -errno;
 		if (!ret)
-			return -EPIPE;
+			return -ETIMEDOUT;
 
 		if (pfd[1].revents & POLLIN)
 			return -EBADF;

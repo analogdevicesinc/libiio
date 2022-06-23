@@ -54,10 +54,11 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	WSASetEvent(io_ctx->events[1]);
 }
 
-int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
+int wait_cancellable(struct iiod_client_pdata *io_ctx,
+		     bool read, unsigned int timeout_ms)
 {
 	long wsa_events = FD_CLOSE;
-	DWORD ret;
+	DWORD ret, timeout = timeout_ms > 0 ? (DWORD) timeout_ms : WSA_INFINITE;
 
 	if (read)
 		wsa_events |= FD_READ;
@@ -69,7 +70,10 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read)
 	WSAEventSelect(io_ctx->fd, io_ctx->events[0], wsa_events);
 
 	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
-		WSA_INFINITE, FALSE);
+				       timeout, FALSE);
+
+	if (ret == WSA_WAIT_TIMEOUT)
+		return -ETIMEDOUT;
 
 	if (ret == WSA_WAIT_EVENT_0 + 1)
 		return -EBADF;
