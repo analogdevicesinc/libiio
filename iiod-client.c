@@ -8,6 +8,7 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
+#include "iiod-responder.h"
 
 #include <iio/iiod-client.h>
 #include <iio/iio-debug.h>
@@ -49,25 +50,38 @@ void iiod_client_mutex_unlock(struct iiod_client *client)
 
 static ssize_t iiod_client_read_integer(struct iiod_client *client, int *val)
 {
-	unsigned int i, nb, first = 0;
+	bool accept_eol = false, has_read_line = !!client->ops->read_line;
+	unsigned int i, nb, first = 0, timeout_ms = client->params->timeout_ms;
+	unsigned int remaining = 0;
+	int64_t start_time = 0, diff_ms;
 	char buf[1024], *end;
-	bool accept_eol = false;
 	ssize_t ret;
 	int value;
 
-	if (client->ops->read_line) {
-		ret = client->ops->read_line(client->desc, buf, sizeof(buf));
+	if (has_read_line) {
+		ret = client->ops->read_line(client->desc, buf,
+					     sizeof(buf), timeout_ms);
 		if (ret < 0)
 			return ret;
 
 		nb = (unsigned int) ret;
 	} else {
+		start_time = iiod_responder_read_counter_us();
 		nb = sizeof(buf);
 	}
 
 	for (i = 0; i < nb; i++) {
-		if (!client->ops->read_line) {
-			ret = client->ops->read(client->desc, &buf[i], 1);
+		if (!has_read_line) {
+			diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
+
+			if (timeout_ms) {
+				if (diff_ms >= timeout_ms)
+					return -ETIMEDOUT;
+
+				remaining = (unsigned int)((int64_t)timeout_ms - diff_ms);
+			}
+
+			ret = client->ops->read(client->desc, &buf[i], 1, remaining);
 			if (ret < 0)
 				return ret;
 		}
@@ -100,10 +114,23 @@ static ssize_t iiod_client_write_all(struct iiod_client *client,
 	const struct iiod_client_ops *ops = client->ops;
 	struct iiod_client_pdata *desc = client->desc;
 	uintptr_t ptr = (uintptr_t) src;
+	unsigned int remaining = 0, timeout_ms = client->params->timeout_ms;
+	uint64_t start_time, diff_ms;
+	ssize_t ret;
+
+	start_time = iiod_responder_read_counter_us();
 
 	while (len) {
-		ssize_t ret = ops->write(desc, (const void *) ptr, len);
+		diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
 
+		if (timeout_ms) {
+			if (diff_ms >= timeout_ms)
+				return -ETIMEDOUT;
+
+			remaining = (unsigned int)((int64_t)timeout_ms - diff_ms);
+		}
+
+		ret = ops->write(desc, (const void *) ptr, len, remaining);
 		if (ret < 0) {
 			if (ret == -EINTR)
 				continue;
@@ -139,10 +166,23 @@ static ssize_t iiod_client_read_all(struct iiod_client *client,
 {
 	const struct iiod_client_ops *ops = client->ops;
 	uintptr_t ptr = (uintptr_t) dst;
+	unsigned int remaining = 0, timeout_ms = client->params->timeout_ms;
+	uint64_t start_time, diff_ms;
+	ssize_t ret;
+
+	start_time = iiod_responder_read_counter_us();
 
 	while (len) {
-		ssize_t ret = ops->read(client->desc, (void *) ptr, len);
+		diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
 
+		if (timeout_ms) {
+			if (diff_ms >= timeout_ms)
+				return -ETIMEDOUT;
+
+			remaining = (unsigned int)((int64_t)timeout_ms - diff_ms);
+		}
+
+		ret = ops->read(client->desc, (void *) ptr, len, remaining);
 		if (ret < 0) {
 			if (ret == -EINTR)
 				continue;

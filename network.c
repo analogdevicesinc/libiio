@@ -68,9 +68,11 @@ network_create_context(const struct iio_context_params *params,
 		       const char *host);
 
 static ssize_t
-network_write_data(struct iiod_client_pdata *io_ctx, const char *src, size_t len);
+network_write_data(struct iiod_client_pdata *io_ctx, const char *src, size_t len,
+		   unsigned int timeout_ms);
 static ssize_t
-network_read_data(struct iiod_client_pdata *io_ctx, char *dst, size_t len);
+network_read_data(struct iiod_client_pdata *io_ctx, char *dst, size_t len,
+		  unsigned int timeout_ms);
 
 static const struct iiod_client_ops network_iiod_client_ops = {
 	.write = network_write_data,
@@ -589,13 +591,14 @@ const struct iio_backend iio_ip_backend = {
 };
 
 static ssize_t network_write_data(struct iiod_client_pdata *io_ctx,
-				  const char *src, size_t len)
+				  const char *src, size_t len,
+				  unsigned int timeout_ms)
 {
 	return network_send(io_ctx, src, len, 0);
 }
 
 static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
-				 char *dst, size_t len)
+				 char *dst, size_t len, unsigned int timeout_ms)
 {
 	return network_recv(io_ctx, dst, len, 0);
 }

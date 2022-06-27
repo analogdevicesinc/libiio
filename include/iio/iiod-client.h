@@ -19,11 +19,11 @@ struct iiod_client_pdata;
 
 struct iiod_client_ops {
 	ssize_t (*write)(struct iiod_client_pdata *desc,
-			 const char *src, size_t len);
+			 const char *src, size_t len, unsigned int timeout_ms);
 	ssize_t (*read)(struct iiod_client_pdata *desc,
-			char *dst, size_t len);
+			char *dst, size_t len, unsigned int timeout_ms);
 	ssize_t (*read_line)(struct iiod_client_pdata *desc,
-			     char *dst, size_t len);
+			     char *dst, size_t len, unsigned int timeout_ms);
 };
 
 __api void iiod_client_mutex_lock(struct iiod_client *client);
