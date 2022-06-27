@@ -168,8 +168,14 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 	client->ops = ops;
 	client->desc = desc;
 
+	err = iiod_client_set_timeout(client, params->timeout_ms);
+	if (err)
+		goto err_free_lock;
+
 	return client;
 
+err_free_lock:
+	iio_mutex_destroy(client->lock);
 err_free_client:
 	free(client);
 	return iio_ptr(err);
@@ -275,12 +281,22 @@ int iiod_client_set_kernel_buffers_count(struct iiod_client *client,
 	return ret;
 }
 
+static unsigned int calculate_remote_timeout(unsigned int timeout_ms)
+{
+	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
+	 * by the remote. Is there something better to do here? */
+	return timeout_ms / 2;
+}
+
 int iiod_client_set_timeout(struct iiod_client *client, unsigned int timeout)
 {
+	unsigned int remote_timeout;
 	int ret;
 	char buf[1024];
 
-	iio_snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", timeout);
+	remote_timeout = calculate_remote_timeout(timeout);
+
+	iio_snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", remote_timeout);
 
 	iio_mutex_lock(client->lock);
 	ret = iiod_client_exec_command(client, buf);
