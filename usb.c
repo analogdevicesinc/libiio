@@ -108,10 +108,10 @@ usb_create_context_from_args(const struct iio_context_params *params,
 			     const char *args);
 static int usb_context_scan(const struct iio_context_params *params,
 			    struct iio_scan *scan, const char *args);
-static ssize_t write_data_sync(struct iiod_client_pdata *ep,
-			       const char *data, size_t len);
-static ssize_t read_data_sync(struct iiod_client_pdata *ep,
-			      char *buf, size_t len);
+static ssize_t write_data_sync(struct iiod_client_pdata *ep, const char *data,
+			       size_t len, unsigned int timeout_ms);
+static ssize_t read_data_sync(struct iiod_client_pdata *ep, char *buf,
+			      size_t len, unsigned int timeout_ms);
 
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
@@ -704,7 +704,8 @@ unlock:
 }
 
 static ssize_t write_data_sync(struct iiod_client_pdata *ep,
-			       const char *data, size_t len)
+			       const char *data, size_t len,
+			       unsigned int timeout_ms)
 {
 	int transferred, ret;
 
@@ -717,7 +718,7 @@ static ssize_t write_data_sync(struct iiod_client_pdata *ep,
 }
 
 static ssize_t read_data_sync(struct iiod_client_pdata *ep,
-			      char *buf, size_t len)
+			      char *buf, size_t len, unsigned int timeout_ms)
 {
 	int transferred, ret;
 
