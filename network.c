@@ -205,7 +205,6 @@ int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 		return ret;
 	}
 
-	set_socket_timeout(fd, timeout);
 	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
 				(const char *) &yes, sizeof(yes)) < 0) {
 		ret = -errno;
@@ -330,8 +329,6 @@ network_setup_iiod_client(const struct iio_device *dev,
 		dev_perror(dev, ret, "Unable to set blocking mode");
 		goto err_free_iiod_client;
 	}
-
-	set_socket_timeout(io_ctx->fd, pdata->io_ctx.timeout_ms);
 
 	io_ctx->timeout_ms = pdata->io_ctx.timeout_ms;
 
@@ -529,23 +526,20 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	int ret, fd = pdata->io_ctx.fd;
+	unsigned int remote_timeout = calculate_remote_timeout(timeout);
+	int ret;
 
-	ret = set_socket_timeout(fd, timeout);
-	if (!ret) {
-		unsigned int remote_timeout = calculate_remote_timeout(timeout);
-
-		ret = iiod_client_set_timeout(pdata->iiod_client,
-					      remote_timeout);
-		if (!ret)
-			pdata->io_ctx.timeout_ms = timeout;
-	}
+	ret = iiod_client_set_timeout(pdata->iiod_client, remote_timeout);
 	if (ret < 0) {
 		char buf[1024];
 		iio_strerror(-ret, buf, sizeof(buf));
 		ctx_warn(ctx, "Unable to set R/W timeout: %s\n", buf);
+		return ret;
 	}
-	return ret;
+
+	pdata->io_ctx.timeout_ms = timeout;
+
+	return 0;
 }
 
 static int network_set_kernel_buffers_count(const struct iio_device *dev,
