@@ -177,20 +177,6 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	return fd;
 }
 
-int set_socket_timeout(int fd, unsigned int timeout)
-{
-	struct timeval tv;
-
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				&tv, sizeof(tv)) < 0)
-		return -errno;
-	else
-		return 0;
-}
-
 int do_select(int fd, unsigned int timeout)
 {
 	struct pollfd pfd;

@@ -114,17 +114,6 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	return (int) s;
 }
 
-int set_socket_timeout(int fd, unsigned int timeout)
-{
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0 ||
-			setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-				(const char *) &timeout, sizeof(timeout)) < 0)
-		return -WSAGetLastError();
-	else
-		return 0;
-}
-
 int do_select(int fd, unsigned int timeout)
 {
 	struct timeval tv;
