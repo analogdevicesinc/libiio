@@ -54,8 +54,6 @@ struct iio_context_pdata {
 	struct iio_usb_ep_couple *io_endpoints;
 	uint16_t nb_ep_couples;
 
-	unsigned int timeout_ms;
-
 	struct iiod_client_pdata io_ctx;
 };
 
@@ -126,13 +124,6 @@ static void usb_io_context_exit(struct iiod_client_pdata *io_ctx)
 		iio_mutex_destroy(io_ctx->lock);
 		io_ctx->lock = NULL;
 	}
-}
-
-static unsigned int usb_calculate_remote_timeout(unsigned int timeout)
-{
-	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
-	 * by the remote. Is there something better to do here? */
-	return timeout / 2;
 }
 
 #define USB_PIPE_CTRL_TIMEOUT 1000 /* These should not take long */
@@ -292,12 +283,6 @@ static int usb_open(const struct iio_device *dev,
 	if (ret)
 		goto err_unlock_client;
 
-	timeout = usb_calculate_remote_timeout(ctx_pdata->timeout_ms);
-
-	ret = iiod_client_set_timeout(ctx_pdata->io_ctx.iiod_client, timeout);
-	if (ret)
-		goto err_usb_close;
-
 	iiod_client_mutex_unlock(client);
 
 	pdata->io_ctx.iiod_client = client;
@@ -306,8 +291,6 @@ static int usb_open(const struct iio_device *dev,
 
 	return 0;
 
-err_usb_close:
-	iiod_client_close_unlocked(pdata->client_io);
 err_unlock_client:
 	iiod_client_mutex_unlock(client);
 	iiod_client_destroy(client);
@@ -428,16 +411,8 @@ static int usb_set_kernel_buffers_count(const struct iio_device *dev,
 static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	unsigned int remote_timeout = usb_calculate_remote_timeout(timeout);
-	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	int ret;
-
-	ret = iiod_client_set_timeout(client, remote_timeout);
-	if (!ret)
-		pdata->timeout_ms = timeout;
-
-	return ret;
+	return iiod_client_set_timeout(pdata->io_ctx.iiod_client, timeout);
 }
 
 static int usb_get_trigger(const struct iio_device *dev,
@@ -599,8 +574,9 @@ static void LIBUSB_CALL sync_transfer_cb(struct libusb_transfer *transfer)
 }
 
 static int usb_sync_transfer(struct iio_context_pdata *pdata,
-	struct iiod_client_pdata *io_ctx, unsigned int ep_type,
-	char *data, size_t len, int *transferred)
+			     struct iiod_client_pdata *io_ctx,
+			     unsigned int ep_type, char *data, size_t len,
+			     int *transferred, unsigned int timeout_ms)
 {
 	unsigned char ep;
 	struct libusb_transfer *transfer = NULL;
@@ -645,7 +621,7 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata,
 
 	libusb_fill_bulk_transfer(transfer, pdata->hdl, ep,
 			(unsigned char *) data, (int) len, sync_transfer_cb,
-			&completed, pdata->timeout_ms);
+			&completed, timeout_ms);
 	transfer->type = LIBUSB_TRANSFER_TYPE_BULK;
 
 	ret = libusb_submit_transfer(transfer);
@@ -710,7 +686,7 @@ static ssize_t write_data_sync(struct iiod_client_pdata *ep,
 	int transferred, ret;
 
 	ret = usb_sync_transfer(ep->ctx_pdata, ep, LIBUSB_ENDPOINT_OUT,
-				(char *) data, len, &transferred);
+				(char *) data, len, &transferred, timeout_ms);
 	if (ret)
 		return ret;
 	else
@@ -723,7 +699,7 @@ static ssize_t read_data_sync(struct iiod_client_pdata *ep,
 	int transferred, ret;
 
 	ret = usb_sync_transfer(ep->ctx_pdata, ep, LIBUSB_ENDPOINT_IN,
-				buf, len, &transferred);
+				buf, len, &transferred, timeout_ms);
 	if (ret)
 		return ret;
 	else
@@ -1005,7 +981,6 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 	pdata->ctx = usb_ctx;
 	pdata->hdl = hdl;
 	pdata->intrfc = intrfc;
-	pdata->timeout_ms = params->timeout_ms;
 
 	ret = usb_io_context_init(&pdata->io_ctx);
 	if (ret)
