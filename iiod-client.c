@@ -74,21 +74,6 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client,
 	return 0;
 }
 
-static int iiod_client_exec_command(struct iiod_client *client,
-				    struct iiod_client_pdata *desc,
-				    const char *cmd)
-{
-	int resp;
-	ssize_t ret;
-
-	ret = client->ops->write(client->pdata, desc, cmd, strlen(cmd));
-	if (ret < 0)
-		return (int) ret;
-
-	ret = iiod_client_read_integer(client, desc, &resp);
-	return ret < 0 ? (int) ret : resp;
-}
-
 static ssize_t iiod_client_write_all(struct iiod_client *client,
 				     struct iiod_client_pdata *desc,
 				     const void *src, size_t len)
@@ -115,6 +100,21 @@ static ssize_t iiod_client_write_all(struct iiod_client *client,
 	}
 
 	return (ssize_t) (ptr - (uintptr_t) src);
+}
+
+static int iiod_client_exec_command(struct iiod_client *client,
+				    struct iiod_client_pdata *desc,
+				    const char *cmd)
+{
+	int resp;
+	ssize_t ret;
+
+	ret = iiod_client_write_all(client, desc, cmd, strlen(cmd));
+	if (ret < 0)
+		return (int) ret;
+
+	ret = iiod_client_read_integer(client, desc, &resp);
+	return ret < 0 ? (int) ret : resp;
 }
 
 static ssize_t iiod_client_read_all(struct iiod_client *client,
@@ -190,7 +190,8 @@ int iiod_client_get_version(struct iiod_client *client,
 
 	iio_mutex_lock(client->lock);
 
-	ret = (int) ops->write(pdata, desc, "VERSION\r\n", sizeof("VERSION\r\n") - 1);
+	ret = (int) iiod_client_write_all(client, desc,
+					  "VERSION\r\n", sizeof("VERSION\r\n") - 1);
 	if (ret < 0) {
 		iio_mutex_unlock(client->lock);
 		return ret;
@@ -455,8 +456,6 @@ ssize_t iiod_client_write_attr(struct iiod_client *client,
 			       const char *attr, const char *src,
 			       size_t len, enum iio_attr_type type)
 {
-	struct iio_context_pdata *pdata = client->pdata;
-	const struct iiod_client_ops *ops = client->ops;
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
 	ssize_t ret;
@@ -509,7 +508,7 @@ ssize_t iiod_client_write_attr(struct iiod_client *client,
 	}
 
 	iio_mutex_lock(client->lock);
-	ret = ops->write(pdata, desc, buf, strlen(buf));
+	ret = iiod_client_write_all(client, desc, buf, strlen(buf));
 	if (ret < 0)
 		goto out_unlock;
 
