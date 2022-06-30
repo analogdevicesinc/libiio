@@ -49,33 +49,45 @@ void iiod_client_mutex_unlock(struct iiod_client *client)
 
 static ssize_t iiod_client_read_integer(struct iiod_client *client, int *val)
 {
-	unsigned int i;
-	char buf[1024], *ptr = NULL, *end;
+	unsigned int i, nb, first = 0;
+	char buf[1024], *end;
+	bool accept_eol = false;
 	ssize_t ret;
 	int value;
 
-	do {
+	if (client->ops->read_line) {
 		ret = client->ops->read_line(client->desc, buf, sizeof(buf));
-		if (ret < 0) {
-			prm_err(client->params, "READ LINE: %zd\n", ret);
+		if (ret < 0)
 			return ret;
+
+		nb = (unsigned int) ret;
+	} else {
+		nb = sizeof(buf);
+	}
+
+	for (i = 0; i < nb; i++) {
+		if (!client->ops->read_line) {
+			ret = client->ops->read(client->desc, &buf[i], 1);
+			if (ret < 0)
+				return ret;
 		}
 
-		for (i = 0; i < (unsigned int) ret; i++) {
-			if (buf[i] != '\n') {
-				if (!ptr)
-					ptr = &buf[i];
-			} else if (!!ptr) {
-				break;
-			}
-		}
-	} while (!ptr);
+		if (buf[i] != '\n')
+			accept_eol = true;
+		else if (!accept_eol)
+			first = i + 1;
+		else
+			break;
+	};
+
+	if (i == nb)
+		return -EINVAL;
 
 	buf[i] = '\0';
 
 	errno = 0;
-	value = (int) strtol(ptr, &end, 10);
-	if (ptr == end || errno == ERANGE)
+	value = (int) strtol(&buf[first], &end, 10);
+	if (buf == end || errno == ERANGE)
 		return -EINVAL;
 
 	*val = value;
