@@ -23,7 +23,6 @@ struct iiod_client_pdata {
 	void * events[2];
 	int cancel_fd[2];
 
-	unsigned int timeout_ms;
 	const struct iio_context_params *params;
 	struct iio_context_pdata *ctx_pdata;
 };
