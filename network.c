@@ -51,6 +51,8 @@
 #define close(s) closesocket(s)
 #endif
 
+#define NETWORK_TIMEOUT_MS 5000
+
 struct iio_context_pdata {
 	struct iiod_client_pdata io_ctx;
 	struct addrinfo *addrinfo;
@@ -79,10 +81,9 @@ static const struct iiod_client_ops network_iiod_client_ops = {
 	.read = network_read_data,
 };
 
-static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
-			    void *data, size_t len, int flags)
+static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
+			    size_t len, int flags, unsigned int timeout_ms)
 {
-	unsigned int timeout_ms = io_ctx->timeout_ms;
 	bool cancellable = true;
 	ssize_t ret;
 	int err;
@@ -117,10 +118,9 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
 	return ret;
 }
 
-static ssize_t network_send(struct iiod_client_pdata *io_ctx,
-		const void *data, size_t len, int flags)
+static ssize_t network_send(struct iiod_client_pdata *io_ctx, const void *data,
+			    size_t len, int flags, unsigned int timeout_ms)
 {
-	unsigned int timeout_ms = io_ctx->timeout_ms;
 	ssize_t ret;
 	int err;
 
@@ -292,16 +292,13 @@ network_setup_iiod_client(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client;
-	unsigned int timeout_ms;
 	int ret;
 
 	/*
 	 * Use the timeout that was set when creating the context.
 	 * See commit 9eff490 for more info.
 	 */
-	timeout_ms = pdata->io_ctx.params->timeout_ms;
-
-	ret = create_socket(pdata->addrinfo, timeout_ms);
+	ret = create_socket(pdata->addrinfo, NETWORK_TIMEOUT_MS);
 	if (ret < 0) {
 		dev_perror(dev, ret, "Unable to create socket");
 		return iio_ptr(ret);
@@ -309,7 +306,6 @@ network_setup_iiod_client(const struct iio_device *dev,
 
 	io_ctx->fd = ret;
 	io_ctx->cancelled = false;
-	io_ctx->timeout_ms = timeout_ms;
 
 	ret = setup_cancel(io_ctx);
 	if (ret < 0) {
@@ -329,8 +325,6 @@ network_setup_iiod_client(const struct iio_device *dev,
 		dev_perror(dev, ret, "Unable to set blocking mode");
 		goto err_free_iiod_client;
 	}
-
-	io_ctx->timeout_ms = pdata->io_ctx.timeout_ms;
 
 	return client;
 
@@ -526,18 +520,15 @@ static unsigned int calculate_remote_timeout(unsigned int timeout)
 static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	unsigned int remote_timeout = calculate_remote_timeout(timeout);
 	int ret;
 
-	ret = iiod_client_set_timeout(pdata->iiod_client, remote_timeout);
+	ret = iiod_client_set_timeout(pdata->iiod_client, timeout);
 	if (ret < 0) {
 		char buf[1024];
 		iio_strerror(-ret, buf, sizeof(buf));
 		ctx_warn(ctx, "Unable to set R/W timeout: %s\n", buf);
 		return ret;
 	}
-
-	pdata->io_ctx.timeout_ms = timeout;
 
 	return 0;
 }
@@ -587,20 +578,20 @@ const struct iio_backend iio_ip_backend = {
 	.name = "network",
 	.uri_prefix = "ip:",
 	.ops = &network_ops,
-	.default_timeout_ms = 5000,
+	.default_timeout_ms = NETWORK_TIMEOUT_MS,
 };
 
 static ssize_t network_write_data(struct iiod_client_pdata *io_ctx,
 				  const char *src, size_t len,
 				  unsigned int timeout_ms)
 {
-	return network_send(io_ctx, src, len, 0);
+	return network_send(io_ctx, src, len, 0, timeout_ms);
 }
 
 static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
 				 char *dst, size_t len, unsigned int timeout_ms)
 {
-	return network_recv(io_ctx, dst, len, 0);
+	return network_recv(io_ctx, dst, len, 0, timeout_ms);
 }
 
 static struct iio_context * network_create_context(const struct iio_context_params *params,
@@ -767,7 +758,6 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	pdata->addrinfo = res;
 	pdata->io_ctx.fd = fd;
 	pdata->io_ctx.params = params;
-	pdata->io_ctx.timeout_ms = params->timeout_ms;
 	pdata->io_ctx.ctx_pdata = pdata;
 
 	ret = setup_cancel(&pdata->io_ctx);
@@ -819,13 +809,10 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		iio_device_set_pdata(dev, ppdata);
 
 		ppdata->io_ctx.fd = -1;
-		ppdata->io_ctx.timeout_ms = params->timeout_ms;
 		ppdata->io_ctx.params = params;
 		ppdata->io_ctx.ctx_pdata = pdata;
 	}
 
-	iiod_client_set_timeout(pdata->iiod_client,
-			calculate_remote_timeout(params->timeout_ms));
 	return ctx;
 
 err_network_shutdown:
