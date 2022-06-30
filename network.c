@@ -55,7 +55,6 @@ struct iio_context_pdata {
 	struct iiod_client_pdata io_ctx;
 	struct addrinfo *addrinfo;
 	struct iiod_client *iiod_client;
-	bool msg_trunc_supported;
 };
 
 struct iio_device_pdata {
@@ -72,13 +71,10 @@ static ssize_t
 network_write_data(struct iiod_client_pdata *io_ctx, const char *src, size_t len);
 static ssize_t
 network_read_data(struct iiod_client_pdata *io_ctx, char *dst, size_t len);
-static ssize_t
-network_read_line(struct iiod_client_pdata *io_ctx, char *dst, size_t len);
 
 static const struct iiod_client_ops network_iiod_client_ops = {
 	.write = network_write_data,
 	.read = network_read_data,
-	.read_line = network_read_line,
 };
 
 static ssize_t network_recv(struct iiod_client_pdata *io_ctx,
@@ -604,95 +600,6 @@ static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
 	return network_recv(io_ctx, dst, len, 0);
 }
 
-static ssize_t network_read_line(struct iiod_client_pdata *io_ctx,
-				 char *dst, size_t len)
-{
-	bool found = false;
-	size_t i;
-#ifdef __linux__
-	ssize_t ret;
-	size_t bytes_read = 0;
-
-	do {
-		size_t to_trunc;
-
-		ret = network_recv(io_ctx, dst, len, MSG_PEEK);
-		if (ret < 0)
-			return ret;
-
-		/* Lookup for the trailing \n */
-		for (i = 0; i < (size_t) ret && dst[i] != '\n'; i++);
-		found = i < (size_t) ret;
-
-		len -= ret;
-		dst += ret;
-
-		if (found)
-			to_trunc = i + 1;
-		else
-			to_trunc = (size_t) ret;
-
-		/* Advance the read offset to the byte following the \n if
-		 * found, or after the last character read otherwise */
-		if (io_ctx->ctx_pdata->msg_trunc_supported)
-			ret = network_recv(io_ctx, NULL, to_trunc, MSG_TRUNC);
-		else
-			ret = network_recv(io_ctx, dst - ret, to_trunc, 0);
-		if (ret < 0) {
-			prm_perror(io_ctx->params, ret, "Unable to read line");
-			return ret;
-		}
-
-		bytes_read += to_trunc;
-	} while (!found && len);
-
-	if (!found) {
-		prm_perror(io_ctx->params, -EIO, "Unable to read line");
-		return -EIO;
-	} else
-		return bytes_read;
-#else
-	for (i = 0; i < len - 1; i++) {
-		ssize_t ret = network_read_data(io_ctx, dst + i, 1);
-
-		if (ret < 0)
-			return ret;
-
-		if (dst[i] != '\n')
-			found = true;
-		else if (found)
-			break;
-	}
-
-	if (!found || i == len - 1)
-		return -EIO;
-
-	return (ssize_t) i + 1;
-#endif
-}
-
-#ifdef __linux__
-/*
- * As of build 16299, Windows Subsystem for Linux presents a Linux API but
- * without support for MSG_TRUNC. Since WSL allows running native Linux
- * applications this is not something that can be detected at compile time. If
- * we want to support WSL we have to have a runtime workaround.
- */
-static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
-{
-	int ret;
-
-	ret = network_recv(io_ctx, NULL, 0, MSG_TRUNC | MSG_DONTWAIT);
-
-	return ret != -EFAULT && ret != -EINVAL;
-}
-#else
-static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
-{
-	return false;
-}
-#endif
-
 static struct iio_context * network_create_context(const struct iio_context_params *params,
 						   const char *host)
 {
@@ -871,12 +778,6 @@ static struct iio_context * network_create_context(const struct iio_context_para
 		goto err_cleanup_cancel;
 
 	pdata->iiod_client = iiod_client;
-
-	pdata->msg_trunc_supported = msg_trunc_supported(&pdata->io_ctx);
-	if (pdata->msg_trunc_supported)
-		prm_dbg(params, "MSG_TRUNC is supported\n");
-	else
-		prm_dbg(params, "MSG_TRUNC is NOT supported\n");
 
 	if (host && host[0])
 		iio_snprintf(uri, sizeof(uri), "ip:%s", host);
