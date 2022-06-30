@@ -244,8 +244,6 @@ static ssize_t serial_write_data(struct iiod_client_pdata *io_data,
 	enum sp_return sp_ret;
 	ssize_t ret;
 
-	timeout_ms = pdata->params.timeout_ms;
-
 	sp_ret = sp_blocking_write(pdata->port, data, len, timeout_ms);
 	ret = (ssize_t) libserialport_to_errno(sp_ret);
 
@@ -269,8 +267,6 @@ static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
 	enum sp_return sp_ret;
 	ssize_t ret;
-
-	timeout_ms = pdata->params.timeout_ms;
 
 	sp_ret = sp_blocking_read_next(pdata->port, buf, len, timeout_ms);
 	ret = (ssize_t) libserialport_to_errno(sp_ret);
@@ -303,15 +299,6 @@ static void serial_shutdown(struct iio_context *ctx)
 	}
 }
 
-static int serial_set_timeout(struct iio_context *ctx, unsigned int timeout)
-{
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-
-	pdata->params.timeout_ms = timeout;
-
-	return 0;
-}
-
 static int serial_get_trigger(const struct iio_device *dev,
 			      const struct iio_device **trigger)
 {
@@ -342,7 +329,6 @@ static const struct iio_backend_ops serial_ops = {
 	.write_channel_attr = serial_write_chn_attr,
 	.set_kernel_buffers_count = serial_set_kernel_buffers_count,
 	.shutdown = serial_shutdown,
-	.set_timeout = serial_set_timeout,
 	.get_trigger = serial_get_trigger,
 	.set_trigger = serial_set_trigger,
 };
