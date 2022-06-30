@@ -283,48 +283,6 @@ static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 	return ret;
 }
 
-static ssize_t serial_read_line(struct iiod_client_pdata *io_data,
-				char *buf, size_t len)
-{
-	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
-	unsigned int timeout_ms = pdata->params.timeout_ms;
-	enum sp_return sp_ret;
-	size_t i;
-	bool found = false;
-	int ret;
-
-	prm_dbg(&pdata->params, "Readline size 0x%lx\n", (unsigned long) len);
-
-	for (i = 0; i < len - 1; i++) {
-		sp_ret = sp_blocking_read_next(pdata->port, &buf[i], 1, timeout_ms);
-
-		ret = libserialport_to_errno(sp_ret);
-		if (ret == 0) {
-			prm_err(&pdata->params, "sp_blocking_read_next has timed out\n");
-			return -ETIMEDOUT;
-		}
-
-		if (ret < 0) {
-			prm_err(&pdata->params, "sp_blocking_read_next returned %i\n",
-				ret);
-			return (ssize_t) ret;
-		}
-
-		prm_dbg(&pdata->params, "Character: %c\n", buf[i]);
-
-		if (buf[i] != '\n')
-			found = true;
-		else if (found)
-			break;
-	}
-
-	/* No \n found? Just garbage data */
-	if (!found || i == len - 1)
-		return -EIO;
-
-	return (ssize_t) i + 1;
-}
-
 static void serial_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
@@ -398,7 +356,6 @@ const struct iio_backend iio_serial_backend = {
 static const struct iiod_client_ops serial_iiod_client_ops = {
 	.write = serial_write_data,
 	.read = serial_read_data,
-	.read_line = serial_read_line,
 };
 
 static int apply_settings(struct sp_port *port, unsigned int baud_rate,
