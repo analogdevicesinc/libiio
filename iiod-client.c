@@ -82,19 +82,6 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client, int *val)
 	return 0;
 }
 
-static int iiod_client_exec_command(struct iiod_client *client, const char *cmd)
-{
-	int resp;
-	ssize_t ret;
-
-	ret = client->ops->write(client->desc, cmd, strlen(cmd));
-	if (ret < 0)
-		return (int) ret;
-
-	ret = iiod_client_read_integer(client, &resp);
-	return ret < 0 ? (int) ret : resp;
-}
-
 static ssize_t iiod_client_write_all(struct iiod_client *client,
 				     const void *src, size_t len)
 {
@@ -120,6 +107,19 @@ static ssize_t iiod_client_write_all(struct iiod_client *client,
 	}
 
 	return (ssize_t) (ptr - (uintptr_t) src);
+}
+
+static int iiod_client_exec_command(struct iiod_client *client, const char *cmd)
+{
+	int resp;
+	ssize_t ret;
+
+	ret = iiod_client_write_all(client, cmd, strlen(cmd));
+	if (ret < 0)
+		return (int) ret;
+
+	ret = iiod_client_read_integer(client, &resp);
+	return ret < 0 ? (int) ret : resp;
 }
 
 static ssize_t iiod_client_read_all(struct iiod_client *client,
@@ -404,7 +404,6 @@ ssize_t iiod_client_write_attr(struct iiod_client *client,
 			       size_t len, enum iio_attr_type type,
 			       unsigned int buf_id)
 {
-	const struct iiod_client_ops *ops = client->ops;
 	const char *id = iio_device_get_id(dev);
 	char buf[1024];
 	ssize_t ret;
@@ -460,7 +459,7 @@ ssize_t iiod_client_write_attr(struct iiod_client *client,
 	}
 
 	iio_mutex_lock(client->lock);
-	ret = ops->write(client->desc, buf, strlen(buf));
+	ret = iiod_client_write_all(client, buf, strlen(buf));
 	if (ret < 0)
 		goto out_unlock;
 

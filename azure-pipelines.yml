@@ -50,6 +50,7 @@ stages:
       clean: true
       persistCredentials: true
     - script: |
+        set -e
         mkdir build && cd build
         cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
@@ -191,10 +192,12 @@ stages:
       fetchDepth: 1
       clean: true
     - script: |
-          brew install cmake doxygen libusb libxml2 ncurses cdk libserialport
+          set -e
+          brew install doxygen libusb libxml2 ncurses cdk libserialport
           pip3 install sphinx sphinx-rtd-theme
       displayName: 'Dependencies'
     - script: |
+        set -e
         mkdir build && cd build
         cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON
         make
@@ -202,6 +205,7 @@ stages:
         cd ..
       displayName: 'Build'
     - script: |
+        set -e
         mkdir build_tar && cd build_tar
         cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
@@ -209,6 +213,7 @@ stages:
         cd ..
       displayName: 'Build tar'
     - script: |
+        set -e
         cd build
         cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
         make
@@ -259,14 +264,16 @@ stages:
           artifactName: 'Ubuntu-arm32v7'
     steps:
     - script: |
-        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-arm-static
-        sudo apt-get install -y g++-arm-linux-gnueabihf libstdc++-4.8-dev-armhf-cross
-        sudo apt-get install -y g++-aarch64-linux-gnu libstdc++-4.8-dev-arm64-cross
+        set -e
+        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
+        sudo apt-get install -y g++-arm-linux-gnueabihf
+        sudo apt-get install -y g++-aarch64-linux-gnu
         sudo apt-get install -y qemu-system-ppc64
         sudo apt-get install qemu
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       displayName: 'Setup'
     - script: |
+        set -e
         sudo docker run --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
       displayName: 'Build'
     - task: CopyFiles@2
@@ -300,6 +307,7 @@ stages:
     container: $[ variables['image'] ]
     steps:
     - script: |
+        set -e
         mkdir build && cd build
         cmake ..
         mkdir artifacts

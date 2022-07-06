@@ -45,6 +45,12 @@ if (LIBIIO_COMPAT)
 	endif()
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	option(OSX_FRAMEWORK "Create a OSX_FRAMEWORK" ON)
+else()
+	set(OSX_FRAMEWORK OFF)
+endif()
+
 set(IIO_PUBLIC_HEADERS include/iio/iio.h;include/iio/iio-debug.h;include/iio/iio-lock.h;include/iio/iiod-client.h)
 
 set_target_properties(iio PROPERTIES
@@ -53,7 +59,7 @@ set_target_properties(iio PROPERTIES
 	PUBLIC_HEADER "${IIO_PUBLIC_HEADERS}"
 )
 set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES
-	FRAMEWORK TRUE
+	FRAMEWORK ${OSX_FRAMEWORK}
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
@@ -185,8 +191,16 @@ endif()
 
 option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 if (WITH_USB_BACKEND)
-	#Handle FreeBSD libusb and Linux libusb-1.0 libraries
-	find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+	find_package(PkgConfig)
+	if (PkgConfig_FOUND)
+		pkg_check_modules(LIBUSB libusb-1.0)
+		if (NOT LIBUSB_FOUND)
+			#Handle FreeBSD libusb and Linux libusb-1.0 libraries
+			find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+		else()
+			set(LIBUSB_LIBRARIES ${LIBUSB_LINK_LIBRARIES})
+		endif()
+	endif()
 	find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 	if (NOT LIBUSB_LIBRARIES OR NOT LIBUSB_INCLUDE_DIR)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"

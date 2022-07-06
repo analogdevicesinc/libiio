@@ -2,11 +2,11 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014-2020 Analog Devices, Inc.
+ * Copyright (C) 2014-2022 Analog Devices, Inc.
  * Author: Adrian Suciu <adrian.suciu@analog.com>
  *
- * Based on https://github.com/mjansson/mdns/blob/ce2e4f789f06429008925ff8f18c22036e60201e/mdns.c
- * which is Licensed under Public Domain
+ * Based on https://github.com/mjansson/mdns/blob/main/mdns.c
+ * which should be sync'ed with the mdns.h file and is Licensed under Public Domain
  */
 
 #include "dns_sd.h"
@@ -20,6 +20,10 @@
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
+
+#define _STRINGIFY(x) #x
+#define STRINGIFY(x) _STRINGIFY(x)
+#define MDNS_PORT_STR STRINGIFY(MDNS_PORT)
 
 #ifdef HAVE_IPV6
 static const unsigned char localhost[] = {
@@ -46,6 +50,52 @@ static bool is_localhost4(const struct sockaddr_in *saddr)
 		saddr->sin_addr.S_un.S_un_b.s_b2 == 0 &&
 		saddr->sin_addr.S_un.S_un_b.s_b3 == 0 &&
 		saddr->sin_addr.S_un.S_un_b.s_b4 == 1;
+}
+
+static struct dns_sd_discovery_data *new_discovery_data(struct dns_sd_discovery_data *dd)
+{
+	struct dns_sd_discovery_data *d;
+
+	d = zalloc(sizeof(*d));
+	if (!d)
+		return NULL;
+
+	if (dd)
+		d->lock = dd->lock;
+
+	return d;
+}
+
+static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
+					  const struct sockaddr *addr, size_t addrlen)
+{
+	char host[NI_MAXHOST] = { 0 };
+	char service[NI_MAXSERV] = { 0 };
+	int ret, len = 0;
+	mdns_string_t str;
+
+	ret = getnameinfo((const struct sockaddr *)addr, (socklen_t)addrlen, host,
+			NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
+
+	if (ret == 0) {
+		if (addr->sa_family == AF_INET6 &&
+		    ((struct sockaddr_in6 *)addr)->sin6_port != 0 &&
+		    strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR)))
+			len = snprintf(buffer, capacity, "[%s]:%s", host, service);
+		else if (((struct sockaddr_in *)addr)->sin_port != 0 &&
+			 strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR)))
+			len = snprintf(buffer, capacity, "%s:%s", host, service);
+		else
+			len = snprintf(buffer, capacity, "%s", host);
+	}
+
+	if (len >= (int)capacity)
+		len = (int)capacity - 1;
+
+	str.str = buffer;
+	str.length = len;
+
+	return str;
 }
 
 static int open_client_sockets(const struct iio_context_params *params,
@@ -101,6 +151,7 @@ static int open_client_sockets(const struct iio_context_params *params,
 
 				if (!is_localhost4(saddr) &&
 				    num_sockets < max_sockets) {
+					saddr->sin_port = htons((unsigned short)MDNS_PORT);
 					sock = mdns_socket_open_ipv4(saddr);
 					if (sock >= 0)
 						sockets[num_sockets++] = sock;
@@ -115,6 +166,7 @@ static int open_client_sockets(const struct iio_context_params *params,
 				if (unicast->DadState == NldsPreferred &&
 				    !is_localhost6(saddr6) &&
 				    num_sockets < max_sockets) {
+					saddr6->sin6_port = htons((unsigned short)MDNS_PORT);
 					sock = mdns_socket_open_ipv6(saddr6);
 					if (sock >= 0)
 						sockets[num_sockets++] = sock;
@@ -132,6 +184,14 @@ static int open_client_sockets(const struct iio_context_params *params,
 	return num_sockets;
 }
 
+/* We should get:
+ *  - "service" record (SRV) specifying host (name) and port
+ *  - IPv4 "address" record (A) specifying IPv4 address of a given host
+ *  - IPv6 "address" record (AAAA) specifying IPv6 address of a given host
+ * It's this routine that gets called, and needs to stitch things together
+ * The DNS host doesn't necessary need to be the acutal host (but for
+ * mdns - it usually is.
+ */
 static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			  mdns_entry_type_t entry, uint16_t query_id,
 			  uint16_t rtype, uint16_t rclass, uint32_t ttl,
@@ -144,53 +204,161 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	struct dns_sd_discovery_data *dd = cb_data->d;
 	const struct iio_context_params *params = cb_data->params;
 	char addrbuffer[64];
-	char servicebuffer[64];
+	char entrybuffer[256];
 	char namebuffer[256];
 	mdns_record_srv_t srv;
+	bool found = false;
+	mdns_string_t entrystr, fromaddrstr, addrstr;
+	unsigned short port = 0;
 
 	if (!dd) {
 		prm_err(params, "DNS SD: Missing info structure. Stop browsing.\n");
 		goto quit;
 	}
 
-	if (rtype != MDNS_RECORDTYPE_SRV)
+	if (rtype != MDNS_RECORDTYPE_SRV && rtype != MDNS_RECORDTYPE_A &&
+	    rtype != MDNS_RECORDTYPE_AAAA)
 		goto quit;
 
-	getnameinfo(from, (socklen_t)addrlen, addrbuffer, NI_MAXHOST,
-		    servicebuffer, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
+	if (entry != MDNS_ENTRYTYPE_ANSWER)
+		goto quit;
 
-	srv = mdns_record_parse_srv(data, size, name_offset, name_length,
-				    namebuffer, sizeof(namebuffer));
-	prm_dbg(params, "%s : SRV %.*s priority %d weight %d port %d\n",
-		addrbuffer, MDNS_STRING_FORMAT(srv.name), srv.priority,
-		srv.weight, srv.port);
+	entrystr = mdns_string_extract(data, size, &name_offset,
+				       entrybuffer, sizeof(entrybuffer));
 
-	/* Go to the last element in the list */
-	while (dd->next)
-		dd = dd->next;
+	if (!strstr(entrystr.str, "_iio._tcp.local"))
+		goto quit;
 
-	if (srv.name.length > 1)
-	{
-		dd->hostname = malloc(srv.name.length);
-		if (!dd->hostname)
-			return -ENOMEM;
+	fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer),
+					   from, addrlen);
 
-		iio_strlcpy(dd->hostname, srv.name.str, srv.name.length);
+	iio_mutex_lock(dd->lock);
+	if (rtype == MDNS_RECORDTYPE_SRV) {
+		srv = mdns_record_parse_srv(data, size, record_offset, record_length,
+					    namebuffer, sizeof(namebuffer));
+		prm_dbg(params, "%.*s : %.*s SRV %.*s priority %d weight %d port %d\n",
+			MDNS_STRING_FORMAT(fromaddrstr), MDNS_STRING_FORMAT(entrystr),
+			MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
+
+		/* find a match based on name/port/ipv[46] & update it, otherwise add it */
+		while (dd->next) {
+			if (dd->hostname &&
+			    !strncmp(dd->hostname, srv.name.str, srv.name.length - 1) &&
+			    (!dd->port || dd->port == srv.port) &&
+			    dd->found == (from->sa_family != AF_INET)) {
+				dd->port = srv.port;
+				prm_dbg(params, "DNS SD: updated SRV %s (%s port: %hu)\n",
+					dd->hostname, dd->addr_str, dd->port);
+				found = true;
+			}
+			dd = dd->next;
+		}
+		if (!found) {
+			/* new hostname and port */
+			if (srv.name.length > 1) {
+				dd->hostname = iio_strndup(srv.name.str,
+							   srv.name.length - 1);
+				if (!dd->hostname)
+					goto mem_fail;
+			}
+
+			iio_strlcpy(dd->addr_str, fromaddrstr.str, fromaddrstr.length + 1);
+			dd->port = srv.port;
+			dd->found = (from->sa_family != AF_INET);
+			prm_dbg(params, "DNS SD: added SRV %s (%s port: %hu)\n",
+				dd->hostname, dd->addr_str, dd->port);
+
+			/* A list entry was filled, prepare new item on the list */
+			dd->next = new_discovery_data(dd);
+			if (!dd->next)
+				goto mem_fail;
+		}
+	} else if (rtype == MDNS_RECORDTYPE_A) {
+		struct sockaddr_in addr;
+
+		mdns_record_parse_a(data, size, record_offset, record_length, &addr);
+		addrstr = ip_address_to_string(namebuffer, sizeof(namebuffer),
+					       (struct sockaddr *) &addr, sizeof(addr));
+		prm_dbg(params, "%.*s : %.*s A %.*s\n", MDNS_STRING_FORMAT(fromaddrstr),
+			MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(addrstr));
+
+		/* find a match based on name/ipv4 or 6 & update it, otherwise add it */
+		while (dd->next) {
+			if (dd->hostname &&
+			    !strncmp(dd->hostname, entrystr.str, entrystr.length - 1) &&
+			    !dd->found) {
+				iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
+				prm_dbg(params, "DNS SD: updated A %s (%s port: %hu)\n",
+					dd->hostname, dd->addr_str, dd->port);
+				found = true;
+			}
+			dd = dd->next;
+		}
+		if (!found) {
+			dd->hostname = iio_strndup(entrystr.str, entrystr.length - 1);
+			if (!dd->hostname)
+				goto mem_fail;
+			iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
+			dd->found = 0;
+			prm_dbg(params, "DNS SD: Added A %s (%s port: %hu)\n",
+				dd->hostname, dd->addr_str, dd->port);
+			/* A list entry was filled, prepare new item on the list */
+			dd->next = new_discovery_data(dd);
+			if (!dd->next)
+				goto mem_fail;
+		}
 	}
+#ifdef HAVE_IPV6
+	else if (rtype == MDNS_RECORDTYPE_AAAA) {
+		struct sockaddr_in6 addr;
 
-	iio_strlcpy(dd->addr_str, addrbuffer, DNS_SD_ADDRESS_STR_MAX);
-	dd->port = srv.port;
+		mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr);
+		addrstr = ip_address_to_string(namebuffer, sizeof(namebuffer),
+					       (struct sockaddr *) &addr, sizeof(addr));
+		prm_dbg("%.*s : %.*s AAAA %.*s\n", MDNS_STRING_FORMAT(fromaddrstr),
+			MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(addrstr));
 
-	prm_dbg(params, "DNS SD: added %s (%s:%d)\n",
-		dd->hostname, dd->addr_str, dd->port);
-
-	/* A list entry was filled, prepare new item on the list */
-	dd->next = zalloc(sizeof(*dd->next));
-	if (!dd->next)
-		prm_err(params, "DNS SD mDNS Resolver : memory failure\n");
-
+		/* find a match based on name/port/ipv[46] & update it, otherwise add it */
+		while (dd->next) {
+			if (dd->hostname &&
+			    !strncmp(dd->hostname, entrystr.str, entrystr.length - 1) &&
+			    dd->found) {
+				iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
+				prm_dbg(params, "DNS SD: updated AAAA %s (%s port: %hu)\n",
+					dd->hostname, dd->addr_str, dd->port);
+				found = true;
+			}
+			else if (dd->hostname &&
+				!strncmp(dd->hostname, entrystr.str, entrystr.length - 1)) {
+				port = dd->port;
+			}
+			dd = dd->next;
+		}
+		if (!found) {
+			dd->hostname = iio_strndup(entrystr.str, entrystr.length - 1);
+			if (!dd->hostname)
+				goto mem_fail;
+			iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
+			dd->found = 1;
+			if (port)
+				dd->port = port;
+			prm_dbg(params, "DNS SD: added AAAA %s (%s port: %hu)\n",
+				dd->hostname, dd->addr_str, dd->port);
+			/* A list entry was filled, prepare new item on the list */
+			dd->next = new_discovery_data(dd);
+			if (!dd->next)
+				goto mem_fail;
+		}
+	}
+#endif /* HAVE_IPV6 */
+	iio_mutex_unlock(dd->lock);
 quit:
 	return 0;
+
+mem_fail:
+	iio_mutex_unlock(dd->lock);
+	prm_err(params, "DNS SD mDNS Resolver : memory failure\n");
+	return -ENOMEM;
 }
 
 int dnssd_find_hosts(const struct iio_context_params *params,
@@ -199,25 +367,26 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	WORD versionWanted = MAKEWORD(1, 1);
 	WSADATA wsaData;
 	const char service[] = "_iio._tcp.local";
-	size_t records, capacity = 2048;
+	size_t rec, records, capacity = 2048;
 	struct dns_sd_discovery_data *d;
-	unsigned int i, isock, num_sockets;
-	struct dns_sd_cb_data cb_data;
+	unsigned int isock, num_sockets;
 	void *buffer;
 	int sockets[32];
 	int transaction_id[32];
-	int ret = -ENOMEM;
+	int nfds, res, ret = -ENOMEM;
+	struct timeval timeout;
 
 	if (WSAStartup(versionWanted, &wsaData)) {
-		printf("Failed to initialize WinSock\n");
+		prm_err(params, "Failed to initialize WinSock\n");
 		return -WSAGetLastError();
 	}
 
 	prm_dbg(params, "DNS SD: Start service discovery.\n");
 
-	d = zalloc(sizeof(*d));
+	d = new_discovery_data(NULL);
 	if (!d)
 		goto out_wsa_cleanup;
+
 	/* pass the structure back, so it can be freed if err */
 	*ddata = d;
 
@@ -249,48 +418,56 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 		ret = mdns_query_send(sockets[isock], MDNS_RECORDTYPE_PTR,
 				      service, sizeof(service)-1, buffer,
 				      capacity, 0);
-		if (ret <= 0)
-			prm_perror(params, -errno, "Failed to send mDNS query");
+		if (ret < 0)
+			prm_err(params, "Failed to send mDNS query: errno %d\n", errno);
 
 		transaction_id[isock] = ret;
 	}
 
-	cb_data.d = d;
-	cb_data.params = params;
-
-	/* This is a simple implementation that loops for 10 seconds or as long as we get replies
-	 * A real world implementation would probably use select, poll or similar syscall to wait
-	 * until data is available on a socket and then read it */
+	/* This is a simple implementation that loops as long as we get replies  */
 	prm_dbg(params, "Reading mDNS query replies\n");
 
-	for (i = 0; i < 10; i++) {
-		do {
-			records = 0;
+	records = 0;
+	do {
+		nfds = 0;
+		timeout.tv_sec = 2;
+		timeout.tv_usec = 0;
 
-			for (isock = 0; isock < num_sockets; isock++) {
-				if (transaction_id[isock] <= 0)
-					continue;
+		fd_set readfs;
+		FD_ZERO(&readfs);
+		for (isock = 0; isock < num_sockets; ++isock) {
+			if (sockets[isock] >= nfds)
+				nfds = sockets[isock] + 1;
+			FD_SET(sockets[isock], &readfs);
+		}
 
-				records += mdns_query_recv(sockets[isock],
-							   buffer, capacity,
-							   query_callback, &cb_data,
-							   transaction_id[isock]);
+		res = select(nfds, &readfs, 0, 0, &timeout);
+		if (res > 0) {
+			for (isock = 0; isock < num_sockets; ++isock) {
+				if (FD_ISSET(sockets[isock], &readfs)) {
+					rec = mdns_query_recv(sockets[isock], buffer,
+							      capacity, query_callback,
+							      d, transaction_id[isock]);
+					if (rec > 0)
+						records += rec;
+				}
+				FD_SET(sockets[isock], &readfs);
 			}
-		} while (records);
-
-		if (records)
-			i = 0;
-
-		Sleep(100);
-	}
+		}
+	} while (res > 0);
 
 	for (isock = 0; isock < num_sockets; ++isock)
 		mdns_socket_close(sockets[isock]);
 
-	prm_dbg(params, "Closed socket%s\n", (num_sockets > 1) ? "s" : "");
+	prm_dbg(params, "Closed %i socket%s, processed %i record%s\n",
+		   num_sockets, (num_sockets > 1) ? "s" : "",
+		   records, (records > 1) ? "s" : "" );
 
 	port_knock_discovery_data(params, &d);
 	remove_dup_discovery_data(params, &d);
+
+	/* since d may have changed, make sure we pass back the start */
+	*ddata = d;
 
 	ret = 0;
 out_free_buffer:

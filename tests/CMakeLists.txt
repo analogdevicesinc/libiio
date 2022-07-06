@@ -57,7 +57,7 @@ if(PTHREAD_LIBRARIES)
 endif()
 
 if(NOT SKIP_INSTALL_ALL)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND OSX_FRAMEWORK)
 		set(IIO_TESTS_INSTALL_DIR ${OSX_INSTALL_FRAMEWORKSDIR}/iio.framework/Tools)
 	else()
 		include(GNUInstallDirs)
