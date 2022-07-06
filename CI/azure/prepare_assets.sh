@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 release_artifacts() {
-        local deb_linux_assets='Fedora-34 Ubuntu-18.04 Ubuntu-20.04'
+        local deb_linux_assets='Fedora-34 Ubuntu-18.04 Ubuntu-20.04 Ubuntu-22.04'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_linux_assets; do
                 cd "Linux-${i}"
@@ -13,7 +13,7 @@ release_artifacts() {
                 rm -r "Linux-${i}"
         done
 
-	local pkg_assets='macOS-10.15 macOS-11'
+	local pkg_assets='macOS-10.15 macOS-11 macOS-12'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $pkg_assets; do
                 cd "${i}"
@@ -49,7 +49,7 @@ release_artifacts() {
 }
 
 swdownloads_artifacts() {
-        local linux_dist='Fedora-34 Ubuntu-18.04 Ubuntu-20.04'
+        local linux_dist='Fedora-34 Ubuntu-18.04 Ubuntu-20.04 Ubuntu-22.04'
         for distribution in $linux_dist; do
 		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Linux-${distribution}"
 		if [ "${distribution}" == "Fedora-34" ]; then
@@ -60,7 +60,7 @@ swdownloads_artifacts() {
                 rm -r ../Linux-"${distribution}"
         done
 
-	local macOS_dist='macOS-10.15 macOS-11'
+	local macOS_dist='macOS-10.15 macOS-11 macOS-12'
 	for distribution in $macOS_dist; do
                 cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/${distribution}"
                 find . -name '*.pkg' -exec mv {} ../"${distribution}_latest_master_libiio.pkg" ";"
