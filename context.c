@@ -407,10 +407,17 @@ const char * iio_context_get_version_tag(const struct iio_context *ctx)
 
 int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 {
-	if (ctx->ops->set_timeout)
-		return ctx->ops->set_timeout(ctx, timeout);
-	else
-		return -ENOSYS;
+	int ret = 0;
+
+	if (ctx->ops->set_timeout) {
+		ret = ctx->ops->set_timeout(ctx, timeout);
+		if (ret)
+			return ret;
+	}
+
+	ctx->params.timeout_ms = timeout;
+
+	return 0;
 }
 
 struct iio_context * iio_context_clone(const struct iio_context *ctx)
