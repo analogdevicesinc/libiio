@@ -38,6 +38,9 @@ stages:
         ubuntu_20_04:
           image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
           artifactName: 'Linux-Ubuntu-20.04'
+        ubuntu_22_04:
+          image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-22.04'        
         fedora34:
           image: 'tfcollins/libiio_fedora_34-ci:latest'
           artifactName: 'Linux-Fedora-34'
@@ -184,6 +187,9 @@ stages:
         macOS_11:
           vmImage: 'macOS-11'
           artifactName: 'macOS-11'
+        macOS_12:
+          vmImage: 'macOS-12'
+          artifactName: 'macOS-12'
     pool:
       vmImage: $[ variables['vmImage'] ]
     steps:
@@ -273,7 +279,7 @@ stages:
       displayName: 'Setup'
     - script: |
         set -e
-        sudo docker run --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
+        sudo docker run --platform "linux/$(arch)" --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
       displayName: 'Build'
     - task: CopyFiles@2
       inputs:
