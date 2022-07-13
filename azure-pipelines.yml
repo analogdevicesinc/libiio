@@ -204,7 +204,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON
+        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF
         make
         sudo make install
         cd ..
@@ -212,7 +212,7 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
         cd ..
