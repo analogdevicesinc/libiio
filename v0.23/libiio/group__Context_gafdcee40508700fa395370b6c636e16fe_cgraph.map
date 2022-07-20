@@ -1,6 +1,6 @@
 <map id="iio_create_context_from_uri" name="iio_create_context_from_uri">
-<area shape="rect" id="node1" title="Create a context from a URI description." alt="" coords="5,57,133,98"/>
-<area shape="rect" id="node2" href="$group__Context.html#gaf31acec2d0f9f498870cc52a1d49783e" title="Create a context from local IIO devices (Linux only)" alt="" coords="181,5,344,32"/>
-<area shape="rect" id="node3" href="$group__Context.html#ga8adf2ef4d2b62aa34201469cd7049617" title="Create a context from the network." alt="" coords="197,57,328,98"/>
-<area shape="rect" id="node4" href="$group__Context.html#ga9925a84e596c3003e30b1cdd2b65d029" title="Create a context from a XML file." alt="" coords="185,123,341,149"/>
+<area shape="rect" id="node1" title="Create a context from a URI description." alt="" coords="5,57,148,98"/>
+<area shape="rect" id="node2" href="$group__Context.html#gaf31acec2d0f9f498870cc52a1d49783e" title="Create a context from local IIO devices (Linux only)" alt="" coords="196,5,376,32"/>
+<area shape="rect" id="node3" href="$group__Context.html#ga8adf2ef4d2b62aa34201469cd7049617" title="Create a context from the network." alt="" coords="213,57,359,98"/>
+<area shape="rect" id="node4" href="$group__Context.html#ga9925a84e596c3003e30b1cdd2b65d029" title="Create a context from a XML file." alt="" coords="199,123,373,149"/>
 </map>

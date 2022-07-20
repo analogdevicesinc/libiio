@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['top_2dlevel_20functions_171',['Top-level functions',['../group__TopLevel.html',1,'']]]
+  ['with_5fscale_168',['with_scale',['../structiio__data__format.html#a1def0aacbe62d0cf3c6b350d47b9c623',1,'iio_data_format']]]
 ];

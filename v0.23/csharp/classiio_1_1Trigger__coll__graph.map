@@ -1,5 +1,5 @@
 <map id="iio.Trigger" name="iio.Trigger">
-<area shape="rect" id="node1" title="iio.Trigger class: Contains the representation of an IIO device that can act as a trigger." alt="" coords="9,171,87,197"/>
-<area shape="rect" id="node2" href="$classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="17,95,79,121"/>
-<area shape="rect" id="node3" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="5,5,91,32"/>
+<area shape="rect" id="node1" title="iio.Trigger class: Contains the representation of an IIO device that can act as a trigger." alt="" coords="9,171,95,197"/>
+<area shape="rect" id="node2" href="$classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="19,95,85,121"/>
+<area shape="rect" id="node3" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="5,5,99,32"/>
 </map>

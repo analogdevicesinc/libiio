@@ -1,5 +1,5 @@
 <map id="iio_scan_block_scan" name="iio_scan_block_scan">
-<area shape="rect" id="node1" title="Enumerate available contexts via scan block." alt="" coords="5,5,148,32"/>
-<area shape="rect" id="node2" href="$group__Scan.html#ga4e618c6efb5a62e04a664f53f1b80d99" title="Free a context info list." alt="" coords="389,5,556,32"/>
-<area shape="rect" id="node3" href="$group__Scan.html#ga5d364d8d008bdbfe5486e6329d06257f" title="Enumerate available contexts." alt="" coords="196,27,341,69"/>
+<area shape="rect" id="node1" title="Enumerate available contexts via scan block." alt="" coords="5,5,160,32"/>
+<area shape="rect" id="node2" href="$group__Scan.html#ga4e618c6efb5a62e04a664f53f1b80d99" title="Free a context info list." alt="" coords="415,5,601,32"/>
+<area shape="rect" id="node3" href="$group__Scan.html#ga5d364d8d008bdbfe5486e6329d06257f" title="Enumerate available contexts." alt="" coords="208,27,367,69"/>
 </map>

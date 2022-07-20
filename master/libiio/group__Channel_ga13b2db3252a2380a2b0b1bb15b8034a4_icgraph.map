@@ -1,0 +1,14 @@
+<map id="iio_channel_find_attr" name="iio_channel_find_attr">
+<area shape="rect" id="node1" title="Try to find a channel&#45;specific attribute by its name." alt="" coords="680,184,821,211"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga2c2ca5696d1341067051eb390d5014ae" title="Read the content of the given channel&#45;specific attribute." alt="" coords="471,97,617,124"/>
+<area shape="rect" id="node7" href="$group__Channel.html#gacd0d3dd36bdc64a9f967e21a891230eb" title="Set the value of the given channel&#45;specific attribute." alt="" coords="456,213,632,240"/>
+<area shape="rect" id="node3" href="$group__Channel.html#gab9c28b0cd94c0607bcc7cac16219eb48" title="Read the content of all channel&#45;specific attributes." alt="" coords="236,5,401,32"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga75ac9b81eb7e7e8a961afb67748e4102" title="Read the content of the given channel&#45;specific attribute." alt="" coords="246,57,391,98"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga116c61892bf3d20ff07efd642c5dfbe1" title="Read the content of the given channel&#45;specific attribute." alt="" coords="246,122,391,163"/>
+<area shape="rect" id="node6" href="$group__Channel.html#ga319f39c313bbd4d331e23df51e4d3ce6" title="Read the content of the given channel&#45;specific attribute." alt="" coords="5,129,181,156"/>
+<area shape="rect" id="node8" href="$group__Channel.html#ga35c76ce5fcae4c551b7c78d648665a41" title="Set the value of the given channel&#45;specific attribute." alt="" coords="245,188,393,215"/>
+<area shape="rect" id="node11" href="$group__Channel.html#ga6df693ee4f0c329d957f7c7ca3588f3f" title="Set the values of all channel&#45;specific attributes." alt="" coords="235,239,403,265"/>
+<area shape="rect" id="node12" href="$group__Channel.html#ga9a385b9b05d20f33f8e587feb2ebe81a" title="Set the value of the given channel&#45;specific attribute." alt="" coords="229,289,408,316"/>
+<area shape="rect" id="node9" href="$group__Channel.html#gad9d6ec4a02948c6416cc99254bdbfa50" title="Set the value of the given channel&#45;specific attribute." alt="" coords="19,181,167,222"/>
+<area shape="rect" id="node10" href="$group__Channel.html#gac55cb77a1baf797e54a8a4e31b2f4680" title="Set the value of the given channel&#45;specific attribute." alt="" coords="19,246,167,287"/>
+</map>

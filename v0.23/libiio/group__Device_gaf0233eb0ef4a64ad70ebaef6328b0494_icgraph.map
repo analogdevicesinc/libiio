@@ -1,6 +1,6 @@
 <map id="iio_device_attr_read" name="iio_device_attr_read">
-<area shape="rect" id="node1" title="Read the content of the given device&#45;specific attribute." alt="" coords="409,46,548,73"/>
-<area shape="rect" id="node2" href="$group__Device.html#gab1b150a5bfa7b1ab7fd76c538e15e4da" title="Read the content of the given device&#45;specific attribute." alt="" coords="223,5,361,47"/>
-<area shape="rect" id="node3" href="$group__Device.html#ga0f7b5d21a4e40efac68e1ece44d7ba74" title="Read the content of the given device&#45;specific attribute." alt="" coords="223,71,361,112"/>
-<area shape="rect" id="node4" href="$group__Device.html#ga96364b7c7097bb8e4656924ea896a502" title="Read the content of the given device&#45;specific attribute." alt="" coords="5,78,175,105"/>
+<area shape="rect" id="node1" title="Read the content of the given device&#45;specific attribute." alt="" coords="445,46,600,73"/>
+<area shape="rect" id="node2" href="$group__Device.html#gab1b150a5bfa7b1ab7fd76c538e15e4da" title="Read the content of the given device&#45;specific attribute." alt="" coords="243,5,397,47"/>
+<area shape="rect" id="node3" href="$group__Device.html#ga0f7b5d21a4e40efac68e1ece44d7ba74" title="Read the content of the given device&#45;specific attribute." alt="" coords="243,71,397,112"/>
+<area shape="rect" id="node4" href="$group__Device.html#ga96364b7c7097bb8e4656924ea896a502" title="Read the content of the given device&#45;specific attribute." alt="" coords="5,78,195,105"/>
 </map>

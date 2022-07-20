@@ -6,6 +6,5 @@ var modules =
     [ "Device", "group__Device.html", "group__Device" ],
     [ "Channel", "group__Channel.html", "group__Channel" ],
     [ "Buffer", "group__Buffer.html", "group__Buffer" ],
-    [ "Compatibility with hardware monitoring (hwmon) devices", "group__Hwmon.html", "group__Hwmon" ],
     [ "Debug and low-level functions", "group__Debug.html", "group__Debug" ]
 ];

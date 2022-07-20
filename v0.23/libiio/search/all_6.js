@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['length_167',['length',['../structiio__data__format.html#a80a90d327d93ba59c4717f2fcf420930',1,'iio_data_format']]]
+  ['repeat_164',['repeat',['../structiio__data__format.html#a6db4ae39ce3e564aac2b31d0948a1efe',1,'iio_data_format']]]
 ];

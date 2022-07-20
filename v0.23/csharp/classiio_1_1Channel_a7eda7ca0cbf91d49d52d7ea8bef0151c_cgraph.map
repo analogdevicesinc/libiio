@@ -1,4 +1,4 @@
 <map id="iio.Channel.write" name="iio.Channel.write">
-<area shape="rect" id="node1" title="Write the specified array of samples corresponding to this channel into the given iio...." alt="" coords="5,5,124,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4768aee0d2271e63867f05c10f541f7c" title="Returns whether or not the channel has been enabled." alt="" coords="172,5,325,32"/>
+<area shape="rect" id="node1" title="Write the specified array of samples corresponding to this channel into the given iio...." alt="" coords="5,5,137,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4768aee0d2271e63867f05c10f541f7c" title="Returns whether or not the channel has been enabled." alt="" coords="185,5,355,32"/>
 </map>

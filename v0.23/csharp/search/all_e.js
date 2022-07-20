@@ -1,10 +1,12 @@
 var searchData=
 [
-  ['read_52',['read',['../classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d',1,'iio.Attr.read()'],['../classiio_1_1Channel.html#a4539e8e210e3f94f9121cf7e0fbad457',1,'iio.Channel.read()'],['../classiio_1_1IOBuffer.html#a804281513f552fd8e6570b9a826301a2',1,'iio.IOBuffer.read()']]],
-  ['read_5fbool_53',['read_bool',['../classiio_1_1Attr.html#a65fc421c1d058a28a7f9c4447ae6c955',1,'iio::Attr']]],
-  ['read_5fdouble_54',['read_double',['../classiio_1_1Attr.html#a49505a94b503df2c16e27c2265ae855b',1,'iio::Attr']]],
-  ['read_5flong_55',['read_long',['../classiio_1_1Attr.html#a62af2e28fdc64d0e1818d2b98d476de7',1,'iio::Attr']]],
-  ['refill_56',['refill',['../classiio_1_1IOBuffer.html#a8a02e05c727fa0a7e8579e5a3122646e',1,'iio::IOBuffer']]],
-  ['reg_5fread_57',['reg_read',['../classiio_1_1Device.html#a2b67eb64e1094bca59468f177f6c039e',1,'iio::Device']]],
-  ['reg_5fwrite_58',['reg_write',['../classiio_1_1Device.html#aa02e1587a188ed02956a033b488576d1',1,'iio::Device']]]
+  ['samples_5fcount_57',['samples_count',['../classiio_1_1IOBuffer.html#a4b1116135bcf1442b980f07ac32b92ca',1,'iio::IOBuffer']]],
+  ['scan_5felement_58',['scan_element',['../classiio_1_1Channel.html#a0a9079a13b55719bfa36b8d041883ecd',1,'iio::Channel']]],
+  ['scancontext_59',['ScanContext',['../classiio_1_1ScanContext.html',1,'iio']]],
+  ['set_5fblocking_5fmode_60',['set_blocking_mode',['../classiio_1_1IOBuffer.html#adcae94765967aafa22375b21e026c7a8',1,'iio::IOBuffer']]],
+  ['set_5fkernel_5fbuffers_5fcount_61',['set_kernel_buffers_count',['../classiio_1_1Device.html#a9005ab45349aa4c98a6717847001d6fd',1,'iio::Device']]],
+  ['set_5frate_62',['set_rate',['../classiio_1_1Trigger.html#ab12ed83717ef5ccd390a5912e2f0ab35',1,'iio::Trigger']]],
+  ['set_5ftimeout_63',['set_timeout',['../classiio_1_1Context.html#a01a0558b0aec4442e71db52fcbb63793',1,'iio::Context']]],
+  ['set_5ftrigger_64',['set_trigger',['../classiio_1_1Device.html#a5cf653e285c685648dfc66a5119595d4',1,'iio.Device.set_trigger()'],['../classiio_1_1Trigger.html#af8c80cf48e924780a1705c20032119c1',1,'iio.Trigger.set_trigger()']]],
+  ['step_65',['step',['../classiio_1_1IOBuffer.html#a6bc109c422c32ded351060e83b3a69a1',1,'iio::IOBuffer']]]
 ];

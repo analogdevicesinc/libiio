@@ -1,6 +1,6 @@
 <map id="iio_channel_attr_write_all" name="iio_channel_attr_write_all">
-<area shape="rect" id="node1" title="Set the values of all channel&#45;specific attributes." alt="" coords="5,56,173,83"/>
-<area shape="rect" id="node2" href="$group__Channel.html#gacd0d3dd36bdc64a9f967e21a891230eb" title="Set the value of the given channel&#45;specific attribute." alt="" coords="221,5,397,32"/>
-<area shape="rect" id="node3" href="$group__Channel.html#gafc3c52f360424c097a24d1925923d772" title="Get the channel&#45;specific attribute present at the given index." alt="" coords="240,56,379,83"/>
-<area shape="rect" id="node4" href="$group__Channel.html#ga14869c3fda8b04f413a02f15dfa6ef7c" title="Enumerate the channel&#45;specific attributes of the given channel." alt="" coords="236,107,383,149"/>
+<area shape="rect" id="node1" title="Set the values of all channel&#45;specific attributes." alt="" coords="5,56,195,83"/>
+<area shape="rect" id="node2" href="$group__Channel.html#gacd0d3dd36bdc64a9f967e21a891230eb" title="Set the value of the given channel&#45;specific attribute." alt="" coords="243,5,440,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#gacce5c491409201986754b8365ddab017" title="Get the channel&#45;specific attribute present at the given index." alt="" coords="264,56,419,83"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga14869c3fda8b04f413a02f15dfa6ef7c" title="Enumerate the channel&#45;specific attributes of the given channel." alt="" coords="261,107,422,149"/>
 </map>

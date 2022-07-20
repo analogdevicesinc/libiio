@@ -1,9 +1,9 @@
-<map id="/__w/1/s/iio.h" name="/__w/1/s/iio.h">
-<area shape="rect" id="node1" title="Public interface." alt="" coords="209,5,309,32"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,80,69,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="93,80,157,107"/>
-<area shape="rect" id="node4" title=" " alt="" coords="181,80,245,107"/>
-<area shape="rect" id="node5" title=" " alt="" coords="270,80,338,107"/>
-<area shape="rect" id="node6" title=" " alt="" coords="363,80,451,107"/>
-<area shape="rect" id="node7" title=" " alt="" coords="475,80,549,107"/>
+<map id="/home/rchis/v0.23/libiio/iio.h" name="/home/rchis/v0.23/libiio/iio.h">
+<area shape="rect" id="node1" title="Public interface." alt="" coords="191,5,365,47"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,95,76,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="100,95,171,121"/>
+<area shape="rect" id="node4" title=" " alt="" coords="195,95,265,121"/>
+<area shape="rect" id="node5" title=" " alt="" coords="290,95,365,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="389,95,485,121"/>
+<area shape="rect" id="node7" title=" " alt="" coords="509,95,591,121"/>
 </map>

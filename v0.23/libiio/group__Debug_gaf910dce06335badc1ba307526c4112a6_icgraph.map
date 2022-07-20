@@ -1,4 +1,4 @@
 <map id="iio_channel_convert" name="iio_channel_convert">
-<area shape="rect" id="node1" title="Convert the sample from hardware format to host format." alt="" coords="172,5,309,32"/>
-<area shape="rect" id="node2" href="$group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30" title="Demultiplex and convert the samples of a given channel." alt="" coords="5,5,124,32"/>
+<area shape="rect" id="node1" title="Convert the sample from hardware format to host format." alt="" coords="185,5,337,32"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30" title="Demultiplex and convert the samples of a given channel." alt="" coords="5,5,137,32"/>
 </map>

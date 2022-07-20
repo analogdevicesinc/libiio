@@ -1,4 +1,4 @@
 <map id="iio_channel_convert_inverse" name="iio_channel_convert_inverse">
-<area shape="rect" id="node1" title="Convert the sample from host format to hardware format." alt="" coords="176,5,313,47"/>
-<area shape="rect" id="node2" href="$group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2" title="Convert and multiplex the samples of a given channel." alt="" coords="5,13,128,39"/>
+<area shape="rect" id="node1" title="Convert the sample from host format to hardware format." alt="" coords="189,5,341,47"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2" title="Convert and multiplex the samples of a given channel." alt="" coords="5,13,141,39"/>
 </map>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['hwmon_143',['hwmon',['../classiio_1_1Device.html#a0c8992763f1c21715d03775a0e37321e',1,'iio::Device']]]
+  ['modifier_141',['modifier',['../classiio_1_1Channel.html#ade4aa6fcb830ef383db4695e8b65ade0',1,'iio::Channel']]]
 ];

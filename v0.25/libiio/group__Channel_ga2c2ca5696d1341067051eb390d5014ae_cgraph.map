@@ -1,0 +1,4 @@
+<map id="iio_channel_attr_read" name="iio_channel_attr_read">
+<area shape="rect" id="node1" title="Read the content of the given channel&#45;specific attribute." alt="" coords="5,5,151,32"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga13b2db3252a2380a2b0b1bb15b8034a4" title="Try to find a channel&#45;specific attribute by its name." alt="" coords="199,5,340,32"/>
+</map>

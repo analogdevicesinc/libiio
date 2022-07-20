@@ -1,4 +1,4 @@
 <map id="iio.Attr.read_long" name="iio.Attr.read_long">
-<area shape="rect" id="node1" title="Read the value of this attribute as a long." alt="" coords="5,5,125,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="173,5,263,32"/>
+<area shape="rect" id="node1" title="Read the value of this attribute as a long." alt="" coords="5,5,139,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="187,5,285,32"/>
 </map>

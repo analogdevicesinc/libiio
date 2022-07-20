@@ -1,4 +1,4 @@
 <map id="iio_context_get_version" name="iio_context_get_version">
-<area shape="rect" id="node1" title="Get the version of the backend in use." alt="" coords="5,5,164,32"/>
-<area shape="rect" id="node2" href="$group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c" title="Get the version of the libiio library." alt="" coords="212,5,364,32"/>
+<area shape="rect" id="node1" title="Get the version of the backend in use." alt="" coords="5,5,183,32"/>
+<area shape="rect" id="node2" href="$group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c" title="Get the version of the libiio library." alt="" coords="231,5,401,32"/>
 </map>

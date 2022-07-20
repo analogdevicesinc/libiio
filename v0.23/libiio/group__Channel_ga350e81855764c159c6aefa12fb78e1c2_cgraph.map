@@ -1,7 +1,7 @@
 <map id="iio_channel_write_raw" name="iio_channel_write_raw">
-<area shape="rect" id="node1" title="Multiplex the samples of a given channel." alt="" coords="5,56,156,83"/>
-<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer." alt="" coords="385,5,488,32"/>
-<area shape="rect" id="node3" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer." alt="" coords="205,56,309,83"/>
-<area shape="rect" id="node5" href="$group__Buffer.html#ga5532665a8776cec1c209d6cf8d0bb409" title="Get the step size between two samples of one channel." alt="" coords="204,107,311,133"/>
-<area shape="rect" id="node4" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled." alt="" coords="359,56,515,83"/>
+<area shape="rect" id="node1" title="Multiplex the samples of a given channel." alt="" coords="5,56,172,83"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer." alt="" coords="416,5,531,32"/>
+<area shape="rect" id="node3" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer." alt="" coords="222,56,337,83"/>
+<area shape="rect" id="node5" href="$group__Buffer.html#ga5532665a8776cec1c209d6cf8d0bb409" title="Get the step size between two samples of one channel." alt="" coords="220,107,339,133"/>
+<area shape="rect" id="node4" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled." alt="" coords="387,56,560,83"/>
 </map>

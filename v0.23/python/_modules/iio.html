@@ -1,32 +1,71 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iio &mdash; libiio-py 0.23.g87fa532 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+  <title>iio &mdash; libiio-py 0.23.g92d6a35f documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-    <script src="../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="../index.html" class="icon icon-home"> libiio-py
+          
+
+          
           </a>
+
+          
+            
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -34,7 +73,18 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../context.html">Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../buffer.html">Buffer</a></li>
@@ -44,30 +94,69 @@
 <li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">libiio-py</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
           <li><a href="index.html">Module code</a> &raquo;</li>
+        
       <li>iio</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <h1>Source code for iio</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 <span class="c1"># SPDX-License-Identifier: LGPL-2.1-or-later</span>
@@ -664,6 +753,14 @@
 <span class="n">_channel_get_type</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_int</span>
 <span class="n">_channel_get_type</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,)</span>
 
+<span class="n">_channel_convert</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_convert</span>
+<span class="n">_channel_convert</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_channel_convert</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">)</span>
+
+<span class="n">_channel_convert_inverse</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_channel_convert_inverse</span>
+<span class="n">_channel_convert_inverse</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_channel_convert_inverse</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ChannelPtr</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">,</span> <span class="n">c_void_p</span><span class="p">)</span>
+
 <span class="n">_create_buffer</span> <span class="o">=</span> <span class="n">_lib</span><span class="o">.</span><span class="n">iio_device_create_buffer</span>
 <span class="n">_create_buffer</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">_BufferPtr</span>
 <span class="n">_create_buffer</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span>
@@ -1027,7 +1124,33 @@
 <span class="sd">        Type for the channel.</span>
 <span class="sd">        type: iio.ChannelType(Enum)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">ChannelType</span><span class="p">(</span><span class="n">_channel_get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">ChannelType</span><span class="p">(</span><span class="n">_channel_get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Channel.convert"><a class="viewcode-back" href="../channel.html#iio.Channel.convert">[docs]</a>    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert src and saves the result in dst, using current channel&#39;s data format.</span>
+
+<span class="sd">        :param dst: type=list</span>
+<span class="sd">            The variable where the result is stored.</span>
+<span class="sd">        :param src: type=list</span>
+<span class="sd">            Data to be converted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">_channel_convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">src_ptr</span><span class="p">,</span> <span class="n">dst_ptr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Channel.convert_inverse"><a class="viewcode-back" href="../channel.html#iio.Channel.convert_inverse">[docs]</a>    <span class="k">def</span> <span class="nf">convert_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the sample from host format to hardware format.</span>
+
+<span class="sd">        :param dst: type=list</span>
+<span class="sd">            The variable where the result is stored.</span>
+<span class="sd">        :param src: type=list</span>
+<span class="sd">            Data to be converted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">src_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">src</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">dst_ptr</span> <span class="o">=</span> <span class="n">cast</span><span class="p">((</span><span class="n">c_char</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_format</span><span class="o">.</span><span class="n">length</span><span class="p">))(</span><span class="o">*</span><span class="n">dst</span><span class="p">),</span> <span class="n">c_void_p</span><span class="p">)</span>
+        <span class="n">_channel_convert_inverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">src_ptr</span><span class="p">,</span> <span class="n">dst_ptr</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="Buffer"><a class="viewcode-back" href="../buffer.html#iio.Buffer">[docs]</a><span class="k">class</span> <span class="nc">Buffer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -1232,7 +1355,7 @@
 <span class="sd">            The IIO Device</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">chn</span> <span class="o">=</span> <span class="n">_d_find_channel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">,</span> <span class="n">name_or_id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">),</span> <span class="n">is_output</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">chn</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">else</span> <span class="n">Channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">chn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chn</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">set_kernel_buffers_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1362,10 +1485,6 @@
         <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;Contains the configured trigger for this IIO device.</span><span class="se">\n\t</span><span class="s2">type=iio.Trigger&quot;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">hwmon</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;hwmon&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;Contains True if the device is a hardware-monitoring device, False if it is a IIO device.</span><span class="se">\n\t</span><span class="s2">type=bool&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1452,7 +1571,7 @@
 <span class="sd">            The IIO Device</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dev</span> <span class="o">=</span> <span class="n">_find_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">name_or_id_or_label</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">))</span>
-        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">else</span> <span class="n">Trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span> <span class="k">if</span> <span class="n">_d_is_trigger</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span> <span class="k">else</span> <span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">dev</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span> <span class="k">if</span> <span class="n">_d_is_trigger</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span> <span class="k">else</span> <span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span></div>
 
     <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Name of this IIO context.</span><span class="se">\n\t</span><span class="s2">type=str&quot;</span>
@@ -1562,30 +1681,46 @@
 </pre></div>
 
            </div>
+           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2020, Analog Devices, Inc..</p>
-  </div>
+    <p>
+        &#169; Copyright 2020, Analog Devices, Inc..
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

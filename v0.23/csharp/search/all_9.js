@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['label_46',['label',['../classiio_1_1Device.html#a3342153fd26e43b710dd33b17cb126fc',1,'iio::Device']]],
-  ['library_5fversion_47',['library_version',['../classiio_1_1Context.html#abbd75cb9945ab472fdf95a02c4657354',1,'iio::Context']]]
+  ['modifier_46',['modifier',['../classiio_1_1Channel.html#ade4aa6fcb830ef383db4695e8b65ade0',1,'iio::Channel']]]
 ];

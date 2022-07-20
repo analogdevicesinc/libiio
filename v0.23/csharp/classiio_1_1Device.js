@@ -19,6 +19,5 @@ var classiio_1_1Device =
     [ "id", "classiio_1_1Device.html#a5d206eae4628dc18fdfac1e515674cdc", null ],
     [ "name", "classiio_1_1Device.html#ab1cd5f216aed88ebe52f17556a4488f0", null ],
     [ "buffer_attrs", "classiio_1_1Device.html#af886c74c8e341cb7140ba9474dbd2340", null ],
-    [ "hwmon", "classiio_1_1Device.html#a0c8992763f1c21715d03775a0e37321e", null ],
-    [ "label", "classiio_1_1Device.html#a3342153fd26e43b710dd33b17cb126fc", null ]
+    [ "label", "classiio_1_1Device.html#a3edd3d7514e4603133ef2e326a3fbc0a", null ]
 ];

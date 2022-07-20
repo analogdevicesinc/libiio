@@ -1,4 +1,4 @@
 <map id="iio.Device" name="iio.Device">
-<area shape="rect" id="node1" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="5,5,85,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Trigger.html" title="iio.Trigger class: Contains the representation of an IIO device that can act as a trigger." alt="" coords="6,80,85,107"/>
+<area shape="rect" id="node1" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="5,5,92,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Trigger.html" title="iio.Trigger class: Contains the representation of an IIO device that can act as a trigger." alt="" coords="5,80,92,107"/>
 </map>
