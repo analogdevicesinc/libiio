@@ -1,4 +1,4 @@
 <map id="iio.Device" name="iio.Device">
-<area shape="rect" id="node1" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="8,95,88,121"/>
-<area shape="rect" id="node2" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="5,5,91,32"/>
+<area shape="rect" id="node1" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="9,95,95,121"/>
+<area shape="rect" id="node2" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="5,5,99,32"/>
 </map>

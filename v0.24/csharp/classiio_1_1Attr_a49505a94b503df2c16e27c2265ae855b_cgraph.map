@@ -1,4 +1,4 @@
 <map id="iio.Attr.read_double" name="iio.Attr.read_double">
-<area shape="rect" id="node1" title="Read the value of this attribute as a double." alt="" coords="5,5,140,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="188,5,277,32"/>
+<area shape="rect" id="node1" title="Read the value of this attribute as a double." alt="" coords="5,5,155,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Attr.html#ab72e4d43a446dba46b79e73c5744f42d" title="Read the value of this attribute as a string." alt="" coords="203,5,301,32"/>
 </map>

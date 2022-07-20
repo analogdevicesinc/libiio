@@ -1,5 +1,5 @@
 <map id="iio_device_debug_attr_read_bool" name="iio_device_debug_attr_read_bool">
-<area shape="rect" id="node1" title="Read the content of the given debug attribute." alt="" coords="5,5,153,47"/>
-<area shape="rect" id="node2" href="$group__Debug.html#gaff27d1a48f8469531c25471918d0b6de" title="Read the content of the given debug attribute." alt="" coords="201,5,349,47"/>
-<area shape="rect" id="node3" href="$group__Debug.html#ga8d786ee19093f86da4feb92fb91dd5d7" title="Read the content of the given debug attribute." alt="" coords="397,13,577,39"/>
+<area shape="rect" id="node1" title="Read the content of the given debug attribute." alt="" coords="5,5,171,47"/>
+<area shape="rect" id="node2" href="$group__Debug.html#gaff27d1a48f8469531c25471918d0b6de" title="Read the content of the given debug attribute." alt="" coords="219,5,384,47"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga8d786ee19093f86da4feb92fb91dd5d7" title="Read the content of the given debug attribute." alt="" coords="432,13,633,39"/>
 </map>

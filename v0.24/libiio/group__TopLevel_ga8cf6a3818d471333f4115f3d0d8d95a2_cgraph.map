@@ -1,5 +1,5 @@
 <map id="iio_has_backend" name="iio_has_backend">
-<area shape="rect" id="node1" title="Check if the specified backend is available." alt="" coords="5,31,124,57"/>
-<area shape="rect" id="node2" href="$group__TopLevel.html#ga0b950d578c5e4e06232949159c491dab" title="Retrieve the name of a given backend." alt="" coords="195,5,310,32"/>
-<area shape="rect" id="node3" href="$group__TopLevel.html#gabe08d9f1e10801b0334575063a66a56c" title="Get the number of available backends." alt="" coords="172,56,333,83"/>
+<area shape="rect" id="node1" title="Check if the specified backend is available." alt="" coords="5,31,135,57"/>
+<area shape="rect" id="node2" href="$group__TopLevel.html#ga24fc0262cc63de3ce8673f8b1f9bf7da" title="Retrieve the name of a given backend." alt="" coords="208,5,335,32"/>
+<area shape="rect" id="node3" href="$group__TopLevel.html#gabe08d9f1e10801b0334575063a66a56c" title="Get the number of available backends." alt="" coords="183,56,360,83"/>
 </map>

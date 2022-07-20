@@ -1,5 +1,5 @@
 <map id="iio.Attr.write" name="iio.Attr.write">
-<area shape="rect" id="node1" title="Set this attribute to the value contained in the string argument." alt="" coords="183,31,275,57"/>
-<area shape="rect" id="node2" href="$classiio_1_1Trigger.html#ab12ed83717ef5ccd390a5912e2f0ab35" title="Configure a new frequency for this trigger." alt="" coords="5,5,135,32"/>
-<area shape="rect" id="node3" href="$classiio_1_1Attr.html#afc52dcef6eae8b3cc85426cceec74a37" title="Set this attribute to the value contained in the bool argument." alt="" coords="24,56,116,83"/>
+<area shape="rect" id="node1" title="Set this attribute to the value contained in the string argument." alt="" coords="196,31,299,57"/>
+<area shape="rect" id="node2" href="$classiio_1_1Trigger.html#ab12ed83717ef5ccd390a5912e2f0ab35" title="Configure a new frequency for this trigger." alt="" coords="5,5,148,32"/>
+<area shape="rect" id="node3" href="$classiio_1_1Attr.html#afc52dcef6eae8b3cc85426cceec74a37" title="Set this attribute to the value contained in the bool argument." alt="" coords="25,56,128,83"/>
 </map>

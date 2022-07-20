@@ -1,8 +1,8 @@
 <map id="iio_channel_write" name="iio_channel_write">
-<area shape="rect" id="node1" title="Convert and multiplex the samples of a given channel." alt="" coords="5,81,128,108"/>
-<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer." alt="" coords="388,5,491,32"/>
-<area shape="rect" id="node3" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer." alt="" coords="193,56,297,83"/>
-<area shape="rect" id="node5" href="$group__Buffer.html#ga5532665a8776cec1c209d6cf8d0bb409" title="Get the step size between two samples of one channel." alt="" coords="191,107,298,133"/>
-<area shape="rect" id="node6" href="$group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb" title="Convert the sample from host format to hardware format." alt="" coords="176,158,313,199"/>
-<area shape="rect" id="node4" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled." alt="" coords="361,56,517,83"/>
+<area shape="rect" id="node1" title="Convert and multiplex the samples of a given channel." alt="" coords="5,81,141,108"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer." alt="" coords="419,5,533,32"/>
+<area shape="rect" id="node3" href="$group__Buffer.html#ga000d2f4c8b72060db1c38ec905bf4156" title="Find the first sample of a channel in a buffer." alt="" coords="208,56,323,83"/>
+<area shape="rect" id="node5" href="$group__Buffer.html#ga5532665a8776cec1c209d6cf8d0bb409" title="Get the step size between two samples of one channel." alt="" coords="206,107,325,133"/>
+<area shape="rect" id="node6" href="$group__Debug.html#gaf0a9a659af18b62ffa0520301402eabb" title="Convert the sample from host format to hardware format." alt="" coords="189,158,341,199"/>
+<area shape="rect" id="node4" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled." alt="" coords="389,56,563,83"/>
 </map>

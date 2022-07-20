@@ -1,4 +1,4 @@
 <map id="iio.Trigger.set_rate" name="iio.Trigger.set_rate">
-<area shape="rect" id="node1" title="Configure a new frequency for this trigger." alt="" coords="5,5,135,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a3f36d81a93bd2266e5303e9e8c41dfdc" title="Set this attribute to the value contained in the string argument." alt="" coords="183,5,275,32"/>
+<area shape="rect" id="node1" title="Configure a new frequency for this trigger." alt="" coords="5,5,148,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Attr.html#a3f36d81a93bd2266e5303e9e8c41dfdc" title="Set this attribute to the value contained in the string argument." alt="" coords="196,5,299,32"/>
 </map>

@@ -1,4 +1,4 @@
 <map id="iio_scan_context_destroy" name="iio_scan_context_destroy">
-<area shape="rect" id="node1" title="Destroy the given scan context." alt="" coords="212,5,383,32"/>
-<area shape="rect" id="node2" href="$group__Scan.html#ga91f6902ca18c491f96627cadb88c5c0a" title="Destroy the given scan block." alt="" coords="5,5,164,32"/>
+<area shape="rect" id="node1" title="Destroy the given scan context." alt="" coords="227,5,413,32"/>
+<area shape="rect" id="node2" href="$group__Scan.html#ga91f6902ca18c491f96627cadb88c5c0a" title="Destroy the given scan block." alt="" coords="5,5,179,32"/>
 </map>

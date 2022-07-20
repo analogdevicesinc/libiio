@@ -1,6 +1,6 @@
 <map id="iio_device_buffer_attr_read" name="iio_device_buffer_attr_read">
-<area shape="rect" id="node1" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="392,46,569,73"/>
-<area shape="rect" id="node2" href="$group__Device.html#ga44952198b73ff6b0c0c0b53d3cd6d1bd" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="199,5,344,47"/>
-<area shape="rect" id="node3" href="$group__Device.html#gae5b9be890edb372d3e30a14ce1c79874" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="199,71,344,112"/>
-<area shape="rect" id="node4" href="$group__Device.html#ga92ee863b94e6f841efec3919f57f5193" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="5,71,151,112"/>
+<area shape="rect" id="node1" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="427,46,625,73"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga44952198b73ff6b0c0c0b53d3cd6d1bd" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="216,5,379,47"/>
+<area shape="rect" id="node3" href="$group__Device.html#gae5b9be890edb372d3e30a14ce1c79874" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="216,71,379,112"/>
+<area shape="rect" id="node4" href="$group__Device.html#ga92ee863b94e6f841efec3919f57f5193" title="Read the content of the given buffer&#45;specific attribute." alt="" coords="5,71,168,112"/>
 </map>

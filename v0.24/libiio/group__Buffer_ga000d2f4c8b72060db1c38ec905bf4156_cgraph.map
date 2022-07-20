@@ -1,5 +1,5 @@
 <map id="iio_buffer_first" name="iio_buffer_first">
-<area shape="rect" id="node1" title="Find the first sample of a channel in a buffer." alt="" coords="5,31,109,57"/>
-<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer." alt="" coords="184,5,287,32"/>
-<area shape="rect" id="node3" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled." alt="" coords="157,56,313,83"/>
+<area shape="rect" id="node1" title="Find the first sample of a channel in a buffer." alt="" coords="5,31,120,57"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#gab5300f917bbdfc5dafc093a60138f131" title="Get the address that follows the last sample in a buffer." alt="" coords="197,5,312,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f" title="Returns True if the channel is enabled." alt="" coords="168,56,341,83"/>
 </map>

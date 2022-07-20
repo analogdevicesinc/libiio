@@ -1,4 +1,4 @@
 <map id="iio_create_context_from_uri" name="iio_create_context_from_uri">
-<area shape="rect" id="node1" title="Create a context from a URI description." alt="" coords="177,5,305,47"/>
-<area shape="rect" id="node2" href="$group__Context.html#ga21076125f817a680e0c01d4a490f0416" title="Create a context from local or remote IIO devices." alt="" coords="5,5,129,47"/>
+<area shape="rect" id="node1" title="Create a context from a URI description." alt="" coords="192,5,335,47"/>
+<area shape="rect" id="node2" href="$group__Context.html#ga21076125f817a680e0c01d4a490f0416" title="Create a context from local or remote IIO devices." alt="" coords="5,5,144,47"/>
 </map>

@@ -1,4 +1,4 @@
 <map id="iio.Context.clone" name="iio.Context.clone">
-<area shape="rect" id="node1" title="Clone this instance." alt="" coords="5,5,124,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Context.html#ab2a18c05d5455eb3cca59b38953fadf8" title="Initializes a new instance of the iio.Context class, using the local or the network backend of the II..." alt="" coords="172,5,307,32"/>
+<area shape="rect" id="node1" title="Clone this instance." alt="" coords="5,5,137,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Context.html#ab2a18c05d5455eb3cca59b38953fadf8" title="Initializes a new instance of the iio.Context class, using the local or the network backend of the II..." alt="" coords="185,5,333,32"/>
 </map>

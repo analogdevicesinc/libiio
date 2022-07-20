@@ -1,4 +1,4 @@
 <map id="iio.Channel.read" name="iio.Channel.read">
-<area shape="rect" id="node1" title="Extract the samples corresponding to this channel from the given iio.IOBuffer object." alt="" coords="5,5,121,32"/>
-<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4768aee0d2271e63867f05c10f541f7c" title="Returns whether or not the channel has been enabled." alt="" coords="169,5,323,32"/>
+<area shape="rect" id="node1" title="Extract the samples corresponding to this channel from the given iio.IOBuffer object." alt="" coords="5,5,133,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1Channel.html#a4768aee0d2271e63867f05c10f541f7c" title="Returns whether or not the channel has been enabled." alt="" coords="181,5,351,32"/>
 </map>

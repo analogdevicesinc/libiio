@@ -1,4 +1,4 @@
 <map id="iio_device_create_buffer" name="iio_device_create_buffer">
-<area shape="rect" id="node1" title="Create an input or output buffer associated to the given device." alt="" coords="5,5,168,32"/>
-<area shape="rect" id="node2" href="$group__Debug.html#ga52b3e955c10d6f962b2c2e749c7c02fb" title="Get the current sample size." alt="" coords="216,5,400,32"/>
+<area shape="rect" id="node1" title="Create an input or output buffer associated to the given device." alt="" coords="5,5,187,32"/>
+<area shape="rect" id="node2" href="$group__Debug.html#ga52b3e955c10d6f962b2c2e749c7c02fb" title="Get the current sample size." alt="" coords="235,5,439,32"/>
 </map>
