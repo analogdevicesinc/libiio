@@ -22,7 +22,7 @@ namespace iio
         internal Trigger(Context ctx, IntPtr ptr) : base(ctx, ptr) { }
 
         /// <summary>Configure a new frequency for this trigger.</summary>
-        /// <exception cref="System.Exception">The new frequency could not be set.</exception>
+        /// <exception cref="IioLib.IIOException">The new frequency could not be set.</exception>
         public void set_rate(ulong rate)
         {
             foreach (Attr each in attrs)
@@ -33,11 +33,11 @@ namespace iio
                     return;
                 }
             }
-            throw new Exception("Trigger has no frequency?");
+            throw new IIOException("Trigger has no frequency?");
         }
 
         /// <summary>Get the currently configured frequency of this trigger.</summary>
-        /// <exception cref="System.Exception">The configured frequency could not be obtained.</exception>
+        /// <exception cref="IioLib.IIOException">The configured frequency could not be obtained.</exception>
         public ulong get_rate()
         {
             foreach (Attr each in attrs)
@@ -47,19 +47,19 @@ namespace iio
                     return (ulong) each.read_long();
                 }
             }
-            throw new Exception("Trigger has no frequency?");
+            throw new IIOException("Trigger has no frequency?");
         }
 
         /// <summary>Set Trigger.</summary>
         public new void set_trigger(Trigger trig)
         {
-            throw new InvalidComObjectException("Device is already a trigger");
+            throw new IIOException("Device is already a trigger");
         }
 
         /// <summary>Get trigger.</summary>
         public new Trigger get_trigger()
         {
-            throw new InvalidComObjectException("Device is already a trigger");
+            throw new IIOException("Device is already a trigger");
         }
     }
 }

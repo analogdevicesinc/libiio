@@ -24,13 +24,13 @@ namespace iio
         {
             private IntPtr chn;
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_channel_attr_read(IntPtr chn, [In()] string name, [Out()] StringBuilder val, uint len);
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+            private static extern int iio_channel_attr_read_raw(IntPtr chn, [In()] string name, [Out()] StringBuilder val, uint len);
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_channel_attr_write(IntPtr chn, [In()] string name, string val);
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+            private static extern int iio_channel_attr_write_string(IntPtr chn, [In()] string name, string val);
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern IntPtr iio_channel_attr_get_filename(IntPtr chn, [In()] string attr);
 
             public ChannelAttr(IntPtr chn, string name) : base(name, Marshal.PtrToStringAnsi(iio_channel_attr_get_filename(chn, name)))
@@ -41,21 +41,18 @@ namespace iio
             public override string read()
             {
                 StringBuilder builder = new StringBuilder(1024);
-                int err = iio_channel_attr_read(chn, name, builder, (uint) builder.Capacity);
+                int err = iio_channel_attr_read_raw(chn, name, builder, (uint) builder.Capacity);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to read channel attribute " + err);
-                }
+                    throw new IIOException("Unable to read channel attribute", err);
+
                 return builder.ToString();
             }
 
             public override void write(string str)
             {
-                int err = iio_channel_attr_write(chn, name, str);
+                int err = iio_channel_attr_write_string(chn, name, str);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to write channel attribute " + err);
-                }
+                    throw new IIOException("Unable to write channel attribute", err);
             }
         }
 
@@ -183,76 +180,59 @@ namespace iio
         }
 
         internal IntPtr chn;
-        private uint sample_size;
+        public readonly Device dev;
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_id(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_name(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_channel_get_attrs_count(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_attr(IntPtr chn, uint index);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool iio_channel_is_output(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool iio_channel_is_scan_element(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_channel_enable(IntPtr chn);
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_channel_enable(IntPtr chn, IntPtr mask);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_channel_disable(IntPtr chn);
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_channel_disable(IntPtr chn, IntPtr mask);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool iio_channel_is_enabled(IntPtr chn);
+        private static extern bool iio_channel_is_enabled(IntPtr chn, IntPtr mask);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_read_raw(IntPtr chn, IntPtr buf, IntPtr dst, uint len);
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_channel_read(IntPtr chn,
+				IntPtr block, IntPtr dst, uint len,
+				[MarshalAs(UnmanagedType.I1)] bool raw);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_write_raw(IntPtr chn, IntPtr buf, IntPtr src, uint len);
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_channel_write(IntPtr chn,
+				IntPtr block, IntPtr src, uint len,
+				[MarshalAs(UnmanagedType.I1)] bool raw);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_read(IntPtr chn, IntPtr buf, IntPtr dst, uint len);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_channel_write(IntPtr chn, IntPtr buf, IntPtr src, uint len);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_data_format(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_channel_get_index(IntPtr chn);
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern long iio_channel_get_index(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_channel_get_device(IntPtr chn);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_get_context(IntPtr dev);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_channel_get_modifier(IntPtr chn);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_channel_get_type(IntPtr chn);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_channel_find_attr(IntPtr chn, [In] string name);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_channel_convert(IntPtr chn, IntPtr dst, IntPtr src);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_channel_convert_inverse(IntPtr chn, IntPtr dst, IntPtr src);
 
         /// <summary>The name of this channel.</summary>
         public readonly string name;
@@ -261,6 +241,9 @@ namespace iio
         /// <remarks>It is possible that two channels have the same ID,
         /// if one is an input channel and the other is an output channel.</remarks>
         public readonly string id;
+
+        /// <summary>Get the index of this channel.</summary>
+        public readonly uint index;
 
         /// <summary>Contains <c>true</c> if the channel is an output channel,
         /// <c>false</c> otherwise.</summary>
@@ -284,17 +267,17 @@ namespace iio
         /// <summary>Represents the format of a data sample.</summary>
         public DataFormat format { get; private set; }
 
-        internal Channel(IntPtr chn)
+        internal Channel(Device dev, IntPtr chn)
         {
             IntPtr fmt_struct = iio_channel_get_data_format(chn);
             uint nb_attrs = iio_channel_get_attrs_count(chn);
 
+            this.dev = dev;
             this.chn = chn;
             attrs = new List<Attr>();
             modifier = (ChannelModifier) iio_channel_get_modifier(chn);
             type = (ChannelType) iio_channel_get_type(chn);
             format = (DataFormat)Marshal.PtrToStructure(fmt_struct, typeof(DataFormat));
-            sample_size = format.length / 8;
 
             for (uint i = 0; i < nb_attrs; i++)
             {
@@ -304,7 +287,7 @@ namespace iio
             IntPtr name_ptr = iio_channel_get_name(this.chn);
             if (name_ptr == IntPtr.Zero)
             {
-                name = "";
+               name = "";
             }
             else
             {
@@ -314,58 +297,46 @@ namespace iio
             id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));
             output = iio_channel_is_output(this.chn);
             scan_element = iio_channel_is_scan_element(this.chn);
+            index = (uint) iio_channel_get_index(this.chn);
         }
 
         /// <summary>Enable the current channel, so that it can be used for I/O operations.</summary>
-        public void enable()
+        public void enable(ChannelsMask mask)
         {
-            iio_channel_enable(this.chn);
+            iio_channel_enable(this.chn, mask.hdl);
         }
 
         /// <summary>Disable the current channel.</summary>
-        public void disable()
+        public void disable(ChannelsMask mask)
         {
-            iio_channel_disable(this.chn);
+            iio_channel_disable(this.chn, mask.hdl);
         }
 
         /// <summary>Returns whether or not the channel has been enabled.</summary>
-        public bool is_enabled()
+        public bool is_enabled(ChannelsMask mask)
         {
-            return iio_channel_is_enabled(this.chn);
+            return iio_channel_is_enabled(this.chn, mask.hdl);
         }
 
         /// <summary>Extract the samples corresponding to this channel from the
-        /// given <see cref="iio.IOBuffer"/> object.</summary>
-        /// <param name="buffer">A valid instance of the <see cref="iio.IOBuffer"/> class.</param>
+        /// given <see cref="iio.Block"/> object.</summary>
+        /// <param name="block">A valid instance of the <see cref="iio.Block"/> class.</param>
         /// <param name="raw">If set to <c>true</c>, the samples are not converted from their
         /// hardware format to their host format.</param>
         /// <returns>A <c>byte</c> array containing the extracted samples.</returns>
-        /// <exception cref="System.Exception">The samples could not be read.</exception>
-        public byte[] read(IOBuffer buffer, bool raw = false)
+        /// <exception cref="IioLib.IIOException">The samples could not be read.</exception>
+        public byte[] read(Block block, bool raw = false)
         {
-            if (!is_enabled())
-            {
-                throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
-            }
             if (this.output)
-            {
-                throw new Exception("Unable to read from output channel");
-            }
+                throw new IIOException("Unable to read from output channel");
 
-            byte[] array = new byte[(int) (buffer.samples_count * sample_size)];
+            byte[] array = new byte[block.size];
             MemoryStream stream = new MemoryStream(array, true);
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
 
-            if (raw)
-            {
-                count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
-            }
-            else
-            {
-                count = iio_channel_read(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
-            }
+            count = iio_channel_read(this.chn, block.hdl, addr, block.size, raw);
             handle.Free();
             stream.SetLength((long) count);
             return stream.ToArray();
@@ -374,80 +345,27 @@ namespace iio
 
         /// <summary>
         /// Write the specified array of samples corresponding to this channel into the
-        /// given <see cref="iio.IOBuffer"/> object.</summary>
-        /// <param name="buffer">A valid instance of the <see cref="iio.IOBuffer"/> class.</param>
+        /// given <see cref="iio.Block"/> object.</summary>
+        /// <param name="block">A valid instance of the <see cref="iio.Block"/> class.</param>
         /// <param name="array">A <c>byte</c> array containing the samples to write.</param>
         /// <param name="raw">If set to <c>true</c>, the samples are not converted from their
         /// host format to their native format.</param>
         /// <returns>The number of bytes written.</returns>
-        /// <exception cref="System.Exception">The samples could not be written.</exception>
-        public uint write(IOBuffer buffer, byte[] array, bool raw = false)
+        /// <exception cref="IioLib.IIOException">The samples could not be written.</exception>
+        public uint write(Block block, byte[] array, bool raw = false)
         {
-            if (!is_enabled())
-            {
-                throw new Exception("Channel must be enabled before the IOBuffer is instantiated");
-            }
             if (!this.output)
-            {
-                throw new Exception("Unable to write to an input channel");
-            }
+                throw new IIOException("Unable to write to an input channel");
 
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
 
-            if (raw)
-            {
-                count = iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
-            }
-            else
-            {
-                count = iio_channel_write(this.chn, buffer.buf, addr, (uint) array.Length);
-            }
+            count = iio_channel_write(this.chn, block.hdl, addr,
+                        (uint) array.Length, raw);
             handle.Free();
 
             return count;
-        }
-
-        /// <summary>Get the index of this channel.</summary>
-        public long get_index()
-        {
-            return iio_channel_get_index(chn);
-        }
-
-        /// <summary>Finds the attribute of the current channel with the given name.</summary>
-        /// <returns><see cref="iio.Channel.ChannelAttr"/></returns>
-        /// <exception cref="System.Exception">There is no attribute with the given name.</exception>
-        public Attr find_attribute(string attribute)
-        {
-            IntPtr attr = iio_channel_find_attr(chn, attribute);
-
-            if (attr == IntPtr.Zero)
-            {
-                throw new Exception("There is no attribute with the given name!");
-            }
-
-            return new ChannelAttr(chn, Marshal.PtrToStringAnsi(attr));
-        }
-
-        /// <summary>Finds the device of the current channel.</summary>
-        /// <returns><see cref="iio.Device"/></returns>
-        public Device get_device()
-        {
-            IntPtr dev_ptr = iio_channel_get_device(chn);
-            return new Device(new Context(dev_ptr), dev_ptr);
-        }
-
-        /// <summary>Converts the data from the hardware format to the format of the arhitecture on which libiio is running.</summary>
-        public void convert(IntPtr dst, IntPtr src)
-        {
-            iio_channel_convert(chn, dst, src);
-        }
-
-        /// <summary>Converts the data from the arhitecture on which libiio is running to the hardware format.</summary>
-        public void convert_inverse(IntPtr dst, IntPtr src)
-        {
-            iio_channel_convert_inverse(chn, dst, src);
         }
     }
 }
