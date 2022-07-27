@@ -23,10 +23,10 @@ namespace iio
         {
             internal IntPtr dev;
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_attr_write(IntPtr dev, [In()] string name, [In()] string val);
 
             public DeviceAttr(IntPtr dev, string name) : base(name)
@@ -39,9 +39,8 @@ namespace iio
                 StringBuilder builder = new StringBuilder(1024);
                 int err = iio_device_attr_read(dev, name, builder, 1024);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to read device attribute " + err);
-                }
+                    throw new IIOException("Unable to read device attribute", err);
+
                 return builder.ToString();
             }
 
@@ -49,9 +48,7 @@ namespace iio
             {
                 int err = iio_device_attr_write(dev, name, str);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to write device attribute " + err);
-                }
+                    throw new IIOException("Unable to write device attribute", err);
             }
         }
 
@@ -59,10 +56,10 @@ namespace iio
         {
             private IntPtr dev;
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_debug_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_debug_attr_write(IntPtr dev, [In()] string name, [In()] string val);
 
             public DeviceDebugAttr(IntPtr dev, string name) : base(name)
@@ -75,9 +72,8 @@ namespace iio
                 StringBuilder builder = new StringBuilder(1024);
                 int err = iio_device_debug_attr_read(dev, name, builder, 1024);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to read debug attribute " + err);
-                }
+                    throw new IIOException("Unable to read debug attribute", err);
+
                 return builder.ToString();
             }
 
@@ -85,9 +81,7 @@ namespace iio
             {
                 int err = iio_device_debug_attr_write(dev, name, str);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to write debug attribute " + err);
-                }
+                    throw new IIOException("Unable to write debug attribute", err);
             }
         }
 
@@ -95,10 +89,10 @@ namespace iio
         {
             private IntPtr dev;
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_buffer_attr_read(IntPtr dev, [In] string name, [Out] StringBuilder val, uint len);
 
-            [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
             private static extern int iio_device_buffer_attr_write(IntPtr dev, [In] string name, [In] string val);
 
             public DeviceBufferAttr(IntPtr dev, string name) : base(name)
@@ -111,9 +105,8 @@ namespace iio
                 StringBuilder builder = new StringBuilder(16384);
                 int err = iio_device_buffer_attr_read(dev, name, builder, 16384);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to read buffer attribute " + err);
-                }
+                    throw new IIOException("Unable to read buffer attribute", err);
+
                 return builder.ToString();
             }
 
@@ -121,82 +114,60 @@ namespace iio
             {
                 int err = iio_device_buffer_attr_write(dev, name, str);
                 if (err < 0)
-                {
-                    throw new Exception("Unable to write buffer attribute " + err);
-                }
+                    throw new IIOException("Unable to write buffer attribute", err);
             }
         }
 
-        internal Context ctx;
+        /// <summary>Gets the context of the current device.</summary>
+        public readonly Context ctx;
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_id(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_name(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_label(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_device_get_channels_count(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_channel(IntPtr dev, uint index);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_device_get_attrs_count(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_device_get_debug_attrs_count(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_device_get_buffer_attrs_count(IntPtr dev);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_attr(IntPtr dev, uint index);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_debug_attr(IntPtr dev, uint index);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_buffer_attr(IntPtr dev, uint index);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_get_trigger(IntPtr dev, IntPtr triggerptr);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_set_trigger(IntPtr dev, IntPtr trigger);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_device_get_sample_size(IntPtr dev);
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_device_get_sample_size(IntPtr dev, IntPtr mask);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_reg_write(IntPtr dev, uint addr, uint value);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_reg_read(IntPtr dev, uint addr, ref uint value);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_get_context(IntPtr dev);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_device_set_kernel_buffers_count(IntPtr dev, uint nb);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_find_buffer_attr(IntPtr dev, [In] string name);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_find_debug_attr(IntPtr dev, [In] string name);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_find_attr(IntPtr dev, [In] string name);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_find_channel(IntPtr dev, [In] string name, [In] bool output);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_device_identify_filename(IntPtr dev, [In] string filename, out IntPtr chn_ptr, out IntPtr attr);
 
         internal IntPtr dev;
 
@@ -241,7 +212,7 @@ namespace iio
 
             for (uint i = 0; i < nb_channels; i++)
             {
-                channels.Add(new Channel(iio_device_get_channel(dev, i)));
+                channels.Add(new Channel(this, iio_device_get_channel(dev, i)));
             }
 
             for (uint i = 0; i < nb_attrs; i++)
@@ -279,45 +250,42 @@ namespace iio
 
         /// <summary>Get the <see cref="iio.Channel"/> object of the specified name.</summary>
         /// <param name="name">Name or ID of the channel to look for</param>
-        /// <exception cref="System.Exception">The IIO device with the specified
+        /// <param name="output">true if you are looking for an output channel, otherwise false.</param>
+        /// <exception cref="IioLib.IIOException">The IIO device with the specified
         /// name or ID could not be found in the current context.</exception>
-        public Channel get_channel(string name)
+        public Channel get_channel(string name, bool output = false)
         {
             foreach (Channel each in channels)
             {
-                if (each.name.CompareTo(name) == 0 ||
-                            each.id.CompareTo(name) == 0)
+                if ((each.name.CompareTo(name) == 0 ||
+                            each.id.CompareTo(name) == 0) && each.output == output)
                 {
                     return each;
                 }
             }
 
-            throw new Exception("Channel " + name + " not found");
+            throw new IIOException("Channel " + name + " not found");
         }
 
         /// <summary>Affect a trigger to this device.</summary>
         /// <param name="trig">A valid instance of the <see cref="iio.Trigger"/> class.</param>
-        /// <exception cref="System.Exception">The trigger could not be set.</exception>
+        /// <exception cref="IioLib.IIOException">The trigger could not be set.</exception>
         public void set_trigger(Trigger trig)
         {
             int err = iio_device_set_trigger(this.dev, trig == null ? IntPtr.Zero : trig.dev);
             if (err < 0)
-            {
-                throw new Exception("Unable to set trigger: err=" + err);
-            }
+                throw new IIOException("Unable to set trigger", err);
         }
 
         /// <summary>Get the current trigger affected to this device.</summary>
         /// <returns>An instance of the <see cref="iio.Trigger"/> class.</returns>
-        /// <exception cref="System.Exception">The instance could not be retrieved.</exception>
+        /// <exception cref="IioLib.IIOException">The instance could not be retrieved.</exception>
         public Trigger get_trigger()
         {
-            IntPtr ptr = (IntPtr)0;
+            IntPtr ptr = IntPtr.Zero;
             int err = iio_device_get_trigger(this.dev, ptr);
             if (err < 0)
-            {
-                throw new Exception("Unable to get trigger: err=" + err);
-            }
+                 throw new IIOException("Unable to get trigger", err);
 
             ptr = Marshal.ReadIntPtr(ptr);
 
@@ -334,130 +302,37 @@ namespace iio
 
         /// <summary>Get the current sample size of the device.</summary>
         /// <remarks>The sample size varies each time channels get enabled or disabled.</remarks>
-        /// <exception cref="System.Exception">Internal error. Please report any bug.</exception>
-        public uint get_sample_size()
+        /// <exception cref="IioLib.IIOException">Internal error. Please report any bug.</exception>
+        public uint get_sample_size(ChannelsMask mask)
         {
-            int ret = iio_device_get_sample_size(dev);
+            int ret = iio_device_get_sample_size(dev, mask.hdl);
             if (ret < 0)
-            {
-                throw new Exception("Internal error. Please report any bug.");
-            }
+                throw new IIOException("Unable to get sample size", ret);
+
             return (uint) ret;
         }
         /// <summary>Set a value to one register of this device.</summary>
         /// <param name="addr">The address of the register concerned.</param>
         /// <param name="value">The value that will be used for this register.</param>
-        /// <exception cref="System.Exception">The register could not be written.</exception>
+        /// <exception cref="IioLib.IIOException">The register could not be written.</exception>
         public void reg_write(uint addr, uint value)
         {
             int err = iio_device_reg_write(dev, addr, value);
             if (err < 0)
-            {
-                throw new Exception("Unable to write register");
-            }
+                throw new IIOException("Unable to write register", err);
         }
 
         /// <summary>Read the content of a register of this device.</summary>
         /// <param name="addr">The address of the register concerned.</param>
-        /// <exception cref="System.Exception">The register could not be read.</exception>
+        /// <exception cref="IioLib.IIOException">The register could not be read.</exception>
         public uint reg_read(uint addr)
         {
             uint value = 0;
             int err = iio_device_reg_read(dev, addr, ref value);
             if (err < 0)
-            {
-                throw new Exception("Unable to read register");
-            }
+                throw new IIOException("Unable to read register", err);
+
             return value;
-        }
-
-        /// <summary>Sets the number of active kernel buffers for this device.</summary>
-        /// <param name="nb">The number of kernel buffers.</param>
-        public int set_kernel_buffers_count(uint nb)
-        {
-            return iio_device_set_kernel_buffers_count(dev, nb);
-        }
-
-        /// <summary>Gets the context of the current device.</summary>
-        /// <returns>An instance of the <see cref="iio.Context"/> class.</returns>
-        public Context get_context()
-        {
-            return new Context(iio_device_get_context(dev));
-        }
-
-        /// <summary>Finds the channel with the given name from the current device.</summary>
-        /// <param name="channel">The name of the channel.</param>
-        /// <param name="output">true if you are looking for an output channel, otherwise false.</param>
-        /// <returns>An instance of the <see cref="iio.Channel"/> class.</returns>
-        /// <exception cref="System.Exception">There is no channel with the given name.</exception>
-        public Channel find_channel(string channel, bool output)
-        {
-            IntPtr chn = iio_device_find_channel(dev, channel, output);
-
-            if (chn == IntPtr.Zero)
-            {
-                throw new Exception("There is no channel with the given name!");
-            }
-
-            return new Channel(chn);
-        }
-
-        /// <summary>Finds the attribute with the given name from the current device.</summary>
-        /// <param name="attribute">The name of the attribute.</param>
-        /// <returns>An instance of the <see cref="iio.Device.DeviceAttr"/> class.</returns>
-        /// <exception cref="System.Exception">There is no attribute with the given name.</exception>
-        public Attr find_attribute(string attribute)
-        {
-            IntPtr attr = iio_device_find_attr(dev, attribute);
-
-            if (attr == IntPtr.Zero)
-            {
-                throw new Exception("This device has no attribute with the given name!");
-            }
-
-            return new DeviceAttr(dev, Marshal.PtrToStringAnsi(attr));
-        }
-
-        /// <summary>Finds the debug attribute with the given name from the current device.</summary>
-        /// <param name="attribute">The name of the debug attribute.</param>
-        /// <returns>An instance of the <see cref="iio.Device.DeviceDebugAttr"/> class.</returns>
-        /// <exception cref="System.Exception">There is no debug attribute with the given name.</exception>
-        public Attr find_debug_attribute(string attribute)
-        {
-            IntPtr attr = iio_device_find_debug_attr(dev, attribute);
-
-            if (attr == IntPtr.Zero)
-            {
-                throw new Exception("This device has no debug attribute with the given name!");
-            }
-
-            return new DeviceDebugAttr(dev, Marshal.PtrToStringAnsi(attr));
-        }
-
-        /// <summary>Finds the buffer attribute with the given name from the current device.</summary>
-        /// <param name="attribute">The name of the buffer attribute.</param>
-        /// <returns>An instance of the <see cref="iio.Device.DeviceBufferAttr"/> class.</returns>
-        /// <exception cref="System.Exception">There is no attribute with the given name.</exception>
-        public Attr find_buffer_attribute(string attribute)
-        {
-            IntPtr attr = iio_device_find_buffer_attr(dev, attribute);
-
-            if (attr == IntPtr.Zero)
-            {
-                throw new Exception("This device has no buffer attribute with the given name!");
-            }
-
-            return new DeviceBufferAttr(dev, Marshal.PtrToStringAnsi(attr));
-        }
-
-        /// <summary>Finds the channel attribute coresponding to the given filename from the current device.</summary>
-        /// <param name="filename">The name of the attribute.</param>
-        /// <param name="chn_ptr">Output variable. It will contain a pointer to the resulting <see cref="iio.Channel"/>.</param>
-        /// <param name="attr">Output variable. It will contain a pointer to the resulting <see cref="iio.ChannelAttr"/>.</param>
-        /// <returns>C errorcode if error encountered, otherwise 0.</returns>
-        public int identify_filename(string filename, IntPtr chn_ptr, IntPtr attr)
-        {
-            return iio_device_identify_filename(dev, filename, out chn_ptr, out attr);
         }
     }
 }

@@ -9,36 +9,131 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace iio
 {
+    public class IIOPtr
+    {
+        public readonly IntPtr ptr;
+        public readonly int error;
+
+        public IIOPtr(IntPtr ptr)
+        {
+            this.ptr = ptr;
+
+            if (IntPtr.Size == 4) {
+                this.error = (uint) ptr >= unchecked((uint) -4095) ? (int) ptr : 0;
+            } else {
+                this.error = (ulong) ptr >= unchecked((ulong) -4095L) ? (int)(long) ptr : 0;
+            }
+        }
+
+        /// <summary>Get a string representation of the error.</summary>
+        public string str()
+        {
+            return IioLib.strerror(error);
+        }
+
+        ~IIOPtr() {}
+
+        public static bool operator !(IIOPtr r)
+        {
+            return r.error > 0;
+        }
+    }
+
+    public class IIOException : Exception
+    {
+        public IIOException(string fmt) : base(fmt)
+        {
+        }
+
+        public IIOException(string fmt, IIOPtr ptr)
+            : base(string.Format("{0}: {1}", fmt, ptr.str()))
+        {
+        }
+
+        public IIOException(string fmt, int err)
+	    : base(string.Format("{0}: {1}", fmt, IioLib.strerror(err)))
+        {
+        }
+    }
+
+    public abstract class IIOObject : IDisposable
+    {
+        internal IntPtr hdl;
+
+        protected IIOObject() : this(IntPtr.Zero) {}
+
+        protected IIOObject(IntPtr hdl)
+        {
+            this.hdl = hdl;
+        }
+
+        ~IIOObject()
+        {
+            if (hdl != IntPtr.Zero)
+                Dispose(false);
+        }
+
+        /// <summary>Releases all resource used by the <see cref="iio.IIOObject"/> object.</summary>
+        /// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="iio.IIOObject"/>. The
+        /// <see cref="Dispose"/> method leaves the <see cref="iio.IIOObject"/> in an unusable state. After calling
+        /// <see cref="Dispose"/>, you must release all references to the <see cref="iio.IIOObject"/> so the garbage
+        /// collector can reclaim the memory that the <see cref="iio.IIOObject"/> was occupying.</remarks>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        private void Dispose(bool clean)
+        {
+            if (hdl != IntPtr.Zero)
+            {
+                if (clean)
+                {
+                    GC.SuppressFinalize(this);
+                }
+                Destroy();
+                hdl = IntPtr.Zero;
+            }
+        }
+
+        protected abstract void Destroy();
+    }
+
     /// <summary><see cref="iio.IioLib"/> class:
     /// Contains the general methods from libiio.</summary>
     public static class IioLib
     {
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_strerror(int err, [In] string buf, ulong len);
+        public const string dllname = "libiio1.dll";
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_strerror(int err, [Out()] StringBuilder buf, ulong len);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool iio_has_backend([In] string backend);
+        private static extern bool iio_has_backend([In()] string backend);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_get_backends_count();
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_get_backend(uint index);
 
-        /// <summary>Calls the iio_strerror method from libiio.</summary>
-        /// <param name="err">Error code.</param>
-        /// <param name="buf">Error message.</param>
-        public static void strerror(int err, string buf)
+        /// <summary>Get a description of a negative error code.</summary>
+        /// <param name="err">Negative error code.</param>
+        public static string strerror(int err)
         {
-            if (buf == null)
-            {
-                throw new System.Exception("The buffer should not be null!");
-            }
-            iio_strerror(err, buf, (ulong) buf.Length);
+            if (err > 0)
+                throw new IIOException("strerror must only be called with negative error codes");
+
+            StringBuilder builder = new StringBuilder(1024);
+
+            iio_strerror(-err, builder, 1024);
+
+            return builder.ToString();
         }
 
         /// <summary>Checks if the given backend is available or not.</summary>
@@ -46,9 +141,8 @@ namespace iio
         public static bool has_backend(string backend)
         {
             if (backend == null)
-            {
-                throw new System.Exception("The backend string should not be null!");
-            }
+                throw new IIOException("The backend string should not be null!");
+
             return iio_has_backend(backend);
         }
 
