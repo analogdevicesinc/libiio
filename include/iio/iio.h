@@ -1024,11 +1024,11 @@ iio_channel_attr_read_raw(const struct iio_channel *chn,
  * @param ptr A pointer to the variable where the value should be stored
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-#define iio_channel_attr_read(dev, attr, ptr)			\
+#define iio_channel_attr_read(chn, attr, ptr)			\
 	_Generic((ptr),						\
 		 bool *: iio_channel_attr_read_bool,		\
 		 long long *: iio_channel_attr_read_longlong,	\
-		 double *: iio_channel_attr_read_double)(dev, attr, ptr)
+		 double *: iio_channel_attr_read_double)(chn, attr, ptr)
 
 
 /** @brief Set the value of the given channel-specific attribute
@@ -1051,13 +1051,13 @@ iio_channel_attr_write_raw(const struct iio_channel *chn,
  * @param val The value to set the attribute to
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-#define iio_channel_attr_write(dev, attr, val)			\
+#define iio_channel_attr_write(chn, attr, val)			\
 	_Generic((val),						\
 		 const char *: iio_channel_attr_write_string,	\
 		 char *: iio_channel_attr_write_string,		\
 		 bool: iio_channel_attr_write_bool,		\
 		 long long: iio_channel_attr_write_longlong,	\
-		 double: iio_channel_attr_write_double)(dev, attr, val)
+		 double: iio_channel_attr_write_double)(chn, attr, val)
 
 
 /** @brief Enable the given channel
