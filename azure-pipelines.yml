@@ -53,7 +53,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
       displayName: 'Build'
