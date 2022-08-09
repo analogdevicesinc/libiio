@@ -25,6 +25,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND OSX_FRAMEWORK)
+	set(IIO_TESTS_INSTALL_DIR ${OSX_INSTALL_FRAMEWORKSDIR}/iio.framework/Tools)
+else()
+	set(IIO_TESTS_INSTALL_DIR ${CMAKE_INSTALL_BINDIR})
+endif()
+
 configure_file(artifact_manifest.txt.cmakein ${CMAKE_CURRENT_BINARY_DIR}/artifact_manifest.txt @ONLY)
 configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 
@@ -39,6 +45,19 @@ if(NOT SKIP_INSTALL_ALL)
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 		FRAMEWORK DESTINATION ${OSX_INSTALL_FRAMEWORKSDIR})
+
+	if (WITH_TESTS)
+		#install(TARGETS ${IIO_TESTS_TARGETS}
+		#	RUNTIME DESTINATION ${IIO_TESTS_INSTALL_DIR})
+
+		# Workaround for CMake < 3.13, which do not support installing
+		# targets built outside the current directory.
+		set(IIO_TEST_PROGRAMS)
+		foreach(_tool ${IIO_TESTS_TARGETS})
+			list(APPEND IIO_TEST_PROGRAMS $<TARGET_FILE:${_tool}>)
+		endforeach()
+		install(PROGRAMS ${IIO_TEST_PROGRAMS} DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
 
 	if (OSX_PACKAGE)
 		install(TARGETS iio ${IIO_COMPAT_LIB}
