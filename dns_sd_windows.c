@@ -316,7 +316,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 		mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr);
 		addrstr = ip_address_to_string(namebuffer, sizeof(namebuffer),
 					       (struct sockaddr *) &addr, sizeof(addr));
-		prm_dbg("%.*s : %.*s AAAA %.*s\n", MDNS_STRING_FORMAT(fromaddrstr),
+		prm_dbg(params, "%.*s : %.*s AAAA %.*s\n",
+			MDNS_STRING_FORMAT(fromaddrstr),
 			MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(addrstr));
 
 		/* find a match based on name/port/ipv[46] & update it, otherwise add it */
