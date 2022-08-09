@@ -210,7 +210,6 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	mdns_record_srv_t srv;
 	bool found = false;
 	mdns_string_t entrystr, fromaddrstr, addrstr;
-	unsigned short port = 0;
 
 	if (!dd) {
 		prm_err(params, "DNS SD: Missing info structure. Stop browsing.\n");
@@ -311,6 +310,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	}
 #ifdef HAVE_IPV6
 	else if (rtype == MDNS_RECORDTYPE_AAAA) {
+		unsigned short port = 0;
 		struct sockaddr_in6 addr;
 
 		mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr);
