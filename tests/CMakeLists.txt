@@ -56,15 +56,5 @@ if(PTHREAD_LIBRARIES)
 	endforeach()
 endif()
 
-if(NOT SKIP_INSTALL_ALL)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND OSX_FRAMEWORK)
-		set(IIO_TESTS_INSTALL_DIR ${OSX_INSTALL_FRAMEWORKSDIR}/iio.framework/Tools)
-	else()
-		include(GNUInstallDirs)
-		set(IIO_TESTS_INSTALL_DIR ${CMAKE_INSTALL_BINDIR})
-	endif()
-	install(TARGETS ${IIO_TESTS_TARGETS} RUNTIME DESTINATION ${IIO_TESTS_INSTALL_DIR})
-endif()
-
 # Make the test targets available to the main CMakeLists.txt
 set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} PARENT_SCOPE)
