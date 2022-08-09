@@ -11,6 +11,7 @@
 
 #include "dns_sd.h"
 #include "deps/mdns/mdns.h"
+#include "iio-private.h"
 
 #include <stdio.h>
 #include <errno.h>
