@@ -421,11 +421,6 @@ struct iio_context * iio_context_clone(const struct iio_context *ctx)
 	return iio_ptr(-ENOSYS);
 }
 
-struct iio_context * iio_create_context_from_uri(const char *uri)
-{
-	return iio_create_context(NULL, uri);
-}
-
 const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
