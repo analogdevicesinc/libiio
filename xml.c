@@ -18,6 +18,9 @@
 static struct iio_context *
 xml_create_context(const struct iio_context_params *params,
 		   const char *xml_file);
+static struct iio_context *
+xml_create_context_mem(const struct iio_context_params *params,
+		       const char *xml, size_t len);
 
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
@@ -496,13 +499,12 @@ xml_create_context(const struct iio_context_params *params, const char *arg)
 	return ctx;
 }
 
-struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
-					    const char *xml, size_t len)
+static struct iio_context *
+xml_create_context_mem(const struct iio_context_params *params,
+		       const char *xml, size_t len)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
-
-	LIBXML_TEST_VERSION;
 
 	doc = xmlReadMemory(xml, (int) len, NULL, NULL, XML_PARSE_DTDVALID);
 	if (!doc) {
