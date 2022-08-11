@@ -415,18 +415,6 @@ __api __check_ret __cnst const char * iio_get_backend(unsigned int index);
  * @brief Contains the representation of an IIO context */
 
 
-/** @brief Create a context from XML data in memory
- * @param xml Pointer to the XML data in memory
- * @param len Length of the XML string in memory (excluding the final \0)
- * @return On success, A pointer to an iio_context structure
- * @return On failure, a pointer-encoded error is returned
- *
- * <b>NOTE:</b> The format of the XML must comply to the one returned by
- * iio_context_get_xml */
-__api __check_ret struct iio_context * iio_create_xml_context_mem(
-		const char *xml, size_t len);
-
-
 /** @brief Create a context from a URI description
  * @param params A pointer to a iio_context_params structure that contains
  *   context creation information; can be NULL
