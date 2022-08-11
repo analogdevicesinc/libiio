@@ -589,8 +589,7 @@ int iio_context_add_attr(struct iio_context *ctx,
 
 struct iio_context *
 iio_create_context_from_xml(const struct iio_context_params *params,
-			    const char *xml, size_t xml_len,
-			    const struct iio_backend *backend,
+			    const char *uri, const struct iio_backend *backend,
 			    const char *description, const char **ctx_attrs,
 			    const char **ctx_values, unsigned int nb_ctx_attrs)
 {
@@ -603,7 +602,7 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 	if (!WITH_XML_BACKEND)
 		return iio_ptr(-ENOSYS);
 
-	ctx = xml_create_context_mem(params, xml, xml_len);
+	ctx = iio_create_context(params, uri);
 	if (iio_err(ctx))
 		return ctx;
 
