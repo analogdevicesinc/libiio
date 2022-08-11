@@ -15,6 +15,10 @@
 
 #define MY_NAME "iio_genxml"
 
+#ifdef _WIN32
+#define snprintf sprintf_s
+#endif
+
 static const struct option options[] = {
 	{0, 0, 0, 0},
 };
@@ -27,13 +31,13 @@ static const char *options_descriptions[] = {
 
 int main(int argc, char **argv)
 {
-	char **argw;
-	char *xml;
-	const char *tmp;
+	char **argw, *uri;
+	const char *xml;
 	struct iio_context *ctx;
 	int c;
 	size_t xml_len;
 	struct option *opts;
+	size_t buf_len;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions);
@@ -74,23 +78,21 @@ int main(int argc, char **argv)
 	if (!ctx)
 		return EXIT_FAILURE;
 
-	tmp = iio_context_get_xml(ctx);
-	if (!tmp) {
-		iio_context_destroy(ctx);
-		return EXIT_FAILURE;
-	}
-	xml_len = strnlen(tmp, (size_t)-1);
-	xml = cmn_strndup(tmp, xml_len);
-	if (!xml) {
+	xml = iio_context_get_xml(ctx);
+	printf("XML generated:\n\n%s\n\n", xml);
+
+	buf_len = strlen(xml) + 5;
+	uri = malloc(buf_len);
+	if (!uri) {
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
 
-	printf("XML generated:\n\n%s\n\n", xml);
+	snprintf(uri, buf_len, "xml:%s", xml);
 
 	iio_context_destroy(ctx);
 
-	ctx = iio_create_xml_context_mem(xml, xml_len);
+	ctx = iio_create_context(NULL, uri);
 	if (!ctx) {
 		fprintf(stderr, "Unable to re-generate context\n");
 	} else {
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
 	}
 
 	free_argw(argc, argw);
-	free(xml);
+	free(uri);
 
 	return EXIT_SUCCESS;
 }
