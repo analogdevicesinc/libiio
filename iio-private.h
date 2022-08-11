@@ -217,8 +217,6 @@ int write_double(char *buf, size_t len, double val);
 
 bool iio_list_has_elem(const char *list, const char *elem);
 
-struct iio_context * xml_create_context_mem(const struct iio_context_params *params,
-					    const char *xml, size_t len);
 struct iio_context *
 iio_create_dynamic_context(const struct iio_context_params *params,
 			   const char *uri);
