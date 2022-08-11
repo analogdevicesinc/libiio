@@ -165,8 +165,7 @@ __api size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, siz
 
 __api struct iio_context *
 iio_create_context_from_xml(const struct iio_context_params *params,
-			    const char *xml, size_t len,
-			    const struct iio_backend *backend,
+			    const char *uri, const struct iio_backend *backend,
 			    const char *description, const char **ctx_attr,
 			    const char **ctx_values, unsigned int nb_ctx_attrs);
 

@@ -489,7 +489,7 @@ iiod_client_create_context_private(struct iiod_client *client,
 {
 	const char *cmd = zstd ? "ZPRINT\r\n" : "PRINT\r\n";
 	struct iio_context *ctx = NULL;
-	size_t xml_len;
+	size_t xml_len, uri_len = sizeof("xml:") - 1;
 	char *xml;
 	int ret;
 
@@ -509,16 +509,21 @@ iiod_client_create_context_private(struct iiod_client *client,
 		goto out_unlock;
 
 	xml_len = (size_t) ret;
-	xml = malloc(xml_len + 1);
+	xml = malloc(xml_len + uri_len + 1);
 	if (!xml) {
 		ret = -ENOMEM;
 		goto out_unlock;
 	}
 
+	memcpy(xml, "xml:", uri_len);
+
 	/* +1: Also read the trailing \n */
-	ret = (int) iiod_client_read_all(client, xml, xml_len + 1);
+	ret = (int) iiod_client_read_all(client, xml + uri_len, xml_len + 1);
 	if (ret < 0)
 		goto out_free_xml;
+
+	/* Replace the \n with a \0 */
+	xml[xml_len + uri_len] = '\0';
 
 #if WITH_ZSTD
 	if (zstd) {
@@ -527,20 +532,23 @@ iiod_client_create_context_private(struct iiod_client *client,
 
 		prm_dbg(client->params, "Received ZSTD-compressed XML string.\n");
 
-		len = ZSTD_getFrameContentSize(xml, xml_len);
+		len = ZSTD_getFrameContentSize(xml + uri_len, xml_len);
 		if (len == ZSTD_CONTENTSIZE_UNKNOWN ||
 		    len == ZSTD_CONTENTSIZE_ERROR) {
 			ret = -EIO;
 			goto out_free_xml;
 		}
 
-		xml_zstd = malloc(len);
+		/* +1: Leave space for the terminating \0 */
+		xml_zstd = malloc(len + uri_len + 1);
 		if (!xml_zstd) {
 			ret = -ENOMEM;
 			goto out_free_xml;
 		}
 
-		xml_len = ZSTD_decompress(xml_zstd, len, xml, xml_len);
+		memcpy(xml_zstd, "xml:", uri_len);
+
+		xml_len = ZSTD_decompress(xml_zstd + uri_len, len, xml + uri_len, xml_len);
 		if (ZSTD_isError(xml_len)) {
 			prm_err(client->params, "Unable to decompress ZSTD data: %s\n",
 				ZSTD_getErrorName(xml_len));
@@ -552,10 +560,12 @@ iiod_client_create_context_private(struct iiod_client *client,
 		/* Free compressed data, make "xml" point to uncompressed data */
 		free(xml);
 		xml = xml_zstd;
+
+		xml_zstd[xml_len + uri_len] = '\0';
 	}
 #endif
 
-	ctx = iio_create_context_from_xml(client->params, xml, xml_len,
+	ctx = iio_create_context_from_xml(client->params, xml,
 					  backend, description,
 					  ctx_attrs, ctx_values, nb_ctx_attrs);
 	ret = iio_err(ctx);
