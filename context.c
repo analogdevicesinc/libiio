@@ -483,14 +483,6 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	return ctx;
 }
 
-struct iio_context * iio_create_xml_context_mem(const char *xml, size_t len)
-{
-	if (WITH_XML_BACKEND)
-		return xml_create_context_mem(&default_params, xml, len);
-
-	return iio_ptr(-ENOSYS);
-}
-
 unsigned int iio_context_get_attrs_count(const struct iio_context *ctx)
 {
 	return ctx->nb_attrs;
