@@ -13,6 +13,8 @@
 #include <libxml/tree.h>
 #include <string.h>
 
+#define XML_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+
 static struct iio_context *
 xml_create_context(const struct iio_context_params *params,
 		   const char *xml_file);
@@ -470,15 +472,20 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 }
 
 static struct iio_context *
-xml_create_context(const struct iio_context_params *params,
-		   const char *xml_file)
+xml_create_context(const struct iio_context_params *params, const char *arg)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
 
 	LIBXML_TEST_VERSION;
 
-	doc = xmlReadFile(xml_file, NULL, XML_PARSE_DTDVALID);
+	if (!strncmp(arg, XML_HEADER, sizeof(XML_HEADER) - 1)) {
+		doc = xmlReadMemory(arg, (int) strlen(arg),
+				    NULL, NULL, XML_PARSE_DTDVALID);
+	} else {
+		doc = xmlReadFile(arg, NULL, XML_PARSE_DTDVALID);
+	}
+
 	if (!doc) {
 		prm_err(params, "Unable to parse XML file\n");
 		return iio_ptr(-EINVAL);
