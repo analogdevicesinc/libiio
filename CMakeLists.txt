@@ -34,19 +34,34 @@ add_library(iio backend.c block.c channel.c device.c context.c buffer.c mask.c u
 	${CMAKE_CURRENT_BINARY_DIR}/iio-config.h
 )
 
-option(LIBIIO_COMPAT "Add compatibility layer for libiio 0.x" ON)
-if (LIBIIO_COMPAT)
-	add_library(iio-compat compat.c)
-	target_link_libraries(iio-compat PRIVATE iio)
-	target_compile_definitions(iio-compat PRIVATE LIBIIO_COMPAT_EXPORTS)
-	set(IIO_COMPAT_LIB iio-compat)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
+	option(LIBIIO_COMPAT "Add compatibility layer for libiio 0.x" ON)
+	if (LIBIIO_COMPAT)
+		add_library(iio-compat compat.c)
+		if (WIN32)
+			target_sources(iio-compat PRIVATE dynamic-windows.c)
+			target_compile_definitions(iio-compat PRIVATE
+				LIBIIO1_NAME="iio${PROJECT_VERSION_MAJOR}.dll"
+			)
+		else()
+			target_sources(iio-compat PRIVATE dynamic-unix.c)
+			target_link_libraries(iio-compat PRIVATE dl)
+			target_compile_definitions(iio-compat PRIVATE
+				LIBIIO1_NAME="libiio.so.${PROJECT_VERSION_MAJOR}"
+			)
+		endif()
 
-	set_target_properties(iio-compat PROPERTIES
-		OUTPUT_NAME iio
-		NO_SONAME ON
-	)
-	if (NOT WIN32)
-		set_target_properties(iio-compat PROPERTIES SUFFIX .so.0)
+		target_include_directories(iio-compat PUBLIC ${CMAKE_BINARY_DIR} include)
+		target_compile_definitions(iio-compat PRIVATE LIBIIO_COMPAT_EXPORTS)
+		set(IIO_COMPAT_LIB iio-compat)
+
+		set_target_properties(iio-compat PROPERTIES
+			OUTPUT_NAME iio
+			NO_SONAME ON
+		)
+		if (NOT WIN32)
+			set_target_properties(iio-compat PROPERTIES SUFFIX .so.0)
+		endif()
 	endif()
 endif()
 
