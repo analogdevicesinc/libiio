@@ -17,10 +17,10 @@ void * iio_dlopen(const char *path)
 
 void iio_dlclose(void *lib)
 {
-	FreeLibrary((void *) module);
+	FreeLibrary((void *) lib);
 }
 
-const void * iio_dlsym(void *lib, const char *symbol)
+void * iio_dlsym(void *lib, const char *symbol)
 {
-	return (const void *) GetProcAddress(lib, symbol);
+	return (void *) GetProcAddress(lib, symbol);
 }
