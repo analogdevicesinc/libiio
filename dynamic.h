@@ -11,6 +11,6 @@
 
 void * iio_dlopen(const char *path);
 void iio_dlclose(void *lib);
-const void * iio_dlsym(void *lib, const char *symbol);
+void * iio_dlsym(void *lib, const char *symbol);
 
 #endif /* __IIO_DYNAMIC_H */

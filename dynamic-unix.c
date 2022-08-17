@@ -20,7 +20,7 @@ void iio_dlclose(void *lib)
 	dlclose(lib);
 }
 
-const void * iio_dlsym(void *lib, const char *symbol)
+void * iio_dlsym(void *lib, const char *symbol)
 {
 	return dlsym(lib, symbol);
 }

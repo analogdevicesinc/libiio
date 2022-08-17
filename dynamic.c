@@ -7,10 +7,11 @@
  */
 
 #include "dynamic.h"
-#include "iio-backend.h"
 #include "iio-config.h"
-#include "iio-debug.h"
 #include "iio-private.h"
+
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
 
 #include <errno.h>
 #include <stdio.h>
