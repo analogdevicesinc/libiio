@@ -607,6 +607,18 @@ __api __cnst const struct iio_context_params *
 iio_context_get_params(const struct iio_context *ctx);
 
 
+/** @brief Associate a pointer to an iio_context structure
+ * @param dev A pointer to an iio_context structure
+ * @param data The pointer to be associated */
+__api void iio_context_set_data(struct iio_context *ctx, void *data);
+
+
+/** @brief Retrieve a previously associated pointer of an iio_context structure
+ * @param dev A pointer to an iio_context structure
+ * @return The pointer previously associated if present, or NULL */
+__api void * iio_context_get_data(const struct iio_context *ctx);
+
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Device functions --------------------------------*/
 /** @defgroup Device Device
