@@ -1206,7 +1206,7 @@ __api int iio_buffer_disable(struct iio_buffer *buf);
  * <b>NOTE:</b> The mask returned may contain more enabled channels than
  * the mask used for creating the buffer. */
 __api const struct iio_channels_mask *
-iio_buffer_get_channels_mask(struct iio_buffer *buf);
+iio_buffer_get_channels_mask(const struct iio_buffer *buf);
 
 
 /** @} *//* ------------------------------------------------------------------*/

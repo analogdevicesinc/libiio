@@ -174,7 +174,7 @@ void iio_buffer_destroy(struct iio_buffer *buf)
 }
 
 const struct iio_channels_mask *
-iio_buffer_get_channels_mask(struct iio_buffer *buf)
+iio_buffer_get_channels_mask(const struct iio_buffer *buf)
 {
 	return buf->mask;
 }
