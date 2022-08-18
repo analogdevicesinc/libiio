@@ -633,3 +633,13 @@ err_context_destroy:
 	iio_context_destroy(ctx);
 	return iio_ptr(ret);
 }
+
+void iio_context_set_data(struct iio_context *ctx, void *data)
+{
+	ctx->userdata = data;
+}
+
+void * iio_context_get_data(const struct iio_context *ctx)
+{
+	return ctx->userdata;
+}
