@@ -83,6 +83,7 @@ struct iio_context {
 	const struct iio_backend_ops *ops;
 	const char *name;
 	char *description;
+	void *userdata;
 
 	unsigned int major;
 	unsigned int minor;
