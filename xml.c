@@ -18,9 +18,6 @@
 static struct iio_context *
 xml_create_context(const struct iio_context_params *params,
 		   const char *xml_file);
-static struct iio_context *
-xml_create_context_mem(const struct iio_context_params *params,
-		       const char *xml, size_t len);
 
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
@@ -332,14 +329,8 @@ err_free_device:
 	return iio_ptr(err);
 }
 
-static struct iio_context * xml_clone(const struct iio_context *ctx)
-{
-	return xml_create_context_mem(&ctx->params, ctx->xml, strlen(ctx->xml));
-}
-
 static const struct iio_backend_ops xml_ops = {
 	.create = xml_create_context,
-	.clone = xml_clone,
 };
 
 const struct iio_backend iio_xml_backend = {
@@ -498,25 +489,6 @@ xml_create_context(const struct iio_context_params *params, const char *arg)
 	xmlFreeDoc(doc);
 	return ctx;
 }
-
-static struct iio_context *
-xml_create_context_mem(const struct iio_context_params *params,
-		       const char *xml, size_t len)
-{
-	struct iio_context *ctx;
-	xmlDoc *doc;
-
-	doc = xmlReadMemory(xml, (int) len, NULL, NULL, XML_PARSE_DTDVALID);
-	if (!doc) {
-		prm_err(params, "Unable to parse XML file\n");
-		return iio_ptr(-EINVAL);
-	}
-
-	ctx = iio_create_xml_context_helper(params, doc);
-	xmlFreeDoc(doc);
-	return ctx;
-}
-
 
 static void cleanup_libxml2_stuff(void)
 {
