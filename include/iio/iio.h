@@ -467,17 +467,6 @@ __api __check_ret struct iio_context *
 iio_create_context(const struct iio_context_params *params, const char *uri);
 
 
-/** @brief Duplicate a pre-existing IIO context
- * @param ctx A pointer to an iio_context structure
- * @return On success, A pointer to an iio_context structure
- * @return On failure, a pointer-encoded error is returned
- *
- * <b>NOTE:</b> This function is not supported on 'usb:' contexts, since libusb
- * can only claim the interface once. "Function not implemented" is the expected errno.
- * Any context which is cloned, must be destroyed via calling iio_context_destroy() */
-__api __check_ret struct iio_context * iio_context_clone(const struct iio_context *ctx);
-
-
 /** @brief Destroy the given context
  * @param ctx A pointer to an iio_context structure
  *

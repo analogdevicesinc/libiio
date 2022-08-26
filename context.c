@@ -406,14 +406,6 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return 0;
 }
 
-struct iio_context * iio_context_clone(const struct iio_context *ctx)
-{
-	if (ctx->ops->clone)
-		return ctx->ops->clone(ctx);
-
-	return iio_ptr(-ENOSYS);
-}
-
 const struct iio_backend *iio_backends[] = {
 	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
