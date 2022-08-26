@@ -89,12 +89,16 @@ static const char * get_attr(struct parser_pdata *pdata,
 
 	switch (cmd->op) {
 	case IIOD_OP_READ_ATTR:
+	case IIOD_OP_WRITE_ATTR:
 		return iio_device_get_attr(dev, arg1);
 	case IIOD_OP_READ_DBG_ATTR:
+	case IIOD_OP_WRITE_DBG_ATTR:
 		return iio_device_get_debug_attr(dev, arg1);
 	case IIOD_OP_READ_BUF_ATTR:
+	case IIOD_OP_WRITE_BUF_ATTR:
 		return iio_device_get_buffer_attr(dev, arg1);
 	case IIOD_OP_READ_CHN_ATTR:
+	case IIOD_OP_WRITE_CHN_ATTR:
 		chn = iio_device_get_channel(dev, arg2);
 		if (!chn)
 			break;
@@ -192,26 +196,33 @@ static void handle_write_attr(struct parser_pdata *pdata,
 	const char *attr;
 	size_t count;
 	ssize_t ret = -EINVAL;
-	uint32_t len;
+	uint64_t len;
 	struct iiod_buf buf;
 
 	attr = get_attr(pdata, cmd);
 	if (!attr)
 		goto out_send_response;
 
-	buf.ptr = malloc(cmd->code);
+	buf.ptr = &len;
+	buf.size = sizeof(len);
+
+	ret = iiod_command_data_read(cmd_data, &buf);
+	if (ret < 0)
+		goto out_send_response;
+
+	buf.ptr = malloc(len);
 	if (!buf.ptr) {
 		ret = -ENOMEM;
 		goto out_send_response;
 	}
 
-	buf.size = cmd->code;
+	buf.size = (size_t) len;
 
 	ret = iiod_command_data_read(cmd_data, &buf);
 	if (ret < 0)
 		goto out_free_buf;
 
-	ret = attr_write(pdata, cmd, attr, buf.ptr, cmd->code);
+	ret = attr_write(pdata, cmd, attr, buf.ptr, (size_t) len);
 
 out_free_buf:
 	free(buf.ptr);
