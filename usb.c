@@ -109,6 +109,7 @@ static ssize_t write_data_sync(struct iiod_client_pdata *ep, const char *data,
 			       size_t len, unsigned int timeout_ms);
 static ssize_t read_data_sync(struct iiod_client_pdata *ep, char *buf,
 			      size_t len, unsigned int timeout_ms);
+static void usb_cancel(struct iiod_client_pdata *io_ctx);
 
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
 {
@@ -239,6 +240,7 @@ static const struct iiod_client_ops usb_iiod_client_ops = {
 	.write = write_data_sync,
 	.read = read_data_sync,
 	.read_line = read_data_sync,
+	.cancel = usb_cancel,
 };
 
 static ssize_t usb_read_dev_attr(const struct iio_device *dev,
@@ -397,10 +399,8 @@ static int iio_usb_match_device(struct libusb_device *dev,
 	return ret;
 }
 
-static void usb_cancel_buffer(struct iio_buffer_pdata *pdata)
+static void usb_cancel(struct iiod_client_pdata *io_ctx)
 {
-	struct iiod_client_pdata *io_ctx = &pdata->io_ctx;
-
 	iio_mutex_lock(io_ctx->lock);
 
 	if (io_ctx->transfer && !io_ctx->cancelled)
@@ -408,6 +408,11 @@ static void usb_cancel_buffer(struct iio_buffer_pdata *pdata)
 	io_ctx->cancelled = true;
 
 	iio_mutex_unlock(io_ctx->lock);
+}
+
+static void usb_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+	usb_cancel(&pdata->io_ctx);
 }
 
 static struct iio_buffer_pdata *
