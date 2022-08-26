@@ -1393,11 +1393,6 @@ static void local_cancel_buffer(struct iio_buffer_pdata *pdata)
 	}
 }
 
-static struct iio_context * local_clone(const struct iio_context *ctx)
-{
-	return local_create_context(&ctx->params, "");
-}
-
 static char * local_get_description(const struct iio_context *ctx)
 {
 	char *description;
@@ -1588,7 +1583,6 @@ int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 static const struct iio_backend_ops local_ops = {
 	.scan = local_context_scan,
 	.create = local_create_context,
-	.clone = local_clone,
 	.read_device_attr = local_read_dev_attr,
 	.write_device_attr = local_write_dev_attr,
 	.read_channel_attr = local_read_chn_attr,
