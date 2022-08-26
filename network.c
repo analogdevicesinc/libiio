@@ -77,10 +77,12 @@ network_write_data(struct iiod_client_pdata *io_ctx, const char *src, size_t len
 static ssize_t
 network_read_data(struct iiod_client_pdata *io_ctx, char *dst, size_t len,
 		  unsigned int timeout_ms);
+static void network_cancel(struct iiod_client_pdata *io_ctx);
 
 static const struct iiod_client_ops network_iiod_client_ops = {
 	.write = network_write_data,
 	.read = network_read_data,
+	.cancel = network_cancel,
 };
 
 static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
