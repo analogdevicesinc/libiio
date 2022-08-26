@@ -24,6 +24,7 @@ struct iiod_client_ops {
 			char *dst, size_t len, unsigned int timeout_ms);
 	ssize_t (*read_line)(struct iiod_client_pdata *desc,
 			     char *dst, size_t len, unsigned int timeout_ms);
+	void (*cancel)(struct iiod_client_pdata *desc);
 };
 
 __api void iiod_client_mutex_lock(struct iiod_client *client);

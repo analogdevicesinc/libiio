@@ -237,6 +237,12 @@ static ssize_t iiod_client_read_all(struct iiod_client *client,
 	return (ssize_t) (ptr - (uintptr_t) dst);
 }
 
+static void iiod_client_cancel(struct iiod_client *client)
+{
+	if (client->ops->cancel)
+		client->ops->cancel(client->desc);
+}
+
 struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 				     struct iiod_client_pdata *desc,
 				     const struct iiod_client_ops *ops)
@@ -269,8 +275,10 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 	return client;
 
 err_free_responder:
-	if (client->responder)
+	if (client->responder) {
+		iiod_client_cancel(client);
 		iiod_responder_destroy(client->responder);
+	}
 err_free_lock:
 	iio_mutex_destroy(client->lock);
 err_free_client:
@@ -280,8 +288,10 @@ err_free_client:
 
 void iiod_client_destroy(struct iiod_client *client)
 {
-	if (client->responder)
+	if (client->responder) {
+		iiod_client_cancel(client);
 		iiod_responder_destroy(client->responder);
+	}
 
 	iio_mutex_destroy(client->lock);
 	free(client);
