@@ -456,14 +456,6 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return 0;
 }
 
-static struct iio_context * network_clone(const struct iio_context *ctx)
-{
-	const struct iio_context_params *params = iio_context_get_params(ctx);
-	const char *addr = iio_context_get_attr_value(ctx, "ip,ip-addr");
-
-	return network_create_context(params, addr);
-}
-
 static struct iio_buffer_pdata *
 network_create_buffer(const struct iio_device *dev, unsigned int idx,
 		      struct iio_channels_mask *mask)
@@ -530,7 +522,6 @@ struct iio_block_pdata * network_create_block(struct iio_buffer_pdata *pdata,
 static const struct iio_backend_ops network_ops = {
 	.scan = IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
-	.clone = network_clone,
 	.read_device_attr = network_read_dev_attr,
 	.write_device_attr = network_write_dev_attr,
 	.read_channel_attr = network_read_chn_attr,
