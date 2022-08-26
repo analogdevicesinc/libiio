@@ -376,13 +376,18 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op,
 
 bool iiod_io_command_is_done(struct iiod_io *io)
 {
-	uint64_t timeout_us = io->timeout_ms * 1000;
+	uint64_t timeout_us;
 	bool done;
 
 	iio_mutex_lock(io->lock);
 
-	done = (io->write_token && iio_task_is_done(io->write_token)) ||
-		(read_counter_us() - io->w_io.start_time > timeout_us);
+	done = io->write_token && iio_task_is_done(io->write_token);
+
+	if (!done && io->timeout_ms) {
+		timeout_us = io->timeout_ms * 1000;
+
+		done = read_counter_us() - io->w_io.start_time > timeout_us;
+	}
 
 	iio_mutex_unlock(io->lock);
 
@@ -391,7 +396,7 @@ bool iiod_io_command_is_done(struct iiod_io *io)
 
 int iiod_io_wait_for_command_done(struct iiod_io *io)
 {
-	uint64_t diff_ms, timeout_ms = io->timeout_ms;
+	uint64_t diff_ms = 0, timeout_ms = io->timeout_ms;
 	struct iio_task_token *token;
 
 	iio_mutex_lock(io->lock);
@@ -402,10 +407,12 @@ int iiod_io_wait_for_command_done(struct iiod_io *io)
 	if (!token)
 		return 0;
 
-	diff_ms = (read_counter_us() - io->w_io.start_time) / 1000;
+	if (timeout_ms) {
+		diff_ms = (read_counter_us() - io->w_io.start_time) / 1000;
 
-	if (diff_ms >= timeout_ms)
-		iio_task_cancel(token);
+		if (diff_ms >= timeout_ms)
+			iio_task_cancel(token);
+	}
 
 	return iio_task_sync(token, (unsigned int)(timeout_ms - diff_ms));
 }
@@ -414,13 +421,23 @@ bool iiod_io_has_response(struct iiod_io *io)
 {
 	uint64_t timeout_us = io->timeout_ms * 1000;
 
-	return io->r_done ||
-		(read_counter_us() - io->w_io.start_time > timeout_us);
+	if (io->r_done)
+		return true;
+
+	if (!io->timeout_ms)
+		return false;
+
+	timeout_us = io->timeout_ms * 1000;
+
+	return read_counter_us() - io->w_io.start_time > timeout_us;
 }
 
 static int iiod_io_cond_wait(const struct iiod_io *io)
 {
 	uint64_t diff_ms, timeout_ms = io->timeout_ms;
+
+	if (!timeout_ms)
+		return iio_cond_wait(io->cond, io->lock, 0);
 
 	diff_ms = (read_counter_us() - io->r_io.start_time) / 1000;
 
