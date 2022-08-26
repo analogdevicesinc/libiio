@@ -68,7 +68,6 @@ struct iio_backend_ops {
 		    struct iio_scan *ctx, const char *args);
 	struct iio_context * (*create)(const struct iio_context_params *params,
 				       const char *uri);
-	struct iio_context * (*clone)(const struct iio_context *ctx);
 
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 				    unsigned int buf_id, const char *attr,
