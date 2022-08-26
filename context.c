@@ -591,7 +591,7 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 	for (i = 0; i < nb_ctx_attrs; i++) {
 		ret = iio_context_add_attr(ctx, ctx_attrs[i], ctx_values[i]);
 		if (ret < 0) {
-			prm_perror(params, ret, "Unable to add context attribute\n");
+			prm_perror(params, ret, "Unable to add context attribute");
 			goto err_context_destroy;
 		}
 	}
@@ -601,7 +601,7 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 				   ctx->description, description);
 		if (len < 0) {
 			ret = (int) len;
-			prm_perror(params, ret, "Unable to set context description\n");
+			prm_perror(params, ret, "Unable to set context description");
 			goto err_context_destroy;
 		}
 
