@@ -86,8 +86,10 @@ void iio_block_destroy(struct iio_block *block)
 	/* Stop the cyclic task */
 	block->cyclic = false;
 
-	if (block->token)
+	if (block->token) {
+		iio_task_cancel(block->token);
 		iio_task_sync(block->token, 0);
+	}
 	if (ops->free_block && block->pdata)
 		ops->free_block(block->pdata);
 	else
