@@ -9,6 +9,7 @@ Description=IIO Daemon
 Requires=systemd-udev-settle.service
 After=network.target systemd-udev-settle.service
 ConditionPathExists=/sys/bus/iio
+Documentation=man:iiod(8)
 
 [Service]
 EnvironmentFile=-/etc/default/iiod
