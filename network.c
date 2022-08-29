@@ -504,8 +504,7 @@ err_free_buf:
 void network_free_buffer(struct iio_buffer_pdata *pdata)
 {
 	iiod_client_free_buffer(pdata->pdata);
-	iiod_client_destroy(pdata->iiod_client);
-	cleanup_cancel(&pdata->io_ctx);
+	network_free_iiod_client(pdata->iiod_client, &pdata->io_ctx);
 	free(pdata);
 }
 
