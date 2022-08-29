@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-header="@CMAKE_SOURCE_DIR@/iio.h"
+header="@CMAKE_SOURCE_DIR@/include/iio/iio.h"
 
 if [ ! -f "${header}" ] ; then
 	echo "Can not find iio.h at ${header}"
