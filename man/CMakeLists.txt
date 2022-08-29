@@ -34,7 +34,7 @@ if (WITH_MAN)
 		)
 	endif()
 	if (WITH_TESTS)
-		list(APPEND MAN1 iio_attr.1 iio_info.1 iio_readdev.1 iio_reg.1 iio_writedev.1)
+		list(APPEND MAN1 iio_adi_xflow_check.1 iio_attr.1 iio_genxml.1 iio_info.1 iio_reg.1 iio_rwdev.1 iio_stresstest.1)
 		foreach(_page ${MAN1})
 			configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/${_page}.in
 				${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page} @ONLY)
