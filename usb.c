@@ -1000,8 +1000,7 @@ err_destroy_ep_mutex:
 err_free_pdata:
 	free(pdata);
 err_set_errno:
-	errno = -ret;
-	return NULL;
+	return iio_ptr(ret);
 }
 
 static struct iio_context *
@@ -1014,18 +1013,19 @@ usb_create_context_from_args(const struct iio_context_params *params,
 	/* keep MSVS happy by setting these to NULL */
 	struct iio_scan *scan_ctx = NULL;
 	bool scan;
-	int err;
+	int err = -EINVAL;
 
 	/* if uri is just "usb:" that means search for the first one */
 	scan = !*ptr;
 	if (scan) {
 		scan_ctx = iio_scan(params, "usb");
-		err = iio_err(scan_ctx);
-		if (err)
+		if (iio_err(scan_ctx)) {
+			err = iio_err(scan_ctx);
 			goto err_bad_uri;
+		}
 
 		if (iio_scan_get_results_count(scan_ctx) != 1) {
-			errno = ENXIO;
+			err = -ENXIO;
 			goto err_bad_uri;
 		}
 
@@ -1074,11 +1074,9 @@ usb_create_context_from_args(const struct iio_context_params *params,
 err_bad_uri:
 	if (scan)
 		iio_scan_destroy(scan_ctx);
-	else
-		errno = EINVAL;
 
 	prm_err(params, "Bad URI: \'usb:%s\'\n", args);
-	return NULL;
+	return iio_ptr(err);
 }
 
 static int usb_add_context_info(struct iio_scan *scan,
