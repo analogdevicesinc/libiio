@@ -950,30 +950,30 @@ static struct iio_context * usb_create_context(const struct iio_context_params *
 
 	pdata->io_ctx.ctx_pdata = pdata;
 
-	pdata->io_ctx.iiod_client = iiod_client_new(params, &pdata->io_ctx,
-						    &usb_iiod_client_ops);
-	ret = iio_err(pdata->io_ctx.iiod_client);
-	if (ret) {
-		prm_perror(params, ret, "Unable to create IIOD client");
-		goto err_io_context_exit;
-	}
-
 	ret = usb_reset_pipes(pdata);
 	if (ret) {
 		prm_perror(params, ret, "Failed to reset pipes");
-		goto err_free_iiod_client;
+		goto err_io_context_exit;
 	}
 
 	ret = usb_open_pipe(pdata, 0);
 	if (ret) {
 		prm_perror(params, ret, "Failed to open control pipe");
-		goto err_free_iiod_client;
+		goto err_io_context_exit;
+	}
+
+	pdata->io_ctx.iiod_client = iiod_client_new(params, &pdata->io_ctx,
+						    &usb_iiod_client_ops);
+	ret = iio_err(pdata->io_ctx.iiod_client);
+	if (ret) {
+		prm_perror(params, ret, "Unable to create IIOD client");
+		goto err_reset_pipes;
 	}
 
 	ctx = usb_create_context_with_attrs(usb_dev, pdata);
 	ret = iio_err(ctx);
 	if (ret)
-		goto err_reset_pipes;
+		goto err_free_iiod_client;
 
 	libusb_free_config_descriptor(conf_desc);
 
