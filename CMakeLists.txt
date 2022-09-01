@@ -4,6 +4,11 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(SET CMP0048 NEW) # project() sets the VERSION variables
 project(libiio LANGUAGES C VERSION 1.0)
 
+# Set the default install path to /usr
+if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
+endif()
+
 if (MINGW)
 	set(WIN32 ON)
 endif()
