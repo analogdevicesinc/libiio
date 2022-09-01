@@ -240,6 +240,7 @@ static char * network_get_description(struct addrinfo *res,
 {
 	char *description;
 	unsigned int len;
+	int err;
 
 #ifdef HAVE_IPV6
 	len = INET6_ADDRSTRLEN + IF_NAMESIZE + 2;
@@ -248,10 +249,8 @@ static char * network_get_description(struct addrinfo *res,
 #endif
 
 	description = malloc(len);
-	if (!description) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	if (!description)
+		return iio_ptr(-ENOMEM);
 
 	description[0] = '\0';
 
@@ -264,9 +263,10 @@ static char * network_get_description(struct addrinfo *res,
 		ptr2 = inet_ntop(AF_INET6, &in->sin6_addr,
 				description, INET6_ADDRSTRLEN);
 		if (!ptr2) {
-			prm_perror(params, -errno, "Unable to look up IPv6 address");
+			err = -errno;
+			prm_perror(params, err, "Unable to look up IPv6 address");
 			free(description);
-			return NULL;
+			return iio_ptr(err);
 		}
 
 		if (IN6_IS_ADDR_LINKLOCAL(&in->sin6_addr)) {
@@ -281,10 +281,12 @@ static char * network_get_description(struct addrinfo *res,
 				} else
 #endif
 				{
-					prm_err(params,
-						"Unable to lookup interface of IPv6 address\n");
+					err = -errno;
+
+					prm_perror(params, err,
+						   "Unable to lookup interface of IPv6 address");
 					free(description);
-					return NULL;
+					return iio_ptr(err);
 				}
 			}
 
@@ -637,10 +639,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	if (port) {
 		unsigned long int tmp;
 		tmp = strtoul(port, &end, 0);
-		if (port == end || tmp > 0xFFFF) {
-			errno = ENOENT;
-			return NULL;
-		}
+		if (port == end || tmp > 0xFFFF)
+			return iio_ptr(-ENOENT);
 
 		port_num = (uint16_t)tmp;
 	} else {
