@@ -418,29 +418,33 @@ bool iiod_io_has_response(struct iiod_io *io)
 		(read_counter_us() - io->w_io.start_time > timeout_us);
 }
 
+static int iiod_io_cond_wait(const struct iiod_io *io)
+{
+	uint64_t diff_ms, timeout_ms = io->timeout_ms;
+
+	diff_ms = (read_counter_us() - io->r_io.start_time) / 1000;
+
+	if (diff_ms < timeout_ms)
+		return iio_cond_wait(io->cond, io->lock, timeout_ms - diff_ms);
+
+	return -ETIMEDOUT;
+}
+
 intptr_t iiod_io_wait_for_response(struct iiod_io *io)
 {
 	struct iiod_responder *priv = io->responder;
-	uint64_t diff_ms, timeout_ms = io->timeout_ms;
 	int ret = 0;
 
 	iio_mutex_lock(io->lock);
 
 	while (!io->r_done) {
-		diff_ms = (read_counter_us() - io->r_io.start_time) / 1000;
-
-		if (diff_ms < timeout_ms)
-			ret = iio_cond_wait(io->cond, io->lock, timeout_ms - diff_ms);
-		else
-			ret = -ETIMEDOUT;
-
+		ret = iiod_io_cond_wait(io);
 		if (ret) {
 			__iiod_io_cancel_unlocked(io);
 			io->r_io.cmd.code = ret;
 			io->r_done = true;
 			break;
 		}
-
 	}
 
 	iio_mutex_unlock(io->lock);
