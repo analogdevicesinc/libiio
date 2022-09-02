@@ -67,6 +67,9 @@ stages:
         sh generateDocumentationAndDeploy.sh
       displayName: 'Documentation'
       condition: eq(variables['artifactName'], 'Linux-Fedora-34')
+    - script: ./CI/azure/check_kernel.sh
+      displayName: 'Kernel check'
+      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
