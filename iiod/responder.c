@@ -148,14 +148,14 @@ static ssize_t attr_write(struct parser_pdata *pdata,
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
 
 	switch (cmd->op) {
-	case IIOD_OP_READ_ATTR:
+	case IIOD_OP_WRITE_ATTR:
 		return iio_device_attr_write_raw(dev, attr, buf, len);
-	case IIOD_OP_READ_DBG_ATTR:
+	case IIOD_OP_WRITE_DBG_ATTR:
 		return iio_device_debug_attr_write_raw(dev, attr, buf, len);
-	case IIOD_OP_READ_BUF_ATTR:
+	case IIOD_OP_WRITE_BUF_ATTR:
 		return iio_device_buffer_attr_write_raw(dev, arg2,
 							attr, buf, len);
-	case IIOD_OP_READ_CHN_ATTR:
+	case IIOD_OP_WRITE_CHN_ATTR:
 		chn = iio_device_get_channel(dev, arg2);
 		return iio_channel_attr_write_raw(chn, attr, buf, len);
 	default:
