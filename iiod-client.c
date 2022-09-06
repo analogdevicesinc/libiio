@@ -1659,7 +1659,7 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 	iio_mutex_lock(block->lock);
 
 	if (block->enqueued) {
-		ret = -EBUSY;
+		ret = -EPERM;
 		goto out_unlock;
 	}
 
@@ -1686,7 +1686,7 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 	iio_mutex_lock(block->lock);
 
 	if (!block->enqueued) {
-		ret = -EBADF;
+		ret = -EPERM;
 		goto out_unlock;
 	}
 
