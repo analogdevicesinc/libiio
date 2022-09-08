@@ -17,7 +17,7 @@ struct iio_stream {
 	struct iio_buffer *buffer;
 	struct iio_block **blocks;
 	size_t buf_size, nb_blocks;
-	bool started, buf_enabled;
+	bool started, buf_enabled, all_enqueued;
 	unsigned int curr;
 };
 
@@ -103,6 +103,8 @@ iio_stream_get_next_block(struct iio_stream *stream)
 
 		if (is_tx)
 			return stream->blocks[0];
+
+		stream->all_enqueued = true;
 	}
 
 	buf_size = is_tx ? stream->buf_size : 0;
@@ -125,10 +127,13 @@ iio_stream_get_next_block(struct iio_stream *stream)
 
 	stream->curr = (stream->curr + 1) % stream->nb_blocks;
 
-	err = iio_block_dequeue(stream->blocks[stream->curr], false);
-	if (err < 0) {
-		dev_perror(dev, err, "Unable to dequeue block");
-		return iio_ptr(err);
+	stream->all_enqueued |= stream->curr == 0;
+	if (stream->all_enqueued) {
+		err = iio_block_dequeue(stream->blocks[stream->curr], false);
+		if (err < 0) {
+			dev_perror(dev, err, "Unable to dequeue block");
+			return iio_ptr(err);
+		}
 	}
 
 	return stream->blocks[stream->curr];
