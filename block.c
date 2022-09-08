@@ -153,7 +153,7 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 
 	if (block->token) {
 		/* Already enqueued */
-		return -EBUSY;
+		return -EPERM;
 	}
 
 	block->bytes_used = bytes_used;
@@ -185,7 +185,7 @@ int iio_block_dequeue(struct iio_block *block, bool nonblock)
 
 	if (!token) {
 		/* Already dequeued */
-		return 0;
+		return -EPERM;
 	}
 
 	return iio_task_sync(token, 0);
