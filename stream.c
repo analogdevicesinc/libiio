@@ -105,16 +105,6 @@ iio_stream_get_next_block(struct iio_stream *stream)
 			return stream->blocks[0];
 	}
 
-	if (!stream->buf_enabled && is_tx) {
-		err = iio_buffer_enable(stream->buffer);
-		if (err) {
-			dev_perror(dev, err, "Unable to enable buffer");
-			return iio_ptr(err);
-		}
-
-		stream->buf_enabled = true;
-	}
-
 	buf_size = is_tx ? stream->buf_size : 0;
 
 	err = iio_block_enqueue(stream->blocks[stream->curr], buf_size, false);
@@ -123,7 +113,7 @@ iio_stream_get_next_block(struct iio_stream *stream)
 		return iio_ptr(err);
 	}
 
-	if (!stream->buf_enabled && !is_tx) {
+	if (!stream->buf_enabled) {
 		err = iio_buffer_enable(stream->buffer);
 		if (err) {
 			dev_perror(dev, err, "Unable to enable buffer");
