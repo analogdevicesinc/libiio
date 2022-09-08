@@ -184,9 +184,6 @@ stages:
     # Host Box
     strategy:
       matrix:
-        macOS_10_15:
-          vmImage: 'macOS-10.15'
-          artifactName: 'macOS-10.15'
         macOS_11:
           vmImage: 'macOS-11'
           artifactName: 'macOS-11'
