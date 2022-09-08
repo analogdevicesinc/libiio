@@ -33,6 +33,7 @@ struct iio_block_pdata {
 	struct iio_block_impl_pdata *pdata;
 	size_t size;
 	void *data;
+	bool dequeued;
 };
 
 int ioctl_nointr(int fd, unsigned long request, void *data);

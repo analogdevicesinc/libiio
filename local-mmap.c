@@ -198,7 +198,7 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 	mask = atomic_fetch_or(&buf->pdata->mmap_enqueued_blocks_mask, BIT(priv->idx));
 	if (mask & BIT(priv->idx)) {
 		/* Already enqueued */
-		return -EBUSY;
+		return -EPERM;
 	}
 
 	priv->block.bytes_used = (uint32_t) bytes_used;
@@ -225,7 +225,7 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 
 	if (!(atomic_load(&buf->pdata->mmap_enqueued_blocks_mask) & BIT(priv->idx))) {
 		/* Already dequeued */
-		return 0;
+		return -EPERM;
 	}
 
 	if (!nonblock) {

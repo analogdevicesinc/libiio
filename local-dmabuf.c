@@ -80,6 +80,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	priv->data = *data;
 	priv->size = size;
 	priv->buf = pdata;
+	priv->dequeued = true;
 	pdata->dmabuf_supported = true;
 
 	return priv;
@@ -107,6 +108,9 @@ int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
 	struct iio_dmabuf dmabuf;
 	int ret, fd = (int)(intptr_t) pdata->pdata;
 
+	if (!pdata->dequeued)
+		return -EPERM;
+
 	dmabuf.fd = fd;
 	dmabuf.flags = 0;
 	dmabuf.bytes_used = bytes_used;
@@ -121,7 +125,13 @@ int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
 	if (ret)
 		return ret;
 
-	return ioctl_nointr(pdata->buf->fd, IIO_DMABUF_ENQUEUE_IOCTL, &dmabuf);
+	ret = ioctl_nointr(pdata->buf->fd, IIO_DMABUF_ENQUEUE_IOCTL, &dmabuf);
+	if (ret)
+		return ret;
+
+	pdata->dequeued = false;
+
+	return 0;
 }
 
 int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
@@ -130,6 +140,9 @@ int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
 	struct dma_buf_sync dbuf_sync;
 	struct timespec start, *time_ptr = NULL;
 	int ret, fd = (int)(intptr_t) pdata->pdata;
+
+	if (pdata->dequeued)
+		return -EPERM;
 
 	if (!nonblock) {
 		clock_gettime(CLOCK_MONOTONIC, &start);
@@ -143,5 +156,11 @@ int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
 	dbuf_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
 
 	/* Enable CPU access to new block */
-	return ioctl_nointr(fd, IIO_DMABUF_SYNC_IOCTL, &dbuf_sync);
+	ret = ioctl_nointr(fd, IIO_DMABUF_SYNC_IOCTL, &dbuf_sync);
+	if (ret < 0)
+		return ret;
+
+	pdata->dequeued = true;
+
+	return 0;
 }
