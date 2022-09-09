@@ -55,7 +55,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
       displayName: 'Build'
@@ -69,6 +69,9 @@ stages:
         sh generateDocumentationAndDeploy.sh
       displayName: 'Documentation'
       condition: eq(variables['artifactName'], 'Linux-Fedora-34')
+    - script: ./CI/azure/check_kernel.sh
+      displayName: 'Kernel check'
+      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
@@ -182,9 +185,6 @@ stages:
     # Host Box
     strategy:
       matrix:
-        macOS_10_15:
-          vmImage: 'macOS-10.15'
-          artifactName: 'macOS-10.15'
         macOS_11:
           vmImage: 'macOS-11'
           artifactName: 'macOS-11'
@@ -205,7 +205,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON
+        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF
         make
         sudo make install
         cd ..
@@ -213,7 +213,7 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
         cd ..

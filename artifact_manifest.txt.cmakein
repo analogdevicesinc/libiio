@@ -13,9 +13,6 @@ Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.deb
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar.gz
 
-macOS-10.15/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-10.15.tar.gz
-macOS-10.15/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
-
 macOS-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-11.tar.gz
 macOS-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
 
