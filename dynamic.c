@@ -73,14 +73,14 @@ const struct iio_backend * iio_module_get_backend(struct iio_module *module)
 {
 	const struct iio_backend *backend;
 	char buf[1024];
+	int err;
 
 	iio_snprintf(buf, sizeof(buf), "iio_%s_backend", module->name);
 
 	backend = iio_dlsym(module->lib, buf);
-	if (!backend) {
+	err = iio_err(backend);
+	if (err)
 		prm_err(module->params, "No \'%s\' symbol\n", buf);
-		return iio_ptr(-EINVAL);
-	}
 
 	return backend;
 }
