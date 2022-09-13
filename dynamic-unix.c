@@ -26,7 +26,8 @@ void * iio_dlsym(void *lib, const char *symbol)
 {
 	void *ptr;
 
+	dlerror();
 	ptr = dlsym(lib, symbol);
 
-	return ptr ? ptr : iio_ptr(-EINVAL);
+	return dlerror() ? iio_ptr(-EINVAL) : ptr;
 }
