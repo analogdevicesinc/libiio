@@ -9,6 +9,8 @@
 #include "dynamic.h"
 
 #include <dlfcn.h>
+#include <errno.h>
+#include <iio/iio.h>
 
 void * iio_dlopen(const char *path)
 {
@@ -22,5 +24,9 @@ void iio_dlclose(void *lib)
 
 void * iio_dlsym(void *lib, const char *symbol)
 {
-	return dlsym(lib, symbol);
+	void *ptr;
+
+	ptr = dlsym(lib, symbol);
+
+	return ptr ? ptr : iio_ptr(-EINVAL);
 }

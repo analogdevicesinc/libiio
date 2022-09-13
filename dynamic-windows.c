@@ -8,6 +8,8 @@
 
 #include "dynamic.h"
 
+#include <errno.h>
+#include <iio/iio.h>
 #include <windows.h>
 
 void * iio_dlopen(const char *path)
@@ -22,5 +24,9 @@ void iio_dlclose(void *lib)
 
 void * iio_dlsym(void *lib, const char *symbol)
 {
-	return (void *) GetProcAddress(lib, symbol);
+	void *ptr;
+
+	ptr = GetProcAddress(lib, symbol);
+
+	return ptr ? ptr : iio_ptr(-EINVAL);
 }
