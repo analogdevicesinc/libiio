@@ -105,7 +105,7 @@ jobs:
       script: |
         cd $(Agent.ToolsDirectory)
         Invoke-WebRequest `
-          -Uri "https://scan.coverity.com/download/cxx/win_64" `
+          -Uri "https://scan.coverity.com/download/cxx/win64" `
           -Body @{
             project = "analogdevicesinc/libiio"
             token = "${env:COVERITY_SCAN_TOKEN}"
