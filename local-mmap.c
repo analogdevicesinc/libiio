@@ -233,11 +233,11 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 		time_ptr = &start;
 	}
 
-	ret = buffer_check_ready(buf, fd, POLLIN | POLLOUT, time_ptr);
-	if (ret < 0)
-		return ret;
-
 	for (;;) {
+		ret = buffer_check_ready(buf, fd, POLLIN | POLLOUT, time_ptr);
+		if (ret < 0)
+			return ret;
+
 		ret = ioctl_nointr(fd, BLOCK_DEQUEUE_IOCTL, &block);
 		if (ret < 0)
 			return ret;
