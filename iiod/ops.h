@@ -93,9 +93,9 @@ struct parser_pdata {
 	bool fd_in_is_socket, fd_out_is_socket;
 	bool is_usb;
 #if WITH_AIO
-	io_context_t aio_ctx;
-	int aio_eventfd;
-	pthread_mutex_t aio_mutex;
+	io_context_t aio_ctx[2];
+	int aio_eventfd[2];
+	pthread_mutex_t aio_mutex[2];
 #endif
 	struct thread_pool *pool;
 	struct iiod_io *io;

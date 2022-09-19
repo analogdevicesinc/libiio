@@ -170,18 +170,18 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	else
 		io_prep_pwrite(&iocb, pdata->fd_out, buf, len, 0);
 
-	io_set_eventfd(&iocb, pdata->aio_eventfd);
+	io_set_eventfd(&iocb, pdata->aio_eventfd[do_read]);
 
-	pthread_mutex_lock(&pdata->aio_mutex);
+	pthread_mutex_lock(&pdata->aio_mutex[do_read]);
 
-	ret = io_submit(pdata->aio_ctx, 1, ios);
+	ret = io_submit(pdata->aio_ctx[do_read], 1, ios);
 	if (ret != 1) {
-		pthread_mutex_unlock(&pdata->aio_mutex);
+		pthread_mutex_unlock(&pdata->aio_mutex[do_read]);
 		IIO_ERROR("Failed to submit IO operation: %zd\n", ret);
 		return -EIO;
 	}
 
-	pfd[0].fd = pdata->aio_eventfd;
+	pfd[0].fd = pdata->aio_eventfd[do_read];
 	pfd[0].events = POLLIN;
 	pfd[0].revents = 0;
 	pfd[1].fd = thread_pool_get_poll_fd(pdata->pool);
@@ -194,14 +194,15 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 
 		if (pfd[0].revents & POLLIN) {
 			uint64_t event;
-			ret = read(pdata->aio_eventfd, &event, sizeof(event));
+			ret = read(pdata->aio_eventfd[do_read],
+						&event, sizeof(event));
 			if (ret != sizeof(event)) {
 				IIO_ERROR("Failed to read from eventfd: %d\n", -errno);
 				ret = -EIO;
 				break;
 			}
 
-			ret = io_getevents(pdata->aio_ctx, 0, 1, e, NULL);
+			ret = io_getevents(pdata->aio_ctx[do_read], 0, 1, e, NULL);
 			if (ret != 1) {
 				IIO_ERROR("Failed to read IO events: %zd\n", ret);
 				ret = -EIO;
@@ -211,7 +212,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 			}
 		} else if ((num_pfds > 1 && pfd[1].revents & POLLIN)) {
 			/* Got a STOP event to abort this whole session */
-			ret = io_cancel(pdata->aio_ctx, &iocb, e);
+			ret = io_cancel(pdata->aio_ctx[do_read], &iocb, e);
 			if (ret != -EINPROGRESS && ret != -EINVAL) {
 				IIO_ERROR("Failed to cancel IO transfer: %zd\n", ret);
 				ret = -EIO;
@@ -222,7 +223,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 		}
 	} while (!(pfd[0].revents & POLLIN));
 
-	pthread_mutex_unlock(&pdata->aio_mutex);
+	pthread_mutex_unlock(&pdata->aio_mutex[do_read]);
 
 	/* Got STOP event, treat it as EOF */
 	if (num_pfds == 1)
@@ -1597,22 +1598,26 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 #if WITH_AIO
 		char err_str[1024];
 
-		pdata.aio_eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-		if (pdata.aio_eventfd < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Failed to create AIO eventfd: %s\n", err_str);
-			return;
+		for (i = 0; i < 2; i++) {
+			pdata.aio_eventfd[i] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+			if (pdata.aio_eventfd[i] < 0) {
+				iio_strerror(errno, err_str, sizeof(err_str));
+				IIO_ERROR("Failed to create AIO eventfd: %s\n", err_str);
+				goto err_free_aio;
+			}
+
+			pdata.aio_ctx[i] = 0;
+			ret = io_setup(1, &pdata.aio_ctx[i]);
+			if (ret < 0) {
+				iio_strerror(-ret, err_str, sizeof(err_str));
+				IIO_ERROR("Failed to create AIO context: %s\n", err_str);
+				close(pdata.aio_eventfd[i]);
+				goto err_free_aio;
+			}
+
+			pthread_mutex_init(&pdata.aio_mutex[i], NULL);
 		}
 
-		pdata.aio_ctx = 0;
-		ret = io_setup(1, &pdata.aio_ctx);
-		if (ret < 0) {
-			iio_strerror(-ret, err_str, sizeof(err_str));
-			IIO_ERROR("Failed to create AIO context: %s\n", err_str);
-			close(pdata.aio_eventfd);
-			return;
-		}
-		pthread_mutex_init(&pdata.aio_mutex, NULL);
 		pdata.readfd = readfd_aio;
 		pdata.writefd = writefd_aio;
 #endif
@@ -1639,9 +1644,13 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		close_dev_helper(&pdata, iio_context_get_device(ctx, i));
 
 #if WITH_AIO
-	if (use_aio) {
-		io_destroy(pdata.aio_ctx);
-		close(pdata.aio_eventfd);
+	i = use_aio ? 2 : 0;
+
+err_free_aio:
+	for (; i > 0; i--) {
+		io_destroy(pdata.aio_ctx[i - 1]);
+		close(pdata.aio_eventfd[i - 1]);
+		pthread_mutex_destroy(&pdata.aio_mutex[i - 1]);
 	}
 #endif
 }
