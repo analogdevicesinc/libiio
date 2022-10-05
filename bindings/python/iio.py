@@ -350,11 +350,6 @@ _set_timeout.argtypes = (
 )
 _set_timeout.errcheck = _check_negative
 
-_clone = _lib.iio_context_clone
-_clone.restype = _ContextPtr
-_clone.argtypes = (_ContextPtr,)
-_clone.errcheck = _check_ptr_err
-
 _d_get_id = _lib.iio_device_get_id
 _d_get_id.restype = c_char_p
 _d_get_id.argtypes = (_DevicePtr,)
@@ -1448,15 +1443,6 @@ class Context(_IIO_Object):
             The timeout value, in milliseconds
         """
         _set_timeout(self._context, timeout)
-
-    def clone(self):
-        """
-        Clone this instance.
-
-        returns: type=iio.LocalContext
-            An new instance of this class
-        """
-        return Context(_clone(self._context))
 
     def find_device(self, name_or_id_or_label):
         """
