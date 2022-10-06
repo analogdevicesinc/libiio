@@ -124,10 +124,18 @@ static int serial_configure(int fd, unsigned int uart_bps,
 	CASE_BPS(1152000, &tty_attrs);
 	CASE_BPS(1500000, &tty_attrs);
 	CASE_BPS(2000000, &tty_attrs);
+#ifdef B2500000 /* Not available on all architectures, i.e. sparc */
 	CASE_BPS(2500000, &tty_attrs);
+#endif
+#ifdef B3000000 /* Not available on all architectures, i.e. sparc */
 	CASE_BPS(3000000, &tty_attrs);
+#endif
+#ifdef B3500000 /* Not available on all architectures, i.e. sparc */
 	CASE_BPS(3500000, &tty_attrs);
+#endif
+#ifdef B4000000 /* Not available on all architectures, i.e. sparc */
 	CASE_BPS(4000000, &tty_attrs);
+#endif
 	default:
 		IIO_ERROR("Invalid baud rate\n");
 		return -EINVAL;
