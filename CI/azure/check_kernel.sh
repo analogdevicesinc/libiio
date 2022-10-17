@@ -20,7 +20,7 @@ wget -O ${KERNEL_TYPES} https://git.kernel.org/pub/scm/linux/kernel/git/torvalds
 
 ret=0
 
-for enum in iio_chan_type iio_modifier
+for enum in iio_chan_type iio_modifier iio_event_type iio_event_direction
 do
 	echo looking for ${enum}
 	rm -f /tmp/kernel_${enum} /tmp/libiio_${enum}
