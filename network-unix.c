@@ -132,6 +132,12 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 			return -EBADF;
 	} while (!(pfd[0].revents & (pfd[0].events | POLLERR | POLLHUP)));
 
+	/* If we get POLLHUP when writing, return -EPIPE, otherwise send() will
+	 * get a SIGPIPE. When reading, recv() will return 0 once all bytes have
+	 * been read from the input stream and won't send a SIGPIPE. */
+	if (!read && (pfd[0].revents & POLLHUP))
+		return -EPIPE;
+
 	return 0;
 }
 
