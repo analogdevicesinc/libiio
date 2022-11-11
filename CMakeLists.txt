@@ -402,7 +402,7 @@ if (WITH_XML_BACKEND)
 	# So, try first to find the CMake module provided by libxml2 package, then fallback
 	# on the CMake's FindLibXml2.cmake module (which can lack some definition, especially
 	# in static build case).
-	find_package(LibXml2 QUIET NO_MODULE)
+	find_package(LibXml2 QUIET NO_MODULE NO_SYSTEM_ENVIRONMENT_PATH)
 	if(DEFINED LIBXML2_VERSION_STRING)
 		set(LIBXML2_FOUND ON)
 		set(LIBXML2_INCLUDE_DIR ${LIBXML2_INCLUDE_DIRS})
