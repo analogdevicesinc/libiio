@@ -101,10 +101,10 @@ void iio_block_destroy(struct iio_block *block)
 	iio_mutex_unlock(buf->lock);
 }
 
-static int
-iio_block_write(struct iio_block *block, size_t bytes_used)
+static int iio_block_write(struct iio_block *block)
 {
 	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+	size_t bytes_used = block->bytes_used;
 	ssize_t ret;
 
 	if (!ops->writebuf)
@@ -117,12 +117,13 @@ iio_block_write(struct iio_block *block, size_t bytes_used)
 static int iio_block_read(struct iio_block *block)
 {
 	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+	size_t bytes_used = block->bytes_used;
 	ssize_t ret;
 
 	if (!ops->readbuf)
 		return -ENOSYS;
 
-	ret = ops->readbuf(block->buffer->pdata, block->data, block->size);
+	ret = ops->readbuf(block->buffer->pdata, block->data, bytes_used);
 	return ret < 0 ? (int) ret : 0;
 }
 
@@ -139,7 +140,7 @@ int iio_block_io(struct iio_block *block)
 		block->token = iio_task_enqueue(block->buffer->worker, block);
 	}
 
-	return iio_block_write(block, block->bytes_used);
+	return iio_block_write(block);
 }
 
 int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
