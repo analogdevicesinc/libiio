@@ -1641,7 +1641,7 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 	struct iiod_command cmd;
 	struct iiod_buf buf[2];
 	bool is_rx = !iio_device_is_tx(pdata->dev);
-	unsigned int nb_buf = 1;
+	unsigned int nb_buf = 1 + !is_rx;
 	int ret = 0;
 
 	cmd.op = cyclic ? IIOD_OP_ENQUEUE_BLOCK_CYCLIC : IIOD_OP_TRANSFER_BLOCK;
@@ -1652,13 +1652,7 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 	buf[0].ptr = &block->bytes_used;
 	buf[0].size = 8;
 	buf[1].ptr = block->data;
-
-	if (is_rx) {
-		buf[1].size = block->size;
-	} else if (bytes_used) {
-		buf[1].size = bytes_used;
-		nb_buf++;
-	}
+	buf[1].size = bytes_used;
 
 	iio_mutex_lock(block->lock);
 
