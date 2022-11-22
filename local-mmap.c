@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "iio-private.h"
 #include "local.h"
 
 #include <errno.h>
@@ -24,8 +25,6 @@
 
 #define container_of(ptr, type, member)	\
 	((type *)(void *)((uintptr_t)(ptr) - offsetof(type, member)))
-
-#define BIT(x) (1ull << (x))
 
 #define BLOCK_ALLOC_IOCTL	_IOWR('i', 0xa0, struct block_alloc_req)
 #define BLOCK_FREE_IOCTL	_IO('i', 0xa1)
@@ -188,6 +187,11 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 			return -EBUSY;
 
 		priv->block.flags |= BLOCK_FLAG_CYCLIC;
+	}
+
+	if (bytes_used != priv->block.size && !iio_device_is_tx(buf->dev)) {
+		/* MMAP interface only supports bytes_used on TX */
+		return -EINVAL;
 	}
 
 	mask = atomic_fetch_or(&buf->pdata->mmap_enqueued_blocks_mask, BIT(priv->idx));
