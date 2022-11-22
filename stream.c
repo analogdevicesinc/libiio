@@ -16,7 +16,7 @@
 struct iio_stream {
 	struct iio_buffer *buffer;
 	struct iio_block **blocks;
-	size_t buf_size, nb_blocks;
+	size_t nb_blocks;
 	bool started, buf_enabled, all_enqueued;
 	unsigned int curr;
 };
@@ -56,7 +56,6 @@ iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
 
 	stream->buffer = buffer;
 	stream->nb_blocks = nb_blocks;
-	stream->buf_size = buf_size;
 
 	return stream;
 
@@ -86,7 +85,6 @@ iio_stream_get_next_block(struct iio_stream *stream)
 {
 	const struct iio_device *dev = stream->buffer->dev;
 	bool is_tx = iio_device_is_tx(dev);
-	size_t buf_size;
 	unsigned int i;
 	int err;
 
@@ -107,9 +105,7 @@ iio_stream_get_next_block(struct iio_stream *stream)
 		stream->all_enqueued = true;
 	}
 
-	buf_size = is_tx ? stream->buf_size : 0;
-
-	err = iio_block_enqueue(stream->blocks[stream->curr], buf_size, false);
+	err = iio_block_enqueue(stream->blocks[stream->curr], 0, false);
 	if (err < 0) {
 		dev_perror(dev, err, "Unable to enqueue block");
 		return iio_ptr(err);
