@@ -148,6 +148,9 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 	const struct iio_device *dev = buffer->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 
+	if (bytes_used > block->size)
+		return -EINVAL;
+
 	if (ops->enqueue_block && block->pdata)
 		return ops->enqueue_block(block->pdata, bytes_used, cyclic);
 

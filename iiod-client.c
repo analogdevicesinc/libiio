@@ -1644,9 +1644,6 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 	unsigned int nb_buf = 1;
 	int ret = 0;
 
-	if (bytes_used > block->size)
-		return -EINVAL;
-
 	cmd.op = cyclic ? IIOD_OP_ENQUEUE_BLOCK_CYCLIC : IIOD_OP_TRANSFER_BLOCK;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
 	cmd.code = pdata->idx | (block->idx << 16);
