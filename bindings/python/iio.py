@@ -369,7 +369,7 @@ _d_attr_count.argtypes = (_DevicePtr,)
 
 _d_get_attr = _lib.iio_device_get_attr
 _d_get_attr.restype = c_char_p
-_d_get_attr.argtypes = (_DevicePtr,)
+_d_get_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_attr.errcheck = _check_null
 
 _d_read_attr = _lib.iio_device_attr_read_raw
@@ -388,7 +388,7 @@ _d_debug_attr_count.argtypes = (_DevicePtr,)
 
 _d_get_debug_attr = _lib.iio_device_get_debug_attr
 _d_get_debug_attr.restype = c_char_p
-_d_get_debug_attr.argtypes = (_DevicePtr,)
+_d_get_debug_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_debug_attr.errcheck = _check_null
 
 _d_read_debug_attr = _lib.iio_device_debug_attr_read_raw
@@ -407,7 +407,7 @@ _d_buffer_attr_count.argtypes = (_DevicePtr,)
 
 _d_get_buffer_attr = _lib.iio_device_get_buffer_attr
 _d_get_buffer_attr.restype = c_char_p
-_d_get_buffer_attr.argtypes = (_DevicePtr,)
+_d_get_buffer_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_buffer_attr.errcheck = _check_null
 
 _d_read_buffer_attr = _lib.iio_device_buffer_attr_read_raw
@@ -496,7 +496,7 @@ _c_attr_count.argtypes = (_ChannelPtr,)
 
 _c_get_attr = _lib.iio_channel_get_attr
 _c_get_attr.restype = c_char_p
-_c_get_attr.argtypes = (_ChannelPtr,)
+_c_get_attr.argtypes = (_ChannelPtr, c_uint)
 _c_get_attr.errcheck = _check_null
 
 _c_get_filename = _lib.iio_channel_attr_get_filename

@@ -197,10 +197,14 @@ stages:
     - checkout: self
       fetchDepth: 1
       clean: true
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
     - script: |
           set -e
-          brew install doxygen libusb libxml2 ncurses cdk libserialport
-          pip3 install sphinx sphinx-rtd-theme
+          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc
+          pip3 install sphinx
       displayName: 'Dependencies'
     - script: |
         set -e

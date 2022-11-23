@@ -108,6 +108,12 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_PM2P5] = "pm2p5",
 	[IIO_MOD_PM4] = "pm4",
 	[IIO_MOD_PM10] = "pm10",
+	[IIO_MOD_LINEAR_X] = "x-g",
+	[IIO_MOD_LINEAR_Y] = "y-g",
+	[IIO_MOD_LINEAR_Z] = "z-g",
+	[IIO_MOD_PITCH] = "pitch",
+	[IIO_MOD_YAW] = "yaw",
+	[IIO_MOD_ROLL] = "roll",
 };
 
 /*
