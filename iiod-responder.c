@@ -78,33 +78,6 @@ struct iiod_responder {
 	unsigned int timeout_ms;
 };
 
-static uint64_t read_counter_us(void)
-{
-	uint64_t value;
-
-#ifdef _WIN32
-	LARGE_INTEGER freq, cnt;
-
-	QueryPerformanceFrequency(&freq);
-	QueryPerformanceCounter(&cnt);
-
-	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
-#else
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-
-	value = tv.tv_sec * 1000000ull + tv.tv_usec;
-#endif
-
-	return value;
-}
-
-uint64_t iiod_responder_read_counter_us(void)
-{
-	return read_counter_us();
-}
-
 static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 {
 	struct iiod_responder *priv = io->responder;
@@ -350,7 +323,7 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op,
 	if (nb > NB_BUFS_MAX)
 		return -EINVAL;
 
-	writer->w_io.start_time = read_counter_us();
+	writer->w_io.start_time = iio_read_counter_us();
 	writer->w_io.cmd.op = op;
 	writer->w_io.cmd.dev = dev;
 	writer->w_io.cmd.client_id = writer->client_id;
@@ -386,7 +359,7 @@ bool iiod_io_command_is_done(struct iiod_io *io)
 	if (!done && io->timeout_ms) {
 		timeout_us = io->timeout_ms * 1000;
 
-		done = read_counter_us() - io->w_io.start_time > timeout_us;
+		done = iio_read_counter_us() - io->w_io.start_time > timeout_us;
 	}
 
 	iio_mutex_unlock(io->lock);
@@ -408,7 +381,7 @@ int iiod_io_wait_for_command_done(struct iiod_io *io)
 		return 0;
 
 	if (timeout_ms) {
-		diff_ms = (read_counter_us() - io->w_io.start_time) / 1000;
+		diff_ms = (iio_read_counter_us() - io->w_io.start_time) / 1000;
 
 		if (diff_ms >= timeout_ms)
 			iio_task_cancel(token);
@@ -429,7 +402,7 @@ bool iiod_io_has_response(struct iiod_io *io)
 
 	timeout_us = io->timeout_ms * 1000;
 
-	return read_counter_us() - io->w_io.start_time > timeout_us;
+	return iio_read_counter_us() - io->w_io.start_time > timeout_us;
 }
 
 static int iiod_io_cond_wait(const struct iiod_io *io)
@@ -439,7 +412,7 @@ static int iiod_io_cond_wait(const struct iiod_io *io)
 	if (!timeout_ms)
 		return iio_cond_wait(io->cond, io->lock, 0);
 
-	diff_ms = (read_counter_us() - io->r_io.start_time) / 1000;
+	diff_ms = (iio_read_counter_us() - io->r_io.start_time) / 1000;
 
 	if (diff_ms < timeout_ms)
 		return iio_cond_wait(io->cond, io->lock, timeout_ms - diff_ms);
@@ -534,7 +507,7 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_io.nb_buf = nb;
 	io->r_done = false;
 	io->r_next = NULL;
-	io->r_io.start_time = read_counter_us();
+	io->r_io.start_time = iio_read_counter_us();
 
 	/* Add it to the readers list */
 	if (!priv->readers) {

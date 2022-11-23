@@ -21,6 +21,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <sys/time.h>
+#endif
+
 #if defined(_WIN32) || \
 		(defined(__APPLE__) && defined(__MACH__)) || \
 		(defined(__USE_XOPEN2K8) && \
@@ -392,4 +398,26 @@ void iio_prm_printf(const struct iio_context_params *params,
 		vfprintf(out, fmt, ap);
 
 	va_end(ap);
+}
+
+uint64_t iio_read_counter_us(void)
+{
+	uint64_t value;
+
+#ifdef _WIN32
+	LARGE_INTEGER freq, cnt;
+
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&cnt);
+
+	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
+#else
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+
+	value = tv.tv_sec * 1000000ull + tv.tv_usec;
+#endif
+
+	return value;
 }

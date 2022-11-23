@@ -97,13 +97,13 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client, int *val)
 
 		nb = (unsigned int) ret;
 	} else {
-		start_time = iiod_responder_read_counter_us();
+		start_time = iio_read_counter_us();
 		nb = sizeof(buf);
 	}
 
 	for (i = 0; i < nb; i++) {
 		if (!has_read_line) {
-			diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
+			diff_ms = (iio_read_counter_us() - start_time) / 1000;
 
 			if (timeout_ms) {
 				if (diff_ms >= timeout_ms)
@@ -149,13 +149,13 @@ static ssize_t iiod_client_write_all(struct iiod_client *client,
 	uint64_t start_time, diff_ms;
 	ssize_t ret;
 
-	start_time = iiod_responder_read_counter_us();
+	start_time = iio_read_counter_us();
 
 	if (iiod_client_uses_binary_interface(client))
 		timeout_ms = 0;
 
 	while (len) {
-		diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
+		diff_ms = (iio_read_counter_us() - start_time) / 1000;
 
 		if (timeout_ms) {
 			if (diff_ms >= timeout_ms)
@@ -204,13 +204,13 @@ static ssize_t iiod_client_read_all(struct iiod_client *client,
 	uint64_t start_time, diff_ms;
 	ssize_t ret;
 
-	start_time = iiod_responder_read_counter_us();
+	start_time = iio_read_counter_us();
 
 	if (iiod_client_uses_binary_interface(client))
 		timeout_ms = 0;
 
 	while (len) {
-		diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
+		diff_ms = (iio_read_counter_us() - start_time) / 1000;
 
 		if (timeout_ms) {
 			if (diff_ms >= timeout_ms)
