@@ -152,6 +152,9 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 	if (bytes_used > block->size)
 		return -EINVAL;
 
+	if (!bytes_used)
+		bytes_used = block->size;
+
 	if (ops->enqueue_block && block->pdata)
 		return ops->enqueue_block(block->pdata, bytes_used, cyclic);
 
