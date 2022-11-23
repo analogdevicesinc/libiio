@@ -20,6 +20,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <time.h>
+#endif
+
 #if defined(_WIN32) || \
 		(defined(__APPLE__) && defined(__MACH__)) || \
 		(defined(__USE_XOPEN2K8) && \
@@ -358,4 +364,26 @@ ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
 	va_end(ap);
 
 	return (ssize_t)ret;
+}
+
+uint64_t iio_read_counter_us(void)
+{
+	uint64_t value;
+
+#ifdef _WIN32
+	LARGE_INTEGER freq, cnt;
+
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&cnt);
+
+	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
+#else
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	value = ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
+#endif
+
+	return value;
 }

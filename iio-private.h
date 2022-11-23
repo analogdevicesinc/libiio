@@ -264,6 +264,7 @@ char *iio_strndup(const char *str, size_t n);
 char *iio_strtok_r(char *str, const char *delim, char **saveptr);
 size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
 char * iio_getenv (char * envvar);
+uint64_t iio_read_counter_us(void);
 
 int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
 
