@@ -1253,6 +1253,14 @@ iio_buffer_create_block(struct iio_buffer *buffer, size_t size);
 __api void iio_block_destroy(struct iio_block *block);
 
 
+/** @brief Get the file descriptor of the underlying DMABUF object
+ * @param block A pointer to an iio_block structure
+ * @return The file descriptor of the underlying DMABUF object.
+ * If the iio_block is not backed by a DMABUF object, -EINVAL is returned.
+ * Otherwise, the file descriptor will be valid until the block is destroyed. */
+__api __check_ret int iio_block_get_dmabuf_fd(const struct iio_block *block);
+
+
 /** @brief Disable CPU access of a given block
  * @param block A pointer to an iio_block structure
  * @param disable Whether or not to disable CPU access
