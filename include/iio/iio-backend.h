@@ -116,6 +116,7 @@ struct iio_backend_ops {
 	int (*dequeue_block)(struct iio_block_pdata *pdata, bool nonblock);
 
 	int (*get_dmabuf_fd)(struct iio_block_pdata *pdata);
+	int (*disable_cpu_access)(struct iio_block_pdata *pdata, bool disable);
 };
 
 /**

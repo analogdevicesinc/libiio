@@ -307,3 +307,13 @@ struct iio_buffer * iio_block_get_buffer(const struct iio_block *block)
 {
 	return block->buffer;
 }
+
+int iio_block_disable_cpu_access(struct iio_block *block, bool disable)
+{
+	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+
+	if (ops->disable_cpu_access)
+		return ops->disable_cpu_access(block->pdata, disable);
+
+	return -ENOSYS;
+}
