@@ -1306,7 +1306,7 @@ iio_block_foreach_sample(const struct iio_block *block,
 /** @brief Enqueue the given iio_block to the buffer's queue
  * @param block A pointer to an iio_block structure
  * @param bytes_used The amount of data in bytes to be transferred (either
- * transmitted or received).
+ * transmitted or received). If zero, the size of the block is used.
  * @param cyclic If True, enable cyclic mode. The block's content will be
  * repeated on the hardware's output until the buffer is cancelled or destroyed.
  * @return On success, 0 is returned
