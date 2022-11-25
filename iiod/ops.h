@@ -47,6 +47,7 @@
 
 struct iio_task;
 struct iiod_io;
+struct parser_pdata;
 struct thread_pool;
 extern struct thread_pool *main_thread_pool;
 struct DevEntry;
@@ -64,6 +65,7 @@ struct block_entry {
 	uint64_t bytes_used;
 	uint16_t client_id;
 	bool cyclic;
+	int dmabuf_fd;
 };
 
 struct buffer_entry {
@@ -71,8 +73,10 @@ struct buffer_entry {
 	struct iio_device *dev;
 	struct iio_buffer *buf;
 	struct iio_task *enqueue_task, *dequeue_task;
+	struct parser_pdata *pdata;
 	uint32_t *words;
 	uint16_t idx;
+	bool is_tx;
 };
 
 struct parser_pdata {
@@ -130,6 +134,10 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 			bool debug, struct thread_pool *pool,
 			const void *xml_zstd, size_t xml_zstd_len);
+
+int usb_attach_dmabuf(int ep_fd, int fd);
+int usb_detach_dmabuf(int ep_fd, int fd);
+int usb_transfer_dmabuf(int ep_fd, int fd, uint64_t size);
 
 int binary_parse(struct parser_pdata *pdata);
 

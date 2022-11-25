@@ -64,6 +64,12 @@ if (WITH_AIO)
 		endif()
 
 		target_sources(iiod PRIVATE usbd.c)
+
+
+		option(WITH_IIOD_USB_DMABUF "Enable DMABUF support on the USB stack" OFF)
+		if (WITH_IIOD_USB_DMABUF)
+			target_sources(iiod PRIVATE usb-dmabuf.c)
+		endif()
 	endif()
 
 	target_include_directories(iiod PRIVATE ${LIBAIO_INCLUDE_DIR})

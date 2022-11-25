@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <iio/iio-lock.h>
 #include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -341,7 +342,17 @@ static int buffer_dequeue_block(void *priv, void *d)
 	if (ret < 0)
 		goto out_send_response;
 
-	if (!iio_buffer_is_tx(buffer->buf)) {
+	if (!buffer->is_tx) {
+		if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0) {
+			/* We need to send the error code before the data.
+			 * If usb_transfer_dmabuf() fails, we're screwed... */
+			iiod_io_send_response_code(entry->io, entry->bytes_used);
+
+			return usb_transfer_dmabuf(buffer->pdata->fd_out,
+						   entry->dmabuf_fd,
+						   entry->bytes_used);
+		}
+
 		data.ptr = iio_block_start(entry->block);
 		data.size = iio_block_end(entry->block) - data.ptr;
 		nb_data++;
@@ -379,6 +390,8 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		ret = -ENOMEM;
 		goto err_send_response;
 	}
+
+	entry->pdata = pdata;
 
 	nb_channels = iio_device_get_channels_count(dev);
 	nb_words = (nb_channels + 31) / 32;
@@ -444,6 +457,8 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		else
 			entry->words[BIT_WORD(i)] &= ~BIT_MASK(i);
 	}
+
+	entry->is_tx = iio_buffer_is_tx(buf);
 
 	/* Success, destroy the temporary mask object */
 	iio_channels_mask_destroy(mask);
@@ -629,13 +644,14 @@ static void handle_create_block(struct parser_pdata *pdata,
 				const struct iiod_command *cmd,
 				struct iiod_command_data *cmd_data)
 {
+	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
 	struct iio_block *block;
 	struct iio_buffer *buf;
 	struct iiod_buf data;
 	uint64_t block_size;
 	struct iiod_io *io;
-	int ret;
+	int ret, ep_fd;
 
 	io = iiod_command_create_io(cmd, cmd_data);
 	ret = iio_err(io);
@@ -651,7 +667,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 	if (ret < 0)
 		goto out_send_response;
 
-	buf = get_iio_buffer(pdata, cmd, NULL);
+	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
 	if (ret)
 		goto out_send_response;
@@ -681,6 +697,24 @@ static void handle_create_block(struct parser_pdata *pdata,
 	entry->io = io;
 	entry->client_id = cmd->client_id;
 
+	if (WITH_IIOD_USB_DMABUF && pdata->is_usb) {
+		entry->dmabuf_fd = iio_block_get_dmabuf_fd(block);
+		if (entry->dmabuf_fd > 0) {
+			ep_fd = buf_entry->is_tx ? pdata->fd_in : pdata->fd_out;
+
+			ret = usb_attach_dmabuf(ep_fd, entry->dmabuf_fd);
+			if (!ret) {
+				/* We could attach to functionfs. Disable CPU
+				 * access to the block as we won't need it. */
+				iio_block_disable_cpu_access(block, true);
+			} else {
+				/* If we can't attach - no problem. The
+				 * data will be transferred the regular way. */
+				entry->dmabuf_fd = -ENOSYS;
+			}
+		}
+	}
+
 	/* Keep a reference to the iiod_io until the block is freed. */
 	iiod_io_ref(io);
 
@@ -697,10 +731,17 @@ static void handle_free_block(struct parser_pdata *pdata,
 			      const struct iiod_command *cmd,
 			      struct iiod_command_data *cmd_data)
 {
+	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
 	struct iio_block *block;
+	struct iio_buffer *buf;
 	struct iiod_io *io;
-	int ret;
+	int ret, ep_fd;
+
+	buf = get_iio_buffer(pdata, cmd, &buf_entry);
+	ret = iio_err(buf);
+	if (ret)
+		goto out_send_response;
 
 	block = get_iio_block(pdata, cmd, NULL);
 	ret = iio_err(block);
@@ -714,6 +755,10 @@ static void handle_free_block(struct parser_pdata *pdata,
 	SLIST_FOREACH(entry, &pdata->blocklist, entry) {
 		if (entry->block != block)
 			continue;
+
+		ep_fd = buf_entry->is_tx ? pdata->fd_in : pdata->fd_out;
+		if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
+			usb_detach_dmabuf(ep_fd, entry->dmabuf_fd);
 
 		SLIST_REMOVE(&pdata->blocklist, entry, block_entry, entry);
 
@@ -775,13 +820,21 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	}
 
 	/* Read the data into the block if we are dealing with a TX buffer */
-	if (iio_buffer_is_tx(buf)) {
-		readbuf.ptr = iio_block_start(block);
-		readbuf.size = iio_block_end(block) - readbuf.ptr;
+	if (entry->is_tx) {
+		if (WITH_IIOD_USB_DMABUF && block_entry->dmabuf_fd > 0) {
+			ret = usb_transfer_dmabuf(pdata->fd_in,
+						  block_entry->dmabuf_fd,
+						  bytes_used);
+			if (ret)
+				goto out_send_response;
+		} else {
+			readbuf.ptr = iio_block_start(block);
+			readbuf.size = iio_block_end(block) - readbuf.ptr;
 
-		ret = iiod_command_data_read(cmd_data, &readbuf);
-		if (ret < 0)
-			goto out_send_response;
+			ret = iiod_command_data_read(cmd_data, &readbuf);
+			if (ret < 0)
+				goto out_send_response;
+		}
 	}
 
 	block_entry->bytes_used = bytes_used;

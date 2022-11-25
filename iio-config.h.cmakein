@@ -29,6 +29,7 @@
 #cmakedefine01 WITH_NETWORK_EVENTFD
 #cmakedefine01 WITH_IIOD_USBD
 #cmakedefine01 WITH_IIOD_SERIAL
+#cmakedefine01 WITH_IIOD_USB_DMABUF
 #cmakedefine01 WITH_LOCAL_CONFIG
 #cmakedefine01 WITH_LOCAL_DMABUF_API
 #cmakedefine01 WITH_LOCAL_MMAP_API
