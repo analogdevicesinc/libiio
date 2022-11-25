@@ -751,7 +751,7 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	int ret;
 
 	buf = get_iio_buffer(pdata, cmd, &entry);
-	ret = iio_err(block);
+	ret = iio_err(buf);
 	if (ret)
 		goto out_send_response;
 
