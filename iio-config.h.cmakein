@@ -32,6 +32,7 @@
 #cmakedefine01 WITH_IIOD_NETWORK
 #cmakedefine01 WITH_IIOD_USBD
 #cmakedefine01 WITH_IIOD_SERIAL
+#cmakedefine01 WITH_IIOD_USB_DMABUF
 #cmakedefine01 WITH_IIOD_V0_COMPAT
 #cmakedefine01 WITH_LOCAL_CONFIG
 #cmakedefine01 WITH_LOCAL_DMABUF_API
