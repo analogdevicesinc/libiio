@@ -47,6 +47,7 @@ struct iio_mutex;
 struct iio_task;
 struct iiod_io;
 struct pollfd;
+struct parser_pdata;
 struct thread_pool;
 extern struct thread_pool *main_thread_pool;
 struct DevEntry;
@@ -61,6 +62,8 @@ struct block_entry {
 	uint64_t bytes_used;
 	uint16_t idx;
 	bool cyclic;
+	int dmabuf_fd;
+	int ep_fd;
 };
 
 struct buffer_entry {
@@ -71,6 +74,7 @@ struct buffer_entry {
 	struct iio_task *enqueue_task, *dequeue_task;
 	uint32_t *words;
 	uint16_t idx;
+	bool is_tx;
 
 	SLIST_HEAD(BlockList, block_entry) blocklist;
 	struct iio_mutex *lock;
@@ -138,6 +142,10 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 int start_network_daemon(struct iio_context *ctx,
 			 struct thread_pool *pool, const void *xml_zstd,
 			 size_t xml_zstd_len, uint16_t port);
+
+int usb_attach_dmabuf(int ep_fd, int fd);
+int usb_detach_dmabuf(int ep_fd, int fd);
+int usb_transfer_dmabuf(int ep_fd, int fd, uint64_t size);
 
 int binary_parse(struct parser_pdata *pdata);
 
