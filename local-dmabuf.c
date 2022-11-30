@@ -253,3 +253,18 @@ int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
 
 	return 0;
 }
+
+int local_dmabuf_disable_cpu_access(struct iio_block_pdata *pdata, bool disable)
+{
+	int ret;
+
+	if (pdata->dequeued) {
+		ret = enable_cpu_access(pdata, !disable);
+		if (ret)
+			return ret;
+	}
+
+	pdata->cpu_access_disabled = disable;
+
+	return 0;
+}

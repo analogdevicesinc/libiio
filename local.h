@@ -34,6 +34,7 @@ struct iio_block_pdata {
 	size_t size;
 	void *data;
 	bool dequeued;
+	bool cpu_access_disabled;
 };
 
 int ioctl_nointr(int fd, unsigned long request, void *data);
@@ -48,6 +49,8 @@ void local_free_dmabuf(struct iio_block_pdata *pdata);
 int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
 			 size_t bytes_used, bool cyclic);
 int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock);
+
+int local_dmabuf_disable_cpu_access(struct iio_block_pdata *pdata, bool disable);
 
 struct iio_block_pdata *
 local_create_mmap_block(struct iio_buffer_pdata *pdata,
