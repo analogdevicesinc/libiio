@@ -50,6 +50,7 @@ int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
 			 size_t bytes_used, bool cyclic);
 int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock);
 
+int local_dmabuf_get_fd(struct iio_block_pdata *pdata);
 int local_dmabuf_disable_cpu_access(struct iio_block_pdata *pdata, bool disable);
 
 struct iio_block_pdata *

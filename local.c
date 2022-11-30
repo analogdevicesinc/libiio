@@ -1580,6 +1580,14 @@ int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 	return -ENOSYS;
 }
 
+static int local_get_dmabuf_fd(struct iio_block_pdata *pdata)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
+		return local_dmabuf_get_fd(pdata);
+
+	return -EINVAL;
+}
+
 static int local_disable_cpu_access(struct iio_block_pdata *pdata, bool disable)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported) {
@@ -1616,6 +1624,7 @@ static const struct iio_backend_ops local_ops = {
 	.readbuf = local_readbuf,
 	.writebuf = local_writebuf,
 
+	.get_dmabuf_fd = local_get_dmabuf_fd,
 	.disable_cpu_access = local_disable_cpu_access,
 };
 

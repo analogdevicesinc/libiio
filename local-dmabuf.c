@@ -187,6 +187,11 @@ void local_free_dmabuf(struct iio_block_pdata *pdata)
 	free(pdata);
 }
 
+int local_dmabuf_get_fd(struct iio_block_pdata *pdata)
+{
+	return (int)(intptr_t) pdata->pdata;
+}
+
 int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
 			 size_t bytes_used, bool cyclic)
 {
