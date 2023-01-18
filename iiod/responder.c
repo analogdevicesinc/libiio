@@ -768,6 +768,12 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	if (ret < 0)
 		goto out_send_response;
 
+	if (bytes_used == 0) {
+		IIO_ERROR("Cannot enqueue a block with size 0\n");
+		ret =  -EINVAL;
+		goto out_send_response;
+	}
+
 	/* Read the data into the block if we are dealing with a TX buffer */
 	if (iio_buffer_is_tx(buf)) {
 		readbuf.ptr = iio_block_start(block);
