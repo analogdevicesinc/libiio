@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * iio_writedev - Part of the Industrial I/O (IIO) utilities
  *
