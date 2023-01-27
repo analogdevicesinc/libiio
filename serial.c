@@ -421,11 +421,10 @@ static struct iio_context * serial_create_context(const char *port_name,
 	struct sp_port *port;
 	struct iio_context_pdata *pdata;
 	struct iio_context *ctx;
-	char *description;
+	char *description, *uri, buf[16];
 	size_t uri_len;
 	unsigned int i;
 	int ret;
-	char *uri;
 
 	uri_len = sizeof("serial:,1000000,8n1n") + strnlen(port_name, PATH_MAX);
 	uri = malloc(uri_len);
@@ -452,8 +451,20 @@ static struct iio_context * serial_create_context(const char *port_name,
 		goto err_close_port;
 	}
 
-	/* Empty the buffers */
-	sp_flush(port, SP_BUF_BOTH);
+	/* Empty the output buffer */
+	ret = libserialport_to_errno(sp_flush(port, SP_BUF_OUTPUT));
+	if (ret)
+		IIO_WARNING("Unable to flush output buffer\n");
+
+	/* Drain the input buffer */
+	do {
+		ret = libserialport_to_errno(sp_blocking_read(port, buf,
+							      sizeof(buf), 1));
+		if (ret < 0) {
+			IIO_WARNING("Unable to drain input buffer\n");
+			break;
+		}
+	} while (ret);
 
 	description = serial_get_description(port);
 	if (!description)
