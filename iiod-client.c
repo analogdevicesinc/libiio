@@ -482,6 +482,13 @@ int iiod_client_set_timeout(struct iiod_client *client, unsigned int timeout)
 		iio_snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", remote_timeout);
 		ret = iiod_client_exec_command(client, buf);
 		iio_mutex_unlock(client->lock);
+
+		if (ret == -EINVAL) {
+			/* The TIMEOUT command is not implemented in tinyiiod
+			 * based programs; so ignore if we get -EINVAL here. */
+			prm_dbg(client->params, "Unable to set remote timeout\n");
+			ret = 0;
+		}
 	}
 
 	return ret;
