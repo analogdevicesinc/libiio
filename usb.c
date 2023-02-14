@@ -323,13 +323,12 @@ static void usb_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	usb_io_context_exit(&pdata->io_ctx);
+	iiod_client_destroy(pdata->io_ctx.iiod_client);
 
 	/* TODO: free buffers? */
 
+	usb_io_context_exit(&pdata->io_ctx);
 	iio_mutex_destroy(pdata->ep_lock);
-
-	iiod_client_destroy(pdata->io_ctx.iiod_client);
 
 	free(pdata->io_endpoints);
 
