@@ -344,15 +344,43 @@ const char * iio_channel_get_attr(const struct iio_channel *chn,
 		return chn->attrs[index].name;
 }
 
-const char * iio_channel_find_attr(const struct iio_channel *chn,
-		const char *name)
+static const char *
+iio_channel_do_find_attr(const struct iio_channel *chn, const char *name)
 {
 	unsigned int i;
+
 	for (i = 0; i < chn->nb_attrs; i++) {
 		const char *attr = chn->attrs[i].name;
 		if (!strcmp(attr, name))
 			return attr;
 	}
+
+	return NULL;
+}
+
+const char * iio_channel_find_attr(const struct iio_channel *chn,
+				   const char *name)
+{
+	const char *attr;
+	size_t len;
+
+	attr = iio_channel_do_find_attr(chn, name);
+	if (attr)
+		return attr;
+
+	/* Support attribute names that start with the channel's label to avoid
+	 * breaking compatibility with old kernels, which did not offer a
+	 * 'label' attribute, and caused Libiio to sometimes misdetect the
+	 * channel's extended name as being part of the attribute name. */
+	if (chn->name) {
+		len = strlen(chn->name);
+
+		if (!strncmp(chn->name, name, len) && name[len] == '_') {
+			name += len + 1;
+			return iio_channel_do_find_attr(chn, name);
+		}
+	}
+
 	return NULL;
 }
 
@@ -361,6 +389,10 @@ ssize_t iio_channel_attr_read_raw(const struct iio_channel *chn,
 {
 	if (!attr)
 		return -EINVAL;
+
+	attr = iio_channel_find_attr(chn, attr);
+	if (!attr)
+		return -ENOENT;
 
 	if (chn->dev->ctx->ops->read_channel_attr)
 		return chn->dev->ctx->ops->read_channel_attr(chn,
@@ -374,6 +406,10 @@ ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 {
 	if (!attr)
 		return -EINVAL;
+
+	attr = iio_channel_find_attr(chn, attr);
+	if (!attr)
+		return -ENOENT;
 
 	if (chn->dev->ctx->ops->write_channel_attr)
 		return chn->dev->ctx->ops->write_channel_attr(chn,
