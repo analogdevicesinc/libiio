@@ -548,6 +548,10 @@ if (IIOD_CLIENT OR WITH_IIOD)
 	add_library(iiod-responder STATIC iiod-responder.c)
 	target_include_directories(iiod-responder PRIVATE include)
 	set_target_properties(iiod-responder PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+	# Link against exported symbols of Libiio and not the
+	# DLL-exported symbols
+	target_compile_definitions(iiod-responder PRIVATE LIBIIO_STATIC)
 endif()
 
 if (IIOD_CLIENT)
