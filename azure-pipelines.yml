@@ -202,7 +202,7 @@ stages:
         addToPath: true
     - script: |
           set -e
-          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc
+          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config
           pip3 install sphinx
       displayName: 'Dependencies'
     - script: |
