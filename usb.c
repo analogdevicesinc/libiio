@@ -11,6 +11,9 @@
 #include "iiod-client.h"
 
 #include <ctype.h>
+#ifdef __linux__
+#include <dirent.h>
+#endif
 #include <errno.h>
 #include <libusb.h>
 #include <stdbool.h>
@@ -1253,8 +1256,20 @@ int usb_context_scan(struct iio_scan_result *scan_result, const char *args)
 		return ret;
 
 	ret = libusb_init(&ctx);
-	if (ret < 0)
+	if (ret < 0) {
+#ifdef __linux__
+		/* When Linux's OTG USB is in device mode, and there are no hosts,
+		 * libusb_init() is expected to fail, but we shouldn't treat that
+		 * as a hard failure - only that there are no devices.
+		 */
+		DIR* dir = opendir("/dev/bus/usb/");
+		if (dir)
+			closedir(dir);
+		else if (errno == ENOENT)
+			return 0;
+#endif
 		return -(int) libusb_to_errno(ret);
+	}
 
 	ret = (int) libusb_get_device_list(ctx, &device_list);
 	if (ret < 0) {
