@@ -98,7 +98,7 @@ if(HAS_CDK_CSTRING2)
 	project(iio-monitor C)
 	add_executable(iio-monitor iio-monitor.c)
 	target_link_libraries(
-		iio-monitor iio ${PTHREAD_LIBRARIES} ${CURSES_LIBRARY} ${CDK_LIBRARY}
+		iio-monitor iio iio_tests_helper ${PTHREAD_LIBRARIES} ${CURSES_LIBRARY} ${CDK_LIBRARY}
 	)
 	set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio-monitor)
 else()

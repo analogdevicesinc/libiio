@@ -26,6 +26,8 @@
 #include <string.h>
 #include <iio.h>
 
+#include "iio_common.h"
+
 #ifdef _MSC_BUILD
 #define inline __inline
 #define iio_snprintf sprintf_s
@@ -38,6 +40,9 @@
 #define RED	020u
 #define YELLOW	040u
 #define BLUE	050u
+
+#define MY_NAME "iio-monitor"
+
 
 static int selected = -1;
 
@@ -423,10 +428,59 @@ thread_err:
 	return;
 }
 
-int main(void)
+static const struct option options[] = {
+        {0, 0, 0, 0},
+};
+
+static const char *options_descriptions[] = {
+        ("[-x <xml_file>]\n"
+                "\t\t\t\t[-u <uri>]"),
+};
+
+#define MY_OPTS ""
+
+int main(int argc, char **argv)
 {
-	struct iio_context *ctx;
+	struct iio_context *ctx = NULL;
 	int row, col;
+	struct option *opts;
+	int c;
+	char **argw;
+
+	argw = dup_argv(MY_NAME, argc, argv);
+
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	opts = add_common_options(options);
+	if (!opts) {
+		fprintf(stderr, "Failed to add common options\n");
+		return EXIT_FAILURE;
+	}
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
+				opts, NULL)) != -1) {
+		switch (c) {
+		/* All these are handled in the common */
+		case 'h':
+		case 'n':
+		case 'x':
+		case 'u':
+		case 'T':
+			break;
+		case 'S':
+			return EXIT_SUCCESS;
+		case 'a':
+			if (!optarg && argc > optind && argv[optind] != NULL
+					&& argv[optind][0] != '-')
+				optind++;
+			break;
+		case 's':
+			autodetect_context(false, MY_NAME, NULL);
+			return EXIT_SUCCESS;
+		case '?':
+			printf("Unknown argument '%c'\n", c);
+			return EXIT_FAILURE;
+		}
+	}
+	free(opts);
 
 	win = initscr();
 	noecho();
@@ -447,7 +501,8 @@ int main(void)
 	right = newwin(row, col / 2, 0, col / 2);
 
 	while (TRUE) {
-		ctx = show_contexts_screen();
+		if (!ctx)
+			ctx = show_contexts_screen();
 		if (!ctx)
 			break;
 
