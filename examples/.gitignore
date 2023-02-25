@@ -2,5 +2,4 @@ ad9361-iiostream
 ad9371-iiostream
 adrv9009-iiostream
 dummy-iiostream
-iio-monitor
 !Makefile

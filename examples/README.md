@@ -35,9 +35,3 @@ It takes the uri as the only argument. for example : `./adrv9009-iiostream ip:19
 This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the linux kernel.
 For buffered access it relies on the hrtimer trigger but could be modified to use the sysfs trigger. 
 No hardware should be required to run this program.
-
-## iio-monitor
-  * Language : C
-  * Requirements : Curses Development Kit (libcdk5-dev); pthreads; ncurses; libiio
-
-A Curses based application which implements real time monitoring of IIO non-buffer samples.

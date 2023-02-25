@@ -269,9 +269,9 @@ This means applications compiled against an older version will work fine with a 
 \example iio_readdev.c Part of the libiio-utilites, iio_readdev is a utility for reading buffers from connected IIO devices, and sending resutls to standard out.
 \example iio_writedev.c Part of the libiio-utilites, iio_writedev is a utility for writing buffers from connected IIO devices.
 \example iio_reg.c Part of the libiio-utilites, iio_reg is a utility for debugging local IIO devices. It should not be used by normal users, and is normally used by driver developers during development, or by end users debugging a driver, or sending in a feature request. It provides a mechanism to read or write SPI or I2C registers for IIO devices.
+\example iio-monitor.c A Curses based application which implements real time monitoring of IIO non-buffer samples.
 \example ad9361-iiostream.c   This example libiio program is meant to exercise the features of IIO functionality on the AD9361 found on the AD-FMCOMMS2-EBZ, AD-FMCOMMS3-EBZ, and the ADRV9361-Z7035 RF SOM.
 \example ad9371-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the AD9371.
 \example adrv9009-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the ADRV9009.
 \example dummy-iiostream.c This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the linux kernel.
-\example iio-monitor.c A Curses based application which implements real time monitoring of IIO non-buffer samples.
 */
