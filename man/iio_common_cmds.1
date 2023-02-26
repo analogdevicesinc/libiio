@@ -1,0 +1,11 @@
+.TP
+.B \-h, \-\-help
+Tells
+.I ##APP_NAME##
+to display some help, and then quit.
+.TP
+.B \-S, \-\-Scan
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip:usb'.
+Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456,b673'.
+vid,pid are hexadecimal numbers (no prefix needed), "*" (match any for pid only)
+If no argument is given, it checks all that are availble.
