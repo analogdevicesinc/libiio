@@ -54,6 +54,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND OSX_FRAMEWORK)
 	set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
 endif()
 
+option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
+include(cmake/CheckManPages.cmake)
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 option(WITH_TESTS "Build the test programs" ON)
 option(WITH_EXAMPLES "Build examples" OFF)
@@ -551,8 +553,9 @@ option(CSHARP_BINDINGS "Install C# bindings" OFF)
 option(PYTHON_BINDINGS "Install Python bindings" OFF)
 add_subdirectory(bindings)
 
-option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
-add_subdirectory(man)
+if(WITH_MAN)
+	add_subdirectory(man)
+endif()
 
 # Create an installer if compiling for OSX
 if(OSX_PACKAGE AND OSX_FRAMEWORK)

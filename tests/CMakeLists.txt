@@ -83,5 +83,7 @@ if(NOT SKIP_INSTALL_ALL)
 	endif()
 endif()
 
+CheckManPages("${IIO_TESTS_TARGETS}")
+
 # Make the test targets available to the main CMakeLists.txt
 set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} PARENT_SCOPE)
