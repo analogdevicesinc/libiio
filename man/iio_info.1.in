@@ -31,58 +31,16 @@ iio_info \- list IIO devices and device attributes
 [
 .I options
 ]
--x <xml_file>
-.br
-.B iio_info
-[
-.I options
-]
--n <hostname>
-.br
-.B iio_info
-[
-.I options
-]
 -u <uri>
 .SH DESCRIPTION
 .B iio_info
 is a utility for displaying information about local or remote IIO devices
 
 .SH OPTIONS
-.TP
-.B \-h, \-\-help
-Tells
-.I iio_info
-to display some help, and then quit.
-.TP
-.B \-x, \-\-xml
-Use the XML backend with the provided XML file
-.TP
-.B \-n, \-\-network
-Use the network backend with the provided hostname
-.TP
-.B \-u, \-\-uri
-The Uniform Resource Identifier
-.I (uri)
-for connecting to devices, can be one of:
-.RS
-.IP ip:[address]
-network address, either numeric (192.168.0.1) or network hostname
-.IP ip:
-blank, if compiled with zeroconf support, will find an IIO device on network
-.IP usb:[device:port:instance]
-normally returned from
-.B iio_info -s
-.IP serial:[port]
-.IP local
-with no address part
-.RE
-.TP
-.B \-S, \-\-scan
-Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip,usb'.
-Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456:b673'.
-vid,pid are hexadecimal numbers (no prefix needed), "*" (match any for pid only)
-If no argument is given, it checks all that are availble.
+##COMMON_COMMANDS_START##
+##COMMON_COMMANDS_STOP##
+##COMMON_OPTION_START##
+##COMMON_OPTION_STOP##
 .TP
 .B \-a, \-\-auto
 Scan for available contexts and if only one is available use it.
@@ -90,23 +48,3 @@ Scan for available contexts and if only one is available use it.
 .SH RETURN VALUE
 If the specified device is not found, a non-zero exit code is returned.
 
-.SH "SEE ALSO"
-.ad l
-.BR iio_attr (1),
-.BR iio_info (1),
-.BR iio_readdev (1),
-.BR iio_reg (1),
-.BR iio_writedev (1),
-.BR libiio (3)
-.PP
-libiio home page:
-.BR \%https://wiki.analog.com/resources/tools-software/linux-software/libiio
-.PP
-libiio code:
-.BR \%https://github.com/analogdevicesinc/libiio
-.PP
-Doxygen for libiio
-.BR \%https://analogdevicesinc.github.io/libiio/
-.SH BUGS
-All bugs are tracked at:
-.BR \%https://github.com/analogdevicesinc/libiio/issues
