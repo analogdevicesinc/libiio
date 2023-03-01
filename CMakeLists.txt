@@ -28,7 +28,9 @@ if (NOT CMAKE_BUILD_TYPE)
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+if (TARGET_SUPPORTS_SHARED_LIBS)
+	option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+endif()
 
 add_library(iio backend.c block.c channel.c device.c context.c buffer.c mask.c utilities.c scan.c sort.c task.c stream.c
 	${CMAKE_CURRENT_BINARY_DIR}/iio-config.h
