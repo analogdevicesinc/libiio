@@ -32,9 +32,6 @@ stages:
     # Docker Images
     strategy:
       matrix:
-        ubuntu_18_04:
-          image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
-          artifactName: 'Linux-Ubuntu-18.04'
         ubuntu_20_04:
           image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
           artifactName: 'Linux-Ubuntu-20.04'
