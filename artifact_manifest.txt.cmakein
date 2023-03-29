@@ -4,9 +4,6 @@ Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.deb
 Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.rpm
 Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.tar.gz
 
-Linux-Ubuntu-18.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-18.04.deb
-Linux-Ubuntu-18.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-18.04.tar.gz
-
 Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.deb
 Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar.gz
 
