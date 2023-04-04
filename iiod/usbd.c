@@ -217,7 +217,6 @@ static void usbd_main(struct thread_pool *pool, void *d)
 		thread_pool_destroy(pdata->pool[i]);
 	}
 
-	close(pdata->ep0_fd);
 	free(pdata->ffs);
 	free(pdata->pool);
 	free(pdata);
@@ -328,14 +327,34 @@ static int write_header(int fd, unsigned int nb_pipes)
 	return 0;
 }
 
+int init_usb_daemon(const char *ffs, unsigned int nb_pipes)
+{
+	char buf[256];
+	int ep0_fd, ret;
+
+	snprintf(buf, sizeof(buf), "%s/ep0", ffs);
+
+	ep0_fd = open(buf, O_RDWR);
+	if (ep0_fd < 0) {
+		return -errno;
+	}
+
+	ret = write_header(ep0_fd, nb_pipes);
+	if (ret < 0) {
+		close(ep0_fd);
+		return ret;
+	}
+
+	return ep0_fd;
+}
+
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		bool debug, bool use_aio, unsigned int nb_pipes,
-		struct thread_pool *pool,
+		int ep0_fd, struct thread_pool *pool,
 		const void *xml_zstd, size_t xml_zstd_len)
 {
 	struct usbd_pdata *pdata;
 	unsigned int i;
-	char buf[256];
 	int ret;
 
 	pdata = zalloc(sizeof(*pdata));
@@ -356,18 +375,6 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		goto err_free_pdata_pool;
 	}
 
-	snprintf(buf, sizeof(buf), "%s/ep0", ffs);
-
-	pdata->ep0_fd = open(buf, O_RDWR);
-	if (pdata->ep0_fd < 0) {
-		ret = -errno;
-		goto err_free_ffs;
-	}
-
-	ret = write_header(pdata->ep0_fd, nb_pipes);
-	if (ret < 0)
-		goto err_close_ep0;
-
 	for (i = 0; i < nb_pipes; i++) {
 		pdata->pool[i] = thread_pool_new();
 		if (!pdata->pool[i]) {
@@ -381,6 +388,7 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 	pdata->use_aio = use_aio;
 	pdata->xml_zstd = xml_zstd;
 	pdata->xml_zstd_len = xml_zstd_len;
+	pdata->ep0_fd = ep0_fd;
 
 	ret = thread_pool_add_thread(pool, usbd_main, pdata, "usbd_main_thd");
 	if (!ret)
@@ -393,9 +401,6 @@ err_free_pools:
 		if (pdata->pool[i])
 			thread_pool_destroy(pdata->pool[i]);
 	}
-err_close_ep0:
-	close(pdata->ep0_fd);
-err_free_ffs:
 	free(pdata->ffs);
 err_free_pdata_pool:
 	free(pdata->pool);
