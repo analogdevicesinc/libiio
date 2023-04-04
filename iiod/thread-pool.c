@@ -185,6 +185,14 @@ bool thread_pool_is_stopped(const struct thread_pool *pool)
 	return pool->stop;
 }
 
+void thread_pool_restart(struct thread_pool *pool)
+{
+	if (pool->stop) {
+		thread_pool_purge_events(pool);
+		pool->stop = false;
+	}
+}
+
 void thread_pool_destroy(struct thread_pool *pool)
 {
 	pthread_mutex_destroy(&pool->thread_count_lock);
