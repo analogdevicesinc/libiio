@@ -519,6 +519,12 @@ int main(int argc, char **argv)
 
 	ret = (void *)calloc(info.num_threads, sizeof(void *));
 
+	if (!ret || !info.start || !info.refills || !info.buffers || !info.starts ||
+			!info.tid || !info.threads) {
+		fprintf(stderr, "Memory allocation failure\n");
+		return 0;
+	}
+
 	for (i = 0; i < info.num_threads; i++) {
 		info.start[i] = malloc(NUM_TIMESTAMPS * sizeof(struct timeval));
 	}
@@ -658,6 +664,11 @@ int main(int argc, char **argv)
 		/* gather and sort things, so we can print out a histogram */
 		struct timeval *sort;
 		sort = calloc(info.num_threads * NUM_TIMESTAMPS, sizeof(struct timeval));
+		if (!sort) {
+			app_running = 0;
+			fprintf(stderr, "Memory allocation failure\n");
+			break;
+		}
 		b = 0;
 		/* gather */
 		for (i = 0; i < info.num_threads; i++) {
