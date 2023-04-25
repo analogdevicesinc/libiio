@@ -428,12 +428,14 @@ static struct iio_context * iio_create_xml_context_helper(xmlDoc *doc)
 		if (!strcmp((char *) attr->name, "description")) {
 			description = content;
 		} else if (!strcmp((char *) attr->name, "version-major")) {
+			errno = 0;
 			major = strtol(content, &end, 10);
-			if (*end != '\0')
+			if (*end != '\0' ||  errno == ERANGE)
 				IIO_WARNING("invalid format for major version\n");
 		} else if (!strcmp((char *) attr->name, "version-minor")) {
+			errno = 0;
 			minor = strtol(content, &end, 10);
-			if (*end != '\0')
+			if (*end != '\0' || errno == ERANGE)
 				IIO_WARNING("invalid format for minor version\n");
 		} else if (!strcmp((char *) attr->name, "version-git")) {
 			git_tag = content;

@@ -1126,8 +1126,10 @@ struct iio_context * network_create_context(const char *host)
 	}
 	if (port) {
 		unsigned long int tmp;
+
+		errno = 0;
 		tmp = strtoul(port, &end, 0);
-		if (port == end || tmp > 0xFFFF) {
+		if (port == end || tmp > 0xFFFF || errno == ERANGE) {
 			errno = ENOENT;
 			return NULL;
 		}
