@@ -251,6 +251,7 @@ int iio_task_destroy(struct iio_task *task)
 
 	iio_cond_destroy(task->cond);
 	iio_mutex_destroy(task->lock);
+	free(task);
 
 	return ret;
 }
