@@ -45,6 +45,7 @@ static int iio_task_run(void *d)
 {
 	struct iio_task *task = d;
 	struct iio_task_token *entry;
+	bool autoclear;
 
 	iio_mutex_lock(task->lock);
 
@@ -69,10 +70,11 @@ static int iio_task_run(void *d)
 
 		iio_mutex_lock(entry->done_lock);
 		entry->done = true;
+		autoclear = entry->autoclear;
 		iio_cond_signal(entry->done_cond);
 		iio_mutex_unlock(entry->done_lock);
 
-		if (entry->autoclear)
+		if (autoclear)
 			iio_task_token_destroy(entry);
 
 		/* Signal that we're done with the previous entry */
