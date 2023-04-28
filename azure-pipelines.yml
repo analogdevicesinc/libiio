@@ -271,6 +271,7 @@ stages:
     steps:
     - script: |
         set -e
+        sudo apt-get update
         sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
         sudo apt-get install -y g++-arm-linux-gnueabihf
         sudo apt-get install -y g++-aarch64-linux-gnu
