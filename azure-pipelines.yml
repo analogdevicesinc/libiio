@@ -32,15 +32,30 @@ stages:
     # Docker Images
     strategy:
       matrix:
+        ubuntu_18_04:
+          image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-18.04'
         ubuntu_20_04:
           image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
           artifactName: 'Linux-Ubuntu-20.04'
         ubuntu_22_04:
           image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
           artifactName: 'Linux-Ubuntu-22.04'        
+        fedora28:
+          image: 'tfcollins/libiio_fedora_28-ci:latest'
+          artifactName: 'Linux-Fedora-28'
         fedora34:
           image: 'tfcollins/libiio_fedora_34-ci:latest'
           artifactName: 'Linux-Fedora-34'
+        debian_bullseye:
+          image: 'tfcollins/libiio_debian_bullseye-ci:latest'
+          artifactName: 'Linux-Debian-11'
+        opensuse_15_4:
+          image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
+          artifactName: 'Linux-openSUSE-15.4'
+        centos_7:
+          image: 'tfcollins/libiio_centos_7-ci:latest'
+          artifactName: 'Linux-CentOS-7'
     container: $[ variables['image'] ]
     steps:
     - checkout: self
@@ -50,7 +65,12 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        if [ "$ARTIFACTNAME" != "Linux-CentOS-7" ]; then
+          cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        else
+          # CentOS 7 does not have new enough kernel headers to support modern libusb
+          cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME} -DWITH_USB_BACKEND=OFF -DWITH_IIOD_USBD=OFF
+        fi
         make
         make package
       displayName: 'Build'
@@ -190,6 +210,9 @@ stages:
         macOS_12:
           vmImage: 'macOS-12'
           artifactName: 'macOS-12'
+        macOS_13:
+          vmImage: 'macOS-13'
+          artifactName: 'macOS-13'
     pool:
       vmImage: $[ variables['vmImage'] ]
     steps:
