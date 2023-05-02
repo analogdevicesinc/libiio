@@ -1,14 +1,15 @@
 #!/bin/bash -e
 
 release_artifacts() {
-        local deb_linux_assets='Fedora-34 Ubuntu-20.04 Ubuntu-22.04'
+        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-18.04 Ubuntu-20.04 Ubuntu-22.04 Debian-11 openSUSE-15.4 CentOS-7'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_linux_assets; do
                 cd "Linux-${i}"
-		if [ "${i}" == "Fedora-34" ]; then 
+		if [ "${i}" == "Fedora-34" ] || [ "${i}" == "Fedora-28" ] || [ "${i}" == "CentOS-7" ]; then 
 			find . -name '*.rpm' -exec mv {} ../ ";"
 		fi
                 find . -name '*.deb' -exec mv {} ../ ";"
+		find . -name '*.tar.gz' -exec mv {} ../ ";"
                 cd ../
                 rm -r "Linux-${i}"
         done
@@ -42,6 +43,7 @@ release_artifacts() {
         for i in $deb_arm_assets; do
                 cd "Ubuntu-${i}"
                 find . -name '*.deb' -exec mv {} ../ ";"
+		find . -name '*.tar.gz' -exec mv {} ../ ";"
                 cd ../
                 rm -r "Ubuntu-${i}"
         done
@@ -49,10 +51,10 @@ release_artifacts() {
 }
 
 swdownloads_artifacts() {
-        local linux_dist='Fedora-34 Ubuntu-20.04 Ubuntu-22.04'
+        local linux_dist='Fedora-34 Fedora-28 Ubuntu-18.04 Ubuntu-20.04 Ubuntu-22.04 Debian-11 openSUSE-15.4 CentOS-7'
         for distribution in $linux_dist; do
 		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Linux-${distribution}"
-		if [ "${distribution}" == "Fedora-34" ]; then
+		if [ "${distribution}" == "Fedora-34" ] || [ "${distribution}" == "Fedora-28" ] || [ "${distribution}" == "CentOS-7" ]; then
                         find . -name '*.rpm' -exec mv {} ../"${distribution}_latest_master_libiio.rpm" ";"
                 fi
                 find . -name '*.tar.gz' -exec mv {} ../"${distribution}_latest_master_libiio.tar.gz" ";"

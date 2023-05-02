@@ -4,11 +4,29 @@ Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.deb
 Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.rpm
 Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.tar.gz
 
+Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.deb
+Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.rpm
+Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.tar.gz
+
+Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.deb
+Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.rpm
+Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.tar.gz
+
+Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.deb
+Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.rpm
+Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.tar.gz
+
+Linux-Ubuntu-18.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-18.04.deb
+Linux-Ubuntu-18.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-18.04.tar.gz
+
 Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.deb
 Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar.gz
 
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.deb
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar.gz
+
+Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.deb
+Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.tar.gz
 
 macOS-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-11.tar.gz
 macOS-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
