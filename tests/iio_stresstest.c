@@ -100,7 +100,7 @@ static const struct option options[] = {
 	{"uri", required_argument, 0, 'u'},
 	{"buffer-size", required_argument, 0, 'b'},
 	{"samples", required_argument, 0, 's' },
-	{"Timeout", required_argument, 0, 'T'},
+	{"duration", required_argument, 0, 'd'},
 	{"threads", required_argument, 0, 't'},
 	{"verbose", no_argument, 0, 'v'},
 	{0, 0, 0, 0},
