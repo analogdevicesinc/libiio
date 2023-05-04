@@ -1,0 +1,69 @@
+.\" Copyright (c) 2018-2020 Robin Getz
+.\" Copyright (c) 2018-2020 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iio_stresstest 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iio_stresstest
+.SH NAME
+iio_stresstest \- Stress test program for Libiio
+.SH SYNOPSIS
+.B iio_stresstest
+[
+.I options
+]
+-u <uri>
+.SH DESCRIPTION
+.B iio_stresstest
+is a stress-testing program that can be used to find bugs in Libiio or in the Libiio daemon (IIOD).
+
+
+.SH OPTIONS
+##COMMON_COMMANDS_START##
+##COMMON_COMMANDS_STOP##
+##COMMON_OPTION_START##
+##COMMON_OPTION_STOP##
+.TP
+.B \-a, \-\-auto
+Scan for available contexts and if only one is available use it.
+.TP
+.B \-T, \-\-timeout <arg>
+Context timeout in milliseconds. 0 = no timeout (wait forever)
+.TP
+.B \-b, \-\-buffer\-size <arg>
+Size of the capture buffer. Default is 256.
+.TP
+.B \-s, \-\-samples <arg>
+Number of samples to capture, 0 = infinite. Default is 0.
+.TP
+.B \-d, \-\-duration <arg>
+Time to wait (in seconds) before stopping all threads
+.TP
+.B \-t, \-\-threads <arg>
+Number of threads to use
+.TP
+.B \-v, \-\-verbose
+Increase verbosity (-vv and -vvv for more)
+
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
