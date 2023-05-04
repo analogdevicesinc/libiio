@@ -30,7 +30,7 @@ if (WITH_MAN)
 			message(FATAL_ERROR "Can not build html DOC from man without man2html")
 		endif()
 		message(STATUS "Building html doc pages with man2html")
-		file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR}/man3)
+		file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR}/man1 ${CMAKE_HTML_DEST_DIR}/man3)
 		execute_process(
 			COMMAND ${MAN2HTML} -r
 			INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/libiio.3
@@ -38,8 +38,7 @@ if (WITH_MAN)
 		)
 	endif()
 	if (WITH_TESTS)
-		list(APPEND MAN1 iio_attr.1 iio_info.1 iio_readdev.1 iio_reg.1 iio_writedev.1)
-		foreach(_page ${MAN1})
+		foreach(_page ${IIO_TESTS_TARGETS})
 			execute_process(
 				COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/make_util_pages.sh
 				${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${_page}.1.in
@@ -49,18 +48,23 @@ if (WITH_MAN)
 				${CMAKE_CURRENT_BINARY_DIR}/${_page}.1.in
 				${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}.1 @ONLY
 			)
-		endforeach()
-		if (WITH_DOC)
-			file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR}/man1)
-			foreach(_page ${MAN1})
+
+			if (WITH_DOC)
 				execute_process(
 					COMMAND ${MAN2HTML} -r
 					INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}
 					OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man1/${_page}.html
 				)
-			endforeach()
-		endif()
+			endif()
+		endforeach()
 	endif()
+
+	if (WITH_IIOD)
+		configure_file(iiod.1.in
+			${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/iiod.1 @ONLY
+		)
+	endif()
+
 	# install man files into the BINARY directories,
 	# section 3 = library functions
 	install(DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}
