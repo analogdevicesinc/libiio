@@ -67,6 +67,9 @@ stages:
     - script: ./CI/azure/check_kernel.sh
       displayName: 'Kernel check'
       condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+    - script: ./CI/azure/check_README_BUILD.sh
+      displayName: 'README_BUILD check'
+      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
