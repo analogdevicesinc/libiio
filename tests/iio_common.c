@@ -192,6 +192,7 @@ void free_argw(int argc, char * argw[])
 
 static const struct option common_options[] = {
 	{"help", no_argument, 0, 'h'},
+	{"version", no_argument, 0, 'V'},
 	{"xml", required_argument, 0, 'x'},
 	{"uri", required_argument, 0, 'u'},
 	{"scan", optional_argument, 0, 'S'},
@@ -239,6 +240,7 @@ struct option * add_common_options(const struct option * longopts)
 
 static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
+	"Display libiio version information.",
 	"Use the XML backend with the provided XML file.",
 	("Use the context at the provided URI."
 		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
@@ -286,6 +288,10 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		switch (c) {
 		case 'h':
 			usage(name, options, options_descriptions);
+			break;
+		case 'V':
+			version(name);
+			exit(0);
 			break;
 		case 'n':
 			if (backend != IIO_LOCAL) {
@@ -432,6 +438,19 @@ void usage(char *name, const struct option *options,
 			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 
 	exit(0);
+}
+
+void version(char *name)
+{
+	unsigned int i, major, minor;
+        char git_tag[8];
+
+	printf("%s version: %u.%u (git tag:%s)\n", name, LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR, LIBIIO_VERSION_GIT);
+	iio_library_get_version(&major, &minor, git_tag);
+        printf("Libiio version: %u.%u (git tag: %s) backends:", major, minor, git_tag);
+        for (i = 0; i < iio_get_backends_count(); i++)
+                printf(" %s", iio_get_backend(i));
+        printf("\n");
 }
 
 uint64_t get_time_us(void)
