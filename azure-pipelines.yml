@@ -50,7 +50,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
       displayName: 'Build'
@@ -208,7 +208,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF
         make
         sudo make install
         cd ..
@@ -216,7 +216,7 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
         cd ..
@@ -224,7 +224,7 @@ stages:
     - script: |
         set -e
         cd build
-        cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
         make
         cd ..
       displayName: 'Build With Doc'

@@ -39,6 +39,7 @@ The recommendation is to leave things to the default.
 Cmake Options          | Default | Target | Description                                    |
 ---------------------- | ------- | -------| ---------------------------------------------- |
 `BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
+'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
 `PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_TESTS`           |  ON |        All | Build the test programs (iio-utils)                |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
