@@ -225,6 +225,17 @@ endif()
 set(LIBIIO_CFILES backend.c channel.c device.c context.c buffer.c utilities.c scan.c sort.c)
 set(LIBIIO_HEADERS iio.h)
 
+set(DOXYGEN_INPUT "${CMAKE_SOURCE_DIR}")
+set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}")
+
+if (CPP_BINDINGS)
+    list(APPEND LIBIIO_HEADERS bindings/cpp/iiopp.h)
+    set(DOXYGEN_ENABLED_SECTIONS CPP_BINDINGS)
+    set(DOXYGEN_INPUT "${DOXYGEN_INPUT} ${CMAKE_SOURCE_DIR}/bindings/cpp/")
+    set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/")
+    set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+endif()
+
 if(WITH_USB_BACKEND)
 	list(APPEND LIBIIO_CFILES usb.c)
 	list(APPEND LIBS_TO_LINK ${LIBUSB_LIBRARIES})
@@ -485,7 +496,7 @@ set_target_properties(iio PROPERTIES
 	VERSION ${VERSION}
 	SOVERSION ${LIBIIO_VERSION_MAJOR}
 	FRAMEWORK ${OSX_FRAMEWORK}
-	PUBLIC_HEADER ${LIBIIO_HEADERS}
+	PUBLIC_HEADER "${LIBIIO_HEADERS}"
 	C_STANDARD 99
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
@@ -560,6 +571,7 @@ if(WITH_DOC)
 	endif()
 endif()
 
+option(CPP_BINDINGS "Install C++ bindings" OFF)
 option(CSHARP_BINDINGS "Install C# bindings" OFF)
 option(PYTHON_BINDINGS "Install Python bindings" OFF)
 add_subdirectory(bindings)
