@@ -1,9 +1,9 @@
 # Contributors
 
 Since it's first commit on 17 Feb 2014, the libIIO has seen many improvements by many contributors.
-Regular releases every 6 months delivers stable updates to users and developers,
+Regular releases every ~6 months delivers stable updates to users and developers,
 each with new features, new examples, added device support, and improved performance. 
-Each of these releases contains the work of over 45 developers representing over 25 corporations.
+Each of these releases contains the work of over 55+ developers representing over 30+ organizations.
 
 Although the libIIO would not exist without the initial support of Analog Devices,
 it is an open source source project, and relies on the contributions of many people.
@@ -19,80 +19,102 @@ or tiny-iiod the deeply embedded iio daemon.
 
 | Author                  | Lines of Code
 | ---------------------   | -------------
-|   Paul Cercueil         |    17904 
-|   Robin Getz            |     7932 
-|   Lars-Peter Clausen    |     3785 
-|   Tim Harder            |     2259 
-|   Michael Hennerich     |     1175 
-|   Matt Fornero          |      987 
-|   Travis F. Collins     |      602 
-|   Alexandru Ardelean    |      555 
-|   Cristi Iacob          |      437 
-|   Lucas Magasweran      |      358 
-|   Matej Kenda           |      273 
-|   Alexandra Trifan      |      257 
-|   Romain Roffé          |      225 
-|   Geert Uytterhoeven    |       35 
-|   Andrea Galbusera      |       32 
-|   JaredD                |       31 
-|   Adrian Freihofer      |       31
-|   Dan Nechita           |       29 
-|   Adrian Suciu          |       23 
-|   Petr Štetiar          |       20 
-|   Edward Kigwana        |       19 
-|   Andreas Brauchli      |       18 
-|   fpagliughi            |       16 
-|   Samuel Martin         |       12 
-|   Rémi Lefèvre          |       12 
-|   Michael Heimpold      |       12 
-|   SrikanthPagadarai     |       11 
-|   Dimas Abreu Archanjo Dutra  |        9 
-|   Marc Titinger         |        8 
-|   Jonas Hansen          |        4 
-|   Jeremy Trimble        |        4 
-|   David Frey            |        4 
-|   Ryo Hashimoto         |        3 
-|   Markus Gnadl          |        2 
-|   Julien Malik          |        2 
-|   Jorik Jonker          |        2 
-|   Pierre-Jean Texier    |        1 
-|   Nicholas Pillitteri   |        1 
-|   Morten Fyhn Amundsen  |        1 
-|   Johnny Vestergaard    |        1 
-|   Gwendal Grignou       |        1 
-|   Ben Acland            |        1 
+| Paul Cercueil           |  24510
+| Robin Getz              |  12624
+| Lars-Peter Clausen      |   3003
+| Raluca Chis             |   1233
+| Cristi Iacob            |   1055
+| Michael Hennerich       |    878
+| Alexandru Ardelean      |    835
+| Matt Fornero            |    768
+| Iacob                   |    588
+| Travis F. Collins       |    577
+| Nuno Sá                 |    531
+| Lucas Magasweran        |    347
+| Romain Roffé            |    202
+| Matej Kenda             |    193
+| Adrian Suciu            |    140
+| Mihail Chindris         |     91
+| AlexandraTrifan         |     85
+| Dan Nechita             |     52
+| Geert Uytterhoeven      |     36
+| Adrian Freihofer        |     30
+| JaredD                  |     28
+| RChis1                  |     25
+| Andrea Galbusera        |     25
+| Petr Štetiar            |     20
+| Andreas Brauchli        |     18
+| fpagliughi              |     15
+| Fabrice Fontaine        |     14
+| Rémi Lefèvre            |     12
+| Edward Kigwana          |     12
+| Samuel Martin           |     11
+| SrikanthPagadarai       |     10
+| Max Lehuraux            |      9
+| Julien Malik            |      9
+| Dimas Abreu Archanjo Dutra  |  9
+| Marc Titinger           |      8
+| Marvin Schmidt          |      7
+| Kathy Camenzind         |      6
+| Chris Lamb              |      6
+| Tim Harder              |      5
+| Misko                   |      4
+| Michael Heimpold        |      4
+| Jeremy Trimble          |      4
+| f4exb                   |      4
+| David Frey              |      4
+| DanielGuramulta         |      4
+| Gwendal Grignou         |      3
+| Matt Thomas             |      2
+| Markus Gnadl            |      2
+| Jan Tojnar              |      2
+| Cormier, Jonathan       |      2
+| Virgil Litan            |      1
+| Pierre-Jean Texier      |      1
+| Nicholas Pillitteri     |      1
+| Morten Fyhn Amundsen    |      1
+| Marc Sporcich           |      1
+| Jonas Hansen            |      1
+| Johnny Vestergaard      |      1
 
 
 ## Domains (or companies) contributing to the libIIO
 
 In order of most contributions to least (counted by lines of code).
 
-| Company          | Lines of code
-| ---------------- | -------------
-|  analog.com       |  31153
-|  metafoo.de       |  3785
-|  mathworks.com    |  987
-|  gmail.com        |  382
-|  daqri.com        |  358
-|  parrot.com       |  237
-|  linux-m68k.org   |  35
-|  scs.ch           |  22
-|  true.cz          |  20
-|  sensirion.com    |  18
-|  mindspring.com   |  16
-|  heimpold.de      |  12
-|  ufmg.br          |  9
-|  baylibre.com     |  8
-|  sierrawireless.com  |  4
-|  azuresummit.com   |  4
-|  google.com        |  3
-|  paraiso.me        |  2
-|  kippendief.biz    |  2
-|  iabg.de           |  2
-|  unixcluster.dk    |  1
-|  koncepto.io       |  1
-|  crapouillou.net   |  1
-|  chromium.org      |  1
+| Company             | Lines of code
+| ------------------- | -------------
+| analog.com          |  33846
+| crapouillou.net     |   9205
+| metafoo.de          |   3003
+| mathworks.com       |    824
+| gmail.com           |    413
+| daqri.com           |    347
+| parrot.com          |    214
+| linux-m68k.org      |     36
+| scs.ch              |     22
+| true.cz             |     20
+| sensirion.com       |     18
+| mindspring.com      |     15
+| ufmg.br             |      9
+| baylibre.com        |      8
+| unseenlabs.fr       |      7
+| exherbo.org         |      7
+| tulip.co            |      6
+| chris-lamb.co.uk    |      6
+| sierrawireless.com  |      4
+| heimpold.de         |      4
+| cs.toronto.edu      |      4
+| azuresummit.com     |      4
+| chromium.org        |      3
+| users.github.com    |      2
+| paraiso.me          |      2
+| iabg.de             |      2
+| criticallink.com    |      2
+| unixcluster.dk      |      1
+| scires.com          |      1
+| koncepto.io         |      1
+| epiqsolutions.com   |      1
 
 ## scripts
 scripts were based on a [gist](https://gist.github.com/amitchhajer/4461043) from Amit Chhajer.
