@@ -41,3 +41,8 @@ No hardware should be required to run this program.
   * Requirements : Curses Development Kit (libcdk5-dev); pthreads; ncurses; libiio
 
 A Curses based application which implements real time monitoring of IIO non-buffer samples.
+
+## iopp-enum
+  * Language : C++
+
+Demonstrates the usage of the C++ API.

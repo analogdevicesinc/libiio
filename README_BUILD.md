@@ -40,6 +40,7 @@ Cmake Options          | Default | Target | Description                         
 ---------------------- | ------- | -------| ---------------------------------------------- |
 `BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
+`CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
 `PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_TESTS`           |  ON |        All | Build the test programs (iio-utils)                |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
@@ -56,7 +57,6 @@ Cmake Options          | Default | Target | Description                         
 `WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags |
 `OSX_FRAMEWORK`        |  ON |        Mac | OS X frameworks provide the interfaces you need to write software for Mac. |
 `OSX_PACKAGE`          |  ON |        Mac | Create a OSX package for installation on local and other machines |
-
 
 Which backends the library supports is dependent on the build system, but can be overridden.
 (If cmake finds libusb, it will use it, unless turned off manually)
@@ -102,7 +102,7 @@ Cmake Options       | Default | Description                                    |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 

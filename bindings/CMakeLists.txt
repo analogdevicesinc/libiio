@@ -1,3 +1,7 @@
+if (CPP_BINDINGS)
+        add_subdirectory(cpp)
+endif()
+
 if (CSHARP_BINDINGS)
 	add_subdirectory(csharp)
 endif()
