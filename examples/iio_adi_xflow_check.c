@@ -170,6 +170,7 @@ int main(int argc, char **argv)
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
+		case 'V':
 		case 'n':
 		case 'x':
 		case 'u':
