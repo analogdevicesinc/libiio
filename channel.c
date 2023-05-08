@@ -387,9 +387,11 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 		const char *attr, char *dst, size_t len)
 {
-	attr = iio_channel_find_attr(chn, attr);
-	if (!attr)
-		return -ENOENT;
+	if (attr) {
+		attr = iio_channel_find_attr(chn, attr);
+		if (!attr)
+			return -ENOENT;
+	}
 
 	if (chn->dev->ctx->ops->read_channel_attr)
 		return chn->dev->ctx->ops->read_channel_attr(chn,
