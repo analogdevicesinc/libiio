@@ -130,21 +130,7 @@
           <li>
             <a href="./man3/libiio.3.html">libiio</a>
           </li>
-          <li>
-            <a href="./man1/iio_attr.1.html">iio_attr</a>
-          </li>
-          <li>
-            <a href="./man1/iio_info.1.html">iio_info</a>
-          </li>
-          <li>
-            <a href="./man1/iio_readdev.1.html">iio_readdev</a>
-          </li>
-          <li>
-            <a href="./man1/iio_reg.1.html">iio_reg</a>
-          </li>
-          <li>
-            <a href="./man1/iio_writedev.1.html">iio_writedev</a>
-          </li>
+					@IIO_TESTS_MAN_PAGES_HTML@
         </ul>
       </div>
     </div>
