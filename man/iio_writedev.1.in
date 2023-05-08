@@ -62,21 +62,24 @@ If the specified device is not found, a non-zero exit code is returned.
 
 .SH "USAGE"
 .PP 
-You use iio_readdev in the same way you use many of the other libiio utilities.
-You must specify a IIO device, and the specific channel to read. Since this is a write, channels must be output.
-It is easy to use
-.B iio_attr
-to find out what the channels are called.
-.PP
-This identifies the device, and channel that can be used.
+You use iio_writedev in the same way you use many of the other libiio utilities.
+You should specify a IIO device, and the specific channel to write. Since this is a write, channels must be output.
+If no channel is provided, iio_writedev will write to all output channels.
+If no device is provided, iio_writedev will print a few examples:
 .RS
-.B \f(CWiio_attr \-a \-o \-c .\fP
+.B \f(CWiio_writedev -a\fP
 .br
-\f(CWUsing auto-detected IIO context at URI "usb:3.10.5"\fP
+Using auto-detected IIO context at URI "usb:3.10.5"
 .br
-dev 'cf-ad9361-dds-core-lpc', channel 'voltage0' (output, index: 0, format: le:S16/16>>0)
+Example : iio_writedev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-dds-core-lpc voltage0
 .br
-dev 'cf-ad9361-dds-core-lpc', channel 'voltage1' (output, index: 1, format: le:S16/16>>0)
+Example : iio_writedev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-dds-core-lpc voltage1
+.br
+Example : iio_writedev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-dds-core-lpc voltage2
+.br
+Example : iio_writedev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-dds-core-lpc voltage3
+.br
+Example : iio_writedev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-dds-core-lpc
 .RE
 .PP
 This sends 1024 samples of I and Q data to the USB attached AD9361. data is taking from standard in, in a binary format.

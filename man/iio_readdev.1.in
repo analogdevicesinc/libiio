@@ -59,20 +59,23 @@ If the specified device is not found, a non-zero exit code is returned.
 .SH "USAGE"
 .PP 
 You use iio_readdev in the same way you use many of the other libiio utilities.
-You must specify a IIO device, and the specific channel to read. Since this is a read, channels must be input.
-It is easy to use
-.B iio_attr
-to find out what the channels are called.
-.PP
-This identifies the device, and channel that can be used.
+You should specify a IIO device, and the specific channel to read. Since this is a read, channels must be input.
+If no channel is provided, iio_readdev will read from all input channels.
+If no device is provided, iio_readdev will print a few examples:
 .RS
-.B \f(CWiio_attr \-a \-i \-c .\fP
+.B \f(CWiio_readdev -a\fP
 .br
-\f(CWUsing auto-detected IIO context at URI "usb:3.10.5"\fP
+Using auto-detected IIO context at URI "usb:3.10.5"
 .br
-dev 'cf-ad9361-lpc', channel 'voltage0' (input, index: 0, format: le:S12/16>>0)
+Example : iio_readdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage0
 .br
-dev 'cf-ad9361-lpc', channel 'voltage1' (input, index: 1, format: le:S12/16>>0)
+Example : iio_readdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage1
+.br
+Example : iio_readdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage2
+.br
+Example : iio_readdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage3
+.br
+Example : iio_readdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc
 .RE
 .PP
 This captures 1024 samples of I and Q data from the USB attached AD9361, and
