@@ -65,7 +65,12 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        if [ "$ARTIFACTNAME" != "CentOS-7" ]; then
+          cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        else
+          # CentOS 7 does not have new enough kernel headers to support modern libusb
+          cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME} -DWITH_USB_BACKEND=OFF -DWITH_IIOD_USBD=OFF
+        fi
         make
         make package
       displayName: 'Build'
