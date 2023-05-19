@@ -37,7 +37,7 @@
  * - Implicit conversion to the wrapped C-types, so C++ instances can easily be passed to the C-API.
  *
  * @warning All objects live in the @ref iiopp::Context that created them. When a context gets destroyed (when
- * the last <tt>std::shared_pointer</tt> to it releases it) all its child objects die as well. All types have
+ * the last <tt>std::shared_ptr</tt> to it releases it) all its child objects die as well. All types have
  * weak reference semantic and become invalid when the context gets destroyed.
  * Lifetime is managed by <tt>std::shared_ptr</tt>.
  *
