@@ -18,7 +18,7 @@
 #include <string>
 #include <optional>
 #include <stdexcept>
-#include <sstream>
+#include <system_error>
 #include <cassert>
 #include <memory>
 
@@ -68,6 +68,14 @@ public:
 
     char const * c_str() const {return s;}
     operator char const * () const {return s;}
+};
+
+/** @brief Thrown to report errors.
+ */
+class error : public std::system_error
+{
+public:
+    using std::system_error::system_error;
 };
 
 /** @brief Common interface for attribute access
@@ -123,10 +131,7 @@ inline std::string err_str(int err)
 [[noreturn]] inline void err(int err, char const * ctx)
 {
     assert(err > 0);
-    std::ostringstream s;
-    s << ctx << ": " << err_str(err);
-    s.flush();
-    throw std::runtime_error(s.str());
+    throw error(err, std::generic_category(), ctx);
 }
 
 inline void check(int ret, char const * ctx)
