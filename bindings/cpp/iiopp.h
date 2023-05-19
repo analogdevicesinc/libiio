@@ -16,7 +16,12 @@
 
 #include <iio.h>
 #include <string>
+
+#if __cplusplus < 201703L
+#include <boost/optional.hpp>
+#else
 #include <optional>
+#endif
 #include <stdexcept>
 #include <system_error>
 #include <cassert>
@@ -24,7 +29,9 @@
 
 /** @brief Public C++ API
  *
- * This is a C++17 wrapper for @ref iio.h
+ * This is a C++ wrapper for @ref iio.h
+ *
+ * It requires C++17 or C++11 with Boost (for <tt>boost::optional</tt>).
  *
  * It provides:
  *
@@ -48,6 +55,12 @@
  */
 namespace iiopp
 {
+
+#if __cplusplus < 201703L
+using boost::optional;
+#else
+using std::optional;
+#endif
 
 class Context;
 class Device;
@@ -109,7 +122,7 @@ public:
 
 /** @brief Optional string, used for C-functions that return @c nullptr for "no value".
  */
-typedef std::optional<cstr> optstr;
+typedef optional<cstr> optstr;
 
 namespace impl
 {
@@ -224,7 +237,7 @@ public:
 };
 
 template <class obj_T, class attr_T, char const * find_attr_T(obj_T const *, char const *)>
-std::optional<attr_T> attr(obj_T const * obj, cstr name)
+optional<attr_T> attr(obj_T const * obj, cstr name)
 {
     char const * s = find_attr_T(obj, name);
     if (s)
@@ -233,7 +246,7 @@ std::optional<attr_T> attr(obj_T const * obj, cstr name)
 }
 
 template <class obj_T, class attr_T, char const * get_attr_T(obj_T const *, unsigned int)>
-std::optional<attr_T> attr(obj_T const * obj, unsigned int idx)
+optional<attr_T> attr(obj_T const * obj, unsigned int idx)
 {
     char const * s = get_attr_T(obj, idx);
     if (s)
@@ -317,8 +330,8 @@ public:
     typedef impl::AttrSeqT<Channel, Attr> AttrSeq;
 #endif
 
-    std::optional<Attr> attr(cstr name) {return impl::attr<iio_channel, Attr, iio_channel_find_attr>(p, name);}
-    std::optional<Attr> attr(unsigned int idx) {return impl::attr<iio_channel, Attr, iio_channel_get_attr>(p, idx);}
+    optional<Attr> attr(cstr name) {return impl::attr<iio_channel, Attr, iio_channel_find_attr>(p, name);}
+    optional<Attr> attr(unsigned int idx) {return impl::attr<iio_channel, Attr, iio_channel_get_attr>(p, idx);}
 
     AttrSeq attrs;
 
@@ -415,8 +428,8 @@ public:
     typedef IAttr Attr;
     typedef impl::AttrSeqT<Channel, Attr> AttrSeq;
 #endif
-    std::optional<Attr> attr(cstr name) {return impl::attr<iio_device, Attr, iio_device_find_attr>(p, name);}
-    std::optional<Attr> attr(unsigned int idx) {return impl::attr<iio_device, Attr, iio_device_get_attr>(p, idx);}
+    optional<Attr> attr(cstr name) {return impl::attr<iio_device, Attr, iio_device_find_attr>(p, name);}
+    optional<Attr> attr(unsigned int idx) {return impl::attr<iio_device, Attr, iio_device_get_attr>(p, idx);}
 
     AttrSeq attrs;
 
@@ -442,8 +455,8 @@ public:
     typedef impl::AttrSeqT<Channel, DebugAttr> DebugAttrSeq;
 #endif
 
-    std::optional<DebugAttr> debug_attr(cstr name) {return impl::attr<iio_device, DebugAttr, iio_device_find_debug_attr>(p, name);}
-    std::optional<DebugAttr> debug_attr(unsigned int idx) {return impl::attr<iio_device, DebugAttr, iio_device_get_debug_attr>(p, idx);}
+    optional<DebugAttr> debug_attr(cstr name) {return impl::attr<iio_device, DebugAttr, iio_device_find_debug_attr>(p, name);}
+    optional<DebugAttr> debug_attr(unsigned int idx) {return impl::attr<iio_device, DebugAttr, iio_device_get_debug_attr>(p, idx);}
 
     DebugAttrSeq debug_attrs;
 
@@ -469,8 +482,8 @@ public:
     typedef impl::AttrSeqT<Channel, BufferAttr> BufferAttrSeq;
 #endif
 
-    std::optional<BufferAttr> buffer_attr(cstr name) {return impl::attr<iio_device, BufferAttr, iio_device_find_buffer_attr>(p, name);}
-    std::optional<BufferAttr> buffer_attr(unsigned int idx) {return impl::attr<iio_device, BufferAttr, iio_device_get_buffer_attr>(p, idx);}
+    optional<BufferAttr> buffer_attr(cstr name) {return impl::attr<iio_device, BufferAttr, iio_device_find_buffer_attr>(p, name);}
+    optional<BufferAttr> buffer_attr(unsigned int idx) {return impl::attr<iio_device, BufferAttr, iio_device_get_buffer_attr>(p, idx);}
 
     BufferAttrSeq buffer_attrs;
 
@@ -792,8 +805,11 @@ std::shared_ptr<ScanBlock> create_scan_block(optstr backend, int flags)
  */
 inline double value(Channel ch)
 {
-    if (double val; !iio_channel_attr_read_double(ch, "input", &val))
-        return val / 1000.;
+    {
+        double val;
+        if (!iio_channel_attr_read_double(ch, "input", &val))
+            return val / 1000.;
+    }
 
     double scale = 1;
     iio_channel_attr_read_double(ch, "scale", &scale);
