@@ -275,8 +275,8 @@
     <p>Once you have secured your access to the library and its header, please
     check the libIIO API or the libIIO examples.</p>
     <h3>Where is (insert my favourite language) support?</h3>
-    <p>The mainline library is written in C, can be used in C++, and has built in
-    bindings for Python and C# (C-Sharp). <a href=
+    <p>The mainline library is written in C, and has built in
+    bindings for C++, Python and C# (C-Sharp). <a href=
     "https://github.com/drom/node-iio">Node.js</a> and <a href=
     "https://github.com/fpagliughi/rust-industrial-io">Rust</a> are maintained
     outside the main repo. If you are interested in creating more language
