@@ -93,9 +93,9 @@ int main(int argc, char ** argv)
     {
         enumerateIioEntities();
     }
-    catch (std::exception & e)
+    catch (error & e)
     {
-        cerr << "ERROR: " << e.what() << endl;
+        cerr << "ERROR " << e.code().value() << ": " << e.what() << endl;
         return EXIT_FAILURE;
     }
 
