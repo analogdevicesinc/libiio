@@ -691,7 +691,7 @@ public:
     ContextInfo(iio_context_info const * i) : p(i){assert(i);}
     operator iio_context_info const * () const {return p;}
 
-    cstr desciption() const {return iio_context_info_get_description(p);}
+    cstr description() const {return iio_context_info_get_description(p);}
     cstr uri() const {return iio_context_info_get_uri(p);}
 };
 
