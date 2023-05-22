@@ -75,7 +75,7 @@ void enumerateIioEntities()
     for (ContextInfo info : *infoList)
     {
         cout << "  uri: " << quoted(info.uri().c_str()) << endl;
-        cout << "  description: " << quoted(info.desciption().c_str()) << endl;
+        cout << "  description: " << quoted(info.description().c_str()) << endl;
     }
 
     cout << "scan block:" << endl;
@@ -83,7 +83,7 @@ void enumerateIioEntities()
     for (ContextInfo info : *blk)
     {
         cout << "  uri: " << quoted(info.uri().c_str()) << endl;
-        cout << "  description: " << quoted(info.desciption().c_str()) << endl;
+        cout << "  description: " << quoted(info.description().c_str()) << endl;
     }
 }
 
