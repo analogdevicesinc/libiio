@@ -701,6 +701,7 @@ toggle_iio_feature("${WITH_TESTS}" utils)
 toggle_iio_feature("${WITH_EXAMPLES}" examples)
 toggle_iio_feature("${WITH_IIOD}" iiod)
 toggle_iio_feature("${INSTALL_UDEV_RULE}" udev-rule)
+toggle_iio_feature("${CPP_BINDINGS}" "c++-bindings")
 #add iiod settings
 list(APPEND IIO_FEATURES_ON ${IIOD_FEATURES_ON})
 list(APPEND IIO_FEATURES_OFF ${IIOD_FEATURES_OFF})
