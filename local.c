@@ -926,7 +926,7 @@ static int local_open(const struct iio_device *dev,
 
 	/*
 	 * Set watermark to the buffer size; the driver will adjust to its
-	 * maximum if it's too high without issueing an error.
+	 * maximum if it's too high without issuing an error.
 	 */
 	ret = local_write_dev_attr(dev, "buffer/watermark",
 				   buf, strlen(buf) + 1, false);

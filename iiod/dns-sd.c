@@ -310,7 +310,7 @@ void start_avahi(struct thread_pool *pool, uint16_t port)
 	avahi.name = NULL;
 	avahi.port = port;
 
-	/* In case dbus, or avahi deamon are not started, we create a thread
+	/* In case dbus, or avahi daemon are not started, we create a thread
 	 * that tries a few times to attach, if it can't within the first
 	 * minute, it gives up.
 	 */

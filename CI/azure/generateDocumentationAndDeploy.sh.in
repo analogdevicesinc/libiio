@@ -8,7 +8,7 @@ set -x
 #
 # Preconditions:
 # - Packages doxygen graphviz must be installed.
-# - An gh-pages branch should already exist. See below for mor info on how to
+# - An gh-pages branch should already exist. See below for more info on how to
 #   create a gh-pages branch.
 #
 # This script will generate Doxygen documentation and push the documentation to
