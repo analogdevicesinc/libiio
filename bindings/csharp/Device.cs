@@ -450,7 +450,7 @@ namespace iio
             return new DeviceBufferAttr(dev, Marshal.PtrToStringAnsi(attr));
         }
 
-        /// <summary>Finds the channel attribute coresponding to the given filename from the current device.</summary>
+        /// <summary>Finds the channel attribute corresponding to the given filename from the current device.</summary>
         /// <param name="filename">The name of the attribute.</param>
         /// <param name="chn_ptr">Output variable. It will contain a pointer to the resulting <see cref="iio.Channel"/>.</param>
         /// <param name="attr">Output variable. It will contain a pointer to the resulting <see cref="iio.ChannelAttr"/>.</param>

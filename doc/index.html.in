@@ -199,7 +199,7 @@
     devices. IIO started as a <a href=
     "https://www.kernel.org/doc/html/latest/driver-api/iio/index.html">Linux
     kernel subsystem</a> to support for devices that included
-    analog-to-digital convertors (ADCs) and/or digital-to-analog convertors
+    analog-to-digital converters (ADCs) and/or digital-to-analog converters
     (DACs). While the libIIO continues to provide an easy interface to the
     Linux kernel IIO subsystem, it has also expanded beyond that, and is now
     just as common to see this used inside an embedded system or hypervisor as

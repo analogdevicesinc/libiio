@@ -41,11 +41,11 @@ endif()
 # if we want to, and have the capabilities find what is needed,
 # based on what backends are turned on and what libraries are installed
 if(DEB_DETECT_DEPENDENCIES AND DPKG_CMD AND DPKGQ_CMD)
-	message(STATUS "querying installed packages on system for dependancies")
+	message(STATUS "querying installed packages on system for dependencies")
 	execute_process(COMMAND "${DPKG_CMD}" --print-architecture 
 		OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
 		OUTPUT_STRIP_TRAILING_WHITESPACE)
-	# don't add a package dependancy if it is not installed locally
+	# don't add a package dependency if it is not installed locally
 	# these should be the debian package names
 	set(PACKAGES "libc6")
 	if (WITH_LOCAL_BACKEND)
@@ -64,7 +64,7 @@ if(DEB_DETECT_DEPENDENCIES AND DPKG_CMD AND DPKGQ_CMD)
 		set(PACKAGES "${PACKAGES} libserialport0")
 	endif()
 	# find the version of the installed package, which is hard to do in
-	# cmake first, turn the list into an list (seperated by semicolons)
+	# cmake first, turn the list into an list (separated by semicolons)
 	string(REGEX REPLACE " " ";" PACKAGES ${PACKAGES})
 	# then iterate over each
 	foreach(package ${PACKAGES})
@@ -103,7 +103,7 @@ if(DEB_DETECT_DEPENDENCIES AND DPKG_CMD AND DPKGQ_CMD)
 						DPKGQ_VER ${DPKGQ_VER})
 				string(REGEX REPLACE "'" "" DPKGQ_VER
 						${DPKGQ_VER})
-				# build the string for the Debian dependancy
+				# build the string for the Debian dependency
 				set(CPACK_DEBIAN_PACKAGE_DEPENDS
 					"${CPACK_DEBIAN_PACKAGE_DEPENDS}"
 					"${match} (>= ${DPKGQ_VER}), ")

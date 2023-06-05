@@ -40,7 +40,7 @@
  * - Error handling (error codes are checked and turned into exceptions).
  * - Functions that may return \c NULL for "no string" are explicit by returning an <tt>std::optional</tt>.
  * - Iterators for idiomatic access to devices of context and channels of devices.
- * - Iterators for atributes.
+ * - Iterators for attributes.
  * - Implicit conversion to the wrapped C-types, so C++ instances can easily be passed to the C-API.
  *
  * @warning All objects live in the @ref iiopp::Context that created them. When a context gets destroyed (when

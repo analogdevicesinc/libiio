@@ -82,7 +82,7 @@ Cmake Options       | Default | Description                                    |
 `WITH_ZSTD`               | OFF | Support for ZSTD compressed metadata    |
 
 
-Options which effect iiod only. These are only avalible on Linux.
+Options which effect iiod only. These are only available on Linux.
 
 Cmake Options       | Default | Description                                    |
 ------------------- | ------- | ---------------------------------------------- |
