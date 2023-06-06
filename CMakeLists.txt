@@ -284,7 +284,7 @@ if(WITH_LOCAL_BACKEND)
 	endif()
 
 	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
-	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" OFF)
+	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" ON)
 
 	list(APPEND LIBIIO_SCAN_BACKENDS local)
 endif()

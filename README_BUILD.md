@@ -53,7 +53,7 @@ Cmake Options          | Default | Target | Description                         
 `INSTALL_UDEV_RULE`    |  ON |      Linux | Install a Linux udev rule for detection of USB devices |
 `UDEV_RULES_INSTALL_DIR` | /lib/udev/rules.d |    Linux | default install path for udev rules |
 `WITH_LOCAL_CONFIG`    |  ON |      Linux | Read local context attributes from /etc/libiio.ini |
-`WITH_HWMON`           | OFF |      Linux | Add compatibility with the hwmon subsystem         |
+`WITH_HWMON`           |  ON |      Linux | Add compatibility with the hwmon subsystem         |
 `WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags |
 `OSX_FRAMEWORK`        |  ON |        Mac | OS X frameworks provide the interfaces you need to write software for Mac. |
 `OSX_PACKAGE`          |  ON |        Mac | Create a OSX package for installation on local and other machines |
