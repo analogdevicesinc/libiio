@@ -10,6 +10,10 @@ set(CPACK_PACKAGE_VERSION_PATCH g${LIBIIO_VERSION_GIT})
 set(CPACK_BUNDLE_NAME libiio)
 set(CPACK_PACKAGE_VERSION ${LIBIIO_VERSION})
 
+# Start with empty file
+set(REQUIRES "${CMAKE_BINARY_DIR}/require_manifest.txt")
+file(WRITE ${REQUIRES} "")
+
 # Determine the distribution we are on
 file(STRINGS /etc/os-release distro REGEX "^NAME=")
 string(REGEX REPLACE "NAME=\"(.*)\"" "\\1" distro "${distro}")
@@ -209,11 +213,46 @@ foreach(package ${PACKAGES})
 			set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}"
 				"${match} >= ${RPM_VER}, ")
 		endif()
+		# find the actual so files
+		STRING(REGEX MATCHALL "libc6|glibc" TEMP_TEST ${match})
+		if(NOT "${TEMP_TEST}" STREQUAL "")
+			continue()
+		endif()
+		if (CPACK_GENERATOR MATCHES "DEB" AND DPKG_CMD)
+			# build up the so locations
+			execute_process(COMMAND "${DPKG_CMD}"
+				-L "${match}"
+				OUTPUT_VARIABLE DPK_RESULT)
+		elseif (CPACK_GENERATOR MATCHES "RPM" AND RPM_CMD)
+			execute_process(COMMAND "${RPM_CMD}" -ql ${match}
+				OUTPUT_VARIABLE DPK_RESULT)
+		else()
+			continue()
+		endif()
+		STRING(STRIP ${DPK_RESULT} STRIPPED)
+		STRING(REGEX REPLACE "[\r\n]" ";" POSSIBLE_SO "${STRIPPED}")
+		foreach(is_so ${POSSIBLE_SO})
+			# match with ".so." or ".so" (and the end)
+			STRING(REGEX MATCHALL "\\.so$|\\.so\\." TEMP_TEST ${is_so})
 			if("${TEMP_TEST}" STREQUAL "")
 				continue()
 			endif()
+			if(IS_SYMLINK ${is_so})
+				continue()
+			endif()
+			file(APPEND ${REQUIRES} "${is_so}\n")
+		endforeach(is_so)
 	endforeach(match)
 endforeach(package)
+
+configure_file( "${CMAKE_SOURCE_DIR}/cmake/add_requirements2tar.sh.in"
+		"${CMAKE_BINARY_DIR}/add_requirements2tar.sh"
+		IMMEDIATE @ONLY
+	)
+add_custom_target(required2tar
+	COMMAND sh ${CMAKE_BINARY_DIR}/add_requirements2tar.sh
+	COMMENT "Adding requirements to tarball"
+	)
 
 if (CPACK_GENERATOR MATCHES "DEB")
 	if (NOT DPKGQ_CMD)
