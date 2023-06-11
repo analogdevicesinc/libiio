@@ -73,6 +73,7 @@ stages:
         fi
         make
         make package
+        make required2tar
       displayName: 'Build'
     - task: CopyFiles@2
       inputs:
