@@ -137,4 +137,14 @@ if(${CMAKE_MAJOR_VERSION} LESS 3)
 			OUTPUT_STRIP_TRAILING_WHITESPACE)
 	ENDIF(NOT CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
 endif()
+
+# Make sure the generated .deb cannot be installed alongside the Debian ones
+set(CPACK_DEBIAN_PACKAGE_PROVIDES
+	"libiio0 (= ${LIBIIO_VERSION}), "
+	"libiio-dev (= ${LIBIIO_VERSION}), "
+	"libiio-utils (= ${LIBIIO_VERSION}), "
+	"iiod (= ${LIBIIO_VERSION})")
+set(CPACK_DEBIAN_PACKAGE_CONFLICTS "libiio0, libiio-dev, libiio-utils, iiod")
+set(CPACK_DEBIAN_PACKAGE_REPLACES "libiio0, libiio-dev, libiio-utils, iiod")
+
 include(CPack)
