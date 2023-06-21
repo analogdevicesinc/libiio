@@ -81,6 +81,19 @@ Cmake Options       | Default | Description                                    |
 `WITH_NETWORK_GET_BUFFER` | OFF | Enable experimental zero-copy transfers |
 `WITH_ZSTD`               | OFF | Support for ZSTD compressed metadata    |
 
+Developer options, which either increases verbosity, or decreases size. It can
+be useful to keep track of things when you are developing with libiio to print
+out warnings, to better understand what is going on. Most users should leave it
+at 'Error' and Embedded Developers are free to set it to 'NoLog' to save space.
+this is invoked as "-DLOG_LEVEL=Debug".
+
+Cmake Options     | Default | Description                                    |
+----------------- | ------- | ---------------------------------------------- |
+                  |         | NoLog   : Remove all warning/error messages    |
+LOG_LEVEL         |         | Error   : Print errors only                    |
+                  |         | Warning : Print warnings and errors            |
+                  |   Info  | Info    : Print info, warnings and errors      |
+                  |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
 
 Options which effect iiod only. These are only available on Linux.
 
