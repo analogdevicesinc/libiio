@@ -15,6 +15,7 @@
 #include "iio-config.h"
 
 #include <stdbool.h>
+#include <time.h>
 
 #ifdef _MSC_BUILD
 #define inline __inline
@@ -22,6 +23,8 @@
 #else
 #define iio_sscanf sscanf
 #endif
+
+uint64_t iio_clock_alive(void);
 
 #if defined(__MINGW32__)
 #   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))

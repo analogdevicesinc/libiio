@@ -29,6 +29,7 @@
 
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
+#cmakedefine HAS_CLOCK_GETTIME
 #cmakedefine HAS_STRNDUP
 #cmakedefine HAS_STRTOK_R
 #cmakedefine HAS_STRERROR_R

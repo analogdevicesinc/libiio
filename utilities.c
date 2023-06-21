@@ -15,10 +15,12 @@
 
 #include <errno.h>
 #include <locale.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -366,6 +368,8 @@ ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
 	return (ssize_t)ret;
 }
 
+uint64_t _iio_init_count = 0;
+
 uint64_t iio_read_counter_us(void)
 {
 	uint64_t value;
@@ -386,4 +390,16 @@ uint64_t iio_read_counter_us(void)
 #endif
 
 	return value;
+}
+
+uint64_t iio_clock_alive(void)
+{
+	uint64_t now;
+
+	if (_iio_init_count == 0) {
+		 fprintf(stdout, "prime\n");
+		 _iio_init_count = iio_read_counter_us();
+	}
+	now = iio_read_counter_us();
+	return now - _iio_init_count;
 }

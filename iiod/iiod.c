@@ -34,6 +34,8 @@
 
 #define MY_NAME "iiod"
 
+struct timespec init_spec = { 0 };
+
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 

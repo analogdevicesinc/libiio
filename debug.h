@@ -12,6 +12,8 @@
 #include "iio-config.h"
 
 #include <stdio.h>
+#include <stdint.h>
+#include <time.h>
 
 #define NoLog_L 0
 #define Error_L 1
@@ -42,13 +44,16 @@
  * IIO_WARNING, and IIO_ERRRO functions are called internally from the
  * library, have fixed format strings and can not be modified externally.
  */
+uint64_t iio_clock_alive(void);
 #if (LOG_LEVEL >= Debug_L)
 # ifdef COLOR_DEBUG
 #  define IIO_DEBUG(str, ...) \
     fprintf(stdout, COLOR_DEBUG "DEBUG: " str COLOR_END, ##__VA_ARGS__) /* Flawfinder: ignore */
 # else
-#  define IIO_DEBUG(...) \
-    fprintf(stdout, "DEBUG: " __VA_ARGS__) /* Flawfinder: ignore */
+#  define IIO_DEBUG(...) do { \
+    fprintf(stdout, "Debug (%1.3lf): ", (float)iio_clock_alive()/1e6); \
+    fprintf(stdout, __VA_ARGS__); /* Flawfinder: ignore */ \
+    } while (0)
 # endif
 #else
 #define IIO_DEBUG(...) do { } while (0)

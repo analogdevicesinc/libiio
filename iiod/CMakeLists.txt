@@ -67,7 +67,7 @@ set_target_properties(iiod PROPERTIES
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
 )
-target_link_libraries(iiod iio ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
+target_link_libraries(iiod iio m ${PTHREAD_LIBRARIES} ${AVAHI_LIBRARIES})
 
 if (WITH_AIO)
 	include_directories(${LIBAIO_INCLUDE_DIR})
