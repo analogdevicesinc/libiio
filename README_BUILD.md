@@ -89,11 +89,11 @@ this is invoked as "-DLOG_LEVEL=Debug".
 
 Cmake Options     | Default | Description                                    |
 ----------------- | ------- | ---------------------------------------------- |
-                  |         | NoLog   : Remove all warning/error messages    |
-LOG_LEVEL         |         | Error   : Print errors only                    |
-                  |         | Warning : Print warnings and errors            |
-                  |   Info  | Info    : Print info, warnings and errors      |
-                  |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
+|                 |         | NoLog   : Remove all warning/error messages    |
+|`LOG_LEVEL`      |         | Error   : Print errors only                    |
+|                 |         | Warning : Print warnings and errors            |
+|                 |   Info  | Info    : Print info, warnings and errors      |
+|                 |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
 
 Options which effect iiod only. These are only available on Linux.
 
