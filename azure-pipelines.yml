@@ -97,6 +97,82 @@ stages:
         artifactName: '$(artifactName)'
 
   #############################################
+  - job: MinGWBuilds
+    strategy:
+      matrix:
+        MinGW_W64:
+           COMPILER: 'MinGW Makefiles'
+           ARCH: 'x86_64'
+           USE_CSHARP: 'OFF'
+           artifactName: 'Windows-MinGW-W64'
+    pool:
+      vmImage: 'windows-2022'
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
+    - task: PowerShell@2
+      displayName: 'Dependencies'
+      inputs:
+        targetType: inline
+        script: |
+          git submodule update --init
+          if ( !( Test-Path deps ) ) {
+            mkdir deps
+          }
+          cd deps
+          mkdir libxml
+          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          7z x -y libxml.7z
+          rm libxml.7z
+          cd C:\
+          wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+          7z x -y "C:\libiio-win-deps.zip"
+    - task: PowerShell@2
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\build_win.ps1
+      displayName: 'Build'
+    - task: CopyFiles@2
+      displayName: 'Copy .exe files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/tests'
+        contents: '*.exe'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy iio.h header'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/'
+        contents: 'iio.h'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy libiio.dll and libiio.dll.a'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64'
+        contents: |
+          libiio.dll
+          libiio.dll.a
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy .tar.gz files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/bindings/python'
+        contents: '*.gz'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PowerShell@2
+      displayName: 'Copy dependencies'
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\publish_deps.ps1
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
+
+  #############################################
   - job: WindowsBuilds
     # Host Box
     strategy:
@@ -105,11 +181,13 @@ stages:
           vmImage: 'windows-2022'
           COMPILER: 'Visual Studio 17 2022'
           ARCH: 'x64'
+          USE_CSHARP: 'ON'
           artifactName: 'Windows-VS-2022-x64'
         VS2019:
           vmImage: 'windows-2019'
           COMPILER: 'Visual Studio 16 2019'
           ARCH: 'x64'
+          USE_CSHARP: 'ON'
           artifactName: 'Windows-VS-2019-x64'
     pool:
       vmImage: $[ variables['vmImage'] ]
