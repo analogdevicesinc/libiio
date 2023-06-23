@@ -320,7 +320,7 @@ static char * network_get_description(struct addrinfo *res)
 				if (errno == 0) {
 					/* Windows uses numerical interface identifiers */
 					ptr = description + strnlen(description, len) + 1;
-					iio_snprintf(ptr, IF_NAMESIZE, "%u", in->sin6_scope_id);
+					iio_snprintf(ptr, IF_NAMESIZE, "%u", (unsigned int)in->sin6_scope_id);
 				} else
 #endif
 				{
