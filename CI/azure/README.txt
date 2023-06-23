@@ -7,17 +7,16 @@
 
 In this archive, you should find the following directories:
 o ./include : Common include files
-o ./MinGW32 : 32-bit binaries compiled by the MinGW toolchain
-o ./MinGW64 : 64-bit binaries compiled by the MinGW toolchain
-o ./MS32    : 32-bit binaries compiled by the MicroSoft toolchain
-o ./MS64    : 364bit binaries compiled by the MicroSoft toolchain
+o ./Windows-MinGW-W64 : 64-bit binaries compiled by the MinGW toolchain
+o ./Windows-VS-2019-x64 : 64-bit binaries compiled by the MicroSoft toolchain, VS-2019
+o ./Windows-VS-2022-x64 : 64-bit binaries compiled by the MicroSoft toolchain, VS-2022
 
 o Visual Studio:
   - Open existing or create a new project for your application
   - Copy iio.h, from the include\ directory, into your project and make sure that
     the location where the file reside appears in the 'Additional Include
     Directories' section (Configuration Properties -> C/C++ -> General).
-  - Copy the relevant .lib file from MS32\ or MS64\ and add 'libiio.lib' to
+  - Copy the relevant .lib file from Windows-VS-2019-x64\ or Windows-VS-2022-x64\ and add 'libiio.lib' to
     your 'Additional Dependencies' (Configuration Properties -> Linker -> Input)
     Also make sure that the directory where libiio.lib resides is added to
     'Additional Library Directories' (Configuration Properties -> Linker
@@ -44,7 +43,7 @@ o WDK/DDK:
 	SOURCES=your_app.c
 
 o MinGW/cygwin
-  - Copy libiio.h, from include/ to your default include directory,
+  - Copy iio.h, from include/ to your default include directory,
     and copy the MinGW32/ or MinGW64/ .a files to your default library directory.
     Or, if you don't want to use the default locations, make sure that you feed
     the relevant -I and -L options to the compiler.

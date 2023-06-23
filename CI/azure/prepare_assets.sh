@@ -31,12 +31,23 @@ release_artifacts() {
                 rm -r "${i}"
         done
 
-        local zip_assets='2019 2022'
+        local zip_assets='VS-2019-x64 VS-2022-x64 MinGW-W64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
+	mkdir Windows
+	cd Windows
+	mkdir include
+	cd ..
+	cp ./Windows-VS-2019-x64/iio.h ./Windows/include
         for i in $zip_assets; do
-		zip -r "Windows-VS-${i}-x64".zip "Windows-VS-${i}-x64"
-		rm -r "Windows-VS-${i}-x64"
+		rm ./"Windows-${i}"/iio.h
+		mv ./"Windows-${i}" Windows
         done
+	cp /home/vsts/work/1/s/CI/azure/README.txt ./Windows
+	cd Windows
+	zip Windows.zip ./*
+	cp ./Windows.zip ../
+	cd ..
+	rm -r Windows
 
         local deb_arm_assets='arm32v7 arm64v8 ppc64le x390x'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
@@ -88,6 +99,10 @@ swdownloads_artifacts() {
 	cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Libiio-Setup-Exe"
 	mv libiio-setup.exe ../libiio-setup.exe
 	rm -r ../Libiio-Setup-Exe
+
+	cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
+	zip -r Windows-MinGW-W64-latest_master_libiio.zip Windows-MinGW-W64
+	rm -r Windows-MinGW-W64
 }
 
 check_artifacts() {
