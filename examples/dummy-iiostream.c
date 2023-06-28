@@ -109,7 +109,7 @@ static bool stop;
 static bool has_repeat;
 
 /* cleanup and exit */
-static void shutdown()
+static void shutdown(void)
 {
 	int ret;
 
