@@ -284,21 +284,36 @@ stages:
     strategy:
       matrix:
         macOS_11:
+          poolName: 'Azure Pipelines'
           vmImage: 'macOS-11'
+          agentName: 'Azure Pipelines 4'
           artifactName: 'macOS-11'
         macOS_12:
+          poolName: 'Azure Pipelines'
           vmImage: 'macOS-12'
+          agentName: 'Azure Pipelines 3'
           artifactName: 'macOS-12'
-        macOS_13:
+        macOS_13_x64:
+          poolName: 'Azure Pipelines'
           vmImage: 'macOS-13'
-          artifactName: 'macOS-13'
+          agentName: 'Azure Pipelines 2'
+          artifactName: 'macOS-13-x64'
+        macOS_13_arm64:
+          poolName: 'Default'
+          vmImage: 
+          agentName: 'macOS_arm64'
+          artifactName: 'macOS-13-arm64'
     pool:
-      vmImage: $[ variables['vmImage'] ]
+      name: $(poolName)
+      vmImage: $(vmImage)
+      demands:
+        - agent.name -equals $(agentName)
     steps:
     - checkout: self
       fetchDepth: 1
       clean: true
     - task: UsePythonVersion@0
+      condition: ne(variables['agentName'],'macOS_arm64')
       inputs:
         versionSpec: '3.x'
         addToPath: true
@@ -307,6 +322,7 @@ stages:
           brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config
           pip3 install sphinx
       displayName: 'Dependencies'
+      condition: ne(variables['agentName'],'macOS_arm64')
     - script: |
         set -e
         mkdir build && cd build
