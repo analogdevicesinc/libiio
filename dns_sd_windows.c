@@ -216,6 +216,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	mdns_string_t entrystr, fromaddrstr, addrstr;
 	unsigned short port = 0;
 
+	IIO_DEBUG("inside %s\n", __func__);
+
 	if (!dd) {
 		IIO_ERROR("DNS SD: Missing info structure. Stop browsing.\n");
 		goto quit;
@@ -241,6 +243,67 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 
 	fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer),
 					   from, addrlen);
+	entrystr = mdns_string_extract(data, size, &name_offset,
+				       entrybuffer, sizeof(entrybuffer));
+
+	if (rtype != MDNS_RECORDTYPE_SRV && rtype != MDNS_RECORDTYPE_A &&
+	    rtype != MDNS_RECORDTYPE_AAAA) {
+		const char* entrytype = (entry == MDNS_ENTRYTYPE_ANSWER) ?
+                                "answer" :
+                                ((entry == MDNS_ENTRYTYPE_AUTHORITY) ? "authority" : "additional");
+		switch (rtype) {
+			case MDNS_RECORDTYPE_IGNORE:
+				IIO_DEBUG("%.*s : ignoring packet type  (%hu) MDNS_RECORDTYPE_IGNORE\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				break;
+			case MDNS_RECORDTYPE_PTR:
+				mdns_string_t namestr = mdns_record_parse_ptr(data, size, record_offset, record_length,
+						namebuffer, sizeof(namebuffer));
+				IIO_DEBUG("%.*s : %s %.*s PTR %.*s rclass 0x%x ignored\n",
+		      			 MDNS_STRING_FORMAT(fromaddrstr), entrytype, MDNS_STRING_FORMAT(entrystr),
+		       			 MDNS_STRING_FORMAT(namestr), rclass);
+				break;
+		        case MDNS_RECORDTYPE_TXT:
+				IIO_DEBUG("%.*s : ignoring packet type (%hu) MDNS_RECORDTYPE_TXT\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				break;
+			case MDNS_RECORDTYPE_ANY:
+				IIO_DEBUG("%.*s : ignoring packet  type (%hu) MDNS_RECORDTYPE_ANY\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				break;
+			case 41:
+				IIO_DEBUG("%.*s : ignoring packet  type (%hu) DNS NSEC (RFC 4034)\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				break;
+			case 47:
+				IIO_DEBUG("%.*s : ignoring packet  type (%hu) DNS OPT (RFC 6891)\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				break;
+			default:
+				IIO_DEBUG("%.*s : ignoring packet type (%hu) Unknown\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				break;
+		}
+			
+		goto quit;
+	}
+
+	if (entry != MDNS_ENTRYTYPE_ANSWER) {
+		switch(entry) {
+			case MDNS_ENTRYTYPE_QUESTION:
+				IIO_DEBUG("%.*s : packet not answer (%u) MDNS_ENTRYTYPE_QUESTION\n", MDNS_STRING_FORMAT(fromaddrstr), entry);
+				break;
+			case MDNS_ENTRYTYPE_AUTHORITY:
+				IIO_DEBUG("%.*s : packet not answer (%u) MDNS_ENTRYTYPE_AUTHORITY\n", MDNS_STRING_FORMAT(fromaddrstr), entry);
+				break;
+			case MDNS_ENTRYTYPE_ADDITIONAL:
+				IIO_DEBUG("%.*s : packet not answer (%u) MDNS_ENTRYTYPE_ADDITIONAL\n", MDNS_STRING_FORMAT(fromaddrstr), entry);
+				break;
+			default:
+				IIO_DEBUG("%.*s : packet not answer (%u) unknown\n", MDNS_STRING_FORMAT(fromaddrstr), entry);
+				break;
+		}
+		goto quit;
+	}
+
+	if (!strstr(entrystr.str, "_iio._tcp.local")) {
+		IIO_DEBUG("%.*s : mdns string no match for \"iio\" is \"%s\"\n", MDNS_STRING_FORMAT(fromaddrstr), entrystr.str);
+		goto quit;
+	}
 
 	iio_mutex_lock(dd->lock);
 	if (rtype == MDNS_RECORDTYPE_SRV) {
@@ -362,6 +425,9 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 		}
 	}
 #endif /* HAVE_IPV6 */
+	else {
+		IIO_DEBUG("%.*s : packet problem rtype = %hu\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+	}
 	lasttime = iio_read_counter_us();
 	iio_mutex_unlock(dd->lock);
 quit:
@@ -442,10 +508,12 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	records = 0;
 	lasttime = iio_read_counter_us();
 
+	int ii = 0;
 	do {
 		nfds = 0;
 		timeout.tv_sec = TIMEOUT;
 		timeout.tv_usec = 0;
+		ii++;
 
 		fd_set readfs;
 		FD_ZERO(&readfs);
@@ -455,18 +523,23 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 			FD_SET(sockets[isock], &readfs);
 		}
 
+		IIO_DEBUG(" before select %i\n", ii);
 		res = select(nfds, &readfs, 0, 0, &timeout);
+		IIO_DEBUG (" after select res=%i | %i\n", res, ii);
+
 		if (res > 0) {
 			for (isock = 0; isock < num_sockets; ++isock) {
 				if (FD_ISSET(sockets[isock], &readfs)) {
 					rec = mdns_query_recv(sockets[isock], buffer,
 							      capacity, query_callback,
 							      d, transaction_id[isock]);
+					IIO_DEBUG("added rec : %zi\n", rec);
 					if (rec > 0)
 						records += rec;
 				}
 				FD_SET(sockets[isock], &readfs);
 			}
+			IIO_DEBUG(" done processing sockets records = %zi | %i\n", records, ii);
 		}
 
 		/* res > 0 even if we didn't process anything :(
