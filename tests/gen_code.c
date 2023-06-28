@@ -171,7 +171,7 @@ void gen_context (const char *uri_in)
 	}
 }
 
-void gen_context_destroy()
+void gen_context_destroy(void)
 {
 	if (!fd)
 		return;

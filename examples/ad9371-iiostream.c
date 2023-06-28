@@ -48,7 +48,7 @@ static struct iio_buffer  *txbuf = NULL;
 static bool stop;
 
 /* cleanup and exit */
-static void shutdown()
+static void shutdown(void)
 {
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
