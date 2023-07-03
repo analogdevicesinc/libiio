@@ -156,11 +156,12 @@ if (WITH_USB_BACKEND)
 		if (NOT LIBUSB_FOUND)
 			#Handle FreeBSD libusb and Linux libusb-1.0 libraries
 			find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+			find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 		else()
 			set(LIBUSB_LIBRARIES ${LIBUSB_LINK_LIBRARIES})
+			set(LIBUSB_INCLUDE_DIR ${LIBUSB_INCLUDE_DIRS})
 		endif()
 	endif()
-	find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 	if (NOT LIBUSB_LIBRARIES OR NOT LIBUSB_INCLUDE_DIR)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
 			"If you want to disable the USB backend, set WITH_USB_BACKEND=OFF.")
