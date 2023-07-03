@@ -34,6 +34,12 @@ macOS-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
 macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-12.tar.gz
 macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
 
+macOS-13-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-13-x64.tar.gz
+macOS-13-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
+
+macOS-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-13-arm64.tar.gz
+macOS-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
+
 Ubuntu-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-arm32v7.deb
 Ubuntu-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-arm32v7.tar.gz
 
