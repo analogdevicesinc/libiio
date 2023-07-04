@@ -453,7 +453,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	for (isock = 0; isock < num_sockets; ++isock)
 		mdns_socket_close(sockets[isock]);
 
-	IIO_DEBUG("Closed %i socket%s, processed %i record%s\n",
+	IIO_DEBUG("Closed %i socket%s, processed %zu record%s\n",
 		   num_sockets, (num_sockets > 1) ? "s" : "",
 		   records, (records > 1) ? "s" : "" );
 
