@@ -56,7 +56,7 @@ struct iio_channel_pdata {
 	unsigned int nb_protected_attrs;
 };
 
-static const char * const device_attrs_blacklist[] = {
+static const char * const device_attrs_denylist[] = {
 	"dev",
 	"uevent",
 };
@@ -748,8 +748,8 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(device_attrs_blacklist); i++)
-		if (!strcmp(device_attrs_blacklist[i], attr))
+	for (i = 0; i < ARRAY_SIZE(device_attrs_denylist); i++)
+		if (!strcmp(device_attrs_denylist[i], attr))
 			return 0;
 
 	if (!strcmp(attr, "name"))

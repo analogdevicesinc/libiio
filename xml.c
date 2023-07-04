@@ -421,12 +421,14 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 		if (!strcmp((char *) attr->name, "description")) {
 			description = content;
 		} else if (!strcmp((char *) attr->name, "version-major")) {
+			errno = 0;
 			major = strtol(content, &end, 10);
-			if (*end != '\0')
+			if (*end != '\0' ||  errno == ERANGE)
 				prm_warn(params, "invalid format for major version\n");
 		} else if (!strcmp((char *) attr->name, "version-minor")) {
+			errno = 0;
 			minor = strtol(content, &end, 10);
-			if (*end != '\0')
+			if (*end != '\0' || errno == ERANGE)
 				prm_warn(params, "invalid format for minor version\n");
 		} else if (!strcmp((char *) attr->name, "version-git")) {
 			git_tag = content;

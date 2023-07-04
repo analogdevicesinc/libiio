@@ -34,24 +34,29 @@ analog@precision:~$ cd libiio
 ## Configure & Build
 
 when configuring libiio with cmake, there are a few optional settings that you can use to control the build.
+The recommendation is to leave things to the default.
 
-Cmake Options       | Default | Description                                    |
-------------------- | ------- | ---------------------------------------------- |
-`BUILD_SHARED_LIBS`    |  ON | Build shared libraries  |
-`CMAKE_INSTALL_PREFIX` | `/usr` | default install path |
-`ENABLE_PACKAGING`     | OFF  | Create .deb/.rpm or .tar.gz packages via 'make package' |
-`CSHARP_BINDINGS`   | OFF | Install C# bindings                                |
-`PYTHON_BINDINGS`   | OFF | Install PYTHON bindings                            |
-`WITH_DOC`          | OFF | Generate documentation with Doxygen and Sphinx     |
-`WITH_MAN`          | OFF | Generate and install man pages                     |
-`WITH_TESTS`        |  ON | Build the test programs (iio-utils)                |
-`INSTALL_UDEV_RULE` |  ON | Install a Linux udev rule for detection of USB devices |
-`UDEV_RULES_INSTALL_DIR` | /lib/udev/rules.d | default install path for udev rules |
-`WITH_EXAMPLES`     | OFF | Build the example programs                         |
-`WITH_LOCAL_CONFIG` |  ON | Read local context attributes from /etc/libiio.ini |
-`WITH_HWMON`        | OFF | Add compatibility with the hwmon subsystem         |
-`NO_THREADS`        | OFF | Disable multi-threading support |
-`WITH_GCOV`         | OFF | Build with gcov profiling flags |
+Cmake Options          | Default | Target | Description                                    |
+---------------------- | ------- | -------| ---------------------------------------------- |
+`BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
+'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
+`CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
+`PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
+`WITH_TESTS`           |  ON |        All | Build the test programs (iio-utils)                |
+`WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
+`NO_THREADS`           | OFF |        All | Disable multi-threading support |
+`CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
+`CMAKE_INSTALL_PREFIX` | `/usr` |   Linux | default install path |
+`ENABLE_PACKAGING`     | OFF | Linux, MaC | Create .deb/.rpm or .tar.gz packages via 'make package' |
+`WITH_DOC`             | OFF |      Linux | Generate documentation with Doxygen and Sphinx     |
+`WITH_MAN`             | OFF |      Linux | Generate and install man pages                     |
+`INSTALL_UDEV_RULE`    |  ON |      Linux | Install a Linux udev rule for detection of USB devices |
+`UDEV_RULES_INSTALL_DIR` | /lib/udev/rules.d |    Linux | default install path for udev rules |
+`WITH_LOCAL_CONFIG`    |  ON |      Linux | Read local context attributes from /etc/libiio.ini |
+`WITH_HWMON`           |  ON |      Linux | Add compatibility with the hwmon subsystem         |
+`WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags |
+`OSX_FRAMEWORK`        |  ON |        Mac | OS X frameworks provide the interfaces you need to write software for Mac. |
+`OSX_PACKAGE`          |  ON |        Mac | Create a OSX package for installation on local and other machines |
 
 Which backends the library supports is dependent on the build system, but can be overridden.
 (If cmake finds libusb, it will use it, unless turned off manually)
@@ -76,8 +81,21 @@ Cmake Options       | Default | Description                                    |
 `WITH_NETWORK_GET_BUFFER` | OFF | Enable experimental zero-copy transfers |
 `WITH_ZSTD`               | OFF | Support for ZSTD compressed metadata    |
 
+Developer options, which either increases verbosity, or decreases size. It can
+be useful to keep track of things when you are developing with libiio to print
+out warnings, to better understand what is going on. Most users should leave it
+at 'Error' and Embedded Developers are free to set it to 'NoLog' to save space.
+this is invoked as "-DLOG_LEVEL=Debug".
 
-Options which effect iiod only. These are only avalible on Linux.
+Cmake Options     | Default | Description                                    |
+----------------- | ------- | ---------------------------------------------- |
+|                 |         | NoLog   : Remove all warning/error messages    |
+|`LOG_LEVEL`      |         | Error   : Print errors only                    |
+|                 |         | Warning : Print warnings and errors            |
+|                 |   Info  | Info    : Print info, warnings and errors      |
+|                 |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
+
+Options which effect iiod only. These are only available on Linux.
 
 Cmake Options       | Default | Description                                    |
 ------------------- | ------- | ---------------------------------------------- |
@@ -97,7 +115,7 @@ Cmake Options       | Default | Description                                    |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 

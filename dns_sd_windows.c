@@ -190,7 +190,7 @@ static int open_client_sockets(const struct iio_context_params *params,
  *  - IPv4 "address" record (A) specifying IPv4 address of a given host
  *  - IPv6 "address" record (AAAA) specifying IPv6 address of a given host
  * It's this routine that gets called, and needs to stitch things together
- * The DNS host doesn't necessary need to be the acutal host (but for
+ * The DNS host doesn't necessary need to be the actual host (but for
  * mdns - it usually is.
  */
 static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,

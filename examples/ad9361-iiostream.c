@@ -58,7 +58,7 @@ static struct iio_channels_mask *rxmask = NULL;
 static struct iio_channels_mask *txmask = NULL;
 
 /* cleanup and exit */
-static void shutdown()
+static void shutdown(void)
 {
 	printf("* Destroying streams\n");
 	if (rxstream) {iio_stream_destroy(rxstream); }

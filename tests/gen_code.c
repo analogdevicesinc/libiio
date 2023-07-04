@@ -51,7 +51,7 @@ bool gen_test_path(const char *gen_file)
 		return false;
 
 	last = strrchr(gen_file, '.');
-	if (*last != '.')
+	if (!last)
 		return false;
 	last++;
 
@@ -171,7 +171,7 @@ void gen_context (const char *uri_in)
 	}
 }
 
-void gen_context_destroy()
+void gen_context_destroy(void)
 {
 	if (!fd)
 		return;

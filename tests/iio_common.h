@@ -46,13 +46,14 @@ int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
  * If such a character is followed by a colon, the option  requires  an  argument.
  * Two colons mean an option takes an optional argument.
  */
-#define COMMON_OPTIONS "hn:x:u:a::S::T:"
+#define COMMON_OPTIONS "hVn:x:u:a::S::T:"
 
 struct iio_context * handle_common_opts(char * name, int argc,
 	char * const argv[], const char *optstring,
 	const struct option *options, const char *options_descriptions[]);
 struct option * add_common_options(const struct option * longopts);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
+void version(char *name);
 
 char ** dup_argv(char * name, int argc, char * argv[]);
 void free_argw(int argc, char * argw[]);

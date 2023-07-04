@@ -123,9 +123,10 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		 bool is_socket, bool is_usb, bool use_aio, struct thread_pool *pool,
 		 const void *xml_zstd, size_t xml_zstd_len);
 
+int init_usb_daemon(const char *ffs, unsigned int nb_pipes);
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 		bool debug, bool use_aio, unsigned int nb_pipes,
-		struct thread_pool *pool,
+		int ep0_fd, struct thread_pool *pool,
 		const void *xml_zstd, size_t xml_zstd_len);
 int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 			bool debug, struct thread_pool *pool,

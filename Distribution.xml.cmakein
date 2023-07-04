@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <installer-gui-script minSpecVersion="2" >
 	<title>Libiio</title>
-	<options customize="never" rootVolumeOnly="true" />
+	<options customize="never" rootVolumeOnly="true" hostArchitectures="i386,arm64"/>
 	<allowed-os-versions>
 		<os-version min="10.6.6" />
 	</allowed-os-versions>

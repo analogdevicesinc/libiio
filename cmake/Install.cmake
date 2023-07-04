@@ -85,6 +85,10 @@ if(WITH_DOC)
 		DESTINATION ${CMAKE_HTML_DEST_DIR}/${CMAKE_API_DEST_DIR}
 		FILES_MATCHING PATTERN "*.svg")
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc/html/ DESTINATION ${CMAKE_HTML_DEST_DIR})
+	set(IIO_TESTS_MAN_PAGES_HTML "")
+	foreach(_page ${IIO_TESTS_TARGETS})
+		set(IIO_TESTS_MAN_PAGES_HTML "${IIO_TESTS_MAN_PAGES_HTML}<li><a href=\"./man1/${_page}.1.html\">${_page}</a></li>")
+	endforeach()
 	configure_file(
 		${CMAKE_CURRENT_SOURCE_DIR}/doc/index.html.in
 		${CMAKE_HTML_DEST_DIR}/index.html @ONLY)

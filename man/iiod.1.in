@@ -1,0 +1,108 @@
+.\" Copyright (c) 2018-2020 Robin Getz
+.\" Copyright (c) 2018-2020 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iiod 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iiod
+.SH NAME
+iiod \- IIO Daemon
+.SH SYNOPSIS
+.B iiod
+[
+.I options
+]
+
+.SH DESCRIPTION
+.B iiod
+is a server built on top of Libiio which can share a Libiio context across the
+network, USB, or a UART link.
+
+.SH COMMANDS
+.TP
+.B \-V, \-\-version
+Display the version of this program.
+.TP
+.B \-d, \-\-debug
+Use alternative (incompatible) debug interface.
+.TP
+.B \-D, \-\-demux
+Demux channels directly on the server.
+.TP
+.B \-i, \-\-interactive
+Run iiod in the controlling terminal.
+.TP
+.B \-a, \-\-aio
+Use asynchronous I/O.
+.TP
+.B \-F, \-\-ffs <arg>
+Use the given FunctionFS mountpoint to serve over USB.
+.TP
+.B \-n, \-\-nb\-pipes <arg>
+Specify the number of USB pipes (ep couples) to use.
+.TP
+.B \-s, \-\-serial <arg>
+Run iiod on the specified UART.
+.TP
+.B \-p, \-\-port <arg>
+Port to listen on (default = 30431).
+Using --port 0 will pick an ephemeral port (dynamic / unused in the range between 32768–60999).
+.TP
+.B \-u, \-\-uri
+The Uniform Resource Identifier
+.I (uri)
+for connecting to devices, can be one of:
+.RS
+.IP ip:[address]
+network address, either numeric (192.168.0.1) or network hostname
+.IP ip:
+blank, if compiled with zeroconf support, will find an IIO device on network
+.IP usb:[device:port:instance]
+normally returned from
+.B iio_info -S
+.IP serial:[port],[baud],[settings]
+which are controlled, and need to match the iiod (or tinyiiod) on the other end of the serial port.
+.RS
+.IP [port]
+is something like '/dev/ttyUSB0' on Linux, and 'COM4' on Windows.
+.IP [baud]
+is is normally one of 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200 [default], 128000 or 256000, but can vary system to system.
+.IP [settings]
+would normally be configured as '8n1' this is controlled by:
+.RS
+.IP data_bits:
+(5, 6, 7, 8 [default], or 9)
+.IP parity_bits:
+('n' none [default], 'o' odd, 'e' even, 'm' mark, or 's' space)
+.IP stop_bits:
+(1 [default, or 2)
+.IP flow_control:
+('0' none [default], 'x' Xon Xoff, 'r' RTSCTS, or 'd' DTRDSR)
+.RE
+.RE
+.IP local:
+with no address part. This is the default.
+.RE
+.TP
+
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.

@@ -209,7 +209,7 @@ char *iio_strtok_r(char *str, const char *delim, char **saveptr)
 #elif defined(HAS_STRTOK_R)
 	return strtok_r(str, delim, saveptr);
 #else
-#error Need a implentation of strtok_r for this platform
+#error Need a implementation of strtok_r for this platform
 #endif
 }
 

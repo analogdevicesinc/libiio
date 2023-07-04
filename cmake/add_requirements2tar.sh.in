@@ -1,0 +1,69 @@
+#!/bin/sh
+# should be called from "make required2tar"
+set -e
+
+cd @CMAKE_BINARY_DIR@
+
+manifest=./require_manifest.txt
+if [ ! -f ${manifest} ] ; then
+	echo "Can not find manifest at ${manifest}"
+	exit 1
+fi
+
+gz=$(ls ./libiio*.tar.gz)
+if [ -z "${gz}" ] ; then
+	echo "try make package first"
+	exit 1
+fi
+if [ "$(echo -n ${gz} | tr -cd ' \t' | wc -c)" -ne "0" ] ; then
+	echo "too many tar, there should be only one, but found ${gz}"
+	exit 1
+fi
+tar=$(echo ${gz} | sed 's/\.gz$//')
+
+#unzip the file (can not append while it is gzipped)
+#gunzip ${gz}
+
+# We should be able to just "tar --append -f ${tar} -T manufest.txt, but the tar on
+# CenrOS7 doesn't support that - so we we need to split it apart, and add
+# files manually.
+
+if [ -d tarball_fixup ] ; then
+        rm -rf tarball_fixup
+fi
+mkdir tarball_fixup
+tar -xzf ${gz} -C ./tarball_fixup
+
+while read -r line
+do
+	if [ -f ${line} ] ; then
+		echo "adding ${line} to architve"
+		#make sure the directory exists as a target
+		mkdir -p ./tarball_fixup$(dirname ${line})
+		cp ${line} ./tarball_fixup${line}
+
+		cd ./tarball_fixup$(dirname ${line})
+		line=$(basename ${line})
+
+		until echo ${line} | grep -q \.so.[0-9]*$
+                do
+			tmp=$(echo ${line} | sed 's/\.[0-9]*$//')
+			if [ ! -f "${tmp}" ] ; then
+				ln -s ${line} ${tmp}
+			else
+				echo "target ${tmp} already exists"
+				ls -l ${tmp}
+			fi
+			line=${tmp}
+		done
+		cd @CMAKE_BINARY_DIR@
+
+	else
+		echo "could not find ${line} to copy"
+		exit 1
+	fi
+done < ${manifest}
+
+tar -czf ${gz} -C ./tarball_fixup/ .
+rm -rf tarball_fixup
+

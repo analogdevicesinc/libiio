@@ -82,45 +82,11 @@ Read and Write IIO Context attributes
 .TP
 .B \-D \-\-debug-attr
 Read and Write IIO Debug attributes
-.TP
-.B \-S, \-\-scan
-Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip,usb'.
-Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456:b673'.
-vid,pid are hexadecimal numbers (no prefix needed), "*" (match any for pid only)
-If no argument is given, it checks all that are available.
-.TP
-.B \-h, \-\-help
-Tells
-.I iio_attr
-to display some help, and then quit.
-
+##COMMON_COMMANDS_START##
+##COMMON_COMMANDS_STOP##
 .SH OPTIONS
-.TP
-.B \-a, \-\-auto
-Look around for devices (locally, ip, and usb), and if there is only one device
-found, connect to it.
-.TP
-.B \-u, \-\-uri
-The Uniform Resource Identifier
-.I (uri)
-for connecting to devices, can be one of:
-.RS
-.IP ip:[address]
-network address, either numeric (192.168.0.1) or network hostname (pluto.local)
-.IP ip:
-blank, if compiled with zeroconf support, will find an IIO device on network
-.IP usb:[device:port:instance]
-normally returned from
-.B iio_info -s
-or
-.B iio_attr -S
-.IP usb:
-blank, if there is only one IIO device plugged into USB, find it, and attach to it.
-.IP serial:[port],[baud],[config]
-serial configuration, serial:/dev/ttyUSB0,115200,8n1 115200 baud, 8 data bits, no partity, one stop bit
-.IP local:
-with no address part
-.RE
+##COMMON_OPTION_START##
+##COMMON_OPTION_STOP##
 .TP
 .B \-i, \-\-input-channel
 Filters channels by input channels only
@@ -140,23 +106,3 @@ Generate small C or python snippets that emulate what you are doing on the comma
 .SH RETURN VALUE
 If the specified device is not found, a non-zero exit code is returned.
 
-.SH "SEE ALSO"
-.ad l
-.BR iio_attr (1),
-.BR iio_info (1),
-.BR iio_readdev (1),
-.BR iio_reg (1),
-.BR iio_writedev (1),
-.BR libiio (3)
-.PP
-libiio home page:
-.BR \%https://wiki.analog.com/resources/tools-software/linux-software/libiio
-.PP
-libiio code:
-.BR \%https://github.com/analogdevicesinc/libiio
-.PP
-Doxygen for libiio
-.BR \%https://analogdevicesinc.github.io/libiio/
-.SH BUGS
-All bugs are tracked at:
-.BR \%https://github.com/analogdevicesinc/libiio/issues
