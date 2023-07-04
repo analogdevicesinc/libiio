@@ -320,7 +320,7 @@ stages:
         addToPath: true
     - script: |
           set -e
-          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config
+          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
           pip3 install sphinx
       displayName: 'Dependencies'
       condition: ne(variables['agentName'],'macOS_arm64')
