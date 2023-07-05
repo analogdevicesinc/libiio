@@ -24,6 +24,9 @@
 #define STRINGIFY(x) _STRINGIFY(x)
 #define MDNS_PORT_STR STRINGIFY(MDNS_PORT)
 
+static uint64_t lasttime;
+#define TIMEOUT 2
+
 #ifdef HAVE_IPV6
 static const unsigned char localhost[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -347,6 +350,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 		}
 	}
 #endif /* HAVE_IPV6 */
+	lasttime = iio_read_counter_us();
 	iio_mutex_unlock(dd->lock);
 quit:
 	return 0;
@@ -370,6 +374,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	int transaction_id[32];
 	int nfds, res, ret = -ENOMEM;
 	struct timeval timeout;
+	uint64_t nowtime;
+	int64_t diff;
 
 	if (WSAStartup(versionWanted, &wsaData)) {
 		IIO_ERROR("Failed to initialize WinSock\n");
@@ -422,9 +428,11 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	IIO_DEBUG("Reading mDNS query replies\n");
 
 	records = 0;
+	lasttime = iio_read_counter_us();
+
 	do {
 		nfds = 0;
-		timeout.tv_sec = 2;
+		timeout.tv_sec = TIMEOUT;
 		timeout.tv_usec = 0;
 
 		fd_set readfs;
@@ -448,6 +456,16 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 				FD_SET(sockets[isock], &readfs);
 			}
 		}
+
+		/* res > 0 even if we didn't process anything :(
+		 * timeout from the last time we successfully added a proper mdns record
+		 */
+		nowtime = iio_read_counter_us();
+
+		/* convert to ms */
+		diff = (nowtime - lasttime) / 1000ull;
+		if (diff > (TIMEOUT * 1000))
+			res = 0;
 	} while (res > 0);
 
 	for (isock = 0; isock < num_sockets; ++isock)
