@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 #include <winsock2.h>
 #include <iphlpapi.h>
 
@@ -23,6 +24,9 @@
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 #define MDNS_PORT_STR STRINGIFY(MDNS_PORT)
+
+static FILETIME lasttime;
+#define TIMEOUT 2
 
 #ifdef HAVE_IPV6
 static const unsigned char localhost[] = {
@@ -347,6 +351,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 		}
 	}
 #endif /* HAVE_IPV6 */
+	GetSystemTimeAsFileTime(&lasttime);
 	iio_mutex_unlock(dd->lock);
 quit:
 	return 0;
@@ -370,6 +375,9 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	int transaction_id[32];
 	int nfds, res, ret = -ENOMEM;
 	struct timeval timeout;
+	FILETIME nowtime;
+	ULARGE_INTEGER now; then;
+	__int64 now64 then64, diff;
 
 	if (WSAStartup(versionWanted, &wsaData)) {
 		IIO_ERROR("Failed to initialize WinSock\n");
@@ -422,9 +430,10 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	IIO_DEBUG("Reading mDNS query replies\n");
 
 	records = 0;
+	GetSystemTimeAsFileTime(&lasttime);
 	do {
 		nfds = 0;
-		timeout.tv_sec = 2;
+		timeout.tv_sec = TIMEOUT;
 		timeout.tv_usec = 0;
 
 		fd_set readfs;
@@ -448,6 +457,22 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 				FD_SET(sockets[isock], &readfs);
 			}
 		}
+		/* res > 0 even if we didn't process anything :( 
+  		 * timeout from the last time we sucessfully added a proper mdns record
+  		 * we have to do the 64-bit conversion since GetSystemTimeAsFileTime doesn't
+     		 * 64-bit align things. See : https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-filetime
+		 */
+		GetSystemTimeAsFileTime(&nowtime);
+		now.LowPart = nowtime.dwLowDateTime;
+		now.HighPart = nowtime.dwHighDateTime;
+		now64 = now.QuadPart;
+		then.LowPart = lasttime.dwLowDateTime;
+		then.HighPart = lasttime.dwHighDateTime;
+		then64 = then.QuadPart;
+		/* convert to ms */
+		diff = (now64 - then64) / 10000;
+		if (diff > (TIMEOUT * 2000))
+			res = 0;
 	} while (res > 0);
 
 	for (isock = 0; isock < num_sockets; ++isock)
