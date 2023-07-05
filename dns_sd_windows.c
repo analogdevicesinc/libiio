@@ -376,8 +376,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	int nfds, res, ret = -ENOMEM;
 	struct timeval timeout;
 	FILETIME nowtime;
-	ULARGE_INTEGER now; then;
-	__int64 now64 then64, diff;
+	ULARGE_INTEGER now, then;
+	__int64 now64, then64, diff;
 
 	if (WSAStartup(versionWanted, &wsaData)) {
 		IIO_ERROR("Failed to initialize WinSock\n");
@@ -470,7 +470,7 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 		then.HighPart = lasttime.dwHighDateTime;
 		then64 = then.QuadPart;
 		/* convert to ms */
-		diff = (now64 - then64) / 10000;
+		diff = (now64 - then64) / 10000LL;
 		if (diff > (TIMEOUT * 2000))
 			res = 0;
 	} while (res > 0);
