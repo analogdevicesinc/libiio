@@ -1060,7 +1060,7 @@ static bool msg_trunc_supported(struct iiod_client_pdata *io_ctx)
 }
 #endif
 
-struct iio_context * network_create_context(const char *host)
+struct iio_context * network_create_context(const char *hostname)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
@@ -1072,6 +1072,10 @@ struct iio_context * network_create_context(const char *host)
 	char *description, *uri, *end, *port = NULL;
 	char port_str[6];
 	uint16_t port_num = IIOD_PORT;
+	char host_buf[FQDN_LEN + sizeof(":65535") + 1];
+	char *host = hostname ? host_buf : NULL;
+
+	iio_strlcpy(host_buf, hostname, sizeof(host_buf));
 
 #ifdef _WIN32
 	WSADATA wsaData;
