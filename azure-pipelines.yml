@@ -281,6 +281,8 @@ stages:
   #############################################
   - job: macOSBuilds
     # Host Box
+    workspace:
+      clean: all
     strategy:
       matrix:
         macOS_11:
