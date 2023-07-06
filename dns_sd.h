@@ -15,11 +15,15 @@
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <ntddndis.h>
+#include <netioapi.h>
 #else
+#include <net/if.h>
 #include <sys/param.h>
 #endif
 
-#define DNS_SD_ADDRESS_STR_MAX (40) /* IPv6 Max = 4*8 + 7 + 1 for NUL */
+/* IPv6 Max = 4*8 + 7 + 1 for '%' + interface length */
+#define DNS_SD_ADDRESS_STR_MAX (40 + IF_NAMESIZE)
 #define FQDN_LEN (255)              /* RFC 1035 */
 
 /* MacOS doesn't include ENOMEDIUM (No medium found) like Linux does */

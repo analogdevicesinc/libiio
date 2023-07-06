@@ -51,10 +51,13 @@ static struct dns_sd_discovery_data *new_discovery_data(void)
 }
 
 static void avahi_process_resolved(struct dns_sd_discovery_data *ddata,
+				   AvahiIfIndex iface,
 				   const AvahiAddress *addr,
 				   const char *host_name,
 				   const uint16_t port)
 {
+	char *ptr;
+
 	/* Avahi is multi-threaded, so lock the list */
 	iio_mutex_lock(ddata->lock);
 	ddata->resolved++;
@@ -82,6 +85,14 @@ static void avahi_process_resolved(struct dns_sd_discovery_data *ddata,
 		IIO_ERROR("Avahi Resolver : memory failure\n");
 	}
 	iio_mutex_unlock(ddata->lock);
+
+	ptr = ddata->addr_str + strnlen(ddata->addr_str, DNS_SD_ADDRESS_STR_MAX);
+
+	if (addr->proto == AVAHI_PROTO_INET6
+	    && iface != AVAHI_IF_UNSPEC
+	    && if_indextoname((unsigned int)iface, ptr + 1)) {
+		*ptr = '%';
+	}
 
 	IIO_DEBUG("\t\t%s:%u (%s)\n", host_name, port, ddata->addr_str);
 }
@@ -126,7 +137,7 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 			  avahi_strerror(err));
 		break;
 	case AVAHI_RESOLVER_FOUND: {
-		avahi_process_resolved(ddata, address, host_name, port);
+		avahi_process_resolved(ddata, iface, address, host_name, port);
 		IIO_DEBUG("Avahi Resolver : service '%s' of type '%s' in domain '%s':\n",
 			  name, type, domain);
 		break;
@@ -157,7 +168,7 @@ static void avahi_host_resolver(AvahiHostNameResolver *resolver,
 			  host_name, avahi_strerror(err));
 		break;
 	case AVAHI_RESOLVER_FOUND:
-		avahi_process_resolved(ddata, address, host_name, IIOD_PORT);
+		avahi_process_resolved(ddata, iface, address, host_name, IIOD_PORT);
 		break;
 	}
 
