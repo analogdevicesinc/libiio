@@ -475,6 +475,8 @@ __api __check_ret struct iio_context * iio_create_network_context(const char *ho
  *     - ip:192.168.1.119:40000                            Port 40000
  *     - ip:2601:190:400:da:47b3:55ab:3914:bff1            Default Port
  *     - ip:[2601:190:400:da:9a90:96ff:feb5:acaa]:40000    Port 40000
+ *     - ip:fe80::f14d:3728:501e:1f94%eth0                 Link-local through eth0, default port
+ *     - ip:[fe80::f14d:3728:501e:1f94%eth0]:40000         Link-local through eth0, port 40000
  * - USB backend, "usb:"\n When more than one usb device is attached, requires
  *   bus, address, and interface parts separated with a dot. For example
  *   <i>"usb:3.32.5"</i>. Where there is only one USB device attached, the shorthand
