@@ -71,6 +71,8 @@ static struct dns_sd_discovery_data *new_discovery_data(struct dns_sd_discovery_
 static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
 					  const struct sockaddr *addr, size_t addrlen)
 {
+	struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
+	struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
 	char host[NI_MAXHOST] = { 0 };
 	char service[NI_MAXSERV] = { 0 };
 	int ret, len = 0;
@@ -80,15 +82,27 @@ static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
 			NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
 
 	if (ret == 0) {
-		if (addr->sa_family == AF_INET6 &&
-		    ((struct sockaddr_in6 *)addr)->sin6_port != 0 &&
-		    strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR)))
-			len = snprintf(buffer, capacity, "[%s]:%s", host, service);
-		else if (((struct sockaddr_in *)addr)->sin_port != 0 &&
-			 strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR)))
+		if (addr->sa_family == AF_INET6) {
+			if (addr6->sin6_port != 0
+			    && strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
+				if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr)) {
+					len = snprintf(buffer, capacity, "[%s%%%lu]:%s",
+						       host, addr6->sin6_scope_id, service);
+				} else {
+					len = snprintf(buffer, capacity, "[%s]:%s", host, service);
+				}
+			} else if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr)) {
+				len = snprintf(buffer, capacity, "%s%%%lu",
+					       host, addr6->sin6_scope_id);
+			} else {
+				len = snprintf(buffer, capacity, "%s", host);
+			}
+		} else if (addr4->sin_port != 0
+			   && strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
 			len = snprintf(buffer, capacity, "%s:%s", host, service);
-		else
+		} else {
 			len = snprintf(buffer, capacity, "%s", host);
+		}
 	}
 
 	if (len >= (int)capacity)
