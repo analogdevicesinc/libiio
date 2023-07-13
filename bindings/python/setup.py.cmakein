@@ -55,22 +55,18 @@ class InstallWrapper(install):
         from platform import system as _system
         from ctypes import CDLL as _cdll
         from ctypes.util import find_library
+        from os import getenv
+        from os.path import join
 
-        if "Windows" in _system():
-            _iiolib = "libiio.dll"
-        else:
-            # Non-windows, possibly Posix system
-            _iiolib = "iio"
+        iiolib = "iio" if "Darwin" in _system() else "libiio${CMAKE_SHARED_LIBRARY_SUFFIX}"
+
+        destdir = getenv("DESTDIR", "") or ""
+        destdir = join("${CMAKE_INSTALL_FULL_LIBDIR}", destdir)
+        fulllibpath = find_recursive(destdir, iiolib)
+
         try:
-            import os
 
-            destdir = os.getenv("DESTDIR", "")
-            if destdir:
-                destdir = os.path.join("${CMAKE_BINARY_DIR}", destdir)
-                fulllibpath = find_recursive(destdir, "libiio.so")
-                _lib = _cdll(fulllibpath, use_errno=True, use_last_error=True)
-            else:
-                _lib = _cdll(find_library(_iiolib), use_errno=True, use_last_error=True)
+            _lib = _cdll(fulllibpath, use_errno=True, use_last_error=True)
             if not _lib._name:
                 raise OSError
         except OSError:
