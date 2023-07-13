@@ -64,6 +64,9 @@ do
 done
 cd ../../../../
 
+# Create links to libusb-1.0.0.dylib
+ln -s libusb-1.0.dylib usr/local/lib/libusb-1.0.0.dylib
+
 # Remove old tar and create new one
 rm "../${tarname}"
 tar -czf "../${tarname}" .
