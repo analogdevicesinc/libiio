@@ -35,20 +35,20 @@ if [ ! -f "${libserialport_loc}" ]; then
 fi
 
 # Create links to framework files
-mkdir -p usr/local/{lib,include}
+mkdir -p usr/local/include usr/local/lib/libiio
 ln -fs "${libiio_loc}" usr/local/lib/libiio.dylib
 ln -fs "${libiioheader_loc}" usr/local/include/iio.h
 
 # Copy dependent libs to local libs
-cp "${libusb_loc}" usr/local/lib/
-cp "${libxml_loc}" usr/local/lib/
-cp "${libserialport_loc}" usr/local/lib/
-chmod +w usr/local/lib/libusb-1.0.dylib
-chmod +w usr/local/lib/libxml2.dylib
-chmod +w usr/local/lib/libserialport.dylib
-install_name_tool -id @rpath/libusb-1.0.dylib usr/local/lib/libusb-1.0.dylib
-install_name_tool -id @rpath/libxml2.dylib usr/local/lib/libxml2.dylib
-install_name_tool -id @rpath/libserialport.dylib usr/local/lib/libserialport.dylib
+cp "${libusb_loc}" usr/local/lib/libiio/
+cp "${libxml_loc}" usr/local/lib/libiio/
+cp "${libserialport_loc}" usr/local/lib/libiio/
+chmod +w usr/local/lib/libiio/libusb-1.0.dylib
+chmod +w usr/local/lib/libiio/libxml2.dylib
+chmod +w usr/local/lib/libiio/libserialport.dylib
+install_name_tool -id @rpath/libusb-1.0.dylib usr/local/lib/libiio/libusb-1.0.dylib
+install_name_tool -id @rpath/libxml2.dylib usr/local/lib/libiio/libxml2.dylib
+install_name_tool -id @rpath/libserialport.dylib usr/local/lib/libiio/libserialport.dylib
 
 # Update rpath of library
 install_name_tool -change "${libusb_loc}" "@rpath/libusb-1.0.dylib" "${libiio_loc}"
@@ -65,7 +65,7 @@ done
 cd ../../../../
 
 # Create links to libusb-1.0.0.dylib
-ln -s libusb-1.0.dylib usr/local/lib/libusb-1.0.0.dylib
+ln -s libusb-1.0.dylib usr/local/lib/libiio/libusb-1.0.0.dylib
 
 # Remove old tar and create new one
 rm "../${tarname}"
