@@ -2177,7 +2177,7 @@ static int build_names(void *d, const char *path)
 	dst = cat_file(buf);
 	if (dst) {
 		len = strnlen(names, sizeof(buf));
-		iio_snprintf(&names[len], BUF_SIZE - len - 1, "%s, ", dst);
+		iio_snprintf(&names[len], BUF_SIZE - len - 1, "%s,", dst);
 		free(dst);
 	}
 	return 0;
@@ -2212,7 +2212,7 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	if (machine) {
 		if (names[0]) {
 			ret = strnlen(names, sizeof(names));
-			names[ret - 2] = '\0';
+			names[ret - 1] = '\0';
 			iio_snprintf(buf, sizeof(buf), "(%s on %s)", names, machine);
 		} else
 			iio_snprintf(buf, sizeof(buf), "(Local IIO devices on %s)", machine);
