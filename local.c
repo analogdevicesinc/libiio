@@ -2170,7 +2170,7 @@ static int build_names(void *d, const char *path)
 	char *names = (char *)d;
 	size_t len;
 
-	if (!strstr(path, "iio:device"))
+	if (!strstr(path, "iio:device") && !(WITH_HWMON && strstr(path, "class/hwmon")))
 		return 0;
 
 	iio_snprintf(buf, sizeof(buf), "%s/name", path);
@@ -2195,15 +2195,32 @@ int local_context_scan(struct iio_scan_result *scan_result)
 	bool exists = false;
 	char *desc, *uri, *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	int ret;
+	bool no_iio;
 
 	ret = foreach_in_dir(&exists, "/sys/bus/iio", true, check_device);
-	if (ret < 0 || !exists)
+	no_iio = ret == -ENOENT;
+	if (WITH_HWMON && no_iio)
+		ret = 0; /* Not an error, unless we also have no hwmon devices */
+	if (ret < 0)
 		return 0;
 
 	names[0] = '\0';
-	ret = foreach_in_dir(&names, "/sys/bus/iio/devices", true, build_names);
-	if (ret < 0)
-		return 0;
+	if (!no_iio) {
+		ret = foreach_in_dir(&names, "/sys/bus/iio/devices", true, build_names);
+		if (ret < 0)
+			return 0;
+	}
+
+	if (WITH_HWMON) {
+		ret = foreach_in_dir(&exists, "/sys/class/hwmon", true, check_device);
+		if (ret == -ENOENT && !no_iio)
+			ret = 0; /* IIO devices but no hwmon devices - not an error */
+		if (ret < 0)
+			return 0;
+		ret = foreach_in_dir(&names, "/sys/class/hwmon", true, build_names);
+		if (ret < 0)
+			return 0;
+	}
 
 	machine = cat_file("/sys/firmware/devicetree/base/model");
 	if (!machine)
