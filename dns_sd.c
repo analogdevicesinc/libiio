@@ -123,7 +123,7 @@ static int dnssd_fill_context_info(struct iio_context_info *info,
 	} else {
 		iio_snprintf(description, sizeof(description), "%s (", addr_str);
 		p = description + strlen(description);
-		for (i = 0; i < iio_context_get_devices_count(ctx) - 1; i++) {
+		for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 			const struct iio_device *dev = iio_context_get_device(ctx, i);
 			const char *name = iio_device_get_name(dev);
 			if (name) {
