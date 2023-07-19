@@ -85,15 +85,7 @@ static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
 		if (addr->sa_family == AF_INET6) {
 			if (addr6->sin6_port != 0
 			    && strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
-				if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr)) {
-					len = snprintf(buffer, capacity, "[%s%%%lu]:%s",
-						       host, addr6->sin6_scope_id, service);
-				} else {
-					len = snprintf(buffer, capacity, "[%s]:%s", host, service);
-				}
-			} else if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr)) {
-				len = snprintf(buffer, capacity, "%s%%%lu",
-					       host, addr6->sin6_scope_id);
+				len = snprintf(buffer, capacity, "[%s]:%s", host, service);
 			} else {
 				len = snprintf(buffer, capacity, "%s", host);
 			}
@@ -233,6 +225,11 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	    rtype != MDNS_RECORDTYPE_AAAA)
 		goto quit;
 
+#ifdef HAVE_IPV6
+	if (rtype == MDNS_RECORDTYPE_AAAA && from->sa_family != AF_INET6)
+		goto quit;
+#endif
+
 	if (entry != MDNS_ENTRYTYPE_ANSWER)
 		goto quit;
 
@@ -326,6 +323,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 		struct sockaddr_in6 addr;
 
 		mdns_record_parse_aaaa(data, size, record_offset, record_length, &addr);
+		addr.sin6_scope_id = ((struct sockaddr_in6 *)from)->sin6_scope_id;
 		addrstr = ip_address_to_string(namebuffer, sizeof(namebuffer),
 					       (struct sockaddr *) &addr, sizeof(addr));
 		IIO_DEBUG("%.*s : %.*s AAAA %.*s\n", MDNS_STRING_FORMAT(fromaddrstr),
