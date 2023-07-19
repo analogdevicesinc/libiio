@@ -264,6 +264,20 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 				break;
 		        case MDNS_RECORDTYPE_TXT:
 				IIO_DEBUG("%.*s : ignoring packet type (%hu) MDNS_RECORDTYPE_TXT\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
+				mdns_record_txt_t txtbuffer[128];
+				size_t parsed = mdns_record_parse_txt(data, size, record_offset, record_length, txtbuffer,
+						sizeof(txtbuffer) / sizeof(mdns_record_txt_t));
+				for (size_t itxt = 0; itxt < parsed; ++itxt) {
+					if (txtbuffer[itxt].value.length) {
+						IIO_DEBUG("\t%.*s : %s %.*s TXT %.*s = %.*s\n", MDNS_STRING_FORMAT(fromaddrstr),
+							entrytype, MDNS_STRING_FORMAT(entrystr),
+							MDNS_STRING_FORMAT(txtbuffer[itxt].key),
+							MDNS_STRING_FORMAT(txtbuffer[itxt].value));
+					} else {
+						IIO_DEBUG("\t%.*s : %s %.*s TXT %.*s\n", MDNS_STRING_FORMAT(fromaddrstr), entrytype,
+								MDNS_STRING_FORMAT(entrystr), MDNS_STRING_FORMAT(txtbuffer[itxt].key));
+					}
+				}
 				break;
 			case MDNS_RECORDTYPE_ANY:
 				IIO_DEBUG("%.*s : ignoring packet  type (%hu) MDNS_RECORDTYPE_ANY\n", MDNS_STRING_FORMAT(fromaddrstr), rtype);
@@ -320,7 +334,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			    (!dd->port || dd->port == srv.port) &&
 			    dd->found == (from->sa_family != AF_INET)) {
 				dd->port = srv.port;
-				IIO_DEBUG("DNS SD: updated SRV %s (%s port: %hu)\n",
+				IIO_DEBUG("DNS SD: updated IPv%i SRV %s (%s port: %hu)\n",
+					  dd->found ? 6 : 4,
 					  dd->hostname, dd->addr_str, dd->port);
 				found = true;
 			}
@@ -338,7 +353,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			iio_strlcpy(dd->addr_str, fromaddrstr.str, fromaddrstr.length + 1);
 			dd->port = srv.port;
 			dd->found = (from->sa_family != AF_INET);
-			IIO_DEBUG("DNS SD: added SRV %s (%s port: %hu)\n",
+			IIO_DEBUG("DNS SD: added IPv%i SRV %s (%s port: %hu)\n",
+				  (dd->found) ? 6 : 4,
 				  dd->hostname, dd->addr_str, dd->port);
 
 			/* A list entry was filled, prepare new item on the list */
@@ -361,7 +377,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			    !strncmp(dd->hostname, entrystr.str, entrystr.length - 1) &&
 			    !dd->found) {
 				iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
-				IIO_DEBUG("DNS SD: updated A %s (%s port: %hu)\n",
+				IIO_DEBUG("DNS SD: updated IPv%i A %s (%s port: %hu)\n",
+					  (dd->found) ? 6 : 4,
 					  dd->hostname, dd->addr_str, dd->port);
 				found = true;
 			}
@@ -373,7 +390,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 				goto mem_fail;
 			iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
 			dd->found = 0;
-			IIO_DEBUG("DNS SD: Added A %s (%s port: %hu)\n",
+			IIO_DEBUG("DNS SD: added IPv%i A %s (%s port: %hu)\n",
+				  (dd->found) ? 6 : 4,
 				  dd->hostname, dd->addr_str, dd->port);
 			/* A list entry was filled, prepare new item on the list */
 			dd->next = new_discovery_data(dd);
@@ -398,7 +416,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			    !strncmp(dd->hostname, entrystr.str, entrystr.length - 1) &&
 			    dd->found) {
 				iio_strlcpy(dd->addr_str, addrstr.str, addrstr.length + 1);
-				IIO_DEBUG("DNS SD: updated AAAA %s (%s port: %hu)\n",
+				IIO_DEBUG("DNS SD: updated IPv%i AAAA %s (%s port: %hu)\n",
+					  (dd->found) ? 6 : 4,
 					  dd->hostname, dd->addr_str, dd->port);
 				found = true;
 			}
@@ -416,7 +435,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			dd->found = 1;
 			if (port)
 				dd->port = port;
-			IIO_DEBUG("DNS SD: added AAAA %s (%s port: %hu)\n",
+			IIO_DEBUG("DNS SD: added IPv%i AAAA %s (%s port: %hu)\n",
+				  (dd->found) ? 6 : 4,
 				  dd->hostname, dd->addr_str, dd->port);
 			/* A list entry was filled, prepare new item on the list */
 			dd->next = new_discovery_data(dd);
