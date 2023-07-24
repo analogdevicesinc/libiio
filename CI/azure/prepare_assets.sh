@@ -44,7 +44,7 @@ release_artifacts() {
         done
 	cp /home/vsts/work/1/s/CI/azure/README.txt ./Windows
 	cd Windows
-	zip Windows.zip ./*
+	zip -r Windows.zip ./*
 	cp ./Windows.zip ../
 	cd ..
 	rm -r Windows
