@@ -6,6 +6,7 @@ trigger:
     include:
     - main
     - master
+    - next_stable
     - staging/*
     - 20*
   tags:
