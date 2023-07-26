@@ -48,7 +48,7 @@ struct dns_sd_discovery_data {
 	uint16_t found, resolved;
 	char addr_str[DNS_SD_ADDRESS_STR_MAX];
 	char *hostname;
-	uint16_t port;
+	uint16_t port, iface;
 	struct dns_sd_discovery_data *next;
 };
 
