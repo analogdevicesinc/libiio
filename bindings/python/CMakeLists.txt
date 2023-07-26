@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 project(libiio-py NONE)
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
@@ -42,10 +42,6 @@ else()
 endif()
 
 if(WITH_DOC)
-	if(${CMAKE_VERSION} VERSION_LESS "3.2.0")
-		# cmake -E env was added in 3.2
-		message(FATAL_ERROR "Sorry, you can't build python doc with ancient cmake, please update")
-	endif()
 	find_program(SPHINX_EXECUTABLE
 		NAMES sphinx-build
 		DOC "Sphinx Documentation Builder (sphinx-doc.org)"
