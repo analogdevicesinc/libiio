@@ -105,26 +105,6 @@ static int serial_get_version(const struct iio_context *ctx,
 			major, minor, git_tag);
 }
 
-static char * serial_get_description(struct sp_port *port)
-{
-	char *description, *name, *desc;
-	size_t desc_len;
-
-	name = sp_get_port_name(port);
-	desc = sp_get_port_description(port);
-
-	desc_len = sizeof(": \0") + strlen(name) + strlen(desc);
-	description = malloc(desc_len);
-	if (!description) {
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	iio_snprintf(description, desc_len, "%s: %s", name, desc);
-
-	return description;
-}
-
 static int serial_open(const struct iio_device *dev,
 		size_t samples_count, bool cyclic)
 {
@@ -421,7 +401,7 @@ static struct iio_context * serial_create_context(const char *port_name,
 	struct sp_port *port;
 	struct iio_context_pdata *pdata;
 	struct iio_context *ctx;
-	char *description, *uri, buf[16];
+	char *uri, buf[16];
 	size_t uri_len;
 	unsigned int i;
 	int ret;
@@ -466,14 +446,10 @@ static struct iio_context * serial_create_context(const char *port_name,
 		}
 	} while (ret);
 
-	description = serial_get_description(port);
-	if (!description)
-		goto err_close_port;
-
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
 		errno = ENOMEM;
-		goto err_free_description;
+		goto err_close_port;
 	}
 
 	pdata->port = port;
@@ -490,7 +466,6 @@ static struct iio_context * serial_create_context(const char *port_name,
 	ctx->name = "serial";
 	ctx->ops = &serial_ops;
 	ctx->pdata = pdata;
-	ctx->description = description;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
@@ -510,6 +485,15 @@ static struct iio_context * serial_create_context(const char *port_name,
 		goto err_context_destroy;
 	free(uri);
 
+	ret = iio_context_add_attr(ctx, "serial,port", sp_get_port_name(port));
+	if (ret < 0)
+		goto err_context_destroy;
+
+	ret = iio_context_add_attr(ctx, "serial,description",
+				   sp_get_port_description(port));
+	if (ret < 0)
+		goto err_context_destroy;
+
 	return ctx;
 
 err_context_destroy:
@@ -522,8 +506,6 @@ err_destroy_iiod_client:
 	iiod_client_destroy(pdata->iiod_client);
 err_free_pdata:
 	free(pdata);
-err_free_description:
-	free(description);
 err_close_port:
 	sp_close(port);
 err_free_port:
