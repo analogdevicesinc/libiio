@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <poll.h>
@@ -36,6 +37,12 @@
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
+
+#ifdef HAVE_IPV6
+#define IP_ADDR_LEN (INET6_ADDRSTRLEN + 1 + IF_NAMESIZE)
+#else
+#define IP_ADDR_LEN (INET_ADDRSTRLEN + 1 + IF_NAMESIZE)
+#endif
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		      const char *uart_params, bool debug, bool interactive,
@@ -265,7 +272,12 @@ static int main_server(struct iio_context *ctx, bool debug,
 
 	while (true) {
 		struct client_data *cdata;
+#ifdef HAVE_IPV6
+		struct sockaddr_in6 caddr;
+#else
 		struct sockaddr_in caddr;
+#endif
+
 		socklen_t addr_len = sizeof(caddr);
 		int new;
 
@@ -330,8 +342,43 @@ static int main_server(struct iio_context *ctx, bool debug,
 		cdata->xml_zstd = xml_zstd;
 		cdata->xml_zstd_len = xml_zstd_len;
 
-		IIO_INFO("New client connected from %s\n",
-				inet_ntoa(caddr.sin_addr));
+		if (LOG_LEVEL >= Info_L) {
+			struct sockaddr_in *caddr4 = (struct sockaddr_in *)&caddr;
+			char ipaddr[IP_ADDR_LEN];
+			int zone = 0;
+			void *addr;
+			char *ptr;
+
+			if (!ipv6 || caddr4->sin_family == AF_INET) {
+				addr = &caddr4->sin_addr;
+#ifdef HAVE_IPV6
+			} else {
+				addr = &caddr.sin6_addr;
+				zone = caddr.sin6_scope_id;
+#endif
+			}
+
+			if (!inet_ntop(caddr4->sin_family, addr, ipaddr, sizeof(ipaddr) - 1)) {
+				iio_strerror(errno, err_str, sizeof(err_str));
+				IIO_ERROR("Error during inet_ntop: %s\n", err_str);
+			} else {
+				ipaddr[IP_ADDR_LEN - 1] = '\0';
+
+				if (zone) {
+					ptr = &ipaddr[strnlen(ipaddr, IP_ADDR_LEN)];
+
+					if (if_indextoname(zone, ptr + 1))
+						*ptr = '%';
+				}
+
+				if (!strncmp(ipaddr, "::ffff:", sizeof("::ffff:") - 1))
+					ptr = &ipaddr[sizeof("::ffff:") - 1];
+				else
+					ptr = ipaddr;
+
+				IIO_INFO("New client connected from %s\n", ptr);
+			}
+		}
 
 		ret = thread_pool_add_thread(main_thread_pool, client_thd, cdata, "net_client_thd");
 		if (ret) {
