@@ -487,8 +487,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 		   num_sockets, (num_sockets > 1) ? "s" : "",
 		   records, (records > 1) ? "s" : "" );
 
-	port_knock_discovery_data(&d);
 	remove_dup_discovery_data(&d);
+	port_knock_discovery_data(&d);
 
 	/* since d may have changed, make sure we pass back the start */
 	*ddata = d;
