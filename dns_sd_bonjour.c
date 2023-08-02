@@ -238,8 +238,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 			}
 		}
 
-		port_knock_discovery_data(&d);
 		remove_dup_discovery_data(&d);
+		port_knock_discovery_data(&d);
 		*ddata = d;
 	}
 

@@ -293,8 +293,8 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	avahi_simple_poll_loop(d->poll);
 
 	if (d->resolved) {
-		port_knock_discovery_data(&d);
 		remove_dup_discovery_data(&d);
+		port_knock_discovery_data(&d);
 	} else
 		ret = -ENXIO;
 
@@ -378,8 +378,8 @@ int dnssd_resolve_host(const char *hostname,
 #endif
 
 	if (d->resolved) {
-		port_knock_discovery_data(&d);
 		remove_dup_discovery_data(&d);
+		port_knock_discovery_data(&d);
 	} else {
 		ret = -ENXIO;
 		goto err_mutex_destroy;
