@@ -120,8 +120,6 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 				void *d)
 {
 	struct dns_sd_discovery_data *ddata = d;
-	AvahiClient *client;
-	int err;
 
 	if (!resolver) {
 		IIO_ERROR("Fatal Error in Avahi Resolver\n");
@@ -130,13 +128,10 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 
 	switch(event) {
 	case AVAHI_RESOLVER_FAILURE:
-		client = avahi_service_resolver_get_client(resolver);
-		err = avahi_client_errno(client);
-
 		IIO_ERROR("Avahi Resolver: Failed resolve service '%s' "
 			  "of type '%s' in domain '%s': %s\n",
 			  name, type, domain,
-			  avahi_strerror(err));
+			  avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(resolver))));
 		break;
 	case AVAHI_RESOLVER_FOUND: {
 		avahi_process_resolved(ddata, iface, address, host_name, port);
@@ -158,16 +153,11 @@ static void avahi_host_resolver(AvahiHostNameResolver *resolver,
 				void *d)
 {
 	struct dns_sd_discovery_data *ddata = d;
-	AvahiClient *client;
-	int err;
 
 	switch(event) {
 	case AVAHI_RESOLVER_FAILURE:
-		client = avahi_host_name_resolver_get_client(resolver);
-		err = avahi_client_errno(client);
-
 		IIO_ERROR("Avahi Resolver: Failed to resolve host '%s' : %s\n",
-			  host_name, avahi_strerror(err));
+			  host_name, avahi_strerror(avahi_client_errno(avahi_host_name_resolver_get_client(resolver))));
 		break;
 	case AVAHI_RESOLVER_FOUND:
 		avahi_process_resolved(ddata, iface, address, host_name, IIOD_PORT);
