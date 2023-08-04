@@ -712,3 +712,4 @@ string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
 
 message(STATUS "Features enabled : ${IIO_FEATURES_ON}")
 message(STATUS "Features disabled: ${IIO_FEATURES_OFF}")
+message(STATUS "LOG_LEVEL set to \"${LOG_LEVEL}\"")
