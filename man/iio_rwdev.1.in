@@ -1,0 +1,96 @@
+.\" Copyright (c) 2018-2020 Robin Getz
+.\" Copyright (c) 2018-2020 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iio_rwdev 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iio_rwdev_
+.SH NAME
+iio_rwdev \- read/write buffers from/to an IIO device
+.SH SYNOPSIS
+.B iio_rwdev
+[
+.I options
+]
+[-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] [-w] <iio_device> [<channel> ...]
+.SH DESCRIPTION
+.B iio_reg
+is a utility for reading buffers from connected IIO devices, and sending resutls to standard out.
+
+.SH OPTIONS
+##COMMON_COMMANDS_START##
+##COMMON_COMMANDS_STOP##
+.TP
+.B \-w \-\-write
+Write sample data to the IIO device. The default is to read samples from it.
+.TP
+.B \-t \-\-trigger
+Use the specified trigger, if needed on the specified channel
+.TP
+.B \-b \-\-buffer-size
+Size of the capture buffer. Default is 256.
+.TP
+.B \-s \-\-samples
+Number of samples (not bytes) to capture, 0 = infinite. Default is 0.
+.TP
+.B \-T \-\-timeout
+Buffer timeout in milliseconds. 0 = no timeout. Default is 0.
+##COMMON_OPTION_START##
+##COMMON_OPTION_STOP##
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH "USAGE"
+.PP
+You use iio_rwdev in the same way you use many of the other libiio utilities.
+You should specify a IIO device, and the specific channel to read or write.
+When reading, channels must be input; when writing they must be output.
+If no channel is provided, iio_rwdev will read from all input channels or write
+to all output channels.
+If no device is provided, iio_rwdev will print a few examples:
+.RS
+.B \f(CWiio_rwdev -a\fP
+.br
+Using auto-detected IIO context at URI "usb:3.10.5"
+.br
+Example : iio_rwdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage0
+.br
+Example : iio_rwdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage1
+.br
+Example : iio_rwdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage2
+.br
+Example : iio_rwdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc voltage3
+.br
+Example : iio_rwdev -u usb:3.10.5 -b 256 -s 1024 cf-ad9361-lpc
+.RE
+.PP
+This captures 1024 samples of I and Q data from the USB attached AD9361, and
+stores it (as raw binary) into the file samples.dat
+.RS
+.B \f(CWiio_rwdev \-a \-s 1024 cf-ad9361-lpc voltage0 voltage1 > samples.dat\fP
+.RE
+.PP
+And plots the data with gnuplot.
+.RS
+.B \f(WCgnuplot \-e \(dq\&set term png; set output 'sample.png'; plot 'sample.dat' binary format='%short%short' using 1 with lines, 'sample.dat' binary format='%short%short' using 2 with lines;\(dq\&\fP
+.RE
+

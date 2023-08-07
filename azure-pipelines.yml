@@ -6,6 +6,7 @@ trigger:
     include:
     - main
     - master
+    - next_stable
     - dev
     - staging/*
     - 20*
@@ -34,15 +35,30 @@ stages:
     # Docker Images
     strategy:
       matrix:
+        ubuntu_18_04:
+          image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-18.04'
         ubuntu_20_04:
           image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
           artifactName: 'Linux-Ubuntu-20.04'
         ubuntu_22_04:
           image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
           artifactName: 'Linux-Ubuntu-22.04'        
+        fedora28:
+          image: 'tfcollins/libiio_fedora_28-ci:latest'
+          artifactName: 'Linux-Fedora-28'
         fedora34:
           image: 'tfcollins/libiio_fedora_34-ci:latest'
           artifactName: 'Linux-Fedora-34'
+        debian_bullseye:
+          image: 'tfcollins/libiio_debian_bullseye-ci:latest'
+          artifactName: 'Linux-Debian-11'
+        opensuse_15_4:
+          image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
+          artifactName: 'Linux-openSUSE-15.4'
+        centos_7:
+          image: 'tfcollins/libiio_centos_7-ci:latest'
+          artifactName: 'Linux-CentOS-7'
     container: $[ variables['image'] ]
     steps:
     - checkout: self
@@ -52,9 +68,15 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        if [ "$ARTIFACTNAME" != "Linux-CentOS-7" ]; then
+          cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        else
+          # CentOS 7 does not have new enough kernel headers to support modern libusb, nor libserialport, nor stdatomics.h
+          cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME} -DWITH_USB_BACKEND=OFF -DWITH_IIOD_USBD=OFF -DWITH_LOCAL_MMAP_API=OFF
+        fi
         make
         make package
+        make required2tar
       displayName: 'Build'
     - task: CopyFiles@2
       inputs:
@@ -69,6 +91,85 @@ stages:
     - script: ./CI/azure/check_kernel.sh
       displayName: 'Kernel check'
       condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+    - script: ./CI/azure/check_README_BUILD.sh
+      displayName: 'README_BUILD check'
+      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
+
+  #############################################
+  - job: MinGWBuilds
+    strategy:
+      matrix:
+        MinGW_W64:
+           COMPILER: 'MinGW Makefiles'
+           ARCH: 'x86_64'
+           USE_CSHARP: 'OFF'
+           artifactName: 'Windows-MinGW-W64'
+    pool:
+      vmImage: 'windows-2022'
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
+    - task: PowerShell@2
+      displayName: 'Dependencies'
+      inputs:
+        targetType: inline
+        script: |
+          git submodule update --init
+          if ( !( Test-Path deps ) ) {
+            mkdir deps
+          }
+          cd deps
+          mkdir libxml
+          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          7z x -y libxml.7z
+          rm libxml.7z
+          cd C:\
+          wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "libiio-win-deps.zip"
+          7z x -y "C:\libiio-win-deps.zip"
+    - task: PowerShell@2
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\build_win.ps1
+      displayName: 'Build'
+    - task: CopyFiles@2
+      displayName: 'Copy .exe files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/tests'
+        contents: '*.exe'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy iio.h header'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/'
+        contents: 'iio.h'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy libiio.dll and libiio.dll.a'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64'
+        contents: |
+          libiio.dll
+          libiio.dll.a
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy .tar.gz files'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/bindings/python'
+        contents: '*.gz'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PowerShell@2
+      displayName: 'Copy dependencies'
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\publish_deps.ps1
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
@@ -83,11 +184,13 @@ stages:
           vmImage: 'windows-2022'
           COMPILER: 'Visual Studio 17 2022'
           ARCH: 'x64'
+          USE_CSHARP: 'ON'
           artifactName: 'Windows-VS-2022-x64'
         VS2019:
           vmImage: 'windows-2019'
           COMPILER: 'Visual Studio 16 2019'
           ARCH: 'x64'
+          USE_CSHARP: 'ON'
           artifactName: 'Windows-VS-2019-x64'
     pool:
       vmImage: $[ variables['vmImage'] ]
@@ -180,33 +283,54 @@ stages:
   #############################################
   - job: macOSBuilds
     # Host Box
+    workspace:
+      clean: all
     strategy:
       matrix:
         macOS_11:
+          poolName: 'Azure Pipelines'
           vmImage: 'macOS-11'
+          agentName: 'Azure Pipelines 4'
           artifactName: 'macOS-11'
         macOS_12:
+          poolName: 'Azure Pipelines'
           vmImage: 'macOS-12'
+          agentName: 'Azure Pipelines 3'
           artifactName: 'macOS-12'
+        macOS_13_x64:
+          poolName: 'Azure Pipelines'
+          vmImage: 'macOS-13'
+          agentName: 'Azure Pipelines 2'
+          artifactName: 'macOS-13-x64'
+        macOS_13_arm64:
+          poolName: 'Default'
+          vmImage: 
+          agentName: 'macOS_arm64'
+          artifactName: 'macOS-13-arm64'
     pool:
-      vmImage: $[ variables['vmImage'] ]
+      name: $(poolName)
+      vmImage: $(vmImage)
+      demands:
+        - agent.name -equals $(agentName)
     steps:
     - checkout: self
       fetchDepth: 1
       clean: true
     - task: UsePythonVersion@0
+      condition: ne(variables['agentName'],'macOS_arm64')
       inputs:
         versionSpec: '3.x'
         addToPath: true
     - script: |
           set -e
-          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config
+          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
           pip3 install sphinx
       displayName: 'Dependencies'
+      condition: ne(variables['agentName'],'macOS_arm64')
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
         make
         sudo make install
         cd ..
@@ -214,15 +338,18 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=OFF -DWITH_ZSTD=OFF -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
+        mv ../CI/azure/macos_tar_fixup.sh .
+        chmod +x macos_tar_fixup.sh
+        ./macos_tar_fixup.sh
         cd ..
       displayName: 'Build tar'
     - script: |
         set -e
         cd build
-        cmake .. -DPYTHON_BINDINGS=ON -DWITH_DOC=ON
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON
         make
         cd ..
       displayName: 'Build With Doc'

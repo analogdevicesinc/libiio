@@ -63,16 +63,6 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	printf("Library version: %u.%u (git tag: %s)\n",
-	       iio_context_get_version_major(NULL),
-	       iio_context_get_version_minor(NULL),
-	       iio_context_get_version_tag(NULL));
-
-	printf("Compiled with backends:");
-	for (i = 0; i < iio_get_backends_count(); i++)
-		printf(" %s", iio_get_backend(i));
-	printf("\n");
-
 	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
 	opts = add_common_options(options);
 	if (!opts) {
@@ -84,6 +74,7 @@ int main(int argc, char **argv)
 		switch (c) {
 			/* All these are handled in the common */
 		case 'h':
+		case 'V':
 		case 'n':
 		case 'x':
 		case 'u':
@@ -114,6 +105,7 @@ int main(int argc, char **argv)
 	if (!ctx)
 		return EXIT_FAILURE;
 
+	version(MY_NAME);
 	printf("IIO context created with %s backend.\n",
 			iio_context_get_name(ctx));
 

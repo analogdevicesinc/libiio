@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <poll.h>
@@ -36,6 +37,17 @@
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
+
+#ifdef HAVE_IPV6
+#define IP_ADDR_LEN (INET6_ADDRSTRLEN + 1 + IF_NAMESIZE)
+#else
+#define IP_ADDR_LEN (INET_ADDRSTRLEN + 1 + IF_NAMESIZE)
+#endif
+
+static int start_iiod(const char *uri, const char *ffs_mountpoint,
+		      const char *uart_params, bool debug, bool interactive,
+		      bool use_aio, uint16_t port, unsigned int nb_pipes,
+		      int ep0_fd);
 
 struct client_data {
 	int fd;
@@ -128,6 +140,14 @@ static void set_handler(int signal, void (*handler)(int))
 
 static void sig_handler(int sig)
 {
+	thread_pool_stop(main_thread_pool);
+}
+
+static bool restart_usr1;
+
+static void sig_handler_usr1(int sig)
+{
+	restart_usr1 = true;
 	thread_pool_stop(main_thread_pool);
 }
 
@@ -252,7 +272,12 @@ static int main_server(struct iio_context *ctx, bool debug,
 
 	while (true) {
 		struct client_data *cdata;
+#ifdef HAVE_IPV6
+		struct sockaddr_in6 caddr;
+#else
 		struct sockaddr_in caddr;
+#endif
+
 		socklen_t addr_len = sizeof(caddr);
 		int new;
 
@@ -317,8 +342,43 @@ static int main_server(struct iio_context *ctx, bool debug,
 		cdata->xml_zstd = xml_zstd;
 		cdata->xml_zstd_len = xml_zstd_len;
 
-		IIO_INFO("New client connected from %s\n",
-				inet_ntoa(caddr.sin_addr));
+		if (LOG_LEVEL >= Info_L) {
+			struct sockaddr_in *caddr4 = (struct sockaddr_in *)&caddr;
+			char ipaddr[IP_ADDR_LEN];
+			int zone = 0;
+			void *addr;
+			char *ptr;
+
+			if (!ipv6 || caddr4->sin_family == AF_INET) {
+				addr = &caddr4->sin_addr;
+#ifdef HAVE_IPV6
+			} else {
+				addr = &caddr.sin6_addr;
+				zone = caddr.sin6_scope_id;
+#endif
+			}
+
+			if (!inet_ntop(caddr4->sin_family, addr, ipaddr, sizeof(ipaddr) - 1)) {
+				iio_strerror(errno, err_str, sizeof(err_str));
+				IIO_ERROR("Error during inet_ntop: %s\n", err_str);
+			} else {
+				ipaddr[IP_ADDR_LEN - 1] = '\0';
+
+				if (zone) {
+					ptr = &ipaddr[strnlen(ipaddr, IP_ADDR_LEN)];
+
+					if (if_indextoname(zone, ptr + 1))
+						*ptr = '%';
+				}
+
+				if (!strncmp(ipaddr, "::ffff:", sizeof("::ffff:") - 1))
+					ptr = &ipaddr[sizeof("::ffff:") - 1];
+				else
+					ptr = ipaddr;
+
+				IIO_INFO("New client connected from %s\n", ptr);
+			}
+		}
 
 		ret = thread_pool_add_thread(main_thread_pool, client_thd, cdata, "net_client_thd");
 		if (ret) {
@@ -414,15 +474,12 @@ int main(int argc, char **argv)
 	long nb_pipes = 3, val;
 	char *end;
 	const char *uri = "local:";
-	struct iio_context *ctx;
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
 	char *uart_params = NULL;
 	char err_str[1024];
-	void *xml_zstd;
-	size_t xml_zstd_len = 0;
 	uint16_t port = IIOD_PORT;
-	int ret;
+	int ret, ep0_fd = 0;
 
 	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:p:u:",
 					options, &option_index)) != -1) {
@@ -497,6 +554,59 @@ int main(int argc, char **argv)
 		}
 	}
 
+	main_thread_pool = thread_pool_new();
+	if (!main_thread_pool) {
+		iio_strerror(errno, err_str, sizeof(err_str));
+		IIO_ERROR("Unable to create thread pool: %s\n", err_str);
+		return EXIT_FAILURE;
+	}
+
+	if (WITH_IIOD_USBD && ffs_mountpoint) {
+		ret = init_usb_daemon(ffs_mountpoint, nb_pipes);
+		if (ret < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Unable to init USB: %s\n", err_str);
+
+			thread_pool_destroy(main_thread_pool);
+			return EXIT_FAILURE;
+		}
+
+		ep0_fd = ret;
+	}
+
+	set_handler(SIGHUP, sig_handler);
+	set_handler(SIGPIPE, sig_handler);
+	set_handler(SIGINT, sig_handler);
+	set_handler(SIGTERM, sig_handler);
+	set_handler(SIGUSR1, sig_handler_usr1);
+
+	do {
+		thread_pool_restart(main_thread_pool);
+		restart_usr1 = false;
+
+		ret = start_iiod(uri, ffs_mountpoint, uart_params, debug,
+				 interactive, use_aio, port, nb_pipes, ep0_fd);
+	} while (!ret && restart_usr1);
+
+	thread_pool_destroy(main_thread_pool);
+
+	if (WITH_IIOD_USBD && ffs_mountpoint)
+		close(ep0_fd);
+
+	return ret;
+}
+
+static int start_iiod(const char *uri, const char *ffs_mountpoint,
+		      const char *uart_params, bool debug, bool interactive,
+		      bool use_aio, uint16_t port, unsigned int nb_pipes,
+		      int ep0_fd)
+{
+	struct iio_context *ctx;
+	char err_str[1024];
+	void *xml_zstd;
+	size_t xml_zstd_len = 0;
+	int ret;
+
 	ctx = iio_create_context(NULL, uri);
 	if (iio_err(ctx)) {
 		iio_strerror(-iio_err(ctx), err_str, sizeof(err_str));
@@ -512,30 +622,17 @@ int main(int argc, char **argv)
 
 	xml_zstd = get_xml_zstd_data(ctx, &xml_zstd_len);
 
-	main_thread_pool = thread_pool_new();
-	if (!main_thread_pool) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to create thread pool: %s\n", err_str);
-		ret = EXIT_FAILURE;
-		goto out_free_device_pdata;
-	}
-
-	set_handler(SIGHUP, sig_handler);
-	set_handler(SIGPIPE, sig_handler);
-	set_handler(SIGINT, sig_handler);
-	set_handler(SIGTERM, sig_handler);
-
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
 		/* We pass use_aio == true directly, this is ensured to be true
 		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				debug, true, (unsigned int) nb_pipes,
+				debug, true, (unsigned int) nb_pipes, ep0_fd,
 				main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to start USB daemon: %s\n", err_str);
 			ret = EXIT_FAILURE;
-			goto out_destroy_thread_pool;
+			goto out_free_xml_data;
 		}
 	}
 
@@ -547,7 +644,7 @@ int main(int argc, char **argv)
 			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to start serial daemon: %s\n", err_str);
 			ret = EXIT_FAILURE;
-			goto out_destroy_thread_pool;
+			goto out_thread_pool_stop;
 		}
 	}
 
@@ -556,20 +653,15 @@ int main(int argc, char **argv)
 	else
 		ret = main_server(ctx, debug, xml_zstd, xml_zstd_len, port);
 
+out_thread_pool_stop:
 	/*
 	 * In case we got here through an error in the main thread make sure all
 	 * the worker threads are signaled to shutdown.
 	 */
-
-out_destroy_thread_pool:
 	thread_pool_stop_and_wait(main_thread_pool);
-	thread_pool_destroy(main_thread_pool);
-
-out_free_device_pdata:
-	free_device_pdata(ctx);
-
-out_destroy_context:
+out_free_xml_data:
 	free(xml_zstd);
+out_destroy_context:
 	iio_context_destroy(ctx);
 
 	return ret;

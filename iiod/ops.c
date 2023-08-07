@@ -758,8 +758,22 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		pthread_mutex_lock(&entry->thdlist_lock);
 
 		if (ret < 0) {
-			IIO_ERROR("Unable to dequeue block: %d\n", (int) ret);
-			break;
+			/* Reading from the device failed - signal the
+			 * error to all connected clients. */
+
+			/* Don't use SLIST_FOREACH - see comment below */
+			for (thd = SLIST_FIRST(&entry->thdlist_head);
+			     thd; thd = next_thd) {
+				next_thd = SLIST_NEXT(thd, dev_list_entry);
+
+				if (!thd->active || thd->is_writer)
+					continue;
+
+				signal_thread(thd, ret);
+			}
+
+			pthread_mutex_unlock(&entry->thdlist_lock);
+			continue;
 		}
 
 		/*
@@ -842,18 +856,18 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			continue;
 		}
 
-		if (ret < 0) {
-			IIO_ERROR("Unable to enqueue block: %d\n", (int) ret);
-			break;
-		}
-
 		if (has_writers) {
 			/* Signal threads which completed their RW command */
 			for (thd = SLIST_FIRST(&entry->thdlist_head);
 					thd; thd = next_thd) {
 				next_thd = SLIST_NEXT(thd, dev_list_entry);
-				if (thd->active && thd->is_writer &&
-						thd->nb < sample_size)
+
+				if (!thd->active || !thd->is_writer)
+					continue;
+
+				if (ret < 0)
+					signal_thread(thd, ret);
+				else if (thd->nb < sample_size)
 					signal_thread(thd, thd->nb);
 			}
 		}

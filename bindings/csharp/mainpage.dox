@@ -15,7 +15,7 @@ open-source, commercial or non-commercial applications.
 The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
 
 @section code_model Code Model
-The basic bricks of the libiio API, and therefore the C# bindings are the the iio namepace, and the classes of that nameplace: iio.Channel, iio.Context, iio.Device, iio.IOBuffer, iio.Trigger, and iio.Attr (channel or device attributes).
+The basic bricks of the libiio API, and therefore the C# bindings are the the iio namespace, and the classes of that nameplace: iio.Channel, iio.Context, iio.Device, iio.IOBuffer, iio.Trigger, and iio.Attr (channel or device attributes).
 
 ![Caption text](doc/codemodel.svg)
 

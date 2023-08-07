@@ -1,0 +1,36 @@
+.TP
+.B \-u, \-\-uri
+The Uniform Resource Identifier
+.I (uri)
+for connecting to devices, can be one of:
+.RS
+.IP ip:[address]
+network address, either numeric (192.168.0.1) or network hostname
+.IP ip:
+blank, if compiled with zeroconf support, will find an IIO device on network
+.IP usb:[device:port:instance]
+normally returned from
+.B ##APP_NAME## -S
+.IP serial:[port],[baud],[settings]
+which are controlled, and need to match the iiod (or tinyiiod) on the other end of the serial port.
+.RS
+.IP [port]
+is something like '/dev/ttyUSB0' on Linux, and 'COM4' on Windows.
+.IP [baud]
+is is normally one of 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200 [default], 128000 or 256000, but can vary system to system.
+.IP [settings]
+would normally be configured as '8n1' this is controlled by:
+.RS
+.IP data_bits:
+(5, 6, 7, 8 [default], or 9)
+.IP parity_bits:
+('n' none [default], 'o' odd, 'e' even, 'm' mark, or 's' space)
+.IP stop_bits:
+(1 [default, or 2)
+.IP flow_control:
+('0' none [default], 'x' Xon Xoff, 'r' RTSCTS, or 'd' DTRDSR)
+.RE
+.RE
+.IP local:
+with no address part.
+.RE

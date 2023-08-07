@@ -596,7 +596,7 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 		}
 	}
 
-	if (ctx->description) {
+	if (description && ctx->description) {
 		len = iio_snprintf(NULL, 0, "%s %s",
 				   ctx->description, description);
 		if (len < 0) {
@@ -614,17 +614,18 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 
 		iio_snprintf(new_description, len + 1, "%s %s",
 			     ctx->description, description);
-	} else {
+	} else if (description) {
 		new_description = iio_strdup(description);
 		if (!new_description) {
 			ret = -ENOMEM;
 			prm_err(params, "Unable to alloc memory\n");
 			goto err_context_destroy;
 		}
+
+		free(ctx->description);
+		ctx->description = new_description;
 	}
 
-	free(ctx->description);
-	ctx->description = new_description;
 	ctx->params = *params;
 
 	return ctx;

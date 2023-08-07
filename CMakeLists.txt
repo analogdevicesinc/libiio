@@ -58,6 +58,8 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
 		set_target_properties(iio-compat PROPERTIES
 			OUTPUT_NAME iio
 			NO_SONAME ON
+			VERSION 0.99
+			SOVERSION 0
 		)
 		if (NOT WIN32)
 			set_target_properties(iio-compat PROPERTIES SUFFIX .so.0)
@@ -214,11 +216,12 @@ if (WITH_USB_BACKEND)
 		if (NOT LIBUSB_FOUND)
 			#Handle FreeBSD libusb and Linux libusb-1.0 libraries
 			find_library(LIBUSB_LIBRARIES NAMES usb-1.0 usb)
+			find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 		else()
 			set(LIBUSB_LIBRARIES ${LIBUSB_LINK_LIBRARIES})
+			set(LIBUSB_INCLUDE_DIR ${LIBUSB_INCLUDE_DIRS})
 		endif()
 	endif()
-	find_path(LIBUSB_INCLUDE_DIR libusb.h PATH_SUFFIXES libusb-1.0)
 	if (NOT LIBUSB_LIBRARIES OR NOT LIBUSB_INCLUDE_DIR)
 		message(SEND_ERROR "Unable to find libusb-1.0 dependency.\n"
 			"If you want to disable the USB backend, set WITH_USB_BACKEND=OFF.")
@@ -259,13 +262,14 @@ endif()
 
 # make sure all check_symbol_exists are before this point, otherwise they fail
 # on some versions of compilers
+option(COMPILE_WARNING_AS_ERROR "Make all warnings into errors" OFF)
 if (MSVC)
 	# why can't different CIs use the same flags?
 	# Travis CI      : CI=True & TRAVIS=True
 	# Appveyor       : CI=True & APPVEYOR=True
 	# Azure Pipelines: TF_BUILD=True
-	if(DEFINED ENV{TF_BUILD} OR (DEFINED ENV{CI} AND DEFINED ENV{APPVEYOR}))
-		message(STATUS "Running in an Azure or AppVeyor environment, setting -Werror")
+	if(COMPILE_WARNING_AS_ERROR)
+		message(STATUS "Setting -Werror")
 		target_compile_options(iio PRIVATE /WX)
 	endif()
 elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -277,8 +281,8 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 		SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}  -fprofile-arcs -ftest-coverage")
 	endif()
-	if(DEFINED ENV{TF_BUILD} OR (DEFINED ENV{CI} AND (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR})))
-		message(STATUS "Running in CI environment (Azure, Travis or AppVeyor), setting -Werror")
+	if(COMPILE_WARNING_AS_ERROR)
+		message(STATUS "Setting -Werror")
 		target_compile_options(iio PRIVATE -Werror)
 	endif()
 else()
@@ -293,6 +297,17 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	if (WITH_IIOD AND NOT WITH_LOCAL_BACKEND)
 		message(SEND_ERROR "IIOD can only be enabled if the local backend is enabled")
 	endif()
+endif()
+
+set(DOXYGEN_INPUT "${CMAKE_SOURCE_DIR}")
+set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}")
+
+if (CPP_BINDINGS)
+    list(APPEND LIBIIO_HEADERS bindings/cpp/iiopp.h)
+    set(DOXYGEN_ENABLED_SECTIONS CPP_BINDINGS)
+    set(DOXYGEN_INPUT "${DOXYGEN_INPUT} ${CMAKE_SOURCE_DIR}/bindings/cpp/")
+    set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/")
+    set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
 endif()
 
 # Get the GIT hash of the latest commit
@@ -337,7 +352,7 @@ if(WITH_LOCAL_BACKEND)
 		target_sources(iio PRIVATE deps/libini/libini.c)
 	endif()
 
-	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" OFF)
+	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" ON)
 
 	option(WITH_LOCAL_DMABUF_API "Add support for the DMABUF API" ON)
 	if (WITH_LOCAL_DMABUF_API)
@@ -595,6 +610,7 @@ endif()
 
 set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${VERSION}")
 
+option(CPP_BINDINGS "Install C++ bindings" OFF)
 option(CSHARP_BINDINGS "Install C# bindings" OFF)
 option(PYTHON_BINDINGS "Install Python bindings" OFF)
 add_subdirectory(bindings)
@@ -603,6 +619,18 @@ option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)
 
 include(cmake/Install.cmake)
+
+# Add uninstall target
+if(NOT TARGET uninstall)
+	configure_file(
+		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+		"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+		IMMEDIATE @ONLY
+	)
+
+	add_custom_target(uninstall
+		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()
 
 string(REPLACE ";" "," LIBIIO_SCAN_BACKENDS "${LIBIIO_SCAN_BACKENDS}")
 
@@ -628,6 +656,7 @@ toggle_iio_feature("${WITH_MODULES}" modules)
 toggle_iio_feature("${WITH_USB_BACKEND_DYNAMIC}" usb-dynamic)
 toggle_iio_feature("${WITH_NETWORK_BACKEND_DYNAMIC}" network-dynamic)
 toggle_iio_feature("${WITH_SERIAL_BACKEND_DYNAMIC}" serial-dynamic)
+toggle_iio_feature("${INSTALL_UDEV_RULE}" udev-rule)
 #add iiod settings
 list(APPEND IIO_FEATURES_ON ${IIOD_FEATURES_ON})
 list(APPEND IIO_FEATURES_OFF ${IIOD_FEATURES_OFF})
@@ -644,3 +673,4 @@ string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
 
 message(STATUS "Features enabled : ${IIO_FEATURES_ON}")
 message(STATUS "Features disabled: ${IIO_FEATURES_OFF}")
+message(STATUS "LOG_LEVEL set to \"${LOG_LEVEL}\"")

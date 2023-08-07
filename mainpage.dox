@@ -11,7 +11,7 @@ License, version 2 or (at your option) any later version.
 This open-source license allows anyone to use the library for proprietary or
 open-source, commercial or non-commercial applications.
 
-Seperately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the GNU General Public License, version 2 or (at your option) any later version.
+Separately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the GNU General Public License, version 2 or (at your option) any later version.
 
 The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
 
@@ -26,8 +26,12 @@ The basic bricks of the libiio API are the iio_context, iio_device, iio_channel 
 - A iio_device object may contain zero or more iio_channel objects. A iio_channel object is associated with only one iio_device.
 - A iio_device object may be associated with one iio_buffer object, and a iio_buffer object is associated with only one iio_device.
 
+@if CPP_BINDINGS
+A C++ API is provided in @ref iiopp.h
+@endif
+
 @section scan_contexts Scanning for IIO contexts
-The first step when dealing with a collection of IIO devices (known as a context) is to find the context. This can be connected via usb, network, serial or local. Having these different connectivity options could prove to be problematic, but libiio abstracts the low level communications away, and allows you just to find contexts, and talk to devices without being interested in the low level aspects. Many find this convinent to develop applications and algorithms on a host, and quickly move to an embedded Linux system without having to change any code.
+The first step when dealing with a collection of IIO devices (known as a context) is to find the context. This can be connected via usb, network, serial or local. Having these different connectivity options could prove to be problematic, but libiio abstracts the low level communications away, and allows you just to find contexts, and talk to devices without being interested in the low level aspects. Many find this convenient to develop applications and algorithms on a host, and quickly move to an embedded Linux system without having to change any code.
 
 To find what IIO contexts are available, use the following:
 - iio_create_scan_context(): Create a iio_scan_context object. Depending on what backends were enabled with compiling the library, some of them may not be available. The first argument to this function is a string which is used as a filter ("usb:", "ip:", "local:", "usb:ip", where the default (NULL) means any backend that is compiled in).
@@ -274,4 +278,7 @@ This means applications compiled against an older version will work fine with a 
 \example adrv9009-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the ADRV9009.
 \example dummy-iiostream.c This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the linux kernel.
 \example iio-monitor.c A Curses based application which implements real time monitoring of IIO non-buffer samples.
+@if CPP_BINDINGS
+\example iiopp-enum.cpp This example demonstrates usage of the C++ API to enumerate devices, channels and attributes.
+@endif
 */

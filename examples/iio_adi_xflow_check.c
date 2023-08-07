@@ -16,7 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "iio_common.h"
+#include "../tests/iio_common.h"
 
 
 #define MY_NAME "iio_adi_xflow_check"
@@ -147,6 +147,7 @@ int main(int argc, char **argv)
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
+		case 'V':
 		case 'n':
 		case 'x':
 		case 'u':

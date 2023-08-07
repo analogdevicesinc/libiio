@@ -1159,8 +1159,9 @@ static int parse_vid_pid(const char *vid_pid, uint16_t *vid, uint16_t *pid)
 	if (!vid_pid)
 		return 0;
 
+	errno = 0;
 	val = strtoul(vid_pid, &ptr, 16);
-	if (ptr == vid_pid || val > 0xFFFF || *ptr != ':')
+	if (ptr == vid_pid || val > 0xFFFF || *ptr != ':' || errno == ERANGE)
 		return -EINVAL;
 
 	*vid = (uint16_t) val;
@@ -1170,8 +1171,9 @@ static int parse_vid_pid(const char *vid_pid, uint16_t *vid, uint16_t *pid)
 	if (*vid_pid == '*')
 		return vid_pid[1] == '\0' ? 0 : -EINVAL;
 
+	errno = 0;
 	val = strtoul(vid_pid, &ptr, 16);
-	if (ptr == vid_pid || val > 0xFFFF || *ptr != '\0')
+	if (ptr == vid_pid || val > 0xFFFF || *ptr != '\0' || errno == ERANGE)
 		return -EINVAL;
 
 	*pid = (uint16_t) val;

@@ -100,24 +100,6 @@ static inline int libserialport_to_errno(enum sp_return ret)
 	}
 }
 
-static char * serial_get_description(struct sp_port *port)
-{
-	char *description, *name, *desc;
-	size_t desc_len;
-
-	name = sp_get_port_name(port);
-	desc = sp_get_port_description(port);
-
-	desc_len = sizeof(": \0") + strlen(name) + strlen(desc);
-	description = malloc(desc_len);
-	if (!description)
-		return iio_ptr(-ENOMEM);
-
-	iio_snprintf(description, desc_len, "%s: %s", name, desc);
-
-	return description;
-}
-
 static ssize_t serial_read_dev_attr(const struct iio_device *dev,
 				    unsigned int buf_id, const char *attr,
 				    char *dst, size_t len,
@@ -347,8 +329,11 @@ static struct iio_context * serial_create_context(
 	struct sp_port *port;
 	struct iio_context_pdata *pdata;
 	struct iio_context *ctx;
-	const char *ctx_uri = "uri";
-	char *description, *uri, buf[16];
+	const char *ctx_params[] = {
+		"uri", "serial,port", "serial,description",
+	};
+	const char *ctx_params_values[ARRAY_SIZE(ctx_params)];
+	char *uri, buf[16];
 	size_t uri_len;
 	int ret;
 
@@ -384,15 +369,10 @@ static struct iio_context * serial_create_context(
 		}
 	} while (ret);
 
-	description = serial_get_description(port);
-	ret = iio_err(description);
-	if (ret)
-		goto err_close_port;
-
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata) {
 		ret = -ENOMEM;
-		goto err_free_description;
+		goto err_close_port;
 	}
 
 	pdata->port = port;
@@ -409,9 +389,14 @@ static struct iio_context * serial_create_context(
 			port_name, baud_rate, bits,
 			parity_char(parity), stop, flow_char(flow));
 
+	ctx_params_values[0] = uri;
+	ctx_params_values[1] = sp_get_port_name(port);
+	ctx_params_values[2] = sp_get_port_description(port);
+
 	ctx = iiod_client_create_context(pdata->iiod_client,
-					 &iio_serial_backend, description,
-					 &ctx_uri, (const char **)&uri, 1);
+					 &iio_serial_backend, NULL,
+					 ctx_params, ctx_params_values,
+					 ARRAY_SIZE(ctx_params));
 	ret = iio_err(ctx);
 	if (ret)
 		goto err_destroy_iiod_client;
@@ -425,8 +410,6 @@ err_destroy_iiod_client:
 	iiod_client_destroy(pdata->iiod_client);
 err_free_pdata:
 	free(pdata);
-err_free_description:
-	free(description);
 err_close_port:
 	sp_close(port);
 err_free_port:

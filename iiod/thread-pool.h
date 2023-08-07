@@ -19,6 +19,7 @@ int thread_pool_get_poll_fd(const struct thread_pool *pool);
 void thread_pool_stop(struct thread_pool *pool);
 void thread_pool_stop_and_wait(struct thread_pool *pool);
 bool thread_pool_is_stopped(const struct thread_pool *pool);
+void thread_pool_restart(struct thread_pool *pool);
 
 void thread_pool_destroy(struct thread_pool *pool);
 

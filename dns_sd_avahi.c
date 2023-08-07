@@ -52,12 +52,14 @@ static struct dns_sd_discovery_data *new_discovery_data(void)
 }
 
 static void avahi_process_resolved(struct dns_sd_cb_data *adata,
+				   AvahiIfIndex iface,
 				   const AvahiAddress *addr,
 				   const char *host_name,
 				   const uint16_t port)
 {
 	struct dns_sd_discovery_data *ddata = adata->d;
 	const struct iio_context_params *params = adata->params;
+	char *ptr;
 
 	/* Avahi is multi-threaded, so lock the list */
 	iio_mutex_lock(ddata->lock);
@@ -86,6 +88,16 @@ static void avahi_process_resolved(struct dns_sd_cb_data *adata,
 		prm_err(params, "Avahi Resolver : memory failure\n");
 	}
 	iio_mutex_unlock(ddata->lock);
+
+	ptr = ddata->addr_str + strnlen(ddata->addr_str, DNS_SD_ADDRESS_STR_MAX);
+
+	if (addr->proto == AVAHI_PROTO_INET6
+	    && addr->data.ipv6.address[0] == 0xfe
+	    && addr->data.ipv6.address[1] == 0x80
+	    && iface != AVAHI_IF_UNSPEC
+	    && if_indextoname((unsigned int)iface, ptr + 1)) {
+		*ptr = '%';
+	}
 
 	prm_dbg(params, "\t\t%s:%u (%s)\n", host_name, port, ddata->addr_str);
 }
@@ -131,7 +143,7 @@ static void __avahi_resolver_cb(AvahiServiceResolver *resolver,
 			avahi_strerror(err));
 		break;
 	case AVAHI_RESOLVER_FOUND: {
-		avahi_process_resolved(adata, address, host_name, port);
+		avahi_process_resolved(adata, iface, address, host_name, port);
 		prm_dbg(params, "Avahi Resolver : service '%s' of type '%s' in domain '%s':\n",
 				name, type, domain);
 		break;
@@ -164,7 +176,7 @@ static void avahi_host_resolver(AvahiHostNameResolver *resolver,
 			host_name, avahi_strerror(err));
 		break;
 	case AVAHI_RESOLVER_FOUND:
-		avahi_process_resolved(adata, address, host_name, IIOD_PORT);
+		avahi_process_resolved(adata, iface, address, host_name, IIOD_PORT);
 		break;
 	}
 
@@ -295,8 +307,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	avahi_simple_poll_loop(d->poll);
 
 	if (d->resolved) {
-		port_knock_discovery_data(params, &d);
 		remove_dup_discovery_data(params, &d);
+		port_knock_discovery_data(params, &d);
 	} else
 		ret = -ENXIO;
 
@@ -389,8 +401,8 @@ int dnssd_resolve_host(const struct iio_context_params *params,
 #endif
 
 	if (d->resolved) {
-		port_knock_discovery_data(params, &d);
 		remove_dup_discovery_data(params, &d);
+		port_knock_discovery_data(params, &d);
 	} else {
 		ret = -ENXIO;
 		goto err_mutex_destroy;

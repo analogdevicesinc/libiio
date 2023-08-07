@@ -31,12 +31,10 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 	struct dns_sd_cb_data *bdata = info;
 	struct dns_sd_discovery_data *dd = bdata->d;
 	const struct iio_context_params *params = bdata->params;
-	char address_v4[DNS_SD_ADDRESS_STR_MAX+1] = "";
-	char address_v6[DNS_SD_ADDRESS_STR_MAX+1] = "";
+	char address[DNS_SD_ADDRESS_STR_MAX+1] = "";
 	char hostname[FQDN_LEN];
 	char name[FQDN_LEN];
-	bool have_v4 = false;
-	bool have_v6 = false;
+	struct sockaddr_in6 *sa6;
 	struct sockaddr_in *sa;
 	CFStreamError anError;
 	CFStringRef targetHost;
@@ -44,6 +42,7 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 	CFArrayRef addrArr;
 	CFDataRef data;
 	SInt32 port;
+	char *ptr;
 
 	if ((flags & kCFNetServiceFlagIsDomain) != 0) {
 		prm_err(params, "DNS SD: FATAL! Callback called for domain, not service.\n");
@@ -100,46 +99,44 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 		goto exit;
 	}
 
-	for (CFIndex i = 0; i < CFArrayGetCount(addrArr); i++) {
-		data = CFArrayGetValueAtIndex(addrArr, i);
-		sa = (struct sockaddr_in *) CFDataGetBytePtr(data);
-
-		switch(sa->sin_family) {
-		case AF_INET:
-			if (inet_ntop(sa->sin_family, &sa->sin_addr,
-				      address_v4, sizeof(address_v4))) {
-				have_v4 = true;
-			}
-		case AF_INET6:
-			if (inet_ntop(sa->sin_family, &sa->sin_addr,
-				      address_v6, sizeof(address_v6))) {
-				have_v6 = true;
-			}
-		}
-	}
-
-	if (!have_v4 && !have_v6) {
-		prm_warn(params, "DNS SD: Can't resolve valid address for "
-			 "service %s.\n", name);
-		goto exit;
-	}
-
 	/* Set properties on the last element on the list. */
 	while (dd->next)
 		dd = dd->next;
 
-	dd->port = port;
-	dd->hostname = strdup(hostname);
+	for (CFIndex i = 0; i < CFArrayGetCount(addrArr); i++) {
+		data = CFArrayGetValueAtIndex(addrArr, i);
+		sa = (struct sockaddr_in *) CFDataGetBytePtr(data);
+		sa6 = (struct sockaddr_in6 *) sa;
 
-	if (have_v4)
-		iio_strlcpy(dd->addr_str, address_v4, sizeof(dd->addr_str));
-	else if(have_v6)
-		iio_strlcpy(dd->addr_str, address_v6, sizeof(dd->addr_str));
+		switch(sa->sin_family) {
+		case AF_INET:
+			if (inet_ntop(sa->sin_family, &sa->sin_addr,
+				      address, sizeof(address)))
+				break;
+			continue;
+		case AF_INET6:
+			if (inet_ntop(sa->sin_family, &sa6->sin6_addr,
+				      address, sizeof(address)))
+				break;
+			continue;
+		default:
+			continue;
+		}
 
-	prm_dbg(params, "DNS SD: added %s (%s:%d)\n",
-		hostname, dd->addr_str, port);
+		dd->port = port;
+		dd->hostname = strdup(hostname);
 
-	if (have_v4 || have_v6) {
+		iio_strlcpy(dd->addr_str, address, sizeof(dd->addr_str));
+
+		ptr = dd->addr_str + strnlen(dd->addr_str, DNS_SD_ADDRESS_STR_MAX);
+
+		if (sa->sin_family == AF_INET6
+		    && sa6->sin6_addr.s6_addr[0] == 0xfe
+		    && sa6->sin6_addr.s6_addr[1] == 0x80
+		    && if_indextoname((unsigned int)sa6->sin6_scope_id, ptr + 1)) {
+			*ptr = '%';
+		}
+
 		/* A list entry was filled, prepare new item on the list. */
 		dd->next = zalloc(sizeof(*dd->next));
 		if (dd->next) {
@@ -148,6 +145,11 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 		} else {
 			prm_err(params, "DNS SD Bonjour Resolver : memory failure\n");
 		}
+
+		prm_dbg(params, "DNS SD: added %s (%s:%d)\n",
+			hostname, dd->addr_str, port);
+
+		dd = dd->next;
 	}
 
 verify_flags:
@@ -246,8 +248,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 			}
 		}
 
-		port_knock_discovery_data(params, &d);
 		remove_dup_discovery_data(params, &d);
+		port_knock_discovery_data(params, &d);
 		*ddata = d;
 	}
 

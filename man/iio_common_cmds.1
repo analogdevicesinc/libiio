@@ -1,0 +1,18 @@
+.TP
+.B \-h, \-\-help
+Tells
+.I ##APP_NAME##
+to display some help, and then quit.
+.TP
+.B \-V, \-\-version
+Prints the version information for this particular copy of
+.I ##APP_NAME##
+and the version of the libiio library it is using. This is useful for knowing if the version of the library and
+.I ##APP_NAME##
+on your system are up to date. This is also useful when reporting bugs.
+.TP
+.B \-S, \-\-scan [backends]
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip:usb'.
+Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456,b673'.
+vid,pid are hexadecimal numbers (no prefix needed), "*" (match any for pid only)
+If no argument is given, it checks all that are available.

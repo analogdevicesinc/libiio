@@ -157,11 +157,18 @@ void thread_pool_stop(struct thread_pool *pool)
 	} while (ret == -1 && errno == EINTR);
 }
 
-void thread_pool_stop_and_wait(struct thread_pool *pool)
+static void thread_pool_purge_events(struct thread_pool *pool)
 {
 	uint64_t e;
 	int ret;
 
+	do {
+		ret = read(pool->stop_fd, &e, sizeof(e));
+	} while (ret != -1 || errno == EINTR);
+}
+
+void thread_pool_stop_and_wait(struct thread_pool *pool)
+{
 	thread_pool_stop(pool);
 
 	pthread_mutex_lock(&pool->thread_count_lock);
@@ -170,14 +177,20 @@ void thread_pool_stop_and_wait(struct thread_pool *pool)
 				&pool->thread_count_lock);
 	pthread_mutex_unlock(&pool->thread_count_lock);
 
-	do {
-		ret = read(pool->stop_fd, &e, sizeof(e));
-	} while (ret != -1 || errno == EINTR);
+	thread_pool_purge_events(pool);
 }
 
 bool thread_pool_is_stopped(const struct thread_pool *pool)
 {
 	return pool->stop;
+}
+
+void thread_pool_restart(struct thread_pool *pool)
+{
+	if (pool->stop) {
+		thread_pool_purge_events(pool);
+		pool->stop = false;
+	}
 }
 
 void thread_pool_destroy(struct thread_pool *pool)

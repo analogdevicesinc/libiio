@@ -389,7 +389,7 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 				   const struct iio_channels_mask *mask)
 {
 	ssize_t size = 0;
-	unsigned int i;
+	unsigned int i, largest = 1;
 	const struct iio_channel *prev = NULL;
 
 	if (mask->words != (dev->nb_channels + 31) / 32)
@@ -410,6 +410,9 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 			continue;
 		}
 
+		if (length > largest)
+			largest = length;
+
 		if (size % length)
 			size += 2 * length - (size % length);
 		else
@@ -417,6 +420,10 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev,
 
 		prev = chn;
 	}
+
+	if (size % largest)
+		size += largest - (size % largest);
+
 	return size;
 }
 

@@ -56,7 +56,7 @@ struct iio_channel_pdata {
 	unsigned int nb_protected_attrs;
 };
 
-static const char * const device_attrs_blacklist[] = {
+static const char * const device_attrs_denylist[] = {
 	"dev",
 	"uevent",
 };
@@ -748,8 +748,8 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(device_attrs_blacklist); i++)
-		if (!strcmp(device_attrs_blacklist[i], attr))
+	for (i = 0; i < ARRAY_SIZE(device_attrs_denylist); i++)
+		if (!strcmp(device_attrs_denylist[i], attr))
 			return 0;
 
 	if (!strcmp(attr, "name"))
@@ -1799,14 +1799,14 @@ static int build_names(void *d, const char *path)
 	char *names = (char *)d;
 	size_t len;
 
-	if (!strstr(path, "iio:device"))
+	if (!strstr(path, "iio:device") && !(WITH_HWMON && strstr(path, "class/hwmon")))
 		return 0;
 
 	iio_snprintf(buf, sizeof(buf), "%s/name", path);
 	dst = cat_file(buf);
 	if (dst) {
 		len = strnlen(names, sizeof(buf));
-		iio_snprintf(&names[len], BUF_SIZE - len - 1, "%s, ", dst);
+		iio_snprintf(&names[len], BUF_SIZE - len - 1, "%s,", dst);
 		free(dst);
 	}
 	return 0;
@@ -1822,19 +1822,39 @@ static int local_context_scan(const struct iio_context_params *params,
 			      struct iio_scan *ctx, const char *args)
 {
 	char *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
-	bool exists = false;
+	bool no_iio, exists = false;
 	const char *desc;
 	int ret;
 
 	ret = foreach_in_dir(NULL, &exists, "/sys/bus/iio", true, check_device);
-	if (ret < 0 || !exists)
+	no_iio = !exists;
+	if (WITH_HWMON && no_iio)
+		ret = 0; /* Not an error, unless we also have no hwmon devices */
+	if (ret < 0)
 		return 0;
 
 	names[0] = '\0';
-	ret = foreach_in_dir(NULL, &names, "/sys/bus/iio/devices",
-			     true, build_names);
-	if (ret < 0)
-		return 0;
+	if (exists) {
+		ret = foreach_in_dir(NULL, &names, "/sys/bus/iio/devices",
+				     true, build_names);
+		if (ret < 0)
+			return 0;
+	}
+
+	if (WITH_HWMON) {
+		exists = false;
+		ret = foreach_in_dir(NULL, &exists, "/sys/class/hwmon",
+				     true, check_device);
+		if (!exists && !no_iio)
+			ret = 0; /* IIO devices but no hwmon devices - not an error */
+		if (ret < 0)
+			return 0;
+
+		ret = foreach_in_dir(NULL, &names, "/sys/class/hwmon",
+				     true, build_names);
+		if (ret < 0)
+			return 0;
+	}
 
 	machine = cat_file("/sys/firmware/devicetree/base/model");
 	if (!machine)
@@ -1843,7 +1863,7 @@ static int local_context_scan(const struct iio_context_params *params,
 	if (machine) {
 		if (names[0]) {
 			ret = strnlen(names, sizeof(names));
-			names[ret - 2] = '\0';
+			names[ret - 1] = '\0';
 			iio_snprintf(buf, sizeof(buf), "(%s on %s)", names, machine);
 		} else
 			iio_snprintf(buf, sizeof(buf), "(Local IIO devices on %s)", machine);

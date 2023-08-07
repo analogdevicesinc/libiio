@@ -277,7 +277,7 @@ static char * network_get_description(struct addrinfo *res,
 				if (errno == 0) {
 					/* Windows uses numerical interface identifiers */
 					ptr = description + strnlen(description, len) + 1;
-					iio_snprintf(ptr, IF_NAMESIZE, "%u", in->sin6_scope_id);
+					iio_snprintf(ptr, IF_NAMESIZE, "%u", (unsigned int)in->sin6_scope_id);
 				} else
 #endif
 				{
@@ -571,7 +571,7 @@ static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
 }
 
 static struct iio_context * network_create_context(const struct iio_context_params *params,
-						   const char *host)
+						   const char *hostname)
 {
 	struct addrinfo hints, *res;
 	struct iio_context *ctx;
@@ -584,6 +584,10 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	char uri[FQDN_LEN + 3];
 	char port_str[6];
 	uint16_t port_num = IIOD_PORT;
+	char host_buf[FQDN_LEN + sizeof(":65535") + 1];
+	char *host = hostname ? host_buf : NULL;
+
+	iio_strlcpy(host_buf, hostname, sizeof(host_buf));
 
 #ifdef _WIN32
 	unsigned int i;
@@ -638,8 +642,10 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	}
 	if (port) {
 		unsigned long int tmp;
+
+		errno = 0;
 		tmp = strtoul(port, &end, 0);
-		if (port == end || tmp > 0xFFFF)
+		if (port == end || tmp > 0xFFFF || errno == ERANGE)
 			return iio_ptr(-ENOENT);
 
 		port_num = (uint16_t)tmp;

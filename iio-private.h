@@ -228,6 +228,7 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p);
 char *iio_strndup(const char *str, size_t n);
 char *iio_strtok_r(char *str, const char *delim, char **saveptr);
 char * iio_getenv (char * envvar);
+uint64_t iio_read_counter_us(void);
 
 int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
 
