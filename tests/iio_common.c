@@ -58,7 +58,8 @@ char *cmn_strndup(const char *str, size_t n)
 #endif
 }
 
-struct iio_context * autodetect_context(bool rtn, const char * name, const char * scan)
+struct iio_context * autodetect_context(bool rtn, const char * name,
+					const char * scan, int *err_code)
 {
 	struct iio_scan_context *scan_ctx;
 	struct iio_context_info **info;
@@ -66,6 +67,7 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 	unsigned int i;
 	ssize_t ret;
 	FILE *out;
+	int err = EXIT_FAILURE;
 
 	scan_ctx = iio_create_scan_context(scan, 0);
 	if (!scan_ctx) {
@@ -97,6 +99,7 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 		} else {
 			out = stdout;
 			fprintf(out, "Available contexts:\n");
+			err = EXIT_SUCCESS;
 		}
 		for (i = 0; i < (size_t) ret; i++) {
 			fprintf(out, "\t%u: %s [%s]\n",
@@ -110,6 +113,8 @@ err_free_info_list:
 err_free_ctx:
 	iio_scan_context_destroy(scan_ctx);
 
+	if (err_code)
+		*err_code = err;
 	return ctx;
 }
 
@@ -260,7 +265,8 @@ static const char *common_options_descriptions[] = {
 
 struct iio_context * handle_common_opts(char * name, int argc,
 		char * const argv[], const char *optstring,
-		const struct option *options, const char *options_descriptions[])
+		const struct option *options, const char *options_descriptions[],
+		int *err_code)
 {
 	struct iio_context *ctx = NULL;
 	int c;
@@ -280,7 +286,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
-		return NULL;
+		goto err_fail;
 	}
 
 	while ((c = getopt_long(argc, argv, buf,	/* Flawfinder: ignore */
@@ -296,11 +302,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'n':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			if (!optarg) {
 				fprintf(stderr, "network options requires a uri\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_NETWORK;
 			arg = optarg;
@@ -308,11 +314,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'x':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			if (!optarg) {
 				fprintf(stderr, "xml options requires a uri\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_XML;
 			arg = optarg;
@@ -320,11 +326,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'u':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			if (!optarg) {
 				fprintf(stderr, "uri options requires a uri\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_URI;
 			arg = optarg;
@@ -332,7 +338,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'a':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_AUTO;
 			detect_context = true;
@@ -355,7 +361,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'T':
 			if (!optarg) {
 				fprintf(stderr, "Timeout requires an argument\n");
-				return NULL;
+				goto err_fail;
 			}
 			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
@@ -368,10 +374,10 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	opterr = 1;
 
 	if (do_scan) {
-		autodetect_context(false, name, arg);
+		autodetect_context(false, name, arg, err_code);
 		return NULL;
 	} else if (detect_context || backend == IIO_AUTO)
-		ctx = autodetect_context(true, name, arg);
+		ctx = autodetect_context(true, name, arg, err_code);
 	else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
 	else if (backend == IIO_XML)
@@ -390,6 +396,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			fprintf(stderr, "Unable to create IIO context %s: %s\n", arg, err_str);
 		else
 			fprintf(stderr, "Unable to create Local IIO context : %s\n", err_str);
+		goto err_fail;
 	}
 
 	if (ctx && timeout >= 0) {
@@ -400,11 +407,16 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			fprintf(stderr, "IIO contexts set timeout failed : %s\n",
 					err_str);
 			iio_context_destroy(ctx);
-			return NULL;
+			goto err_fail;
 		}
 	}
 
 	return ctx;
+
+err_fail:
+	if (err_code)
+		*err_code = EXIT_FAILURE;
+	return NULL;
 }
 
 void usage(char *name, const struct option *options,

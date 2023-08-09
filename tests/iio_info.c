@@ -53,12 +53,13 @@ int main(int argc, char **argv)
 	int c;
 	unsigned int i, major, minor;
 	char git_tag[8];
-	int ret;
 	struct option *opts;
+	int ret = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -82,8 +83,8 @@ int main(int argc, char **argv)
 				optind++;
 			break;
 		case 's':
-			autodetect_context(false, MY_NAME, NULL);
-			return EXIT_SUCCESS;
+			autodetect_context(false, MY_NAME, NULL, &ret);
+			return ret;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!ctx)
-		return EXIT_FAILURE;
+		return ret;
 
 	version(MY_NAME);
 	printf("IIO context created with %s backend.\n",
