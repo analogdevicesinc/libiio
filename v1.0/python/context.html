@@ -1,0 +1,419 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Contexts &#8212; libiio-py 1.0.g58cf11d documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Buffer" href="buffer.html" />
+    <link rel="prev" title="libiio Python Bindings" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="contexts">
+<h1>Contexts<a class="headerlink" href="#contexts" title="Permalink to this heading">¶</a></h1>
+<section id="members">
+<h2>Members<a class="headerlink" href="#members" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.Context">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the representation of an IIO context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.attrs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.Context.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of context-specific attributes
+type=dict of str objects</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.description">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.Context.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.devices">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.Context.devices" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Context.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Context.find_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Context.find_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.Context.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Context.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Context.set_timeout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Context.set_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.Context.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.xml">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.Context.xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.LocalContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">LocalContext</span></span><a class="reference internal" href="_modules/iio.html#LocalContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.LocalContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local IIO Context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.attrs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.LocalContext.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of context-specific attributes
+type=dict of str objects</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.description">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.LocalContext.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.devices">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.LocalContext.devices" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.LocalContext.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.LocalContext.find_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.LocalContext.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.LocalContext.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.LocalContext.set_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.LocalContext.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.xml">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.LocalContext.xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.XMLContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">XMLContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xmlfile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#XMLContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.XMLContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>XML IIO Context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.attrs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.XMLContext.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of context-specific attributes
+type=dict of str objects</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.description">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.XMLContext.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.devices">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.XMLContext.devices" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.XMLContext.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext.find_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.XMLContext.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.XMLContext.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext.set_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.XMLContext.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.xml">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.XMLContext.xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.NetworkContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">NetworkContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#NetworkContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.NetworkContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Network IIO Context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.attrs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.NetworkContext.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of context-specific attributes
+type=dict of str objects</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.description">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.NetworkContext.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.devices">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.NetworkContext.devices" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.NetworkContext.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.NetworkContext.find_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.NetworkContext.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.NetworkContext.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.NetworkContext.set_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.NetworkContext.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.xml">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.NetworkContext.xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">libiio-py</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channel.html">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">libiio Python Bindings</a></li>
+      <li>Next: <a href="buffer.html" title="next chapter">Buffer</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Analog Devices, Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/context.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

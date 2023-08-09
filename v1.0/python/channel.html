@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Channels &#8212; libiio-py 1.0.g58cf11d documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Trigger" href="trigger.html" />
+    <link rel="prev" title="Device" href="device.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="channels">
+<h1>Channels<a class="headerlink" href="#channels" title="Permalink to this heading">¶</a></h1>
+<section id="members">
+<h2>Members<a class="headerlink" href="#members" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.Channel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a channel of an IIO device.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.attrs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.Channel.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of attributes for this channel.
+type=dict of iio.ChannelAttr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.data_format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_format</span></span><a class="headerlink" href="#iio.Channel.data_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel data format.
+type: iio.DataFormat</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#iio.Channel.device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Corresponding device for the channel.
+type: iio.Device</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#iio.Channel.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>An identifier of this channel.
+Note that it is possible that two channels have the same ID, if one is an input channel and the other is an output channel.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.index">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#iio.Channel.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index for the channel.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.modifier">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">modifier</span></span><a class="headerlink" href="#iio.Channel.modifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel modifier.
+type: iio.ChannelModifier(Enum)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.Channel.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this channel.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.output">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#iio.Channel.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains True if the channel is an output channel, False otherwise.
+type=bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Channel.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel.read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the samples corresponding to this channel from the given iio.Block object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – type=iio.Block
+A valid instance of the iio.Block class</p></li>
+<li><p><strong>raw</strong> – type=bool
+If set to True, the samples are not converted from their
+native format to their host format</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=bytearray</dt><dd><p>An array containing the samples for this channel</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.scan_element">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scan_element</span></span><a class="headerlink" href="#iio.Channel.scan_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains True if the channel is a scan element, False otherwise.
+If a channel is a scan element, then it is possible to enable it and use it for I/O operations.
+type=bool</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#iio.Channel.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type for the channel.
+type: iio.ChannelType(Enum)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Channel.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#Channel.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.Channel.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the specified array of samples corresponding to this channel into the given iio.Block object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf</strong> – type=iio.Block
+A valid instance of the iio.Block class</p></li>
+<li><p><strong>array</strong> – type=bytearray
+The array containing the samples to copy</p></li>
+<li><p><strong>raw</strong> – type=bool
+If set to True, the samples are not converted from their
+host format to their native format</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=int</dt><dd><p>The number of bytes written</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="channel-attributes">
+<h2>Channel attributes<a class="headerlink" href="#channel-attributes" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.DataFormat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">DataFormat</span></span><a class="reference internal" href="_modules/iio.html#DataFormat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.DataFormat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents the data format of an IIO channel.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.ChannelModifier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelModifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#ChannelModifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.ChannelModifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the modifier type of an IIO channel.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.ChannelType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iio.html#ChannelType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iio.ChannelType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the type of an IIO channel.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">libiio-py</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="device.html" title="previous chapter">Device</a></li>
+      <li>Next: <a href="trigger.html" title="next chapter">Trigger</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Analog Devices, Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/channel.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

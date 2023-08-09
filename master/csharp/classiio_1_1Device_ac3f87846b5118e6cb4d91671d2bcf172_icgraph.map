@@ -1,0 +1,4 @@
+<map id="iio.Device.get_sample_size" name="iio.Device.get_sample_size">
+<area shape="rect" id="node1" title="Get the current sample size of the device." alt="" coords="169,5,351,32"/>
+<area shape="rect" id="node2" href="$classiio_1_1IOBuffer.html#a2b27efa130fa79ef714ca7644133d6ac" title="Gets the step size of the current buffer." alt="" coords="5,5,121,32"/>
+</map>

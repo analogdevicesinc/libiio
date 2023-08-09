@@ -1,0 +1,144 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of INTRO</TITLE>
+</HEAD><BODY>
+<H1>INTRO</H1>
+Section: Misc. Reference Manual Pages (3LIBIIO)<BR>Updated: 23 August 2023<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+libiio-1.0 - introduction to
+<I>libiio</I>,
+
+a library for interacting with the Linux
+<FONT SIZE="-1">IIO</FONT>
+subsystem and devices
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>#include &lt;<A HREF="file:///usr/include/iio.h">iio.h</A>&gt;</B>
+
+<P>
+cc file.c
+<B>-liio</B>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+The define
+<B>IIO_CHECK_REG</B>
+
+will warn if return values are not checked. Most
+<B>libiio</B>
+
+functions, if/when a failure occurs will return a negative error number.
+this warning will ensure these error numbers are looked at. There is
+nothing more frustraining than calling a function, debugging some hardware,
+and then eventually realizing there was a typo in an attribute name.
+This option will force libraries users to at least capture the return value.
+<P>
+cc file.c
+<B>-DIIO_CHECK_REG -liio</B>
+
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I>libiio</I>
+
+is a library used to interface to the
+<I>Linux Industrial Input/Output (IIO)</I>
+
+Subsystem. The Linux
+<I>IIO</I>
+
+subsystem is intended to provide support for devices that in some sense
+are analog to digital or digital to analog converters (ADCs, DACs). This
+includes, but is not limited to ADCs, Accelerometers, Gyros, IMUs,
+Capacitance to Digital Converters (CDCs), Pressure Sensors, Color,
+Light and Proximity Sensors, Temperature Sensors, Magnetometers, DACs,
+DDS (Direct Digital Synthesis), PLLs (Phase Locked Loops),
+Variable/Programmable Gain Amplifiers (VGA, PGA), and RF transceivers.
+You can use
+<I>libiio</I>
+
+natively on an embedded Linux target (local mode), or use libiio to
+communicate remotely to that same target from a host Linux, Windows
+or MAC over USB, Ethernet or Serial.
+<A NAME="lbAF">&nbsp;</A>
+<H2>DATA TYPES</H2>
+
+The library makes use of C structures and typedefs to promote portability,
+and is known to run on various GNU/Linux distributions, macOS,
+Windows, and mbed (via tiny-iiod). The main C structures are:
+
+<DL COMPACT>
+<DT><DT><B>iio_context_params</B>
+
+<DD>
+<DD>
+IIO context creation information
+<DT><B>iio_scan</B>
+
+<DD>
+Structure holding scanning information
+<DT><B>iio_context</B>
+
+<DD>
+Contains the representation of an IIO context
+<DT><B>iio_device</B>
+
+<DD>
+Represents a device in the IIO context
+<DT><B>iio_channel</B>
+
+<DD>
+Represents an input or output channel of a device
+<DT><B>iio_buffer</B>
+
+<DD>
+An input or output buffer, used to read or write samples
+<DT><B>iio_block</B>
+
+<DD>
+A block of memory containing data samples
+<DT><B>iio_stream</B>
+
+<DD>
+A helper object to simplify reading/writing to a iio_buffer
+<DT><B>iio_data_format</B>
+
+<DD>
+Contains the format of a data sample.
+</DL>
+<P>
+
+
+<A NAME="lbAG">&nbsp;</A>
+<H2>LIST OF ROUTINES</H2>
+
+The following routines are part of the library. Consult the Doxygen pages
+for details on their operation (in the SEE ALSO section).
+<P>
+Functions for handling pointer-encoded errors
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">OPTIONS</A><DD>
+<DT><A HREF="#lbAE">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAF">DATA TYPES</A><DD>
+<DT><A HREF="#lbAG">LIST OF ROUTINES</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 08:07:06 GMT, August 23, 2023
+</BODY>
+</HTML>

@@ -1,0 +1,4 @@
+<map id="iio_channel_attr_write_raw" name="iio_channel_attr_write_raw">
+<area shape="rect" id="node1" title="Set the value of the given channel&#45;specific attribute." alt="" coords="5,5,181,32"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga13b2db3252a2380a2b0b1bb15b8034a4" title="Try to find a channel&#45;specific attribute by its name." alt="" coords="229,5,371,32"/>
+</map>
