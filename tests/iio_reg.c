@@ -66,14 +66,14 @@ int main(int argc, char **argv)
 	unsigned long addr;
 	struct iio_context *ctx;
 	struct iio_device *dev;
-	int c;
+	int c, ret = EXIT_FAILURE;
 	char * name;
 	struct option *opts;
-	bool do_scan = false;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, "",
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -91,8 +91,6 @@ int main(int argc, char **argv)
 		case 'T':
 			break;
 		case 'S':
-			do_scan = true;
-			/* FALLTHRU */
 		case 'a':
 			if (!optarg && argc > optind && argv[optind] != NULL
 					&& argv[optind][0] != '-')
@@ -105,13 +103,13 @@ int main(int argc, char **argv)
 	}
 	free(opts);
 
-	if (do_scan)
-		return EXIT_SUCCESS;
-
 	if ((argc - optind) < 2 || (argc - optind) > 3) {
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_SUCCESS;
 	}
+
+	if (!ctx)
+		return ret;
 
 	name = cmn_strndup(argw[optind], NAME_MAX);
 	dev = iio_context_find_device(ctx, name);

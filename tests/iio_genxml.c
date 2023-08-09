@@ -31,12 +31,13 @@ int main(int argc, char **argv)
 	char *xml;
 	const char *tmp;
 	struct iio_context *ctx;
-	int c;
 	size_t xml_len;
 	struct option *opts;
+	int c, ret = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
-	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, "",
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!ctx)
-		return EXIT_FAILURE;
+		return ret;
 
 	tmp = iio_context_get_xml(ctx);
 	if (!tmp) {

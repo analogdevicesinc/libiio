@@ -193,12 +193,14 @@ int main(int argc, char **argv)
 	struct option *opts;
 	bool mib, benchmark = false;
 	uint64_t before = 0, after, rate, total;
+	int err_code = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
 	setup_sig_handler();
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
+				 options, options_descriptions, &err_code);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -260,7 +262,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!ctx)
-		return EXIT_FAILURE;
+		return err_code;
 
 	if (!argw[optind]) {
 		unsigned int nb_devices = iio_context_get_devices_count(ctx);
