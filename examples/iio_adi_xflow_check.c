@@ -130,13 +130,13 @@ int main(int argc, char **argv)
 	const char *device_name;
 	struct iio_device *dev;
 	char unit;
-	int ret;
+	int ret = EXIT_FAILURE;
 	struct option *opts;
-	bool do_scan = false;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -154,8 +154,6 @@ int main(int argc, char **argv)
 		case 'T':
 			break;
 		case 'S':
-			do_scan = true;
-			/* FALLTHROUGH */
 		case 'a':
 			if (!optarg && argc > optind && argv[optind] != NULL
 					&& argv[optind][0] != '-')
@@ -183,9 +181,6 @@ int main(int argc, char **argv)
 	}
 	free(opts);
 
-	if (do_scan)
-		return EXIT_SUCCESS;
-
 	if (optind + 1 != argc) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		usage(MY_NAME, options, options_descriptions);
@@ -193,7 +188,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!ctx)
-		return EXIT_FAILURE;
+		return ret;
 
 #ifndef _WIN32
 	set_handler(SIGHUP, &quit_all);

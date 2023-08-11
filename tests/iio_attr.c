@@ -338,10 +338,10 @@ int main(int argc, char **argv)
 	bool found_err = false, read_err = false, write_err = false,
 		dev_found = false, attr_found = false, ctx_found = false,
 		debug_found = false, channel_found = false ;
-	bool context_scan = false;
 	unsigned int i;
 	char *wbuf = NULL;
 	struct option *opts;
+	int ret = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -356,7 +356,8 @@ int main(int argc, char **argv)
 		argd--;
 	}
 
-	ctx = handle_common_opts(MY_NAME, argd, argw, MY_OPTS, options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argd, argw, MY_OPTS,
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -374,8 +375,6 @@ int main(int argc, char **argv)
 		case 'T':
 			break;
 		case 'S':
-			context_scan = true;
-			/* FALLTHRU */
 		case 'a':
 			if (!optarg && argc > optind && argv[optind] != NULL
 					&& argv[optind][0] != '-')
@@ -435,11 +434,8 @@ int main(int argc, char **argv)
 
 	free(opts);
 
-	if (context_scan)
-		return EXIT_SUCCESS;
-
 	if (!ctx)
-		return EXIT_FAILURE;
+		return ret;
 
 	if (gen_code) {
 		if (!gen_test_path(gen_file)) {
@@ -592,7 +588,6 @@ int main(int argc, char **argv)
 		ctx_found = true;
 		for (i = 0; i < nb_ctx_attrs; i++) {
 			const char *key, *value;
-			ssize_t ret;
 
 			ret = iio_context_get_attr(ctx, i, &key, &value);
 			if (!ret) {
@@ -764,7 +759,6 @@ int main(int argc, char **argv)
 					continue;
 
 				for (k = 0; k < nb_attrs; k++) {
-					int ret;
 					const char *attr =
 						iio_channel_get_attr(ch, k);
 
@@ -796,7 +790,6 @@ int main(int argc, char **argv)
 			}
 
 			if (search_device && device_index && nb_attrs) {
-				int ret;
 				for (j = 0; j < nb_attrs; j++) {
 					const char *attr = iio_device_get_attr(dev, j);
 
@@ -829,7 +822,6 @@ int main(int argc, char **argv)
 
 			if (search_buffer && device_index && nb_attrs) {
 				for (j = 0; j < nb_attrs; j++) {
-					int ret;
 					const char *attr = iio_device_get_buffer_attr(dev, j);
 
 					if ((attr_index && str_match(attr, argw[attr_index],
@@ -855,7 +847,6 @@ int main(int argc, char **argv)
 
 			if (search_debug && device_index && nb_attrs) {
 				for (j = 0; j < nb_attrs; j++) {
-					int ret;
 					const char *attr = iio_device_get_debug_attr(dev, j);
 
 					if ((attr_index && str_match(attr, argw[attr_index],

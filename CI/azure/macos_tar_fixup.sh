@@ -29,7 +29,7 @@ ln -fs "../../../${libiioheader_loc}" usr/local/include/iio.h
 install_name_tool -add_rpath @loader_path/. "${libiio_loc}"
 
 # Copy dependent libs to local libs, and update rpath of dependencies
-for each in $(otool -L "${libiio_loc}" |grep homebrew |cut -f2 | cut -d' ' -f1) ; do
+for each in $(otool -L "${libiio_loc}" |grep '\/usr\/local\|homebrew' |cut -f2 | cut -d' ' -f1) ; do
 	name=$(basename "${each}")
 	cp "${each}" "${deps_dir}"
 	chmod +w "${deps_dir}/${name}"

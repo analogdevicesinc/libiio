@@ -216,13 +216,14 @@ int main(int argc, char **argv)
 	uint64_t before = 0, after, rate, total;
 	size_t rw_len, len, nb;
 	void *start;
-	int c, ret;
+	int c, ret = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
 	setup_sig_handler();
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -301,6 +302,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Cannot benchmark in cyclic mode.\n");
 		goto err_free_ctx;
 	}
+
+	if (!ctx)
+		return ret;
 
 	if (!argw[optind]) {
 		for (i = 0; i < iio_context_get_devices_count(ctx); i++) {

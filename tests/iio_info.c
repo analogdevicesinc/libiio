@@ -58,12 +58,13 @@ int main(int argc, char **argv)
 	char sign, repeat[12], err_str[1024];
 	const char *key, *value, *name, *label, *type_name, *attr;
 	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
-	int ret, c;
 	struct option *opts;
+	int c, ret = EXIT_FAILURE;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions);
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
+				 options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -87,8 +88,8 @@ int main(int argc, char **argv)
 				optind++;
 			break;
 		case 's':
-			autodetect_context(false, MY_NAME, NULL);
-			return EXIT_SUCCESS;
+			ret = iio_err(autodetect_context(false, MY_NAME, NULL));
+			return ret ? EXIT_FAILURE : EXIT_SUCCESS;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
@@ -103,7 +104,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!ctx)
-		return EXIT_FAILURE;
+		return ret;
 
 	version(MY_NAME);
 	printf("IIO context created with %s backend.\n",

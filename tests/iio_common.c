@@ -72,12 +72,13 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 	err = iio_err(scan_ctx);
 	if (err) {
 		prm_perror(NULL, err, "Scanning for IIO contexts failed");
-		return NULL;
+		return iio_ptr(err);
 	}
 
 	results = iio_scan_get_results_count(scan_ctx);
 	if (results == 0) {
 		fprintf(stderr, "No IIO context found.\n");
+		ctx = iio_ptr(-ENXIO);
 		goto err_free_ctx;
 	}
 	if (rtn && results == 1) {
@@ -101,7 +102,6 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 
 err_free_ctx:
 	iio_scan_destroy(scan_ctx);
-
 	return ctx;
 }
 
@@ -255,7 +255,8 @@ static const char *common_options_descriptions[] = {
 
 struct iio_context * handle_common_opts(char * name, int argc,
 		char * const argv[], const char *optstring,
-		const struct option *options, const char *options_descriptions[])
+		const struct option *options, const char *options_descriptions[],
+		int *err_code)
 {
 	struct iio_context *ctx = NULL;
 	enum backend backend = IIO_LOCAL;
@@ -275,7 +276,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
-		return NULL;
+		goto err_fail;
 	}
 
 	while ((c = getopt_long(argc, argv, buf,	/* Flawfinder: ignore */
@@ -291,11 +292,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'n':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			if (!optarg) {
 				fprintf(stderr, "network options requires a uri\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_NETWORK;
 			arg = optarg;
@@ -304,11 +305,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'x':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			if (!optarg) {
 				fprintf(stderr, "xml options requires a uri\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_XML;
 			arg = optarg;
@@ -317,11 +318,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'u':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			if (!optarg) {
 				fprintf(stderr, "uri options requires a uri\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_URI;
 			arg = optarg;
@@ -329,7 +330,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'a':
 			if (backend != IIO_LOCAL) {
 				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				return NULL;
+				goto err_fail;
 			}
 			backend = IIO_AUTO;
 			detect_context = true;
@@ -352,7 +353,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'T':
 			if (!optarg) {
 				fprintf(stderr, "Timeout requires an argument\n");
-				return NULL;
+				goto err_fail;
 			}
 			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
@@ -365,7 +366,9 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	opterr = 1;
 
 	if (do_scan) {
-		autodetect_context(false, name, arg);
+		err = iio_err(autodetect_context(false, name, arg));
+		if (err_code)
+			*err_code = err ? EXIT_FAILURE : EXIT_SUCCESS;
 		return NULL;
 	} else if (detect_context || backend == IIO_AUTO) {
 		ctx = autodetect_context(true, name, arg);
@@ -391,7 +394,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		else
 			prm_perror(NULL, err, "Unable to create local IIO context");
 
-		ctx = NULL;
+		goto err_fail;
 	}
 
 	if (ctx && timeout >= 0) {
@@ -399,11 +402,16 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		if (err < 0) {
 			ctx_perror(ctx, err, "IIO context set timeout failed");
 			iio_context_destroy(ctx);
-			return NULL;
+			goto err_fail;
 		}
 	}
 
 	return ctx;
+
+err_fail:
+	if (err_code)
+		*err_code = EXIT_FAILURE;
+	return NULL;
 }
 
 void usage(char *name, const struct option *options,

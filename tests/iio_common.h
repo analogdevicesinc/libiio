@@ -36,7 +36,8 @@ struct option;
 void * xmalloc(size_t n, const char *name);
 char *cmn_strndup(const char *str, size_t n);
 
-struct iio_context * autodetect_context(bool rtn, const char *name, const char *scan);
+struct iio_context * autodetect_context(bool rtn, const char *name,
+					const char *scan);
 unsigned long int sanitize_clamp(const char *name, const char *argv,
 	uint64_t min, uint64_t max);
 int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
@@ -50,7 +51,8 @@ int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
 
 struct iio_context * handle_common_opts(char * name, int argc,
 	char * const argv[], const char *optstring,
-	const struct option *options, const char *options_descriptions[]);
+	const struct option *options, const char *options_descriptions[],
+	int *ret);
 struct option * add_common_options(const struct option * longopts);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
 void version(char *name);
