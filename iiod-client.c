@@ -1030,9 +1030,9 @@ iiod_client_create_context_private_new(struct iiod_client *client,
 	if (ret) {
 		ctx = NULL;
 	} else {
-		/* If the context creation suceeded, update our "params" pointer
-		 * to point to the context's params, as we know their lifetime
-		 * is bigger than ours. */
+		/* If the context creation succeeded, update our "params"
+		 * pointer to point to the context's params, as we know their
+		 * lifetime is bigger than ours. */
 		client->params = &ctx->params;
 	}
 
@@ -1140,9 +1140,9 @@ iiod_client_create_context_private(struct iiod_client *client,
 	if (ret) {
 		ctx = NULL;
 	} else {
-		/* If the context creation suceeded, update our "params" pointer
-		 * to point to the context's params, as we know their lifetime
-		 * is bigger than ours. */
+		/* If the context creation succeeded, update our "params"
+		 * pointer to point to the context's params, as we know their
+		 * lifetime is bigger than ours. */
 		client->params = &ctx->params;
 	}
 
