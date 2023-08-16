@@ -39,7 +39,7 @@ The recommendation is to leave things to the default.
 Cmake Options          | Default | Target | Description                                    |
 ---------------------- | ------- | -------| ---------------------------------------------- |
 `BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
-`LIBIIO_COMPAT`        |  ON |        All | Build Libiio v0.x compatiblity layer |
+`LIBIIO_COMPAT`        |  ON |        All | Build Libiio v0.x compatibility layer |
 `WITH_MODULES`         | OFF |        All | Build modular backends |
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
