@@ -156,7 +156,7 @@ struct iio_buffer {
 
 	size_t block_size;
 
-	/* Mutex to protext nb_blocks. Should really be an atomic... */
+	/* Mutex to protect nb_blocks. Should really be an atomic... */
 	struct iio_mutex *lock;
 	unsigned int nb_blocks;
 };
