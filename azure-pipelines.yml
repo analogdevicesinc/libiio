@@ -306,7 +306,7 @@ stages:
         macOS_13_arm64:
           poolName: 'Default'
           vmImage: 
-          agentName: 'macOS_arm64'
+          agentName: 'miniMAC_arm64'
           artifactName: 'macOS-13-arm64'
     pool:
       name: $(poolName)
@@ -318,7 +318,7 @@ stages:
       fetchDepth: 1
       clean: true
     - task: UsePythonVersion@0
-      condition: ne(variables['agentName'],'macOS_arm64')
+      condition: ne(variables['agentName'],'miniMAC_arm64')
       inputs:
         versionSpec: '3.x'
         addToPath: true
@@ -327,7 +327,7 @@ stages:
           brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config
           pip3 install sphinx
       displayName: 'Dependencies'
-      condition: ne(variables['agentName'],'macOS_arm64')
+      condition: ne(variables['agentName'],'miniMAC_arm64')
     - script: |
         set -e
         mkdir build && cd build
