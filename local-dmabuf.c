@@ -23,6 +23,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <linux/memfd.h>
+
 struct iio_udmabuf_create {
 	uint32_t memfd;
 	uint32_t flags;
@@ -70,6 +72,23 @@ static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 	return ioctl_nointr(fd, IIO_DMABUF_SYNC_IOCTL, &dbuf_sync);
 }
 
+static void * local_mmap(void *addr, size_t length, int prot, int flags,
+			 int fd, off_t offset, bool hugetlb)
+{
+	void *map = MAP_FAILED;
+
+	if (hugetlb) {
+		map = mmap(addr, length, prot,
+			   flags | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT),
+			   fd, offset);
+	}
+
+	if (map == MAP_FAILED)
+		map = mmap(addr, length, prot, flags, fd, offset);
+
+	return map;
+}
+
 struct iio_block_pdata *
 local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 {
@@ -77,6 +96,11 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	struct iio_block_pdata *priv;
 	size_t page_size, mem_size;
 	int ret, fd, devfd, memfd;
+	int memfd_flags = MFD_ALLOW_SEALING;
+	bool hugetlb = size >= 0x200000;
+
+	if (hugetlb)
+		memfd_flags |= MFD_HUGETLB | MFD_HUGE_2MB;
 
 	priv = zalloc(sizeof(*priv));
 	if (!priv)
@@ -97,7 +121,13 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		goto err_free_priv;
 	}
 
-	memfd = syscall(__NR_memfd_create, "/libiio-udmabuf", MFD_ALLOW_SEALING);
+	memfd = syscall(__NR_memfd_create, "/libiio-udmabuf", memfd_flags);
+	if (memfd < 0 && hugetlb) {
+		/* Try again, without requesting huge pages this time. */
+		memfd = syscall(__NR_memfd_create, "/libiio-udmabuf",
+				MFD_ALLOW_SEALING);
+		hugetlb = false;
+	}
 	if (memfd < 0) {
 		ret = -errno;
 		goto err_close_devfd;
@@ -124,7 +154,8 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		goto err_close_memfd;
 	}
 
-	*data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	*data = local_mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
+			   fd, 0, hugetlb);
 	if (*data == MAP_FAILED) {
 		ret = -errno;
 		goto err_close_fd;
