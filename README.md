@@ -7,6 +7,8 @@ Have a look at [the wiki](https://github.com/analogdevicesinc/libiio/wiki/libiio
 The old v0.x API can still be found in the [libiio-v0](https://github.com/analogdevicesinc/libiio/tree/libiio-v0) branch.
 Libiio v0.x is now considered legacy, and as such, only important bug fixes will be accepted into this branch.
 
+Old programs compiled against libiio v0.x will still be able to run with libiio v1.0 and newer, as it provides a compatibility layer.
+
 # libiio
 
 Library for interfacing with Linux IIO devices
