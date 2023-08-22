@@ -1,3 +1,12 @@
+## :warning: Important note (2023-08-22)
+
+Since August 22th 2023, the "master" branch of libiio contains what will eventually become libiio v1.0.
+It features a brand new API, which is incompatible with libiio v0.25 and older.
+Have a look at [the wiki](https://github.com/analogdevicesinc/libiio/wiki/libiio_0_to_1) for a description of the API changes.
+
+The old v0.x API can still be found in the [libiio-v0](https://github.com/analogdevicesinc/libiio/tree/libiio-v0) branch.
+Libiio v0.x is now considered legacy, and as such, only important bug fixes will be accepted into this branch.
+
 # libiio
 
 Library for interfacing with Linux IIO devices
