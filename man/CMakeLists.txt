@@ -37,7 +37,7 @@ if (WITH_MAN)
 			OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man3/libiio.3.html
 		)
 	endif()
-	if (WITH_TESTS)
+	if (WITH_UTILS)
 		foreach(_page ${IIO_TESTS_TARGETS})
 			execute_process(
 				COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/make_util_pages.sh
@@ -77,7 +77,7 @@ if (WITH_MAN)
 endif()
 
 toggle_iio_feature("${WITH_MAN}" man)
-toggle_iio_feature("${WITH_TESTS}" man-utils)
+toggle_iio_feature("${WITH_UTILS}" man-utils)
 
 set(IIOM_FEATURES_ON "${IIO_FEATURES_ON}" PARENT_SCOPE)
 set(IIOM_FEATURES_OFF "${IIO_FEATURES_OFF}" PARENT_SCOPE)
