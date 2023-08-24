@@ -16,7 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../tests/iio_common.h"
+#include "../utils/iio_common.h"
 
 
 #define MY_NAME "iio_adi_xflow_check"
