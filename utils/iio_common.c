@@ -288,8 +288,8 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			exit(0);
 			break;
 		case 'u':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+			if (backend != IIO_LOCAL || do_scan) {
+				fprintf(stderr, "-a, -u and -S are mutually exclusive\n");
 				goto err_fail;
 			}
 			if (!optarg) {
@@ -300,8 +300,8 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			arg = optarg;
 			break;
 		case 'a':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
+			if (backend != IIO_LOCAL || do_scan) {
+				fprintf(stderr, "-a, -u and -S are mutually exclusive\n");
 				goto err_fail;
 			}
 			backend = IIO_AUTO;
@@ -314,6 +314,10 @@ struct iio_context * handle_common_opts(char * name, int argc,
 			}
 			break;
 		case 'S':
+			if (backend != IIO_LOCAL) {
+				fprintf(stderr, "-a, -u and -S are mutually exclusive\n");
+				goto err_fail;
+			}
 			do_scan = true;
 			if (optarg) {
 				arg = optarg;
