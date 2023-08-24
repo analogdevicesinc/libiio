@@ -142,7 +142,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy .exe files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/tests'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/utils'
         contents: '*.exe'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
@@ -236,7 +236,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy .exe files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/tests/Release'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/utils/Release'
         contents: '*.exe'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
