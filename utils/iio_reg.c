@@ -85,8 +85,6 @@ int main(int argc, char **argv)
 		/* All these are handled in the common */
 		case 'h':
 		case 'V':
-		case 'n':
-		case 'x':
 		case 'u':
 		case 'T':
 			break;

@@ -192,7 +192,6 @@ void free_argw(int argc, char * argw[])
 static const struct option common_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
-	{"xml", required_argument, 0, 'x'},
 	{"uri", required_argument, 0, 'u'},
 	{"scan", optional_argument, 0, 'S'},
 	{"auto", optional_argument, 0, 'a'},
@@ -236,7 +235,6 @@ struct option * add_common_options(const struct option * longopts)
 static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
 	"Display libiio version information.",
-	"Use the XML backend with the provided XML file.",
 	("Use the context at the provided URI."
 		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
 		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
@@ -288,32 +286,6 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		case 'V':
 			version(name);
 			exit(0);
-			break;
-		case 'n':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				goto err_fail;
-			}
-			if (!optarg) {
-				fprintf(stderr, "network options requires a uri\n");
-				goto err_fail;
-			}
-			backend = IIO_NETWORK;
-			arg = optarg;
-			prefix = "ip";
-			break;
-		case 'x':
-			if (backend != IIO_LOCAL) {
-				fprintf(stderr, "-a, -x, -n and -u are mutually exclusive\n");
-				goto err_fail;
-			}
-			if (!optarg) {
-				fprintf(stderr, "xml options requires a uri\n");
-				goto err_fail;
-			}
-			backend = IIO_XML;
-			arg = optarg;
-			prefix = "xml";
 			break;
 		case 'u':
 			if (backend != IIO_LOCAL) {
