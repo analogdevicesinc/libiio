@@ -76,8 +76,6 @@ int main(int argc, char **argv)
 			/* All these are handled in the common */
 		case 'h':
 		case 'V':
-		case 'n':
-		case 'x':
 		case 'u':
 		case 'T':
 			break;
@@ -87,9 +85,6 @@ int main(int argc, char **argv)
 					&& argw[optind][0] != '-')
 				optind++;
 			break;
-		case 's':
-			ret = iio_err(autodetect_context(false, MY_NAME, NULL));
-			return ret ? EXIT_FAILURE : EXIT_SUCCESS;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
