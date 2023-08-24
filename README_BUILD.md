@@ -44,7 +44,7 @@ Cmake Options          | Default | Target | Description                         
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
 `PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
-`WITH_TESTS`           |  ON |        All | Build the test programs (iio-utils)                |
+`WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
 `NO_THREADS`           | OFF |        All | Disable multi-threading support |
 `CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
