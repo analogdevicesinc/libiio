@@ -9,6 +9,7 @@ trigger:
     - next_stable
     - staging/*
     - 20*
+    - tfcollins/*
   tags:
     include:
     - v*
