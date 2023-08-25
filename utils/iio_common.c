@@ -242,10 +242,10 @@ static const char *common_options_descriptions[] = {
 		"\n\t\t\t    'local:' (Linux only)"),
 	("Scan for available backends."
 		"\n\t\t\toptional arg of specific backend(s)"
-		"\n\t\t\t    'ip', 'usb' or 'ip:usb'"),
+		"\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
 	("Scan for available contexts and if a single context is"
 		"\n\t\t\tavailable use it. <arg> filters backend(s)"
-		"\n\t\t\t    'ip', 'usb' or 'ip:usb:'"),
+		"\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
 	("Context timeout in milliseconds."
 		"\n\t\t\t0 = no timeout (wait forever)"),
 };
