@@ -109,6 +109,7 @@ Cmake Options       | Default | Description                                    |
 `WITH_IIOD_NETWORK` |  ON | Add network (TCP/IP) support                         |
 `WITH_IIOD_SERIAL`  |  ON | Add serial (UART) support                            |
 `WITH_IIOD_USBD`    |  ON | Add support for USB through FunctionFS within IIOD   |
+`WITH_IIOD_USB_DMABUF` | OFF | Enable DMABUF support on the USB stack            |
 `WITH_IIOD_V0_COMPAT` |  ON | Add support for Libiio v0.x protocol and clients |
 `WITH_LIBTINYIIOD`  | OFF | Build libtinyiiod                                    |
 `WITH_AIO`          |  ON | Build IIOD with async. I/O support                   |
