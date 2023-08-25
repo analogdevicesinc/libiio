@@ -47,12 +47,14 @@ if (MSVC)
 	target_link_options(iio_writedev PUBLIC /DEBUG)
 endif()
 
-target_link_libraries(iio_genxml  iio iio_tests_helper)
+target_link_libraries(iio_genxml  iio iio_tests_helper ${LIBXML2_LIBRARIES})
 target_link_libraries(iio_info    iio iio_tests_helper)
 target_link_libraries(iio_attr    iio iio_tests_helper)
 target_link_libraries(iio_readdev iio iio_tests_helper)
 target_link_libraries(iio_reg     iio iio_tests_helper)
 target_link_libraries(iio_writedev iio iio_tests_helper)
+
+target_include_directories(iio_genxml PRIVATE ${LIBXML2_INCLUDE_DIR})
 
 set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_readdev iio_reg iio_writedev)
 
