@@ -119,16 +119,11 @@ local_create_mmap_block(struct iio_buffer_pdata *pdata,
 		req.id = 0;
 		req.type = 0;
 		req.size = size;
-		req.count = priv->idx + 1;
+		req.count = 1;
 
 		ret = ioctl_nointr(pdata->fd, BLOCK_ALLOC_IOCTL, &req);
 		if (ret < 0)
 			goto out_free_priv;
-
-		if (req.count < priv->idx + 1) {
-			ret = -ENOMEM;
-			goto out_free_priv;
-		}
 
 		ppdata->nb_blocks++;
 	} else {
