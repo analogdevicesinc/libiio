@@ -87,7 +87,8 @@ static ssize_t sanitize_xml(char *ptr, ssize_t len, const char *str)
 }
 
 ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
-					  const char *before, char *param,
+					  const char *before,
+					  const char *param,
 					  const char *after)
 {
 	ssize_t ret, alen = 0;
