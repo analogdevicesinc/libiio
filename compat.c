@@ -99,10 +99,6 @@ struct compat {
 	void * (*iio_device_get_data)(const struct iio_device *);
 	void (*iio_device_set_data)(struct iio_device *, void *);
 
-	int (*iio_device_identify_filename)(const struct iio_device *dev,
-					    const char *filename,
-					    struct iio_channel **chn,
-					    const char **attr);
 	int (*iio_device_reg_read)(struct iio_device *, uint32_t, uint32_t *);
 	int (*iio_device_reg_write)(struct iio_device *, uint32_t, uint32_t);
 
@@ -827,7 +823,54 @@ int iio_device_identify_filename(const struct iio_device *dev,
 				 const char *filename, struct iio_channel **chn,
 				 const char **attr)
 {
-	return IIO_CALL(iio_device_identify_filename)(dev, filename, chn, attr);
+	unsigned int i, j, nb_channels, nb_attrs;
+	struct iio_channel *ch;
+	const char *fn, *name;
+
+	nb_channels = IIO_CALL(iio_device_get_channels_count)(dev);
+
+	for (i = 0; i < nb_channels; i++) {
+		ch = IIO_CALL(iio_device_get_channel)(dev, i);
+		nb_attrs = IIO_CALL(iio_channel_get_attrs_count)(ch);
+
+		for (j = 0; j < nb_attrs; j++) {
+			name = IIO_CALL(iio_channel_get_attr)(ch, j);
+			fn = IIO_CALL(iio_channel_attr_get_filename)(ch, name);
+
+			if (!strcmp(fn, filename)) {
+				*attr = name;
+				*chn = ch;
+				return 0;
+			}
+		}
+	}
+
+	nb_attrs = IIO_CALL(iio_device_get_attrs_count)(dev);
+
+	for (i = 0; i < nb_attrs; i++) {
+		name = IIO_CALL(iio_device_get_attr)(dev, i);
+
+		/* Devices attributes are named after their filename */
+		if (!strcmp(name, filename)) {
+			*attr = name;
+			*chn = NULL;
+			return 0;
+		}
+	}
+
+	nb_attrs = IIO_CALL(iio_device_get_debug_attrs_count)(dev);
+
+	for (i = 0; i < nb_attrs; i++) {
+		name = IIO_CALL(iio_device_get_debug_attr)(dev, i);
+
+		if (!strcmp(name, filename)) {
+			*attr = name;
+			*chn = NULL;
+			return 0;
+		}
+	}
+
+	return -EINVAL;
 }
 
 int iio_device_reg_read(struct iio_device *dev,
@@ -1950,7 +1993,6 @@ static void compat_lib_init(void)
 	FIND_SYMBOL(ctx->lib, iio_device_get_label);
 	FIND_SYMBOL(ctx->lib, iio_device_get_data);
 	FIND_SYMBOL(ctx->lib, iio_device_set_data);
-	FIND_SYMBOL(ctx->lib, iio_device_identify_filename);
 	FIND_SYMBOL(ctx->lib, iio_device_reg_read);
 	FIND_SYMBOL(ctx->lib, iio_device_reg_write);
 	FIND_SYMBOL(ctx->lib, iio_device_get_channels_count);
