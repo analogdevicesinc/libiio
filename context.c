@@ -145,10 +145,10 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
-	for (i = 0; i < ctx->nb_attrs; i++) {
+	for (i = 0; i < ctx->attrlist.num; i++) {
 		ret = iio_snprintf(ptr, len,
 				   "<context-attribute name=\"%s\" ",
-				   ctx->attrs[i]);
+				   ctx->attrlist.attrs[i].name);
 		if (ret < 0)
 			return ret;
 
@@ -276,12 +276,10 @@ void iio_context_destroy(struct iio_context *ctx)
 	if (ctx->ops->shutdown)
 		ctx->ops->shutdown(ctx);
 
-	for (i = 0; i < ctx->nb_attrs; i++) {
-		free(ctx->attrs[i]);
+	for (i = 0; i < ctx->attrlist.num; i++)
 		free(ctx->values[i]);
-	}
-	free(ctx->attrs);
 	free(ctx->values);
+	iio_free_attrs(&ctx->attrlist);
 	for (i = 0; i < ctx->nb_devices; i++)
 		free_device(ctx->devices[i]);
 	free(ctx->devices);
@@ -452,33 +450,13 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 
 unsigned int iio_context_get_attrs_count(const struct iio_context *ctx)
 {
-	return ctx->nb_attrs;
+	return ctx->attrlist.num;
 }
 
-int iio_context_get_attr(const struct iio_context *ctx, unsigned int index,
-		const char **name, const char **value)
+const struct iio_attr *
+iio_context_get_attr(const struct iio_context *ctx, unsigned int index)
 {
-	if (index >= ctx->nb_attrs)
-		return -EINVAL;
-
-	if (name)
-		*name = ctx->attrs[index];
-	if (value)
-		*value = ctx->values[index];
-	return 0;
-}
-
-const char * iio_context_get_attr_value(
-		const struct iio_context *ctx, const char *name)
-{
-	unsigned int i;
-
-	for (i = 0; i < ctx->nb_attrs; i++) {
-		if (!strcmp(name, ctx->attrs[i]))
-			return ctx->values[i];
-	}
-
-	return NULL;
+	return iio_attr_get(&ctx->attrlist, index);
 }
 
 const struct iio_attr *
