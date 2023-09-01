@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "attr.h"
 #include "iio-private.h"
 
 #include <errno.h>
@@ -212,8 +213,8 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 	}
 }
 
-static ssize_t iio_snprintf_chan_attr_xml(char *str, ssize_t len,
-					  struct iio_channel_attr *attr)
+static ssize_t iio_snprintf_chan_attr_xml(const struct iio_attr *attr,
+					  char *str, ssize_t len)
 {
 	ssize_t ret, alen = 0;
 
@@ -286,8 +287,8 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
-	for (i = 0; i < chn->nb_attrs; i++) {
-		ret = iio_snprintf_chan_attr_xml(ptr, len, &chn->attrs[i]);
+	for (i = 0; i < chn->attrlist.num; i++) {
+		ret = iio_snprintf_chan_attr_xml(&chn->attrlist.attrs[i], ptr, len);
 		if (ret < 0)
 			return ret;
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
@@ -332,39 +333,22 @@ enum iio_chan_type iio_channel_get_type(const struct iio_channel *chn)
 
 unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn)
 {
-	return chn->nb_attrs;
+	return chn->attrlist.num;
 }
 
-const char * iio_channel_get_attr(const struct iio_channel *chn,
-		unsigned int index)
+const struct iio_attr *
+iio_channel_get_attr(const struct iio_channel *chn, unsigned int index)
 {
-	if (index >= chn->nb_attrs)
-		return NULL;
-	else
-		return chn->attrs[index].name;
+	return iio_attr_get(&chn->attrlist, index);
 }
 
-static const char *
-iio_channel_do_find_attr(const struct iio_channel *chn, const char *name)
+const struct iio_attr *
+iio_channel_find_attr(const struct iio_channel *chn, const char *name)
 {
-	unsigned int i;
-
-	for (i = 0; i < chn->nb_attrs; i++) {
-		const char *attr = chn->attrs[i].name;
-		if (!strcmp(attr, name))
-			return attr;
-	}
-
-	return NULL;
-}
-
-const char * iio_channel_find_attr(const struct iio_channel *chn,
-				   const char *name)
-{
-	const char *attr;
+	const struct iio_attr *attr;
 	size_t len;
 
-	attr = iio_channel_do_find_attr(chn, name);
+	attr = iio_attr_find(&chn->attrlist, name);
 	if (attr)
 		return attr;
 
@@ -377,51 +361,11 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 
 		if (!strncmp(chn->name, name, len) && name[len] == '_') {
 			name += len + 1;
-			return iio_channel_do_find_attr(chn, name);
+			return iio_attr_find(&chn->attrlist, name);
 		}
 	}
 
 	return NULL;
-}
-
-ssize_t iio_channel_attr_read_raw(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len)
-{
-	if (!attr)
-		return -EINVAL;
-
-	attr = iio_channel_find_attr(chn, attr);
-	if (!attr)
-		return -ENOENT;
-
-	if (chn->dev->ctx->ops->read_channel_attr)
-		return chn->dev->ctx->ops->read_channel_attr(chn,
-				attr, dst, len);
-	else
-		return -ENOSYS;
-}
-
-ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
-		const char *attr, const void *src, size_t len)
-{
-	if (!attr)
-		return -EINVAL;
-
-	attr = iio_channel_find_attr(chn, attr);
-	if (!attr)
-		return -ENOENT;
-
-	if (chn->dev->ctx->ops->write_channel_attr)
-		return chn->dev->ctx->ops->write_channel_attr(chn,
-				attr, src, len);
-	else
-		return -ENOSYS;
-}
-
-ssize_t iio_channel_attr_write_string(const struct iio_channel *chn,
-				      const char *attr, const char *src)
-{
-	return iio_channel_attr_write_raw(chn, attr, src, strlen(src) + 1);
 }
 
 void iio_channel_set_data(struct iio_channel *chn, void *data)
@@ -467,12 +411,7 @@ void iio_channel_disable(const struct iio_channel *chn,
 
 void free_channel(struct iio_channel *chn)
 {
-	size_t i;
-	for (i = 0; i < chn->nb_attrs; i++) {
-		free(chn->attrs[i].name);
-		free(chn->attrs[i].filename);
-	}
-	free(chn->attrs);
+	iio_free_attrs(&chn->attrlist);
 	free(chn->name);
 	free(chn->id);
 	free(chn);
@@ -714,94 +653,6 @@ size_t iio_channel_write(const struct iio_channel *chn,
 	}
 
 	return src_ptr - (uintptr_t) src;
-}
-
-int iio_channel_attr_read_longlong(const struct iio_channel *chn,
-		const char *attr, long long *val)
-{
-	char *end, buf[1024];
-	long long value;
-	ssize_t ret;
-
-	ret = iio_channel_attr_read_raw(chn, attr, buf, sizeof(buf));
-	if (ret < 0)
-		return (int) ret;
-
-	errno = 0;
-	value = strtoll(buf, &end, 0);
-	if (end == buf || errno == ERANGE)
-		return -EINVAL;
-	*val = value;
-	return 0;
-}
-
-int iio_channel_attr_read_bool(const struct iio_channel *chn,
-		const char *attr, bool *val)
-{
-	long long value;
-	int ret = iio_channel_attr_read_longlong(chn, attr, &value);
-	if (ret < 0)
-		return ret;
-
-	*val = !!value;
-	return 0;
-}
-
-int iio_channel_attr_read_double(const struct iio_channel *chn,
-		const char *attr, double *val)
-{
-	char buf[1024];
-	ssize_t ret;
-
-	ret = iio_channel_attr_read_raw(chn, attr, buf, sizeof(buf));
-	if (ret < 0)
-		return (int) ret;
-	else
-		return read_double(buf, val);
-}
-
-int iio_channel_attr_write_longlong(const struct iio_channel *chn,
-		const char *attr, long long val)
-{
-	int ret;
-	char buf[1024];
-	iio_snprintf(buf, sizeof(buf), "%lld", val);
-	ret = (int) iio_channel_attr_write_string(chn, attr, buf);
-	return ret < 0 ? ret : 0;
-}
-
-int iio_channel_attr_write_double(const struct iio_channel *chn,
-		const char *attr, double val)
-{
-	int ret;
-	char buf[1024];
-
-	ret = write_double(buf, sizeof(buf), val);
-	if (!ret)
-		ret = (int) iio_channel_attr_write_string(chn, attr, buf);
-	return ret < 0 ? ret : 0;
-}
-
-int iio_channel_attr_write_bool(const struct iio_channel *chn,
-		const char *attr, bool val)
-{
-	int ret;
-	if (val)
-		ret = (int) iio_channel_attr_write_raw(chn, attr, "1", 2);
-	else
-		ret = (int) iio_channel_attr_write_raw(chn, attr, "0", 2);
-	return ret < 0 ? ret : 0;
-}
-
-const char * iio_channel_attr_get_filename(
-		const struct iio_channel *chn, const char *attr)
-{
-	unsigned int i;
-	for (i = 0; i < chn->nb_attrs; i++) {
-		if (!strcmp(chn->attrs[i].name, attr))
-			return chn->attrs[i].filename;
-	}
-	return NULL;
 }
 
 const struct iio_device * iio_channel_get_device(const struct iio_channel *chn)

@@ -1022,8 +1022,8 @@ __api __check_ret __pure bool iio_channel_is_scan_element(const struct iio_chann
 /** @brief Enumerate the channel-specific attributes of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The number of channel-specific attributes found */
-__api __check_ret __pure unsigned int iio_channel_get_attrs_count(
-		const struct iio_channel *chn);
+__api __check_ret __pure unsigned int
+iio_channel_get_attrs_count(const struct iio_channel *chn);
 
 
 /** @brief Get the channel-specific attribute present at the given index
@@ -1031,8 +1031,8 @@ __api __check_ret __pure unsigned int iio_channel_get_attrs_count(
  * @param index The index corresponding to the attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char * iio_channel_get_attr(
-		const struct iio_channel *chn, unsigned int index);
+__api __check_ret __pure const struct iio_attr *
+iio_channel_get_attr(const struct iio_channel *chn, unsigned int index);
 
 
 /** @brief Try to find a channel-specific attribute by its name
@@ -1041,80 +1041,9 @@ __api __check_ret __pure const char * iio_channel_get_attr(
  * attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the name does not correspond to any known attribute of the given
- * channel, NULL is returned
- *
- * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
- * It can also be used to retrieve the name of an attribute as a pointer to a
- * static string from a dynamically allocated string. */
-__api __check_ret __pure const char * iio_channel_find_attr(
-		const struct iio_channel *chn, const char *name);
-
-
-/** @brief Retrieve the filename of an attribute
- * @param chn A pointer to an iio_channel structure
- * @param attr a NULL-terminated string corresponding to the name of the
- * attribute
- * @return On success, a pointer to a static NULL-terminated string
- * @return If the attribute name is unknown, NULL is returned */
-__api __check_ret __pure const char * iio_channel_attr_get_filename(
-		const struct iio_channel *chn, const char *attr);
-
-
-/** @brief Read the content of the given channel-specific attribute
- * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param dst A pointer to the memory area where the NULL-terminated string
- * corresponding to the value read will be stored
- * @param len The available length of the memory area, in bytes
- * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_channel_attr_read_raw(const struct iio_channel *chn,
-			  const char *attr, char *dst, size_t len);
-
-
-/** @brief Read the content of the given channel-specific attribute
- * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param ptr A pointer to the variable where the value should be stored
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_channel_attr_read(chn, attr, ptr)			\
-	_Generic((ptr),						\
-		 bool *: iio_channel_attr_read_bool,		\
-		 long long *: iio_channel_attr_read_longlong,	\
-		 double *: iio_channel_attr_read_double)(chn, attr, ptr)
-
-
-/** @brief Set the value of the given channel-specific attribute
- * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param src A pointer to the data to be written
- * @param len The number of bytes that should be written
- * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_channel_attr_write_raw(const struct iio_channel *chn,
-			   const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the value of the given channel-specific attribute
- * @param chn A pointer to an iio_channel structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param val The value to set the attribute to
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_channel_attr_write(chn, attr, val)			\
-	_Generic((val),						\
-		 const char *: iio_channel_attr_write_string,	\
-		 char *: iio_channel_attr_write_string,		\
-		 bool: iio_channel_attr_write_bool,		\
-		 long long: iio_channel_attr_write_longlong,	\
-		 double: iio_channel_attr_write_double)(chn, attr, val)
+ * channel, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_channel_find_attr(const struct iio_channel *chn, const char *name);
 
 
 /** @brief Enable the given channel

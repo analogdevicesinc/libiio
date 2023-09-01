@@ -536,7 +536,7 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 		arg2 = (uint16_t) i;
 
 		for (i = 0; i < iio_channel_get_attrs_count(chn); i++)
-			if (!strcmp(iio_channel_get_attr(chn, i), attr->name))
+			if (iio_channel_get_attr(chn, i) == attr)
 				break;
 
 		if (i == iio_channel_get_attrs_count(chn))
@@ -713,7 +713,7 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 		arg2 = (uint16_t) i;
 
 		for (i = 0; i < iio_channel_get_attrs_count(chn); i++)
-			if (!strcmp(iio_channel_get_attr(chn, i), attr->name))
+			if (iio_channel_get_attr(chn, i) == attr)
 				break;
 
 		if (i == iio_channel_get_attrs_count(chn))
