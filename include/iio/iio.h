@@ -617,30 +617,13 @@ __api __check_ret __pure unsigned int iio_context_get_attrs_count(
 		const struct iio_context *ctx);
 
 
-/** @brief Retrieve the name and value of a context-specific attribute
+/** @brief Retrieve the context-specific attribute at the given index
  * @param ctx A pointer to an iio_context structure
  * @param index The index corresponding to the attribute
- * @param name A pointer to a const char * pointer (NULL accepted)
- * @param value A pointer to a const char * pointer (NULL accepted)
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned
- *
- * Introduced in version 0.9. */
-__api __check_ret int iio_context_get_attr(
-		const struct iio_context *ctx, unsigned int index,
-		const char **name, const char **value);
-
-
-/** @brief Retrieve the value of a context-specific attribute
- * @param ctx A pointer to an iio_context structure
- * @param name The name of the context attribute to read
- * @return On success, a pointer to a static NULL-terminated string
- * @return If the name does not correspond to any attribute, NULL is
- * returned
- *
- * Introduced in version 0.9. */
-__api __check_ret const char * iio_context_get_attr_value(
-		const struct iio_context *ctx, const char *name);
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the index is out-of-range, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_context_get_attr(const struct iio_context *ctx, unsigned int index);
 
 
 /** @brief Try to find a context-specific attribute by its name

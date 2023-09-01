@@ -99,9 +99,7 @@ struct iio_context {
 
 	char *xml;
 
-	char **attrs;
 	char **values;
-	unsigned int nb_attrs;
 	struct iio_attr_list attrlist;
 
 	struct iio_context_params params;
