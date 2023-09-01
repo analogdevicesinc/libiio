@@ -717,7 +717,8 @@ static int read_device_name(struct iio_device *dev)
 	char buf[1024];
 	ssize_t ret;
 
-	ret = iio_device_attr_read_raw(dev, "name", buf, sizeof(buf));
+	ret = local_read_dev_attr(dev, 0, "name", buf, sizeof(buf),
+				  IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0)
 		return ret;
 	else if (ret == 0)
@@ -735,7 +736,8 @@ static int read_device_label(struct iio_device *dev)
 	char buf[1024];
 	ssize_t ret;
 
-	ret = iio_device_attr_read_raw(dev, "label", buf, sizeof(buf));
+	ret = local_read_dev_attr(dev, 0, "label", buf, sizeof(buf),
+				  IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0)
 		return ret;
 	else if (ret == 0)
@@ -1620,11 +1622,15 @@ const struct iio_backend iio_local_backend = {
 static void init_data_scale(struct iio_channel *chn)
 {
 	char *end, buf[1024];
+	const char *attr;
 	ssize_t ret;
 	float value;
 
 	chn->format.with_scale = false;
-	ret = iio_channel_attr_read_raw(chn, "scale", buf, sizeof(buf));
+	attr = get_filename(chn, "scale");
+
+	ret = local_read_dev_attr(chn->dev, 0, attr,
+				  buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0)
 		return;
 
