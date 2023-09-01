@@ -652,6 +652,8 @@ ssize_t iiod_client_read_attr(struct iiod_client *client,
 				iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n",
 						id, attr ? attr : "");
 				break;
+			default:
+				return -EINVAL;
 		}
 	}
 
@@ -839,6 +841,8 @@ ssize_t iiod_client_write_attr(struct iiod_client *client,
 				iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n",
 						id, attr ? attr : "", (unsigned long) len);
 				break;
+			default:
+				return -EINVAL;
 		}
 	}
 

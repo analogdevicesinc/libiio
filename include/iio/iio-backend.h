@@ -44,6 +44,7 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
+struct iio_buffer;
 struct iio_device;
 struct iio_context;
 struct iio_channel;
@@ -61,6 +62,22 @@ enum iio_attr_type {
 	IIO_ATTR_TYPE_DEVICE = 0,
 	IIO_ATTR_TYPE_DEBUG,
 	IIO_ATTR_TYPE_BUFFER,
+	IIO_ATTR_TYPE_CHANNEL,
+	IIO_ATTR_TYPE_CONTEXT,
+};
+
+union iio_pointer {
+	const struct iio_context *ctx;
+	const struct iio_device *dev;
+	const struct iio_channel *chn;
+	const struct iio_buffer *buf;
+};
+
+struct iio_attr {
+	union iio_pointer iio;
+	enum iio_attr_type type;
+	const char *name;
+	const char *filename;
 };
 
 struct iio_backend_ops {
@@ -80,6 +97,10 @@ struct iio_backend_ops {
 			const char *attr, char *dst, size_t len);
 	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
 			const char *attr, const char *src, size_t len);
+	ssize_t (*read_attr)(const struct iio_attr *attr,
+			     char *dst, size_t len);
+	ssize_t (*write_attr)(const struct iio_attr *attr,
+			      const char *src, size_t len);
 
 	const struct iio_device * (*get_trigger)(const struct iio_device *dev);
 	int (*set_trigger)(const struct iio_device *dev,
@@ -179,6 +200,21 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 static inline void *zalloc(size_t size)
 {
 	return calloc(1, size);
+}
+
+static inline const struct iio_device *
+iio_attr_get_device(const struct iio_attr *attr)
+{
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CONTEXT:
+		return NULL;
+	case IIO_ATTR_TYPE_CHANNEL:
+		return iio_channel_get_device(attr->iio.chn);
+	case IIO_ATTR_TYPE_BUFFER:
+		return iio_buffer_get_device(attr->iio.buf);
+	default:
+		return attr->iio.dev;
+	}
 }
 
 #undef __api
