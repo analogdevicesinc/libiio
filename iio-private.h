@@ -73,6 +73,11 @@ struct iio_module;
 struct iio_mutex;
 struct iio_task;
 
+struct iio_attr_list {
+	struct iio_attr *attrs;
+	unsigned int num;
+};
+
 struct iio_channel_attr {
 	char *name;
 	char *filename;
@@ -97,6 +102,7 @@ struct iio_context {
 	char **attrs;
 	char **values;
 	unsigned int nb_attrs;
+	struct iio_attr_list attrlist;
 
 	struct iio_context_params params;
 
@@ -118,6 +124,7 @@ struct iio_channel {
 
 	struct iio_channel_attr *attrs;
 	unsigned int nb_attrs;
+	struct iio_attr_list attrlist;
 
 	unsigned int number;
 };
@@ -137,6 +144,7 @@ struct iio_device {
 	struct iio_dev_attrs attrs;
 	struct iio_dev_attrs buffer_attrs;
 	struct iio_dev_attrs debug_attrs;
+	struct iio_attr_list attrlist[3];
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
@@ -155,6 +163,8 @@ struct iio_buffer {
 	struct iio_task *worker;
 
 	size_t block_size;
+
+	struct iio_attr_list attrlist;
 
 	/* Mutex to protect nb_blocks. Should really be an atomic... */
 	struct iio_mutex *lock;
@@ -231,9 +241,6 @@ char * iio_getenv (char * envvar);
 uint64_t iio_read_counter_us(void);
 
 int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
-
-int iio_context_add_attr(struct iio_context *ctx,
-		const char *key, const char *value);
 
 int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
 		     const char *attr, const char *type);

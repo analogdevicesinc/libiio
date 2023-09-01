@@ -86,6 +86,7 @@ typedef ptrdiff_t ssize_t;
 
 #endif /* DOXYGEN */
 
+struct iio_attr;
 struct iio_block;
 struct iio_context;
 struct iio_device;
@@ -320,6 +321,75 @@ static inline __check_ret void *iio_err_cast(const void *ptr)
 {
 	return (void *) ptr;
 }
+
+/** @} *//* ------------------------------------------------------------------*/
+/* ------------------------- Attributes functions ----------------------------*/
+/** @defgroup Attributes functions
+ * @{
+ * @struct iio_attr
+ * @brief Structure holding meta-data for an attribute
+ */
+
+/** @brief Read the content of the given attribute
+ * @param attr A pointer to an iio_attr structure
+ * @param dst A pointer to the memory area where the read data will be stored
+ * @param len The available length of the memory area, in bytes
+ * @return On success, the number of bytes written to the buffer
+ * @return On error, a negative errno code is returned */
+__api __check_ret ssize_t
+iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
+
+/** @brief Read the content of the given attribute
+ * @param attr A pointer to an iio_attr structure
+ * @param ptr A pointer to a variable where the value should be stored
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+#define iio_attr_read(attr, ptr)				\
+	_Generic((ptr),						\
+		 bool *: iio_attr_read_bool,			\
+		 long long *: iio_attr_read_longlong,		\
+		 double *: iio_attr_read_double)(chn, attr, ptr)
+
+/** @brief Set the value of the given attribute
+ * @param attr A pointer to an iio_attr structure
+ * @param src A pointer to the data to be written
+ * @param len The number of bytes that should be written
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned */
+__api __check_ret ssize_t
+iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len);
+
+/** @brief Set the value of the given attribute
+ * @param attr A pointer to an iio_attr structure
+ * @param val The value to set the attribute to
+ * @return On success, the number of bytes written
+ * @return On error, a negative errno code is returned. */
+#define iio_attr_write(attr, val)			\
+	_Generic((val),						\
+		 const char *: iio_attr_write_string,		\
+		 char *: iio_attr_write_string,			\
+		 bool: iio_attr_write_bool,			\
+		 long long: iio_attr_write_longlong,		\
+		 double: iio_attr_write_double)(dev, attr, val)
+
+/** @brief Retrieve the name of an attribute
+ * @param attr A pointer to an iio_attr structure
+ * @return A pointer to a static NULL-terminated string */
+__api __pure const char *
+iio_attr_get_name(const struct iio_attr *attr);
+
+/** @brief Retrieve the filename of an attribute
+ * @param attr A pointer to an iio_attr structure
+ * @return A pointer to a static NULL-terminated string */
+__api __check_ret __pure const char *
+iio_attr_get_filename(const struct iio_attr *attr);
+
+/** @brief Retrieve the static value of an attribute
+ * @param attr A pointer to an iio_attr structure
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the attribute does not have a static value, NULL is returned. */
+__api __pure const char *
+iio_attr_get_static_value(const struct iio_attr *attr);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
@@ -1721,6 +1791,27 @@ iio_device_debug_attr_write_longlong(const struct iio_device *dev,
 __api __check_ret int
 iio_device_debug_attr_write_double(const struct iio_device *dev,
 				   const char *attr, double val);
+__api __check_ret int
+iio_attr_read_bool(const struct iio_attr *attr, bool *val);
+
+__api __check_ret int
+iio_attr_read_longlong(const struct iio_attr *attr, long long *val);
+
+__api __check_ret int
+iio_attr_read_double(const struct iio_attr *attr, double *val);
+
+__api __check_ret ssize_t
+iio_attr_write_string(const struct iio_attr *attr, const char *src);
+
+__api __check_ret int
+iio_attr_write_bool(const struct iio_attr *attr, bool val);
+
+__api __check_ret int
+iio_attr_write_longlong(const struct iio_attr *attr, long long val);
+
+__api __check_ret int
+iio_attr_write_double(const struct iio_attr *attr, double val);
+
 #endif /* DOXYGEN */
 
 #ifdef __cplusplus

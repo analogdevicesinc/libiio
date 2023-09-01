@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "attr.h"
 #include "iio-private.h"
 
 #include <errno.h>
