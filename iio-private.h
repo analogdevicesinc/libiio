@@ -78,11 +78,6 @@ struct iio_attr_list {
 	unsigned int num;
 };
 
-struct iio_channel_attr {
-	char *name;
-	char *filename;
-};
-
 struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
@@ -120,8 +115,6 @@ struct iio_channel {
 	enum iio_modifier modifier;
 	enum iio_chan_type type;
 
-	struct iio_channel_attr *attrs;
-	unsigned int nb_attrs;
 	struct iio_attr_list attrlist;
 
 	unsigned int number;
