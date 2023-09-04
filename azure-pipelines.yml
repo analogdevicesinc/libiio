@@ -1,11 +1,13 @@
 # If you make changes to builds or artifacts, please check and update the following files if needed:
 # README.md, CI/azure/prepare_assets.sh, artifact_manifest.txt.cmakein, CI/publish_deps.ps1
 
+variables:
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+
 trigger:
   branches:
     include:
     - main
-    - master
     - next_stable
     - dev
     - staging/*
@@ -18,7 +20,6 @@ pr:
   branches:
     include:
     - main
-    - master
     - dev
     - 20*
 
@@ -429,7 +430,7 @@ stages:
   #############################################
   jobs:
   - job: CheckArtifacts
-    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
+    condition: and(succeeded(), or(eq(variables.isMain, true), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
     # Host Box
     pool:
       vmImage: 'ubuntu-latest'
@@ -465,7 +466,7 @@ stages:
   #############################################  
   - job: PushToSWDownloads
     dependsOn: CheckArtifacts
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    condition: and(succeeded(), eq(variables.isMain, true))
     pool:
       vmImage: 'ubuntu-latest'
     steps:
