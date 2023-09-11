@@ -29,24 +29,18 @@ int iio_channel_compare(const void *p1, const void *p2)
 {
 	const struct iio_channel *tmp1 = *(struct iio_channel **)p1;
 	const struct iio_channel *tmp2 = *(struct iio_channel **)p2;
+	long idx1 = iio_channel_get_index(tmp1);
+	long idx2 = iio_channel_get_index(tmp2);
 
-	/* make sure buffer enabled channels are first */
-	if (iio_channel_is_scan_element(tmp1) && !iio_channel_is_scan_element(tmp2))
-		return -1;
-	if (!iio_channel_is_scan_element(tmp1) && iio_channel_is_scan_element(tmp2))
-		return 1;
-	/* and sort them by index */
-	if (iio_channel_is_scan_element(tmp1) && iio_channel_is_scan_element(tmp2)){
-		if (iio_channel_get_index(tmp1) > iio_channel_get_index(tmp2))
-			return 1;
-		return -1;
+	if (idx1 == idx2 && idx1 >= 0) {
+		idx1 = iio_channel_get_data_format(tmp1)->shift;
+		idx2 = iio_channel_get_data_format(tmp2)->shift;
 	}
-	/* otherwise, if the ID is the same, input channels first */
-	if (strcmp(tmp1->id, tmp2->id) == 0)
-		return !iio_channel_is_output(tmp1);
 
-	/* finally by ID */
-	return strcmp(tmp1->id, tmp2->id);
+	if (idx2 >= 0 && (idx1 > idx2 || idx1 < 0))
+		return 1;
+
+	return -1;
 }
 
 int iio_channel_attr_compare(const void *p1, const void *p2)
