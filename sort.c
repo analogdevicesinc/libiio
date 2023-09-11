@@ -26,7 +26,7 @@
  * to char", hence the cast plus dereference
  */
 
-int iio_channel_compare(const void *p1, const void *p2)
+static int iio_channel_compare(const void *p1, const void *p2)
 {
 	const struct iio_channel *tmp1 = *(struct iio_channel **)p1;
 	const struct iio_channel *tmp2 = *(struct iio_channel **)p2;
@@ -52,7 +52,7 @@ int iio_channel_attr_compare(const void *p1, const void *p2)
 	return strcmp(tmp1->name, tmp2->name);
 }
 
-int iio_device_compare(const void *p1, const void *p2)
+static int iio_device_compare(const void *p1, const void *p2)
 {
 	const struct iio_device *tmp1 = *(struct iio_device **)p1;
 	const struct iio_device *tmp2 = *(struct iio_device **)p2;

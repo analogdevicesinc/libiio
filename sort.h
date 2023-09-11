@@ -12,9 +12,7 @@
 struct iio_context;
 struct iio_device;
 
-int iio_channel_compare(const void *p1, const void *p2);
 int iio_channel_attr_compare(const void *p1, const void *p2);
-int iio_device_compare(const void *p1, const void *p2);
 int iio_device_attr_compare(const void *p1, const void *p2);
 int iio_buffer_attr_compare(const void *p1, const void *p2);
 int iio_context_info_compare(const void *p1, const void *p2);
