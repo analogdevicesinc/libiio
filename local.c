@@ -446,8 +446,15 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 					dev->id, attr);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s",
-					dev->id, attr);
+			if (buf_id > 0) {
+				iio_snprintf(buf, sizeof(buf),
+					     "/sys/bus/iio/devices/%s/buffer%u/%s",
+					     dev->id, buf_id, attr);
+			} else {
+				iio_snprintf(buf, sizeof(buf),
+					     "/sys/bus/iio/devices/%s/buffer/%s",
+					     dev->id, attr);
+			}
 			break;
 		default:
 			return -EINVAL;
