@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "attr.h"
 #include "iio-config.h"
 #include "iio-private.h"
 
@@ -101,6 +102,8 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	struct iio_buffer *buf;
 	ssize_t sample_size;
+	size_t attrlist_size;
+	unsigned int i;
 	int err;
 
 	if (!ops->create_buffer)
@@ -119,10 +122,26 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	buf->dev = dev;
 	buf->idx = idx;
 
+	/* Duplicate buffer attributes from the iio_device.
+	 * This ensures that those can contain a pointer to our iio_buffer */
+	buf->attrlist.num = dev->attrlist[IIO_ATTR_TYPE_BUFFER].num;
+	attrlist_size = buf->attrlist.num * sizeof(*buf->attrlist.attrs);
+	buf->attrlist.attrs = malloc(attrlist_size);
+	if (!buf->attrlist.attrs) {
+		err = -ENOMEM;
+		goto err_free_buf;
+	}
+
+	memcpy(buf->attrlist.attrs, /* Flawfinder: ignore */
+	       dev->attrlist[IIO_ATTR_TYPE_BUFFER].attrs, attrlist_size);
+
+	for (i = 0; i < buf->attrlist.num; i++)
+		buf->attrlist.attrs[i].iio.buf = buf;
+
 	buf->mask = iio_create_channels_mask(dev->nb_channels);
 	if (!buf->mask) {
 		err = -ENOMEM;
-		goto err_free_buf;
+		goto err_free_attrs;
 	}
 
 	err = iio_channels_mask_copy(buf->mask, mask);
@@ -153,6 +172,10 @@ err_free_mutex:
 	iio_mutex_destroy(buf->lock);
 err_free_mask:
 	iio_channels_mask_destroy(buf->mask);
+err_free_attrs:
+	/* No need to call iio_free_attrs() since the names / filenames
+	 * are allocated by the device */
+	free(buf->attrlist.attrs);
 err_free_buf:
 	free(buf);
 	return iio_ptr(err);
@@ -177,4 +200,21 @@ const struct iio_channels_mask *
 iio_buffer_get_channels_mask(const struct iio_buffer *buf)
 {
 	return buf->mask;
+}
+
+unsigned int iio_buffer_get_attrs_count(const struct iio_buffer *buf)
+{
+	return buf->attrlist.num;
+}
+
+const struct iio_attr *
+iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index)
+{
+	return iio_attr_get(&buf->attrlist, index);
+}
+
+const struct iio_attr *
+iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
+{
+	return iio_attr_find(&buf->attrlist, name);
 }
