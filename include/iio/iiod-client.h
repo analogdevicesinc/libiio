@@ -68,6 +68,14 @@ __api ssize_t iiod_client_write_attr(struct iiod_client *client,
 				     size_t len, enum iio_attr_type type,
 				     unsigned int buf_id);
 
+__api ssize_t iiod_client_attr_read(struct iiod_client *client,
+				    const struct iio_attr *attr,
+				    char *dest, size_t len);
+
+__api ssize_t iiod_client_attr_write(struct iiod_client *client,
+				     const struct iio_attr *attr,
+				     const char *src, size_t len);
+
 __api struct iio_context *
 iiod_client_create_context(struct iiod_client *client,
 			   const struct iio_backend *backend,

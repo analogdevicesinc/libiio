@@ -511,19 +511,22 @@ static int iiod_client_discard(struct iiod_client *client,
 }
 
 static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
-					 const struct iio_device *dev,
-					 const struct iio_channel *chn,
-					 const char *attr, char *dest,
-					 size_t len, enum iio_attr_type type,
-					 unsigned int buf_id)
+					 const struct iio_attr *attr,
+					 char *dest, size_t len)
 {
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	const struct iio_channel *chn;
+	const struct iio_device *dev;
+	const struct iio_buffer *buf;
 	struct iiod_command cmd = { 0 };
 	unsigned int i;
 	uint16_t arg1, arg2 = 0;
 	struct iiod_buf iiod_buf;
 
-	if (chn) {
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		chn = attr->iio.chn;
+		dev = iio_channel_get_device(chn);
 		cmd.op = IIOD_OP_READ_CHN_ATTR;
 
 		for (i = 0; i < iio_device_get_channels_count(dev); i++)
@@ -533,53 +536,57 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 		arg2 = (uint16_t) i;
 
 		for (i = 0; i < iio_channel_get_attrs_count(chn); i++)
-			if (!strcmp(iio_channel_get_attr(chn, i), attr))
+			if (!strcmp(iio_channel_get_attr(chn, i), attr->name))
 				break;
 
 		if (i == iio_channel_get_attrs_count(chn))
 			return -ENOENT;
 
 		arg1 = (uint16_t) i;
-	} else {
-		switch (type) {
-		default:
-			cmd.op = IIOD_OP_READ_ATTR;
+		break;
+	case IIO_ATTR_TYPE_DEVICE:
+		dev = attr->iio.dev;
+		cmd.op = IIOD_OP_READ_ATTR;
 
-			for (i = 0; i < iio_device_get_attrs_count(dev); i++)
-				if (!strcmp(iio_device_get_attr(dev, i), attr))
-					break;
+		for (i = 0; i < iio_device_get_attrs_count(dev); i++)
+			if (!strcmp(iio_device_get_attr(dev, i), attr->name))
+				break;
 
-			if (i == iio_device_get_attrs_count(dev))
-				return -ENOENT;
+		if (i == iio_device_get_attrs_count(dev))
+			return -ENOENT;
 
-			arg1 = (uint16_t) i;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			cmd.op = IIOD_OP_READ_DBG_ATTR;
+		arg1 = (uint16_t) i;
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		dev = attr->iio.dev;
+		cmd.op = IIOD_OP_READ_DBG_ATTR;
 
-			for (i = 0; i < iio_device_get_debug_attrs_count(dev); i++)
-				if (!strcmp(iio_device_get_debug_attr(dev, i), attr))
-					break;
+		for (i = 0; i < iio_device_get_debug_attrs_count(dev); i++)
+			if (!strcmp(iio_device_get_debug_attr(dev, i), attr->name))
+				break;
 
-			if (i == iio_device_get_debug_attrs_count(dev))
-				return -ENOENT;
+		if (i == iio_device_get_debug_attrs_count(dev))
+			return -ENOENT;
 
-			arg1 = (uint16_t) i;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			cmd.op = IIOD_OP_READ_BUF_ATTR;
+		arg1 = (uint16_t) i;
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		buf = attr->iio.buf;
+		dev = iio_buffer_get_device(buf);
+		cmd.op = IIOD_OP_READ_BUF_ATTR;
 
-			for (i = 0; i < iio_device_get_buffer_attrs_count(dev); i++)
-				if (!strcmp(iio_device_get_buffer_attr(dev, i), attr))
-					break;
+		for (i = 0; i < iio_buffer_get_attrs_count(buf); i++)
+			if (iio_buffer_get_attr(buf, i) == attr)
+				break;
 
-			if (i == iio_device_get_buffer_attrs_count(dev))
-				return -ENOENT;
+		if (i == iio_buffer_get_attrs_count(buf))
+			return -ENOENT;
 
-			arg1 = (uint16_t) i;
-			arg2 = (uint16_t) buf_id;
-			break;
-		}
+		arg1 = (uint16_t) i;
+		arg2 = (uint16_t) buf->idx;
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
@@ -591,70 +598,52 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 	return iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
 }
 
-ssize_t iiod_client_read_attr(struct iiod_client *client,
-			      const struct iio_device *dev,
-			      const struct iio_channel *chn,
-			      const char *attr, char *dest,
-			      size_t len, enum iio_attr_type type,
-			      unsigned int buf_id)
+ssize_t iiod_client_attr_read(struct iiod_client *client,
+			      const struct iio_attr *attr,
+			      char *dest, size_t len)
 {
-	const char *id = iio_device_get_id(dev);
+	const struct iio_device *dev;
+	const char *id;
 	char buf[1024];
 	ssize_t ret;
 
-	if (iiod_client_uses_binary_interface(client)) {
-		return iiod_client_read_attr_new(client, dev, chn,
-						 attr, dest, len, type, buf_id);
+	if (iiod_client_uses_binary_interface(client))
+		return iiod_client_read_attr_new(client, attr, dest, len);
+
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		dev = iio_channel_get_device(attr->iio.chn);
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		dev = iio_buffer_get_device(attr->iio.buf);
+		break;
+	default:
+		dev = attr->iio.dev;
+		break;
 	}
 
-	if (buf_id > 0)
-		return -ENOSYS;
+	id = iio_device_get_id(dev);
 
-	if (attr) {
-		if (chn) {
-			if (!iio_channel_find_attr(chn, attr))
-				return -ENOENT;
-		} else {
-			switch (type) {
-				case IIO_ATTR_TYPE_DEVICE:
-					if (!iio_device_find_attr(dev, attr))
-						return -ENOENT;
-					break;
-				case IIO_ATTR_TYPE_DEBUG:
-					if (!iio_device_find_debug_attr(dev, attr))
-						return -ENOENT;
-					break;
-				case IIO_ATTR_TYPE_BUFFER:
-					if (!iio_device_find_buffer_attr(dev, attr))
-						return -ENOENT;
-					break;
-				default:
-					return -EINVAL;
-			}
-		}
-	}
-
-	if (chn) {
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
 		iio_snprintf(buf, sizeof(buf), "READ %s %s %s %s\r\n", id,
-				iio_channel_is_output(chn) ? "OUTPUT" : "INPUT",
-				iio_channel_get_id(chn), attr ? attr : "");
-	} else {
-		switch (type) {
-			case IIO_ATTR_TYPE_DEVICE:
-				iio_snprintf(buf, sizeof(buf), "READ %s %s\r\n",
-						id, attr ? attr : "");
-				break;
-			case IIO_ATTR_TYPE_DEBUG:
-				iio_snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
-						id, attr ? attr : "");
-				break;
-			case IIO_ATTR_TYPE_BUFFER:
-				iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n",
-						id, attr ? attr : "");
-				break;
-			default:
-				return -EINVAL;
-		}
+				iio_channel_is_output(attr->iio.chn) ? "OUTPUT" : "INPUT",
+				iio_channel_get_id(attr->iio.chn), attr->name);
+		break;
+	case IIO_ATTR_TYPE_DEVICE:
+		iio_snprintf(buf, sizeof(buf), "READ %s %s\r\n",
+			     id, attr->name);
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		iio_snprintf(buf, sizeof(buf), "READ %s DEBUG %s\r\n",
+			     id, attr->name);
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n",
+			     id, attr->name);
+		break;
+	case IIO_ATTR_TYPE_CONTEXT:
+		return -EINVAL;
 	}
 
 	iio_mutex_lock(client->lock);
@@ -685,14 +674,25 @@ out_unlock:
 	return ret;
 }
 
+ssize_t iiod_client_read_attr(struct iiod_client *client,
+			      const struct iio_device *dev,
+			      const struct iio_channel *chn,
+			      const char *attr, char *dest,
+			      size_t len, enum iio_attr_type type,
+			      unsigned int buf_id)
+{
+	return -ENOSYS;
+}
+
+
 static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
-					  const struct iio_device *dev,
-					  const struct iio_channel *chn,
-					  const char *attr, const char *src,
-					  size_t len, enum iio_attr_type type,
-					  unsigned int buf_id)
+					  const struct iio_attr *attr,
+					  const char *src, size_t len)
 {
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	const struct iio_channel *chn;
+	const struct iio_device *dev;
+	const struct iio_buffer *buf;
 	struct iiod_command cmd = { 0 };
 	uint16_t arg1, arg2 = 0;
 	struct iiod_buf iiod_buf[2];
@@ -700,7 +700,10 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 	unsigned int i;
 	int ret;
 
-	if (chn) {
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		chn = attr->iio.chn;
+		dev = iio_channel_get_device(chn);
 		cmd.op = IIOD_OP_WRITE_CHN_ATTR;
 
 		for (i = 0; i < iio_device_get_channels_count(dev); i++)
@@ -710,53 +713,57 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 		arg2 = (uint16_t) i;
 
 		for (i = 0; i < iio_channel_get_attrs_count(chn); i++)
-			if (!strcmp(iio_channel_get_attr(chn, i), attr))
+			if (!strcmp(iio_channel_get_attr(chn, i), attr->name))
 				break;
 
 		if (i == iio_channel_get_attrs_count(chn))
 			return -ENOENT;
 
 		arg1 = (uint16_t) i;
-	} else {
-		switch (type) {
-		default:
-			cmd.op = IIOD_OP_WRITE_ATTR;
+		break;
+	case IIO_ATTR_TYPE_DEVICE:
+		dev = attr->iio.dev;
+		cmd.op = IIOD_OP_WRITE_ATTR;
 
-			for (i = 0; i < iio_device_get_attrs_count(dev); i++)
-				if (!strcmp(iio_device_get_attr(dev, i), attr))
-					break;
+		for (i = 0; i < iio_device_get_attrs_count(dev); i++)
+			if (!strcmp(iio_device_get_attr(dev, i), attr->name))
+				break;
 
-			if (i == iio_device_get_attrs_count(dev))
-				return -ENOENT;
+		if (i == iio_device_get_attrs_count(dev))
+			return -ENOENT;
 
-			arg1 = (uint16_t) i;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			cmd.op = IIOD_OP_WRITE_DBG_ATTR;
+		arg1 = (uint16_t) i;
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		dev = attr->iio.dev;
+		cmd.op = IIOD_OP_WRITE_DBG_ATTR;
 
-			for (i = 0; i < iio_device_get_debug_attrs_count(dev); i++)
-				if (!strcmp(iio_device_get_debug_attr(dev, i), attr))
-					break;
+		for (i = 0; i < iio_device_get_debug_attrs_count(dev); i++)
+			if (!strcmp(iio_device_get_debug_attr(dev, i), attr->name))
+				break;
 
-			if (i == iio_device_get_debug_attrs_count(dev))
-				return -ENOENT;
+		if (i == iio_device_get_debug_attrs_count(dev))
+			return -ENOENT;
 
-			arg1 = (uint16_t) i;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			cmd.op = IIOD_OP_WRITE_BUF_ATTR;
+		arg1 = (uint16_t) i;
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		buf = attr->iio.buf;
+		dev = iio_buffer_get_device(buf);
+		cmd.op = IIOD_OP_WRITE_BUF_ATTR;
 
-			for (i = 0; i < iio_device_get_buffer_attrs_count(dev); i++)
-				if (!strcmp(iio_device_get_buffer_attr(dev, i), attr))
-					break;
+		for (i = 0; i < iio_buffer_get_attrs_count(buf); i++)
+			if (iio_buffer_get_attr(buf, i) == attr)
+				break;
 
-			if (i == iio_device_get_buffer_attrs_count(dev))
-				return -ENOENT;
+		if (i == iio_buffer_get_attrs_count(buf))
+			return -ENOENT;
 
-			arg1 = (uint16_t) i;
-			arg2 = (uint16_t) buf_id;
-			break;
-		}
+		arg1 = (uint16_t) i;
+		arg2 = (uint16_t) buf->idx;
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
@@ -778,72 +785,54 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 	return (ssize_t) iiod_io_wait_for_response(io);
 }
 
-ssize_t iiod_client_write_attr(struct iiod_client *client,
-			       const struct iio_device *dev,
-			       const struct iio_channel *chn,
-			       const char *attr, const char *src,
-			       size_t len, enum iio_attr_type type,
-			       unsigned int buf_id)
+ssize_t iiod_client_attr_write(struct iiod_client *client,
+			       const struct iio_attr *attr,
+			       const char *src, size_t len)
 {
-	const char *id = iio_device_get_id(dev);
+	const struct iio_device *dev;
+	const char *id;
 	char buf[1024];
 	ssize_t ret;
 	int resp;
 
-	if (iiod_client_uses_binary_interface(client)) {
-		return iiod_client_write_attr_new(client, dev, chn,
-						  attr, src, len, type, buf_id);
+	if (iiod_client_uses_binary_interface(client))
+		return iiod_client_write_attr_new(client, attr, src, len);
+
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		dev = iio_channel_get_device(attr->iio.chn);
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		dev = iio_buffer_get_device(attr->iio.buf);
+		break;
+	default:
+		dev = attr->iio.dev;
+		break;
 	}
 
-	if (buf_id > 0)
-		return -ENOSYS;
+	id = iio_device_get_id(dev);
 
-	if (attr) {
-		if (chn) {
-			if (!iio_channel_find_attr(chn, attr))
-				return -ENOENT;
-		} else {
-			switch (type) {
-				case IIO_ATTR_TYPE_DEVICE:
-					if (!iio_device_find_attr(dev, attr))
-						return -ENOENT;
-					break;
-				case IIO_ATTR_TYPE_DEBUG:
-					if (!iio_device_find_debug_attr(dev, attr))
-						return -ENOENT;
-					break;
-				case IIO_ATTR_TYPE_BUFFER:
-					if (!iio_device_find_buffer_attr(dev, attr))
-						return -ENOENT;
-					break;
-				default:
-					return -EINVAL;
-			}
-		}
-	}
-
-	if (chn) {
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
 		iio_snprintf(buf, sizeof(buf), "WRITE %s %s %s %s %lu\r\n", id,
-				iio_channel_is_output(chn) ? "OUTPUT" : "INPUT",
-				iio_channel_get_id(chn), attr ? attr : "",
-				(unsigned long) len);
-	} else {
-		switch (type) {
-			case IIO_ATTR_TYPE_DEVICE:
-				iio_snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
-						id, attr ? attr : "", (unsigned long) len);
-				break;
-			case IIO_ATTR_TYPE_DEBUG:
-				iio_snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
-						id, attr ? attr : "", (unsigned long) len);
-				break;
-			case IIO_ATTR_TYPE_BUFFER:
-				iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n",
-						id, attr ? attr : "", (unsigned long) len);
-				break;
-			default:
-				return -EINVAL;
-		}
+			     iio_channel_is_output(attr->iio.chn) ? "OUTPUT" : "INPUT",
+			     iio_channel_get_id(attr->iio.chn), attr->name,
+			     (unsigned long) len);
+		break;
+	case IIO_ATTR_TYPE_DEVICE:
+		iio_snprintf(buf, sizeof(buf), "WRITE %s %s %lu\r\n",
+			     id, attr->name, (unsigned long) len);
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		iio_snprintf(buf, sizeof(buf), "WRITE %s DEBUG %s %lu\r\n",
+			     id, attr->name, (unsigned long) len);
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n",
+			     id, attr->name, (unsigned long) len);
+		break;
+	case IIO_ATTR_TYPE_CONTEXT:
+		return -EINVAL;
 	}
 
 	iio_mutex_lock(client->lock);
@@ -865,6 +854,17 @@ out_unlock:
 	iio_mutex_unlock(client->lock);
 	return ret;
 }
+
+ssize_t iiod_client_write_attr(struct iiod_client *client,
+			       const struct iio_device *dev,
+			       const struct iio_channel *chn,
+			       const char *attr, const char *src,
+			       size_t len, enum iio_attr_type type,
+			       unsigned int buf_id)
+{
+	return -ENOSYS;
+}
+
 
 static int iiod_client_cmd(const struct iiod_command *cmd,
 			   struct iiod_command_data *data, void *d)
