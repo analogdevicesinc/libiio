@@ -8,6 +8,7 @@
 
 #include "iio-private.h"
 #include <string.h>
+#include <stdlib.h>
 
 /* These are a few functions to do sorting via qsort for various
  * iio structures. For more info, see the qsort(3) man page.
@@ -91,4 +92,16 @@ int iio_context_info_compare(const void *p1, const void *p2)
 		return ret;
 
 	return strcmp(tmp1->description, tmp2->description);
+}
+
+void iio_sort_devices(struct iio_context *ctx)
+{
+	qsort(ctx->devices, ctx->nb_devices,
+	      sizeof(*ctx->devices), iio_device_compare);
+}
+
+void iio_sort_channels(struct iio_device *dev)
+{
+	qsort(dev->channels, dev->nb_channels,
+	      sizeof(*dev->channels), iio_channel_compare);
 }

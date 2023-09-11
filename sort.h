@@ -9,11 +9,16 @@
 #ifndef __IIO_QSORT_H__
 #define __IIO_QSORT_H__
 
+struct iio_context;
+struct iio_device;
+
 int iio_channel_compare(const void *p1, const void *p2);
 int iio_channel_attr_compare(const void *p1, const void *p2);
 int iio_device_compare(const void *p1, const void *p2);
 int iio_device_attr_compare(const void *p1, const void *p2);
 int iio_buffer_attr_compare(const void *p1, const void *p2);
 int iio_context_info_compare(const void *p1, const void *p2);
+void iio_sort_devices(struct iio_context *ctx);
+void iio_sort_channels(struct iio_device *dev);
 
 #endif /* __IIO_QSORT_H__ */
