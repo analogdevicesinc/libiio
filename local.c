@@ -433,6 +433,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
+		case IIO_ATTR_TYPE_CHANNEL:
 			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
 				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
 							dev->id, attr);
@@ -496,6 +497,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
+		case IIO_ATTR_TYPE_CHANNEL:
 			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
 				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
 					dev->id, attr);
@@ -1418,6 +1420,34 @@ static char * local_get_description(const struct iio_context *ctx)
 	return description;
 }
 
+static ssize_t
+local_read_attr(const struct iio_attr *attr, char *dst, size_t len)
+{
+	const struct iio_device *dev = iio_attr_get_device(attr);
+	enum iio_attr_type type = attr->type;
+	const char *filename = attr->filename;
+	unsigned int buf_id = 0;
+
+	if (type == IIO_ATTR_TYPE_BUFFER)
+		buf_id = attr->iio.buf->idx;
+
+	return local_read_dev_attr(dev, buf_id, filename, dst, len, type);
+}
+
+static ssize_t
+local_write_attr(const struct iio_attr *attr, const char *src, size_t len)
+{
+	const struct iio_device *dev = iio_attr_get_device(attr);
+	enum iio_attr_type type = attr->type;
+	const char *filename = attr->filename;
+	unsigned int buf_id = 0;
+
+	if (type == IIO_ATTR_TYPE_BUFFER)
+		buf_id = attr->iio.buf->idx;
+
+	return local_write_dev_attr(dev, buf_id, filename, src, len, type);
+}
+
 static struct iio_buffer_pdata *
 local_create_buffer(const struct iio_device *dev, unsigned int idx,
 		    struct iio_channels_mask *mask)
@@ -1593,6 +1623,8 @@ static const struct iio_backend_ops local_ops = {
 	.write_device_attr = local_write_dev_attr,
 	.read_channel_attr = local_read_chn_attr,
 	.write_channel_attr = local_write_chn_attr,
+	.read_attr = local_read_attr,
+	.write_attr = local_write_attr,
 	.get_trigger = local_get_trigger,
 	.set_trigger = local_set_trigger,
 	.shutdown = local_shutdown,
