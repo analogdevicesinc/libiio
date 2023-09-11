@@ -1733,8 +1733,7 @@ local_create_context(const struct iio_context_params *params, const char *args)
 			goto err_context_destroy;
 	}
 
-	qsort(ctx->devices, ctx->nb_devices, sizeof(struct iio_device *),
-		iio_device_compare);
+	iio_sort_devices(ctx);
 
 	foreach_in_dir(ctx, ctx, "/sys/kernel/debug/iio", true, add_debug);
 
