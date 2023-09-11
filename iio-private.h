@@ -120,11 +120,6 @@ struct iio_channel {
 	unsigned int number;
 };
 
-struct iio_dev_attrs {
-	char **names;
-	unsigned int num;
-};
-
 struct iio_device {
 	const struct iio_context *ctx;
 	struct iio_device_pdata *pdata;
@@ -132,9 +127,6 @@ struct iio_device {
 
 	char *name, *id, *label;
 
-	struct iio_dev_attrs attrs;
-	struct iio_dev_attrs buffer_attrs;
-	struct iio_dev_attrs debug_attrs;
 	struct iio_attr_list attrlist[3];
 
 	struct iio_channel **channels;
@@ -232,9 +224,6 @@ char * iio_getenv (char * envvar);
 uint64_t iio_read_counter_us(void);
 
 int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
-
-int add_iio_dev_attr(struct iio_device *dev, struct iio_dev_attrs *attrs,
-		     const char *attr, const char *type);
 
 __cnst const struct iio_context_params *get_default_params(void);
 

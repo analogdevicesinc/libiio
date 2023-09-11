@@ -741,14 +741,9 @@ __api __check_ret __pure unsigned int iio_device_get_channels_count(
 /** @brief Enumerate the device-specific attributes of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of device-specific attributes found */
-__api __check_ret __pure unsigned int iio_device_get_attrs_count(
-		const struct iio_device *dev);
+__api __check_ret __pure unsigned int
+iio_device_get_attrs_count(const struct iio_device *dev);
 
-/** @brief Enumerate the buffer-specific attributes of the given device
- * @param dev A pointer to an iio_device structure
- * @return The number of buffer-specific attributes found */
-__api __check_ret __pure unsigned int iio_device_get_buffer_attrs_count(
-		const struct iio_device *dev);
 
 /** @brief Get the channel present at the given index
  * @param dev A pointer to an iio_device structure
@@ -764,16 +759,9 @@ __api __check_ret __pure struct iio_channel * iio_device_get_channel(
  * @param index The index corresponding to the attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char * iio_device_get_attr(
-		const struct iio_device *dev, unsigned int index);
+__api __check_ret __pure const struct iio_attr *
+iio_device_get_attr(const struct iio_device *dev, unsigned int index);
 
-/** @brief Get the buffer-specific attribute present at the given index
- * @param dev A pointer to an iio_device structure
- * @param index The index corresponding to the attribute
- * @return On success, a pointer to a static NULL-terminated string
- * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char * iio_device_get_buffer_attr(
-		const struct iio_device *dev, unsigned int index);
 
 /** @brief Try to find a channel structure by its name of ID
  * @param dev A pointer to an iio_device structure
@@ -798,141 +786,8 @@ __api __check_ret __pure struct iio_channel * iio_device_find_channel(
  * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
  * It can also be used to retrieve the name of an attribute as a pointer to a
  * static string from a dynamically allocated string. */
-__api __check_ret __pure const char * iio_device_find_attr(
-		const struct iio_device *dev, const char *name);
-
-/** @brief Try to find a buffer-specific attribute by its name
- * @param dev A pointer to an iio_device structure
- * @param name A NULL-terminated string corresponding to the name of the
- * attribute
- * @return On success, a pointer to a static NULL-terminated string
- * @return If the name does not correspond to any known attribute of the given
- * device, NULL is returned
- *
- * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
- * It can also be used to retrieve the name of an attribute as a pointer to a
- * static string from a dynamically allocated string. */
-__api __check_ret __pure const char * iio_device_find_buffer_attr(
-		const struct iio_device *dev, const char *name);
-
-/** @brief Read the content of the given device-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param dst A pointer to the memory area where the NULL-terminated string
- * corresponding to the value read will be stored
- * @param len The available length of the memory area, in bytes
- * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_device_attr_read_raw(const struct iio_device *dev,
-			 const char *attr, char *dst, size_t len);
-
-
-/** @brief Read the content of the given device-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param ptr A pointer to a variable where the value should be stored
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_device_attr_read(dev, attr, ptr)			\
-	_Generic((ptr),						\
-		 bool *: iio_device_attr_read_bool,		\
-		 long long *: iio_device_attr_read_longlong,	\
-		 double *: iio_device_attr_read_double)(dev, attr, ptr)
-
-
-/** @brief Set the value of the given device-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param src A pointer to the data to be written
- * @param len The number of bytes that should be written
- * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_device_attr_write_raw(const struct iio_device *dev,
-			  const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the value of the given device-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param val The value to set the attribute to
- * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned. */
-#define iio_device_attr_write(dev, attr, val)			\
-	_Generic((val),						\
-		 const char *: iio_device_attr_write_string,	\
-		 char *: iio_device_attr_write_string,		\
-		 bool: iio_device_attr_write_bool,		\
-		 long long: iio_device_attr_write_longlong,	\
-		 double: iio_device_attr_write_double)(dev, attr, val)
-
-
-/** @brief Read the content of the given buffer-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param buf_id The index of the hardware buffer (generally 0)
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param dst A pointer to the memory area where the NULL-terminated string
- * corresponding to the value read will be stored
- * @param len The available length of the memory area, in bytes
- * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_device_buffer_attr_read_raw(const struct iio_device *dev,
-				unsigned int buf_id,
-				const char *attr, char *dst, size_t len);
-
-
-/** @brief Read the content of the given buffer-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param buf_id The index of the hardware buffer (generally 0)
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param ptr A pointer to the variable where the value should be stored
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_device_buffer_attr_read(dev, buf_id, attr, ptr)		\
-	_Generic((ptr),							\
-		 bool *: iio_device_buffer_attr_read_bool,		\
-		 long long *: iio_device_buffer_attr_read_longlong,	\
-		 double *: iio_device_buffer_attr_read_double)(dev, buf_id, attr, ptr)
-
-
-/** @brief Set the value of the given buffer-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param buf_id The index of the hardware buffer (generally 0)
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param src A pointer to the data to be written
- * @param len The number of bytes that should be written
- * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_device_buffer_attr_write_raw(const struct iio_device *dev,
-				 unsigned int buf_id, const char *attr,
-				 const void *src, size_t len);
-
-
-/** @brief Set the value of the given buffer-specific attribute
- * @param dev A pointer to an iio_device structure
- * @param buf_id The index of the hardware buffer (generally 0)
- * @param attr A NULL-terminated string corresponding to the name of the
- * attribute
- * @param val A long long value to set the attribute to
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_device_buffer_attr_write(dev, buf_id, attr, val)		\
-	_Generic((val),							\
-		 const char *: iio_device_buffer_attr_write_string,	\
-		 char *: iio_device_buffer_attr_write_string,		\
-		 bool: iio_device_buffer_attr_write_bool,		\
-		 long long: iio_device_buffer_attr_write_longlong,	\
-		 double: iio_device_buffer_attr_write_double)(dev, buf_id, attr, val)
+__api __check_ret __pure const struct iio_attr *
+iio_device_find_attr(const struct iio_device *dev, const char *name);
 
 
 /** @brief Associate a pointer to an iio_device structure
@@ -1539,8 +1394,8 @@ __api void iio_channel_convert_inverse(const struct iio_channel *chn,
 /** @brief Enumerate the debug attributes of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of debug attributes found */
-__api __check_ret __pure unsigned int iio_device_get_debug_attrs_count(
-		const struct iio_device *dev);
+__api __check_ret __pure unsigned int
+iio_device_get_debug_attrs_count(const struct iio_device *dev);
 
 
 /** @brief Get the debug attribute present at the given index
@@ -1548,8 +1403,8 @@ __api __check_ret __pure unsigned int iio_device_get_debug_attrs_count(
  * @param index The index corresponding to the debug attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char * iio_device_get_debug_attr(
-		const struct iio_device *dev, unsigned int index);
+__api __check_ret __pure const struct iio_attr *
+iio_device_get_debug_attr(const struct iio_device *dev, unsigned int index);
 
 
 /** @brief Try to find a debug attribute by its name
@@ -1558,71 +1413,9 @@ __api __check_ret __pure const char * iio_device_get_debug_attr(
  * debug attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the name does not correspond to any known debug attribute of the
- * given device, NULL is returned
- *
- * <b>NOTE:</b> This function is useful to detect the presence of a debug
- * attribute.
- * It can also be used to retrieve the name of a debug attribute as a pointer
- * to a static string from a dynamically allocated string. */
-__api __check_ret __pure const char * iio_device_find_debug_attr(
-		const struct iio_device *dev, const char *name);
-
-
-/** @brief Read the content of the given debug attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * debug attribute
- * @param dst A pointer to the memory area where the NULL-terminated string
- * corresponding to the value read will be stored
- * @param len The available length of the memory area, in bytes
- * @return On success, the number of bytes written to the buffer
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_device_debug_attr_read_raw(const struct iio_device *dev,
-			       const char *attr, char *dst, size_t len);
-
-
-/** @brief Read the content of the given debug attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * debug attribute
- * @param ptr A pointer to a variable where the value should be stored
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_device_debug_attr_read(dev, attr, ptr)			\
-	_Generic((ptr),							\
-		 bool *: iio_device_debug_attr_read_bool,		\
-		 long long *: iio_device_debug_attr_read_longlong,	\
-		 double *: iio_device_debug_attr_read_double)(dev, attr, ptr)
-
-
-/** @brief Set the value of the given debug attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * debug attribute
- * @param src A pointer to the data to be written
- * @param len The number of bytes that should be written
- * @return On success, the number of bytes written
- * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_device_debug_attr_write_raw(const struct iio_device *dev,
-				const char *attr, const void *src, size_t len);
-
-
-/** @brief Set the value of the given debug attribute
- * @param dev A pointer to an iio_device structure
- * @param attr A NULL-terminated string corresponding to the name of the
- * debug attribute
- * @param val A double value to set the debug attribute to
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-#define iio_device_debug_attr_write(dev, attr, val)			\
-	_Generic((val),							\
-		 const char *: iio_device_debug_attr_write_string,	\
-		 char *: iio_device_debug_attr_write_string,		\
-		 bool: iio_device_debug_attr_write_bool,		\
-		 long long: iio_device_debug_attr_write_longlong,	\
-		 double: iio_device_debug_attr_write_double)(dev, attr, val)
+ * given device, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_device_find_debug_attr(const struct iio_device *dev, const char *name);
 
 
 /** @brief Set the value of a hardware register
@@ -1649,98 +1442,8 @@ __api __check_ret int iio_device_reg_read(struct iio_device *dev,
 
 #ifndef DOXYGEN
 /* These functions can be used directly, but should be used through the generic
- * macros iio_{device,channel,device_buffer,device_debug}_attr_{read,write}() */
-__api __check_ret int
-iio_device_attr_read_bool(const struct iio_device *dev,
-			  const char *attr, bool *val);
-__api __check_ret int
-iio_device_attr_read_longlong(const struct iio_device *dev,
-			      const char *attr, long long *val);
-__api __check_ret int
-iio_device_attr_read_double(const struct iio_device *dev,
-			    const char *attr, double *val);
-__api __check_ret ssize_t
-iio_device_attr_write_string(const struct iio_device *dev,
-			     const char *attr, const char *src);
-__api __check_ret int
-iio_device_attr_write_bool(const struct iio_device *dev,
-			   const char *attr, bool val);
-__api __check_ret int
-iio_device_attr_write_longlong(const struct iio_device *dev,
-			       const char *attr, long long val);
-__api __check_ret int
-iio_device_attr_write_double(const struct iio_device *dev,
-			     const char *attr, double val);
-__api __check_ret int
-iio_device_buffer_attr_read_bool(const struct iio_device *dev,
-				 unsigned int buf_id,
-				 const char *attr, bool *val);
-__api __check_ret int
-iio_device_buffer_attr_read_longlong(const struct iio_device *dev,
-				     unsigned int buf_id,
-				     const char *attr, long long *val);
-__api __check_ret int
-iio_device_buffer_attr_read_double(const struct iio_device *dev,
-				   unsigned int buf_id,
-				   const char *attr, double *val);
-__api __check_ret ssize_t
-iio_device_buffer_attr_write_string(const struct iio_device *dev,
-				    unsigned int buf_id,
-				    const char *attr, const char *src);
-__api __check_ret int
-iio_device_buffer_attr_write_bool(const struct iio_device *dev,
-				  unsigned int buf_id,
-				  const char *attr, bool val);
-__api __check_ret int
-iio_device_buffer_attr_write_longlong(const struct iio_device *dev,
-				      unsigned int buf_id,
-				      const char *attr, long long val);
-__api __check_ret int
-iio_device_buffer_attr_write_double(const struct iio_device *dev,
-				    unsigned int buf_id,
-				    const char *attr, double val);
-__api __check_ret int
-iio_channel_attr_read_bool(const struct iio_channel *chn,
-			   const char *attr, bool *val);
-__api __check_ret int
-iio_channel_attr_read_longlong(const struct iio_channel *chn,
-			       const char *attr, long long *val);
-__api __check_ret int
-iio_channel_attr_read_double(const struct iio_channel *chn,
-			     const char *attr, double *val);
-__api __check_ret ssize_t
-iio_channel_attr_write_string(const struct iio_channel *chn,
-			      const char *attr, const char *src);
-__api __check_ret
-int iio_channel_attr_write_bool(const struct iio_channel *chn,
-				const char *attr, bool val);
-__api __check_ret int
-iio_channel_attr_write_longlong(const struct iio_channel *chn,
-				const char *attr, long long val);
-__api __check_ret int
-iio_channel_attr_write_double(const struct iio_channel *chn,
-			      const char *attr, double val);
-__api __check_ret int
-iio_device_debug_attr_read_bool(const struct iio_device *dev,
-				const char *attr, bool *val);
-__api __check_ret int
-iio_device_debug_attr_read_longlong(const struct iio_device *dev,
-				    const char *attr, long long *val);
-__api __check_ret int
-iio_device_debug_attr_read_double(const struct iio_device *dev,
-				  const char *attr, double *val);
-__api __check_ret ssize_t
-iio_device_debug_attr_write_string(const struct iio_device *dev,
-				   const char *attr, const char *src);
-__api __check_ret int
-iio_device_debug_attr_write_bool(const struct iio_device *dev,
-				 const char *attr, bool val);
-__api __check_ret int
-iio_device_debug_attr_write_longlong(const struct iio_device *dev,
-				     const char *attr, long long val);
-__api __check_ret int
-iio_device_debug_attr_write_double(const struct iio_device *dev,
-				   const char *attr, double val);
+ * macros iio_attr_{read,write}() */
+
 __api __check_ret int
 iio_attr_read_bool(const struct iio_attr *attr, bool *val);
 
