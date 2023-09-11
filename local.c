@@ -38,14 +38,10 @@
 #define IIO_BUFFER_GET_FD_IOCTL		_IOWR('i', 0x91, int)
 
 /* Forward declarations */
-static ssize_t local_read_chn_attr(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len);
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
 				    unsigned int buf_id, const char *attr,
 				    const char *src, size_t len,
 				    enum iio_attr_type type);
-static ssize_t local_write_chn_attr(const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len);
 static struct iio_context *
 local_create_context(const struct iio_context_params *params, const char *args);
 static int local_context_scan(const struct iio_context_params *params,
@@ -544,22 +540,6 @@ static const char * get_filename(const struct iio_channel *chn,
 		if (!strcmp(attr, chn->attrlist.attrs[i].name))
 			return chn->attrlist.attrs[i].filename;
 	return attr;
-}
-
-static ssize_t local_read_chn_attr(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len)
-{
-	attr = get_filename(chn, attr);
-	return local_read_dev_attr(chn->dev, 0, attr,
-				   dst, len, IIO_ATTR_TYPE_DEVICE);
-}
-
-static ssize_t local_write_chn_attr(const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len)
-{
-	attr = get_filename(chn, attr);
-	return local_write_dev_attr(chn->dev, 0, attr,
-				    src, len, IIO_ATTR_TYPE_DEVICE);
 }
 
 static int channel_write_state(const struct iio_channel *chn,
@@ -1564,10 +1544,6 @@ int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 static const struct iio_backend_ops local_ops = {
 	.scan = local_context_scan,
 	.create = local_create_context,
-	.read_device_attr = local_read_dev_attr,
-	.write_device_attr = local_write_dev_attr,
-	.read_channel_attr = local_read_chn_attr,
-	.write_channel_attr = local_write_chn_attr,
 	.read_attr = local_read_attr,
 	.write_attr = local_write_attr,
 	.get_trigger = local_get_trigger,
