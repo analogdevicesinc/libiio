@@ -91,7 +91,8 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 	struct iio_context *ctx;
 	char uri[sizeof("ip:") + FQDN_LEN + sizeof (":65535") + 1];
 	char description[255], *p;
-	const char *hw_model, *serial;
+	const char *hw_model = NULL, *serial = NULL;
+	const struct iio_attr *attr;
 	unsigned int i;
 
 	if (port == IIOD_PORT) {
@@ -111,8 +112,12 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 		return -ENOMEM;
 	}
 
-	hw_model = iio_context_get_attr_value(ctx, "hw_model");
-	serial = iio_context_get_attr_value(ctx, "hw_serial");
+	attr = iio_context_find_attr(ctx, "hw_model");
+	if (attr)
+		hw_model = iio_attr_get_static_value(attr);
+	attr = iio_context_find_attr(ctx, "hw_serial");
+	if (attr)
+		serial = iio_attr_get_static_value(attr);
 
 	if (hw_model && serial) {
 		iio_snprintf(description, sizeof(description), "%s (%s), serial=%s",
