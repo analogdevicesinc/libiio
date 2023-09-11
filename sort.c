@@ -94,6 +94,22 @@ int iio_context_info_compare(const void *p1, const void *p2)
 	return strcmp(tmp1->description, tmp2->description);
 }
 
+static int iio_attr_compare(const void *p1, const void *p2)
+{
+	const struct iio_attr *attr1 = (const struct iio_attr *)p1;
+	const struct iio_attr *attr2 = (const struct iio_attr *)p2;
+
+	return strcmp(attr1->name, attr2->name);
+}
+
+void iio_sort_attrs(struct iio_attr_list *attrs)
+{
+	if (attrs->num > 0) {
+		qsort(attrs->attrs, attrs->num,
+		      sizeof(*attrs->attrs), iio_attr_compare);
+	}
+}
+
 void iio_sort_devices(struct iio_context *ctx)
 {
 	qsort(ctx->devices, ctx->nb_devices,
