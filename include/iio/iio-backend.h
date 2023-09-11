@@ -86,17 +86,6 @@ struct iio_backend_ops {
 	struct iio_context * (*create)(const struct iio_context_params *params,
 				       const char *uri);
 
-	ssize_t (*read_device_attr)(const struct iio_device *dev,
-				    unsigned int buf_id, const char *attr,
-				    char *dst, size_t len, enum iio_attr_type);
-	ssize_t (*write_device_attr)(const struct iio_device *dev,
-				     unsigned int buf_id, const char *attr,
-				     const char *src, size_t len,
-				     enum iio_attr_type);
-	ssize_t (*read_channel_attr)(const struct iio_channel *chn,
-			const char *attr, char *dst, size_t len);
-	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
-			const char *attr, const char *src, size_t len);
 	ssize_t (*read_attr)(const struct iio_attr *attr,
 			     char *dst, size_t len);
 	ssize_t (*write_attr)(const struct iio_attr *attr,
