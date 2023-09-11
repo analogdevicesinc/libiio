@@ -44,54 +44,12 @@ static int iio_channel_compare(const void *p1, const void *p2)
 	return -1;
 }
 
-int iio_channel_attr_compare(const void *p1, const void *p2)
-{
-	const struct iio_channel_attr *tmp1 = (struct iio_channel_attr *)p1;
-	const struct iio_channel_attr *tmp2 = (struct iio_channel_attr *)p2;
-	/* qsort channel attributes by name */
-	return strcmp(tmp1->name, tmp2->name);
-}
-
 static int iio_device_compare(const void *p1, const void *p2)
 {
 	const struct iio_device *tmp1 = *(struct iio_device **)p1;
 	const struct iio_device *tmp2 = *(struct iio_device **)p2;
 	/* qsort devices by ID */
 	return strcmp(tmp1->id, tmp2->id);
-}
-
-int iio_device_attr_compare(const void *p1, const void *p2)
-{
-	const char *tmp1 = *(const char **)p1;
-	const char *tmp2 = *(const char **)p2;
-	/* qsort device attributes by name */
-	return strcmp(tmp1, tmp2);
-}
-
-int iio_buffer_attr_compare(const void *p1, const void *p2)
-{
-	const char *tmp1 = *(const char **)p1;
-	const char *tmp2 = *(const char **)p2;
-	/* qsort buffer attributes by name */
-	return strcmp(tmp1, tmp2);
-}
-
-int iio_context_info_compare(const void *p1, const void *p2)
-{
-	int ret;
-	const struct iio_context_info *tmp1 = *(struct iio_context_info **)p1;
-	const struct iio_context_info *tmp2 = *(struct iio_context_info **)p2;
-
-	if(!tmp1->uri)
-		return 1;
-	if (!tmp2->uri)
-		return 0;
-
-	ret = strcmp(tmp1->uri, tmp2->uri);
-	if (ret)
-		return ret;
-
-	return strcmp(tmp1->description, tmp2->description);
 }
 
 static int iio_attr_compare(const void *p1, const void *p2)
