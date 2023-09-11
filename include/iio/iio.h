@@ -643,6 +643,17 @@ __api __check_ret const char * iio_context_get_attr_value(
 		const struct iio_context *ctx, const char *name);
 
 
+/** @brief Try to find a context-specific attribute by its name
+ * @param ctx A pointer to an iio_context structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the name does not correspond to any known attribute of the given
+ * context, NULL is returned. */
+__api __check_ret __pure const struct iio_attr *
+iio_context_find_attr(const struct iio_context *ctx, const char *name);
+
+
 /** @brief Enumerate the devices found in the given context
  * @param ctx A pointer to an iio_context structure
  * @return The number of devices found */
