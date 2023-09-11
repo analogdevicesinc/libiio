@@ -53,8 +53,7 @@ static int local_context_scan(const struct iio_context_params *params,
 
 struct iio_channel_pdata {
 	char *enable_fn;
-	struct iio_channel_attr *protected_attrs;
-	unsigned int nb_protected_attrs;
+	struct iio_attr_list protected;
 };
 
 static const char * const device_attrs_denylist[] = {
@@ -128,13 +127,13 @@ static int set_channel_name(struct iio_channel *chn)
 	const char *ptr;
 	unsigned int i;
 
-	if (chn->nb_attrs + pdata->nb_protected_attrs < 2)
+	if (chn->attrlist.num + pdata->protected.num < 2)
 		return 0;
 
-	if (chn->nb_attrs)
-		attr0 = ptr = chn->attrs[0].name;
+	if (chn->attrlist.num)
+		attr0 = ptr = chn->attrlist.attrs[0].name;
 	else
-		attr0 = ptr = pdata->protected_attrs[0].name;
+		attr0 = ptr = pdata->protected.attrs[0].name;
 
 	while (true) {
 		bool can_fix = true;
@@ -145,13 +144,13 @@ static int set_channel_name(struct iio_channel *chn)
 			break;
 
 		len = ptr - attr0 + 1;
-		for (i = 1; can_fix && i < chn->nb_attrs; i++)
-			can_fix = !strncmp(attr0, chn->attrs[i].name, len);
+		for (i = 1; can_fix && i < chn->attrlist.num; i++)
+			can_fix = !strncmp(attr0, chn->attrlist.attrs[i].name, len);
 
-		for (i = !chn->nb_attrs;
-				can_fix && i < pdata->nb_protected_attrs; i++) {
+		for (i = !chn->attrlist.num;
+				can_fix && i < pdata->protected.num; i++) {
 			can_fix = !strncmp(attr0,
-					pdata->protected_attrs[i].name, len);
+					pdata->protected.attrs[i].name, len);
 		}
 
 		if (!can_fix)
@@ -172,10 +171,10 @@ static int set_channel_name(struct iio_channel *chn)
 		chn_dbg(chn, "Setting name of channel %s to %s\n", chn->id, name);
 
 		/* Shrink the attribute name */
-		for (i = 0; i < chn->nb_attrs; i++)
-			strcut(chn->attrs[i].name, prefix_len);
-		for (i = 0; i < pdata->nb_protected_attrs; i++)
-			strcut(pdata->protected_attrs[i].name, prefix_len);
+		for (i = 0; i < chn->attrlist.num; i++)
+			strcut((char *) chn->attrlist.attrs[i].name, prefix_len);
+		for (i = 0; i < pdata->protected.num; i++)
+			strcut((char *) pdata->protected.attrs[i].name, prefix_len);
 	}
 
 	return 0;
@@ -541,9 +540,9 @@ static const char * get_filename(const struct iio_channel *chn,
 		const char *attr)
 {
 	unsigned int i;
-	for (i = 0; i < chn->nb_attrs; i++)
-		if (!strcmp(attr, chn->attrs[i].name))
-			return chn->attrs[i].filename;
+	for (i = 0; i < chn->attrlist.num; i++)
+		if (!strcmp(attr, chn->attrlist.attrs[i].name))
+			return chn->attrlist.attrs[i].filename;
 	return attr;
 }
 
@@ -687,7 +686,8 @@ static char * get_channel_id(struct iio_device *dev, const char *attr)
 	return res;
 }
 
-static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
+static const char *
+get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
 	char *ptr = strchr(attr, '_');
 	size_t len;
@@ -698,7 +698,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 		 * the channel's ID; in that particular case we don't need to
 		 * strip the prefix.
 		 */
-		return iio_strdup(ptr ? ptr + 1 : attr);
+		return ptr ? ptr + 1 : attr;
 	}
 
 	ptr = strchr(ptr + 1, '_') + 1;
@@ -711,7 +711,7 @@ static char * get_short_attr_name(struct iio_channel *chn, const char *attr)
 			ptr += len + 1;
 	}
 
-	return iio_strdup(ptr);
+	return ptr;
 }
 
 static int read_device_name(struct iio_device *dev)
@@ -765,7 +765,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	if (!strcmp(attr, "label"))
 		return read_device_label(dev);
 
-	return add_iio_dev_attr(dev, &dev->attrs, attr, "");
+	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEVICE);
 }
 
 static int handle_protected_scan_element_attr(struct iio_channel *chn,
@@ -847,10 +847,10 @@ static int handle_scan_elements(struct iio_channel *chn)
 	struct iio_channel_pdata *pdata = chn->pdata;
 	unsigned int i;
 
-	for (i = 0; i < pdata->nb_protected_attrs; i++) {
+	for (i = 0; i < pdata->protected.num; i++) {
 		int ret = handle_protected_scan_element_attr(chn,
-				pdata->protected_attrs[i].name,
-				pdata->protected_attrs[i].filename);
+				pdata->protected.attrs[i].name,
+				pdata->protected.attrs[i].filename);
 		if (ret < 0)
 			return ret;
 	}
@@ -858,79 +858,32 @@ static int handle_scan_elements(struct iio_channel *chn)
 	return 0;
 }
 
-static int add_protected_attr(struct iio_channel *chn, char *name, char *fn)
-{
-	struct iio_channel_pdata *pdata = chn->pdata;
-	struct iio_channel_attr *attrs;
-
-	attrs = realloc(pdata->protected_attrs,
-			(1 + pdata->nb_protected_attrs) * sizeof(*attrs));
-	if (!attrs)
-		return -ENOMEM;
-
-	attrs[pdata->nb_protected_attrs].name = name;
-	attrs[pdata->nb_protected_attrs++].filename = fn;
-	pdata->protected_attrs = attrs;
-
-	chn_dbg(chn, "Add protected attr \'%s\' to channel \'%s\'\n",
-		name, chn->id);
-	return 0;
-}
-
 static void free_protected_attrs(struct iio_channel *chn)
 {
 	struct iio_channel_pdata *pdata = chn->pdata;
-	unsigned int i;
 
-	for (i = 0; i < pdata->nb_protected_attrs; i++) {
-		free(pdata->protected_attrs[i].name);
-		free(pdata->protected_attrs[i].filename);
-	}
-
-	free(pdata->protected_attrs);
-	pdata->nb_protected_attrs = 0;
-	pdata->protected_attrs = NULL;
+	iio_free_attrs(&pdata->protected);
 }
 
 static int add_attr_to_channel(struct iio_channel *chn,
-		const char *attr, const char *path, bool is_scan_element)
+			       const char *name, const char *path,
+			       bool is_scan_element)
 {
-	struct iio_channel_attr *attrs;
-	char *fn, *name = get_short_attr_name(chn, attr);
-	if (!name)
-		return -ENOMEM;
+	struct iio_channel_pdata *pdata = chn->pdata;
+	union iio_pointer p = { .chn = chn, };
+	struct iio_attr_list *attrs;
+	int ret;
 
-	fn = iio_strdup(path);
-	if (!fn)
-		goto err_free_name;
+	name = get_short_attr_name(chn, name);
 
-	if (is_scan_element) {
-		int ret = add_protected_attr(chn, name, fn);
+	attrs = is_scan_element ? &pdata->protected : &chn->attrlist;
+	ret = iio_add_attr(p, attrs, name, path, IIO_ATTR_TYPE_CHANNEL);
+	if (ret)
+		return ret;
 
-		if (ret < 0)
-			goto err_free_fn;
-
-		return 0;
-	}
-
-	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
-			sizeof(struct iio_channel_attr));
-	if (!attrs)
-		goto err_free_fn;
-
-	attrs[chn->nb_attrs].filename = fn;
-	attrs[chn->nb_attrs++].name = name;
-	chn->attrs = attrs;
-
-	chn_dbg(chn, "Added attr \'%s\' to channel \'%s\'\n",
-		name, chn->id);
+	chn_dbg(chn, "Added%s attr \'%s\' to channel \'%s\'\n",
+		is_scan_element ? " protected" : "", name, chn->id);
 	return 0;
-
-err_free_fn:
-	free(fn);
-err_free_name:
-	free(name);
-	return -ENOMEM;
 }
 
 static int add_channel_to_device(struct iio_device *dev,
@@ -1117,57 +1070,53 @@ static int detect_global_attr(struct iio_device *dev, const char *attr,
 
 static int detect_and_move_global_attrs(struct iio_device *dev)
 {
-	unsigned int i;
-	char **ptr = dev->attrs.names;
+	struct iio_attr_list *list = &dev->attrlist[IIO_ATTR_TYPE_DEVICE];
+	struct iio_attr *attrs = list->attrs;
+	unsigned int i, j;
 
-	for (i = 0; i < dev->attrs.num; i++) {
-		const char *attr = dev->attrs.names[i];
+	for (i = 0; i < list->num; i++) {
 		bool match;
 		int ret;
 
-		ret = detect_global_attr(dev, attr, 2, &match);
+		ret = detect_global_attr(dev, attrs[i].name, 2, &match);
 		if (ret)
 			return ret;
 
 		if (!match) {
-			ret = detect_global_attr(dev, attr, 1, &match);
+			ret = detect_global_attr(dev, attrs[i].name, 1, &match);
 			if (ret)
 				return ret;
 		}
 
-		if (match) {
-			free(dev->attrs.names[i]);
-			dev->attrs.names[i] = NULL;
-		}
+		if (match)
+			iio_free_attr_data(&attrs[i]);
 	}
 
 	/* Find channels without an index */
-	for (i = 0; i < dev->attrs.num; i++) {
-		const char *attr = dev->attrs.names[i];
+	for (i = 0; i < list->num; i++) {
 		int ret;
 
-		if (!dev->attrs.names[i])
+		if (!attrs[i].name)
 			continue;
 
-		if (is_channel(dev, attr, false)) {
-			ret = add_channel(dev, attr, attr, false);
+		if (is_channel(dev, attrs[i].name, false)) {
+			ret = add_channel(dev, attrs[i].name, attrs[i].name, false);
 			if (ret)
 				return ret;
 
-			free(dev->attrs.names[i]);
-			dev->attrs.names[i] = NULL;
+			iio_free_attr_data(&attrs[i]);
 		}
 	}
 
-	for (i = 0; i < dev->attrs.num; i++) {
-		if (dev->attrs.names[i])
-			*ptr++ = dev->attrs.names[i];
+	for (i = 0, j = 0; i < list->num; i++) {
+		if (attrs[i].name)
+			attrs[j++] = attrs[i];
 	}
 
-	dev->attrs.num = ptr - dev->attrs.names;
-	if (!dev->attrs.num) {
-		free(dev->attrs.names);
-		dev->attrs.names = NULL;
+	list->num = j;
+	if (!list->num) {
+		free(list->attrs);
+		list->attrs = NULL;
 	}
 
 	return 0;
@@ -1183,7 +1132,7 @@ static int add_buffer_attr(void *d, const char *path)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 
-	return add_iio_dev_attr(dev, &dev->buffer_attrs, name, " buffer");
+	return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_BUFFER);
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
@@ -1294,8 +1243,7 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 		if (ret < 0)
 			return ret;
 
-		qsort(dev->buffer_attrs.names, dev->buffer_attrs.num, sizeof(char *),
-			iio_buffer_attr_compare);
+		iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_BUFFER]);
 	}
 
 	return 0;
@@ -1347,13 +1295,10 @@ static int create_device(void *d, const char *path)
 		goto err_free_device;
 
 	/* sorting is done after global attrs are added */
-	for (i = 0; i < dev->nb_channels; i++) {
-		struct iio_channel *chn = dev->channels[i];
-		qsort(chn->attrs,  chn->nb_attrs, sizeof(struct iio_channel_attr),
-			iio_channel_attr_compare);
-	}
-	qsort(dev->attrs.names, dev->attrs.num, sizeof(char *),
-		iio_device_attr_compare);
+	for (i = 0; i < dev->nb_channels; i++)
+		iio_sort_attrs(&dev->channels[i]->attrlist);
+
+	iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_DEVICE]);
 
 	ret = iio_context_add_device(ctx, dev);
 	if (!ret)
@@ -1373,7 +1318,7 @@ static int add_debug_attr(void *d, const char *path)
 	struct iio_device *dev = d;
 	const char *attr = strrchr(path, '/') + 1;
 
-	return add_iio_dev_attr(dev, &dev->debug_attrs, attr, " debug");
+	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEBUG);
 }
 
 static int add_debug(void *d, const char *path)
