@@ -323,30 +323,10 @@ struct iio_device * iio_context_find_device(const struct iio_context *ctx,
 
 static void reorder_channels(struct iio_device *dev)
 {
-	bool found;
 	unsigned int i;
 
 	/* Reorder channels by index */
-	do {
-		found = false;
-		for (i = 1; i < dev->nb_channels; i++) {
-			struct iio_channel **channels = dev->channels;
-			long ch1 = channels[i - 1]->index;
-			long ch2 = channels[i]->index;
-
-			if (ch1 == ch2 && ch1 >= 0) {
-				ch1 = channels[i - 1]->format.shift;
-				ch2 = channels[i]->format.shift;
-			}
-
-			if (ch2 >= 0 && ((ch1 > ch2) || ch1 < 0)) {
-				struct iio_channel *bak = channels[i];
-				channels[i] = channels[i - 1];
-				channels[i - 1] = bak;
-				found = true;
-			}
-		}
-	} while (found);
+	iio_sort_channels(dev);
 
 	for (i = 0; i < dev->nb_channels; i++)
 		dev->channels[i]->number = i;
