@@ -22,20 +22,14 @@ xml_create_context(const struct iio_context_params *params,
 
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 {
+	const char *name = NULL, *filename = NULL;
 	xmlAttr *attr;
-	char *name = NULL, *filename = NULL;
-	struct iio_channel_attr *attrs;
-	int err = -ENOMEM;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "name")) {
-			name = iio_strdup((char *) attr->children->content);
-			if (!name)
-				goto err_free;
-		} else if (!strcmp((char *) attr->name, "filename")) {
-			filename = iio_strdup((char *) attr->children->content);
-			if (!filename)
-				goto err_free;
+		if (!strcmp((const char *)attr->name, "name")) {
+			name = (const char *)attr->children->content;
+		} else if (!strcmp((const char *)attr->name, "filename")) {
+			filename = (const char *)attr->children->content;
 		} else {
 			chn_dbg(chn, "Unknown field \'%s\' in channel %s\n",
 				attr->name, chn->id);
@@ -44,30 +38,10 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 
 	if (!name) {
 		chn_err(chn, "Incomplete attribute in channel %s\n", chn->id);
-		err = -EINVAL;
-		goto err_free;
+		return -EINVAL;
 	}
 
-	if (!filename) {
-		filename = iio_strdup(name);
-		if (!filename)
-			goto err_free;
-	}
-
-	attrs = realloc(chn->attrs, (1 + chn->nb_attrs) *
-			sizeof(struct iio_channel_attr));
-	if (!attrs)
-		goto err_free;
-
-	attrs[chn->nb_attrs].filename = filename;
-	attrs[chn->nb_attrs++].name = name;
-	chn->attrs = attrs;
-	return 0;
-
-err_free:
-	free(name);
-	free(filename);
-	return err;
+	return iio_channel_add_attr(chn, name, filename);
 }
 
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
@@ -89,16 +63,7 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 		return -EINVAL;
 	}
 
-	switch(type) {
-		case IIO_ATTR_TYPE_DEBUG:
-			return add_iio_dev_attr(dev, &dev->debug_attrs, name, " debug");
-		case IIO_ATTR_TYPE_DEVICE:
-			return add_iio_dev_attr(dev, &dev->attrs, name, "");
-		case IIO_ATTR_TYPE_BUFFER:
-			return add_iio_dev_attr(dev, &dev->buffer_attrs, name, " buffer");
-		default:
-			return -EINVAL;
-	}
+	return iio_device_add_attr(dev, name, type);
 }
 
 static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
