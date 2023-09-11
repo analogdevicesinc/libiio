@@ -1215,6 +1215,33 @@ __api __check_ret __pure const struct iio_device * iio_buffer_get_device(
 		const struct iio_buffer *buf);
 
 
+/** @brief Enumerate the attributes of the given buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return The number of buffer-specific attributes found */
+__api __check_ret __pure unsigned int
+iio_buffer_get_attrs_count(const struct iio_buffer *buf);
+
+
+/** @brief Get the buffer-specific attribute present at the given index
+ * @param buf A pointer to an iio_buffer structure
+ * @param index The index corresponding to the attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index);
+
+
+/** @brief Try to find a buffer-specific attribute by its name
+ * @param buf A pointer to an iio_buffer structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the name does not correspond to any known attribute of the given
+ * buffer, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_buffer_find_attr(const struct iio_buffer *buf, const char *name);
+
+
 /** @brief Create an input or output buffer associated to the given device
  * @param dev A pointer to an iio_device structure
  * @param idx The index of the hardware buffer. Should be 0 in most cases.
