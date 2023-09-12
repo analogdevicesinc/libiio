@@ -246,52 +246,26 @@ static const struct iiod_client_ops usb_iiod_client_ops = {
 	.cancel = usb_cancel,
 };
 
-static ssize_t usb_read_dev_attr(const struct iio_device *dev,
-				 unsigned int buf_id, const char *attr,
-				 char *dst, size_t len, enum iio_attr_type type)
+static ssize_t
+usb_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 {
+	const struct iio_device *dev = iio_attr_get_device(attr);
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_read_attr(client, dev, NULL, attr,
-				     dst, len, type, buf_id);
+	return iiod_client_attr_read(client, attr, dst, len);
 }
 
-static ssize_t usb_write_dev_attr(const struct iio_device *dev,
-				  unsigned int buf_id, const char *attr,
-				  const char *src, size_t len,
-				  enum iio_attr_type type)
+static ssize_t
+usb_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 {
+	const struct iio_device *dev = iio_attr_get_device(attr);
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_write_attr(client, dev, NULL, attr, src,
-				      len, type, buf_id);
-}
-
-static ssize_t usb_read_chn_attr(const struct iio_channel *chn,
-		const char *attr, char *dst, size_t len)
-{
-	const struct iio_device *dev = iio_channel_get_device(chn);
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	struct iiod_client *client = pdata->io_ctx.iiod_client;
-
-	return iiod_client_read_attr(client, dev, chn, attr,
-				     dst, len, false, 0);
-}
-
-static ssize_t usb_write_chn_attr(const struct iio_channel *chn,
-		const char *attr, const char *src, size_t len)
-{
-	const struct iio_device *dev = iio_channel_get_device(chn);
-	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
-	struct iiod_client *client = pdata->io_ctx.iiod_client;
-
-	return iiod_client_write_attr(client, dev, chn, attr, src, len, false, 0);
+	return iiod_client_attr_write(client, attr, src, len);
 }
 
 static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
@@ -530,10 +504,8 @@ usb_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
 static const struct iio_backend_ops usb_ops = {
 	.scan = usb_context_scan,
 	.create = usb_create_context_from_args,
-	.read_device_attr = usb_read_dev_attr,
-	.read_channel_attr = usb_read_chn_attr,
-	.write_device_attr = usb_write_dev_attr,
-	.write_channel_attr = usb_write_chn_attr,
+	.read_attr = usb_read_attr,
+	.write_attr = usb_write_attr,
 	.get_trigger = usb_get_trigger,
 	.set_trigger = usb_set_trigger,
 	.set_timeout = usb_set_timeout,
