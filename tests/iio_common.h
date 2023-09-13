@@ -62,8 +62,12 @@ uint64_t get_time_us(void);
  * {PAGESIZE} : Size in bytes of a page
  * Too bad we work on non-POSIX systems
  */
+#if defined(_WIN32)
+#define NAME_MAX 4096 // This might break window's 256 char limit
+#else
 #ifndef NAME_MAX
 #define NAME_MAX 256
+#endif
 #endif
 
 

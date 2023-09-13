@@ -26,12 +26,8 @@
 #define iio_sscanf sscanf
 #endif
 
-#if defined(_WIN32)
-#define NAME_MAX 4096 // This might break window's 256 char limit
-#else
 #ifndef NAME_MAX
 #define NAME_MAX 256
-#endif
 #endif
 #ifndef PATH_MAX
 #define PATH_MAX 4096
