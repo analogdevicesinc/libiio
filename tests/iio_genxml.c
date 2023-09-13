@@ -26,8 +26,12 @@
 #define iio_sscanf sscanf
 #endif
 
+#if defined(_WIN32)
+#define NAME_MAX 4096 // This might break window's 256 char limit
+#else
 #ifndef NAME_MAX
 #define NAME_MAX 256
+#endif
 #endif
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -47,6 +51,7 @@
 
 static const struct option options[] = {
 	{"values", no_argument, 0, 'v'},
+	{"filename", required_argument, 0, 'f'},
 	{0, 0, 0, 0},
 };
 
@@ -54,6 +59,7 @@ static const char *options_descriptions[] = {
 	(""),
 	/* help */
 	"Get values for attributes from drivers.",
+	"Filename to write XML data to instead of stdout.",
 };
 
 enum iio_attr_type {
@@ -180,6 +186,9 @@ static char *get_attr_xml2(const struct iio_device *device, const char *attr, si
 	str = malloc(len);
 	if (!str)
 		return NULL;
+
+	if (len > NAME_MAX)
+		printf("Warning: attribute %s value is too long for buffers\n", attr);
 
 	switch (type) {
 	case IIO_ATTR_TYPE_DEVICE:
@@ -669,8 +678,8 @@ char * iio_context_get_xml_with_values(const struct iio_context *ctx)
 	for (i = 0; i < iio_context_get_attrs_count(ctx) && len > 0; i++) {
 		ptr += iio_snprintf(ptr, len, "<context-attribute name=\"%s\" value=\"%s\" />",
 				    ctx_attrs[i], ctx_values[i]);
-		free(ctx_attrs[i]);
-		free(ctx_values[i]);
+		// free(ctx_attrs[i]);
+		// free(ctx_values[i]);
 		len = eptr - ptr;
 	}
 
