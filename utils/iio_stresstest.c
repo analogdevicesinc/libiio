@@ -478,9 +478,6 @@ int main(int argc, char **argv)
 					dev = iio_context_get_device(ctx, i);
 					name = iio_device_get_name(dev);
 
-					if (!iio_device_get_buffer_attrs_count(dev))
-						continue;
-
 					nb_channels = iio_device_get_channels_count(dev);
 					mask = iio_create_channels_mask(nb_channels);
 					if (!mask) {

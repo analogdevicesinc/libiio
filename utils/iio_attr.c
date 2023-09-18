@@ -106,7 +106,9 @@ static inline const char *get_label_or_name_or_id(const struct iio_device *dev)
 }
 
 static int dump_device_attributes(const struct iio_device *dev,
-		const char *attr, const char *wbuf, enum verbosity quiet)
+				  const struct iio_attr *attr,
+				  const char *type, const char *var,
+				  const char *wbuf, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
@@ -115,10 +117,11 @@ static int dump_device_attributes(const struct iio_device *dev,
 		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			printf("'%s'", get_label_or_name_or_id(dev));
-			printf(", attr '%s', value :", attr);
+			printf(", %s attr '%s', value :",
+			       type, iio_attr_get_name(attr));
 		}
-		gen_function("device", "dev", attr, NULL);
-		ret = iio_device_attr_read_raw(dev, attr, buf, BUF_SIZE);
+		gen_function(type, var, attr, NULL);
+		ret = iio_attr_read_raw(attr, buf, BUF_SIZE);
 		if (ret > 0) {
 			if (quiet == ATTR_NORMAL)
 				printf("%s\n", buf);
@@ -129,12 +132,13 @@ static int dump_device_attributes(const struct iio_device *dev,
 		}
 	}
 	if (wbuf) {
-		gen_function("device", "dev", attr, wbuf);
-		ret = iio_device_attr_write_string(dev, attr, wbuf);
+		gen_function(type, var, attr, wbuf);
+		ret = iio_attr_write_string(attr, wbuf);
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
-				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_device_attributes(dev, attr, NULL, quiet);
+				printf("wrote %li bytes to %s\n", (long)ret,
+				       iio_attr_get_name(attr));
+			dump_device_attributes(dev, attr, type, var, NULL, quiet);
 		} else {
 			IIO_PERROR((int)ret, "Unable to write attribute");
 		}
@@ -144,93 +148,10 @@ static int dump_device_attributes(const struct iio_device *dev,
 	return (int)ret;
 }
 
-static int dump_buffer_attributes(const struct iio_device *dev,
-				  const char *attr, const char *wbuf, enum verbosity quiet)
-{
-	ssize_t ret = 0;
-	char *buf = xmalloc(BUF_SIZE, MY_NAME);
-
-	if (!wbuf || quiet == ATTR_VERBOSE ) {
-		gen_function("device_buffer", "dev", attr, NULL);
-		ret = iio_device_buffer_attr_read_raw(dev, 0, attr, buf, BUF_SIZE);
-
-		if (quiet == ATTR_VERBOSE) {
-			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
-			printf("'%s'", get_label_or_name_or_id(dev));
-			printf(", buffer attr '%s', value :", attr);
-		}
-
-		if (ret > 0) {
-			if (quiet == ATTR_NORMAL)
-				printf("%s\n", buf);
-			else  if (quiet == ATTR_VERBOSE)
-				printf("'%s'\n", buf);
-		} else {
-			IIO_PERROR((int)ret, "Unable to read buffer attribute");
-		}
-	}
-
-	if (wbuf) {
-		gen_function("device_buffer", "dev", attr, wbuf);
-		ret = iio_device_buffer_attr_write_string(dev, 0, attr, wbuf);
-		if (ret > 0) {
-			if (quiet == ATTR_VERBOSE)
-				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_buffer_attributes(dev, attr, NULL, quiet);
-		} else {
-			IIO_PERROR((int)ret, "Unable to write buffer attribute");
-		}
-	}
-
-	free(buf);
-	return (int)ret;
-}
-
-static int dump_debug_attributes(const struct iio_device *dev,
-				  const char *attr, const char *wbuf, enum verbosity quiet)
-{
-	ssize_t ret = 0;
-	char *buf = xmalloc(BUF_SIZE, MY_NAME);
-
-	if (!wbuf || quiet == ATTR_VERBOSE) {
-		gen_function("device_debug", "dev", attr, NULL);
-		ret = iio_device_debug_attr_read_raw(dev, attr, buf, BUF_SIZE);
-
-		if (quiet == ATTR_VERBOSE) {
-			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
-			printf("'%s'", get_label_or_name_or_id(dev));
-			printf(", debug attr '%s', value :", attr);
-
-		}
-
-		if (ret > 0) {
-			if (quiet == ATTR_NORMAL)
-				printf("%s\n", buf);
-			else if (quiet == ATTR_VERBOSE)
-				printf("'%s'\n", buf);
-		} else {
-			IIO_PERROR((int)ret, "Unable to read debug attribute");
-		}
-	}
-
-	if (wbuf) {
-		gen_function("device_debug", "dev", attr, wbuf);
-		ret = iio_device_debug_attr_write_string(dev, attr, wbuf);
-		if (ret > 0) {
-			if (quiet == ATTR_VERBOSE)
-				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_debug_attributes(dev, attr, NULL, quiet);
-		} else {
-			IIO_PERROR((int)ret, "Unable to write debug attribute");
-		}
-	}
-
-	free(buf);
-	return (int)ret;
-}
-
 static int dump_channel_attributes(const struct iio_device *dev,
-		struct iio_channel *ch, const char *attr, const char *wbuf, enum verbosity quiet)
+				   struct iio_channel *ch,
+				   const struct iio_attr *attr,
+				   const char *wbuf, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
@@ -243,7 +164,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			type_name = "input";
 
 		gen_function("channel", "ch", attr, NULL);
-		ret = iio_channel_attr_read_raw(ch, attr, buf, BUF_SIZE);
+		ret = iio_attr_read_raw(attr, buf, BUF_SIZE);
 		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			printf("'%s'", get_label_or_name_or_id(dev));
@@ -255,7 +176,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			printf("id '%s', ", iio_channel_get_name(ch));
 
 		if (quiet == ATTR_VERBOSE)
-			printf("attr '%s', ", attr);
+			printf("attr '%s', ", iio_attr_get_name(attr));
 
 		if (ret > 0) {
 			if (quiet == ATTR_NORMAL)
@@ -268,10 +189,11 @@ static int dump_channel_attributes(const struct iio_device *dev,
 	}
 	if (wbuf) {
 		gen_function("channel", "ch", attr, wbuf);
-		ret = iio_channel_attr_write_string(ch, attr, wbuf);
+		ret = iio_attr_write_string(attr, wbuf);
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
-				printf("wrote %li bytes to %s\n", (long)ret, attr);
+				printf("wrote %li bytes to %s\n", (long)ret,
+				       iio_attr_get_name(attr));
 			dump_channel_attributes(dev, ch, attr, NULL, quiet);
 		} else {
 			IIO_PERROR((int)ret, "Unable to write channel attribute");
@@ -338,6 +260,7 @@ int main(int argc, char **argv)
 	bool found_err = false, read_err = false, write_err = false,
 		dev_found = false, attr_found = false, ctx_found = false,
 		debug_found = false, channel_found = false ;
+	const struct iio_attr *attr;
 	unsigned int i;
 	char *wbuf = NULL;
 	struct option *opts;
@@ -570,7 +493,8 @@ int main(int argc, char **argv)
 
 	if (gen_code) {
 		gen_start(gen_file);
-		gen_context(iio_context_get_attr_value(ctx, "uri"));
+		attr = iio_context_find_attr(ctx, "uri");
+		gen_context(iio_attr_get_static_value(attr));
 	}
 
 	if (search_context) {
@@ -587,16 +511,15 @@ int main(int argc, char **argv)
 		for (i = 0; i < nb_ctx_attrs; i++) {
 			const char *key, *value;
 
-			ret = iio_context_get_attr(ctx, i, &key, &value);
-			if (!ret) {
-				if (!attr_index || str_match(key, argw[attr_index], ignore_case)) {
-					found_err = false;
-					attr_found = true;
-					printf("%s: %s\n", key, value);
-					gen_context_attr(key);
-				}
-			} else {
-				IIO_PERROR(-errno, "Unable to get context attributes");
+			attr = iio_context_get_attr(ctx, i);
+			key = iio_attr_get_name(attr);
+			value = iio_attr_get_static_value(attr);
+
+			if (!attr_index || str_match(key, argw[attr_index], ignore_case)) {
+				found_err = false;
+				attr_found = true;
+				printf("%s: %s\n", key, value);
+				gen_context_attr(key);
 			}
 		}
 	}
@@ -615,6 +538,8 @@ int main(int argc, char **argv)
 			const char *label_or_name = label ? label : name;
 			const char *label_or_name_or_id = label_or_name ? label_or_name : dev_id;
 			const char *ch_name;
+			struct iio_buffer *buffer;
+			struct iio_channels_mask *mask;
 			unsigned int nb_attrs, nb_channels, j;
 
 			if (device_index && !str_match(dev_id, argw[device_index], ignore_case)
@@ -671,15 +596,21 @@ int main(int argc, char **argv)
 						MY_NAME, argw[device_index], nb_channels);
 				found_err = true;
 			}
+
+			mask = nb_channels ? iio_create_channels_mask(nb_channels) : NULL;
+
 			for (j = 0; j < nb_channels; j++) {
 				struct iio_channel *ch;
 				const char *type_name;
 				unsigned int k;
 
+				ch = iio_device_get_channel(dev, j);
+
+				if (mask)
+					iio_channel_enable(ch, mask);
+
 				if (!search_channel || !device_index)
 					continue;
-
-				ch = iio_device_get_channel(dev, j);
 
 				if (input_only && iio_channel_is_output(ch))
 					continue;
@@ -757,12 +688,12 @@ int main(int argc, char **argv)
 					continue;
 
 				for (k = 0; k < nb_attrs; k++) {
-					const char *attr =
-						iio_channel_get_attr(ch, k);
+					attr = iio_channel_get_attr(ch, k);
 
 					if (attr_index &&
-						!str_match(attr, argw[attr_index],
-							ignore_case))
+						!str_match(iio_attr_get_name(attr),
+							   argw[attr_index],
+							   ignore_case))
 						continue;
 					gen_dev(dev);
 					found_err = false;
@@ -789,17 +720,18 @@ int main(int argc, char **argv)
 
 			if (search_device && device_index && nb_attrs) {
 				for (j = 0; j < nb_attrs; j++) {
-					const char *attr = iio_device_get_attr(dev, j);
+					attr = iio_device_get_attr(dev, j);
 
 					if (attr_index &&
-					    !str_match(attr, argw[attr_index], ignore_case))
+					    !str_match(iio_attr_get_name(attr),
+						       argw[attr_index], ignore_case))
 						continue;
 
 					gen_dev(dev);
 					found_err = false;
 					attr_found = true;
-					ret = dump_device_attributes(dev, attr, wbuf,
-							       attr_index ? quiet : ATTR_VERBOSE);
+					ret = dump_device_attributes(dev, attr, "device", "dev", wbuf,
+								     attr_index ? quiet : ATTR_VERBOSE);
 					if (wbuf && ret < 0)
 						write_err = true;
 					else if (ret < 0 && attr_index)
@@ -807,36 +739,48 @@ int main(int argc, char **argv)
 				}
 			}
 
-			nb_attrs = iio_device_get_buffer_attrs_count(dev);
+			if (mask)
+				buffer = iio_device_create_buffer(dev, 0, mask);
+			if (mask && !iio_err(buffer)) {
+				nb_attrs = iio_buffer_get_attrs_count(buffer);
 
-			if (search_buffer && !device_index)
-				printf("found %u buffer attributes\n", nb_attrs);
-			if (search_buffer && device_index && !attr_index && !nb_attrs) {
-				printf("%s: Found %s device, but it has %u buffer attributes\n",
-						MY_NAME, label_or_name_or_id, nb_attrs);
-				if (!attr_found)
-					found_err = true;
-			}
+				if (search_buffer && !device_index)
+					printf("found %u buffer attributes\n", nb_attrs);
 
-			if (search_buffer && device_index && nb_attrs) {
-				for (j = 0; j < nb_attrs; j++) {
-					const char *attr = iio_device_get_buffer_attr(dev, j);
-
-					if ((attr_index && str_match(attr, argw[attr_index],
-								ignore_case)) || !attr_index) {
-						gen_dev(dev);
-						found_err = false;
-						attr_found = true;
-						ret = dump_buffer_attributes(dev, attr, wbuf,
-									  attr_index ? quiet : ATTR_VERBOSE);
-						if (wbuf && ret < 0)
-							write_err = true;
-						else if (ret < 0 && attr_index)
-							read_err = true;
-					}
+				if (search_buffer && device_index && !attr_index && !nb_attrs) {
+					printf("%s: Found %s device, but it has %u buffer attributes\n",
+					       MY_NAME, label_or_name_or_id, nb_attrs);
+					if (!attr_found)
+						found_err = true;
 				}
 
+				if (search_buffer && device_index && nb_attrs) {
+					for (j = 0; j < nb_attrs; j++) {
+						attr = iio_buffer_get_attr(buffer, j);
+
+						if ((attr_index && str_match(iio_attr_get_name(attr),
+									     argw[attr_index],
+									     ignore_case))
+						    || !attr_index) {
+							found_err = false;
+							attr_found = true;
+							ret = dump_device_attributes(dev, attr, "buffer",
+										     "buf", wbuf,
+										     attr_index ? quiet : ATTR_VERBOSE);
+							if (wbuf && ret < 0)
+								write_err = true;
+							else if (ret < 0 && attr_index)
+								read_err = true;
+						}
+					}
+
+				}
+
+				iio_buffer_destroy(buffer);
 			}
+
+			if (mask)
+				iio_channels_mask_destroy(mask);
 
 			nb_attrs = iio_device_get_debug_attrs_count(dev);
 
@@ -845,16 +789,19 @@ int main(int argc, char **argv)
 
 			if (search_debug && device_index && nb_attrs) {
 				for (j = 0; j < nb_attrs; j++) {
-					const char *attr = iio_device_get_debug_attr(dev, j);
+					attr = iio_device_get_debug_attr(dev, j);
 
-					if ((attr_index && str_match(attr, argw[attr_index],
-								ignore_case)) || !attr_index) {
+					if ((attr_index
+					     && str_match(iio_attr_get_name(attr),
+							  argw[attr_index],
+							  ignore_case)) || !attr_index) {
 						gen_dev(dev);
 						found_err = false;
 						attr_found = true;
 						debug_found = true;
-						ret = dump_debug_attributes(dev, attr, wbuf,
-								      attr_index ? quiet : ATTR_VERBOSE);
+						ret = dump_device_attributes(dev, attr, "device_debug",
+									     "dev", wbuf,
+									     attr_index ? quiet : ATTR_VERBOSE);
 						if (wbuf && ret < 0)
 							write_err = true;
 						else if (ret < 0 && attr_index)

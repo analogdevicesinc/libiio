@@ -56,8 +56,11 @@ int main(int argc, char **argv)
 	const struct iio_channel *ch;
 	const struct iio_data_format *format;
 	char sign, repeat[12], err_str[1024];
-	const char *key, *value, *name, *label, *type_name, *attr;
+	const char *key, *value, *name, *label, *type_name;
 	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
+	struct iio_channels_mask *mask;
+	const struct iio_attr *attr;
+	struct iio_buffer *buffer;
 	struct option *opts;
 	int c, ret = EXIT_FAILURE;
 
@@ -118,11 +121,11 @@ int main(int argc, char **argv)
 		printf("IIO context has %u attributes:\n", nb_ctx_attrs);
 
 	for (i = 0; i < nb_ctx_attrs; i++) {
-		ret = iio_context_get_attr(ctx, i, &key, &value);
-		if (ret == 0)
-			printf("\t%s: %s\n", key, value);
-		else
-			ctx_perror(ctx, ret, "Unable to read IIO context attribute");
+		attr = iio_context_get_attr(ctx, i);
+		key = iio_attr_get_name(attr);
+		value = iio_attr_get_static_value(attr);
+
+		printf("\t%s: %s\n", key, value);
 	}
 
 	nb_devices = iio_context_get_devices_count(ctx);
@@ -146,8 +149,13 @@ int main(int argc, char **argv)
 		nb_channels = iio_device_get_channels_count(dev);
 		printf("\t\t%u channels found:\n", nb_channels);
 
+		mask = nb_channels ? iio_create_channels_mask(nb_channels) : NULL;
+
 		for (j = 0; j < nb_channels; j++) {
 			ch = iio_device_get_channel(dev, j);
+
+			if (mask)
+				iio_channel_enable(ch, mask);
 
 			if (iio_channel_is_output(ch))
 				type_name = "output";
@@ -194,10 +202,10 @@ int main(int argc, char **argv)
 
 			for (k = 0; k < nb_attrs; k++) {
 				attr = iio_channel_get_attr(ch, k);
-				ret = (int) iio_channel_attr_read_raw(ch,
-						attr, buf, BUF_SIZE);
+				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
 
-				printf("\t\t\t\tattr %2u: %s ", k, attr);
+				printf("\t\t\t\tattr %2u: %s ", k,
+				       iio_attr_get_name(attr));
 
 				if (ret > 0)
 					printf("value: %s\n", buf);
@@ -212,12 +220,10 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_attr(dev, j);
-				ret = (int) iio_device_attr_read_raw(dev,
-						attr, buf, BUF_SIZE);
+				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
 
 				printf("\t\t\t\tattr %2u: %s ",
-						j, attr);
-
+				       j, iio_attr_get_name(attr));
 				if (ret > 0)
 					printf("value: %s\n", buf);
 				else
@@ -225,23 +231,25 @@ int main(int argc, char **argv)
 			}
 		}
 
-		nb_attrs = iio_device_get_buffer_attrs_count(dev);
-		if (nb_attrs) {
-			printf("\t\t%u buffer-specific attributes found:\n",
-					nb_attrs);
+		if (mask)
+			buffer = iio_device_create_buffer(dev, 0, mask);
+		if (mask && !iio_err(buffer)) {
+			nb_attrs = iio_buffer_get_attrs_count(buffer);
+			if (nb_attrs)
+				printf("\t\t%u buffer attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
-				attr = iio_device_get_buffer_attr(dev, j);
-				ret = (int) iio_device_buffer_attr_read_raw(dev, 0,
-						attr, buf, BUF_SIZE);
+				attr = iio_buffer_get_attr(buffer, j);
+				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
 
-				printf("\t\t\t\tattr %2u: %s ",
-						j, attr);
-
+				printf("\t\t\tattr %2u: %s ", j,
+				       iio_attr_get_name(attr));
 				if (ret > 0)
-					printf("value: %s\n", buf);
+					printf("Value: %s\n", buf);
 				else
 					ctx_perror(ctx, ret, "");
 			}
+
+			iio_buffer_destroy(buffer);
 		}
 
 		nb_attrs = iio_device_get_debug_attrs_count(dev);
@@ -250,10 +258,9 @@ int main(int argc, char **argv)
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_debug_attr(dev, j);
 
-				ret = (int) iio_device_debug_attr_read_raw(dev,
-						attr, buf, BUF_SIZE);
+				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
 				printf("\t\t\t\tdebug attr %2u: %s ",
-						j, attr);
+				       j, iio_attr_get_name(attr));
 				if (ret > 0)
 					printf("value: %s\n", buf);
 				else
@@ -275,6 +282,9 @@ int main(int argc, char **argv)
 		} else if (ret < 0) {
 			ctx_perror(ctx, ret, "Unable to get trigger");
 		}
+
+		if (mask)
+			iio_channels_mask_destroy(mask);
 	}
 
 	free_argw(argc, argw);

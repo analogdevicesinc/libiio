@@ -212,6 +212,7 @@ int main(int argc, char **argv)
 	const struct iio_block *block;
 	struct iio_channels_mask *mask;
 	const struct iio_channels_mask *hw_mask;
+	const struct iio_attr *uri, *attr;
 	struct option *opts;
 	uint64_t before = 0, after, rate, total;
 	size_t rw_len, len, nb;
@@ -305,6 +306,8 @@ int main(int argc, char **argv)
 		return ret;
 
 	if (!argw[optind]) {
+		uri = iio_context_find_attr(ctx, "uri");
+
 		for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 			dev = iio_context_get_device(ctx, i);
 			nb_channels = iio_device_get_channels_count(dev);
@@ -322,12 +325,12 @@ int main(int argc, char **argv)
 				hit = true;
 
 				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s %s\n",
-						iio_context_get_attr_value(ctx, "uri"),
+						iio_attr_get_static_value(uri),
 						dev_name(dev), iio_channel_get_id(ch));
 			}
 			if (hit)
 				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s\n",
-						iio_context_get_attr_value(ctx, "uri"),
+						iio_attr_get_static_value(uri),
 						dev_name(dev));
 		}
 		usage(MY_NAME, options, options_descriptions);
@@ -356,10 +359,14 @@ int main(int argc, char **argv)
 		 * Fixed rate for now. Try new ABI first,
 		 * fail gracefully to remain compatible.
 		 */
-		if (iio_device_attr_write_longlong(trigger,
-				"sampling_frequency", DEFAULT_FREQ_HZ) < 0) {
-			ret = iio_device_attr_write_longlong(trigger,
-				"frequency", DEFAULT_FREQ_HZ);
+		attr = iio_device_find_attr(trigger, "sampling_frequency");
+
+		if (!attr || iio_attr_write_longlong(attr, DEFAULT_FREQ_HZ) < 0) {
+			attr = iio_device_find_attr(trigger, "frequency");
+			if (!attr)
+				ret = -ENOENT;
+			else
+				ret = iio_attr_write_longlong(attr, DEFAULT_FREQ_HZ);
 			if (ret < 0)
 				dev_perror(trigger, ret, "Sample rate not set");
 		}
