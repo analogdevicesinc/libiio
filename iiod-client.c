@@ -674,17 +674,6 @@ out_unlock:
 	return ret;
 }
 
-ssize_t iiod_client_read_attr(struct iiod_client *client,
-			      const struct iio_device *dev,
-			      const struct iio_channel *chn,
-			      const char *attr, char *dest,
-			      size_t len, enum iio_attr_type type,
-			      unsigned int buf_id)
-{
-	return -ENOSYS;
-}
-
-
 static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 					  const struct iio_attr *attr,
 					  const char *src, size_t len)
@@ -854,17 +843,6 @@ out_unlock:
 	iio_mutex_unlock(client->lock);
 	return ret;
 }
-
-ssize_t iiod_client_write_attr(struct iiod_client *client,
-			       const struct iio_device *dev,
-			       const struct iio_channel *chn,
-			       const char *attr, const char *src,
-			       size_t len, enum iio_attr_type type,
-			       unsigned int buf_id)
-{
-	return -ENOSYS;
-}
-
 
 static int iiod_client_cmd(const struct iiod_command *cmd,
 			   struct iiod_command_data *data, void *d)

@@ -54,20 +54,6 @@ __api int iiod_client_set_kernel_buffers_count(struct iiod_client *client,
 __api int iiod_client_set_timeout(struct iiod_client *client,
 				  unsigned int timeout);
 
-__api ssize_t iiod_client_read_attr(struct iiod_client *client,
-				    const struct iio_device *dev,
-				    const struct iio_channel *chn,
-				    const char *attr, char *dest, size_t len,
-				    enum iio_attr_type type,
-				    unsigned int buf_id);
-
-__api ssize_t iiod_client_write_attr(struct iiod_client *client,
-				     const struct iio_device *dev,
-				     const struct iio_channel *chn,
-				     const char *attr, const char *src,
-				     size_t len, enum iio_attr_type type,
-				     unsigned int buf_id);
-
 __api ssize_t iiod_client_attr_read(struct iiod_client *client,
 				    const struct iio_attr *attr,
 				    char *dest, size_t len);
