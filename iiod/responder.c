@@ -21,6 +21,11 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
+/* Forward declaration */
+static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
+					  const struct iiod_command *cmd,
+					  struct buffer_entry **entry_ptr);
+
 static SLIST_HEAD(BufferList, buffer_entry) bufferlist;
 
 /* Protect bufferlist from parallel access */
@@ -86,12 +91,12 @@ static void handle_timeout(struct parser_pdata *pdata,
 	iiod_io_send_response_code(io, ret);
 }
 
-static const char * get_attr(struct parser_pdata *pdata,
-			     const struct iiod_command *cmd)
+static const struct iio_attr *
+get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 {
+	const struct iio_buffer *buf;
 	const struct iio_device *dev;
 	const struct iio_channel *chn;
-	const char *attr;
 	uint16_t arg1 = (uint32_t) cmd->code >> 16,
 		 arg2 = cmd->code & 0xffff;
 
@@ -108,7 +113,11 @@ static const char * get_attr(struct parser_pdata *pdata,
 		return iio_device_get_debug_attr(dev, arg1);
 	case IIOD_OP_READ_BUF_ATTR:
 	case IIOD_OP_WRITE_BUF_ATTR:
-		return iio_device_get_buffer_attr(dev, arg1);
+		buf = get_iio_buffer(pdata, cmd, NULL);
+		if (iio_err(buf))
+			break;
+
+		return iio_buffer_get_attr(buf, arg1);
 	case IIOD_OP_READ_CHN_ATTR:
 	case IIOD_OP_WRITE_CHN_ATTR:
 		chn = iio_device_get_channel(dev, arg2);
@@ -123,58 +132,6 @@ static const char * get_attr(struct parser_pdata *pdata,
 	return NULL;
 }
 
-static ssize_t attr_read(struct parser_pdata *pdata,
-			 const struct iiod_command *cmd,
-			 const char *attr, void *buf, size_t len)
-{
-	const struct iio_channel *chn;
-	const struct iio_device *dev;
-	uint16_t arg2 = cmd->code & 0xffff;
-
-	dev = iio_context_get_device(pdata->ctx, cmd->dev);
-
-	switch (cmd->op) {
-	case IIOD_OP_READ_ATTR:
-		return iio_device_attr_read_raw(dev, attr, buf, len);
-	case IIOD_OP_READ_DBG_ATTR:
-		return iio_device_debug_attr_read_raw(dev, attr, buf, len);
-	case IIOD_OP_READ_BUF_ATTR:
-		return iio_device_buffer_attr_read_raw(dev, arg2, attr,
-						       buf, len);
-	case IIOD_OP_READ_CHN_ATTR:
-		chn = iio_device_get_channel(dev, arg2);
-		return iio_channel_attr_read_raw(chn, attr, buf, len);
-	default:
-		return -EINVAL;
-	}
-}
-
-static ssize_t attr_write(struct parser_pdata *pdata,
-			  const struct iiod_command *cmd,
-			  const char *attr, const void *buf, size_t len)
-{
-	const struct iio_channel *chn;
-	const struct iio_device *dev;
-	uint16_t arg2 = cmd->code & 0xffff;
-
-	dev = iio_context_get_device(pdata->ctx, cmd->dev);
-
-	switch (cmd->op) {
-	case IIOD_OP_WRITE_ATTR:
-		return iio_device_attr_write_raw(dev, attr, buf, len);
-	case IIOD_OP_WRITE_DBG_ATTR:
-		return iio_device_debug_attr_write_raw(dev, attr, buf, len);
-	case IIOD_OP_WRITE_BUF_ATTR:
-		return iio_device_buffer_attr_write_raw(dev, arg2,
-							attr, buf, len);
-	case IIOD_OP_WRITE_CHN_ATTR:
-		chn = iio_device_get_channel(dev, arg2);
-		return iio_channel_attr_write_raw(chn, attr, buf, len);
-	default:
-		return -EINVAL;
-	}
-}
-
 static void handle_read_attr(struct parser_pdata *pdata,
 			     const struct iiod_command *cmd,
 			     struct iiod_command_data *cmd_data)
@@ -182,12 +139,12 @@ static void handle_read_attr(struct parser_pdata *pdata,
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	ssize_t ret = -EINVAL;
 	char buf[0x10000];
-	const char *attr;
+	const struct iio_attr *attr;
 	struct iiod_buf iiod_buf;
 
 	attr = get_attr(pdata, cmd);
 	if (attr)
-		ret = attr_read(pdata, cmd, attr, buf, sizeof(buf));
+		ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 
 	if (ret < 0) {
 		iiod_io_send_response_code(io, ret);
@@ -205,7 +162,7 @@ static void handle_write_attr(struct parser_pdata *pdata,
 			      struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
-	const char *attr;
+	const struct iio_attr *attr;
 	size_t count;
 	ssize_t ret = -EINVAL;
 	uint64_t len;
@@ -234,7 +191,7 @@ static void handle_write_attr(struct parser_pdata *pdata,
 	if (ret < 0)
 		goto out_free_buf;
 
-	ret = attr_write(pdata, cmd, attr, buf.ptr, (size_t) len);
+	ret = iio_attr_write_raw(attr, buf.ptr, (size_t) len);
 
 out_free_buf:
 	free(buf.ptr);

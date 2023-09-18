@@ -1303,8 +1303,10 @@ ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
 }
 
 ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, enum iio_attr_type type)
+		      const char *name, enum iio_attr_type type)
 {
+	const struct iio_device_pdata *dev_pdata;
+	const struct iio_attr *attr;
 	/* We use a very large buffer here, as if attr is NULL all the
 	 * attributes will be read, which may represents a few kilobytes worth
 	 * of data. */
@@ -1318,20 +1320,40 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			ret = iio_device_attr_read_raw(dev, attr, buf, sizeof(buf) - 1);
+			attr = iio_device_find_attr(dev, name);
+			if (attr)
+				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+			else
+				ret = -ENOENT;
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
-			ret = iio_device_debug_attr_read_raw(dev,
-				attr, buf, sizeof(buf) - 1);
+			attr = iio_device_find_debug_attr(dev, name);
+			if (attr)
+				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+			else
+				ret = -ENOENT;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			ret = iio_device_buffer_attr_read_raw(dev, 0,
-							attr, buf, sizeof(buf) - 1);
+			pthread_mutex_lock(&devlist_lock);
+
+			dev_pdata = iio_device_get_data(dev);
+			if (dev_pdata->entry && dev_pdata->entry->buf) {
+				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
+				if (attr)
+					ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+				else
+					ret = -ENOENT;
+			} else {
+				ret = -EBADF;
+			}
+
+			pthread_mutex_unlock(&devlist_lock);
 			break;
 		default:
 			ret = -EINVAL;
 			break;
 	}
+
 	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
@@ -1341,8 +1363,10 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 }
 
 ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		const char *attr, size_t len, enum iio_attr_type type)
+		       const char *name, size_t len, enum iio_attr_type type)
 {
+	const struct iio_device_pdata *dev_pdata;
+	const struct iio_attr *attr;
 	ssize_t ret = -ENOMEM;
 	char *buf;
 
@@ -1361,13 +1385,34 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
-			ret = iio_device_attr_write_raw(dev, attr, buf, len);
+			attr = iio_device_find_attr(dev, name);
+			if (attr)
+				ret = iio_attr_write_raw(attr, buf, len);
+			else
+				ret = -ENOENT;
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
-			ret = iio_device_debug_attr_write_raw(dev, attr, buf, len);
+			attr = iio_device_find_debug_attr(dev, name);
+			if (attr)
+				ret = iio_attr_write_raw(attr, buf, len);
+			else
+				ret = -ENOENT;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			ret = iio_device_buffer_attr_write_raw(dev, 0, attr, buf, len);
+			pthread_mutex_lock(&devlist_lock);
+
+			dev_pdata = iio_device_get_data(dev);
+			if (dev_pdata->entry && dev_pdata->entry->buf) {
+				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
+				if (attr)
+					ret = iio_attr_write_raw(attr, buf, len);
+				else
+					ret = -ENOENT;
+			} else {
+				ret = -EBADF;
+			}
+
+			pthread_mutex_unlock(&devlist_lock);
 			break;
 		default:
 			ret = -EINVAL;
@@ -1382,15 +1427,22 @@ err_print_value:
 }
 
 ssize_t read_chn_attr(struct parser_pdata *pdata,
-		struct iio_channel *chn, const char *attr)
+		      struct iio_channel *chn, const char *name)
 {
 	char buf[1024];
 	ssize_t ret = -ENODEV;
+	const struct iio_attr *attr;
 
-	if (chn)
-		ret = iio_channel_attr_read_raw(chn, attr, buf, sizeof(buf) - 1);
-	else if (pdata->dev)
-		ret = -ENXIO;
+	if (chn) {
+		attr = iio_channel_find_attr(chn, name);
+		if (attr)
+			ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		else
+			ret = -ENOENT;
+	} else {
+		ret = pdata->dev ? -ENXIO : -ENODEV;
+	}
+
 	print_value(pdata, ret);
 	if (ret < 0)
 		return ret;
@@ -1400,10 +1452,13 @@ ssize_t read_chn_attr(struct parser_pdata *pdata,
 }
 
 ssize_t write_chn_attr(struct parser_pdata *pdata,
-		struct iio_channel *chn, const char *attr, size_t len)
+		       struct iio_channel *chn, const char *name, size_t len)
 {
+	const struct iio_attr *attr;
 	ssize_t ret = -ENOMEM;
-	char *buf = malloc(len);
+	char *buf;
+
+	buf = malloc(len);
 	if (!buf)
 		goto err_print_value;
 
@@ -1411,12 +1466,16 @@ ssize_t write_chn_attr(struct parser_pdata *pdata,
 	if (ret < 0)
 		goto err_free_buffer;
 
-	if (chn)
-		ret = iio_channel_attr_write_raw(chn, attr, buf, len);
-	else if (pdata->dev)
-		ret = -ENXIO;
-	else
-		ret = -ENODEV;
+	if (chn) {
+		attr = iio_channel_find_attr(chn, name);
+		if (attr)
+			ret = iio_attr_write_raw(attr, buf, len);
+		else
+			ret = -ENOENT;
+	} else {
+		ret = pdata->dev ? -ENXIO : -ENODEV;
+	}
+
 err_free_buffer:
 	free(buf);
 err_print_value:
