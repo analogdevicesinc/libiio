@@ -91,13 +91,17 @@ static void errchk(int v, const char* what) {
 /* write attribute: long long int */
 static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 {
-	errchk(iio_channel_attr_write_longlong(chn, what, val), what);
+	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
+
+	errchk(attr ? iio_attr_write_longlong(attr, val) : -ENOENT, what);
 }
 
 /* write attribute: string */
 static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
 {
-	errchk(iio_channel_attr_write_string(chn, what, str), what);
+	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
+
+	errchk(attr ? iio_attr_write_string(attr, str) : -ENOENT, what);
 }
 
 /* helper function generating channel names */
@@ -158,17 +162,16 @@ static bool get_lo_chan(enum iodev d, struct iio_channel **chn)
 /* applies streaming configuration through IIO */
 bool cfg_ad9361_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 {
+	const struct iio_attr *attr;
 	struct iio_channel *chn = NULL;
 
 	// Configure phy and lo channels
 	printf("* Acquiring AD9361 phy channel %d\n", chid);
 	if (!get_phy_chan(type, chid, &chn)) {	return false; }
-	int ret = iio_channel_attr_write_string(chn, "rf_port_select", cfg->rfport);
-	if (ret == -EINVAL)
-		printf("Error writing %s to channel \"rf_port_select\"\nThis error can be ignored for PlutoSDR and derivatives.\n",
-                        cfg->rfport);
-	else
-		errchk(ret, "rf_port_select");
+
+	attr = iio_channel_find_attr(chn, "rf_port_select");
+	if (attr)
+		errchk(iio_attr_write_string(attr, cfg->rfport), cfg->rfport);
 	wr_ch_lli(chn, "rf_bandwidth",       cfg->bw_hz);
 	wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
 

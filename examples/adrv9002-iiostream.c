@@ -115,6 +115,7 @@ static int configure_tx_lo(void)
 {
 	struct iio_device *phy;
 	struct iio_channel *chan;
+	const struct iio_attr *attr;
 	int ret;
 	long long val;
 
@@ -131,13 +132,21 @@ static int configure_tx_lo(void)
 	}
 
 	/* printout some useful info */
-	ret = iio_channel_attr_read_longlong(chan, "rf_bandwidth", &val);
+	attr = iio_channel_find_attr(chan, "rf_bandwidth");
+	if (attr)
+		ret = iio_attr_read_longlong(attr, &val);
+	else
+		ret = -ENOENT;
 	if (ret)
 		return ret;
 
 	info("adrv9002 bandwidth: %lld\n", val);
 
-	ret = iio_channel_attr_read_longlong(chan, "sampling_frequency", &val);
+	attr = iio_channel_find_attr(chan, "sampling_frequency");
+	if (attr)
+		ret = iio_attr_read_longlong(attr, &val);
+	else
+		ret = -ENOENT;
 	if (ret)
 		return ret;
 
@@ -151,7 +160,12 @@ static int configure_tx_lo(void)
 		return -ENODEV;
 	}
 
-	return iio_channel_attr_write_longlong(chan, "TX1_LO_frequency", val);
+	attr = iio_channel_find_attr(chan, "TX1_LO_frequency");
+	if (attr)
+		ret = iio_attr_write_longlong(attr, val);
+	else
+		ret = -ENOENT;
+	return ret;
 }
 
 static void cleanup(void)
