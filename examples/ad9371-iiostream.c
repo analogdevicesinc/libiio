@@ -9,6 +9,7 @@
 
 #include "iiostream-common.h"
 
+#include <errno.h>
 #include <iio/iio.h>
 #include <iio/iio-debug.h>
 #include <stdbool.h>
@@ -88,15 +89,18 @@ static void errchk(int v, const char* what) {
 /* write attribute: long long int */
 static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 {
-	errchk(iio_channel_attr_write_longlong(chn, what, val), what);
+	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
+
+	errchk(attr ? iio_attr_write_longlong(attr, val) : -ENOENT, what);
 }
 
 /* write attribute: long long int */
 static long long rd_ch_lli(struct iio_channel *chn, const char* what)
 {
+	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
 	long long val;
 
-	errchk(iio_channel_attr_read_longlong(chn, what, &val), what);
+	errchk(attr ? iio_attr_read_longlong(attr, &val) : -ENOENT, what);
 
 	printf("\t %s: %lld\n", what, val);
 	return val;

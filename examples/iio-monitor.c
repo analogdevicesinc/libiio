@@ -44,13 +44,9 @@ static int selected = -1;
 static WINDOW *win, *left, *right;
 static bool stop;
 
-static bool channel_has_attr(struct iio_channel *chn, const char *attr)
+static bool channel_has_attr(struct iio_channel *chn, const char *name)
 {
-	unsigned int i, nb = iio_channel_get_attrs_count(chn);
-	for (i = 0; i < nb; i++)
-		if (!strcmp(attr, iio_channel_get_attr(chn, i)))
-			return true;
-	return false;
+	return !!iio_channel_find_attr(chn, name);
 }
 
 static bool is_valid_channel(struct iio_channel *chn)
@@ -69,6 +65,7 @@ static void err_str(int ret)
 
 static double get_channel_value(struct iio_channel *chn)
 {
+	const struct iio_attr *attr;
 	char *old_locale, *end;
 	char buf[1024];
 	double val;
@@ -77,8 +74,9 @@ static double get_channel_value(struct iio_channel *chn)
 	old_locale = strdup(setlocale(LC_NUMERIC, NULL));
 	setlocale(LC_NUMERIC, "C");
 
-	if (channel_has_attr(chn, "input")) {
-		ret = iio_channel_attr_read_raw(chn, "input", buf, sizeof(buf));
+	attr = iio_channel_find_attr(chn, "input");
+	if (attr) {
+		ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 		if (ret < 0) {
 			err_str(ret);
 			val = 0;
@@ -91,7 +89,8 @@ static double get_channel_value(struct iio_channel *chn)
 			}
 		}
 	} else {
-		ret = iio_channel_attr_read_raw(chn, "raw", buf, sizeof(buf));
+		attr = iio_channel_find_attr(chn, "raw");
+		ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 		if (ret < 0) {
 			err_str(ret);
 			val = 0;
@@ -103,8 +102,10 @@ static double get_channel_value(struct iio_channel *chn)
 				val = 0;
 			}
 		}
-		if (channel_has_attr(chn, "offset")) {
-			ret = iio_channel_attr_read_raw(chn, "offset", buf, sizeof(buf));
+
+		attr = iio_channel_find_attr(chn, "offset");
+		if (attr) {
+			ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 			if (ret < 0)
 				err_str(ret);
 			else {
@@ -115,8 +116,9 @@ static double get_channel_value(struct iio_channel *chn)
 			}
 		}
 
-		if (channel_has_attr(chn, "scale")) {
-			ret = iio_channel_attr_read_raw(chn, "scale", buf, sizeof(buf));
+		attr = iio_channel_find_attr(chn, "scale");
+		if (attr) {
+			ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 			if (ret < 0)
 				err_str(ret);
 			else {
