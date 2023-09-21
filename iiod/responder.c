@@ -32,15 +32,25 @@ static void free_block_entry(struct block_entry *entry)
 	free(entry);
 }
 
-static void free_buffer_tasks(struct buffer_entry *entry)
-{
-	iio_task_destroy(entry->enqueue_task);
-	iio_task_destroy(entry->dequeue_task);
-}
-
 static void free_buffer_entry(struct buffer_entry *entry)
 {
+	struct block_entry *block_entry, *block_next;
+
+	iio_task_destroy(entry->enqueue_task);
+	iio_task_destroy(entry->dequeue_task);
+
+	pthread_mutex_lock(&entry->lock);
+
+	for (block_entry = SLIST_FIRST(&entry->blocklist);
+	     block_entry; block_entry = block_next) {
+		block_next = SLIST_NEXT(block_entry, entry);
+		free_block_entry(block_entry);
+	}
+
+	pthread_mutex_unlock(&entry->lock);
+
 	iio_buffer_destroy(entry->buf);
+	pthread_mutex_destroy(&entry->lock);
 	free(entry->words);
 	free(entry);
 }
@@ -448,6 +458,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	iio_channels_mask_destroy(mask);
 
 	entry->buf = buf;
+	pthread_mutex_init(&entry->lock, NULL);
 
 	pthread_mutex_lock(&buflist_lock);
 	SLIST_INSERT_HEAD(&pdata->bufferlist, entry, entry);
@@ -503,6 +514,7 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 }
 
 static struct iio_block * get_iio_block(struct parser_pdata *pdata,
+					struct buffer_entry *entry_buf,
 					const struct iiod_command *cmd,
 					struct block_entry **entry_ptr)
 {
@@ -510,16 +522,16 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	struct iio_block *block = NULL;
 	int err;
 
-	pthread_mutex_lock(&buflist_lock);
+	pthread_mutex_lock(&entry_buf->lock);
 
-	SLIST_FOREACH(entry, &pdata->blocklist, entry) {
+	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
 		if (entry->client_id == cmd->client_id) {
 			block = entry->block;
 			break;
 		}
 	}
 
-	pthread_mutex_unlock(&buflist_lock);
+	pthread_mutex_unlock(&entry_buf->lock);
 
 	if (block && entry_ptr)
 		*entry_ptr = entry;
@@ -534,40 +546,28 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_device *dev;
 	struct block_entry *block_entry, *block_next;
-	struct buffer_entry *entry;
+	struct buffer_entry *entry, *buf_entry;
 	struct iio_buffer *buf;
-	int ret = -EINVAL;
+	int ret;
 
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
 	if (!dev)
 		goto out_send_response;
 
-	ret = -EBADF;
-
-	buf = get_iio_buffer(pdata, cmd, NULL);
+	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
 	if (ret)
 		goto out_send_response;
 
+	ret = -EBADF;
+
 	pthread_mutex_lock(&buflist_lock);
 
-	for (block_entry = SLIST_FIRST(&pdata->blocklist);
-	     block_entry; block_entry = block_next) {
-		block_next = SLIST_NEXT(block_entry, entry);
-
-		if (iio_block_get_buffer(block_entry->block) == buf) {
-		      SLIST_REMOVE(&pdata->blocklist, block_entry, block_entry, entry);
-		      free_block_entry(block_entry);
-		}
-	}
-
 	SLIST_FOREACH(entry, &pdata->bufferlist, entry) {
-		if (entry->dev != dev || entry->idx != cmd->code)
+		if (entry != buf_entry)
 			continue;
 
 		SLIST_REMOVE(&pdata->bufferlist, entry, buffer_entry, entry);
-
-		free_buffer_tasks(entry);
 		free_buffer_entry(entry);
 		ret = 0;
 		break;
@@ -628,6 +628,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 				const struct iiod_command *cmd,
 				struct iiod_command_data *cmd_data)
 {
+	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
 	struct iio_block *block;
 	struct iio_buffer *buf;
@@ -650,12 +651,12 @@ static void handle_create_block(struct parser_pdata *pdata,
 	if (ret < 0)
 		goto out_send_response;
 
-	buf = get_iio_buffer(pdata, cmd, NULL);
+	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
 	if (ret)
 		goto out_send_response;
 
-	block = get_iio_block(pdata, cmd, NULL);
+	block = get_iio_block(pdata, buf_entry, cmd, NULL);
 	ret = iio_err(block);
 	if (ret == 0) {
 		/* No error? This block already exists, so return
@@ -683,9 +684,9 @@ static void handle_create_block(struct parser_pdata *pdata,
 	/* Keep a reference to the iiod_io until the block is freed. */
 	iiod_io_ref(io);
 
-	pthread_mutex_lock(&buflist_lock);
-	SLIST_INSERT_HEAD(&pdata->blocklist, entry, entry);
-	pthread_mutex_unlock(&buflist_lock);
+	pthread_mutex_lock(&buf_entry->lock);
+	SLIST_INSERT_HEAD(&buf_entry->blocklist, entry, entry);
+	pthread_mutex_unlock(&buf_entry->lock);
 
 out_send_response:
 	iiod_io_send_response_code(io, ret);
@@ -696,32 +697,39 @@ static void handle_free_block(struct parser_pdata *pdata,
 			      const struct iiod_command *cmd,
 			      struct iiod_command_data *cmd_data)
 {
+	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
+	struct iio_buffer *buf;
 	struct iio_block *block;
 	struct iiod_io *io;
 	int ret;
 
-	block = get_iio_block(pdata, cmd, NULL);
+	buf = get_iio_buffer(pdata, cmd, &buf_entry);
+	ret = iio_err(buf);
+	if (ret)
+		goto out_send_response;
+
+	block = get_iio_block(pdata, buf_entry, cmd, NULL);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
 
 	ret = -EBADF;
 
-	pthread_mutex_lock(&buflist_lock);
+	pthread_mutex_lock(&buf_entry->lock);
 
-	SLIST_FOREACH(entry, &pdata->blocklist, entry) {
+	SLIST_FOREACH(entry, &buf_entry->blocklist, entry) {
 		if (entry->block != block)
 			continue;
 
-		SLIST_REMOVE(&pdata->blocklist, entry, block_entry, entry);
+		SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
 
 		free_block_entry(entry);
 		ret = 0;
 		break;
 	}
 
-	pthread_mutex_unlock(&buflist_lock);
+	pthread_mutex_unlock(&buf_entry->lock);
 
 	IIO_DEBUG("Block %u freed.\n", cmd->code);
 
@@ -754,7 +762,7 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	if (ret)
 		goto out_send_response;
 
-	block = get_iio_block(pdata, cmd, &block_entry);
+	block = get_iio_block(pdata, entry, cmd, &block_entry);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
@@ -859,21 +867,9 @@ static const struct iiod_responder_ops iiod_responder_ops = {
 
 static void iiod_responder_free_resources(struct parser_pdata *pdata)
 {
-	struct block_entry *block_entry, *block_next;
 	struct buffer_entry *buf_entry, *buf_next;
 
 	pthread_mutex_lock(&buflist_lock);
-
-	for (buf_entry = SLIST_FIRST(&pdata->bufferlist);
-	     buf_entry; buf_entry = SLIST_NEXT(buf_entry, entry)) {
-		free_buffer_tasks(buf_entry);
-	}
-
-	for (block_entry = SLIST_FIRST(&pdata->blocklist);
-	     block_entry; block_entry = block_next) {
-		block_next = SLIST_NEXT(block_entry, entry);
-		free_block_entry(block_entry);
-	}
 
 	for (buf_entry = SLIST_FIRST(&pdata->bufferlist);
 	     buf_entry; buf_entry = buf_next) {
