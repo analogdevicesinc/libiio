@@ -68,6 +68,7 @@ struct block_entry {
 
 struct buffer_entry {
 	SLIST_ENTRY(buffer_entry) entry;
+	struct parser_pdata *pdata;
 	struct iio_device *dev;
 	struct iio_buffer *buf;
 	struct iio_task *enqueue_task, *dequeue_task;
@@ -85,8 +86,6 @@ struct parser_pdata {
 	int resp_fd[2];
 
 	SLIST_HEAD(ParserDataThdHead, ThdEntry) thdlist_head;
-
-	SLIST_HEAD(BufferList, buffer_entry) bufferlist;
 
 	/* Used as temporaries placements by the lexer */
 	struct iio_device *dev;

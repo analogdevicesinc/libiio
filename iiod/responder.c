@@ -21,7 +21,9 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
-/* Protect parser_pdata->bufferlist from parallel access */
+static SLIST_HEAD(BufferList, buffer_entry) bufferlist;
+
+/* Protect bufferlist from parallel access */
 static pthread_mutex_t buflist_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void free_block_entry(struct block_entry *entry)
@@ -458,10 +460,11 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	iio_channels_mask_destroy(mask);
 
 	entry->buf = buf;
+	entry->pdata = pdata;
 	pthread_mutex_init(&entry->lock, NULL);
 
 	pthread_mutex_lock(&buflist_lock);
-	SLIST_INSERT_HEAD(&pdata->bufferlist, entry, entry);
+	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
 	pthread_mutex_unlock(&buflist_lock);
 
 	IIO_DEBUG("Buffer %u created.\n", entry->idx);
@@ -498,7 +501,7 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 
 	pthread_mutex_lock(&buflist_lock);
 
-	SLIST_FOREACH(entry, &pdata->bufferlist, entry) {
+	SLIST_FOREACH(entry, &bufferlist, entry) {
 		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
 			buf = entry->buf;
 			break;
@@ -563,11 +566,11 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 
 	pthread_mutex_lock(&buflist_lock);
 
-	SLIST_FOREACH(entry, &pdata->bufferlist, entry) {
+	SLIST_FOREACH(entry, &bufferlist, entry) {
 		if (entry != buf_entry)
 			continue;
 
-		SLIST_REMOVE(&pdata->bufferlist, entry, buffer_entry, entry);
+		SLIST_REMOVE(&bufferlist, entry, buffer_entry, entry);
 		free_buffer_entry(entry);
 		ret = 0;
 		break;
@@ -871,10 +874,15 @@ static void iiod_responder_free_resources(struct parser_pdata *pdata)
 
 	pthread_mutex_lock(&buflist_lock);
 
-	for (buf_entry = SLIST_FIRST(&pdata->bufferlist);
+	for (buf_entry = SLIST_FIRST(&bufferlist);
 	     buf_entry; buf_entry = buf_next) {
 		buf_next = SLIST_NEXT(buf_entry, entry);
-		free_buffer_entry(buf_entry);
+
+		/* Only free the buffers that this client created */
+		if (buf_entry->pdata == pdata) {
+			SLIST_REMOVE(&bufferlist, buf_entry, buffer_entry, entry);
+			free_buffer_entry(buf_entry);
+		}
 	}
 
 	pthread_mutex_unlock(&buflist_lock);
