@@ -73,6 +73,9 @@ struct buffer_entry {
 	struct iio_task *enqueue_task, *dequeue_task;
 	uint32_t *words;
 	uint16_t idx;
+
+	SLIST_HEAD(BlockList, block_entry) blocklist;
+	pthread_mutex_t lock;
 };
 
 struct parser_pdata {
@@ -84,7 +87,6 @@ struct parser_pdata {
 	SLIST_HEAD(ParserDataThdHead, ThdEntry) thdlist_head;
 
 	SLIST_HEAD(BufferList, buffer_entry) bufferlist;
-	SLIST_HEAD(BlockList, block_entry) blocklist;
 
 	/* Used as temporaries placements by the lexer */
 	struct iio_device *dev;
