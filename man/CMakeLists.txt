@@ -22,7 +22,7 @@ if (WITH_MAN)
 
 	configure_file(
 		${CMAKE_CURRENT_BINARY_DIR}/libiio.3.in
-		${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/libiio.3 @ONLY)
+		${CMAKE_CURRENT_BINARY_DIR}/libiio.3 @ONLY)
 
 	if (WITH_DOC)
 		find_program(MAN2HTML man2html)
@@ -33,7 +33,7 @@ if (WITH_MAN)
 		file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR}/man1 ${CMAKE_HTML_DEST_DIR}/man3)
 		execute_process(
 			COMMAND ${MAN2HTML} -r
-			INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/libiio.3
+			INPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/libiio.3
 			OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man3/libiio.3.html
 		)
 	endif()
@@ -46,13 +46,13 @@ if (WITH_MAN)
 			)
 			configure_file(
 				${CMAKE_CURRENT_BINARY_DIR}/${_page}.1.in
-				${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}.1 @ONLY
+				${CMAKE_CURRENT_BINARY_DIR}/${_page}.1 @ONLY
 			)
 
 			if (WITH_DOC)
 				execute_process(
 					COMMAND ${MAN2HTML} -r
-					INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}
+					INPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${_page}
 					OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man1/${_page}.html
 				)
 			endif()
@@ -61,19 +61,28 @@ if (WITH_MAN)
 
 	if (WITH_IIOD)
 		configure_file(iiod.1.in
-			${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/iiod.1 @ONLY
+			${CMAKE_CURRENT_BINARY_DIR}/iiod.1 @ONLY
 		)
 	endif()
 
-	# install man files into the BINARY directories,
-	# section 3 = library functions
-	install(DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}
-		DESTINATION ${CMAKE_INSTALL_MANDIR}/man3
-		COMPONENT doc FILES_MATCHING PATTERN "*.3*")
-	# section 1 = user commands
-	install(DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}
-		DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
-		COMPONENT doc FILES_MATCHING PATTERN "*.1*")
+	file(
+		GLOB man1
+		LIST_DIRECTORIES false
+		${CMAKE_CURRENT_BINARY_DIR}/*.1
+	)
+	file(
+		GLOB man3
+		LIST_DIRECTORIES false
+		${CMAKE_CURRENT_BINARY_DIR}/*.3
+	)
+	install(
+		FILES ${man1}
+		DESTINATION ${CMAKE_INSTALL_MANDIR}/man1/
+	)
+	install(
+		FILES ${man3}
+		DESTINATION ${CMAKE_INSTALL_MANDIR}/man3/
+	)
 endif()
 
 toggle_iio_feature("${WITH_MAN}" man)
