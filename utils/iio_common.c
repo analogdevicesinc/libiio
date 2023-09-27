@@ -432,8 +432,8 @@ void version(char *name)
 	       iio_context_get_version_major(NULL),
 	       iio_context_get_version_minor(NULL),
 	       iio_context_get_version_tag(NULL));
-        for (i = 0; i < iio_get_backends_count(); i++)
-                printf(" %s", iio_get_backend(i));
+        for (i = 0; i < iio_get_builtin_backends_count(); i++)
+                printf(" %s", iio_get_builtin_backend(i));
         printf("\n");
 }
 
