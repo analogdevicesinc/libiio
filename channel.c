@@ -403,9 +403,11 @@ ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 		const char *attr, const void *src, size_t len)
 {
-	attr = iio_channel_find_attr(chn, attr);
-	if (!attr)
-		return -ENOENT;
+	if (attr) {
+		attr = iio_channel_find_attr(chn, attr);
+		if (!attr)
+			return -ENOENT;
+	}
 
 	if (chn->dev->ctx->ops->write_channel_attr)
 		return chn->dev->ctx->ops->write_channel_attr(chn,
