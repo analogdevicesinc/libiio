@@ -403,20 +403,18 @@ __api void iio_strerror(int err, char *dst, size_t len);
 __api __check_ret __cnst bool iio_has_backend(const char *backend);
 
 
-/** @brief Get the number of available backends
- * @return The number of available backends
- *
- * Introduced in version 0.9. */
-__api __check_ret __cnst unsigned int iio_get_backends_count(void);
+/** @brief Get the number of available built-in backends
+ * @return The number of available built-in backends */
+__api __check_ret __cnst unsigned int
+iio_get_builtin_backends_count(void);
 
 
-/** @brief Retrieve the name of a given backend
- * @param index The index corresponding to the attribute
+/** @brief Retrieve the name of a given built-in backend
+ * @param index The index corresponding to the backend
  * @return On success, a pointer to a static NULL-terminated string
- * @return If the index is invalid, NULL is returned
- *
- * Introduced in version 0.9. */
-__api __check_ret __cnst const char * iio_get_backend(unsigned int index);
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __cnst const char *
+iio_get_builtin_backend(unsigned int index);
 
 
 /** @} *//* ------------------------------------------------------------------*/
