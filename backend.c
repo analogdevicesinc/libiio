@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "dynamic.h"
 #include "iio-config.h"
 #include "iio-private.h"
 
@@ -35,13 +36,17 @@ const char * iio_get_builtin_backend(unsigned int index)
 	return NULL;
 }
 
-bool iio_has_backend(const char *backend)
+bool
+iio_has_backend(const struct iio_context_params *params, const char *backend)
 {
 	unsigned int i;
 
 	for (i = 0; i < iio_get_builtin_backends_count(); i++)
 		if (strcmp(backend, iio_get_builtin_backend(i)) == 0)
 			return true;
+
+	if (WITH_MODULES)
+		return iio_has_backend_dynamic(params, backend);
 
 	return false;
 }

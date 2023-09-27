@@ -161,3 +161,18 @@ out_release_module:
 	iio_release_module(lib);
 	return iio_ptr(ret);
 }
+
+bool iio_has_backend_dynamic(const struct iio_context_params *params,
+			     const char *name)
+{
+	const struct iio_backend *backend;
+	struct iio_module *lib;
+	bool found;
+
+	backend = get_iio_backend(params, name, &lib);
+	found = !iio_err(backend);
+	if (found)
+		iio_release_module(lib);
+
+	return found;
+}
