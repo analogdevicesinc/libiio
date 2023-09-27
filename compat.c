@@ -53,9 +53,9 @@ struct compat {
 	const char * (*iio_scan_get_uri)(const struct iio_scan *, size_t );
 
 	/* Backends */
-	bool (*iio_has_backend)(const char *);
-	unsigned int (*iio_get_backends_count)(void);
-	const char * (*iio_get_backend)(unsigned int);
+	bool (*iio_has_backend)(const struct iio_context_params *, const char *);
+	unsigned int (*iio_get_builtin_backends_count)(void);
+	const char * (*iio_get_builtin_backend)(unsigned int);
 
 	/* Context */
 	struct iio_context * (*iio_create_context)(const struct iio_context_params *,
@@ -1657,17 +1657,17 @@ void iio_library_get_version(unsigned int *major, unsigned int *minor,
 
 bool iio_has_backend(const char *backend)
 {
-	return IIO_CALL(iio_has_backend)(backend);
+	return IIO_CALL(iio_has_backend)(NULL, backend);
 }
 
 unsigned int iio_get_backends_count(void)
 {
-	return IIO_CALL(iio_get_backends_count)();
+	return IIO_CALL(iio_get_builtin_backends_count)();
 }
 
 const char * iio_get_backend(unsigned int index)
 {
-	return IIO_CALL(iio_get_backend)(index);
+	return IIO_CALL(iio_get_builtin_backend)(index);
 }
 
 void iio_strerror(int err, char *dst, size_t len)
@@ -1964,8 +1964,8 @@ static void compat_lib_init(void)
 	FIND_SYMBOL(ctx->lib, iio_scan_get_uri);
 
 	FIND_SYMBOL(ctx->lib, iio_has_backend);
-	FIND_SYMBOL(ctx->lib, iio_get_backends_count);
-	FIND_SYMBOL(ctx->lib, iio_get_backend);
+	FIND_SYMBOL(ctx->lib, iio_get_builtin_backends_count);
+	FIND_SYMBOL(ctx->lib, iio_get_builtin_backend);
 
 	FIND_SYMBOL(ctx->lib, iio_create_context);
 	FIND_SYMBOL(ctx->lib, iio_context_destroy);
