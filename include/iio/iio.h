@@ -396,11 +396,12 @@ __api void iio_strerror(int err, char *dst, size_t len);
 
 
 /** @brief Check if the specified backend is available
+ * @param params A pointer to a iio_context_params structure that contains
+ *   context creation information; can be NULL
  * @param backend The name of the backend to query
- * @return True if the backend is available, false otherwise
- *
- * Introduced in version 0.9. */
-__api __check_ret __cnst bool iio_has_backend(const char *backend);
+ * @return True if the backend is available, false otherwise */
+__api __check_ret bool
+iio_has_backend(const struct iio_context_params *params, const char *backend);
 
 
 /** @brief Get the number of available built-in backends
