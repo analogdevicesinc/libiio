@@ -48,7 +48,7 @@ struct iio_module * iio_open_module(const struct iio_context_params *params,
 
 	module->lib = iio_dlopen(buf);
 	if (!module->lib) {
-		prm_err(params, "Unable to open plug-in\n");
+		prm_dbg(params, "Unable to open plug-in\n");
 		err = -ENOSYS;
 		goto err_free_name;
 	}
@@ -95,10 +95,8 @@ get_iio_backend(const struct iio_context_params *params,
 
 	lib = iio_open_module(params, name);
 	ret = iio_err(lib);
-	if (ret) {
-		prm_dbg(params, "Unable to open plug-in\n");
+	if (ret)
 		return iio_err_cast(lib);
-	}
 
 	backend = iio_module_get_backend(lib);
 	ret = iio_err(backend);
