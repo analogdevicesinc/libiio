@@ -406,7 +406,7 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return 0;
 }
 
-const struct iio_backend *iio_backends[] = {
+const struct iio_backend * const iio_backends[] = {
 	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
 		   &iio_ip_backend),
