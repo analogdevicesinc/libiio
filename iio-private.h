@@ -246,7 +246,7 @@ extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;
 extern const struct iio_backend iio_xml_backend;
 
-extern const struct iio_backend *iio_backends[];
+extern const struct iio_backend * const iio_backends[];
 extern const unsigned int iio_backends_size;
 
 ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
