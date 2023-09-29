@@ -336,15 +336,13 @@ bool iio_device_is_trigger(const struct iio_device *dev)
 		!strncmp(id, "trigger", sizeof("trigger") - 1));
 }
 
-int iio_device_get_trigger(const struct iio_device *dev,
-		const struct iio_device **trigger)
+const struct iio_device *
+iio_device_get_trigger(const struct iio_device *dev)
 {
-	if (!trigger)
-		return -EINVAL;
-	else if (dev->ctx->ops->get_trigger)
-		return dev->ctx->ops->get_trigger(dev, trigger);
+	if (dev->ctx->ops->get_trigger)
+		return dev->ctx->ops->get_trigger(dev);
 	else
-		return -ENOSYS;
+		return iio_ptr(-ENOSYS);
 }
 
 int iio_device_set_trigger(const struct iio_device *dev,

@@ -885,13 +885,13 @@ __api void * iio_device_get_data(const struct iio_device *dev);
 
 /** @brief Retrieve the trigger of a given device
  * @param dev A pointer to an iio_device structure
- * @param trigger a pointer to a pointer of an iio_device structure. The pointed
- * pointer will be set to the address of the iio_device structure corresponding
- * to the associated trigger device.
- * @return On success, 0 is returned
- * @return On error, a negative errno code is returned */
-__api __check_ret int iio_device_get_trigger(const struct iio_device *dev,
-		const struct iio_device **trigger);
+ * @return On success, a pointer to the trigger's iio_device structure is
+ * returned.
+ * @return On failure, a pointer-encoded error is returned. If no trigger
+ * has been associated with the given device, the error code will be
+ * -ENODEV. */
+__api __check_ret const struct iio_device *
+iio_device_get_trigger(const struct iio_device *dev);
 
 
 /** @brief Associate a trigger to a given device
