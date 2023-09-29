@@ -81,8 +81,7 @@ struct iio_backend_ops {
 	ssize_t (*write_channel_attr)(const struct iio_channel *chn,
 			const char *attr, const char *src, size_t len);
 
-	int (*get_trigger)(const struct iio_device *dev,
-			const struct iio_device **trigger);
+	const struct iio_device * (*get_trigger)(const struct iio_device *dev);
 	int (*set_trigger)(const struct iio_device *dev,
 			const struct iio_device *trigger);
 
