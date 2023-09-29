@@ -244,9 +244,8 @@ static void handle_gettrig(struct parser_pdata *pdata,
 	if (!dev)
 		goto out_send_response;
 
-	ret = iio_device_get_trigger(dev, &trigger);
-	if (!ret && !trigger)
-		ret = -ENODEV;
+	trigger = iio_device_get_trigger(dev);
+	ret = iio_err(trigger);
 	if (ret)
 		goto out_send_response;
 

@@ -1457,8 +1457,9 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 		return -ENODEV;
 	}
 
-	ret = iio_device_get_trigger(dev, &trigger);
-	if (!ret && trigger) {
+	trigger = iio_device_get_trigger(dev);
+	ret = iio_err(trigger);
+	if (!ret) {
 		const char *name = iio_device_get_name(trigger);
 		char buf[256];
 
