@@ -261,16 +261,15 @@ int main(int argc, char **argv)
 			}
 		}
 
-		ret = iio_device_get_trigger(dev, &trig);
+		trig = iio_device_get_trigger(dev);
+		ret = iio_err(trig);
 		if (ret == 0) {
-			if (trig == NULL) {
-				printf("\t\tNo trigger assigned to device\n");
-			} else {
-				name = iio_device_get_name(trig);
-				printf("\t\tCurrent trigger: %s(%s)\n",
-						iio_device_get_id(trig),
-						name ? name : "");
-			}
+			name = iio_device_get_name(trig);
+			printf("\t\tCurrent trigger: %s(%s)\n",
+					iio_device_get_id(trig),
+					name ? name : "");
+		} else if (ret == -ENODEV) {
+			printf("\t\tNo trigger assigned to device\n");
 		} else if (ret == -ENOENT) {
 			printf("\t\tNo trigger on this device\n");
 		} else if (ret < 0) {
