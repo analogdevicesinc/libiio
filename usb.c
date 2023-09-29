@@ -301,14 +301,13 @@ static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return iiod_client_set_timeout(pdata->io_ctx.iiod_client, timeout);
 }
 
-static int usb_get_trigger(const struct iio_device *dev,
-                const struct iio_device **trigger)
+static const struct iio_device * usb_get_trigger(const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iiod_client *client = pdata->io_ctx.iiod_client;
 
-	return iiod_client_get_trigger(client, dev, trigger);
+	return iiod_client_get_trigger(client, dev);
 }
 
 static int usb_set_trigger(const struct iio_device *dev,
