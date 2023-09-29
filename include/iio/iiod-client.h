@@ -39,9 +39,9 @@ __api void iiod_client_destroy(struct iiod_client *client);
 
 __api bool iiod_client_uses_binary_interface(const struct iiod_client *client);
 
-__api int iiod_client_get_trigger(struct iiod_client *client,
-				  const struct iio_device *dev,
-				  const struct iio_device **trigger);
+__api const struct iio_device *
+iiod_client_get_trigger(struct iiod_client *client,
+			const struct iio_device *dev);
 
 __api int iiod_client_set_trigger(struct iiod_client *client,
 				  const struct iio_device *dev,

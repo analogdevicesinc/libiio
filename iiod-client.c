@@ -309,9 +309,9 @@ static int iio_device_get_index(const struct iio_device *dev)
 	return -ENODEV; /* Cannot happen */
 }
 
-static int iiod_client_get_trigger_new(struct iiod_client *client,
-				       const struct iio_device *dev,
-				       const struct iio_device **trigger)
+static const struct iio_device *
+iiod_client_get_trigger_new(struct iiod_client *client,
+			    const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
@@ -322,19 +322,14 @@ static int iiod_client_get_trigger_new(struct iiod_client *client,
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
 
 	ret = iiod_io_exec_simple_command(io, &cmd);
-	if (ret == -ENODEV)
-		*trigger = NULL;
-	else if (ret >= 0)
-		*trigger = iio_context_get_device(ctx, ret);
-	else
-		return ret;
+	if (ret < 0)
+		return iio_ptr(ret);
 
-	return 0;
+	return iio_context_get_device(ctx, ret);
 }
 
-int iiod_client_get_trigger(struct iiod_client *client,
-			    const struct iio_device *dev,
-			    const struct iio_device **trigger)
+const struct iio_device * iiod_client_get_trigger(struct iiod_client *client,
+						  const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
@@ -343,7 +338,7 @@ int iiod_client_get_trigger(struct iiod_client *client,
 	int ret;
 
 	if (iiod_client_uses_binary_interface(client))
-		return iiod_client_get_trigger_new(client, dev, trigger);
+		return iiod_client_get_trigger_new(client, dev);
 
 	iio_snprintf(buf, sizeof(buf), "GETTRIG %s\r\n",
 			iio_device_get_id(dev));
@@ -352,7 +347,7 @@ int iiod_client_get_trigger(struct iiod_client *client,
 	ret = iiod_client_exec_command(client, buf);
 
 	if (ret == 0)
-		*trigger = NULL;
+		ret = -ENODEV;
 	if (ret <= 0)
 		goto out_unlock;
 
@@ -379,16 +374,15 @@ int iiod_client_get_trigger(struct iiod_client *client,
 				continue;
 
 			if (!strncmp(name, buf, name_len)) {
-				*trigger = cur;
-				ret = 0;
-				goto out_unlock;
+				iio_mutex_unlock(client->lock);
+				return cur;
 			}
 		}
 	}
 
 out_unlock:
 	iio_mutex_unlock(client->lock);
-	return ret;
+	return iio_ptr(ret);
 }
 
 static int iiod_client_set_trigger_new(struct iiod_client *client,
