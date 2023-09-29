@@ -586,34 +586,30 @@ static int channel_read_state(const struct iio_channel *chn, unsigned int idx)
 	return buf[0] == '1';
 }
 
-static int local_get_trigger(const struct iio_device *dev,
-		const struct iio_device **trigger)
+static const struct iio_device * local_get_trigger(const struct iio_device *dev)
 {
+	const struct iio_device *cur;
 	char buf[1024];
 	unsigned int i;
 	ssize_t nb;
 
 	nb = local_read_dev_attr(dev, 0, "trigger/current_trigger",
 				 buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
-	if (nb < 0) {
-		*trigger = NULL;
-		return (int) nb;
-	}
+	if (nb < 0)
+		return iio_ptr(nb);
 
-	if (buf[0] == '\0') {
-		*trigger = NULL;
-		return 0;
-	}
+	if (buf[0] == '\0')
+		return iio_ptr(-ENODEV);
 
 	nb = iio_context_get_devices_count(dev->ctx);
 	for (i = 0; i < (size_t) nb; i++) {
-		const struct iio_device *cur = iio_context_get_device(dev->ctx, i);
-		if (cur->name && !strcmp(cur->name, buf)) {
-			*trigger = cur;
-			return 0;
-		}
+		cur = iio_context_get_device(dev->ctx, i);
+
+		if (cur->name && !strcmp(cur->name, buf))
+			return cur;
 	}
-	return -ENXIO;
+
+	return iio_ptr(-ENXIO);
 }
 
 static int local_set_trigger(const struct iio_device *dev,
