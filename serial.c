@@ -201,13 +201,13 @@ static void serial_shutdown(struct iio_context *ctx)
 	sp_free_port(ctx_pdata->port);
 }
 
-static int serial_get_trigger(const struct iio_device *dev,
-			      const struct iio_device **trigger)
+static const struct iio_device *
+serial_get_trigger(const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_get_trigger(pdata->iiod_client, dev, trigger);
+	return iiod_client_get_trigger(pdata->iiod_client, dev);
 }
 
 static int serial_set_trigger(const struct iio_device *dev,
