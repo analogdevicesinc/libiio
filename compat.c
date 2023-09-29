@@ -181,8 +181,7 @@ struct compat {
 	int (*iio_device_debug_attr_write_double)(const struct iio_device *,
 						  const char *, double);
 
-	int (*iio_device_get_trigger)(const struct iio_device *,
-				      const struct iio_device **);
+	const struct iio_device * (*iio_device_get_trigger)(const struct iio_device *);
 	int (*iio_device_set_trigger)(const struct iio_device *,
 				      const struct iio_device *);
 	bool (*iio_device_is_trigger)(const struct iio_device *);
@@ -1358,7 +1357,23 @@ int iio_device_get_trigger(const struct iio_device *dev,
 			   const struct iio_device **trigger)
 
 {
-	return IIO_CALL(iio_device_get_trigger)(dev, trigger);
+	const struct iio_device *trig;
+	int ret;
+
+	trig = IIO_CALL(iio_device_get_trigger)(dev);
+	ret = iio_err(trig);
+
+	if (ret == -ENODEV) {
+		trig = NULL;
+		ret = 0;
+	}
+	if (ret < 0)
+		return ret;
+
+	if (trigger)
+		*trigger = trig;
+
+	return 0;
 }
 
 int iio_device_set_trigger(const struct iio_device *dev,
