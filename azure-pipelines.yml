@@ -7,6 +7,7 @@ trigger:
     - main
     - master
     - next_stable
+    - libiio-v0
     - staging/*
     - 20*
   tags:
