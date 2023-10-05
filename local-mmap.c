@@ -128,7 +128,7 @@ local_create_mmap_block(struct iio_buffer_pdata *pdata,
 		ppdata->nb_blocks++;
 	} else {
 		/* One of our previously allocated blocks has been freed;
-		 * re-use it now. */
+		 * reuse it now. */
 
 		/* XXX: This only works if the blocks are the same size... */
 		priv->idx = __builtin_ffsl(~ppdata->mmap_block_mask) - 1;
