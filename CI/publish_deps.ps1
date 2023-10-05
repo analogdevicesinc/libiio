@@ -11,15 +11,19 @@ cd dependencies
 wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
 7z x -y "libiio-win-deps.zip"
 
+# Version numbers inside this directory change all the time; print what's
+# currently in the folder to make it easier to debug CI breakages on MinGW.
+dir C:\ghcup\ghc\
+
 if ($COMPILER -eq "MinGW Makefiles") {
 	cp $src_dir\dependencies\libs\64\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp $src_dir\dependencies\libs\64\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp C:\ghcup\ghc\9.2.8\mingw\bin\libgcc_s_seh-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.2\mingw\bin\libiconv-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.2\mingw\bin\zlib1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.2\mingw\bin\liblzma-5.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.2\mingw\bin\libwinpthread-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.2\mingw\bin\libxml2-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\ghcup\ghc\9.6.3\mingw\bin\libiconv-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\ghcup\ghc\9.6.3\mingw\bin\zlib1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\ghcup\ghc\9.6.3\mingw\bin\liblzma-5.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\ghcup\ghc\9.6.3\mingw\bin\libwinpthread-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\ghcup\ghc\9.6.3\mingw\bin\libxml2-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp C:\ghcup\ghc\9.2.8\mingw\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 } else {
 	cp $src_dir\dependencies\libs\64\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
