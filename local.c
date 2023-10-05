@@ -471,7 +471,7 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	if (ferror(f))
 		ret = -errno;
 	fclose(f);
-	return ret ? ret : -EIO;
+	return ret;
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
