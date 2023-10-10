@@ -743,7 +743,7 @@ public:
     }
 };
 
-std::shared_ptr<ScanContext> create_scan_context(optstr backend, int flags)
+inline std::shared_ptr<ScanContext> create_scan_context(optstr backend, int flags)
 {
     iio_scan_context * ctx = iio_create_scan_context(backend ? static_cast<char const*>(*backend) : nullptr, flags);
     if (!ctx)
@@ -781,7 +781,7 @@ public:
 
 };
 
-std::shared_ptr<ScanBlock> create_scan_block(optstr backend, int flags)
+inline std::shared_ptr<ScanBlock> create_scan_block(optstr backend, int flags)
 {
     iio_scan_block * blk = iio_create_scan_block(backend ? static_cast<char const*>(*backend) : nullptr, flags);
     if (!blk)
