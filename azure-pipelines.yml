@@ -320,7 +320,6 @@ stages:
       fetchDepth: 1
       clean: true
     - task: UsePythonVersion@0
-      condition: ne(variables['agentName'],'miniMAC_arm64')
       inputs:
         versionSpec: '3.x'
         addToPath: true
