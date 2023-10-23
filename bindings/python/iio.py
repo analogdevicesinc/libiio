@@ -118,6 +118,9 @@ class _Block(Structure):
 class _Stream(Structure):
     pass
 
+class _Attr(Structure):
+    pass
+
 class ContextParams(Structure):
     pass # TODO
 
@@ -239,6 +242,7 @@ _BlockPtr = _POINTER(_Block)
 _DataFormatPtr = _POINTER(DataFormat)
 _ContextParamsPtr = _POINTER(ContextParams)
 _StreamPtr = _POINTER(_Stream)
+_AttrPtr = _POINTER(_Attr)
 
 if "Windows" in _system():
     _iiolib = "libiio.dll"
@@ -324,9 +328,9 @@ _get_attrs_count.restype = c_uint
 _get_attrs_count.argtypes = (_ContextPtr,)
 
 _get_attr = _lib.iio_context_get_attr
-_get_attr.restype = c_int
-_get_attr.argtypes = (_ContextPtr, c_uint, _POINTER(c_char_p), _POINTER(c_char_p))
-_get_attr.errcheck = _check_negative
+_get_attr.restype = _AttrPtr
+_get_attr.argtypes = (_ContextPtr, c_uint)
+_get_attr.errcheck = _check_null
 
 _devices_count = _lib.iio_context_get_devices_count
 _devices_count.restype = c_uint
@@ -350,6 +354,29 @@ _set_timeout.argtypes = (
 )
 _set_timeout.errcheck = _check_negative
 
+_a_get_name = _lib.iio_attr_get_name
+_a_get_name.restype = c_char_p
+_a_get_name.argtypes = (_AttrPtr,)
+
+_a_get_fname = _lib.iio_attr_get_filename
+_a_get_fname.restype = c_char_p
+_a_get_fname.argtypes = (_AttrPtr,)
+
+_a_get_value = _lib.iio_attr_get_static_value
+_a_get_value.restype = c_char_p
+_a_get_value.argtypes = (_AttrPtr,)
+_a_get_value.errcheck = _check_null
+
+_a_read = _lib.iio_attr_read_raw
+_a_read.restype = c_ssize_t
+_a_read.argtypes = (_AttrPtr, c_char_p, c_size_t)
+_a_read.errcheck = _check_negative
+
+_a_write = _lib.iio_attr_write_string
+_a_write.restype = c_ssize_t
+_a_write.argtypes = (_AttrPtr, c_char_p)
+_a_write.errcheck = _check_negative
+
 _d_get_id = _lib.iio_device_get_id
 _d_get_id.restype = c_char_p
 _d_get_id.argtypes = (_DevicePtr,)
@@ -368,57 +395,27 @@ _d_attr_count.restype = c_uint
 _d_attr_count.argtypes = (_DevicePtr,)
 
 _d_get_attr = _lib.iio_device_get_attr
-_d_get_attr.restype = c_char_p
+_d_get_attr.restype = _AttrPtr
 _d_get_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_attr.errcheck = _check_null
-
-_d_read_attr = _lib.iio_device_attr_read_raw
-_d_read_attr.restype = c_ssize_t
-_d_read_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
-_d_read_attr.errcheck = _check_negative
-
-_d_write_attr = _lib.iio_device_attr_write_string
-_d_write_attr.restype = c_ssize_t
-_d_write_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
-_d_write_attr.errcheck = _check_negative
 
 _d_debug_attr_count = _lib.iio_device_get_debug_attrs_count
 _d_debug_attr_count.restype = c_uint
 _d_debug_attr_count.argtypes = (_DevicePtr,)
 
 _d_get_debug_attr = _lib.iio_device_get_debug_attr
-_d_get_debug_attr.restype = c_char_p
+_d_get_debug_attr.restype = _AttrPtr
 _d_get_debug_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_debug_attr.errcheck = _check_null
 
-_d_read_debug_attr = _lib.iio_device_debug_attr_read_raw
-_d_read_debug_attr.restype = c_ssize_t
-_d_read_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
-_d_read_debug_attr.errcheck = _check_negative
+_b_attr_count = _lib.iio_buffer_get_attrs_count
+_b_attr_count.restype = c_uint
+_b_attr_count.argtypes = (_BufferPtr,)
 
-_d_write_debug_attr = _lib.iio_device_debug_attr_write_string
-_d_write_debug_attr.restype = c_ssize_t
-_d_write_debug_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
-_d_write_debug_attr.errcheck = _check_negative
-
-_d_buffer_attr_count = _lib.iio_device_get_buffer_attrs_count
-_d_buffer_attr_count.restype = c_uint
-_d_buffer_attr_count.argtypes = (_DevicePtr,)
-
-_d_get_buffer_attr = _lib.iio_device_get_buffer_attr
-_d_get_buffer_attr.restype = c_char_p
-_d_get_buffer_attr.argtypes = (_DevicePtr, c_uint)
-_d_get_buffer_attr.errcheck = _check_null
-
-_d_read_buffer_attr = _lib.iio_device_buffer_attr_read_raw
-_d_read_buffer_attr.restype = c_ssize_t
-_d_read_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
-_d_read_buffer_attr.errcheck = _check_negative
-
-_d_write_buffer_attr = _lib.iio_device_buffer_attr_write_string
-_d_write_buffer_attr.restype = c_ssize_t
-_d_write_buffer_attr.argtypes = (_DevicePtr, c_char_p, c_char_p)
-_d_write_buffer_attr.errcheck = _check_negative
+_b_get_attr = _lib.iio_buffer_get_attr
+_b_get_attr.restype = _AttrPtr
+_b_get_attr.argtypes = (_BufferPtr, c_uint)
+_b_get_attr.errcheck = _check_null
 
 _d_get_context = _lib.iio_device_get_context
 _d_get_context.restype = _ContextPtr
@@ -495,27 +492,9 @@ _c_attr_count.restype = c_uint
 _c_attr_count.argtypes = (_ChannelPtr,)
 
 _c_get_attr = _lib.iio_channel_get_attr
-_c_get_attr.restype = c_char_p
+_c_get_attr.restype = _AttrPtr
 _c_get_attr.argtypes = (_ChannelPtr, c_uint)
 _c_get_attr.errcheck = _check_null
-
-_c_get_filename = _lib.iio_channel_attr_get_filename
-_c_get_filename.restype = c_char_p
-_c_get_filename.argtypes = (
-    _ChannelPtr,
-    c_char_p,
-)
-_c_get_filename.errcheck = _check_null
-
-_c_read_attr = _lib.iio_channel_attr_read_raw
-_c_read_attr.restype = c_ssize_t
-_c_read_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p, c_size_t)
-_c_read_attr.errcheck = _check_negative
-
-_c_write_attr = _lib.iio_channel_attr_write_string
-_c_write_attr.restype = c_ssize_t
-_c_write_attr.argtypes = (_ChannelPtr, c_char_p, c_char_p)
-_c_write_attr.errcheck = _check_negative
 
 _create_channels_mask = _lib.iio_create_channels_mask
 _create_channels_mask.argtypes = (c_uint,)
@@ -675,148 +654,6 @@ version = _get_lib_version()
 backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
 
 
-class _Attr(object):
-    def __init__(self, name, filename=None):
-        self._name = name
-        self._name_ascii = name.encode("ascii")
-        self._filename = name if filename is None else filename
-
-    def __str__(self):
-        return self._name
-
-    @abc.abstractmethod
-    def _read(self):
-        pass
-
-    @abc.abstractmethod
-    def _write(self, value):
-        pass
-
-    name = property(
-        lambda self: self._name, None, None, "The name of this attribute.\n\ttype=str"
-    )
-    filename = property(
-        lambda self: self._filename,
-        None,
-        None,
-        "The filename in sysfs to which this attribute is bound.\n\ttype=str",
-    )
-    value = property(
-        lambda self: self._read(),
-        lambda self, x: self._write(x),
-        None,
-        "Current value of this attribute.\n\ttype=str",
-    )
-
-
-class ChannelAttr(_Attr):
-    """Represents an attribute of a channel."""
-
-    def __init__(self, channel, name):
-        """
-        Initialize a new instance of the ChannelAttr class.
-
-        :param channel: type=iio.Channel
-            A valid instance of the iio.Channel class.
-        :param name: type=str
-            The channel attribute's name
-
-        returns: type=iio.ChannelAttr
-            A new instance of this class
-        """
-        super(ChannelAttr, self).__init__(
-            name, _c_get_filename(channel, name.encode("ascii")).decode("ascii")
-        )
-        self._channel = channel
-
-    def _read(self):
-        buf = create_string_buffer(1024)
-        _c_read_attr(self._channel, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
-
-    def _write(self, value):
-        _c_write_attr(self._channel, self._name_ascii, value.encode("ascii"))
-
-
-class DeviceAttr(_Attr):
-    """Represents an attribute of an IIO device."""
-
-    def __init__(self, device, name):
-        """
-        Initialize a new instance of the DeviceAttr class.
-
-        :param device: type=iio.Device
-            A valid instance of the iio.Device class.
-        :param name: type=str
-            The device attribute's name
-
-        returns: type=iio.DeviceAttr
-            A new instance of this class
-        """
-        super(DeviceAttr, self).__init__(name)
-        self._device = device
-
-    def _read(self):
-        buf = create_string_buffer(1024)
-        _d_read_attr(self._device, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
-
-    def _write(self, value):
-        _d_write_attr(self._device, self._name_ascii, value.encode("ascii"))
-
-
-class DeviceDebugAttr(DeviceAttr):
-    """Represents a debug attribute of an IIO device."""
-
-    def __init__(self, device, name):
-        """
-        Initialize a new instance of the DeviceDebugAttr class.
-
-        :param device: type=iio.Device
-             A valid instance of the iio.Device class.
-        :param name: type=str
-             The device debug attribute's name
-
-        returns: type=iio.DeviceDebugAttr
-            A new instance of this class
-        """
-        super(DeviceDebugAttr, self).__init__(device, name)
-
-    def _read(self):
-        buf = create_string_buffer(1024)
-        _d_read_debug_attr(self._device, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
-
-    def _write(self, value):
-        _d_write_debug_attr(self._device, self._name_ascii, value.encode("ascii"))
-
-
-class DeviceBufferAttr(DeviceAttr):
-    """Represents a buffer attribute of an IIO device."""
-
-    def __init__(self, device, name):
-        """
-        Initialize a new instance of the DeviceBufferAttr class.
-
-        :param device: type=iio.Device
-            A valid instance of the iio.Device class.
-        :param name: type=str
-            The device buffer attribute's name
-
-        returns: type=iio.DeviceBufferAttr
-            A new instance of this class
-        """
-        super(DeviceBufferAttr, self).__init__(device, name)
-
-    def _read(self):
-        buf = create_string_buffer(1024)
-        _d_read_buffer_attr(self._device, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
-
-    def _write(self, value):
-        _d_write_buffer_attr(self._device, self._name_ascii, value.encode("ascii"))
-
-
 class _IIO_Object(object):
     def __init__(self, hdl, parent):
         self._hdl = hdl
@@ -827,6 +664,54 @@ class _IIO_Object(object):
 
     def __eq__(self, other):
         return cast(self._hdl, c_void_p).value == cast(other._hdl, c_void_p).value
+
+
+class Attr(_IIO_Object):
+    """Represents an attribute."""
+
+    def __init__(self, parent, attr):
+        """
+        Initialize a new instance of the Attr class.
+
+        :param attr: type=_AttrPtr
+            Pointer to an IIO attribute.
+
+        returns: type=iio.Attr
+            A new instance of this class
+        """
+        self._attr = attr
+        self._name = _a_get_name(attr).decode("ascii")
+        self._filename = _a_get_fname(attr).decode("ascii")
+        super().__init__(self._attr, parent)
+
+    def __str__(self):
+        return self._name
+
+    def _read(self):
+        buf = create_string_buffer(1024)
+        _a_read(self._attr, buf, len(buf))
+        return buf.value.decode("ascii")
+
+    def _write(self, value):
+        _a_write(self._attr, value.encode("ascii"))
+
+    name = property(
+        lambda self: self._name, None, None, "The name of this attribute.\n\ttype=str"
+    )
+
+    filename = property(
+        lambda self: self._filename,
+        None,
+        None,
+        "The filename in sysfs to which this attribute is bound.\n\ttype=str",
+    )
+
+    value = property(
+        lambda self: self._read(),
+        lambda self, x: self._write(x),
+        None,
+        "Current value of this attribute.\n\ttype=str",
+    )
 
 class ChannelsMask(_IIO_Object):
     """A bitmask where each bit corresponds to an enabled channel."""
@@ -882,13 +767,6 @@ class Channel(_IIO_Object):
         self._channel = _channel
         super(Channel, self).__init__(self._channel, dev)
 
-        self._attrs = {
-            name: ChannelAttr(_channel, name)
-            for name in [
-                _c_get_attr(_channel, x).decode("ascii")
-                for x in range(0, _c_attr_count(_channel))
-            ]
-        }
         self._id = _c_get_id(self._channel).decode("ascii")
 
         name_raw = _c_get_name(self._channel)
@@ -944,10 +822,13 @@ class Channel(_IIO_Object):
         lambda self: self._name, None, None, "The name of this channel.\n\ttype=str"
     )
     attrs = property(
-        lambda self: self._attrs,
+        lambda self: {attr.name: attr for attr in [
+            Attr(self, _c_get_attr(self._channel, x))
+            for x in range(0, _c_attr_count(self._channel))
+        ]},
         None,
         None,
-        "List of attributes for this channel.\n\ttype=dict of iio.ChannelAttr",
+        "List of attributes for this channel.\n\ttype=dict of iio.Attr",
     )
     output = property(
         lambda self: self._output,
@@ -1161,6 +1042,16 @@ class Buffer(_IIO_Object):
             "Represents the state (enabled/disabled) of the hardware buffer.",
     )
 
+    attrs = property(
+        lambda self: {attr.name: attr for attr in [
+            Attr(self, _b_get_attr(self._buffer, x))
+            for x in range(0, _b_attr_count(self._buffer))
+        ]},
+        None,
+        None,
+        "List of attributes for this buffer.\n\ttype=dict of iio.Attr",
+    )
+
 
 class Stream(_IIO_Object):
     def __init__(self, buffer, samples_count, nb_blocks = 4):
@@ -1196,28 +1087,6 @@ class _DeviceOrTrigger(_IIO_Object):
 
         self._device = _device
         self._context = _d_get_context(_device)
-        self._attrs = {
-            name: DeviceAttr(_device, name)
-            for name in [
-                _d_get_attr(_device, x).decode("ascii")
-                for x in range(0, _d_attr_count(_device))
-            ]
-        }
-        self._debug_attrs = {
-            name: DeviceDebugAttr(_device, name)
-            for name in [
-                _d_get_debug_attr(_device, x).decode("ascii")
-                for x in range(0, _d_debug_attr_count(_device))
-            ]
-        }
-        self._buffer_attrs = {
-            name: DeviceBufferAttr(_device, name)
-            for name in [
-                _d_get_buffer_attr(_device, x).decode("ascii")
-                for x in range(0, _d_buffer_attr_count(_device))
-            ]
-        }
-
         self._id = _d_get_id(self._device).decode("ascii")
 
         name_raw = _d_get_name(self._device)
@@ -1280,22 +1149,22 @@ class _DeviceOrTrigger(_IIO_Object):
         lambda self: self._label, None, None, "The label of this device.\n\ttype=str",
     )
     attrs = property(
-        lambda self: self._attrs,
+        lambda self: {attr.name: attr for attr in [
+            Attr(self, _d_get_attr(self._device, x))
+            for x in range(0, _d_attr_count(self._device))
+        ]},
         None,
         None,
-        "List of attributes for this IIO device.\n\ttype=dict of iio.DeviceAttr",
+        "List of attributes for this IIO device.\n\ttype=dict of iio.Attr",
     )
     debug_attrs = property(
-        lambda self: self._debug_attrs,
+        lambda self: {attr.name: attr for attr in [
+            Attr(self, _d_get_debug_attr(self._device, x))
+            for x in range(0, _d_debug_attr_count(self._device))
+        ]},
         None,
         None,
-        "List of debug attributes for this IIO device.\n\ttype=dict of iio.DeviceDebugAttr",
-    )
-    buffer_attrs = property(
-        lambda self: self._buffer_attrs,
-        None,
-        None,
-        "List of buffer attributes for this IIO device.\n\ttype=dict of iio.DeviceBufferAttr",
+        "List of debug attributes for this IIO device.\n\ttype=dict of iio.Attr",
     )
     channels = property(
         lambda self: sorted([
@@ -1324,10 +1193,10 @@ class Trigger(_DeviceOrTrigger):
         super(Trigger, self).__init__(ctx, _device)
 
     def _get_rate(self):
-        return int(self._attrs["sampling_frequency"].value)
+        return int(self.attrs["sampling_frequency"].value)
 
     def _set_rate(self, value):
-        self._attrs["sampling_frequency"].value = str(value)
+        self.attrs["sampling_frequency"].value = str(value)
 
     frequency = property(
         _get_rate,
@@ -1418,13 +1287,6 @@ class Context(_IIO_Object):
 
         super(Context, self).__init__(self._context, None)
 
-        self._attrs = {}
-        for index in range(0, _get_attrs_count(self._context)):
-            str1 = c_char_p()
-            str2 = c_char_p()
-            _get_attr(self._context, index, _byref(str1), _byref(str2))
-            self._attrs[str1.value.decode("ascii")] = str2.value.decode("ascii")
-
         self._name = _get_name(self._context).decode("ascii")
         self._description = _get_description(self._context).decode("ascii")
         self._xml = _get_xml(self._context).decode("ascii")
@@ -1480,10 +1342,13 @@ class Context(_IIO_Object):
         "Version of the backend.\n\ttype=(int, int, str)",
     )
     attrs = property(
-        lambda self: self._attrs,
+        lambda self: {attr.name: attr.value for attr in [
+            Attr(self, _get_attr(self._context, x))
+            for x in range(0, _get_attrs_count(self._context))
+        ]},
         None,
         None,
-        "List of context-specific attributes\n\ttype=dict of str objects",
+        "List of context-specific attributes\n\ttype=dict of iio.Attr",
     )
     devices = property(
         lambda self: [
