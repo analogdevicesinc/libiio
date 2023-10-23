@@ -125,6 +125,7 @@ stages:
       inputs:
         targetType: inline
         script: |
+          ghcup install ghc 9.2.8
           git submodule update --init
           if ( !( Test-Path deps ) ) {
             mkdir deps
