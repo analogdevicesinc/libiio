@@ -248,10 +248,10 @@ else:
 
 _lib = _cdll("libiio.so.1", use_errno=True, use_last_error=True)
 
-_get_backends_count = _lib.iio_get_backends_count
+_get_backends_count = _lib.iio_get_builtin_backends_count
 _get_backends_count.restype = c_uint
 
-_get_backend = _lib.iio_get_backend
+_get_backend = _lib.iio_get_builtin_backend
 _get_backend.argtypes = (c_uint,)
 _get_backend.restype = c_char_p
 _get_backend.errcheck = _check_null
