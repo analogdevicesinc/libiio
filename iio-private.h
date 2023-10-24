@@ -34,7 +34,7 @@
 #define is_little_endian() (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #endif
 
-#define BIT(x) (1 << (x))
+#define BIT(x) (1ull << (x))
 #define BIT_MASK(bit) BIT((bit) % 32)
 #define BIT_WORD(bit) ((bit) / 32)
 
