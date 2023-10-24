@@ -47,6 +47,10 @@ local_create_context(const struct iio_context_params *params, const char *args);
 static int local_context_scan(const struct iio_context_params *params,
 			      struct iio_scan *ctx, const char *args);
 
+struct iio_device_pdata {
+	int fd;
+};
+
 struct iio_channel_pdata {
 	char *enable_fn;
 	struct iio_attr_list protected;
@@ -91,6 +95,8 @@ static void local_free_pdata(struct iio_device *device)
 
 	for (i = 0; i < device->nb_channels; i++)
 		local_free_channel_pdata(device->channels[i]);
+
+	free(device->pdata);
 }
 
 static void local_shutdown(struct iio_context *ctx)
@@ -101,6 +107,8 @@ static void local_shutdown(struct iio_context *ctx)
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
 
+		if (dev->pdata && dev->pdata->fd >= 0)
+			close(dev->pdata->fd);
 		local_free_pdata(dev);
 	}
 }
@@ -1379,9 +1387,11 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 {
 	struct iio_buffer_pdata *pdata;
 	const struct iio_channel *chn;
-	char buf[1024];
-	int err, fd, cancel_fd, new_fd = idx;
+	int err, cancel_fd, fd = idx;
 	unsigned int i;
+
+	if (dev->pdata->fd < 0)
+		return iio_ptr(dev->pdata->fd);
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata)
@@ -1402,20 +1412,17 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_mmap_pdata;
 	}
 
-	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
-	fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
-	if (fd == -1) {
-		err = -errno;
-		goto err_close_eventfd;
-	}
-
-	err = ioctl_nointr(fd, IIO_BUFFER_GET_FD_IOCTL, &new_fd);
+	err = ioctl_nointr(dev->pdata->fd, IIO_BUFFER_GET_FD_IOCTL, &fd);
 	if (err == 0) {
-		close(fd);
-		fd = new_fd;
 		pdata->multi_buffer = true;
-	} else if (idx > 0) {
-		goto err_close;
+	} else if (idx == 0) {
+		fd = dup(dev->pdata->fd);
+		if (fd == -1) {
+			err = -errno;
+			goto err_close_eventfd;
+		}
+	} else {
+		goto err_close_eventfd;
 	}
 
 	pdata->cancel_fd = cancel_fd;
@@ -1608,6 +1615,37 @@ static void init_scan_elements(struct iio_context *ctx)
 	}
 }
 
+static int local_open_buffer(const struct iio_device *dev)
+{
+	char buf[1024];
+	int fd;
+
+	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
+	fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
+	if (fd == -1)
+		return -errno;
+
+	return fd;
+}
+
+static int init_devices(struct iio_context *ctx)
+{
+	struct iio_device *dev;
+	unsigned int i;
+
+	for (i = 0; i < ctx->nb_devices; i++) {
+		dev = ctx->devices[i];
+
+		dev->pdata = malloc(sizeof(*dev->pdata));
+		if (!dev->pdata)
+			return -ENOMEM;
+
+		dev->pdata->fd = local_open_buffer(dev);
+	}
+
+	return 0;
+}
+
 static int populate_context_attrs(struct iio_context *ctx, const char *file)
 {
 	struct INI *ini;
@@ -1722,6 +1760,10 @@ local_create_context(const struct iio_context_params *params, const char *args)
 		goto err_context_destroy;
 
 	ret = iio_context_init(ctx);
+	if (ret < 0)
+		goto err_context_destroy;
+
+	ret = init_devices(ctx);
 	if (ret < 0)
 		goto err_context_destroy;
 
