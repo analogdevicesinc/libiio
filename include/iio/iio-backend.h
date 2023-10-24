@@ -53,6 +53,7 @@ struct iio_buffer_pdata;
 struct iio_context_pdata;
 struct iio_device_pdata;
 struct iio_channel_pdata;
+struct iio_event_stream_pdata;
 
 enum iio_backend_api_ver {
 	IIO_BACKEND_API_V1 = 1,
@@ -124,6 +125,12 @@ struct iio_backend_ops {
 	int (*dequeue_block)(struct iio_block_pdata *pdata, bool nonblock);
 
 	int (*get_dmabuf_fd)(struct iio_block_pdata *pdata);
+
+	struct iio_event_stream_pdata *(*open_ev)(const struct iio_device *dev);
+	void (*close_ev)(struct iio_event_stream_pdata *pdata);
+	int (*read_ev)(struct iio_event_stream_pdata *pdata,
+		       struct iio_event *out_event,
+		       bool nonblock);
 };
 
 /**
