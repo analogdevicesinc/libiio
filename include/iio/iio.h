@@ -92,6 +92,7 @@ struct iio_context;
 struct iio_device;
 struct iio_channel;
 struct iio_channels_mask;
+struct iio_event_stream;
 struct iio_buffer;
 struct iio_scan;
 struct iio_stream;
@@ -1293,6 +1294,87 @@ static inline bool iio_device_is_hwmon(const struct iio_device *dev)
 	return id[0] == 'h';
 }
 
+
+/** @} *//* ------------------------------------------------------------------*/
+/* ---------------------------- IIO events support ---------------------------*/
+/** @defgroup Events Functions to read IIO events
+ * @{
+ * @struct iio_event
+ * @brief Represents a IIO event.
+ *
+ * This structure is the same as 'iio_event_data' from <linux/iio/events.h>.
+ */
+struct iio_event {
+	uint64_t id;
+	int64_t timestamp;
+};
+
+/**
+ * @brief Get the type of a given IIO event
+ * @param event A pointer to an iio_event structure
+ * @return An enum iio_event_type.
+ *
+ * <b>NOTE:</b>Corresponds to the IIO_EVENT_CODE_EXTRACT_TYPE macro of
+ * <linux/iio/events.h>. */
+static inline enum iio_event_type
+iio_event_get_type(const struct iio_event *event)
+{
+	return (enum iio_event_type)((event->id >> 56) & 0xff);
+}
+
+/**
+ * @brief Get the direction of a given IIO event
+ * @param event A pointer to an iio_event structure
+ * @return An enum iio_event_direction.
+ *
+ * <b>NOTE:</b>Corresponds to the IIO_EVENT_CODE_EXTRACT_DIR macro of
+ * <linux/iio/events.h>. */
+static inline enum iio_event_direction
+iio_event_get_direction(const struct iio_event *event)
+{
+	return (enum iio_event_direction)((event->id >> 48) & 0x7f);
+}
+
+/**
+ * @brief Get a pointer to the IIO channel that corresponds to this event.
+ * @param event A pointer to an iio_event structure
+ * @param dev A pointer to the iio_device structure that delivered the event
+ * @param diff If set, retrieve the differential channel
+ * @return On success, a pointer to an iio_channel structure
+ * @return On error, NULL is returned */
+__api __check_ret const struct iio_channel *
+iio_event_get_channel(const struct iio_event *event,
+		      const struct iio_device *dev, bool diff);
+
+/**
+ * @brief Create an events stream for the given IIO device.
+ * @param dev A pointer to an iio_device structure
+ * @return On success, a pointer to an iio_event_stream structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret struct iio_event_stream *
+iio_device_create_event_stream(const struct iio_device *dev);
+
+/**
+ * @brief Destroy the given event stream.
+ * @param stream A pointer to an iio_event_stream structure */
+__api void iio_event_stream_destroy(struct iio_event_stream *stream);
+
+/**
+ * @brief Read an event from the event stream.
+ * @param stream A pointer to an iio_event_stream structure
+ * @param out_event An pointer to an iio_event structure, that will be filled by
+ *   this function.
+ * @param nonblock if True, the operation won't block and return -EBUSY if
+ *   there is currently no event in the queue.
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned.
+ *
+ * <b>NOTE</b>: it is possible to stop a blocking call of iio_event_stream_read
+ * by calling iio_event_stream_destroy in a different thread or signal handler.
+ * In that case, iio_event_stream_read will return -EINTR. */
+__api int iio_event_stream_read(struct iio_event_stream *stream,
+				struct iio_event *out_event,
+				bool nonblock);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Low-level functions -----------------------------*/
