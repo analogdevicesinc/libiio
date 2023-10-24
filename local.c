@@ -35,6 +35,7 @@
 
 #define NB_BLOCKS 4
 
+#define IIO_GET_EVENT_FD_IOCTL		 _IOR('i', 0x90, int)
 #define IIO_BUFFER_GET_FD_IOCTL		_IOWR('i', 0x91, int)
 
 /* Forward declarations */
@@ -49,6 +50,11 @@ static int local_context_scan(const struct iio_context_params *params,
 
 struct iio_device_pdata {
 	int fd;
+};
+
+struct iio_event_stream_pdata {
+	const struct iio_device *dev;
+	int fd, cancel_fd;
 };
 
 struct iio_channel_pdata {
@@ -1337,17 +1343,21 @@ static int add_debug(void *d, const char *path)
 	return foreach_in_dir(ctx, dev, path, false, add_debug_attr);
 }
 
-static void local_cancel_buffer(struct iio_buffer_pdata *pdata)
+static void local_signal_cancel_fd(const struct iio_device *dev, int fd)
 {
-	const struct iio_device *dev = pdata->dev;
 	uint64_t event = 1;
 	int ret;
 
-	ret = write(pdata->cancel_fd, &event, sizeof(event));
+	ret = write(fd, &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
 		dev_perror(dev, -errno, "Unable to signal cancellation event");
 	}
+}
+
+static void local_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+	local_signal_cancel_fd(pdata->dev, pdata->cancel_fd);
 }
 
 static char * local_get_description(const struct iio_context *ctx)
@@ -1564,6 +1574,88 @@ int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 	return -ENOSYS;
 }
 
+static struct iio_event_stream_pdata *
+local_open_events_fd(const struct iio_device *dev)
+{
+	struct iio_event_stream_pdata *pdata;
+	int err;
+
+	if (dev->pdata->fd < 0)
+		return iio_ptr(dev->pdata->fd);
+
+	pdata = zalloc(sizeof(*pdata));
+	if (!pdata)
+		return iio_ptr(-ENOMEM);
+
+	pdata->dev = dev;
+
+	pdata->cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+	if (pdata->cancel_fd == -1) {
+		err = -errno;
+		free(pdata);
+		return iio_ptr(err);
+	}
+
+	err = ioctl_nointr(dev->pdata->fd, IIO_GET_EVENT_FD_IOCTL, &pdata->fd);
+	if (err < 0) {
+		close(pdata->cancel_fd);
+		free(pdata);
+		return iio_ptr(err);
+	}
+
+	return pdata;
+}
+
+static void local_close_events_fd(struct iio_event_stream_pdata *pdata)
+{
+	local_signal_cancel_fd(pdata->dev, pdata->cancel_fd);
+	close(pdata->cancel_fd);
+
+	close(pdata->fd);
+	free(pdata);
+}
+
+static int local_read_event(struct iio_event_stream_pdata *pdata,
+			    struct iio_event *out_event, bool nonblock)
+{
+	struct pollfd pollfd[2] = {
+		{
+			.fd = pdata->fd,
+			.events = POLLIN,
+		}, {
+			.fd = pdata->cancel_fd,
+			.events = POLLIN,
+		}
+	};
+	int ret, timeout_rel = nonblock ? 0 : -1;
+
+	do {
+		ret = poll(pollfd, 2, timeout_rel);
+	} while (ret == -1 && errno == EINTR);
+
+	if ((pollfd[1].revents & (POLLIN | POLLNVAL)))
+		return -EINTR;
+
+	if (ret < 0)
+		return -errno;
+
+	if (!ret) {
+		/* No event available */
+		return nonblock ? -EAGAIN : -EBUSY;
+	}
+
+
+	if (!(pollfd[0].revents & POLLIN)) {
+		/* Unknown error */
+		return -EIO;
+	}
+
+	if (read(pdata->fd, out_event, sizeof(*out_event)) < 0) /* Flawfinder: ignore */
+		return -errno;
+
+	return 0;
+}
+
 static const struct iio_backend_ops local_ops = {
 	.scan = local_context_scan,
 	.create = local_create_context,
@@ -1585,6 +1677,10 @@ static const struct iio_backend_ops local_ops = {
 
 	.readbuf = local_readbuf,
 	.writebuf = local_writebuf,
+
+	.open_ev = local_open_events_fd,
+	.close_ev = local_close_events_fd,
+	.read_ev = local_read_event,
 };
 
 const struct iio_backend iio_local_backend = {
