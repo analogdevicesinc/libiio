@@ -21,6 +21,8 @@
 #include <avahi-client/publish.h>
 #include <avahi-common/domain.h>
 
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <stddef.h>
 #include <time.h>
 
@@ -242,21 +244,62 @@ fail:
 }
 
 #define IIOD_ON "iiod on "
+#define TIMEOUT 20
 
 static void start_avahi_thd(struct thread_pool *pool, void *d)
 {
-
 	char label[AVAHI_LABEL_MAX];
 	char host[AVAHI_LABEL_MAX - sizeof(IIOD_ON)];
 	struct timespec ts;
-	int ret;
+	int ret, net = 0;
 
 	ts.tv_nsec = 0;
 	ts.tv_sec = 1;
 
+	/*
+	 * Try to make sure the network is up before letting avahi
+	 * know we are here, and advertising on the network.
+	 * However, if we are on the last try before we timeout,
+	 * ignore some prerequisites, and just assume it will be
+	 * OK later (if someone boots, and later plugs in USB <-> ethernet).
+	 */
 	while(true) {
+		struct ifaddrs *ifaddr = 0;
+		struct ifaddrs *ifa = 0;
+
+		if (!net && ts.tv_sec < TIMEOUT) {
+			/* Ensure networking is alive */
+			ret = getifaddrs(&ifaddr);
+			if (ret)
+				goto again;
+
+			/* Make sure at least one practical interface is up and ready */
+			for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+				/* no address */
+				if (!ifa->ifa_addr)
+					continue;
+				/* Interface is running, think ifup */
+				if (!(ifa->ifa_flags & IFF_UP))
+					continue;
+				/* supports multicast (i.e. MDNS) */
+				if (!(ifa->ifa_flags & IFF_MULTICAST))
+					continue;
+				/* Interface is not a loopback interface */
+				if ((ifa->ifa_flags & IFF_LOOPBACK))
+					continue;
+				IIO_INFO("found applicable network for mdns on %s\n", ifa->ifa_name);
+				net++;
+			}
+			freeifaddrs(ifaddr);
+			if (!net)
+				goto again;
+		}
+
+		/* Get the hostname, which on uClibc, can return (none)
+		 * rather than fail/zero length string, like on glibc */
 		ret = gethostname(host, sizeof(host));
-		if (ret || !strcmp(host, "none"))
+		if (ret || !host[0] || (ts.tv_sec < TIMEOUT && (!strcmp(host, "none") ||
+				!strcmp(host, "(none)"))))
 			goto again;
 
 		snprintf(label, sizeof(label), "%s%s", IIOD_ON, host);
@@ -277,13 +320,13 @@ static void start_avahi_thd(struct thread_pool *pool, void *d)
 		if (avahi.client)
 			break;
 again:
-		IIO_INFO("Avahi didn't start, try again later\n");
+		IIO_INFO("Avahi didn't start, try again in %ld seconds later\n", ts.tv_sec);
 		nanosleep(&ts, NULL);
 		ts.tv_sec++;
-		/* If it hasn't started in 10 times over 60 seconds,
+		/* If it hasn't started in 20 times over 210 seconds (3.5 min),
 		 * it is not going to, so stop
 		 */
-		if (ts.tv_sec >= 11)
+		if (ts.tv_sec > TIMEOUT)
 			break;
 	}
 
