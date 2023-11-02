@@ -16,6 +16,7 @@
 struct iiod_client;
 struct iiod_client_io;
 struct iiod_client_pdata;
+struct iio_event_stream_pdata;
 
 struct iiod_client_ops {
 	ssize_t (*write)(struct iiod_client_pdata *desc,
@@ -93,6 +94,14 @@ __api ssize_t iiod_client_readbuf(struct iiod_client_buffer_pdata *pdata,
 				  void *dst, size_t len);
 __api ssize_t iiod_client_writebuf(struct iiod_client_buffer_pdata *pdata,
 				   const void *src, size_t len);
+
+struct iio_event_stream_pdata *
+iiod_client_open_event_stream(struct iiod_client *client,
+			      const struct iio_device *dev);
+void iiod_client_close_event_stream(struct iio_event_stream_pdata *pdata);
+int iiod_client_read_event(struct iio_event_stream_pdata *pdata,
+			   struct iio_event *out_event,
+			   bool nonblock);
 
 #undef __api
 
