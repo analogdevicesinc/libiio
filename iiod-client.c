@@ -1713,6 +1713,7 @@ iiod_client_open_event_stream(struct iiod_client *client,
 	uint16_t idx = client->next_evstream_idx--;
 	struct iiod_command cmd = {
 		.op = IIOD_OP_CREATE_EVSTREAM,
+		.dev = (uint8_t) iio_device_get_index(dev),
 	};
 	int err;
 
@@ -1731,9 +1732,6 @@ iiod_client_open_event_stream(struct iiod_client *client,
 	err = iio_err(pdata->io);
 	if (err)
 		goto err_free_pdata;
-
-	cmd.dev = (uint8_t) iio_device_get_index(dev);
-	cmd.code = idx;
 
 	err = iiod_io_exec_simple_command(pdata->io, &cmd);
 	if (err)
