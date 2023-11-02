@@ -30,6 +30,9 @@ struct iiod_client {
 	struct iio_mutex *lock;
 
 	struct iiod_responder *responder;
+
+	/* TODO: atomic? */
+	uint16_t next_evstream_idx;
 };
 
 struct iiod_client_io {
@@ -67,6 +70,13 @@ struct iio_block_pdata {
 
 	void *data;
 	bool enqueued;
+};
+
+struct iio_event_stream_pdata {
+	struct iiod_client *client;
+	const struct iio_device *dev;
+	struct iiod_io *io;
+	uint16_t idx;
 };
 
 void iiod_client_mutex_lock(struct iiod_client *client)
@@ -263,6 +273,7 @@ struct iiod_client * iiod_client_new(const struct iio_context_params *params,
 	client->ops = ops;
 	client->desc = desc;
 	client->responder = NULL;
+	client->next_evstream_idx = (uint16_t)-1;
 
 	err = iiod_client_enable_binary(client);
 	if (err)
@@ -1692,4 +1703,100 @@ out_unlock:
 bool iiod_client_uses_binary_interface(const struct iiod_client *client)
 {
 	return !!client->responder;
+}
+
+struct iio_event_stream_pdata *
+iiod_client_open_event_stream(struct iiod_client *client,
+			      const struct iio_device *dev)
+{
+	struct iio_event_stream_pdata *pdata;
+	uint16_t idx = client->next_evstream_idx--;
+	struct iiod_command cmd = {
+		.op = IIOD_OP_CREATE_EVSTREAM,
+	};
+	int err;
+
+	if (!iiod_client_uses_binary_interface(client))
+		return iio_ptr(-ENOSYS);
+
+	pdata = zalloc(sizeof(*pdata));
+	if (!pdata)
+		return iio_ptr(-ENOMEM);
+
+	pdata->dev = dev;
+	pdata->client = client;
+	pdata->idx = idx;
+
+	pdata->io = iiod_responder_create_io(client->responder, idx);
+	err = iio_err(pdata->io);
+	if (err)
+		goto err_free_pdata;
+
+	cmd.dev = (uint8_t) iio_device_get_index(dev);
+	cmd.code = idx;
+
+	err = iiod_io_exec_simple_command(pdata->io, &cmd);
+	if (err)
+		goto err_destroy_io;
+
+	/* Use infinite timeout for blocking events reads, as those only make
+	 * sense when running in a thread, and we don't want them to return
+	 * without any event. */
+	iiod_io_set_timeout(pdata->io, 0);
+
+	return pdata;
+
+err_destroy_io:
+	iiod_io_cancel(pdata->io);
+	iiod_io_unref(pdata->io);
+err_free_pdata:
+	free(pdata);
+	return iio_ptr(err);
+}
+
+void iiod_client_close_event_stream(struct iio_event_stream_pdata *pdata)
+{
+	struct iiod_command cmd = {
+		.op = IIOD_OP_FREE_EVSTREAM,
+		.dev = (uint8_t) iio_device_get_index(pdata->dev),
+		.code = pdata->idx,
+	};
+	struct iiod_io *io;
+
+	/* Close the event stream using the default I/O, since there may
+	 * be a blocking event read operation pending on the I/O pipe dedicated
+	 * to this event stream. */
+	io = iiod_responder_get_default_io(pdata->client->responder);
+
+	iiod_io_exec_simple_command(io, &cmd);
+
+	iiod_io_cancel(pdata->io);
+	iiod_io_unref(pdata->io);
+	free(pdata);
+}
+
+int iiod_client_read_event(struct iio_event_stream_pdata *pdata,
+			   struct iio_event *out_event,
+			   bool nonblock)
+{
+	struct iiod_command cmd = {
+		.op = IIOD_OP_READ_EVENT,
+		.dev = (uint8_t) iio_device_get_index(pdata->dev),
+		.code = nonblock,
+	};
+	struct iiod_buf buf = {
+		.ptr = out_event,
+		.size = sizeof(*out_event),
+	};
+	struct iiod_io *io = pdata->io;
+	int ret;
+
+	/* Get a reference to the I/O stream, so that it's not freed while
+	 * we're using it */
+	iiod_io_ref(io);
+
+	ret = iiod_io_exec_command(io, &cmd, NULL, &buf);
+
+	iiod_io_unref(io);
+	return ret < 0 ? ret : 0;
 }
