@@ -79,6 +79,16 @@ struct buffer_entry {
 	pthread_mutex_t lock;
 };
 
+struct evstream_entry {
+	SLIST_ENTRY(evstream_entry) entry;
+	struct parser_pdata *pdata;
+	const struct iio_device *dev;
+	struct iio_event_stream *stream;
+	struct iio_task *task;
+	struct iiod_io *io;
+	uint16_t client_id;
+};
+
 struct parser_pdata {
 	struct iio_context *ctx;
 	bool stop, binary, verbose;
