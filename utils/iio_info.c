@@ -62,6 +62,8 @@ static void print_attr(const struct iio_attr *attr,
 	value = iio_attr_get_static_value(attr);
 	if (!value) {
 		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		if (ret < 0)
+			iio_strerror(ret, buf, sizeof(buf));
 		value = buf;
 	}
 
@@ -78,7 +80,7 @@ static void print_attr(const struct iio_attr *attr,
 	if (ret >= 0)
 		printf(" value: %s\n", value);
 	else
-		ctx_perror(ctx, ret, "");
+		printf(" value: ERROR: %s\n", value);
 }
 
 static void print_channel(const struct iio_channel *chn)
