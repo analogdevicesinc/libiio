@@ -1124,31 +1124,36 @@ static int add_buffer_attr(void *d, const char *path)
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
-		const char *path, bool dir_is_scan_elements)
+		const char *path, const char *prefix,
+		bool dir_is_scan_elements)
 {
 	char buf[1024];
 	const char *name = strrchr(path, '/') + 1;
 
-	if (dir_is_scan_elements) {
-		iio_snprintf(buf, sizeof(buf), "scan_elements/%s", name);
-		path = buf;
-	} else {
-		if (!is_channel(dev, name, true))
-			return add_attr_to_device(dev, name);
-		path = name;
-	}
+	if (!dir_is_scan_elements && !is_channel(dev, name, true))
+	      return add_attr_to_device(dev, name);
 
-	return add_channel(dev, name, path, dir_is_scan_elements);
+	iio_snprintf(buf, sizeof(buf), "%s%s", prefix, name);
+
+	return add_channel(dev, name, buf, dir_is_scan_elements);
 }
 
 static int add_attr_or_channel(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d, path, false);
+	return add_attr_or_channel_helper((struct iio_device *) d,
+				path, "", false);
+}
+
+static int add_event(void *d, const char *path)
+{
+	return add_attr_or_channel_helper((struct iio_device *) d,
+				path, "events/", false);
 }
 
 static int add_scan_element(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d, path, true);
+	return add_attr_or_channel_helper((struct iio_device *) d,
+				path, "scan_elements/", true);
 }
 
 static int foreach_in_dir(const struct iio_context *ctx,
@@ -1237,6 +1242,23 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 	return 0;
 }
 
+static int add_events(struct iio_device *dev, const char *devpath)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct stat st;
+	char buf[1024];
+
+	iio_snprintf(buf, sizeof(buf), "%s/events", devpath);
+
+	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
+		int ret = foreach_in_dir(ctx, dev, buf, false, add_event);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int create_device(void *d, const char *path)
 {
 	unsigned int i;
@@ -1260,6 +1282,10 @@ static int create_device(void *d, const char *path)
 	ret = add_buffer_attributes(dev, path);
 	if (ret < 0)
 		goto err_free_device;
+
+	ret = add_events(dev, path);
+	if (ret < 0)
+		goto err_free_scan_elements;
 
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
