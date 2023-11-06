@@ -50,6 +50,10 @@ static const char * const iio_chan_type_name_spec[] = {
 	[IIO_POSITIONRELATIVE] = "positionrelative",
 	[IIO_PHASE] = "phase",
 	[IIO_MASSCONCENTRATION] = "massconcentration",
+	[IIO_DELTA_ANGL] = "delta_angl",
+	[IIO_DELTA_VELOCITY] = "delta_velocity",
+	[IIO_COLORTEMP] = "colortemp",
+	[IIO_CHROMATICITY] = "chromaticity",
 };
 
 static const char * const hwmon_chan_type_name_spec[] = {
