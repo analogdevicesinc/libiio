@@ -14,12 +14,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* For isatty() */
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "iio_common.h"
 
 #define MY_NAME "iio_info"
 
 #ifdef _WIN32
 #define snprintf sprintf_s
+#define isatty _isatty
 #endif
 
 static struct iio_context *ctx;
@@ -50,6 +58,16 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 
 #define MY_OPTS ""
 
+static bool colors;
+
+#define FMT_ERR "\e[1;31mERROR: %s\e[0m"
+#define FMT_DEV "\e[1;32m%s\e[0m"
+#define FMT_CHN "\e[0;33m%s\e[0m"
+#define FMT_ATTR "\e[1;34m%s\e[0m"
+
+/* Keeps Codacy happy */
+#define print_fmt(fmt, ...) printf(fmt, __VA_ARGS__) /* Flawfinder: ignore */
+
 static void print_attr(const struct iio_attr *attr,
 		       unsigned int level, unsigned int idx)
 {
@@ -72,13 +90,18 @@ static void print_attr(const struct iio_attr *attr,
 	name = iio_attr_get_name(attr);
 	fn = iio_attr_get_filename(attr);
 
-	printf("%s", name);
+	if (colors)
+		print_fmt(FMT_ATTR, name);
+	else
+		printf("%s", name);
 
 	if (strcmp(name, fn))
 		printf(" (%s)", fn);
 
 	if (ret >= 0)
 		printf(" value: %s\n", value);
+	else if (colors)
+		print_fmt(" value: " FMT_ERR "\n", value);
 	else
 		printf(" value: ERROR: %s\n", value);
 }
@@ -95,12 +118,21 @@ static void print_channel(const struct iio_channel *chn)
 		type_name = "input";
 
 	name = iio_channel_get_name(chn);
-	printf("\t\t\t%s: %s (%s",
-	       iio_channel_get_id(chn),
-	       name ? name : "", type_name);
+	if (colors) {
+		print_fmt("\t\t\t" FMT_CHN ": " FMT_CHN " (" FMT_CHN,
+			  iio_channel_get_id(chn),
+			  name ? name : "", type_name);
+	} else {
+		printf("\t\t\t%s: %s (%s",
+		       iio_channel_get_id(chn),
+		       name ? name : "", type_name);
+	}
 
 	if (iio_channel_get_type(chn) == IIO_CHAN_TYPE_UNKNOWN) {
-		printf(", ERROR: iio_channel_get_type() = UNKNOWN");
+		if (colors)
+			print_fmt(", " FMT_ERR, "iio_channel_get_type() = UNKNOWN");
+		else
+			printf(", ERROR: iio_channel_get_type() = UNKNOWN");
 	}
 
 	if (iio_channel_is_scan_element(chn)) {
@@ -139,6 +171,10 @@ int main(int argc, char **argv)
 	struct iio_buffer *buffer;
 	struct option *opts;
 	int c, ret = EXIT_FAILURE;
+
+#ifndef _MSC_BUILD
+	colors = isatty(STDOUT_FILENO) == 1;
+#endif
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
@@ -208,10 +244,16 @@ int main(int argc, char **argv)
 		dev = iio_context_get_device(ctx, i);
 		name = iio_device_get_name(dev);
 		label = iio_device_get_label(dev);
-
-		printf("\t%s:", iio_device_get_id(dev));
-		if (name)
-			printf(" %s", name);
+		if (colors)
+			print_fmt("\t" FMT_DEV ":", iio_device_get_id(dev));
+		else
+			printf("\t%s:", iio_device_get_id(dev));
+		if (name) {
+			if (colors)
+				print_fmt(" " FMT_DEV, name);
+			else
+				printf(" %s", name);
+		}
 		if (label)
 			printf(" (label: %s)", label);
 		if (dev_is_buffer_capable(dev))
