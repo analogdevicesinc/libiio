@@ -719,13 +719,17 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 
 	buf = get_iio_buffer(pdata, cmd, &entry);
 	ret = iio_err(buf);
-	if (ret)
-		goto out_send_response;
+	if (ret) {
+		IIO_ERROR("handle_transfer_block: Could not find IIO buffer\n");
+		return;
+	}
 
 	block = get_iio_block(pdata, entry, cmd, &block_entry);
 	ret = iio_err(block);
-	if (ret)
-		goto out_send_response;
+	if (ret) {
+		IIO_ERROR("handle_transfer_block: Could not find IIO block\n");
+		return;
+	}
 
 	readbuf.ptr = &bytes_used;
 	readbuf.size = 8;
