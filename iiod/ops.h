@@ -69,7 +69,7 @@ struct block_entry {
 struct buffer_entry {
 	SLIST_ENTRY(buffer_entry) entry;
 	struct parser_pdata *pdata;
-	struct iio_device *dev;
+	const struct iio_device *dev;
 	struct iio_buffer *buf;
 	struct iio_task *enqueue_task, *dequeue_task;
 	uint32_t *words;

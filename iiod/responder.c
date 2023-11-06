@@ -329,7 +329,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_context *ctx = pdata->ctx;
 	struct iio_channels_mask *mask;
-	struct iio_device *dev;
+	const struct iio_device *dev;
 	struct iio_channel *chn;
 	struct buffer_entry *entry;
 	struct iio_buffer *buf;
