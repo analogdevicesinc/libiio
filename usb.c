@@ -501,6 +501,15 @@ usb_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	return iiod_client_create_block(pdata->pdata, size, data);
 }
 
+static struct iio_event_stream_pdata *
+usb_open_events_fd(const struct iio_device *dev)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return iiod_client_open_event_stream(pdata->io_ctx.iiod_client, dev);
+}
+
 static const struct iio_backend_ops usb_ops = {
 	.scan = usb_context_scan,
 	.create = usb_create_context_from_args,
@@ -523,6 +532,10 @@ static const struct iio_backend_ops usb_ops = {
 	.free_block = iiod_client_free_block,
 	.enqueue_block = iiod_client_enqueue_block,
 	.dequeue_block = iiod_client_dequeue_block,
+
+	.open_ev = usb_open_events_fd,
+	.close_ev = iiod_client_close_event_stream,
+	.read_ev = iiod_client_read_event,
 };
 
 __api_export_if(WITH_USB_BACKEND_DYNAMIC)
