@@ -612,6 +612,12 @@ iiod_responder_set_timeout(struct iiod_responder *priv, unsigned int timeout_ms)
 	priv->default_io->timeout_ms = timeout_ms;
 }
 
+void
+iiod_io_set_timeout(struct iiod_io *io, unsigned int timeout_ms)
+{
+	io->timeout_ms = timeout_ms;
+}
+
 struct iiod_responder *
 iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 {
