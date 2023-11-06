@@ -463,7 +463,7 @@ iio_scan_get_uri(const struct iio_scan *ctx, size_t idx);
 
 
 /** @brief Get a string description of an error code
- * @param err The error code
+ * @param err The error code. Can be positive or negative.
  * @param dst A pointer to the memory area where the NULL-terminated string
  * corresponding to the error message will be stored
  * @param len The available length of the memory area, in bytes */

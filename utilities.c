@@ -192,13 +192,17 @@ int write_double(char *buf, size_t len, double val)
 
 void iio_strerror(int err, char *buf, size_t len)
 {
+	/* strerror only works with positive error codes.
+	 * Support negative error codes by just negating the value. */
+	int ret = err < 0 ? -err : err;
+
 #if defined(_WIN32)
-	int ret = strerror_s(buf, len, err);
+	ret = strerror_s(buf, len, ret);
 #elif defined(HAS_STRERROR_R)
-	int ret = strerror_r(err, buf, len);
+	ret = strerror_r(ret, buf, len);
 #else
 	/* no strerror_s, no strerror_r... just use the default message */
-	int ret = 0xf7de;
+	ret = 0xf7de;
 #endif
 	if (ret != 0)
 		iio_snprintf(buf, len, "Unknown error %i", err);
