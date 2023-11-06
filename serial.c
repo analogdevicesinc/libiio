@@ -236,6 +236,15 @@ serial_create_block(struct iio_buffer_pdata *buf, size_t size, void **data)
 	return iiod_client_create_block(buf->pdata, size, data);
 }
 
+static struct iio_event_stream_pdata *
+serial_open_events_fd(const struct iio_device *dev)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return iiod_client_open_event_stream(pdata->iiod_client, dev);
+}
+
 static const struct iio_backend_ops serial_ops = {
 	.create = serial_create_context_from_args,
 	.read_attr = serial_read_attr,
@@ -252,6 +261,10 @@ static const struct iio_backend_ops serial_ops = {
 	.free_block = iiod_client_free_block,
 	.enqueue_block = iiod_client_enqueue_block,
 	.dequeue_block = iiod_client_dequeue_block,
+
+	.open_ev = serial_open_events_fd,
+	.close_ev = iiod_client_close_event_stream,
+	.read_ev = iiod_client_read_event,
 };
 
 __api_export_if(WITH_SERIAL_BACKEND_DYNAMIC)
