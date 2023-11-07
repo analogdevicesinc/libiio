@@ -17,7 +17,9 @@ from ctypes import (
     Structure,
     c_char_p,
     c_uint,
+    c_uint64,
     c_int,
+    c_int64,
     c_long,
     c_longlong,
     c_size_t,
@@ -38,6 +40,8 @@ from ctypes.util import find_library
 from enum import Enum
 from os import strerror as _strerror
 from platform import system as _system
+from threading import Thread
+from weakref import ref as weakref
 import abc
 
 if "Windows" in _system():
@@ -108,6 +112,8 @@ class _Channel(Structure):
 class _ChannelsMask(Structure):
     pass
 
+class _EventStream(Structure):
+    pass
 
 class _Buffer(Structure):
     pass
@@ -138,6 +144,47 @@ class DataFormat(Structure):
         ("scale", c_double),
         ("repeat", c_uint),
     ]
+
+class EventType(Enum):
+    """Represents the type of an IIO event."""
+
+    IIO_EV_TYPE_THRESH = 0
+    IIO_EV_TYPE_MAG = 1
+    IIO_EV_TYPE_ROC = 2
+    IIO_EV_TYPE_THRESH_ADAPTIVE = 3
+    IIO_EV_TYPE_MAG_ADAPTIVE = 4
+    IIO_EV_TYPE_CHANGE = 5
+    IIO_EV_TYPE_MAG_REFERENCED = 6
+    IIO_EV_TYPE_GESTURE = 7
+
+class EventDirection(Enum):
+    """Represents the direction of an IIO event."""
+
+    IIO_EV_DIR_EITHER = 0
+    IIO_EV_DIR_RISING = 1
+    IIO_EV_DIR_FALLING = 2
+    IIO_EV_DIR_NONE = 3
+    IIO_EV_DIR_SINGLETAP = 4
+    IIO_EV_DIR_DOUBLETAP = 5
+
+class Event(Structure):
+    """Represents an IIO event."""
+
+    _fields_ = [('id', c_uint64), ('timestamp', c_int64)]
+
+    type = property(
+        lambda self: EventType((self.id >> 56) & 0xff),
+        None,
+        None,
+        "The type of the IIO event.\n\ttype=iio.EventType(Enum)",
+    )
+
+    direction = property(
+        lambda self: EventDirection((self.id >> 48) & 0x7f),
+        None,
+        None,
+        "The direction of the IIO event.\n\ttype=iio.EventDirection(Enum)",
+    )
 
 
 class ChannelModifier(Enum):
@@ -237,6 +284,8 @@ _ContextPtr = _POINTER(_Context)
 _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _ChannelsMaskPtr = _POINTER(_ChannelsMask)
+_EventPtr = _POINTER(Event)
+_EventStreamPtr = _POINTER(_EventStream)
 _BufferPtr = _POINTER(_Buffer)
 _BlockPtr = _POINTER(_Block)
 _DataFormatPtr = _POINTER(DataFormat)
@@ -398,6 +447,11 @@ _d_get_attr = _lib.iio_device_get_attr
 _d_get_attr.restype = _AttrPtr
 _d_get_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_attr.errcheck = _check_null
+
+_d_create_evstream = _lib.iio_device_create_event_stream
+_d_create_evstream.restype = _EventStreamPtr
+_d_create_evstream.argtypes = (_DevicePtr,)
+_d_create_evstream.errcheck = _check_ptr_err
 
 _d_debug_attr_count = _lib.iio_device_get_debug_attrs_count
 _d_debug_attr_count.restype = c_uint
@@ -630,6 +684,18 @@ _stream_get_next_block.restype = _BlockPtr
 _stream_get_next_block.argtypes = (_StreamPtr,)
 _stream_get_next_block.errcheck = _check_ptr_err
 
+_evstream_destroy = _lib.iio_event_stream_destroy
+_evstream_destroy.argtypes = (_EventStreamPtr,)
+
+_evstream_read = _lib.iio_event_stream_read
+_evstream_read.restype = c_int
+_evstream_read.argtypes = (_EventStreamPtr, _EventPtr, c_bool)
+_evstream_read.errcheck = _check_negative
+
+_ev_get_channel = _lib.iio_event_get_channel
+_ev_get_channel.restype = _ChannelPtr
+_ev_get_channel.argtypes = (_EventPtr, _DevicePtr, c_bool)
+_ev_get_channel.errcheck = _check_null
 
 # pylint: enable=invalid-name
 
@@ -1094,6 +1160,9 @@ class _DeviceOrTrigger(_IIO_Object):
 
         label_raw = _d_get_label(self._device)
         self._label = label_raw.decode("ascii") if label_raw is not None else None
+        self._stream = None
+        self._evthd = None
+        self._event_cb = None
 
     def reg_write(self, reg, value):
         """
@@ -1224,6 +1293,10 @@ class Device(_DeviceOrTrigger):
         super(Device, self).__init__(ctx, _device)
         self.ctx = ctx
 
+    def __del__(self):
+        print("Delete event CB")
+        self.event_cb = None
+
     def _set_trigger(self, trigger):
         _d_set_trigger(self._device, trigger._device if trigger else None)
 
@@ -1237,6 +1310,76 @@ class Device(_DeviceOrTrigger):
                 return dev
         return None
 
+    def _ev_thd(self, weak_self):
+        # Drop the "self" reference
+        del self
+
+        event = Event()
+
+        while True:
+            try:
+                chn1 = None
+                chn2 = None
+
+                self = weak_self()
+                if self is None:
+                    break
+
+                stream = self._stream
+                del self
+
+                _evstream_read(stream, _byref(event), False)
+                print("Read event.")
+
+                self = weak_self()
+                if self is None:
+                    break
+
+                try:
+                    chn1 = Channel(self, _ev_get_channel(_byref(event), self._device, False))
+                    chn2 = Channel(self, _ev_get_channel(_byref(event), self._device, True))
+                except Exception:
+                    pass
+
+                #self._event_cb((chn1, chn2), event)
+                self._event_cb(event)
+                del self
+                chn1 = None
+                chn2 = None
+
+            except OSError as err:
+                if err.errno == 9:
+                    # Event stream was closed
+                    break
+                else:
+                    raise
+
+        print("Event thread stopped.")
+
+
+    def _set_cb(self, cb):
+        # Unset any previous handler
+        if self._stream is not None:
+            _evstream_destroy(self._stream)
+            self._stream = None
+        if self._evthd is not None:
+            self._evthd.join()
+            self._evthd = None
+
+        # Create an event stream
+        if cb is not None:
+            try:
+                self._stream = _d_create_evstream(self._device)
+            except Exception:
+                self._stream = None
+                raise
+
+            self._evthd = Thread(target = self._ev_thd, args=(weakref(self),))
+            self._evthd.start()
+
+        self._event_cb = cb
+
+
     trigger = property(
         _get_trigger,
         _set_trigger,
@@ -1246,6 +1389,14 @@ class Device(_DeviceOrTrigger):
     hwmon = property(
         lambda self: self._id[:5] == "hwmon", None, None,
         "Contains True if the device is a hardware-monitoring device, False if it is a IIO device.\n\ttype=bool",
+    )
+    event_cb = property(
+        lambda self: self._event_cb,
+        lambda self, x: self._set_cb(x),
+        None,
+        "Registered event callback function.\n\ttype=function. The first argument will be a tuple "
+        "containing the two channels (if differential) or the channel and None (if not differential. "
+        "The second argument is of type iio.Event.",
     )
 
     @property
