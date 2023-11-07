@@ -17,7 +17,9 @@ from ctypes import (
     Structure,
     c_char_p,
     c_uint,
+    c_uint64,
     c_int,
+    c_int64,
     c_long,
     c_longlong,
     c_size_t,
@@ -34,6 +36,7 @@ from ctypes import (
     memmove as _memmove,
     byref as _byref,
 )
+from contextlib import contextmanager
 from ctypes.util import find_library
 from enum import Enum
 from os import strerror as _strerror
@@ -108,6 +111,8 @@ class _Channel(Structure):
 class _ChannelsMask(Structure):
     pass
 
+class _EventStream(Structure):
+    pass
 
 class _Buffer(Structure):
     pass
@@ -139,6 +144,47 @@ class DataFormat(Structure):
         ("repeat", c_uint),
         ("offset", c_double),
     ]
+
+class EventType(Enum):
+    """Represents the type of an IIO event."""
+
+    IIO_EV_TYPE_THRESH = 0
+    IIO_EV_TYPE_MAG = 1
+    IIO_EV_TYPE_ROC = 2
+    IIO_EV_TYPE_THRESH_ADAPTIVE = 3
+    IIO_EV_TYPE_MAG_ADAPTIVE = 4
+    IIO_EV_TYPE_CHANGE = 5
+    IIO_EV_TYPE_MAG_REFERENCED = 6
+    IIO_EV_TYPE_GESTURE = 7
+
+class EventDirection(Enum):
+    """Represents the direction of an IIO event."""
+
+    IIO_EV_DIR_EITHER = 0
+    IIO_EV_DIR_RISING = 1
+    IIO_EV_DIR_FALLING = 2
+    IIO_EV_DIR_NONE = 3
+    IIO_EV_DIR_SINGLETAP = 4
+    IIO_EV_DIR_DOUBLETAP = 5
+
+class Event(Structure):
+    """Represents an IIO event."""
+
+    _fields_ = [('id', c_uint64), ('timestamp', c_int64)]
+
+    type = property(
+        lambda self: EventType((self.id >> 56) & 0xff),
+        None,
+        None,
+        "The type of the IIO event.\n\ttype=iio.EventType(Enum)",
+    )
+
+    direction = property(
+        lambda self: EventDirection((self.id >> 48) & 0x7f),
+        None,
+        None,
+        "The direction of the IIO event.\n\ttype=iio.EventDirection(Enum)",
+    )
 
 
 class ChannelModifier(Enum):
@@ -238,6 +284,8 @@ _ContextPtr = _POINTER(_Context)
 _DevicePtr = _POINTER(_Device)
 _ChannelPtr = _POINTER(_Channel)
 _ChannelsMaskPtr = _POINTER(_ChannelsMask)
+_EventPtr = _POINTER(Event)
+_EventStreamPtr = _POINTER(_EventStream)
 _BufferPtr = _POINTER(_Buffer)
 _BlockPtr = _POINTER(_Block)
 _DataFormatPtr = _POINTER(DataFormat)
@@ -399,6 +447,11 @@ _d_get_attr = _lib.iio_device_get_attr
 _d_get_attr.restype = _AttrPtr
 _d_get_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_attr.errcheck = _check_null
+
+_d_create_evstream = _lib.iio_device_create_event_stream
+_d_create_evstream.restype = _EventStreamPtr
+_d_create_evstream.argtypes = (_DevicePtr,)
+_d_create_evstream.errcheck = _check_ptr_err
 
 _d_debug_attr_count = _lib.iio_device_get_debug_attrs_count
 _d_debug_attr_count.restype = c_uint
@@ -631,6 +684,18 @@ _stream_get_next_block.restype = _BlockPtr
 _stream_get_next_block.argtypes = (_StreamPtr,)
 _stream_get_next_block.errcheck = _check_ptr_err
 
+_evstream_destroy = _lib.iio_event_stream_destroy
+_evstream_destroy.argtypes = (_EventStreamPtr,)
+
+_evstream_read = _lib.iio_event_stream_read
+_evstream_read.restype = c_int
+_evstream_read.argtypes = (_EventStreamPtr, _EventPtr, c_bool)
+_evstream_read.errcheck = _check_negative
+
+_ev_get_channel = _lib.iio_event_get_channel
+_ev_get_channel.restype = _ChannelPtr
+_ev_get_channel.argtypes = (_EventPtr, _DevicePtr, c_bool)
+_ev_get_channel.errcheck = _check_null
 
 # pylint: enable=invalid-name
 
@@ -1082,6 +1147,56 @@ class Stream(_IIO_Object):
         return Block(self._buffer, self._block_size, next_hdl)
 
 
+class EventStream(_IIO_Object):
+    """Class used to read IIO events. Cannot be instantiated directly."""
+
+    def __init__(self):
+        # Prevent the EventStream from being initialized manually.
+        raise NotImplementedError
+
+    @classmethod
+    def _create(cls, device, stream):
+        self = cls.__new__(cls)
+        super(EventStream, self).__init__(stream, device)
+
+        return self
+
+    def read(self, nonblock=True):
+        """
+        Read one event from the stream.
+
+        :param nonblock: type=bool
+            If set, return None if there are no events in the stream.
+            If unset, it will wait until an event arrives.
+
+        returns: type=(iio.Event, (iio.Channel, iio.Channel))
+            The first element of the tuple is the Event read.
+            The second element is a tuple itself, that contains the
+            two channels related to the event. For non-differential
+            events the second channel will always be None.
+        """
+        event = Event()
+
+        try:
+            _evstream_read(self._hdl, _byref(event), nonblock)
+        except OSError as err:
+            if err.errno == 11:  # EAGAIN
+                return None
+
+            raise
+
+        chn1 = None
+        chn2 = None
+
+        try:
+            dev = self._parent
+            chn1 = Channel(dev, _ev_get_channel(_byref(event), dev._device, False))
+            chn2 = Channel(dev, _ev_get_channel(_byref(event), dev._device, True))
+        except OSError:
+            pass
+
+        return (event, (chn1, chn2))
+
 class _DeviceOrTrigger(_IIO_Object):
     def __init__(self, _ctx, _device):
         super(_DeviceOrTrigger, self).__init__(_device, _ctx)
@@ -1237,6 +1352,20 @@ class Device(_DeviceOrTrigger):
             if trig.id == dev.id:
                 return dev
         return None
+
+    @contextmanager
+    def event_stream(self):
+        """
+        Create an events stream.
+
+        returns: type=contextlib._GeneratorContextManager
+            A generator for a EventStream instance.
+        """
+        try:
+            stream = _d_create_evstream(self._device)
+            yield EventStream._create(self, stream)
+        finally:
+            _evstream_destroy(stream)
 
     trigger = property(
         _get_trigger,
