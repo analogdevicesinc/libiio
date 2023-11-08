@@ -297,9 +297,11 @@ void gen_function(const char* prefix, const char* target,
 		if (wbuf) {
 			fprintf(fd, "    # Write string to %s attribute:\n", prefix);
 			if (!strcmp(prefix, "device") || !strcmp(prefix, "channel")) {
-				fprintf(fd, "    %s.attrs[\"%s\"].value = str(\"%s\")\n", target, attr, wbuf);
+				fprintf(fd, "    %s.attrs[\"%s\"].value = str(\"%s\")\n", target,
+					iio_attr_get_name(attr), wbuf);
 			} else if (!strcmp(prefix, "device_debug")) {
-				fprintf(fd, "    %s.debug_attrs[\"%s\"].value = str(\"%s\")\n", target, attr, wbuf);
+				fprintf(fd, "    %s.debug_attrs[\"%s\"].value = str(\"%s\")\n", target,
+					iio_attr_get_name(attr), wbuf);
 			} else {
 				fprintf(fd, "    # Write for %s / %s not implemented yet\n", prefix, target);
 			}
