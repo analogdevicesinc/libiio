@@ -137,6 +137,7 @@ class DataFormat(Structure):
         ("with_scale", c_bool),
         ("scale", c_double),
         ("repeat", c_uint),
+        ("offset", c_double),
     ]
 
 
