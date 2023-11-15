@@ -532,16 +532,6 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	return ret ? ret : -EIO;
 }
 
-static const char * get_filename(const struct iio_channel *chn,
-		const char *attr)
-{
-	unsigned int i;
-	for (i = 0; i < chn->attrlist.num; i++)
-		if (!strcmp(attr, chn->attrlist.attrs[i].name))
-			return chn->attrlist.attrs[i].filename;
-	return attr;
-}
-
 static int channel_write_state(const struct iio_channel *chn,
 			       unsigned int idx, bool en)
 {
@@ -1572,42 +1562,6 @@ const struct iio_backend iio_local_backend = {
 	.default_timeout_ms = 1000,
 };
 
-static void init_data_scale(struct iio_channel *chn)
-{
-	char *end, buf[1024];
-	const char *attr;
-	ssize_t ret;
-	float value;
-
-	chn->format.with_scale = false;
-	attr = get_filename(chn, "scale");
-
-	ret = local_read_dev_attr(chn->dev, 0, attr,
-				  buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
-	if (ret < 0)
-		return;
-
-	errno = 0;
-	value = strtof(buf, &end);
-	if (end == buf || errno == ERANGE)
-		return;
-
-	chn->format.with_scale = true;
-	chn->format.scale = value;
-}
-
-static void init_scan_elements(struct iio_context *ctx)
-{
-	unsigned int i, j;
-
-	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
-		struct iio_device *dev = iio_context_get_device(ctx, i);
-
-		for (j = 0; j < dev->nb_channels; j++)
-			init_data_scale(dev->channels[j]);
-	}
-}
-
 static int populate_context_attrs(struct iio_context *ctx, const char *file)
 {
 	struct INI *ini;
@@ -1703,8 +1657,6 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	iio_sort_devices(ctx);
 
 	foreach_in_dir(ctx, ctx, "/sys/kernel/debug/iio", true, add_debug);
-
-	init_scan_elements(ctx);
 
 	if (WITH_LOCAL_CONFIG) {
 		ret = populate_context_attrs(ctx, "/etc/libiio.ini");
