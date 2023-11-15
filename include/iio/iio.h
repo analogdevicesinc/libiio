@@ -1328,6 +1328,10 @@ struct iio_data_format {
 
 	/** @brief Number of times length repeats (added in v0.8) */
 	unsigned int repeat;
+
+	/** @brief Contains a value to be added to the raw sample before
+	 *  applying the scale. */
+	double offset;
 };
 
 
