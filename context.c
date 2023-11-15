@@ -398,6 +398,50 @@ const struct iio_backend * const iio_backends[] = {
 };
 const unsigned int iio_backends_size = ARRAY_SIZE(iio_backends);
 
+static int iio_context_update_scale_offset(struct iio_context *ctx)
+{
+	const struct iio_attr *attr;
+	struct iio_channel *chn;
+	struct iio_device *dev;
+	unsigned int i, j;
+	int err;
+
+	if (!ctx->ops->read_attr)
+		return 0;
+
+	for (i = 0; i < ctx->nb_devices; i++) {
+		dev = ctx->devices[i];
+
+		for (j = 0; j < dev->nb_channels; j++) {
+			chn = dev->channels[j];
+
+			attr = iio_channel_find_attr(chn, "scale");
+			if (attr) {
+				err = iio_attr_read_double(attr,
+							   &chn->format.scale);
+				if (err) {
+					chn_perror(chn, err, "Unable to read scale");
+					return err;
+				}
+
+				chn->format.with_scale = true;
+			}
+
+			attr = iio_channel_find_attr(chn, "offset");
+			if (attr) {
+				err = iio_attr_read_double(attr,
+							   &chn->format.offset);
+				if (err) {
+					chn_perror(chn, err, "Unable to read offset");
+					return err;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 struct iio_context * iio_create_context(const struct iio_context_params *params,
 					const char *uri)
 {
@@ -406,6 +450,7 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	struct iio_context *ctx = NULL;
 	char *uri_dup = NULL;
 	unsigned int i;
+	int err;
 
 	if (params)
 		params2 = *params;
@@ -444,6 +489,14 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	}
 
 	free(uri_dup);
+
+	if (!iio_err(ctx)) {
+		err = iio_context_update_scale_offset(ctx);
+		if (err) {
+			iio_context_destroy(ctx);
+			ctx = iio_ptr(err);
+		}
+	}
 
 	return ctx;
 }
