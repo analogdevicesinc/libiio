@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2021 Analog Devices, Inc.
+ * Copyright (C) 2021-2023 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -24,6 +24,7 @@
 #define __FIRST(a, ...)		a
 #define ___OTHERS(a, ...)	a, __VA_ARGS__
 #define __OTHERS(a, b, ...)	___OTHERS(a, __VA_ARGS__)
+#define __SKIPFIRST(a, ...)	__VA_ARGS__
 
 
 /** @brief Print a message with the given priority
@@ -40,6 +41,9 @@ iio_prm_printf(const struct iio_context_params *params,
 #define __dev_ctx_or_null(dev)	((dev) ? iio_device_get_context(dev) : NULL)
 #define __chn_dev_or_null(chn)	((chn) ? iio_channel_get_device(chn) : NULL)
 
+#define __dev_id_or_null(dev)	((dev) ? iio_device_get_id(dev) : NULL)
+#define __chn_id_or_null(chn)	((chn) ? iio_channel_get_id(chn) : NULL)
+
 #define prm_err(prm, ...)	iio_prm_printf((prm), LEVEL_ERROR, "ERROR: " __VA_ARGS__)
 #define prm_warn(prm, ...)	iio_prm_printf((prm), LEVEL_WARNING, "WARNING: " __VA_ARGS__)
 #define prm_info(prm, ...)	iio_prm_printf((prm), LEVEL_INFO, __VA_ARGS__)
@@ -50,15 +54,39 @@ iio_prm_printf(const struct iio_context_params *params,
 #define ctx_info(ctx, ...)	prm_info(__ctx_params_or_null(ctx), __VA_ARGS__)
 #define ctx_dbg(ctx, ...)	prm_dbg(__ctx_params_or_null(ctx), __VA_ARGS__)
 
-#define dev_err(dev, ...)	ctx_err(__dev_ctx_or_null(dev), __VA_ARGS__)
-#define dev_warn(dev, ...)	ctx_warn(__dev_ctx_or_null(dev), __VA_ARGS__)
-#define dev_info(dev, ...)	ctx_info(__dev_ctx_or_null(dev), __VA_ARGS__)
-#define dev_dbg(dev, ...)	ctx_dbg(__dev_ctx_or_null(dev), __VA_ARGS__)
+#define dev_err(dev, ...)	ctx_err(__dev_ctx_or_null(dev), \
+					"%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					__dev_id_or_null(dev), \
+					__SKIPFIRST(__VA_ARGS__, ""))
+#define dev_warn(dev, ...)	ctx_warn(__dev_ctx_or_null(dev), \
+					 "%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					 __dev_id_or_null(dev), \
+					 __SKIPFIRST(__VA_ARGS__, ""))
+#define dev_info(dev, ...)	ctx_info(__dev_ctx_or_null(dev), \
+					 "%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					 __dev_id_or_null(dev), \
+					 __SKIPFIRST(__VA_ARGS__, ""))
+#define dev_dbg(dev, ...)	ctx_dbg(__dev_ctx_or_null(dev), \
+					"%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					__dev_id_or_null(dev), \
+					__SKIPFIRST(__VA_ARGS__, ""))
 
-#define chn_err(chn, ...)	dev_err(__chn_dev_or_null(chn), __VA_ARGS__)
-#define chn_warn(chn, ...)	dev_warn(__chn_dev_or_null(chn), __VA_ARGS__)
-#define chn_info(chn, ...)	dev_info(__chn_dev_or_null(chn), __VA_ARGS__)
-#define chn_dbg(chn, ...)	dev_dbg(__chn_dev_or_null(chn), __VA_ARGS__)
+#define chn_err(dev, ...)	dev_err(__chn_dev_or_null(chn), \
+					"%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					__chn_id_or_null(chn), \
+					__SKIPFIRST(__VA_ARGS__, ""))
+#define chn_warn(dev, ...)	dev_warn(__chn_dev_or_null(chn), \
+					 "%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					 __chn_id_or_null(chn), \
+					 __SKIPFIRST(__VA_ARGS__, ""))
+#define chn_info(dev, ...)	dev_info(__chn_dev_or_null(chn), \
+					 "%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					 __chn_id_or_null(chn), \
+					 __SKIPFIRST(__VA_ARGS__, ""))
+#define chn_dbg(dev, ...)	dev_dbg(__chn_dev_or_null(chn), \
+					"%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+					__chn_id_or_null(chn), \
+					__SKIPFIRST(__VA_ARGS__, ""))
 
 #define prm_perror(params, err, ...) do {				\
 	char _buf[1024];						\
@@ -68,8 +96,14 @@ iio_prm_printf(const struct iio_context_params *params,
 		__OTHERS(": %s\n",__VA_ARGS__, _buf));			\
 } while (0)
 #define ctx_perror(ctx, err, ...)	prm_perror(__ctx_params_or_null(ctx), err, __VA_ARGS__)
-#define dev_perror(dev, err, ...)	ctx_perror(__dev_ctx_or_null(dev), err, __VA_ARGS__)
-#define chn_perror(dev, err, ...)	dev_perror(__chn_dev_or_null(chn), err, __VA_ARGS__)
+#define dev_perror(dev, err, ...)	ctx_perror(__dev_ctx_or_null(dev), err, \
+						   "%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+						   __dev_id_or_null(dev), \
+						   __SKIPFIRST(__VA_ARGS__, ""))
+#define chn_perror(dev, err, ...)	dev_perror(__chn_dev_or_null(chn), err, \
+						   "%s: " __FIRST(__VA_ARGS__, 0) "%s", \
+						   __chn_id_or_null(chn), \
+						   __SKIPFIRST(__VA_ARGS__, ""))
 
 #undef __api
 
