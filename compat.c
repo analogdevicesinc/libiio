@@ -306,6 +306,7 @@ static int iio_init_context_compat(struct iio_context *ctx)
 	struct iio_channel *chn;
 	size_t size = sizeof(*compat);
 	unsigned int i, j, nb_devices, nb_channels;
+	unsigned int chn_counter = 0;
 	int err;
 
 	nb_devices = IIO_CALL(iio_context_get_devices_count)(ctx);
@@ -351,7 +352,7 @@ static int iio_init_context_compat(struct iio_context *ctx)
 			chn_compat = (void *)((uintptr_t)compat
 					      + sizeof(*compat)
 					      + nb_devices * sizeof(*dev_compat)
-					      + j * sizeof(*chn_compat));
+					      + chn_counter++ * sizeof(*chn_compat));
 			IIO_CALL(iio_channel_set_data)(chn, chn_compat);
 		}
 	}
