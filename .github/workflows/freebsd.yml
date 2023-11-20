@@ -5,18 +5,18 @@ on: [push]
 
 jobs:
   build:
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: ["12.3", "13.2"]
+        os: ["13.2"]
     name: Test FreeBSD
     steps:
     - uses: actions/checkout@v3
     - name: Install libiio dependencies of FreeBSD
       id: test
-      uses: vmactions/freebsd-vm@v0
+      uses: vmactions/freebsd-vm@v1
       with:
         release: ${{ matrix.os }}
         usesh: true
