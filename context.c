@@ -44,6 +44,7 @@ static const struct iio_context_params default_params = {
 	.err = NULL, /* stderr */
 	.log_level = (enum iio_log_level)DEFAULT_LOG_LEVEL,
 	.stderr_level = LEVEL_WARNING,
+	.timestamp_level = LEVEL_DEBUG,
 };
 
 const struct iio_context_params *get_default_params(void)
@@ -459,6 +460,8 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		params2.log_level = default_params.log_level;
 	if (!params2.stderr_level)
 		params2.stderr_level = default_params.stderr_level;
+	if (!params2.timestamp_level)
+		params2.timestamp_level = default_params.timestamp_level;
 
 	if (!uri) {
 		uri_dup = iio_getenv("IIOD_REMOTE");
