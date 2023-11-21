@@ -385,6 +385,7 @@ void iio_prm_printf(const struct iio_context_params *params,
 		    const char *fmt, ...)
 {
 	FILE *out = NULL;
+	uint64_t now;
 	va_list ap;
 
 	va_start(ap, fmt);
@@ -398,8 +399,17 @@ void iio_prm_printf(const struct iio_context_params *params,
 		out = msg_level <= LEVEL_WARNING ? stderr : stdout;
 	}
 
-	if (out)
+	if (out) {
+		if (params
+		    && params->timestamp_level > LEVEL_NOLOG
+		    && params->timestamp_level <= msg_level) {
+			now = iio_read_counter_us() - library_startup_time_us;
+			fprintf(out, "(%u.%06us) ", (unsigned int)(now / 1000000),
+				(unsigned int)now % 1000000);
+		}
+
 		vfprintf(out, fmt, ap);
+	}
 
 	va_end(ap);
 }
