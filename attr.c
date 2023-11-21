@@ -233,8 +233,7 @@ int iio_device_add_attr(struct iio_device *dev,
 	if (ret < 0)
 		return ret;
 
-	dev_dbg(dev, "Added%s attr \'%s\' to device \'%s\'\n",
-		attr_type_string[type], name, dev->id);
+	dev_dbg(dev, "Added%s attr \'%s\'\n", attr_type_string[type], name);
 	return 0;
 }
 
@@ -249,8 +248,7 @@ int iio_channel_add_attr(struct iio_channel *chn,
 	if (ret < 0)
 		return ret;
 
-	chn_dbg(chn, "Added attr \'%s\' (\'%s\') to channel \'%s\'\n",
-		name, filename, chn->id);
+	chn_dbg(chn, "Added attr \'%s\' (\'%s\')\n", name, filename);
 	return 0;
 }
 
