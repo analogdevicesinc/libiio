@@ -144,6 +144,13 @@ struct iio_context_params {
 	 * sent to the standard output.
 	 * If zero, defaults to LEVEL_WARNING. */
 	enum iio_log_level stderr_level;
+
+	/** @brief Under this log level (excluded), messages are sent without
+	 * timestamp; above this log level (included), messages are sent with
+	 * a timestamp. If set to LEVEL_NOLOG, messages at all log levels are
+	 * sent without a timestamp.
+	 * If zero, defaults to LEVEL_DEBUG. */
+	enum iio_log_level timestamp_level;
 };
 
 /*

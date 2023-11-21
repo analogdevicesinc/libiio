@@ -40,6 +40,8 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		params2.log_level = default_params->log_level;
 	if (!params2.stderr_level)
 		params2.stderr_level = default_params->stderr_level;
+	if (!params2.timestamp_level)
+		params2.timestamp_level = default_params->timestamp_level;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
