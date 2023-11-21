@@ -126,9 +126,6 @@ enum iio_log_level {
  * created.
  */
 struct iio_context_params {
-	/** @brief Timeout for I/O operations. If zero, the default timeout is used. */
-	unsigned int timeout_ms;
-
 	/** @brief Handle to the standard output. If NULL, defaults to stdout. */
 	FILE *out;
 
@@ -151,6 +148,12 @@ struct iio_context_params {
 	 * sent without a timestamp.
 	 * If zero, defaults to LEVEL_DEBUG. */
 	enum iio_log_level timestamp_level;
+
+	/** @brief Timeout for I/O operations. If zero, the default timeout is used. */
+	unsigned int timeout_ms;
+
+	/** @brief Reserved for future fields. */
+	char __rsrv[32];
 };
 
 /*
