@@ -458,7 +458,7 @@ xml_create_context(const struct iio_context_params *params, const char *arg)
 	return ctx;
 }
 
-static void cleanup_libxml2_stuff(void)
+void libiio_cleanup_xml_backend(void)
 {
 	/*
 	 * This function will be called only when the libiio library is
@@ -470,33 +470,3 @@ static void cleanup_libxml2_stuff(void)
 	xmlCleanupParser();
 	xmlMemoryDump();
 }
-
-#if defined(_MSC_BUILD)
-#pragma section(".CRT$XCU", read)
-#define __CONSTRUCTOR(f, p) \
-  static void f(void); \
-  __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
-  __pragma(comment(linker,"/include:" p #f "_")) \
-  static void f(void)
-#ifdef _WIN64
-#define _CONSTRUCTOR(f) __CONSTRUCTOR(f, "")
-#else
-#define _CONSTRUCTOR(f) __CONSTRUCTOR(f, "_")
-#endif
-#elif defined(__GNUC__)
-#define _CONSTRUCTOR(f) static void __attribute__((constructor)) f(void)
-#else
-#define _CONSTRUCTOR(f) static void f(void)
-#endif
-
-_CONSTRUCTOR(initialize)
-{
-	/*
-	 * When the library loads, register our destructor.
-	 * Do it here and not in the context creation function,
-	 * as it could otherwise end up registering the destructor
-	 * many times.
-	 */
-	atexit(cleanup_libxml2_stuff);
-}
-#undef _CONSTRUCTOR
