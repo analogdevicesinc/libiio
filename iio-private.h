@@ -255,5 +255,6 @@ static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
 bool iio_channel_is_hwmon(const char *id);
 
 int iio_block_io(struct iio_block *block);
+void libiio_cleanup_xml_backend(void);
 
 #endif /* __IIO_PRIVATE_H__ */

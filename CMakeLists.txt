@@ -39,6 +39,7 @@ add_library(iio
 	context.c
 	device.c
 	events.c
+	library.c
 	mask.c
 	scan.c
 	sort.c
