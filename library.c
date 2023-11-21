@@ -9,8 +9,11 @@
 #include "iio-private.h"
 #include <iio-config.h>
 
+uint64_t library_startup_time_us;
+
 static void libiio_init(void)
 {
+	library_startup_time_us = iio_read_counter_us();
 }
 
 static void libiio_exit(void)

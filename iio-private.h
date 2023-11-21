@@ -237,6 +237,8 @@ extern const struct iio_backend iio_xml_backend;
 extern const struct iio_backend * const iio_backends[];
 extern const unsigned int iio_backends_size;
 
+extern uint64_t library_startup_time_us;
+
 ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
 					  const char *before,
 					  const char *param,
