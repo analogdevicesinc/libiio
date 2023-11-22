@@ -77,8 +77,9 @@ static int serial_configure(int fd, unsigned int uart_bps,
 
 	err = tcgetattr(fd, &tty_attrs);
 	if (err == -1) {
-		IIO_ERROR("tcgetattr failed\n");
-		return -errno;
+		err = -errno;
+		IIO_PERROR(err, "tcgetattr failed");
+		return err;
 	}
 
 	tty_attrs.c_lflag &= ~(ISIG | ICANON | ECHO | IEXTEN);
@@ -221,8 +222,9 @@ static int serial_configure(int fd, unsigned int uart_bps,
 
 	err = tcsetattr(fd, TCSANOW, &tty_attrs);
 	if (err == -1) {
-		IIO_ERROR("Unable to apply serial settings\n");
-		return -errno;
+		err = -errno;
+		IIO_PERROR(err, "Unable to apply serial settings");
+		return err;
 	}
 
 	return 0;

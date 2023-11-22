@@ -204,7 +204,7 @@ static void usbd_main(struct thread_pool *pool, void *d)
 
 		ret = handle_event(pdata, &event);
 		if (ret) {
-			IIO_ERROR("Unable to handle event: %i\n", ret);
+			IIO_PERROR(ret, "Unable to handle event");
 			break;
 		}
 

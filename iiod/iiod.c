@@ -61,6 +61,9 @@ bool server_demux;
 
 struct thread_pool *main_thread_pool;
 
+struct iio_context_params iiod_params = {
+	.log_level = LEVEL_INFO,
+};
 
 static struct sockaddr_in sockaddr = {
 	.sin_family = AF_INET,
@@ -160,22 +163,14 @@ static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio,
 		flags = fcntl(STDIN_FILENO, F_GETFL);
 		if (flags >= 0)
 			flags = fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-		if (flags < 0) {
-			char err_str[1024];
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Could not get/set O_NONBLOCK on STDIN_FILENO"
-					" %s\n", err_str);
-		}
+		if (flags < 0)
+			IIO_PERROR(errno, "Could not get/set O_NONBLOCK on stdin");
 
 		flags = fcntl(STDOUT_FILENO, F_GETFL);
 		if (flags >= 0)
 			flags = fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
-		if (flags < 0) {
-			char err_str[1024];
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Could not get/set O_NONBLOCK on STDOUT_FILENO"
-					" %s\n", err_str);
-		}
+		if (flags < 0)
+			IIO_PERROR(errno, "Could not get/set O_NONBLOCK on stdout");
 	}
 
 	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
@@ -193,12 +188,11 @@ static int main_server(struct iio_context *ctx, bool debug,
 	    keepalive_intvl = 10,
 	    keepalive_probes = 6;
 	struct pollfd pfd[2];
-	char err_str[1024];
 	bool ipv6;
 
 	IIO_INFO("Starting IIO Daemon version %u.%u.%s\n",
-			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
-			LIBIIO_VERSION_GIT);
+		 LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
+		 LIBIIO_VERSION_GIT);
 
 	sockaddr.sin_port = htons(port);
 	sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -212,16 +206,13 @@ static int main_server(struct iio_context *ctx, bool debug,
 	if (!ipv6)
 		fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (fd < 0) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to create socket: %s\n", err_str);
+		IIO_PERROR(errno, "Unable to create socket");
 		return EXIT_FAILURE;
 	}
 
 	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-	if (ret < 0) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_WARNING("setsockopt SO_REUSEADDR : %s\n", err_str);
-	}
+	if (ret < 0)
+		IIO_PERROR(errno, "Failed to set SO_REUSEADDR");
 
 #ifdef HAVE_IPV6
 	if (ipv6)
@@ -231,8 +222,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 	if (!ipv6)
 		ret = bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
 	if (ret < 0) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Bind failed: %s\n", err_str);
+		IIO_PERROR(errno, "Bind failed");
 		goto err_close_socket;
 	}
 
@@ -243,8 +233,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 		struct sockaddr_in sin;
 		socklen_t len = sizeof(sin);
 		if (getsockname(fd, (struct sockaddr *)&sin, &len) == -1) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("getsockname failed : %s\n", err_str);
+			IIO_PERROR(errno, "getsockname failed");
 			goto err_close_socket;
 		}
 		port = ntohs(sin.sin_port);
@@ -255,8 +244,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 		IIO_INFO("IPv6 support enabled\n");
 
 	if (listen(fd, 16) < 0) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to mark as passive socket: %s\n", err_str);
+		IIO_PERROR(errno, "Unable to mark as passive socket");
 		goto err_close_socket;
 	}
 
@@ -291,9 +279,8 @@ static int main_server(struct iio_context *ctx, bool debug,
 		if (new == -1) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Failed to create connection socket: %s\n",
-				err_str);
+
+			IIO_PERROR(errno, "Failed to create connection socket");
 			continue;
 		}
 
@@ -308,33 +295,27 @@ static int main_server(struct iio_context *ctx, bool debug,
 		 * and disconnect the client if no reply was received for one
 		 * minute. */
 		ret = setsockopt(new, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
-		if (ret < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt SO_KEEPALIVE : %s", err_str);
-		}
+		if (ret < 0)
+			IIO_PERROR(errno, "setsockopt SO_KEEPALIVE");
+
 		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_probes,
 				sizeof(keepalive_probes));
-		if (ret < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_KEEPCNT : %s", err_str);
-		}
+		if (ret < 0)
+			IIO_PERROR(errno, "setsockopt TCP_KEEPCNT");
+
 		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_time,
 				sizeof(keepalive_time));
-		if (ret < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_KEEPIDLE : %s", err_str);
-		}
+		if (ret < 0)
+			IIO_PERROR(errno, "setsockopt TCP_KEEPIDLE");
+
 		ret = setsockopt(new, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_intvl,
 				sizeof(keepalive_intvl));
-		if (ret < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_KEEPINTVL : %s", err_str);
-		}
+		if (ret < 0)
+			IIO_PERROR(errno, "setsockopt TCP_KEEPINTVL");
+
 		ret = setsockopt(new, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
-		if (ret < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_WARNING("setsockopt TCP_NODELAY : %s", err_str);
-		}
+		if (ret < 0)
+			IIO_PERROR(errno, "setsockopt TCP_NODELAY");
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
@@ -342,7 +323,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 		cdata->xml_zstd = xml_zstd;
 		cdata->xml_zstd_len = xml_zstd_len;
 
-		if (LOG_LEVEL >= Info_L) {
+		if (iiod_params.log_level >= LEVEL_INFO) {
 			struct sockaddr_in *caddr4 = (struct sockaddr_in *)&caddr;
 			char ipaddr[IP_ADDR_LEN];
 			int zone = 0;
@@ -359,8 +340,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 			}
 
 			if (!inet_ntop(caddr4->sin_family, addr, ipaddr, sizeof(ipaddr) - 1)) {
-				iio_strerror(errno, err_str, sizeof(err_str));
-				IIO_ERROR("Error during inet_ntop: %s\n", err_str);
+				IIO_PERROR(errno, "Error during inet_ntop");
 			} else {
 				ipaddr[IP_ADDR_LEN - 1] = '\0';
 
@@ -382,9 +362,7 @@ static int main_server(struct iio_context *ctx, bool debug,
 
 		ret = thread_pool_add_thread(main_thread_pool, client_thd, cdata, "net_client_thd");
 		if (ret) {
-			iio_strerror(ret, err_str, sizeof(err_str));
-			IIO_ERROR("Failed to create new client thread: %s\n",
-				err_str);
+			IIO_PERROR(ret, "Failed to create new client thread");
 			close(new);
 			free(cdata);
 		}
@@ -556,16 +534,14 @@ int main(int argc, char **argv)
 
 	main_thread_pool = thread_pool_new();
 	if (!main_thread_pool) {
-		iio_strerror(errno, err_str, sizeof(err_str));
-		IIO_ERROR("Unable to create thread pool: %s\n", err_str);
+		IIO_PERROR(errno, "Unable to create thread pool");
 		return EXIT_FAILURE;
 	}
 
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
 		ret = init_usb_daemon(ffs_mountpoint, nb_pipes);
 		if (ret < 0) {
-			iio_strerror(-ret, err_str, sizeof(err_str));
-			IIO_ERROR("Unable to init USB: %s\n", err_str);
+			IIO_PERROR(ret, "Unable to init USB");
 
 			thread_pool_destroy(main_thread_pool);
 			return EXIT_FAILURE;
@@ -602,15 +578,13 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		      int ep0_fd)
 {
 	struct iio_context *ctx;
-	char err_str[1024];
 	void *xml_zstd;
 	size_t xml_zstd_len = 0;
 	int ret;
 
-	ctx = iio_create_context(NULL, uri);
+	ctx = iio_create_context(&iiod_params, uri);
 	if (iio_err(ctx)) {
-		iio_strerror(-iio_err(ctx), err_str, sizeof(err_str));
-		IIO_ERROR("Unable to create local context: %s\n", err_str);
+		IIO_PERROR(iio_err(ctx), "Unable to create local context");
 		return EXIT_FAILURE;
 	}
 
@@ -629,8 +603,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 				debug, true, (unsigned int) nb_pipes, ep0_fd,
 				main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
-			iio_strerror(-ret, err_str, sizeof(err_str));
-			IIO_ERROR("Unable to start USB daemon: %s\n", err_str);
+			IIO_PERROR(ret, "Unable to start USB daemon");
 			ret = EXIT_FAILURE;
 			goto out_free_xml_data;
 		}
@@ -641,8 +614,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 					  debug, main_thread_pool,
 					  xml_zstd, xml_zstd_len);
 		if (ret) {
-			iio_strerror(-ret, err_str, sizeof(err_str));
-			IIO_ERROR("Unable to start serial daemon: %s\n", err_str);
+			IIO_PERROR(ret, "Unable to start serial daemon");
 			ret = EXIT_FAILURE;
 			goto out_thread_pool_stop;
 		}
