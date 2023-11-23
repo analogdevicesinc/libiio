@@ -564,7 +564,7 @@ int main(int argc, char **argv)
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
 		ret = init_usb_daemon(ffs_mountpoint, nb_pipes);
 		if (ret < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
+			iio_strerror(-ret, err_str, sizeof(err_str));
 			IIO_ERROR("Unable to init USB: %s\n", err_str);
 
 			thread_pool_destroy(main_thread_pool);
