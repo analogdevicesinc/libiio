@@ -170,8 +170,13 @@ option(WITH_EXAMPLES "Build examples" OFF)
 option(WITH_UTILS "Build the Libiio utility programs" ON)
 
 if (NOT LOG_LEVEL)
-	set(LOG_LEVEL Info CACHE STRING "Log level" FORCE)
+	set(LOG_LEVEL Info CACHE STRING "Default log level" FORCE)
 	set_property(CACHE LOG_LEVEL PROPERTY STRINGS NoLog Error Warning Info Debug)
+endif()
+
+if (NOT MAX_LOG_LEVEL)
+	set(MAX_LOG_LEVEL Debug CACHE STRING "Maximum log level supported" FORCE)
+	set_property(CACHE MAX_LOG_LEVEL PROPERTY STRINGS NoLog Error Warning Info Debug)
 endif()
 
 set(LEVEL_NoLog 1)
@@ -180,6 +185,11 @@ set(LEVEL_Warning 3)
 set(LEVEL_Info 4)
 set(LEVEL_Debug 5)
 set(DEFAULT_LOG_LEVEL ${LEVEL_${LOG_LEVEL}})
+set(MAX_LOG_LEVEL_VALUE ${LEVEL_${MAX_LOG_LEVEL}})
+
+if (DEFAULT_LOG_LEVEL GREATER MAX_LOG_LEVEL_VALUE)
+	message(SEND_ERROR "Default log level cannot be more than the maximum log level.")
+endif()
 
 if (MSVC)
 	target_compile_options(iio PRIVATE /Zi /W4 /wd4200 /wd4127 /wd4100)
