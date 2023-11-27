@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 	struct iio_channels_mask *mask;
 	const struct iio_attr *attr;
 	struct iio_buffer *buffer;
+	struct iio_event_stream *stream;
 	struct option *opts;
 	int c, ret = EXIT_FAILURE;
 
@@ -244,6 +245,8 @@ int main(int argc, char **argv)
 		dev = iio_context_get_device(ctx, i);
 		name = iio_device_get_name(dev);
 		label = iio_device_get_label(dev);
+		stream = iio_device_create_event_stream(dev);
+
 		if (colors)
 			print_fmt("\t" FMT_DEV ":", iio_device_get_id(dev));
 		else
@@ -258,7 +261,12 @@ int main(int argc, char **argv)
 			printf(" (label: %s)", label);
 		if (dev_is_buffer_capable(dev))
 			printf(" (buffer capable)");
+		if (!iio_err(stream))
+			printf(" (events supported)");
 		printf("\n");
+
+		if (!iio_err(stream))
+			iio_event_stream_destroy(stream);
 
 		nb_channels = iio_device_get_channels_count(dev);
 		printf("\t\t%u channels found:\n", nb_channels);
