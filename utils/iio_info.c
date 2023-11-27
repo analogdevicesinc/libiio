@@ -22,6 +22,8 @@
 #define snprintf sprintf_s
 #endif
 
+static struct iio_context *ctx;
+
 static const struct option options[] = {
 	{0, 0, 0, 0},
 };
@@ -48,14 +50,86 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 
 #define MY_OPTS ""
 
+static void print_attr(const struct iio_attr *attr,
+		       unsigned int level, unsigned int idx)
+{
+	char buf[BUF_SIZE];
+	const char *name, *fn, *value;
+	ssize_t ret = 0;
+
+	buf[BUF_SIZE - 1] = '\0';
+
+	value = iio_attr_get_static_value(attr);
+	if (!value) {
+		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		value = buf;
+	}
+
+	printf("%.*sattr %2u: ", level, "\t\t\t\t", idx);
+
+	name = iio_attr_get_name(attr);
+	fn = iio_attr_get_filename(attr);
+
+	printf("%s", name);
+
+	if (strcmp(name, fn))
+		printf(" (%s)", fn);
+
+	if (ret >= 0)
+		printf(" value: %s\n", value);
+	else
+		ctx_perror(ctx, ret, "");
+}
+
+static void print_channel(const struct iio_channel *chn)
+{
+	const struct iio_data_format *format;
+	const char *type_name, *name;
+	char sign, repeat[12];
+
+	if (iio_channel_is_output(chn))
+		type_name = "output";
+	else
+		type_name = "input";
+
+	name = iio_channel_get_name(chn);
+	printf("\t\t\t%s: %s (%s",
+	       iio_channel_get_id(chn),
+	       name ? name : "", type_name);
+
+	if (iio_channel_get_type(chn) == IIO_CHAN_TYPE_UNKNOWN) {
+		printf(", ERROR: iio_channel_get_type() = UNKNOWN");
+	}
+
+	if (iio_channel_is_scan_element(chn)) {
+		format = iio_channel_get_data_format(chn);
+		sign = format->is_signed ? 's' : 'u';
+
+		repeat[0] = '\0';
+
+		if (format->is_fully_defined)
+			sign += 'A' - 'a';
+
+		if (format->repeat > 1)
+			snprintf(repeat, sizeof(repeat), "X%u",
+				format->repeat);
+
+		printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n",
+			iio_channel_get_index(chn),
+			format->is_be ? 'b' : 'l',
+			sign, format->bits,
+			format->length, repeat,
+			format->shift);
+	} else {
+		printf(")\n");
+	}
+}
+
 int main(int argc, char **argv)
 {
 	char **argw, *buf;
-	struct iio_context *ctx;
 	const struct iio_device *dev, *trig;
 	const struct iio_channel *ch;
-	const struct iio_data_format *format;
-	char sign, repeat[12], err_str[1024];
 	const char *key, *value, *name, *label, *type_name;
 	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
 	struct iio_channels_mask *mask;
@@ -122,15 +196,11 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < nb_ctx_attrs; i++) {
 		attr = iio_context_get_attr(ctx, i);
-		key = iio_attr_get_name(attr);
-		value = iio_attr_get_static_value(attr);
-
-		printf("\t%s: %s\n", key, value);
+		print_attr(attr, 1, i);
 	}
 
 	nb_devices = iio_context_get_devices_count(ctx);
 	printf("IIO context has %u devices:\n", nb_devices);
-	buf = xmalloc(BUF_SIZE, MY_NAME);
 
 	for (i = 0; i < nb_devices; i++) {
 		dev = iio_context_get_device(ctx, i);
@@ -157,41 +227,7 @@ int main(int argc, char **argv)
 			if (mask)
 				iio_channel_enable(ch, mask);
 
-			if (iio_channel_is_output(ch))
-				type_name = "output";
-			else
-				type_name = "input";
-
-			name = iio_channel_get_name(ch);
-			printf("\t\t\t%s: %s (%s",
-					iio_channel_get_id(ch),
-					name ? name : "", type_name);
-
-			if (iio_channel_get_type(ch) == IIO_CHAN_TYPE_UNKNOWN)
-				printf(", WARN:iio_channel_get_type()=UNKNOWN");
-
-			if (iio_channel_is_scan_element(ch)) {
-				format = iio_channel_get_data_format(ch);
-				sign = format->is_signed ? 's' : 'u';
-
-				repeat[0] = '\0';
-
-				if (format->is_fully_defined)
-					sign += 'A' - 'a';
-
-				if (format->repeat > 1)
-					snprintf(repeat, sizeof(repeat), "X%u",
-						format->repeat);
-
-				printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n",
-					iio_channel_get_index(ch),
-					format->is_be ? 'b' : 'l',
-					sign, format->bits,
-					format->length, repeat,
-					format->shift);
-			} else {
-				printf(")\n");
-			}
+			print_channel(ch);
 
 			nb_attrs = iio_channel_get_attrs_count(ch);
 			if (!nb_attrs)
@@ -202,15 +238,7 @@ int main(int argc, char **argv)
 
 			for (k = 0; k < nb_attrs; k++) {
 				attr = iio_channel_get_attr(ch, k);
-				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
-
-				printf("\t\t\t\tattr %2u: %s ", k,
-				       iio_attr_get_name(attr));
-
-				if (ret > 0)
-					printf("value: %s\n", buf);
-				else
-					ctx_perror(ctx, ret, "");
+				print_attr(attr, 4, k);
 			}
 		}
 
@@ -220,14 +248,7 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_attr(dev, j);
-				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
-
-				printf("\t\t\t\tattr %2u: %s ",
-				       j, iio_attr_get_name(attr));
-				if (ret > 0)
-					printf("value: %s\n", buf);
-				else
-					ctx_perror(ctx, ret, "");
+				print_attr(attr, 3, j);
 			}
 		}
 
@@ -239,14 +260,7 @@ int main(int argc, char **argv)
 				printf("\t\t%u buffer attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_buffer_get_attr(buffer, j);
-				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
-
-				printf("\t\t\tattr %2u: %s ", j,
-				       iio_attr_get_name(attr));
-				if (ret > 0)
-					printf("Value: %s\n", buf);
-				else
-					ctx_perror(ctx, ret, "");
+				print_attr(attr, 3, j);
 			}
 
 			iio_buffer_destroy(buffer);
@@ -257,14 +271,7 @@ int main(int argc, char **argv)
 			printf("\t\t%u debug attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_debug_attr(dev, j);
-
-				ret = (int) iio_attr_read_raw(attr, buf, BUF_SIZE);
-				printf("\t\t\t\tdebug attr %2u: %s ",
-				       j, iio_attr_get_name(attr));
-				if (ret > 0)
-					printf("value: %s\n", buf);
-				else
-					ctx_perror(ctx, ret, "");
+				print_attr(attr, 3, j);
 			}
 		}
 
@@ -288,7 +295,6 @@ int main(int argc, char **argv)
 	}
 
 	free_argw(argc, argw);
-	free(buf);
 	iio_context_destroy(ctx);
 	return EXIT_SUCCESS;
 }
