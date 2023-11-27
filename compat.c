@@ -1685,6 +1685,19 @@ const char * iio_channel_find_attr(const struct iio_channel *chn,
 	return IIO_CALL(iio_attr_get_name)(attr);
 }
 
+const char * iio_channel_attr_get_filename(const struct iio_channel *chn,
+					   const char *name)
+{
+	const struct iio_attr *attr;
+
+	attr = IIO_CALL(iio_channel_find_attr)(chn, name);
+	if (!attr)
+		return NULL;
+
+	return IIO_CALL(iio_attr_get_filename)(attr);
+}
+
+
 ssize_t iio_channel_attr_read(const struct iio_channel *chn,
 			      const char *name, char *dst, size_t len)
 {
