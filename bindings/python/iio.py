@@ -478,7 +478,6 @@ _d_get_context.argtypes = (_DevicePtr,)
 _d_find_channel = _lib.iio_device_find_channel
 _d_find_channel.restype = _ChannelPtr
 _d_find_channel.argtypes = (_DevicePtr, c_char_p, c_bool)
-_d_find_channel.errcheck = _check_null
 
 _d_reg_write = _lib.iio_device_reg_write
 _d_reg_write.restype = c_int
