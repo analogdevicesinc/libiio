@@ -536,7 +536,7 @@ static const struct iio_backend_ops network_ops = {
 __api_export_if(WITH_NETWORK_BACKEND_DYNAMIC)
 const struct iio_backend iio_ip_backend = {
 	.api_version = IIO_BACKEND_API_V1,
-	.name = "network",
+	.name = "ip",
 	.uri_prefix = "ip:",
 	.ops = &network_ops,
 	.default_timeout_ms = NETWORK_TIMEOUT_MS,
