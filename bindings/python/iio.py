@@ -572,7 +572,7 @@ _c_read = _lib.iio_channel_read
 _c_read.restype = c_ssize_t
 _c_read.argtypes = (
     _ChannelPtr,
-    _BufferPtr,
+    _BlockPtr,
     c_void_p,
     c_size_t,
     c_bool,
@@ -582,7 +582,7 @@ _c_write = _lib.iio_channel_write
 _c_write.restype = c_ssize_t
 _c_write.argtypes = (
     _ChannelPtr,
-    _BufferPtr,
+    _BlockPtr,
     c_void_p,
     c_size_t,
     c_bool,
@@ -853,7 +853,7 @@ class Channel(_IIO_Object):
         returns: type=bytearray
             An array containing the samples for this channel
         """
-        array = bytearray(buf._length)
+        array = bytearray(len(block))
         mytype = c_char * len(array)
         c_array = mytype.from_buffer(array)
         length = _c_read(self._channel, block._block, c_array, len(array), raw)
