@@ -353,7 +353,7 @@ iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
 	_Generic((ptr),						\
 		 bool *: iio_attr_read_bool,			\
 		 long long *: iio_attr_read_longlong,		\
-		 double *: iio_attr_read_double)(chn, attr, ptr)
+		 double *: iio_attr_read_double)(attr, ptr)
 
 /** @brief Set the value of the given attribute
  * @param attr A pointer to an iio_attr structure
@@ -375,7 +375,7 @@ iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len);
 		 char *: iio_attr_write_string,			\
 		 bool: iio_attr_write_bool,			\
 		 long long: iio_attr_write_longlong,		\
-		 double: iio_attr_write_double)(dev, attr, val)
+		 double: iio_attr_write_double)(attr, val)
 
 /** @brief Retrieve the name of an attribute
  * @param attr A pointer to an iio_attr structure
