@@ -721,6 +721,39 @@ add_subdirectory(bindings)
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)
 
+# Testing
+option(WITH_TESTS "Enabling unit testing" OFF)
+option(TESTS_DEBUG "Enable test debugging" OFF)
+if(WITH_TESTS)
+	include(CTest)
+	enable_testing()
+	add_subdirectory(tests)
+	if(WITH_GCOV)
+		if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+			message(FATAL_ERROR "Coverage only supported on Linux")
+		endif()
+		# Verify that lcov is installed
+		find_program(LCOV_PATH lcov)
+		if(NOT LCOV_PATH)
+			message(FATAL_ERROR "lcov not found! Aborting...")
+		endif()
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wall -fprofile-arcs -ftest-coverage")
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+		target_compile_options(iio PRIVATE --coverage)
+		target_link_libraries(iio PRIVATE --coverage)
+
+		# Add custom target to run tests with coverage
+		add_custom_target(
+			coverage
+			COMMAND ${CMAKE_CTEST_COMMAND} --progress &&  lcov -c -d ${CMAKE_CURRENT_SOURCE_DIR} -o main_coverage.info && genhtml main_coverage.info -o coverage
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+		message(STATUS "Coverage flags enabled")
+	endif()
+
+endif()
+
 include(cmake/Install.cmake)
 
 # Add uninstall target
@@ -766,6 +799,8 @@ toggle_iio_feature("${BUILD_SHARED_LIBS}" shared-libs)
 toggle_iio_feature("${WITH_LOCAL_CONFIG}" local-config)
 toggle_iio_feature("${OSX_FRAMEWORK}" osx-framework)
 toggle_iio_feature("${COMPILE_WARNING_AS_ERROR}" -Werror)
+toggle_iio_feature("${WITH_TESTS}" tests)
+toggle_iio_feature("${TESTS_DEBUG}" tests-debug)
 toggle_iio_feature("${WITH_GCOV}" gcov)
 #add iiod settings
 toggle_iio_features_for_lists(IIOD_OPTIONS IIOD_FEATURES)
