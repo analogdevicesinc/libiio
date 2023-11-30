@@ -607,7 +607,7 @@ size_t iio_channel_read(const struct iio_channel *chn,
 	if (raw)
 		cb = chn_memcpy;
 	else
-		cb = iio_channel_convert_inverse;
+		cb = iio_channel_convert;
 
 	for (src_ptr = (uintptr_t) iio_block_first(block, chn);
 	     src_ptr < block_end && dst_ptr + length <= end;
