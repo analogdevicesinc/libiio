@@ -57,9 +57,11 @@ Cmake Options          | Default | Target | Description                         
 `UDEV_RULES_INSTALL_DIR` | /lib/udev/rules.d |    Linux | default install path for udev rules |
 `WITH_LOCAL_CONFIG`    |  ON |      Linux | Read local context attributes from /etc/libiio.ini |
 `WITH_HWMON`           |  ON |      Linux | Add compatibility with the hwmon subsystem         |
-`WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags |
+`WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags. Generates coverage report if TESTS enabled |
 `OSX_FRAMEWORK`        |  ON |        Mac | OS X frameworks provide the interfaces you need to write software for Mac. |
 `OSX_PACKAGE`          |  ON |        Mac | Create a OSX package for installation on local and other machines |
+`WITH_TESTS`           | OFF |        All | Build tests and enable tests targets |
+`TESTS_DEBUG`          | OFF |        All | Build tests with debug outputs |
 
 Which backends the library supports is dependent on the build system, but can be overridden.
 (If cmake finds libusb, it will use it, unless turned off manually)
