@@ -59,6 +59,9 @@ Cmake Options          | Default | Target | Description                         
 `WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags |
 `OSX_FRAMEWORK`        |  ON |        Mac | OS X frameworks provide the interfaces you need to write software for Mac. |
 `OSX_PACKAGE`          |  ON |        Mac | Create a OSX package for installation on local and other machines |
+`TESTS`                | OFF |        All | Build tests and enable tests targets |
+`TESTS_DEBUG`          | OFF |        All | Build tests with debug outputs |
+`TESTS_COVERAGE`       | OFF |      Linux | Enable debug flags and coverage report generation |
 
 Which backends the library supports is dependent on the build system, but can be overridden.
 (If cmake finds libusb, it will use it, unless turned off manually)
