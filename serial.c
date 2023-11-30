@@ -13,18 +13,25 @@
 #include <iio/iio-lock.h>
 #include <iio/iiod-client.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <libserialport.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <time.h>
+#endif
 
 struct iio_context_pdata {
 	struct sp_port *port;
 	struct iiod_client *iiod_client;
 
 	struct iio_context_params params;
+
+	bool shutdown;
 };
 
 struct iio_buffer_pdata {
@@ -145,21 +152,47 @@ static ssize_t serial_write_data(struct iiod_client_pdata *io_data,
 	return ret;
 }
 
+void sleep_one_ms(void)
+{
+#ifdef _WIN32
+	Sleep(1);
+#else
+	const struct timespec ts = {
+		/* One millisecond */
+		.tv_nsec = 1 * 1000 * 1000,
+	};
+
+	nanosleep(&ts, NULL);
+#endif
+}
+
 static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 				char *buf, size_t len, unsigned int timeout_ms)
 {
 	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
+	long long time_left_ms = (long long)timeout_ms;
 	enum sp_return sp_ret;
-	ssize_t ret;
+	ssize_t ret = 0;
 
-	sp_ret = sp_blocking_read_next(pdata->port, buf, len, timeout_ms);
-	ret = (ssize_t) libserialport_to_errno(sp_ret);
+	while (true) {
+		if (timeout_ms && time_left_ms <= 0)
+			break;
+
+		sp_ret = sp_nonblocking_read(pdata->port, buf, len);
+		ret = (ssize_t) libserialport_to_errno(sp_ret);
+		if (ret || pdata->shutdown)
+			break;
+
+		sleep_one_ms();
+		time_left_ms--;
+	}
 
 	prm_dbg(&pdata->params, "Read returned %li: %.*s\n",
 		(long) ret, (int) ret, buf);
 
 	if (ret == 0) {
-		prm_err(&pdata->params, "sp_blocking_read_next has timed out\n");
+		if (!pdata->shutdown)
+			prm_err(&pdata->params, "serial_read_data has timed out\n");
 		return -ETIMEDOUT;
 	}
 
@@ -169,6 +202,8 @@ static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 static void serial_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
+
+	ctx_pdata->shutdown = true;
 
 	iiod_client_destroy(ctx_pdata->iiod_client);
 	sp_close(ctx_pdata->port);
