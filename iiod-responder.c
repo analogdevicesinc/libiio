@@ -240,12 +240,14 @@ static int iiod_responder_reader_thrd(void *d)
 {
 	struct iiod_responder *priv = d;
 	struct iiod_command cmd;
-	struct iiod_buf cmd_buf;
+	struct iiod_buf cmd_buf, ok_buf;
 	struct iiod_io *io;
 	ssize_t ret = 0;
 
 	cmd_buf.ptr = &cmd;
 	cmd_buf.size = sizeof(cmd);
+	ok_buf.ptr = "0\r\n";
+	ok_buf.size = 3;
 
 	iio_mutex_lock(priv->lock);
 
@@ -253,6 +255,18 @@ static int iiod_responder_reader_thrd(void *d)
 		iio_mutex_unlock(priv->lock);
 
 		ret = iiod_rw_all(priv, NULL, &cmd_buf, 1, sizeof(cmd), true);
+
+		if (!strncmp((char *)&cmd, "BINARY\r\n", 8)) {
+			/* If we receive again the "BINARY\r\n" string, send a
+			 * return code of zero and continue as usual.
+			 * This can happen with the serial backend when the
+			 * client disconnects and a new client appears.
+			 * Conveniently, the string is exactly 8 bytes, which is
+			 * the size of a iio_command. */
+
+			iiod_rw_all(priv, NULL, &ok_buf, 1, ok_buf.size, false);
+			continue;
+		}
 
 		iio_mutex_lock(priv->lock);
 		if (ret <= 0)
