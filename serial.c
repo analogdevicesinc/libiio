@@ -262,6 +262,18 @@ static int serial_enable_buffer(struct iio_buffer_pdata *buf,
 	return iiod_client_enable_buffer(buf->pdata, nb_samples, enable);
 }
 
+static ssize_t
+serial_readbuf(struct iio_buffer_pdata *buf, void *dst, size_t len)
+{
+	return iiod_client_readbuf(buf->pdata, dst, len);
+}
+
+static ssize_t
+serial_writebuf(struct iio_buffer_pdata *buf, const void *src, size_t len)
+{
+	return iiod_client_writebuf(buf->pdata, src, len);
+}
+
 static struct iio_block_pdata *
 serial_create_block(struct iio_buffer_pdata *buf, size_t size, void **data)
 {
@@ -288,6 +300,9 @@ static const struct iio_backend_ops serial_ops = {
 	.create_buffer = serial_create_buffer,
 	.free_buffer = serial_free_buffer,
 	.enable_buffer = serial_enable_buffer,
+
+	.readbuf = serial_readbuf,
+	.writebuf = serial_writebuf,
 
 	.create_block = serial_create_block,
 	.free_block = iiod_client_free_block,
