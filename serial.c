@@ -187,9 +187,6 @@ static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 		time_left_ms--;
 	}
 
-	prm_dbg(&pdata->params, "Read returned %li: %.*s\n",
-		(long) ret, (int) ret, buf);
-
 	if (ret == 0) {
 		if (!pdata->shutdown)
 			prm_err(&pdata->params, "serial_read_data has timed out\n");
