@@ -410,6 +410,14 @@ struct iio_context * iio_context_clone(const struct iio_context *old_ctx)
 	uri = IIO_CALL(iio_attr_get_static_value)(attr);
 	params = IIO_CALL(iio_context_get_params)(old_ctx);
 
+	if (strncmp(uri, "local:", sizeof("local:") - 1)
+	    && strncmp(uri, "ip:", sizeof("ip:") - 1)) {
+		/* The .clone callback was only implemented by the local
+		 * and network backends in Libiio <= v0.25. */
+		err = -ENOSYS;
+		goto err_set_errno;
+	}
+
 	ctx = IIO_CALL(iio_create_context)(params, uri);
 	err = iio_err(ctx);
 	if (err)
