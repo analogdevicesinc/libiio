@@ -68,6 +68,9 @@ if (WITH_AIO)
 
 	target_include_directories(iiod PRIVATE ${LIBAIO_INCLUDE_DIR})
 	target_link_libraries(iiod LINK_PRIVATE ${LIBAIO_LIBRARIES})
+elseif (WITH_IIOD_USBD)
+	message(SEND_ERROR "Sorry, USB support in iiod (WITH_IIOD_USBD)"
+		" requires async I/O support (WITH_AIO)")
 endif()
 
 option(WITH_IIOD_SERIAL "Add serial (UART) support" ON)
