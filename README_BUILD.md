@@ -9,7 +9,7 @@ analog@precision:~$ sudo apt-get install build-essential
 ```
 Install Prerequisites
 ```shell
-analog@precision:~$ sudo apt-get install libxml2-dev bison flex libcdk5-dev cmake
+analog@precision:~$ sudo apt-get install libxml2-dev libzstd-dev bison flex libcdk5-dev cmake
 ```
 Install libraries for Backends
 ```shell
