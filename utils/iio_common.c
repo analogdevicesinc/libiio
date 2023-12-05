@@ -444,7 +444,7 @@ uint64_t get_time_us(void)
 #ifdef _MSC_BUILD
 	timespec_get(&tp, TIME_UTC);
 #else
-	clock_gettime(CLOCK_REALTIME, &tp);
+	clock_gettime(CLOCK_MONOTONIC, &tp);
 #endif
 
 	return tp.tv_sec * 1000000ull + tp.tv_nsec / 1000;
