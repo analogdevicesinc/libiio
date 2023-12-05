@@ -320,7 +320,8 @@ static void start_avahi_thd(struct thread_pool *pool, void *d)
 		if (avahi.client)
 			break;
 again:
-		IIO_INFO("Avahi didn't start, try again in %d seconds later\n", ts.tv_sec);
+		IIO_INFO("Avahi didn't start, try again in %ld seconds later\n",
+			 (long)ts.tv_sec);
 		nanosleep(&ts, NULL);
 		ts.tv_sec++;
 		/* If it hasn't started in 20 times over 210 seconds (3.5 min),
