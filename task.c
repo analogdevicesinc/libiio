@@ -50,6 +50,9 @@ static int iio_task_run(void *d)
 	iio_mutex_lock(task->lock);
 
 	for (;;) {
+		/* Signal that we're idle */
+		iio_cond_signal(task->cond);
+
 		while (!task->stop && !(task->list && task->running)) {
 			iio_cond_wait(task->cond, task->lock, 0);
 
@@ -77,9 +80,7 @@ static int iio_task_run(void *d)
 		if (autoclear)
 			iio_task_token_destroy(entry);
 
-		/* Signal that we're done with the previous entry */
 		iio_mutex_lock(task->lock);
-		iio_cond_signal(task->cond);
 	}
 
 	iio_mutex_unlock(task->lock);
