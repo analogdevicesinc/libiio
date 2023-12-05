@@ -305,7 +305,7 @@ if (MSVC)
 	# Azure Pipelines: TF_BUILD=True
 	if(COMPILE_WARNING_AS_ERROR)
 		message(STATUS "Setting -Werror")
-		target_compile_options(iio PRIVATE /WX)
+		target_compile_options(iio PUBLIC /WX)
 	endif()
 elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	option(WITH_GCOV "Build with gcov profiling flags" OFF)
@@ -318,7 +318,7 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	endif()
 	if(COMPILE_WARNING_AS_ERROR)
 		message(STATUS "Setting -Werror")
-		target_compile_options(iio PRIVATE -Werror)
+		target_compile_options(iio PUBLIC -Werror)
 	endif()
 else()
 	message(STATUS "Unknown compiler ${CMAKE_C_COMPILER_ID}")
@@ -602,6 +602,9 @@ if (IIOD_CLIENT OR WITH_IIOD)
 	# Link against exported symbols of Libiio and not the
 	# DLL-exported symbols
 	target_compile_definitions(iiod-responder PRIVATE LIBIIO_STATIC)
+
+	# Use the same compile options as Libiio
+	target_compile_options(iiod-responder PUBLIC $<TARGET_PROPERTY:iio,INTERFACE_COMPILE_OPTIONS>)
 endif()
 
 if (IIOD_CLIENT)
