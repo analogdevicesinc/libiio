@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <iio/iio.h>
 #include <iio/iio-debug.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 
@@ -63,7 +64,7 @@ static void print_event(const struct iio_device *dev,
 	enum iio_event_type type = iio_event_get_type(event);
 	enum iio_event_direction dir = iio_event_get_direction(event);
 
-	printf("Event: time: %lld", event->timestamp);
+	printf("Event: time: %"PRId64, event->timestamp); /* Flawfinder: ignore */
 
 	chn = iio_event_get_channel(event, dev, false);
 	if (chn)
