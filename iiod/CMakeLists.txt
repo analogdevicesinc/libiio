@@ -21,7 +21,7 @@ set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_DEFINITIONS)
 
 add_executable(iiod
-	iiod.c ops.c responder.c thread-pool.c
+	iiod.c interpreter.c ops.c responder.c thread-pool.c
 	${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS}
 )
 set_target_properties(iiod PROPERTIES
