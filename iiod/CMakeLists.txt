@@ -1,15 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(iiod C)
 
-include(FindBISON)
-include(FindFLEX)
-
-flex_target(lexer
-	${CMAKE_CURRENT_SOURCE_DIR}/lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
-bison_target(parser
-	${CMAKE_CURRENT_SOURCE_DIR}/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
-add_flex_bison_dependency(lexer parser)
-
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_LIBRARIES ${PTHREAD_LIBRARIES})
 set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
@@ -21,8 +12,7 @@ set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_DEFINITIONS)
 
 add_executable(iiod
-	iiod.c interpreter.c ops.c responder.c thread-pool.c
-	${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS}
+	iiod.c interpreter.c responder.c thread-pool.c
 )
 set_target_properties(iiod PROPERTIES
 	C_STANDARD 99
@@ -40,6 +30,20 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	set_source_files_properties(${FLEX_lexer_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 	set_source_files_properties(${BISON_parser_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif ()
+
+option(WITH_IIOD_V0_COMPAT "Build support for Libiio v0.x protocol" ON)
+if (WITH_IIOD_V0_COMPAT)
+	include(FindBISON)
+	include(FindFLEX)
+
+	flex_target(lexer
+		${CMAKE_CURRENT_SOURCE_DIR}/lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
+	bison_target(parser
+		${CMAKE_CURRENT_SOURCE_DIR}/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
+	add_flex_bison_dependency(lexer parser)
+
+	target_sources(iiod PRIVATE ops.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
+endif (WITH_IIOD_V0_COMPAT)
 
 option(WITH_AIO "Build IIOD with async. I/O support" ON)
 if (WITH_AIO)
@@ -133,6 +137,7 @@ if (WITH_UPSTART)
 endif()
 
 toggle_iio_feature("${WITH_IIOD_SERIAL}" iiod-serial)
+toggle_iio_feature("${WITH_IIOD_V0_COMPAT}" iiod-v0-compat)
 toggle_iio_feature("${WITH_AIO}" iiod-aio)
 toggle_iio_feature("${WITH_IIOD_USBD}" iiod-usb)
 toggle_iio_feature("${WITH_SYSTEMD}" iiod-systemd)
