@@ -133,6 +133,7 @@ static inline void *zalloc(size_t size)
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		 bool is_socket, bool is_usb, bool use_aio, struct thread_pool *pool,
 		 const void *xml_zstd, size_t xml_zstd_len);
+void ascii_interpreter(struct parser_pdata *pdata, bool verbose);
 
 int init_usb_daemon(const char *ffs, unsigned int nb_pipes);
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
