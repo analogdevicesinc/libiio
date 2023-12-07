@@ -243,6 +243,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	pdata.fd_out = fd_out;
 	pdata.verbose = verbose;
 	pdata.pool = pool;
+	pdata.binary = !WITH_IIOD_V0_COMPAT;
 
 	pdata.xml_zstd = xml_zstd;
 	pdata.xml_zstd_len = xml_zstd_len;
@@ -287,7 +288,8 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 		pdata.writefd = writefd_io;
 	}
 
-	ascii_interpreter(&pdata, verbose);
+	if (WITH_IIOD_V0_COMPAT)
+		ascii_interpreter(&pdata, verbose);
 
 	if (pdata.binary)
 		binary_parse(&pdata);
