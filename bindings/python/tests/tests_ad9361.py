@@ -61,7 +61,7 @@ def test_ad9361_buffers(tx_buffer_modes, rx_buffer_modes):
 
     uri = os.getenv("URI", "ip:analog.local")
 
-    ctx = iio.Context("ip:analog.local")
+    ctx = iio.Context(uri)
     dev = ctx.find_device("ad9361-phy")
     dev_rx = ctx.find_device("cf-ad9361-lpc")
     dev_tx = ctx.find_device("cf-ad9361-dds-core-lpc")
