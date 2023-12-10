@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <iio/iio-debug.h>
+#include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <string.h>
 
