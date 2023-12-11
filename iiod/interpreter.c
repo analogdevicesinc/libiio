@@ -229,7 +229,7 @@ ssize_t read_all(struct parser_pdata *pdata, void *dst, size_t len)
 	return ptr - (uintptr_t) dst;
 }
 
-void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		 bool is_socket, bool is_usb, bool use_aio,
 		 struct thread_pool *pool, const void *xml_zstd,
 		 size_t xml_zstd_len)
@@ -241,7 +241,6 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	pdata.ctx = ctx;
 	pdata.fd_in = fd_in;
 	pdata.fd_out = fd_out;
-	pdata.verbose = verbose;
 	pdata.pool = pool;
 	pdata.binary = !WITH_IIOD_V0_COMPAT;
 
@@ -289,7 +288,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
 	}
 
 	if (WITH_IIOD_V0_COMPAT)
-		ascii_interpreter(&pdata, verbose);
+		ascii_interpreter(&pdata);
 
 	if (pdata.binary)
 		binary_parse(&pdata);

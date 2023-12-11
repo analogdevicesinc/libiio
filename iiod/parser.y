@@ -151,11 +151,9 @@ Line:
 	| PRINT END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		const char *xml = iio_context_get_xml(pdata->ctx);
-		if (!pdata->verbose) {
-			char buf[128];
-			snprintf(buf, sizeof(buf), "%lu\n", (unsigned long) strlen(xml));
-			output(pdata, buf);
-		}
+		char buf[128];
+		snprintf(buf, sizeof(buf), "%lu\n", (unsigned long) strlen(xml));
+		output(pdata, buf);
 		output(pdata, xml);
 		output(pdata, "\n");
 		YYACCEPT;
@@ -163,11 +161,9 @@ Line:
 	| ZPRINT END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
 		if (pdata->xml_zstd) {
-			if (!pdata->verbose) {
-				char buf[128];
-				snprintf(buf, sizeof(buf), "%lu\n", (unsigned long)pdata->xml_zstd_len);
-				output(pdata, buf);
-			}
+			char buf[128];
+			snprintf(buf, sizeof(buf), "%lu\n", (unsigned long)pdata->xml_zstd_len);
+			output(pdata, buf);
 			if (write_all(pdata, pdata->xml_zstd, pdata->xml_zstd_len) <= 0)
 				pdata->stop = true;
 			output(pdata, "\n");
@@ -451,20 +447,14 @@ Line:
 void yyerror(yyscan_t scanner, const char *msg)
 {
 	struct parser_pdata *pdata = yyget_extra(scanner);
+	char buf[128];
 
 	/* Avoid errors on EOF */
 	if (pdata->stop)
 		return;
 
-	if (pdata->verbose) {
-		output(pdata, "ERROR: ");
-		output(pdata, msg);
-		output(pdata, "\n");
-	} else {
-		char buf[128];
-		snprintf(buf, sizeof(buf), "%i\n", -EINVAL);
-		output(pdata, buf);
-	}
+	snprintf(buf, sizeof(buf), "%i\n", -EINVAL);
+	output(pdata, buf);
 }
 
 ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size)
