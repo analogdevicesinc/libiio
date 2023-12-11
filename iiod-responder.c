@@ -455,8 +455,10 @@ static int iiod_io_cond_wait(const struct iiod_io *io)
 
 	diff_ms = (read_counter_us() - io->r_io.start_time) / 1000;
 
-	if (diff_ms < timeout_ms)
-		return iio_cond_wait(io->cond, io->lock, timeout_ms - diff_ms);
+	if (diff_ms < timeout_ms) {
+		return iio_cond_wait(io->cond, io->lock,
+				     (unsigned int)(timeout_ms - diff_ms));
+	}
 
 	return -ETIMEDOUT;
 }
