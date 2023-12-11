@@ -28,7 +28,9 @@ typedef void *yyscan_t;
 #include <stdbool.h>
 #include <sys/socket.h>
 
-int yylex();
+union YYSTYPE;
+
+int yylex(union YYSTYPE *type, yyscan_t scanner);
 int yylex_init_extra(void *d, yyscan_t *scanner);
 int yylex_destroy(yyscan_t yyscanner);
 
