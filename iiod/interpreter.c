@@ -254,21 +254,17 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 	SLIST_INIT(&pdata.thdlist_head);
 
 #if WITH_AIO
-	char err_str[1024];
-
 	for (i = 0; i < 2; i++) {
 		pdata.aio_eventfd[i] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 		if (pdata.aio_eventfd[i] < 0) {
-			iio_strerror(errno, err_str, sizeof(err_str));
-			IIO_ERROR("Failed to create AIO eventfd: %s\n", err_str);
+			IIO_PERROR(errno, "Failed to create AIO eventfd");
 			goto err_free_aio;
 		}
 
 		pdata.aio_ctx[i] = 0;
 		ret = io_setup(1, &pdata.aio_ctx[i]);
 		if (ret < 0) {
-			iio_strerror(-ret, err_str, sizeof(err_str));
-			IIO_ERROR("Failed to create AIO context: %s\n", err_str);
+			IIO_PERROR(ret, "Failed to create AIO context");
 			close(pdata.aio_eventfd[i]);
 			goto err_free_aio;
 		}
