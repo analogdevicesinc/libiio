@@ -146,7 +146,10 @@ struct iio_buffer {
 
 	struct iio_task *worker;
 
+	/* These two fields are set by the last block created. They are only
+	 * used when communicating with v0.x IIOD. */
 	size_t block_size;
+	bool cyclic;
 
 	struct iio_attr_list attrlist;
 
