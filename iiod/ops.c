@@ -398,8 +398,8 @@ err_free_blocks:
 	for (; i; i--)
 	      iio_block_destroy(entry->blocks[i - 1]);
 	iio_buffer_destroy(entry->buf);
-	entry->buf = NULL;
 err_free_blocks_array:
+	entry->buf = NULL;
 	free(entry->blocks);
 	entry->blocks = NULL;
 	return err;
