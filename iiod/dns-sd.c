@@ -342,7 +342,6 @@ again:
 void start_avahi(struct thread_pool *pool, uint16_t port)
 {
 	int ret;
-	char err_str[1024];
 
 	IIO_INFO("Attempting to start Avahi\n");
 
@@ -357,11 +356,8 @@ void start_avahi(struct thread_pool *pool, uint16_t port)
 	 * minute, it gives up.
 	 */
 	ret = thread_pool_add_thread(pool, start_avahi_thd, NULL, "avahi_thd");
-	if (ret) {
-		iio_strerror(ret, err_str, sizeof(err_str));
-		IIO_ERROR("Failed to create new Avahi thread: %s\n",
-				err_str);
-	}
+	if (ret)
+		IIO_PERROR(ret, "Failed to create new Avahi thread");
 }
 
 void stop_avahi(void)
