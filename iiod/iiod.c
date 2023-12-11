@@ -45,7 +45,7 @@
 #endif
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, bool use_aio,
+		      const char *uart_params,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd);
 
 struct client_data {
@@ -79,7 +79,6 @@ static const struct option options[] = {
 	  {"version", no_argument, 0, 'V'},
 	  {"debug", no_argument, 0, 'd'},
 	  {"demux", no_argument, 0, 'D'},
-	  {"aio", no_argument, 0, 'a'},
 	  {"ffs", required_argument, 0, 'F'},
 	  {"nb-pipes", required_argument, 0, 'n'},
 	  {"serial", required_argument, 0, 's'},
@@ -93,7 +92,6 @@ static const char *options_descriptions[] = {
 	"Display the version of this program.",
 	"Output debug log to the standard output.",
 	"Demux channels directly on the server.",
-	"Use asynchronous I/O.",
 	"Use the given FunctionFS mountpoint to serve over USB",
 	"Specify the number of USB pipes (ep couples) to use",
 	"Run " MY_NAME " on the specified UART.",
@@ -120,9 +118,8 @@ static void client_thd(struct thread_pool *pool, void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd,
-			true, false, false, pool,
-			cdata->xml_zstd, cdata->xml_zstd_len);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, true, false, pool,
+		    cdata->xml_zstd, cdata->xml_zstd_len);
 
 	IIO_INFO("Client exited\n");
 	close(cdata->fd);
@@ -418,7 +415,6 @@ err_free_pdata:
 
 int main(int argc, char **argv)
 {
-	bool use_aio = false;
 	long nb_pipes = 3, val;
 	char *end;
 	const char *uri = "local:";
@@ -429,7 +425,7 @@ int main(int argc, char **argv)
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
 
-	while ((c = getopt_long(argc, argv, "+hVdDaF:n:s:p:u:",
+	while ((c = getopt_long(argc, argv, "+hVdDF:n:s:p:u:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -437,14 +433,6 @@ int main(int argc, char **argv)
 			break;
 		case 'D':
 			server_demux = true;
-			break;
-		case 'a':
-			if (!WITH_AIO) {
-				IIO_ERROR("IIOD was not compiled with AIO support.\n");
-				return EXIT_FAILURE;
-			}
-
-			use_aio = true;
 			break;
 		case 'F':
 			if (!WITH_IIOD_USBD) {
@@ -528,7 +516,7 @@ int main(int argc, char **argv)
 		restart_usr1 = false;
 
 		ret = start_iiod(uri, ffs_mountpoint, uart_params,
-				 use_aio, port, nb_pipes, ep0_fd);
+				 port, nb_pipes, ep0_fd);
 	} while (!ret && restart_usr1);
 
 	thread_pool_destroy(main_thread_pool);
@@ -540,7 +528,7 @@ int main(int argc, char **argv)
 }
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, bool use_aio,
+		      const char *uart_params,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd)
 {
 	struct iio_context *ctx;
@@ -563,10 +551,8 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 	xml_zstd = get_xml_zstd_data(ctx, &xml_zstd_len);
 
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
-		/* We pass use_aio == true directly, this is ensured to be true
-		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				true, (unsigned int) nb_pipes, ep0_fd,
+				(unsigned int) nb_pipes, ep0_fd,
 				main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start USB daemon");
