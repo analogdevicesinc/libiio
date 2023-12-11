@@ -12,7 +12,7 @@ set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_DEFINITIONS)
 
 add_executable(iiod
-	iiod.c interpreter.c network.c responder.c thread-pool.c
+	iiod.c interpreter.c responder.c thread-pool.c
 )
 set_target_properties(iiod PROPERTIES
 	C_STANDARD 99
@@ -82,13 +82,18 @@ if (WITH_IIOD_SERIAL)
 	target_sources(iiod PRIVATE serial.c)
 endif()
 
+option(WITH_IIOD_NETWORK "Add network (TCP/IP) support" ON)
+if (WITH_IIOD_NETWORK)
+	target_sources(iiod PRIVATE network.c)
+
+	if (HAVE_AVAHI)
+		target_sources(iiod PRIVATE dns-sd.c)
+	endif()
+endif()
+
 if (WITH_ZSTD)
 	target_include_directories(iiod PRIVATE ${LIBZSTD_INCLUDE_DIR})
 	target_link_libraries(iiod LINK_PRIVATE ${LIBZSTD_LIBRARIES})
-endif()
-
-if (HAVE_AVAHI)
-	target_sources(iiod PRIVATE dns-sd.c)
 endif()
 
 include(GNUInstallDirs)
@@ -137,6 +142,7 @@ if (WITH_UPSTART)
 endif()
 
 toggle_iio_feature("${WITH_IIOD_SERIAL}" iiod-serial)
+toggle_iio_feature("${WITH_IIOD_NETWORK}" iiod-network)
 toggle_iio_feature("${WITH_IIOD_V0_COMPAT}" iiod-v0-compat)
 toggle_iio_feature("${WITH_AIO}" iiod-aio)
 toggle_iio_feature("${WITH_IIOD_USBD}" iiod-usb)

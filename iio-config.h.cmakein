@@ -28,6 +28,7 @@
 #cmakedefine01 WITH_USB_BACKEND_DYNAMIC
 
 #cmakedefine01 WITH_NETWORK_EVENTFD
+#cmakedefine01 WITH_IIOD_NETWORK
 #cmakedefine01 WITH_IIOD_USBD
 #cmakedefine01 WITH_IIOD_SERIAL
 #cmakedefine01 WITH_IIOD_V0_COMPAT
