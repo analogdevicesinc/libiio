@@ -45,9 +45,8 @@
 #endif
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, bool debug, bool interactive,
-		      bool use_aio, uint16_t port, unsigned int nb_pipes,
-		      int ep0_fd);
+		      const char *uart_params, bool debug, bool use_aio,
+		      uint16_t port, unsigned int nb_pipes, int ep0_fd);
 
 struct client_data {
 	int fd;
@@ -81,7 +80,6 @@ static const struct option options[] = {
 	  {"version", no_argument, 0, 'V'},
 	  {"debug", no_argument, 0, 'd'},
 	  {"demux", no_argument, 0, 'D'},
-	  {"interactive", no_argument, 0, 'i'},
 	  {"aio", no_argument, 0, 'a'},
 	  {"ffs", required_argument, 0, 'F'},
 	  {"nb-pipes", required_argument, 0, 'n'},
@@ -96,7 +94,6 @@ static const char *options_descriptions[] = {
 	"Display the version of this program.",
 	"Use alternative (incompatible) debug interface.",
 	"Demux channels directly on the server.",
-	"Run " MY_NAME " in the controlling terminal.",
 	"Use asynchronous I/O.",
 	"Use the given FunctionFS mountpoint to serve over USB",
 	"Specify the number of USB pipes (ep couples) to use",
@@ -152,31 +149,6 @@ static void sig_handler_usr1(int sig)
 {
 	restart_usr1 = true;
 	thread_pool_stop(main_thread_pool);
-}
-
-static int main_interactive(struct iio_context *ctx, bool verbose, bool use_aio,
-			    const void *xml_zstd, size_t xml_zstd_len)
-{
-	int flags;
-
-	if (!use_aio) {
-		flags = fcntl(STDIN_FILENO, F_GETFL);
-		if (flags >= 0)
-			flags = fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-		if (flags < 0)
-			IIO_PERROR(errno, "Could not get/set O_NONBLOCK on stdin");
-
-		flags = fcntl(STDOUT_FILENO, F_GETFL);
-		if (flags >= 0)
-			flags = fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
-		if (flags < 0)
-			IIO_PERROR(errno, "Could not get/set O_NONBLOCK on stdout");
-	}
-
-	interpreter(ctx, STDIN_FILENO, STDOUT_FILENO, verbose,
-			false, false, use_aio, main_thread_pool,
-			xml_zstd, xml_zstd_len);
-	return EXIT_SUCCESS;
 }
 
 static int main_server(struct iio_context *ctx, bool debug,
@@ -448,7 +420,7 @@ err_free_pdata:
 
 int main(int argc, char **argv)
 {
-	bool debug = false, interactive = false, use_aio = false;
+	bool debug = false, use_aio = false;
 	long nb_pipes = 3, val;
 	char *end;
 	const char *uri = "local:";
@@ -459,7 +431,7 @@ int main(int argc, char **argv)
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
 
-	while ((c = getopt_long(argc, argv, "+hVdDiaF:n:s:p:u:",
+	while ((c = getopt_long(argc, argv, "+hVdDaF:n:s:p:u:",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
@@ -467,9 +439,6 @@ int main(int argc, char **argv)
 			break;
 		case 'D':
 			server_demux = true;
-			break;
-		case 'i':
-			interactive = true;
 			break;
 		case 'a':
 			if (!WITH_AIO) {
@@ -561,7 +530,7 @@ int main(int argc, char **argv)
 		restart_usr1 = false;
 
 		ret = start_iiod(uri, ffs_mountpoint, uart_params, debug,
-				 interactive, use_aio, port, nb_pipes, ep0_fd);
+				 use_aio, port, nb_pipes, ep0_fd);
 	} while (!ret && restart_usr1);
 
 	thread_pool_destroy(main_thread_pool);
@@ -573,9 +542,8 @@ int main(int argc, char **argv)
 }
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, bool debug, bool interactive,
-		      bool use_aio, uint16_t port, unsigned int nb_pipes,
-		      int ep0_fd)
+		      const char *uart_params, bool debug, bool use_aio,
+		      uint16_t port, unsigned int nb_pipes, int ep0_fd)
 {
 	struct iio_context *ctx;
 	void *xml_zstd;
@@ -620,10 +588,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-	if (interactive)
-		ret = main_interactive(ctx, debug, use_aio, xml_zstd, xml_zstd_len);
-	else
-		ret = main_server(ctx, debug, xml_zstd, xml_zstd_len, port);
+	ret = main_server(ctx, debug, xml_zstd, xml_zstd_len, port);
 
 out_thread_pool_stop:
 	/*
