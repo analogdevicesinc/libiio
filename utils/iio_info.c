@@ -90,7 +90,7 @@ static void print_attr(const struct iio_attr *attr,
 	if (!value) {
 		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
 		if (ret < 0)
-			iio_strerror(ret, buf, sizeof(buf));
+			iio_strerror((int)ret, buf, sizeof(buf));
 		value = buf;
 	}
 
