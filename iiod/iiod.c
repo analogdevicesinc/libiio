@@ -290,6 +290,13 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		 LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
 		 LIBIIO_VERSION_GIT);
 
+	if (!WITH_IIOD_NETWORK
+	    && (!WITH_IIOD_USBD || !ffs_mountpoint)
+	    && (!WITH_IIOD_SERIAL || !uart_params)) {
+		IIO_ERROR("Not enough parameters given.\n");
+		return EXIT_FAILURE;
+	}
+
 	ctx = iio_create_context(&iiod_params, uri);
 	if (iio_err(ctx)) {
 		IIO_PERROR(iio_err(ctx), "Unable to create local context");
