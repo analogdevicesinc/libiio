@@ -19,9 +19,8 @@ struct iio_block {
 	size_t size;
 	void *data;
 
-	struct iio_task_token *token, *old_token;
+	struct iio_task_token *token;
 	size_t bytes_used;
-	bool cyclic;
 };
 
 struct iio_block *
@@ -83,9 +82,6 @@ void iio_block_destroy(struct iio_block *block)
 	struct iio_buffer *buf = block->buffer;
 	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
 
-	/* Stop the cyclic task */
-	block->cyclic = false;
-
 	if (block->token) {
 		iio_task_cancel(block->token);
 		iio_task_sync(block->token, 0);
@@ -132,20 +128,12 @@ int iio_block_io(struct iio_block *block)
 	if (!iio_device_is_tx(block->buffer->dev))
 		return iio_block_read(block);
 
-	if (block->old_token)
-		iio_task_sync(block->old_token, 0);
-
-	if (block->cyclic) {
-		block->old_token = block->token;
-		block->token = iio_task_enqueue(block->buffer->worker, block);
-	}
-
 	return iio_block_write(block);
 }
 
 int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 {
-	const struct iio_buffer *buffer = block->buffer;
+	struct iio_buffer *buffer = block->buffer;
 	const struct iio_device *dev = buffer->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 
@@ -164,7 +152,7 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 	}
 
 	block->bytes_used = bytes_used;
-	block->cyclic = cyclic;
+	buffer->cyclic = cyclic;
 	block->token = iio_task_enqueue(buffer->worker, block);
 
 	return iio_err(block->token);
