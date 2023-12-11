@@ -176,7 +176,6 @@ out_stream_destroy:
 out_ctx_destroy:
 	if (ctx)
 		iio_context_destroy(ctx);
-out_free_argw:
 	free_argw(argc, argw);
 	return ret;
 }
