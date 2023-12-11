@@ -143,6 +143,9 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 			struct thread_pool *pool,
 			const void *xml_zstd, size_t xml_zstd_len);
+int start_network_daemon(struct iio_context *ctx,
+			 struct thread_pool *pool, const void *xml_zstd,
+			 size_t xml_zstd_len, uint16_t port);
 
 int binary_parse(struct parser_pdata *pdata);
 
