@@ -326,12 +326,14 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-	ret = start_network_daemon(ctx, main_thread_pool,
-				   xml_zstd, xml_zstd_len, port);
-	if (ret) {
-		IIO_PERROR(ret, "Unable to start network daemon");
-		ret = EXIT_FAILURE;
-		goto out_thread_pool_stop;
+	if (WITH_IIOD_NETWORK) {
+		ret = start_network_daemon(ctx, main_thread_pool,
+					   xml_zstd, xml_zstd_len, port);
+		if (ret) {
+			IIO_PERROR(ret, "Unable to start network daemon");
+			ret = EXIT_FAILURE;
+			goto out_thread_pool_stop;
+		}
 	}
 
 	thread_pool_wait(main_thread_pool);
