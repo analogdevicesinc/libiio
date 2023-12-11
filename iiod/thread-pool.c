@@ -167,16 +167,19 @@ static void thread_pool_purge_events(struct thread_pool *pool)
 	} while (ret != -1 || errno == EINTR);
 }
 
-void thread_pool_stop_and_wait(struct thread_pool *pool)
+void thread_pool_wait(struct thread_pool *pool)
 {
-	thread_pool_stop(pool);
-
 	pthread_mutex_lock(&pool->thread_count_lock);
 	while (pool->thread_count)
 		pthread_cond_wait(&pool->thread_count_cond,
 				&pool->thread_count_lock);
 	pthread_mutex_unlock(&pool->thread_count_lock);
+}
 
+void thread_pool_stop_and_wait(struct thread_pool *pool)
+{
+	thread_pool_stop(pool);
+	thread_pool_wait(pool);
 	thread_pool_purge_events(pool);
 }
 
