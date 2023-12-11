@@ -60,10 +60,19 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 
 static bool colors;
 
+#ifndef _MSC_BUILD
 #define FMT_ERR "\e[1;31mERROR: %s\e[0m"
 #define FMT_DEV "\e[1;32m%s\e[0m"
 #define FMT_CHN "\e[0;33m%s\e[0m"
 #define FMT_ATTR "\e[1;34m%s\e[0m"
+#else
+/* MSVC doesn't like escape codes. But those will never be used anyway,
+ * as color support is disabled when building with MSVC. */
+#define FMT_ERR "%s"
+#define FMT_DEV "%s"
+#define FMT_CHN "%s"
+#define FMT_ATTR "%s"
+#endif
 
 /* Keeps Codacy happy */
 #define print_fmt(fmt, ...) printf(fmt, __VA_ARGS__) /* Flawfinder: ignore */
