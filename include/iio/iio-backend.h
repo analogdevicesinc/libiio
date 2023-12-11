@@ -108,7 +108,7 @@ struct iio_backend_ops {
 						  struct iio_channels_mask *mask);
 	void (*free_buffer)(struct iio_buffer_pdata *pdata);
 	int (*enable_buffer)(struct iio_buffer_pdata *pdata,
-			     size_t nb_samples, bool enable);
+			     size_t nb_samples, bool enable, bool cyclic);
 	void (*cancel_buffer)(struct iio_buffer_pdata *pdata);
 
 	ssize_t (*readbuf)(struct iio_buffer_pdata *pdata,

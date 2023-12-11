@@ -46,6 +46,7 @@ static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
 {
 	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
 	size_t sample_size, nb_samples = 0;
+	bool cyclic = false;
 
 	if (buf->block_size) {
 		sample_size = iio_device_get_sample_size(buf->dev, buf->mask);
@@ -53,7 +54,7 @@ static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
 	}
 
 	if (ops->enable_buffer)
-		return ops->enable_buffer(buf->pdata, nb_samples, enabled);
+		return ops->enable_buffer(buf->pdata, nb_samples, enabled, cyclic);
 
 	return -ENOSYS;
 }

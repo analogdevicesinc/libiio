@@ -490,9 +490,9 @@ static void usb_free_buffer(struct iio_buffer_pdata *buf)
 }
 
 static int usb_enable_buffer(struct iio_buffer_pdata *pdata,
-			     size_t nb_samples, bool enable)
+			     size_t nb_samples, bool enable, bool cyclic)
 {
-	return iiod_client_enable_buffer(pdata->pdata, nb_samples, enable);
+	return iiod_client_enable_buffer(pdata->pdata, nb_samples, enable, cyclic);
 }
 
 static struct iio_block_pdata *

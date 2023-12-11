@@ -313,7 +313,7 @@ static int local_do_enable_buffer(struct iio_buffer_pdata *pdata, bool enable)
 }
 
 static int local_enable_buffer(struct iio_buffer_pdata *pdata,
-			       size_t nb_samples, bool enable)
+			       size_t nb_samples, bool enable, bool cyclic)
 {
 	int ret;
 

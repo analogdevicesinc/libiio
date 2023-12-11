@@ -77,7 +77,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 			  struct iio_channels_mask *mask);
 __api void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata);
 __api int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
-				    size_t nb_samples, bool enable);
+				    size_t nb_samples, bool enable, bool cyclic);
 
 __api struct iio_block_pdata *
 iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,

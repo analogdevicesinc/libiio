@@ -485,9 +485,9 @@ void network_free_buffer(struct iio_buffer_pdata *pdata)
 }
 
 int network_enable_buffer(struct iio_buffer_pdata *pdata,
-			  size_t block_size, bool enable)
+			  size_t block_size, bool enable, bool cyclic)
 {
-	return iiod_client_enable_buffer(pdata->pdata, block_size, enable);
+	return iiod_client_enable_buffer(pdata->pdata, block_size, enable, cyclic);
 }
 
 struct iio_block_pdata * network_create_block(struct iio_buffer_pdata *pdata,
