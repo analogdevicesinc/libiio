@@ -461,7 +461,7 @@ static int iiod_io_cond_wait(const struct iiod_io *io)
 	return -ETIMEDOUT;
 }
 
-intptr_t iiod_io_wait_for_response(struct iiod_io *io)
+int32_t iiod_io_wait_for_response(struct iiod_io *io)
 {
 	struct iiod_responder *priv = io->responder;
 	int ret = 0;
@@ -509,13 +509,13 @@ int iiod_io_send_command(struct iiod_io *io,
 	return iiod_io_wait_for_command_done(io);
 }
 
-int iiod_io_send_response_async(struct iiod_io *io, intptr_t code,
+int iiod_io_send_response_async(struct iiod_io *io, int32_t code,
 				const struct iiod_buf *buf, size_t nb)
 {
 	return iiod_enqueue_command(io, IIOD_OP_RESPONSE, 0, code, buf, nb);
 }
 
-int iiod_io_send_response(struct iiod_io *io, intptr_t code,
+int iiod_io_send_response(struct iiod_io *io, int32_t code,
 			  const struct iiod_buf *buf, size_t nb)
 {
 	int ret;
