@@ -170,10 +170,10 @@ static void print_channel(const struct iio_channel *chn)
 
 int main(int argc, char **argv)
 {
-	char **argw, *buf;
+	char **argw;
 	const struct iio_device *dev, *trig;
 	const struct iio_channel *ch;
-	const char *key, *value, *name, *label, *type_name;
+	const char *name, *label;
 	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
 	struct iio_channels_mask *mask;
 	const struct iio_attr *attr;
