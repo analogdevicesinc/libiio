@@ -57,8 +57,8 @@ struct option * add_common_options(const struct option * longopts);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
 void version(char *name);
 
-char ** dup_argv(char * name, int argc, char * argv[]);
-void free_argw(int argc, char * argw[]);
+char ** dup_argv(char * name, unsigned int argc, char * argv[]);
+void free_argw(unsigned int argc, char * argw[]);
 
 uint64_t get_time_us(void);
 

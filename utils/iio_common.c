@@ -150,7 +150,7 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 	return (unsigned long int) val;
 }
 
-char ** dup_argv(char * name, int argc, char * argv[])
+char ** dup_argv(char * name, unsigned int argc, char * argv[])
 {
 	unsigned int i;
 	char** new_argv;
@@ -179,7 +179,7 @@ err_oom:
 	exit(0);
 }
 
-void free_argw(int argc, char * argw[])
+void free_argw(unsigned int argc, char * argw[])
 {
 	unsigned int i;
 
