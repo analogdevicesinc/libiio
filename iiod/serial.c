@@ -56,9 +56,8 @@ static void serial_main(struct thread_pool *pool, void *d)
 	struct serial_pdata *pdata = d;
 
 	do {
-		interpreter(pdata->ctx, pdata->fd, pdata->fd,
-			    false, false, false, pool,
-			    pdata->xml_zstd, pdata->xml_zstd_len);
+		interpreter(pdata->ctx, pdata->fd, pdata->fd, false, false,
+			    pool, pdata->xml_zstd, pdata->xml_zstd_len);
 	} while (!thread_pool_is_stopped(pool));
 
 	close(pdata->fd);

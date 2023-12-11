@@ -230,7 +230,7 @@ ssize_t read_all(struct parser_pdata *pdata, void *dst, size_t len)
 }
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
-		 bool is_socket, bool is_usb, bool use_aio,
+		 bool is_socket, bool is_usb,
 		 struct thread_pool *pool, const void *xml_zstd,
 		 size_t xml_zstd_len)
 {
@@ -253,39 +253,35 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 
 	SLIST_INIT(&pdata.thdlist_head);
 
-	if (use_aio) {
-		/* Note: if WITH_AIO is not defined, use_aio is always false.
-		 * We ensure that in iiod.c. */
 #if WITH_AIO
-		char err_str[1024];
+	char err_str[1024];
 
-		for (i = 0; i < 2; i++) {
-			pdata.aio_eventfd[i] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-			if (pdata.aio_eventfd[i] < 0) {
-				iio_strerror(errno, err_str, sizeof(err_str));
-				IIO_ERROR("Failed to create AIO eventfd: %s\n", err_str);
-				goto err_free_aio;
-			}
-
-			pdata.aio_ctx[i] = 0;
-			ret = io_setup(1, &pdata.aio_ctx[i]);
-			if (ret < 0) {
-				iio_strerror(-ret, err_str, sizeof(err_str));
-				IIO_ERROR("Failed to create AIO context: %s\n", err_str);
-				close(pdata.aio_eventfd[i]);
-				goto err_free_aio;
-			}
-
-			pthread_mutex_init(&pdata.aio_mutex[i], NULL);
+	for (i = 0; i < 2; i++) {
+		pdata.aio_eventfd[i] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+		if (pdata.aio_eventfd[i] < 0) {
+			iio_strerror(errno, err_str, sizeof(err_str));
+			IIO_ERROR("Failed to create AIO eventfd: %s\n", err_str);
+			goto err_free_aio;
 		}
 
-		pdata.readfd = readfd_aio;
-		pdata.writefd = writefd_aio;
-#endif
-	} else {
-		pdata.readfd = readfd_io;
-		pdata.writefd = writefd_io;
+		pdata.aio_ctx[i] = 0;
+		ret = io_setup(1, &pdata.aio_ctx[i]);
+		if (ret < 0) {
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			IIO_ERROR("Failed to create AIO context: %s\n", err_str);
+			close(pdata.aio_eventfd[i]);
+			goto err_free_aio;
+		}
+
+		pthread_mutex_init(&pdata.aio_mutex[i], NULL);
 	}
+
+	pdata.readfd = readfd_aio;
+	pdata.writefd = writefd_aio;
+#else
+	pdata.readfd = readfd_io;
+	pdata.writefd = writefd_io;
+#endif
 
 	if (WITH_IIOD_V0_COMPAT)
 		ascii_interpreter(&pdata);
@@ -294,10 +290,8 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		binary_parse(&pdata);
 
 #if WITH_AIO
-	i = use_aio ? 2 : 0;
-
 err_free_aio:
-	for (; i > 0; i--) {
+	for (i = 2; i > 0; i--) {
 		io_destroy(pdata.aio_ctx[i - 1]);
 		close(pdata.aio_eventfd[i - 1]);
 		pthread_mutex_destroy(&pdata.aio_mutex[i - 1]);
