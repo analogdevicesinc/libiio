@@ -91,7 +91,7 @@ static const struct option options[] = {
 static const char *options_descriptions[] = {
 	"Show this help and quit.",
 	"Display the version of this program.",
-	"Use alternative (incompatible) debug interface.",
+	"Output debug log to the standard output.",
 	"Demux channels directly on the server.",
 	"Use asynchronous I/O.",
 	"Use the given FunctionFS mountpoint to serve over USB",
@@ -433,6 +433,7 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
+			iiod_params.log_level = LEVEL_DEBUG;
 			break;
 		case 'D':
 			server_demux = true;
