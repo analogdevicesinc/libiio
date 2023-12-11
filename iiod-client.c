@@ -1490,7 +1490,7 @@ void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata)
 }
 
 int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
-			      size_t nb_samples, bool enable)
+			      size_t nb_samples, bool enable, bool cyclic)
 {
 	struct iiod_client *client = pdata->client;
 	struct iiod_client_io *client_io;
@@ -1511,7 +1511,7 @@ int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
 		if (enable) {
 			client_io = iiod_client_open_with_mask(client, pdata->dev,
 							       pdata->mask,
-							       nb_samples, false);
+							       nb_samples, cyclic);
 			err = iio_err(client_io);
 			pdata->io = err ? NULL : client_io;
 		} else {

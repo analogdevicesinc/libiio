@@ -257,9 +257,9 @@ static void serial_free_buffer(struct iio_buffer_pdata *buf)
 }
 
 static int serial_enable_buffer(struct iio_buffer_pdata *buf,
-				size_t nb_samples, bool enable)
+				size_t nb_samples, bool enable, bool cyclic)
 {
-	return iiod_client_enable_buffer(buf->pdata, nb_samples, enable);
+	return iiod_client_enable_buffer(buf->pdata, nb_samples, enable, cyclic);
 }
 
 static ssize_t
