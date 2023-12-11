@@ -91,7 +91,7 @@ struct evstream_entry {
 
 struct parser_pdata {
 	struct iio_context *ctx;
-	bool stop, binary, verbose;
+	bool stop, binary;
 	int fd_in, fd_out;
 	int resp_fd[2];
 
@@ -130,18 +130,18 @@ static inline void *zalloc(size_t size)
 	return calloc(1, size);
 }
 
-void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool verbose,
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		 bool is_socket, bool is_usb, bool use_aio, struct thread_pool *pool,
 		 const void *xml_zstd, size_t xml_zstd_len);
-void ascii_interpreter(struct parser_pdata *pdata, bool verbose);
+void ascii_interpreter(struct parser_pdata *pdata);
 
 int init_usb_daemon(const char *ffs, unsigned int nb_pipes);
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
-		bool debug, bool use_aio, unsigned int nb_pipes,
-		int ep0_fd, struct thread_pool *pool,
-		const void *xml_zstd, size_t xml_zstd_len);
+		     bool use_aio, unsigned int nb_pipes,
+		     int ep0_fd, struct thread_pool *pool,
+		     const void *xml_zstd, size_t xml_zstd_len);
 int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
-			bool debug, struct thread_pool *pool,
+			struct thread_pool *pool,
 			const void *xml_zstd, size_t xml_zstd_len);
 
 int binary_parse(struct parser_pdata *pdata);

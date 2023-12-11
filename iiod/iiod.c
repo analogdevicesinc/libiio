@@ -45,12 +45,11 @@
 #endif
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, bool debug, bool use_aio,
+		      const char *uart_params, bool use_aio,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd);
 
 struct client_data {
 	int fd;
-	bool debug;
 	struct iio_context *ctx;
 	const void *xml_zstd;
 	size_t xml_zstd_len;
@@ -121,7 +120,7 @@ static void client_thd(struct thread_pool *pool, void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd, cdata->debug,
+	interpreter(cdata->ctx, cdata->fd, cdata->fd,
 			true, false, false, pool,
 			cdata->xml_zstd, cdata->xml_zstd_len);
 
@@ -151,7 +150,7 @@ static void sig_handler_usr1(int sig)
 	thread_pool_stop(main_thread_pool);
 }
 
-static int main_server(struct iio_context *ctx, bool debug,
+static int main_server(struct iio_context *ctx,
 		       const void *xml_zstd, size_t xml_zstd_len,
 		       uint16_t port)
 {
@@ -291,7 +290,6 @@ static int main_server(struct iio_context *ctx, bool debug,
 
 		cdata->fd = new;
 		cdata->ctx = ctx;
-		cdata->debug = debug;
 		cdata->xml_zstd = xml_zstd;
 		cdata->xml_zstd_len = xml_zstd_len;
 
@@ -420,7 +418,7 @@ err_free_pdata:
 
 int main(int argc, char **argv)
 {
-	bool debug = false, use_aio = false;
+	bool use_aio = false;
 	long nb_pipes = 3, val;
 	char *end;
 	const char *uri = "local:";
@@ -435,7 +433,6 @@ int main(int argc, char **argv)
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
-			debug = true;
 			break;
 		case 'D':
 			server_demux = true;
@@ -529,7 +526,7 @@ int main(int argc, char **argv)
 		thread_pool_restart(main_thread_pool);
 		restart_usr1 = false;
 
-		ret = start_iiod(uri, ffs_mountpoint, uart_params, debug,
+		ret = start_iiod(uri, ffs_mountpoint, uart_params,
 				 use_aio, port, nb_pipes, ep0_fd);
 	} while (!ret && restart_usr1);
 
@@ -542,7 +539,7 @@ int main(int argc, char **argv)
 }
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, bool debug, bool use_aio,
+		      const char *uart_params, bool use_aio,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd)
 {
 	struct iio_context *ctx;
@@ -568,7 +565,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		/* We pass use_aio == true directly, this is ensured to be true
 		 * by the CMake script. */
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				debug, true, (unsigned int) nb_pipes, ep0_fd,
+				true, (unsigned int) nb_pipes, ep0_fd,
 				main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start USB daemon");
@@ -579,7 +576,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 
 	if (WITH_IIOD_SERIAL && uart_params) {
 		ret = start_serial_daemon(ctx, uart_params,
-					  debug, main_thread_pool,
+					  main_thread_pool,
 					  xml_zstd, xml_zstd_len);
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start serial daemon");
@@ -588,7 +585,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-	ret = main_server(ctx, debug, xml_zstd, xml_zstd_len, port);
+	ret = main_server(ctx, xml_zstd, xml_zstd_len, port);
 
 out_thread_pool_stop:
 	/*

@@ -41,7 +41,7 @@ struct usbd_pdata {
 	struct iio_context *ctx;
 	char *ffs;
 	int ep0_fd;
-	bool debug, use_aio;
+	bool use_aio;
 	struct thread_pool **pool;
 	unsigned int nb_pipes;
 
@@ -71,7 +71,7 @@ static void usbd_client_thread(struct thread_pool *pool, void *d)
 	struct usbd_client_pdata *pdata = d;
 
 	interpreter(pdata->pdata->ctx, pdata->ep_in, pdata->ep_out,
-			pdata->pdata->debug, false, true,
+			false, true,
 			pdata->pdata->use_aio, pool,
 			pdata->pdata->xml_zstd, pdata->pdata->xml_zstd_len);
 
@@ -349,7 +349,7 @@ int init_usb_daemon(const char *ffs, unsigned int nb_pipes)
 }
 
 int start_usb_daemon(struct iio_context *ctx, const char *ffs,
-		bool debug, bool use_aio, unsigned int nb_pipes,
+		bool use_aio, unsigned int nb_pipes,
 		int ep0_fd, struct thread_pool *pool,
 		const void *xml_zstd, size_t xml_zstd_len)
 {
@@ -384,7 +384,6 @@ int start_usb_daemon(struct iio_context *ctx, const char *ffs,
 	}
 
 	pdata->ctx = ctx;
-	pdata->debug = debug;
 	pdata->use_aio = use_aio;
 	pdata->xml_zstd = xml_zstd;
 	pdata->xml_zstd_len = xml_zstd_len;

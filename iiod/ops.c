@@ -154,17 +154,9 @@ static inline const char *dev_label_or_name_or_id(const struct iio_device *dev)
 
 static void print_value(struct parser_pdata *pdata, long value)
 {
-	if (pdata->verbose && value < 0) {
-		char buf[1024];
-		iio_strerror(-value, buf, sizeof(buf));
-		output(pdata, "ERROR: ");
-		output(pdata, buf);
-		output(pdata, "\n");
-	} else {
-		char buf[128];
-		snprintf(buf, sizeof(buf), "%li\n", value);
-		output(pdata, buf);
-	}
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%li\n", value);
+	output(pdata, buf);
 }
 
 static ssize_t send_sample(const struct iio_channel *chn,
@@ -1594,7 +1586,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 	return found ? (ssize_t) bytes_read : -EIO;
 }
 
-void ascii_interpreter(struct parser_pdata *pdata, bool verbose)
+void ascii_interpreter(struct parser_pdata *pdata)
 {
 	yyscan_t scanner;
 	unsigned int i;
@@ -1603,8 +1595,6 @@ void ascii_interpreter(struct parser_pdata *pdata, bool verbose)
 	yylex_init_extra(pdata, &scanner);
 
 	do {
-		if (verbose)
-			output(pdata, "iio-daemon > ");
 		ret = yyparse(scanner);
 	} while (!pdata->stop && !pdata->binary && ret >= 0);
 

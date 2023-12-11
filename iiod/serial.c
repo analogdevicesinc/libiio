@@ -21,7 +21,6 @@
 
 struct serial_pdata {
 	struct iio_context *ctx;
-	bool debug;
 	int fd;
 	const void *xml_zstd;
 	size_t xml_zstd_len;
@@ -57,7 +56,7 @@ static void serial_main(struct thread_pool *pool, void *d)
 	struct serial_pdata *pdata = d;
 
 	do {
-		interpreter(pdata->ctx, pdata->fd, pdata->fd, pdata->debug,
+		interpreter(pdata->ctx, pdata->fd, pdata->fd,
 			    false, false, false, pool,
 			    pdata->xml_zstd, pdata->xml_zstd_len);
 	} while (!thread_pool_is_stopped(pool));
@@ -231,7 +230,7 @@ static int serial_configure(int fd, unsigned int uart_bps,
 }
 
 int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
-			bool debug, struct thread_pool *pool,
+			struct thread_pool *pool,
 			const void *xml_zstd, size_t xml_zstd_len)
 {
 	struct serial_pdata *pdata;
@@ -260,7 +259,6 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 		goto err_close_fd;
 
 	pdata->ctx = ctx;
-	pdata->debug = debug;
 	pdata->fd = fd;
 	pdata->xml_zstd = xml_zstd;
 	pdata->xml_zstd_len = xml_zstd_len;
