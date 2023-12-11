@@ -34,7 +34,6 @@ int main(int argc, char **argv)
 	char **argw, *uri;
 	const char *xml;
 	struct iio_context *ctx;
-	size_t xml_len;
 	struct option *opts;
 	size_t buf_len;
 	int c, ret = EXIT_FAILURE;
