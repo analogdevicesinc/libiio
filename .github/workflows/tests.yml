@@ -21,7 +21,7 @@ jobs:
           run: |
             mkdir build
             cd build
-            cmake .. -DTESTS=ON -DTESTS_DEBUG=ON -DTESTS_COVERAGE=ON
+            cmake .. -DTESTS=ON -DTESTS_DEBUG=ON -DTESTS_COVERAGE=ON -DWITH_GCOV=ON
             make
             make coverage
 
