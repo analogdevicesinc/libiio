@@ -289,8 +289,8 @@ int main(void)
 		goto clean;
 	}
 
-	tx_sample_sz = iio_device_get_sample_size(tx, rxmask);
-	rx_sample_sz = iio_device_get_sample_size(rx, txmask);
+	rx_sample_sz = iio_device_get_sample_size(rx, rxmask);
+	tx_sample_sz = iio_device_get_sample_size(tx, txmask);
 
 	info("* Starting IO streaming (press CTRL+C to cancel)\n");
 	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE, rxstream, txstream,
