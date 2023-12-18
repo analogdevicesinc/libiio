@@ -278,8 +278,8 @@ int main (__notused int argc, __notused char **argv)
 		shutdown();
 	}
 
-	tx_sample_sz = iio_device_get_sample_size(tx, rxmask);
-	rx_sample_sz = iio_device_get_sample_size(rx, txmask);
+	rx_sample_sz = iio_device_get_sample_size(rx, rxmask);
+	tx_sample_sz = iio_device_get_sample_size(tx, txmask);
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
 
