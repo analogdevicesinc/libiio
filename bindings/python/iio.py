@@ -1346,7 +1346,7 @@ class Device(_DeviceOrTrigger):
     def _get_trigger(self):
         value = _DevicePtr()
         _d_get_trigger(self._device, _byref(value))
-        trig = Trigger(value.contents)
+        trig = Trigger(self.ctx, value.contents)
 
         for dev in self.ctx.devices:
             if trig.id == dev.id:
