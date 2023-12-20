@@ -754,6 +754,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	if (ret)
 		goto err_destroy_iiod_client;
 
+	free(description);
+
 	iio_context_set_pdata(ctx, pdata);
 
 	/* pdata->io_ctx.params points to the 'params' function argument,
