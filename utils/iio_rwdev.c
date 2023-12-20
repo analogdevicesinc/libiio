@@ -145,7 +145,7 @@ static void * sig_handler_thd(void *data)
 
 static void setup_sig_handler(void)
 {
-	sigset_t mask, oldmask;
+	static sigset_t mask, oldmask;
 	pthread_t thd;
 	int ret;
 
