@@ -195,6 +195,7 @@ void iio_buffer_destroy(struct iio_buffer *buf)
 	iio_task_destroy(buf->worker);
 	iio_mutex_destroy(buf->lock);
 	iio_channels_mask_destroy(buf->mask);
+	free(buf->attrlist.attrs);
 	free(buf);
 }
 
