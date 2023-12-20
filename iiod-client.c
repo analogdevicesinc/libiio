@@ -1692,6 +1692,8 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 
 	/* Retrieve return code of enqueue */
 	ret = (int) iiod_io_wait_for_response(block->io);
+	if (ret < 0)
+		goto out_unlock;
 
 	block->enqueued = false;
 
