@@ -217,8 +217,6 @@ static ssize_t iiod_run_command(struct iiod_responder *priv,
 
 static void iiod_responder_signal_io(struct iiod_io *io, int32_t code)
 {
-	struct iiod_responder *priv = io->responder;
-
 	io->r_io.cmd.code = code;
 
 	/* Wake up the reader */
