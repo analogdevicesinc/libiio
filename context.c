@@ -546,7 +546,7 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 			    const char **ctx_values, unsigned int nb_ctx_attrs)
 {
 	struct iio_context *ctx;
-	char *new_description;
+	char *new_description = NULL;
 	unsigned int i;
 	ssize_t len;
 	int ret;
@@ -596,11 +596,10 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 			prm_err(params, "Unable to alloc memory\n");
 			goto err_context_destroy;
 		}
-
-		free(ctx->description);
-		ctx->description = new_description;
 	}
 
+	free(ctx->description);
+	ctx->description = new_description;
 	ctx->params = *params;
 
 	return ctx;
