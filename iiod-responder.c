@@ -21,6 +21,9 @@
 
 #define NB_BUFS_MAX 2
 
+static void iiod_io_ref_unlocked(struct iiod_io *io);
+static void iiod_io_unref_unlocked(struct iiod_io *io);
+
 struct iiod_client_data {
 	/*
 	 * Structure for the command to send.
@@ -299,6 +302,8 @@ static int iiod_responder_reader_thrd(void *d)
 			continue;
 		}
 
+		iiod_io_ref_unlocked(io);
+
 		/* Discard the entry from the readers list */
 		__iiod_io_cancel_unlocked(io);
 
@@ -315,6 +320,7 @@ static int iiod_responder_reader_thrd(void *d)
 
 			if (ret <= 0) {
 				iiod_responder_signal_io(io, (int32_t) ret);
+				iiod_io_unref_unlocked(io);
 				break;
 			}
 		} else {
@@ -323,6 +329,7 @@ static int iiod_responder_reader_thrd(void *d)
 
 		/* Wake up the reader */
 		iiod_responder_signal_io(io, cmd.code);
+		iiod_io_unref_unlocked(io);
 	}
 
 	priv->thrd_err_code = priv->thrd_stop ? -EINTR : (int) ret;
@@ -740,16 +747,26 @@ static void iiod_io_destroy(struct iiod_io *io)
 	free(io);
 }
 
+static void iiod_io_ref_unlocked(struct iiod_io *io)
+{
+	if (io->refcnt > 0)
+		io->refcnt += 1;
+}
+
 void iiod_io_ref(struct iiod_io *io)
 {
 	struct iiod_responder *priv = io->responder;
 
 	iio_mutex_lock(priv->lock);
-
-	if (io->refcnt > 0)
-		io->refcnt += 1;
-
+	iiod_io_ref_unlocked(io);
 	iio_mutex_unlock(priv->lock);
+}
+
+static void iiod_io_unref_unlocked(struct iiod_io *io)
+{
+	io->refcnt -= 1;
+	if (io->refcnt == 0)
+		iiod_io_destroy(io);
 }
 
 void iiod_io_unref(struct iiod_io *io)
@@ -757,11 +774,7 @@ void iiod_io_unref(struct iiod_io *io)
 	struct iiod_responder *priv = io->responder;
 
 	iio_mutex_lock(priv->lock);
-
-	io->refcnt -= 1;
-	if (io->refcnt == 0)
-		iiod_io_destroy(io);
-
+	iiod_io_unref_unlocked(io);
 	iio_mutex_unlock(priv->lock);
 }
 
