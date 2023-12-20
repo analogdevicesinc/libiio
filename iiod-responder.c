@@ -71,6 +71,7 @@ struct iiod_responder {
 	struct iiod_io *readers, *writers, *default_io;
 	uint16_t next_client_id;
 
+	struct iio_cond *cond;
 	struct iio_mutex *lock;
 	struct iio_thrd *read_thrd;
 	struct iio_task *write_task;
@@ -116,10 +117,12 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 	/* Discard the entry from the readers list */
 	if (io == priv->readers) {
 		priv->readers = io->r_next;
+		iiod_io_unref_unlocked(io);
 	} else if (priv->readers) {
 		for (tmp = priv->readers; tmp->r_next; tmp = tmp->r_next) {
 			if (tmp->r_next == io) {
 				tmp->r_next = io->r_next;
+				iiod_io_unref_unlocked(io);
 				break;
 			}
 		}
@@ -226,15 +229,18 @@ static void iiod_responder_signal_io(struct iiod_io *io, int32_t code)
 	iio_mutex_unlock(io->lock);
 }
 
-static void iiod_responder_cancel_responses(struct iiod_responder *priv)
+static void iiod_responder_cancel_responses(struct iiod_responder *priv, int err)
 {
 	struct iiod_io *io, *next;
 
 	/* Discard the entry from the readers list */
 	for (io = priv->readers; io; io = next) {
 		next = io->r_next;
-		iiod_responder_signal_io(io, priv->thrd_err_code);
+		iiod_responder_signal_io(io, err);
+		iiod_io_unref_unlocked(io);
 	}
+
+	priv->readers = NULL;
 }
 
 static int iiod_responder_reader_thrd(void *d)
@@ -253,6 +259,12 @@ static int iiod_responder_reader_thrd(void *d)
 	iio_mutex_lock(priv->lock);
 
 	while (!priv->thrd_stop) {
+		while (!priv->readers && !priv->thrd_stop)
+			iio_cond_wait(priv->cond, priv->lock, 0);
+
+		if (priv->thrd_stop)
+			break;
+
 		iio_mutex_unlock(priv->lock);
 
 		ret = iiod_rw_all(priv, NULL, &cmd_buf, 1, sizeof(cmd), true);
@@ -270,8 +282,10 @@ static int iiod_responder_reader_thrd(void *d)
 		}
 
 		iio_mutex_lock(priv->lock);
-		if (ret <= 0)
-			break;
+		if (ret <= 0) {
+			iiod_responder_cancel_responses(priv, ret);
+			continue;
+		}
 
 		if (cmd.op != IIOD_OP_RESPONSE) {
 			iio_mutex_unlock(priv->lock);
@@ -280,7 +294,7 @@ static int iiod_responder_reader_thrd(void *d)
 
 			iio_mutex_lock(priv->lock);
 			if (ret < 0)
-				break;
+				iiod_responder_cancel_responses(priv, ret);
 
 			continue;
 		}
@@ -330,10 +344,10 @@ static int iiod_responder_reader_thrd(void *d)
 		iiod_io_unref_unlocked(io);
 	}
 
-	priv->thrd_err_code = priv->thrd_stop ? -EINTR : (int) ret;
+	priv->thrd_err_code = -EINTR;
 	priv->thrd_stop = true;
+	iiod_responder_cancel_responses(priv, priv->thrd_err_code);
 
-	iiod_responder_cancel_responses(priv);
 	iio_task_stop(priv->write_task);
 	iio_task_flush(priv->write_task);
 
@@ -557,6 +571,8 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_next = NULL;
 	io->r_io.start_time = read_counter_us();
 
+	iiod_io_ref_unlocked(io);
+
 	/* Add it to the readers list */
 	if (!priv->readers) {
 		priv->readers = io;
@@ -565,6 +581,8 @@ int iiod_io_get_response_async(struct iiod_io *io,
 			tmp = tmp->r_next;
 		tmp->r_next = io;
 	}
+
+	iio_cond_signal(priv->cond);
 
 	iio_mutex_unlock(priv->lock);
 
@@ -657,10 +675,15 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 	if (err)
 		goto err_free_priv;
 
+	priv->cond = iio_cond_create();
+	err = iio_err(priv->cond);
+	if (err)
+		goto err_free_lock;
+
 	priv->default_io = iiod_responder_create_io(priv, 0);
 	err = iio_err(priv->default_io);
 	if (err)
-	      goto err_free_lock;
+		goto err_free_cond;
 
 	priv->write_task = iio_task_create(iiod_responder_write, priv,
 					   "iiod-responder-writer-task");
@@ -682,6 +705,8 @@ err_free_write_task:
 	iio_task_destroy(priv->write_task);
 err_free_io:
 	iiod_io_unref(priv->default_io);
+err_free_cond:
+	iio_cond_destroy(priv->cond);
 err_free_lock:
 	iio_mutex_destroy(priv->lock);
 err_free_priv:
@@ -691,13 +716,18 @@ err_free_priv:
 
 void iiod_responder_destroy(struct iiod_responder *priv)
 {
+	iio_mutex_lock(priv->lock);
 	priv->thrd_stop = true;
+	iio_cond_signal(priv->cond);
+	iio_mutex_unlock(priv->lock);
+
 	iiod_responder_wait_done(priv);
 
 	iio_task_destroy(priv->write_task);
 
 	iiod_io_unref(priv->default_io);
 	iio_mutex_destroy(priv->lock);
+	iio_cond_destroy(priv->cond);
 	free(priv);
 }
 
