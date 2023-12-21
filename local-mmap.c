@@ -63,6 +63,7 @@ struct iio_block_impl_pdata {
 	struct iio_block_pdata pdata;
 	struct block block;
 	unsigned int idx;
+	bool enqueued;
 };
 
 static struct iio_block_impl_pdata *
@@ -194,10 +195,17 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 		return -EINVAL;
 	}
 
-	mask = atomic_fetch_or(&buf->pdata->mmap_enqueued_blocks_mask, BIT(priv->idx));
-	if (mask & BIT(priv->idx)) {
+	if (priv->enqueued) {
 		/* Already enqueued */
 		return -EPERM;
+	}
+
+	mask = atomic_fetch_or(&buf->pdata->mmap_enqueued_blocks_mask, BIT(priv->idx));
+	if (mask & BIT(priv->idx)) {
+		/* The block was marked as dequeued, but has been enqueued to
+		 * the kernel? This case should never happen. */
+		priv->enqueued = true;
+		return 0;
 	}
 
 	priv->block.bytes_used = (uint32_t) bytes_used;
@@ -211,6 +219,8 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 	if (cyclic)
 		buf->pdata->cyclic_buffer_enqueued = true;
 
+	priv->enqueued = true;
+
 	return 0;
 }
 
@@ -222,7 +232,7 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 	struct block block;
 	int ret, fd = buf->fd;
 
-	if (!(atomic_load(&buf->pdata->mmap_enqueued_blocks_mask) & BIT(priv->idx))) {
+	if (!priv->enqueued) {
 		/* Already dequeued */
 		return -EPERM;
 	}
@@ -233,6 +243,12 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 	}
 
 	for (;;) {
+		if (!(atomic_load(&buf->pdata->mmap_enqueued_blocks_mask) & BIT(priv->idx))) {
+			/* The block has been dequeued by a previous call to
+			 * local_dequeue_mmap_block() for a different block. */
+			break;
+		}
+
 		ret = buffer_check_ready(buf, fd, POLLIN | POLLOUT, time_ptr);
 		if (ret < 0)
 			return ret;
@@ -246,6 +262,8 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 		if (block.id == priv->idx)
 			break;
 	}
+
+	priv->enqueued = false;
 
 	return 0;
 }
