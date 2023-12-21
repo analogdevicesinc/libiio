@@ -1608,8 +1608,7 @@ static void local_free_block(struct iio_block_pdata *pdata)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
 		local_free_dmabuf(pdata);
-
-	if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
+	else if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
 		local_free_mmap_block(pdata);
 }
 
