@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <iio.h>
+#include <iio/iio.h>
 #include <string>
 
 #if __cplusplus < 201703L
@@ -25,7 +25,7 @@
 #include <stdexcept>
 #include <system_error>
 #include <cassert>
-#include <memory>
+#include <type_traits>
 
 /** @brief Public C++ API
  *
@@ -36,20 +36,21 @@
  * It provides:
  *
  * - Classes that model the major types, providing member functions for easy usage.
- * - Uniform access to attributes of channels and devices (with their attr/debug_attr/buffer_attr variants).
- * - Error handling (error codes are checked and turned into exceptions).
+ * - Error handling (errors are checked and turned into exceptions).
+ * - Simplified resource management via smart pointers.
  * - Functions that may return \c NULL for "no string" are explicit by returning an <tt>std::optional</tt>.
- * - Iterators for idiomatic access to devices of context and channels of devices.
- * - Iterators for attributes.
- * - Implicit conversion to the wrapped C-types, so C++ instances can easily be passed to the C-API.
+ * - Iterators and array subscription operator for idiomatic access to sequences.
+ * - Implicit conversion to the wrapped C-types, so C++ instances can easily be passed to the C-API. Arguments C++-API take the raw C-types.
  *
- * @warning All objects live in the @ref iiopp::Context that created them. When a context gets destroyed (when
- * the last <tt>std::shared_ptr</tt> to it releases it) all its child objects die as well. All types have
- * weak reference semantic and become invalid when the context gets destroyed.
- * Lifetime is managed by <tt>std::shared_ptr</tt>.
+ * @warning All objects live in the @ref iiopp::Context that created them. When a context gets destroyed,
+ * all its child objects die as well. All wrapper classes have weak reference semantic and become invalid
+ * when the context gets destroyed (or their referenced instance get destroyed by other means).
  *
- * In consequence all types are cheap to copy (at the cost of assigning a pointer and maybe an integer). Copies refer
+ * In consequence all types are cheap to copy (at the cost of assigning a pointer). Copies refer
  * to the same underlying object.
+ *
+ * Types with <i>Ptr</i> at the end act like unique pointers: Their destructor destroys the object they refer to and
+ * they are not copyable (but movable).
  *
  * See @ref iiopp-enum.cpp for an example.
  */
@@ -91,43 +92,16 @@ public:
     using std::system_error::system_error;
 };
 
-/** @brief Common interface for attribute access
- */
-class IAttr
-{
-public:
-    virtual ~IAttr(){}
-
-    virtual cstr name() const = 0;
-
-    virtual size_t read(char * dst, size_t size) const = 0; // Flawfinder: ignore
-    virtual bool read_bool() const = 0;
-    virtual double read_double() const = 0;
-    virtual long long read_longlong() const = 0;
-
-    virtual size_t write(cstr src) = 0;
-    virtual void write_bool(bool val) = 0;
-    virtual void write_double(double val) = 0;
-    virtual void write_longlong(long long val) = 0;
-
-    operator bool () const {return read_bool();}
-    operator double () const {return read_double();}
-    operator long long () const {return read_longlong();}
-
-    cstr operator = (cstr val){write(val); return val;}
-    bool operator = (bool val){write_bool(val); return val;}
-    double operator = (double val){write_double(val); return val;}
-    long long operator = (long long val){write_longlong(val); return val;}
-};
-
 /** @brief Optional string, used for C-functions that return @c nullptr for "no value".
  */
 typedef optional<cstr> optstr;
 
+
+/**
+@brief Namespace of implementation details
+*/
 namespace impl
 {
-
-std::shared_ptr<Context> new_ctx(iio_context * ctx);
 
 inline optstr opt(char const * s)
 {
@@ -157,6 +131,17 @@ inline void check(int ret, char const * ctx)
 }
 
 template <class T>
+T * check(T * ret, char const * ctx)
+{
+    if (int e = iio_err(ret))
+    {
+        err(e, ctx);
+    }
+
+    return ret;
+}
+
+template <class T>
 T check_n(T n, char const * s)
 {
     if (n < 0)
@@ -168,7 +153,7 @@ T check_n(T n, char const * s)
  *
  * Implements begin(), end() and the index operator for a type @a container_T (which should be derived from it) with elements of type @a element_T.
  */
-template <class container_T, class element_T>
+template <class container_T, class element_T> //, class size_T=std::size_t, class diff_T=std::ptrdiff_t>
 class IndexedSequence
 {
     container_T & _me() {return *static_cast<container_T*>(this);}
@@ -178,15 +163,15 @@ public:
      */
     class Iterator
     {
-        container_T & c;
-        size_t i;
     public:
         typedef std::random_access_iterator_tag iterator_category;
         typedef element_T value_type;
-        typedef std::ptrdiff_t difference_type;
+        typedef decltype(std::declval<container_T>().size()) size_type;
+        typedef std::make_signed<size_type> difference_type;
         typedef element_T *pointer;
         typedef element_T &reference;
-        Iterator(container_T &cont, size_t idx) : c(cont), i(idx) {assert(idx <= cont.size());}
+
+        Iterator(container_T &cont, size_type idx) : c(cont), i(idx) {assert(idx <= cont.size());}
 
         element_T operator*() const { return c[i]; }
         Iterator& operator++() { assert(i <= c.size()); ++i; return *this;}
@@ -197,75 +182,70 @@ public:
         bool operator > (const Iterator& rhs) const { assert(&c == &rhs.c); return i > rhs.i; }
         bool operator <= (const Iterator& rhs) const { assert(&c == &rhs.c); return i <= rhs.i; }
         bool operator >= (const Iterator& rhs) const { assert(&c == &rhs.c); return i >= rhs.i; }
-        Iterator operator + (ssize_t x) const { return Iterator(c, i + x); }
-        ssize_t operator - (Iterator rhs) const { assert(&c == &rhs.c); return i - rhs.i; }
+        Iterator operator + (difference_type x) const { return Iterator(c, i + x); }
+        int operator - (Iterator rhs) const { assert(&c == &rhs.c); return i - rhs.i; }
+    private:
+        container_T & c;
+        size_type i;
     };
 
     Iterator begin() {return Iterator(_me(), 0);}
     Iterator end() {return Iterator(_me(), _me().size());}
 };
 
-template <class obj_T,
-         ssize_t read_T(obj_T const *, char const *, char *, size_t),
-         int read_bool_T(obj_T const *, char const *, bool *),
-         int read_double_T(obj_T const *, char const *, double *),
-         int read_longlong_T(obj_T const *, char const *, long long *),
-         ssize_t write_T(obj_T const *, char const *, char const *),
-         int write_bool_T(obj_T const *, char const *, bool),
-         int write_double_T(obj_T const *, char const *, double),
-         int write_longlong_T(obj_T const *, char const *, long long)
-         >
-class AttrT : public IAttr
+}
+
+
+/** @brief C++ wrapper for the @ref Attributes C-API
+ */
+class Attr
 {
-    obj_T const * const _obj;
-    cstr const _name;
+    iio_attr const * p;
 public:
+    Attr() = delete;
+    Attr(iio_attr const * attr) : p(attr){}
+    operator iio_attr const * () const {return p;}
 
-    AttrT(obj_T const * obj, cstr name) : _obj(obj), _name(name){assert(obj && name);}
+    cstr name() {return iio_attr_get_name(p);}
+    cstr filename() {return iio_attr_get_filename(p);}
+    cstr static_value() {return iio_attr_get_static_value(p);}
 
-    cstr name() const override {return _name;}
+    size_t read_raw(char * dst, size_t size) const {return impl::check_n(iio_attr_read_raw(p, dst, size), "iio_attr_read_raw");}
+    bool read_bool() const {bool val; impl::check(iio_attr_read_bool(p, &val), "iio_attr_read_bool"); return val;}
+    double read_double() const {double val; impl::check(iio_attr_read_double(p, &val), "iio_attr_read_double"); return val;}
+    long long read_longlong() const {long long val; impl::check(iio_attr_read_longlong(p, &val), "iio_attr_read_longlong"); return val;}
 
-    size_t read(char * dst, size_t size) const override {return check_n(read_T(_obj, _name, dst, size), "iio_..._attr_read");} // Flawfinder: ignore
-    bool read_bool() const override {bool val; check(read_bool_T(_obj, _name, &val), "iio_..._attr_read_bool"); return val;}
-    double read_double() const override {double val; check(read_double_T(_obj, _name, &val), "iio_..._attr_read_double"); return val;}
-    long long read_longlong() const override {long long val; check(read_longlong_T(_obj, _name, &val), "iio_..._attr_read_longlong"); return val;}
+    size_t write_raw(void const * src, size_t len) {return impl::check_n(iio_attr_write_raw(p, src, len), "iio_attr_write_raw");}
+    size_t write_string(cstr val) {return impl::check_n(iio_attr_write_string(p, val), "iio_attr_write_string");}
+    void write_bool(bool val) {impl::check(iio_attr_write_bool(p, val), "iio_attr_write_bool");}
+    void write_double(double val) {impl::check(iio_attr_write_double(p, val), "iio_attr_write_double");}
+    void write_longlong(long long val) {impl::check(iio_attr_write_longlong(p, val), "iio_attr_write_longlong");}
 
-    size_t write(cstr src) override {return check_n(write_T(_obj, _name, src), "iio_..._attr_write");}
-    void write_bool(bool val) override {check(write_bool_T(_obj, _name, val), "iio_..._attr_write_bool");}
-    void write_double(double val) override {check(write_double_T(_obj, _name, val), "iio_..._attr_write_double");}
-    void write_longlong(long long val) override {check(write_longlong_T(_obj, _name, val), "iio_..._attr_write_longlong");}
+    operator bool () const {return read_bool();}
+    operator double () const {return read_double();}
+    operator long long () const {return read_longlong();}
+
+    cstr operator = (cstr val){write_string(val); return val;}
+    bool operator = (bool val){write_bool(val); return val;}
+    double operator = (double val){write_double(val); return val;}
+    long long operator = (long long val){write_longlong(val); return val;}
 };
 
-template <class obj_T, class attr_T, char const * find_attr_T(obj_T const *, char const *)>
-optional<attr_T> attr(obj_T const * obj, cstr name)
+namespace impl
 {
-    char const * s = find_attr_T(obj, name);
-    if (s)
-        return {attr_T(obj, s)};
-    return {};
-}
-
-template <class obj_T, class attr_T, char const * get_attr_T(obj_T const *, unsigned int)>
-optional<attr_T> attr(obj_T const * obj, unsigned int idx)
-{
-    char const * s = get_attr_T(obj, idx);
-    if (s)
-        return {attr_T(obj, s)};
-    return {};
-}
 
 /** @brief Vector-like accessor for all attributes of an object
  */
 #ifdef DOXYGEN
-template <class obj_T, class attr_T>
-class AttrSeqT : public IndexedSequence<AttrSeqT<obj_T, attr_T>, attr_T>
+template <class obj_T>
+class AttrSeqT : public IndexedSequence<AttrSeqT<obj_T>, Attr>
 #else
-template <class obj_T, class attr_T,
+template <class obj_T,
           unsigned int get_attrs_count_T(obj_T const *),
-          char const * get_attr_T(obj_T const *, unsigned int),
-          char const * find_attr_T(obj_T const *, char const *)
+          iio_attr const * get_attr_T(obj_T const *, unsigned int),
+          iio_attr const * find_attr_T(obj_T const *, char const *)
           >
-class AttrSeqT : public IndexedSequence<AttrSeqT<obj_T, attr_T, get_attrs_count_T, get_attr_T, find_attr_T>, attr_T>
+class AttrSeqT : public IndexedSequence<AttrSeqT<obj_T, get_attrs_count_T, get_attr_T, find_attr_T>, Attr>
 #endif
 {
     obj_T const * const _obj;
@@ -274,28 +254,128 @@ public:
 
     /** @brief Count of attributes
      */
-    size_t size() const {return get_attrs_count_T(_obj);}
+    unsigned int size() const {return get_attrs_count_T(_obj);}
 
     /** @brief Access by attribute index
      */
-    attr_T operator [](size_t idx)
+    Attr operator [](unsigned int idx)
     {
-        if (auto ret = attr<obj_T, attr_T, get_attr_T>(_obj, idx))
-            return *ret;
+        if (auto ret = get_attr_T(_obj, idx))
+            return Attr(ret);
         throw std::out_of_range("invalid attribute index");
     }
 
     /** @brief Access by attribute name
      */
-    attr_T operator [](cstr name)
+    Attr operator [](cstr name)
     {
-        if (auto ret = attr<obj_T, attr_T, find_attr_T>(_obj, name))
-            return *ret;
+        if (auto ret = find_attr_T(_obj, name))
+            return Attr(ret);
         throw std::out_of_range("invalid attribute name");
     }
 };
 
+template <class obj_T, iio_attr const * find_attr_T(obj_T const *, char const *)>
+optional<Attr> attr(obj_T const * obj, cstr name)
+{
+    iio_attr const * a = find_attr_T(obj, name);
+    if (a)
+        return {Attr(a)};
+    return {};
+}
+
+template <class obj_T, iio_attr const * get_attr_T(obj_T const *, unsigned int)>
+optional<Attr> attr(obj_T const * obj, unsigned int index)
+{
+    iio_attr const * a = get_attr_T(obj, index);
+    if (a)
+        return {Attr(a)};
+    return {};
+}
+
 } // namespace impl
+
+
+
+/**
+@brief Special unique pointer for instances that must be destroyed
+
+@tparam obj_T Wrapper class
+@tparam ptr_T Pointer type from the C-API
+@tparam deleter_T Function that must be used for destroying objects
+*/
+template <class obj_T, class ptr_T, void deleter_T(ptr_T *)>
+class Ptr
+{
+    obj_T p;
+public:
+    Ptr() = delete;
+    Ptr(Ptr const &) = delete;
+    Ptr(Ptr && rhs) : p(rhs.p) { rhs.p = nullptr;}
+    explicit Ptr(ptr_T * obj) : p{obj}{}
+    ~Ptr(){ if (p) deleter_T(const_cast<ptr_T*>(static_cast<ptr_T const*>(p)));}
+
+    Ptr & operator = (Ptr &) = delete;
+    void operator = (Ptr && rhs)
+    {
+        if (p)
+            deleter_T(p);
+        p = rhs.p;
+        rhs.p = nullptr;
+    }
+
+    operator obj_T * () {return &p;}
+    operator obj_T * () const {return &p;}
+    obj_T * operator -> () {return &p;}
+    obj_T const * operator -> () const {return &p;}
+};
+
+/** @brief C++ wrapper for @ref iio_channels_mask
+ */
+class ChannelsMask
+{
+    iio_channels_mask const * const p;
+public:
+
+    ChannelsMask() = delete;
+    ChannelsMask(iio_channels_mask const * mask) : p(mask){}
+    operator iio_channels_mask const * () const {return p;}
+};
+
+typedef Ptr<ChannelsMask, iio_channels_mask, iio_channels_mask_destroy> ChannelsMaskPtr;
+
+ChannelsMaskPtr create_channels_mask(unsigned int nb_channels)
+{
+    return ChannelsMaskPtr(iio_create_channels_mask(nb_channels));
+}
+
+/** @brief C++ wrapper for the @ref Block C-API
+ */
+class Block
+{
+    iio_block * const p;
+public:
+
+    Block() = delete;
+    Block(iio_block * block) : p(block){}
+    operator iio_block * () const {return p;}
+
+    void * start() {return iio_block_start(p);}
+    void * first(iio_channel * chn) {return iio_block_first(p, chn);}
+    void * end() {return iio_block_end(p);}
+    ssize_t foreach_sample(const struct iio_channels_mask *mask,
+                             ssize_t (*callback)(const struct iio_channel *chn, void *src, size_t bytes, void *d),
+                             void *data)
+    {
+        return iio_block_foreach_sample(p, mask, callback, data);
+    }
+
+    void enqueue(size_t bytes_used, bool cyclic) {impl::check(iio_block_enqueue(p, bytes_used, cyclic), "iio_block_enqueue");}
+    void dequeue(bool nonblock) {impl::check(iio_block_dequeue(p, nonblock), "iio_block_dequeue");}
+    Buffer buffer();
+};
+
+typedef Ptr<Block, iio_block, iio_block_destroy> BlockPtr;
 
 /** @brief C++ wrapper for the @ref Channel C-API
  */
@@ -309,56 +389,83 @@ public:
     operator iio_channel * () const {return p;}
 
 #ifndef DOXYGEN
-    typedef impl::AttrT<iio_channel,
-        iio_channel_attr_read,
-        iio_channel_attr_read_bool,
-        iio_channel_attr_read_double,
-        iio_channel_attr_read_longlong,
-        iio_channel_attr_write,
-        iio_channel_attr_write_bool,
-        iio_channel_attr_write_double,
-        iio_channel_attr_write_longlong
-        > Attr;
-
-    typedef impl::AttrSeqT<iio_channel, Attr,
-        iio_channel_get_attrs_count,
-        iio_channel_get_attr,
-        iio_channel_find_attr
-        > AttrSeq;
+    typedef impl::AttrSeqT<iio_channel,
+                           iio_channel_get_attrs_count,
+                           iio_channel_get_attr,
+                           iio_channel_find_attr
+                           > AttrSeq;
 #else
-    typedef IAttr Attr;
-    typedef impl::AttrSeqT<Channel, Attr> AttrSeq;
+    typedef impl::AttrSeqT<Channel> AttrSeq;
 #endif
-
-    optional<Attr> attr(cstr name) {return impl::attr<iio_channel, Attr, iio_channel_find_attr>(p, name);}
-    optional<Attr> attr(unsigned int idx) {return impl::attr<iio_channel, Attr, iio_channel_get_attr>(p, idx);}
 
     AttrSeq attrs;
 
-    void disable() {iio_channel_disable(p);}
-    void enable() {iio_channel_enable(p);}
-    optstr find_attr(cstr name) {return impl::opt(iio_channel_find_attr(p, name));}
-    unsigned int attrs_count() const {return iio_channel_get_attrs_count(p);}
-    void * data() const {return iio_channel_get_data(p);}
-    Device device();
+    Device device() const;
     cstr id() const {return iio_channel_get_id(p);}
-    iio_modifier modifier() const {return iio_channel_get_modifier(p);}
     optstr name() const { return impl::opt(iio_channel_get_name(p));}
-    iio_chan_type type() const {return iio_channel_get_type(p);}
-    bool is_enabled() const { return iio_channel_is_enabled(p);}
     bool is_output() const { return iio_channel_is_output(p);}
     bool is_scan_element() const { return iio_channel_is_scan_element(p);}
-    size_t read(Buffer buffer, void * dst, size_t len) const; // Flawfinder: ignore
-    size_t read_raw(Buffer buffer, void * dst, size_t len) const;
+    unsigned int attrs_count() const {return iio_channel_get_attrs_count(p);}
+    Attr attr(unsigned int index) {return iio_channel_get_attr(p, index);}
+    Attr find_attr(cstr name) {return iio_channel_find_attr(p, name);}
+    void enable(iio_channels_mask * mask) {iio_channel_enable(p, mask);}
+    void disable(iio_channels_mask * mask) {iio_channel_disable(p, mask);}
+    bool is_enabled(iio_channels_mask * mask) const { return iio_channel_is_enabled(p, mask);}
+    size_t read(Block block, void * dst, size_t len, bool raw) const; // Flawfinder: ignore
+    size_t write(Block block, void const * src, size_t len, bool raw);
     void set_data(void * data){iio_channel_set_data(p, data);}
-    size_t write(Buffer buffer, void const * src, size_t len);
-    size_t write_raw(Buffer buffer, void const * src, size_t len);
-
+    void * data() const {return iio_channel_get_data(p);}
+    iio_chan_type type() const {return iio_channel_get_type(p);}
+    iio_modifier modifier() const {return iio_channel_get_modifier(p);}
+    hwmon_chan_type hwmon_type() const {return hwmon_channel_get_type(p);}
+    unsigned long index() const { return impl::check_n(iio_channel_get_index(p), "iio_channel_get_index");}
+    iio_data_format const * data_format() const {return iio_channel_get_data_format(p);}
     void convert(void * dst, void const * src) const {iio_channel_convert(p, dst, src);}
     void convert_inverse(void * dst, void const * src) const {iio_channel_convert_inverse(p, dst, src);}
-    iio_data_format const * data_format() const {return iio_channel_get_data_format(p);}
-    unsigned long index() const { return impl::check_n(iio_channel_get_index(p), "iio_channel_get_index");}
 };
+
+/** @brief C++ wrapper for the @ref Stream C-API
+ */
+class Stream
+{
+    iio_stream * const p;
+public:
+
+    Stream() = delete;
+    Stream(iio_stream * s) : p(s){}
+    operator iio_stream * () const {return p;}
+
+    Block next_block() {return const_cast<iio_block *>(impl::check(iio_stream_get_next_block(p), "iio_stream_get_next_block")); }
+};
+
+typedef Ptr<Stream, iio_stream, iio_stream_destroy> StreamPtr;
+
+/**
+@brief Event object
+*/
+struct Event : public iio_event
+{
+    iio_event_type type() const { return iio_event_get_type(this);}
+    iio_event_direction direction() const { return iio_event_get_direction(this);}
+    Channel channel(iio_device * dev, bool diff){return const_cast<iio_channel*>(iio_event_get_channel(this, dev, diff));}
+};
+
+/** @brief C++ wrapper for @ref iio_event_stream
+ */
+class EventStream
+{
+    iio_event_stream * const p;
+public:
+
+    EventStream() = delete;
+    EventStream(iio_event_stream * s) : p(s){}
+    operator iio_event_stream * () const {return p;}
+
+    Event read(bool nonblock) {iio_event ev; impl::check(iio_event_stream_read(p, &ev, nonblock), "iio_event_stream_read"); return static_cast<Event&>(ev);} // Flawfinder: ignore
+};
+
+typedef Ptr<EventStream, iio_event_stream, iio_event_stream_destroy> EventStreamPtr;
+
 
 /** @brief C++ wrapper for the @ref Buffer C-API
  */
@@ -366,28 +473,37 @@ class Buffer
 {
     iio_buffer * const p;
 public:
-    Buffer(iio_buffer * buffer) : p(buffer){}
+    Buffer() = delete;
+    Buffer(iio_buffer * buffer) : p(buffer), attrs(buffer){}
     operator iio_buffer * () const {return p;}
-    void cancel() {iio_buffer_cancel(p);}
-    void * end() {return iio_buffer_end(p);}
-    void * first(Channel channel){ return iio_buffer_first(p, channel);}
-    ssize_t for_each(ssize_t (*callback)(const struct iio_channel *chn, void *src, size_t bytes, void *d), void *data){return iio_buffer_foreach_sample(p, callback, data);}
-    void * data() {return iio_buffer_get_data(p);}
+
+#ifndef DOXYGEN
+    typedef impl::AttrSeqT<iio_buffer,
+                           iio_buffer_get_attrs_count,
+                           iio_buffer_get_attr,
+                           iio_buffer_find_attr
+                           > AttrSeq;
+#else
+    typedef impl::AttrSeqT<Buffer> AttrSeq;
+#endif
+
+    AttrSeq attrs;
+
     Device device();
-    int poll_fd() const {
-        int const ret = iio_buffer_get_poll_fd(p);
-        if (ret < 0)
-            impl::err(-ret, "iio_buffer_get_poll_fd");
-        return ret;
-    }
-    size_t push() const { return impl::check_n(iio_buffer_push(p), "iio_buffer_push");}
-    size_t push_partial(size_t samples_count) const {return impl::check_n(iio_buffer_push_partial(p, samples_count), "iio_buffer_push_partial");}
-    size_t refill() const { return impl::check_n(iio_buffer_refill(p), "iio_buffer_refill");}
-    void set_blocking_mode(bool blocking){impl::check(iio_buffer_set_blocking_mode(p, blocking), "iio_buffer_set_blocking_mode");}
+    unsigned int attrs_count() const {return iio_buffer_get_attrs_count(p);}
+    Attr get_attr(unsigned int index) {return iio_buffer_get_attr(p, index);}
+    Attr find_attr(cstr name) {return iio_buffer_find_attr(p, name);}
     void set_data(void * data){iio_buffer_set_data(p, data);}
-    void * start() {return iio_buffer_start(p);}
-    ptrdiff_t step() const {return iio_buffer_step(p);}
+    void * data() {return iio_buffer_get_data(p);}
+    void cancel() {iio_buffer_cancel(p);}
+    void enable() {impl::check(iio_buffer_enable(p), "iio_buffer_enable");}
+    void disable() {impl::check(iio_buffer_disable(p), "iio_buffer_disable");}
+    ChannelsMask channels_mask() {return iio_buffer_get_channels_mask(p);}
+    BlockPtr create_block(size_t size) { return BlockPtr{impl::check(iio_buffer_create_block(p, size), "iio_buffer_create_block")}; }
+    StreamPtr create_stream(size_t nb_blocks, size_t sample_count) { return StreamPtr{impl::check(iio_buffer_create_stream(p, nb_blocks, sample_count), "iio_buffer_create_stream")}; }
 };
+
+typedef Ptr<Buffer, iio_buffer, iio_buffer_destroy> BufferPtr;
 
 /** @brief C++ wrapper for the @ref Device C-API
  */
@@ -396,134 +512,70 @@ class Device : public impl::IndexedSequence<Device, Channel>
     iio_device * const p;
 public:
 
-    size_t size() const
+    unsigned int size() const
     {
         return channels_count();
     }
 
-    Channel operator [](size_t i)
+    Channel operator [](unsigned int i)
     {
         assert(i < channels_count());
         return channel(i);
     }
 
 #ifndef DOXYGEN
-    typedef impl::AttrT<iio_device,
-        iio_device_attr_read,
-        iio_device_attr_read_bool,
-        iio_device_attr_read_double,
-        iio_device_attr_read_longlong,
-        iio_device_attr_write,
-        iio_device_attr_write_bool,
-        iio_device_attr_write_double,
-        iio_device_attr_write_longlong
-        > Attr;
-
-    typedef impl::AttrSeqT<iio_device, Attr,
+    typedef impl::AttrSeqT<iio_device,
         iio_device_get_attrs_count,
         iio_device_get_attr,
         iio_device_find_attr
         > AttrSeq;
 #else
-    typedef IAttr Attr;
-    typedef impl::AttrSeqT<Channel, Attr> AttrSeq;
+    typedef impl::AttrSeqT<Device> AttrSeq;
 #endif
-    optional<Attr> attr(cstr name) {return impl::attr<iio_device, Attr, iio_device_find_attr>(p, name);}
-    optional<Attr> attr(unsigned int idx) {return impl::attr<iio_device, Attr, iio_device_get_attr>(p, idx);}
 
     AttrSeq attrs;
 
 #ifndef DOXYGEN
-    typedef impl::AttrT<iio_device,
-        iio_device_debug_attr_read,
-        iio_device_debug_attr_read_bool,
-        iio_device_debug_attr_read_double,
-        iio_device_debug_attr_read_longlong,
-        iio_device_debug_attr_write,
-        iio_device_debug_attr_write_bool,
-        iio_device_debug_attr_write_double,
-        iio_device_debug_attr_write_longlong
-        > DebugAttr;
-
-    typedef impl::AttrSeqT<iio_device, DebugAttr,
+    typedef impl::AttrSeqT<iio_device,
         iio_device_get_debug_attrs_count,
         iio_device_get_debug_attr,
         iio_device_find_debug_attr
         > DebugAttrSeq;
 #else
-    typedef IAttr DebugAttr;
-    typedef impl::AttrSeqT<Channel, DebugAttr> DebugAttrSeq;
+    typedef impl::AttrSeqT<Device> DebugAttrSeq;
 #endif
-
-    optional<DebugAttr> debug_attr(cstr name) {return impl::attr<iio_device, DebugAttr, iio_device_find_debug_attr>(p, name);}
-    optional<DebugAttr> debug_attr(unsigned int idx) {return impl::attr<iio_device, DebugAttr, iio_device_get_debug_attr>(p, idx);}
 
     DebugAttrSeq debug_attrs;
 
-#ifndef DOXYGEN
-    typedef impl::AttrT<iio_device,
-        iio_device_buffer_attr_read,
-        iio_device_buffer_attr_read_bool,
-        iio_device_buffer_attr_read_double,
-        iio_device_buffer_attr_read_longlong,
-        iio_device_buffer_attr_write,
-        iio_device_buffer_attr_write_bool,
-        iio_device_buffer_attr_write_double,
-        iio_device_buffer_attr_write_longlong
-        > BufferAttr;
-
-    typedef impl::AttrSeqT<iio_device, BufferAttr,
-        iio_device_get_buffer_attrs_count,
-        iio_device_get_buffer_attr,
-        iio_device_find_buffer_attr
-        > BufferAttrSeq;
-#else
-    typedef IAttr BufferAttr;
-    typedef impl::AttrSeqT<Channel, BufferAttr> BufferAttrSeq;
-#endif
-
-    optional<BufferAttr> buffer_attr(cstr name) {return impl::attr<iio_device, BufferAttr, iio_device_find_buffer_attr>(p, name);}
-    optional<BufferAttr> buffer_attr(unsigned int idx) {return impl::attr<iio_device, BufferAttr, iio_device_get_buffer_attr>(p, idx);}
-
-    BufferAttrSeq buffer_attrs;
 
     Device() = delete;
-    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev), buffer_attrs(dev){}
+    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev) {}
     operator iio_device * () const {return p;}
 
-    optstr find_attr(cstr name) const {return impl::opt(iio_device_find_attr(p, name));}
-    optstr find_buffer_attr(cstr name) const {return impl::opt(iio_device_find_buffer_attr(p, name));}
-    Channel find_channel(cstr name, bool output) const {return Channel{iio_device_find_channel(p, name, output)};}
-    unsigned int attrs_count() const {return iio_device_get_attrs_count(p);}
-    unsigned int buffer_attrs_count() const {return iio_device_get_buffer_attrs_count(p);}
-    Channel channel(unsigned int idx) const {return Channel{iio_device_get_channel(p, idx)};}
-    unsigned int channels_count() const {return iio_device_get_channels_count(p);}
     Context context();
-    void * data() const {return iio_device_get_data(p);}
     cstr id() const { return iio_device_get_id(p);}
-    optstr label() const { return impl::opt(iio_device_get_label(p));}
     optstr name() const { return impl::opt(iio_device_get_name(p));}
-    Device trigger() const {iio_device const * ret; impl::check(iio_device_get_trigger(p, &ret), "iio_device_get_trigger"); return const_cast<iio_device*>(ret);}
-    bool is_trigger() const {return iio_device_is_trigger(p);}
+    optstr label() const { return impl::opt(iio_device_get_label(p));}
+    unsigned int channels_count() const {return iio_device_get_channels_count(p);}
+    unsigned int attrs_count() const {return iio_device_get_attrs_count(p);}
+    Channel channel(unsigned int idx) const {return Channel{iio_device_get_channel(p, idx)};}
+    optional<Attr> attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_attr>(p, idx);}
+    Channel find_channel(cstr name, bool output) const {return Channel{iio_device_find_channel(p, name, output)};}
+    optional<Attr> find_attr(cstr name) {return impl::attr<iio_device, iio_device_find_attr>(p, name);}
     void set_data(void * data){iio_device_set_data(p, data);}
-    void set_kernel_buffers_count(unsigned int nb_buffers) {impl::check(iio_device_set_kernel_buffers_count(p, nb_buffers), "iio_device_set_kernel_buffers_count");}
+    void * data() const {return iio_device_get_data(p);}
+    Device trigger() const {return Device{const_cast<iio_device*>(impl::check(iio_device_get_trigger(p), "iio_device_get_trigger"))};}
     void set_trigger(iio_device const * trigger) {impl::check(iio_device_set_trigger(p, trigger), "iio_device_set_trigger");}
-    std::shared_ptr<Buffer> create_buffer(size_t samples_count, bool cyclic)
-    {
-        iio_buffer * buffer = iio_device_create_buffer(p, samples_count, cyclic);
-        if (!buffer)
-            impl::err(errno, "iio_device_create_buffer");
-
-        auto deleter = [](Buffer * buf) {
-            if (buf)
-            {
-                iio_buffer_destroy(*buf);
-                delete buf;
-            }
-        };
-
-        return std::shared_ptr<Buffer>{new Buffer(buffer), deleter};
-    }
+    bool is_trigger() const {return iio_device_is_trigger(p);}
+    BufferPtr create_buffer(unsigned int idx, iio_channels_mask * mask) {return BufferPtr(impl::check(iio_device_create_buffer(p, idx, mask), "iio_device_create_buffer"));}
+    bool is_hwmon() const {return iio_device_is_hwmon(p);}
+    EventStreamPtr create_event_stream() { return EventStreamPtr{impl::check(iio_device_create_event_stream(p), "iio_device_create_event_stream")};}
+    ssize_t sample_size(iio_channels_mask * mask) const {return impl::check_n(iio_device_get_sample_size(p, mask), "iio_device_get_sample_size");}
+    unsigned int debug_attrs_count() const {return iio_device_get_debug_attrs_count(p);}
+    optional<Attr> debug_attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_debug_attr>(p, idx);}
+    optional<Attr> find_debug_attr(cstr name) {return impl::attr<iio_device, iio_device_find_debug_attr>(p, name);}
+    void reg_write(uint32_t address, uint32_t value) {impl::check(iio_device_reg_write(p, address, value), "iio_device_reg_write");}
+    uint32_t reg_read(uint32_t address) {uint32_t value; impl::check(iio_device_reg_read(p, address, &value), "iio_device_reg_read"); return value;}
 };
 
 /** @brief C++ wrapper for the @ref Context C-API
@@ -532,270 +584,111 @@ class Context : public impl::IndexedSequence<Context, Device>
 {
     iio_context * const p;
 public:
-    size_t size() const
+    unsigned int size() const
     {
         return devices_count();
     }
 
-    Device operator [](size_t i)
+    Device operator [](unsigned int i)
     {
         assert(i < devices_count());
         return device(i);
     }
 
+#ifndef DOXYGEN
+    typedef impl::AttrSeqT<iio_context,
+                           iio_context_get_attrs_count,
+                           iio_context_get_attr,
+                           iio_context_find_attr
+                           > AttrSeq;
+#else
+    typedef impl::AttrSeqT<Context> AttrSeq;
+#endif
+
+    AttrSeq attrs;
+
+
     Context() = delete;
-    Context(iio_context * ctx) : p(ctx){assert(ctx);}
+    Context(iio_context * ctx) : p(ctx), attrs(ctx) {assert(ctx);}
     operator iio_context * () const {return p;}
 
-    std::shared_ptr<Context> clone() const {
-        iio_context * ctx = iio_context_clone(p);
-        if (!ctx)
-            impl::err(errno, "iio_context_clone");
-
-        return impl::new_ctx(ctx);
-    }
-
-    Device find_device(cstr name) const {return iio_context_find_device(p, name);}
-    std::pair<cstr, cstr> attr(unsigned int idx) const
-    {
-        char const * name, * value;
-        impl::check(iio_context_get_attr(p, idx, &name, &value), "iio_context_get_attr");
-        return {name, value};
-    }
-    optstr attr_value(cstr name) const {return impl::opt(iio_context_get_attr_value(p, name));}
+    unsigned int version_major() const { return iio_context_get_version_major(p); }
+    unsigned int version_minor() const { return iio_context_get_version_minor(p); }
+    cstr version_tag() const { return iio_context_get_version_tag(p); }
+    cstr xml() const { return iio_context_get_xml(p); }
+    cstr name() const { return iio_context_get_name(p); }
+    cstr description() const { return iio_context_get_description(p); }
     unsigned int attrs_count() const {return iio_context_get_attrs_count(p);}
-    cstr description() const {return iio_context_get_description(p);}
-    Device device(unsigned int idx) const
-    {
-        return Device{iio_context_get_device(p, idx)};
-    }
+    optional<Attr> attr(unsigned int idx) {return impl::attr<iio_context, iio_context_get_attr>(p, idx);}
+    optional<Attr> find_attr(cstr name) {return impl::attr<iio_context, iio_context_find_attr>(p, name);}
     unsigned int devices_count() const {return iio_context_get_devices_count(p);}
-    cstr name() const {return iio_context_get_name(p);}
-
-    struct Version
-    {
-        unsigned int major, minor;
-        std::string git_tag;
-    };
-
-    Version version() const {
-        Version ver;
-        char git_tag[8]; // Flawfinder: ignore
-        impl::check(iio_context_get_version(p, &ver.major, &ver.minor, git_tag), "iio_context_get_version");
-        ver.git_tag = git_tag;
-        return ver;
-    }
-
-    cstr xml() const {return iio_context_get_xml(p);}
+    Device device(unsigned int idx) const { return Device{iio_context_get_device(p, idx)}; }
+    Device find_device(cstr name) const {return iio_context_find_device(p, name);}
     void set_timeout(unsigned int timeout_ms){impl::check(iio_context_set_timeout(p, timeout_ms), "iio_context_set_timeout");}
+    iio_context_params const * params() const {return iio_context_get_params(p);}
+    void set_data(void * data){iio_context_set_data(p, data);}
+    void * data() const {return iio_context_get_data(p);}
 };
 
+typedef Ptr<Context, iio_context, iio_context_destroy> ContextPtr;
+
+inline Buffer Block::buffer() {return iio_block_get_buffer(p);}
 inline Context Device::context(){return const_cast<iio_context*>(iio_device_get_context(p));}
-inline Device Channel::device() {return const_cast<iio_device*>(iio_channel_get_device(p));}
+inline Device Channel::device() const {return const_cast<iio_device*>(iio_channel_get_device(p));}
 inline Device Buffer::device()  {return const_cast<iio_device*>(iio_buffer_get_device(p));}
-inline size_t Channel::read(Buffer buffer, void * dst, size_t len) const {return iio_channel_read(p, buffer, dst, len);} // Flawfinder: ignore
-inline size_t Channel::read_raw(Buffer buffer, void * dst, size_t len) const {return iio_channel_read_raw(p, buffer, dst, len);}
-inline size_t Channel::write(Buffer buffer, void const * src, size_t len) {return iio_channel_write(p, buffer, src, len);}
-inline size_t Channel::write_raw(Buffer buffer, void const * src, size_t len) {return iio_channel_write_raw(p, buffer, src, len);}
+inline size_t Channel::read(Block block, void * dst, size_t len, bool raw) const {return iio_channel_read(p, block, dst, len, raw);} // Flawfinder: ignore
+inline size_t Channel::write(Block block, void const * src, size_t len, bool raw) {return iio_channel_write(p, block, src, len, raw);}
 
-namespace impl
-{
-inline std::shared_ptr<Context> new_ctx(iio_context * ctx)
-{
-    assert(ctx);
-
-    auto deleter = [](Context * ctx) {
-        if (ctx)
-        {
-            iio_context_destroy(*ctx);
-            delete ctx;
-        }
-    };
-
-    return std::shared_ptr<Context>{new Context(ctx), deleter};
-}
-} // namespace impl
-
-
-/** @brief C++ wrapper for @ref iio_create_context_from_uri
+/** @brief C++ wrapper for @ref iio_create_context
  */
-inline std::shared_ptr<Context> create_from_uri(cstr uri)
+inline ContextPtr create_context(iio_context_params * params, const char * uri)
 {
-    iio_context * ctx = iio_create_context_from_uri(uri);
-    if (!ctx)
-        impl::err(errno, "iio_create_context_from_uri");
-
-    return impl::new_ctx(ctx);
+    return ContextPtr{impl::check(iio_create_context(params, uri), "iio_create_context")};
 }
 
-/** @brief C++ wrapper for @ref iio_create_default_context
- */
-inline std::shared_ptr<Context> create_default_context()
+class Scan;
+
+class ScanResult
 {
-    iio_context * ctx = iio_create_default_context();
-    if (!ctx)
-        impl::err(errno, "iio_create_default_context");
+    struct iio_scan const * const p;
+    size_t const idx;
 
-    return impl::new_ctx(ctx);
-}
+    friend class Scan;
 
-/** @brief C++ wrapper for @ref iio_create_local_context
- */
-inline std::shared_ptr<Context> create_local_context()
-{
-    iio_context * ctx = iio_create_local_context();
-    if (!ctx)
-        impl::err(errno, "iio_create_local_context");
-
-    return impl::new_ctx(ctx);
-}
-
-/** @brief C++ wrapper for @ref iio_create_network_context
- */
-inline std::shared_ptr<Context> create_network_context(cstr host)
-{
-    iio_context * ctx = iio_create_network_context(host);
-    if (!ctx)
-        impl::err(errno, "iio_create_network_context");
-
-    return impl::new_ctx(ctx);
-}
-
-/** @brief C++ wrapper for @ref iio_create_xml_context
- */
-inline std::shared_ptr<Context> create_xml_context(cstr xml_file)
-{
-    iio_context * ctx = iio_create_xml_context(xml_file);
-    if (!ctx)
-        impl::err(errno, "iio_create_xml_context");
-
-    return impl::new_ctx(ctx);
-}
-
-/** @brief C++ wrapper for @ref iio_create_xml_context_mem
- */
-inline std::shared_ptr<Context> create_xml_context_mem(char const * xml, size_t len)
-{
-    iio_context * ctx = iio_create_xml_context_mem(xml, len);
-    if (!ctx)
-        impl::err(errno, "iio_create_xml_context_mem");
-
-    return impl::new_ctx(ctx);
-}
-
-class ContextInfo
-{
-    iio_context_info const * const p;
+    ScanResult(struct iio_scan const * scan, size_t index) : p(scan), idx(index){}
 public:
-    ContextInfo() = delete;
-    ContextInfo(iio_context_info const * i) : p(i){assert(i);}
-    operator iio_context_info const * () const {return p;}
-
-    cstr description() const {return iio_context_info_get_description(p);}
-    cstr uri() const {return iio_context_info_get_uri(p);}
+    cstr description() const { return iio_scan_get_description(p, idx);}
+    cstr uri() const { return iio_scan_get_description(p, idx);}
 };
 
-class ScanContext
+/** @brief C++ wrapper for the @ref Scan C-API
+ */
+class Scan : public impl::IndexedSequence<Scan, ScanResult>
 {
-    iio_scan_context * const p;
+    struct iio_scan const * const p;
 public:
-    ScanContext() = delete;
-    ScanContext(iio_scan_context * ctx) : p(ctx){assert(ctx);}
-    operator iio_scan_context * () const {return p;}
-
-    class InfoList : public impl::IndexedSequence<InfoList, ContextInfo>
+    size_t size() const
     {
-        iio_context_info ** const p;
-        size_t const n;
-    public:
-        InfoList() = delete;
-        InfoList(iio_context_info ** p, size_t n) : p(p), n(n){assert(p);}
-        operator iio_context_info ** () const {return p;}
-
-        size_t size() const {return n;}
-
-        ContextInfo operator [] (size_t i) const
-        {
-            if (i >= n)
-                throw std::out_of_range("invalid info index");
-
-            return ContextInfo(p[i]);
-        }
-    };
-
-    std::shared_ptr<InfoList> info_list() const
-    {
-        iio_context_info ** lst;
-        ssize_t const n = iio_scan_context_get_info_list(p, &lst);
-        if (n < 0)
-            impl::err(static_cast<int>(-n), "iio_scan_context_get_info_list");
-
-
-        auto deleter = [](InfoList * lst) {
-            if (lst)
-            {
-                iio_context_info_list_free(*lst);
-                delete lst;
-            }
-        };
-
-        return std::shared_ptr<InfoList>{new InfoList(lst, n), deleter};
-    }
-};
-
-inline std::shared_ptr<ScanContext> create_scan_context(optstr backend, int flags)
-{
-    iio_scan_context * ctx = iio_create_scan_context(backend ? static_cast<char const*>(*backend) : nullptr, flags);
-    if (!ctx)
-        impl::err(errno, "iio_create_scan_context");
-
-    auto deleter = [](ScanContext * ctx) {
-        if (ctx)
-        {
-            iio_scan_context_destroy(*ctx);
-            delete ctx;
-        }
-    };
-
-    return std::shared_ptr<ScanContext>{new ScanContext(ctx), deleter};
-}
-
-class ScanBlock : public impl::IndexedSequence<ScanBlock, ContextInfo>
-{
-    iio_scan_block * const p;
-    size_t const n;
-public:
-    ScanBlock() = delete;
-    ScanBlock(iio_scan_block * blk) : p(blk), n(impl::check_n(iio_scan_block_scan(blk), "iio_scan_block_scan")){assert(blk);}
-    operator iio_scan_block * () const {return p;}
-
-
-        size_t size() const {return n;}
-
-    ContextInfo operator [] (unsigned int i) const
-    {
-        if (iio_context_info * info = iio_scan_block_get_info(p, i))
-            return ContextInfo(info);
-        impl::err(errno, "iio_scan_block_get_info");
+        return results_count();
     }
 
+    ScanResult operator [](size_t i)
+    {
+        assert(i < results_count());
+        return ScanResult{p, i};
+    }
+
+    Scan() = delete;
+    Scan(struct iio_scan const * scan) : p(scan){}
+    operator struct iio_scan const * () const {return p;}
+    size_t results_count() const { return iio_scan_get_results_count(p);}
 };
 
-inline std::shared_ptr<ScanBlock> create_scan_block(optstr backend, int flags)
+typedef Ptr<Scan, struct iio_scan, iio_scan_destroy> ScanPtr;
+
+ScanPtr scan(struct iio_context_params const * params, char const * backends)
 {
-    iio_scan_block * blk = iio_create_scan_block(backend ? static_cast<char const*>(*backend) : nullptr, flags);
-    if (!blk)
-        impl::err(errno, "iio_create_scan_block");
-
-    auto deleter = [](ScanBlock * blk) {
-        if (blk)
-        {
-            iio_scan_block_destroy(*blk);
-            delete blk;
-        }
-    };
-
-    return std::shared_ptr<ScanBlock>{new ScanBlock(blk), deleter};
+    return ScanPtr(impl::check(iio_scan(params, backends), "iio_scan"));
 }
 
 
@@ -805,22 +698,21 @@ inline std::shared_ptr<ScanBlock> create_scan_block(optstr backend, int flags)
  */
 inline double value(Channel ch)
 {
-    {
-        double val;
-        if (!iio_channel_attr_read_double(ch, "input", &val))
-            return val / 1000.;
-    }
+    if (auto att = ch.find_attr("input"))
+        return att.read_double() / 1000;
 
     double scale = 1;
-    iio_channel_attr_read_double(ch, "scale", &scale);
+    if (auto att = ch.find_attr("scale"))
+        scale = att.read_double();
 
-    double offset = 0;
-    iio_channel_attr_read_double(ch, "offset", &offset);
+    double offset = 1;
+    if (auto att = ch.find_attr("offset"))
+        offset = att.read_double();
 
-    double raw;
-    impl::check(iio_channel_attr_read_double(ch, "raw", &raw), "reading raw value");
+    if (auto att = ch.find_attr("raw"))
+        return (att.read_double() + offset) * scale / 1000.;
 
-    return (raw + offset) * scale / 1000.;
+    impl::err(ENOENT, "channel does not provide raw value");
 }
 
 } // namespace iiopp

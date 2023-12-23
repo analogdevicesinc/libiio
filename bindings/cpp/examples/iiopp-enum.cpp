@@ -17,10 +17,10 @@
 using namespace iiopp;
 using namespace std;
 
-string get(IAttr const & att)
+string get(Attr const & att)
 {
     char value[1024] = {0}; // Flawfinder: ignore
-    att.read(value, sizeof(value)); // Flawfinder: ignore
+    att.read_raw(value, sizeof(value));
     return value;
 }
 
@@ -28,7 +28,7 @@ void enumerateIioEntities()
 {
     cout << boolalpha;
 
-    shared_ptr<Context> context = create_default_context();
+    ContextPtr context = create_context(nullptr, nullptr);
 
     for (Device device : *context)
     {
@@ -48,9 +48,6 @@ void enumerateIioEntities()
         for (auto att : device.debug_attrs)
             cout << "  debug attribute " << att.name() << " = " << quoted(get(att)) << endl;
 
-        for (auto att : device.buffer_attrs)
-            cout << "  buffer attribute " << att.name() << " = " << quoted(get(att)) << endl;
-
         for (Channel channel : device)
         {
             cout << "  Channel: " << channel.id() << endl;
@@ -61,29 +58,19 @@ void enumerateIioEntities()
             cout << endl;
 
             cout << "    is output: " << channel.is_output() << endl;
-            cout << "    is enabled: " << channel.is_enabled() << endl;
 
             for (auto att : channel.attrs)
                 cout << "    attribute " << quoted(att.name().c_str()) << " = " << quoted(get(att)) << endl;
         }
     }
 
-    shared_ptr<ScanContext> scanCtx = create_scan_context({}, 0);
-    shared_ptr<ScanContext::InfoList> infoList = scanCtx->info_list();
+    ScanPtr s = scan(nullptr, nullptr);
 
-    cout << "scan context info list:" << endl;
-    for (ContextInfo info : *infoList)
+    cout << "scan returned " << s->size() << " results" << endl;
+    for (ScanResult r : *s)
     {
-        cout << "  uri: " << quoted(info.uri().c_str()) << endl;
-        cout << "  description: " << quoted(info.description().c_str()) << endl;
-    }
-
-    cout << "scan block:" << endl;
-    shared_ptr<ScanBlock> blk = create_scan_block({}, 0);
-    for (ContextInfo info : *blk)
-    {
-        cout << "  uri: " << quoted(info.uri().c_str()) << endl;
-        cout << "  description: " << quoted(info.description().c_str()) << endl;
+        cout << "  uri: " << quoted(r.uri().c_str()) << endl;
+        cout << "  description: " << quoted(r.description().c_str()) << endl;
     }
 }
 
