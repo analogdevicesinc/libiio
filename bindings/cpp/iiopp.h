@@ -17,10 +17,12 @@
 #include <iio/iio.h>
 #include <string>
 
-#if __cplusplus < 201703L
-#include <boost/optional.hpp>
-#else
+#define IIOPP_HAVE_STD_OPIONAL (__cplusplus >= 201703L || _MSC_VER >= 1910)
+
+#if IIOPP_HAVE_STD_OPIONAL
 #include <optional>
+#else
+#include <boost/optional.hpp>
 #endif
 #include <stdexcept>
 #include <system_error>
@@ -57,10 +59,10 @@
 namespace iiopp
 {
 
-#if __cplusplus < 201703L
-using boost::optional;
-#else
+#if IIOPP_HAVE_STD_OPIONAL
 using std::optional;
+#else
+using boost::optional;
 #endif
 
 class Context;
