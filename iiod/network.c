@@ -36,6 +36,8 @@
 #define IP_ADDR_LEN (INET_ADDRSTRLEN + 1 + IF_NAMESIZE)
 #endif
 
+static const int dft_socket_flags = WITH_AIO ? 0 : SOCK_NONBLOCK;
+
 static struct sockaddr_in sockaddr = {
 	.sin_family = AF_INET,
 };
@@ -91,11 +93,11 @@ static void network_main(struct thread_pool *pool, void *d)
 #ifdef HAVE_IPV6
 	sockaddr6.sin6_port = htons(port);
 
-	fd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	fd = socket(AF_INET6, SOCK_STREAM | dft_socket_flags, 0);
 #endif
 	ipv6 = (fd >= 0);
 	if (!ipv6)
-		fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+		fd = socket(AF_INET, SOCK_STREAM | dft_socket_flags, 0);
 	if (fd < 0) {
 		IIO_PERROR(errno, "Unable to create socket");
 		return;
@@ -166,7 +168,7 @@ static void network_main(struct thread_pool *pool, void *d)
 			break;
 
 		new = accept4(fd, (struct sockaddr *) &caddr, &addr_len,
-			SOCK_NONBLOCK);
+			      dft_socket_flags);
 		if (new == -1) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
