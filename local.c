@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 #include <limits.h>
 #include <poll.h>
 #include <stdbool.h>
@@ -47,6 +48,10 @@ static struct iio_context *
 local_create_context(const struct iio_context_params *params, const char *args);
 static int local_context_scan(const struct iio_context_params *params,
 			      struct iio_scan *ctx, const char *args);
+
+struct iio_context_pdata {
+	struct iio_mutex *lock;
+};
 
 struct iio_device_pdata {
 	int fd;
@@ -117,6 +122,10 @@ static void local_shutdown(struct iio_context *ctx)
 			close(dev->pdata->fd);
 		local_free_pdata(dev);
 	}
+
+	if (ctx->pdata && ctx->pdata->lock)
+		iio_mutex_destroy(ctx->pdata->lock);
+	free(ctx->pdata);
 }
 
 /** Shrinks the first nb characters of a string
@@ -1407,17 +1416,77 @@ local_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 	return local_write_dev_attr(dev, buf_id, filename, src, len, type);
 }
 
+static int
+local_open_fd(const struct iio_device *dev, bool events, unsigned int idx)
+{
+	struct iio_mutex *lock = dev->ctx->pdata->lock;
+	int ret, dev_fd, fd;
+	char buf[1024];
+	bool open_dev_fd;
+	long io_cmd;
+
+	if (events)
+		io_cmd = IIO_GET_EVENT_FD_IOCTL;
+	else
+		io_cmd = IIO_BUFFER_GET_FD_IOCTL;
+
+	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
+
+	iio_mutex_lock(lock);
+
+	dev_fd = dev->pdata->fd;
+	open_dev_fd = !dev_fd;
+
+	if (open_dev_fd) {
+		dev_fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
+		if (dev_fd == -1) {
+			ret = -errno;
+			goto out_unlock;
+		}
+	}
+
+	fd = idx;
+	ret = ioctl_nointr(dev_fd, io_cmd, &fd);
+	if (ret == 0) {
+		ret = fd;
+	} else if (!events && idx == 0) {
+		ret = dev_fd;
+
+		/* Multi-buffer is not available. We need to keep the buffer
+		 * FD opened. */
+		dev->pdata->fd = dev_fd;
+
+		goto out_unlock;
+	}
+
+	if (open_dev_fd)
+		close(dev_fd);
+out_unlock:
+	iio_mutex_unlock(lock);
+
+	return ret;
+}
+
+static void local_close_fd(const struct iio_device *dev, int fd)
+{
+	struct iio_mutex *lock = dev->ctx->pdata->lock;
+
+	iio_mutex_lock(lock);
+	if (dev->pdata->fd == fd)
+		dev->pdata->fd = 0;
+
+	close(fd);
+	iio_mutex_unlock(lock);
+}
+
 static struct iio_buffer_pdata *
 local_create_buffer(const struct iio_device *dev, unsigned int idx,
 		    struct iio_channels_mask *mask)
 {
 	struct iio_buffer_pdata *pdata;
 	const struct iio_channel *chn;
-	int err, cancel_fd, fd = idx;
+	int err, cancel_fd, fd;
 	unsigned int i;
-
-	if (dev->pdata->fd < 0)
-		return iio_ptr(dev->pdata->fd);
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata)
@@ -1438,18 +1507,11 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_mmap_pdata;
 	}
 
-	err = ioctl_nointr(dev->pdata->fd, IIO_BUFFER_GET_FD_IOCTL, &fd);
-	if (err == 0) {
-		pdata->multi_buffer = true;
-	} else if (idx == 0) {
-		fd = dup(dev->pdata->fd);
-		if (fd == -1) {
-			err = -errno;
-			goto err_close_eventfd;
-		}
-	} else {
+	err = local_open_fd(dev, false, idx);
+	if (err < 0)
 		goto err_close_eventfd;
-	}
+
+	fd = err;
 
 	pdata->cancel_fd = cancel_fd;
 	pdata->fd = fd;
@@ -1497,7 +1559,7 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 	return pdata;
 
 err_close:
-	close(fd);
+	local_close_fd(dev, fd);
 err_close_eventfd:
 	close(cancel_fd);
 err_free_mmap_pdata:
@@ -1510,7 +1572,7 @@ err_free_pdata:
 static void local_free_buffer(struct iio_buffer_pdata *pdata)
 {
 	free(pdata->pdata);
-	close(pdata->fd);
+	local_close_fd(pdata->dev, pdata->fd);
 	close(pdata->cancel_fd);
 	local_do_enable_buffer(pdata, false);
 
@@ -1592,18 +1654,22 @@ local_open_events_fd(const struct iio_device *dev)
 	pdata->cancel_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (pdata->cancel_fd == -1) {
 		err = -errno;
-		free(pdata);
-		return iio_ptr(err);
+		goto err_free_pdata;
 	}
 
-	err = ioctl_nointr(dev->pdata->fd, IIO_GET_EVENT_FD_IOCTL, &pdata->fd);
-	if (err < 0) {
-		close(pdata->cancel_fd);
-		free(pdata);
-		return iio_ptr(err);
-	}
+	err = local_open_fd(dev, true, 0);
+	if (err < 0)
+		goto err_close_eventfd;
+
+	pdata->fd = err;
 
 	return pdata;
+
+err_close_eventfd:
+	close(pdata->cancel_fd);
+err_free_pdata:
+	free(pdata);
+	return iio_ptr(err);
 }
 
 static void local_close_events_fd(struct iio_event_stream_pdata *pdata)
@@ -1691,19 +1757,6 @@ const struct iio_backend iio_local_backend = {
 	.default_timeout_ms = 1000,
 };
 
-static int local_open_buffer(const struct iio_device *dev)
-{
-	char buf[1024];
-	int fd;
-
-	iio_snprintf(buf, sizeof(buf), "/dev/%s", dev->id);
-	fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
-	if (fd == -1)
-		return -errno;
-
-	return fd;
-}
-
 static int init_devices(struct iio_context *ctx)
 {
 	struct iio_device *dev;
@@ -1712,11 +1765,9 @@ static int init_devices(struct iio_context *ctx)
 	for (i = 0; i < ctx->nb_devices; i++) {
 		dev = ctx->devices[i];
 
-		dev->pdata = malloc(sizeof(*dev->pdata));
+		dev->pdata = calloc(1, sizeof(*dev->pdata));
 		if (!dev->pdata)
 			return -ENOMEM;
-
-		dev->pdata->fd = local_open_buffer(dev);
 	}
 
 	return 0;
@@ -1794,6 +1845,17 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	ret = iio_err(ctx);
 	if (ret)
 		return iio_err_cast(ctx);
+
+	ctx->pdata = calloc(1, sizeof(*ctx->pdata));
+	if (!ctx->pdata) {
+		ret = -ENOMEM;
+		goto err_context_destroy;
+	}
+
+	ctx->pdata->lock = iio_mutex_create();
+	ret = iio_err(ctx->pdata->lock);
+	if (ret < 0)
+		goto err_context_destroy;
 
 	ctx->params = *params;
 

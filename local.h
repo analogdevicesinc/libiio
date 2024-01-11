@@ -22,7 +22,6 @@ struct iio_buffer_pdata {
 	struct iio_buffer_impl_pdata *pdata;
 	int fd, cancel_fd;
 	unsigned int idx;
-	bool multi_buffer;
 	bool dmabuf_supported;
 	bool mmap_supported;
 	size_t size;
