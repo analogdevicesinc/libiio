@@ -779,6 +779,41 @@ out_send_response:
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
+static void handle_retry_dequeue_block(struct parser_pdata *pdata,
+				       const struct iiod_command *cmd,
+				       struct iiod_command_data *cmd_data)
+{
+	struct buffer_entry *entry;
+	struct block_entry *block_entry;
+	struct iio_block *block;
+	struct iio_buffer *buf;
+	int ret;
+
+	buf = get_iio_buffer(pdata, cmd, &entry);
+	ret = iio_err(buf);
+	if (ret) {
+		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO buffer");
+		return;
+	}
+
+	block = get_iio_block(pdata, entry, cmd, &block_entry);
+	ret = iio_err(block);
+	if (ret) {
+		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO block");
+		return;
+	}
+
+	ret = iio_task_enqueue_autoclear(entry->dequeue_task, block_entry);
+	if (ret)
+		goto out_send_response;
+
+	/* The return code and/or data will be sent from the task handler. */
+	return;
+
+out_send_response:
+	iiod_io_send_response_code(block_entry->io, ret);
+}
+
 static int evstream_read(void *priv, void *d)
 {
 	struct evstream_entry *entry = priv;
@@ -982,6 +1017,7 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 	[IIOD_OP_FREE_BLOCK]		= handle_free_block,
 	[IIOD_OP_TRANSFER_BLOCK]	= handle_transfer_block,
 	[IIOD_OP_ENQUEUE_BLOCK_CYCLIC]	= handle_transfer_block,
+	[IIOD_OP_RETRY_DEQUEUE_BLOCK]	= handle_retry_dequeue_block,
 
 	[IIOD_OP_CREATE_EVSTREAM]	= handle_create_evstream,
 	[IIOD_OP_FREE_EVSTREAM]		= handle_free_evstream,
