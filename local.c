@@ -125,7 +125,6 @@ static void local_shutdown(struct iio_context *ctx)
 
 	if (ctx->pdata && ctx->pdata->lock)
 		iio_mutex_destroy(ctx->pdata->lock);
-	free(ctx->pdata);
 }
 
 /** Shrinks the first nb characters of a string
