@@ -285,8 +285,13 @@ static int buffer_enqueue_block(void *priv, void *d)
 
 	ret = iio_block_enqueue(entry->block, (size_t) entry->bytes_used,
 				entry->cyclic);
-	if (ret)
+	if (ret) {
+		/* Shift the error code by 16 bits to the left. This notifies
+		 * the client that the error happened during the enqueue, and
+		 * not the dequeue of the block. */
+		ret <<= 16;
 		goto out_send_response;
+	}
 
 	if (entry->cyclic)
 		goto out_send_response;
