@@ -41,6 +41,7 @@
 #cmakedefine01 HAVE_DNS_SD
 #cmakedefine01 HAVE_AVAHI
 #cmakedefine01 WITH_ZSTD
+#cmakedefine01 NO_THREADS
 
 #cmakedefine HAS_PIPE2
 #cmakedefine HAS_STRDUP
@@ -50,7 +51,6 @@
 #cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP
 #cmakedefine HAVE_IPV6
-#cmakedefine NO_THREADS
 
 #define IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
 
