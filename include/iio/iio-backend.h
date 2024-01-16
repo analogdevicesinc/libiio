@@ -148,6 +148,13 @@ struct iio_backend {
 	unsigned int			default_timeout_ms;
 };
 
+/*
+ * If Libiio was compiled with external backend support (WITH_EXTERNAL_BACKEND),
+ * applications should implement their own backend and provide the
+ * iio_external_backend symbol.
+ */
+extern const struct iio_backend iio_external_backend;
+
 struct iio_context * iio_context_create_from_backend(
 		const struct iio_backend *backend,
 		const char *description);

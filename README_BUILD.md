@@ -72,6 +72,7 @@ Cmake Options          | Default | Depends on    | Description                  
 `WITH_SERIAL_BACKEND_DYNAMIC` |  ON | Modules + serial backend | Compile the serial backend as a module |
 `WITH_NETWORK_BACKEND` |  ON |               | Supports TCP/IP                  |
 `WITH_NETWORK_BACKEND_DYNAMIC` |  ON | Modules + network backend | Compile the network backend as a module |
+`WITH_EXTERNAL_BACKEND` | OFF | | Support external backend provided by the application |
 `HAVE_DNS_SD`          |  ON | Networking    | Enable DNS-SD (ZeroConf) support |
 `ENABLE_IPV6`          |  ON | Networking    | Define if you want to enable IPv6 support |
 `WITH_LOCAL_BACKEND`   |  ON | Linux         | Enables local support with iiod  |
