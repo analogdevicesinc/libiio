@@ -372,6 +372,10 @@ set(LIBIIO_VERSION ${VERSION}.g${LIBIIO_VERSION_GIT})
 file(WRITE ${CMAKE_BINARY_DIR}/.version ${LIBIIO_VERSION})
 
 if(WITH_LOCAL_BACKEND)
+	if (NO_THREADS)
+		message(SEND_ERROR "Local backend require threads.")
+	endif()
+
 	target_sources(iio PRIVATE local.c)
 
 	# Link with librt if present
@@ -576,7 +580,10 @@ elseif(NEED_LIBXML2)
 		"If you want to enable the XML backend, set WITH_XML_BACKEND=ON.")
 endif()
 
-if (WIN32)
+option(NO_THREADS "Build a thread-less Libiio library" OFF)
+if (NO_THREADS)
+	target_sources(iio PRIVATE lock-dummy.c)
+elseif (WIN32)
 	target_sources(iio PRIVATE lock-windows.c)
 else ()
 	if (NOT ANDROID)
@@ -606,6 +613,10 @@ if (IIOD_CLIENT OR WITH_IIOD)
 endif()
 
 if (IIOD_CLIENT)
+	if (NO_THREADS)
+		message(SEND_ERROR "Backends using iiod-client require threads.")
+	endif()
+
 	target_sources(iio PRIVATE iiod-client.c)
 	target_link_libraries(iio PRIVATE iiod-responder)
 endif()
@@ -625,6 +636,10 @@ if(WITH_EXAMPLES)
 	add_subdirectory(examples)
 endif()
 if (WITH_IIOD)
+	if (NO_THREADS)
+		message(SEND_ERROR "IIOD require threads.")
+	endif()
+
 	if (NOT PTHREAD_LIBRARIES)
 		message(SEND_ERROR "IIOD requires pthread support.\n"
 			"If you want to disable IIOD, set WITH_IIOD=OFF.")
@@ -672,6 +687,7 @@ string(REPLACE ";" "," LIBIIO_SCAN_BACKENDS "${LIBIIO_SCAN_BACKENDS}")
 
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
 
+toggle_iio_feature("${NO_THREADS}" threadless)
 toggle_iio_feature("${LIBIIO_COMPAT}" compat)
 toggle_iio_feature("${WITH_XML_BACKEND}" xml)
 toggle_iio_feature("${WITH_ZSTD}" zstd)
