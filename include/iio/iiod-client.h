@@ -48,10 +48,6 @@ __api int iiod_client_set_trigger(struct iiod_client *client,
 				  const struct iio_device *dev,
 				  const struct iio_device *trigger);
 
-__api int iiod_client_set_kernel_buffers_count(struct iiod_client *client,
-					       const struct iio_device *dev,
-					       unsigned int nb_blocks);
-
 __api int iiod_client_set_timeout(struct iiod_client *client,
 				  unsigned int timeout);
 
