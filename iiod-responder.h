@@ -91,6 +91,9 @@ void iiod_io_set_timeout(struct iiod_io *io, unsigned int timeout_ms);
 /* Read the current value of the micro-second counter */
 uint64_t iiod_responder_read_counter_us(void);
 
+/* Stop the iiod_responder. */
+void iiod_responder_stop(struct iiod_responder *responder);
+
 /* Wait until the iiod_responder stops. */
 void iiod_responder_wait_done(struct iiod_responder *responder);
 

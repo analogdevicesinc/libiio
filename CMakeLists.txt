@@ -601,7 +601,7 @@ endif()
 
 if (IIOD_CLIENT OR WITH_IIOD)
 	add_library(iiod-responder STATIC iiod-responder.c)
-	target_include_directories(iiod-responder PRIVATE include)
+	target_include_directories(iiod-responder PRIVATE include ${CMAKE_BINARY_DIR})
 	set_target_properties(iiod-responder PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 	# Link against exported symbols of Libiio and not the

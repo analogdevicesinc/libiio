@@ -7,6 +7,7 @@
  */
 
 #include "iiod-responder.h"
+#include "iio-config.h"
 
 #include <errno.h>
 #include <iio/iio.h>
@@ -237,9 +238,8 @@ static void iiod_responder_cancel_responses(struct iiod_responder *priv)
 	}
 }
 
-static int iiod_responder_reader_thrd(void *d)
+static int iiod_responder_reader_worker(struct iiod_responder *priv)
 {
-	struct iiod_responder *priv = d;
 	struct iiod_command cmd;
 	struct iiod_buf cmd_buf, ok_buf;
 	struct iiod_io *io;
@@ -340,6 +340,11 @@ static int iiod_responder_reader_thrd(void *d)
 	iio_mutex_unlock(priv->lock);
 
 	return (int) ret;
+}
+
+static int iiod_responder_reader_thrd(void *d)
+{
+	return iiod_responder_reader_worker(d);
 }
 
 static int iiod_responder_write(void *p, void *elm)
@@ -668,11 +673,13 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 	if (err)
 		goto err_free_io;
 
-	priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv,
-					  "iiod-responder-reader-thd");
-	err = iio_err(priv->read_thrd);
-	if (err)
-		goto err_free_write_task;
+	if (!NO_THREADS) {
+		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv,
+						  "iiod-responder-reader-thd");
+		err = iio_err(priv->read_thrd);
+		if (err)
+			goto err_free_write_task;
+	}
 
 	iio_task_start(priv->write_task);
 
@@ -689,9 +696,14 @@ err_free_priv:
 	return iio_ptr(err);
 }
 
-void iiod_responder_destroy(struct iiod_responder *priv)
+void iiod_responder_stop(struct iiod_responder *priv)
 {
 	priv->thrd_stop = true;
+}
+
+void iiod_responder_destroy(struct iiod_responder *priv)
+{
+	iiod_responder_stop(priv);
 	iiod_responder_wait_done(priv);
 
 	iio_task_destroy(priv->write_task);
@@ -703,9 +715,12 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 
 void iiod_responder_wait_done(struct iiod_responder *priv)
 {
-	if (priv->read_thrd) {
-		iio_thrd_join_and_destroy(priv->read_thrd);
+	if (!NO_THREADS) {
+		if (priv->read_thrd)
+			iio_thrd_join_and_destroy(priv->read_thrd);
 		priv->read_thrd = NULL;
+	} else if (!priv->thrd_stop) {
+		iiod_responder_reader_worker(priv);
 	}
 }
 
