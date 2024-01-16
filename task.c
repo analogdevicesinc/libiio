@@ -2,9 +2,11 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2022 Analog Devices, Inc.
+ * Copyright (C) 2022-2024 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
+
+#include "iio-config.h"
 
 #include <iio/iio-lock.h>
 
@@ -41,47 +43,52 @@ static void iio_task_token_destroy(struct iio_task_token *token)
 	free(token);
 }
 
-static int iio_task_run(void *d)
+static void iio_task_process(struct iio_task *task)
 {
-	struct iio_task *task = d;
 	struct iio_task_token *entry;
 	bool autoclear;
 
+	/* Signal that we're idle */
+	iio_cond_signal(task->cond);
+
+	while (!task->stop && !(task->list && task->running)) {
+		iio_cond_wait(task->cond, task->lock, 0);
+
+		/* If iio_task_stop() was called while we were waiting
+		 * for clients, notify that we're idle. */
+		if (!task->running)
+			iio_cond_signal(task->cond);
+	}
+
+	if (task->stop)
+		return;
+
+	entry = task->list;
+	task->list = entry->next;
+	iio_mutex_unlock(task->lock);
+
+	entry->ret = task->fn(task->firstarg, entry->elm);
+
+	iio_mutex_lock(entry->done_lock);
+	entry->done = true;
+	autoclear = entry->autoclear;
+	iio_cond_signal(entry->done_cond);
+	iio_mutex_unlock(entry->done_lock);
+
+	if (autoclear)
+		iio_task_token_destroy(entry);
+
+	iio_mutex_lock(task->lock);
+}
+
+static int iio_task_run(void *d)
+{
+	struct iio_task *task = d;
+
 	iio_mutex_lock(task->lock);
 
-	for (;;) {
-		/* Signal that we're idle */
-		iio_cond_signal(task->cond);
-
-		while (!task->stop && !(task->list && task->running)) {
-			iio_cond_wait(task->cond, task->lock, 0);
-
-			/* If iio_task_stop() was called while we were waiting
-			 * for clients, notify that we're idle. */
-			if (!task->running)
-				iio_cond_signal(task->cond);
-		}
-
-		if (task->stop)
-			break;
-
-		entry = task->list;
-		task->list = entry->next;
-		iio_mutex_unlock(task->lock);
-
-		entry->ret = task->fn(task->firstarg, entry->elm);
-
-		iio_mutex_lock(entry->done_lock);
-		entry->done = true;
-		autoclear = entry->autoclear;
-		iio_cond_signal(entry->done_cond);
-		iio_mutex_unlock(entry->done_lock);
-
-		if (autoclear)
-			iio_task_token_destroy(entry);
-
-		iio_mutex_lock(task->lock);
-	}
+	while (!task->stop)
+		iio_task_process(task);
 
 	iio_mutex_unlock(task->lock);
 
@@ -111,10 +118,12 @@ struct iio_task * iio_task_create(int (*fn)(void *, void *),
 	task->fn = fn;
 	task->firstarg = firstarg;
 
-	task->thrd = iio_thrd_create(iio_task_run, task, name);
-	err = iio_err(task->thrd);
-	if (err)
-		goto err_free_cond;
+	if (!NO_THREADS) {
+		task->thrd = iio_thrd_create(iio_task_run, task, name);
+		err = iio_err(task->thrd);
+		if (err)
+			goto err_free_cond;
+	}
 
 	return task;
 
@@ -171,6 +180,9 @@ iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 
 	iio_cond_signal(task->cond);
 	iio_mutex_unlock(task->lock);
+
+	if (NO_THREADS && !task->stop && task->running)
+		iio_task_process(task);
 
 	return entry;
 
@@ -241,14 +253,15 @@ void iio_task_flush(struct iio_task *task)
 
 int iio_task_destroy(struct iio_task *task)
 {
-	int ret;
+	int ret = 0;
 
 	iio_mutex_lock(task->lock);
 	task->stop = true;
 	iio_cond_signal(task->cond);
 	iio_mutex_unlock(task->lock);
 
-	ret = iio_thrd_join_and_destroy(task->thrd);
+	if (!NO_THREADS)
+		ret = iio_thrd_join_and_destroy(task->thrd);
 
 	iio_task_flush(task);
 
@@ -305,6 +318,10 @@ void iio_task_start(struct iio_task *task)
 	task->running = true;
 	iio_cond_signal(task->cond);
 	iio_mutex_unlock(task->lock);
+
+	if (NO_THREADS && !task->stop)
+		while (task->list)
+			iio_task_process(task);
 }
 
 void iio_task_stop(struct iio_task *task)
