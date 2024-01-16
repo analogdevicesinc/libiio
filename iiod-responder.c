@@ -75,7 +75,6 @@ struct iiod_responder {
 	struct iio_mutex *lock;
 	struct iio_thrd *read_thrd;
 	struct iio_task *write_task;
-	struct iio_thrd *write_thrd;
 
 	bool thrd_stop;
 	int thrd_err_code;
