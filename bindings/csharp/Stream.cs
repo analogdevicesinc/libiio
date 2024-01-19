@@ -18,10 +18,10 @@ namespace iio
                     uint nb_blocks, uint samples_count);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_stream_destroy(IntPtr buf);
+        private static extern void iio_stream_destroy(IntPtr stream);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IIOPtr iio_stream_get_next_block(IntPtr buf);
+        private static extern IIOPtr iio_stream_get_next_block(IntPtr stream);
 
         public readonly IOBuffer buf;
         public readonly uint nb_blocks;

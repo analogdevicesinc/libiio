@@ -36,6 +36,12 @@ namespace iio
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_buffer_disable(IntPtr buf);
 
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_buffer_get_attrs_count(IntPtr buf);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_buffer_get_attr(IntPtr buf, uint index);
+
         internal ChannelsMask mask;
 
         /// <summary>The size of this buffer, in samples.</summary>
@@ -43,6 +49,9 @@ namespace iio
 
         /// <summary>The associated <see cref="iio.Device"/> object.</summary>
         public readonly Device dev;
+
+        /// <summary>A <c>list</c> of all the attributes that this buffer has.</summary>
+        public readonly List<Attr> attrs;
 
         private bool is_enabled;
 
@@ -77,6 +86,13 @@ namespace iio
 
             this.hdl = ptr.ptr;
             this.is_enabled = false;
+
+            attrs = new List<Attr>();
+            uint nb_buffer_attrs = iio_buffer_get_attrs_count(hdl);
+            for (uint i = 0; i < nb_buffer_attrs; i++)
+            {
+                attrs.Add(new Attr(iio_buffer_get_attr(hdl, i)));
+            }
         }
 
         protected override void Destroy()

@@ -23,7 +23,9 @@ namespace iio
         {
             IIOPtr ptr = iio_create_channels_mask(nb_channels);
             if (!ptr)
+            {
                 throw new IIOException("Failed to create iio.ChannelsMask", ptr);
+            }
 
             this.hdl = ptr.ptr;
         }

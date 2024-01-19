@@ -20,42 +20,6 @@ namespace iio
     /// Contains the representation of an input or output channel.</summary>
     public class Channel
     {
-        private class ChannelAttr : Attr
-        {
-            private IntPtr chn;
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_channel_attr_read_raw(IntPtr chn, [In()] string name, [Out()] StringBuilder val, uint len);
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_channel_attr_write_string(IntPtr chn, [In()] string name, string val);
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern IntPtr iio_channel_attr_get_filename(IntPtr chn, [In()] string attr);
-
-            public ChannelAttr(IntPtr chn, string name) : base(name, Marshal.PtrToStringAnsi(iio_channel_attr_get_filename(chn, name)))
-            {
-                this.chn = chn;
-            }
-
-            public override string read()
-            {
-                StringBuilder builder = new StringBuilder(1024);
-                int err = iio_channel_attr_read_raw(chn, name, builder, (uint) builder.Capacity);
-                if (err < 0)
-                    throw new IIOException("Unable to read channel attribute", err);
-
-                return builder.ToString();
-            }
-
-            public override void write(string str)
-            {
-                int err = iio_channel_attr_write_string(chn, name, str);
-                if (err < 0)
-                    throw new IIOException("Unable to write channel attribute", err);
-            }
-        }
-
         /// <summary><see cref="iio.Channel.ChannelModifier"/> class:
         /// Contains the available channel modifiers.</summary>
         public enum ChannelModifier
@@ -104,7 +68,15 @@ namespace iio
             IIO_MOD_PM10,
             IIO_MOD_ETHANOL,
             IIO_MOD_H2,
-            IIO_MOD_O2
+            IIO_MOD_O2,
+            IIO_MOD_LINEAR_X,
+            IIO_MOD_LINEAR_Y,
+            IIO_MOD_LINEAR_Z,
+            IIO_MOD_PITCH,
+            IIO_MOD_YAW,
+            IIO_MOD_ROLL,
+            IIO_MOD_LIGHT_UVA,
+            IIO_MOD_LIGHT_UVB
         }
 
         /// <summary><see cref="iio.Channel.ChannelType"/> class:
@@ -146,6 +118,10 @@ namespace iio
             IIO_POSITIONRELATIVE,
             IIO_PHASE,
             IIO_MASSCONCENTRATION,
+            IIO_DELTA_ANGL,
+            IIO_DELTA_VELOCITY,
+            IIO_COLORTEMP,
+            IIO_CHROMATICITY,
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
@@ -177,6 +153,9 @@ namespace iio
 
             /// <summary>Number of times length repeats</summary>
             public uint repeat;
+
+            /// <summary>Contains a value to be added to the raw sample before applying the scale.</summary>
+            public double offset;
         }
 
         internal IntPtr chn;
@@ -281,7 +260,7 @@ namespace iio
 
             for (uint i = 0; i < nb_attrs; i++)
             {
-                attrs.Add(new ChannelAttr(this.chn, Marshal.PtrToStringAnsi(iio_channel_get_attr(chn, i))));
+                attrs.Add(new Attr(iio_channel_get_attr(chn, i)));
             }
 
             IntPtr name_ptr = iio_channel_get_name(this.chn);
