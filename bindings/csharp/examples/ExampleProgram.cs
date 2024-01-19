@@ -30,23 +30,37 @@ namespace IIOCSharp
     {
         static void Main(string[] args)
         {
-            Context ctx = new Context("10.44.2.241");
-            if (ctx == null)
+            const uint blocksize = 1024;
+            Scan scan = new Scan();
+            if (scan.nb_results > 0) {
+                Console.WriteLine("* Scanned contexts: " + scan.nb_results);
+            }
+            foreach (var entry in scan.results) {
+                Console.WriteLine("\t" + entry.Key + " " + entry.Value);
+            }
+            scan.Dispose();
+
+            Context ctx;
+            try
             {
-                Console.WriteLine("Unable to create IIO context");
+                ctx = new Context("ip:192.168.2.1");
+                Console.WriteLine(ctx.xml);
+            } catch (IIOException e)
+            {
+                Console.WriteLine(e.ToString());
                 return;
             }
 
-            Console.WriteLine("IIO context created: " + ctx.name);
-            Console.WriteLine("IIO context description: " + ctx.description);
+            Console.WriteLine("* IIO context created: " + ctx.name);
+            Console.WriteLine("* IIO context description: " + ctx.description);
 
-            Console.WriteLine("IIO context has " + ctx.devices.Count + " devices:");
+            Console.WriteLine("* IIO context has " + ctx.devices.Count + " devices:");
             foreach (Device dev in ctx.devices) {
                 Console.WriteLine("\t" + dev.id + ": " + dev.name);
 
                 if (dev is Trigger)
                 {
-                    Console.WriteLine("Found trigger! Rate=" + ((Trigger) dev).get_rate());
+                    Console.WriteLine("* Found trigger! Rate=" + ((Trigger) dev).get_rate());
                 }
 
                 Console.WriteLine("\t\t" + dev.channels.Count + " channels found:");
@@ -68,25 +82,58 @@ namespace IIOCSharp
                     Console.WriteLine("\t\t\t" + chn.attrs.Count + " channel-specific attributes found:");
                     foreach (Attr attr in chn.attrs)
                     {
-                        Console.WriteLine("\t\t\t\t" + attr.name);
-                        if (attr.name.CompareTo("frequency") == 0)
+                        string attr_name = "\t\t\t\t" + attr.name;
+                        string attr_val = "";
+                        try
                         {
-                            Console.WriteLine("Attribute content: " + attr.read());
+                            if (attr.name == "calibscale")
+                            {
+                                double val = attr.read_double();
+                                Console.WriteLine(attr_name + " " + val);
+                            }
+                            else
+                            {
+                                attr_val = attr.read();
+                                Console.WriteLine(attr_name + " " + attr_val);
+                            }
+                        }
+                        catch (IIOException)
+                        {
+                            Console.WriteLine(attr_name);
                         }
                     }
-                    
                 }
 
 				/* If we find cf-ad9361-lpc, try to read a few bytes from the first channel */
                 if (dev.name.CompareTo("cf-ad9361-lpc") == 0)
                 {
-                    Channel chn = dev.channels[0];
-                    chn.enable();
-                    IOBuffer buf = new IOBuffer(dev, 0x8000);
-                    buf.refill();
-                    
-                    Console.WriteLine("Read " + chn.read(buf).Length + " bytes from hardware");
+                    ChannelsMask chnmask = new ChannelsMask((uint)dev.channels.Count);
+                    Channel rx0_i = dev.channels[0];
+                    rx0_i.enable(chnmask);
+                    Channel rx0_q = dev.channels[1];
+                    rx0_q.enable(chnmask);
+
+                    IOBuffer buf = new IOBuffer(dev, chnmask);
+                    uint sampleSize = dev.get_sample_size(chnmask);
+                    Console.WriteLine("* Sample size is " + sampleSize + "\n");
+
+                    Console.WriteLine("\t\t\t" + buf.attrs.Count + " buffer-specific attributes found:");
+                    foreach (Attr attr in buf.attrs)
+                    {
+                        Console.WriteLine("\t\t\t\t" + attr.name + " " + attr.read());
+                    }
+
+                    Stream stream = new Stream(buf, 4, blocksize);
+                    for (int i=0; i < 10; i++) {
+                        Block block = stream.next();
+                        byte[] databuf = new byte[blocksize];
+                        block.read(databuf);
+                        Console.WriteLine("* ("+ i + ") Read " + databuf.Length + " bytes from hardware");
+                    }
+
+                    stream.Dispose();
                     buf.Dispose();
+                    chnmask.Dispose();
                 }
 
                 if (dev.attrs.Count == 0)
@@ -94,16 +141,13 @@ namespace IIOCSharp
                     continue;
                 }
 
-                Console.WriteLine("\t\t" + dev.attrs.Count + " device-specific attributes found:");
+                Console.WriteLine("\n\t\t" + dev.attrs.Count + " device-specific attributes found:");
                 foreach (Attr attr in dev.attrs)
                 {
                     Console.WriteLine("\t\t\t" + attr.name);
                 }
 
             }
-
-			/* Wait for user input */
-            Console.ReadLine();
         }
     }
 }

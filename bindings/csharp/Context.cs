@@ -69,7 +69,7 @@ namespace iio
         private static extern IntPtr iio_context_get_description(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_context_get_xml(IntPtr ctx);
+        private static extern IIOPtr iio_context_get_xml(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_devices_count(IntPtr ctx);
@@ -91,7 +91,7 @@ namespace iio
         private static extern uint iio_context_get_attrs_count(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_context_get_attr(IntPtr ctx, uint index, out IntPtr name_ptr, out IntPtr value_ptr);
+        private static extern IntPtr iio_context_get_attr(IntPtr ctx, uint index);
 
         /// <summary>A XML representation of the current context.</summary>
         public readonly string xml;
@@ -123,7 +123,6 @@ namespace iio
         {
             if (!ptr)
                 throw new IIOException("Unable to create iio.Context", ptr);
-
             this.hdl = ptr.ptr;
 
             uint nb_devices = iio_context_get_devices_count(hdl);
@@ -142,7 +141,14 @@ namespace iio
                 }
             }
 
-            xml = Marshal.PtrToStringAnsi(iio_context_get_xml(hdl));
+            IIOPtr xml_hdl = iio_context_get_xml(hdl);
+            if (!xml_hdl)
+            {
+                throw new IIOException("Unable to create the context xml", xml_hdl);
+            }
+            xml = Marshal.PtrToStringAnsi(xml_hdl.ptr);
+            Marshal.FreeHGlobal(xml_hdl.ptr);
+
             name = Marshal.PtrToStringAnsi(iio_context_get_name(hdl));
             description = Marshal.PtrToStringAnsi(iio_context_get_description(hdl));
             library_version = new Version();
@@ -153,14 +159,8 @@ namespace iio
 
             for (uint i = 0; i < nbAttrs; i++)
             {
-                IntPtr name_ptr;
-                IntPtr value_ptr;
-
-                iio_context_get_attr(hdl, i, out name_ptr, out value_ptr);
-                string attr_name = Marshal.PtrToStringAnsi(name_ptr);
-                string attr_value = Marshal.PtrToStringAnsi(value_ptr);
-
-                attrs[attr_name] = attr_value;
+                Attr attr = new Attr(iio_context_get_attr(hdl, i));
+                attrs[attr.name] = attr.read();
             }
         }
 

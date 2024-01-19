@@ -13,33 +13,40 @@ using System.Text;
 
 namespace iio
 {
-    public class IIOPtr
+    public struct IIOPtr
     {
         public readonly IntPtr ptr;
-        public readonly int error;
 
         public IIOPtr(IntPtr ptr)
         {
             this.ptr = ptr;
+        }
 
-            if (IntPtr.Size == 4) {
-                this.error = (uint) ptr >= unchecked((uint) -4095) ? (int) ptr : 0;
-            } else {
-                this.error = (ulong) ptr >= unchecked((ulong) -4095L) ? (int)(long) ptr : 0;
+        public int computeError()
+        {
+            int error;
+            if (IntPtr.Size == 4)
+            {
+                error = (uint) ptr >= unchecked((uint) -4095) ? (int) ptr : 0;
             }
+            else
+            {
+                error = (ulong) ptr >= unchecked((ulong) -4095L) ? (int)(long) ptr : 0;
+            }
+            return error;
         }
 
         /// <summary>Get a string representation of the error.</summary>
         public string str()
         {
+            int error = computeError();
             return IioLib.strerror(error);
         }
 
-        ~IIOPtr() {}
-
         public static bool operator !(IIOPtr r)
         {
-            return r.error > 0;
+            int error = r.computeError();
+            return error < 0;
         }
     }
 

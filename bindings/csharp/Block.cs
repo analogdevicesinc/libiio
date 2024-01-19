@@ -59,14 +59,19 @@ namespace iio
 
             IIOPtr ptr = iio_buffer_create_block(buf.hdl, size);
             if (!ptr)
+            {
                 throw new IIOException("Unable to create iio.Block", ptr);
+            }
 
             this.hdl = ptr.ptr;
         }
 
         protected override void Destroy()
         {
-            iio_block_destroy(hdl);
+            if (!stream_block)
+            {
+                iio_block_destroy(hdl);
+            }
         }
 
         public int enqueue(uint bytes_used = 0, bool cyclic = false)

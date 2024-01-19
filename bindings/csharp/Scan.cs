@@ -54,7 +54,9 @@ namespace iio
         {
             IIOPtr ptr = iio_scan(IntPtr.Zero, backends);
             if (!ptr)
+            {
                 throw new IIOException("Unable to create iio.Scan", ptr);
+            }
 
             hdl = ptr.ptr;
             nb_results = iio_scan_get_results_count(hdl);

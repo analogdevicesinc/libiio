@@ -19,105 +19,6 @@ namespace iio
     /// Contains the representation of an IIO device.</summary>
     public class Device
     {
-        private class DeviceAttr : Attr
-        {
-            internal IntPtr dev;
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_attr_write(IntPtr dev, [In()] string name, [In()] string val);
-
-            public DeviceAttr(IntPtr dev, string name) : base(name)
-            {
-                this.dev = dev;
-            }
-
-            public override string read()
-            {
-                StringBuilder builder = new StringBuilder(1024);
-                int err = iio_device_attr_read(dev, name, builder, 1024);
-                if (err < 0)
-                    throw new IIOException("Unable to read device attribute", err);
-
-                return builder.ToString();
-            }
-
-            public override void write(string str)
-            {
-                int err = iio_device_attr_write(dev, name, str);
-                if (err < 0)
-                    throw new IIOException("Unable to write device attribute", err);
-            }
-        }
-
-        private class DeviceDebugAttr : Attr
-        {
-            private IntPtr dev;
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_debug_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_debug_attr_write(IntPtr dev, [In()] string name, [In()] string val);
-
-            public DeviceDebugAttr(IntPtr dev, string name) : base(name)
-            {
-                this.dev = dev;
-            }
-
-            public override string read()
-            {
-                StringBuilder builder = new StringBuilder(1024);
-                int err = iio_device_debug_attr_read(dev, name, builder, 1024);
-                if (err < 0)
-                    throw new IIOException("Unable to read debug attribute", err);
-
-                return builder.ToString();
-            }
-
-            public override void write(string str)
-            {
-                int err = iio_device_debug_attr_write(dev, name, str);
-                if (err < 0)
-                    throw new IIOException("Unable to write debug attribute", err);
-            }
-        }
-
-        private class DeviceBufferAttr : Attr
-        {
-            private IntPtr dev;
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_buffer_attr_read(IntPtr dev, [In] string name, [Out] StringBuilder val, uint len);
-
-            [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_buffer_attr_write(IntPtr dev, [In] string name, [In] string val);
-
-            public DeviceBufferAttr(IntPtr dev, string name) : base(name)
-            {
-                this.dev = dev;
-            }
-
-            public override string read()
-            {
-                StringBuilder builder = new StringBuilder(16384);
-                int err = iio_device_buffer_attr_read(dev, name, builder, 16384);
-                if (err < 0)
-                    throw new IIOException("Unable to read buffer attribute", err);
-
-                return builder.ToString();
-            }
-
-            public override void write(string str)
-            {
-                int err = iio_device_buffer_attr_write(dev, name, str);
-                if (err < 0)
-                    throw new IIOException("Unable to write buffer attribute", err);
-            }
-        }
-
         /// <summary>Gets the context of the current device.</summary>
         public readonly Context ctx;
 
@@ -143,19 +44,13 @@ namespace iio
         private static extern uint iio_device_get_debug_attrs_count(IntPtr dev);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern uint iio_device_get_buffer_attrs_count(IntPtr dev);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_attr(IntPtr dev, uint index);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_debug_attr(IntPtr dev, uint index);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_get_buffer_attr(IntPtr dev, uint index);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_device_get_trigger(IntPtr dev, IntPtr triggerptr);
+        private static extern IIOPtr iio_device_get_trigger(IntPtr dev);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_set_trigger(IntPtr dev, IntPtr trigger);
@@ -190,9 +85,6 @@ namespace iio
         /// <summary>A <c>list</c> of all the debug attributes that this device has.</summary>
         public readonly List<Attr> debug_attrs;
 
-        /// <summary>A <c>list</c> of all the buffer attributes that this device has.</summary>
-        public List<Attr> buffer_attrs { get; private set; }
-
         /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
         public readonly List<Channel> channels;
 
@@ -203,12 +95,10 @@ namespace iio
             channels = new List<Channel>();
             attrs = new List<Attr>();
             debug_attrs = new List<Attr>();
-            buffer_attrs = new List<Attr>();
 
             uint nb_channels = iio_device_get_channels_count(dev);
             uint nb_attrs = iio_device_get_attrs_count(dev);
             uint nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
-            uint nb_buffer_attrs = iio_device_get_buffer_attrs_count(dev);
 
             for (uint i = 0; i < nb_channels; i++)
             {
@@ -217,17 +107,12 @@ namespace iio
 
             for (uint i = 0; i < nb_attrs; i++)
             {
-                attrs.Add(new DeviceAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_attr(dev, i))));
+                attrs.Add(new Attr(iio_device_get_attr(dev, i)));
             }
 
             for (uint i = 0; i < nb_debug_attrs; i++)
             {
-                debug_attrs.Add(new DeviceDebugAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_debug_attr(dev, i))));
-            }
-
-            for (uint i = 0; i < nb_buffer_attrs; i++)
-            {
-                buffer_attrs.Add(new DeviceBufferAttr(dev, Marshal.PtrToStringAnsi(iio_device_get_buffer_attr(dev, i))));
+                debug_attrs.Add(new Attr(iio_device_get_debug_attr(dev, i)));
             }
 
             id = Marshal.PtrToStringAnsi(iio_device_get_id(dev));
@@ -282,16 +167,15 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The instance could not be retrieved.</exception>
         public Trigger get_trigger()
         {
-            IntPtr ptr = IntPtr.Zero;
-            int err = iio_device_get_trigger(this.dev, ptr);
-            if (err < 0)
-                 throw new IIOException("Unable to get trigger", err);
-
-            ptr = Marshal.ReadIntPtr(ptr);
+            IIOPtr ptr = iio_device_get_trigger(this.dev);
+            if (!ptr)
+            {
+                 throw new IIOException("Unable to get trigger", ptr);
+            }
 
             foreach (Trigger trig in ctx.devices)
             {
-                if (trig.dev == ptr)
+                if (trig.dev == ptr.ptr)
                 {
                     return trig;
                 }

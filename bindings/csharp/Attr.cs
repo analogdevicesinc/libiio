@@ -10,35 +10,71 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace iio
 {
     /// <summary><see cref="iio.Attr"/> class:
-    /// Contains the representation of a channel or device attribute.</summary>
-    public abstract class Attr
+    /// Contains the representation of an iio_attr.</summary>
+    public class Attr
     {
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_attr_read_raw(IntPtr attr,
+                [Out()] StringBuilder dst, uint len);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_attr_write_raw(IntPtr attr, IntPtr src,
+                uint len);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_attr_get_name(IntPtr attr);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_attr_get_filename(IntPtr attr);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_attr_get_static_value(IntPtr attr);
+
+        internal IntPtr attr;
+
         /// <summary>The name of this attribute.</summary>
         public readonly string name;
 
         /// <summary>The filename in sysfs to which this attribute is bound.</summary>
         public readonly string filename;
 
-        internal Attr(string name, string filename = null)
+        internal Attr(IntPtr attr)
         {
-            this.filename = filename == null ? name : filename;
-            this.name = name;
+            this.attr = attr;
+            this.name = Marshal.PtrToStringAnsi(iio_attr_get_name(attr));
+            this.filename = Marshal.PtrToStringAnsi(iio_attr_get_filename(attr));
         }
 
         /// <summary>Read the value of this attribute as a <c>string</c>.</summary>
         /// <exception cref="IioLib.IIOException">The attribute could not be read.</exception>
-        public abstract string read();
+        public string read()
+        {
+            StringBuilder builder = new StringBuilder(1024);
+            int err = iio_attr_read_raw(attr, builder, (uint)builder.Capacity);
+            if (err < 0)
+            {
+                throw new IIOException("Unable to read attribute", err);
+            }
+            return builder.ToString();
+        }
 
         /// <summary>Set this attribute to the value contained in the <c>string</c> argument.</summary>
         /// <param name="val">The <c>string</c> value to set the parameter to.</param>
         /// <exception cref="IioLib.IIOException">The attribute could not be written.</exception>
-        public abstract void write(string val);
+        public void write(string val)
+        {
+            IntPtr valptr = Marshal.StringToHGlobalAnsi(val);
+            int err = iio_attr_write_raw(attr, valptr, (uint)val.Length);
+            if (err < 0)
+                throw new IIOException("Unable to write attribute", err);
+        }
 
         /// <summary>Read the value of this attribute as a <c>bool</c>.</summary>
         /// <exception cref="IioLib.IIOException">The attribute could not be read.</exception>
