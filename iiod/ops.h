@@ -59,7 +59,7 @@ struct block_entry {
 	struct iio_block *block;
 	struct iiod_io *io;
 	uint64_t bytes_used;
-	uint16_t client_id;
+	uint16_t idx;
 	bool cyclic;
 };
 
