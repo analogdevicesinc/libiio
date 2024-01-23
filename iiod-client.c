@@ -48,6 +48,7 @@ static int iiod_client_enable_binary(struct iiod_client *client);
 
 struct iiod_client_buffer_pdata {
 	struct iiod_client *client;
+	struct iiod_client *client_fb;
 	struct iiod_client_io *io;
 
 	struct iio_channels_mask *mask;
@@ -1419,6 +1420,7 @@ ssize_t iiod_client_writebuf(struct iiod_client_buffer_pdata *pdata,
 
 struct iiod_client_buffer_pdata *
 iiod_client_create_buffer(struct iiod_client *client,
+			  struct iiod_client *client_fb,
 			  const struct iio_device *dev, unsigned int idx,
 			  struct iio_channels_mask *mask)
 {
@@ -1435,6 +1437,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 	pdata->dev = dev;
 	pdata->idx = (uint16_t) idx;
 	pdata->client = client;
+	pdata->client_fb = client_fb;
 	pdata->mask = mask;
 
 	if (iiod_client_uses_binary_interface(client)) {
@@ -1462,7 +1465,7 @@ err_free_pdata:
 
 void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata)
 {
-	struct iiod_client *client = pdata->client;
+	struct iiod_client *client = pdata->client_fb;
 	struct iiod_io *io;
 	struct iiod_command cmd;
 
@@ -1586,7 +1589,7 @@ err_free_block:
 
 void iiod_client_free_block(struct iio_block_pdata *block)
 {
-	struct iiod_client *client = block->buffer->client;
+	struct iiod_client *client = block->buffer->client_fb;
 	struct iiod_io *io;
 	struct iiod_client_buffer_pdata *pdata = block->buffer;
 	struct iiod_command cmd;

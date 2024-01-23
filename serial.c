@@ -239,6 +239,7 @@ serial_create_buffer(const struct iio_device *dev, unsigned int idx,
 		return iio_ptr(-ENOMEM);
 
 	buf->pdata = iiod_client_create_buffer(pdata->iiod_client,
+					       pdata->iiod_client,
 					       dev, idx, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
