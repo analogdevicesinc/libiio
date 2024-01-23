@@ -48,8 +48,10 @@ static void free_buffer_entry(struct buffer_entry *entry)
 {
 	struct block_entry *block_entry, *block_next;
 
-	iio_task_stop(entry->dequeue_task);
-	iio_task_stop(entry->enqueue_task);
+	if (!NO_THREADS) {
+		iio_task_stop(entry->dequeue_task);
+		iio_task_stop(entry->enqueue_task);
+	}
 
 	iio_task_destroy(entry->enqueue_task);
 	iio_task_destroy(entry->dequeue_task);
@@ -439,8 +441,10 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 
 	IIO_DEBUG("Buffer %u created.\n", entry->idx);
 
-	iio_task_start(entry->enqueue_task);
-	iio_task_start(entry->dequeue_task);
+	if (!NO_THREADS) {
+		iio_task_start(entry->enqueue_task);
+		iio_task_start(entry->dequeue_task);
+	}
 
 	/* Send the success code + updated mask back */
 	iiod_io_send_response(io, data.size, &data, 1);
@@ -574,7 +578,17 @@ static void handle_set_enabled_buffer(struct parser_pdata *pdata,
 
 	if (enabled) {
 		ret = iio_buffer_enable(buf);
+
+		if (NO_THREADS) {
+			iio_task_start(entry->enqueue_task);
+			iio_task_start(entry->dequeue_task);
+		}
 	} else {
+		if (NO_THREADS) {
+			iio_task_stop(entry->enqueue_task);
+			iio_task_stop(entry->dequeue_task);
+		}
+
 		ret = iio_buffer_disable(buf);
 	}
 
