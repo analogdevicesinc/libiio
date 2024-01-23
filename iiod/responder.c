@@ -510,7 +510,7 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	iio_mutex_lock(entry_buf->lock);
 
 	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
-		if (entry->client_id == cmd->client_id) {
+		if (entry->idx == cmd->code >> 16) {
 			block = entry->block;
 			break;
 		}
@@ -670,7 +670,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 
 	entry->block = block;
 	entry->io = io;
-	entry->client_id = cmd->client_id;
+	entry->idx = cmd->code >> 16;
 
 	/* Keep a reference to the iiod_io until the block is freed. */
 	iiod_io_ref(io);
