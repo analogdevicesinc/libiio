@@ -56,6 +56,9 @@ stages:
         debian_bullseye:
           image: 'tfcollins/libiio_debian_bullseye-ci:latest'
           artifactName: 'Linux-Debian-11'
+        debian_bookworm:
+          image: 'tfcollins/libiio_debian_bookworm-ci:latest'
+          artifactName: 'Linux-Debian-12'
         opensuse_15_4:
           image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
           artifactName: 'Linux-openSUSE-15.4'
