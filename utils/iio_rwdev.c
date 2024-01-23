@@ -34,6 +34,7 @@
 
 static const struct option options[] = {
 	  {"trigger", required_argument, 0, 't'},
+	  {"trigger-rate", required_argument, 0, 'r'},
 	  {"buffer-size", required_argument, 0, 'b'},
 	  {"samples", required_argument, 0, 's' },
 	  {"auto", no_argument, 0, 'a'},
@@ -47,6 +48,7 @@ static const char *options_descriptions[] = {
 	"[-t <trigger>] [-b <buffer-size>]"
 		"[-s <samples>] <iio_device> [<channel> ...]",
 	"Use the specified trigger.",
+	"Set the trigger to the specified rate (Hz). Default is 100 Hz.",
 	"Size of the transfer buffer. Default is 256.",
 	"Number of samples to transfer, 0 = infinite. Default is 0.",
 	"Scan for available contexts and if only one is available use it.",
@@ -194,7 +196,7 @@ static ssize_t transfer_sample(const struct iio_channel *chn,
 	return (ssize_t) nb;
 }
 
-#define MY_OPTS "t:b:s:T:wcB"
+#define MY_OPTS "t:b:s:T:r:wcB"
 
 int main(int argc, char **argv)
 {
@@ -202,6 +204,7 @@ int main(int argc, char **argv)
 	unsigned int i, j, nb_channels;
 	unsigned int nb_active_channels = 0;
 	unsigned int buffer_size = SAMPLES_PER_READ;
+	unsigned int trigger_rate = DEFAULT_FREQ_HZ;
 	uint64_t refill_per_benchmark = REFILL_PER_BENCHMARK;
 	struct iio_device *dev, *trigger;
 	struct iio_channel *ch;
@@ -252,6 +255,12 @@ int main(int argc, char **argv)
 				goto err_free_ctx;
 			}
 			trigger_name = optarg;
+			break;
+		case 'r':
+			if (!optarg) {
+				fprintf(stderr, "Trigger rate requires an argument\n");
+			}
+			trigger_rate = sanitize_clamp("trigger rate", optarg, 0, UINT_MAX);
 			break;
 		case 'b':
 			if (!optarg) {
@@ -361,12 +370,12 @@ int main(int argc, char **argv)
 		 */
 		attr = iio_device_find_attr(trigger, "sampling_frequency");
 
-		if (!attr || iio_attr_write_longlong(attr, DEFAULT_FREQ_HZ) < 0) {
+		if (!attr || iio_attr_write_longlong(attr, trigger_rate) < 0) {
 			attr = iio_device_find_attr(trigger, "frequency");
 			if (!attr)
 				ret = -ENOENT;
 			else
-				ret = iio_attr_write_longlong(attr, DEFAULT_FREQ_HZ);
+				ret = iio_attr_write_longlong(attr, trigger_rate);
 			if (ret < 0)
 				dev_perror(trigger, ret, "Sample rate not set");
 		}
