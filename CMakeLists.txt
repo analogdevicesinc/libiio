@@ -328,10 +328,6 @@ endif()
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(WITH_IIOD "Build the IIO Daemon" ON)
 	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
-
-	if (WITH_IIOD AND NOT WITH_LOCAL_BACKEND)
-		message(SEND_ERROR "IIOD can only be enabled if the local backend is enabled")
-	endif()
 endif()
 
 set(DOXYGEN_INPUT "${CMAKE_SOURCE_DIR}")
