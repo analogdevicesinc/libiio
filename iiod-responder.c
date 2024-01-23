@@ -482,7 +482,10 @@ int32_t iiod_io_wait_for_response(struct iiod_io *io)
 	while (!io->r_done) {
 		ret = iiod_io_cond_wait(io);
 		if (ret) {
+			iio_mutex_lock(priv->lock);
 			__iiod_io_cancel_unlocked(io);
+			iio_mutex_unlock(priv->lock);
+
 			io->r_io.cmd.code = ret;
 			io->r_done = true;
 			break;
