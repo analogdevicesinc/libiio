@@ -459,8 +459,9 @@ network_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_buf;
 	}
 
-	buf->pdata = iiod_client_create_buffer(buf->iiod_client, dev,
-					       idx, mask);
+	buf->pdata = iiod_client_create_buffer(buf->iiod_client,
+					       pdata->iiod_client,
+					       dev, idx, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create buffer");

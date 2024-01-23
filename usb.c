@@ -445,6 +445,7 @@ usb_create_buffer(const struct iio_device *dev, unsigned int idx,
 	}
 
 	buf->pdata = iiod_client_create_buffer(buf->io_ctx.iiod_client,
+					       ctx_pdata->io_ctx.iiod_client,
 					       dev, idx, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
