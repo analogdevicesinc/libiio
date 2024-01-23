@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS "s", /* Flawfinder: ignore */
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
 					opts, NULL)) != -1) {
 		switch (c) {
 			/* All these are handled in the common */
