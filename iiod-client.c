@@ -944,13 +944,16 @@ iiod_client_create_context_private_new(struct iiod_client *client,
 	struct iio_context *ctx = NULL;
 	unsigned long long len;
 	char *xml_zstd, *xml;
+	bool is_zstd;
 	int ret;
 
-	xml = malloc(xml_len);
+	xml = malloc(xml_len + uri_len);
 	if (!xml)
 		return iio_ptr(-ENOMEM);
 
-	ret = iiod_client_send_print(client, xml, xml_len);
+	memcpy(xml, "xml:", uri_len);
+
+	ret = iiod_client_send_print(client, &xml[uri_len], xml_len);
 	if (ret < 0) {
 		prm_perror(client->params, -ret,
 			   "Unable to send PRINT command");
@@ -959,37 +962,42 @@ iiod_client_create_context_private_new(struct iiod_client *client,
 
 	xml_len = ret;
 
+	is_zstd = strncmp(xml, "xml:<?xml", sizeof("xml:<?xml") - 1) != 0;
+	if (is_zstd)
+		prm_dbg(client->params, "Received ZSTD-compressed XML string.\n");
+	else
+		prm_dbg(client->params, "Received uncompressed XML string.\n");
 
-	prm_dbg(client->params, "Received ZSTD-compressed XML string.\n");
+	if (is_zstd) {
+		len = ZSTD_getFrameContentSize(&xml[uri_len], xml_len);
+		if (len == ZSTD_CONTENTSIZE_UNKNOWN ||
+		    len == ZSTD_CONTENTSIZE_ERROR) {
+			ret = -EIO;
+			goto out_free_xml;
+		}
 
-	len = ZSTD_getFrameContentSize(xml, xml_len);
-	if (len == ZSTD_CONTENTSIZE_UNKNOWN ||
-	    len == ZSTD_CONTENTSIZE_ERROR) {
-		ret = -EIO;
-		goto out_free_xml;
+		xml_zstd = malloc(uri_len + len + 1);
+		if (!xml_zstd) {
+			ret = -ENOMEM;
+			goto out_free_xml;
+		}
+
+		xml_len = ZSTD_decompress(&xml_zstd[uri_len], len, &xml[uri_len], xml_len);
+		if (ZSTD_isError(xml_len)) {
+			prm_err(client->params, "Unable to decompress ZSTD data: %s\n",
+				ZSTD_getErrorName(xml_len));
+			ret = -EIO;
+			free(xml_zstd);
+			goto out_free_xml;
+		}
+
+		memcpy(xml_zstd, "xml:", uri_len);
+		xml_zstd[uri_len + xml_len] = '\0';
+
+		/* Free compressed data, make "xml" point to uncompressed data */
+		free(xml);
+		xml = xml_zstd;
 	}
-
-	xml_zstd = malloc(uri_len + len + 1);
-	if (!xml_zstd) {
-		ret = -ENOMEM;
-		goto out_free_xml;
-	}
-
-	xml_len = ZSTD_decompress(xml_zstd + uri_len, len, xml, xml_len);
-	if (ZSTD_isError(xml_len)) {
-		prm_err(client->params, "Unable to decompress ZSTD data: %s\n",
-			ZSTD_getErrorName(xml_len));
-		ret = -EIO;
-		free(xml_zstd);
-		goto out_free_xml;
-	}
-
-	memcpy(xml_zstd, "xml:", uri_len);
-	xml_zstd[uri_len + xml_len] = '\0';
-
-	/* Free compressed data, make "xml" point to uncompressed data */
-	free(xml);
-	xml = xml_zstd;
 
 	prm_dbg(client->params, "Creating context\n");
 
