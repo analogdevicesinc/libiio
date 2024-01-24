@@ -72,7 +72,7 @@ struct compat {
 
 	const char * (*iio_context_get_name)(const struct iio_context *);
 	const char * (*iio_context_get_description)(const struct iio_context *);
-	const char * (*iio_context_get_xml)(const struct iio_context *);
+	char * (*iio_context_get_xml)(const struct iio_context *);
 	const struct iio_context_params *
 		(*iio_context_get_params)(const struct iio_context *);
 
@@ -260,6 +260,7 @@ struct iio_context_compat {
 	void *userdata;
 
 	unsigned int nb_devices;
+	char *xml;
 };
 
 struct iio_buffer_compat {
@@ -322,6 +323,11 @@ static int iio_init_context_compat(struct iio_context *ctx)
 	if (!compat)
 		return -ENOMEM;
 
+	compat->xml = IIO_CALL(iio_context_get_xml)(ctx);
+	err = iio_err(compat->xml);
+	if (err)
+		goto err_free_compat;
+
 	compat->nb_devices = nb_devices;
 
 	for (i = 0; i < nb_devices; i++) {
@@ -368,6 +374,8 @@ err_destroy_masks:
 		if (dev_compat->mask)
 			IIO_CALL(iio_channels_mask_destroy)(dev_compat->mask);
 	}
+	free(compat->xml);
+err_free_compat:
 	free(compat);
 	return err;
 }
@@ -442,6 +450,7 @@ void iio_context_destroy(struct iio_context *ctx)
 
 	compat = IIO_CALL(iio_context_get_data)(ctx);
 	IIO_CALL(iio_context_destroy)(ctx);
+	free(compat->xml);
 	free(compat);
 }
 
@@ -694,7 +703,9 @@ const char * iio_context_get_description(const struct iio_context *ctx)
 
 const char * iio_context_get_xml(const struct iio_context *ctx)
 {
-	return IIO_CALL(iio_context_get_xml)(ctx);
+	struct iio_context_compat *compat = IIO_CALL(iio_context_get_data)(ctx);
+
+	return compat->xml;
 }
 
 unsigned int iio_context_get_devices_count(const struct iio_context *ctx)
