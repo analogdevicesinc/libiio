@@ -11,6 +11,8 @@
 #include "ops.h"
 #include "thread-pool.h"
 
+#include <iio/iio-lock.h>
+
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
@@ -316,6 +318,18 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 
 	xml_zstd = get_xml_zstd_data(ctx, &xml_zstd_len);
 
+	buflist_lock = iio_mutex_create();
+	if (iio_err(buflist_lock)) {
+		ret = EXIT_FAILURE;
+		goto out_free_xml_data;
+	}
+
+	evlist_lock = iio_mutex_create();
+	if (iio_err(evlist_lock)) {
+		ret = EXIT_FAILURE;
+		goto out_free_buflist_lock;
+	}
+
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
 				(unsigned int) nb_pipes, ep0_fd,
@@ -323,7 +337,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start USB daemon");
 			ret = EXIT_FAILURE;
-			goto out_free_xml_data;
+			goto out_free_evlist_lock;
 		}
 	}
 
@@ -356,6 +370,10 @@ out_thread_pool_stop:
 	 * the worker threads are signaled to shutdown.
 	 */
 	thread_pool_stop_and_wait(main_thread_pool);
+out_free_evlist_lock:
+	iio_mutex_destroy(evlist_lock);
+out_free_buflist_lock:
+	iio_mutex_destroy(buflist_lock);
 out_free_xml_data:
 	free(xml_zstd);
 out_destroy_context:
