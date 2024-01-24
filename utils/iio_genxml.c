@@ -31,8 +31,7 @@ static const char *options_descriptions[] = {
 
 int main(int argc, char **argv)
 {
-	char **argw, *uri;
-	const char *xml;
+	char **argw, *uri, *xml;
 	struct iio_context *ctx;
 	struct option *opts;
 	size_t buf_len;
@@ -84,12 +83,14 @@ int main(int argc, char **argv)
 	uri = malloc(buf_len);
 	if (!uri) {
 		iio_context_destroy(ctx);
+		free(xml);
 		return EXIT_FAILURE;
 	}
 
 	snprintf(uri, buf_len, "xml:%s", xml);
 
 	iio_context_destroy(ctx);
+	free(xml);
 
 	ctx = iio_create_context(NULL, uri);
 	if (!ctx) {
