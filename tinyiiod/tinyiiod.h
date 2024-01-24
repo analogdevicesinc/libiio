@@ -37,4 +37,12 @@ int iiod_interpreter(struct iio_context *ctx,
 		     ssize_t (*write_cb)(struct iiod_pdata *, const void *, size_t),
 		     const void *xml, size_t xml_len);
 
+/* When a blocking iio_backend_ops.read_ev() is called, and there is no event,
+ * the callback is expected to return -EAGAIN; only then, when/if an event
+ * eventually occurs, the application should call iiod_set_event() once to
+ * answer. */
+void iiod_set_event(struct iio_event_stream *stream,
+		    const struct iio_event *event,
+		    int err_code_or_zero);
+
 #endif /* __LIBTINYIIOD_H__ */

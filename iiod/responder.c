@@ -835,6 +835,33 @@ out_send_response:
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
+void iiod_set_event(struct iio_event_stream *stream,
+		    const struct iio_event *event,
+		    int err_code_or_zero)
+{
+	struct evstream_entry *elm, *entry = NULL;
+	struct iiod_buf buf = {
+		.ptr = (void *)event,
+		.size = sizeof(*event),
+	};
+
+	iio_mutex_lock(evlist_lock);
+
+	SLIST_FOREACH(elm, &evlist, entry) {
+		if (elm->stream == stream) {
+			entry = elm;
+			break;
+		}
+	}
+
+	iio_mutex_unlock(evlist_lock);
+
+	if (err_code_or_zero)
+		iiod_io_send_response_code(entry->io, err_code_or_zero);
+	else
+		iiod_io_send_response(entry->io, sizeof(*event), &buf, 1);
+}
+
 static int evstream_read(void *priv, void *d)
 {
 	struct evstream_entry *entry = priv;
@@ -846,6 +873,12 @@ static int evstream_read(void *priv, void *d)
 	int ret;
 
 	ret = iio_event_stream_read(entry->stream, &event, false);
+	if (ret == -EAGAIN) {
+		/* If iio_event_stream_read() returned -EAGAIN for a blocking
+		 * read, trust that the application will call iiod_set_event(). */
+		return 0;
+	}
+
 	if (ret < 0)
 	      return iiod_io_send_response_code(entry->io, ret);
 
