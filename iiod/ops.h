@@ -45,11 +45,15 @@
 #define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
 		& BIT_MASK(bit)))
 
+struct iio_mutex;
 struct iio_task;
 struct iiod_io;
 struct thread_pool;
 extern struct thread_pool *main_thread_pool;
 struct DevEntry;
+
+extern struct iio_mutex *buflist_lock;
+extern struct iio_mutex *evlist_lock;
 
 enum iio_attr_type {
 	IIO_ATTR_TYPE_DEVICE,
@@ -76,7 +80,7 @@ struct buffer_entry {
 	uint16_t idx;
 
 	SLIST_HEAD(BlockList, block_entry) blocklist;
-	pthread_mutex_t lock;
+	struct iio_mutex *lock;
 };
 
 struct evstream_entry {

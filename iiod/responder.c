@@ -14,7 +14,6 @@
 
 #include <fcntl.h>
 #include <iio/iio-lock.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,12 +28,12 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 static SLIST_HEAD(BufferList, buffer_entry) bufferlist;
 
 /* Protect bufferlist from parallel access */
-static pthread_mutex_t buflist_lock = PTHREAD_MUTEX_INITIALIZER;
+struct iio_mutex *buflist_lock;
 
 static SLIST_HEAD(EventStreamList, evstream_entry) evlist;
 
 /* Protect evlist from parallel access */
-static pthread_mutex_t evlist_lock = PTHREAD_MUTEX_INITIALIZER;
+struct iio_mutex *evlist_lock;
 
 static void free_block_entry(struct block_entry *entry)
 {
@@ -56,7 +55,7 @@ static void free_buffer_entry(struct buffer_entry *entry)
 	iio_task_destroy(entry->enqueue_task);
 	iio_task_destroy(entry->dequeue_task);
 
-	pthread_mutex_lock(&entry->lock);
+	iio_mutex_lock(entry->lock);
 
 	for (block_entry = SLIST_FIRST(&entry->blocklist);
 	     block_entry; block_entry = block_next) {
@@ -64,10 +63,10 @@ static void free_buffer_entry(struct buffer_entry *entry)
 		free_block_entry(block_entry);
 	}
 
-	pthread_mutex_unlock(&entry->lock);
+	iio_mutex_unlock(entry->lock);
 
 	iio_buffer_destroy(entry->buf);
-	pthread_mutex_destroy(&entry->lock);
+	iio_mutex_destroy(entry->lock);
 	free(entry->words);
 	free(entry);
 }
@@ -412,10 +411,15 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	entry->dev = dev;
 	entry->idx = (uint16_t) cmd->code;
 
+	entry->lock = iio_mutex_create();
+	ret = iio_err(entry->lock);
+	if (ret)
+		goto err_destroy_dequeue_task;
+
 	buf = iio_device_create_buffer(dev, entry->idx, mask);
 	ret = iio_err(buf);
 	if (ret)
-		goto err_destroy_dequeue_task;
+		goto err_destroy_lock;
 
 	/* Rewrite the "words" bitmask according to the mask object,
 	 * which may have been modified when creating the buffer. */
@@ -433,11 +437,10 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 
 	entry->buf = buf;
 	entry->pdata = pdata;
-	pthread_mutex_init(&entry->lock, NULL);
 
-	pthread_mutex_lock(&buflist_lock);
+	iio_mutex_lock(buflist_lock);
 	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
-	pthread_mutex_unlock(&buflist_lock);
+	iio_mutex_unlock(buflist_lock);
 
 	IIO_DEBUG("Buffer %u created.\n", entry->idx);
 
@@ -450,6 +453,8 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	iiod_io_send_response(io, data.size, &data, 1);
 	return;
 
+err_destroy_lock:
+	iio_mutex_destroy(entry->lock);
 err_destroy_dequeue_task:
 	iio_task_destroy(entry->dequeue_task);
 err_destroy_enqueue_task:
@@ -476,7 +481,7 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 	if (!dev)
 		return iio_ptr(-EINVAL);
 
-	pthread_mutex_lock(&buflist_lock);
+	iio_mutex_lock(buflist_lock);
 
 	SLIST_FOREACH(entry, &bufferlist, entry) {
 		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
@@ -485,7 +490,7 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 		}
 	}
 
-	pthread_mutex_unlock(&buflist_lock);
+	iio_mutex_unlock(buflist_lock);
 
 	if (buf && entry_ptr)
 		*entry_ptr = entry;
@@ -502,7 +507,7 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	struct iio_block *block = NULL;
 	int err;
 
-	pthread_mutex_lock(&entry_buf->lock);
+	iio_mutex_lock(entry_buf->lock);
 
 	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
 		if (entry->client_id == cmd->client_id) {
@@ -511,7 +516,7 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 		}
 	}
 
-	pthread_mutex_unlock(&entry_buf->lock);
+	iio_mutex_unlock(entry_buf->lock);
 
 	if (block && entry_ptr)
 		*entry_ptr = entry;
@@ -541,7 +546,7 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 
 	ret = -EBADF;
 
-	pthread_mutex_lock(&buflist_lock);
+	iio_mutex_lock(buflist_lock);
 
 	SLIST_FOREACH(entry, &bufferlist, entry) {
 		if (entry != buf_entry)
@@ -553,7 +558,7 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 		break;
 	}
 
-	pthread_mutex_unlock(&buflist_lock);
+	iio_mutex_unlock(buflist_lock);
 
 	IIO_DEBUG("Buffer %u freed.\n", cmd->code);
 
@@ -670,9 +675,9 @@ static void handle_create_block(struct parser_pdata *pdata,
 	/* Keep a reference to the iiod_io until the block is freed. */
 	iiod_io_ref(io);
 
-	pthread_mutex_lock(&buf_entry->lock);
+	iio_mutex_lock(buf_entry->lock);
 	SLIST_INSERT_HEAD(&buf_entry->blocklist, entry, entry);
-	pthread_mutex_unlock(&buf_entry->lock);
+	iio_mutex_unlock(buf_entry->lock);
 
 out_send_response:
 	iiod_io_send_response_code(io, ret);
@@ -702,7 +707,7 @@ static void handle_free_block(struct parser_pdata *pdata,
 
 	ret = -EBADF;
 
-	pthread_mutex_lock(&buf_entry->lock);
+	iio_mutex_lock(buf_entry->lock);
 
 	SLIST_FOREACH(entry, &buf_entry->blocklist, entry) {
 		if (entry->block != block)
@@ -715,7 +720,7 @@ static void handle_free_block(struct parser_pdata *pdata,
 		break;
 	}
 
-	pthread_mutex_unlock(&buf_entry->lock);
+	iio_mutex_unlock(buf_entry->lock);
 
 	IIO_DEBUG("Block %u freed.\n", cmd->code);
 
@@ -900,9 +905,9 @@ static void handle_create_evstream(struct parser_pdata *pdata,
 	/* Keep a reference to the iiod_io until the evstream is freed. */
 	iiod_io_ref(io);
 
-	pthread_mutex_lock(&evlist_lock);
+	iio_mutex_lock(evlist_lock);
 	SLIST_INSERT_HEAD(&evlist, entry, entry);
-	pthread_mutex_unlock(&evlist_lock);
+	iio_mutex_unlock(evlist_lock);
 
 out_send_response:
 	iiod_io_send_response_code(io, ret);
@@ -921,7 +926,7 @@ static struct evstream_entry * get_evstream(struct parser_pdata *pdata,
 	if (!dev)
 		return NULL;
 
-	pthread_mutex_lock(&evlist_lock);
+	iio_mutex_lock(evlist_lock);
 	SLIST_FOREACH(entry, &evlist, entry) {
 		if (entry->client_id == idx
 		    && entry->dev == dev
@@ -933,7 +938,7 @@ static struct evstream_entry * get_evstream(struct parser_pdata *pdata,
 	if (entry && remove)
 	      SLIST_REMOVE(&evlist, entry, evstream_entry, entry);
 
-	pthread_mutex_unlock(&evlist_lock);
+	iio_mutex_unlock(evlist_lock);
 
 	return entry;
 }
@@ -1076,7 +1081,7 @@ static void iiod_responder_free_resources(struct parser_pdata *pdata)
 	struct buffer_entry *buf_entry, *buf_next;
 	struct evstream_entry *ev_entry, *ev_next;
 
-	pthread_mutex_lock(&buflist_lock);
+	iio_mutex_lock(buflist_lock);
 
 	for (buf_entry = SLIST_FIRST(&bufferlist);
 	     buf_entry; buf_entry = buf_next) {
@@ -1089,9 +1094,9 @@ static void iiod_responder_free_resources(struct parser_pdata *pdata)
 		}
 	}
 
-	pthread_mutex_unlock(&buflist_lock);
+	iio_mutex_unlock(buflist_lock);
 
-	pthread_mutex_lock(&evlist_lock);
+	iio_mutex_lock(evlist_lock);
 
 	for (ev_entry = SLIST_FIRST(&evlist); ev_entry; ev_entry = ev_next) {
 		ev_next = SLIST_NEXT(ev_entry, entry);
@@ -1103,7 +1108,7 @@ static void iiod_responder_free_resources(struct parser_pdata *pdata)
 		}
 	}
 
-	pthread_mutex_unlock(&evlist_lock);
+	iio_mutex_unlock(evlist_lock);
 }
 
 int binary_parse(struct parser_pdata *pdata)
