@@ -98,10 +98,11 @@ static void sig_handler_usr1(int sig)
 
 static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 {
-#if WITH_ZSTD
 	const char *xml = iio_context_get_xml(ctx);
-	size_t len, xml_len = strlen(xml);
+	size_t xml_len = strlen(xml);
 	void *buf;
+#if WITH_ZSTD
+	size_t len;
 	size_t ret;
 
 	len = ZSTD_compressBound(xml_len);
@@ -118,11 +119,15 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 	}
 
 	*out_len = ret;
+#else
+	buf = iio_strdup(xml);
+	if (!buf)
+		return NULL;
+
+	*out_len = xml_len;
+#endif
 
 	return buf;
-#else
-	return NULL;
-#endif
 }
 
 static void free_device_pdata(struct iio_context *ctx)
