@@ -81,6 +81,7 @@ class cstr
 public:
     cstr(std::string const & s) : s(s.c_str()){}
     cstr(char const * s) : s(s){assert(s);}
+    cstr(void const * s) : s(static_cast<char const *>(s)){assert(s);}
 
     char const * c_str() const {return s;}
     operator char const * () const {return s;}
@@ -580,6 +581,8 @@ public:
     uint32_t reg_read(uint32_t address) {uint32_t value; impl::check(iio_device_reg_read(p, address, &value), "iio_device_reg_read"); return value;}
 };
 
+typedef Ptr<cstr, void, free> CstrPtr;
+
 /** @brief C++ wrapper for the @ref Context C-API
  */
 class Context : public impl::IndexedSequence<Context, Device>
@@ -617,7 +620,7 @@ public:
     unsigned int version_major() const { return iio_context_get_version_major(p); }
     unsigned int version_minor() const { return iio_context_get_version_minor(p); }
     cstr version_tag() const { return iio_context_get_version_tag(p); }
-    cstr xml() const { return iio_context_get_xml(p); }
+    CstrPtr xml() const { return CstrPtr{impl::check(iio_context_get_xml(p), "iio_context_get_xml")};}
     cstr name() const { return iio_context_get_name(p); }
     cstr description() const { return iio_context_get_description(p); }
     unsigned int attrs_count() const {return iio_context_get_attrs_count(p);}
