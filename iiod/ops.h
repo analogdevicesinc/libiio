@@ -15,6 +15,7 @@
 #include <endian.h>
 #include <errno.h>
 #include <iio/iio.h>
+#include <iio/iio-backend.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,12 +55,6 @@ struct DevEntry;
 
 extern struct iio_mutex *buflist_lock;
 extern struct iio_mutex *evlist_lock;
-
-enum iio_attr_type {
-	IIO_ATTR_TYPE_DEVICE,
-	IIO_ATTR_TYPE_DEBUG,
-	IIO_ATTR_TYPE_BUFFER,
-};
 
 struct block_entry {
 	SLIST_ENTRY(block_entry) entry;
@@ -128,11 +123,6 @@ struct iio_device_pdata {
 };
 
 extern bool server_demux; /* Defined in iiod.c */
-
-static inline void *zalloc(size_t size)
-{
-	return calloc(1, size);
-}
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		 bool is_socket, bool is_usb, struct thread_pool *pool,
