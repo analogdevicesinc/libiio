@@ -181,7 +181,7 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 }
 
 /* Returns a string containing the XML representation of this context */
-static char * iio_context_create_xml(const struct iio_context *ctx)
+char * iio_context_get_xml(const struct iio_context *ctx)
 {
 	ssize_t len;
 	char *str;
@@ -251,11 +251,6 @@ void iio_context_set_pdata(struct iio_context *ctx, struct iio_context_pdata *d)
 	ctx->pdata = d;
 }
 
-const char * iio_context_get_xml(const struct iio_context *ctx)
-{
-	return ctx->xml;
-}
-
 const char * iio_context_get_name(const struct iio_context *ctx)
 {
 	return ctx->name;
@@ -284,7 +279,6 @@ void iio_context_destroy(struct iio_context *ctx)
 	for (i = 0; i < ctx->nb_devices; i++)
 		free_device(ctx->devices[i]);
 	free(ctx->devices);
-	free(ctx->xml);
 	free(ctx->description);
 	free(ctx->git_tag);
 	free(ctx->pdata);
@@ -340,12 +334,7 @@ int iio_context_init(struct iio_context *ctx)
 	for (i = 0; i < ctx->nb_devices; i++)
 		reorder_channels(ctx->devices[i]);
 
-	if (ctx->xml)
-		return 0;
-
-	ctx->xml = iio_context_create_xml(ctx);
-
-	return iio_err(ctx->xml);
+	return 0;
 }
 
 unsigned int iio_context_get_version_major(const struct iio_context *ctx)

@@ -601,8 +601,9 @@ __api __pure const char * iio_context_get_version_tag(const struct iio_context *
 
 /** @brief Obtain a XML representation of the given context
  * @param ctx A pointer to an iio_context structure
- * @return A pointer to a static NULL-terminated string */
-__api __check_ret __pure const char * iio_context_get_xml(const struct iio_context *ctx);
+ * @return On success, an allocated string. Must be deallocated with free().
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret char * iio_context_get_xml(const struct iio_context *ctx);
 
 
 /** @brief Get the name of the given context
