@@ -92,8 +92,6 @@ struct iio_context {
 	struct iio_device **devices;
 	unsigned int nb_devices;
 
-	char *xml;
-
 	char **values;
 	struct iio_attr_list attrlist;
 
