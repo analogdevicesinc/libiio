@@ -31,6 +31,7 @@ from ctypes import (
     c_double,
     cast,
     sizeof,
+    string_at,
     POINTER as _POINTER,
     CDLL as _cdll,
     memmove as _memmove,
@@ -300,6 +301,7 @@ else:
     _iiolib = "iio"
 
 _lib = _cdll("libiio.so.1", use_errno=True, use_last_error=True)
+_libc = _cdll(find_library("c"))
 
 _get_backends_count = _lib.iio_get_builtin_backends_count
 _get_backends_count.restype = c_uint
@@ -357,7 +359,7 @@ _get_description.restype = c_char_p
 _get_description.argtypes = (_ContextPtr,)
 
 _get_xml = _lib.iio_context_get_xml
-_get_xml.restype = c_char_p
+_get_xml.restype = c_void_p
 _get_xml.argtypes = (_ContextPtr,)
 
 _get_version_major = _lib.iio_context_get_version_major
@@ -696,6 +698,9 @@ _ev_get_channel = _lib.iio_event_get_channel
 _ev_get_channel.restype = _ChannelPtr
 _ev_get_channel.argtypes = (_EventPtr, _DevicePtr, c_bool)
 _ev_get_channel.errcheck = _check_null
+
+_libc_free = _libc.free
+_libc_free.argtypes = (c_void_p,)
 
 # pylint: enable=invalid-name
 
@@ -1419,13 +1424,15 @@ class Context(_IIO_Object):
 
         self._name = _get_name(self._context).decode("ascii")
         self._description = _get_description(self._context).decode("ascii")
-        self._xml = _get_xml(self._context).decode("ascii")
+        self._xml_hdl = _get_xml(self._context)
+        self._xml = bytes(string_at(self._xml_hdl)).decode("ascii")
         self._version = _get_lib_version(self._context)
 
     def __del__(self):
         """Destroy this context."""
         if self._context is not None:
             _destroy(self._context)
+            _libc_free(cast(self._xml_hdl, c_void_p))
 
     def set_timeout(self, timeout):
         """
