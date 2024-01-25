@@ -12,7 +12,7 @@ set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_DEFINITIONS)
 
 add_executable(iiod
-	iiod.c interpreter.c responder.c thread-pool.c
+	iiod.c interpreter.c responder.c rw.c thread-pool.c
 )
 set_target_properties(iiod PROPERTIES
 	C_STANDARD 99
