@@ -698,13 +698,13 @@ iio_context_get_params(const struct iio_context *ctx);
 
 
 /** @brief Associate a pointer to an iio_context structure
- * @param dev A pointer to an iio_context structure
+ * @param ctx A pointer to an iio_context structure
  * @param data The pointer to be associated */
 __api void iio_context_set_data(struct iio_context *ctx, void *data);
 
 
 /** @brief Retrieve a previously associated pointer of an iio_context structure
- * @param dev A pointer to an iio_context structure
+ * @param ctx A pointer to an iio_context structure
  * @return The pointer previously associated if present, or NULL */
 __api void * iio_context_get_data(const struct iio_context *ctx);
 
@@ -932,6 +932,7 @@ __api void iio_channel_disable(const struct iio_channel *chn,
 
 /** @brief Returns True if the channel is enabled
  * @param chn A pointer to an iio_channel structure
+ * @param mask A pointer to an iio_channels_mask structure
  * @return True if the channel is enabled, False otherwise */
 __api __check_ret bool
 iio_channel_is_enabled(const struct iio_channel *chn,
@@ -1122,7 +1123,7 @@ iio_buffer_get_channels_mask(const struct iio_buffer *buf);
 
 
 /** @brief Create a data block for the given buffer
- * @param buf A pointer to an iio_buffer structure
+ * @param buffer A pointer to an iio_buffer structure
  * @param size The size of the block to create, in bytes
  * @return On success, a pointer to an iio_block structure
  * @return On failure, a pointer-encoded error is returned */
@@ -1136,13 +1137,13 @@ __api void iio_block_destroy(struct iio_block *block);
 
 
 /** @brief Get the start address of the block
- * @param buf A pointer to an iio_block structure
+ * @param block A pointer to an iio_block structure
  * @return A pointer corresponding to the start address of the block */
 __api void *iio_block_start(const struct iio_block *block);
 
 
 /** @brief Find the first sample of a channel in a block
- * @param buf A pointer to an iio_block structure
+ * @param block A pointer to an iio_block structure
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to the first sample found, or to the end of the block if
  * no sample for the given channel is present in the block
@@ -1175,6 +1176,8 @@ __api void *iio_block_end(const struct iio_block *block);
 
 /** @brief Call the supplied callback for each sample found in a block
  * @param block A pointer to an iio_block structure
+ * @param mask A pointer to the iio_channels_mask structure that represents
+ *   the list of channels for which we want samples
  * @param callback A pointer to a function to call for each sample found
  * @param data A user-specified pointer that will be passed to the callback
  * @return number of bytes processed.
@@ -1447,8 +1450,7 @@ iio_channels_mask_destroy(struct iio_channels_mask *mask);
 
 /** @brief Get the current sample size
  * @param dev A pointer to an iio_device structure
- * @param mask A pointer to an iio_channels_mask structure. If NULL, the current
- *   channel mask of the iio_device object is used.
+ * @param mask A pointer to an iio_channels_mask structure.
  * @return On success, the sample size in bytes
  * @return On error, a negative errno code is returned
  *
