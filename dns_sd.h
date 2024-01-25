@@ -24,7 +24,6 @@
 
 /* IPv6 Max = 4*8 + 7 + 1 for '%' + interface length */
 #define DNS_SD_ADDRESS_STR_MAX (40 + IF_NAMESIZE)
-#define FQDN_LEN (255)              /* RFC 1035 */
 
 /* MacOS doesn't include ENOMEDIUM (No medium found) like Linux does */
 #ifndef ENOMEDIUM
