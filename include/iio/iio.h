@@ -272,6 +272,8 @@ enum iio_modifier {
 	IIO_MOD_PITCH,
 	IIO_MOD_YAW,
 	IIO_MOD_ROLL,
+	IIO_MOD_LIGHT_UVA,
+	IIO_MOD_LIGHT_UVB,
 };
 
 /**
