@@ -15,6 +15,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <poll.h>
 #include <signal.h>
 #if WITH_ZSTD
 #include <zstd.h>
@@ -378,6 +379,17 @@ out_free_xml_data:
 	free(xml_zstd);
 out_destroy_context:
 	iio_context_destroy(ctx);
+
+	return ret;
+}
+
+int poll_nointr(struct pollfd *pfd, unsigned int num_pfd)
+{
+	int ret;
+
+	do {
+		ret = poll(pfd, num_pfd, -1);
+	} while (ret == -1 && errno == EINTR);
 
 	return ret;
 }
