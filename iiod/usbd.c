@@ -12,6 +12,7 @@
 
 #include <fcntl.h>
 #include <linux/usb/functionfs.h>
+#include <poll.h>
 #include <stdint.h>
 #include <string.h>
 

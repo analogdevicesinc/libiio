@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -49,6 +48,7 @@
 struct iio_mutex;
 struct iio_task;
 struct iiod_io;
+struct pollfd;
 struct thread_pool;
 extern struct thread_pool *main_thread_pool;
 struct DevEntry;
@@ -180,15 +180,6 @@ static __inline__ void output(struct parser_pdata *pdata, const char *text)
 		pdata->stop = true;
 }
 
-static __inline__ int poll_nointr(struct pollfd *pfd, unsigned int num_pfd)
-{
-	int ret;
-
-	do {
-		ret = poll(pfd, num_pfd, -1);
-	} while (ret == -1 && errno == EINTR);
-
-	return ret;
-}
+int poll_nointr(struct pollfd *pfd, unsigned int num_pfd);
 
 #endif /* __OPS_H__ */
