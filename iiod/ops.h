@@ -12,14 +12,12 @@
 #include "../iio-config.h"
 #include "queue.h"
 
-#include <endian.h>
 #include <errno.h>
 #include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #if WITH_AIO

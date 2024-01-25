@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <sys/eventfd.h>
 #endif
+#include <sys/socket.h>
 
 #if WITH_AIO
 static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
