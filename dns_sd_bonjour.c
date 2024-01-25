@@ -8,6 +8,7 @@
  */
 
 #include "dns_sd.h"
+#include "network.h" // for FQDN_LEN
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

@@ -12,6 +12,8 @@
 
 #include <stdbool.h>
 
+#define FQDN_LEN (255)              /* RFC 1035 */
+
 struct iio_context_params;
 struct iio_context_pdata;
 struct addrinfo;
