@@ -582,24 +582,6 @@ err_free_dev:
 	return NULL;
 }
 
-int _iio_context_add_device(struct iio_context *ctx, struct iio_device *dev)
-{
-	struct iio_device **devices = realloc(ctx->devices,
-			(ctx->nb_devices + 1) * sizeof(struct iio_device *));
-
-	if (!devices) {
-		ctx_err(ctx, "Unable to allocate memory\n");
-		return -ENOMEM;
-	}
-
-	devices[ctx->nb_devices++] = dev;
-	ctx->devices = devices;
-
-	ctx_dbg(ctx, "Added device \'%s\' to context \'%s\'\n",
-		dev->id, ctx->name);
-	return 0;
-}
-
 struct iio_context *
 iio_create_context_from_xml(const struct iio_context_params *params,
 			    const char *uri, const struct iio_backend *backend,
