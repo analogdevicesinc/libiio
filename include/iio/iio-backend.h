@@ -168,6 +168,16 @@ iio_device_add_channel(struct iio_device *dev, long index,
 		       const char *id, const char *name, bool output,
 		       bool scan_element, const struct iio_data_format *fmt);
 
+__api int
+iio_context_add_attr(struct iio_context *ctx,
+		     const char *key, const char *value);
+__api int
+iio_device_add_attr(struct iio_device *dev,
+		    const char *name, enum iio_attr_type type);
+__api int
+iio_channel_add_attr(struct iio_channel *chn,
+		     const char *name, const char *filename);
+
 __api struct iio_context_pdata *
 iio_context_get_pdata(const struct iio_context *ctx);
 
