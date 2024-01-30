@@ -15,7 +15,7 @@
 #include <libxml/tree.h>
 #include <string.h>
 
-#define XML_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+#define XML_HEADER "<?xml version=\"1.0\""
 
 static struct iio_context *
 xml_create_context(const struct iio_context_params *params,
