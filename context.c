@@ -511,6 +511,63 @@ iio_context_find_attr(const struct iio_context *ctx, const char *name)
 	return iio_attr_find(&ctx->attrlist, name);
 }
 
+struct iio_device * iio_context_add_device(struct iio_context *ctx,
+					   const char *id, const char *name,
+					   const char *label)
+{
+	struct iio_device *dev, **devs;
+	char *new_id, *new_name = NULL, *new_label = NULL;
+
+	dev = zalloc(sizeof(*dev));
+	if (!dev)
+		return NULL;
+
+	new_id = iio_strdup(id);
+	if (!new_id)
+		goto err_free_dev;
+
+	if (name) {
+		new_name = iio_strdup(name);
+		if (!new_name)
+			goto err_free_id;
+	}
+
+	if (label) {
+		new_label = iio_strdup(label);
+		if (!new_label)
+			goto err_free_name;
+	}
+
+	dev->id = new_id;
+	dev->ctx = ctx;
+	dev->name = new_name;
+	dev->label = new_label;
+
+	devs = realloc(ctx->devices, (ctx->nb_devices + 1) * sizeof(*dev));
+	if (!devs)
+		goto err_free_label;
+
+	devs[ctx->nb_devices++] = dev;
+	ctx->devices = devs;
+
+	ctx_dbg(ctx, "Added device \'%s\' to context \'%s\'\n",
+		dev->id, ctx->name);
+
+	iio_sort_devices(ctx);
+
+	return dev;
+
+err_free_label:
+	free(new_label);
+err_free_name:
+	free(new_name);
+err_free_id:
+	free(new_id);
+err_free_dev:
+	free(dev);
+	return NULL;
+}
+
 int _iio_context_add_device(struct iio_context *ctx, struct iio_device *dev)
 {
 	struct iio_device **devices = realloc(ctx->devices,

@@ -159,6 +159,10 @@ struct iio_context * iio_context_create_from_backend(
 		const struct iio_backend *backend,
 		const char *description);
 
+__api struct iio_device *
+iio_context_add_device(struct iio_context *ctx,
+		       const char *id, const char *name, const char *label);
+
 __api struct iio_context_pdata *
 iio_context_get_pdata(const struct iio_context *ctx);
 
