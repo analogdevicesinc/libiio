@@ -14,6 +14,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
 #include <limits.h>
@@ -436,10 +437,9 @@ local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
 		return ret;
 }
 
-static ssize_t local_read_dev_attr(const struct iio_device *dev,
-				   unsigned int buf_id, const char *attr,
-				   char *dst, size_t len,
-				   enum iio_attr_type type)
+static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
+				      const char *attr, char *dst, size_t len,
+				      enum iio_attr_type type)
 {
 	FILE *f;
 	char buf[1024];
@@ -451,27 +451,27 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
 		case IIO_ATTR_TYPE_CHANNEL:
-			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
+			if (WITH_HWMON && id[0] == 'h') {
 				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
-							dev->id, attr);
+							id, attr);
 			} else {
 				iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-							dev->id, attr);
+							id, attr);
 			}
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-					dev->id, attr);
+					id, attr);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
 			if (buf_id > 0) {
 				iio_snprintf(buf, sizeof(buf),
 					     "/sys/bus/iio/devices/%s/buffer%u/%s",
-					     dev->id, buf_id, attr);
+					     id, buf_id, attr);
 			} else {
 				iio_snprintf(buf, sizeof(buf),
 					     "/sys/bus/iio/devices/%s/buffer/%s",
-					     dev->id, attr);
+					     id, attr);
 			}
 			break;
 		default:
@@ -498,6 +498,16 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 		ret = -errno;
 	fclose(f);
 	return ret;
+}
+
+static ssize_t local_read_dev_attr(const struct iio_device *dev,
+				   unsigned int buf_id, const char *attr,
+				   char *dst, size_t len,
+				   enum iio_attr_type type)
+{
+	const char *id = iio_device_get_id(dev);
+
+	return local_do_read_dev_attr(id, buf_id, attr, dst, len, type);
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
@@ -706,44 +716,6 @@ get_short_attr_name(struct iio_channel *chn, const char *attr)
 	return ptr;
 }
 
-static int read_device_name(struct iio_device *dev)
-{
-	char buf[1024];
-	ssize_t ret;
-
-	ret = local_read_dev_attr(dev, 0, "name", buf, sizeof(buf),
-				  IIO_ATTR_TYPE_DEVICE);
-	if (ret < 0)
-		return ret;
-	else if (ret == 0)
-		return -EIO;
-
-	dev->name = iio_strdup(buf);
-	if (!dev->name)
-		return -ENOMEM;
-	else
-		return 0;
-}
-
-static int read_device_label(struct iio_device *dev)
-{
-	char buf[1024];
-	ssize_t ret;
-
-	ret = local_read_dev_attr(dev, 0, "label", buf, sizeof(buf),
-				  IIO_ATTR_TYPE_DEVICE);
-	if (ret < 0)
-		return ret;
-	else if (ret == 0)
-		return -EIO;
-
-	dev->label = iio_strdup(buf);
-	if (!dev->label)
-		return -ENOMEM;
-	else
-		return 0;
-}
-
 static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	unsigned int i;
@@ -752,10 +724,8 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 		if (!strcmp(device_attrs_denylist[i], attr))
 			return 0;
 
-	if (!strcmp(attr, "name"))
-		return read_device_name(dev);
-	if (!strcmp(attr, "label"))
-		return read_device_label(dev);
+	if (!strcmp(attr, "name") || !strcmp(attr, "label"))
+		return 0;
 
 	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEVICE);
 }
@@ -1268,16 +1238,25 @@ static int create_device(void *d, const char *path)
 	unsigned int i;
 	int ret;
 	struct iio_context *ctx = d;
-	struct iio_device *dev = zalloc(sizeof(*dev));
+	struct iio_device *dev;
+	const char *id, *name_ptr = NULL, *label_ptr = NULL;
+	char name[512], label[512];
+
+	id = strrchr(path, '/') + 1;
+
+	ret = (int)local_do_read_dev_attr(id, 0, "name", name, sizeof(name),
+					  IIO_ATTR_TYPE_DEVICE);
+	if (ret > 0)
+		name_ptr = name;
+
+	ret = (int)local_do_read_dev_attr(id, 0, "label", label, sizeof(label),
+					  IIO_ATTR_TYPE_DEVICE);
+	if (ret < 0)
+		label_ptr = label;
+
+	dev = iio_context_add_device(ctx, id, name_ptr, label_ptr);
 	if (!dev)
 		return -ENOMEM;
-
-	dev->ctx = ctx;
-	dev->id = iio_strdup(strrchr(path, '/') + 1);
-	if (!dev->id) {
-		free(dev);
-		return -ENOMEM;
-	}
 
 	ret = foreach_in_dir(ctx, dev, path, false, add_attr_or_channel);
 	if (ret < 0)
@@ -1318,9 +1297,7 @@ static int create_device(void *d, const char *path)
 
 	iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_DEVICE]);
 
-	ret = _iio_context_add_device(ctx, dev);
-	if (!ret)
-		return 0;
+	return 0;
 
 err_free_scan_elements:
 	for (i = 0; i < dev->nb_channels; i++)
