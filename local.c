@@ -1838,7 +1838,8 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	if (!description)
 		return iio_ptr(-ENOMEM);
 
-	ctx = iio_context_create_from_backend(&iio_local_backend, description);
+	ctx = iio_context_create_from_backend(params, &iio_local_backend,
+					      description, 0, 0, NULL);
 	free(description);
 	ret = iio_err(ctx);
 	if (ret)
@@ -1854,8 +1855,6 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	ret = iio_err(ctx->pdata->lock);
 	if (ret < 0)
 		goto err_context_destroy;
-
-	ctx->params = *params;
 
 	ret = foreach_in_dir(ctx, ctx, "/sys/bus/iio/devices",
 			     true, create_device);

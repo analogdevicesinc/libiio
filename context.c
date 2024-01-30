@@ -204,12 +204,15 @@ char * iio_context_get_xml(const struct iio_context *ctx)
 	return str;
 }
 
-struct iio_context * iio_context_create_from_backend(
-		const struct iio_backend *backend,
-		const char *description)
+struct iio_context *
+iio_context_create_from_backend(const struct iio_context_params *params,
+				const struct iio_backend *backend,
+				const char *description,
+				unsigned int major, unsigned int minor,
+				const char *git_tag)
 {
 	struct iio_context *ctx;
-	int ret;
+	int ret = -ENOMEM;
 
 	if (!backend)
 		return iio_ptr(-EINVAL);
@@ -218,7 +221,6 @@ struct iio_context * iio_context_create_from_backend(
 	if (!ctx)
 		return iio_ptr(-ENOMEM);
 
-	ret = -ENOMEM;
 	if (description) {
 		ctx->description = iio_strdup(description);
 		if (!ctx->description)
@@ -227,9 +229,21 @@ struct iio_context * iio_context_create_from_backend(
 
 	ctx->name = backend->name;
 	ctx->ops = backend->ops;
+	ctx->params = *params;
+
+	ctx->major = major;
+	ctx->minor = minor;
+
+	if (git_tag) {
+		ctx->git_tag = iio_strdup(git_tag);
+		if (!ctx->git_tag)
+			goto err_free_description;
+	}
 
 	return ctx;
 
+err_free_description:
+	free(ctx->description);
 err_free_ctx:
 	free(ctx);
 	return iio_ptr(ret);

@@ -405,24 +405,13 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 		}
 	}
 
-	ctx = iio_context_create_from_backend(&iio_xml_backend, description);
+	ctx = iio_context_create_from_backend(params, &iio_xml_backend,
+					      description,
+					      major, minor, git_tag);
 	err = iio_err(ctx);
 	if (err) {
 		prm_err(params, "Unable to allocate memory for context\n");
 		return iio_ptr(err);
-	}
-
-	ctx->params = *params;
-
-	if (git_tag) {
-		ctx->major = major;
-		ctx->minor = minor;
-
-		ctx->git_tag = iio_strdup(git_tag);
-		if (!ctx->git_tag) {
-			iio_context_destroy(ctx);
-			return iio_ptr(-ENOMEM);
-		}
 	}
 
 	err = iio_populate_xml_context_helper(ctx, root);
