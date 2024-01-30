@@ -225,8 +225,6 @@ char *iio_strtok_r(char *str, const char *delim, char **saveptr);
 char * iio_getenv (char * envvar);
 uint64_t iio_read_counter_us(void);
 
-int _iio_context_add_device(struct iio_context *ctx, struct iio_device *dev);
-
 __cnst const struct iio_context_params *get_default_params(void);
 
 extern const struct iio_backend iio_ip_backend;
