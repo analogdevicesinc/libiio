@@ -155,9 +155,11 @@ struct iio_backend {
  */
 extern const struct iio_backend iio_external_backend;
 
-struct iio_context * iio_context_create_from_backend(
-		const struct iio_backend *backend,
-		const char *description);
+__api struct iio_context *
+iio_context_create_from_backend(const struct iio_context_params *params,
+				const struct iio_backend *backend,
+				const char *description, unsigned int minor,
+				unsigned int major, const char *git_tag);
 
 __api struct iio_device *
 iio_context_add_device(struct iio_context *ctx,
