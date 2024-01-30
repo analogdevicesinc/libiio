@@ -1318,7 +1318,7 @@ static int create_device(void *d, const char *path)
 
 	iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_DEVICE]);
 
-	ret = iio_context_add_device(ctx, dev);
+	ret = _iio_context_add_device(ctx, dev);
 	if (!ret)
 		return 0;
 

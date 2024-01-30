@@ -354,7 +354,7 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 			return err;
 		}
 
-		err = iio_context_add_device(ctx, dev);
+		err = _iio_context_add_device(ctx, dev);
 		if (err) {
 			free(dev);
 			return err;

@@ -511,7 +511,7 @@ iio_context_find_attr(const struct iio_context *ctx, const char *name)
 	return iio_attr_find(&ctx->attrlist, name);
 }
 
-int iio_context_add_device(struct iio_context *ctx, struct iio_device *dev)
+int _iio_context_add_device(struct iio_context *ctx, struct iio_device *dev)
 {
 	struct iio_device **devices = realloc(ctx->devices,
 			(ctx->nb_devices + 1) * sizeof(struct iio_device *));
