@@ -7,6 +7,7 @@
  */
 
 #include "iio-private.h"
+#include "sort.h"
 
 #include <inttypes.h>
 #include <errno.h>
@@ -213,6 +214,8 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 	}
 
 	attrs->num++;
+
+	iio_sort_attrs(attrs);
 
 	return 0;
 }
