@@ -27,11 +27,4 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 		 const char *name, const char *filename,
 		 enum iio_attr_type type);
 
-int iio_context_add_attr(struct iio_context *ctx,
-			 const char *key, const char *value);
-int iio_device_add_attr(struct iio_device *dev,
-			const char *name, enum iio_attr_type type);
-int iio_channel_add_attr(struct iio_channel *chn,
-			 const char *name, const char *filename);
-
 #endif /* __IIO_ATTR_H__ */
