@@ -6,10 +6,8 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "attr.h"
-#include "iio-private.h"
-
 #include <errno.h>
+#include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -32,13 +30,12 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 		} else if (!strcmp((const char *)attr->name, "filename")) {
 			filename = (const char *)attr->children->content;
 		} else {
-			chn_dbg(chn, "Unknown field \'%s\' in channel %s\n",
-				attr->name, chn->id);
+			chn_dbg(chn, "Unknown field \'%s\'\n", attr->name);
 		}
 	}
 
 	if (!name) {
-		chn_err(chn, "Incomplete attribute in channel %s\n", chn->id);
+		chn_err(chn, "Incomplete attribute\n");
 		return -EINVAL;
 	}
 
@@ -54,20 +51,21 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 		if (!strcmp((char *) attr->name, "name")) {
 			name = (char *) attr->children->content;
 		} else {
-			dev_dbg(dev, "Unknown field \'%s\' in device %s\n",
-				attr->name, dev->id);
+			dev_dbg(dev, "Unknown field \'%s\'\n", attr->name);
 		}
 	}
 
 	if (!name) {
-		dev_err(dev, "Incomplete attribute in device %s\n", dev->id);
+		dev_err(dev, "Incomplete attribute\n");
 		return -EINVAL;
 	}
 
 	return iio_device_add_attr(dev, name, type);
 }
 
-static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
+static int setup_scan_element(const struct iio_device *dev,
+			      xmlNode *n, long *index,
+			      struct iio_data_format *fmt)
 {
 	xmlAttr *attr;
 	int err;
@@ -83,7 +81,7 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			value = strtoll(content, &end, 0);
 			if (end == content || value < 0 || errno == ERANGE)
 				return -EINVAL;
-			chn->index = (long) value;
+			*index = (long)value;
 		} else if (!strcmp(name, "format")) {
 			char e, s;
 			if (strchr(content, 'X')) {
@@ -94,14 +92,14 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 #else
 					&e, &s,
 #endif
-					&chn->format.bits,
-					&chn->format.length,
-					&chn->format.repeat,
-					&chn->format.shift);
+					&fmt->bits,
+					&fmt->length,
+					&fmt->repeat,
+					&fmt->shift);
 				if (err != 6)
 					return -EINVAL;
 			} else {
-				chn->format.repeat = 1;
+				fmt->repeat = 1;
 				err = iio_sscanf(content, "%ce:%c%u/%u>>%u",
 #ifdef _MSC_BUILD
 					&e, (unsigned int)sizeof(e),
@@ -109,16 +107,16 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 #else
 					&e, &s,
 #endif
-					&chn->format.bits,
-					&chn->format.length,
-					&chn->format.shift);
+					&fmt->bits,
+					&fmt->length,
+					&fmt->shift);
 				if (err != 5)
 					return -EINVAL;
 			}
-			chn->format.is_be = e == 'b';
-			chn->format.is_signed = (s == 's' || s == 'S');
-			chn->format.is_fully_defined = (s == 'S' || s == 'U' ||
-				chn->format.bits == chn->format.length);
+			fmt->is_be = e == 'b';
+			fmt->is_signed = (s == 's' || s == 'S');
+			fmt->is_fully_defined = (s == 'S' || s == 'U' ||
+				fmt->bits == fmt->length);
 		} else if (!strcmp(name, "scale")) {
 			char *end;
 			float value;
@@ -126,14 +124,14 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 			errno = 0;
 			value = strtof(content, &end);
 			if (end == content || errno == ERANGE) {
-				chn->format.with_scale = false;
+				fmt->with_scale = false;
 				return -EINVAL;
 			}
 
-			chn->format.with_scale = true;
-			chn->format.scale = value;
+			fmt->with_scale = true;
+			fmt->scale = value;
 		} else {
-			chn_dbg(chn, "Unknown attribute \'%s\' in <scan-element>\n",
+			dev_dbg(dev, "Unknown attribute \'%s\' in <scan-element>\n",
 				name);
 		}
 	}
@@ -141,35 +139,32 @@ static int setup_scan_element(struct iio_channel *chn, xmlNode *n)
 	return 0;
 }
 
-static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
+static int create_channel(struct iio_device *dev, xmlNode *node)
 {
 	xmlAttr *attr;
 	struct iio_channel *chn;
 	int err = -ENOMEM;
+	char *name_ptr = NULL, *id_ptr = NULL;
+	bool output = false;
+	bool scan_element = false;
+	long index = -ENOENT;
+	struct iio_data_format format = { 0 };
+	xmlNode *n;
 
-	chn = zalloc(sizeof(*chn));
-	if (!chn)
-		return iio_ptr(-ENOMEM);
-
-	chn->dev = dev;
-
-	/* Set the default index value < 0 (== no index) */
-	chn->index = -ENOENT;
-
-	for (attr = n->properties; attr; attr = attr->next) {
+	for (attr = node->properties; attr; attr = attr->next) {
 		const char *name = (const char *) attr->name,
 		      *content = (const char *) attr->children->content;
 		if (!strcmp(name, "name")) {
-			chn->name = iio_strdup(content);
-			if (!chn->name)
-				goto err_free_channel;
+			name_ptr = iio_strdup(content);
+			if (!name_ptr)
+				goto err_free_name_id;
 		} else if (!strcmp(name, "id")) {
-			chn->id = iio_strdup(content);
-			if (!chn->id)
-				goto err_free_channel;
+			id_ptr = iio_strdup(content);
+			if (!id_ptr)
+				goto err_free_name_id;
 		} else if (!strcmp(name, "type")) {
 			if (!strcmp(content, "output"))
-				chn->is_output = true;
+				output = true;
 			else if (strcmp(content, "input"))
 				dev_dbg(dev, "Unknown channel type %s\n", content);
 		} else {
@@ -178,109 +173,114 @@ static struct iio_channel * create_channel(struct iio_device *dev, xmlNode *n)
 		}
 	}
 
-	if (!chn->id) {
+	if (!id_ptr) {
 		dev_err(dev, "Incomplete <attribute>\n");
 		err = -EINVAL;
-		goto err_free_channel;
+		goto err_free_name_id;
 	}
 
-	for (n = n->children; n; n = n->next) {
+	for (n = node->children; n; n = n->next) {
+		if (!strcmp((char *) n->name, "scan-element")) {
+			scan_element = true;
+			err = setup_scan_element(dev, n, &index, &format);
+			if (err < 0)
+				goto err_free_name_id;
+
+			break;
+		}
+	}
+
+	chn = iio_device_add_channel(dev, index, id_ptr, name_ptr, output,
+				     scan_element, &format);
+	if (!chn) {
+		err = -ENOMEM;
+		goto err_free_name_id;
+	}
+
+	free(name_ptr);
+	free(id_ptr);
+
+	for (n = node->children; n; n = n->next) {
 		if (!strcmp((char *) n->name, "attribute")) {
 			err = add_attr_to_channel(chn, n);
 			if (err < 0)
-				goto err_free_channel;
-		} else if (!strcmp((char *) n->name, "scan-element")) {
-			chn->is_scan_element = true;
-			err = setup_scan_element(chn, n);
-			if (err < 0)
-				goto err_free_channel;
-		} else if (strcmp((char *) n->name, "text")) {
-			dev_dbg(dev, "Unknown children \'%s\' in <channel>\n",
+				return err;
+		} else if (strcmp((char *) n->name, "scan-element")
+			   && strcmp((char *) n->name, "text")) {
+			chn_dbg(chn, "Unknown children \'%s\' in <channel>\n",
 				n->name);
 			continue;
 		}
 	}
 
-	iio_channel_init_finalize(chn);
+	return 0;
 
-	return chn;
-
-err_free_channel:
-	free_channel(chn);
-	return iio_ptr(err);
+err_free_name_id:
+	free(name_ptr);
+	free(id_ptr);
+	return err;
 }
 
-static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
+static int create_device(struct iio_context *ctx, xmlNode *n)
 {
 	xmlAttr *attr;
 	struct iio_device *dev;
 	int err = -ENOMEM;
-
-	dev = zalloc(sizeof(*dev));
-	if (!dev)
-		return iio_ptr(-ENOMEM);
-
-	dev->ctx = ctx;
+	char *name = NULL, *label = NULL, *id = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			dev->name = iio_strdup(
-					(char *) attr->children->content);
-			if (!dev->name)
-				goto err_free_device;
+			name = iio_strdup((char *) attr->children->content);
+			if (!name)
+				goto err_free_name_label_id;
 		} else if (!strcmp((char *) attr->name, "label")) {
-			dev->label = iio_strdup((char *) attr->children->content);
-			if (!dev->label)
-				goto err_free_device;
+			label = iio_strdup((char *) attr->children->content);
+			if (!label)
+				goto err_free_name_label_id;
 		} else if (!strcmp((char *) attr->name, "id")) {
-			dev->id = iio_strdup((char *) attr->children->content);
-			if (!dev->id)
-				goto err_free_device;
+			id = iio_strdup((char *) attr->children->content);
+			if (!id)
+				goto err_free_name_label_id;
 		} else {
 			ctx_dbg(ctx, "Unknown attribute \'%s\' in <device>\n",
 				attr->name);
 		}
 	}
 
-	if (!dev->id) {
+	if (!id) {
 		ctx_err(ctx, "Unable to read device ID\n");
 		err = -EINVAL;
-		goto err_free_device;
+		goto err_free_name_label_id;
 	}
+
+	dev = iio_context_add_device(ctx, id, name, label);
+	if (!dev)
+		goto err_free_name_label_id;
+
+	/* Those have been duplicated into the iio_device. */
+	free(name);
+	free(label);
+	free(id);
 
 	for (n = n->children; n; n = n->next) {
 		if (!strcmp((char *) n->name, "channel")) {
-			struct iio_channel **chns,
-					   *chn = create_channel(dev, n);
-			err = iio_err(chn);
+			err = create_channel(dev, n);
 			if (err) {
 				dev_perror(dev, err, "Unable to create channel");
-				goto err_free_device;
+				return err;
 			}
-
-			chns = realloc(dev->channels, (1 + dev->nb_channels) *
-					sizeof(struct iio_channel *));
-			if (!chns) {
-				err = -ENOMEM;
-				dev_err(dev, "Unable to allocate memory\n");
-				free(chn);
-				goto err_free_device;
-			}
-
-			chns[dev->nb_channels++] = chn;
-			dev->channels = chns;
 		} else if (!strcmp((char *) n->name, "attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE);
 			if (err < 0)
-				goto err_free_device;
+				return err;
 		} else if (!strcmp((char *) n->name, "debug-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG);
 			if (err < 0)
-				goto err_free_device;
+				return err;
 		} else if (!strcmp((char *) n->name, "buffer-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER);
 			if (err < 0)
-				goto err_free_device;
+				return err;
 		} else if (strcmp((char *) n->name, "text")) {
 			dev_dbg(dev, "Unknown children \'%s\' in <device>\n",
 				n->name);
@@ -288,12 +288,13 @@ static struct iio_device * create_device(struct iio_context *ctx, xmlNode *n)
 		}
 	}
 
-	return dev;
+	return 0;
 
-err_free_device:
-	free_device(dev);
-
-	return iio_ptr(err);
+err_free_name_label_id:
+	free(name);
+	free(label);
+	free(id);
+	return err;
 }
 
 static const struct iio_backend_ops xml_ops = {
@@ -332,8 +333,6 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 	int err;
 
 	for (n = root->children; n; n = n->next) {
-		struct iio_device *dev;
-
 		if (!strcmp((char *) n->name, "context-attribute")) {
 			err = parse_context_attr(ctx, n);
 			if (err)
@@ -347,21 +346,14 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 			continue;
 		}
 
-		dev = create_device(ctx, n);
-		err = iio_err(dev);
+		err = create_device(ctx, n);
 		if (err) {
 			ctx_perror(ctx, err, "Unable to create device");
 			return err;
 		}
-
-		err = _iio_context_add_device(ctx, dev);
-		if (err) {
-			free(dev);
-			return err;
-		}
 	}
 
-	return iio_context_init(ctx);
+	return 0;
 }
 
 static struct iio_context *
