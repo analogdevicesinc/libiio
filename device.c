@@ -8,6 +8,7 @@
 
 #include "attr.h"
 #include "iio-private.h"
+#include "sort.h"
 
 #include <iio/iio-debug.h>
 #include <inttypes.h>
@@ -350,4 +351,67 @@ struct iio_device_pdata * iio_device_get_pdata(const struct iio_device *dev)
 void iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *d)
 {
 	dev->pdata = d;
+}
+
+struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,
+					    const char *id, const char *name,
+					    bool output, bool scan_element,
+					    const struct iio_data_format *fmt)
+{
+	struct iio_channel *chn, **chns;
+	char *new_id, *new_name = NULL;
+	unsigned int i;
+
+	chn = zalloc(sizeof(*chn));
+	if (!chn)
+		return NULL;
+
+	new_id = iio_strdup(id);
+	if (!new_id)
+		goto err_free_chn;
+
+	if (name) {
+		new_name = iio_strdup(name);
+		if (!new_name)
+			goto err_free_id;
+	}
+
+	chn->id = new_id;
+	chn->name = new_name;
+	chn->dev = dev;
+	chn->is_output = output;
+	chn->is_scan_element = scan_element;
+	chn->index = index;
+
+	memcpy(&chn->format, fmt, sizeof(*fmt));
+
+	if (!chn->format.repeat)
+		chn->format.repeat = 1;
+
+	chns = realloc(dev->channels, (dev->nb_channels + 1) * sizeof(*chn));
+	if (!chns)
+		goto err_free_name;
+
+	chns[dev->nb_channels++] = chn;
+	dev->channels = chns;
+
+	dev_dbg(dev, "Added channel \'%s\'\n", id);
+
+	iio_channel_init_finalize(chn);
+
+	/* Reorder channels by index */
+	iio_sort_channels(dev);
+
+	for (i = 0; i < dev->nb_channels; i++)
+		dev->channels[i]->number = i;
+
+	return chn;
+
+err_free_name:
+	free(new_name);
+err_free_id:
+	free(new_id);
+err_free_chn:
+	free(chn);
+	return NULL;
 }
