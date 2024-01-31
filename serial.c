@@ -243,7 +243,7 @@ serial_create_buffer(const struct iio_device *dev, unsigned int idx,
 					       dev, idx, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
-		dev_perror(dev, ret, "Unable to create IIOD client");
+		dev_perror(dev, ret, "Unable to create buffer");
 		free(buf);
 		return iio_ptr(ret);
 	}
