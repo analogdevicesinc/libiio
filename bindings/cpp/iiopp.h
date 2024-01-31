@@ -710,7 +710,7 @@ inline double value(Channel ch)
     if (auto att = ch.find_attr("scale"))
         scale = att.read_double();
 
-    double offset = 1;
+    double offset = 0;
     if (auto att = ch.find_attr("offset"))
         offset = att.read_double();
 
