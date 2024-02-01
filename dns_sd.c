@@ -94,6 +94,7 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 	const char *hw_model = NULL, *serial = NULL;
 	const struct iio_attr *attr;
 	unsigned int i;
+	int err;
 
 	if (port == IIOD_PORT) {
 		iio_snprintf(uri, sizeof(uri), "ip:%s", hostname);
@@ -107,9 +108,10 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 	}
 
 	ctx = iio_create_context(params, uri);
-	if (!ctx) {
-		prm_err(params, "No context at %s\n", addr_str);
-		return -ENOMEM;
+	err = iio_err(ctx);
+	if (err) {
+		prm_perror(params, err, "No context at %s\n", addr_str);
+		return err;
 	}
 
 	attr = iio_context_find_attr(ctx, "hw_model");
