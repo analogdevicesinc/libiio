@@ -1279,7 +1279,10 @@ ssize_t iio_device_attr_write_raw(const struct iio_device *dev,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_device_find_attr)(dev, name);
-	return IIO_CALL(iio_attr_write_raw)(attr, src, len);
+	if (attr)
+		return IIO_CALL(iio_attr_write_raw)(attr, src, len);
+
+	return -ENOENT;
 }
 
 ssize_t iio_device_attr_write(const struct iio_device *dev,
@@ -1288,7 +1291,10 @@ ssize_t iio_device_attr_write(const struct iio_device *dev,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_device_find_attr)(dev, name);
-	return IIO_CALL(iio_attr_write_string)(attr, src);
+	if (attr)
+		return IIO_CALL(iio_attr_write_string)(attr, src);
+
+	return -ENOENT;
 }
 
 int iio_device_attr_write_bool(const struct iio_device *dev,
@@ -1297,7 +1303,10 @@ int iio_device_attr_write_bool(const struct iio_device *dev,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_device_find_attr)(dev, name);
-	return IIO_CALL(iio_attr_write_bool)(attr, val);
+	if (attr)
+		return IIO_CALL(iio_attr_write_bool)(attr, val);
+
+	return -ENOENT;
 }
 
 int iio_device_attr_write_longlong(const struct iio_device *dev,
@@ -1306,7 +1315,10 @@ int iio_device_attr_write_longlong(const struct iio_device *dev,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_device_find_attr)(dev, name);
-	return IIO_CALL(iio_attr_write_longlong)(attr, val);
+	if (attr)
+		return IIO_CALL(iio_attr_write_longlong)(attr, val);
+
+	return -ENOENT;
 }
 
 int iio_device_attr_write_double(const struct iio_device *dev,
@@ -1315,7 +1327,10 @@ int iio_device_attr_write_double(const struct iio_device *dev,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_device_find_attr)(dev, name);
-	return IIO_CALL(iio_attr_write_double)(attr, val);
+	if (attr)
+		return IIO_CALL(iio_attr_write_double)(attr, val);
+
+	return -ENOENT;
 }
 
 int iio_device_attr_write_all(struct iio_device *dev,
@@ -1812,7 +1827,10 @@ ssize_t iio_channel_attr_write_raw(const struct iio_channel *chn,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_channel_find_attr)(chn, name);
-	return IIO_CALL(iio_attr_write_raw)(attr, src, len);
+	if (attr)
+		return IIO_CALL(iio_attr_write_raw)(attr, src, len);
+
+	return -ENOENT;
 }
 
 ssize_t iio_channel_attr_write(const struct iio_channel *chn,
@@ -1821,7 +1839,10 @@ ssize_t iio_channel_attr_write(const struct iio_channel *chn,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_channel_find_attr)(chn, name);
-	return IIO_CALL(iio_attr_write_string)(attr, src);
+	if (attr)
+		return IIO_CALL(iio_attr_write_string)(attr, src);
+
+	return -ENOENT;
 }
 
 ssize_t iio_channel_attr_write_bool(const struct iio_channel *chn,
@@ -1830,7 +1851,10 @@ ssize_t iio_channel_attr_write_bool(const struct iio_channel *chn,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_channel_find_attr)(chn, name);
-	return IIO_CALL(iio_attr_write_bool)(attr, val);
+	if (attr)
+		return IIO_CALL(iio_attr_write_bool)(attr, val);
+
+	return -ENOENT;
 }
 
 ssize_t iio_channel_attr_write_longlong(const struct iio_channel *chn,
@@ -1839,7 +1863,10 @@ ssize_t iio_channel_attr_write_longlong(const struct iio_channel *chn,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_channel_find_attr)(chn, name);
-	return IIO_CALL(iio_attr_write_longlong)(attr, val);
+	if (attr)
+		return IIO_CALL(iio_attr_write_longlong)(attr, val);
+
+	return -ENOENT;
 }
 
 ssize_t iio_channel_attr_write_double(const struct iio_channel *chn,
@@ -1848,7 +1875,10 @@ ssize_t iio_channel_attr_write_double(const struct iio_channel *chn,
 	const struct iio_attr *attr;
 
 	attr = IIO_CALL(iio_channel_find_attr)(chn, name);
-	return IIO_CALL(iio_attr_write_double)(attr, val);
+	if (attr)
+		return IIO_CALL(iio_attr_write_double)(attr, val);
+
+	return -ENOENT;
 }
 
 int iio_channel_attr_write_all(struct iio_channel *chn,
