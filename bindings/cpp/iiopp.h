@@ -40,7 +40,7 @@
  * - Classes that model the major types, providing member functions for easy usage.
  * - Error handling (errors are checked and turned into exceptions).
  * - Simplified resource management via smart pointers.
- * - Functions that may return \c NULL for "no string" are explicit by returning an <tt>std::optional</tt>.
+ * - Functions that may return \c NULL for "no string" or "no object" are explicit by returning an <tt>std::optional</tt>.
  * - Iterators and array subscription operator for idiomatic access to sequences.
  * - Implicit conversion to the wrapped C-types, so C++ instances can easily be passed to the C-API. Arguments C++-API take the raw C-types.
  *
@@ -109,6 +109,11 @@ namespace impl
 inline optstr opt(char const * s)
 {
     return s ? optstr{{s}} : optstr{};
+}
+
+template <class T, class C> optional<T> maybe(C * obj)
+{
+    return obj ? optional<T>{{obj}} : optional<T>{};
 }
 
 inline std::string err_str(int err)
@@ -206,7 +211,7 @@ class Attr
     iio_attr const * p;
 public:
     Attr() = delete;
-    Attr(iio_attr const * attr) : p(attr){}
+    Attr(iio_attr const * attr) : p(attr){assert(attr);}
     operator iio_attr const * () const {return p;}
 
     cstr name() {return iio_attr_get_name(p);}
@@ -281,19 +286,13 @@ public:
 template <class obj_T, iio_attr const * find_attr_T(obj_T const *, char const *)>
 optional<Attr> attr(obj_T const * obj, cstr name)
 {
-    iio_attr const * a = find_attr_T(obj, name);
-    if (a)
-        return {Attr(a)};
-    return {};
+    return maybe<Attr>(find_attr_T(obj, name));
 }
 
 template <class obj_T, iio_attr const * get_attr_T(obj_T const *, unsigned int)>
 optional<Attr> attr(obj_T const * obj, unsigned int index)
 {
-    iio_attr const * a = get_attr_T(obj, index);
-    if (a)
-        return {Attr(a)};
-    return {};
+    return maybe<Attr>(get_attr_T(obj, index));
 }
 
 } // namespace impl
@@ -341,7 +340,7 @@ class ChannelsMask
 public:
 
     ChannelsMask() = delete;
-    ChannelsMask(iio_channels_mask const * mask) : p(mask){}
+    ChannelsMask(iio_channels_mask const * mask) : p(mask){assert(mask);}
     operator iio_channels_mask const * () const {return p;}
 };
 
@@ -360,7 +359,7 @@ class Block
 public:
 
     Block() = delete;
-    Block(iio_block * block) : p(block){}
+    Block(iio_block * block) : p(block){assert(block);}
     operator iio_block * () const {return p;}
 
     void * start() {return iio_block_start(p);}
@@ -388,7 +387,7 @@ class Channel
 public:
 
     Channel() = delete;
-    Channel(iio_channel * chan) : p(chan), attrs(chan){}
+    Channel(iio_channel * chan) : p(chan), attrs(chan){assert(chan);}
     operator iio_channel * () const {return p;}
 
 #ifndef DOXYGEN
@@ -409,8 +408,8 @@ public:
     bool is_output() const { return iio_channel_is_output(p);}
     bool is_scan_element() const { return iio_channel_is_scan_element(p);}
     unsigned int attrs_count() const {return iio_channel_get_attrs_count(p);}
-    Attr attr(unsigned int index) {return iio_channel_get_attr(p, index);}
-    Attr find_attr(cstr name) {return iio_channel_find_attr(p, name);}
+    optional<Attr> attr(unsigned int index) {return impl::maybe<Attr>(iio_channel_get_attr(p, index));}
+    optional<Attr> find_attr(cstr name) {return impl::maybe<Attr>(iio_channel_find_attr(p, name));}
     void enable(iio_channels_mask * mask) {iio_channel_enable(p, mask);}
     void disable(iio_channels_mask * mask) {iio_channel_disable(p, mask);}
     bool is_enabled(iio_channels_mask * mask) const { return iio_channel_is_enabled(p, mask);}
@@ -435,7 +434,7 @@ class Stream
 public:
 
     Stream() = delete;
-    Stream(iio_stream * s) : p(s){}
+    Stream(iio_stream * s) : p(s){assert(s);}
     operator iio_stream * () const {return p;}
 
     Block next_block() {return const_cast<iio_block *>(impl::check(iio_stream_get_next_block(p), "iio_stream_get_next_block")); }
@@ -450,7 +449,7 @@ struct Event : public iio_event
 {
     iio_event_type type() const { return iio_event_get_type(this);}
     iio_event_direction direction() const { return iio_event_get_direction(this);}
-    Channel channel(iio_device * dev, bool diff){return const_cast<iio_channel*>(iio_event_get_channel(this, dev, diff));}
+    optional<Channel> channel(iio_device * dev, bool diff){return impl::maybe<Channel>(const_cast<iio_channel*>(iio_event_get_channel(this, dev, diff)));}
 };
 
 /** @brief C++ wrapper for @ref iio_event_stream
@@ -461,7 +460,7 @@ class EventStream
 public:
 
     EventStream() = delete;
-    EventStream(iio_event_stream * s) : p(s){}
+    EventStream(iio_event_stream * s) : p(s){assert(p);}
     operator iio_event_stream * () const {return p;}
 
     Event read(bool nonblock) {iio_event ev; impl::check(iio_event_stream_read(p, &ev, nonblock), "iio_event_stream_read"); return static_cast<Event&>(ev);} // Flawfinder: ignore
@@ -477,7 +476,7 @@ class Buffer
     iio_buffer * const p;
 public:
     Buffer() = delete;
-    Buffer(iio_buffer * buffer) : p(buffer), attrs(buffer){}
+    Buffer(iio_buffer * buffer) : p(buffer), attrs(buffer){assert(buffer);}
     operator iio_buffer * () const {return p;}
 
 #ifndef DOXYGEN
@@ -494,8 +493,8 @@ public:
 
     Device device();
     unsigned int attrs_count() const {return iio_buffer_get_attrs_count(p);}
-    Attr get_attr(unsigned int index) {return iio_buffer_get_attr(p, index);}
-    Attr find_attr(cstr name) {return iio_buffer_find_attr(p, name);}
+    optional<Attr> get_attr(unsigned int index) {return impl::maybe<Attr>(iio_buffer_get_attr(p, index));}
+    optional<Attr> find_attr(cstr name) {return impl::maybe<Attr>(iio_buffer_find_attr(p, name));}
     void set_data(void * data){iio_buffer_set_data(p, data);}
     void * data() {return iio_buffer_get_data(p);}
     void cancel() {iio_buffer_cancel(p);}
@@ -522,8 +521,10 @@ public:
 
     Channel operator [](unsigned int i)
     {
-        assert(i < channels_count());
-        return channel(i);
+        if (auto maybeCh = channel(i))
+            return *maybeCh;
+
+        throw std::out_of_range("channel index out of range");
     }
 
 #ifndef DOXYGEN
@@ -552,7 +553,7 @@ public:
 
 
     Device() = delete;
-    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev) {}
+    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev) {assert(dev);}
     operator iio_device * () const {return p;}
 
     Context context();
@@ -561,9 +562,9 @@ public:
     optstr label() const { return impl::opt(iio_device_get_label(p));}
     unsigned int channels_count() const {return iio_device_get_channels_count(p);}
     unsigned int attrs_count() const {return iio_device_get_attrs_count(p);}
-    Channel channel(unsigned int idx) const {return Channel{iio_device_get_channel(p, idx)};}
+    optional<Channel> channel(unsigned int idx) const {return impl::maybe<Channel>(iio_device_get_channel(p, idx));}
     optional<Attr> attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_attr>(p, idx);}
-    Channel find_channel(cstr name, bool output) const {return Channel{iio_device_find_channel(p, name, output)};}
+    optional<Channel> find_channel(cstr name, bool output) const {return impl::maybe<Channel>(iio_device_find_channel(p, name, output));}
     optional<Attr> find_attr(cstr name) {return impl::attr<iio_device, iio_device_find_attr>(p, name);}
     void set_data(void * data){iio_device_set_data(p, data);}
     void * data() const {return iio_device_get_data(p);}
@@ -596,8 +597,10 @@ public:
 
     Device operator [](unsigned int i)
     {
-        assert(i < devices_count());
-        return device(i);
+        if (auto maybeDev = device(i))
+            return *maybeDev;
+
+        throw std::out_of_range("device index out of range");
     }
 
 #ifndef DOXYGEN
@@ -627,8 +630,8 @@ public:
     optional<Attr> attr(unsigned int idx) {return impl::attr<iio_context, iio_context_get_attr>(p, idx);}
     optional<Attr> find_attr(cstr name) {return impl::attr<iio_context, iio_context_find_attr>(p, name);}
     unsigned int devices_count() const {return iio_context_get_devices_count(p);}
-    Device device(unsigned int idx) const { return Device{iio_context_get_device(p, idx)}; }
-    Device find_device(cstr name) const {return iio_context_find_device(p, name);}
+    optional<Device> device(unsigned int idx) const { return impl::maybe<Device>(iio_context_get_device(p, idx)); }
+    optional<Device> find_device(cstr name) const {return impl::maybe<Device>(iio_context_find_device(p, name));}
     void set_timeout(unsigned int timeout_ms){impl::check(iio_context_set_timeout(p, timeout_ms), "iio_context_set_timeout");}
     iio_context_params const * params() const {return iio_context_get_params(p);}
     void set_data(void * data){iio_context_set_data(p, data);}
@@ -660,7 +663,7 @@ class ScanResult
 
     friend class Scan;
 
-    ScanResult(struct iio_scan const * scan, size_t index) : p(scan), idx(index){}
+    ScanResult(struct iio_scan const * scan, size_t index) : p(scan), idx(index){assert(scan);}
 public:
     cstr description() const { return iio_scan_get_description(p, idx);}
     cstr uri() const { return iio_scan_get_description(p, idx);}
@@ -684,7 +687,7 @@ public:
     }
 
     Scan() = delete;
-    Scan(struct iio_scan const * scan) : p(scan){}
+    Scan(struct iio_scan const * scan) : p(scan){assert(scan);}
     operator struct iio_scan const * () const {return p;}
     size_t results_count() const { return iio_scan_get_results_count(p);}
 };
@@ -704,18 +707,18 @@ ScanPtr scan(struct iio_context_params const * params, char const * backends)
 inline double value(Channel ch)
 {
     if (auto att = ch.find_attr("input"))
-        return att.read_double() / 1000;
+        return att->read_double() / 1000;
 
     double scale = 1;
     if (auto att = ch.find_attr("scale"))
-        scale = att.read_double();
+        scale = att->read_double();
 
     double offset = 0;
     if (auto att = ch.find_attr("offset"))
-        offset = att.read_double();
+        offset = att->read_double();
 
     if (auto att = ch.find_attr("raw"))
-        return (att.read_double() + offset) * scale / 1000.;
+        return (att->read_double() + offset) * scale / 1000.;
 
     impl::err(ENOENT, "channel does not provide raw value");
 }
