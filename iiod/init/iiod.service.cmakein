@@ -2,7 +2,7 @@
 #
 # iiod - Systemd init script
 #
-# Copyright (C) 2016-2021 Analog Devices Inc.
+# Copyright (C) 2016-2024 Analog Devices Inc.
 
 [Unit]
 Description=IIO Daemon
@@ -12,6 +12,7 @@ ConditionPathExists=/sys/bus/iio
 Documentation=man:iiod(8)
 
 [Service]
+Environment=$IIOD_EXTRA_OPTS=''
 EnvironmentFile=-/etc/default/iiod
 ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod $IIOD_EXTRA_OPTS
 KillMode=process
