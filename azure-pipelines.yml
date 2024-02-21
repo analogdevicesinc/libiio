@@ -331,13 +331,13 @@ stages:
     - script: |
           set -e
           brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
-          pip3 install sphinx
+          pip3 install sphinx setuptools
       displayName: 'Dependencies'
       condition: ne(variables['agentName'],'miniMAC_arm64')
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '/python')") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
         make
         sudo make install
         cd ..
@@ -345,7 +345,7 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '/python')") -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
         mv ../CI/azure/macos_tar_fixup.sh .
