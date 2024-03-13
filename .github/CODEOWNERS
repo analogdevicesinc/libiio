@@ -1,0 +1,20 @@
+# This document lists the code owners for libiio repo sources, and it is used
+# whenever Pull Requests are created, in next way:
+#  - People listed as CODEOWNERS are automatically added as reviewers to all
+#    PRs open to branches containing this file, depending on the changed folders.
+#  - In addition to Code Owners, other reviewers can be added.
+#  - There can be different code owners for different branches.
+#  - PRs will require the approval of at least one code owner.
+#
+# For more details, you can refer to
+# https://github.blog/2017-07-06-introducing-code-owners/
+#
+# The format of CODEOWNERS is: <pattern> + <mail address of one/more owners>
+# In case of multiple matches, the last pattern matched will take precedence.
+
+##### Global code owners (for folders with no later match) #####
+*    cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com
+
+##### Code owners for CI related files/folders #####
+/CI/	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com andreea.andrisan@analog.com
+azure-pipelines.yml	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com andreea.andrisan@analog.com
