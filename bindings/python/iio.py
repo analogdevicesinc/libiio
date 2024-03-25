@@ -759,7 +759,7 @@ class Attr(_IIO_Object):
         return self._name
 
     def _read(self):
-        buf = create_string_buffer(1024)
+        buf = create_string_buffer(4096)
         _a_read(self._attr, buf, len(buf))
         return buf.value.decode("ascii")
 
