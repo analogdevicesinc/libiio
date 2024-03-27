@@ -1,6 +1,6 @@
 ## :warning: Important note (2023-08-22)
 
-Since August 22th 2023, the "master" branch of libiio contains what will eventually become libiio v1.0.
+Since August 22th 2023, the "main" branch of libiio contains what will eventually become libiio v1.0.
 It features a brand new API, which is incompatible with libiio v0.25 and older.
 Have a look at [the wiki](https://github.com/analogdevicesinc/libiio/wiki/libiio_0_to_1) for a description of the API changes.
 
@@ -17,8 +17,8 @@ libiio is used to interface to the Linux Industrial Input/Output (IIO) Subsystem
 
 Although libiio was primarily developed by Analog Devices Inc., it is an active open source library, which many people have contributed to. The library is released under the GNU Lesser General Public License (LGPL), version 2.1 or (at your option) any later version, this open-source license allows anyone to use the library, on any vendors processor/FPGA/SoC, which may be controlling any vendors peripheral device (ADC, DAC, etc) either locally or remotely. This includes closed or open-source, commercial or non-commercial applications (subject to the LGPL license freedoms, obligations and restrictions). The examples and test applications (sometimes referred to as the iio-utils) are released separately under the GNU General Public License (GPL) version 2.0 (at your option) any later version.
 
-Library License : [![Library License](https://img.shields.io/badge/license-LGPL2+-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/master/COPYING.txt)
-Tests/Examples License : [![Application License](https://img.shields.io/badge/license-GPL2+-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/master/COPYING_GPL.txt)
+Library License : [![Library License](https://img.shields.io/badge/license-LGPL2+-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/main/COPYING.txt)
+Tests/Examples License : [![Application License](https://img.shields.io/badge/license-GPL2+-blue.svg)](https://github.com/analogdevicesinc/libiio/blob/main/COPYING_GPL.txt)
 Latest Release : [![GitHub release](https://img.shields.io/github/release/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 Downloads :  [![Github All Releases](https://img.shields.io/github/downloads/analogdevicesinc/libiio/total.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 
@@ -32,9 +32,9 @@ If you have a question about libiio and an Analog Devices IIO kernel driver plea
 
 As with many open source packages, we use [GitHub](https://github.com/analogdevicesinc/libiio) to do develop and maintain the source, and [Azure Pipelines](https://azure.microsoft.com/en-gb/services/devops/pipelines/) for continuous integration.
   - If you want to just use libiio, we suggest using the [latest release](https://github.com/analogdevicesinc/libiio/releases/latest).
-  - If you think you have found a bug in the release, or need a feature which isn't in the release, try the latest **untested** binaries from the master branch and check out the [documentation](https://codedocs.xyz/analogdevicesinc/libiio/) based on the master branch. We provide builds for a few operating systems. If you need something else, we can most likely add that -- just ask.
+  - If you think you have found a bug in the release, or need a feature which isn't in the release, try the latest **untested** binaries from the main branch and check out the [documentation](https://codedocs.xyz/analogdevicesinc/libiio/) based on the main branch. We provide builds for a few operating systems. If you need something else, we can most likely add that -- just ask.
 
-| Operating System        | GitHub master status  | Version |  Primary Installer Package  | Alternative Package, tarball or zip |
+| Operating System        | GitHub main status  | Version |  Primary Installer Package  | Alternative Package, tarball or zip |
 |:-----------------------:|:---------------------:|:-------:|:-------------------:|:--------------:|
 | Windows                 | [![Build Status](https://dev.azure.com/AnalogDevices/OpenSource/_apis/build/status/analogdevicesinc.libiio?branchName=master&stageName=Builds&jobName=WindowsBuilds&configuration=WindowsBuilds%20VS2019)](https://dev.azure.com/AnalogDevices/OpenSource/_build/latest?definitionId=9&branchName=master) | Windows-64 Server 2019 | [![Latest Windows installer](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://swdownloads.analog.com/cse/azure_builds/libiio-setup.exe) <br /> [![Build Status](https://dev.azure.com/AnalogDevices/OpenSource/_apis/build/status/analogdevicesinc.libiio?branchName=master&stageName=Builds&jobName=GenerateSetupExe)](https://dev.azure.com/AnalogDevices/OpenSource/_build/latest?definitionId=9&branchName=master) | [![Latest Windows zip](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://swdownloads.analog.com/cse/azure_builds/Windows-VS-2019-x64-latest_master_libiio.zip) |
 |  | [![Build Status](https://dev.azure.com/AnalogDevices/OpenSource/_apis/build/status/analogdevicesinc.libiio?branchName=master&stageName=Builds&jobName=WindowsBuilds&configuration=WindowsBuilds%20VS2022)](https://dev.azure.com/AnalogDevices/OpenSource/_build/latest?definitionId=9&branchName=master) | Windows-64 Server 2022 | (libiio-setup.exe works for both Windows Server 2019 and Windows Server 2022) | [![Latest Windows zip](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://swdownloads.analog.com/cse/azure_builds/Windows-VS-2022-x64-latest_master_libiio.zip) |
