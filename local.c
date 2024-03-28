@@ -1697,6 +1697,26 @@ static int local_read_event(struct iio_event_stream_pdata *pdata,
 	return 0;
 }
 
+static int local_get_dmabuf_fd(struct iio_block_pdata *pdata)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
+		return local_dmabuf_get_fd(pdata);
+
+	return -EINVAL;
+}
+
+static int local_disable_cpu_access(struct iio_block_pdata *pdata, bool disable)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported) {
+		if (pdata->cpu_access_disabled == disable)
+			return 0;
+
+		return local_dmabuf_disable_cpu_access(pdata, disable);
+	}
+
+	return -EINVAL;
+}
+
 static const struct iio_backend_ops local_ops = {
 	.scan = local_context_scan,
 	.create = local_create_context,
@@ -1722,6 +1742,9 @@ static const struct iio_backend_ops local_ops = {
 	.open_ev = local_open_events_fd,
 	.close_ev = local_close_events_fd,
 	.read_ev = local_read_event,
+
+	.get_dmabuf_fd = local_get_dmabuf_fd,
+	.disable_cpu_access = local_disable_cpu_access,
 };
 
 const struct iio_backend iio_local_backend = {
