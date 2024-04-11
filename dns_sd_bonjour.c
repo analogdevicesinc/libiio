@@ -15,7 +15,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <CFNetwork/CFNetwork.h>
-
 /*
  * Implementation for DNS SD discovery for macOS using CFNetServices.
  */
@@ -56,6 +55,7 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 		return;
 	}
 
+	IIO_DEBUG("mutex lock\n");
 	iio_mutex_lock(dd->lock);
 
 	if (netService == NULL) {
@@ -81,6 +81,7 @@ static void __cfnet_browser_cb(CFNetServiceBrowserRef browser,
 		goto exit;
 	}
 
+	printf("get service name\n");
 	svcName = CFNetServiceGetName(netService);
 	if (!CFStringGetCString(svcName, name,
 				sizeof(name), kCFStringEncodingASCII)) {
@@ -155,10 +156,12 @@ verify_flags:
 	}
 
 exit:
+	IIO_DEBUG("mutex unlock\n");
 	iio_mutex_unlock(dd->lock);
 	return;
 
 stop_browsing:
+	IIO_DEBUG("stop browsing\n");
 	CFNetServiceBrowserStopSearch(browser, &anError);
 }
 
@@ -181,13 +184,17 @@ int dnssd_find_hosts(struct dns_sd_discovery_data **ddata)
 	if (!d)
 		return -ENOMEM;
 
+	IIO_DEBUG("Creating iio mutex\n");
 	d->lock = iio_mutex_create();
+	IIO_DEBUG("Created iio mutex\n");
 	if (!d->lock) {
+		IIO_DEBUG("inside \n");
 		dnssd_free_all_discovery_data(d);
 		return -ENOMEM;
 	}
-
+	IIO_DEBUG("before clientctx \n");
 	clientContext.info = d;
+	IIO_DEBUG("create service browser");
 	serviceBrowser = CFNetServiceBrowserCreate(kCFAllocatorDefault,
 						   __cfnet_browser_cb,
 						   &clientContext);

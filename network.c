@@ -415,6 +415,7 @@ static int network_close(const struct iio_device *dev)
 	struct iio_device_pdata *pdata = dev->pdata;
 	int ret = -EBADF;
 
+	IIO_DEBUG("lock network mutex\n");
 	iio_mutex_lock(pdata->lock);
 
 	if (pdata->io_ctx.fd >= 0) {
@@ -444,6 +445,7 @@ static int network_close(const struct iio_device *dev)
 	}
 #endif
 
+	IIO_DEBUG("unlock network mutex\n");
 	iio_mutex_unlock(pdata->lock);
 	return ret;
 }
@@ -1295,6 +1297,7 @@ struct iio_context * network_create_context(const char *hostname)
 		dev->pdata->memfd = -1;
 #endif
 
+		IIO_DEBUG("create network mutex\n");
 		dev->pdata->lock = iio_mutex_create();
 		if (!dev->pdata->lock) {
 			ret = -ENOMEM;

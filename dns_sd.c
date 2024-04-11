@@ -35,7 +35,7 @@
 static void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
 {
 	free(d->hostname);
-	free(d->address);
+//	free(d->address);
 	free(d);
 }
 
@@ -49,6 +49,8 @@ static void dnssd_remove_node(struct dns_sd_discovery_data **ddata, int n)
 	ldata = NULL;
 
 	if (n == 0) {
+		IIO_DEBUG("next addr%s\n", d->addr_str);
+//		if(d->)
 		tdata = d->next;
 		dnssd_free_discovery_data(d);
 		d = tdata;
@@ -345,6 +347,8 @@ host_fail:
 
 void dnssd_free_all_discovery_data(struct dns_sd_discovery_data *d)
 {
-	while (d)
+	while (d) {
+		IIO_DEBUG("free dnssd node \n");
 		dnssd_remove_node(&d, 0);
+	}
 }
