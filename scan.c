@@ -14,8 +14,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <stdio.h>
-
 struct iio_scan_context {
 	char *backendopts;
 };
@@ -52,7 +50,6 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 			token = token[3] == '=' ? token + 4 : NULL;
 			ret = usb_context_scan(&scan_result, token);
 		} else if (HAVE_DNS_SD && !strcmp(token, "ip")) {
-			printf("libiio dnssd context scan\n");
 			ret = dnssd_context_scan(&scan_result);
 		} else {
 			ret = -ENODEV;
