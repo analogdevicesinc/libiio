@@ -403,6 +403,11 @@ stages:
           arch: arm
           build_script: ci-ubuntu.sh
           artifactName: 'Ubuntu-arm32v7'
+        debian_bookworm:
+          image: tfcollins/libiio_debian_bookworm-ci-arm-ppc:latest
+          arch: arm
+          build_script: ci-ubuntu.sh
+          artifactName: 'Debian12-arm'
     steps:
     - script: |
         set -e
