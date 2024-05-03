@@ -672,6 +672,13 @@ def iio_strerror(err, buf, length):
 version = _get_lib_version()
 backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
 
+_read_attr_buffer_size = 4096
+
+def set_read_attr_buffer_size(size):
+    """Set the size of the buffer used to read attributes."""
+    assert size > 0, "Size must be greater than 0"
+    global _read_attr_buffer_size
+    _read_attr_buffer_size = size
 
 class _Attr(object):
     def __init__(self, name, filename=None):
@@ -728,7 +735,7 @@ class ChannelAttr(_Attr):
         self._channel = channel
 
     def _read(self):
-        buf = create_string_buffer(1024)
+        buf = create_string_buffer(_read_attr_buffer_size)
         _c_read_attr(self._channel, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
@@ -755,7 +762,7 @@ class DeviceAttr(_Attr):
         self._device = device
 
     def _read(self):
-        buf = create_string_buffer(1024)
+        buf = create_string_buffer(_read_attr_buffer_size)
         _d_read_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
@@ -781,7 +788,7 @@ class DeviceDebugAttr(DeviceAttr):
         super(DeviceDebugAttr, self).__init__(device, name)
 
     def _read(self):
-        buf = create_string_buffer(1024)
+        buf = create_string_buffer(_read_attr_buffer_size)
         _d_read_debug_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
@@ -807,7 +814,7 @@ class DeviceBufferAttr(DeviceAttr):
         super(DeviceBufferAttr, self).__init__(device, name)
 
     def _read(self):
-        buf = create_string_buffer(1024)
+        buf = create_string_buffer(_read_attr_buffer_size)
         _d_read_buffer_attr(self._device, self._name_ascii, buf, len(buf))
         return buf.value.decode("ascii")
 
