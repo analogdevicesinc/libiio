@@ -375,6 +375,11 @@ static int apply_settings(struct sp_port *port, unsigned int baud_rate,
 {
 	int ret;
 
+#ifdef _WIN32
+	ret = libserialport_to_errno(sp_set_dtr(port, SP_DTR_ON));
+	if (ret)
+		return ret;
+#endif
 	ret = libserialport_to_errno(sp_set_baudrate(port, (int) baud_rate));
 	if (ret)
 		return ret;
