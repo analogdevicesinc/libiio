@@ -30,83 +30,83 @@ stages:
   #############################################
   # Builds
   #############################################
-  jobs:
-  - job: LinuxBuilds
-    # Host Box
-    pool:
-      vmImage: 'ubuntu-latest'
-    # Docker Images
-    strategy:
-      matrix:
-        ubuntu_18_04:
-          image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
-          artifactName: 'Linux-Ubuntu-18.04'
-        ubuntu_20_04:
-          image: 'aandrisa/ubuntu2:latest'
-          artifactName: 'Linux-Ubuntu-20.04'
-        # ubuntu_22_04:
-        #   image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
-        #   artifactName: 'Linux-Ubuntu-22.04'        
-        # fedora28:
-        #   image: 'tfcollins/libiio_fedora_28-ci:latest'
-        #   artifactName: 'Linux-Fedora-28'
-        # fedora34:
-        #   image: 'tfcollins/libiio_fedora_34-ci:latest'
-        #   artifactName: 'Linux-Fedora-34'
-        # debian_bullseye:
-        #   image: 'tfcollins/libiio_debian_bullseye-ci:latest'
-        #   artifactName: 'Linux-Debian-11'
-        # debian_bookworm:
-        #   image: 'tfcollins/libiio_debian_bookworm-ci:latest'
-        #   artifactName: 'Linux-Debian-12'
-        # opensuse_15_4:
-        #   image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
-        #   artifactName: 'Linux-openSUSE-15.4'
-        # centos_7:
-        #   image: 'tfcollins/libiio_centos_7-ci:latest'
-        #   artifactName: 'Linux-CentOS-7'
-        kuiper2:
-          image: 'aandrisa/kuiper2_multiplatform:latest'
-          artifactName: 'Kuiper2.0'
-    container: $[ variables['image'] ]
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-      persistCredentials: true
-    - script: |
-        set -e
-        mkdir build && cd build
-        if [ "$ARTIFACTNAME" != "Linux-CentOS-7" ]; then
-          cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
-        else
-          # CentOS 7 does not have new enough kernel headers to support modern libusb, nor libserialport, nor stdatomics.h
-          cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME} -DWITH_USB_BACKEND=OFF -DWITH_IIOD_USBD=OFF -DWITH_LOCAL_MMAP_API=OFF
-        fi
-        make
-        make package
-        make required2tar
-      displayName: 'Build'
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - script: |
-        cd $(Agent.BuildDirectory)/s/build/
-        sh generateDocumentationAndDeploy.sh
-      displayName: 'Documentation'
-      condition: eq(variables['artifactName'], 'Linux-Fedora-34')
-    - script: ./CI/azure/check_kernel.sh
-      displayName: 'Kernel check'
-      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
-    - script: ./CI/azure/check_README_BUILD.sh
-      displayName: 'README_BUILD check'
-      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: '$(artifactName)'
+  # jobs:
+  # - job: LinuxBuilds
+  #   # Host Box
+  #   pool:
+  #     vmImage: 'ubuntu-latest'
+  #   # Docker Images
+  #   strategy:
+  #     matrix:
+  #       ubuntu_18_04:
+  #         image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
+  #         artifactName: 'Linux-Ubuntu-18.04'
+  #       ubuntu_20_04:
+  #         image: 'aandrisa/ubuntu2:latest'
+  #         artifactName: 'Linux-Ubuntu-20.04'
+  #       # ubuntu_22_04:
+  #       #   image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
+  #       #   artifactName: 'Linux-Ubuntu-22.04'        
+  #       # fedora28:
+  #       #   image: 'tfcollins/libiio_fedora_28-ci:latest'
+  #       #   artifactName: 'Linux-Fedora-28'
+  #       # fedora34:
+  #       #   image: 'tfcollins/libiio_fedora_34-ci:latest'
+  #       #   artifactName: 'Linux-Fedora-34'
+  #       # debian_bullseye:
+  #       #   image: 'tfcollins/libiio_debian_bullseye-ci:latest'
+  #       #   artifactName: 'Linux-Debian-11'
+  #       # debian_bookworm:
+  #       #   image: 'tfcollins/libiio_debian_bookworm-ci:latest'
+  #       #   artifactName: 'Linux-Debian-12'
+  #       # opensuse_15_4:
+  #       #   image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
+  #       #   artifactName: 'Linux-openSUSE-15.4'
+  #       # centos_7:
+  #       #   image: 'tfcollins/libiio_centos_7-ci:latest'
+  #       #   artifactName: 'Linux-CentOS-7'
+  #       kuiper2:
+  #         image: 'aandrisa/kuiper2_multiplatform:latest'
+  #         artifactName: 'Kuiper2.0'
+  #   container: $[ variables['image'] ]
+  #   steps:
+  #   - checkout: self
+  #     fetchDepth: 1
+  #     clean: true
+  #     persistCredentials: true
+  #   - script: |
+  #       set -e
+  #       mkdir build && cd build
+  #       if [ "$ARTIFACTNAME" != "Linux-CentOS-7" ]; then
+  #         cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+  #       else
+  #         # CentOS 7 does not have new enough kernel headers to support modern libusb, nor libserialport, nor stdatomics.h
+  #         cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME} -DWITH_USB_BACKEND=OFF -DWITH_IIOD_USBD=OFF -DWITH_LOCAL_MMAP_API=OFF
+  #       fi
+  #       make
+  #       make package
+  #       make required2tar
+  #     displayName: 'Build'
+  #   - task: CopyFiles@2
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+  #       contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - script: |
+  #       cd $(Agent.BuildDirectory)/s/build/
+  #       sh generateDocumentationAndDeploy.sh
+  #     displayName: 'Documentation'
+  #     condition: eq(variables['artifactName'], 'Linux-Fedora-34')
+  #   - script: ./CI/azure/check_kernel.sh
+  #     displayName: 'Kernel check'
+  #     condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+  #   - script: ./CI/azure/check_README_BUILD.sh
+  #     displayName: 'README_BUILD check'
+  #     condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+  #   - task: PublishPipelineArtifact@1
+  #     inputs:
+  #       targetPath: '$(Build.ArtifactStagingDirectory)'
+  #       artifactName: '$(artifactName)'
 
   #############################################
   # - job: MinGWBuilds
@@ -429,6 +429,7 @@ stages:
       displayName: 'Setup'
     - script: |
         set -e
+        ls -al /usr/bin/qemu*
         sudo docker run --platform "linux/$(arch)" --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
       displayName: 'Build'
     - task: CopyFiles@2
