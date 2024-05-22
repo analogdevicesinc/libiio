@@ -379,62 +379,67 @@ stages:
   #       artifactName: '$(artifactName)'
 
   #############################################
-#   - job: ARMBuilds
-#     # Host Box
-#     pool:
-#       vmImage: "ubuntu-latest"
-#     # Docker Images
-#     strategy:
-#       matrix:
-#         ubuntu-ppc64le:
-#           image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
-#           arch: ppc64le
-#           build_script: ci-ubuntu.sh
-#           artifactName: 'Ubuntu-ppc64le'
-#         ubuntu-x390x:
-#           image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
-#           arch: s390x
-#           build_script: ci-ubuntu.sh
-#           artifactName: 'Ubuntu-x390x'
-#         ubuntu-arm64v8:
-#           image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
-#           arch: aarch64
-#           build_script: ci-ubuntu.sh
-#           artifactName: 'Ubuntu-arm64v8'
-#         ubuntu-arm32v7:
-#           image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
-#           arch: arm
-#           build_script: ci-ubuntu.sh
-#           artifactName: 'Ubuntu-arm32v7'
-#         debian_bookworm:
-#           image: tfcollins/libiio_debian_bookworm-ci-arm-ppc:latest
-#           arch: arm
-#           build_script: ci-ubuntu.sh
-#           artifactName: 'Debian12-arm'
-#     steps:
-#     - script: |
-#         set -e
-#         sudo apt-get update
-#         sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
-#         sudo apt-get install -y g++-arm-linux-gnueabihf
-#         sudo apt-get install -y g++-aarch64-linux-gnu
-#         sudo apt-get install -y qemu-system-ppc64
-#         sudo apt-get install qemu
-#         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-#       displayName: 'Setup'
-#     - script: |
-#         set -e
-#         sudo docker run --platform "linux/$(arch)" --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
-#       displayName: 'Build'
-#     - task: CopyFiles@2
-#       inputs:
-#         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-#         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz)'
-#         targetFolder: '$(Build.ArtifactStagingDirectory)'
-#     - task: PublishPipelineArtifact@1
-#       inputs:
-#         targetPath: '$(Build.ArtifactStagingDirectory)'
-#         artifactName: '$(artifactName)'
+  - job: ARMBuilds
+    # Host Box
+    pool:
+      vmImage: "ubuntu-latest"
+    # Docker Images
+    strategy:
+      matrix:
+        ubuntu-ppc64le:
+          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          arch: ppc64le
+          build_script: ci-ubuntu.sh
+          artifactName: 'Ubuntu-ppc64le'
+        # ubuntu-x390x:
+        #   image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+        #   arch: s390x
+        #   build_script: ci-ubuntu.sh
+        #   artifactName: 'Ubuntu-x390x'
+        # ubuntu-arm64v8:
+        #   image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+        #   arch: aarch64
+        #   build_script: ci-ubuntu.sh
+        #   artifactName: 'Ubuntu-arm64v8'
+        # ubuntu-arm32v7:
+        #   image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+        #   arch: arm
+        #   build_script: ci-ubuntu.sh
+        #   artifactName: 'Ubuntu-arm32v7'
+        # debian_bookworm:
+        #   image: tfcollins/libiio_debian_bookworm-ci-arm-ppc:latest
+        #   arch: arm
+        #   build_script: ci-ubuntu.sh
+        #   artifactName: 'Debian12-arm'
+        kuiper2:
+          image: 'aandrisa/kuiper2_multiplatform:latest'
+          arch: arm
+          build_script: ci-ubuntu.sh
+          artifactName: 'Kuiper2.0'
+    steps:
+    - script: |
+        set -e
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
+        sudo apt-get install -y g++-arm-linux-gnueabihf
+        sudo apt-get install -y g++-aarch64-linux-gnu
+        sudo apt-get install -y qemu-system-ppc64
+        sudo apt-get install qemu
+        sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      displayName: 'Setup'
+    - script: |
+        set -e
+        sudo docker run --platform "linux/$(arch)" --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
+      displayName: 'Build'
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifactName: '$(artifactName)'
 
 #   #############################################
 # - stage: ManageArtifacts
