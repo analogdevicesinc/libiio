@@ -1251,7 +1251,7 @@ static int create_device(void *d, const char *path)
 
 	ret = (int)local_do_read_dev_attr(id, 0, "label", label, sizeof(label),
 					  IIO_ATTR_TYPE_DEVICE);
-	if (ret < 0)
+	if (ret > 0)
 		label_ptr = label;
 
 	dev = iio_context_add_device(ctx, id, name_ptr, label_ptr);
