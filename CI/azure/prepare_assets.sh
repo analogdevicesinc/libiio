@@ -119,4 +119,12 @@ check_artifacts() {
 	done < "artifact_manifest.txt"
 }
 
+package_repository_artifacts() {
+        cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Debian12-arm"
+        package_name=$(find . -name '*.deb' | sed -n 's/\(libiio\)-\([0-9.]*\).*/\1_\2/p' | sed 's/.$/_armhf/')
+        find . -name '*.tar.gz' -exec mv {} "$package_name.tar.gz" ";"
+        find . -name '*.deb' -exec mv {} "$package_name.deb" ";"
+        rm -r ../Debian12-arm
+}
+
 "${1}"_artifacts
