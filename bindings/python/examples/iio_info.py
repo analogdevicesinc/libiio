@@ -31,7 +31,11 @@ def _create_context():
             print("Multiple contexts found. Please select one using --uri:")
             for uri, description in contexts.items():
                 print("\t%s: %s" % (uri, description))
-        sys.exit(0)
+            sys.exit(0)
+        if len(contexts) == 0:
+            print("No contexts found.")
+            sys.exit(0)
+        uri = list(contexts.keys())[0]
 
     return iio.Context(uri)
 
@@ -55,7 +59,7 @@ class Information:
 
     def _context_info(self):
         print("IIO context created: " + self.context.name)
-        print("Backend version: %u.%u (git tag: %s" % self.context.version)
+        print("Backend version: %u.%u (git tag: %s)" % self.context.version)
         print("Backend description string: " + self.context.description)
 
         if len(self.context.attrs) > 0:
