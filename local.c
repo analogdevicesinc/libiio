@@ -1099,15 +1099,14 @@ static int add_buffer_attr(void *d, const char *path)
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
 		const char *path, const char *prefix,
-		bool dir_is_scan_elements)
+			        bool dir_is_scan_elements, bool is_event)
 {
 	char buf[1024];
 	const char *name = strrchr(path, '/') + 1;
 
-	if (!dir_is_scan_elements && !is_channel(dev, name, true))
-	      return add_attr_to_device(dev, name);
-
 	iio_snprintf(buf, sizeof(buf), "%s%s", prefix, name);
+	if (!is_event && !dir_is_scan_elements && !is_channel(dev, name, true))
+	      return add_attr_to_device(dev, name);
 
 	return add_channel(dev, name, buf, dir_is_scan_elements);
 }
@@ -1115,19 +1114,19 @@ static int add_attr_or_channel_helper(struct iio_device *dev,
 static int add_attr_or_channel(void *d, const char *path)
 {
 	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "", false);
+				    path, "", false, false);
 }
 
 static int add_event(void *d, const char *path)
 {
 	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "events/", false);
+				    path, "events/", false, true);
 }
 
 static int add_scan_element(void *d, const char *path)
 {
 	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "scan_elements/", true);
+				    path, "scan_elements/", true, false);
 }
 
 static int foreach_in_dir(const struct iio_context *ctx,
