@@ -564,8 +564,8 @@ struct iio_device * iio_context_add_device(struct iio_context *ctx,
 	devs[ctx->nb_devices++] = dev;
 	ctx->devices = devs;
 
-	ctx_dbg(ctx, "Added device \'%s\' to context \'%s\'\n",
-		dev->id, ctx->name);
+	ctx_dbg(ctx, "Added device \'%s\' to context \'%s\' with label \'%s\'\n",
+		dev->id, ctx->name, dev->label);
 
 	iio_sort_devices(ctx);
 
