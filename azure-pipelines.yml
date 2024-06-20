@@ -38,9 +38,6 @@ stages:
     # Docker Images
     strategy:
       matrix:
-        ubuntu_18_04:
-          image: 'tfcollins/libiio_ubuntu_18_04-ci:latest'
-          artifactName: 'Linux-Ubuntu-18.04'
         ubuntu_20_04:
           image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
           artifactName: 'Linux-Ubuntu-20.04'
@@ -294,11 +291,6 @@ stages:
       clean: all
     strategy:
       matrix:
-        macOS_11:
-          poolName: 'Azure Pipelines'
-          vmImage: 'macOS-11'
-          agentName: 'Azure Pipelines 4'
-          artifactName: 'macOS-11'
         macOS_12:
           poolName: 'Azure Pipelines'
           vmImage: 'macOS-12'
@@ -384,22 +376,22 @@ stages:
     strategy:
       matrix:
         ubuntu-ppc64le:
-          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
           arch: ppc64le
           build_script: ci-ubuntu.sh
           artifactName: 'Ubuntu-ppc64le'
         ubuntu-x390x:
-          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
           arch: s390x
           build_script: ci-ubuntu.sh
           artifactName: 'Ubuntu-x390x'
         ubuntu-arm64v8:
-          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
           arch: aarch64
           build_script: ci-ubuntu.sh
           artifactName: 'Ubuntu-arm64v8'
         ubuntu-arm32v7:
-          image: tfcollins/libiio_ubuntu_18_04-ci-arm-ppc:latest
+          image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
           arch: arm
           build_script: ci-ubuntu.sh
           artifactName: 'Ubuntu-arm32v7'
