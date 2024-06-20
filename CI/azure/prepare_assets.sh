@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 release_artifacts() {
-        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-18.04 Ubuntu-20.04 Ubuntu-22.04 Debian-11 openSUSE-15.4 CentOS-7'
+        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Debian-11 openSUSE-15.4 CentOS-7'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_linux_assets; do
                 cd "Linux-${i}"
@@ -14,7 +14,7 @@ release_artifacts() {
                 rm -r "Linux-${i}"
         done
 
-	local pkg_assets='macOS-11 macOS-12 macOS-13-x64 macOS-13-arm64'
+	local pkg_assets='macOS-12 macOS-13-x64 macOS-13-arm64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $pkg_assets; do
                 cd "${i}"
@@ -62,7 +62,7 @@ release_artifacts() {
 }
 
 swdownloads_artifacts() {
-        local linux_dist='Fedora-34 Fedora-28 Ubuntu-18.04 Ubuntu-20.04 Ubuntu-22.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
+        local linux_dist='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
         for distribution in $linux_dist; do
 		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Linux-${distribution}"
 		if [ "${distribution}" == "Fedora-34" ] || [ "${distribution}" == "Fedora-28" ] || [ "${distribution}" == "CentOS-7" ]; then
@@ -73,7 +73,7 @@ swdownloads_artifacts() {
                 rm -r ../Linux-"${distribution}"
         done
 
-	local macOS_dist='macOS-11 macOS-12 macOS-13-x64 macOS-13-arm64'
+	local macOS_dist='macOS-12 macOS-13-x64 macOS-13-arm64'
 	for distribution in $macOS_dist; do
                 cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/${distribution}"
                 find . -name '*.pkg' -exec mv {} ../"${distribution}_latest_main_libiio.pkg" ";"
