@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 release_artifacts() {
-        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Debian-11 openSUSE-15.4 CentOS-7'
+        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_linux_assets; do
                 cd "Linux-${i}"
@@ -58,6 +58,11 @@ release_artifacts() {
                 cd ../
                 rm -r "Ubuntu-${i}"
         done
+
+        cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Debian12-arm"
+        find . -name '*.deb' -exec mv {} ../ ";"
+        find . -name '*.tar.gz' -exec mv {} ../ ";"
+        rm -r ../Debian12-arm
 
 }
 
