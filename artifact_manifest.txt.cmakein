@@ -1,20 +1,19 @@
 Libiio-Setup-Exe/libiio-setup.exe
 
-Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.deb
 Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.rpm
 Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.tar.gz
 
-Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.deb
 Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.rpm
 Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.tar.gz
 
-Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.deb
 Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.rpm
 Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.tar.gz
 
 Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.deb
-Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.rpm
 Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.tar.gz
+
+Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.deb
+Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.tar.gz
 
 Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.deb
 Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar.gz
@@ -22,7 +21,7 @@ Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.deb
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar.gz
 
-Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.deb
+Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.rpm
 Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.tar.gz
 
 macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-12.tar.gz
@@ -45,6 +44,9 @@ Ubuntu-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-ppc64le.tar.gz
 
 Ubuntu-x390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-x390x.deb
 Ubuntu-x390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-x390x.tar.gz
+
+Debian12-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian12-arm.deb
+Debian12-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian12-arm.tar.gz
 
 Windows-VS-2019-x64/iio.h
 Windows-VS-2019-x64/iio_attr.exe
