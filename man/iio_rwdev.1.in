@@ -34,7 +34,7 @@ iio_rwdev \- read/write buffers from/to an IIO device
 [-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] [-w] <iio_device> [<channel> ...]
 .SH DESCRIPTION
 .B iio_reg
-is a utility for reading buffers from connected IIO devices, and sending resutls to standard out.
+is a utility for reading buffers from connected IIO devices, and sending results to standard out.
 
 .SH OPTIONS
 ##COMMON_COMMANDS_START##
