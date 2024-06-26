@@ -270,7 +270,7 @@ This means applications compiled against an older version will work fine with a 
 
 \example iio_attr.c Part of the libiio-utilites, iio_attr is a utility for displaying information about local or remote IIO devices. By providing an optional value, iio_attr will attempt to write the new value to the attribute.
 \example iio_info.c Part of the libiio-utilites, iio_info is a utility for displaying information about local or remote IIO devices.
-\example iio_readdev.c Part of the libiio-utilites, iio_readdev is a utility for reading buffers from connected IIO devices, and sending resutls to standard out.
+\example iio_readdev.c Part of the libiio-utilites, iio_readdev is a utility for reading buffers from connected IIO devices, and sending results to standard out.
 \example iio_writedev.c Part of the libiio-utilites, iio_writedev is a utility for writing buffers from connected IIO devices.
 \example iio_reg.c Part of the libiio-utilites, iio_reg is a utility for debugging local IIO devices. It should not be used by normal users, and is normally used by driver developers during development, or by end users debugging a driver, or sending in a feature request. It provides a mechanism to read or write SPI or I2C registers for IIO devices.
 \example ad9361-iiostream.c   This example libiio program is meant to exercise the features of IIO functionality on the AD9361 found on the AD-FMCOMMS2-EBZ, AD-FMCOMMS3-EBZ, and the ADRV9361-Z7035 RF SOM.
