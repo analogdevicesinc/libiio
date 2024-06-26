@@ -291,11 +291,6 @@ stages:
       clean: all
     strategy:
       matrix:
-        macOS_11:
-          poolName: 'Azure Pipelines'
-          vmImage: 'macOS-11'
-          agentName: 'Azure Pipelines 4'
-          artifactName: 'macOS-11'
         macOS_12:
           poolName: 'Azure Pipelines'
           vmImage: 'macOS-12'
