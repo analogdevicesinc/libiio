@@ -46,6 +46,7 @@ Source: "D:\a\1\a\Windows-VS-2019-x64\iio\*.h"; DestDir: "{commonpf32}\Microsoft
 Source: "D:\a\1\a\Windows-VS-2019-x64\libxml2.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "D:\a\1\a\Windows-VS-2019-x64\libusb-1.0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "D:\a\1\a\Windows-VS-2019-x64\libserialport-0.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+Source: "D:\a\1\a\Windows-VS-2019-x64\libzstd.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "D:\a\1\a\Windows-VS-2019-x64\libiio-sharp.dll"; DestDir: "{commoncf}\libiio"; Flags: replacesameversion
 Source: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT\msvcp140.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT\vcruntime140.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
