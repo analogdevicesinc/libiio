@@ -220,8 +220,8 @@ stages:
           7z x -y libxml.7z
           rm libxml.7z
           cd C:\
-          wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "libiio-win-deps.zip"
-          7z x -y "C:\libiio-win-deps.zip"
+          wget https://swdownloads.analog.com/cse/build/libiio-deps-20240627.zip -OutFile "libiio-win-msvc-deps.zip"
+          7z x -y "C:\libiio-win-msvc-deps.zip"
     - task: PowerShell@2
       inputs:
         targetType: 'filePath'

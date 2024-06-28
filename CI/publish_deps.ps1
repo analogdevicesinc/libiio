@@ -9,7 +9,10 @@ cd $src_dir
 mkdir dependencies
 cd dependencies
 wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "libiio-win-deps.zip"
+wget https://swdownloads.analog.com/cse/build/libiio-deps-20240627.zip -OutFile "libiio-msvc-deps.zip"
+
 7z x -y "libiio-win-deps.zip"
+7z x -y "libiio-msvc-deps.zip"
 
 # Version numbers inside this directory change all the time; print what's
 # currently in the folder to make it easier to debug CI breakages on MinGW.
@@ -27,10 +30,10 @@ if ($COMPILER -eq "MinGW Makefiles") {
 	cp C:\ghcup\ghc\9.6.5\mingw\bin\libxml2-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp C:\ghcup\ghc\9.2.8\mingw\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 } else {
-	cp $src_dir\dependencies\libs\64\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $src_dir\dependencies\libs\64\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $src_dir\dependencies\libs\64\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $src_dir\dependencies\libs\64\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp $src_dir\dependencies\libiio-deps-240627\msvc\libs\64\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp $src_dir\dependencies\libiio-deps-240627\msvc\libs\64\libserialport.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp $src_dir\dependencies\libiio-deps-240627\msvc\libs\64\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp $src_dir\dependencies\libiio-deps-240627\msvc\libs\64\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 	if ($COMPILER -eq "Visual Studio 16 2019") {
 		cd 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
