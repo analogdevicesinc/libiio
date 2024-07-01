@@ -535,7 +535,7 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 	struct block_entry *block_entry, *block_next;
 	struct buffer_entry *entry, *buf_entry;
 	struct iio_buffer *buf;
-	int ret;
+	int ret = -ENODEV;
 
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
 	if (!dev)
