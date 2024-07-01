@@ -614,35 +614,40 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 		}
 	}
 
-	if (description && ctx->description) {
-		len = iio_snprintf(NULL, 0, "%s %s",
-				   ctx->description, description);
-		if (len < 0) {
-			ret = (int) len;
-			prm_perror(params, ret, "Unable to set context description");
-			goto err_context_destroy;
+	if (description) {
+		if (ctx->description) {
+			len = iio_snprintf(NULL, 0, "%s %s", ctx->description,
+					   description);
+			if (len < 0) {
+				ret = (int) len;
+				prm_perror(params, ret,
+					   "Unable to set context description");
+				goto err_context_destroy;
+			}
+
+			new_description = malloc(len + 1);
+			if (!new_description) {
+				ret = -ENOMEM;
+				prm_err(params, "Unable to alloc memory\n");
+				goto err_context_destroy;
+			}
+
+			iio_snprintf(new_description, len + 1, "%s %s",
+				     ctx->description, description);
+
+			free(ctx->description);
+		} else {
+			new_description = iio_strdup(description);
+			if (!new_description) {
+				ret = -ENOMEM;
+				prm_err(params, "Unable to alloc memory\n");
+				goto err_context_destroy;
+			}
 		}
 
-		new_description = malloc(len + 1);
-		if (!new_description) {
-			ret = -ENOMEM;
-			prm_err(params, "Unable to alloc memory\n");
-			goto err_context_destroy;
-		}
-
-		iio_snprintf(new_description, len + 1, "%s %s",
-			     ctx->description, description);
-	} else if (description) {
-		new_description = iio_strdup(description);
-		if (!new_description) {
-			ret = -ENOMEM;
-			prm_err(params, "Unable to alloc memory\n");
-			goto err_context_destroy;
-		}
+		ctx->description = new_description;
 	}
 
-	free(ctx->description);
-	ctx->description = new_description;
 	ctx->params = *params;
 
 	return ctx;
