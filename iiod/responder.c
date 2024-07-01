@@ -94,7 +94,6 @@ static void handle_timeout(struct parser_pdata *pdata,
 			   struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
-	struct iio_context *ctx = pdata->ctx;
 	int ret;
 
 	ret = iio_context_set_timeout(pdata->ctx, cmd->code);
@@ -173,7 +172,6 @@ static void handle_write_attr(struct parser_pdata *pdata,
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_attr *attr;
-	size_t count;
 	ssize_t ret = -EINVAL;
 	uint64_t len;
 	struct iiod_buf buf;
@@ -520,7 +518,6 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 {
 	struct block_entry *entry;
 	struct iio_block *block = NULL;
-	int err;
 
 	iio_mutex_lock(entry_buf->lock);
 
@@ -545,7 +542,6 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_device *dev;
-	struct block_entry *block_entry, *block_next;
 	struct buffer_entry *entry, *buf_entry;
 	struct iio_buffer *buf;
 	int ret = -ENODEV;
@@ -1038,7 +1034,7 @@ static void handle_free_evstream(struct parser_pdata *pdata,
 				 const struct iiod_command *cmd,
 				 struct iiod_command_data *cmd_data)
 {
-	struct evstream_entry *entry, *each;
+	struct evstream_entry *entry;
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	int ret = 0;
 
