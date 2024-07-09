@@ -106,14 +106,6 @@ static long long rd_ch_lli(struct iio_channel *chn, const char* what)
 	return val;
 }
 
-#if 0
-/* write attribute: string */
-static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
-{
-	errchk(iio_channel_attr_write(chn, what, str), what);
-}
-#endif
-
 /* helper function generating channel names */
 static char* get_ch_name_mod(const char* type, int id, char modify)
 {

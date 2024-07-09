@@ -96,14 +96,6 @@ static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 	errchk(attr ? iio_attr_write_longlong(attr, val) : -ENOENT, what);
 }
 
-/* write attribute: string */
-static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
-{
-	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
-
-	errchk(attr ? iio_attr_write_string(attr, str) : -ENOENT, what);
-}
-
 /* helper function generating channel names */
 static char* get_ch_name(const char* type, int id)
 {
