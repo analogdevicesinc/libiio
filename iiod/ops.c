@@ -427,7 +427,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	struct ThdEntry *thd, *next_thd;
 	struct iio_device *dev = entry->dev;
 	struct iio_device_pdata *dev_pdata;
-	unsigned int i, nb_channels = iio_device_get_channels_count(dev);
+	unsigned int nb_channels = iio_device_get_channels_count(dev);
 	struct iio_channel *chn;
 	struct iio_block *block;
 	ssize_t nb_bytes, ret = 0;
