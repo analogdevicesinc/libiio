@@ -94,11 +94,11 @@ static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 	errchk(attr ? iio_attr_write_longlong(attr, val) : -ENOENT, what);
 }
 
-/* write attribute: long long int */
+/* read attribute: long long int */
 static long long rd_ch_lli(struct iio_channel *chn, const char* what)
 {
 	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
-	long long val;
+	long long val = 0;
 
 	errchk(attr ? iio_attr_read_longlong(attr, &val) : -ENOENT, what);
 
@@ -193,10 +193,6 @@ int main (__notused int argc, __notused char **argv)
 	// Streaming devices
 	struct iio_device *tx;
 	struct iio_device *rx;
-
-	// RX and TX sample counters
-	size_t nrx = 0;
-	size_t ntx = 0;
 
 	// RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;
