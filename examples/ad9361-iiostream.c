@@ -187,10 +187,6 @@ int main (int argc, char **argv)
 	struct iio_device *tx;
 	struct iio_device *rx;
 
-	// RX and TX sample counters
-	size_t nrx = 0;
-	size_t ntx = 0;
-
 	// RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;
 
