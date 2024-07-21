@@ -2,6 +2,7 @@
 set -e
 
 KERNEL_TYPES="/tmp/mainline_types.h"
+KERNEL_MODIFIER="/tmp/modifier.c"
 IIOH="./include/iio/iio.h"
 CHANNELC="./channel.c"
 
@@ -15,8 +16,9 @@ if [ ! -f ${CHANNELC} ] ; then
 	exit 1
 fi
 
-rm -f ${KERNEL_TYPES}
+rm -f ${KERNEL_TYPES} ${KERNEL_MODIFIER}
 wget -O ${KERNEL_TYPES} https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/uapi/linux/iio/types.h
+wget -O ${KERNEL_MODIFIER} https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/iio/industrialio-core.c
 
 ret=0
 
@@ -67,4 +69,19 @@ while IFS="" read -r p ; do
 	fi
 done < /tmp/libiio_iio_modifier
 
+sed '/\[IIO_MOD_.*\] =/!d' ${KERNEL_MODIFIER} | sed 's/,$//' > /tmp/kernel_modifier
+sed '/\[IIO_[A-Z]*\] =/!d' ${KERNEL_MODIFIER} | sed 's/,$//' >> /tmp/kernel_modifier
+while IFS="" read -r p ; do
+	key=$(echo $"${p}" | sed -e 's/^[ \t]*//' -e 's/\[/\\\[/g' -e 's/\]/\\\]/g' )
+	count=$(grep "${key}" ./channel.c | wc -l)
+	if [ "$count" -eq "0" ] ; then
+		wrong=$(grep $(echo "${p}" | sed -e 's/^.*\[//' -e 's/\].*$//') ./channel.c | \
+				sed -e 's/^[[:space:]]*//' -e 's/,.*$//')
+		echo "${p} set to (${wrong}) in channel.c"
+		ret=1
+	fi
+done < /tmp/kernel_modifier
+
+
+rm -f /tmp/kernel_modifier /tmp/libiio_iio_modifier /tmp/libiio_iio_chan_type ${KERNEL_TYPES} ${KERNEL_MODIFIER}
 exit $ret
