@@ -401,6 +401,9 @@ stages:
           build_script: ci-ubuntu.sh
           artifactName: 'Debian12-arm'
     steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
     - script: |
         set -e
         sudo apt-get update
@@ -445,6 +448,9 @@ stages:
           artifactName: 'Check artifacts'
     container: $[ variables['image'] ]
     steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
     - script: |
         set -e
         mkdir build && cd build
