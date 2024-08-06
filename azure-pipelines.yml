@@ -390,6 +390,11 @@ stages:
           arch: aarch64
           build_script: ci-ubuntu.sh
           artifactName: 'Ubuntu-arm64v8'
+        ubuntu-arm32v6:
+          image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
+          arch: arm/v6
+          build_script: ci-ubuntu.sh
+          artifactName: 'Ubuntu-arm32v6'
         ubuntu-arm32v7:
           image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
           arch: arm
