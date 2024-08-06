@@ -296,7 +296,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 
 	IIO_INFO("Starting IIO Daemon version %u.%u.%s\n",
 		 LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
-		 LIBIIO_VERSION_GIT);
+		 LIBIIO_VERSION_PATCH);
 
 	if (!WITH_IIOD_NETWORK
 	    && (!WITH_IIOD_USBD || !ffs_mountpoint)
