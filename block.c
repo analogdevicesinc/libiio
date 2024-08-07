@@ -21,6 +21,8 @@ struct iio_block {
 
 	struct iio_task_token *token;
 	size_t bytes_used;
+
+	int dmabuf_fd;
 };
 
 struct iio_block *
@@ -41,13 +43,19 @@ iio_buffer_create_block(struct iio_buffer *buf, size_t size)
 	if (!block)
 		return iio_ptr(-ENOMEM);
 
+	block->dmabuf_fd = -EINVAL;
+
 	if (ops->create_block) {
 		pdata = ops->create_block(buf->pdata, size, &block->data);
 		ret = iio_err(pdata);
-		if (!ret)
+		if (!ret) {
 			block->pdata = pdata;
-		else if (ret != -ENOSYS)
+
+			if (ops->get_dmabuf_fd)
+				block->dmabuf_fd = ops->get_dmabuf_fd(pdata);
+		} else if (ret != -ENOSYS) {
 			goto err_free_block;
+		}
 	}
 
 	if (!block->pdata) {
@@ -294,4 +302,19 @@ iio_block_foreach_sample(const struct iio_block *block,
 struct iio_buffer * iio_block_get_buffer(const struct iio_block *block)
 {
 	return block->buffer;
+}
+
+int iio_block_get_dmabuf_fd(const struct iio_block *block)
+{
+	return block->dmabuf_fd;
+}
+
+int iio_block_disable_cpu_access(struct iio_block *block, bool disable)
+{
+	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+
+	if (ops->disable_cpu_access)
+		return ops->disable_cpu_access(block->pdata, disable);
+
+	return -ENOSYS;
 }
