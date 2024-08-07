@@ -115,7 +115,6 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	priv->size = size;
 	priv->buf = pdata;
 	priv->dequeued = true;
-	pdata->dmabuf_supported = true;
 
 	/* The new block is dequeued by default, so enable CPU access */
 	ret = enable_cpu_access(priv, true);
@@ -135,6 +134,8 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 
 		goto err_data_unmap;
 	}
+
+	pdata->dmabuf_supported = true;
 
 	close(devfd);
 
