@@ -127,7 +127,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	if (ret) {
 		ret = -errno;
 
-		if (ret == -ENOTTY) {
+		if (ret == -ENODEV) {
 			/* If the ioctl is not available, return -ENOSYS to mark
 			 * the DMABUF interface as unavailable */
 			ret = -ENOSYS;
