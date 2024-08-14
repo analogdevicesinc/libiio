@@ -1,0 +1,77 @@
+name: Test MATLAB Bindings
+
+on: [push]
+
+env:
+  LD_LIBRARY_PATH: /lib/x86_64-linux-gnu/libstdc++.so.6
+
+jobs:
+  build:
+    name: Test MATLAB Bindings
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+            release: R2023b
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+            submodules: recursive
+      - name: Install dependencies
+        run: |
+            sudo apt-get -qq update
+            sudo apt-get install -y git cmake graphviz libavahi-common-dev libavahi-client-dev libaio-dev libusb-1.0-0-dev libxml2-dev rpm tar bzip2 gzip flex bison git libzstd-dev
+            # Change LD_LIBRARY PATH TO USE MATLAB GLIBC
+            # Find location of libstdc++.so.6 of MATLAB
+            #LDLIBMATLAB=$(find /opt/hostedtoolcache/MATLAB/ -name libstdc++.so.6 | grep -v orig)
+            #echo "LDLIBMATLAB=$LDLIBMATLAB"
+            echo "IIO_EMU_PREFIX='LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/libstdc++.so.6'" >> $GITHUB_ENV
+            #export LIBRARY_PATH=$LDLIBMATLAB:$LD_LIBRARY_PATH
+            # export LD_LIBRARY_PATH=$LDLIBMATLAB
+            cmake . -DHAVE_DNS_SD=OFF -DPYTHON_BINDINGS=ON -DCMAKE_CROSSCOMPILING=ON
+            make
+            sudo make install
+            sudo make clean
+            cd bindings/python
+            ls
+            sudo rm -rf pylibiio.egg-info
+            pip install .
+            cd ../..
+            mkdir edeps
+            cd edeps
+            git clone https://github.com/analogdevicesinc/libtinyiiod.git
+            cd libtinyiiod
+            mkdir build && cd build
+            cmake -DBUILD_EXAMPLES=OFF ..
+            make
+            sudo make install
+            sudo ldconfig
+            cd ../..
+            git clone -b v0.1.0 https://github.com/analogdevicesinc/iio-emu.git
+            cd iio-emu
+            mkdir build && cd build
+            cmake ..
+            make
+            sudo make install
+            sudo ldconfig
+            cd ../..
+            cd ..
+
+      - name: Install pytest-libiio interface
+        run: |
+            pip install pytest pyyaml lxml click
+            git clone https://github.com/tfcollins/pytest-libiio.git -b tfcollins/glibc
+            mv pytest-libiio/pytest_libiio bindings/matlab/
+            cd bindings/matlab
+            python -c 'import pytest_libiio.plugin'
+            cd ../..
+
+      - name: Run Tests
+        uses: matlab-actions/run-command@v2
+        with:
+            command: addpath(genpath('include'));cd('bindings/matlab');addpath(genpath('.'));runTests;exit()
