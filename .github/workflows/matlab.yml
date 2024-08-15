@@ -53,4 +53,4 @@ jobs:
       - name: Run Tests
         uses: matlab-actions/run-command@v2
         with:
-            command: addpath(genpath('include'));cd('bindings/matlab');addpath(genpath('.'));addpath(genpath('test'));runTests;exit()
+            command: addpath(genpath('include'));cd('bindings/matlab');addpath(genpath('.'));cd('test');runTests;exit()
