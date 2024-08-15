@@ -26,7 +26,7 @@ classdef TestContext < matlab.unittest.TestCase
             disp(p);
             % Start background process
             xmlfile = fullfile(folder, 'pluto.xml');
-            testCase.emu = py.pytest_libiio.plugin.iio_emu_manager(xmlfile);
+            testCase.emu = py.emu_manager.iio_emu_manager(xmlfile);
             disp(testCase.emu.uri)
             testCase.emu.start();
             disp('iio-emu started');

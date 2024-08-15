@@ -26,22 +26,10 @@ jobs:
         run: |
             sudo apt-get -qq update
             sudo apt-get install -y git cmake graphviz libavahi-common-dev libavahi-client-dev libaio-dev libusb-1.0-0-dev libxml2-dev rpm tar bzip2 gzip flex bison git libzstd-dev
-            # Change LD_LIBRARY PATH TO USE MATLAB GLIBC
-            # Find location of libstdc++.so.6 of MATLAB
-            #LDLIBMATLAB=$(find /opt/hostedtoolcache/MATLAB/ -name libstdc++.so.6 | grep -v orig)
-            #echo "LDLIBMATLAB=$LDLIBMATLAB"
             echo "IIO_EMU_PREFIX='LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/libstdc++.so.6'" >> $GITHUB_ENV
-            #export LIBRARY_PATH=$LDLIBMATLAB:$LD_LIBRARY_PATH
-            # export LD_LIBRARY_PATH=$LDLIBMATLAB
-            cmake . -DHAVE_DNS_SD=OFF -DPYTHON_BINDINGS=ON -DCMAKE_CROSSCOMPILING=ON
+            cmake . -DHAVE_DNS_SD=OFF
             make
             sudo make install
-            sudo make clean
-            cd bindings/python
-            ls
-            sudo rm -rf pylibiio.egg-info
-            pip install .
-            cd ../..
             mkdir edeps
             cd edeps
             git clone https://github.com/analogdevicesinc/libtinyiiod.git
@@ -61,15 +49,6 @@ jobs:
             sudo ldconfig
             cd ../..
             cd ..
-
-      - name: Install pytest-libiio interface
-        run: |
-            pip install pytest pyyaml lxml click
-            git clone https://github.com/tfcollins/pytest-libiio.git -b tfcollins/glibc
-            mv pytest-libiio/pytest_libiio bindings/matlab/
-            cd bindings/matlab
-            python -c 'import pytest_libiio.plugin'
-            cd ../..
 
       - name: Run Tests
         uses: matlab-actions/run-command@v2
