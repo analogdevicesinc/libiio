@@ -3,6 +3,7 @@ Library API
 
 .. toctree::
     :maxdepth: 2
+    :caption: C API
 
     api/c/top
     api/c/scan

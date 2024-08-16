@@ -25,6 +25,7 @@ extensions = [
     "adi_doctools",
     "myst_parser",
     "breathe",
+    'sphinxcontrib.matlab', 'sphinx.ext.autodoc',
 ]
 
 needs_extensions = {
@@ -39,6 +40,10 @@ breathe_projects = {"libiio": os.path.join(doxyfolder, "generated", "xml")}
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = ['.rst', '.md']
+
+matlab_src_dir = os.path.join(os.path.dirname(__file__), "..", '..')
+# matlab_keep_package_prefix = False
+matlab_short_links = True
 
 # -- External docs configuration ----------------------------------------------
 

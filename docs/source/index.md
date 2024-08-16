@@ -39,7 +39,8 @@ The mainline library is written in C, and has built in bindings for C++, Python 
 install
 theory
 examples
-c_api
+api
+bindings
 tools/index
 iiod
 training
