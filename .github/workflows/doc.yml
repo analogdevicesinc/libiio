@@ -34,13 +34,13 @@ jobs:
 
       - name: Check doc build
         run: |
-          cd doc
+          cd docs
           make html SPHINXOPTS="-W"
           cd ..
 
     #   - name: Check doc coverage
     #     run: |
-    #       cd doc
+    #       cd docs
     #       make coverage
     #       cat build/coverage/python.txt
     #       cat build/coverage/python.txt | wc -l | xargs -I % test % -eq 2
@@ -48,6 +48,6 @@ jobs:
 
       - name: Check doc links
         run: |
-          cd doc
+          cd docs
           make linkcheck
           cd ..
