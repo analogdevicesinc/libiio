@@ -31,6 +31,14 @@ Once you have secured your access to the library and its header, please check th
 
 The mainline library is written in C, and has built in bindings for C++, Python and C# (C-Sharp). [Node.js](https://github.com/drom/node-iio) and [Rust](https://github.com/fpagliughi/rust-industrial-io) are maintained outside the main repo. If you are interested in creating more language bindings, please [reach out](https://github.com/analogdevicesinc/libiio/issues) to the developers by posting an issue on github.
 
+## Licensing
+
+Libiio has been developed and is released under the terms of the GNU Lesser General Public License, version 2 or (at your option) any later version. This open-source license allows anyone to use the library for proprietary or open-source, commercial or non-commercial applications.
+
+Separately, the IIO Library also includes a set of test examples and utilities, (collectively known as iio-utils) which are developed and released under the terms of the GNU General Public License, version 2 or (at your option) any later version.
+
+The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
+
 # Project Pages
 
 ```{toctree}
@@ -38,6 +46,7 @@ The mainline library is written in C, and has built in bindings for C++, Python 
 
 install
 theory
+usage
 examples
 api
 bindings

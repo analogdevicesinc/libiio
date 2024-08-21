@@ -26,13 +26,14 @@ extensions = [
     "myst_parser",
     "breathe",
     'sphinxcontrib.matlab', 'sphinx.ext.autodoc',
+    "sphinx_inline_tabs",
 ]
 
 needs_extensions = {
     'adi_doctools': '0.3.6'
 }
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "attrs_inline"]
 
 breathe_default_project = "libiio"
 breathe_projects = {"libiio": os.path.join(doxyfolder, "generated", "xml")}

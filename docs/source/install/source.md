@@ -1,0 +1,268 @@
+# Building from Source
+
+:::{warning}
+
+libiio v1, available in the `main` branch, is under heavy active development. If you are looking for a stable version, please use the latest release by checking out a tag starting with v0.. For example, to check out the v0.25 release, use the following command:
+
+```bash
+git checkout v0.25
+```
+
+:::
+
+This section describes how to build libIIO from source. This is useful if you want to use the latest features or if you are developing libIIO itself.
+
+### Install Prerequisites/Dependencies and Build
+
+````{tab} Linux (Debian/Ubuntu)
+
+Basic system setup
+```shell
+analog@precision:~$ sudo apt-get update
+analog@precision:~$ sudo apt-get install build-essential
+```
+Install Prerequisites
+```shell
+analog@precision:~$ sudo apt-get install libxml2-dev libzstd-dev bison flex libcdk5-dev cmake
+```
+Install libraries for Backends
+```shell
+analog@precision:~$ sudo apt-get install libaio-dev libusb-1.0-0-dev
+analog@precision:~$ sudo apt-get install libserialport-dev libavahi-client-dev
+```
+Install to build doc
+```shell
+analog@precision:~$ sudo apt-get install doxygen graphviz
+```
+Install to build python backends
+```shell
+analog@precision:~$ sudo apt-get install python3 python3-pip python3-setuptools
+```
+
+
+### Clone
+```shell
+analog@precision:~$ git clone https://github.com/analogdevicesinc/libiio.git
+analog@precision:~$ cd libiio
+```
+
+### Build
+```shell
+analog@precision:~/libiio$ mkdir build
+analog@precision:~/libiio$ cd build
+analog@precision:~/libiio/build$ cmake ../
+analog@precision:~/libiio/build$ make
+```
+
+For detailed information about the different build options, see the [Configuration Options](#configuration-options) section.
+
+### Install
+```shell
+analog@precision:~/libiio/build$ sudo make install
+```
+
+:::{note}
+Some things (specifically building doc)  need to find libiio or the bindings on path.
+That means that you configure (with -DWITH_DOC=OFF), build, install, configure
+(with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
+:::
+
+
+````
+
+
+````{tab} Windows
+
+On Windows you will need to install a supported compiler such as Mingw-w64 or Visual Studio. Typically, Visual Studio will include CMake, but if you are using Mingw-w64, you will need to install it separately within the Mingw-w64 environment.
+
+You will also need to install the following dependencies:
+- libxml2
+- libzstd
+- (Optional) libusb
+- (Optional) libserialport
+
+These are available in the [following zip for convenience](http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip).
+
+```powershell
+mkdir C:\libiio-deps
+cd C:\libiio-deps
+Invoke-WebRequest -Uri http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile libiio-deps-20220517.zip
+Expand-Archive -Path libiio-deps-20220517.zip -DestinationPath .
+```
+
+### Clone
+```powershell
+C:\> mkdir dev
+C:\> cd dev
+C:\dev> git clone https://github.com/analogdevicesinc/libiio.git
+C:\dev> cd libiio
+```
+
+:::{note}
+For Visual Studio, you will need to run the following command to set up the environment:
+```powershell
+C:\> "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+```
+This may be different depending on your version of Visual Studio. You can also use the Developer Command Prompt for Visual Studio.
+:::
+
+
+### Build
+```powershell
+C:\dev\libiio> mkdir build
+C:\dev\libiio> cd build
+C:\dev\libiio\build> cmake -DWITH_USB_BACKEND=ON -DLIBXML2_LIBRARIES="C:\\libiio-deps\\libs\\64\\libxml2.lib" -DLIBUSB_LIBRARIES="C:\\libiio-deps\\libs\\64\\libusb-1.0.lib" -DLIBSERIALPORT_LIBRARIES="C:\\libiio-deps\\libs\\64\\libserialport.dll.a"  -DLIBZSTD_LIBRARIES="C:\\libiio-deps\\libs\\64\\libzstd.dll.a" -DLIBUSB_INCLUDE_DIR="C:\\libiio-deps\\include\\libusb-1.0" -DLIBXML2_INCLUDE_DIR="C:\\libiio-deps\\include\\libxml2" -DLIBZSTD_INCLUDE_DIR="C:\\libiio-deps\\include" ..
+
+C:\dev\libiio\build> cmake --build . --config Release
+
+````
+
+````{tab} macOS
+
+This process relies on [Homebrew](https://brew.sh/), a package manager for macOS. If you don't have Homebrew installed, you can install it by running the following command in your terminal:
+
+```shell
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Easy: Using a homebrew formula
+
+```shell
+brew install tfcollins/libiio
+```
+
+### Manual: Install Prerequisites
+```shell
+brew install cmake libxml2 libzstd libusb libserialport zstd
+```
+
+Optional dependencies for building documentation and python bindings:
+```shell
+brew install doxygen ncurses cdk sphinx-doc pkg-config
+pip3 install sphinx setuptools
+```
+
+### Clone
+```shell
+mkdir /tmp/dev
+cd /tmp/dev
+git clone https://github.com/analogdevicesinc/libiio.git
+```
+
+### Build
+```shell
+cd libiio
+mkdir build
+cd build
+cmake ..
+make
+```
+
+### Install
+```shell
+sudo make install
+```
+
+---
+
+
+## Configuration Options
+
+when configuring libiio with cmake, there are a few optional settings that you can use to control the build.
+The recommendation is to leave things to the default.
+
+Cmake Options          | Default | Target | Description                                    |
+---------------------- | ------- | -------| ---------------------------------------------- |
+`BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
+`LIBIIO_COMPAT`        |  ON |        All | Build Libiio v0.x compatibility layer |
+`WITH_MODULES`         | OFF |        All | Build modular backends |
+'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
+`CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
+`PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
+`WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
+`WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
+`NO_THREADS`           | OFF |        All | Disable multi-threading support |
+`CSHARP_BINDINGS`      | OFF |    Windows | Install C## bindings                                |
+`CMAKE_INSTALL_PREFIX` | `/usr` |   Linux | default install path |
+`ENABLE_PACKAGING`     | OFF | Linux, MaC | Create .deb/.rpm or .tar.gz packages via 'make package' |
+`WITH_DOC`             | OFF |      Linux | Generate documentation with Doxygen and Sphinx     |
+`WITH_MAN`             | OFF |      Linux | Generate and install man pages                     |
+`INSTALL_UDEV_RULE`    |  ON |      Linux | Install a Linux udev rule for detection of USB devices |
+`UDEV_RULES_INSTALL_DIR` | /lib/udev/rules.d |    Linux | default install path for udev rules |
+`WITH_LOCAL_CONFIG`    |  ON |      Linux | Read local context attributes from /etc/libiio.ini |
+`WITH_HWMON`           |  ON |      Linux | Add compatibility with the hwmon subsystem         |
+`WITH_GCOV`            | OFF |      Linux | Build with gcov profiling flags |
+`OSX_FRAMEWORK`        |  ON |        Mac | OS X frameworks provide the interfaces you need to write software for Mac. |
+`OSX_PACKAGE`          |  ON |        Mac | Create a OSX package for installation on local and other machines |
+
+Which backends the library supports is dependent on the build system, but can be overridden.
+(If cmake finds libusb, it will use it, unless turned off manually)
+
+Cmake Options          | Default | Depends on    | Description                     |
+---------------------- | ------- | ------------- | ------------------------------- |
+`WITH_XML_BACKEND`     |  ON | libxml2       | Enable the XML backend, required when using network, serial, or USB backend  |
+`WITH_USB_BACKEND`     |  ON | libusb        | Enable the libusb backend        |
+`WITH_USB_BACKEND_DYNAMIC` |  ON | Modules + USB backend | Compile the USB backend as a module |
+`WITH_SERIAL_BACKEND`  | OFF | libserialport | Enable the Serial backend        |
+`WITH_SERIAL_BACKEND_DYNAMIC` |  ON | Modules + serial backend | Compile the serial backend as a module |
+`WITH_NETWORK_BACKEND` |  ON |               | Supports TCP/IP                  |
+`WITH_NETWORK_BACKEND_DYNAMIC` |  ON | Modules + network backend | Compile the network backend as a module |
+`WITH_EXTERNAL_BACKEND` | OFF | | Support external backend provided by the application |
+`HAVE_DNS_SD`          |  ON | Networking    | Enable DNS-SD (ZeroConf) support |
+`ENABLE_IPV6`          |  ON | Networking    | Define if you want to enable IPv6 support |
+`WITH_LOCAL_BACKEND`   |  ON | Linux         | Enables local support with iiod  |
+`WITH_LOCAL_CONFIG`    |  ON | Local backend | Read local context attributes from /etc/libiio.ini |
+
+
+There are a few options, which are experimental, which should be left to their default settings:
+
+Cmake Options       | Default | Description                                    |
+------------------- | ------- | ---------------------------------------------- |
+`WITH_LOCAL_MMAP_API`     |  ON | Use the mmap API provided in Analog Devices' kernel (not upstream) |
+`WITH_LOCAL_DMABUF_API`   |  ON | Use the experimental DMABUF interface (not upstream) |
+`WITH_ZSTD`               |  ON | Support for ZSTD compressed metadata    |
+
+Developer options, which either increases verbosity, or decreases size. It can
+be useful to keep track of things when you are developing with libiio to print
+out warnings, to better understand what is going on. Most users should leave it
+at 'Error' and Embedded Developers are free to set it to 'NoLog' to save space.
+this is invoked as "-DLOG_LEVEL=Debug".
+
+Cmake Options     | Default | Description                                    |
+----------------- | ------- | ---------------------------------------------- |
+|                 |         | NoLog   : Remove all warning/error messages    |
+|`LOG_LEVEL`      |         | Error   : Print errors only                    |
+|                 |         | Warning : Print warnings and errors            |
+|                 |   Info  | Info    : Print info, warnings and errors      |
+|                 |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
+
+Options which effect iiod only. These are only available on Linux.
+
+Cmake Options       | Default | Description                                    |
+------------------- | ------- | ---------------------------------------------- |
+`WITH_IIOD`         |  ON | Build the IIO Daemon                                 |
+`WITH_IIOD_NETWORK` |  ON | Add network (TCP/IP) support                         |
+`WITH_IIOD_SERIAL`  |  ON | Add serial (UART) support                            |
+`WITH_IIOD_USBD`    |  ON | Add support for USB through FunctionFS within IIOD   |
+`WITH_IIOD_V0_COMPAT` |  ON | Add support for Libiio v0.x protocol and clients |
+`WITH_LIBTINYIIOD`  | OFF | Build libtinyiiod                                    |
+`WITH_AIO`          |  ON | Build IIOD with async. I/O support                   |
+`WITH_SYSTEMD`      | OFF | Enable installation of systemd service file for iiod |
+`SYSTEMD_UNIT_INSTALL_DIR`  | /lib/systemd/system | default install path for systemd unit files |
+`WITH_SYSVINIT`     | OFF | Enable installation of SysVinit script for iiod      |
+`SYSVINIT_INSTALL_DIR`      | /etc/init.d         | default install path for SysVinit scripts   |
+`WITH_UPSTART`      | OFF | Enable installation of upstart config file for iiod  |
+`UPSTART_CONF_INSTALL_DIR`: | /etc/init           | default install path for upstart conf files |
+
+## Notes
+
+Special Note on Microsoft Visual Compiler (MSVC):
+
+MSVC in debug mode is just very stupid. If it sees this code:
+```c
+if (0)
+   call_function();
+```
+It will try to link against the `call_function` symbol even though it's clearly dead code.
+
+For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
