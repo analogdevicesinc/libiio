@@ -1,0 +1,146 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  title: libiio
+  name: libiio
+  description: >-
+    Library for interfacing with Linux IIO devices
+
+
+    libiio is used to interface to the Linux Industrial Input/Output (IIO)
+    Subsystem. The Linux IIO subsystem is intended to provide support for
+    devices that in some sense are analog to digital or digital to analog
+    converters (ADCs, DACs). This includes, but is not limited to ADCs,
+    Accelerometers, Gyros, IMUs, Capacitance to Digital Converters (CDCs),
+    Pressure Sensors, Color, Light and Proximity Sensors, Temperature Sensors,
+    Magnetometers, DACs, DDS (Direct Digital Synthesis), PLLs (Phase Locked
+    Loops), Variable/Programmable Gain Amplifiers (VGA, PGA), and RF
+    transceivers. You can use libiio natively on an embedded Linux target (local
+    mode), or use libiio to communicate remotely to that same target from a host
+    Linux, Windows or MAC over USB or Ethernet or Serial.
+  productType: software product
+  organization: group:default/sw-customer-solutions-enablement
+  links:
+    - url: https://github.com/analogdevicesinc/libiio
+      title: GitHub
+      icon: web
+    - url: https://codedocs.xyz/analogdevicesinc/libiio/
+      title: Documentation
+      icon: web
+    - url: https://wiki.analog.com/resources/tools-software/linux-software/libiio
+      title: Wiki
+      icon: web
+  tags:
+    - c
+    - linux
+    - cmake
+  annotations:
+    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
+spec:
+  type: product
+  lifecycle: execution
+  system: system:default/analog-devices-products
+  owner: group:default/libiio-sw-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  title: libiio 0.25.0
+  name: libiio-0.25.0
+  description: "-"
+  releaseDate: 2023-08-11
+  releaseType: minor
+  qualityLevel: alpha
+  licenseType: open-source
+  applicationType: desktop
+  distributionForm: source
+  feeCharged: no
+  distributionMethod: github
+  redistributionRights: source
+  version: 0.25.0
+  annotations:
+    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
+spec:
+  type: release
+  lifecycle: release
+  owner: user:default/mhenneri
+  subcomponentOf: component:default/libiio
+  dependsOn:
+    - component:default/libiio-source-0.25.0
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  title: libiio
+  name: libiio-source
+  version: main
+  description: >-
+    Library for interfacing with Linux IIO devices
+
+
+    libiio is used to interface to the Linux Industrial Input/Output (IIO)
+    Subsystem. The Linux IIO subsystem is intended to provide support for
+    devices that in some sense are analog to digital or digital to analog
+    converters (ADCs, DACs). This includes, but is not limited to ADCs,
+    Accelerometers, Gyros, IMUs, Capacitance to Digital Converters (CDCs),
+    Pressure Sensors, Color, Light and Proximity Sensors, Temperature Sensors,
+    Magnetometers, DACs, DDS (Direct Digital Synthesis), PLLs (Phase Locked
+    Loops), Variable/Programmable Gain Amplifiers (VGA, PGA), and RF
+    transceivers. You can use libiio natively on an embedded Linux target (local
+    mode), or use libiio to communicate remotely to that same target from a host
+    Linux, Windows or MAC over USB or Ethernet or Serial.
+  classification: software
+  license:
+    - GPL-2.0-or-later
+  links:
+    - url: https://codedocs.xyz/analogdevicesinc/libiio/
+      title: Documentation
+      icon: web
+    - url: https://wiki.analog.com/resources/tools-software/linux-software/libiio
+      title: Wiki
+      icon: web
+  tags:
+    - linux
+    - python
+    - cmake
+    - c
+  annotations:
+    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
+spec:
+  type: library
+  lifecycle: execution
+  owner: group:default/libiio-sw-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  title: libiio v.0.25.0
+  name: libiio-source-0.25.0
+  version: 0.25.0
+  description: Release version of libiio
+  classification: software
+  license:
+    - GPL-2.0-or-later
+  links:
+    - url: https://codedocs.xyz/analogdevicesinc/libiio/
+      title: Documentation
+      icon: web
+    - url: https://wiki.analog.com/resources/tools-software/linux-software/libiio
+      title: Wiki
+      icon: web
+  tags:
+    - linux
+    - cmake
+  annotations:
+    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.25
+    hub.blackduck/project-name: oa_libiio
+    hub.blackduck/project-version: "0.25"
+spec:
+  type: library
+  lifecycle: release
+  owner: group:default/libiio-sw-team
+  subcomponentOf: component:default/libiio-source
