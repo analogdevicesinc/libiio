@@ -296,6 +296,8 @@ void iio_context_destroy(struct iio_context *ctx)
 	free(ctx->description);
 	free(ctx->git_tag);
 	free(ctx->pdata);
+	if (ctx->xml_raw)
+		free(ctx->xml_raw);
 	free(ctx);
 
 	if (WITH_MODULES && lib)

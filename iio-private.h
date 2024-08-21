@@ -98,6 +98,8 @@ struct iio_context {
 	struct iio_context_params params;
 
 	struct iio_module *lib;
+
+	char *xml_raw;
 };
 
 struct iio_channel {
