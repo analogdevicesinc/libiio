@@ -4,3 +4,4 @@ sphinxcontrib.wavedrom
 myst-parser
 breathe
 sphinx-inline-tabs
+sphinxcontrib-matlabdomain
