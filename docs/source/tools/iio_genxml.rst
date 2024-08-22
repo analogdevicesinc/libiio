@@ -1,7 +1,7 @@
 iio_genxml
 ==========
 
-iio_genxml - Generate XML representation of a Libiio context
+iio_genxml - Generate XML representation of a libiio context
 
 SYNOPSIS
 --------
@@ -12,7 +12,7 @@ DESCRIPTION
 -----------
 
 **iio_genxml** is a utility for generating a XML representation of a
-Libiio context.
+libiio context.
 
 OPTIONS
 -------

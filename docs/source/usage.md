@@ -135,7 +135,7 @@ When the object is no more needed, it can be destroyed with iio_buffer_destroy()
 If the Buffer object has been created from a device with input channels, then it must be updated first. This is done with the iio_buffer_refill() function.
 
 ### Reading or writing samples to the Buffer
-Libiio offers various ways to interact with the iio_buffer object.
+libiio offers various ways to interact with the iio_buffer object.
 
 #### Direct copy
 If you already have a buffer of samples, correctly interleaved and in the format that the hardware expects,
@@ -151,7 +151,7 @@ Using `memcpy` to copy samples from the iio_buffer is <b>not recommended</b>.
 When capturing samples from an input device, you cannot assume that the iio_buffer object contains only the samples you're interested in.
 
 #### Iterating over the buffer with a callback
-Libiio provides a way to iterate over the buffer by registering a callback function, with the iio_buffer_foreach_sample() function.
+libiio provides a way to iterate over the buffer by registering a callback function, with the iio_buffer_foreach_sample() function.
 
 The callback function will be called for each "sample slot" of the buffer,
 which will contain a valid sample if the buffer has been refilled,
@@ -203,7 +203,7 @@ back to their hardware format.
 The raw stream of samples generally isn't in a format that can be directly used in algorithms.
 Some operations, like endianness conversion and bit-shifting of the samples, have to be performed first.
 
-Libiio offers two functions that can be used to convert samples:
+libiio offers two functions that can be used to convert samples:
 - iio_channel_convert(), to convert from the hardware format
 - iio_channel_convert_inverse(), to convert to the hardware format.
 

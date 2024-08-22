@@ -10,7 +10,7 @@ git checkout v0.25
 
 :::
 
-This section describes how to build libIIO from source. This is useful if you want to use the latest features or if you are developing libIIO itself.
+This section describes how to build libiio from source. This is useful if you want to use the latest features or if you are developing libiio itself.
 
 ## Install Prerequisites/Dependencies and Build
 
@@ -175,7 +175,7 @@ The recommendation is to leave things to the default.
 Cmake Options          | Default | Target | Description                                    |
 ---------------------- | ------- | -------| ---------------------------------------------- |
 `BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
-`LIBIIO_COMPAT`        |  ON |        All | Build Libiio v0.x compatibility layer |
+`libiio_COMPAT`        |  ON |        All | Build libiio v0.x compatibility layer |
 `WITH_MODULES`         | OFF |        All | Build modular backends |
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
@@ -245,7 +245,7 @@ Cmake Options       | Default | Description                                    |
 `WITH_IIOD_NETWORK` |  ON | Add network (TCP/IP) support                         |
 `WITH_IIOD_SERIAL`  |  ON | Add serial (UART) support                            |
 `WITH_IIOD_USBD`    |  ON | Add support for USB through FunctionFS within IIOD   |
-`WITH_IIOD_V0_COMPAT` |  ON | Add support for Libiio v0.x protocol and clients |
+`WITH_IIOD_V0_COMPAT` |  ON | Add support for libiio v0.x protocol and clients |
 `WITH_LIBTINYIIOD`  | OFF | Build libtinyiiod                                    |
 `WITH_AIO`          |  ON | Build IIOD with async. I/O support                   |
 `WITH_SYSTEMD`      | OFF | Enable installation of systemd service file for iiod |

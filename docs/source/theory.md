@@ -46,7 +46,7 @@ using those devices in environments like [GNU Radio](https://wiki.analog.com/res
 
 ## License and code management
 
-Libiio has been developed and is released under the terms of the GNU Lesser General Public
+libiio has been developed and is released under the terms of the GNU Lesser General Public
 License, version 2. This open-source license allows anyone to use the library for proprietary or
 open-source, commercial or non-commercial applications. This choice was motivated by the fact
 that Analog Devices is a company that principally sells hardware, and this library provides the
@@ -692,7 +692,7 @@ the preprocessor flag HAVE_AVAHI to a non-zero value; the IIOD will then registe
 Avahi daemon if one is running on the target, and the network backend will query the local Avahi
 server for a IIOD server to use.
 
-## Libiio, now and in the future
+## libiio, now and in the future
 
 ### Bindings
 

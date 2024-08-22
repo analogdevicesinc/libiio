@@ -1,6 +1,6 @@
 # Installation
 
-It is recommended to use the latest releases through pre-built packages when available. If you need the latest features or are developing libIIO itself, you can build from source following guides:
+It is recommended to use the latest releases through pre-built packages when available. If you need the latest features or are developing libiio itself, you can build from source following guides:
 
 ```{toctree}
 :maxdepth: 1
@@ -21,7 +21,7 @@ The EXE installer is recommend but zip packages include the same files, which ca
 
 ### Linux
 
-Most Linux users can install libIIO from their distribution's package manager. For example, on Ubuntu, you can install libIIO with the following command:
+Most Linux users can install libiio from their distribution's package manager. For example, on Ubuntu, you can install libiio with the following command:
 
 ```bash
 sudo apt-get install libiio0

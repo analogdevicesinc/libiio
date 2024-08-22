@@ -1,7 +1,7 @@
 iio_stresstest
 ==============
 
-iio_stresstest - Stress test program for Libiio
+iio_stresstest - Stress test program for libiio
 
 SYNOPSIS
 --------
@@ -12,7 +12,7 @@ DESCRIPTION
 -----------
 
 **iio_stresstest** is a stress-testing program that can be used to find
-bugs in Libiio or in the Libiio daemon (IIOD).
+bugs in libiio or in the libiio daemon (IIOD).
 
 OPTIONS
 -------

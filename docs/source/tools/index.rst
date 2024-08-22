@@ -1,7 +1,7 @@
 Command Line Tools
 ==================
 
-libIIO provides a set of command line tools to interact with libIIO contexts. These tools are useful for debugging, testing, and development. They are typically referred to as the iio-tools or iio-utils.
+libiio provides a set of command line tools to interact with libiio contexts. These tools are useful for debugging, testing, and development. They are typically referred to as the iio-tools or iio-utils.
 
 .. toctree::
    :maxdepth: 1
