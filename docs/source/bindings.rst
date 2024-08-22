@@ -5,4 +5,4 @@ Bindings
 .. toctree::
     :maxdepth: 2
 
-    api/matlab/index
+    api/python/index

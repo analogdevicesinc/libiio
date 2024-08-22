@@ -10,6 +10,13 @@ os.chdir(doxyfolder)
 os.system("doxygen doxyfile.in")
 os.chdir(cwd)
 
+# Add bindings and examples to path
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "examples")))
+
+import iio
+
 # -- Project information -----------------------------------------------------
 project = 'libiio'
 year = datetime.datetime.now().year

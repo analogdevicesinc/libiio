@@ -12,7 +12,7 @@ git checkout v0.25
 
 This section describes how to build libIIO from source. This is useful if you want to use the latest features or if you are developing libIIO itself.
 
-### Install Prerequisites/Dependencies and Build
+## Install Prerequisites/Dependencies and Build
 
 ````{tab} Linux (Debian/Ubuntu)
 
@@ -125,7 +125,8 @@ This process relies on [Homebrew](https://brew.sh/), a package manager for macOS
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### Easy: Using a homebrew formula
+(homebrew)=
+### Easy: Using a homebrew formula 
 
 ```shell
 brew install tfcollins/libiio
@@ -165,7 +166,7 @@ sudo make install
 
 ---
 
-
+(configuration-options)=
 ## Configuration Options
 
 when configuring libiio with cmake, there are a few optional settings that you can use to control the build.

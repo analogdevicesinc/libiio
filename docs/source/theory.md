@@ -1,11 +1,11 @@
 # Theory of Operation
 
-### Objectives
+## Objectives
 
 Why did Analog Devices develop libiio?
 To answer that question, it is needed to understand the state of things before libiio was introduced.
 
-#### Simplification and standardization
+### Simplification and standardization
 
 The Linux kernel features a IIO subsystem, which provides a standardized interface with the
 user-space for client applications. The various drivers designed to interface different IIO devices
@@ -31,7 +31,7 @@ to support a wide range of devices. For instance, if the application requests on
 a capture channel without specifying its name, then it will be compatible with all IIO devices with
 at least one capture channel that exist to date, as well as future hardware that has yet to be invented.
 
-#### Advanced features
+### Advanced features
 
 Beyond resolving issues, libiio was also announcing new features. The major planned
 improvement being a network backend, which would broaden the set of possibilities: running the
@@ -40,9 +40,11 @@ device from anywhere in the network in an application.
 
 That network backend was also opening questions about other possible improvements: for
 instance, using IIO devices from applications running on different operating systems, like Windows,
-using those devices in environments like [GNU Radio](gnuradio), [MATLAB](/libiio/clients/matlab_simulink) or [Simulink](/libiio/clients/matlab_simulink), etc.
+using those devices in environments like [GNU Radio](https://wiki.analog.com/resources/tools-software/linux-software/gnuradio), [MATLAB](https://wiki.analog.com/resources/tools-software/mathworks) or [Simulink](https://wiki.analog.com/resources/tools-software/mathworks), etc.
 
-### License and code management
+
+
+## License and code management
 
 Libiio has been developed and is released under the terms of the GNU Lesser General Public
 License, version 2. This open-source license allows anyone to use the library for proprietary or
@@ -52,7 +54,7 @@ clients with a better and easier way of using this hardware.
 
 The full terms of the license can be found here: <http://opensource.org/licenses/LGPL-2.1>
 
-### Code conformance
+## Code conformance
 
 A good part of libiio fully complies with the C99 and POSIX standards, and should be
 compilable on any POSIX-compliant operating system supported by a C99 compiler. The exception
@@ -63,7 +65,7 @@ a design decision since the beginning of the project, porting the library to Win
 exceptionally easy and required very little change, thanks to the recent POSIX sockets compatibility
 layer provided in Windows.
 
-### Code visibility
+## Code visibility
 
 While the public API declares and references iio_context, iio_device, iio_channel and iio_buffer
 objects, their content is never known to the client application. All the public functions use pointers
@@ -86,7 +88,7 @@ token marks the corresponding functions as visible in the library. The functions
 are considered hidden and will not be callable from outside the library. This ensures that client
 applications cannot call internal functions, and use the API functions instead.
 
-### Backends
+## Backends
 
 The libiio library has been designed from the start to support multiple backends. The current 0.1
 version features three different backends: a XML backend, a local backend, a network backend.
@@ -122,7 +124,7 @@ library to work. For instance, the Windows versions are built without the local 
 is Linux-specific; and a build of the library meant to run on a development board with IIO devices
 attached could be compiled without the network and XML backends, as those would be unused.
 
-### Layering
+## Layering
 
 The libiio library is built with two distincts layers. The top layer contains the implementations of
 all the public functions. It is high-level, in the sense that those functions can be used independently
@@ -175,6 +177,7 @@ file.
 
 #### Document Type Definition
 
+```xml
     <?xml version="1.0" encoding="utf-8"?>
     <!DOCTYPE context [
         <!ELEMENT context (device)*>
@@ -190,6 +193,7 @@ file.
         <!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED>
         <!ATTLIST debug-attribute name CDATA #REQUIRED>
     ]>
+```
 
 This DTD corresponds to the format expected by the XML backend of the latest libiio. It is
 always embedded at the top of the XML generated with iio_context_get_xml, and the XML backend
@@ -341,15 +345,10 @@ samples:
 
     This method can be very useful if the data of a channel has to be processed sample by sample, as in this case, there is no copy to an intermediate buffer. As the inner loops gets a pointer to the sample\'s emplacement, it can be used either to read or write the buffer.
 
-```{=html}
-<!-- -->
-```
--   Alternatively, the iio_buffer class contains a method called iio_buffer_foreach_sample. This function takes a function pointer as argument: the supplied callback will be called for each sample of the buffer. The callback receives four arguments: a pointer to the iio_channel structure corresponding to the sample, a pointer to the sample itself, the length of the sample in bytes, plus a pointer optionally set as argument of iio_buffer_foreach_sample. Again, this function can be used to read from or write to the buffer.\
-    The main difference with the previous method, is that the callback is called for each sample of the buffer, in the order that they appear in the buffer, and not ordered by channels. As said previously, the buffer can contain samples of channels that we didn\'t request; the callback can just check whether or not the sample\'s channel is enabled with iio_channel_is_enabled, and just return zero if it\'s not.
 
-```{=html}
-<!-- -->
-```
+<!-- -   Alternatively, the iio_buffer class contains a method called iio_buffer_foreach_sample. This function takes a function pointer as argument: the supplied callback will be called for each sample of the buffer. The callback receives four arguments: a pointer to the iio_channel structure corresponding to the sample, a pointer to the sample itself, the length of the sample in bytes, plus a pointer optionally set as argument of iio_buffer_foreach_sample. Again, this function can be used to read from or write to the buffer.\
+    The main difference with the previous method, is that the callback is called for each sample of the buffer, in the order that they appear in the buffer, and not ordered by channels. As said previously, the buffer can contain samples of channels that we didn\'t request; the callback can just check whether or not the sample\'s channel is enabled with iio_channel_is_enabled, and just return zero if it\'s not. -->
+
 -   The last method is to use one of the higher-level functions provided by the iio_channel class: iio_channel_read_raw, iio_channel_write_raw, iio_channel_read, iio_channel_write. The former two will basically copy the first N samples of one channel to/from a user-specified buffer (N depending of the size of this one buffer). Note that this function can be replaced with the first method and a memcpy (that\'s what it does internally, after all). The latter two will do the same, but will additionally convert all the samples copied from the raw format to the format that can be used by the applications.
 
 ### Refilling and submitting a buffer
@@ -362,7 +361,7 @@ As stated previously, the **iio_channel_read** and **iio_channel_write** functio
 
 First, here is a textual representation of the hardware format as reported by the kernel:
 
-    >## cat /sys/bus/iio/devices/iio:device0/scan_elements/in_voltage0_type
+    ># cat /sys/bus/iio/devices/iio:device0/scan_elements/in_voltage0_type
     le:s12/16>>4
 
 What it says, is that the hardware samples are in little-endian order ("le"), that the sample size is 16 bits, but with only 12 bits worth of data. The "\>\>4" shift informs that those 12 bits are located after 4 most-significant bits (MSB), so in this particular case they correspond to the 12 less-significant bits (LSB), as 16 -- 4 = 12. The "s" character of "s12" means that the 12-bit value is signed.
@@ -703,7 +702,7 @@ C is a good language, but not everybody is familiar with it; some people might p
 
 #### Python bindings
 
-The Python bindings were developed very early in the project to facilitate generating XML strings modeling IIO contexts in order to properly test the XML backend. They quickly became outdated as the project moved on, but were later greatly improved and should now be on par with the C## bindings.
+The Python bindings were developed very early in the project to facilitate generating XML strings modeling IIO contexts in order to properly test the XML backend. They quickly became outdated as the project moved on, but were later greatly improved and should now be on par with the C# bindings.
 
 To create the bindings, The "ctypes" module has been used:
 
@@ -745,11 +744,11 @@ Since v0.21 the python bindings have been available through pypi, and therefore 
 
 ##### PyADI-IIO
 
-An additional module was created which leverages the libiio python bindings call [pyadi-iio](resources/tools-software/linux-software/pyadi-iio). pyadi-iio is recommended if a device specific class exists for your [current hardware](https://github.com/analogdevicesinc/pyadi-iio/blob/master/supported_parts.md). However, since pyadi-iio uses libiio all the libiio python APIs are available in that module if needed.
+An additional module was created which leverages the libiio python bindings call [pyadi-iio](https://analogdevicesinc.github.io/pyadi-iio/). pyadi-iio is recommended if a device specific class exists for your [current hardware](https://github.com/analogdevicesinc/pyadi-iio/blob/master/supported_parts.md). However, since pyadi-iio uses libiio all the libiio python APIs are available in that module if needed.
 
-#### C## bindings
+#### C# bindings
 
-The C## bindings in particular are fully functional and cover the whole panel of features that
+The C# bindings in particular are fully functional and cover the whole panel of features that
 libiio provides. Its API consists in the Context, Device, Channel and IOBuffer classes, each one
 providing a couple of methods, that directly call their C counterpart:
 
@@ -775,9 +774,9 @@ namespace iio
 In this example, if you call the id method on an object of type Device, as a result the C function
 iio_device_get_id will be called. All the others methods implement a similar mechanism.
 
-The C## bindings are especially interesting for Windows users, because they permit to use libiio
+The C# bindings are especially interesting for Windows users, because they permit to use libiio
 in a .NET application (with the network backend, of course). By using Mono, it is also possible to
-use libiio in C## programs running on Linux.
+use libiio in C# programs running on Linux.
 
 ### Future improvements
 
@@ -785,7 +784,7 @@ use libiio in C## programs running on Linux.
 
 The current version of the IIOD server is extremely fast, provided that client-side demultiplexing is used. On a weak 400 MHz CPU, it has no problems to stream samples at speeds of 3MSPS (3 million samples per second) without dropping a single one.
 
-However, 3 MSPS is really far from the maximum capacity of the typical converters. The [AD-FMCOMMS3-EBZ](/resources/eval/user-guides/ad-fmcomms3-ebz/) board, for instance, can digitize at a speed up to 61.44 MSPS (time 4 channels, for a total of 245.76 MSPS) \... nearly 100 times faster. And the recent [AD-FMCDAQ2-EBZ](/resources/eval/user-guides/ad-fmcdaq2-ebz/) is capable of 1000 MSPS for dual 16-bit channels, which
+However, 3 MSPS is really far from the maximum capacity of the typical converters. The [AD-FMCOMMS3-EBZ](https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms3-ebz/) board, for instance, can digitize at a speed up to 61.44 MSPS (time 4 channels, for a total of 245.76 MSPS) \... nearly 100 times faster. And the recent [AD-FMCDAQ2-EBZ](https://wiki.analog.com/resources/eval/user-guides/ad-fmcdaq2-ebz/) is capable of 1000 MSPS for dual 16-bit channels, which
 represents a maximum transfer speed of 2000 MSPS, or 32.0 Gb/s.
 
 So how to reach those extremely high speeds, with a 400 MHz CPU? That\'s where [Zero copy](https://en.wikipedia.org/wiki/Zero-copy)
@@ -795,15 +794,9 @@ IIOD uploads the samples from one device to a connected client:
 -   When the low-speed interface is used, the samples are acquired from the hardware using DMA, and stored into a kernel buffer; the local backend of libiio will then use the CPU to copy the samples to the iio_buffer object, and then copy again to the packet buffer of the Linux kernel by writing the client\'s socket.\
     ![](_static/libiio_route_lowspeed.png){.align-center width="600" query="?600"}
 
-```{=html}
-<!-- -->
-```
--   The high-speed interface works roughly the same, but the manual copy from the kernel\'s IIO buffer to the iio_buffer object is avoided by swapping the buffers from user space and kernel space. However, it is still required to write the buffer to each client\'s socket.\
-    ![](_static/libiio_route_highspeed.png){.align-center width="600" query="?600"}
+<!-- -   The high-speed interface works roughly the same, but the manual copy from the kernel\'s IIO buffer to the iio_buffer object is avoided by swapping the buffers from user space and kernel space. However, it is still required to write the buffer to each client\'s socket.\
+    ![](_static/libiio_route_highspeed.png){.align-center width="600" query="?600"} -->
 
-```{=html}
-<!-- -->
-```
 -   Then comes zerocopy. The principle, is to avoid the second manual copy of the samples, when the data is written to the socket. So how can this work? How is it possible to send data through the network, without writing the socket?\
     The answer is to be found deep inside the Linux kernel. A particular system call, named "[vmsplice](https://en.wikipedia.org/wiki/Splice_(system_call))", allows to "give" virtual pages of memory to the Linux kernel through a file descriptor. This trick, introduced in Linux 2.6.17, works by re-configuring the Memory Management Unit of the CPU. Let\'s say the buffer to write to the socket starts at address 0x4000; the vmsplice system call will map the exact same area to a different address in kernel space, e.g. 0x8000, so that the buffer can be addressed from both addresses. Then, it will re-map the original 0x4000 address to point to a different physical location. As a result, a complete buffer of samples has been moved to kernel space, without copying a single byte of it! Then, from the hardware to the network link, the CPU never has to copy anything, and the 400 MHz ARM board can push hundreds of megabytes of samples on the network while having a CPU usage staying close to zero.\
     ![](_static/libiio_route_zerocopy.png){.align-center width="600" query="?600"}\

@@ -39,9 +39,7 @@ Please reference your OS's package manager for the correct package names. Altern
 
 For macOS there are four options:
 
-- [Homebrew](install/homebrew.md)
+- [Homebrew](#homebrew)
 - [MacPorts](https://ports.macports.org/port/libiio/)
-- DMG installer from the [GitHub releases page](ttps://github.com/analogdevicesinc/libiio/releases)
+- DMG installer from the [GitHub releases page](https://github.com/analogdevicesinc/libiio/releases)
 - [Building from source](install/source.md)
-
-

@@ -18,3 +18,4 @@ This section provides a detailed description of the C API. The API is divided in
     api/c/event
     api/c/hwmon
     api/c/debug
+

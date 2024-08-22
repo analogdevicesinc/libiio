@@ -141,11 +141,11 @@ Libiio offers various ways to interact with the iio_buffer object.
 If you already have a buffer of samples, correctly interleaved and in the format that the hardware expects,
 it is possible to copy the samples directly into the iio_buffer object using `memcpy`:
 
-~~~{.c}
+```c
 size_t iio_buf_size = iio_buffer_end(buffer) - iio_buffer_start(buffer);
 size_t count = MAX(sizeof(samples_buffer), iio_buf_size);
 memcpy(iio_buffer_start(buffer), samples_buffer, count);
-~~~
+```
 
 Using `memcpy` to copy samples from the iio_buffer is <b>not recommended</b>.
 When capturing samples from an input device, you cannot assume that the iio_buffer object contains only the samples you're interested in.
@@ -157,7 +157,7 @@ The callback function will be called for each "sample slot" of the buffer,
 which will contain a valid sample if the buffer has been refilled,
 or correspond to an area where a sample should be stored if using an output device.
 
-~~~{.c}
+```c
 ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes, void *d)
 {
     /* Use "src" to read or write a sample for this channel */
@@ -169,7 +169,7 @@ int main(void)
     iio_buffer_foreach_sample(buffer, sample_cb, NULL);
     ...
 }
-~~~
+```
 
 Note that the callback will be called in the order that the samples appear in the buffer,
 and only for samples that correspond to channels that were enabled.
@@ -180,13 +180,13 @@ As such, it is interesting if you want to process the data channel by channel.
 
 It basically consists in a for loop that uses the functions iio_buffer_first(), iio_buffer_step() and iio_buffer_end():
 
-~~~{.c}
+```c
 for (void *ptr = iio_buffer_first(buffer, channel);
            ptr < iio_buffer_end(buffer);
            ptr += iio_buffer_step(buffer)) {
     /* Use "ptr" to read or write a sample for this channel */
 }
-~~~
+```
 
 #### Extracting from/to a second buffer
 

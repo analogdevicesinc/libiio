@@ -1,6 +1,6 @@
 # Examples
 
-This page provides a few examples of how to use the libIIO library. The examples are written in C and are intended to be used as a starting point for your own application. For other languages, please refer to the [Bindings](bindings.md) page.
+This page provides a few examples of how to use the libIIO library. The examples are written in C and are intended to be used as a starting point for your own application. For other languages, please refer to the [Bindings](bindings.rst) page.
 
 :::{note}
 To reduce verbosity, the error handling code has been omitted from the examples. In a real application, you should always check the return value of each function call.

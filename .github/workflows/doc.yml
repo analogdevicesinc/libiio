@@ -21,6 +21,7 @@ jobs:
           cd build
           cmake .. -DWITH_MAN=ON -DHAVE_DNS_SD=OFF
           make
+          sudo make install
           cd ..
           cd docs
           pip install -r requirements_doc.txt
