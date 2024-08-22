@@ -66,6 +66,6 @@ int main() {
 The following examples are available in the libiio repository:
 
 - [ad9361-iiostream.c](https://github.com/analogdevicesinc/libiio/blob/main/examples/ad9361-iiostream.c)
-- [ad9361-iio-stream.c](https://github.com/analogdevicesinc/libiio/blob/main/examples/ad93761-iiostream.c)
+- [ad9361-iio-stream.c](https://github.com/analogdevicesinc/libiio/blob/main/examples/ad9371-iiostream.c)
 - [adrv9002-iiostream.c](https://github.com/analogdevicesinc/libiio/blob/main/examples/adrv9002-iiostream.c)
 - [adrv9009-iiostream.c](https://github.com/analogdevicesinc/libiio/blob/main/examples/adrv9009-iiostream.c)

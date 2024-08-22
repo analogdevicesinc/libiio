@@ -1,7 +1,7 @@
 Python Bindings
 ===============
 
-Python bindings for the `Industrial I/O <../index.html>`_ interface library. 
+Python bindings for the Industrial I/O interface library. 
 
 Installation
 ############

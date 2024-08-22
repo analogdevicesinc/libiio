@@ -15,7 +15,7 @@ It is entirely user-mode: No special privilege or elevation is required for the 
 
 Any host running Linux, macOS, Windows, or OpenBSD/NetBSD, should be trivial to get libIIO running on. If you are interested in porting to other hosts that support either networking (socket interface), [libusb](https://libusb.info/) or serial, it should be very straightforward. [Pull Requests](https://github.com/analogdevicesinc/libiio/pulls) are always reviewed, and well written ones are normally accepted.
 
-The local backend and Linux daemon can run on any embedded Linux based system, from purpose built systems like [PlutoSDR](http://www.analog.com/plutosdr) or [ADALM2000](http://www.analog.com/adalm2000) to [Raspberry Pi](https://www.raspberrypi.org/) or [BeagleBoard](https://beagleboard.org/) to [Jetson](https://www.nvidia.com/en-us/autonomous-machines/jetson). [tiny-iiod](https://github.com/analogdevicesinc/libtinyiiod) requires a modern C compiler and is known to work on a variety of non-Linux frameworks including [Mbed](https://www.mbed.com/) and [FreeRTOS](https://www.freertos.org/).
+The local backend and Linux daemon can run on any embedded Linux based system, from purpose built systems like [PlutoSDR](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ADALM-PLUTO.html) or [ADALM2000](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ADALM2000.html) to [Raspberry Pi](https://www.raspberrypi.org/) or [BeagleBoard](https://beagleboard.org/) to [Jetson](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/). [tiny-iiod](https://github.com/analogdevicesinc/libtinyiiod) requires a modern C compiler and is known to work on a variety of non-Linux frameworks including [Mbed](https://www.mbed.com/) and [FreeRTOS](https://www.freertos.org/).
 
 ## Sounds good! How do I get started?
 
@@ -25,7 +25,7 @@ For other platforms, you are encouraged to use one of our [release builds](https
 
 If you prefer, you can also access the source directly from [github](https://github.com/analogdevicesinc/libiio).
 
-Once you have secured your access to the library and its header, please check the [libIIO API](https://analogdevicesinc.github.io/libiio/api/index.html) or the [libIIO examples](https://analogdevicesinc.github.io/libiio/examples/index.html).
+Once you have secured your access to the library and its header, please check the [libIIO API](api.rst) or the [libIIO examples](examples.md).
 
 ## Where is (insert my favourite language) support?
 
