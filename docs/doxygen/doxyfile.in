@@ -12,3 +12,10 @@ PREDEFINED             = "__api= " \
 
 GENERATE_HTML = NO
 GENERATE_LATEX = NO
+
+EXCLUDE                = ../../iio-private.h \
+                         ../../debug.h \
+                         ../../iio-lock.h \
+                         ../../iiod-client.h \
+                         ../../sort.h \
+                         ../../network.h
