@@ -675,6 +675,44 @@ add_subdirectory(bindings)
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)
 
+# Testing
+option(TESTS "Enabling unit testing" OFF)
+option(TESTS_DEBUG "Enable test debugging" OFF)
+option(TESTS_COVERAGE "Enable coverage tracing when testing" OFF)
+if(TESTS)
+	include(CTest)
+	enable_testing()
+	add_subdirectory(tests)
+	if(TESTS_COVERAGE)
+		if(NOT WITH_GCOV)
+			message(FATAL_ERROR "Coverage report generation only supported with WITH_GCOV also enabled")
+		endif()
+
+		if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+			message(FATAL_ERROR "Coverage only supported on Linux")
+		endif()
+		# Verify that lcov is installed
+		find_program(LCOV_PATH lcov)
+		if(NOT LCOV_PATH)
+			message(FATAL_ERROR "lcov not found! Aborting...")
+		endif()
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wall -fprofile-arcs -ftest-coverage")
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+		target_compile_options(iio PRIVATE --coverage)
+		target_link_libraries(iio PRIVATE --coverage)
+
+		# Add custom target to run tests with coverage
+		add_custom_target(
+			coverage
+			COMMAND ${CMAKE_CTEST_COMMAND} --progress &&  lcov -c -d ${CMAKE_CURRENT_SOURCE_DIR} -o main_coverage.info && genhtml main_coverage.info -o coverage
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+		message(STATUS "Coverage flags enabled")
+	endif()
+
+endif()
+
 include(cmake/Install.cmake)
 
 # Add uninstall target
