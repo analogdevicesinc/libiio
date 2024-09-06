@@ -6,14 +6,15 @@ classdef scan < handle
             %
             % Args:
             %   ctxParamsPtr: A pointer to a iio_context_params structure 
-            %       that contains context creation information; can be NULL
-            %   backends: a NULL-terminated string containing a comma-separated list
+            %       that contains context creation information; can be
+            %       NULL.
+            %   backends: A NULL-terminated string containing a comma-separated list
             %       of the backends to be scanned for contexts. If NULL, all the available
-            %       backends are scanned
+            %       backends are scanned.
             % 
             % Returns:
-            %   On success, a pointer to an iio_scan structure
-            %   On failure, a pointer-encoded error is returned
+            %   On success, a pointer to an iio_scan structure.
+            %   On failure, a pointer-encoded error is returned.
             %
             % NOTE: It is possible to provide backend-specific information.
             %   For instance, "local,usb=0456:*" will scan the local backend and
@@ -36,9 +37,10 @@ classdef scan < handle
             % Destroy the given scan context
             %
             % Args:
-            %   scanPtr: A pointer to an iio_scan structure
+            %   scanPtr: A pointer to an iio_scan structure.
             %
-            % NOTE: After that function, the iio_scan pointer shall be invalid.
+            % NOTE: 
+            %   After that function, the iio_scan pointer shall be invalid.
             %
             % libiio function: iio_scan_destroy
 
@@ -53,10 +55,10 @@ classdef scan < handle
             % Get number of results of a scan operation
             %
             % Args:
-            %   scanPtr: A pointer to an iio_scan structure
+            %   scanPtr: A pointer to an iio_scan structure.
             % 
             % Returns:
-            %   The number of results of the scan operation
+            %   The number of results of the scan operation.
             %
             % libiio function: iio_scan_get_results_count
             
@@ -71,12 +73,12 @@ classdef scan < handle
             % Get description of scanned context
             %
             % Args:
-            %   scanPtr: A pointer to an iio_scan structure
-            %   idx: The index of the scanned context
+            %   scanPtr: A pointer to an iio_scan structure.
+            %   idx: The index of the scanned context.
             % 
             % Returns:
-            %   On success, a pointer to a NULL-terminated string
-            %   If the index is invalid, NULL is returned
+            %   On success, a pointer to a NULL-terminated string.
+            %   If the index is invalid, NULL is returned.
             %
             % libiio function: iio_scan_get_description
 
@@ -92,12 +94,12 @@ classdef scan < handle
             % Get URI of scanned context
             %
             % Args:
-            %   scanPtr: A pointer to an iio_scan structure
-            %   idx: The index of the scanned context
+            %   scanPtr: A pointer to an iio_scan structure.
+            %   idx: The index of the scanned context.
             % 
             % Returns:
-            %   On success, a pointer to a NULL-terminated string
-            %   If the index is invalid, NULL is returned
+            %   On success, a pointer to a NULL-terminated string.
+            %   If the index is invalid, NULL is returned.
             %
             % libiio function: iio_scan_get_uri
 

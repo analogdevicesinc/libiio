@@ -5,12 +5,12 @@ classdef block < handle
             % Create a data block for the given buffer
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
-            %   size: The size of the block to create, in bytes
+            %   buffPtr: A pointer to an iio_buffer structure.
+            %   size: The size of the block to create, in bytes.
             % 
             % Returns:
-            %   On success, a pointer to an iio_block structure
-            %   On failure, a pointer-encoded error is returned
+            %   On success, a pointer to an iio_block structure.
+            %   On failure, a pointer-encoded error is returned.
             %
             % libiio function: iio_buffer_create_block
 
@@ -26,7 +26,7 @@ classdef block < handle
             % Destroy the given block
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
+            %   blockPtr: A pointer to an iio_block structure.
             %
             % libiio function: iio_block_destroy
 
@@ -41,10 +41,10 @@ classdef block < handle
             % Get the start address of the block
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
+            %   blockPtr: A pointer to an iio_block structure.
             % 
             % Returns:
-            %   A pointer corresponding to the start address of the block
+            %   A pointer corresponding to the start address of the block.
             %
             % libiio function: iio_block_start
 
@@ -60,8 +60,8 @@ classdef block < handle
             % Find the first sample of a channel in a block
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
-            %   chnPtr: A pointer to an iio_channel structure
+            %   blockPtr: A pointer to an iio_block structure.
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
             %   A pointer to the first sample found, or to the end of the 
@@ -97,11 +97,11 @@ classdef block < handle
             % Get the address after the last sample in a block
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
+            %   blockPtr: A pointer to an iio_block structure.
             % 
             % Returns:
             %   A pointer corresponding to the address that follows the 
-            %   last sample present in the buffer
+            %   last sample present in the buffer.
             %
             % libiio function: iio_block_end
 
@@ -117,21 +117,23 @@ classdef block < handle
             % Call the supplied callback for each sample found in a block
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
+            %   blockPtr: A pointer to an iio_block structure.
             %   maskPtr: A pointer to the iio_channels_mask structure that 
-            %   represents the list of channels for which we want samples
-            %   callback: A pointer to a function to call for each sample found
-            %   dataPtr: A user-specified pointer that will be passed to the callback
+            %       represents the list of channels for which we want samples.
+            %   callback: A pointer to a function to call for each sample
+            %       found.
+            %   dataPtr: A user-specified pointer that will be passed to
+            %       the callback.
             % 
             % Returns:
             %   Number of bytes processed
             %
             % NOTE: 
             %   The callback receives four arguments:
-            %   A pointer to the iio_channel structure corresponding to the sample,
-            %   A pointer to the sample itself,
-            %   The length of the sample in bytes,
-            %   The user-specified pointer passed to iio_block_foreach_sample.
+            %   a pointer to the iio_channel structure corresponding to the sample,
+            %   a pointer to the sample itself,
+            %   the length of the sample in bytes,
+            %   the user-specified pointer passed to iio_block_foreach_sample.
             %
             % libiio function: iio_block_foreach_sample
 
@@ -192,12 +194,12 @@ classdef block < handle
             end
         end
 
-        function status = iio_block_dequeue(blockPtr, nonblock)
+        function status = iio_block_dequeue(blockPtr, nonBlock)
             % Dequeue the given iio_block from the buffer's queue
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
-            %   nonblock: if True, the operation won't block and return 
+            %   blockPtr: A pointer to an iio_block structure.
+            %   nonBlock: if True, the operation won't block and return 
             %       -EBUSY if the block is not ready for dequeue.
             % 
             % Returns:
@@ -206,10 +208,12 @@ classdef block < handle
             %
             % libiio function: iio_block_dequeue
 
+            validateattributes(nonBlock, { 'logical' }, {'scalar', 'nonempty'});
+
             if coder.target('MATLAB')
-                status = adi.libiio.helpers.calllibADI('iio_block_dequeue', blockPtr, nonblock);
+                status = adi.libiio.helpers.calllibADI('iio_block_dequeue', blockPtr, nonBlock);
             else
-                status = coder.ceval('iio_block_dequeue', blockPtr, nonblock);
+                status = coder.ceval('iio_block_dequeue', blockPtr, nonBlock);
             end
         end
 
@@ -217,10 +221,10 @@ classdef block < handle
             % Retrieve a pointer to the iio_buffer structure
             %
             % Args:
-            %   blockPtr: A pointer to an iio_block structure
+            %   blockPtr: A pointer to an iio_block structure.
             % 
             % Returns:
-            %   A pointer to an iio_buffer structure
+            %   A pointer to an iio_buffer structure.
             %
             % libiio function: iio_block_get_buffer
 

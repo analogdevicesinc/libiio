@@ -24,11 +24,12 @@ classdef toplevel < handle
             %
             % Args:
             %   ctxParamsPtr: A pointer to a iio_context_params structure 
-            %       that contains context creation information; can be NULL
-            %   backend: The name of the backend to query
+            %       that contains context creation information; can be
+            %       NULL.
+            %   backend: The name of the backend to query.
             % 
             % Returns:
-            %   True if the backend is available, false otherwise
+            %   True if the backend is available, false otherwise.
             %
             % libiio function: iio_has_backend
             
@@ -43,7 +44,7 @@ classdef toplevel < handle
             % Get the number of available built-in backends
             % 
             % Returns:
-            %   True if the backend is available, false otherwise
+            %   True if the backend is available, false otherwise.
             %
             % libiio function: iio_has_backend
             
@@ -58,11 +59,11 @@ classdef toplevel < handle
             % Retrieve the name of a given built-in backend
             %
             % Args:
-            %   idx: The index corresponding to the backend
+            %   idx: The index corresponding to the backend.
             % 
             % Returns:
-            %   On success, a pointer to a NULL-terminated string
-            %   If the index is invalid, NULL is returned
+            %   On success, a pointer to a NULL-terminated string.
+            %   If the index is invalid, NULL is returned.
             %
             % libiio function: iio_get_builtin_backend
 

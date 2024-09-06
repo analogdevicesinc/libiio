@@ -5,10 +5,10 @@ classdef hwmon < handle
             % Get the type of the given hwmon channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   The type of the hwmon channel
+            %   The type of the hwmon channel.
             %
             % libiio function: hwmon_channel_get_type
 
@@ -23,11 +23,11 @@ classdef hwmon < handle
             % Get whether or not the device is a hardware monitoring device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
             %   True if the device is a hardware monitoring device, 
-            %   false if it is a IIO device
+            %   false if it is a IIO device.
             %
             % libiio function: iio_device_is_hwmon
 

@@ -6,15 +6,16 @@ classdef context < handle
             %
             % Args:
             %   ctxParamsPtr: A pointer to a iio_context_params structure 
-            %       that contains context creation information; can be NULL
+            %       that contains context creation information; can be
+            %       NULL.
             %   uri: a URI describing the context location. If NULL, the 
             %       backend will be created using the URI string present in 
             %       the IIOD_REMOTE environment variable, or if not set, a 
             %       local backend is created.
             % 
             % Returns:
-            %   On success, a pointer to a iio_context structure
-            %   On failure, a pointer-encoded error is returned
+            %   On success, a pointer to a iio_context structure.
+            %   On failure, a pointer-encoded error is returned.
             %
             % NOTE: The following URIs are supported based on compile time backend
             % support:
@@ -74,7 +75,7 @@ classdef context < handle
             % Destroy the given context
             %
             % Args:
-            %   ctxPtr: A pointer to a iio_context structure
+            %   ctxPtr: A pointer to a iio_context structure.
             %
             % libiio function: iio_context_destroy
 
@@ -89,10 +90,10 @@ classdef context < handle
             % Get the major number of the library version
             %
             % Args:
-            %   ctxPtr: Optional pointer to a iio_context structure
+            %   ctxPtr: Optional pointer to a iio_context structure.
             %
             % Returns:
-            %   The major number
+            %   The major number.
             %
             % NOTE: 
             %   If ctx is non-null, it will return the major version of 
@@ -111,10 +112,10 @@ classdef context < handle
             % Get the minor number of the library version
             %
             % Args:
-            %   ctxPtr: Optional pointer to a iio_context structure
+            %   ctxPtr: Optional pointer to a iio_context structure.
             %
             % Returns:
-            %   The minor number
+            %   The minor number.
             %
             % NOTE: 
             %   If ctx is non-null, it will return the major version of 
@@ -133,10 +134,10 @@ classdef context < handle
             % Get the git hash string of the library version
             %
             % Args:
-            %   ctxPtr: Optional pointer to a iio_context structure
+            %   ctxPtr: Optional pointer to a iio_context structure.
             %
             % Returns:
-            %   A NULL-terminated string that contains the git tag or hash
+            %   A NULL-terminated string that contains the git tag or hash.
             %
             % NOTE: 
             %   If ctx is non-null, it will return the major version of 
@@ -156,7 +157,7 @@ classdef context < handle
             % Obtain a XML representation of the given context
             %
             % Args:
-            %   ctxPtr: A pointer to a iio_context structure
+            %   ctxPtr: A pointer to a iio_context structure.
             %
             % Returns:
             %   On success, an allocated string. Must be deallocated with free().
@@ -176,10 +177,10 @@ classdef context < handle
             % Get the name of the given context
             %
             % Args:
-            %   ctxPtr: A pointer to a iio_context structure
+            %   ctxPtr: A pointer to a iio_context structure.
             %
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % NOTE: 
             %   The returned string will be local, xml or network 
@@ -200,10 +201,10 @@ classdef context < handle
             % Get a description of the given context
             %
             % Args:
-            %   ctxPtr: A pointer to a iio_context structure
+            %   ctxPtr: A pointer to a iio_context structure.
             %
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % NOTE: 
             %   The returned string will contain human-readable information 
@@ -223,10 +224,10 @@ classdef context < handle
             % Get the number of context-specific attributes
             %
             % Args:
-            %   ctxPtr: A pointer to a iio_context structure
+            %   ctxPtr: A pointer to a iio_context structure.
             % 
             % Returns:
-            %   The number of context-specific attributes
+            %   The number of context-specific attributes.
             %
             % libiio function: iio_device_get_channels_count
             
@@ -241,12 +242,12 @@ classdef context < handle
             % Retrieve the context-specific attribute at the given index
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
-            %   idx: The index corresponding to the attribute
+            %   ctxPtr: A pointer to an iio_context structure.
+            %   idx: The index corresponding to the attribute.
             % 
             % Returns:
-            %   On success, a pointer to an iio_attr structure
-            %   If the index is out-of-range, NULL is returned
+            %   On success, a pointer to an iio_attr structure.
+            %   If the index is out-of-range, NULL is returned.
             %
             % libiio function: iio_context_get_attr
 
@@ -262,12 +263,12 @@ classdef context < handle
             % Try to find a device structure by its ID, label or name
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
+            %   ctxPtr: A pointer to an iio_context structure.
             %   name: A NULL-terminated string corresponding to the name 
-            %   of the attribute
+            %       of the attribute.
             % 
             % Returns:
-            %   On success, a pointer to a iio_attr structure
+            %   On success, a pointer to a iio_attr structure.
             %   If the name does not correspond to any known attribute of 
             %   the given context, NULL is returned.
             %
@@ -285,10 +286,10 @@ classdef context < handle
             % Enumerate the devices found in the given context
             %
             % Args:
-            %   ctxPtr: A pointer to a iio_context structure
+            %   ctxPtr: A pointer to a iio_context structure.
             % 
             % Returns:
-            %   The number of devices found
+            %   The number of devices found.
             %
             % libiio function: iio_context_get_devices_count
             
@@ -303,12 +304,12 @@ classdef context < handle
             % Get the device present at the given index
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
-            %   idx: The index corresponding to the device
+            %   ctxPtr: A pointer to an iio_context structure.
+            %   idx: The index corresponding to the device.
             % 
             % Returns:
-            %   On success, a pointer to a iio_device structure
-            %   If the index is invalid, NULL is returned
+            %   On success, a pointer to a iio_device structure.
+            %   If the index is invalid, NULL is returned.
             %
             % libiio function: iio_context_get_device
 
@@ -324,14 +325,14 @@ classdef context < handle
             % Try to find a device structure by its ID, label or name
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
+            %   ctxPtr: A pointer to an iio_context structure.
             %   name: A NULL-terminated string corresponding to the ID, 
-            %   label or nameof the device to search for
+            %       label or nameof the device to search for.
             % 
             % Returns:
-            %   On success, a pointer to a iio_device structure
+            %   On success, a pointer to a iio_device structure.
             %   If the parameter does not correspond to the ID, label or 
-            %   name of any known device, NULL is returned
+            %   name of any known device, NULL is returned.
             %
             % libiio function: iio_context_find_device
 
@@ -347,14 +348,14 @@ classdef context < handle
             % Set a timeout for I/O operations
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
+            %   ctxPtr: A pointer to an iio_context structure.
             %   timeout_ms: A positive integer representing the time in 
-            %   milliseconds after which a timeout occurs. A value of 0 
-            %   is used to specify that no timeout should occur.
+            %       milliseconds after which a timeout occurs. A value of 0 
+            %       is used to specify that no timeout should occur.
             % 
             % Returns:
-            %   On success, 0 is returned
-            %   On error, a negative errno code is returned
+            %   On success, 0 is returned.
+            %   On error, a negative errno code is returned.
             %
             % libiio function: iio_context_set_timeout
 
@@ -370,10 +371,10 @@ classdef context < handle
             % Get a pointer to the params structure
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
+            %   ctxPtr: A pointer to an iio_context structure.
             % 
             % Returns:
-            %   A pointer to the context's iio_context_params structure
+            %   A pointer to the context's iio_context_params structure.
             %
             % libiio function: iio_context_get_params
 
@@ -389,11 +390,11 @@ classdef context < handle
             % Associate a pointer to an iio_context structure
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
-            %   dataPtr: The pointer to be associated
+            %   ctxPtr: A pointer to an iio_context structure.
+            %   dataPtr: The pointer to be associated.
             % 
             % Returns:
-            %   A pointer to the context's iio_context_params structure
+            %   A pointer to the context's iio_context_params structure.
             %
             % libiio function: iio_context_set_data
 
@@ -408,10 +409,10 @@ classdef context < handle
             % Retrieve a previously associated pointer of an iio_context structure
             %
             % Args:
-            %   ctxPtr: A pointer to an iio_context structure
+            %   ctxPtr: A pointer to an iio_context structure.
             % 
             % Returns:
-            %   The pointer previously associated if present, or NULL
+            %   The pointer previously associated if present, or NULL.
             %
             % libiio function: iio_context_get_data
 

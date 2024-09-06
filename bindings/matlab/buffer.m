@@ -5,10 +5,10 @@ classdef buffer < handle
             % Retrieve a pointer to the iio_device structure
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             % 
             % Returns:
-            %   A pointer to an iio_device structure
+            %   A pointer to an iio_device structure.
             %
             % libiio function: iio_buffer_get_device
 
@@ -24,10 +24,10 @@ classdef buffer < handle
             % Enumerate the attributes of the given buffer
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             % 
             % Returns:
-            %   The number of buffer-specific attributes found
+            %   The number of buffer-specific attributes found.
             %
             % libiio function: iio_buffer_get_attrs_count
 
@@ -42,8 +42,8 @@ classdef buffer < handle
             % Get the buffer-specific attribute present at the given index
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
-            %   index: The index corresponding to the attribute
+            %   buffPtr: A pointer to an iio_buffer structure.
+            %   index: The index corresponding to the attribute.
             % 
             % Returns:
             %   On success, a pointer to an iio_attr structure.
@@ -51,6 +51,10 @@ classdef buffer < handle
             %
             % libiio function: iio_buffer_get_attr
 
+            validateattributes(index, { 'double','single' }, ...
+                {'real', 'scalar', 'finite', 'nonnan', 'nonempty', ...
+                'nonnegative', 'integer'});
+            
             if coder.target('MATLAB')
                 attrPtr = adi.libiio.helpers.calllibADI('iio_buffer_get_attr', buffPtr, index);
             else
@@ -63,14 +67,14 @@ classdef buffer < handle
             % Try to find a buffer-specific attribute by its name
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %   name: A NULL-terminated string corresponding to the name 
-            %       of the attribute
+            %       of the attribute.
             % 
             % Returns:
             %   On success, a pointer to a static NULL-terminated string.
             %   If the name does not correspond to any known attribute of the given
-            %   channel, NULL is returned
+            %   channel, NULL is returned.
             %
             % libiio function: iio_buffer_find_attr
 
@@ -82,14 +86,14 @@ classdef buffer < handle
             end
         end
 
-        function buffPtr = iio_device_create_buffer(devPtr, idx, maskPtr)
+        function buffPtr = iio_device_create_buffer(devPtr, index, maskPtr)
             % Create an input or output buffer associated to the given device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
-            %   idx: The index of the hardware buffer. Should be 0 in 
+            %   devPtr: A pointer to an iio_device structure.
+            %   index: The index of the hardware buffer. Should be 0 in 
             %       most cases.
-            %   maskPtr: A pointer to an iio_channels_mask structure
+            %   maskPtr: A pointer to an iio_channels_mask structure.
             % 
             % Returns:
             %   On success, a pointer to an iio_buffer structure.
@@ -97,11 +101,15 @@ classdef buffer < handle
             %
             % libiio function: iio_device_create_buffer
 
+            validateattributes(index, { 'double','single' }, ...
+                {'real', 'scalar', 'finite', 'nonnan', 'nonempty', ...
+                'nonnegative', 'integer'});
+            
             if coder.target('MATLAB')
-                buffPtr = adi.libiio.helpers.calllibADI('iio_device_create_buffer', devPtr, idx, maskPtr);
+                buffPtr = adi.libiio.helpers.calllibADI('iio_device_create_buffer', devPtr, index, maskPtr);
             else
                 buffPtr = coder.opaque('struct iio_buffer*', 'NULL');
-                buffPtr = coder.ceval('iio_device_create_buffer', devPtr, idx, maskPtr);
+                buffPtr = coder.ceval('iio_device_create_buffer', devPtr, index, maskPtr);
             end
         end
 
@@ -109,8 +117,8 @@ classdef buffer < handle
             % Associate a pointer to an iio_buffer structure
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
-            %   dataPtr: The pointer to be associated
+            %   buffPtr: A pointer to an iio_buffer structure.
+            %   dataPtr: The pointer to be associated.
             %
             % libiio function: iio_buffer_set_data
 
@@ -125,10 +133,10 @@ classdef buffer < handle
             % Retrieve a previously associated pointer of an iio_channel structure
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %
             % Returns:
-            %   The pointer previously associated if present, or NULL
+            %   The pointer previously associated if present, or NULL.
             %
             % libiio function: iio_buffer_get_data
 
@@ -144,7 +152,7 @@ classdef buffer < handle
             % Destroy the given buffer
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %
             % libiio function: iio_buffer_destroy
 
@@ -181,7 +189,7 @@ classdef buffer < handle
             % must not be called from a signal handler.
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %
             % libiio function: iio_buffer_cancel
 
@@ -196,11 +204,11 @@ classdef buffer < handle
             % Enable the buffer
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %
             % Returns:
-            %   On success, 0
-            %   On error, a negative error code is returned
+            %   On success, 0.
+            %   On error, a negative error code is returned.
             %
             % libiio function: iio_buffer_enable
 
@@ -215,11 +223,11 @@ classdef buffer < handle
             % Disable the buffer
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %
             % Returns:
-            %   On success, 0
-            %   On error, a negative error code is returned
+            %   On success, 0.
+            %   On error, a negative error code is returned.
             %
             % libiio function: iio_buffer_disable
 
@@ -234,10 +242,10 @@ classdef buffer < handle
             % Retrieve a mask of the channels enabled for the given buffer
             %
             % Args:
-            %   buffPtr: A pointer to an iio_buffer structure
+            %   buffPtr: A pointer to an iio_buffer structure.
             %
             % Returns:
-            %   A pointer to an iio_channels_mask structure
+            %   A pointer to an iio_channels_mask structure.
             %
             % NOTE: The mask returned may contain more enabled channels 
             %   than the mask used for creating the buffer.

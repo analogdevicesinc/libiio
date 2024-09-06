@@ -5,10 +5,10 @@ classdef channel < handle
             % Retrieve a pointer to the iio_device structure
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   A pointer to an iio_device structure
+            %   A pointer to an iio_device structure.
             %
             % libiio function: iio_channel_get_device
 
@@ -24,10 +24,10 @@ classdef channel < handle
             % Retrieve the channel ID (e.g. voltage0)
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % libiio function: iio_channel_get_id
 
@@ -42,10 +42,10 @@ classdef channel < handle
             % Retrieve the channel name (e.g. vccint)
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % NOTE:
             %   If the channel has no name, NULL is returned.
@@ -63,10 +63,10 @@ classdef channel < handle
             % Return True if the given channel is an output channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   True if the channel is an output channel, False otherwise
+            %   True if the channel is an output channel, False otherwise.
             %
             % libiio function: iio_channel_is_output
 
@@ -81,10 +81,10 @@ classdef channel < handle
             % Return True if the given channel is a scan element
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   True if the channel is a scan element, False otherwise
+            %   True if the channel is a scan element, False otherwise.
             %
             % NOTE:
             %   A channel that is a scan element is a channel that can
@@ -104,10 +104,10 @@ classdef channel < handle
             % Enumerate the channel-specific attributes of the given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             % 
             % Returns:
-            %   The number of channel-specific attributes found
+            %   The number of channel-specific attributes found.
             %
             % libiio function: iio_channel_get_attrs_count
 
@@ -122,12 +122,12 @@ classdef channel < handle
             % Get the channel-specific attribute present at the given index
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   index: The index corresponding to the attribute
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   index: The index corresponding to the attribute.
             % 
             % Returns:
             %   On success, a pointer to a static NULL-terminated string.
-            %   If the index is invalid, NULL is returned
+            %   If the index is invalid, NULL is returned.
             %
             % libiio function: iio_channel_get_attr
 
@@ -145,12 +145,12 @@ classdef channel < handle
             % Args:
             %   chnPtr: A pointer to an iio_channel structure
             %   name: A NULL-terminated string corresponding to the name 
-            %       of the attribute
+            %       of the attribute.
             % 
             % Returns:
             %   On success, a pointer to a static NULL-terminated string.
             %   If the name does not correspond to any known attribute of the given
-            %   channel, NULL is returned
+            %   channel, NULL is returned.
             %
             % libiio function: iio_channel_find_attr
 
@@ -166,8 +166,8 @@ classdef channel < handle
             % Enable the given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   maskPtr: The channels mask to manipulate
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   maskPtr: The channels mask to manipulate.
             %
             % libiio function: iio_channel_enable
 
@@ -182,8 +182,8 @@ classdef channel < handle
             % Disable the given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   maskPtr: The channels mask to manipulate
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   maskPtr: The channels mask to manipulate.
             %
             % libiio function: iio_channel_disable
 
@@ -198,11 +198,11 @@ classdef channel < handle
             % Returns True if the channel is enabled
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   maskPtr: The channels mask to manipulate
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   maskPtr: The channels mask to manipulate.
             % 
             % Returns:
-            %   True if the channel is enabled, False otherwise
+            %   True if the channel is enabled, False otherwise.
             %
             % libiio function: iio_channel_is_enabled
 
@@ -217,16 +217,16 @@ classdef channel < handle
             % Demultiplex and convert the samples of a given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   blockPtr: A pointer to an iio_block structure
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   blockPtr: A pointer to an iio_block structure.
             %   dstPtr: A pointer to the memory area where the converted 
-            %       data will be stored
-            %   len: The available length of the memory area, in bytes
+            %       data will be stored.
+            %   len: The available length of the memory area, in bytes.
             %   raw: True to read samples in the hardware format, false to read
-            %       converted samples
+            %       converted samples.
             % 
             % Returns:
-            %   The size of the converted data, in bytes
+            %   The size of the converted data, in bytes.
             %
             % libiio function: iio_channel_read
 
@@ -241,16 +241,16 @@ classdef channel < handle
             % Convert and multiplex the samples of a given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   blockPtr: A pointer to an iio_block structure
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   blockPtr: A pointer to an iio_block structure.
             %   srcPtr: A pointer to the memory area where the sequential data will
-            %       be read from
-            %   len: The available length of the memory area, in bytes
+            %       be read from.
+            %   len: The available length of the memory area, in bytes.
             %   raw: True if the samples are already in hardware format, false if they
-            %       need to be converted
+            %       need to be converted.
             % 
             % Returns:
-            %   The number of bytes actually converted and multiplexed
+            %   The number of bytes actually converted and multiplexed.
             %
             % libiio function: iio_channel_write
 
@@ -265,8 +265,8 @@ classdef channel < handle
             % Associate a pointer to an iio_channel structure
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
-            %   dataPtr: The pointer to be associated
+            %   chnPtr: A pointer to an iio_channel structure.
+            %   dataPtr: The pointer to be associated.
             %
             % libiio function: iio_channel_set_data
 
@@ -281,10 +281,10 @@ classdef channel < handle
             % Retrieve a previously associated pointer of an iio_channel structure
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             %
             % Returns:
-            %   The pointer previously associated if present, or NULL
+            %   The pointer previously associated if present, or NULL.
             %
             % libiio function: iio_channel_get_data
 
@@ -300,10 +300,10 @@ classdef channel < handle
             % Get the type of the given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             %
             % Returns:
-            %   The type of the channel
+            %   The type of the channel.
             %
             % libiio function: iio_channel_get_type
 
@@ -318,10 +318,10 @@ classdef channel < handle
             % Get the modifier type of the given channel
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             %
             % Returns:
-            %   The modifier type of the channel
+            %   The modifier type of the channel.
             %
             % libiio function: iio_channel_get_modifier
 
