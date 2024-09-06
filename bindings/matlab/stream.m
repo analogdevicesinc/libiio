@@ -12,10 +12,17 @@ classdef stream < handle
             %   samples.
             % 
             % Returns:
-            %   On success, a pointer to an iio_stream structure
-            %   On failure, a pointer-encoded error is returned
+            %   On success, a pointer to an iio_stream structure.
+            %   On failure, a pointer-encoded error is returned.
             %
             % libiio function: iio_buffer_create_stream
+
+            validateattributes(nbBlocks, { 'double','single' }, ...
+                {'real', 'scalar', 'finite', 'nonnan', 'nonempty', ...
+                'nonnegative', 'integer'});
+            validateattributes(samplesCount, { 'double','single' }, ...
+                {'real', 'scalar', 'finite', 'nonnan', 'nonempty', ...
+                'nonnegative', 'integer'});
 
             if coder.target('MATLAB')
                 streamPtr = adi.libiio.helpers.calllibADI('iio_buffer_create_stream', buffPtr, nbBlocks, samplesCount);
@@ -29,7 +36,7 @@ classdef stream < handle
             % Destroy the given stream object
             %
             % Args:
-            %   streamPtr: A pointer to an iio_stream structure
+            %   streamPtr: A pointer to an iio_stream structure.
             %
             % libiio function: iio_stream_destroy
 
@@ -44,11 +51,11 @@ classdef stream < handle
             % Get a pointer to the next data block
             %
             % Args:
-            %   streamPtr: A pointer to an iio_stream structure
+            %   streamPtr: A pointer to an iio_stream structure.
             % 
             % Returns:
-            %   On success, a pointer to an iio_block structure
-            %   On failure, a pointer-encoded error is returned
+            %   On success, a pointer to an iio_block structure.
+            %   On failure, a pointer-encoded error is returned.
             %
             % libiio function: iio_stream_get_next_block
 

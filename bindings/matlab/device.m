@@ -5,10 +5,10 @@ classdef device < handle
             % Retrieve a pointer to the iio_context structure
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   A pointer to an iio_context structure
+            %   A pointer to an iio_context structure.
             %
             % libiio function: iio_device_get_context
             
@@ -24,10 +24,10 @@ classdef device < handle
             % Retrieve the device ID (e.g. iio:device0)
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % libiio function: iio_device_get_id
             
@@ -42,13 +42,13 @@ classdef device < handle
             % Retrieve the device name (e.g. xadc)
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % NOTE: 
-            %   If the device has no name, NULL is returned
+            %   If the device has no name, NULL is returned.
             %
             % libiio function: iio_device_get_name
             
@@ -63,13 +63,13 @@ classdef device < handle
             % Retrieve the device label (e.g. lo_pll0_rx_adf4351)
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % NOTE: 
-            %   If the device has no name, NULL is returned
+            %   If the device has no name, NULL is returned.
             %
             % libiio function: iio_device_get_label
             
@@ -84,10 +84,10 @@ classdef device < handle
             % Enumerate the channels of the given device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   The number of channels found
+            %   The number of channels found.
             %
             % libiio function: iio_device_get_channels_count
             
@@ -102,10 +102,10 @@ classdef device < handle
             % Enumerate the device-specific attributes of the given device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   The number of channels found
+            %   The number of channels found.
             %
             % libiio function: iio_device_get_attrs_count
             
@@ -120,8 +120,8 @@ classdef device < handle
             % Get the channel present at the given index
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
-            %   index: The index corresponding to the channel
+            %   devPtr: A pointer to an iio_device structure.
+            %   index: The index corresponding to the channel.
             % 
             % Returns:
             %   On success, a pointer to an iio_channel structure. 
@@ -141,8 +141,8 @@ classdef device < handle
             % Get the device-specific attribute present at the given index
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
-            %   index: The index corresponding to the attribute
+            %   devPtr: A pointer to an iio_device structure.
+            %   index: The index corresponding to the attribute.
             % 
             % Returns:
             %   On success, a pointer to an iio_attr structure. 
@@ -158,15 +158,15 @@ classdef device < handle
             end
         end
         
-        function chanPtr = iio_device_find_channel(devPtr, id, output)
+        function chanPtr = iio_device_find_channel(devPtr, name, output)
             %  Try to find a channel structure by its name of ID
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
-            %   id: name A NULL-terminated string corresponding to the name
-            %   name or the ID of the channel to search for
+            %   devPtr: A pointer to an iio_device structure.
+            %   name: A NULL-terminated string corresponding to the name 
+            %       or the ID of the channel to search for.
             %   output: True if the searched channel is output, False
-            %   otherwise
+            %       otherwise.
             % 
             % Returns:
             %   On success, a pointer to an iio_channel structure. 
@@ -176,10 +176,10 @@ classdef device < handle
             % libiio function: iio_device_find_channel
 
             if coder.target('MATLAB')
-                chanPtr = adi.libiio.helpers.calllibADI('iio_device_find_channel', devPtr, id, output);
+                chanPtr = adi.libiio.helpers.calllibADI('iio_device_find_channel', devPtr, name, output);
             else
                 chanPtr = coder.opaque('struct iio_channel*', 'NULL');
-                chanPtr = coder.ceval('iio_device_find_channel', devPtr, id, output);
+                chanPtr = coder.ceval('iio_device_find_channel', devPtr, name, output);
             end
         end
 
@@ -187,9 +187,9 @@ classdef device < handle
             % Try to find a device-specific attribute by its name
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             %   name: A NULL-terminated string corresponding to the name 
-            %   of the attribute
+            %       of the attribute.
             % 
             % Returns:
             %   On success, a pointer to an iio_attr structure. 
@@ -216,8 +216,8 @@ classdef device < handle
             % Associate a pointer to an iio_device structure
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
-            %   dataPtr: The pointer to be associated
+            %   devPtr: A pointer to an iio_device structure.
+            %   dataPtr: The pointer to be associated.
             %
             % libiio function: iio_device_set_data
 
@@ -232,10 +232,10 @@ classdef device < handle
             % Retrieve a previously associated pointer of an iio_device structure
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             %
             % Returns:
-            %   The pointer previously associated if present, or NULL 
+            %   The pointer previously associated if present, or NULL.
             %
             % libiio function: iio_device_get_data
 
@@ -251,15 +251,15 @@ classdef device < handle
             % Retrieve the trigger of a given device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
-            %   dataPtr: The pointer to be associated
+            %   devPtr: A pointer to an iio_device structure.
+            %   dataPtr: The pointer to be associated.
             %
             % Returns:
             %   On success, a pointer to the trigger's iio_device 
-            %   structure is returned.
+            %       structure is returned.
             %   On failure, a pointer-encoded error is returned. If no 
-            %   trigger has been associated with the given device, the 
-            %   error code will be -ENODEV.
+            %       trigger has been associated with the given device, the 
+            %       error code will be -ENODEV.
             %
             % libiio function: iio_device_get_trigger
 
@@ -275,12 +275,12 @@ classdef device < handle
             % Associate a trigger to a given device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             %   triggerPtr: A pointer to the iio_device structure 
-            %   corresponding to the trigger that should be associated.
+            %       corresponding to the trigger that should be associated.
             %
             % Returns:
-            %   On success, 0 is returned
+            %   On success, 0 is returned.
             %   On error, a negative errno code is returned.
             %
             % libiio function: iio_device_set_trigger
@@ -296,10 +296,10 @@ classdef device < handle
             % Return True if the given device is a trigger
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             %
             % Returns:
-            %   True if the device is a trigger, False otherwise
+            %   True if the device is a trigger, False otherwise.
             %
             % libiio function: iio_device_is_trigger
 

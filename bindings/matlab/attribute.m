@@ -5,14 +5,14 @@ classdef attribute < handle
             % Read the content of the given attribute
             %
             % Args:
-            %   attrPtr: A pointer to an iio_attr structure
+            %   attrPtr: A pointer to an iio_attr structure.
             %   dstPtr: A pointer to the memory area where the read data 
-            %   will be stored
-            %   len: The available length of the memory area, in bytes
+            %       will be stored.
+            %   len: The available length of the memory area, in bytes.
             % 
             % Returns:
-            %   On success, the number of bytes written to the buffer
-            %   On error, a negative errno code is returned
+            %   On success, the number of bytes written to the buffer.
+            %   On error, a negative errno code is returned.
             %
             % libiio function: iio_attr_read_raw
             validateattributes(len, { 'double','single' }, ...
@@ -30,13 +30,13 @@ classdef attribute < handle
             % Read the content of the given attribute
             %
             % Args:
-            %   attrPtr: A pointer to an iio_attr structure
-            %   srcPtr: A pointer to the data to be written
-            %   len: The number of bytes that should be written
+            %   attrPtr: A pointer to an iio_attr structure.
+            %   srcPtr: A pointer to the data to be written.
+            %   len: The number of bytes that should be written.
             % 
             % Returns:
-            %   On success, the number of bytes written
-            %   On error, a negative errno code is returned
+            %   On success, the number of bytes written.
+            %   On error, a negative errno code is returned.
             %
             % libiio function: iio_attr_write_raw
             validateattributes(len, { 'double','single' }, ...
@@ -54,10 +54,10 @@ classdef attribute < handle
             % Retrieve the name of an attribute
             %
             % Args:
-            %   attrPtr: A pointer to an iio_attr structure
+            %   attrPtr: A pointer to an iio_attr structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % libiio function: iio_attr_get_name
             
@@ -72,10 +72,10 @@ classdef attribute < handle
             % Retrieve the filename of an attribute
             %
             % Args:
-            %   attrPtr: A pointer to an iio_attr structure
+            %   attrPtr: A pointer to an iio_attr structure.
             % 
             % Returns:
-            %   A pointer to a static NULL-terminated string
+            %   A pointer to a static NULL-terminated string.
             %
             % libiio function: iio_attr_get_filename
             
@@ -90,10 +90,10 @@ classdef attribute < handle
             % Retrieve the static value of an attribute
             %
             % Args:
-            %   attrPtr: A pointer to an iio_attr structure
+            %   attrPtr: A pointer to an iio_attr structure.
             % 
             % Returns:
-            %   On success, a pointer to a static NULL-terminated string
+            %   On success, a pointer to a static NULL-terminated string.
             %   If the attribute does not have a static value, NULL is returned.
             %
             % libiio function: iio_attr_get_filename

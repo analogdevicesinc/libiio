@@ -5,10 +5,10 @@ classdef event < handle
             % Get the type of a given IIO event
             %
             % Args:
-            %   eventPtr: A pointer to an iio_event structure
+            %   eventPtr: A pointer to an iio_event structure.
             % 
             % Returns:
-            %   An enum iio_event_type
+            %   An enum iio_event_type.
             %
             % NOTE:
             %   Corresponds to the IIO_EVENT_CODE_EXTRACT_TYPE macro of
@@ -27,10 +27,10 @@ classdef event < handle
             % Get the direction of a given IIO event
             %
             % Args:
-            %   eventPtr: A pointer to an iio_event structure
+            %   eventPtr: A pointer to an iio_event structure.
             % 
             % Returns:
-            %   An enum iio_event_direction
+            %   An enum iio_event_direction.
             %
             % NOTE:
             %   Corresponds to the IIO_EVENT_CODE_EXTRACT_DIR macro of
@@ -49,15 +49,17 @@ classdef event < handle
             % Get a pointer to the IIO channel that corresponds to this event
             %
             % Args:
-            %   eventPtr: A pointer to an iio_event structure
-            %   devPtr: A pointer to an iio_device structure
-            %   diff: If set, retrieve the differential channel
+            %   eventPtr: A pointer to an iio_event structure.
+            %   devPtr: A pointer to an iio_device structure.
+            %   diff: If set, retrieve the differential channel.
             % 
             % Returns:
-            %   On success, a pointer to an iio_channel structure
-            %   On failure, NULL is returned
+            %   On success, a pointer to an iio_channel structure.
+            %   On failure, NULL is returned.
             %
             % libiio function: iio_event_get_channel
+
+            validateattributes(diff, { 'logical' }, {'scalar', 'nonempty'});
 
             if coder.target('MATLAB')
                 chanPtr = adi.libiio.helpers.calllibADI('iio_event_get_channel', eventPtr, devPtr, diff);
@@ -71,11 +73,11 @@ classdef event < handle
             % Create an events stream for the given IIO device
             %
             % Args:
-            %   devPtr: A pointer to an iio_device structure
+            %   devPtr: A pointer to an iio_device structure.
             % 
             % Returns:
-            %   On success, a pointer to an iio_event_stream structure
-            %   On failure, a pointer-encoded error is returned
+            %   On success, a pointer to an iio_event_stream structure.
+            %   On failure, a pointer-encoded error is returned.
             %
             % libiio function: iio_device_create_event_stream
 
@@ -91,7 +93,7 @@ classdef event < handle
             % Destroy the given event stream.
             %
             % Args:
-            %   eventStreamPtr: A pointer to an iio_event_stream structure
+            %   eventStreamPtr: A pointer to an iio_event_stream structure.
             %
             % libiio function: iio_event_stream_destroy
 
@@ -106,23 +108,25 @@ classdef event < handle
             % Read an event from the event stream
             %
             % Args:
-            %   eventStreamPtr: A pointer to an iio_event_stream structure
+            %   eventStreamPtr: A pointer to an iio_event_stream structure.
             %   outEventPtr: An pointer to an iio_event structure, that 
-            %   will be filled by this function
+            %       will be filled by this function.
             %   nonBlock: if True, the operation won't block and return 
-            %   -EBUSY if there is currently no event in the queue
+            %       -EBUSY if there is currently no event in the queue.
             % 
             % Returns:
-            %   On success, 0 is returned
-            %   On error, a negative errno code is returned
+            %   On success, 0 is returned.
+            %   On error, a negative errno code is returned.
             %
             % NOTE:
             %   It is possible to stop a blocking call of 
             %   iio_event_stream_read by calling iio_event_stream_destroy 
             %   in a different thread or signal handler. In that case, 
-            %   iio_event_stream_read will return -EINTR
+            %   iio_event_stream_read will return -EINTR.
             %
             % libiio function: iio_event_stream_read
+
+            validateattributes(nonBlock, { 'logical' }, {'scalar', 'nonempty'});
 
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_event_stream_read', eventStreamPtr, outEventPtr, nonBlock);
