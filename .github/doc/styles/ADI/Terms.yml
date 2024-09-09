@@ -1,0 +1,14 @@
+# `extends` specifies the extension point you're using. Here, we're
+# using `substitution` to ensure correct usage of some techincal and 
+# brand-specifc terminology.
+extends: substitution
+# `message` allows you to customize the output shown to your users.
+message: Use '%s' instead of '%s'.
+# We're setting this rule's severity to `error`, which will cause
+# CI builds to fail.
+level: error
+# We're using case-insensitive patterns.
+ignorecase: true
+swap:  
+  libIIO: libiio
+  linux: Linux
