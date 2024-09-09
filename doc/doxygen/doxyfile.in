@@ -1,0 +1,21 @@
+GENERATE_XML = YES
+INPUT = ../../include/iio
+OUTPUT_DIRECTORY = generated
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = "__api= " \
+                         "__check_ret= " \
+                         "__pure= " \
+                         "__cnst= "
+
+GENERATE_HTML = NO
+GENERATE_LATEX = NO
+
+EXCLUDE                = ../../iio-private.h \
+                         ../../debug.h \
+                         ../../iio-lock.h \
+                         ../../iiod-client.h \
+                         ../../sort.h \
+                         ../../network.h
