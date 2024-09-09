@@ -1,0 +1,12 @@
+extends: capitalization
+message: "'%s' should be in title case"
+level: warning
+scope: sentence
+# $title, $sentence, $lower, $upper, or a pattern.
+#match: $title
+#style: AP # AP or Chicago; only applies when match is set to $title.
+exceptions:
+  - ADC
+  - DAC
+  - adc
+  - dac
