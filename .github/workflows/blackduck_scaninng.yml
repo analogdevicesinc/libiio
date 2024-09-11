@@ -1,0 +1,31 @@
+name: Blackduck Scanning
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v**
+
+jobs:
+  build:
+    runs-on: [ ubuntu-latest ]
+    environment: blackduck
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+      - name: Black Duck Scan
+        uses: synopsys-sig/synopsys-action@v1.11.0
+
+        ### Configure DETECT environment variables
+        env:
+          DETECT_PROJECT_NAME: oa_libiio
+          DETECT_PROJECT_VERSION_NAME: ${{ github.ref_name }}
+          DETECT_BLACKDUCK_SIGNATURE_SCANNER_LICENSE_SEARCH: true
+          DETECT_BLACKDUCK_SIGNATURE_SCANNER_COPYRIGHT_SEARCH: true
+          DETECT_EXCLUDED_DETECTOR_TYPES: GIT
+        with:
+          ### SCANNING: Required fields
+          blackduck_url: ${{ vars.BLACKDUCK_URL }}
+          blackduck_token: ${{ secrets.BLACKDUCK_TOKEN }}
+          blackduck_args: '--detect.wait.for.results=false'
