@@ -180,13 +180,13 @@ stages:
           vmImage: 'windows-2022'
           COMPILER: 'Visual Studio 17 2022'
           ARCH: 'x64'
-          USE_CSHARP: 'ON'
+          PLATFORM_TOOLSET: 'v143'
           artifactName: 'Windows-VS-2022-x64'
         VS2019:
           vmImage: 'windows-2019'
           COMPILER: 'Visual Studio 16 2019'
           ARCH: 'x64'
-          USE_CSHARP: 'ON'
+          PLATFORM_TOOLSET: 'v142'
           artifactName: 'Windows-VS-2019-x64'
     pool:
       vmImage: $[ variables['vmImage'] ]
@@ -197,32 +197,21 @@ stages:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.9'
-    - task: PowerShell@2
-      displayName: 'Dependencies'
+    - task: CmdLine@2
+      displayName: 'Build dependecies'
       inputs:
-        targetType: inline
         script: |
           git submodule update --init
-          if ( !( Test-Path deps ) ) {
-            mkdir deps
-          }
-          cd deps
-          mkdir libxml
-          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
-          7z x -y libxml.7z
-          rm libxml.7z
-          cd C:\
-          wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "libiio-win-deps.zip"
-          7z x -y "C:\libiio-win-deps.zip"
+          .\CI\azure\windows_build_deps.cmd
     - task: PowerShell@2
       inputs:
         targetType: 'filePath'
-        filePath: .\CI\build_win.ps1
+        filePath: .\CI\build_win_msvc.ps1
       displayName: 'Build'
     - task: CopyFiles@2
       displayName: 'Copy libraries'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/Release'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/Release'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy public headers'
@@ -232,19 +221,19 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy .exe files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/utils/Release'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/utils/Release'
         contents: '*.exe'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy .tar.gz files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/bindings/python'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/python'
         contents: '*.gz'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy libiio-sharp.dll file'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-$(ARCH)/bindings/csharp'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/csharp'
         contents: 'libiio-sharp.dll'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PowerShell@2
@@ -256,6 +245,10 @@ stages:
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Agent.BuildDirectory)/s/Windows-msvc-deps.zip'
+        artifactName: '$(artifactName)-msvc-deps.zip'
 
   #############################################
   - job: GenerateSetupExe
