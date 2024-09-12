@@ -16,16 +16,16 @@ wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "
 dir C:\ghcup\ghc\
 
 if ($COMPILER -eq "MinGW Makefiles") {
-	cp $src_dir\dependencies\libs\64\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $src_dir\dependencies\libs\64\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $src_dir\dependencies\libs\64\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.2.8\mingw\bin\libgcc_s_seh-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.5\mingw\bin\libiconv-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.5\mingw\bin\zlib1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.5\mingw\bin\liblzma-5.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.5\mingw\bin\libwinpthread-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.6.5\mingw\bin\libxml2-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\ghcup\ghc\9.2.8\mingw\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libxml2-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libgcc_s_seh-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libiconv-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\zlib1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\liblzma-5.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libwinpthread-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\mingw64\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 } else {
 	cp $src_dir\dependencies\libs\64\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp $src_dir\dependencies\libs\64\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
