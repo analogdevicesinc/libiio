@@ -108,8 +108,6 @@ stages:
       matrix:
         MinGW_W64:
            COMPILER: 'MinGW Makefiles'
-           ARCH: 'x86_64'
-           USE_CSHARP: 'OFF'
            artifactName: 'Windows-MinGW-W64'
     pool:
       vmImage: 'windows-2022'
@@ -125,48 +123,42 @@ stages:
       inputs:
         targetType: inline
         script: |
-          ghcup install ghc 9.2.8
           git submodule update --init
-          if ( !( Test-Path deps ) ) {
-            mkdir deps
-          }
-          cd deps
-          mkdir libxml
-          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
-          7z x -y libxml.7z
-          rm libxml.7z
-          cd C:\
-          wget http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile "libiio-win-deps.zip"
-          7z x -y "C:\libiio-win-deps.zip"
+          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+          C:\msys64\usr\bin\bash.exe -c "./CI/azure/build_mingw.sh install_pacman_deps"
     - task: PowerShell@2
       inputs:
-        targetType: 'filePath'
-        filePath: .\CI\build_win.ps1
+        targetType: inline
+        script: |
+          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+          mkdir build-mingw
+          cd build-mingw
+          C:\msys64\usr\bin\bash.exe -c "../CI/azure/build_mingw.sh build_libiio"
       displayName: 'Build'
     - task: CopyFiles@2
       displayName: 'Copy .exe files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/utils'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw/utils'
         contents: '*.exe'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
-      displayName: 'Copy iio.h header'
+      displayName: 'Copy public headers'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/'
-        contents: 'iio.h'
+        sourceFolder: '$(Agent.BuildDirectory)/s/include'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
-      displayName: 'Copy libiio.dll and libiio.dll.a'
+      displayName: 'Copy libiio.dll, libiio.dll.a and libiio1.dll'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw'
         contents: |
           libiio.dll
           libiio.dll.a
+          libiio1.dll
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
       displayName: 'Copy .tar.gz files'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-x64/bindings/python'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw/bindings/python'
         contents: '*.gz'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PowerShell@2
