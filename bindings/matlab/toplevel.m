@@ -19,13 +19,13 @@ classdef toplevel < handle
             end
         end
 
-        function hasBackend = iio_has_backend(ctxParamsPtr, backend)
+        function hasBackend = iio_has_backend(varargin)
             % Check if the specified backend is available
             %
             % Args:
-            %   ctxParamsPtr: A pointer to a iio_context_params structure 
-            %       that contains context creation information; can be
-            %       NULL.
+            %   (optional) ctxParamsPtr: A pointer to a iio_context_params 
+            %       structure that contains context creation information; 
+            %       can be NULL.
             %   backend: The name of the backend to query.
             % 
             % Returns:
@@ -33,6 +33,18 @@ classdef toplevel < handle
             %
             % libiio function: iio_has_backend
             
+            if nargin == 1
+                if coder.target('MATLAB')
+                    ctxParamsPtr = libpointer;
+                else
+                    ctxParamsPtr = coder.opaque('const struct iio_context_params*', 'NULL');
+                end
+                backend = varargin{1};
+            elseif nargin == 2
+                ctxParamsPtr = varargin{1};
+                backend = varargin{2};
+            end
+
             if coder.target('MATLAB')
                 hasBackend = adi.libiio.helpers.calllibADI('iio_has_backend', ctxParamsPtr, backend);
             else

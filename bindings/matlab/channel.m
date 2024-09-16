@@ -143,7 +143,7 @@ classdef channel < handle
             % Try to find a channel-specific attribute by its name
             %
             % Args:
-            %   chnPtr: A pointer to an iio_channel structure
+            %   chnPtr: A pointer to an iio_channel structure.
             %   name: A NULL-terminated string corresponding to the name 
             %       of the attribute.
             % 
@@ -243,11 +243,11 @@ classdef channel < handle
             % Args:
             %   chnPtr: A pointer to an iio_channel structure.
             %   blockPtr: A pointer to an iio_block structure.
-            %   srcPtr: A pointer to the memory area where the sequential data will
-            %       be read from.
+            %   srcPtr: A pointer to the memory area where the sequential 
+            %       data will be read from.
             %   len: The available length of the memory area, in bytes.
-            %   raw: True if the samples are already in hardware format, false if they
-            %       need to be converted.
+            %   raw: True if the samples are already in hardware format, 
+            %       false if they need to be converted.
             % 
             % Returns:
             %   The number of bytes actually converted and multiplexed.

@@ -56,7 +56,7 @@ classdef block < handle
             end
         end
 
-        function addr = iio_block_first(blockPtr, chnPtr)
+        function firstSamplePtr = iio_block_first(blockPtr, chnPtr)
             % Find the first sample of a channel in a block
             %
             % Args:
@@ -86,14 +86,14 @@ classdef block < handle
             % libiio function: iio_block_first
 
             if coder.target('MATLAB')
-                addr = adi.libiio.helpers.calllibADI('iio_block_first', blockPtr, chnPtr);
+                firstSamplePtr = adi.libiio.helpers.calllibADI('iio_block_first', blockPtr, chnPtr);
             else
-                addr = coder.opaque('void*', 'NULL');
-                addr = coder.ceval('iio_block_first', blockPtr, chnPtr);
+                firstSamplePtr = coder.opaque('void*', 'NULL');
+                firstSamplePtr = coder.ceval('iio_block_first', blockPtr, chnPtr);
             end
         end
 
-        function endAddr = iio_block_end(blockPtr)
+        function lastSamplePtr = iio_block_end(blockPtr)
             % Get the address after the last sample in a block
             %
             % Args:
@@ -106,10 +106,10 @@ classdef block < handle
             % libiio function: iio_block_end
 
             if coder.target('MATLAB')
-                endAddr = adi.libiio.helpers.calllibADI('iio_block_end', blockPtr);
+                lastSamplePtr = adi.libiio.helpers.calllibADI('iio_block_end', blockPtr);
             else
-                endAddr = coder.opaque('void*', 'NULL');
-                endAddr = coder.ceval('iio_block_end', blockPtr);
+                lastSamplePtr = coder.opaque('void*', 'NULL');
+                lastSamplePtr = coder.ceval('iio_block_end', blockPtr);
             end
         end
         %{

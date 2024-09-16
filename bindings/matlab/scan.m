@@ -1,16 +1,17 @@
 classdef scan < handle
     methods (Static)
         %% scan methods
-        function scanPtr = iio_scan(ctxParamsPtr, backends)
+        function scanPtr = iio_scan(varargin)
             % Scan backends for IIO contexts
             %
             % Args:
-            %   ctxParamsPtr: A pointer to a iio_context_params structure 
-            %       that contains context creation information; can be
-            %       NULL.
-            %   backends: A NULL-terminated string containing a comma-separated list
-            %       of the backends to be scanned for contexts. If NULL, all the available
-            %       backends are scanned.
+            %   (optional) ctxParamsPtr: A pointer to a iio_context_params 
+            %       structure that contains context creation information; 
+            %       can be NULL.
+            %   (optional) backends: A NULL-terminated string containing a 
+            %       comma-separated list of the backends to be scanned for 
+            %       contexts. If NULL, all the available backends are 
+            %       scanned.
             % 
             % Returns:
             %   On success, a pointer to an iio_scan structure.
@@ -24,6 +25,26 @@ classdef scan < handle
             %   prefix needed.
             %
             % libiio function: iio_scan
+
+            if nargin == 0
+                if coder.target('MATLAB')
+                    ctxParamsPtr = libpointer;
+                    backends = libpointer;
+                else
+                    ctxParamsPtr = coder.opaque('const struct iio_context_params*', 'NULL');
+                    backends = coder.opaque('const char *', 'NULL');
+                end
+            elseif nargin == 1
+                if coder.target('MATLAB')
+                    ctxParamsPtr = libpointer;
+                else
+                    ctxParamsPtr = coder.opaque('const struct iio_context_params*', 'NULL');
+                end
+                backends = varargin{1};
+            elseif nargin == 2
+                ctxParamsPtr = varargin{1};
+                backends = varargin{2};
+            end
             
             if coder.target('MATLAB')
                 scanPtr = adi.libiio.helpers.calllibADI('iio_scan', ctxParamsPtr, backends);
