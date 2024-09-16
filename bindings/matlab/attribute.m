@@ -27,7 +27,7 @@ classdef attribute < handle
         end
 
         function status = iio_attr_write_raw(attrPtr, srcPtr, len)
-            % Read the content of the given attribute
+            % Set the value of the given attribute
             %
             % Args:
             %   attrPtr: A pointer to an iio_attr structure.
@@ -106,6 +106,21 @@ classdef attribute < handle
         end
 
         function [status, value] = iio_attr_read_bool(attrPtr)
+            % Read the content of the given (boolean) attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            % 
+            % Returns:
+            %   On success, 
+            %       status is 0, and
+            %       value is the (boolean) value read from the attribute
+            %   On error, 
+            %       status is a negative errno code, and
+            %       value is a NULL-pointer.
+            %
+            % libiio function: iio_attr_read_bool
+
             valPtr = libpointer('bool', 0);
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_read_bool', attrPtr, valPtr);
@@ -121,6 +136,21 @@ classdef attribute < handle
         end
 
         function [status, value] = iio_attr_read_longlong(attrPtr)
+            % Read the content of the given (longlong) attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            % 
+            % Returns:
+            %   On success, 
+            %       status is 0, and
+            %       value is the (longlong) value read from the attribute
+            %   On error, 
+            %       status is a negative errno code, and
+            %       value is a NULL-pointer.
+            %
+            % libiio function: iio_attr_read_longlong
+
             valPtr = libpointer('int64Ptr', 0);
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_read_longlong', attrPtr, valPtr);
@@ -136,6 +166,21 @@ classdef attribute < handle
         end
 
         function [status, value] = iio_attr_read_double(attrPtr)
+            % Read the content of the given (double) attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            % 
+            % Returns:
+            %   On success, 
+            %       status is 0, and
+            %       value is the (double) value read from the attribute
+            %   On error, 
+            %       status is a negative errno code, and
+            %       value is a NULL-pointer.
+            %
+            % libiio function: iio_attr_read_double
+            
             valPtr = libpointer('double', 0);
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_read_double', attrPtr, valPtr);
@@ -151,14 +196,38 @@ classdef attribute < handle
         end
 
         function status = iio_attr_write_string(attrPtr, value)
+            % Set the (string) value of the given attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            %   value: The (string) data to be written.
+            % 
+            % Returns:
+            %   On success, 0 is returned.
+            %   On error, a negative errno code is returned.
+            %
+            % libiio function: iio_attr_write_string
+            
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_write_string', attrPtr, value);
             else
-                status = coder.ceval('iio_attr_write_string', attrPtr, value);
+                status = coder.ceval('iio_attr_write_string', attrPtr, adi.libiio.helpers.ntstr(value));
             end
         end
 
         function status = iio_attr_write_bool(attrPtr, value)
+            % Set the (boolean) value of the given attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            %   value: The (boolean) data to be written.
+            % 
+            % Returns:
+            %   On success, 0 is returned.
+            %   On error, a negative errno code is returned.
+            %
+            % libiio function: iio_attr_write_bool
+            
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_write_bool', attrPtr, value);
             else
@@ -167,6 +236,18 @@ classdef attribute < handle
         end
 
         function status = iio_attr_write_longlong(attrPtr, value)
+            % Set the (longlong) value of the given attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            %   value: The (longlong) data to be written.
+            % 
+            % Returns:
+            %   On success, 0 is returned.
+            %   On error, a negative errno code is returned.
+            %
+            % libiio function: iio_attr_write_longlong
+            
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_write_longlong', attrPtr, value);
             else
@@ -175,6 +256,18 @@ classdef attribute < handle
         end
 
         function status = iio_attr_write_double(attrPtr, value)
+            % Set the (double) value of the given attribute
+            %
+            % Args:
+            %   attrPtr: A pointer to an iio_attr structure.
+            %   value: The (double) data to be written.
+            % 
+            % Returns:
+            %   On success, 0 is returned.
+            %   On error, a negative errno code is returned.
+            %
+            % libiio function: iio_attr_write_double
+            
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_write_double', attrPtr, value);
             else

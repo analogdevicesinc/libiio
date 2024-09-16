@@ -1,13 +1,13 @@
 classdef context < handle
     methods (Static)
         %% context methods
-        function ctxPtr = iio_create_context(ctxParamsPtr, uri)
+        function ctxPtr = iio_create_context(varargin)
             % Create a context from a URI description
             %
             % Args:
-            %   ctxParamsPtr: A pointer to a iio_context_params structure 
-            %       that contains context creation information; can be
-            %       NULL.
+            %   (optional) ctxParamsPtr: A pointer to a iio_context_params 
+            %       structure that contains context creation information; 
+            %       can be NULL.
             %   uri: a URI describing the context location. If NULL, the 
             %       backend will be created using the URI string present in 
             %       the IIOD_REMOTE environment variable, or if not set, a 
@@ -63,6 +63,18 @@ classdef context < handle
             %
             % libiio function: iio_create_context
             
+            if nargin == 1
+                if coder.target('MATLAB')
+                    ctxParamsPtr = libpointer;
+                else
+                    ctxParamsPtr = coder.opaque('const struct iio_context_params*', 'NULL');
+                end
+                uri = varargin{1};
+            elseif nargin == 2
+                ctxParamsPtr = varargin{1};
+                uri = varargin{2};
+            end
+            
             if coder.target('MATLAB')
                 ctxPtr = adi.libiio.helpers.calllibADI('iio_create_context', ctxParamsPtr, uri);
             else
@@ -86,11 +98,11 @@ classdef context < handle
             end
         end
 
-        function major = iio_context_get_version_major(ctxPtr)
+        function major = iio_context_get_version_major(varargin)
             % Get the major number of the library version
             %
             % Args:
-            %   ctxPtr: Optional pointer to a iio_context structure.
+            %   (optional) ctxPtr: A pointer to a iio_context structure.
             %
             % Returns:
             %   The major number.
@@ -101,6 +113,16 @@ classdef context < handle
             %
             % libiio function: iio_context_get_version_major
 
+            if nargin == 0
+                if coder.target('MATLAB')
+                    ctxPtr = libpointer;
+                else
+                    ctxPtr = coder.opaque('const struct iio_context*', 'NULL');
+                end
+            elseif nargin == 1
+                ctxPtr = varargin{1};
+            end
+
             if coder.target('MATLAB')
                 major = adi.libiio.helpers.calllibADI('iio_context_get_version_major', ctxPtr);
             else
@@ -108,11 +130,11 @@ classdef context < handle
             end
         end
 
-        function minor = iio_context_get_version_minor(ctxPtr)
+        function minor = iio_context_get_version_minor(varargin)
             % Get the minor number of the library version
             %
             % Args:
-            %   ctxPtr: Optional pointer to a iio_context structure.
+            %   (optional) ctxPtr: A pointer to a iio_context structure.
             %
             % Returns:
             %   The minor number.
@@ -123,6 +145,16 @@ classdef context < handle
             %
             % libiio function: iio_context_get_version_minor
 
+            if nargin == 0
+                if coder.target('MATLAB')
+                    ctxPtr = libpointer;
+                else
+                    ctxPtr = coder.opaque('const struct iio_context*', 'NULL');
+                end
+            elseif nargin == 1
+                ctxPtr = varargin{1};
+            end
+
             if coder.target('MATLAB')
                 minor = adi.libiio.helpers.calllibADI('iio_context_get_version_minor', ctxPtr);
             else
@@ -130,11 +162,11 @@ classdef context < handle
             end
         end
 
-        function vtag = iio_context_get_version_tag(ctxPtr)
+        function vtag = iio_context_get_version_tag(varargin)
             % Get the git hash string of the library version
             %
             % Args:
-            %   ctxPtr: Optional pointer to a iio_context structure.
+            %   (optional) ctxPtr: A pointer to a iio_context structure.
             %
             % Returns:
             %   A NULL-terminated string that contains the git tag or hash.
@@ -144,6 +176,16 @@ classdef context < handle
             %   the remote library, if running remotely.
             %
             % libiio function: iio_context_get_version_tag
+
+            if nargin == 0
+                if coder.target('MATLAB')
+                    ctxPtr = libpointer;
+                else
+                    ctxPtr = coder.opaque('const struct iio_context*', 'NULL');
+                end
+            elseif nargin == 1
+                ctxPtr = varargin{1};
+            end
 
             if coder.target('MATLAB')
                 vtag = adi.libiio.helpers.calllibADI('iio_context_get_version_tag', ctxPtr);
