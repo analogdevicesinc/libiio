@@ -73,6 +73,33 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
+  title: libiio 0.26.0
+  name: libiio-0.26.0
+  description: "-"
+  releaseDate: 2024-08-26
+  releaseType: minor
+  qualityLevel: alpha
+  licenseType: open-source
+  applicationType: desktop
+  distributionForm: source
+  feeCharged: no
+  distributionMethod: github
+  redistributionRights: source
+  version: 0.26.0
+  annotations:
+    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
+spec:
+  type: release
+  lifecycle: release
+  owner: user:default/mhenneri
+  subcomponentOf: component:default/libiio
+  dependsOn:
+    - component:default/libiio-source-0.26.0
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
   title: libiio
   name: libiio-source
   version: main
@@ -139,6 +166,37 @@ metadata:
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.25
     hub.blackduck/project-name: oa_libiio
     hub.blackduck/project-version: "0.25"
+spec:
+  type: library
+  lifecycle: release
+  owner: group:default/libiio-sw-team
+  subcomponentOf: component:default/libiio-source
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  title: libiio v.0.26.0
+  name: libiio-source-0.26.0
+  version: 0.26.0
+  description: Release version of libiio
+  classification: software
+  license:
+    - GPL-2.0-or-later
+  links:
+    - url: https://codedocs.xyz/analogdevicesinc/libiio/
+      title: Documentation
+      icon: web
+    - url: https://wiki.analog.com/resources/tools-software/linux-software/libiio
+      title: Wiki
+      icon: web
+  tags:
+    - linux
+    - cmake
+  annotations:
+    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.26-rc.1
+    hub.blackduck/project-name: oa_libiio
+    hub.blackduck/project-version: "0.26-rc.1"
 spec:
   type: library
   lifecycle: release
