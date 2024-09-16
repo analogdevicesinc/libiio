@@ -8,7 +8,7 @@
 Description=IIO Daemon
 Requires=systemd-udev-settle.service
 After=network.target systemd-udev-settle.service
-ConditionPathExists=/sys/bus/iio
+@CMAKE_SERVICE_PATH@
 
 [Service]
 Environment=$IIOD_EXTRA_OPTS=''
