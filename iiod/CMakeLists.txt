@@ -109,6 +109,11 @@ endif()
 
 option(WITH_SYSTEMD "Enable installation of systemd service file for iiod" OFF)
 if (WITH_SYSTEMD)
+	if(${WITH_HWMON})
+		set(CMAKE_SERVICE_PATH "ConditionPathExists=|/sys/bus/iio\nConditionPathExists=|/sys/class/hwmon")
+	else()
+		set(CMAKE_SERVICE_PATH "ConditionPathExists=/sys/bus/iio")
+	endif()
 	set(SYSTEMD_UNIT_INSTALL_DIR /lib/systemd/system CACHE PATH
 		"default install path for systemd unit files"
 	)
