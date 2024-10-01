@@ -723,7 +723,7 @@ def iio_strerror(err, buf, length):
 
 version = _get_lib_version()
 backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
-
+bindings_version = "1.0"
 
 class _IIO_Object(object):
     def __init__(self, hdl, parent):
