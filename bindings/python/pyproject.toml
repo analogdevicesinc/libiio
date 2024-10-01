@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=40.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pylibiio"
+dynamic = ["version", "readme"]
+description = "Analog Devices python interfaces for hardware with Industrial I/O drivers"
+license = { text = "LGPL-2-or-later" }
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.7"
+maintainers = [{ name = "Analog Devices, Inc" }]
+
+[tool.setuptools.dynamic]
+version = { attr = "iio.bindings_version" }
+readme = { file = "README.md", content-type = "text/markdown" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["iio"]
+exclude = ["doc", "examples"]
+
+[project.urls]
+homepage = "https://analogdevicesinc.github.io/libiio/"
+documentation = "https://analogdevicesinc.github.io/libiio/"
+repository = "https://github.com/analogdevicesinc/libiio"
