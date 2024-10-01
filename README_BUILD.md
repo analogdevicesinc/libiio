@@ -46,7 +46,6 @@ Cmake Options          | Default | Target | Description                         
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings |
 `CPP_EXAMPLES`         | OFF |        All | Build C++ examples (C++17 required) |
-`PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
 `CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
@@ -126,7 +125,7 @@ Cmake Options       | Default | Description                                    |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
