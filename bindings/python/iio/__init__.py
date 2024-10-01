@@ -41,6 +41,7 @@ from contextlib import contextmanager
 from ctypes.util import find_library
 from enum import Enum
 from os import strerror as _strerror
+from os import path as _path
 from platform import system as _system
 import abc
 
@@ -295,12 +296,21 @@ _StreamPtr = _POINTER(_Stream)
 _AttrPtr = _POINTER(_Attr)
 
 if "Windows" in _system():
-    _iiolib = "libiio.dll"
+    _lib_loc = find_library("libiio1.dll")
 else:
     # Non-windows, possibly Posix system
-    _iiolib = "iio"
+    _lib_loc = find_library("iio")
+    if _path.islink(_lib_loc):
+        _lib_loc = _path.realpath(_lib_loc)
+    if _lib_loc is not None:
+        filename = _path.basename(_lib_loc)
+        version = filename.split(".so.")[1]
+        if version[0] != "1":
+            raise OSError(2, f"libiio version 1.x required, found version {version}")
 
-_lib = _cdll("libiio.so.1", use_errno=True, use_last_error=True)
+if _lib_loc is None:
+    raise OSError(2, "Could not find libiio C library")
+_lib = _cdll(_lib_loc, use_errno=True, use_last_error=True)
 _libc = _cdll(find_library("c"))
 
 _get_backends_count = _lib.iio_get_builtin_backends_count
