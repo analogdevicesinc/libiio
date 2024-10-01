@@ -6,11 +6,6 @@ if (CSHARP_BINDINGS)
 	add_subdirectory(csharp)
 endif()
 
-if (PYTHON_BINDINGS)
-	add_subdirectory(python)
-endif()
-
-toggle_iio_feature("${PYTHON_BINDINGS}" python-bindings)
 toggle_iio_feature("${CSHARP_BINDINGS}" "c#-bindings")
 toggle_iio_feature("${CPP_BINDINGS}" "c++-bindings")
 
