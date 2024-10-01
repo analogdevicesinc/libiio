@@ -716,7 +716,6 @@ set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${VERSION}")
 
 option(CPP_BINDINGS "Install C++ bindings" OFF)
 iio_option(CSHARP_BINDINGS "Install C# bindings" OFF "POSIX")
-iio_option(PYTHON_BINDINGS "Install Python bindings" OFF "POSIX")
 add_subdirectory(bindings)
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
