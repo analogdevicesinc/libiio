@@ -43,7 +43,6 @@ Cmake Options          | Default | Target | Description                         
 `WITH_MODULES`         | OFF |        All | Build modular backends |
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
-`PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
 `NO_THREADS`           | OFF |        All | Disable multi-threading support |
@@ -125,7 +124,7 @@ Cmake Options       | Default | Description                                    |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 

@@ -28,11 +28,13 @@ To install these bindings there are a few methods. If you already have the libra
 (sudo) pip install pylibiio
 ```
 If you do not want to use pip, then installation is dependent on your operating system.
-#### Linux / macOS
-For Linux and macOS the python bindings need to be installed through source if not using pip. For v0.20 and beyond this requires the `-DPYTHON_BINDINGS=ON` flag during the cmake configuration. Further documentation is located [here](https://github.com/analogdevicesinc/libiio/blob/master/README_BUILD.md).
-
-#### Windows
-Only pip installation is supported.
+#### Install from source
+To install from source, you will need to clone the repository and invoke pip within the python bindings directory:
+```shell
+git clone https://github.com/analogdevicesinc/libiio.git
+cd libiio/bindings/python
+pip install .
+```
 
 ### Support
 If you have a question about libiio or the python bindings and an Analog Devices IIO kernel driver please ask on : [![EngineerZone](https://img.shields.io/badge/chat-on%20EngineerZone-blue.svg)](https://ez.analog.com/linux-device-drivers/linux-software-drivers). If you have a question about a non-ADI devices, please ask it on [github](https://github.com/analogdevicesinc/libiio/issues).
