@@ -5,6 +5,7 @@ project(ad9371-iiostream C)
 project(adrv9009-iiostream C)
 project(dummy-iiostream C)
 project(adrv9002-iiostream C)
+project(ad57xx-iiostream C)
 
 add_library(iiostream_helper STATIC iiostream-common.c)
 target_link_libraries(iiostream_helper PUBLIC iio)
@@ -45,15 +46,19 @@ add_executable(
     adrv9002-iiostream adrv9002-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
 )
 add_executable(dummy-iiostream dummy-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC})
+add_executable(
+    ad57xx-iiostream ad57xx-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
+)
 
 target_link_libraries(ad9361-iiostream iiostream_helper)
 target_link_libraries(ad9371-iiostream iiostream_helper)
 target_link_libraries(adrv9009-iiostream iiostream_helper)
 target_link_libraries(dummy-iiostream iiostream_helper)
 target_link_libraries(adrv9002-iiostream iiostream_helper)
+target_link_libraries(ad57xx-iiostream iiostream_helper)
 
 set(IIO_EXAMPLES_TARGETS ad9361-iiostream ad9371-iiostream adrv9009-iiostream
-                         dummy-iiostream adrv9002-iiostream
+                         dummy-iiostream adrv9002-iiostream ad57xx-iiostream
 )
 
 find_library(PTHREAD_LIBRARIES pthread)
