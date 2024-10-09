@@ -179,7 +179,6 @@ int main(int argc, char **argv)
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
 	char *uart_params = NULL;
-	char err_str[1024];
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
 

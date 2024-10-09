@@ -96,14 +96,6 @@ static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 	errchk(attr ? iio_attr_write_longlong(attr, val) : -ENOENT, what);
 }
 
-/* write attribute: string */
-static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
-{
-	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
-
-	errchk(attr ? iio_attr_write_string(attr, str) : -ENOENT, what);
-}
-
 /* helper function generating channel names */
 static char* get_ch_name(const char* type, int id)
 {
@@ -194,10 +186,6 @@ int main (int argc, char **argv)
 	// Streaming devices
 	struct iio_device *tx;
 	struct iio_device *rx;
-
-	// RX and TX sample counters
-	size_t nrx = 0;
-	size_t ntx = 0;
 
 	// RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;

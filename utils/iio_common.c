@@ -257,12 +257,12 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		int *err_code)
 {
 	struct iio_context *ctx = NULL;
+	struct iio_context_params params = { .timeout_ms = -1 };
 	enum backend backend = IIO_LOCAL;
 	const char *arg = NULL, *prefix = NULL;
 	bool do_scan = false, detect_context = false;
 	char buf[1024];
 	struct option *opts;
-	int timeout = -1;
 	int err, c;
 
 	/* Setting opterr to zero disables error messages from getopt_long */
@@ -331,7 +331,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				fprintf(stderr, "Timeout requires an argument\n");
 				goto err_fail;
 			}
-			timeout = sanitize_clamp("timeout", optarg, 0, INT_MAX);
+			params.timeout_ms = sanitize_clamp("timeout", optarg, 0, INT_MAX);
 			break;
 		case '?':
 			break;
@@ -359,7 +359,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 	} else if (!arg && backend != IIO_LOCAL)
 		fprintf(stderr, "argument parsing error\n");
 	else if (backend == IIO_URI)
-		ctx = iio_create_context(NULL, arg);
+		ctx = iio_create_context(&params, arg);
 	else
 		ctx = iio_create_context(NULL, NULL);
 
@@ -373,14 +373,6 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		goto err_fail;
 	}
 
-	if (ctx && timeout >= 0) {
-		err = iio_context_set_timeout(ctx, timeout);
-		if (err < 0) {
-			ctx_perror(ctx, err, "IIO context set timeout failed");
-			iio_context_destroy(ctx);
-			goto err_fail;
-		}
-	}
 
 	return ctx;
 
