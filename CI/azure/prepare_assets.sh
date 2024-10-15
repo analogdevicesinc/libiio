@@ -38,7 +38,11 @@ release_artifacts() {
 	mkdir include
 	cd ..
 	cp ./Windows-VS-2019-x64/iio.h ./Windows/include
+        cp ./Windows-VS-2019-x64/Windows-msvc-deps.zip ./
         for i in $zip_assets; do
+                if [ "${i}" != "MinGW-W64" ]; then
+                        rm ./"Windows-${i}"/Windows-msvc-deps.zip
+                fi
 		rm ./"Windows-${i}"/iio.h
 		mv ./"Windows-${i}" Windows
         done
