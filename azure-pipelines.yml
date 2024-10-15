@@ -236,6 +236,12 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/csharp'
         contents: 'libiio-sharp.dll'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: CopyFiles@2
+      displayName: 'Copy dependencies sources archive'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/'
+        contents: 'Windows-msvc-deps.zip'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: PowerShell@2
       displayName: 'Copy dependencies'
       inputs:
@@ -245,10 +251,6 @@ stages:
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Agent.BuildDirectory)/s/Windows-msvc-deps.zip'
-        artifactName: '$(artifactName)-msvc-deps.zip'
 
   #############################################
   - job: GenerateSetupExe
