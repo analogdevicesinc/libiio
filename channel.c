@@ -863,7 +863,7 @@ int iio_channel_attr_write_all(struct iio_channel *chn,
 		}
 	}
 
-	ret = (int) iio_channel_attr_write_raw(chn, NULL, buf, ptr - buf);
+	ret = -ENOENT;//(int) iio_channel_attr_write_raw(chn, NULL, buf, ptr - buf);
 
 err_free_buf:
 	free(buf);
