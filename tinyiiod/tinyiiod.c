@@ -31,14 +31,14 @@ static ssize_t iiod_readfd(struct parser_pdata *pdata, void *buf, size_t len)
 {
 	struct iiod_ctx *ctx = container_of(pdata, struct iiod_ctx, parser_pdata);
 
-	ctx->read_cb(ctx->pdata, buf, len);
+	return ctx->read_cb(ctx->pdata, buf, len);
 }
 
 static ssize_t iiod_writefd(struct parser_pdata *pdata, const void *buf, size_t len)
 {
 	struct iiod_ctx *ctx = container_of(pdata, struct iiod_ctx, parser_pdata);
 
-	ctx->write_cb(ctx->pdata, buf, len);
+	return ctx->write_cb(ctx->pdata, buf, len);
 }
 
 int iiod_interpreter(struct iio_context *ctx,
