@@ -1,52 +1,52 @@
 Libiio-Setup-Exe/libiio-setup.exe
 
-Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.rpm
-Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.tar.gz
+Linux-Fedora-34/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Fedora-34.rpm
+Linux-Fedora-34/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Fedora-34.tar.gz
 
-Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.rpm
-Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.tar.gz
+Linux-Fedora-28/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Fedora-28.rpm
+Linux-Fedora-28/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Fedora-28.tar.gz
 
-Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.rpm
-Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.tar.gz
+Linux-CentOS-7/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-CentOS-7.rpm
+Linux-CentOS-7/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-CentOS-7.tar.gz
 
-Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.deb
-Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.tar.gz
+Linux-Debian-11/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Debian-11.deb
+Linux-Debian-11/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Debian-11.tar.gz
 
-Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.deb
-Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.tar.gz
+Linux-Debian-12/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Debian-12.deb
+Linux-Debian-12/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Debian-12.tar.gz
 
-Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.deb
-Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar.gz
+Linux-Ubuntu-20.04/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Ubuntu-20.04.deb
+Linux-Ubuntu-20.04/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Ubuntu-20.04.tar.gz
 
-Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.deb
-Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar.gz
+Linux-Ubuntu-22.04/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Ubuntu-22.04.deb
+Linux-Ubuntu-22.04/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-Ubuntu-22.04.tar.gz
 
-Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.rpm
-Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.tar.gz
+Linux-openSUSE-15.4/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-openSUSE-15.4.rpm
+Linux-openSUSE-15.4/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Linux-openSUSE-15.4.tar.gz
 
-macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-12.tar.gz
-macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
+macOS-12/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-macOS-12.tar.gz
+macOS-12/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@.pkg
 
-macOS-13-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-13-x64.tar.gz
-macOS-13-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
+macOS-13-x64/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-macOS-13-x64.tar.gz
+macOS-13-x64/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@.pkg
 
-macOS-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-13-arm64.tar.gz
-macOS-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
+macOS-13-arm64/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-macOS-13-arm64.tar.gz
+macOS-13-arm64/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@.pkg
 
-Ubuntu-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-arm32v7.deb
-Ubuntu-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-arm32v7.tar.gz
+Ubuntu-arm32v7/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-arm32v7.deb
+Ubuntu-arm32v7/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-arm32v7.tar.gz
 
-Ubuntu-arm64v8/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-arm64v8.deb
-Ubuntu-arm64v8/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-arm64v8.tar.gz
+Ubuntu-arm64v8/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-arm64v8.deb
+Ubuntu-arm64v8/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-arm64v8.tar.gz
 
-Ubuntu-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-ppc64le.deb
-Ubuntu-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-ppc64le.tar.gz
+Ubuntu-ppc64le/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-ppc64le.deb
+Ubuntu-ppc64le/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-ppc64le.tar.gz
 
-Ubuntu-x390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-x390x.deb
-Ubuntu-x390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-x390x.tar.gz
+Ubuntu-x390x/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-x390x.deb
+Ubuntu-x390x/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Ubuntu-x390x.tar.gz
 
-Debian12-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian12-arm.deb
-Debian12-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian12-arm.tar.gz
+Debian12-arm/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Debian12-arm.deb
+Debian12-arm/libiio-@VERSION@.@LIBIIO_VERSION_PATCH@-Debian12-arm.tar.gz
 
 Windows-VS-2019-x64/Windows-msvc-deps.zip
 Windows-VS-2019-x64/iio/iio.h
