@@ -11,7 +11,7 @@ After=network.target systemd-udev-settle.service
 @CMAKE_SERVICE_PATH@
 
 [Service]
-Environment=$IIOD_EXTRA_OPTS=''
+Environment=IIOD_EXTRA_OPTS=''
 EnvironmentFile=-/etc/default/iiod
 ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/iiod $IIOD_EXTRA_OPTS
 KillMode=process
