@@ -121,7 +121,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 		pfd[0].events = POLLOUT;
 	pfd[1].fd = io_ctx->cancel_fd[0];
 	pfd[1].events = POLLIN | POLLPRI | POLLHUP | POLLERR;
-	printf("poll cancel_fd %d\n", pfd[1].fd);
+	printf("poll cancel_fd %d thread = %u\n", pfd[1].fd, pthread_self());
 
 	do {
 		do {
