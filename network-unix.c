@@ -76,6 +76,7 @@ err_close:
 
 void cleanup_cancel(struct iiod_client_pdata *io_ctx)
 {
+	printf("cleanup_cancel\n");
 	close(io_ctx->cancel_fd[0]);
 	if (!WITH_NETWORK_EVENTFD)
 		close(io_ctx->cancel_fd[1]);
@@ -90,6 +91,7 @@ int setup_cancel(struct iiod_client_pdata *io_ctx)
 
 void do_cancel(struct iiod_client_pdata *io_ctx)
 {
+	printf("do cancel...\n");
 	uint64_t event = 1;
 	int ret;
 
@@ -98,7 +100,9 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 		/* If this happens something went very seriously wrong */
 		prm_perror(io_ctx->params, -errno,
 			   "Unable to signal cancellation event");
+		printf("do cancel error!\n");
 	}
+	printf("do cancel done\n");
 }
 
 int wait_cancellable(struct iiod_client_pdata *io_ctx,
@@ -116,17 +120,21 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 	else
 		pfd[0].events = POLLOUT;
 	pfd[1].fd = io_ctx->cancel_fd[0];
-	pfd[1].events = POLLIN;
+	pfd[1].events = POLLIN | POLLPRI | POLLHUP | POLLERR;
 
 	do {
 		do {
 			ret = poll(pfd, 2, timeout);
 		} while (ret == -1 && errno == EINTR);
+		printf("pfd[0].revents = %d, pfd[1].revents = %d, ret = %d\n",pfd[0].revents,pfd[1].revents, ret);
 
 		if (ret == -1)
 			return -errno;
 		if (!ret)
 			return -ETIMEDOUT;
+
+		if (pfd[0].revents & POLLHUP)
+			return -EBADF;
 
 		if (pfd[1].revents & POLLIN)
 			return -EBADF;

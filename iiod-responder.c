@@ -154,8 +154,11 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 			nb = 1;
 		}
 
-		if (is_read)
+		if (is_read) {
+			printf("read...\n");
 			ret = priv->ops->read(priv->d, curr, nb);
+			printf("read done\n");
+		}
 		else
 			ret = priv->ops->write(priv->d, curr, nb);
 		if (ret <= 0)
@@ -705,12 +708,17 @@ void iiod_responder_stop(struct iiod_responder *priv)
 
 void iiod_responder_destroy(struct iiod_responder *priv)
 {
+	printf("iiod_responder_destroy1\n");
 	iiod_responder_stop(priv);
+	printf("iiod_responder_destroy2\n");
 	iiod_responder_wait_done(priv);
 
+	printf("iiod_responder_destroy3\n");
 	iio_task_destroy(priv->write_task);
+	printf("iiod_responder_destroy4\n");
 
 	iiod_io_unref(priv->default_io);
+	printf("iiod_responder_destroy5\n");
 	iio_mutex_destroy(priv->lock);
 	free(priv);
 }
@@ -718,8 +726,11 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 void iiod_responder_wait_done(struct iiod_responder *priv)
 {
 	if (!NO_THREADS) {
-		if (priv->read_thrd)
+		if (priv->read_thrd) {
+			printf("iio_thrd_join_and_destroy...\n ");
 			iio_thrd_join_and_destroy(priv->read_thrd);
+			printf("iio_thrd_join_and_destroy done\n ");
+		}
 		priv->read_thrd = NULL;
 	} else if (!priv->thrd_stop) {
 		iiod_responder_reader_worker(priv);
