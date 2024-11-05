@@ -367,7 +367,7 @@ err_close_socket:
 static void network_free_iiod_client(struct iiod_client *client,
 				     struct iiod_client_pdata *io_ctx)
 {
-	printf("network_free_iiod_client1\n");
+	printf("network_free_iiod_client1 cancel_fd = %d\n", io_ctx->cancel_fd[0]);
 	iiod_client_destroy(client);
 	printf("network_free_iiod_client2\n");
 	cleanup_cancel(io_ctx);
@@ -488,7 +488,7 @@ err_free_buf:
 
 void network_free_buffer(struct iio_buffer_pdata *pdata)
 {
-	printf("free1\n");
+	printf("free1 fd = %d\n", pdata->io_ctx.cancel_fd[0]);
 	iiod_client_free_buffer(pdata->pdata);
 	printf("free2\n");
 	network_free_iiod_client(pdata->iiod_client, &pdata->io_ctx);

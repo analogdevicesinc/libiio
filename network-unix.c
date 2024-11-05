@@ -42,6 +42,7 @@ static int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 	io_ctx->cancel_fd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (io_ctx->cancel_fd[0] < 0)
 		return -errno;
+	printf("created cancel_fd %d\n", io_ctx->cancel_fd[0]);
 	return 0;
 }
 
@@ -91,10 +92,9 @@ int setup_cancel(struct iiod_client_pdata *io_ctx)
 
 void do_cancel(struct iiod_client_pdata *io_ctx)
 {
-	printf("do cancel...\n");
+	printf("do cancel... fd = %d\n", io_ctx->cancel_fd[0]);
 	uint64_t event = 1;
 	int ret;
-
 	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
@@ -121,6 +121,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 		pfd[0].events = POLLOUT;
 	pfd[1].fd = io_ctx->cancel_fd[0];
 	pfd[1].events = POLLIN | POLLPRI | POLLHUP | POLLERR;
+	printf("poll cancel_fd %d\n", pfd[1].fd);
 
 	do {
 		do {
@@ -132,9 +133,6 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 			return -errno;
 		if (!ret)
 			return -ETIMEDOUT;
-
-		if (pfd[0].revents & POLLHUP)
-			return -EBADF;
 
 		if (pfd[1].revents & POLLIN)
 			return -EBADF;
