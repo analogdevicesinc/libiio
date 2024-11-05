@@ -34,11 +34,11 @@ void iio_buffer_cancel(struct iio_buffer *buf)
 {
 	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
 
+	iio_task_stop(buf->worker);
 
 	if (ops->cancel_buffer)
 		ops->cancel_buffer(buf->pdata);
 
-	iio_task_stop(buf->worker);
 	iio_task_flush(buf->worker);
 }
 
