@@ -52,17 +52,13 @@ static void iio_task_process(struct iio_task *task)
 	iio_cond_signal(task->cond);
 
 	while (!task->stop && !(task->list && task->running)) {
-		printf("task stop: %d %d id: %d\n", task->stop, task->running, task->thrd);
 		iio_cond_wait(task->cond, task->lock, 0);
-		printf("b ts: %d %d\n", task->stop, task->running);
 
 		/* If iio_task_stop() was called while we were waiting
 		 * for clients, notify that we're idle. */
 		if (!task->running)
 			iio_cond_signal(task->cond);
-		printf("c ts: %d %d\n", task->stop, task->running);
 	}
-	printf("x1\n");
 
 	if (task->stop)
 		return;
@@ -83,7 +79,6 @@ static void iio_task_process(struct iio_task *task)
 		iio_task_token_destroy(entry);
 
 	iio_mutex_lock(task->lock);
-	printf("x2\n");
 }
 
 static int iio_task_run(void *d)
@@ -103,7 +98,6 @@ static int iio_task_run(void *d)
 struct iio_task * iio_task_create(int (*fn)(void *, void *),
 				  void *firstarg, const char *name)
 {
-	printf("iio_task_create\n");
 	struct iio_task *task;
 	int err = -ENOMEM;
 
@@ -259,7 +253,6 @@ void iio_task_flush(struct iio_task *task)
 
 int iio_task_destroy(struct iio_task *task)
 {
-	printf("iio_task_destroy\n");
 	int ret = 0;
 
 	iio_mutex_lock(task->lock);
@@ -267,11 +260,8 @@ int iio_task_destroy(struct iio_task *task)
 	iio_cond_signal(task->cond);
 	iio_mutex_unlock(task->lock);
 
-	if (!NO_THREADS) {
-		printf("waiting for join...\n");
+	if (!NO_THREADS)
 		ret = iio_thrd_join_and_destroy(task->thrd);
-		printf("joined\n");
-	}
 
 	iio_task_flush(task);
 
@@ -336,10 +326,8 @@ void iio_task_start(struct iio_task *task)
 
 void iio_task_stop(struct iio_task *task)
 {
-	printf("task_stop\n");
 	iio_mutex_lock(task->lock);
 	task->running = false;
-	// task->stop = true;
 	iio_cond_signal(task->cond);
 	iio_cond_wait(task->cond, task->lock, 0);
 	iio_mutex_unlock(task->lock);

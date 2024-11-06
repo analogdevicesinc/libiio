@@ -187,23 +187,16 @@ void iio_buffer_destroy(struct iio_buffer *buf)
 {
 	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
 
-	printf("iio_buffer_cancel...\n");
 	iio_buffer_cancel(buf);
-	printf("iio_buffer_cancel done\n");
 
-	printf("free_buffer...\n");
 	if (ops->free_buffer)
 		ops->free_buffer(buf->pdata);
-	printf("free_buffer done\n");
 
-	printf("iio_task_destroy...\n");
 	iio_task_destroy(buf->worker);
-	printf("iio_task_destroy done\n");
 	iio_mutex_destroy(buf->lock);
 	iio_channels_mask_destroy(buf->mask);
 	free(buf->attrlist.attrs);
 	free(buf);
-	printf("iio_buffer_destroy done\n");
 }
 
 const struct iio_channels_mask *
