@@ -114,6 +114,16 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 	struct iiod_io *tmp;
 
 	/* Discard the entry from the readers list */
+	printf("thread = %u, discard reader %d\n", pthread_self(), io);
+	if (priv->readers) {
+		for (tmp = priv->readers; tmp->r_next; ) {
+			if (tmp == tmp->r_next) {
+				printf("loop detected!!! %d -> %d\n", tmp, tmp->r_next);
+				exit(1);
+			}
+			tmp = tmp->r_next;
+		}
+	}
 	if (io == priv->readers) {
 		priv->readers = io->r_next;
 	} else if (priv->readers) {
@@ -155,9 +165,9 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 		}
 
 		if (is_read) {
-			printf("read...\n");
+			printf("thread = %u, read...\n", pthread_self());
 			ret = priv->ops->read(priv->d, curr, nb);
-			printf("read done\n");
+			printf("thread = %u, read done\n", pthread_self());
 		}
 		else
 			ret = priv->ops->write(priv->d, curr, nb);
@@ -253,6 +263,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 	ok_buf.size = 3;
 
 	iio_mutex_lock(priv->lock);
+	printf("thread = %u, start reader...\n", pthread_self());
 
 	while (!priv->thrd_stop) {
 		iio_mutex_unlock(priv->lock);
@@ -271,7 +282,9 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			continue;
 		}
 
+		printf("thread = %u, try lock...\n", pthread_self());
 		iio_mutex_lock(priv->lock);
+		printf("thread = %u, locked\n", pthread_self());
 		if (ret <= 0)
 			break;
 
@@ -280,7 +293,10 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 			ret = iiod_run_command(priv, &cmd);
 
+			printf("thread = %u, try lock...\n", pthread_self());
 			iio_mutex_lock(priv->lock);
+			printf("thread = %u, locked\n", pthread_self());
+
 			if (ret < 0)
 				break;
 
@@ -298,7 +314,10 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			 * for it, so drop it. */
 			iio_mutex_unlock(priv->lock);
 			iiod_discard_data(priv, cmd.code);
+			printf("thread = %u, try lock...\n", pthread_self());
 			iio_mutex_lock(priv->lock);
+			printf("thread = %u, locked\n", pthread_self());
+
 			continue;
 		}
 
@@ -331,6 +350,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		iiod_responder_signal_io(io, cmd.code);
 		iiod_io_unref_unlocked(io);
 	}
+	printf("thread = %u, stop reader...\n", pthread_self());
 
 	priv->thrd_err_code = priv->thrd_stop ? -EINTR : (int) ret;
 	priv->thrd_stop = true;
@@ -568,12 +588,37 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_io.start_time = read_counter_us();
 
 	/* Add it to the readers list */
-	if (!priv->readers) {
-		priv->readers = io;
-	} else {
-		for (tmp = priv->readers; tmp->r_next; )
+	printf("thread = %u, adding reader %d\n", pthread_self(), io);
+	bool found = false;
+	if (priv->readers) {
+		for (tmp = priv->readers; tmp->r_next; ) {
+			if (tmp == io)
+			{
+				printf("reader is already in list!!\n");
+				found = true;
+				exit(1);
+			}
+			if (tmp == tmp->r_next) {
+				printf("loop detected!!!\n");
+				exit(1);
+			}
 			tmp = tmp->r_next;
-		tmp->r_next = io;
+		}
+	}
+	if (!found) {
+		if (!priv->readers) {
+			priv->readers = io;
+		} else {
+			unsigned int i = 0;
+			for (tmp = priv->readers; tmp->r_next; ) {
+				printf("list item %d = %d\n", i++,tmp);
+				tmp = tmp->r_next;
+				if (i > 100) exit(1);
+			}
+			tmp->r_next = io;
+			printf("io->r_next = %d\n", io->r_next);
+			io->r_next = NULL;
+		}
 	}
 
 	iio_mutex_unlock(priv->lock);
@@ -708,7 +753,7 @@ void iiod_responder_stop(struct iiod_responder *priv)
 
 void iiod_responder_destroy(struct iiod_responder *priv)
 {
-	printf("iiod_responder_destroy1\n");
+	printf("thread = %u, iiod_responder_destroy1\n", pthread_self());
 	iiod_responder_stop(priv);
 	printf("iiod_responder_destroy2\n");
 	iiod_responder_wait_done(priv);
@@ -723,11 +768,17 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 	free(priv);
 }
 
+struct iio_thrd {
+	pthread_t thid;
+	void *d;
+	int (*func)(void *);
+};
+
 void iiod_responder_wait_done(struct iiod_responder *priv)
 {
 	if (!NO_THREADS) {
 		if (priv->read_thrd) {
-			printf("iio_thrd_join_and_destroy...\n ");
+			printf("thread = %u, iio_thrd_join_and_destroy thread = %u...\n", pthread_self(), priv->read_thrd->thid);
 			iio_thrd_join_and_destroy(priv->read_thrd);
 			printf("iio_thrd_join_and_destroy done\n ");
 		}

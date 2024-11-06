@@ -121,13 +121,13 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 		pfd[0].events = POLLOUT;
 	pfd[1].fd = io_ctx->cancel_fd[0];
 	pfd[1].events = POLLIN | POLLPRI | POLLHUP | POLLERR;
-	printf("poll cancel_fd %d thread = %u\n", pfd[1].fd, pthread_self());
+	printf("thread = %u, poll cancel_fd %d\n", pthread_self(), pfd[1].fd);
 
 	do {
 		do {
 			ret = poll(pfd, 2, timeout);
 		} while (ret == -1 && errno == EINTR);
-		printf("pfd[0].revents = %d, pfd[1].revents = %d, ret = %d\n",pfd[0].revents,pfd[1].revents, ret);
+		printf("thread = %u, pfd[0].revents = %d, pfd[1].revents = %d, ret = %d\n",pthread_self(), pfd[0].revents,pfd[1].revents, ret);
 
 		if (ret == -1)
 			return -errno;
