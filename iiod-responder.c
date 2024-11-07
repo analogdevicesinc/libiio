@@ -603,7 +603,6 @@ int iiod_io_get_response_async(struct iiod_io *io,
 			}
 			tmp->r_next = io;
 			printf("io->r_next = %d\n", io->r_next);
-			// io->r_next = NULL;
 		}
 	}
 	else	exit(1);
