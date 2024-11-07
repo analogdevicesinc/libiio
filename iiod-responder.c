@@ -850,8 +850,9 @@ struct iiod_io *
 iiod_responder_get_default_io(struct iiod_responder *priv)
 {
 	int idx = -1;
+	const uint64_t thid = iio_curr_thid();
 	for (unsigned int i = 0; i < priv->default_io_pool_size; i++) {
-		if (priv->default_io_pool_thread_ids[i] == pthread_self()) {
+		if (priv->default_io_pool_thread_ids[i] == thid) {
 			idx = i;
 			break;
 		}
@@ -862,10 +863,10 @@ iiod_responder_get_default_io(struct iiod_responder *priv)
 		io = priv->default_io_pool[idx];
 	}
 	else {
-		// printf("creating new io element for thread %u\n", pthread_self());
+		printf("creating new io element for thread %u\n", pthread_self());
 		io = iiod_responder_create_io(priv, 0);
 		io->timeout_ms = priv->timeout_ms;
-		priv->default_io_pool_thread_ids[priv->default_io_pool_size] = pthread_self();
+		priv->default_io_pool_thread_ids[priv->default_io_pool_size] = thid;
 		priv->default_io_pool[priv->default_io_pool_size] = io;
 		priv->default_io_pool_size++;
 		if (priv->default_io_pool_size > MAX_DEFAULT_IO_ELEMENTS) {
