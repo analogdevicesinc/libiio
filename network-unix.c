@@ -97,7 +97,6 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 		/* If this happens something went very seriously wrong */
 		prm_perror(io_ctx->params, -errno,
 			   "Unable to signal cancellation event");
-		printf("do cancel error!\n");
 	}
 }
 
@@ -116,7 +115,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 	else
 		pfd[0].events = POLLOUT;
 	pfd[1].fd = io_ctx->cancel_fd[0];
-	pfd[1].events = POLLIN | POLLPRI | POLLHUP | POLLERR;
+	pfd[1].events = POLLIN;
 
 	do {
 		do {
