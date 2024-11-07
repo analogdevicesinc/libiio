@@ -92,6 +92,7 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 {
 	uint64_t event = 1;
 	int ret;
+
 	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
