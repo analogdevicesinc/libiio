@@ -8,7 +8,6 @@
 
 #include "debug.h"
 #include "ops.h"
-#include "thread-pool.h"
 
 #include "../iiod-responder.h"
 
