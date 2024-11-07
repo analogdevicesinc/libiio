@@ -366,11 +366,8 @@ err_close_socket:
 static void network_free_iiod_client(struct iiod_client *client,
 				     struct iiod_client_pdata *io_ctx)
 {
-	printf("network_free_iiod_client1 cancel_fd = %d\n", io_ctx->cancel_fd[0]);
 	iiod_client_destroy(client);
-	printf("network_free_iiod_client2\n");
 	cleanup_cancel(io_ctx);
-	printf("network_free_iiod_client3\n");
 	close(io_ctx->fd);
 	io_ctx->fd = -1;
 }
