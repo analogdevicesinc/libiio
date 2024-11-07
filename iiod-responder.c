@@ -745,16 +745,13 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 
 	iio_task_destroy(priv->write_task);
 
-	// iiod_io_unref(priv->default_io);
+	for (unsigned int i = 0; i < priv->default_io_pool_size; i++) {
+		iiod_io_unref(priv->default_io_pool[i]);
+	}
+
 	iio_mutex_destroy(priv->lock);
 	free(priv);
 }
-
-struct iio_thrd {
-	pthread_t thid;
-	void *d;
-	int (*func)(void *);
-};
 
 void iiod_responder_wait_done(struct iiod_responder *priv)
 {
