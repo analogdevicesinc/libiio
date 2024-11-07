@@ -135,6 +135,7 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 			}
 		}
 	}
+	iio_mutex_unlock(io->inuse_lock);
 }
 
 static ssize_t iiod_rw_all(struct iiod_responder *priv,
@@ -515,7 +516,6 @@ int32_t iiod_io_wait_for_response(struct iiod_io *io)
 
 			io->r_io.cmd.code = ret;
 			io->r_done = true;
-			iio_mutex_unlock(io->inuse_lock);
 			break;
 		}
 	}
