@@ -102,6 +102,7 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
 			if (ret < 0)
 				return ret;
 		}
+
 		ret = recv(io_ctx->fd, data, (int) len, flags);
 		if (ret == 0)
 			return -EPIPE;
