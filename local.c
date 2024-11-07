@@ -1547,6 +1547,7 @@ err_free_pdata:
 
 static void local_free_buffer(struct iio_buffer_pdata *pdata)
 {
+	printf("local_free_buffer\n");
 	free(pdata->pdata);
 	local_close_fd(pdata->dev, pdata->fd);
 	close(pdata->cancel_fd);

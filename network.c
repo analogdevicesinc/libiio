@@ -95,13 +95,16 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
 #ifdef __linux__
 	cancellable &= !(flags & MSG_DONTWAIT);
 #endif
+	printf("thread = %u, network_recv cancellable = %d\n", pthread_self(), cancellable);
 
 	while (1) {
+		printf("thread = %u, wait_cancellable...\n", pthread_self());
 		if (cancellable) {
 			ret = wait_cancellable(io_ctx, true, timeout_ms);
 			if (ret < 0)
 				return ret;
 		}
+		printf("thread = %u, wait_cancellable done\n", pthread_self());
 
 		ret = recv(io_ctx->fd, data, (int) len, flags);
 		if (ret == 0)
@@ -119,6 +122,7 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
 			return (ssize_t) err;
 		}
 	}
+	printf("thread = %u, network_recv done\n", pthread_self());
 	return ret;
 }
 
@@ -362,8 +366,11 @@ err_close_socket:
 static void network_free_iiod_client(struct iiod_client *client,
 				     struct iiod_client_pdata *io_ctx)
 {
+	printf("network_free_iiod_client1 cancel_fd = %d\n", io_ctx->cancel_fd[0]);
 	iiod_client_destroy(client);
+	printf("network_free_iiod_client2\n");
 	cleanup_cancel(io_ctx);
+	printf("network_free_iiod_client3\n");
 	close(io_ctx->fd);
 	io_ctx->fd = -1;
 }
@@ -480,8 +487,11 @@ err_free_buf:
 
 void network_free_buffer(struct iio_buffer_pdata *pdata)
 {
+	printf("thread = %u, free1 fd = %d\n", pthread_self(), pdata->io_ctx.cancel_fd[0]);
 	iiod_client_free_buffer(pdata->pdata);
+	printf("thread = %u, free2\n", pthread_self());
 	network_free_iiod_client(pdata->iiod_client, &pdata->io_ctx);
+	printf("thread = %u, free3\n", pthread_self());
 	free(pdata);
 }
 

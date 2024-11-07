@@ -303,11 +303,15 @@ err_free_client:
 void iiod_client_destroy(struct iiod_client *client)
 {
 	if (client->responder) {
+		printf("iiod_client_destroy1\n");
 		iiod_client_cancel(client);
+		printf("iiod_client_destroy2\n");
 		iiod_responder_destroy(client->responder);
+		printf("iiod_client_destroy3\n");
 	}
 
 	iio_mutex_destroy(client->lock);
+	printf("iiod_client_destroy4\n");
 	free(client);
 }
 
@@ -510,6 +514,7 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 					 char *dest, size_t len)
 {
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	printf("* thread = %u, iiod_responder_get_default_io = %d\n", pthread_self(), io);
 	const struct iio_channel *chn;
 	const struct iio_device *dev;
 	const struct iio_buffer *buf;
