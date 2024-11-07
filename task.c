@@ -260,9 +260,8 @@ int iio_task_destroy(struct iio_task *task)
 	iio_cond_signal(task->cond);
 	iio_mutex_unlock(task->lock);
 
-	if (!NO_THREADS) {
+	if (!NO_THREADS)
 		ret = iio_thrd_join_and_destroy(task->thrd);
-	}
 
 	iio_task_flush(task);
 
