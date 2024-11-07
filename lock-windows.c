@@ -139,3 +139,9 @@ int iio_thrd_join_and_destroy(struct iio_thrd *thrd)
 
 	return (int) ret;
 }
+
+uint64_t iio_curr_thid()
+{
+	// thread-id should always fit into 64-bit number
+	return GetCurrentThreadId();
+}
