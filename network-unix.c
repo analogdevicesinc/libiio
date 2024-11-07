@@ -92,12 +92,13 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 {
 	uint64_t event = 1;
 	int ret;
-
+	printf("thread = %u, cancel... cancel_fd = %d\n", pthread_self(), io_ctx->cancel_fd[CANCEL_WR_FD]);
 	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
 		prm_perror(io_ctx->params, -errno,
 			   "Unable to signal cancellation event");
+		printf("do cancel error!\n");
 	}
 }
 
@@ -117,11 +118,13 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 		pfd[0].events = POLLOUT;
 	pfd[1].fd = io_ctx->cancel_fd[0];
 	pfd[1].events = POLLIN;
+	printf("thread = %u, wait cancellable... cancel_fd = %d\n", pthread_self(), pfd[1].fd);
 
 	do {
 		do {
 			ret = poll(pfd, 2, timeout);
 		} while (ret == -1 && errno == EINTR);
+		printf("thread = %u, pfd[0].revents = %d, pfd[1].revents = %d, ret = %d\n",pthread_self(), pfd[0].revents,pfd[1].revents, ret);
 
 		if (ret == -1)
 			return -errno;

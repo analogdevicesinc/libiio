@@ -49,7 +49,6 @@ struct iiod_io {
 	/* Cond to sleep until I/O is done */
 	struct iio_cond *cond;
 	struct iio_mutex *lock;
-	struct iio_mutex *inuse_lock;
 
 	/* Set to true when the response has been read */
 	bool r_done;
@@ -71,6 +70,9 @@ struct iiod_responder {
 	void *d;
 
 	struct iiod_io *readers, *writers, *default_io;
+	struct iiod_io* default_io_pool[100];
+	unsigned int default_io_pool_thread_ids[100];
+	unsigned int default_io_pool_size;
 	uint16_t next_client_id;
 
 	struct iio_mutex *lock;
@@ -114,6 +116,15 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 	struct iiod_responder *priv = io->responder;
 	struct iiod_io *tmp;
 
+	if (priv->readers) {
+		for (tmp = priv->readers; tmp; ) {
+			if (tmp == tmp->r_next) {
+				printf("loop detected!!!\n");
+			}
+			tmp = tmp->r_next;
+		}
+	}
+
 	/* Discard the entry from the readers list */
 	printf("thread = %u, discard reader %d\n", pthread_self(), io);
 	if (io == priv->readers) {
@@ -126,7 +137,6 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 			}
 		}
 	}
-	iio_mutex_unlock(io->inuse_lock);
 }
 
 static ssize_t iiod_rw_all(struct iiod_responder *priv,
@@ -567,7 +577,6 @@ int iiod_io_get_response_async(struct iiod_io *io,
 		return priv->thrd_err_code;
 	}
 
-	iio_mutex_lock(io->inuse_lock);
 	if (nb)
 		memcpy(io->r_io.buf, buf, sizeof(*buf) * nb);
 	io->r_io.nb_buf = nb;
@@ -656,11 +665,6 @@ iiod_responder_create_io(struct iiod_responder *priv, uint16_t id)
 	if (err)
 		goto err_free_cond;
 
-	io->inuse_lock = iio_mutex_create();
-	err = iio_err(io->inuse_lock);
-	if (err)
-		goto err_free_cond;
-
 	io->client_id = id;
 
 	printf("thread = %u, created io %d\n", pthread_self(), io);
@@ -676,8 +680,8 @@ err_free_io:
 void
 iiod_responder_set_timeout(struct iiod_responder *priv, unsigned int timeout_ms)
 {
-	priv->timeout_ms = timeout_ms;
-	priv->default_io->timeout_ms = timeout_ms;
+	// priv->timeout_ms = timeout_ms;
+	// priv->default_io->timeout_ms = timeout_ms;
 }
 
 void
@@ -704,10 +708,7 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 	if (err)
 		goto err_free_priv;
 
-	priv->default_io = iiod_responder_create_io(priv, 0);
-	err = iio_err(priv->default_io);
-	if (err)
-	      goto err_free_lock;
+	priv->default_io_pool_size = 0;
 
 	priv->write_task = iio_task_create(iiod_responder_write, priv,
 					   "iiod-responder-writer-task");
@@ -780,7 +781,8 @@ struct iiod_io * iiod_command_create_io(const struct iiod_command *cmd,
 {
 	struct iiod_responder *priv = (struct iiod_responder *) data;
 
-	return iiod_responder_create_io(priv, cmd->client_id);
+	struct iiod_io* io = iiod_responder_create_io(priv, cmd->client_id);
+	return io;
 }
 
 void iiod_io_cancel(struct iiod_io *io)
@@ -802,11 +804,11 @@ void iiod_io_cancel(struct iiod_io *io)
 
 	/* Cancel any pending response request */
 	iiod_io_cancel_response(io);
-	iio_mutex_unlock(io->inuse_lock);
 }
 
 static void iiod_io_destroy(struct iiod_io *io)
 {
+	printf("destroy %d\n", io);
 	iio_mutex_destroy(io->lock);
 	iio_cond_destroy(io->cond);
 	free(io);
@@ -846,7 +848,27 @@ void iiod_io_unref(struct iiod_io *io)
 struct iiod_io *
 iiod_responder_get_default_io(struct iiod_responder *priv)
 {
-	return priv->default_io;
+	int idx = -1;
+	for (unsigned int i = 0; i < priv->default_io_pool_size; i++) {
+		if (priv->default_io_pool_thread_ids[i] == pthread_self()) {
+			idx = i;
+			break;
+		}
+	}
+	struct iiod_io *io;
+	if (idx != -1) {
+		printf("using existing io element for thread %u\n", pthread_self());
+		io = priv->default_io_pool[idx];
+	}
+	else {
+		printf("creating new io element for thread %u\n", pthread_self());
+		io = iiod_responder_create_io(priv, 0);
+		io->timeout_ms = priv->timeout_ms;
+		priv->default_io_pool_thread_ids[priv->default_io_pool_size] = pthread_self();
+		priv->default_io_pool[priv->default_io_pool_size] = io;
+		priv->default_io_pool_size++;
+	}
+	return io;
 }
 
 struct iiod_io *

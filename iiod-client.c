@@ -1605,7 +1605,9 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 	/* Cancel any I/O going on. This means we must send the block free
 	 * command through the main I/O as the block's I/O stream is
 	 * disrupted. */
+	printf("thread = %u, iiod_io_cancel...\n", pthread_self());
 	iiod_io_cancel(block->io);
+	printf("thread = %u, iiod_io_cancel ok\n", pthread_self());
 	iiod_io_unref(block->io);
 
 	io = iiod_responder_get_default_io(client->responder);
