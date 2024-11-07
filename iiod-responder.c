@@ -663,6 +663,7 @@ iiod_responder_create_io(struct iiod_responder *priv, uint16_t id)
 
 	io->client_id = id;
 
+	printf("thread = %u, created io %d\n", pthread_self(), io);
 	return io;
 
 err_free_cond:
