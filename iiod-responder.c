@@ -767,8 +767,7 @@ struct iiod_io * iiod_command_create_io(const struct iiod_command *cmd,
 {
 	struct iiod_responder *priv = (struct iiod_responder *) data;
 
-	struct iiod_io* io = iiod_responder_create_io(priv, cmd->client_id);
-	return io;
+	return iiod_responder_create_io(priv, cmd->client_id);
 }
 
 void iiod_io_cancel(struct iiod_io *io)
