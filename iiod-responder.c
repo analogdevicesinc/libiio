@@ -571,14 +571,14 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_io.start_time = read_counter_us();
 
 	/* Add it to the readers list */
-    if (!priv->readers) {
-        priv->readers = io;
-    } else {
-        for (tmp = priv->readers; tmp->r_next; ) {
-            tmp = tmp->r_next;
-        }
-        tmp->r_next = io;
-    }
+	if (!priv->readers) {
+		priv->readers = io;
+	} else {
+		for (tmp = priv->readers; tmp->r_next; ) {
+			tmp = tmp->r_next;
+		}
+		tmp->r_next = io;
+	}
 
 	iio_mutex_unlock(priv->lock);
 
