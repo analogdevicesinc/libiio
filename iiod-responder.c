@@ -756,9 +756,8 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 void iiod_responder_wait_done(struct iiod_responder *priv)
 {
 	if (!NO_THREADS) {
-		if (priv->read_thrd) {
+		if (priv->read_thrd)
 			iio_thrd_join_and_destroy(priv->read_thrd);
-		}
 		priv->read_thrd = NULL;
 	} else if (!priv->thrd_stop) {
 		iiod_responder_reader_worker(priv);
