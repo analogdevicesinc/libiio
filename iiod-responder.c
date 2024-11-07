@@ -117,17 +117,7 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 	struct iiod_responder *priv = io->responder;
 	struct iiod_io *tmp;
 
-	if (priv->readers) {
-		for (tmp = priv->readers; tmp; ) {
-			if (tmp == tmp->r_next) {
-				printf("loop detected!!!\n");
-			}
-			tmp = tmp->r_next;
-		}
-	}
-
 	/* Discard the entry from the readers list */
-	// printf("thread = %u, discard reader %d\n", pthread_self(), io);
 	if (io == priv->readers) {
 		priv->readers = io->r_next;
 	} else if (priv->readers) {
@@ -581,36 +571,16 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_io.start_time = read_counter_us();
 
 	/* Add it to the readers list */
-	// printf("thread = %u, adding reader %d\n", pthread_self(), io);
-	bool found = false;
-	if (priv->readers) {
-		for (tmp = priv->readers; tmp; ) {
-			if (tmp == io)
-			{
-				printf("reader is already in list!!\n");
-				found = true;
-			}
-			if (tmp == tmp->r_next) {
-				printf("loop detected!!!\n");
-			}
-			tmp = tmp->r_next;
-		}
-	}
-	if (!found) {
-		if (!priv->readers) {
-			priv->readers = io;
-		} else {
-			unsigned int i = 0;
-			for (tmp = priv->readers; tmp->r_next; ) {
-				// printf("list item %d = %d\n", i++,tmp);
-				tmp = tmp->r_next;
-				if (i > 100) exit(1);
-			}
-			tmp->r_next = io;
-			// printf("io->r_next = %d\n", io->r_next);
-		}
-	}
-	else	exit(1);
+    if (!priv->readers) {
+        priv->readers = io;
+    } else {
+        unsigned int i = 0;
+        for (tmp = priv->readers; tmp->r_next; ) {
+            tmp = tmp->r_next;
+            if (i > 100) exit(1);
+        }
+        tmp->r_next = io;
+    }
 
 	iio_mutex_unlock(priv->lock);
 
@@ -842,11 +812,9 @@ iiod_responder_get_default_io(struct iiod_responder *priv)
 	}
 	struct iiod_io *io;
 	if (idx != -1 && priv->default_io_pool[idx] != NULL && priv->default_io_pool[idx]->refcnt != 0) {
-		// printf("using existing io element for thread %u\n", pthread_self());
 		io = priv->default_io_pool[idx];
 	}
 	else {
-		printf("creating new io element for thread %lu\n", thid);
 		io = iiod_responder_create_io(priv, 0);
 		io->timeout_ms = priv->timeout_ms;
 		priv->default_io_pool_thread_ids[priv->default_io_pool_size] = thid;
@@ -854,7 +822,7 @@ iiod_responder_get_default_io(struct iiod_responder *priv)
 		priv->default_io_pool_size++;
 		if (priv->default_io_pool_size > MAX_DEFAULT_IO_ELEMENTS) {
 			printf("default_io_pool overflow!!!\n");
-			exit(1);
+			return iio_ptr(-ENOMEM);
 		}
 
 	}
