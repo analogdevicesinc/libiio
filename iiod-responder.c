@@ -291,7 +291,6 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		/* Find the client for the given ID in the readers list */
 		for (io = priv->readers; io; io = io->r_next) {
 			if (io->client_id == cmd.client_id) {
-				// printf("thread = %u, selecting io %u with client_id %d\n", pthread_self(), io, io->client_id);
 				break;
 			}
 		}
