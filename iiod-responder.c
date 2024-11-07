@@ -574,10 +574,8 @@ int iiod_io_get_response_async(struct iiod_io *io,
     if (!priv->readers) {
         priv->readers = io;
     } else {
-        unsigned int i = 0;
         for (tmp = priv->readers; tmp->r_next; ) {
             tmp = tmp->r_next;
-            if (i > 100) exit(1);
         }
         tmp->r_next = io;
     }
