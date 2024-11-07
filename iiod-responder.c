@@ -21,6 +21,7 @@
 #endif
 
 #define NB_BUFS_MAX 2
+#define MAX_DEFAULT_IO_ELEMENTS 100
 
 static void iiod_io_ref_unlocked(struct iiod_io *io);
 static void iiod_io_unref_unlocked(struct iiod_io *io);
@@ -70,8 +71,8 @@ struct iiod_responder {
 	void *d;
 
 	struct iiod_io *readers, *writers, *default_io;
-	struct iiod_io* default_io_pool[100];
-	unsigned int default_io_pool_thread_ids[100];
+	struct iiod_io* default_io_pool[MAX_DEFAULT_IO_ELEMENTS];
+	uint64_t default_io_pool_thread_ids[MAX_DEFAULT_IO_ELEMENTS];
 	unsigned int default_io_pool_size;
 	uint16_t next_client_id;
 
@@ -126,7 +127,7 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 	}
 
 	/* Discard the entry from the readers list */
-	printf("thread = %u, discard reader %d\n", pthread_self(), io);
+	// printf("thread = %u, discard reader %d\n", pthread_self(), io);
 	if (io == priv->readers) {
 		priv->readers = io->r_next;
 	} else if (priv->readers) {
@@ -303,7 +304,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		/* Find the client for the given ID in the readers list */
 		for (io = priv->readers; io; io = io->r_next) {
 			if (io->client_id == cmd.client_id) {
-				printf("thread = %u, selecting io %u with client_id %d\n", pthread_self(), io, io->client_id);
+				// printf("thread = %u, selecting io %u with client_id %d\n", pthread_self(), io, io->client_id);
 				break;
 			}
 		}
@@ -585,7 +586,7 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_io.start_time = read_counter_us();
 
 	/* Add it to the readers list */
-	printf("thread = %u, adding reader %d\n", pthread_self(), io);
+	// printf("thread = %u, adding reader %d\n", pthread_self(), io);
 	bool found = false;
 	if (priv->readers) {
 		for (tmp = priv->readers; tmp; ) {
@@ -606,12 +607,12 @@ int iiod_io_get_response_async(struct iiod_io *io,
 		} else {
 			unsigned int i = 0;
 			for (tmp = priv->readers; tmp->r_next; ) {
-				printf("list item %d = %d\n", i++,tmp);
+				// printf("list item %d = %d\n", i++,tmp);
 				tmp = tmp->r_next;
 				if (i > 100) exit(1);
 			}
 			tmp->r_next = io;
-			printf("io->r_next = %d\n", io->r_next);
+			// printf("io->r_next = %d\n", io->r_next);
 		}
 	}
 	else	exit(1);
@@ -731,7 +732,7 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 err_free_write_task:
 	iio_task_destroy(priv->write_task);
 err_free_io:
-	iiod_io_unref(priv->default_io);
+	// iiod_io_unref(priv->default_io);
 err_free_lock:
 	iio_mutex_destroy(priv->lock);
 err_free_priv:
@@ -751,7 +752,7 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 
 	iio_task_destroy(priv->write_task);
 
-	iiod_io_unref(priv->default_io);
+	// iiod_io_unref(priv->default_io);
 	iio_mutex_destroy(priv->lock);
 	free(priv);
 }
@@ -856,17 +857,22 @@ iiod_responder_get_default_io(struct iiod_responder *priv)
 		}
 	}
 	struct iiod_io *io;
-	if (idx != -1) {
-		printf("using existing io element for thread %u\n", pthread_self());
+	if (idx != -1 && priv->default_io_pool[idx] != NULL && priv->default_io_pool[idx]->refcnt != 0) {
+		// printf("using existing io element for thread %u\n", pthread_self());
 		io = priv->default_io_pool[idx];
 	}
 	else {
-		printf("creating new io element for thread %u\n", pthread_self());
+		// printf("creating new io element for thread %u\n", pthread_self());
 		io = iiod_responder_create_io(priv, 0);
 		io->timeout_ms = priv->timeout_ms;
 		priv->default_io_pool_thread_ids[priv->default_io_pool_size] = pthread_self();
 		priv->default_io_pool[priv->default_io_pool_size] = io;
 		priv->default_io_pool_size++;
+		if (priv->default_io_pool_size > MAX_DEFAULT_IO_ELEMENTS) {
+			printf("default_io_pool overflow!!!\n");
+			exit(1);
+		}
+
 	}
 	return io;
 }

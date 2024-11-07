@@ -510,7 +510,7 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 					 char *dest, size_t len)
 {
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
-	printf("* thread = %u, iiod_responder_get_default_io = %d\n", pthread_self(), io);
+	// printf("* thread = %u, iiod_responder_get_default_io = %d\n", pthread_self(), io);
 	const struct iio_channel *chn;
 	const struct iio_device *dev;
 	const struct iio_buffer *buf;

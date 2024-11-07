@@ -99,13 +99,10 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
 	while (1) {
 		if (cancellable) {
 			ret = wait_cancellable(io_ctx, true, timeout_ms);
-			printf("thread = %u, wait cancellable ret = %d\n", pthread_self(), ret);
 			if (ret < 0)
 				return ret;
 		}
-		printf("thread = %u, recv...\n", pthread_self());
 		ret = recv(io_ctx->fd, data, (int) len, flags);
-		printf("thread = %u, recv ret = %d\n", pthread_self(), ret);
 		if (ret == 0)
 			return -EPIPE;
 		else if (ret > 0)
