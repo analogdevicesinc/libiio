@@ -708,7 +708,7 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 					   "iiod-responder-writer-task");
 	err = iio_err(priv->write_task);
 	if (err)
-		goto err_free_io;
+		goto err_free_lock;
 
 	if (!NO_THREADS) {
 		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv,
@@ -724,8 +724,6 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 
 err_free_write_task:
 	iio_task_destroy(priv->write_task);
-err_free_io:
-	// iiod_io_unref(priv->default_io);
 err_free_lock:
 	iio_mutex_destroy(priv->lock);
 err_free_priv:
