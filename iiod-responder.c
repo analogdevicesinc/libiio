@@ -708,7 +708,8 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 
 	iio_task_destroy(priv->write_task);
 
-	for (unsigned int i = 0; i < priv->default_io_pool_size; i++) {
+	unsigned int i;
+    for (i = 0; i < priv->default_io_pool_size; i++) {
 		iiod_io_unref(priv->default_io_pool[i]);
 	}
 
@@ -799,7 +800,8 @@ iiod_responder_get_default_io(struct iiod_responder *priv)
 {
 	int idx = -1;
 	const uint64_t thid = iio_curr_thid();
-	for (unsigned int i = 0; i < priv->default_io_pool_size; i++) {
+    unsigned int i;
+	for (i = 0; i < priv->default_io_pool_size; i++) {
 		if (priv->default_io_pool_thread_ids[i] == thid) {
 			idx = i;
 			break;
