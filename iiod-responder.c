@@ -763,17 +763,12 @@ void iiod_responder_stop(struct iiod_responder *priv)
 
 void iiod_responder_destroy(struct iiod_responder *priv)
 {
-	printf("thread = %u, iiod_responder_destroy1\n", pthread_self());
 	iiod_responder_stop(priv);
-	printf("iiod_responder_destroy2\n");
 	iiod_responder_wait_done(priv);
 
-	printf("iiod_responder_destroy3\n");
 	iio_task_destroy(priv->write_task);
-	printf("iiod_responder_destroy4\n");
 
 	iiod_io_unref(priv->default_io);
-	printf("iiod_responder_destroy5\n");
 	iio_mutex_destroy(priv->lock);
 	free(priv);
 }
