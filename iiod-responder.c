@@ -665,7 +665,6 @@ iiod_responder_create_io(struct iiod_responder *priv, uint16_t id)
 
 	io->client_id = id;
 
-	printf("thread = %u, created io %d\n", pthread_self(), io);
 	return io;
 
 err_free_cond:
@@ -763,9 +762,7 @@ void iiod_responder_wait_done(struct iiod_responder *priv)
 {
 	if (!NO_THREADS) {
 		if (priv->read_thrd) {
-			printf("thread = %u, iio_thrd_join_and_destroy thread = %u...\n", pthread_self(), priv->read_thrd->thid);
 			iio_thrd_join_and_destroy(priv->read_thrd);
-			printf("iio_thrd_join_and_destroy done\n ");
 		}
 		priv->read_thrd = NULL;
 	} else if (!priv->thrd_stop) {
