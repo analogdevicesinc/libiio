@@ -264,7 +264,6 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 	ok_buf.size = 3;
 
 	iio_mutex_lock(priv->lock);
-	printf("thread = %u, start reader...\n", pthread_self());
 
 	while (!priv->thrd_stop) {
 		iio_mutex_unlock(priv->lock);
@@ -345,7 +344,6 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		iiod_responder_signal_io(io, cmd.code);
 		iiod_io_unref_unlocked(io);
 	}
-	printf("thread = %u, stop reader...\n", pthread_self());
 
 	priv->thrd_err_code = priv->thrd_stop ? -EINTR : (int) ret;
 	priv->thrd_stop = true;
@@ -802,7 +800,6 @@ void iiod_io_cancel(struct iiod_io *io)
 
 static void iiod_io_destroy(struct iiod_io *io)
 {
-	printf("destroy %d\n", io);
 	iio_mutex_destroy(io->lock);
 	iio_cond_destroy(io->cond);
 	free(io);
@@ -856,7 +853,7 @@ iiod_responder_get_default_io(struct iiod_responder *priv)
 		io = priv->default_io_pool[idx];
 	}
 	else {
-		printf("creating new io element for thread %u\n", pthread_self());
+		printf("creating new io element for thread %lu\n", thid);
 		io = iiod_responder_create_io(priv, 0);
 		io->timeout_ms = priv->timeout_ms;
 		priv->default_io_pool_thread_ids[priv->default_io_pool_size] = thid;
