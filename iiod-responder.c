@@ -116,15 +116,6 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 
 	/* Discard the entry from the readers list */
 	printf("thread = %u, discard reader %d\n", pthread_self(), io);
-	if (priv->readers) {
-		for (tmp = priv->readers; tmp; ) {
-			if (tmp == tmp->r_next) {
-				printf("loop detected!!! %d -> %d\n", tmp, tmp->r_next);
-				exit(1);
-			}
-			tmp = tmp->r_next;
-		}
-	}
 	if (io == priv->readers) {
 		priv->readers = io->r_next;
 	} else if (priv->readers) {
@@ -167,9 +158,7 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 		}
 
 		if (is_read) {
-			printf("thread = %u, read...\n", pthread_self());
 			ret = priv->ops->read(priv->d, curr, nb);
-			printf("thread = %u, read done\n", pthread_self());
 		}
 		else
 			ret = priv->ops->write(priv->d, curr, nb);
@@ -239,7 +228,6 @@ static void iiod_responder_signal_io(struct iiod_io *io, int32_t code)
 	io->r_done = true;
 	iio_cond_signal(io->cond);
 	iio_mutex_unlock(io->lock);
-	iio_mutex_unlock(io->inuse_lock);
 }
 
 static void iiod_responder_cancel_responses(struct iiod_responder *priv)
@@ -285,9 +273,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			continue;
 		}
 
-		printf("thread = %u, try lock...\n", pthread_self());
 		iio_mutex_lock(priv->lock);
-		printf("thread = %u, locked\n", pthread_self());
 		if (ret <= 0)
 			break;
 
@@ -296,9 +282,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 			ret = iiod_run_command(priv, &cmd);
 
-			printf("thread = %u, try lock...\n", pthread_self());
 			iio_mutex_lock(priv->lock);
-			printf("thread = %u, locked\n", pthread_self());
 
 			if (ret < 0)
 				break;
@@ -309,7 +293,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		/* Find the client for the given ID in the readers list */
 		for (io = priv->readers; io; io = io->r_next) {
 			if (io->client_id == cmd.client_id) {
-				printf("* thread = %u, selecting io %u with client_id %d\n", pthread_self(), io, io->client_id);
+				printf("thread = %u, selecting io %u with client_id %d\n", pthread_self(), io, io->client_id);
 				break;
 			}
 		}
@@ -319,9 +303,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			 * for it, so drop it. */
 			iio_mutex_unlock(priv->lock);
 			iiod_discard_data(priv, cmd.code);
-			printf("thread = %u, try lock...\n", pthread_self());
 			iio_mutex_lock(priv->lock);
-			printf("thread = %u, locked\n", pthread_self());
 
 			continue;
 		}
@@ -820,6 +802,7 @@ void iiod_io_cancel(struct iiod_io *io)
 
 	/* Cancel any pending response request */
 	iiod_io_cancel_response(io);
+	iio_mutex_unlock(io->inuse_lock);
 }
 
 static void iiod_io_destroy(struct iiod_io *io)
