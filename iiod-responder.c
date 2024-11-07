@@ -290,9 +290,8 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 		/* Find the client for the given ID in the readers list */
 		for (io = priv->readers; io; io = io->r_next) {
-			if (io->client_id == cmd.client_id) {
+			if (io->client_id == cmd.client_id)
 				break;
-			}
 		}
 
 		if (!io) {
@@ -573,9 +572,8 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	if (!priv->readers) {
 		priv->readers = io;
 	} else {
-		for (tmp = priv->readers; tmp->r_next; ) {
+		for (tmp = priv->readers; tmp->r_next; )
 			tmp = tmp->r_next;
-		}
 		tmp->r_next = io;
 	}
 
