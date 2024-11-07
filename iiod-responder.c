@@ -70,7 +70,7 @@ struct iiod_responder {
 	const struct iiod_responder_ops *ops;
 	void *d;
 
-	struct iiod_io *readers, *writers, *default_io;
+	struct iiod_io *readers, *writers;
 	struct iiod_io* default_io_pool[MAX_DEFAULT_IO_ELEMENTS];
 	uint64_t default_io_pool_thread_ids[MAX_DEFAULT_IO_ELEMENTS];
 	unsigned int default_io_pool_size;
@@ -168,9 +168,8 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 			nb = 1;
 		}
 
-		if (is_read) {
+		if (is_read)
 			ret = priv->ops->read(priv->d, curr, nb);
-		}
 		else
 			ret = priv->ops->write(priv->d, curr, nb);
 		if (ret <= 0)
@@ -294,7 +293,6 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			ret = iiod_run_command(priv, &cmd);
 
 			iio_mutex_lock(priv->lock);
-
 			if (ret < 0)
 				break;
 
@@ -315,7 +313,6 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			iio_mutex_unlock(priv->lock);
 			iiod_discard_data(priv, cmd.code);
 			iio_mutex_lock(priv->lock);
-
 			continue;
 		}
 
@@ -681,8 +678,7 @@ err_free_io:
 void
 iiod_responder_set_timeout(struct iiod_responder *priv, unsigned int timeout_ms)
 {
-	// priv->timeout_ms = timeout_ms;
-	// priv->default_io->timeout_ms = timeout_ms;
+	priv->timeout_ms = timeout_ms;
 }
 
 void

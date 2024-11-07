@@ -510,7 +510,6 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 					 char *dest, size_t len)
 {
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
-	// printf("* thread = %u, iiod_responder_get_default_io = %d\n", pthread_self(), io);
 	const struct iio_channel *chn;
 	const struct iio_device *dev;
 	const struct iio_buffer *buf;
@@ -1605,9 +1604,7 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 	/* Cancel any I/O going on. This means we must send the block free
 	 * command through the main I/O as the block's I/O stream is
 	 * disrupted. */
-	printf("thread = %u, iiod_io_cancel...\n", pthread_self());
 	iiod_io_cancel(block->io);
-	printf("thread = %u, iiod_io_cancel ok\n", pthread_self());
 	iiod_io_unref(block->io);
 
 	io = iiod_responder_get_default_io(client->responder);
