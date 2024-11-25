@@ -1,5 +1,5 @@
-apiVersion: backstage.io/v1alpha1
-kind: Component
+apiVersion: analog.com/v1alpha1
+kind: Product
 metadata:
   title: libiio
   name: libiio
@@ -18,8 +18,8 @@ metadata:
     transceivers. You can use libiio natively on an embedded Linux target (local
     mode), or use libiio to communicate remotely to that same target from a host
     Linux, Windows or MAC over USB or Ethernet or Serial.
-  productType: software product
   organization: group:default/sw-customer-solutions-enablement
+  distributionRegion: global
   links:
     - url: https://github.com/analogdevicesinc/libiio
       title: GitHub
@@ -35,22 +35,20 @@ metadata:
     - linux
     - cmake
   annotations:
-    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
 spec:
-  type: product
+  type: software-product
   lifecycle: execution
   system: system:default/analog-devices-products
   owner: group:default/libiio-sw-team
 ---
-apiVersion: backstage.io/v1alpha1
-kind: Component
+apiVersion: analog.com/v1alpha1
+kind: Release
 metadata:
   title: libiio 0.25.0
   name: libiio-0.25.0
   description: "-"
   releaseDate: 2023-08-11
-  releaseType: minor
   qualityLevel: alpha
   licenseType: open-source
   applicationType: desktop
@@ -60,24 +58,22 @@ metadata:
   redistributionRights: source
   version: 0.25.0
   annotations:
-    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
 spec:
-  type: release
+  type: minor
   lifecycle: release
   owner: user:default/mhenneri
   subcomponentOf: component:default/libiio
   dependsOn:
     - component:default/libiio-source-0.25.0
 ---
-apiVersion: backstage.io/v1alpha1
-kind: Component
+apiVersion: analog.com/v1alpha1
+kind: Release
 metadata:
   title: libiio 0.26.0
   name: libiio-0.26.0
   description: "-"
   releaseDate: 2024-08-26
-  releaseType: minor
   qualityLevel: alpha
   licenseType: open-source
   applicationType: desktop
@@ -87,10 +83,9 @@ metadata:
   redistributionRights: source
   version: 0.26.0
   annotations:
-    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
 spec:
-  type: release
+  type: minor
   lifecycle: release
   owner: user:default/mhenneri
   subcomponentOf: component:default/libiio
@@ -134,7 +129,6 @@ metadata:
     - cmake
     - c
   annotations:
-    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio.git
 spec:
   type: library
@@ -162,7 +156,6 @@ metadata:
     - linux
     - cmake
   annotations:
-    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.25
     hub.blackduck/project-name: oa_libiio
     hub.blackduck/project-version: "0.25"
@@ -193,7 +186,6 @@ metadata:
     - linux
     - cmake
   annotations:
-    backstage.io/edit-url: https://github.com/analogdevicesinc/libiio/blob/main/catalog-info.yaml
     backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.26-rc.1
     hub.blackduck/project-name: oa_libiio
     hub.blackduck/project-version: "0.26-rc.1"
