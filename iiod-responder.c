@@ -13,6 +13,7 @@
 #include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-lock.h>
+#include <pthread.h>
 #include <string.h>
 #ifdef _WIN32
 #include <Windows.h>
@@ -49,6 +50,12 @@ struct iiod_io {
 	/* Cond to sleep until I/O is done */
 	struct iio_cond *cond;
 	struct iio_mutex *lock;
+
+	/* Cond for synchronize multiple readers */
+	struct iio_cond *r_cond;
+
+	/* set to true when the I/O is busy */
+	bool busy;
 
 	/* Set to true when the response has been read */
 	bool r_done;
@@ -301,9 +308,6 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 		iiod_io_ref_unlocked(io);
 
-		/* Discard the entry from the readers list */
-		__iiod_io_cancel_unlocked(io);
-
 		iio_mutex_unlock(priv->lock);
 
 		if (io->r_io.nb_buf && cmd.code > 0) {
@@ -482,15 +486,15 @@ int32_t iiod_io_wait_for_response(struct iiod_io *io)
 	while (!io->r_done) {
 		ret = iiod_io_cond_wait(io);
 		if (ret) {
-			iio_mutex_lock(priv->lock);
-			__iiod_io_cancel_unlocked(io);
-			iio_mutex_unlock(priv->lock);
-
 			io->r_io.cmd.code = ret;
 			io->r_done = true;
 			break;
 		}
 	}
+
+	iio_mutex_lock(priv->lock);
+	__iiod_io_cancel_unlocked(io);
+	iio_mutex_unlock(priv->lock);
 
 	iio_mutex_unlock(io->lock);
 
@@ -551,8 +555,15 @@ int iiod_io_get_response_async(struct iiod_io *io,
 		return -EINVAL;
 
 	iio_mutex_lock(priv->lock);
+	iio_mutex_lock(io->lock);
+
+	/* If r_done is not yet done then it's still busy. Wait for it */
+	while (io->busy)
+		iio_cond_wait(io->r_cond, io->lock, 0);
+
 	if (priv->thrd_stop) {
 		/* Thread has been stopped, cannot enqueue response */
+		iio_mutex_unlock(io->lock);
 		iio_mutex_unlock(priv->lock);
 		return priv->thrd_err_code;
 	}
@@ -562,6 +573,7 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	io->r_io.nb_buf = nb;
 	io->r_done = false;
 	io->r_next = NULL;
+	io->busy = true;
 	io->r_io.start_time = read_counter_us();
 
 	/* Add it to the readers list */
@@ -573,6 +585,7 @@ int iiod_io_get_response_async(struct iiod_io *io,
 		tmp->r_next = io;
 	}
 
+	iio_mutex_unlock(io->lock);
 	iio_mutex_unlock(priv->lock);
 
 	return 0;
@@ -617,15 +630,22 @@ iiod_responder_create_io(struct iiod_responder *priv, uint16_t id)
 	if (err)
 		goto err_free_io;
 
+	io->r_cond = iio_cond_create();
+	err = iio_err(io->r_cond);
+	if (err)
+		goto err_free_cond;
+
 	io->lock = iio_mutex_create();
 	err = iio_err(io->lock);
 	if (err)
-		goto err_free_cond;
+		goto err_free_r_cond;
 
 	io->client_id = id;
 
 	return io;
 
+err_free_r_cond:
+	iio_cond_destroy(io->r_cond);
 err_free_cond:
 	iio_cond_destroy(io->cond);
 err_free_io:
@@ -740,7 +760,6 @@ void iiod_io_cancel(struct iiod_io *io)
 	struct iio_task_token *token;
 
 	iio_mutex_lock(priv->lock);
-	__iiod_io_cancel_unlocked(io);
 	token = io->write_token;
 	io->write_token = NULL;
 	iio_mutex_unlock(priv->lock);
@@ -780,6 +799,16 @@ void iiod_io_ref(struct iiod_io *io)
 static void iiod_io_unref_unlocked(struct iiod_io *io)
 {
 	io->refcnt -= 1;
+	/* If the refcount is one, then only the responder holds a reference which
+	 * means that the I/O is no longer used and ready to be re-used.
+	 * Signal any potential waiters.
+	 */
+	if (io->refcnt == 1) {
+		io->busy = false;
+		iio_cond_broadcast(io->r_cond);
+		return;
+	}
+
 	if (io->refcnt == 0)
 		iiod_io_destroy(io);
 }
@@ -797,6 +826,15 @@ struct iiod_io *
 iiod_responder_get_default_io(struct iiod_responder *priv)
 {
 	return priv->default_io;
+}
+
+struct iiod_io *
+iiod_responder_get_default_io_and_ref(struct iiod_responder *priv)
+{
+	struct iiod_io *io = iiod_responder_get_default_io(priv);
+
+	iiod_io_ref(io);
+	return io;
 }
 
 struct iiod_io *

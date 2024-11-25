@@ -31,6 +31,7 @@ __api void iio_cond_destroy(struct iio_cond *cond);
 __api int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
 			unsigned int timeout_ms);
 __api void iio_cond_signal(struct iio_cond *cond);
+__api void iio_cond_broadcast(struct iio_cond *cond);
 
 __api struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 					void *d, const char *name);

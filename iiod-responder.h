@@ -104,6 +104,9 @@ iiod_responder_create_io(struct iiod_responder *responder, uint16_t id);
 struct iiod_io *
 iiod_responder_get_default_io(struct iiod_responder *responder);
 
+struct iiod_io *
+iiod_responder_get_default_io_and_ref(struct iiod_responder *priv);
+
 /* Create a iiod_io suitable for responding to the given command.
  * Initialized with the reference counter set to 1. */
 struct iiod_io *
@@ -177,5 +180,11 @@ int32_t iiod_io_wait_for_response(struct iiod_io *io);
 _Bool iiod_io_has_response(struct iiod_io *io);
 
 void iiod_io_cancel_response(struct iiod_io *io);
+
+static inline void
+iiod_responder_put_default_io(struct iiod_io *io)
+{
+	iiod_io_unref(io);
+}
 
 #endif /* __IIOD_RESPONDER_H__ */

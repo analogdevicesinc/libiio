@@ -104,6 +104,11 @@ void iio_cond_signal(struct iio_cond *cond)
 	pthread_cond_signal(&cond->cond);
 }
 
+void iio_cond_broadcast(struct iio_cond *cond)
+{
+	pthread_cond_broadcast(&cond->cond);
+}
+
 static void * iio_thrd_wrapper(void *d)
 {
 	struct iio_thrd *thrd = d;

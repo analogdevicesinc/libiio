@@ -328,7 +328,7 @@ iiod_client_get_trigger_new(struct iiod_client *client,
 			    const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_io *io = iiod_responder_get_default_io_and_ref(client->responder);
 	struct iiod_command cmd;
 	int ret;
 
@@ -336,6 +336,7 @@ iiod_client_get_trigger_new(struct iiod_client *client,
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
 
 	ret = iiod_io_exec_simple_command(io, &cmd);
+	iiod_responder_put_default_io(io);
 	if (ret < 0)
 		return iio_ptr(ret);
 
@@ -403,8 +404,9 @@ static int iiod_client_set_trigger_new(struct iiod_client *client,
 				       const struct iio_device *dev,
 				       const struct iio_device *trigger)
 {
-	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_io *io = iiod_responder_get_default_io_and_ref(client->responder);
 	struct iiod_command cmd;
+	int ret;
 
 	cmd.op = IIOD_OP_SETTRIG;
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
@@ -413,7 +415,10 @@ static int iiod_client_set_trigger_new(struct iiod_client *client,
 	else
 		cmd.code = iio_device_get_index(trigger);
 
-	return iiod_io_exec_simple_command(io, &cmd);
+	ret = iiod_io_exec_simple_command(io, &cmd);
+	iiod_responder_put_default_io(io);
+
+	return ret;
 }
 
 int iiod_client_set_trigger(struct iiod_client *client,
@@ -462,8 +467,9 @@ int iiod_client_set_timeout(struct iiod_client *client, unsigned int timeout)
 		cmd.op = IIOD_OP_TIMEOUT;
 		cmd.code = remote_timeout;
 
-		io = iiod_responder_get_default_io(client->responder);
+		io = iiod_responder_get_default_io_and_ref(client->responder);
 		ret = iiod_io_exec_simple_command(io, &cmd);
+		iiod_responder_put_default_io(io);
 	} else {
 		char buf[1024];
 
@@ -509,7 +515,7 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 					 const struct iio_attr *attr,
 					 char *dest, size_t len)
 {
-	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_io *io = iiod_responder_get_default_io_and_ref(client->responder);
 	const struct iio_channel *chn;
 	const struct iio_device *dev;
 	const struct iio_buffer *buf;
@@ -517,6 +523,7 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 	unsigned int i;
 	uint16_t arg1, arg2 = 0;
 	struct iiod_buf iiod_buf;
+	int ret;
 
 	switch (attr->type) {
 	case IIO_ATTR_TYPE_CHANNEL:
@@ -534,8 +541,10 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 			if (iio_channel_get_attr(chn, i) == attr)
 				break;
 
-		if (i == iio_channel_get_attrs_count(chn))
-			return -ENOENT;
+		if (i == iio_channel_get_attrs_count(chn)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		break;
@@ -547,8 +556,10 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 			if (iio_device_get_attr(dev, i) == attr)
 				break;
 
-		if (i == iio_device_get_attrs_count(dev))
-			return -ENOENT;
+		if (i == iio_device_get_attrs_count(dev)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		break;
@@ -560,8 +571,10 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 			if (iio_device_get_debug_attr(dev, i) == attr)
 				break;
 
-		if (i == iio_device_get_debug_attrs_count(dev))
-			return -ENOENT;
+		if (i == iio_device_get_debug_attrs_count(dev)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		break;
@@ -574,14 +587,17 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 			if (iio_buffer_get_attr(buf, i) == attr)
 				break;
 
-		if (i == iio_buffer_get_attrs_count(buf))
-			return -ENOENT;
+		if (i == iio_buffer_get_attrs_count(buf)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		arg2 = (uint16_t) buf->idx;
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out_unref;
 	}
 
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
@@ -590,7 +606,11 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 	iiod_buf.ptr = dest;
 	iiod_buf.size = len;
 
-	return iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+	ret = iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+
+out_unref:
+	iiod_responder_put_default_io(io);
+	return ret;
 }
 
 ssize_t iiod_client_attr_read(struct iiod_client *client,
@@ -673,7 +693,7 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 					  const struct iio_attr *attr,
 					  const char *src, size_t len)
 {
-	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_io *io = iiod_responder_get_default_io_and_ref(client->responder);
 	const struct iio_channel *chn;
 	const struct iio_device *dev;
 	const struct iio_buffer *buf;
@@ -700,8 +720,10 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 			if (iio_channel_get_attr(chn, i) == attr)
 				break;
 
-		if (i == iio_channel_get_attrs_count(chn))
-			return -ENOENT;
+		if (i == iio_channel_get_attrs_count(chn)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		break;
@@ -713,8 +735,10 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 			if (iio_device_get_attr(dev, i) == attr)
 				break;
 
-		if (i == iio_device_get_attrs_count(dev))
-			return -ENOENT;
+		if (i == iio_device_get_attrs_count(dev)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		break;
@@ -726,8 +750,10 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 			if (iio_device_get_debug_attr(dev, i) == attr)
 				break;
 
-		if (i == iio_device_get_debug_attrs_count(dev))
-			return -ENOENT;
+		if (i == iio_device_get_debug_attrs_count(dev)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		break;
@@ -740,14 +766,17 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 			if (iio_buffer_get_attr(buf, i) == attr)
 				break;
 
-		if (i == iio_buffer_get_attrs_count(buf))
-			return -ENOENT;
+		if (i == iio_buffer_get_attrs_count(buf)) {
+			ret = -ENOENT;
+			goto out_unref;
+		}
 
 		arg1 = (uint16_t) i;
 		arg2 = (uint16_t) buf->idx;
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out_unref;
 	}
 
 	cmd.dev = (uint8_t) iio_device_get_index(dev);
@@ -766,7 +795,11 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 		return ret;
 	}
 
-	return (ssize_t) iiod_io_wait_for_response(io);
+	ret = iiod_io_wait_for_response(io);
+
+out_unref:
+	iiod_responder_put_default_io(io);
+	return (ssize_t) ret;
 }
 
 ssize_t iiod_client_attr_write(struct iiod_client *client,
@@ -926,11 +959,15 @@ static int iiod_client_enable_binary(struct iiod_client *client)
 static int iiod_client_send_print(struct iiod_client *client,
 				  void *buf, size_t buf_len)
 {
-	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_io *io = iiod_responder_get_default_io_and_ref(client->responder);
 	struct iiod_command cmd = { .op = IIOD_OP_PRINT };
 	struct iiod_buf iiod_buf = { .ptr = buf, .size = buf_len };
+	int ret;
 
-	return iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+	ret = iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+	iiod_responder_put_default_io(io);
+
+	return ret;
 }
 
 static struct iio_context *
@@ -1441,7 +1478,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 	pdata->mask = mask;
 
 	if (iiod_client_uses_binary_interface(client)) {
-		io = iiod_responder_get_default_io(client->responder);
+		io = iiod_responder_get_default_io_and_ref(client->responder);
 
 		cmd.op = IIOD_OP_CREATE_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(dev);
@@ -1452,6 +1489,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 		buf.size = mask->words * 4;
 
 		err = iiod_io_exec_command(io, &cmd, &buf, &buf);
+		iiod_responder_put_default_io(io);
 		if (err < 0)
 			goto err_free_pdata;
 	}
@@ -1470,13 +1508,14 @@ void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata)
 	struct iiod_command cmd;
 
 	if (iiod_client_uses_binary_interface(client)) {
-		io = iiod_responder_get_default_io(client->responder);
+		io = iiod_responder_get_default_io_and_ref(client->responder);
 
 		cmd.op = IIOD_OP_FREE_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
 		cmd.code = pdata->idx;
 
 		iiod_io_exec_simple_command(io, &cmd);
+		iiod_responder_put_default_io(io);
 	}
 
 	free(pdata);
@@ -1519,9 +1558,11 @@ int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
 	cmd.code = pdata->idx;
 
-	io = iiod_responder_get_default_io(client->responder);
+	io = iiod_responder_get_default_io_and_ref(client->responder);
 
-	return iiod_io_exec_simple_command(io, &cmd);
+	err = iiod_io_exec_simple_command(io, &cmd);
+	iiod_responder_put_default_io(io);
+	return err;
 }
 
 struct iio_block_pdata *
@@ -1607,8 +1648,9 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 	iiod_io_cancel(block->io);
 	iiod_io_unref(block->io);
 
-	io = iiod_responder_get_default_io(client->responder);
+	io = iiod_responder_get_default_io_and_ref(client->responder);
 	iiod_io_exec_simple_command(io, &cmd);
+	iiod_responder_put_default_io(io);
 
 	free(block->data);
 	iio_mutex_destroy(block->lock);
@@ -1827,9 +1869,10 @@ void iiod_client_close_event_stream(struct iio_event_stream_pdata *pdata)
 	/* Close the event stream using the default I/O, since there may
 	 * be a blocking event read operation pending on the I/O pipe dedicated
 	 * to this event stream. */
-	io = iiod_responder_get_default_io(pdata->client->responder);
+	io = iiod_responder_get_default_io_and_ref(pdata->client->responder);
 
 	iiod_io_exec_simple_command(io, &cmd);
+	iiod_responder_put_default_io(io);
 
 	iiod_io_cancel(pdata->io);
 	iiod_io_unref(pdata->io);
