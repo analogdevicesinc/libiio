@@ -36,6 +36,7 @@ int main(int argc, char **argv)
 	struct option *opts;
 	size_t buf_len;
 	int c, ret = EXIT_FAILURE;
+	int err;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 	ctx = handle_common_opts(MY_NAME, argc, argw, "",
@@ -77,6 +78,12 @@ int main(int argc, char **argv)
 		return ret;
 
 	xml = iio_context_get_xml(ctx);
+	err = iio_err(xml);
+	if (err) {
+		fprintf(stderr, "Unable to retrieve context xml representation!\n");
+		iio_context_destroy(ctx);
+		return EXIT_FAILURE;
+	}
 	printf("XML generated:\n\n%s\n\n", xml);
 
 	buf_len = strlen(xml) + 5;
@@ -93,7 +100,8 @@ int main(int argc, char **argv)
 	free(xml);
 
 	ctx = iio_create_context(NULL, uri);
-	if (!ctx) {
+	err = iio_err(ctx);
+	if (err) {
 		fprintf(stderr, "Unable to re-generate context\n");
 	} else {
 		printf("Context re-creation from generated XML succeeded!\n");
