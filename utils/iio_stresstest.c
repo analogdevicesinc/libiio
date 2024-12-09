@@ -250,19 +250,18 @@ static void *client_thread(void *data)
 	while (app_running && threads_running) {
 		gettimeofday(&start, NULL);
 		do {
-			errno = 0;
 			if (info->uri_index)
 				ctx = iio_create_context(NULL, info->argv[info->uri_index]);
 			else
 				ctx = iio_create_context(NULL, NULL);
-			r_errno = errno;
+			r_errno = iio_err(ctx);
 			gettimeofday(&end, NULL);
 
 			duration = ((end.tv_sec - start.tv_sec) * 1000) +
 					((end.tv_usec - start.tv_usec) / 1000);
-		} while (threads_running && !ctx && duration < info->timeout);
+		} while (threads_running && r_errno && duration < info->timeout);
 
-		if (!ctx) {
+		if (r_errno) {
 			thread_err(id, r_errno, "Unable to create IIO context");
 			goto thread_fail;
 		}
@@ -401,7 +400,7 @@ int main(int argc, char **argv)
 	struct iio_channel *ch;
 	struct iio_channels_mask *mask;
 	const char *name;
-	int c, pret, option_index;
+	int c, pret, option_index, err;
 	struct timeval start, end, s_loop;
 	void **ret;
 	size_t min_samples;
@@ -469,7 +468,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Incorrect number of arguments.\n");
 		if (info.uri_index) {
 			ctx = iio_create_context(NULL, info.argv[info.uri_index]);
-			if (ctx) {
+			err = iio_err(ctx);
+			if (!err) {
 				fprintf(stderr, "checking uri %s\n", info.argv[info.uri_index]);
 				i = iio_context_set_timeout(ctx, 500);
 				thread_err(-1, i, "iio_context_set_timeout fail");
@@ -515,7 +515,8 @@ int main(int argc, char **argv)
 
 	if (info.uri_index) {
 		ctx = iio_create_context(NULL, info.argv[info.uri_index]);
-		if (!ctx) {
+		err = iio_err(ctx);
+		if (err) {
 			fprintf(stderr, "need valid uri\n");
 			usage(MY_NAME, options, options_descriptions);
 			return EXIT_FAILURE;
