@@ -46,10 +46,10 @@ string(REGEX REPLACE "\n" ";" files "${files}")
 foreach(file ${files})
 	message(STATUS "Uninstalling $ENV{DESTDIR}${file}")
 	if(IS_SYMLINK "$ENV{DESTDIR}${file}" OR EXISTS "$ENV{DESTDIR}${file}")
-		exec_program(
-			"@CMAKE_COMMAND@" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
+		execute_process(
+			COMMAND @CMAKE_COMMAND@ -E rm $ENV{DESTDIR}${file}
 			OUTPUT_VARIABLE rm_out
-			RETURN_VALUE rm_retval
+			RESULT_VARIABLE rm_retval
 		)
 		if(NOT "${rm_retval}" STREQUAL 0)
 			message(FATAL_ERROR "Problem when removing $ENV{DESTDIR}${file}")
@@ -66,10 +66,10 @@ foreach(file ${files})
 					break()
 				endif()
 				message(STATUS "Removing empty directory: ${dir}")
-				exec_program(
-					"@CMAKE_COMMAND@" ARGS "-E remove_directory ${dir}"
+				execute_process(
+					COMMAND @CMAKE_COMMAND@ -E rm -rf ${dir}
 					OUTPUT_VARIABLE stdout
-					RETURN_VALUE result
+					RESULT_VARIABLE result
 				)
 				if(NOT "${result}" STREQUAL 0)
 					message(FATAL_ERROR "Failed to remove directory: '${file}'.")
