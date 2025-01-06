@@ -14,14 +14,6 @@ classdef helpers < handle
             warnings = [];
             libName = adi.libiio.helpers.getIIOLibName();
             headername = adi.libiio.helpers.getIIOHeaderName();
-            % persistent IsLibiioLoaded
-            % if isempty(IsLibiioLoaded)
-            %     [notfound, warnings] = loadlibrary(libName,headername);
-            %     if ~isempty(notfound)
-            %         % error
-            %     end
-            %     IsLibiioLoaded = libisloaded(libName);
-            % end
 
             if ~libisloaded(libName)
                 [notfound, warnings] = loadlibrary(libName,headername);
@@ -33,14 +25,6 @@ classdef helpers < handle
 
         function unloadLibIIO()
             libName = adi.libiio.helpers.getIIOLibName();
-            % persistent IsLibiioLoaded
-            % if isempty(IsLibiioLoaded)
-            %     IsLibiioLoaded = libisloaded(libName);
-            % end
-            % 
-            % if IsLibiioLoaded
-            %     unloadlibrary(libName);
-            % end
 
             if libisloaded(libName)
                 unloadlibrary(libName);
