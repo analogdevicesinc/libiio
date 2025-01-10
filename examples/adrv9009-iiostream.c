@@ -91,25 +91,17 @@ static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 	errchk(attr ? iio_attr_write_longlong(attr, val) : -ENOENT, what);
 }
 
-/* write attribute: long long int */
+/* read attribute: long long int */
 static long long rd_ch_lli(struct iio_channel *chn, const char* what)
 {
 	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
-	long long val;
+	long long val = 0;
 
 	errchk(attr ? iio_attr_read_longlong(attr, &val) : -ENOENT, what);
 
 	printf("\t %s: %lld\n", what, val);
 	return val;
 }
-
-#if 0
-/* write attribute: string */
-static void wr_ch_str(struct iio_channel *chn, const char* what, const char* str)
-{
-	errchk(iio_channel_attr_write(chn, what, str), what);
-}
-#endif
 
 /* helper function generating channel names */
 static char* get_ch_name_mod(const char* type, int id, char modify)
@@ -198,10 +190,6 @@ int main (__notused int argc, __notused char **argv)
 	struct iio_channel *rx0_q = NULL;
 	struct iio_channel *tx0_i = NULL;
 	struct iio_channel *tx0_q = NULL;
-
-	// RX and TX sample counters
-	size_t nrx = 0;
-	size_t ntx = 0;
 
 	// RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;

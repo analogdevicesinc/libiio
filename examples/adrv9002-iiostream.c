@@ -170,8 +170,6 @@ static int configure_tx_lo(void)
 
 static void cleanup(void)
 {
-	int c;
-
 	if (rxstream)
 		iio_stream_destroy(rxstream);
 	if (txstream)
