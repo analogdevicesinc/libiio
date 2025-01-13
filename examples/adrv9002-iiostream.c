@@ -226,12 +226,14 @@ int main(void)
 	struct iio_device *rx;
 	size_t tx_sample_sz, rx_sample_sz;
 	int ret = EXIT_FAILURE;
+	int err;
 
 	if (register_signals() < 0)
 		return EXIT_FAILURE;
 
 	ctx = iio_create_context(NULL, NULL);
-	if (!ctx) {
+	err = iio_err(ctx);
+	if (ret) {
 		error("Could not create IIO context\n");
 		return EXIT_FAILURE;
 	}

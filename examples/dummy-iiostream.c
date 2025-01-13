@@ -239,7 +239,9 @@ int main (int argc, char **argv)
 	has_repeat = ((major * 10000) + minor) >= 8 ? true : false;
 
 	printf("* Acquiring IIO context\n");
-	IIO_ENSURE((ctx = iio_create_context(NULL, NULL)) && "No context");
+	ctx = iio_create_context(NULL, NULL);
+	err = iio_err(ctx);
+	IIO_ENSURE(!err && "No context");
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring device %s\n", name);

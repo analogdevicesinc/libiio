@@ -161,7 +161,8 @@ void gen_context (const char *uri_in)
 
 	if (lang == C_LANG) {
 		fprintf(fd, "\t/* Create IIO Context */\n"
-		    "\tIIO_ASSERT(ctx = iio_create_context(NULL, \"%s\"));\n\n", uri);
+			"\tctx = iio_create_context(NULL, \"%s\");"
+		    "\tIIO_ASSERT(!iio_err(ctx));\n\n", uri);
 	} else if (lang == PYTHON_LANG) {
 		fprintf(fd, "    # Create IIO Context\n"
 			    "    try:\n"

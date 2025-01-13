@@ -225,7 +225,10 @@ int main (__notused int argc, __notused char **argv)
 	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
 
 	printf("* Acquiring IIO context\n");
-	IIO_ENSURE((ctx = iio_create_context(NULL, NULL)) && "No context");
+
+	ctx = iio_create_context(NULL, NULL);
+	err = iio_err(ctx);
+	IIO_ENSURE(!err && "No context");
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9371 streaming devices\n");

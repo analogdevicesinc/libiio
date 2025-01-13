@@ -251,7 +251,7 @@ static struct iio_context *show_contexts_screen(void)
 	int i;
 	bool free_uri;
 	char **items;
-	int ret;
+	int ret, err;
 
 	screen = initCDKScreen(win);
 	if (!screen) {
@@ -261,7 +261,8 @@ static struct iio_context *show_contexts_screen(void)
 
 	do {
 		scan_ctx = iio_scan(NULL, NULL);
-		if (!scan_ctx)
+		err = iio_err(scan_ctx);
+		if (err)
 			break;
 
 		num_contexts = iio_scan_get_results_count(scan_ctx);
@@ -311,7 +312,8 @@ static struct iio_context *show_contexts_screen(void)
 
 		if (uri) {
 			ctx = iio_create_context(NULL, uri);
-			if (ctx == NULL) {
+			err = iio_err(ctx);
+			if (err) {
 				char *msg[] = { "</16>Failed to create IIO context.<!16>" };
 				popupLabel(screen, (CDK_CSTRING2)msg, 1);
 			}
@@ -326,7 +328,7 @@ static struct iio_context *show_contexts_screen(void)
 			free(items[i]);
 		free(items);
 
-	} while (!ctx && ret >= 0);
+	} while (err && ret >= 0);
 
 	destroyCDKScreen(screen);
 

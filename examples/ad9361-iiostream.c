@@ -225,10 +225,14 @@ int main (int argc, char **argv)
 
 	printf("* Acquiring IIO context\n");
 	if (argc == 1) {
-		IIO_ENSURE((ctx = iio_create_context(NULL, NULL)) && "No context");
+		ctx = iio_create_context(NULL, NULL);
+		err = iio_err(ctx);
+		IIO_ENSURE(!err && "No context");
 	}
 	else if (argc == 2) {
-		IIO_ENSURE((ctx = iio_create_context(NULL, argv[1])) && "No context");
+		ctx = iio_create_context(NULL, argv[1]);
+		err = iio_err(ctx);
+		IIO_ENSURE(!err && "No context");
 	}
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
