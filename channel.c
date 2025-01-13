@@ -326,6 +326,11 @@ const char * iio_channel_get_name(const struct iio_channel *chn)
 	return chn->name;
 }
 
+const char * iio_channel_get_label(const struct iio_channel *chn)
+{
+	return chn->label;
+}
+
 bool iio_channel_is_output(const struct iio_channel *chn)
 {
 	return chn->is_output;

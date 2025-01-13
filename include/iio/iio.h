@@ -876,6 +876,12 @@ __api __check_ret __pure const char * iio_channel_get_id(const struct iio_channe
  * <b>NOTE:</b> if the channel has no name, NULL is returned. */
 __api __check_ret __pure const char * iio_channel_get_name(const struct iio_channel *chn);
 
+/** @brief Retrieve the channel label (e.g. <b><i>anglY</i></b>)
+ * @param chn A pointer to an iio_channel structure
+ * @return A pointer to a static NULL-terminated string
+ *
+ * <b>NOTE:</b> if the channel has no label, NULL is returned. */
+__api __check_ret __pure const char * iio_channel_get_label(const struct iio_channel *chn);
 
 /** @brief Return True if the given channel is an output channel
  * @param chn A pointer to an iio_channel structure
