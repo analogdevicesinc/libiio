@@ -139,6 +139,7 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 			continue;
 
 		if (!strcmp(chn->id, name) ||
+				(chn->label && !strcmp(chn->label, name)) ||
 				(chn->name && !strcmp(chn->name, name)))
 			return chn;
 	}

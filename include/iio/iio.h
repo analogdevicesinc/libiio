@@ -782,14 +782,14 @@ __api __check_ret __pure const struct iio_attr *
 iio_device_get_attr(const struct iio_device *dev, unsigned int index);
 
 
-/** @brief Try to find a channel structure by its name of ID
+/** @brief Try to find a channel structure by its ID, label or name
  * @param dev A pointer to an iio_device structure
- * @param name A NULL-terminated string corresponding to the name or the ID of
- * the channel to search for
+ * @param name A NULL-terminated string corresponding to ID, label or name
+ * of the channel to search for
  * @param output True if the searched channel is output, False otherwise
  * @return On success, a pointer to an iio_channel structure
- * @return If the name or ID does not correspond to any known channel of the
- * given device, NULL is returned */
+ * @return If the ID, label or name does not correspond to any known channel of
+ * the given device, NULL is returned */
 __api __check_ret __pure struct iio_channel * iio_device_find_channel(
 		const struct iio_device *dev, const char *name, bool output);
 
