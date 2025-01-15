@@ -168,8 +168,9 @@ iio_context_add_device(struct iio_context *ctx,
 
 __api struct iio_channel *
 iio_device_add_channel(struct iio_device *dev, long index,
-		       const char *id, const char *name, bool output,
-		       bool scan_element, const struct iio_data_format *fmt);
+		       const char *id, const char *name, const char *label,
+			   bool output, bool scan_element,
+			   const struct iio_data_format *fmt);
 
 __api int
 iio_context_add_attr(struct iio_context *ctx,

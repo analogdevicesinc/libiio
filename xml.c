@@ -144,7 +144,7 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 	xmlAttr *attr;
 	struct iio_channel *chn;
 	int err = -ENOMEM;
-	char *name_ptr = NULL, *id_ptr = NULL;
+	char *name_ptr = NULL, *label_ptr = NULL, *id_ptr = NULL;
 	bool output = false;
 	bool scan_element = false;
 	long index = -ENOENT;
@@ -157,6 +157,10 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 		if (!strcmp(name, "name")) {
 			name_ptr = iio_strdup(content);
 			if (!name_ptr)
+				goto err_free_name_id;
+		} else if (!strcmp(name, "label")) {
+			label_ptr = iio_strdup(content);
+			if (!label_ptr)
 				goto err_free_name_id;
 		} else if (!strcmp(name, "id")) {
 			id_ptr = iio_strdup(content);
@@ -190,14 +194,15 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 		}
 	}
 
-	chn = iio_device_add_channel(dev, index, id_ptr, name_ptr, output,
-				     scan_element, &format);
+	chn = iio_device_add_channel(dev, index, id_ptr, name_ptr, label_ptr,
+				     output, scan_element, &format);
 	if (!chn) {
 		err = -ENOMEM;
 		goto err_free_name_id;
 	}
 
 	free(name_ptr);
+	free(label_ptr);
 	free(id_ptr);
 
 	for (n = node->children; n; n = n->next) {
@@ -217,6 +222,7 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 
 err_free_name_id:
 	free(name_ptr);
+	free(label_ptr);
 	free(id_ptr);
 	return err;
 }

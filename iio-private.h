@@ -109,7 +109,7 @@ struct iio_channel {
 	bool is_scan_element;
 	struct iio_data_format format;
 	char __format_padding[128 - sizeof(struct iio_data_format)];
-	char *name, *id;
+	char *name, *id, *label;
 	long index;
 	enum iio_modifier modifier;
 	enum iio_chan_type type;

@@ -354,12 +354,12 @@ void iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *d)
 }
 
 struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,
-					    const char *id, const char *name,
+					    const char *id, const char *name, const char *label,
 					    bool output, bool scan_element,
 					    const struct iio_data_format *fmt)
 {
 	struct iio_channel *chn, **chns;
-	char *new_id, *new_name = NULL;
+	char *new_id, *new_name = NULL, *new_label = NULL;
 	unsigned int i;
 
 	chn = zalloc(sizeof(*chn));
@@ -376,8 +376,15 @@ struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,
 			goto err_free_id;
 	}
 
+	if (label) {
+		new_label = iio_strdup(label);
+		if (!new_label)
+			goto err_free_name;
+	}
+
 	chn->id = new_id;
 	chn->name = new_name;
+	chn->label = new_label;
 	chn->dev = dev;
 	chn->is_output = output;
 	chn->is_scan_element = scan_element;
@@ -390,7 +397,7 @@ struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,
 
 	chns = realloc(dev->channels, (dev->nb_channels + 1) * sizeof(*chn));
 	if (!chns)
-		goto err_free_name;
+		goto err_free_label;
 
 	chns[dev->nb_channels++] = chn;
 	dev->channels = chns;
@@ -407,6 +414,8 @@ struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,
 
 	return chn;
 
+err_free_label:
+	free(new_label);
 err_free_name:
 	free(new_name);
 err_free_id:

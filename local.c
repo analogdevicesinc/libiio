@@ -835,6 +835,22 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	union iio_pointer p = { .chn = chn, };
 	struct iio_attr_list *attrs;
 	int ret;
+	size_t lbl_len = strlen("_label");
+	char label[512];
+	const char *dev_id;
+
+	if (strlen(name) >= lbl_len &&
+		!strcmp(name + strlen(name) - lbl_len, "_label")) {
+		dev_id = iio_device_get_id(iio_channel_get_device(chn));
+		ret = local_do_read_dev_attr(dev_id, 0, name,
+			label, sizeof(label), IIO_ATTR_TYPE_CHANNEL);
+		if (ret > 0)
+			chn->label = iio_strdup(label);
+		else
+			chn_perror(chn, ret, "Unable to read channel label");
+
+		return 0;
+	}
 
 	name = get_short_attr_name(chn, name);
 
