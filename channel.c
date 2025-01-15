@@ -282,6 +282,14 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
+	if (chn->label) {
+		ret = iio_snprintf(ptr, len, " label=\"%s\"", chn->label);
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	}
+
 	ret = iio_snprintf(ptr, len, " type=\"%s\" >", chn->is_output ? "output" : "input");
 	if (ret < 0)
 		return ret;
@@ -420,6 +428,7 @@ void free_channel(struct iio_channel *chn)
 {
 	iio_free_attrs(&chn->attrlist);
 	free(chn->name);
+	free(chn->label);
 	free(chn->id);
 	free(chn);
 }
