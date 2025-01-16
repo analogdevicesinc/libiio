@@ -168,6 +168,9 @@ namespace iio
         private static extern IntPtr iio_channel_get_name(IntPtr chn);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_channel_get_label(IntPtr chn);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_channel_get_attrs_count(IntPtr chn);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -215,6 +218,9 @@ namespace iio
 
         /// <summary>The name of this channel.</summary>
         public readonly string name;
+
+        /// <summary>The label of this channel.</summary>
+        public string label { get; private set; }
 
         /// <summary>An identifier of this channel.</summary>
         /// <remarks>It is possible that two channels have the same ID,
@@ -272,6 +278,9 @@ namespace iio
             {
                 name = Marshal.PtrToStringAnsi(name_ptr);
             }
+
+            IntPtr label_ptr = iio_channel_get_label(this.chn);
+            label = label_ptr == IntPtr.Zero ? "" : Marshal.PtrToStringAnsi(label_ptr);
 
             id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));
             output = iio_channel_is_output(this.chn);
