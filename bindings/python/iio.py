@@ -535,6 +535,10 @@ _c_get_name = _lib.iio_channel_get_name
 _c_get_name.restype = c_char_p
 _c_get_name.argtypes = (_ChannelPtr,)
 
+_c_get_label = _lib.iio_channel_get_label
+_c_get_label.restype = c_char_p
+_c_get_label.argtypes = (_ChannelPtr,)
+
 _c_is_output = _lib.iio_channel_is_output
 _c_is_output.restype = c_bool
 _c_is_output.argtypes = (_ChannelPtr,)
@@ -845,6 +849,9 @@ class Channel(_IIO_Object):
         self._output = _c_is_output(self._channel)
         self._scan_element = _c_is_scan_element(self._channel)
 
+        label_raw = _c_get_label(self._channel)
+        self._name = label_raw.decode("ascii") if label_raw is not None else None
+
     def read(self, block, raw=False):
         """
         Extract the samples corresponding to this channel from the given iio.Block object.
@@ -891,6 +898,9 @@ class Channel(_IIO_Object):
     )
     name = property(
         lambda self: self._name, None, None, "The name of this channel.\n\ttype=str"
+    )
+    label = property(
+        lambda self: self._label, None, None, "The label of this channel.\n\ttype=str"
     )
     attrs = property(
         lambda self: {attr.name: attr for attr in [
