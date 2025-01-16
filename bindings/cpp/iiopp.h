@@ -405,6 +405,7 @@ public:
     Device device() const;
     cstr id() const {return iio_channel_get_id(p);}
     optstr name() const { return impl::opt(iio_channel_get_name(p));}
+    optstr label() const { return impl::opt(iio_channel_get_label(p));}
     bool is_output() const { return iio_channel_is_output(p);}
     bool is_scan_element() const { return iio_channel_is_scan_element(p);}
     unsigned int attrs_count() const {return iio_channel_get_attrs_count(p);}
