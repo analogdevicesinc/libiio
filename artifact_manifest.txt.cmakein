@@ -24,9 +24,6 @@ Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar
 Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.rpm
 Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.tar.gz
 
-macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-12.tar.gz
-macOS-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
-
 macOS-13-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-13-x64.tar.gz
 macOS-13-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
 
