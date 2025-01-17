@@ -174,6 +174,8 @@ static int dump_channel_attributes(const struct iio_device *dev,
 		}
 		if (iio_channel_get_name(ch) && quiet == ATTR_VERBOSE)
 			printf("id '%s', ", iio_channel_get_name(ch));
+		if (iio_channel_get_label(ch) && quiet == ATTR_VERBOSE)
+			printf("label '%s', ", iio_channel_get_label(ch));
 
 		if (quiet == ATTR_VERBOSE)
 			printf("attr '%s', ", iio_attr_get_name(attr));
@@ -537,7 +539,7 @@ int main(int argc, char **argv)
 			const char *name = iio_device_get_name(dev);
 			const char *label_or_name = label ? label : name;
 			const char *label_or_name_or_id = label_or_name ? label_or_name : dev_id;
-			const char *ch_name;
+			const char *ch_name, *ch_label;
 			struct iio_buffer *buffer;
 			struct iio_channels_mask *mask;
 			unsigned int nb_attrs, nb_channels, j;
@@ -625,10 +627,12 @@ int main(int argc, char **argv)
 					type_name = "input";
 
 				ch_name = iio_channel_get_name(ch);
+				ch_label = iio_channel_get_label(ch);
 				if (channel_index &&
 						!str_match(iio_channel_get_id(ch),
 						argw[channel_index], ignore_case) &&
-						(!ch_name || !str_match(ch_name,argw[channel_index], ignore_case)))
+						(!ch_label || !str_match(ch_label,argw[channel_index], ignore_case) &&
+						(!ch_name || !str_match(ch_name,argw[channel_index], ignore_case))))
 					continue;
 
 				channel_found = true;
@@ -642,6 +646,8 @@ int main(int argc, char **argv)
 
 					if (ch_name)
 						printf(", id '%s'", ch_name);
+					if (ch_label)
+						printf(", label '%s'", ch_label);
 
 					printf(" (%s", type_name);
 
