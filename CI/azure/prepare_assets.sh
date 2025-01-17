@@ -14,7 +14,7 @@ release_artifacts() {
                 rm -r "Linux-${i}"
         done
 
-	local pkg_assets='macOS-12 macOS-13-x64 macOS-13-arm64'
+	local pkg_assets='macOS-13-x64 macOS-13-arm64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $pkg_assets; do
                 cd "${i}"
@@ -82,7 +82,7 @@ swdownloads_artifacts() {
                 rm -r ../Linux-"${distribution}"
         done
 
-	local macOS_dist='macOS-12 macOS-13-x64 macOS-13-arm64'
+	local macOS_dist='macOS-13-x64 macOS-13-arm64'
 	for distribution in $macOS_dist; do
                 cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/${distribution}"
                 find . -name '*.pkg' -exec mv {} ../"${distribution}_latest_main_libiio.pkg" ";"
