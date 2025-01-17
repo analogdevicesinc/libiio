@@ -118,7 +118,7 @@ static void print_attr(const struct iio_attr *attr,
 static void print_channel(const struct iio_channel *chn)
 {
 	const struct iio_data_format *format;
-	const char *type_name, *name;
+	const char *type_name, *name, *label;
 	char sign, repeat[12];
 
 	if (iio_channel_is_output(chn))
@@ -127,14 +127,24 @@ static void print_channel(const struct iio_channel *chn)
 		type_name = "input";
 
 	name = iio_channel_get_name(chn);
+	label = iio_channel_get_label(chn);
 	if (colors) {
-		print_fmt("\t\t\t" FMT_CHN ": " FMT_CHN " (" FMT_CHN,
+		print_fmt("\t\t\t" FMT_CHN ": " FMT_CHN,
 			  iio_channel_get_id(chn),
-			  name ? name : "", type_name);
+			  name ? name : "");
 	} else {
-		printf("\t\t\t%s: %s (%s",
+		printf("\t\t\t%s: %s",
 		       iio_channel_get_id(chn),
-		       name ? name : "", type_name);
+		       name ? name : "");
+	}
+
+	if (label)
+		printf(" (label: %s)", label);
+
+	if (colors) {
+		print_fmt(" (" FMT_CHN, type_name);
+	} else {
+		printf(" (%s", type_name);
 	}
 
 	if (iio_channel_get_type(chn) == IIO_CHAN_TYPE_UNKNOWN) {
