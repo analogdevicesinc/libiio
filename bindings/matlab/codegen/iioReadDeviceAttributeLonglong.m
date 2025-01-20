@@ -1,4 +1,4 @@
-function [status, attrName, value] = iioReadDevAttrLonglong(uri, phyDevName, devAttrName)
+function [status, attrName, value] = iioReadDeviceAttributeLonglong(uri, phyDevName, devAttrName)
     assert(isa(uri,'char') && all(size(uri) <= [1,20]));
     assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,20]));
     assert(isa(devAttrName,'char') && all(size(devAttrName) <= [1,20]));
@@ -8,6 +8,7 @@ function [status, attrName, value] = iioReadDevAttrLonglong(uri, phyDevName, dev
     status = -int32(iioCtxPtr==coder.opaque('struct iio_context*', 'NULL'));
     if status ~= 0
         value = int64(0);
+        attrName = char(zeros(1,1,'uint8'));
         return;
     end
 

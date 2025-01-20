@@ -64,7 +64,8 @@ classdef attribute < handle
             if coder.target('MATLAB')
                 name = adi.libiio.helpers.calllibADI('iio_attr_get_name', attrPtr);
             else
-                name = coder.ceval('iio_attr_get_name', attrPtr);
+                name = coder.nullcopy(char(zeros(1,128, 'uint8')));
+                coder.ceval('iio_attr_get_name', attrPtr, coder.wref(name));
             end
         end
 
@@ -151,17 +152,25 @@ classdef attribute < handle
             %
             % libiio function: iio_attr_read_longlong
 
-            valPtr = libpointer('int64Ptr', 0);
             if coder.target('MATLAB')
+                valPtr = libpointer('int64Ptr', 0);
                 status = adi.libiio.helpers.calllibADI('iio_attr_read_longlong', attrPtr, valPtr);
-            else
-                status = coder.ceval('iio_attr_read_longlong', attrPtr, valPtr);
-            end
 
-            if ~status
-                value = valPtr.value;
+                if ~status
+                    value = valPtr.value;
+                else
+                    value = 0;
+                end
             else
-                value = 0;
+                status = coder.nullcopy(int32(0));
+                valueLongLong = coder.opaque('long long');
+                status = coder.ceval('iio_attr_read_longlong', attrPtr, coder.wref(valueLongLong));
+
+                if ~status
+                    value = int64(valueLongLong);
+                else
+                    value = coder.nullcopy(int64(0));
+                end
             end
         end
 
@@ -181,17 +190,25 @@ classdef attribute < handle
             %
             % libiio function: iio_attr_read_double
             
-            valPtr = libpointer('double', 0);
             if coder.target('MATLAB')
+                valPtr = libpointer('doublePtr', 0);
                 status = adi.libiio.helpers.calllibADI('iio_attr_read_double', attrPtr, valPtr);
+
+                if ~status
+                    value = valPtr.value;
+                else
+                    value = 0;
+                end
             else
-                status = coder.ceval('iio_attr_read_double', attrPtr, valPtr);
-            end
-            
-            if ~status
-                value = valPtr.value;
-            else
-                value = 0;
+                status = coder.nullcopy(int32(0));
+                valueDouble = coder.opaque('double');
+                status = coder.ceval('iio_attr_read_double', attrPtr, coder.wref(valueDouble));
+
+                if ~status
+                    value = double(valueDouble);
+                else
+                    value = coder.nullcopy(double(0));
+                end
             end
         end
 
@@ -251,6 +268,7 @@ classdef attribute < handle
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_write_longlong', attrPtr, value);
             else
+                status = coder.nullcopy(int32(0));
                 status = coder.ceval('iio_attr_write_longlong', attrPtr, value);
             end
         end
@@ -271,6 +289,7 @@ classdef attribute < handle
             if coder.target('MATLAB')
                 status = adi.libiio.helpers.calllibADI('iio_attr_write_double', attrPtr, value);
             else
+                status = coder.nullcopy(int32(0));
                 status = coder.ceval('iio_attr_write_double', attrPtr, value);
             end
         end

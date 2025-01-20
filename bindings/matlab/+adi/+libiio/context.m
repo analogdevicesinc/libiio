@@ -126,6 +126,7 @@ classdef context < handle
             if coder.target('MATLAB')
                 major = adi.libiio.helpers.calllibADI('iio_context_get_version_major', ctxPtr);
             else
+                major = coder.nullcopy(double(0));
                 major = coder.ceval('iio_context_get_version_major', ctxPtr);
             end
         end
@@ -158,6 +159,7 @@ classdef context < handle
             if coder.target('MATLAB')
                 minor = adi.libiio.helpers.calllibADI('iio_context_get_version_minor', ctxPtr);
             else
+                minor = coder.nullcopy(double(0));
                 minor = coder.ceval('iio_context_get_version_minor', ctxPtr);
             end
         end
@@ -190,7 +192,7 @@ classdef context < handle
             if coder.target('MATLAB')
                 vtag = adi.libiio.helpers.calllibADI('iio_context_get_version_tag', ctxPtr);
             else
-                vtag = coder.nullcopy(adi.libiio.scan.ntstr(''));
+                vtag = coder.nullcopy(adi.libiio.helpers.ntstr(''));
                 vtag = coder.ceval('iio_context_get_version_tag', ctxPtr);
             end
         end
@@ -210,7 +212,7 @@ classdef context < handle
             if coder.target('MATLAB')
                 xml = adi.libiio.helpers.calllibADI('iio_context_get_xml', ctxPtr);
             else
-                xml = coder.nullcopy(adi.libiio.scan.ntstr(''));
+                xml = coder.nullcopy(adi.libiio.helpers.ntstr(''));
                 xml = coder.ceval('iio_context_get_xml', ctxPtr);
             end
         end
@@ -234,7 +236,7 @@ classdef context < handle
             if coder.target('MATLAB')
                 name = adi.libiio.helpers.calllibADI('iio_context_get_name', ctxPtr);
             else
-                name = coder.nullcopy(adi.libiio.scan.ntstr(''));
+                name = coder.nullcopy(adi.libiio.helpers.ntstr(''));
                 name = coder.ceval('iio_context_get_name', ctxPtr);
             end
         end
@@ -257,26 +259,8 @@ classdef context < handle
             if coder.target('MATLAB')
                 descr = adi.libiio.helpers.calllibADI('iio_context_get_description', ctxPtr);
             else
-                descr = coder.nullcopy(adi.libiio.scan.ntstr(''));
+                descr = coder.nullcopy(adi.libiio.helpers.ntstr(''));
                 descr = coder.ceval('iio_context_get_description', ctxPtr);
-            end
-        end
-
-        function count = iio_device_get_channels_count(ctxPtr)
-            % Get the number of context-specific attributes
-            %
-            % Args:
-            %   ctxPtr: A pointer to a iio_context structure.
-            % 
-            % Returns:
-            %   The number of context-specific attributes.
-            %
-            % libiio function: iio_device_get_channels_count
-            
-            if coder.target('MATLAB')
-                count = adi.libiio.helpers.calllibADI('iio_device_get_channels_count', ctxPtr);
-            else
-                count = coder.ceval('iio_device_get_channels_count', ctxPtr);
             end
         end
 
@@ -338,6 +322,7 @@ classdef context < handle
             if coder.target('MATLAB')
                 count = adi.libiio.helpers.calllibADI('iio_context_get_devices_count', ctxPtr);
             else
+                count = coder.nullcopy(double(0));
                 count = coder.ceval('iio_context_get_devices_count', ctxPtr);
             end
         end

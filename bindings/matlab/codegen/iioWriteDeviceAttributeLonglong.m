@@ -1,4 +1,4 @@
-function status = iioWriteDevAttrLonglong(uri, phyDevName, devAttrName, value)
+function status = iioWriteDeviceAttributeLonglong(uri, phyDevName, devAttrName, value)
     assert(isa(uri,'char') && all(size(uri) <= [1,20]));
     assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,20]));
     assert(isa(devAttrName,'char') && all(size(devAttrName) <= [1,20]));
