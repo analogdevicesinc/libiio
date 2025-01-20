@@ -10,13 +10,8 @@ lock(label: 'adgt_test_harness_boards', quantity: 1){
 
     //Update repos
     harness.set_env('libiio_repo', 'http://gateway.englab:3000/mirrors/libiio.git')
-    harness.set_env('libiio_branch', 'v1p0_matlab_bindings')
     harness.set_env('nebula_repo', 'http://gateway.englab:3000/mirrors/nebula.git')
     harness.set_env('nebula_branch','main')
-    harness.set_env('nebula_config_branch','release')
-    // harness.set_env('telemetry_repo', 'http://gateway.englab:3000/mirrors/telemetry.git')
-    // harness.set_env('telemetry_branch', 'master')
-    // harness.set_env('matlab_repo', 'https://github.com/analogdevicesinc/TransceiverToolbox.git') // Not necessary when using checkout scm
     harness.set_env('matlab_release','R2023b')
     harness.set_env('matlab_license','network')
     harness.set_matlab_timeout('8m')
@@ -32,7 +27,7 @@ lock(label: 'adgt_test_harness_boards', quantity: 1){
     }
     
     //Update agent with required deps
-    harness.set_required_agent(["sdg-nuc-01","sdg-nuc-02"])
+    harness.set_required_agent(["sdg-nuc-01","sdg-nuc-02", "sdg-nuc-05"])
     harness.set_env('update_container_lib', true)
     harness.set_env('update_lib_requirements', true)
     harness.update_agents()
@@ -53,7 +48,7 @@ lock(label: 'adgt_test_harness_boards', quantity: 1){
                       harness.stage_library("RecoverBoard"))
   
     // Test stage
-    harness.set_matlab_commands(["addpath(genpath('test'))",
+    harness.set_matlab_commands(["addpath(genpath(pwd))",
                     "pyenv('Version','/usr/bin/python3')",
                     "cd('bindings/matlab');runTests()"])
     harness.add_stage(harness.stage_library("MATLABTests"),'continueWhenFail')
