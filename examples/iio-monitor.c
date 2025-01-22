@@ -165,7 +165,7 @@ static void * read_thd(void *d)
 
 	while (!stop) {
 		struct iio_device *dev;
-		const char *name;
+		const char *name, *label;
 		int row, col, len, align, line = 2;
 		unsigned int i, nb_channels, nb = 0;
 		char buf[1024];
@@ -208,9 +208,12 @@ static void * read_thd(void *d)
 
 			nb++;
 			name = iio_channel_get_name(chn);
+			label = iio_channel_get_label(chn);
 			id = iio_channel_get_id(chn);
 			if (!name)
 				name = id;
+			if (label)
+				name = label;
 			unit = id_to_unit(id);
 
 			iio_snprintf(buf, sizeof(buf), "</%u></B>%s<!B><!%u>",
