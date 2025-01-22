@@ -122,6 +122,7 @@ namespace iio
             IIO_DELTA_VELOCITY,
             IIO_COLORTEMP,
             IIO_CHROMATICITY,
+            IIO_ATTENTION,
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
