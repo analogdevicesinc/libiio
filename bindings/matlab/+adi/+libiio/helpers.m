@@ -5,18 +5,27 @@ classdef helpers < handle
             libName = 'libiio1';
         end
 
-        function headername = getIIOHeaderName()
-            headername = 'iio.h';
+        function loadlibraryArgs = getIIOHeaderName()
+            headerFile = 'iio.h';
+            headerWrapperFile = 'iio-wrapper.h';
+            if ispc
+                headerPath = [getenv('PROGRAMFILES(X86)'), '\Microsoft Visual Studio 12.0\VC\include\iio\'];
+                headerWrapperPath = strcat("..", filesep);
+            elseif isunix
+                headerPath = '/usr/local/lib'; % FIXME
+                headerWrapperPath = strcat("..", filesep); % FIXME
+            end
+            loadlibraryArgs = {headerWrapperPath+headerWrapperFile,'includepath',headerPath,'addheader',headerFile};
         end
 
         function [notfound, warnings] = loadLibIIO()
             notfound = [];
             warnings = [];
             libName = adi.libiio.helpers.getIIOLibName();
-            headername = adi.libiio.helpers.getIIOHeaderName();
 
             if ~libisloaded(libName)
-                [notfound, warnings] = loadlibrary(libName,headername);
+                loadlibraryArgs = adi.libiio.helpers.getIIOHeaderName();
+                [notfound, warnings] = loadlibrary(libName,loadlibraryArgs{:});
                 if ~isempty(notfound)
                     % error
                 end
