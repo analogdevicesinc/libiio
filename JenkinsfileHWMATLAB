@@ -12,6 +12,7 @@ lock(label: 'adgt_test_harness_boards', quantity: 1){
     harness.set_env('libiio_repo', 'http://gateway.englab:3000/mirrors/libiio.git')
     harness.set_env('nebula_repo', 'http://gateway.englab:3000/mirrors/nebula.git')
     harness.set_env('nebula_branch','main')
+    harness.set_env('matlab_repo', 'https://github.com/analogdevicesinc/libiio.git')
     harness.set_env('matlab_release','R2023b')
     harness.set_env('matlab_license','network')
     harness.set_matlab_timeout('8m')
