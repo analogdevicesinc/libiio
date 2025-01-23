@@ -6,6 +6,7 @@ KERNEL_MODIFIER="/tmp/modifier.c"
 IIOH="./include/iio/iio.h"
 CHANNELC="./channel.c"
 CHANNELC_SHARP="./bindings/csharp/Channel.cs"
+IIO_PY="./bindings/python/iio.py"
 
 if [ ! -f ${IIOH} ] ; then
 	echo can not find ${IIOH}
@@ -19,6 +20,11 @@ fi
 
 if [ ! -f ${CHANNELC_SHARP} ] ; then
 	echo can not find ${CHANNELC_SHARP}
+	exit 1
+fi
+
+if [ ! -f ${IIO_PY} ] ; then
+	echo can not find ${IIO_PY}
 	exit 1
 fi
 
@@ -113,6 +119,30 @@ do
 	if [ "$count" -ne "0" ] ; then
 		ret=1
 		echo "difference between upstream kernel types.h and Channels.cs in ${csharp_enums[i]}"
+	else
+		echo none
+	fi
+done
+
+echo Checking Python bindings
+
+python_enums=("ChannelType" "ChannelModifier" "EventType" "EventDirection")
+
+for i in {0..3}
+do
+	echo "looking for ${python_enums[i]}"
+	sed "0,/^class ${python_enums[i]}/d" ${IIO_PY} | \
+		sed '0,/^$/d' | sed -n '/^$/q;p'| sed -e 's/^[ \t]*//' -e 's/ .*//' | \
+		grep -v IIO_CHAN_TYPE_UNKNOWN > "/tmp/libiio_py_${python_enums[i]}"
+
+	echo "Differences in ${python_enums[i]}"
+	set +e
+	diff -u -w "/tmp/libiio_py_${python_enums[i]}" "/tmp/kernel_${iio_groups[i]}"
+	count=$(diff -u -w  "/tmp/libiio_py_${python_enums[i]}" "/tmp/kernel_${iio_groups[i]}" | wc -l)
+	set -e
+	if [ "$count" -ne "0" ] ; then
+		ret=1
+		echo "difference between upstream kernel types.h and iio.py in ${python_enums[i]}"
 	else
 		echo none
 	fi
