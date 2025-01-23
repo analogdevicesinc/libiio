@@ -2,7 +2,11 @@ classdef helpers < handle
     %%helpers
     methods (Hidden, Static)
         function libName = getIIOLibName()
-            libName = 'libiio1';
+            if ispc
+                libName = 'libiio1';
+            elseif isunix
+                libName = 'libiio';
+            end
         end
 
         function loadlibraryArgs = getIIOHeaderName()
@@ -10,11 +14,10 @@ classdef helpers < handle
             headerWrapperFile = 'iio-wrapper.h';
             if ispc
                 headerPath = [getenv('PROGRAMFILES(X86)'), '\Microsoft Visual Studio 12.0\VC\include\iio\'];
-                headerWrapperPath = strcat("..", filesep);
             elseif isunix
-                headerPath = '/usr/local/lib'; % FIXME
-                headerWrapperPath = strcat("..", filesep); % FIXME
+                headerPath = '/usr/include/iio'; % FIXME
             end
+            headerWrapperPath = strcat("..", filesep);
             loadlibraryArgs = {headerWrapperPath+headerWrapperFile,'includepath',headerPath,'addheader',headerFile};
         end
 
