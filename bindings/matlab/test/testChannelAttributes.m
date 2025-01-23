@@ -31,7 +31,8 @@ classdef testChannelAttributes < matlab.unittest.TestCase
 
             %% Double
             % Read from Channel Attribute
-            [status, attrName, result] = iioReadChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3});
+            [status, chnDataFormatPtr, attrName, result] = iioReadChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3});
+            assert(~chnDataFormatPtr.isNull);
             assert(strcmp(attrName, testCase.chnParamsDouble{3}));
             assert(status==0);
             OrigValue = result;
@@ -39,14 +40,14 @@ classdef testChannelAttributes < matlab.unittest.TestCase
             % Write to Channel Attribute and Verify Value is Written
             status = iioWriteChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3}, testCase.chnParamsDouble{4});
             assert(status==0);
-            [status, ~, result] = iioReadChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3});
+            [status, ~, ~, result] = iioReadChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3});
             assert(status==0);
             assert(result==testCase.chnParamsDouble{4});
 
             % Write Original Value to Channel Attribute and Verify Value is Written
             status = iioWriteChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3}, OrigValue);
             assert(status==0);
-            [status, ~, result] = iioReadChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3});
+            [status, ~, ~, result] = iioReadChannelAttributeDouble(testCase.uri{1}, testCase.phyDev{1}, testCase.chnParamsDouble{1}, testCase.chnParamsDouble{2}, testCase.chnParamsDouble{3});
             assert(status==0);
             assert(result==OrigValue);
 
