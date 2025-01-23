@@ -12,3 +12,4 @@ reportFormat = CoverageReport("coverageReport");
 p = CodeCoveragePlugin.forFolder(strcat("..", filesep, "+adi", filesep, "+libiio"),"Producing",reportFormat);
 runner.addPlugin(p);
 results = runner.run(suite);
+exit(any([results.Failed]));
