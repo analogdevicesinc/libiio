@@ -228,7 +228,7 @@ The exception is when iio_channel_read() or iio_channel_write() are used, as the
 
 @subsection push Submitting the Buffer (output devices only)
 When all the samples have been written to the iio_buffer object, you can submit the buffer to the hardware with a call to iio_buffer_push().
-As soon as the buffer has been submitted, it can be re-used to store new samples.
+As soon as the buffer has been submitted, it can be reused to store new samples.
 
 If the iio_buffer object has been created with the "cyclic" parameter set, and the kernel driver supports cyclic buffers,
 the submitted buffer will be repeated until the iio_buffer is destroyed, and no subsequent call to iio_buffer_push() will be allowed.
