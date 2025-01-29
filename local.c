@@ -71,6 +71,7 @@ struct iio_channel_pdata {
 static const char * const device_attrs_denylist[] = {
 	"dev",
 	"uevent",
+	"waiting_for_supplier",
 };
 
 static const char * const buffer_attrs_reserved[] = {
