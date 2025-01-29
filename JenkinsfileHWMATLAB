@@ -9,7 +9,8 @@ lock(label: 'adgt_test_harness_boards', quantity: 1){
     def harness = getGauntlet(hdlBranch, linuxBranch, bootPartitionBranch, firmwareVersion, bootfile_source)
 
     //Update repos
-    harness.set_env('libiio_repo', 'http://gateway.englab:3000/mirrors/libiio.git')
+    harness.set_env('libiio_repo', 'https://github.com/analogdevicesinc/libiio.git')
+    harness.set_env('libiio_branch','v1p0_matlab_bindings')
     harness.set_env('nebula_repo', 'http://gateway.englab:3000/mirrors/nebula.git')
     harness.set_env('nebula_branch','main')
     harness.set_env('matlab_repo', 'https://github.com/analogdevicesinc/libiio.git')
