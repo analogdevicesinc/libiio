@@ -459,8 +459,9 @@ int main(int argc, char **argv)
 
 		block = iio_stream_get_next_block(stream);
 		ret = iio_err(block);
-		if (ret && app_running) {
-			dev_perror(dev, ret, "Unable to get next block");
+		if (ret) {
+			if (app_running)
+				dev_perror(dev, ret, "Unable to get next block");
 			break;
 		}
 
