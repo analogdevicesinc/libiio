@@ -17,7 +17,8 @@ classdef helpers < handle
             elseif isunix
                 headerPath = '/usr/include/iio'; % FIXME
             end
-            headerWrapperPath = strcat("..", filesep);
+            helpersFilePath = fileparts(mfilename('fullpath'));
+            headerWrapperPath = strcat(helpersFilePath, filesep, "..", filesep, "..", filesep);
             loadlibraryArgs = {headerWrapperPath+headerWrapperFile,'includepath',headerPath,'addheader',headerFile};
         end
 
