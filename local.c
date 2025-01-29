@@ -134,6 +134,7 @@ static void local_shutdown(struct iio_context *ctx)
 static void strcut(char *str, int nb)
 {
 	char *ptr = str + nb;
+
 	while (*ptr)
 		*str++ = *ptr++;
 	*str = 0;
@@ -634,8 +635,8 @@ static int local_set_trigger(const struct iio_device *dev,
 				  strlen(value) + 1, IIO_ATTR_TYPE_DEVICE);
 	if (nb < 0)
 		return (int) nb;
-	else
-		return 0;
+
+	return 0;
 }
 
 static bool is_channel(const struct iio_device *dev, const char *attr, bool strict)
@@ -996,6 +997,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		unsigned int len1 = dashptr - attr;
 		unsigned int len2 = ptr - dashptr - 1;
 		const char*  iddashptr = strchr(chn->id, '-');
+
 		if (iddashptr && strlen(iddashptr + 1) > len2 &&
 			(unsigned int)(iddashptr - chn->id) > len1 &&
 			chn->id[len1] >= '0' && chn->id[len1] <= '9' &&
@@ -1017,9 +1019,10 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 				return 2;
 		}
 		return 1;
-	} else if (chn->id[len] != '_') {
-		return 0;
 	}
+
+	if (chn->id[len] != '_')
+		return 0;
 
 	if (find_channel_modifier(chn->id + len + 1, NULL) != IIO_NO_MOD)
 		return 1;
@@ -1035,6 +1038,7 @@ static int detect_global_attr(struct iio_device *dev, const char *attr,
 	*match = false;
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
+
 		if (is_global_attr(chn, attr) == level) {
 			int ret;
 			*match = true;
@@ -1930,7 +1934,6 @@ static char * cat_file(const char *path)
 {
 	char buf[BUF_SIZE];
 	ssize_t ret;
-
 	FILE *f;
 
 	f = fopen(path, "re");
@@ -1939,10 +1942,10 @@ static char * cat_file(const char *path)
 
 	ret = fread(buf, 1, sizeof(buf)-1, f);
 	fclose(f);
-	if (ret > 0)
-		buf[ret - 1] = '\0';
-	else
+	if (ret <= 0)
 		return NULL;
+
+	buf[ret - 1] = '\0';
 
 	return strndup(buf, sizeof(buf) - 1);
 }
