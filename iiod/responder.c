@@ -410,13 +410,13 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	}
 
 	entry->enqueue_task = iio_task_create(buffer_enqueue_block, entry,
-					      "buffer-enqueue-thd");
+					      "buffer-enqueue");
 	ret = iio_err(entry->enqueue_task);
 	if (ret)
 		goto err_free_mask;
 
 	entry->dequeue_task = iio_task_create(buffer_dequeue_block, entry,
-					      "buffer-dequeue-thd");
+					      "buffer-dequeue");
 	ret = iio_err(entry->dequeue_task);
 	if (ret)
 		goto err_destroy_enqueue_task;
@@ -970,7 +970,7 @@ static void handle_create_evstream(struct parser_pdata *pdata,
 	}
 
 	entry->task = iio_task_create(evstream_read, entry,
-				      "evstream-read-thd");
+				      "evstream-read");
 	ret = iio_err(entry->task);
 	if (ret) {
 		iio_event_stream_destroy(entry->stream);
