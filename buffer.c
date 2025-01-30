@@ -156,7 +156,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_mask;
 
 	buf->worker = iio_task_create(iio_buffer_enqueue_worker, NULL,
-				      "iio_buffer_enqueue_worker");
+				      "enqueue-worker");
 	err = iio_err(buf->worker);
 	if (err < 0)
 		goto err_free_mutex;
