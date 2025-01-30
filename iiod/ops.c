@@ -122,21 +122,6 @@ struct sample_cb_info {
  * clients */
 static pthread_mutex_t devlist_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static unsigned int get_channel_number(const struct iio_channel *chn)
-{
-	const struct iio_device *dev = iio_channel_get_device(chn);
-	const struct iio_channel *other;
-	unsigned int i = 0;
-
-	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
-		other = iio_device_get_channel(dev, i);
-		if (other == chn)
-			break;
-	}
-
-	return i;
-}
-
 static inline const char *dev_label_or_name_or_id(const struct iio_device *dev)
 {
 	const char *name;
@@ -427,7 +412,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	struct ThdEntry *thd, *next_thd;
 	struct iio_device *dev = entry->dev;
 	struct iio_device_pdata *dev_pdata;
-	unsigned int i, nb_channels = iio_device_get_channels_count(dev);
+	unsigned int nb_channels = iio_device_get_channels_count(dev);
 	struct iio_channel *chn;
 	struct iio_block *block;
 	ssize_t nb_bytes, ret = 0;
@@ -792,48 +777,6 @@ static void remove_thd_entry(struct ThdEntry *t)
 	dev_entry_put(entry);
 
 	free_thd_entry(t);
-}
-
-static ssize_t get_dev_sample_size_mask(const struct iio_device *dev,
-					const uint32_t *mask, size_t words)
-{
-	unsigned int i, len, number,
-		     nb_channels = iio_device_get_channels_count(dev);
-	const struct iio_channel *prev = NULL;
-	const struct iio_channel *chn;
-	const struct iio_data_format *fmt;
-	long index;
-	ssize_t size = 0;
-
-	if (words != (nb_channels + 31) / 32)
-		return -EINVAL;
-
-	for (i = 0; i < nb_channels; i++) {
-		chn = iio_device_get_channel(dev, i);
-		number = get_channel_number(chn);
-		fmt = iio_channel_get_data_format(chn);
-		index = iio_channel_get_index(chn);
-		len = fmt->length / 8 * fmt->repeat;
-
-		if (index < 0)
-			break;
-		if (!TEST_BIT(mask, number))
-			continue;
-
-		if (prev && index == iio_channel_get_index(prev)) {
-			prev = chn;
-			continue;
-		}
-
-		if (size % len)
-			size += 2 * len - (size % len);
-		else
-			size += len;
-
-		prev = chn;
-	}
-
-	return size;
 }
 
 static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
