@@ -293,7 +293,7 @@ int start_network_daemon(struct iio_context *ctx,
 		goto err_free_pdata;
 	}
 
-	err = thread_pool_add_thread(pool, network_main, pdata, "network_main_thd");
+	err = thread_pool_add_thread(pool, network_main, pdata, "net_main_thd");
 	if (!err)
 		return 0;
 
