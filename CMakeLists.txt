@@ -596,6 +596,13 @@ else ()
 		endif()
 
 		target_link_libraries(iio PRIVATE ${PTHREAD_LIBRARIES})
+
+		include(cmake/Utilities.cmake)
+
+		CHECK_PTHREAD_SET_NAME(HAS_PTHREAD_SETNAME_NP)
+		if (HAS_PTHREAD_SETNAME_NP AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+			set_source_files_properties(lock.c PROPERTIES COMPILE_FLAGS -D_GNU_SOURCE)
+		endif()
 	endif()
 
 	target_sources(iio PRIVATE lock.c)
