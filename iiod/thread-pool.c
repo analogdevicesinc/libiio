@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "iio-config.h"
 #include "thread-pool.h"
 
 #include <errno.h>
