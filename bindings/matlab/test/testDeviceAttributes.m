@@ -52,6 +52,10 @@ classdef testDeviceAttributes < matlab.unittest.TestCase
             % assert(status==0);
             % assert(result==OrigValue);
 
+            [PhyDevName, DevId] = ...
+                iioContextGetDeviceInfo(testCase.uri{1}, testCase.phyDev{1});
+            assert(strcmp(PhyDevName, testCase.phyDev{1}));
+
             % Unload Library
             adi.libiio.helpers.unloadLibIIO();
         end

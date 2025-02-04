@@ -6,10 +6,10 @@ function [status, attrName, value] = iioReadChannelAttributeLonglong(...
     chnAttrName)
 
     assert(isa(uri,'char') && all(size(uri) <= [1,20]));
-    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,20]));
-    assert(isa(chnName,'char') && all(size(chnName) <= [1,20]));
+    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,50]));
+    assert(isa(chnName,'char') && all(size(chnName) <= [1,50]));
     assert(isa(isOutput,'logical') && all(size(isOutput) <= [1,1]));
-    assert(isa(chnAttrName,'char') && all(size(chnAttrName) <= [1,20]));
+    assert(isa(chnAttrName,'char') && all(size(chnAttrName) <= [1,50]));
 
     % Get Context
     iioCtxPtr = adi.libiio.context.iio_create_context(uri);

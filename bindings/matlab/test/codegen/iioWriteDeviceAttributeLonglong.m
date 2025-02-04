@@ -1,7 +1,7 @@
 function status = iioWriteDeviceAttributeLonglong(uri, phyDevName, devAttrName, value)
     assert(isa(uri,'char') && all(size(uri) <= [1,20]));
-    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,20]));
-    assert(isa(devAttrName,'char') && all(size(devAttrName) <= [1,20]));
+    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,50]));
+    assert(isa(devAttrName,'char') && all(size(devAttrName) <= [1,50]));
     assert(isa(value,'int64') && isreal(value) && all(size(value) == [1,1]));
 
     % Get Context

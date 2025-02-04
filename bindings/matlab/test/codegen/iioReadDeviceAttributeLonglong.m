@@ -1,7 +1,7 @@
 function [status, attrName, value] = iioReadDeviceAttributeLonglong(uri, phyDevName, devAttrName)
     assert(isa(uri,'char') && all(size(uri) <= [1,20]));
-    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,20]));
-    assert(isa(devAttrName,'char') && all(size(devAttrName) <= [1,20]));
+    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,50]));
+    assert(isa(devAttrName,'char') && all(size(devAttrName) <= [1,50]));
 
     % Get Context
     iioCtxPtr = adi.libiio.context.iio_create_context(uri);
