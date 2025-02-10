@@ -100,6 +100,10 @@ endif()
 
 set(IIO_PUBLIC_HEADERS include/iio/iio.h;include/iio/iio-debug.h;include/iio/iio-lock.h;include/iio/iiod-client.h)
 
+if (CPP_BINDINGS)
+	list(APPEND IIO_PUBLIC_HEADERS bindings/cpp/iiopp.h)
+endif()
+
 set_target_properties(iio PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
@@ -338,7 +342,6 @@ set(DOXYGEN_INPUT "${CMAKE_SOURCE_DIR}")
 set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}")
 
 if (CPP_BINDINGS)
-    list(APPEND LIBIIO_HEADERS bindings/cpp/iiopp.h)
     set(DOXYGEN_ENABLED_SECTIONS CPP_BINDINGS)
     set(DOXYGEN_INPUT "${DOXYGEN_INPUT} ${CMAKE_SOURCE_DIR}/bindings/cpp/")
     set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/")
