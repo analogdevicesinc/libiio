@@ -118,6 +118,31 @@ static int iio_task_sync_core(struct iio_task_token *token, unsigned int timeout
 	return ret;
 }
 
+static bool iio_task_token_find(struct iio_task *task, struct iio_task_token *token,
+				bool del)
+{
+	struct iio_task_token *tmp;
+
+	if (!task->list)
+		return false;
+
+	if (token == task->list) {
+		if (del)
+			task->list = token->next;
+		return true;
+	}
+
+	for (tmp = task->list; tmp->next; tmp = tmp->next) {
+		if (tmp->next == token) {
+			if (del)
+				tmp->next = token->next;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 struct iio_task * iio_task_create(int (*fn)(void *, void *),
 				  void *firstarg, const char *name)
 {
@@ -285,24 +310,10 @@ bool iio_task_is_done(struct iio_task_token *token)
 void iio_task_cancel(struct iio_task_token *token)
 {
 	struct iio_task *task = token->task;
-	struct iio_task_token *tmp;
 	bool found = false;
 
 	iio_mutex_lock(task->lock);
-
-	if (token == task->list) {
-		task->list = token->next;
-		found = true;
-	} else if (task->list) {
-		for (tmp = task->list; tmp->next; tmp = tmp->next) {
-			if (tmp->next == token) {
-				tmp->next = tmp->next->next;
-				found = true;
-				break;
-			}
-		}
-	}
-
+	found = iio_task_token_find(task, token, true);
 	iio_mutex_unlock(task->lock);
 
 	if (found) {
