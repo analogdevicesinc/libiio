@@ -39,6 +39,8 @@ static void free_block_entry(struct block_entry *entry)
 	iiod_io_cancel(entry->io);
 	iiod_io_unref(entry->io);
 	iio_block_destroy(entry->block);
+	iio_task_token_destroy(entry->enqueue_token);
+	iio_task_token_destroy(entry->dequeue_token);
 	free(entry);
 }
 
@@ -299,7 +301,7 @@ static int buffer_enqueue_block(void *priv, void *d)
 	if (entry->cyclic)
 		goto out_send_response;
 
-	ret = iio_task_enqueue_autoclear(buffer->dequeue_task, entry);
+	ret = iio_task_token_enqueue(entry->dequeue_token);
 	if (ret)
 		goto out_send_response;
 
@@ -685,13 +687,22 @@ static void handle_create_block(struct parser_pdata *pdata,
 	entry = zalloc(sizeof(*entry));
 	if (!entry) {
 		ret = -ENOMEM;
-		iio_block_destroy(block);
-		goto out_send_response;
+		goto out_block_destroy;
 	}
 
 	entry->block = block;
 	entry->io = io;
 	entry->idx = cmd->code >> 16;
+
+	entry->enqueue_token = iio_task_token_create(buf_entry->enqueue_task, entry);
+	ret = iio_err(entry->enqueue_token);
+	if (ret)
+		goto out_free_entry;
+
+	entry->dequeue_token = iio_task_token_create(buf_entry->dequeue_task, entry);
+	ret = iio_err(entry->dequeue_token);
+	if (ret)
+		goto out_destroy_token;
 
 	if (WITH_IIOD_USB_DMABUF && pdata->is_usb) {
 		entry->dmabuf_fd = iio_block_get_dmabuf_fd(block);
@@ -719,6 +730,14 @@ static void handle_create_block(struct parser_pdata *pdata,
 	SLIST_INSERT_HEAD(&buf_entry->blocklist, entry, entry);
 	iio_mutex_unlock(buf_entry->lock);
 
+	goto out_send_response;
+
+out_destroy_token:
+	iio_task_token_destroy(entry->enqueue_token);
+out_free_entry:
+	free(entry);
+out_block_destroy:
+	iio_block_destroy(block);
 out_send_response:
 	iiod_io_send_response_code(io, ret);
 	iiod_io_unref(io);
@@ -746,6 +765,10 @@ static void handle_free_block(struct parser_pdata *pdata,
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
+
+	/* make sure the block is not being used by the enqueue or dequeue tasks */
+	iio_task_cancel_sync(entry->enqueue_token, 0);
+	iio_task_cancel_sync(entry->dequeue_token, 0);
 
 	if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
 		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
@@ -832,7 +855,7 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	block_entry->bytes_used = bytes_used;
 	block_entry->cyclic = cmd->op == IIOD_OP_ENQUEUE_BLOCK_CYCLIC;
 
-	ret = iio_task_enqueue_autoclear(entry->enqueue_task, block_entry);
+	ret = iio_task_token_enqueue(block_entry->enqueue_token);
 	if (ret)
 		goto out_send_response;
 
@@ -871,7 +894,7 @@ static void handle_retry_dequeue_block(struct parser_pdata *pdata,
 		return;
 	}
 
-	ret = iio_task_enqueue_autoclear(entry->dequeue_task, block_entry);
+	ret = iio_task_token_enqueue(block_entry->dequeue_token);
 	if (ret)
 		goto out_send_response;
 
