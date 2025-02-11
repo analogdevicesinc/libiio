@@ -36,13 +36,6 @@ struct iio_task {
 	bool running, stop;
 };
 
-static void iio_task_token_destroy(struct iio_task_token *token)
-{
-	iio_mutex_destroy(token->done_lock);
-	iio_cond_destroy(token->done_cond);
-	free(token);
-}
-
 static void iio_task_process(struct iio_task *task)
 {
 	struct iio_task_token *entry;
@@ -185,11 +178,20 @@ err_free_task:
 }
 
 static int iio_task_token_do_enqueue(struct iio_task *task, struct iio_task_token *token,
-				     bool autoclear)
+				     bool autoclear, bool new_token)
 {
 	struct iio_task_token *tmp;
 
 	iio_mutex_lock(task->lock);
+
+	if (!new_token) {
+		/* make sure the list is properly terminated */
+		token->next = NULL;
+		if (iio_task_token_find(task, token, false)) {
+			iio_mutex_unlock(task->lock);
+			return -EEXIST;
+		}
+	}
 
 	if (task->stop) {
 		iio_mutex_unlock(task->lock);
@@ -206,7 +208,10 @@ static int iio_task_token_do_enqueue(struct iio_task *task, struct iio_task_toke
 		tmp->next = token;
 	}
 
+	iio_mutex_lock(token->done_lock);
 	token->autoclear = autoclear;
+	token->done = false;
+	iio_mutex_unlock(token->done_lock);
 
 	iio_cond_signal(task->cond);
 	iio_mutex_unlock(task->lock);
@@ -221,6 +226,34 @@ static struct iio_task_token *
 iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 {
 	struct iio_task_token *entry;
+	int err;
+
+	entry = iio_task_token_create(task, elm);
+	if (iio_err(entry))
+		return iio_err_cast(entry);
+
+	err = iio_task_token_do_enqueue(task, entry, autoclear, true);
+	if (err)
+		goto err_destroy_entry;
+
+	return entry;
+
+err_destroy_entry:
+	iio_task_token_destroy(entry);
+	return iio_ptr(err);
+}
+
+void iio_task_token_destroy(struct iio_task_token *token)
+{
+	iio_mutex_destroy(token->done_lock);
+	iio_cond_destroy(token->done_cond);
+	free(token);
+}
+
+struct iio_task_token * iio_task_token_create(struct iio_task *task, void *elm)
+{
+	struct iio_task_token *entry;
+
 	int err = -ENOMEM;
 
 	entry = calloc(1, sizeof(*entry));
@@ -229,6 +262,10 @@ iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 
 	entry->task = task;
 	entry->elm = elm;
+	/* Initialize it to true. This matters if we create a token and never happen
+	 * to enqueue it. iio_task_cancel_sync() would then wait forever.
+	 */
+	entry->done = true;
 
 	entry->done_cond = iio_cond_create();
 	err = iio_err(entry->done_cond);
@@ -240,19 +277,18 @@ iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 	if (err)
 		goto err_free_cond;
 
-	err = iio_task_token_do_enqueue(task, entry, autoclear);
-	if (err)
-		goto err_free_lock;
-
 	return entry;
 
-err_free_lock:
-	iio_mutex_destroy(entry->done_lock);
 err_free_cond:
 	iio_cond_destroy(entry->done_cond);
 err_free_entry:
 	free(entry);
 	return iio_ptr(err);
+}
+
+int iio_task_token_enqueue(struct iio_task_token *token)
+{
+	return iio_task_token_do_enqueue(token->task, token, false, false);
 }
 
 struct iio_task_token * iio_task_enqueue(struct iio_task *task, void *elm)
