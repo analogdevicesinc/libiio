@@ -184,10 +184,43 @@ err_free_task:
 	return iio_ptr(err);
 }
 
+static int iio_task_token_do_enqueue(struct iio_task *task, struct iio_task_token *token,
+				     bool autoclear)
+{
+	struct iio_task_token *tmp;
+
+	iio_mutex_lock(task->lock);
+
+	if (task->stop) {
+		iio_mutex_unlock(task->lock);
+		return -EBADF;
+	}
+
+	if (!task->list) {
+		task->list = token;
+	} else {
+		for (tmp = task->list; tmp->next; ) {
+			tmp = tmp->next;
+		}
+
+		tmp->next = token;
+	}
+
+	token->autoclear = autoclear;
+
+	iio_cond_signal(task->cond);
+	iio_mutex_unlock(task->lock);
+
+	if (NO_THREADS && !task->stop && task->running)
+		iio_task_process(task);
+
+	return 0;
+}
+
 static struct iio_task_token *
 iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 {
-	struct iio_task_token *entry, *tmp;
+	struct iio_task_token *entry;
 	int err = -ENOMEM;
 
 	entry = calloc(1, sizeof(*entry));
@@ -207,30 +240,9 @@ iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 	if (err)
 		goto err_free_cond;
 
-	entry->autoclear = autoclear;
-
-	iio_mutex_lock(task->lock);
-
-	if (task->stop) {
-		iio_mutex_unlock(task->lock);
-		err = -EBADF;
+	err = iio_task_token_do_enqueue(task, entry, autoclear);
+	if (err)
 		goto err_free_lock;
-	}
-
-	if (!task->list) {
-		task->list = entry;
-	} else {
-		for (tmp = task->list; tmp->next; )
-			tmp = tmp->next;
-
-		tmp->next = entry;
-	}
-
-	iio_cond_signal(task->cond);
-	iio_mutex_unlock(task->lock);
-
-	if (NO_THREADS && !task->stop && task->running)
-		iio_task_process(task);
 
 	return entry;
 
