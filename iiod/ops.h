@@ -45,6 +45,7 @@
 
 struct iio_mutex;
 struct iio_task;
+struct iio_task_token;
 struct iiod_io;
 struct pollfd;
 struct parser_pdata;
@@ -59,6 +60,8 @@ struct block_entry {
 	SLIST_ENTRY(block_entry) entry;
 	struct iio_block *block;
 	struct iiod_io *io;
+	struct iio_task_token *enqueue_token;
+	struct iio_task_token *dequeue_token;
 	uint64_t bytes_used;
 	uint16_t idx;
 	bool cyclic;
