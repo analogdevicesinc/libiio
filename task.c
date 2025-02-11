@@ -94,6 +94,29 @@ static int iio_task_run(void *d)
 
 	return 0;
 }
+static int __iio_task_sync(struct iio_task_token *token, unsigned int timeout_ms, bool token_destroy)
+{
+	int ret;
+
+	iio_mutex_lock(token->done_lock);
+	while (!token->done) {
+		ret = iio_cond_wait(token->done_cond, token->done_lock,
+				    timeout_ms);
+		if (ret) {
+			iio_mutex_unlock(token->done_lock);
+			iio_task_cancel(token);
+			iio_mutex_lock(token->done_lock);
+		}
+	}
+	iio_mutex_unlock(token->done_lock);
+
+	ret = token->ret;
+
+	if (token_destroy)
+		iio_task_token_destroy(token);
+
+	return ret;
+}
 
 struct iio_task * iio_task_create(int (*fn)(void *, void *),
 				  void *firstarg, const char *name)
@@ -207,25 +230,7 @@ int iio_task_enqueue_autoclear(struct iio_task *task, void *elm)
 
 int iio_task_sync(struct iio_task_token *token, unsigned int timeout_ms)
 {
-	int ret;
-
-	iio_mutex_lock(token->done_lock);
-	while (!token->done) {
-		ret = iio_cond_wait(token->done_cond, token->done_lock,
-				    timeout_ms);
-		if (ret) {
-			iio_mutex_unlock(token->done_lock);
-			iio_task_cancel(token);
-			iio_mutex_lock(token->done_lock);
-		}
-	}
-	iio_mutex_unlock(token->done_lock);
-
-	ret = token->ret;
-
-	iio_task_token_destroy(token);
-
-	return ret;
+	return __iio_task_sync(token, timeout_ms, true);
 }
 
 void iio_task_flush(struct iio_task *task)
