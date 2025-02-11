@@ -355,6 +355,12 @@ bool iio_task_is_done(struct iio_task_token *token)
 	return token->done;
 }
 
+int iio_task_cancel_sync(struct iio_task_token *token, unsigned int timeout_ms)
+{
+	iio_task_cancel(token);
+	return iio_task_sync_core(token, timeout_ms, false);
+}
+
 void iio_task_cancel(struct iio_task_token *token)
 {
 	struct iio_task *task = token->task;

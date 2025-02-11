@@ -52,6 +52,7 @@ __api int iio_task_token_enqueue(struct iio_task_token *token);
 
 __api _Bool iio_task_is_done(struct iio_task_token *token);
 __api int iio_task_sync(struct iio_task_token *token, unsigned int timeout_ms);
+__api int iio_task_cancel_sync(struct iio_task_token *token, unsigned int timeout_ms);
 __api void iio_task_cancel(struct iio_task_token *token);
 
 #undef __api
