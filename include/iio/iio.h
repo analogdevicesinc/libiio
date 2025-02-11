@@ -362,11 +362,13 @@ iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
  * @param ptr A pointer to a variable where the value should be stored
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
+#ifndef __cplusplus
 #define iio_attr_read(attr, ptr)				\
 	_Generic((ptr),						\
 		 bool *: iio_attr_read_bool,			\
 		 long long *: iio_attr_read_longlong,		\
 		 double *: iio_attr_read_double)(attr, ptr)
+#endif /* __cplusplus */
 
 /** @brief Set the value of the given attribute
  * @param attr A pointer to an iio_attr structure
@@ -382,6 +384,7 @@ iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len);
  * @param val The value to set the attribute to
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned. */
+#ifndef __cplusplus
 #define iio_attr_write(attr, val)			\
 	_Generic((val),						\
 		 const char *: iio_attr_write_string,		\
@@ -389,6 +392,7 @@ iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len);
 		 bool: iio_attr_write_bool,			\
 		 long long: iio_attr_write_longlong,		\
 		 double: iio_attr_write_double)(attr, val)
+#endif /* __cplusplus */
 
 /** @brief Retrieve the name of an attribute
  * @param attr A pointer to an iio_attr structure
@@ -1595,6 +1599,52 @@ iio_attr_write_longlong(const struct iio_attr *attr, long long val);
 
 __api __check_ret int
 iio_attr_write_double(const struct iio_attr *attr, double val);
+
+#ifdef __cplusplus 
+/* These functions are meant to simulate the generic macros
+ * iio_attr_{read,write}() in C++ compiled programs. */
+extern "C++" {
+static inline __check_ret int
+iio_attr_read(const struct iio_attr *attr, bool *val) {
+	return iio_attr_read_bool(attr, val);
+}
+
+static inline __check_ret int
+iio_attr_read(const struct iio_attr *attr, long long *val) {
+	return iio_attr_read_longlong(attr, val);
+}
+
+static inline __check_ret int
+iio_attr_read(const struct iio_attr *attr, double *val) {
+	return iio_attr_read_double(attr, val);
+}
+
+static inline __check_ret ssize_t
+iio_attr_write(const struct iio_attr *attr, const char *val) {
+	return iio_attr_write_string(attr, val);
+}
+
+static inline __check_ret ssize_t
+iio_attr_write(const struct iio_attr *attr, char *val) {
+	return iio_attr_write_string(attr, val);
+}
+
+static inline __check_ret int
+iio_attr_write(const struct iio_attr *attr, bool val) {
+	return iio_attr_write_bool(attr, val);
+}
+
+static inline __check_ret int
+iio_attr_write(const struct iio_attr *attr, long long val) {
+	return iio_attr_write_longlong(attr, val);
+}
+
+static inline __check_ret int
+iio_attr_write(const struct iio_attr *attr, double val) {
+	return iio_attr_write_double(attr, val);
+}
+}
+#endif /* __cplusplus */
 
 #endif /* DOXYGEN */
 
