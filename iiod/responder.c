@@ -740,28 +740,18 @@ static void handle_free_block(struct parser_pdata *pdata,
 	if (ret)
 		goto out_send_response;
 
-	block = get_iio_block(pdata, buf_entry, cmd, NULL);
+	iio_mutex_lock(buf_entry->lock);
+
+	block = get_iio_block_unlocked(buf_entry, cmd, &entry);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
 
-	ret = -EBADF;
+	if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
+		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
 
-	iio_mutex_lock(buf_entry->lock);
-
-	SLIST_FOREACH(entry, &buf_entry->blocklist, entry) {
-		if (entry->block != block)
-			continue;
-
-		if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
-			usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
-
-		SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
-
-		free_block_entry(entry);
-		ret = 0;
-		break;
-	}
+	SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
+	free_block_entry(entry);
 
 	iio_mutex_unlock(buf_entry->lock);
 
