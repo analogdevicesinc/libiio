@@ -382,10 +382,12 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op,
 		memcpy(writer->w_io.buf, buf, sizeof(*buf) * nb);
 	writer->w_io.nb_buf = nb;
 
-	if (writer->write_token)
-	      return -EIO;
-
 	iio_mutex_lock(priv->lock);
+	if (writer->write_token) {
+		iio_mutex_unlock(priv->lock);
+		return -EIO;
+	}
+
 	if (priv->thrd_stop) {
 		iio_mutex_unlock(priv->lock);
 		return priv->thrd_err_code;
@@ -399,10 +401,11 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op,
 
 bool iiod_io_command_is_done(struct iiod_io *io)
 {
+	struct iiod_responder *priv = io->responder;
 	uint64_t timeout_us;
 	bool done;
 
-	iio_mutex_lock(io->lock);
+	iio_mutex_lock(priv->lock);
 
 	done = io->write_token && iio_task_is_done(io->write_token);
 
@@ -412,7 +415,7 @@ bool iiod_io_command_is_done(struct iiod_io *io)
 		done = read_counter_us() - io->w_io.start_time > timeout_us;
 	}
 
-	iio_mutex_unlock(io->lock);
+	iio_mutex_unlock(priv->lock);
 
 	return done;
 }
@@ -420,12 +423,13 @@ bool iiod_io_command_is_done(struct iiod_io *io)
 int iiod_io_wait_for_command_done(struct iiod_io *io)
 {
 	uint64_t diff_ms = 0, timeout_ms = io->timeout_ms;
+	struct iiod_responder *priv = io->responder;
 	struct iio_task_token *token;
 
-	iio_mutex_lock(io->lock);
+	iio_mutex_lock(priv->lock);
 	token = io->write_token;
 	io->write_token = NULL;
-	iio_mutex_unlock(io->lock);
+	iio_mutex_unlock(priv->lock);
 
 	if (!token)
 		return 0;
