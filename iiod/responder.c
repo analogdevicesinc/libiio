@@ -511,6 +511,26 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 	return buf ?: iio_ptr(-EBADF);
 }
 
+static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
+						 const struct iiod_command *cmd,
+						 struct block_entry **entry_ptr)
+{
+	struct block_entry *entry;
+	struct iio_block *block = NULL;
+
+	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
+		if (entry->idx == cmd->code >> 16) {
+			block = entry->block;
+			break;
+		}
+	}
+
+	if (block && entry_ptr)
+		*entry_ptr = entry;
+
+	return block ?: iio_ptr(-EBADF);
+}
+
 static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 					struct buffer_entry *entry_buf,
 					const struct iiod_command *cmd,
@@ -520,20 +540,10 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	struct iio_block *block = NULL;
 
 	iio_mutex_lock(entry_buf->lock);
-
-	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
-		if (entry->idx == cmd->code >> 16) {
-			block = entry->block;
-			break;
-		}
-	}
-
+	block = get_iio_block_unlocked(entry_buf, cmd, entry_ptr);
 	iio_mutex_unlock(entry_buf->lock);
 
-	if (block && entry_ptr)
-		*entry_ptr = entry;
-
-	return block ?: iio_ptr(-EBADF);
+	return block;
 }
 
 static void handle_free_buffer(struct parser_pdata *pdata,
@@ -788,11 +798,13 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 		return;
 	}
 
-	block = get_iio_block(pdata, entry, cmd, &block_entry);
+	iio_mutex_lock(entry->lock);
+
+	block = get_iio_block_unlocked(entry, cmd, &block_entry);
 	ret = iio_err(block);
 	if (ret) {
 		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO block");
-		return;
+		goto out_unlock;
 	}
 
 	readbuf.ptr = &bytes_used;
@@ -834,10 +846,12 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	if (ret)
 		goto out_send_response;
 
+out_unlock:
+	iio_mutex_unlock(entry->lock);
 	/* The return code and/or data will be sent from the task handler. */
 	return;
-
 out_send_response:
+	iio_mutex_unlock(entry->lock);
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
@@ -858,21 +872,26 @@ static void handle_retry_dequeue_block(struct parser_pdata *pdata,
 		return;
 	}
 
-	block = get_iio_block(pdata, entry, cmd, &block_entry);
+	iio_mutex_lock(entry->lock);
+
+	block = get_iio_block_unlocked(entry, cmd, &block_entry);
 	ret = iio_err(block);
 	if (ret) {
 		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO block");
-		return;
+		goto out_unlock;
 	}
 
 	ret = iio_task_enqueue_autoclear(entry->dequeue_task, block_entry);
 	if (ret)
 		goto out_send_response;
 
+out_unlock:
+	iio_mutex_unlock(entry->lock);
 	/* The return code and/or data will be sent from the task handler. */
 	return;
 
 out_send_response:
+	iio_mutex_unlock(entry->lock);
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
