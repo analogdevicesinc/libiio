@@ -342,8 +342,11 @@ static int buffer_dequeue_block(void *priv, void *d)
 		ret = data.size;
 	}
 
+
 out_send_response:
+	printf("Sending response (%d)\n", entry->idx);
 	iiod_io_send_response(entry->io, ret, &data, nb_data);
+	printf("Done Sending response (%d)\n", entry->idx);
 	return 0;
 }
 

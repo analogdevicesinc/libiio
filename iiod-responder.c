@@ -156,8 +156,11 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 
 		if (is_read)
 			ret = priv->ops->read(priv->d, curr, nb);
-		else
+		else {
+			printf("Write %zd bytes, req(%zu)\n", curr->size, bytes);
 			ret = priv->ops->write(priv->d, curr, nb);
+			printf("Done Write %zd bytes\n", curr->size);
+		}
 		if (ret <= 0)
 			return ret;
 
@@ -294,7 +297,9 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			/* We received a response, but have no client waiting
 			 * for it, so drop it. */
 			iio_mutex_unlock(priv->lock);
+			fprintf(stderr, "Discard data(%d)\n", cmd.code);
 			iiod_discard_data(priv, cmd.code);
+			fprintf(stderr, "Data Discarded(%d)\n", cmd.code);
 			iio_mutex_lock(priv->lock);
 			continue;
 		}
@@ -310,8 +315,10 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 			ret = iiod_rw_all(priv, NULL, io->r_io.buf,
 					  io->r_io.nb_buf, cmd.code, true);
 
-			if (ret > 0 && (size_t) ret < (size_t) cmd.code)
+			if (ret > 0 && (size_t) ret < (size_t) cmd.code) {
+				fprintf(stderr, "Discard data now(%zd)\n", cmd.code - ret);
 				iiod_discard_data(priv, cmd.code - ret);
+			}
 
 			iio_mutex_lock(priv->lock);
 

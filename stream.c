@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 struct iio_stream {
@@ -73,9 +74,14 @@ void iio_stream_destroy(struct iio_stream *stream)
 {
 	size_t i;
 
-	for (i = 0; i < stream->nb_blocks; i++)
-		if (stream->blocks[i])
+	for (i = 0; i < stream->nb_blocks; i++) {
+		if (stream->blocks[i]) {
+			//iio_block_dequeue(stream->blocks[i], false);
+			fprintf(stderr, "destroy block %zd\n", i);
 			iio_block_destroy(stream->blocks[i]);
+			fprintf(stderr, "done destroy block %zd\n", i);
+		}
+	}
 	free(stream->blocks);
 	free(stream);
 }

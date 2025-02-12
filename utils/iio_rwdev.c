@@ -69,9 +69,14 @@ static int exit_code = EXIT_FAILURE;
 static void quit_all(int sig)
 {
 	exit_code = sig;
+	/*
+	 * If the main function is stuck waiting for data it will not abort. If the
+	 * user presses Ctrl+C a second time we abort without cleaning up.
+	 */
+	if (!app_running)
+		exit(sig);
+
 	app_running = false;
-	if (buffer)
-		iio_buffer_cancel(buffer);
 }
 
 #ifdef _WIN32
@@ -138,9 +143,11 @@ static void * sig_handler_thd(void *data)
 	/* Blocks until one of the termination signals is received */
 	do {
 		ret = sigwait(mask, &sig);
-	} while (ret == EINTR);
+		if (ret == EINTR)
+			continue;
 
-	quit_all(ret);
+		quit_all(ret);
+	} while (1);
 
 	return NULL;
 }
@@ -541,10 +548,13 @@ int main(int argc, char **argv)
 	}
 
 err_destroy_stream:
+	fprintf(stderr, "iio_stream_destroy\n");
 	iio_stream_destroy(stream);
 err_destroy_buffer:
+	fprintf(stderr, "iio_buffer_destroy\n");
 	iio_buffer_destroy(buffer);
 err_free_mask:
+	fprintf(stderr, "iio_channels_mask_destroy\n");
 	iio_channels_mask_destroy(mask);
 err_free_ctx:
 	if (ctx)
