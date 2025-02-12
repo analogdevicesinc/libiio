@@ -574,6 +574,7 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 
 	iio_mutex_lock(buflist_lock);
 
+	printf("Buffer destroy\n");
 	SLIST_FOREACH(entry, &bufferlist, entry) {
 		if (entry != buf_entry)
 			continue;
