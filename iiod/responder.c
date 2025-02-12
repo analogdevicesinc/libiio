@@ -565,6 +565,8 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 	if (!dev)
 		goto out_send_response;
 
+	printf("Buffer destroy\n");
+
 	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
 	if (ret)
@@ -574,7 +576,6 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 
 	iio_mutex_lock(buflist_lock);
 
-	printf("Buffer destroy\n");
 	SLIST_FOREACH(entry, &bufferlist, entry) {
 		if (entry != buf_entry)
 			continue;
@@ -792,7 +793,9 @@ out_send_response:
 		/* TODO: How to handle the error? */
 		return;
 	}
+	printf("Send free block reply(%d)\n", cmd->code >> 16);
 	iiod_io_send_response_code(io, ret);
+	printf("Done send free block reply(%d)\n", cmd->code >> 16);
 	iiod_io_unref(io);
 }
 

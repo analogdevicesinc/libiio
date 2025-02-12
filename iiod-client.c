@@ -1476,6 +1476,7 @@ void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata)
 		cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
 		cmd.code = pdata->idx;
 
+		printf("Execute free buffer\n");
 		iiod_io_exec_simple_command(io, &cmd);
 	}
 
