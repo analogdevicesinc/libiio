@@ -772,8 +772,8 @@ static void handle_free_block(struct parser_pdata *pdata,
 		goto out_send_response;
 
 	/* make sure the block is not being used by the enqueue or dequeue tasks */
-	iio_task_cancel_sync(entry->enqueue_token, 0);
-	iio_task_cancel_sync(entry->dequeue_token, 0);
+	//iio_task_cancel_sync(entry->enqueue_token, 0);
+	//iio_task_cancel_sync(entry->dequeue_token, 0);
 
 	if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
 		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);

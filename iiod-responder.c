@@ -606,6 +606,7 @@ int iiod_io_exec_command(struct iiod_io *io,
 		return ret;
 	}
 
+	printf("Wait for command done, timeout(%d)\n", io->timeout_ms);
 	return (int) iiod_io_wait_for_response(io);
 }
 
