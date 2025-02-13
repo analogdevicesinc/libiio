@@ -173,7 +173,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		}
 
 		pdata.aio_ctx[i] = 0;
-		ret = io_setup(1, &pdata.aio_ctx[i]);
+		ret = io_setup(16, &pdata.aio_ctx[i]);
 		if (ret < 0) {
 			IIO_PERROR(ret, "Failed to create AIO context");
 			close(pdata.aio_eventfd[i]);
