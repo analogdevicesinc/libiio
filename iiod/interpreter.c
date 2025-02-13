@@ -22,6 +22,7 @@ static int log = 0;
 
 void async_enable_log(void)
 {
+	printf("Enabling log\n");
 	if (!log)
 		log = 1;
 }
