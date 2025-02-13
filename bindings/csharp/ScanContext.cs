@@ -43,6 +43,10 @@ namespace iio
         public Dictionary<string, string> get_usb_backend_contexts()
         {
             IntPtr scan_block = iio_create_scan_block("usb", 0);
+            if (scan_block == IntPtr.Zero)
+            {
+                throw new Exception("Unable to create scan block for 'usb' backends");
+            }
             Dictionary<string, string> context_info_dict = get_contexts_info(scan_block);
             iio_scan_block_destroy(scan_block);
 
@@ -56,6 +60,10 @@ namespace iio
         public Dictionary<string, string> get_local_backend_contexts()
         {
             IntPtr scan_block = iio_create_scan_block("local", 0);
+            if (scan_block == IntPtr.Zero)
+            {
+                throw new Exception("Unable to create scan block for 'local' backends");
+            }
             Dictionary<string, string> context_info_dict = get_contexts_info(scan_block);
             iio_scan_block_destroy(scan_block);
 
@@ -69,6 +77,10 @@ namespace iio
         public Dictionary<string, string> get_dns_sd_backend_contexts()
         {
             IntPtr scan_block = iio_create_scan_block("ip", 0);
+            if (scan_block == IntPtr.Zero)
+            {
+                throw new Exception("Unable to create scan block for 'network' backends");
+            }
             Dictionary<string, string> context_info_dict = get_contexts_info(scan_block);
             iio_scan_block_destroy(scan_block);
 
