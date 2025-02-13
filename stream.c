@@ -76,7 +76,7 @@ void iio_stream_destroy(struct iio_stream *stream)
 
 	for (i = 0; i < stream->nb_blocks; i++) {
 		if (stream->blocks[i]) {
-			iio_block_dequeue(stream->blocks[i], false);
+			//iio_block_dequeue(stream->blocks[i], false);
 			fprintf(stderr, "destroy block %zd\n", i);
 			iio_block_destroy(stream->blocks[i]);
 			fprintf(stderr, "done destroy block %zd\n", i);

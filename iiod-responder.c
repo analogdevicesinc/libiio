@@ -493,6 +493,7 @@ int32_t iiod_io_wait_for_response(struct iiod_io *io)
 	while (!io->r_done) {
 		ret = iiod_io_cond_wait(io);
 		if (ret) {
+			fprintf(stderr, "Done waiting...(ret=%d)\n", ret);
 			iio_mutex_lock(priv->lock);
 			__iiod_io_cancel_unlocked(io);
 			iio_mutex_unlock(priv->lock);
@@ -532,6 +533,11 @@ int iiod_io_send_command(struct iiod_io *io,
 		return ret;
 
 	return iiod_io_wait_for_command_done(io);
+}
+
+int iiod_io_get_client_id(struct iiod_io *io)
+{
+	return io->client_id;
 }
 
 int iiod_io_send_response_async(struct iiod_io *io, int32_t code,
@@ -606,7 +612,6 @@ int iiod_io_exec_command(struct iiod_io *io,
 		return ret;
 	}
 
-	printf("Wait for command done, timeout(%d)\n", io->timeout_ms);
 	return (int) iiod_io_wait_for_response(io);
 }
 

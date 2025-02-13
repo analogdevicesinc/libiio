@@ -177,5 +177,6 @@ int32_t iiod_io_wait_for_response(struct iiod_io *io);
 _Bool iiod_io_has_response(struct iiod_io *io);
 
 void iiod_io_cancel_response(struct iiod_io *io);
+int iiod_io_get_client_id(struct iiod_io *io);
 
 #endif /* __IIOD_RESPONDER_H__ */

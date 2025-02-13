@@ -344,7 +344,7 @@ static int buffer_dequeue_block(void *priv, void *d)
 
 
 out_send_response:
-	printf("Sending response (%d)\n", entry->idx);
+	printf("Sending response (%d) %d\n", entry->idx, iiod_io_get_client_id(entry->io));
 	iiod_io_send_response(entry->io, ret, &data, nb_data);
 	printf("Done Sending response (%d)\n", entry->idx);
 	return 0;
@@ -759,6 +759,8 @@ static void handle_free_block(struct parser_pdata *pdata,
 	struct iiod_io *io;
 	int ret, ep_fd;
 
+	async_enable_log();
+
 	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
 	if (ret)
@@ -772,8 +774,8 @@ static void handle_free_block(struct parser_pdata *pdata,
 		goto out_send_response;
 
 	/* make sure the block is not being used by the enqueue or dequeue tasks */
-	//iio_task_cancel_sync(entry->enqueue_token, 0);
-	//iio_task_cancel_sync(entry->dequeue_token, 0);
+	iio_task_cancel_sync(entry->enqueue_token, 0);
+	iio_task_cancel_sync(entry->dequeue_token, 0);
 
 	if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
 		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
@@ -793,7 +795,8 @@ out_send_response:
 		/* TODO: How to handle the error? */
 		return;
 	}
-	printf("Send free block reply(%d)\n", cmd->code >> 16);
+	printf("Send free block reply(%d) %d\n", cmd->code >> 16,
+		iiod_io_get_client_id(io));
 	iiod_io_send_response_code(io, ret);
 	printf("Done send free block reply(%d)\n", cmd->code >> 16);
 	iiod_io_unref(io);

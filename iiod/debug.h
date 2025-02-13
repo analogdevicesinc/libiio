@@ -28,4 +28,6 @@ extern struct iio_context_params iiod_params;
 #define IIO_PERROR(err, ...) \
 	prm_perror(&iiod_params, err, __VA_ARGS__)
 
+void async_enable_log(void);
+
 #endif /* __IIOD_DEBUG_H__ */
