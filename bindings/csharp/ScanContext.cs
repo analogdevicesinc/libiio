@@ -42,59 +42,63 @@ namespace iio
         /// <returns>a <see cref="Dictionary{String, String}"/> containing the context's uri as key and its description as value.</returns>
         public Dictionary<string, string> get_usb_backend_contexts()
         {
-            IntPtr scan_block = iio_create_scan_block("usb", 0);
-            if (scan_block == IntPtr.Zero)
-            {
-                throw new Exception("Unable to create scan block for 'usb' backends");
-            }
-            Dictionary<string, string> context_info_dict = get_contexts_info(scan_block);
-            iio_scan_block_destroy(scan_block);
-
-            return context_info_dict;
+            return scan_backend_contexts("usb");
         }
 
         // <summary>
-        /// Gets the uri and the description of all available contexts with local backend. 
+        /// Gets the uri and the description of all available contexts with local backend.
         /// </summary>
         /// <returns>a <see cref="Dictionary{String, String}"/> containing the context's uri as key and its description as value.</returns>
         public Dictionary<string, string> get_local_backend_contexts()
         {
-            IntPtr scan_block = iio_create_scan_block("local", 0);
-            if (scan_block == IntPtr.Zero)
-            {
-                throw new Exception("Unable to create scan block for 'local' backends");
-            }
-            Dictionary<string, string> context_info_dict = get_contexts_info(scan_block);
-            iio_scan_block_destroy(scan_block);
-
-            return context_info_dict;
+            return scan_backend_contexts("local");
         }
 
         // <summary>
-        /// Gets the uri and the description of all available contexts from dns_sd backend. 
+        /// Gets the uri and the description of all available contexts from dns_sd backend.
         /// </summary>
         /// <returns>a <see cref="Dictionary{String, String}"/> containing the context's uri as key and its description as value.</returns>
         public Dictionary<string, string> get_dns_sd_backend_contexts()
         {
-            IntPtr scan_block = iio_create_scan_block("ip", 0);
+            return scan_backend_contexts("ip");
+        }
+
+        private Dictionary<string, string> scan_backend_contexts(string backend)
+        {
+            IntPtr scan_block = iio_create_scan_block(backend, 0);
             if (scan_block == IntPtr.Zero)
             {
-                throw new Exception("Unable to create scan block for 'network' backends");
+                throw new Exception("Unable to create scan block for '" + backend + "' backend");
             }
-            Dictionary<string, string> context_info_dict = get_contexts_info(scan_block);
-            iio_scan_block_destroy(scan_block);
 
-            return context_info_dict;
+            try
+            {
+                return get_contexts_info(scan_block);
+            }
+            finally
+            {
+                iio_scan_block_destroy(scan_block);
+            }
         }
 
         private Dictionary<string, string> get_contexts_info(IntPtr scan_block)
         {
-            uint contexts_count = (uint)iio_scan_block_scan(scan_block);
+            long ret = iio_scan_block_scan(scan_block);
+            if (ret < 0)
+            {
+                throw new Exception("Failed to perform a scan for the given scan block");
+            }
+
+            uint contexts_count = (uint)ret;
             Dictionary<string, string> contexts_info = new Dictionary<string, string>();
 
             for (uint i = 0; i < contexts_count; i++)
             {
                 IntPtr info = iio_scan_block_get_info(scan_block, i);
+                if (info == IntPtr.Zero)
+                {
+                    throw new Exception("Failed to get info about scan block at index: " + i);
+                }
                 string uri = Marshal.PtrToStringAnsi(iio_context_info_get_uri(info)); // URIs are ASCII (RFC-compliant)
                 string description = UTF8Marshaler.PtrToStringUTF8(iio_context_info_get_description(info));
                 contexts_info[uri] = description;
