@@ -15,7 +15,7 @@ namespace iio
 {
     /// <summary> <see cref="iio.ScanContext"/> class:
     /// Class for getting information about the available contexts.</summary>
-    public class ScanContext
+    public class ScanContext : IDisposable
     {
         private IntPtr scan_block;
 
@@ -33,6 +33,37 @@ namespace iio
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern long iio_scan_block_scan(IntPtr blk);
+
+        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_scan_block_destroy(IntPtr blk);
+
+        ~ScanContext()
+        {
+            Dispose(false);
+        }
+
+        private void Dispose(bool clean)
+        {
+            if (this.scan_block != IntPtr.Zero)
+            {
+                if (clean)
+                {
+                    GC.SuppressFinalize(this);
+                }
+                iio_scan_block_destroy(this.scan_block);
+                this.scan_block = IntPtr.Zero;
+            }
+        }
+
+        /// <summary>Releases all resource used by the <see cref="iio.ScanContext"/> object.</summary>
+        /// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="iio.ScanContext"/>. The
+        /// <see cref="Dispose"/> method leaves the <see cref="iio.ScanContext"/> in an unusable state. After calling
+        /// <see cref="Dispose"/>, you must release all references to the <see cref="iio.ScanContext"/> so the garbage
+        /// collector can reclaim the memory that the <see cref="iio.ScanContext"/> was occupying.</remarks>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         /// <summary>
         /// Gets the uri and the description of all available contexts with USB backend. 
