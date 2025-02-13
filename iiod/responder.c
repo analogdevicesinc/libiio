@@ -781,8 +781,6 @@ static void handle_free_block(struct parser_pdata *pdata,
 		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
 
 	SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
-	free_block_entry(entry);
-
 	iio_mutex_unlock(buf_entry->lock);
 
 	IIO_DEBUG("Block %u freed.\n", cmd->code);
@@ -790,16 +788,17 @@ static void handle_free_block(struct parser_pdata *pdata,
 out_send_response:
 	/* We may have freed the block's iiod_io, so create a new one to
 	 * answer the request. */
-	io = iiod_command_create_io(cmd, cmd_data);
-	if (iio_err(io)) {
-		/* TODO: How to handle the error? */
-		return;
-	}
+	//io = iiod_command_create_io(cmd, cmd_data);
+	//if (iio_err(io)) {
+	//	/* TODO: How to handle the error? */
+	//	return;
+	//}
 	printf("Send free block reply(%d) %d\n", cmd->code >> 16,
 		iiod_io_get_client_id(io));
-	iiod_io_send_response_code(io, ret);
+	iiod_io_send_response_code(entry->io, ret);
 	printf("Done send free block reply(%d)\n", cmd->code >> 16);
-	iiod_io_unref(io);
+	free_block_entry(entry);
+	//iiod_io_unref(io);
 }
 
 static void handle_transfer_block(struct parser_pdata *pdata,

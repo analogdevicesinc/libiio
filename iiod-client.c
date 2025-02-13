@@ -1591,7 +1591,7 @@ err_free_block:
 void iiod_client_free_block(struct iio_block_pdata *block)
 {
 	struct iiod_client *client = block->buffer->client_fb;
-	struct iiod_io *io;
+	//struct iiod_io *io;
 	struct iiod_client_buffer_pdata *pdata = block->buffer;
 	struct iiod_command cmd;
 
@@ -1608,10 +1608,11 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 	fprintf(stderr, "Canceling block %d\n", block->idx);
 	iiod_io_cancel(block->io);
 	fprintf(stderr, "Done canceling block %d\n", block->idx);
-	iiod_io_unref(block->io);
 
-	io = iiod_responder_get_default_io(client->responder);
-	iiod_io_exec_simple_command(io, &cmd);
+
+	//io = iiod_responder_get_default_io(client->responder);
+	iiod_io_exec_simple_command(block->io, &cmd);
+	iiod_io_unref(block->io);
 
 	free(block->data);
 	iio_mutex_destroy(block->lock);
