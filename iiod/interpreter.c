@@ -47,13 +47,13 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 
 	io_set_eventfd(&iocb, pdata->aio_eventfd[do_read]);
 
-	if (log && len > 512)
-		printf("[%lu]: Try to write a block (before lock = %zd)\n",
-		       pthread_self(), len);
+	if (log)
+		printf("[%lu]: Try to write a block (before lock = %zd) %d\n",
+		       pthread_self(), len, do_read);
 
 	pthread_mutex_lock(&pdata->aio_mutex[do_read]);
 
-	if (log && len > 512)
+	if (log)
 		printf("[%lu]: Try to write a block (after lock)\n", pthread_self());
 
 	ret = io_submit(pdata->aio_ctx[do_read], 1, ios);
@@ -63,7 +63,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 		return -EIO;
 	}
 
-	if (log && len > 512)
+	if (log)
 		printf("[%lu]: Try to write a block (after io_submit)\n", pthread_self());
 
 	pfd[0].fd = pdata->aio_eventfd[do_read];
@@ -75,10 +75,10 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 	num_pfds = 2;
 
 	do {
-		if (log && len > 512)
+		if (log)
 			printf("[%lu]: Try to write a block (before poll)\n", pthread_self());
 		poll_nointr(pfd, num_pfds);
-		if (log && len > 512)
+		if (log)
 			printf("[%lu]: Try to write a block (after poll)\n", pthread_self());
 		if (pfd[0].revents & POLLIN) {
 			uint64_t event;
