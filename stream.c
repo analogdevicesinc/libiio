@@ -74,8 +74,17 @@ void iio_stream_destroy(struct iio_stream *stream)
 	size_t i;
 
 	for (i = 0; i < stream->nb_blocks; i++)
-		if (stream->blocks[i])
+		if (stream->blocks[i]) {
+			/* Make sure to dequeue any possible in flight block
+			 * before destroying it. Note that if the block is not
+			 * enqueued, this returns an error but we really don't
+			 * care about it. Making sure the block is dequeued makes
+			 * for a much cleaner exit specially in cases where freeing
+			 * the blocks is deferred to the default client.
+			 */
+			iio_block_dequeue(stream->blocks[i], false);
 			iio_block_destroy(stream->blocks[i]);
+		}
 	free(stream->blocks);
 	free(stream);
 }
