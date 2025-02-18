@@ -346,7 +346,7 @@ public:
 
 typedef Ptr<ChannelsMask, iio_channels_mask, iio_channels_mask_destroy> ChannelsMaskPtr;
 
-ChannelsMaskPtr create_channels_mask(unsigned int nb_channels)
+inline ChannelsMaskPtr create_channels_mask(unsigned int nb_channels)
 {
     return ChannelsMaskPtr(iio_create_channels_mask(nb_channels));
 }
@@ -695,7 +695,7 @@ public:
 
 typedef Ptr<Scan, struct iio_scan, iio_scan_destroy> ScanPtr;
 
-ScanPtr scan(struct iio_context_params const * params, char const * backends)
+inline ScanPtr scan(struct iio_context_params const * params, char const * backends)
 {
     return ScanPtr(impl::check(iio_scan(params, backends), "iio_scan"));
 }
