@@ -27,8 +27,23 @@ struct iio_cond {
 struct iio_thrd {
 	pthread_t thid;
 	void *d;
+	/*
+	 * pthread_setname_np(3) does not allow names bigger than 16
+	 * (at least on linux).
+	 */
+	char name[16];
 	int (*func)(void *);
 };
+
+#if defined(HAS_PTHREAD_SETNAME_NP)
+#if defined(__APPLE__)
+#define iio_thrd_create_set_name(thid, name)	pthread_setname_np(name)
+#else
+#define iio_thrd_create_set_name(thid, name)	pthread_setname_np(thid, name)
+#endif
+#else
+#define iio_thrd_create_set_name(thid, name)	0
+#endif
 
 struct iio_mutex * iio_mutex_create(void)
 {
@@ -107,6 +122,12 @@ void iio_cond_signal(struct iio_cond *cond)
 static void * iio_thrd_wrapper(void *d)
 {
 	struct iio_thrd *thrd = d;
+	/*
+	 * For Mac, it seems we need to name the thread from the thread
+	 * itself.
+	 */
+	if (thrd->name[0] != '\0')
+		iio_thrd_create_set_name(thrd->thid, thrd->name);
 
 	return (void *)(intptr_t) thrd->func(thrd->d);
 }
@@ -126,6 +147,8 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 
 	iio_thrd->d = d;
 	iio_thrd->func = thrd;
+	if (name)
+		iio_strlcpy(iio_thrd->name, name, sizeof(iio_thrd->name));
 
 	ret = pthread_create(&iio_thrd->thid, NULL,
 			     iio_thrd_wrapper, iio_thrd);
@@ -134,7 +157,7 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 		return iio_ptr(ret);
 	}
 
-	/* TODO: Set name */
+
 
 	return iio_thrd;
 }

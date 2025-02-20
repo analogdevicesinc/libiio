@@ -670,14 +670,14 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 	      goto err_free_lock;
 
 	priv->write_task = iio_task_create(iiod_responder_write, priv,
-					   "iiod-responder-writer-task");
+					   "writer-task");
 	err = iio_err(priv->write_task);
 	if (err)
 		goto err_free_io;
 
 	if (!NO_THREADS) {
 		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv,
-						  "iiod-responder-reader-thd");
+						  "reader-thd");
 		err = iio_err(priv->read_thrd);
 		if (err)
 			goto err_free_write_task;

@@ -1,15 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(iiod C)
 
-include(CheckSymbolExists)
-set(CMAKE_REQUIRED_LIBRARIES ${PTHREAD_LIBRARIES})
-set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
-set(TMP_FLAGS "${CMAKE_C_FLAGS}")
-set(CMAKE_C_FLAGS "")
-check_symbol_exists(pthread_setname_np "pthread.h" HAS_PTHREAD_SETNAME_NP)
-set(CMAKE_C_FLAGS "${TMP_FLAGS}")
-set(CMAKE_REQUIRED_LIBRARIES)
-set(CMAKE_REQUIRED_DEFINITIONS)
+include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
+CHECK_PTHREAD_SET_NAME(HAS_PTHREAD_SETNAME_NP)
 
 add_executable(iiod
 	iiod.c interpreter.c responder.c rw.c thread-pool.c
