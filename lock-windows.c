@@ -117,7 +117,7 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 
 	iio_thrd->thid = CreateThread(NULL, 0,
 				      (LPTHREAD_START_ROUTINE) iio_thrd_wrapper,
-				      d, 0, NULL);
+				      iio_thrd, 0, NULL);
 	if (!iio_thrd->thid) {
 		free(iio_thrd);
 		return iio_ptr(-(int) GetLastError());
