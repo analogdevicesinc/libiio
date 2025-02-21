@@ -114,7 +114,8 @@ static ssize_t writefd_aio(struct parser_pdata *pdata, const void *dest,
 		len = MAX_AIO_REQ_SIZE;
 	return async_io(pdata, (void *)dest, len, false);
 }
-#endif /* WITH_AIO */
+
+#else
 
 static ssize_t readfd_io(struct parser_pdata *pdata, void *dest, size_t len)
 {
@@ -195,6 +196,8 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 
 	return ret;
 }
+
+#endif /* WITH_AIO */
 
 void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		 bool is_socket, bool is_usb,
