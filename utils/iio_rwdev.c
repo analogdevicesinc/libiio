@@ -66,12 +66,16 @@ static size_t num_samples;
 static volatile sig_atomic_t app_running = true;
 static int exit_code = EXIT_FAILURE;
 
-static void quit_all(int sig)
+static int quit_all(int sig)
 {
 	exit_code = sig;
-	app_running = false;
-	if (buffer)
+	if (!app_running && buffer) {
 		iio_buffer_cancel(buffer);
+		return 1;
+	}
+
+	app_running = false;
+	return 0;
 }
 
 #ifdef _WIN32
@@ -79,11 +83,15 @@ static void quit_all(int sig)
 BOOL WINAPI sig_handler_fn(DWORD dwCtrlType)
 {
 	/* Runs in its own thread */
+	int ret;
 
 	switch (dwCtrlType) {
 	case CTRL_C_EVENT:
 	case CTRL_CLOSE_EVENT:
-		quit_all(SIGTERM);
+		ret = quit_all(SIGTERM);
+		if (!ret)
+			return FALSE;
+
 		return TRUE;
 	default:
 		return FALSE;
@@ -138,9 +146,10 @@ static void * sig_handler_thd(void *data)
 	/* Blocks until one of the termination signals is received */
 	do {
 		ret = sigwait(mask, &sig);
-	} while (ret == EINTR);
+		if (ret == EINTR)
+			continue;
 
-	quit_all(ret);
+	} while (!quit_all(ret));
 
 	return NULL;
 }
