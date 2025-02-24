@@ -39,6 +39,8 @@ static void free_block_entry(struct block_entry *entry)
 	iiod_io_cancel(entry->io);
 	iiod_io_unref(entry->io);
 	iio_block_destroy(entry->block);
+	iio_task_token_destroy(entry->enqueue_token);
+	iio_task_token_destroy(entry->dequeue_token);
 	free(entry);
 }
 
@@ -299,7 +301,7 @@ static int buffer_enqueue_block(void *priv, void *d)
 	if (entry->cyclic)
 		goto out_send_response;
 
-	ret = iio_task_enqueue_autoclear(buffer->dequeue_task, entry);
+	ret = iio_task_token_enqueue(entry->dequeue_token);
 	if (ret)
 		goto out_send_response;
 
@@ -511,6 +513,26 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 	return buf ?: iio_ptr(-EBADF);
 }
 
+static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
+						 const struct iiod_command *cmd,
+						 struct block_entry **entry_ptr)
+{
+	struct block_entry *entry;
+	struct iio_block *block = NULL;
+
+	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
+		if (entry->idx == cmd->code >> 16) {
+			block = entry->block;
+			break;
+		}
+	}
+
+	if (block && entry_ptr)
+		*entry_ptr = entry;
+
+	return block ?: iio_ptr(-EBADF);
+}
+
 static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 					struct buffer_entry *entry_buf,
 					const struct iiod_command *cmd,
@@ -520,20 +542,10 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	struct iio_block *block = NULL;
 
 	iio_mutex_lock(entry_buf->lock);
-
-	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
-		if (entry->idx == cmd->code >> 16) {
-			block = entry->block;
-			break;
-		}
-	}
-
+	block = get_iio_block_unlocked(entry_buf, cmd, entry_ptr);
 	iio_mutex_unlock(entry_buf->lock);
 
-	if (block && entry_ptr)
-		*entry_ptr = entry;
-
-	return block ?: iio_ptr(-EBADF);
+	return block;
 }
 
 static void handle_free_buffer(struct parser_pdata *pdata,
@@ -675,13 +687,22 @@ static void handle_create_block(struct parser_pdata *pdata,
 	entry = zalloc(sizeof(*entry));
 	if (!entry) {
 		ret = -ENOMEM;
-		iio_block_destroy(block);
-		goto out_send_response;
+		goto out_block_destroy;
 	}
 
 	entry->block = block;
 	entry->io = io;
 	entry->idx = cmd->code >> 16;
+
+	entry->enqueue_token = iio_task_token_create(buf_entry->enqueue_task, entry);
+	ret = iio_err(entry->enqueue_token);
+	if (ret)
+		goto out_free_entry;
+
+	entry->dequeue_token = iio_task_token_create(buf_entry->dequeue_task, entry);
+	ret = iio_err(entry->dequeue_token);
+	if (ret)
+		goto out_destroy_token;
 
 	if (WITH_IIOD_USB_DMABUF && pdata->is_usb) {
 		entry->dmabuf_fd = iio_block_get_dmabuf_fd(block);
@@ -709,6 +730,14 @@ static void handle_create_block(struct parser_pdata *pdata,
 	SLIST_INSERT_HEAD(&buf_entry->blocklist, entry, entry);
 	iio_mutex_unlock(buf_entry->lock);
 
+	goto out_send_response;
+
+out_destroy_token:
+	iio_task_token_destroy(entry->enqueue_token);
+out_free_entry:
+	free(entry);
+out_block_destroy:
+	iio_block_destroy(block);
 out_send_response:
 	iiod_io_send_response_code(io, ret);
 	iiod_io_unref(io);
@@ -730,28 +759,22 @@ static void handle_free_block(struct parser_pdata *pdata,
 	if (ret)
 		goto out_send_response;
 
-	block = get_iio_block(pdata, buf_entry, cmd, NULL);
+	iio_mutex_lock(buf_entry->lock);
+
+	block = get_iio_block_unlocked(buf_entry, cmd, &entry);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
 
-	ret = -EBADF;
+	/* make sure the block is not being used by the enqueue or dequeue tasks */
+	iio_task_cancel_sync(entry->enqueue_token, 0);
+	iio_task_cancel_sync(entry->dequeue_token, 0);
 
-	iio_mutex_lock(buf_entry->lock);
+	if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
+		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
 
-	SLIST_FOREACH(entry, &buf_entry->blocklist, entry) {
-		if (entry->block != block)
-			continue;
-
-		if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
-			usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
-
-		SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
-
-		free_block_entry(entry);
-		ret = 0;
-		break;
-	}
+	SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
+	free_block_entry(entry);
 
 	iio_mutex_unlock(buf_entry->lock);
 
@@ -788,11 +811,13 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 		return;
 	}
 
-	block = get_iio_block(pdata, entry, cmd, &block_entry);
+	iio_mutex_lock(entry->lock);
+
+	block = get_iio_block_unlocked(entry, cmd, &block_entry);
 	ret = iio_err(block);
 	if (ret) {
 		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO block");
-		return;
+		goto out_unlock;
 	}
 
 	readbuf.ptr = &bytes_used;
@@ -830,14 +855,16 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	block_entry->bytes_used = bytes_used;
 	block_entry->cyclic = cmd->op == IIOD_OP_ENQUEUE_BLOCK_CYCLIC;
 
-	ret = iio_task_enqueue_autoclear(entry->enqueue_task, block_entry);
+	ret = iio_task_token_enqueue(block_entry->enqueue_token);
 	if (ret)
 		goto out_send_response;
 
+out_unlock:
+	iio_mutex_unlock(entry->lock);
 	/* The return code and/or data will be sent from the task handler. */
 	return;
-
 out_send_response:
+	iio_mutex_unlock(entry->lock);
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
@@ -858,21 +885,26 @@ static void handle_retry_dequeue_block(struct parser_pdata *pdata,
 		return;
 	}
 
-	block = get_iio_block(pdata, entry, cmd, &block_entry);
+	iio_mutex_lock(entry->lock);
+
+	block = get_iio_block_unlocked(entry, cmd, &block_entry);
 	ret = iio_err(block);
 	if (ret) {
 		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO block");
-		return;
+		goto out_unlock;
 	}
 
-	ret = iio_task_enqueue_autoclear(entry->dequeue_task, block_entry);
+	ret = iio_task_token_enqueue(block_entry->dequeue_token);
 	if (ret)
 		goto out_send_response;
 
+out_unlock:
+	iio_mutex_unlock(entry->lock);
 	/* The return code and/or data will be sent from the task handler. */
 	return;
 
 out_send_response:
+	iio_mutex_unlock(entry->lock);
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
