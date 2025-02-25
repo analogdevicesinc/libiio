@@ -1,5 +1,5 @@
 function [PhyDevName, ChnId, ChnType, ModType, IsOutput, ...
-    IsScanElement, AttrsCount, AttrNameGet, AttrNameFind] = ...
+    IsScanElement, AttrsCount, AttrFileName, AttrNameGet, AttrNameFind] = ...
     iioContextGetChannelInfo(uri, phyDevName, ...
     chnName, isOutput, AttrIndex)
 
@@ -20,7 +20,8 @@ function [PhyDevName, ChnId, ChnType, ModType, IsOutput, ...
         IsOutput = true;
         IsScanElement = true;
         AttrsCount = 0;
-        AttrNameGet = uint8('pqr');
+        AttrFileName = uint8('ijk');
+        AttrNameGet = uint8('uvw');
         AttrNameFind = uint8('pqr');
         return;
     end
@@ -53,9 +54,12 @@ function [PhyDevName, ChnId, ChnType, ModType, IsOutput, ...
     % Get Channel Attributes Count Associated with the Channel Pointer
     AttrsCount = adi.libiio.channel.iio_channel_get_attrs_count(iioPhyDevChnPtr);
 
+    % Get Attribute Pointer Associated with the Channel Pointer at Index
     AttrPtrGet = adi.libiio.channel.iio_channel_get_attr(iioPhyDevChnPtr, AttrIndex);
+    AttrFileName = adi.libiio.attribute.iio_attr_get_filename(AttrPtrGet);
     AttrNameGet = adi.libiio.attribute.iio_attr_get_name(AttrPtrGet);
 
+    % Get Attribute Pointer Associated with the Channel Pointer Given Name
     AttrPtrFind = adi.libiio.channel.iio_channel_find_attr(iioPhyDevChnPtr, AttrNameGet);
     AttrNameFind = adi.libiio.attribute.iio_attr_get_name(AttrPtrFind);
 

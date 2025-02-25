@@ -6,5 +6,3 @@ if isunix
 elseif ispc
     % Code to run on Windows platform
 end
-    
-    

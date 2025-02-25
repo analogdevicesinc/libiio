@@ -7,17 +7,19 @@ function [status, chnDataFormatPtr, ...
     chnAttrName)
 
     assert(isa(uri,'char') && all(size(uri) <= [1,20]));
-    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,20]));
-    assert(isa(chnName,'char') && all(size(chnName) <= [1,20]));
+    assert(isa(phyDevName,'char') && all(size(phyDevName) <= [1,50]));
+    assert(isa(chnName,'char') && all(size(chnName) <= [1,50]));
     assert(isa(isOutput,'logical') && all(size(isOutput) <= [1,1]));
-    assert(isa(chnAttrName,'char') && all(size(chnAttrName) <= [1,20]));
+    assert(isa(chnAttrName,'char') && all(size(chnAttrName) <= [1,50]));
 
     % Get Context
     iioCtxPtr = adi.libiio.context.iio_create_context(uri);
     status = -int32(iioCtxPtr==coder.opaque('struct iio_context*', 'NULL'));
     if status ~= 0
-        value = double(0);
+        chnDataFormatPtr = struct;
+        coder.cstructname(chnDataFormatPtr, 'const struct iio_data_format*', 'extern', 'HeaderFile', 'iio-wrapper.h');
         attrName = char(zeros(1,1,'uint8'));
+        value = double(0);
         return;
     end
 
