@@ -1,7 +1,7 @@
 classdef attribute < handle
     methods (Static)
         %% attribute methods
-        function status = iio_attr_read_raw(attrPtr, dstPtr, len)
+        function [nBytes, value] = iio_attr_read_raw(attrPtr, len)
             % Read the content of the given attribute
             %
             % Args:
@@ -20,9 +20,12 @@ classdef attribute < handle
                 'nonnegative', 'integer'});
             
             if coder.target('MATLAB')
-                status = adi.libiio.helpers.calllibADI('iio_attr_read_raw', attrPtr, dstPtr, len);
+                dstPtr = libpointer('cstring',repmat(' ',1,len+1));
+                [nBytes, ~,value] = adi.libiio.helpers.calllibADI('iio_attr_read_raw', attrPtr, dstPtr, len);
             else
-                status = coder.ceval('iio_attr_read_raw', attrPtr, dstPtr, len);
+                nBytes = coder.nullcopy(int32(0));
+                value = coder.nullcopy(char(zeros(1,len+1, 'uint8')));
+                nBytes = coder.ceval('iio_attr_read_raw', attrPtr, coder.wref(dstPtr), len);
             end
         end
 
