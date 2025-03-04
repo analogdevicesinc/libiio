@@ -1,3 +1,28 @@
+# libiio - Active Development Overview
+
+**libiio** is under active development, with continuous improvements, bug fixes, and new features added frequently. The `main` branch represents the development of **libiio v1.0**, which introduces a **brand-new API** that is **incompatible with libiio v0.26 and earlier**. This new API reflects significant architectural changes and improvements designed to enhance performance, flexibility, and usability.
+
+## Nightly Builds (Developer Use Only)
+
+To support developers contributing to or testing the experimental features of libiio v1.0 (which encompasses all code on the `main` branch at present), we provide **nightly builds**. These are automated, pre-release versions generated daily from the latest changes in the repository.
+
+These nightly builds are intended **exclusively for development and testing purposes**.
+**End users should avoid using nightly builds in production**, as they may include unstable, incomplete, or breaking changes that could negatively impact performance or functionality.
+
+### Why Use Nightly Builds?
+
+Using nightly builds allows developers to:
+
+- Test and verify new features before they are officially released.
+- Identify bugs and regressions early in the development cycle.
+- Provide feedback to help shape the final release of libiio v1.0.
+
+### Reporting Issues
+
+If you encounter any bugs or issues while using nightly builds, we encourage you to report them on the [issue tracker](https://github.com/analogdevicesinc/libiio/issues). Early feedback is critical to ensuring the stability and reliability of future releases.
+
+Thank you for contributing to the development of libiio!
+
 # Libiio packages
 
 | Operating System        | GitHub main status  | Version |  Primary Installer Package  | Alternative Package, tarball or zip |
@@ -20,3 +45,5 @@
 |  | [![Build Status](https://dev.azure.com/AnalogDevices/OpenSource/_apis/build/status/analogdevicesinc.libiio?branchName=main&stageName=Builds&jobName=ARMBuilds&configuration=ARMBuilds%20ubuntu-arm32v7)](https://dev.azure.com/AnalogDevices/OpenSource/_build/latest?definitionId=9&branchName=main) | Ubuntu-arm32v7 | [![Debian](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/deb.png)](https://swdownloads.analog.com/cse/azure_builds/Ubuntu-arm32v7_latest_main_libiio.deb) | [![Linux tarball](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/linux_box.png)](https://swdownloads.analog.com/cse/azure_builds/Ubuntu-arm32v7_latest_main_libiio.tar.gz) |
 |  | [![Build Status](https://dev.azure.com/AnalogDevices/OpenSource/_apis/build/status/analogdevicesinc.libiio?branchName=main&stageName=Builds&jobName=ARMBuilds&configuration=ARMBuilds%20debian_bookworm)](https://dev.azure.com/AnalogDevices/OpenSource/_build/latest?definitionId=9&branchName=main) | Debian Bookworm-arm | [![Debian](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/deb.png)](https://swdownloads.analog.com/cse/azure_builds/Debian12-arm_latest_main_libiio.deb) | [![Linux tarball](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/linux_box.png)](https://swdownloads.analog.com/cse/azure_builds/Debian12-arm_latest_main_libiio.tar.gz) |
 | MinGW    | [![Build Status](https://dev.azure.com/AnalogDevices/OpenSource/_apis/build/status%2Fanalogdevicesinc.libiio?branchName=main&stageName=Builds&jobName=MinGWBuilds)](https://dev.azure.com/AnalogDevices/OpenSource/_build/latest?definitionId=9&branchName=main) | Windows-MinGW-W64 |  | [![Latest Windows zip](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://swdownloads.analog.com/cse/azure_builds/Windows-MinGW-W64-latest_main_libiio.zip) |
+
+1. The Ubuntu packages are known to work on their Debian counterpart releases.
