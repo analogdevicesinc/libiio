@@ -16,17 +16,17 @@
 #include <stdlib.h>
 #include <time.h>
 
-#if defined(HAS_PTHREAD_SETNAME_NP)
 #ifndef PTHREAD_MAX_NAMELEN_NP
 #define PTHREAD_MAX_NAMELEN_NP	16
 #endif
+#if defined(HAS_PTHREAD_SETNAME_NP)
 #if defined(__APPLE__)
 #define iio_thrd_create_set_name(thid, name)	pthread_setname_np(name)
 #else
 #define iio_thrd_create_set_name(thid, name)	pthread_setname_np(thid, name)
 #endif
 #else
-#define iio_thrd_create_set_name(thid, name)	0
+#define iio_thrd_create_set_name(thid, name)
 #endif
 
 struct iio_mutex {
