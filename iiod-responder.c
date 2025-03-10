@@ -575,6 +575,7 @@ int iiod_io_get_response_async(struct iiod_io *io,
 		for (tmp = priv->readers; tmp->r_next; )
 			tmp = tmp->r_next;
 		tmp->r_next = io;
+		io->r_next = NULL;
 	}
 
 	iio_mutex_unlock(priv->lock);
