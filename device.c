@@ -407,8 +407,10 @@ struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,
 
 	iio_channel_init_finalize(chn);
 
-	/* Reorder channels by index */
-	iio_sort_channels(dev);
+	/* Reorder channels by index unless context is created from xml which
+	 * should provide already sorted channels. */
+	if (strcmp(dev->ctx->name, "xml"))
+		iio_sort_channels(dev);
 
 	for (i = 0; i < dev->nb_channels; i++)
 		dev->channels[i]->number = i;
