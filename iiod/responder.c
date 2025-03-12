@@ -232,7 +232,7 @@ static void handle_gettrig(struct parser_pdata *pdata,
 		if (trigger == iio_context_get_device(ctx, i))
 			break;
 
-	ret = i < iio_context_get_devices_count(ctx) ? i : -ENODEV;
+	ret = i < iio_context_get_devices_count(ctx) ? (int)i : -ENODEV;
 
 out_send_response:
 	iiod_io_send_response_code(io, ret);
