@@ -284,7 +284,6 @@ static bool iio_buffer_is_tx(const struct iio_buffer *buf)
 
 static int buffer_enqueue_block(void *priv, void *d)
 {
-	struct buffer_entry *buffer = priv;
 	struct block_entry *entry = d;
 	intptr_t ret;
 
@@ -538,7 +537,6 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 					const struct iiod_command *cmd,
 					struct block_entry **entry_ptr)
 {
-	struct block_entry *entry;
 	struct iio_block *block = NULL;
 
 	iio_mutex_lock(entry_buf->lock);
@@ -752,7 +750,7 @@ static void handle_free_block(struct parser_pdata *pdata,
 	struct iio_buffer *buf;
 	struct iio_block *block;
 	struct iiod_io *io;
-	int ret, ep_fd;
+	int ret;
 
 	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
