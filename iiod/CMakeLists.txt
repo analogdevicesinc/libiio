@@ -12,7 +12,7 @@ set_target_properties(iiod PROPERTIES
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
 )
-target_link_libraries(iiod LINK_PRIVATE iio iiod-responder
+target_link_libraries(iiod LINK_PRIVATE iio iio_common_config iiod-responder
 	${PTHREAD_LIBRARIES} ${AVAHI_COMMON_LIBRARIES} ${AVAHI_CLIENT_LIBRARIES}
 )
 target_include_directories(iiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
