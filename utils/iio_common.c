@@ -351,7 +351,7 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		err = iio_snprintf(buf, sizeof(buf), "%s:%s", prefix, arg);
 		if (err < 0)
 			ctx = iio_ptr(err);
-		else if (err >= sizeof(buf))
+		else if ((size_t)err >= sizeof(buf))
 			ctx = iio_ptr(-EINVAL);
 		else
 			ctx = iio_create_context(NULL, buf);
