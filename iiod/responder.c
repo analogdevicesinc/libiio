@@ -335,7 +335,7 @@ static int buffer_dequeue_block(void *priv, void *d)
 		}
 
 		data.ptr = iio_block_start(entry->block);
-		data.size = iio_block_end(entry->block) - data.ptr;
+		data.size = (char *)iio_block_end(entry->block) - (char *)data.ptr;
 		nb_data++;
 
 		ret = data.size;
@@ -842,7 +842,7 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 				goto out_send_response;
 		} else {
 			readbuf.ptr = iio_block_start(block);
-			readbuf.size = iio_block_end(block) - readbuf.ptr;
+			readbuf.size = (char *)iio_block_end(block) - (char *)readbuf.ptr;
 
 			ret = iiod_command_data_read(cmd_data, &readbuf);
 			if (ret < 0)
