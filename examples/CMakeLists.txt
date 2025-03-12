@@ -7,7 +7,7 @@ project(dummy-iiostream C)
 project(adrv9002-iiostream C)
 
 add_library(iiostream_helper STATIC iiostream-common.c)
-target_link_libraries(iiostream_helper PUBLIC iio)
+target_link_libraries(iiostream_helper PUBLIC iio iio_common_config)
 
 if (APPLE)
     # Add relative rpath to iio library (which is in the same framework)

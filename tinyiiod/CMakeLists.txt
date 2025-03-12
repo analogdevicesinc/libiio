@@ -17,4 +17,4 @@ set_target_properties(tinyiiod PROPERTIES
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
 )
-target_link_libraries(tinyiiod LINK_PRIVATE iio iiod-responder)
+target_link_libraries(tinyiiod LINK_PRIVATE iio iio_common_config iiod-responder)

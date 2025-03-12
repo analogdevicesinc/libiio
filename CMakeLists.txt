@@ -195,8 +195,10 @@ if (DEFAULT_LOG_LEVEL GREATER MAX_LOG_LEVEL_VALUE)
 	message(SEND_ERROR "Default log level cannot be more than the maximum log level.")
 endif()
 
+add_library(iio_common_config INTERFACE)
+
 if (MSVC)
-	target_compile_options(iio PRIVATE /Zi /W4 /wd4200 /wd4127 /wd4100)
+	target_compile_options(iio_common_config INTERFACE /Zi /W4 /wd4200 /wd4127 /wd4100)
 	# Zi produces a separate PDB file that contains all the symbolic debugging information
 	# W4 displays level 1, 2, 3, and 4 (informational) warnings that aren't off by default
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
@@ -215,18 +217,20 @@ elseif (CMAKE_COMPILER_IS_GNUCC)
 	check_c_compiler_flag(-Wpedantic HAS_WPEDANTIC)
 	check_c_compiler_flag(-Wshadow HAS_WSHADOW)
 
-	target_compile_options(iio PRIVATE -Wall -Wextra -Wno-unused-parameter
+	target_compile_options(iio_common_config INTERFACE -Wall -Wextra -Wno-unused-parameter
 		$<$<BOOL:HAS_WPEDANTIC>:-Wpedantic>
 		$<$<BOOL:HAS_WSHADOW>:-Wshadow>
 	)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-	target_compile_options(iio PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
+	target_compile_options(iio_common_config INTERFACE -Wall -Wextra -pedantic -Wno-unused-parameter)
 else()
 	message(STATUS "Unknown compiler, please report upstream")
 	message(STATUS "CMAKE_C_COMPILER_ID : " ${CMAKE_C_COMPILER_ID})
 	message(STATUS "CFLAGS set to " ${CMAKE_C_FLAGS})
 endif()
+
+target_link_libraries(iio PRIVATE iio_common_config)
 
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
