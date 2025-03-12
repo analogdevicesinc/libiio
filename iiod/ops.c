@@ -555,7 +555,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		}
 
 		if (has_readers) {
-			nb_bytes = iio_block_end(block) - iio_block_start(block);
+			nb_bytes = (char *)iio_block_end(block) - (char *)iio_block_start(block);
 
 			/* We don't use SLIST_FOREACH here. As soon as a thread is
 			 * signaled, its "thd" structure might be freed;
