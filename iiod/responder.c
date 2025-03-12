@@ -509,7 +509,7 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 	if (buf && entry_ptr)
 		*entry_ptr = entry;
 
-	return buf ?: iio_ptr(-EBADF);
+	return buf ? buf : iio_ptr(-EBADF);
 }
 
 static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
@@ -529,7 +529,7 @@ static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
 	if (block && entry_ptr)
 		*entry_ptr = entry;
 
-	return block ?: iio_ptr(-EBADF);
+	return block ? block : iio_ptr(-EBADF);
 }
 
 static struct iio_block * get_iio_block(struct parser_pdata *pdata,
