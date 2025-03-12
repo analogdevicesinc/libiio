@@ -168,9 +168,8 @@ char ** dup_argv(char * name, unsigned int argc, char * argv[])
 	return new_argv;
 
 err_dup:
-	i--;
-	for (; i >= 0; i--)
-		free(new_argv[i]);
+	for (; i > 0; i--)
+		free(new_argv[i - 1]);
 
 	free(new_argv);
 
