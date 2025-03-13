@@ -18,12 +18,6 @@ target_link_libraries(iiod LINK_PRIVATE iio iio_common_config iiod-responder
 target_include_directories(iiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(iiod PRIVATE _GNU_SOURCE)
 
-if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-	# flex sometimes generates code which generate sign comparison errors
-	set_source_files_properties(${FLEX_lexer_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
-	set_source_files_properties(${BISON_parser_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
-endif ()
-
 option(WITH_IIOD_V0_COMPAT "Build support for Libiio v0.x protocol" ON)
 if (WITH_IIOD_V0_COMPAT)
 	include(FindBISON)
@@ -37,6 +31,11 @@ if (WITH_IIOD_V0_COMPAT)
 
 	target_sources(iiod PRIVATE ops.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
 endif (WITH_IIOD_V0_COMPAT)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+	# flex sometimes generates code which generate sign comparison errors
+	set_source_files_properties(${FLEX_lexer_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
+	set_source_files_properties(${BISON_parser_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
+endif ()
 
 option(WITH_AIO "Build IIOD with async. I/O support" ON)
 if (WITH_AIO)
