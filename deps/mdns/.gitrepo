@@ -7,6 +7,6 @@
 	remote = https://github.com/mjansson/mdns
 	branch = main
 	commit = c36996e067202691c562e2ea1ee59f9494c87231
-	parent = e175f25bbf6b131f3cdb52a4b6662412dbdd286a
+	parent = a5c9cf5ac8919dc2a5c3a27da8e784e551e84075
 	method = merge
 	cmdver = 0.4.3
