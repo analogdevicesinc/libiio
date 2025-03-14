@@ -1,3 +1,12 @@
+1.4.3
+
+Fixed a possible buffer overflow in txt record parse
+
+Fixed parsing boolean txt records (keys without value)
+
+Ignore questions field in query receive, allowing replies with multiple questions
+
+
 1.4.2
 
 Add mdns_goodbye_multicast function to send end of service announcement
