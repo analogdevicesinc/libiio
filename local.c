@@ -1484,12 +1484,20 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 	const struct iio_channel *chn;
 	int err, cancel_fd, fd;
 	unsigned int i;
+	const char *use_cma_for_device;
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata)
 		return iio_ptr(-ENOMEM);
 
 	pdata->dev = dev;
+
+	pdata->dmabuf_alloc_type = DMABUF_ALLOC_SC;
+	use_cma_for_device = iio_getenv("CMA_FOR_DEVICE");
+	if (use_cma_for_device) {
+		if (strstr(dev->name, use_cma_for_device))
+			pdata->dmabuf_alloc_type = DMABUF_ALLOC_CMA;
+	}
 
 	if (WITH_LOCAL_MMAP_API) {
 		pdata->pdata = local_alloc_mmap_buffer_impl();
