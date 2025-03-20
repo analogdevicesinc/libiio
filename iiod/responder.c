@@ -761,8 +761,10 @@ static void handle_free_block(struct parser_pdata *pdata,
 
 	block = get_iio_block_unlocked(buf_entry, cmd, &entry);
 	ret = iio_err(block);
-	if (ret)
+	if (ret) {
+		iio_mutex_unlock(buf_entry->lock);
 		goto out_send_response;
+	}
 
 	/* make sure the block is not being used by the enqueue or dequeue tasks */
 	iio_task_cancel_sync(entry->enqueue_token, 0);
