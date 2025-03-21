@@ -1545,8 +1545,12 @@ iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
 	int ret = -ENOMEM;
 	uint64_t block_size = size;
 
-	if (!iiod_client_uses_binary_interface(client))
+	printf("Create block...\n");
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		printf("No binary interface\n");
 		return iio_ptr(-ENOSYS);
+	}
 
 	buf.ptr = &block_size;
 	buf.size = sizeof(block_size);
@@ -1577,8 +1581,10 @@ iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
 	cmd.code = pdata->idx | (pbuf->idx << 16);
 
 	ret = iiod_io_exec_command(pbuf->io, &cmd, &buf, NULL);
-	if (ret < 0)
+	if (ret < 0) {
+		printf("Got error on exec command %d\n", ret);
 		goto err_free_io;
+	}
 
 	*data = block->data;
 

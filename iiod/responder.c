@@ -715,6 +715,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 	struct iiod_io *io;
 	int ret, ep_fd;
 
+	printf("Handle create block!\n");
 	io = iiod_command_create_io(cmd, cmd_data);
 	ret = iio_err(io);
 	if (ret) {

@@ -140,7 +140,8 @@ int main(void)
 	for (i = 0; i < 4; i++) {
 		blocks[i] = iio_buffer_create_block(rxbuf, block_size);
 		if (iio_err(blocks[i])) {
-			fprintf(stderr, "Could not create RX block\n");
+			fprintf(stderr, "Could not create RX block (%d)\n",
+				iio_err(blocks[i]));
 			goto clean;
 		}
 
