@@ -668,9 +668,9 @@ if (WITH_LIBTINYIIOD)
 	add_subdirectory(tinyiiod)
 endif()
 
-if ((WITH_IIOD OR IIOD_CLIENT) AND NOT WITH_ZSTD)
-	message(WARNING "IIOD async. API requires ZSTD support, consider enabling it.\n"
-		"If you want to enable libzstd support, set WITH_ZSTD=ON.")
+if (((WITH_IIOD AND WITH_AIO) OR IIOD_CLIENT) AND NOT WITH_ZSTD)
+	message(SEND_ERROR "Sorry, IIOD async. API requires ZSTD support.\n"
+		"Set WITH_ZSTD=ON to enable it.")
 endif()
 
 if (WIN32)
