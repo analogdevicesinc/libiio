@@ -427,7 +427,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	size_t nb_words;
 	int ret = -EINVAL;
 
-	printf("Handle create block!\n");
+	printf("Handle create buffer!\n");
 
 	dev = iio_context_get_device(ctx, cmd->dev);
 	if (!dev)
