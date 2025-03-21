@@ -56,8 +56,26 @@ struct DevEntry;
 extern struct iio_mutex *buflist_lock;
 extern struct iio_mutex *evlist_lock;
 
+struct block_share_entry {
+	SLIST_ENTRY(block_share_entry) entry;
+	struct block_entry *block;
+	struct buffer_entry *buffer;
+};
+
 struct block_entry {
 	SLIST_ENTRY(block_entry) entry;
+	/* Should be protected by the buffer lock of the "parent" and never be written
+	 * on "child" blocks.
+	 */
+	SLIST_HEAD(BlockChildList, block_share_entry) childlist;
+	/* The below two pointers should only be set on "child" objects when sharing
+	 * a block entry. See handle_share_block(). We need this because free_block_entry()
+	 * can be called when freeing a buffer before unsharing the block (that should
+	 * happen though) so that we need to unshare it and access the parent device to
+	 * update @childlist.
+	 */
+	struct block_entry *parent_block;
+	struct buffer_entry *parent_buffer;
 	struct iio_block *block;
 	struct iiod_io *io;
 	struct iio_task_token *enqueue_token;
@@ -67,6 +85,12 @@ struct block_entry {
 	bool cyclic;
 	int dmabuf_fd;
 	int ep_fd;
+	/*
+	 * This means this is a shared block and was duplicated.
+	 * It is used so that we know we only have to unshare in case
+	 * free_block_entry() is called from the buffer destroy function.
+	 */
+	bool child;
 };
 
 struct buffer_entry {

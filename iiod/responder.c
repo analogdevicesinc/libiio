@@ -7,12 +7,15 @@
  */
 
 #include "debug.h"
+#include "iio-private.h"
+#include "iio/iio.h"
 #include "ops.h"
 
 #include "../iiod-responder.h"
 
 #include <fcntl.h>
 #include <iio/iio-lock.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -34,14 +37,75 @@ static SLIST_HEAD(EventStreamList, evstream_entry) evlist;
 /* Protect evlist from parallel access */
 struct iio_mutex *evlist_lock;
 
-static void free_block_entry(struct block_entry *entry)
+static void __free_block_entry_common(struct buffer_entry *buffer, struct block_entry *entry)
 {
 	iiod_io_cancel(entry->io);
 	iiod_io_unref(entry->io);
-	iio_block_destroy(entry->block);
+	if (!entry->child)
+		iio_block_destroy(entry->block);
+	else
+		iio_block_unshare(buffer->buf, entry->block);
 	iio_task_token_destroy(entry->enqueue_token);
 	iio_task_token_destroy(entry->dequeue_token);
 	free(entry);
+}
+
+static void __free_shared_block(struct block_share_entry *shared)
+{
+	iio_mutex_lock(shared->buffer->lock);
+	SLIST_REMOVE(&shared->buffer->blocklist, shared->block, block_entry, entry);
+	__free_block_entry_common(shared->buffer, shared->block);
+	iio_mutex_unlock(shared->buffer->lock);
+	free(shared);
+}
+
+static void free_shared_block(struct block_entry *block_entry)
+{
+	struct block_entry *block_orig = block_entry->parent_block;
+	struct buffer_entry *buf_orig = block_entry->parent_buffer;
+	struct block_share_entry *shared_entry;
+	bool found = false;
+
+	iio_mutex_lock(buf_orig->lock);
+	/* Go over the child blocks and find me so I can remove myself! */
+	SLIST_FOREACH(shared_entry, &block_orig->childlist, entry) {
+		if (shared_entry->block == block_entry) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		IIO_WARNING("Block not found in the shared list... Won't free it!!\n");
+		iio_mutex_unlock(buf_orig->lock);
+		return;
+	}
+
+	/* remove shared entry from the original buffer */
+	SLIST_REMOVE(&block_orig->childlist, shared_entry, block_share_entry, entry);
+	iio_mutex_unlock(buf_orig->lock);
+	__free_block_entry_common(shared_entry->buffer, shared_entry->block);
+	free(shared_entry);
+}
+
+static void free_block_entry(struct block_entry *entry)
+{
+	struct block_share_entry *shared_entry, *next;
+
+	printf("free_block_entry (clone=%d)\n", entry->child);
+	if (entry->child) {
+		free_shared_block(entry);
+		return;
+	}
+
+	/* Make sure to remove all the shares for this block */
+	for (shared_entry = SLIST_FIRST(&entry->childlist); shared_entry;
+	     shared_entry = next) {
+		next = SLIST_NEXT(shared_entry, entry);
+		__free_shared_block(shared_entry);
+	}
+
+	__free_block_entry_common(NULL, entry);
 }
 
 static void free_buffer_entry(struct buffer_entry *entry)
@@ -747,12 +811,13 @@ static void handle_free_block(struct parser_pdata *pdata,
 			      const struct iiod_command *cmd,
 			      struct iiod_command_data *cmd_data)
 {
+	struct block_share_entry *child;
 	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
 	struct iio_buffer *buf;
 	struct iio_block *block;
 	struct iiod_io *io;
-	int ret, ep_fd;
+	int ret;
 
 	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
@@ -769,6 +834,11 @@ static void handle_free_block(struct parser_pdata *pdata,
 	/* make sure the block is not being used by the enqueue or dequeue tasks */
 	iio_task_cancel_sync(entry->enqueue_token, 0);
 	iio_task_cancel_sync(entry->dequeue_token, 0);
+	/* also sync any possible shared block */
+	SLIST_FOREACH(child, &entry->childlist, entry) {
+		iio_task_cancel_sync(child->block->enqueue_token, 0);
+		iio_task_cancel_sync(child->block->dequeue_token, 0);
+	}
 
 	if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0)
 		usb_detach_dmabuf(entry->ep_fd, entry->dmabuf_fd);
@@ -783,6 +853,187 @@ static void handle_free_block(struct parser_pdata *pdata,
 out_send_response:
 	/* We may have freed the block's iiod_io, so create a new one to
 	 * answer the request. */
+	io = iiod_command_create_io(cmd, cmd_data);
+	if (iio_err(io)) {
+		/* TODO: How to handle the error? */
+		return;
+	}
+	iiod_io_send_response_code(io, ret);
+	iiod_io_unref(io);
+}
+
+static void handle_share_block(struct parser_pdata *pdata,
+			       const struct iiod_command *cmd,
+			       struct iiod_command_data *cmd_data)
+{
+	struct buffer_entry *orig_entry, *new_entry;
+	struct block_share_entry *shared_entry;
+	struct iio_buffer *new_buf, *orig_buf;
+	struct block_entry *entry, *new_block;
+	struct iiod_command orig_buf_cmd;
+	struct iiod_block_share shared;
+	struct iio_block *block;
+	struct iiod_buf data;
+	struct iiod_io *io;
+	int ret;
+
+	io = iiod_command_create_io(cmd, cmd_data);
+	ret = iio_err(io);
+	if (ret) {
+		/* TODO: How to handle this error? */
+		return;
+	}
+
+	data.ptr = &shared;
+	data.size = sizeof(shared);
+
+	ret = iiod_command_data_read(cmd_data, &data);
+	if (ret < 0)
+		goto out_send_response;
+
+	/* get the buffer to share the block */
+	new_buf = get_iio_buffer(pdata, cmd, &new_entry);
+	ret = iio_err(new_buf);
+	if (ret)
+		goto out_send_response;
+
+	block = get_iio_block(pdata, new_entry, cmd, NULL);
+	ret = iio_err(block);
+	if (ret == 0) {
+		/* No error? This block already exists, so return
+		 * -EINVAL. */
+		ret = -EINVAL;
+		goto out_send_response;
+	}
+
+	orig_buf_cmd.dev = shared.dev;
+	orig_buf_cmd.code = shared.buf_idx | shared.block_idx << 16;
+
+	struct iio_device *dev;
+	dev = iio_context_get_device(pdata->ctx, shared.dev);
+
+	printf("Sharing block %d from %s, buffer %d to buffer %d\n",
+	       cmd->code >> 16, iio_device_get_name(dev), shared.buf_idx, cmd->code & 0xffff);
+
+	/* now, let's get the block from it's original/default buffer */
+	orig_buf = get_iio_buffer(pdata, &orig_buf_cmd, &orig_entry);
+	ret = iio_err(orig_buf);
+	if (ret) {
+		printf("Could not find the original buffer\n");
+		goto out_send_response;
+	}
+	iio_mutex_lock(orig_entry->lock);
+
+	block = get_iio_block_unlocked(orig_entry, cmd, &entry);
+	ret = iio_err(block);
+	if (ret) {
+		printf("Could not find the original block\n");
+		goto out_unlock;
+	}
+
+	ret = iio_block_share(new_buf, block);
+	if (ret)
+		goto out_unlock;
+
+	new_block = zalloc(sizeof(*new_block));
+	if (!entry) {
+		ret = -ENOMEM;
+		goto out_unshare;
+	}
+
+	/* duplicate needed fields from the original entry */
+	new_block->block = block;
+	new_block->cyclic = entry->cyclic;
+	new_block->dmabuf_fd = entry->dmabuf_fd;
+	new_block->ep_fd = entry->ep_fd;
+	new_block->child = true;
+	new_block->idx = cmd->code >> 16;
+	/* get parent references */
+	new_block->parent_block = entry;
+	new_block->parent_buffer = orig_entry;
+
+	new_block->enqueue_token = iio_task_token_create(new_entry->enqueue_task,
+							 new_block);
+	ret = iio_err(new_block->enqueue_token);
+	if (ret)
+		goto out_free_entry;
+
+	new_block->dequeue_token = iio_task_token_create(new_entry->dequeue_task,
+							 new_block);
+	ret = iio_err(new_block->dequeue_token);
+	if (ret)
+		goto out_destroy_token;
+
+	shared_entry = zalloc(sizeof(*shared_entry));
+	if (!shared_entry) {
+		ret = -ENOMEM;
+		goto out_destroy_dequeue;
+	}
+
+	shared_entry->block = new_block;
+	shared_entry->buffer = new_entry;
+	SLIST_INSERT_HEAD(&entry->childlist, shared_entry, entry);
+
+	/* Keep a reference to the iiod_io until the block is freed. */
+	iiod_io_ref(io);
+
+	iio_mutex_lock(new_entry->lock);
+	SLIST_INSERT_HEAD(&new_entry->blocklist, new_block, entry);
+	iio_mutex_unlock(new_entry->lock);
+
+	goto out_unlock;
+
+out_destroy_dequeue:
+	iio_task_token_destroy(new_block->dequeue_token);
+out_destroy_token:
+	iio_task_token_destroy(new_block->enqueue_token);
+out_free_entry:
+	free(new_block);
+out_unshare:
+	iio_block_unshare(new_buf, block);
+out_unlock:
+	iio_mutex_unlock(orig_entry->lock);
+out_send_response:
+	iiod_io_send_response_code(io, ret);
+	iiod_io_unref(io);
+}
+
+static void handle_unshare_block(struct parser_pdata *pdata,
+				 const struct iiod_command *cmd,
+				 struct iiod_command_data *cmd_data)
+{
+	struct buffer_entry *buf_entry;
+	struct block_entry *entry;
+	struct iio_block *block;
+	struct iio_buffer *buf;
+	struct iiod_io *io;
+	int ret;
+
+	buf = get_iio_buffer(pdata, cmd, &buf_entry);
+	ret = iio_err(buf);
+	if (ret)
+		goto out_send_response;
+
+	iio_mutex_lock(buf_entry->lock);
+
+	block = get_iio_block_unlocked(buf_entry, cmd, &entry);
+	ret = iio_err(block);
+	if (ret) {
+		iio_mutex_unlock(buf_entry->lock);
+		goto out_send_response;
+	}
+
+	iio_task_cancel_sync(entry->enqueue_token, 0);
+	iio_task_cancel_sync(entry->dequeue_token, 0);
+
+	printf("Unsharing block %d from buffer %d\n", cmd->code >> 16, cmd->code & 0xffff);
+
+	SLIST_REMOVE(&buf_entry->blocklist, entry, block_entry, entry);
+	free_shared_block(entry);
+
+	iio_mutex_unlock(buf_entry->lock);
+
+out_send_response:
 	io = iiod_command_create_io(cmd, cmd_data);
 	if (iio_err(io)) {
 		/* TODO: How to handle the error? */
@@ -1142,6 +1393,8 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 
 	[IIOD_OP_CREATE_BLOCK]		= handle_create_block,
 	[IIOD_OP_FREE_BLOCK]		= handle_free_block,
+	[IIOD_OP_SHARE_BLOCK]		= handle_share_block,
+	[IIOD_OP_UNSHARE_BLOCK]		= handle_unshare_block,
 	[IIOD_OP_TRANSFER_BLOCK]	= handle_transfer_block,
 	[IIOD_OP_ENQUEUE_BLOCK_CYCLIC]	= handle_transfer_block,
 	[IIOD_OP_RETRY_DEQUEUE_BLOCK]	= handle_retry_dequeue_block,

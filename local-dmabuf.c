@@ -6,6 +6,7 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include <stdio.h>
 #define _GNU_SOURCE
 #include "local.h"
 
@@ -165,18 +166,52 @@ void local_free_dmabuf(struct iio_block_pdata *pdata)
 	free(pdata);
 }
 
+int local_share_dmabuf(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block)
+{
+	int ret, fd = local_dmabuf_get_fd(block);
+
+	/* make sure nothing is happening on this block */
+	if (!block->dequeued)
+		return -EPERM;
+
+	printf("local_share_dmabuf (cpu=%d)\n", block->cpu_access_disabled);
+	/* Attach DMABUF to the buffer */
+	ret = ioctl(pdata->fd, IIO_DMABUF_ATTACH_IOCTL, &fd);
+	if (ret)
+		return -errno;
+
+	return 0;
+}
+
+void local_unshare_dmabuf(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block)
+{
+	int ret, fd = local_dmabuf_get_fd(block);
+
+	/* make sure nothing is happening on this block */
+	if (!block->dequeued) {
+		dev_err(pdata->dev, "Block is still in use, cannot unshare DMABUF\n");
+		return;
+	}
+
+	printf("local_unshare_dmabuf (cpu=%d)\n", block->cpu_access_disabled);
+	/* Attach DMABUF to the buffer */
+	ret = ioctl(pdata->fd, IIO_DMABUF_DETACH_IOCTL, &fd);
+	if (ret)
+		dev_perror(pdata->dev, ret, "Unable to unshare DMABUF");
+}
+
 int local_dmabuf_get_fd(struct iio_block_pdata *pdata)
 {
 	return (int)(intptr_t) pdata->pdata;
 }
 
-int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
-			 size_t bytes_used, bool cyclic)
+int local_enqueue_dmabuf_to_buf(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block,
+				size_t bytes_used, bool cyclic)
 {
 	struct iio_dmabuf dmabuf;
-	int ret, fd = (int)(intptr_t) pdata->pdata;
+	int ret, fd = local_dmabuf_get_fd(block);
 
-	if (!pdata->dequeued)
+	if (!block->dequeued)
 		return -EPERM;
 
 	if (bytes_used > pdata->size || bytes_used == 0)
@@ -189,31 +224,31 @@ int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
 	if (cyclic)
 		dmabuf.flags |= IIO_DMABUF_FLAG_CYCLIC;
 
-	if (!pdata->cpu_access_disabled) {
+	if (!block->cpu_access_disabled) {
 		/* Disable CPU access to last block */
-		ret = enable_cpu_access(pdata, false);
+		ret = enable_cpu_access(block, false);
 		if (ret)
 			return ret;
 	}
 
-	ret = ioctl_nointr(pdata->buf->fd, IIO_DMABUF_ENQUEUE_IOCTL, &dmabuf);
+	ret = ioctl_nointr(pdata->fd, IIO_DMABUF_ENQUEUE_IOCTL, &dmabuf);
 	if (ret) {
-		dev_perror(pdata->buf->dev, ret, "Unable to enqueue DMABUF");
+		dev_perror(pdata->dev, ret, "Unable to enqueue DMABUF");
 		return ret;
 	}
 
-	pdata->dequeued = false;
+	block->dequeued = false;
 
 	return 0;
 }
 
-int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
+int local_dequeue_dmabuf_from_buf(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block,
+				  bool nonblock)
 {
-	struct iio_buffer_pdata *buf_pdata = pdata->buf;
 	struct timespec start, *time_ptr = NULL;
-	int ret, fd = (int)(intptr_t) pdata->pdata;
+	int ret, fd = local_dmabuf_get_fd(block);
 
-	if (pdata->dequeued)
+	if (block->dequeued)
 		return -EPERM;
 
 	if (!nonblock) {
@@ -221,18 +256,18 @@ int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
 		time_ptr = &start;
 	}
 
-	ret = buffer_check_ready(buf_pdata, fd, POLLOUT, time_ptr);
+	ret = buffer_check_ready(pdata, fd, POLLOUT, time_ptr);
 	if (ret < 0)
 		return ret;
 
-	if (!pdata->cpu_access_disabled) {
+	if (!block->cpu_access_disabled) {
 		/* Enable CPU access to new block */
-		ret = enable_cpu_access(pdata, true);
+		ret = enable_cpu_access(block, true);
 		if (ret < 0)
 			return ret;
 	}
 
-	pdata->dequeued = true;
+	block->dequeued = true;
 
 	return 0;
 }
