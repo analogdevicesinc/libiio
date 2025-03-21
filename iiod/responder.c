@@ -729,8 +729,10 @@ static void handle_create_block(struct parser_pdata *pdata,
 	data.size = sizeof(block_size);
 
 	ret = iiod_command_data_read(cmd_data, &data);
-	if (ret < 0)
+	if (ret < 0) {
+		printf("Could not set cmd_data\n");
 		goto out_send_response;
+	}
 
 	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
