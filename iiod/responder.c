@@ -750,8 +750,10 @@ static void handle_create_block(struct parser_pdata *pdata,
 
 	block = iio_buffer_create_block(buf, (size_t) block_size);
 	ret = iio_err(block);
-	if (ret)
+	if (ret) {
+		printf("Error creating the block\n");
 		goto out_send_response;
+	}
 
 	entry = zalloc(sizeof(*entry));
 	if (!entry) {

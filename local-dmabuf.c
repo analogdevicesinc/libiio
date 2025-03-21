@@ -81,6 +81,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	struct iio_block_pdata *priv;
 	int ret, fd, devfd;
 
+	printf("local create dma block\n");
 	priv = zalloc(sizeof(*priv));
 	if (!priv)
 		return iio_ptr(-ENOMEM);
@@ -88,7 +89,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
 	if (devfd < 0) {
 		ret = -errno;
-
+		printf("Could not open /dev/dma_heap/system: %d\n", ret);
 		/* If we're running on an old kernel, return -ENOSYS to mark
 		 * the DMABUF interface as unavailable */
 		if (ret == -ENOENT)
