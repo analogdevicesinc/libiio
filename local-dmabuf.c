@@ -84,7 +84,11 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	if (!priv)
 		return iio_ptr(-ENOMEM);
 
-	devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
+	if (pdata->dmabuf_alloc_type == DMABUF_ALLOC_SC) {
+		devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
+	} else {
+		devfd = open("/dev/dma_heap/cma,linux", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
+	}
 	if (devfd < 0) {
 		ret = -errno;
 

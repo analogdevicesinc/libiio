@@ -17,12 +17,18 @@ struct iio_block_impl_pdata;
 struct iio_device;
 struct timespec;
 
+enum dma_allocator_type {
+	DMABUF_ALLOC_SC,  /* System allocator (generic - uses Scatter-Gather) */
+	DMABUF_ALLOC_CMA, /* Continuous memory allocator */
+};
+
 struct iio_buffer_pdata {
 	const struct iio_device *dev;
 	struct iio_buffer_impl_pdata *pdata;
 	int fd, cancel_fd;
 	unsigned int idx;
 	bool dmabuf_supported;
+	enum dma_allocator_type dmabuf_alloc_type;
 	bool mmap_supported;
 	size_t size;
 };
