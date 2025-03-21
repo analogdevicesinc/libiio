@@ -81,12 +81,19 @@ __api struct iio_block_pdata *
 iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
 			 size_t size, void **data);
 __api void iiod_client_free_block(struct iio_block_pdata *block);
-
+__api int iiod_client_block_share(struct iiod_client_buffer_pdata *pdata,
+				  struct iio_block_pdata *block);
+__api void iiod_client_block_unshare(struct iiod_client_buffer_pdata *pdata,
+				     struct iio_block_pdata *block);
 __api int iiod_client_enqueue_block(struct iio_block_pdata *block,
 				    size_t bytes_used, bool cyclic);
-
+__api int iiod_client_enqueue_block_to_buf(struct iiod_client_buffer_pdata *pdata,
+					   struct iio_block_pdata *block,
+					   size_t bytes_used, bool cyclic);
 __api int iiod_client_dequeue_block(struct iio_block_pdata *block,
 				    bool nonblock);
+__api int iiod_client_dequeue_block_from_buf(struct iiod_client_buffer_pdata *pdata,
+					     struct iio_block_pdata *block, bool nonblock);
 
 __api ssize_t iiod_client_readbuf(struct iiod_client_buffer_pdata *pdata,
 				  void *dst, size_t len);

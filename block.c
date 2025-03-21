@@ -7,6 +7,7 @@
  */
 
 #include "iio-private.h"
+#include "iio/iio.h"
 
 #include <errno.h>
 #include <iio/iio-lock.h>
@@ -105,6 +106,33 @@ void iio_block_destroy(struct iio_block *block)
 	iio_mutex_unlock(buf->lock);
 }
 
+int iio_block_share(struct iio_buffer *buffer, struct iio_block *block)
+{
+	const struct iio_backend_ops *ops = buffer->dev->ctx->ops;
+	int ret;
+
+	if (!ops->share_block || !block->pdata)
+		return -ENOSYS;
+
+	ret = ops->share_block(buffer->pdata, block->pdata);
+	if (ret < 0)
+		return ret;
+
+	iio_mutex_lock(buffer->lock);
+	buffer->nb_blocks++;
+	iio_mutex_unlock(buffer->lock);
+
+	return 0;
+}
+
+void iio_block_unshare(struct iio_buffer *buffer, struct iio_block *block)
+{
+	const struct iio_backend_ops *ops = buffer->dev->ctx->ops;
+
+	if (ops->unshare_block && block->pdata)
+		ops->unshare_block(buffer->pdata, block->pdata);
+}
+
 static int iio_block_write(struct iio_block *block)
 {
 	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
@@ -166,6 +194,26 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 	return iio_err(block->token);
 }
 
+int iio_block_enqueue_to_buf(struct iio_buffer *buffer, struct iio_block *block,
+			     size_t bytes_used, bool cyclic)
+{
+	const struct iio_device *dev = buffer->dev;
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+
+	if (bytes_used > block->size)
+		return -EINVAL;
+
+	if (!bytes_used)
+		bytes_used = block->size;
+
+	/* only supported on the new API */
+	if (ops->enqueue_block && block->pdata)
+		return ops->enqueue_block_to_buf(buffer->pdata, block->pdata,
+						 bytes_used, cyclic);
+
+	return -ENOSYS;
+}
+
 int iio_block_dequeue(struct iio_block *block, bool nonblock)
 {
 	struct iio_buffer *buffer = block->buffer;
@@ -192,6 +240,23 @@ int iio_block_dequeue(struct iio_block *block, bool nonblock)
 	}
 
 	return iio_task_sync(token, 0);
+}
+
+/*
+ * In theory, we should only need the buffer APIs which also means only two backend ops. We can still
+ * have an helper define or inline function for the the default case where buffer is NULL and we default
+ * to the first buffer (the one where the block was created against).
+ */
+int iio_block_dequeue_from_buf(struct iio_buffer *buffer, struct iio_block *block,
+			       bool nonblock)
+{
+	const struct iio_device *dev = buffer->dev;
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+
+	if (ops->dequeue_block && block->pdata)
+		return ops->dequeue_block_from_buf(buffer->pdata, block->pdata, nonblock);
+
+	return -ENOSYS;
 }
 
 void *iio_block_start(const struct iio_block *block)

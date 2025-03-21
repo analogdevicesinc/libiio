@@ -122,8 +122,16 @@ struct iio_backend_ops {
 
 	int (*enqueue_block)(struct iio_block_pdata *pdata,
 			     size_t bytes_used, bool cyclic);
+	int (*enqueue_block_to_buf)(struct iio_buffer_pdata *buf_pdata,
+				    struct iio_block_pdata *pdata,
+				    size_t bytes_used, bool cyclic);
 	int (*dequeue_block)(struct iio_block_pdata *pdata, bool nonblock);
-
+	int (*dequeue_block_from_buf)(struct iio_buffer_pdata *buf_pdata,
+				      struct iio_block_pdata *pdata, bool nonblock);
+	int (*share_block)(struct iio_buffer_pdata *pdata,
+			   struct iio_block_pdata *block);
+	void (*unshare_block)(struct iio_buffer_pdata *pdata,
+			      struct iio_block_pdata *block);
 	int (*get_dmabuf_fd)(struct iio_block_pdata *pdata);
 	int (*disable_cpu_access)(struct iio_block_pdata *pdata, bool disable);
 

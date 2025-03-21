@@ -47,6 +47,8 @@ enum iiod_opcode {
 
 	IIOD_OP_CREATE_BLOCK,
 	IIOD_OP_FREE_BLOCK,
+	IIOD_OP_SHARE_BLOCK,
+	IIOD_OP_UNSHARE_BLOCK,
 	IIOD_OP_TRANSFER_BLOCK,
 	IIOD_OP_ENQUEUE_BLOCK_CYCLIC,
 	IIOD_OP_RETRY_DEQUEUE_BLOCK,
@@ -63,6 +65,12 @@ struct iiod_command {
 	uint8_t op;
 	uint8_t dev;
 	int32_t code;
+};
+
+struct iiod_block_share {
+	uint8_t dev;
+	uint8_t buf_idx;
+	uint8_t block_idx;
 };
 
 struct iiod_buf {

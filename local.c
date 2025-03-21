@@ -1610,11 +1610,26 @@ static void local_free_block(struct iio_block_pdata *pdata)
 		local_free_mmap_block(pdata);
 }
 
+static int local_share_block(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block)
+{
+	/* original buffer must support dma-buf */
+	if (WITH_LOCAL_DMABUF_API && block->buf->dmabuf_supported)
+		return local_share_dmabuf(pdata, block);
+
+	return -ENOSYS;
+}
+
+static void local_unshare_block(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->dmabuf_supported)
+		local_unshare_dmabuf(pdata, block);
+}
+
 static int local_enqueue_block(struct iio_block_pdata *pdata,
 			       size_t bytes_used, bool cyclic)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
-		return local_enqueue_dmabuf(pdata, bytes_used, cyclic);
+		return local_enqueue_dmabuf_to_buf(pdata->buf, pdata, bytes_used, cyclic);
 
 	if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
 		return local_enqueue_mmap_block(pdata, bytes_used, cyclic);
@@ -1622,10 +1637,29 @@ static int local_enqueue_block(struct iio_block_pdata *pdata,
 	return -ENOSYS;
 }
 
+static int local_enqueue_block_to_buf(struct iio_buffer_pdata *pdata,
+				      struct iio_block_pdata *block,
+				      size_t bytes_used, bool cyclic)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->dmabuf_supported)
+		return local_enqueue_dmabuf_to_buf(pdata, block, bytes_used, cyclic);
+
+	return -ENOSYS;
+}
+
+static int local_dequeue_block_from_buf(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block,
+					bool nonblock)
+{
+	if (WITH_LOCAL_DMABUF_API && pdata->dmabuf_supported)
+		return local_dequeue_dmabuf_from_buf(pdata, block, nonblock);
+
+	return -ENOSYS;
+}
+
 int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
-		return local_dequeue_dmabuf(pdata, nonblock);
+		return local_dequeue_dmabuf_from_buf(pdata->buf, pdata, nonblock);
 
 	if (WITH_LOCAL_MMAP_API && pdata->buf->mmap_supported)
 		return local_dequeue_mmap_block(pdata, nonblock);
@@ -1750,8 +1784,12 @@ static const struct iio_backend_ops local_ops = {
 
 	.create_block = local_create_block,
 	.free_block = local_free_block,
+	.share_block = local_share_block,
+	.unshare_block = local_unshare_block,
 	.enqueue_block = local_enqueue_block,
 	.dequeue_block = local_dequeue_block,
+	.enqueue_block_to_buf = local_enqueue_block_to_buf,
+	.dequeue_block_from_buf = local_dequeue_block_from_buf,
 
 	.create_buffer = local_create_buffer,
 	.free_buffer = local_free_buffer,

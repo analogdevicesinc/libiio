@@ -498,6 +498,33 @@ struct iio_block_pdata * network_create_block(struct iio_buffer_pdata *pdata,
 	return iiod_client_create_block(pdata->pdata, size, data);
 }
 
+static int network_client_enqueue_block_to_buf(struct iio_buffer_pdata *buf_pdata,
+					       struct iio_block_pdata *block,
+					       size_t bytes_used, bool cyclic)
+{
+	return iiod_client_enqueue_block_to_buf(buf_pdata->pdata, block,
+						bytes_used, cyclic);
+}
+
+static int network_client_dequeue_block_from_buf(struct iio_buffer_pdata *buf_pdata,
+						 struct iio_block_pdata *block,
+						 bool nonblock)
+{
+	return iiod_client_dequeue_block_from_buf(buf_pdata->pdata, block, nonblock);
+}
+
+static int network_client_block_share(struct iio_buffer_pdata *buf_pdata,
+				      struct iio_block_pdata *block)
+{
+	return iiod_client_block_share(buf_pdata->pdata, block);
+}
+
+static void network_client_block_unshare(struct iio_buffer_pdata *buf_pdata,
+					 struct iio_block_pdata *block)
+{
+	iiod_client_block_unshare(buf_pdata->pdata, block);
+}
+
 static struct iio_event_stream_pdata *
 network_open_events_fd(const struct iio_device *dev)
 {
@@ -527,8 +554,12 @@ static const struct iio_backend_ops network_ops = {
 
 	.create_block = network_create_block,
 	.free_block = iiod_client_free_block,
+	.share_block = network_client_block_share,
+	.unshare_block = network_client_block_unshare,
 	.enqueue_block = iiod_client_enqueue_block,
+	.enqueue_block_to_buf = network_client_enqueue_block_to_buf,
 	.dequeue_block = iiod_client_dequeue_block,
+	.dequeue_block_from_buf = network_client_dequeue_block_from_buf,
 
 	.open_ev = network_open_events_fd,
 	.close_ev = iiod_client_close_event_stream,

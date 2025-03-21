@@ -8,6 +8,7 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
+#include "iio/iio.h"
 #include "iiod-responder.h"
 
 #include <iio/iiod-client.h>
@@ -17,6 +18,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #if WITH_ZSTD
@@ -59,17 +61,23 @@ struct iiod_client_buffer_pdata {
 	uint16_t next_block_idx;
 };
 
-struct iio_block_pdata {
+struct iio_block_buffer {
 	struct iiod_client_buffer_pdata *buffer;
 	struct iiod_io *io;
+	uint16_t idx;
+};
 
+struct iio_block_pdata {
+	struct iio_block_buffer pbuffer[4];
 	struct iio_mutex *lock;
 
 	size_t size;
 	uint64_t bytes_used;
-	uint16_t idx;
 
 	void *data;
+
+	uint8_t curr_buf;
+
 	bool enqueued;
 	bool retry_dequeue;
 };
@@ -1530,13 +1538,16 @@ iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
 {
 	struct iiod_client *client = pdata->client;
 	struct iio_block_pdata *block;
+	struct iio_block_buffer *pbuf;
 	struct iiod_command cmd;
 	struct iiod_buf buf;
 	int ret = -ENOMEM;
 	uint64_t block_size = size;
 
-	if (!iiod_client_uses_binary_interface(client))
+	if (!iiod_client_uses_binary_interface(client)) {
+		printf("No binary interface\n");
 		return iio_ptr(-ENOSYS);
+	}
 
 	buf.ptr = &block_size;
 	buf.size = sizeof(block_size);
@@ -1554,30 +1565,35 @@ iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
 	if (!block->data)
 		goto err_free_mutex;
 
-	block->idx = pdata->next_block_idx++;
+	pbuf = &block->pbuffer[0];
+	pbuf->idx = pdata->next_block_idx++;
 
-	block->io = iiod_responder_create_io(client->responder, block->idx + 1);
-	ret = iio_err(block->io);
+	pbuf->io = iiod_responder_create_io(client->responder, pbuf->idx + 1);
+	ret = iio_err(pbuf->io);
 	if (ret)
 		goto err_free_data;
 
 	cmd.op = IIOD_OP_CREATE_BLOCK;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx | (block->idx << 16);
+	cmd.code = pdata->params.idx | (pbuf->idx << 16);
 
-	ret = iiod_io_exec_command(block->io, &cmd, &buf, NULL);
-	if (ret < 0)
+	ret = iiod_io_exec_command(pbuf->io, &cmd, &buf, NULL);
+	if (ret < 0) {
+		printf("Got error on exec command %d\n", ret);
 		goto err_free_io;
+	}
 
 	*data = block->data;
 
-	block->buffer = pdata;
+	/* default, first buffer is the one where the block is created against */
+	pbuf->buffer = pdata;
+
 	block->size = size;
 
 	return block;
 
 err_free_io:
-	iiod_io_unref(block->io);
+	iiod_io_unref(pbuf->io);
 err_free_data:
 	free(block->data);
 err_free_mutex:
@@ -1589,9 +1605,11 @@ err_free_block:
 
 void iiod_client_free_block(struct iio_block_pdata *block)
 {
-	struct iiod_client *client = block->buffer->client_fb;
+	/* freeing the block needs to go through the default buffer */
+	struct iio_block_buffer *pbuffer = &block->pbuffer[0];
+	struct iiod_client *client = pbuffer->buffer->client_fb;
 	struct iiod_io *io;
-	struct iiod_client_buffer_pdata *pdata = block->buffer;
+	struct iiod_client_buffer_pdata *pdata = pbuffer->buffer;
 	struct iiod_command cmd;
 
 	if (!iiod_client_uses_binary_interface(client))
@@ -1599,13 +1617,13 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 
 	cmd.op = IIOD_OP_FREE_BLOCK;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx | (block->idx << 16);
+	cmd.code = pdata->params.idx | (pbuffer->idx << 16);
 
 	/* Cancel any I/O going on. This means we must send the block free
 	 * command through the main I/O as the block's I/O stream is
 	 * disrupted. */
-	iiod_io_cancel(block->io);
-	iiod_io_unref(block->io);
+	iiod_io_cancel(pbuffer->io);
+	iiod_io_unref(pbuffer->io);
 
 	io = iiod_responder_get_default_io(client->responder);
 	iiod_io_exec_simple_command(io, &cmd);
@@ -1615,25 +1633,156 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 	free(block);
 }
 
-int iiod_client_enqueue_block(struct iio_block_pdata *block,
-			      size_t bytes_used, bool cyclic)
+static struct iio_block_buffer *
+iiod_client_block_buffer_get(struct iio_block_pdata *block)
 {
-	struct iiod_client_buffer_pdata *pdata = block->buffer;
+	/* pos 0 is reserved for the original buffer */
+	for (unsigned int i = 1; i < ARRAY_SIZE(block->pbuffer); i++)
+		if (!block->pbuffer[i].buffer)
+			return &block->pbuffer[i];
+
+	return NULL;
+}
+
+int iiod_client_block_share(struct iiod_client_buffer_pdata *pdata,
+			    struct iio_block_pdata *block)
+{
+	struct iio_block_buffer *default_buf = &block->pbuffer[0];
+	struct iiod_client *client = pdata->client;
+	struct iiod_block_share shared;
+	struct iio_block_buffer *pbuf;
+	struct iiod_command cmd;
+	struct iiod_buf buf;
+	int ret = -ENOENT;
+
+	if (!iiod_client_uses_binary_interface(client))
+		return -ENOSYS;
+
+	/* make sure we are not sharing against the default buffer */
+	if (default_buf->buffer == pdata)
+		return -EINVAL;
+
+	iio_mutex_lock(block->lock);
+
+	pbuf = iiod_client_block_buffer_get(block);
+	if (!pbuf)
+		goto out_unlock;
+
+	if (block->enqueued) {
+		ret = -EBUSY;
+		goto out_unlock;
+	}
+
+	buf.ptr = &shared;
+	buf.size = sizeof(shared);
+
+	/* we need know where to look for the block on the server side */
+	shared.dev = (uint8_t) iio_device_get_index(default_buf->buffer->dev);
+	shared.buf_idx = default_buf->buffer->params.idx;
+	shared.block_idx = default_buf->idx;
+
+	pbuf->idx = pdata->next_block_idx++;
+	pbuf->io = iiod_responder_create_io(client->responder, pbuf->idx + 1);
+	ret = iio_err(pbuf->io);
+	if (ret)
+		goto out_unlock;
+
+	cmd.op = IIOD_OP_SHARE_BLOCK;
+	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
+	cmd.code = pdata->params.idx | (pbuf->idx << 16);
+
+	printf("share block (idx=%d) from %s to %s, idx=%d buf_idx=%d\n", default_buf->idx,
+	       iio_device_get_name(default_buf->buffer->dev),
+	       iio_device_get_name(pdata->dev), pbuf->idx, pdata->params.idx);
+
+	ret = iiod_io_exec_command(pbuf->io, &cmd, &buf, NULL);
+	if (ret < 0)
+		goto out_free_io;
+
+	pbuf->buffer = pdata;
+	iio_mutex_unlock(block->lock);
+	return 0;
+
+out_free_io:
+	iiod_io_unref(pbuf->io);
+out_unlock:
+	iio_mutex_unlock(block->lock);
+	return ret;
+}
+
+static struct iio_block_buffer *
+iiod_client_block_buffer_lookup(const struct iiod_client_buffer_pdata *pdata,
+				struct iio_block_pdata *block, uint8_t *idx)
+{
+	for (unsigned int i = 0; i < ARRAY_SIZE(block->pbuffer); i++) {
+		if (!block->pbuffer[i].buffer)
+			continue;
+
+		if (block->pbuffer[i].buffer == pdata) {
+			*idx = i;
+			return &block->pbuffer[i];
+		}
+	}
+
+	return NULL;
+}
+
+void iiod_client_block_unshare(struct iiod_client_buffer_pdata *pdata,
+			       struct iio_block_pdata *block)
+{
+	struct iiod_client *client = pdata->client_fb;
+	struct iio_block_buffer *pbuf;
+	struct iiod_command cmd;
+	struct iiod_io *io;
+	uint8_t idx;
+
+	if (!iiod_client_uses_binary_interface(client))
+		return;
+
+	iio_mutex_lock(block->lock);
+	pbuf = iiod_client_block_buffer_lookup(pdata, block, &idx);
+	if (!pbuf) {
+		printf("Block not found\n");
+		goto out_unlock;
+	}
+
+	/* cannot unshare from the original buffer where this block was created */
+	if (!idx)
+		goto out_unlock;
+
+	if (block->enqueued)
+		goto out_unlock;
+
+	cmd.op = IIOD_OP_UNSHARE_BLOCK;
+	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
+	cmd.code = pdata->params.idx | (pbuf->idx << 16);
+	/* Cancel any I/O going on. This means we must send the block unshare
+	 * command through the main I/O as the block's I/O stream is
+	 * disrupted. */
+	iiod_io_cancel(pbuf->io);
+	iiod_io_unref(pbuf->io);
+
+	pbuf->buffer = NULL;
+
+	printf("%d:Unshare block (idx=%d) from %s\n", idx,
+	       pbuf->idx, iio_device_get_name(pdata->dev));
+
+	io = iiod_responder_get_default_io(client->responder);
+	iiod_io_exec_simple_command(io, &cmd);
+out_unlock:
+	iio_mutex_unlock(block->lock);
+}
+
+int iiod_client_enqueue_block_to_buf(struct iiod_client_buffer_pdata *pdata,
+				     struct iio_block_pdata *block,
+				     size_t bytes_used, bool cyclic)
+{
+	struct iio_block_buffer *pbuf;
 	struct iiod_command cmd;
 	struct iiod_buf buf[2];
 	bool is_rx = !iio_device_is_tx(pdata->dev);
 	unsigned int nb_buf = 1 + !is_rx;
 	int ret = 0;
-
-	cmd.op = cyclic ? IIOD_OP_ENQUEUE_BLOCK_CYCLIC : IIOD_OP_TRANSFER_BLOCK;
-	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx | (block->idx << 16);
-
-	block->bytes_used = bytes_used;
-	buf[0].ptr = &block->bytes_used;
-	buf[0].size = 8;
-	buf[1].ptr = block->data;
-	buf[1].size = bytes_used;
 
 	iio_mutex_lock(block->lock);
 
@@ -1642,11 +1791,31 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 		goto out_unlock;
 	}
 
-	iiod_io_get_response_async(block->io, &buf[1], is_rx);
+	pbuf = iiod_client_block_buffer_lookup(pdata, block, &block->curr_buf);
+	if (!pbuf) {
+		ret = -ENOENT;
+		goto out_unlock;
+	}
 
-	ret = iiod_io_send_command_async(block->io, &cmd, buf, nb_buf);
+	cmd.op = cyclic ? IIOD_OP_ENQUEUE_BLOCK_CYCLIC : IIOD_OP_TRANSFER_BLOCK;
+	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
+	cmd.code = pdata->params.idx | (pbuf->idx << 16);
+
+	block->bytes_used = bytes_used;
+	buf[0].ptr = &block->bytes_used;
+	buf[0].size = 8;
+	buf[1].ptr = block->data;
+	buf[1].size = bytes_used;
+
+	//printf("(%s): Enqueue block(sz=%zu)\n",
+	//	       iio_device_get_name(pdata->dev), block->bytes_used);
+	iiod_io_get_response_async(pbuf->io, &buf[1], is_rx);
+
+	ret = iiod_io_send_command_async(pbuf->io, &cmd, buf, nb_buf);
 	if (ret < 0) {
-		iiod_io_cancel_response(block->io);
+		printf("(%s): Failed to send command on enqueue block %d\n",
+		       iio_device_get_name(pdata->dev), ret);
+		iiod_io_cancel_response(pbuf->io);
 		goto out_unlock;
 	}
 
@@ -1658,17 +1827,32 @@ out_unlock:
 	return ret;
 }
 
-int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
+int iiod_client_enqueue_block(struct iio_block_pdata *block,
+			      size_t bytes_used, bool cyclic)
 {
-	struct iiod_client_buffer_pdata *pdata = block->buffer;
+	return iiod_client_enqueue_block_to_buf(block->pbuffer[0].buffer, block,
+						bytes_used, cyclic);
+}
+
+int iiod_client_dequeue_block_from_buf(struct iiod_client_buffer_pdata *pdata,
+				       struct iio_block_pdata *block, bool nonblock)
+{
+	struct iio_block_buffer *pbuf;
 	struct iiod_command cmd;
 	struct iiod_buf buf;
+	uint8_t buf_idx;
 	bool is_rx;
 	int ret;
 
 	iio_mutex_lock(block->lock);
 
-	if (!block->enqueued) {
+	pbuf = iiod_client_block_buffer_lookup(pdata, block, &buf_idx);
+	if (!pbuf) {
+		ret = -ENOENT;
+		goto out_unlock;
+	}
+
+	if (!block->enqueued || buf_idx != block->curr_buf) {
 		ret = -EPERM;
 		goto out_unlock;
 	}
@@ -1677,38 +1861,38 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 		/* The previous enqueue succeeded, but the dequeue failed. */
 		cmd.op = IIOD_OP_RETRY_DEQUEUE_BLOCK;
 		cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-		cmd.code = pdata->params.idx | (block->idx << 16);
+		cmd.code = pdata->params.idx | (pbuf->idx << 16);
 		buf.ptr = block->data;
 		buf.size = block->bytes_used;
 
 		is_rx = !iio_device_is_tx(pdata->dev);
-		iiod_io_get_response_async(block->io, &buf, is_rx);
+		iiod_io_get_response_async(pbuf->io, &buf, is_rx);
 
-		ret = iiod_io_send_command_async(block->io, &cmd, NULL, 0);
+		ret = iiod_io_send_command_async(pbuf->io, &cmd, NULL, 0);
 		if (ret < 0) {
-			iiod_io_cancel_response(block->io);
+			iiod_io_cancel_response(pbuf->io);
 			goto out_unlock;
 		}
 
 		block->retry_dequeue = false;
 	}
 
-	if (nonblock && !iiod_io_command_is_done(block->io)) {
+	if (nonblock && !iiod_io_command_is_done(pbuf->io)) {
 		ret = -EBUSY;
 		goto out_unlock;
 	}
 
-	ret = iiod_io_wait_for_command_done(block->io);
+	ret = iiod_io_wait_for_command_done(pbuf->io);
 	if (ret)
 		goto out_unlock;
 
-	if (nonblock && !iiod_io_has_response(block->io)) {
+	if (nonblock && !iiod_io_has_response(pbuf->io)) {
 		ret = -EBUSY;
 		goto out_unlock;
 	}
 
 	/* Retrieve return code of enqueue */
-	ret = (int) iiod_io_wait_for_response(block->io);
+	ret = (int) iiod_io_wait_for_response(pbuf->io);
 	if (ret < 0) {
 		if ((ret & 0xffff) == 0) {
 			/* Low 16 bits are clear - the block wasn't enqueued. */
@@ -1716,6 +1900,7 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 
 			/* Get the actual error code from the upper 16 bits. */
 			ret >>= 16;
+			printf("Block was not enqueued(ret=%d)\n", ret);
 			goto out_unlock;
 		}
 
@@ -1730,6 +1915,13 @@ out_unlock:
 	iio_mutex_unlock(block->lock);
 
 	return ret;
+
+}
+
+int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
+{
+	return iiod_client_dequeue_block_from_buf(block->pbuffer[0].buffer, block,
+						  nonblock);
 }
 
 bool iiod_client_uses_binary_interface(const struct iiod_client *client)

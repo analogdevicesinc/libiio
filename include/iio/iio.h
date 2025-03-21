@@ -1207,6 +1207,8 @@ __api int iio_block_disable_cpu_access(struct iio_block *block, bool disable);
  * @return A pointer corresponding to the start address of the block */
 __api void *iio_block_start(const struct iio_block *block);
 
+__api int iio_block_share(struct iio_buffer *buffer, struct iio_block *block);
+__api void iio_block_unshare(struct iio_buffer *buffer, struct iio_block *block);
 
 /** @brief Find the first sample of a channel in a block
  * @param block A pointer to an iio_block structure
@@ -1274,6 +1276,8 @@ iio_block_foreach_sample(const struct iio_block *block,
  * accessed until iio_block_dequeue successfully returns. */
 __api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic);
 
+__api int iio_block_enqueue_to_buf(struct iio_buffer *buffer, struct iio_block *block,
+				   size_t bytes_used, bool cyclic);
 
 /** @brief Dequeue the given iio_block from the buffer's queue
  * @param block A pointer to an iio_block structure
@@ -1283,6 +1287,8 @@ __api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyc
  * @return On error, a negative error code is returned */
 __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
 
+__api int iio_block_dequeue_from_buf(struct iio_buffer *buffer, struct iio_block *block,
+				     bool nonblock);
 
 /** @brief Retrieve a pointer to the iio_buffer structure
  * @param block A pointer to an iio_block structure
