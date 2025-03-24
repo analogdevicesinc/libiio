@@ -9,13 +9,17 @@
 
 static struct iio_context *ctx;
 static struct iio_device *tx;
+static struct iio_device *tx2;
 static struct iio_device *rx;
 static struct iio_buffer *rxbuf;
 static struct iio_buffer *txbuf;
+static struct iio_buffer *tx2buf;
 static struct iio_channels_mask *rxmask;
 static struct iio_channels_mask *txmask;
+static struct iio_channels_mask *tx2mask;
 static struct iio_channel *rx_chan[2];
 static struct iio_channel *tx_chan[2];
+static struct iio_channel *tx2_chan[2];
 static volatile bool running = true;
 
 static void cleanup(void)
@@ -107,6 +111,10 @@ int main(void)
 	if (!tx)
 		goto clean;
 
+	tx2 = iio_context_find_device(ctx, "axi-adrv9002-tx2-lpc");
+	if (!tx2)
+		goto clean;
+
 	rx = iio_context_find_device(ctx, "axi-adrv9002-rx-lpc");
 	if (!rx)
 		goto clean;
@@ -123,6 +131,12 @@ int main(void)
 		goto clean;
 	}
 
+	tx2mask = stream_channels_get_mask(tx2, tx2_chan, true);
+	if (iio_err(tx2mask)) {
+		tx2mask = NULL;
+		goto clean;
+	}
+
 	rxbuf = iio_device_create_buffer(rx, block_size, rxmask);
 	if (iio_err(rxbuf)) {
 		rxbuf = NULL;
@@ -134,6 +148,13 @@ int main(void)
 	if (iio_err(txbuf)) {
 		txbuf = NULL;
 		fprintf(stderr, "Could not create TX buffer\n");
+		goto clean;
+	}
+
+	tx2buf = iio_device_create_buffer(tx2, block_size, tx2mask);
+	if (iio_err(tx2buf)) {
+		tx2buf = NULL;
+		fprintf(stderr, "Could not create TX2 buffer\n");
 		goto clean;
 	}
 
@@ -156,9 +177,21 @@ int main(void)
 			fprintf(stderr, "Could not share RX block, ret=%d\n", ret);
 			goto clean;
 		}
+
+		ret = iio_block_share(tx2buf, blocks[i]);
+		if (ret) {
+			fprintf(stderr, "Could not share RX block W TX2, ret=%d\n", ret);
+			goto clean;
+		}
 		//ret = iio_block_enqueue(blocks[i], 0, false);
 		//if (ret)
 		//	goto clean;
+	}
+
+	ret = iio_block_share(txbuf, blocks[i]);
+	if (ret) {
+		fprintf(stderr, "Could not share RX block, ret=%d\n", ret);
+		goto clean;
 	}
 
 	i = 0;

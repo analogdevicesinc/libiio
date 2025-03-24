@@ -929,8 +929,9 @@ static void handle_share_block(struct parser_pdata *pdata,
 	struct iio_device *dev;
 	dev = iio_context_get_device(pdata->ctx, shared.dev);
 
-	printf("Sharing block %d from %s, buffer %d to buffer %d\n",
-	       cmd->code >> 16, iio_device_get_name(dev), shared.buf_idx, cmd->code & 0xffff);
+	printf("Sharing block %d from %s, buffer %d to dev(%s)\n",
+	       cmd->code >> 16, iio_device_get_name(dev), shared.buf_idx,
+	       iio_device_get_name(iio_context_get_device(pdata->ctx, cmd->dev)));
 
 	/* now, let's get the block from it's original/default buffer */
 	orig_buf = get_iio_buffer(pdata, &orig_buf_cmd, &orig_entry);

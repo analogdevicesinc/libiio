@@ -1694,9 +1694,9 @@ int iiod_client_block_share(struct iiod_client_buffer_pdata *pdata,
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
 	cmd.code = pdata->idx | (pbuf->idx << 16);
 
-	printf("share block (idx=%d) from %s to %s, idx=%d\n", default_buf->idx,
+	printf("share block (idx=%d) from %s to %s, idx=%dn buf_idx=%d\n", default_buf->idx,
 	       iio_device_get_name(default_buf->buffer->dev),
-	       iio_device_get_name(pdata->dev), pbuf->idx);
+	       iio_device_get_name(pdata->dev), pbuf->idx, pdata->idx);
 
 	ret = iiod_io_exec_command(pbuf->io, &cmd, &buf, NULL);
 	if (ret < 0)
