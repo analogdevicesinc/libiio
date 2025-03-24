@@ -153,9 +153,9 @@ int main(void)
 		if (ret)
 			goto clean;
 
-		ret = iio_block_enqueue(blocks[i], 0, false);
-		if (ret)
-			goto clean;
+		//ret = iio_block_enqueue(blocks[i], 0, false);
+		//if (ret)
+		//	goto clean;
 	}
 
 	i = 0;

@@ -884,6 +884,7 @@ static void handle_share_block(struct parser_pdata *pdata,
 	struct iiod_io *io;
 	int ret;
 
+	printf("Handle share block!\n");
 	io = iiod_command_create_io(cmd, cmd_data);
 	ret = iio_err(io);
 	if (ret) {
