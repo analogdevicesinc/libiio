@@ -54,7 +54,8 @@ static void __free_shared_block(struct block_share_entry *shared)
 {
 	iio_mutex_lock(shared->buffer->lock);
 	SLIST_REMOVE(&shared->buffer->blocklist, shared->block, block_entry, entry);
-	printf("Freeing shared block %d\n", shared->block->idx);
+	printf("Freeing shared block %d (%p)\n", shared->block->idx,
+	       shared->block->io);
 	__free_block_entry_common(shared->buffer, shared->block);
 	iio_mutex_unlock(shared->buffer->lock);
 	free(shared);
@@ -966,6 +967,8 @@ static void handle_share_block(struct parser_pdata *pdata,
 	new_block->ep_fd = entry->ep_fd;
 	new_block->child = true;
 	new_block->idx = cmd->code >> 16;
+	new_block->io = io;
+
 	/* get parent references */
 	new_block->parent_block = entry;
 	new_block->parent_buffer = orig_entry;
