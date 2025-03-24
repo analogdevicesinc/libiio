@@ -58,6 +58,7 @@ static void __free_shared_block(struct block_share_entry *shared)
 	__free_block_entry_common(shared->buffer, shared->block);
 	iio_mutex_unlock(shared->buffer->lock);
 	free(shared);
+	printf("Freeing shared block %d done\n", shared->block->idx);
 }
 
 static void free_shared_block(struct block_entry *block_entry)
