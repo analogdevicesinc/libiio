@@ -101,6 +101,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	ret = ioctl(devfd, IIO_DMA_HEAP_ALLOC, &req);
 	if (ret < 0) {
 		ret = -errno;
+		printf("Could not do IIO_DMA_HEAP_ALLOC: %d\n", ret);
 		goto err_close_devfd;
 	}
 
@@ -109,6 +110,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	*data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (*data == MAP_FAILED) {
 		ret = -errno;
+		printf("Could not do mmap: %d\n", ret);
 		goto err_close_fd;
 	}
 
@@ -133,7 +135,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 			 * the DMABUF interface as unavailable */
 			ret = -ENOSYS;
 		}
-
+		printf("Could not do IIO_DMABUF_ATTACH_IOCTL: %d\n", ret);
 		goto err_data_unmap;
 	}
 
