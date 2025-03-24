@@ -801,6 +801,8 @@ static void handle_create_block(struct parser_pdata *pdata,
 	SLIST_INSERT_HEAD(&buf_entry->blocklist, entry, entry);
 	iio_mutex_unlock(buf_entry->lock);
 
+	printf("Block %u created.\n", cmd->code >> 16);
+
 	goto out_send_response;
 
 out_destroy_token:
@@ -896,14 +898,17 @@ static void handle_share_block(struct parser_pdata *pdata,
 	data.size = sizeof(shared);
 
 	ret = iiod_command_data_read(cmd_data, &data);
-	if (ret < 0)
+	if (ret < 0) {
+		printf("Could not read data(%d)!\n", ret);
 		goto out_send_response;
-
+	}
 	/* get the buffer to share the block */
 	new_buf = get_iio_buffer(pdata, cmd, &new_entry);
 	ret = iio_err(new_buf);
-	if (ret)
+	if (ret) {
+		printf("Could not get buffer(%d)!\n", ret);
 		goto out_send_response;
+	}
 
 	block = get_iio_block(pdata, new_entry, cmd, NULL);
 	ret = iio_err(block);

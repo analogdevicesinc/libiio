@@ -89,7 +89,7 @@ stream_channels_get_mask(const struct iio_device *dev, struct iio_channel **chan
 int main(void)
 {
 	size_t block_size = BLOCK_SIZE;
-	struct iio_block *blocks[4];
+	struct iio_block *blocks[4] = { NULL };
 	unsigned int i;
 	int ret = EXIT_FAILURE;
 	int err;
@@ -145,14 +145,17 @@ int main(void)
 			goto clean;
 		}
 
-		ret  = iio_block_disable_cpu_access(blocks[i], true);
-		if (ret)
-			goto clean;
+		//ret  = iio_block_disable_cpu_access(blocks[i], true);
+		//if (ret) {
+		//	printf("Could not disable CPU access (%d)\n", ret);
+		//	goto clean;
+		//}
 
 		ret = iio_block_share(txbuf, blocks[i]);
-		if (ret)
+		if (ret) {
+			fprintf(stderr, "Could not share RX block, ret=%d\n", ret);
 			goto clean;
-
+		}
 		//ret = iio_block_enqueue(blocks[i], 0, false);
 		//if (ret)
 		//	goto clean;
@@ -189,7 +192,7 @@ int main(void)
 clean:
 	for (int i = 0; i < 4; i++) {
 		if (blocks[i]) {
-			iio_block_unshare(txbuf, blocks[i]);
+			//iio_block_unshare(txbuf, blocks[i]);
 			iio_block_destroy(blocks[i]);
 		}
 	}
