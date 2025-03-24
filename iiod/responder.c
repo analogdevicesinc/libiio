@@ -54,6 +54,7 @@ static void __free_shared_block(struct block_share_entry *shared)
 {
 	iio_mutex_lock(shared->buffer->lock);
 	SLIST_REMOVE(&shared->buffer->blocklist, shared->block, block_entry, entry);
+	printf("Freeing shared block %d\n", shared->block->idx);
 	__free_block_entry_common(shared->buffer, shared->block);
 	iio_mutex_unlock(shared->buffer->lock);
 	free(shared);
@@ -845,6 +846,7 @@ static void handle_free_block(struct parser_pdata *pdata,
 	iio_task_cancel_sync(entry->dequeue_token, 0);
 	/* also sync any possible shared block */
 	SLIST_FOREACH(child, &entry->childlist, entry) {
+		printf("Sync child block(%d)\n", child->block->idx);
 		iio_task_cancel_sync(child->block->enqueue_token, 0);
 		iio_task_cancel_sync(child->block->dequeue_token, 0);
 	}
