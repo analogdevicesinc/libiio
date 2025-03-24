@@ -110,7 +110,6 @@ int iio_block_share(struct iio_buffer *buffer, struct iio_block *block)
 {
 	const struct iio_backend_ops *ops = buffer->dev->ctx->ops;
 
-	printf("Share block %p %p\n", (void *)ops->share_block, (void *)block->pdata);
 	if (ops->share_block && block->pdata)
 		return ops->share_block(buffer->pdata, block->pdata);
 

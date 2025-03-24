@@ -945,8 +945,10 @@ static void handle_share_block(struct parser_pdata *pdata,
 	}
 
 	ret = iio_block_share(new_buf, block);
-	if (ret)
+	if (ret) {
+		printf("Could not share the block (%d)\n", ret);
 		goto out_unlock;
+	}
 
 	new_block = zalloc(sizeof(*new_block));
 	if (!entry) {

@@ -183,6 +183,8 @@ int local_share_dmabuf(struct iio_buffer_pdata *pdata, struct iio_block_pdata *b
 	if (ret)
 		return -errno;
 
+	pdata->dmabuf_supported = true;
+
 	return 0;
 }
 

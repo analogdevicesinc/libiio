@@ -1611,7 +1611,8 @@ static void local_free_block(struct iio_block_pdata *pdata)
 
 static int local_share_block(struct iio_buffer_pdata *pdata, struct iio_block_pdata *block)
 {
-	if (WITH_LOCAL_DMABUF_API && pdata->dmabuf_supported)
+	/* original buffer must support dma-buf */
+	if (WITH_LOCAL_DMABUF_API && block->buf->dmabuf_supported)
 		return local_share_dmabuf(pdata, block);
 
 	return -ENOSYS;
