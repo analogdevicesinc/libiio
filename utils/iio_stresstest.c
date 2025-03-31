@@ -103,19 +103,21 @@ static const struct option options[] = {
 	{"samples", required_argument, 0, 's' },
 	{"duration", required_argument, 0, 'd'},
 	{"threads", required_argument, 0, 't'},
+	{"cma", no_argument, 0, 'C'},
 	{"verbose", no_argument, 0, 'v'},
 	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	("[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>] [-s <samples>]"
-		"<iio_device> [<channel> ...]"),
+		"<iio_device> [<channel> ...] [-C]"),
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",
 	"Number of samples to capture, 0 = infinite. Default is 0.",
 	"Time to wait (in s) between stopping all threads",
 	"Number of Threads",
+	"Use CMA-Linux allocator for DMA buffer.",
 	"Increase verbosity (-vv and -vvv for more)",
 };
 
@@ -429,7 +431,7 @@ int main(int argc, char **argv)
 	if(!min_samples)
 		min_samples = 128;
 
-	while ((c = getopt_long(argc, argv, "hvu:b:s:t:T:",
+	while ((c = getopt_long(argc, argv, "hvu:b:s:t:T:C",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -456,6 +458,9 @@ int main(int argc, char **argv)
 			/* Max number threads 1024, min 1 */
 			info.num_threads = sanitize_clamp("threads", info.argv[info.arg_index],
 					1, 1024);
+			break;
+		case 'C':
+			buffer_params.dma_allocator = IIO_DMA_ALLOCATOR_CMA_LINUX;
 			break;
 		case 'v':
 			if (!info.verbose)
