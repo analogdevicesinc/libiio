@@ -572,7 +572,7 @@ public:
     Device trigger() const {return Device{const_cast<iio_device*>(impl::check(iio_device_get_trigger(p), "iio_device_get_trigger"))};}
     void set_trigger(iio_device const * trigger) {impl::check(iio_device_set_trigger(p, trigger), "iio_device_set_trigger");}
     bool is_trigger() const {return iio_device_is_trigger(p);}
-    BufferPtr create_buffer(unsigned int idx, iio_channels_mask * mask) {return BufferPtr(impl::check(iio_device_create_buffer(p, idx, mask), "iio_device_create_buffer"));}
+    BufferPtr create_buffer(iio_buffer_params * params, iio_channels_mask * mask) {return BufferPtr(impl::check(iio_device_create_buffer(p, params, mask), "iio_device_create_buffer"));}
     bool is_hwmon() const {return iio_device_is_hwmon(p);}
     EventStreamPtr create_event_stream() { return EventStreamPtr{impl::check(iio_device_create_event_stream(p), "iio_device_create_event_stream")};}
     ssize_t sample_size(iio_channels_mask * mask) const {return impl::check_n(iio_device_get_sample_size(p, mask), "iio_device_get_sample_size");}

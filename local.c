@@ -286,7 +286,7 @@ local_set_buffer_size(const struct iio_buffer_pdata *pdata, size_t nb_samples)
 
 	iio_snprintf(buf, sizeof(buf), "%zu", nb_samples);
 
-	ret = local_write_dev_attr(pdata->dev, pdata->idx, "length",
+	ret = local_write_dev_attr(pdata->dev, pdata->params->idx, "length",
 				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0)
 		return (int) ret;
@@ -302,7 +302,7 @@ local_set_watermark(const struct iio_buffer_pdata *pdata, size_t nb_samples)
 
 	iio_snprintf(buf, sizeof(buf), "%zu", nb_samples);
 
-	ret = local_write_dev_attr(pdata->dev, pdata->idx, "watermark",
+	ret = local_write_dev_attr(pdata->dev, pdata->params->idx, "watermark",
 				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
 		return (int) ret;
@@ -314,7 +314,7 @@ static int local_do_enable_buffer(struct iio_buffer_pdata *pdata, bool enable)
 {
 	int ret;
 
-	ret = (int) local_write_dev_attr(pdata->dev, pdata->idx, "enable",
+	ret = (int) local_write_dev_attr(pdata->dev, pdata->params->idx, "enable",
 					 enable ? "1" : "0",
 					 2, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0)
@@ -1394,7 +1394,7 @@ local_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 	unsigned int buf_id = 0;
 
 	if (type == IIO_ATTR_TYPE_BUFFER)
-		buf_id = attr->iio.buf->idx;
+		buf_id = attr->iio.buf->params.idx;
 
 	return local_read_dev_attr(dev, buf_id, filename, dst, len, type);
 }
@@ -1408,7 +1408,7 @@ local_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 	unsigned int buf_id = 0;
 
 	if (type == IIO_ATTR_TYPE_BUFFER)
-		buf_id = attr->iio.buf->idx;
+		buf_id = attr->iio.buf->params.idx;
 
 	return local_write_dev_attr(dev, buf_id, filename, src, len, type);
 }
@@ -1477,7 +1477,8 @@ static void local_close_fd(const struct iio_device *dev, int fd)
 }
 
 static struct iio_buffer_pdata *
-local_create_buffer(const struct iio_device *dev, unsigned int idx,
+local_create_buffer(const struct iio_device *dev,
+		    struct iio_buffer_params *params,
 		    struct iio_channels_mask *mask)
 {
 	struct iio_buffer_pdata *pdata;
@@ -1504,15 +1505,15 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_mmap_pdata;
 	}
 
-	err = local_open_fd(dev, false, idx);
+	err = local_open_fd(dev, false, params->idx);
 	if (err < 0)
 		goto err_close_eventfd;
 
 	fd = err;
 
+	pdata->params = params;
 	pdata->cancel_fd = cancel_fd;
 	pdata->fd = fd;
-	pdata->idx = idx;
 
 	/* Disable buffer */
 	err = local_do_enable_buffer(pdata, false);
@@ -1523,7 +1524,7 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
 		if (chn->index >= 0) {
-			err = channel_write_state(chn, idx, false);
+			err = channel_write_state(chn, params->idx, false);
 			if (err < 0)
 				goto err_close;
 		}
@@ -1533,7 +1534,7 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
 		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
-			err = channel_write_state(chn, idx, true);
+			err = channel_write_state(chn, params->idx, true);
 			if (err < 0)
 				goto err_close;
 		}
@@ -1544,7 +1545,7 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
 		if (chn->index >= 0) {
-			err = channel_read_state(chn, idx);
+			err = channel_read_state(chn, params->idx);
 			if (err < 0)
 				goto err_close;
 

@@ -226,6 +226,7 @@ static void *client_thread(void *data)
 	const struct iio_device *dev;
 	const struct iio_channel *ch;
 	struct iio_channels_mask *mask;
+	struct iio_buffer_params buffer_params = {0};
 	struct timeval start, end;
 	int id = -1, stamp, r_errno;
 	ssize_t ret;
@@ -307,10 +308,11 @@ static void *client_thread(void *data)
 		if (info->verbose == VERYVERBOSE)
 			printf("%2d: Running\n", id);
 
+		buffer_params.idx = info->buffer_size;
 		i = 0;
 		while (threads_running || i == 0) {
 			info->buffers[id]++;
-			buffer = iio_device_create_buffer(dev, info->buffer_size, false);
+			buffer = iio_device_create_buffer(dev, &buffer_params, false);
 			ret = iio_err(buffer);
 			if (ret) {
 				struct timespec wait;
@@ -398,6 +400,7 @@ int main(int argc, char **argv)
 	struct iio_buffer *buffer;
 	struct iio_context *ctx;
 	struct iio_channel *ch;
+	struct iio_buffer_params buffer_params = {0};
 	struct iio_channels_mask *mask;
 	const char *name;
 	int c, pret, option_index, err;
@@ -492,7 +495,7 @@ int main(int argc, char **argv)
 							iio_channel_enable(ch, mask);
 					}
 
-					buffer = iio_device_create_buffer(dev, 0, mask);
+					buffer = iio_device_create_buffer(dev, &buffer_params, mask);
 					if (!iio_err(buffer)) {
 						iio_buffer_destroy(buffer);
 
