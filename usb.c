@@ -403,11 +403,12 @@ usb_writebuf(struct iio_buffer_pdata *pdata, const void *src, size_t len)
 }
 
 static struct iio_buffer_pdata *
-usb_create_buffer(const struct iio_device *dev, unsigned int idx,
+usb_create_buffer(const struct iio_device *dev,
+		  struct iio_buffer_params *params,
 		  struct iio_channels_mask *mask)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
-	const struct iio_context_params *params = iio_context_get_params(ctx);
+	const struct iio_context_params *ctx_params = iio_context_get_params(ctx);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 	struct iio_buffer_pdata *buf;
 	int ret;
@@ -436,7 +437,7 @@ usb_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_ep;
 	}
 
-	buf->io_ctx.iiod_client = iiod_client_new(params, &buf->io_ctx,
+	buf->io_ctx.iiod_client = iiod_client_new(ctx_params, &buf->io_ctx,
 						  &usb_iiod_client_ops);
 	ret = iio_err(buf->io_ctx.iiod_client);
 	if (ret) {
@@ -446,7 +447,7 @@ usb_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	buf->pdata = iiod_client_create_buffer(buf->io_ctx.iiod_client,
 					       ctx_pdata->io_ctx.iiod_client,
-					       dev, idx, mask);
+					       dev, params, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create iiod-client buffer");

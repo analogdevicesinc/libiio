@@ -435,11 +435,12 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 }
 
 static struct iio_buffer_pdata *
-network_create_buffer(const struct iio_device *dev, unsigned int idx,
+network_create_buffer(const struct iio_device *dev,
+		      struct iio_buffer_params *buffer_params,
 		      struct iio_channels_mask *mask)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
-	const struct iio_context_params *params = iio_context_get_params(ctx);
+	const struct iio_context_params *ctx_params = iio_context_get_params(ctx);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	struct iio_buffer_pdata *buf;
 	int ret;
@@ -448,7 +449,7 @@ network_create_buffer(const struct iio_device *dev, unsigned int idx,
 	if (!buf)
 		return iio_ptr(-ENOMEM);
 
-	buf->io_ctx.params = params;
+	buf->io_ctx.params = ctx_params;
 	buf->io_ctx.ctx_pdata = pdata;
 	buf->dev = dev;
 
@@ -461,7 +462,7 @@ network_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	buf->pdata = iiod_client_create_buffer(buf->iiod_client,
 					       pdata->iiod_client,
-					       dev, idx, mask);
+					       dev, buffer_params, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create buffer");

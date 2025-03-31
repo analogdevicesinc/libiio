@@ -17,6 +17,7 @@ struct iiod_client;
 struct iiod_client_io;
 struct iiod_client_pdata;
 struct iio_event_stream_pdata;
+struct iio_buffer_params;
 
 struct iiod_client_ops {
 	ssize_t (*write)(struct iiod_client_pdata *desc,
@@ -70,7 +71,7 @@ iiod_client_create_context(struct iiod_client *client,
 __api struct iiod_client_buffer_pdata *
 iiod_client_create_buffer(struct iiod_client *client,
 			  struct iiod_client *client_fb,
-			  const struct iio_device *dev, unsigned int idx,
+			  const struct iio_device *dev, const struct iio_buffer_params *params,
 			  struct iio_channels_mask *mask);
 __api void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata);
 __api int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,

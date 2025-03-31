@@ -223,6 +223,7 @@ int main(int argc, char **argv)
 	struct iio_stream *stream;
 	const struct iio_block *block;
 	struct iio_channels_mask *mask;
+	struct iio_buffer_params buffer_params = {0};
 	const struct iio_channels_mask *hw_mask;
 	const struct iio_attr *uri, *attr;
 	struct option *opts;
@@ -437,7 +438,7 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	}
 
-	buffer = iio_device_create_buffer(dev, 0, mask);
+	buffer = iio_device_create_buffer(dev, &buffer_params, mask);
 	ret = iio_err(buffer);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to allocate buffer");

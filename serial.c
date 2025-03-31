@@ -226,7 +226,8 @@ static int serial_set_trigger(const struct iio_device *dev,
 }
 
 static struct iio_buffer_pdata *
-serial_create_buffer(const struct iio_device *dev, unsigned int idx,
+serial_create_buffer(const struct iio_device *dev,
+		     struct iio_buffer_params *params,
 		     struct iio_channels_mask *mask)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -240,7 +241,7 @@ serial_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	buf->pdata = iiod_client_create_buffer(pdata->iiod_client,
 					       pdata->iiod_client,
-					       dev, idx, mask);
+					       dev, params, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create buffer");
