@@ -98,7 +98,7 @@ else()
 	set(OSX_FRAMEWORK OFF)
 endif()
 
-set(IIO_PUBLIC_HEADERS include/iio/iio.h;include/iio/iio-debug.h;include/iio/iio-lock.h;include/iio/iiod-client.h)
+set(IIO_PUBLIC_HEADERS include/iio/iio.h;include/iio/iio-debug.h;include/iio/iio-lock.h;include/iio/iiod-client.h;include/iio/iio-backend.h)
 
 if (CPP_BINDINGS)
 	list(APPEND IIO_PUBLIC_HEADERS bindings/cpp/iiopp.h)
