@@ -58,7 +58,9 @@ def _check_null(result, func, arguments):
     if result:
         return result
     err = get_last_error() if "Windows" in _system() else get_errno()
-    raise OSError(err, _strerror(err))
+    if err != 0:  # The fail reason is known so raise an exception
+        raise OSError(err, _strerror(err))
+    return result
 
 
 def _check_negative(result, func, arguments):
