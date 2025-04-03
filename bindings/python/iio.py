@@ -162,6 +162,7 @@ class EventType(Enum):
     IIO_EV_TYPE_CHANGE = 5
     IIO_EV_TYPE_MAG_REFERENCED = 6
     IIO_EV_TYPE_GESTURE = 7
+    IIO_EV_TYPE_FAULT = 8
 
 class EventDirection(Enum):
     """Represents the direction of an IIO event."""
@@ -172,6 +173,7 @@ class EventDirection(Enum):
     IIO_EV_DIR_NONE = 3
     IIO_EV_DIR_SINGLETAP = 4
     IIO_EV_DIR_DOUBLETAP = 5
+    IIO_EV_DIR_FAULT_OPENWIRE = 6
 
 class Event(Structure):
     """Represents an IIO event."""
