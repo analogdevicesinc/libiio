@@ -466,7 +466,8 @@ if (WITH_SERIAL_BACKEND)
 endif()
 
 option(WITH_ZSTD "Support for ZSTD compressed metadata" ON)
-if (WITH_ZSTD)
+if (WITH_ZSTD OR
+	(WITH_IIOD AND (WITH_USB_BACKEND OR WITH_NETWORK_BACKEND OR WITH_SERIAL_BACKEND OR WITH_AIO)))
 	find_library(LIBZSTD_LIBRARIES zstd)
 	find_path(LIBZSTD_INCLUDE_DIR zstd.h)
 
@@ -477,7 +478,7 @@ if (WITH_ZSTD)
 
 	target_link_libraries(iio PRIVATE ${LIBZSTD_LIBRARIES})
 	target_include_directories(iio PRIVATE ${LIBZSTD_INCLUDE_DIR})
-endif (WITH_ZSTD)
+endif ()
 
 option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
 if(WITH_NETWORK_BACKEND)
