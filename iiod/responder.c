@@ -553,14 +553,9 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 			       struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
-	const struct iio_device *dev;
 	struct buffer_entry *entry, *buf_entry;
 	struct iio_buffer *buf;
 	int ret = -ENODEV;
-
-	dev = iio_context_get_device(pdata->ctx, cmd->dev);
-	if (!dev)
-		goto out_send_response;
 
 	buf = get_iio_buffer(pdata, cmd, &buf_entry);
 	ret = iio_err(buf);
