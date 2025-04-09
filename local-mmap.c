@@ -113,7 +113,7 @@ local_create_mmap_block(struct iio_buffer_pdata *pdata,
 		goto out_free_priv;
 	}
 
-	if (__builtin_popcountl(ppdata->mmap_block_mask) == ppdata->nb_blocks) {
+	if (__builtin_popcountl(ppdata->mmap_block_mask) == (int) ppdata->nb_blocks) {
 		/* All our allocated blocks are used; we need to create one more. */
 		priv->idx = ppdata->nb_blocks;
 		req.id = 0;
