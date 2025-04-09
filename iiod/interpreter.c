@@ -205,8 +205,6 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 		 size_t xml_zstd_len)
 {
 	struct parser_pdata pdata = { 0 };
-	unsigned int i;
-	int ret;
 
 	pdata.ctx = ctx;
 	pdata.fd_in = fd_in;
@@ -224,7 +222,9 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 	SLIST_INIT(&pdata.thdlist_head);
 
 #if WITH_AIO
-	for (i = 0; i < 2; i++) {
+	for (unsigned int i = 0; i < 2; i++) {
+		int ret;
+
 		pdata.aio_eventfd[i] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 		if (pdata.aio_eventfd[i] < 0) {
 			IIO_PERROR(errno, "Failed to create AIO eventfd");
@@ -257,7 +257,7 @@ void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
 
 #if WITH_AIO
 err_free_aio:
-	for (i = 2; i > 0; i--) {
+	for (unsigned int i = 2; i > 0; i--) {
 		io_destroy(pdata.aio_ctx[i - 1]);
 		close(pdata.aio_eventfd[i - 1]);
 		pthread_mutex_destroy(&pdata.aio_mutex[i - 1]);
