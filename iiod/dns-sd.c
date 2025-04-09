@@ -46,7 +46,7 @@ static struct avahi_data {
 static void create_services(AvahiClient *c);
 static AvahiClient * client_new(void);
 
-static void client_free()
+static void client_free(void)
 {
 	/* This also frees the entry group, if any. */
 	if (avahi.client) {
@@ -56,7 +56,7 @@ static void client_free()
 	}
 }
 
-static void shutdown_avahi()
+static void shutdown_avahi(void)
 {
 	/* Stop the avahi client, if it's running. */
 	if (avahi.poll)
