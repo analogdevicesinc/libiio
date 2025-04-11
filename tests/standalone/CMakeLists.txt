@@ -1,6 +1,7 @@
 set (TEST_SOURCES
   test_version.c
   test_scan.c
+  test_backends.c
 )
 
 foreach(TEST_SRC ${TEST_SOURCES})
