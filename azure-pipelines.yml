@@ -388,6 +388,7 @@ stages:
         sudo apt-get update
         sudo apt-get install -y qemu-system-ppc64
         sudo apt-get install qemu-user-static
+        sudo sysctl kernel.randomize_va_space=0
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       displayName: 'Setup'
     - script: |
