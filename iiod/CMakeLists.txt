@@ -152,6 +152,7 @@ toggle_iio_feature("${WITH_IIOD_USBD}" iiod-usb)
 toggle_iio_feature("${WITH_SYSTEMD}" iiod-systemd)
 toggle_iio_feature("${WITH_SYSVINIT}" iiod-sysvinit)
 toggle_iio_feature("${WITH_UPSTART}" iiod-upstart)
+toggle_iio_feature("${WITH_IIOD_USB_DMABUF}" iiod-usb-dmabuf)
 
 set(IIOD_FEATURES_ON "${IIO_FEATURES_ON}" PARENT_SCOPE)
 set(IIOD_FEATURES_OFF "${IIO_FEATURES_OFF}" PARENT_SCOPE)
