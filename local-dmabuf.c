@@ -139,6 +139,14 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 			ret = -ENOSYS;
 		}
 
+		if (ret == -EPERM) {
+			/* If the ioctl is available, but the buffer implementation used
+			 * in the kernel driver does not provide the necessary
+			 * DMABUF iio_buffer_access_funcs, mark the DMABUF interface as
+			 * unavailable. */
+			ret = -ENOSYS;
+		}
+
 		goto err_data_unmap;
 	}
 
