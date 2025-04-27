@@ -134,6 +134,14 @@ analog@precision:~/libiio/build$ make -j$(nproc)
 analog@precision:~/libiio/build$ sudo make install
 ```
 
+Note: As specified above, the default installation path on Linux based systems is '/usr'.
+This can be changed by setting the `CMAKE_INSTALL_PREFIX` var during the `cmake` step.
+
+## Uninstall
+```shell
+analog@precision:~/libiio/build$ sudo make uninstall
+```
+
 Note: Some things (specifically building doc)  need to find libiio or the bindings on path.
 That means that you configure (with -DWITH_DOC=OFF), build, install, configure
 (with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
