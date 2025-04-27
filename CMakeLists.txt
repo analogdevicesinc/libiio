@@ -754,4 +754,5 @@ string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
 
 message(STATUS "Features enabled : ${IIO_FEATURES_ON}")
 message(STATUS "Features disabled: ${IIO_FEATURES_OFF}")
+message(STATUS "Install Path set to '${CMAKE_INSTALL_PREFIX}\', modify with -DCMAKE_INSTALL_PREFIX=/path")
 message(STATUS "LOG_LEVEL set to \"${LOG_LEVEL}\"")
