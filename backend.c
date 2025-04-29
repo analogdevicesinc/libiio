@@ -12,6 +12,14 @@
 
 #include <string.h>
 
+LIBIIO_WEAK_SYMBOL const struct iio_backend iio_external_backend = {
+	.api_version = 0,
+	.name = "overrideable-external-backend",
+	.uri_prefix = NULL,
+	.ops = NULL,
+	.default_timeout_ms = 0
+};
+
 unsigned int iio_get_builtin_backends_count(void)
 {
 	unsigned int i, count = 0;
