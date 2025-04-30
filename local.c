@@ -331,7 +331,7 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 	if ((pdata->dmabuf_supported | pdata->mmap_supported) != !nb_samples)
 		return -EINVAL;
 
-	if (nb_samples) {
+	if (enable && nb_samples) {
 		ret = local_set_buffer_size(pdata, nb_samples);
 		if (ret)
 			return ret;
@@ -341,7 +341,7 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 			return ret;
 	}
 
-	return local_do_enable_buffer(pdata, true);
+	return local_do_enable_buffer(pdata, enable);
 }
 
 static ssize_t local_readbuf(struct iio_buffer_pdata *buffer,
