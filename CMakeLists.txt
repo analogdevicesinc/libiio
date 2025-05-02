@@ -54,9 +54,9 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" AND NOT ${CMAKE_SYSTEM_NAME} STREQUA
 	# within Libiio itself first. This makes sure that the library won't
 	# call the symbols from the compat layer if the compat layer is used.
 
-	# TODO: Use cmake_link_options() in CMake 3.13+
-	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bsymbolic")
-	SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic")
+	if (BUILD_SHARED_LIBS)
+		target_link_options(iio PRIVATE -Wl,-Bsymbolic)
+	endif()
 endif()
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
