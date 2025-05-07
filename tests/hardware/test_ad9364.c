@@ -51,7 +51,7 @@ int main() {
 
   const char *uri = getenv("URI_AD9361");
   if (uri == NULL)
-    exit(0); // Cant find anything don't run tests
+    exit(0); // Can't find anything don't run tests
   ctx = iio_create_context(NULL, uri);
 
   phy = iio_context_find_device(ctx, "ad9361-phy");
