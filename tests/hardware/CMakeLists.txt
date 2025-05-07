@@ -1,6 +1,17 @@
-add_executable(TestBufferAD9361 test_ad9364.c)
-target_link_libraries(TestBufferAD9361 LINK_PRIVATE iio)
-add_test(
-  NAME TestBufferAD9361
-  COMMAND TestBufferAD9361
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+set(TEST_SOURCES
+  test_ad9364.c
+)
+
+foreach(TEST_SRC ${TEST_SOURCES})
+    get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
+
+    add_executable(${TEST_NAME} ${TEST_SRC})
+
+    target_link_libraries(${TEST_NAME} LINK_PRIVATE iio)
+
+    add_test(
+        NAME ${TEST_NAME}
+        COMMAND ${TEST_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endforeach()
