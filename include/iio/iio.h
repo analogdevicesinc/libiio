@@ -84,6 +84,14 @@ typedef ptrdiff_t ssize_t;
 
 #define __api __iio_api
 
+#if defined(_WIN32)
+#  define LIBIIO_WEAK_SYMBOL
+#elif defined(__GNUC__) || defined(__clang__)
+#  define LIBIIO_WEAK_SYMBOL __attribute__((weak, visibility("default")))
+#else
+#  define LIBIIO_WEAK_SYMBOL
+#endif
+
 #endif /* DOXYGEN */
 
 struct iio_attr;
