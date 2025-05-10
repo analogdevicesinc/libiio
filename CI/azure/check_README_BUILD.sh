@@ -29,6 +29,19 @@ do
 	fi
 done
 
+# check if any cmake options don't print out at the end of the cmake process
+for f in $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt)
+do
+	for i in $(grep -i "option[[:space:]]*(" "${f}" | sed -e "s/^[[:space:]]*//g" -e "s/(/ /g" | awk '{print $2}' | sort | uniq)
+	do
+		a=$(grep -i "toggle_iio_feature.*${i}" $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt))
+		if [ -z "${a}" ] ; then
+			echo "${f} defines \"${i}\" as option, but it is missing toggle_iio_feature"
+			error=1
+		fi
+	done
+done
+
 if [ "${error}" -eq "1" ] ; then
 	exit 1
 fi
