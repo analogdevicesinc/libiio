@@ -1,5 +1,6 @@
 set(TEST_SOURCES
   test_ad9364.c
+  test_buffers.c
 )
 
 foreach(TEST_SRC ${TEST_SOURCES})
