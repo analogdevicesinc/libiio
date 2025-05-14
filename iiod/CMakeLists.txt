@@ -144,15 +144,29 @@ if (WITH_UPSTART)
 	)
 endif()
 
-toggle_iio_feature("${WITH_IIOD_SERIAL}" iiod-serial)
-toggle_iio_feature("${WITH_IIOD_NETWORK}" iiod-network)
-toggle_iio_feature("${WITH_IIOD_V0_COMPAT}" iiod-v0-compat)
-toggle_iio_feature("${WITH_AIO}" iiod-aio)
-toggle_iio_feature("${WITH_IIOD_USBD}" iiod-usb)
-toggle_iio_feature("${WITH_SYSTEMD}" iiod-systemd)
-toggle_iio_feature("${WITH_SYSVINIT}" iiod-sysvinit)
-toggle_iio_feature("${WITH_UPSTART}" iiod-upstart)
-toggle_iio_feature("${WITH_IIOD_USB_DMABUF}" iiod-usb-dmabuf)
+list(APPEND OPTIONS_LISTS
+	"WITH_IIOD_SERIAL"
+	"WITH_IIOD_NETWORK"
+	"WITH_IIOD_V0_COMPAT"
+	"WITH_AIO"
+	"WITH_IIOD_USBD"
+	"WITH_SYSTEMD"
+	"WITH_SYSVINIT"
+	"WITH_UPSTART"
+	"WITH_IIOD_USB_DMABUF"
+)
 
-set(IIOD_FEATURES_ON "${IIO_FEATURES_ON}" PARENT_SCOPE)
-set(IIOD_FEATURES_OFF "${IIO_FEATURES_OFF}" PARENT_SCOPE)
+list(APPEND FEATURES_LISTS
+	"iiod-serial"
+	"iiod-network"
+	"iiod-v0-compat"
+	"iiod-aio"
+	"iiod-usb"
+	"iiod-systemd"
+	"iiod-sysvinit"
+	"iod-upstart"
+	"iiod-usb-dmabuf"
+)
+
+set(IIOD_OPTIONS "${OPTIONS_LISTS}" PARENT_SCOPE)
+set(IIOD_FEATURES "${FEATURES_LISTS}" PARENT_SCOPE)
