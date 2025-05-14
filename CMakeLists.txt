@@ -252,6 +252,9 @@ if (ENABLE_IPV6)
 endif()
 
 option(WITH_EXTERNAL_BACKEND "Support external backend provided by the application" OFF)
+if (WITH_EXTERNAL_BACKEND AND NOT WITH_LIBTINYIIOD)
+	message(SEND_ERROR "Sorry, external backend is only supported when WITH_LIBTINYIIOD=ON.")
+endif()
 
 option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 if (WITH_USB_BACKEND)
