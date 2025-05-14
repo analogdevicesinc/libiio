@@ -652,6 +652,18 @@ macro(toggle_iio_feature opt str)
 	endif()
 endmacro()
 
+macro(toggle_iio_features_for_lists option_list feature_list)
+	list(LENGTH ${option_list} OPT_LENGTH)
+	math(EXPR LEN "${OPT_LENGTH} - 1")
+
+	foreach(idx RANGE ${LEN})
+		list(GET ${option_list} ${idx} OPT)
+		list(GET ${feature_list} ${idx} FEAT)
+
+		toggle_iio_feature("${OPT}" "${FEAT}")
+	endforeach()
+endmacro()
+
 if(WITH_UTILS)
 	add_subdirectory(utils)
 endif()
@@ -745,16 +757,14 @@ toggle_iio_feature("${OSX_FRAMEWORK}" osx-framework)
 toggle_iio_feature("${COMPILE_WARNING_AS_ERROR}" -Werror)
 toggle_iio_feature("${WITH_GCOV}" gcov)
 #add iiod settings
-list(APPEND IIO_FEATURES_ON ${IIOD_FEATURES_ON})
-list(APPEND IIO_FEATURES_OFF ${IIOD_FEATURES_OFF})
+toggle_iio_features_for_lists(IIOD_OPTIONS IIOD_FEATURES)
 toggle_iio_feature("${WITH_DOC}" doc)
 #add man page settings
-list(APPEND IIO_FEATURES_ON ${IIOM_FEATURES_ON})
-list(APPEND IIO_FEATURES_OFF ${IIOM_FEATURES_OFF})
+toggle_iio_features_for_lists(IIOM_OPTIONS IIOM_FEATURES)
 #add binding settings
-list(APPEND IIO_FEATURES_ON ${IIOB_FEATURES_ON})
-list(APPEND IIO_FEATURES_OFF ${IIOB_FEATURES_OFF})
+toggle_iio_features_for_lists(IIOB_OPTIONS IIOB_FEATURES)
 
+# prepare features lists and print them
 string(REPLACE ";" " " IIO_FEATURES_ON "${IIO_FEATURES_ON}")
 string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
 
