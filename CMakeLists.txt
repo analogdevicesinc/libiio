@@ -29,6 +29,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(CPP_EXAMPLES "Build C++ examples" OFF)
 
 add_library(iio
 	attr.c
@@ -349,7 +350,9 @@ if (CPP_BINDINGS)
     set(DOXYGEN_ENABLED_SECTIONS CPP_BINDINGS)
     set(DOXYGEN_INPUT "${DOXYGEN_INPUT} ${CMAKE_SOURCE_DIR}/bindings/cpp/")
     set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/")
-    set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+	if (CPP_EXAMPLES)
+        set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+	endif()
 endif()
 
 # Get the GIT hash of the latest commit
