@@ -406,6 +406,35 @@ stages:
         artifactName: '$(artifactName)'
 
   #############################################
+  - job: MCUsBuilds
+    # Host Box
+    pool:
+      vmImage: 'ubuntu-latest'
+    # Docker Images
+    strategy:
+      matrix:
+        ubuntu_22_04:
+          image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
+          artifactName: 'MCU-ARM-Cortex-M4'
+    container: $[ variables['image'] ]
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+      persistCredentials: true
+    - script: |
+        set -e
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi
+      displayName: 'Setup'
+    - script: |
+        set -e
+        mkdir build && cd build
+        cmake .. -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../arm-cross-compile.cmake -DBUILD_SHARED_LIBS=OFF -DCOMPILE_WARNING_AS_ERROR=OFF -DCPP_BINDINGS=OFF -DCPP_EXAMPLES=OFF -DCSHARP_BINDINGS=OFF -DENABLE_IPV6=OFF -DHAVE_DNS_SD=OFF -DLIBIIO_COMPAT=OFF -DNO_THREADS=ON -DOSX_FRAMEWORK=OFF -DPYTHON_BINDINGS=OFF -DWITH_AIO=OFF -DWITH_EXAMPLES=OFF -DWITH_EXTERNAL_BACKEND=ON -DWITH_GCOV=OFF -DWITH_HWMON=OFF -DWITH_IIOD=OFF -DWITH_LIBTINYIIOD=ON -DWITH_LOCAL_BACKEND=OFF -DWITH_LOCAL_CONFIG=OFF -DWITH_LOCAL_DMABUF_API=OFF -DWITH_LOCAL_MMAP_API=OFF -DWITH_MAN=OFF -DWITH_MODULES=OFF -DWITH_NETWORK_BACKEND=OFF -DWITH_NETWORK_BACKEND_DYNAMIC=OFF -DWITH_SERIAL_BACKEND=OFF -DWITH_SERIAL_BACKEND_DYNAMIC=OFF -DWITH_USB_BACKEND=OFF -DWITH_USB_BACKEND_DYNAMIC=OFF -DWITH_UTILS=OFF -DWITH_XML_BACKEND=OFF -DWITH_ZSTD=OFF
+        make
+      displayName: 'Build'
+
+  #############################################
 - stage: ManageArtifacts
   dependsOn: Builds
   #############################################
