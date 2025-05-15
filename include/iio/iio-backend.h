@@ -44,6 +44,12 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
+/*
+ * Prototype of a user-supplied function that retrieves the number of ticks
+ * (as microseconds) from a clock source.
+ */
+typedef unsigned int (*iio_get_ticks_us)(void);
+
 struct iio_buffer;
 struct iio_device;
 struct iio_context;
@@ -221,6 +227,14 @@ iio_create_context_from_xml(const struct iio_context_params *params,
 			    const char *uri, const struct iio_backend *backend,
 			    const char *description, const char **ctx_attr,
 			    const char **ctx_values, unsigned int nb_ctx_attrs);
+
+/**
+ * Register a callback that returns the current time in micro-second ticks for
+ * libiio’s log-timestamping. Useful when clock_gettime() isn’t available.
+ * Call this once during system start-up, before any other libiio calls.
+ */
+__api void
+iio_register_get_ticks_us_cb(iio_get_ticks_us cb);
 
 /* Allocate zeroed out memory */
 static inline void *zalloc(size_t size)
