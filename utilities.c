@@ -425,12 +425,14 @@ uint64_t iio_read_counter_us(void)
 	QueryPerformanceCounter(&cnt);
 
 	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
-#else
+#elif HAS_POSIX_TIME
 	struct timespec ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	value = ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
+#else
+	value = 0;
 #endif
 
 	return value;
