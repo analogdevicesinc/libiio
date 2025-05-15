@@ -23,7 +23,7 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#else
+#elif CLOCK_GETTIME_AVAILABLE
 #include <time.h>
 #endif
 
@@ -397,6 +397,10 @@ uint64_t iio_read_counter_us(void)
 {
 	uint64_t value;
 
+	if (platform_get_ticks_us) {
+		value = platform_get_ticks_us();
+		return value;
+	} else {
 #ifdef _WIN32
 	LARGE_INTEGER freq, cnt;
 
@@ -404,13 +408,16 @@ uint64_t iio_read_counter_us(void)
 	QueryPerformanceCounter(&cnt);
 
 	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
-#else
+#elif CLOCK_GETTIME_AVAILABLE
 	struct timespec ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	value = ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
+#else
+	value = 0;
 #endif
+	}
 
 	return value;
 }
