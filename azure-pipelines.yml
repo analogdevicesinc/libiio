@@ -411,6 +411,35 @@ stages:
         artifactName: '$(artifactName)'
 
   #############################################
+  - job: MCUsBuilds
+    # Host Box
+    pool:
+      vmImage: 'ubuntu-latest'
+    # Docker Images
+    strategy:
+      matrix:
+        ubuntu_22_04:
+          image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
+          artifactName: 'MCU-ARM-Cortex-M4'
+    container: $[ variables['image'] ]
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+      persistCredentials: true
+    - script: |
+        set -e
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi
+      displayName: 'Setup'
+    - script: |
+        set -e
+        mkdir build && cd build
+        cmake .. -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-cross-compile.cmake -DWITH_LIBTINYIIOD=ON
+        make
+      displayName: 'Build'
+
+  #############################################
 - stage: ManageArtifacts
   dependsOn: Builds
   #############################################
