@@ -42,7 +42,8 @@ Cmake Options          | Default | Target | Description                         
 `LIBIIO_COMPAT`        |  ON |        All | Build Libiio v0.x compatibility layer |
 `WITH_MODULES`         | OFF |        All | Build modular backends |
 'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
-`CPP_BINDINGS`         | OFF |        All | Install C++ bindings (C++17 required for examples) |
+`CPP_BINDINGS`         | OFF |        All | Install C++ bindings |
+`CPP_EXAMPLES`         | OFF |        All | Build C++ examples (C++17 required) |
 `PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
