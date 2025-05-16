@@ -1,6 +1,8 @@
 # Build instructions for libiio
 
-## Install Prerequisites/Dependencies
+## Instructions applicable to Linux, BSD, and Windows configurations
+
+### Install Prerequisites/Dependencies
 
 Basic system setup
 ```shell
@@ -25,13 +27,13 @@ Install to build python backends
 analog@precision:~$ sudo apt-get install python3 python3-pip python3-setuptools
 ```
 
-## Clone
+### Clone
 ```shell
 analog@precision:~$ git clone https://github.com/analogdevicesinc/libiio.git
 analog@precision:~$ cd libiio
 ```
 
-## Configure & Build
+### Configure & Build
 
 when configuring libiio with cmake, there are a few optional settings that you can use to control the build.
 The recommendation is to leave things to the default.
@@ -130,7 +132,7 @@ analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=O
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
-## Install
+### Install
 ```shell
 analog@precision:~/libiio/build$ sudo make install
 ```
@@ -138,7 +140,7 @@ analog@precision:~/libiio/build$ sudo make install
 Note: As specified above, the default installation path on Linux based systems is '/usr'.
 This can be changed by setting the `CMAKE_INSTALL_PREFIX` var during the `cmake` step.
 
-## Uninstall
+### Uninstall
 ```shell
 analog@precision:~/libiio/build$ sudo make uninstall
 ```
@@ -148,7 +150,7 @@ That means that you configure (with -DWITH_DOC=OFF), build, install, configure
 (with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
 
 
-## Notes
+### Notes
 
 Special Note on Microsoft Visual Compiler (MSVC):
 
@@ -160,3 +162,56 @@ if (0)
 It will try to link against the `call_function` symbol even though it's clearly dead code.
 
 For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
+
+## Instructions applicable to Microcontroller configurations
+
+### Install Prerequisites/Dependencies
+
+Basic system setup
+```shell
+analog@precision:~$ sudo apt-get update
+analog@precision:~$ sudo apt-get install build-essential
+```
+Install Prerequisites
+```shell
+analog@precision:~$ sudo apt-get install git cmake
+```
+
+Install ARM toolchain for cross-compiling
+```shell
+analog@precision:~$ sudo apt-get install gcc-arm-none-eabi
+```
+
+### Clone
+```shell
+analog@precision:~$ git clone https://github.com/analogdevicesinc/libiio.git
+analog@precision:~$ cd libiio
+```
+
+### Configure & Build
+
+When configuring libiio with cmake, there are a few options that need to be turned on while the rest need to be turned off.
+Cmake Options       | Default | Action                |
+------------------- | ------- | --------------------- |
+`WITH_LIBTINYIIOD`  | OFF | Needs to be turned ON     |
+`WITH_EXTERNAL_BACKEND` | OFF | Needs to be turned ON |
+`NO_THREADS`           | OFF |  Needs to be turned ON |
+
+Additionally, during the CMake configuration step, a toolchain file must be provided to inform CMake about the MCU platform. The arm-cross-compile.cmake file, located at the root of the repository, serves this purpose. The MCU type can then be specified using the -DCMAKE_SYSTEM_PROCESSOR option, as shown in the example below.
+
+```shell
+analog@precision:~/libiio$ mkdir build
+analog@precision:~/libiio/build$ cd build
+analog@precision:~/libiio/build$ cmake .. -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../arm-cross-compile.cmake -DBUILD_SHARED_LIBS=OFF -DCOMPILE_WARNING_AS_ERROR=OFF -DCPP_BINDINGS=OFF -DCPP_EXAMPLES=OFF -DCSHARP_BINDINGS=OFF -DENABLE_IPV6=OFF -DHAVE_DNS_SD=OFF -DLIBIIO_COMPAT=OFF -DNO_THREADS=ON -DOSX_FRAMEWORK=OFF -DPYTHON_BINDINGS=OFF -DWITH_AIO=OFF -DWITH_EXAMPLES=OFF -DWITH_EXTERNAL_BACKEND=ON -DWITH_GCOV=OFF -DWITH_HWMON=OFF -DWITH_IIOD=OFF -DWITH_LIBTINYIIOD=ON -DWITH_LOCAL_BACKEND=OFF -DWITH_LOCAL_CONFIG=OFF -DWITH_LOCAL_DMABUF_API=OFF -DWITH_LOCAL_MMAP_API=OFF -DWITH_MAN=OFF -DWITH_MODULES=OFF -DWITH_NETWORK_BACKEND=OFF -DWITH_NETWORK_BACKEND_DYNAMIC=OFF -DWITH_SERIAL_BACKEND=OFF -DWITH_SERIAL_BACKEND_DYNAMIC=OFF -DWITH_USB_BACKEND=OFF -DWITH_USB_BACKEND_DYNAMIC=OFF -DWITH_UTILS=OFF -DWITH_XML_BACKEND=OFF -DWITH_ZSTD=OFF
+analog@precision:~/libiio/build$ make -j$(nproc)
+```
+
+### Install
+```shell
+analog@precision:~/libiio/build$ sudo make install
+```
+
+### Uninstall
+```shell
+analog@precision:~/libiio/build$ sudo make uninstall
+```
