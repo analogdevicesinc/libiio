@@ -30,6 +30,19 @@ if (WITH_IIOD_V0_COMPAT)
 	add_flex_bison_dependency(lexer parser)
 
 	target_sources(iiod PRIVATE ops.c ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
+
+	# license checks needs header files at cmake time, so build them now.
+	if (LICENSE_CHECK)
+		execute_process(
+			COMMAND ${BISON_EXECUTABLE} -d -o "${CMAKE_CURRENT_BINARY_DIR}/parser.c" "${CMAKE_CURRENT_SOURCE_DIR}/parser.y"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+			RESULT_VARIABLE bison_res
+		)
+		if(NOT bison_res EQUAL 0)
+			message(FATAL_ERROR "bison failed to generate parser.h")
+		endif()
+	endif()
+
 endif (WITH_IIOD_V0_COMPAT)
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	# flex sometimes generates code which generate sign comparison errors
