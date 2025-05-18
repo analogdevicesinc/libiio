@@ -1,5 +1,24 @@
 # Build instructions for libiio
 
+## License Considerations
+libiio includes source components that are released under a mix of open-source licenses, including MIT, GPL, and LGPL. As a result, the license of the **final built binaries** depends on the selected build configuration.
+
+In a typical build on a POSIX-compliant system (such as Linux), libiio produces:
+- A shared library licensed under the **GNU Lesser General Public License version 2.1 or later (LGPL-2.1-or-later)**.
+- User-space utilities (such as command-line tools) licensed under the **GNU General Public License (GPL)**.
+
+The specific options you enable or disable during configuration can affect which components are included and which license terms apply to the resulting binaries.
+
+Additionally, libiio may link against external system libraries (e.g., `libzstd`, `libxml2`, `libavahi`, etc.) depending on the selected features. These dependencies have their own licensing terms and may further influence the overall license obligations of your build.
+
+For **non-POSIX environments** (such as microcontrollers, Zephyr, FreeRTOS, and other embedded platforms), the project aims to support configurations that include only permissively licensed components. In such cases, the goal is to produce a minimal **MIT-only** licensed library suitable for static linking in constrained or proprietary environments.
+
+To verify the licensing implications of your build, it is **strongly recommended** that you:
+- Review your configuration options carefully.
+- Enable the license compatibility check by passing `-DLICENSE_CHECK=ON` to CMake during configuration.
+
+This helps ensure that the resulting binaries align with your project's licensing, compliance, and distribution requirements.
+
 ## Install Prerequisites/Dependencies
 
 Basic system setup
@@ -100,6 +119,10 @@ Cmake Options     | Default | Description                                    |
 |                 |         | Warning : Print warnings and errors            |
 |                 |   Info  | Info    : Print info, warnings and errors      |
 |                 |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
+|`LICENSE_CHECK`  |   OFF   | Use to print out license info on files used for targets |
+|                 |         |   This is informative only, as many files are different |
+|                 |         |   licenses, and this is an easy way to see what is the  |
+|                 |         |   final license of the resulting binary                 |
 
 Options which effect iiod only. These are only available on Linux.
 
