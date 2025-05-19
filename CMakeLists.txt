@@ -29,6 +29,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(CPP_EXAMPLES "Build C++ examples" OFF)
 
 add_library(iio
 	attr.c
@@ -238,6 +239,11 @@ check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
+check_symbol_exists(clock_gettime "time.h" HAS_CLOCK_GETTIME)
+
+if (HAS_CLOCK_GETTIME)
+	target_compile_definitions(iio PRIVATE CLOCK_GETTIME_AVAILABLE=1)
+endif()
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
 if (ENABLE_IPV6)
@@ -252,6 +258,37 @@ if (ENABLE_IPV6)
 endif()
 
 option(WITH_EXTERNAL_BACKEND "Support external backend provided by the application" OFF)
+if (WITH_EXTERNAL_BACKEND AND NOT WITH_LIBTINYIIOD)
+	message(SEND_ERROR "Sorry, external backend is only supported when WITH_LIBTINYIIOD=ON.")
+endif()
+
+if (WITH_EXTERNAL_BACKEND)
+	set(DISABLED_FEATURES_FOR_EXTERNAL_BACKED "")
+
+	if (WITH_UTILS)
+		list(APPEND DISABLED_FEATURES_FOR_EXTERNAL_BACKED utils)
+		set(WITH_UTILS OFF)
+	endif()
+
+	if (WITH_EXAMPLES)
+		list(APPEND DISABLED_FEATURES_FOR_EXTERNAL_BACKED examples)
+		set(WITH_EXAMPLES OFF)
+	endif()
+
+	if (CPP_EXAMPLES)
+		list(APPEND DISABLED_FEATURES_FOR_EXTERNAL_BACKED c++-examples)
+		set(CPP_EXAMPLES OFF)
+	endif()
+
+	list(LENGTH DISABLED_FEATURES_FOR_EXTERNAL_BACKED features_count)
+	if (features_count GREATER 0)
+		set(external_backend_message "Activating external backend disables features:")
+		foreach (feature IN LISTS DISABLED_FEATURES_FOR_EXTERNAL_BACKED)
+			string(APPEND external_backend_message " ${feature}")
+		endforeach()
+		message(STATUS "${external_backend_message}")
+	endif()
+endif()
 
 option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 if (WITH_USB_BACKEND)
@@ -349,7 +386,9 @@ if (CPP_BINDINGS)
     set(DOXYGEN_ENABLED_SECTIONS CPP_BINDINGS)
     set(DOXYGEN_INPUT "${DOXYGEN_INPUT} ${CMAKE_SOURCE_DIR}/bindings/cpp/")
     set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/")
-    set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+	if (CPP_EXAMPLES)
+        set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+	endif()
 endif()
 
 # Get the GIT hash of the latest commit
