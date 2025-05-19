@@ -100,6 +100,10 @@ Cmake Options     | Default | Description                                    |
 |                 |         | Warning : Print warnings and errors            |
 |                 |   Info  | Info    : Print info, warnings and errors      |
 |                 |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
+|`LICENSE_CHECK`  |   OFF   | Use to print out license info on files used for targets |
+|                 |         |   This is informative only, as many files are different |
+|                 |         |   licenses, and this is an easy way to see what is the  |
+|                 |         |   final license of the resulting binary                 |
 
 Options which effect iiod only. These are only available on Linux.
 
