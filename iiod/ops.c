@@ -352,7 +352,7 @@ static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
 	if (!entry->blocks)
 		return -ENOMEM;
 
-	entry->buf = iio_device_create_buffer(entry->dev, 0, mask);
+	entry->buf = iio_device_create_buffer(entry->dev, NULL, mask);
 	err = iio_err(entry->buf);
 	if (err)
 		goto err_free_blocks_array;
@@ -832,7 +832,7 @@ retry:
 			 * a previous. E.g. like
 			 *
 			 *     iio_buffer_destroy(buf);
-			 *     buf = iio_device_create_buffer(dev, n, true);
+			 *     buf = iio_device_create_buffer(dev, &params, true);
 			 *
 			 * In this case the two buffers each use their own
 			 * communication channel which are unordered to each

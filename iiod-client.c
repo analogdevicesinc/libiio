@@ -15,6 +15,12 @@
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
@@ -1441,17 +1447,31 @@ iiod_client_create_buffer(struct iiod_client *client,
 	pdata->mask = mask;
 
 	if (iiod_client_uses_binary_interface(client)) {
+		struct iiod_buf_params *buf_params;
+		size_t len = sizeof(*buf_params) + mask->words * sizeof(uint32_t);
+
 		io = iiod_responder_get_default_io(client->responder);
 
 		cmd.op = IIOD_OP_CREATE_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(dev);
 		cmd.code = pdata->params.idx;
 
-		/* TODO: endianness */
-		buf.ptr = mask->mask;
-		buf.size = mask->words * 4;
+		buf_params = malloc(len);
+		if (!buf_params) {
+			err = -ENOMEM;
+			goto err_free_pdata;
+		}
+
+		buf_params->dma_allocator = htonl(params->dma_allocator);
+		buf_params->nb_mask = (unsigned int) mask->words;
+		for (unsigned int i = 0; i < mask->words; i++)
+			buf_params->mask[i] = htonl(mask->mask[i]);
+
+		buf.ptr = buf_params;
+		buf.size = len;
 
 		err = iiod_io_exec_command(io, &cmd, &buf, &buf);
+		free(buf_params);
 		if (err < 0)
 			goto err_free_pdata;
 	}

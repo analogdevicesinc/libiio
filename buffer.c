@@ -122,9 +122,20 @@ iio_device_create_buffer(const struct iio_device *dev,
 	if (!buf)
 		return iio_ptr(-ENOMEM);
 
-	if (params)
-		buf->params = *params;
+	if (params) {
+		/* We need to make sure that all reserved bytes are zero initialized.
+		 * This is important for the ABI stability.
+		 */
+		for (i = 0; i < sizeof(buf->params.__rsrv); i++) {
+			if (params->__rsrv[i]) {
+				dev_err(dev, "Reserved bytes in buffer params must be zero.\n");
+				err = -E2BIG;
+				goto err_free_buf;
+			}
+		}
 
+		buf->params = *params;
+	}
 	buf->dev = dev;
 
 	/* Duplicate buffer attributes from the iio_device.
