@@ -239,14 +239,14 @@ int main (__notused int argc, __notused char **argv)
 	iio_channel_enable(tx0_q, txmask);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 0, rxmask);
+	rxbuf = iio_device_create_buffer(rx, NULL, rxmask);
 	err = iio_err(rxbuf);
 	if (err) {
 		rxbuf = NULL;
 		ctx_perror(ctx, err, "Could not create RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 0, txmask);
+	txbuf = iio_device_create_buffer(tx, NULL, txmask);
 	err = iio_err(txbuf);
 	if (err) {
 		txbuf = NULL;
