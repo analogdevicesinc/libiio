@@ -65,6 +65,12 @@ struct iiod_command {
 	int32_t code;
 };
 
+struct iiod_buf_params {
+	unsigned int dma_allocator;
+	unsigned int nb_mask;
+	unsigned int mask[];
+};
+
 struct iiod_buf {
 	void *ptr;
 	size_t size;
