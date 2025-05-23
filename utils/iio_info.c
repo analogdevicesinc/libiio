@@ -324,7 +324,7 @@ int main(int argc, char **argv)
 		}
 
 		if (mask)
-			buffer = iio_device_create_buffer(dev, 0, mask);
+			buffer = iio_device_create_buffer(dev, NULL, mask);
 		if (mask && !iio_err(buffer)) {
 			nb_attrs = iio_buffer_get_attrs_count(buffer);
 			if (nb_attrs)
