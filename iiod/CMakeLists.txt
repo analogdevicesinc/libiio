@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 project(iiod C)
 
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)

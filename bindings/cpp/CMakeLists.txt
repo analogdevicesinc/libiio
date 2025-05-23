@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 project(iiopp-enum LANGUAGES CXX)
 add_executable(iiopp-enum examples/iiopp-enum.cpp iiopp.h ${LIBIIO_RC})
