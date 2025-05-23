@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_rwdev iio_reg iio_event)
 if (PTHREAD_LIBRARIES OR ANDROID)
