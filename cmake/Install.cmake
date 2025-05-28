@@ -1,3 +1,4 @@
+include(cmake/Utilities.cmake)
 
 set(CMAKE_INSTALL_DOCDIR "" CACHE PATH "documentation root (DATAROOTDIR/doc/${PROJECT_NAME}${LIBIIO_VERSION_MAJOR}-doc)")
 if(ENABLE_SHARED AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -176,7 +177,7 @@ if (NOT OSX_PACKAGE)
 endif()
 
 if (WITH_USB_BACKEND AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
-	option(INSTALL_UDEV_RULE "Install a udev rule for detection of USB devices" ON)
+	iio_option(INSTALL_UDEV_RULE "Install a udev rule for detection of USB devices" ON "POSIX")
 
 	if (INSTALL_UDEV_RULE)
 		set(UDEV_RULES_INSTALL_DIR /lib/udev/rules.d CACHE PATH "default install path for udev rules")

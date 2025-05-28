@@ -18,7 +18,7 @@ target_link_libraries(iiod LINK_PRIVATE iio iio_common_config iiod-responder
 target_include_directories(iiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(iiod PRIVATE _GNU_SOURCE)
 
-option(WITH_IIOD_V0_COMPAT "Build support for Libiio v0.x protocol" ON)
+iio_option(WITH_IIOD_V0_COMPAT "Build support for Libiio v0.x protocol" ON "POSIX")
 if (WITH_IIOD_V0_COMPAT)
 	include(FindBISON)
 	include(FindFLEX)
@@ -37,7 +37,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	set_source_files_properties(${BISON_parser_OUTPUTS} PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 endif ()
 
-option(WITH_AIO "Build IIOD with async. I/O support" ON)
+iio_option(WITH_AIO "Build IIOD with async. I/O support" ON "POSIX")
 if (WITH_AIO)
 	find_library(LIBAIO_LIBRARIES aio)
 	find_path(LIBAIO_INCLUDE_DIR libaio.h)
@@ -47,7 +47,7 @@ if (WITH_AIO)
 			"If you want to disable async. I/O support, set WITH_AIO=OFF.")
 	endif ()
 
-	option(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ON)
+	iio_option(WITH_IIOD_USBD "Add support for USB through FunctionFS within IIOD" ON "POSIX")
 	if (WITH_IIOD_USBD)
 		include(CheckTypeSize)
 		set(CMAKE_EXTRA_INCLUDE_FILES linux/usb/functionfs.h)
@@ -62,7 +62,7 @@ if (WITH_AIO)
 		target_sources(iiod PRIVATE usbd.c)
 
 
-		option(WITH_IIOD_USB_DMABUF "Enable DMABUF support on the USB stack" OFF)
+		iio_option(WITH_IIOD_USB_DMABUF "Enable DMABUF support on the USB stack" OFF "POSIX")
 		if (WITH_IIOD_USB_DMABUF)
 			target_sources(iiod PRIVATE usb-dmabuf.c)
 		endif()
@@ -75,12 +75,12 @@ elseif (WITH_IIOD_USBD)
 		" requires async I/O support (WITH_AIO)")
 endif()
 
-option(WITH_IIOD_SERIAL "Add serial (UART) support" ON)
+iio_option(WITH_IIOD_SERIAL "Add serial (UART) support" ON "POSIX")
 if (WITH_IIOD_SERIAL)
 	target_sources(iiod PRIVATE serial.c)
 endif()
 
-option(WITH_IIOD_NETWORK "Add network (TCP/IP) support" ON)
+iio_option(WITH_IIOD_NETWORK "Add network (TCP/IP) support" ON "POSIX")
 if (WITH_IIOD_NETWORK)
 	target_sources(iiod PRIVATE network.c)
 
@@ -99,7 +99,7 @@ if(NOT SKIP_INSTALL_ALL)
 	install(TARGETS iiod RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
 endif()
 
-option(WITH_SYSTEMD "Enable installation of systemd service file for iiod" OFF)
+iio_option(WITH_SYSTEMD "Enable installation of systemd service file for iiod" OFF "POSIX")
 if (WITH_SYSTEMD)
 	if(${WITH_HWMON})
 		set(CMAKE_SERVICE_PATH "ConditionPathExists=|/sys/bus/iio\nConditionPathExists=|/sys/class/hwmon")
@@ -117,7 +117,7 @@ if (WITH_SYSTEMD)
 	)
 endif()
 
-option(WITH_SYSVINIT "Enable installation of SysVinit script for iiod" OFF)
+iio_option(WITH_SYSVINIT "Enable installation of SysVinit script for iiod" OFF "POSIX")
 if (WITH_SYSVINIT)
 	set(SYSVINIT_INSTALL_DIR /etc/init.d CACHE PATH
 		"default install path for SysVinit scripts"
@@ -131,7 +131,7 @@ if (WITH_SYSVINIT)
 	)
 endif()
 
-option(WITH_UPSTART "Enable installation of upstart config file for iiod" OFF)
+iio_option(WITH_UPSTART "Enable installation of upstart config file for iiod" OFF "POSIX")
 if (WITH_UPSTART)
 	set(UPSTART_CONF_INSTALL_DIR /etc/init CACHE PATH
 		"default install path for upstart conf files"
