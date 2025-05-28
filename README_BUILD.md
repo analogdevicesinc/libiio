@@ -1,6 +1,8 @@
 # Build instructions for libiio
 
-## Install Prerequisites/Dependencies
+## Instructions applicable to Linux, BSD, and Windows configurations
+
+### Install Prerequisites/Dependencies
 
 Basic system setup
 ```shell
@@ -25,13 +27,13 @@ Install to build python backends
 analog@precision:~$ sudo apt-get install python3 python3-pip python3-setuptools
 ```
 
-## Clone
+### Clone
 ```shell
 analog@precision:~$ git clone https://github.com/analogdevicesinc/libiio.git
 analog@precision:~$ cd libiio
 ```
 
-## Configure & Build
+### Configure & Build
 
 when configuring libiio with cmake, there are a few optional settings that you can use to control the build.
 The recommendation is to leave things to the default.
@@ -47,7 +49,6 @@ Cmake Options          | Default | Target | Description                         
 `PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
-`NO_THREADS`           | OFF |        All | Disable multi-threading support |
 `CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
 `CMAKE_INSTALL_PREFIX` | `/usr` |   Linux | default install path |
 `ENABLE_PACKAGING`     | OFF | Linux, MaC | Create .deb/.rpm or .tar.gz packages via 'make package' |
@@ -73,7 +74,6 @@ Cmake Options          | Default | Depends on    | Description                  
 `WITH_SERIAL_BACKEND_DYNAMIC` |  ON | Modules + serial backend | Compile the serial backend as a module |
 `WITH_NETWORK_BACKEND` |  ON |               | Supports TCP/IP                  |
 `WITH_NETWORK_BACKEND_DYNAMIC` |  ON | Modules + network backend | Compile the network backend as a module |
-`WITH_EXTERNAL_BACKEND` | OFF | | Support external backend provided by the application |
 `HAVE_DNS_SD`          |  ON | Networking    | Enable DNS-SD (ZeroConf) support |
 `ENABLE_IPV6`          |  ON | Networking    | Define if you want to enable IPv6 support |
 `WITH_LOCAL_BACKEND`   |  ON | Linux         | Enables local support with iiod  |
@@ -130,7 +130,7 @@ analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=O
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
-## Install
+### Install
 ```shell
 analog@precision:~/libiio/build$ sudo make install
 ```
@@ -138,7 +138,7 @@ analog@precision:~/libiio/build$ sudo make install
 Note: As specified above, the default installation path on Linux based systems is '/usr'.
 This can be changed by setting the `CMAKE_INSTALL_PREFIX` var during the `cmake` step.
 
-## Uninstall
+### Uninstall
 ```shell
 analog@precision:~/libiio/build$ sudo make uninstall
 ```
@@ -148,7 +148,7 @@ That means that you configure (with -DWITH_DOC=OFF), build, install, configure
 (with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
 
 
-## Notes
+### Notes
 
 Special Note on Microsoft Visual Compiler (MSVC):
 
@@ -160,3 +160,54 @@ if (0)
 It will try to link against the `call_function` symbol even though it's clearly dead code.
 
 For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
+
+## Instructions applicable to Microcontroller configurations
+
+### Install Prerequisites/Dependencies
+
+Basic system setup
+```shell
+analog@precision:~$ sudo apt-get update
+analog@precision:~$ sudo apt-get install build-essential
+```
+Install Prerequisites
+```shell
+analog@precision:~$ sudo apt-get install git cmake
+```
+
+Install ARM toolchain for cross-compiling
+```shell
+analog@precision:~$ sudo apt-get install gcc-arm-none-eabi
+```
+
+### Clone
+```shell
+analog@precision:~$ git clone https://github.com/analogdevicesinc/libiio.git
+analog@precision:~$ cd libiio
+```
+
+### Configure & Build
+
+When configuring libiio with CMake, option `WITH_LIBTINYIIOD` must be enabled. CMake will then automatically activate the features required for the Microcontroller configuration and disable those that are incompatible with it.
+
+Additionally, during the CMake configuration step, a toolchain file must be provided to inform CMake about the MCU platform. The arm-cross-compile.cmake file, located in the `cmake` directory, serves this purpose. The MCU type can then be specified using the -DCMAKE_SYSTEM_PROCESSOR option, as shown in the example below.
+
+```shell
+analog@precision:~/libiio$ mkdir build
+analog@precision:~/libiio/build$ cd build
+analog@precision:~/libiio/build$ cmake .. -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-cross-compile.cmake -DWITH_LIBTINYIIOD=ON
+analog@precision:~/libiio/build$ make -j$(nproc)
+```
+
+### Install
+```shell
+analog@precision:~/libiio/build$ sudo make install
+```
+
+### Uninstall
+```shell
+analog@precision:~/libiio/build$ sudo make uninstall
+```
+
+### Notes
+After enabling and then disabling WITH_LIBTINYIIOD, the previously disabled features will not be automatically restored. To build libiio for a Linux/BSD/Windows configuration, clear the build directory and follow the appropriate setup instructions.
