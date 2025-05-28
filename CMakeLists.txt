@@ -1,8 +1,15 @@
+# Note to contributors that want to add new options:
+# Use iio_option() instead of option() when declaring an option that belongs
+# to POSIX configuration or MCU configuration. See: libiio/cmake/Utilities.cmake
+# Options unrelated to the above configuration can still use the native option().
+
 message(STATUS "cmake version: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 3.13)
 
 cmake_policy(SET CMP0048 NEW) # project() sets the VERSION variables
 project(libiio LANGUAGES C VERSION 1.0)
+
+include(cmake/Utilities.cmake)
 
 # Set the default install path to /usr
 if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -28,8 +35,8 @@ if (NOT CMAKE_BUILD_TYPE)
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(CPP_EXAMPLES "Build C++ examples" OFF)
+iio_option(BUILD_SHARED_LIBS "Build shared libraries" ON "POSIX")
+iio_option(CPP_EXAMPLES "Build C++ examples" OFF "POSIX")
 
 add_library(iio
 	attr.c
@@ -61,7 +68,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" AND NOT ${CMAKE_SYSTEM_NAME} STREQUA
 endif()
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
-	option(LIBIIO_COMPAT "Add compatibility layer for libiio 0.x" ON)
+	iio_option(LIBIIO_COMPAT "Add compatibility layer for libiio 0.x" ON "POSIX")
 	if (LIBIIO_COMPAT)
 		add_library(iio-compat compat.c)
 		if (WIN32)
@@ -156,7 +163,7 @@ endif()
 include(GNUInstallDirs)
 
 if (BUILD_SHARED_LIBS)
-	option(WITH_MODULES "Enable support for dynamically-loaded modules" OFF)
+	iio_option(WITH_MODULES "Enable support for dynamically-loaded modules" OFF "POSIX")
 	if (WITH_MODULES)
 		target_sources(iio PRIVATE dynamic.c)
 		if (WIN32)
@@ -171,8 +178,8 @@ if (BUILD_SHARED_LIBS)
 	endif()
 endif()
 
-option(WITH_EXAMPLES "Build examples" OFF)
-option(WITH_UTILS "Build the Libiio utility programs" ON)
+iio_option(WITH_EXAMPLES "Build examples" OFF "POSIX")
+iio_option(WITH_UTILS "Build the Libiio utility programs" ON "POSIX")
 
 if (NOT LOG_LEVEL)
 	set(LOG_LEVEL Info CACHE STRING "Default log level" FORCE)
@@ -240,7 +247,7 @@ check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 
-option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
+iio_option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON "POSIX")
 if (ENABLE_IPV6)
 	if (WIN32)
 		set(HAVE_IPV6 ON)
@@ -252,9 +259,7 @@ if (ENABLE_IPV6)
 	endif()
 endif()
 
-option(WITH_EXTERNAL_BACKEND "Support external backend provided by the application" OFF)
-
-option(WITH_USB_BACKEND "Enable the libusb backend" ON)
+iio_option(WITH_USB_BACKEND "Enable the libusb backend" ON "POSIX")
 if (WITH_USB_BACKEND)
 	find_package(PkgConfig)
 	if (PkgConfig_FOUND)
@@ -277,7 +282,7 @@ if (WITH_USB_BACKEND)
 		set(NEED_LIBXML2 1)
 
 		if (WITH_MODULES)
-			option(WITH_USB_BACKEND_DYNAMIC "Build USB backend as a module instead of built-in" ON)
+			iio_option(WITH_USB_BACKEND_DYNAMIC "Build USB backend as a module instead of built-in" ON "POSIX")
 		else()
 			set(WITH_USB_BACKEND_DYNAMIC OFF)
 		endif()
@@ -339,8 +344,8 @@ endif()
 option(WITH_LIBTINYIIOD "Build libtinyiiod" OFF)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	option(WITH_IIOD "Build the IIO Daemon" ON)
-	option(WITH_LOCAL_BACKEND "Enable the local backend" ON)
+	iio_option(WITH_IIOD "Build the IIO Daemon" ON "POSIX")
+	iio_option(WITH_LOCAL_BACKEND "Enable the local backend" ON "POSIX")
 endif()
 
 set(DOXYGEN_INPUT "${CMAKE_SOURCE_DIR}")
@@ -384,10 +389,6 @@ set(LIBIIO_VERSION ${VERSION}.g${LIBIIO_VERSION_GIT})
 file(WRITE ${CMAKE_BINARY_DIR}/.version ${LIBIIO_VERSION})
 
 if(WITH_LOCAL_BACKEND)
-	if (NO_THREADS)
-		message(SEND_ERROR "Local backend require threads.")
-	endif()
-
 	target_sources(iio PRIVATE local.c)
 
 	# Link with librt if present
@@ -396,19 +397,19 @@ if(WITH_LOCAL_BACKEND)
 		target_link_libraries(iio PRIVATE ${LIBRT_LIBRARIES})
 	endif()
 
-	option(WITH_LOCAL_CONFIG "Read local context attributes from /etc/libiio.ini" ON)
+	iio_option(WITH_LOCAL_CONFIG "Read local context attributes from /etc/libiio.ini" ON "POSIX")
 	if (WITH_LOCAL_CONFIG)
 		target_sources(iio PRIVATE deps/libini/libini.c)
 	endif()
 
-	option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" ON)
+	iio_option(WITH_HWMON "Add compatibility with the hardware monitoring (hwmon) subsystem" ON "POSIX")
 
-	option(WITH_LOCAL_DMABUF_API "Add support for the DMABUF API" ON)
+	iio_option(WITH_LOCAL_DMABUF_API "Add support for the DMABUF API" ON "POSIX")
 	if (WITH_LOCAL_DMABUF_API)
 		target_sources(iio PRIVATE local-dmabuf.c)
 	endif()
 
-	option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON)
+	iio_option(WITH_LOCAL_MMAP_API "Use the mmap API provided in Analog Devices' kernel (not upstream)" ON "POSIX")
 	if (WITH_LOCAL_MMAP_API)
 		target_sources(iio PRIVATE local-mmap.c)
 
@@ -434,7 +435,7 @@ if(WITH_LOCAL_BACKEND)
 	list(APPEND LIBIIO_SCAN_BACKENDS local)
 endif()
 
-option(WITH_SERIAL_BACKEND "Enable the serial backend" OFF)
+iio_option(WITH_SERIAL_BACKEND "Enable the serial backend" OFF "POSIX")
 if (WITH_SERIAL_BACKEND)
 	find_library(LIBSERIALPORT_LIBRARIES serialport)
 	find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
@@ -452,7 +453,7 @@ if (WITH_SERIAL_BACKEND)
 	set(NEED_LIBXML2 1)
 
 	if (WITH_MODULES)
-		option(WITH_SERIAL_BACKEND_DYNAMIC "Build serial backend as a module instead of built-in" ON)
+		iio_option(WITH_SERIAL_BACKEND_DYNAMIC "Build serial backend as a module instead of built-in" ON "POSIX")
 	else()
 		set(WITH_SERIAL_BACKEND_DYNAMIC OFF)
 	endif()
@@ -468,7 +469,7 @@ if (WITH_SERIAL_BACKEND)
 	endif()
 endif()
 
-option(WITH_ZSTD "Support for ZSTD compressed metadata" ON)
+iio_option(WITH_ZSTD "Support for ZSTD compressed metadata" ON "POSIX")
 if (WITH_ZSTD OR
 	(WITH_IIOD AND (WITH_USB_BACKEND OR WITH_NETWORK_BACKEND OR WITH_SERIAL_BACKEND OR WITH_AIO)))
 	find_library(LIBZSTD_LIBRARIES zstd)
@@ -483,7 +484,7 @@ if (WITH_ZSTD OR
 	target_include_directories(iio PRIVATE ${LIBZSTD_INCLUDE_DIR})
 endif ()
 
-option(WITH_NETWORK_BACKEND "Enable the network backend" ON)
+iio_option(WITH_NETWORK_BACKEND "Enable the network backend" ON "POSIX")
 if(WITH_NETWORK_BACKEND)
 	if (WIN32)
 		target_link_libraries(iio PRIVATE wsock32 iphlpapi ws2_32)
@@ -505,7 +506,7 @@ if(WITH_NETWORK_BACKEND)
 	endif()
 
 	if (WITH_MODULES)
-		option(WITH_NETWORK_BACKEND_DYNAMIC "Build network backend as a module instead of built-in" ON)
+		iio_option(WITH_NETWORK_BACKEND_DYNAMIC "Build network backend as a module instead of built-in" ON "POSIX")
 	else()
 		set(WITH_NETWORK_BACKEND_DYNAMIC OFF)
 	endif()
@@ -525,7 +526,7 @@ if(WITH_NETWORK_BACKEND)
 		target_sources(${IIO_NETWORK_LIB} PRIVATE network-unix.c)
 	endif()
 
-	option(HAVE_DNS_SD "Enable DNS-SD (ZeroConf) support" ON)
+	iio_option(HAVE_DNS_SD "Enable DNS-SD (ZeroConf) support" ON "POSIX")
 	if (NOT HAVE_DNS_SD)
 	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		find_library(CORE_SERVICES CoreServices)
@@ -564,7 +565,7 @@ else()
 endif()
 
 
-option(WITH_XML_BACKEND "Enable the XML backend" ON)
+iio_option(WITH_XML_BACKEND "Enable the XML backend" ON "POSIX")
 if (WITH_XML_BACKEND)
 	# Since libxml2-2.9.2, libxml2 provides its own LibXml2-config.cmake, with all
 	# variables correctly set.
@@ -593,8 +594,7 @@ elseif(NEED_LIBXML2)
 		"If you want to enable the XML backend, set WITH_XML_BACKEND=ON.")
 endif()
 
-option(NO_THREADS "Build a thread-less Libiio library" OFF)
-if (NO_THREADS)
+if (WITH_LIBTINYIIOD)
 	target_sources(iio PRIVATE lock-dummy.c)
 elseif (WIN32)
 	target_sources(iio PRIVATE lock-windows.c)
@@ -607,8 +607,6 @@ else ()
 		endif()
 
 		target_link_libraries(iio PRIVATE ${PTHREAD_LIBRARIES})
-
-		include(cmake/Utilities.cmake)
 
 		CHECK_PTHREAD_SET_NAME(HAS_PTHREAD_SETNAME_NP)
 		if (HAS_PTHREAD_SETNAME_NP AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -633,10 +631,6 @@ if (IIOD_CLIENT OR WITH_IIOD OR WITH_LIBTINYIIOD)
 endif()
 
 if (IIOD_CLIENT)
-	if (NO_THREADS)
-		message(SEND_ERROR "Backends using iiod-client require threads.")
-	endif()
-
 	target_sources(iio PRIVATE iiod-client.c)
 	target_link_libraries(iio PRIVATE iiod-responder)
 endif()
@@ -670,10 +664,6 @@ if(WITH_EXAMPLES)
 	add_subdirectory(examples)
 endif()
 if (WITH_IIOD)
-	if (NO_THREADS)
-		message(SEND_ERROR "IIOD require threads.")
-	endif()
-
 	if (NOT PTHREAD_LIBRARIES)
 		message(SEND_ERROR "IIOD requires pthread support.\n"
 			"If you want to disable IIOD, set WITH_IIOD=OFF.")
@@ -700,8 +690,8 @@ endif()
 set(CMAKE_HTML_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/html/v${VERSION}")
 
 option(CPP_BINDINGS "Install C++ bindings" OFF)
-option(CSHARP_BINDINGS "Install C# bindings" OFF)
-option(PYTHON_BINDINGS "Install Python bindings" OFF)
+iio_option(CSHARP_BINDINGS "Install C# bindings" OFF "POSIX")
+iio_option(PYTHON_BINDINGS "Install Python bindings" OFF "POSIX")
 add_subdirectory(bindings)
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
@@ -725,12 +715,10 @@ string(REPLACE ";" "," LIBIIO_SCAN_BACKENDS "${LIBIIO_SCAN_BACKENDS}")
 
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
 
-toggle_iio_feature("${NO_THREADS}" threadless)
 toggle_iio_feature("${LIBIIO_COMPAT}" compat)
 toggle_iio_feature("${WITH_XML_BACKEND}" xml)
 toggle_iio_feature("${WITH_ZSTD}" zstd)
 toggle_iio_feature("${WITH_NETWORK_BACKEND}" network)
-toggle_iio_feature("${WITH_EXTERNAL_BACKEND}" external)
 toggle_iio_feature("${HAVE_DNS_SD}" dns-sd)
 toggle_iio_feature("${HAVE_AVAHI}" avahi)
 toggle_iio_feature("${HAVE_BONJOUR}" bonjour)
