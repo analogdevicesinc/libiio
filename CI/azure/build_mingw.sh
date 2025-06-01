@@ -40,6 +40,7 @@ build_libiio() {
         -DENABLE_IPV6=ON -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON \
         -DCSHARP_BINDINGS:BOOL=OFF ..
     $CMAKE --build . --config "$build_type"
+    $CMAKE -DLICENSE_CHECK=ON ..
 }
 
 init_env
