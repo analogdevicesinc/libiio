@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 release_artifacts() {
-        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
+        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Ubuntu-24.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_linux_assets; do
                 cd "Linux-${i}"
@@ -71,7 +71,7 @@ release_artifacts() {
 }
 
 swdownloads_artifacts() {
-        local linux_dist='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
+        local linux_dist='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Ubuntu-24.04 Debian-11 Debian-12 openSUSE-15.4 CentOS-7'
         for distribution in $linux_dist; do
 		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Linux-${distribution}"
 		if [ "${distribution}" == "Fedora-34" ] || [ "${distribution}" == "Fedora-28" ] || [ "${distribution}" == "CentOS-7" ]; then

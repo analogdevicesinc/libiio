@@ -21,6 +21,9 @@ Linux-Ubuntu-20.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-20.04.tar
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.deb
 Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar.gz
 
+Linux-Ubuntu-24.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-24.04.deb
+Linux-Ubuntu-24.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-24.04.tar.gz
+
 Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.rpm
 Linux-openSUSE-15.4/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.4.tar.gz
 

@@ -44,6 +44,9 @@ stages:
         ubuntu_22_04:
           image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
           artifactName: 'Linux-Ubuntu-22.04'        
+        ubuntu_24_04:
+          image: 'tfcollins/libiio_ubuntu_24_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-24.04'
         fedora28:
           image: 'tfcollins/libiio_fedora_28-ci:latest'
           artifactName: 'Linux-Fedora-28'
