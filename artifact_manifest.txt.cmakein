@@ -6,9 +6,6 @@ Linux-Fedora-34/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-34.tar.gz
 Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.rpm
 Linux-Fedora-28/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-28.tar.gz
 
-Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.rpm
-Linux-CentOS-7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-CentOS-7.tar.gz
-
 Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.deb
 Linux-Debian-11/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-11.tar.gz
 
