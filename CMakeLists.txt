@@ -29,6 +29,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(CPP_EXAMPLES "Build C++ examples" OFF)
 
 add_library(iio
 	attr.c
@@ -238,6 +239,11 @@ check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
+check_symbol_exists(clock_gettime "time.h" HAS_CLOCK_GETTIME)
+
+if (HAS_CLOCK_GETTIME)
+	target_compile_definitions(iio PRIVATE CLOCK_GETTIME_AVAILABLE=1)
+endif()
 
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON)
 if (ENABLE_IPV6)
@@ -252,6 +258,9 @@ if (ENABLE_IPV6)
 endif()
 
 option(WITH_EXTERNAL_BACKEND "Support external backend provided by the application" OFF)
+if (WITH_EXTERNAL_BACKEND AND NOT WITH_LIBTINYIIOD)
+	message(SEND_ERROR "Sorry, external backend is only supported when WITH_LIBTINYIIOD=ON.")
+endif()
 
 option(WITH_USB_BACKEND "Enable the libusb backend" ON)
 if (WITH_USB_BACKEND)
@@ -349,7 +358,9 @@ if (CPP_BINDINGS)
     set(DOXYGEN_ENABLED_SECTIONS CPP_BINDINGS)
     set(DOXYGEN_INPUT "${DOXYGEN_INPUT} ${CMAKE_SOURCE_DIR}/bindings/cpp/")
     set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/")
-    set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+	if (CPP_EXAMPLES)
+        set(DOXYGEN_CPP_EXAMPLE_PATH "${CMAKE_SOURCE_DIR}/bindings/cpp/examples")
+	endif()
 endif()
 
 # Get the GIT hash of the latest commit
@@ -646,6 +657,18 @@ macro(toggle_iio_feature opt str)
 	endif()
 endmacro()
 
+macro(toggle_iio_features_for_lists option_list feature_list)
+	list(LENGTH ${option_list} OPT_LENGTH)
+	math(EXPR LEN "${OPT_LENGTH} - 1")
+
+	foreach(idx RANGE ${LEN})
+		list(GET ${option_list} ${idx} OPT)
+		list(GET ${feature_list} ${idx} FEAT)
+
+		toggle_iio_feature("${OPT}" "${FEAT}")
+	endforeach()
+endmacro()
+
 if(WITH_UTILS)
 	add_subdirectory(utils)
 endif()
@@ -739,16 +762,14 @@ toggle_iio_feature("${OSX_FRAMEWORK}" osx-framework)
 toggle_iio_feature("${COMPILE_WARNING_AS_ERROR}" -Werror)
 toggle_iio_feature("${WITH_GCOV}" gcov)
 #add iiod settings
-list(APPEND IIO_FEATURES_ON ${IIOD_FEATURES_ON})
-list(APPEND IIO_FEATURES_OFF ${IIOD_FEATURES_OFF})
+toggle_iio_features_for_lists(IIOD_OPTIONS IIOD_FEATURES)
 toggle_iio_feature("${WITH_DOC}" doc)
 #add man page settings
-list(APPEND IIO_FEATURES_ON ${IIOM_FEATURES_ON})
-list(APPEND IIO_FEATURES_OFF ${IIOM_FEATURES_OFF})
+toggle_iio_features_for_lists(IIOM_OPTIONS IIOM_FEATURES)
 #add binding settings
-list(APPEND IIO_FEATURES_ON ${IIOB_FEATURES_ON})
-list(APPEND IIO_FEATURES_OFF ${IIOB_FEATURES_OFF})
+toggle_iio_features_for_lists(IIOB_OPTIONS IIOB_FEATURES)
 
+# prepare features lists and print them
 string(REPLACE ";" " " IIO_FEATURES_ON "${IIO_FEATURES_ON}")
 string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
 
