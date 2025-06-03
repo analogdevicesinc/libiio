@@ -1,0 +1,33 @@
+name: Testing
+
+on: [push, pull_request]
+
+jobs:
+  linux-test:
+    runs-on: ubuntu-latest
+    container:
+      image: tfcollins/libiio_ubuntu_22_04-ci:latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Set up Python 3.7
+          uses: actions/setup-python@v2
+          with:
+            python-version: 3.7
+        - name: Install dependencies
+          run: |
+            apt update
+            apt install -y lcov
+        - name: Build and Test
+          run: |
+            mkdir build
+            cd build
+            cmake .. -DTESTS=ON -DTESTS_DEBUG=ON -DTESTS_COVERAGE=ON -DWITH_GCOV=ON
+            make
+            make coverage
+
+        # - name: Upload coverage to Codecov
+        #     uses: codecov/codecov-action@v1
+        #     with:
+        #         token: ${{ secrets.CODECOV_TOKEN }}
+        #         file: ./build/coverage.xml
+        #         flags: unittests
