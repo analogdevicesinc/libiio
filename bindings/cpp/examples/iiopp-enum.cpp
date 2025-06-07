@@ -9,7 +9,7 @@
  * Author: Tilman Blumhagen <tilman.blumhagen@difitec.de>
  */
 
-#include <iiopp.h>
+#include <iio.hpp>
 
 #include <iostream>
 #include <iomanip>

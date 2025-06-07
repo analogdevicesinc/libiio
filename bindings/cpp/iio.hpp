@@ -6,7 +6,7 @@
  * Author: Tilman Blumhagen <tilman.blumhagen@difitec.de>
  */
 
-/** @file iiopp.h
+/** @file iio.hpp
  * @brief Public C++ interface
  *
  * @see @ref iiopp

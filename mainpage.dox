@@ -27,7 +27,7 @@ The basic bricks of the libiio API are the iio_context, iio_device, iio_channel 
 - A iio_device object may be associated with one iio_buffer object, and a iio_buffer object is associated with only one iio_device.
 
 @if CPP_BINDINGS
-A C++ API is provided in @ref iiopp.h
+A C++ API is provided in @ref iio.hpp
 @endif
 
 @section scan_contexts Scanning for IIO contexts
