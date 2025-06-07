@@ -4,6 +4,34 @@
  *
  * Copyright (C) 2014 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
+ *
+ * Note: This header file is released under the MIT License as specified by
+ * the SPDX identifier above. However, libiio as a whole includes components
+ * under multiple open-source licenses. The license of the final binary
+ * depends on the build configuration and may differ from that of this file.
+ * Please review the full licensing information and configuration options
+ * to ensure compliance with applicable license terms.
+ */
+
+/** @warning
+ * libiio includes source components released under different
+ * open-source licenses, including MIT, GPL, and LGPL. As a result, the license
+ * of the final binary is determined by how libiio is configured at build time.
+ * The specific build options selected can affect which licensing terms apply
+ * to the resulting binary. In most cases, particularly when building for
+ * Linux or other POSIX-compliant systems, the default configuration produces
+ * a shared library binary licensed under the GNU Lesser General Public License
+ * version 2.1 or later (LGPL-2.1-or-later).
+ *
+ * Additionally, depending on the selected configuration options, some optional
+ * backends may link against external system libraries. These libraries have
+ * their own licensing terms and may influence the overall license of the
+ * resulting binary, based on how they are used and linked.
+ *
+ * To ensure that the final license aligns with your project's compliance and
+ * distribution requirements, we strongly recommend reviewing your build
+ * configuration. You can enable a license compatibility check during
+ * configuration by adding the CMake option: -DLICENSE_CHECK=ON
  */
 
 /** @file iio.h

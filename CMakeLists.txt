@@ -704,6 +704,8 @@ if(NOT TARGET uninstall)
 		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
+option(LICENSE_CHECK "Print out licenses of files used in binaries" OFF)
+
 string(REPLACE ";" "," LIBIIO_SCAN_BACKENDS "${LIBIIO_SCAN_BACKENDS}")
 
 configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ONLY)
@@ -748,6 +750,7 @@ list(APPEND IIO_FEATURES_OFF ${IIOM_FEATURES_OFF})
 #add binding settings
 list(APPEND IIO_FEATURES_ON ${IIOB_FEATURES_ON})
 list(APPEND IIO_FEATURES_OFF ${IIOB_FEATURES_OFF})
+toggle_iio_feature("${LICENSE_CHECK}" license_check)
 
 string(REPLACE ";" " " IIO_FEATURES_ON "${IIO_FEATURES_ON}")
 string(REPLACE ";" " " IIO_FEATURES_OFF "${IIO_FEATURES_OFF}")
@@ -756,3 +759,10 @@ message(STATUS "Features enabled : ${IIO_FEATURES_ON}")
 message(STATUS "Features disabled: ${IIO_FEATURES_OFF}")
 message(STATUS "Install Path set to '${CMAKE_INSTALL_PREFIX}\', modify with -DCMAKE_INSTALL_PREFIX=/path")
 message(STATUS "LOG_LEVEL set to \"${LOG_LEVEL}\"")
+
+if (LICENSE_CHECK)
+   # Call it from the top-level source directory after all add_subdirectory calls
+   include(cmake/Utilities.cmake)
+   spdx_check_all_targets(${CMAKE_SOURCE_DIR})
+endif()
+

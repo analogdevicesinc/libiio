@@ -37,7 +37,7 @@ build_libiio() {
     $CMAKE -G "MinGW Makefiles" -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '\python.exe')") \
         -DCMAKE_SYSTEM_PREFIX_PATH="C:" -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON \
         -DENABLE_IPV6=ON -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON \
-        -DCSHARP_BINDINGS:BOOL=OFF ..
+        -DCSHARP_BINDINGS:BOOL=OFF -DLICENSE_CHECK=ON ..
     $CMAKE --build . --config Release
 }
 
