@@ -19,6 +19,7 @@ endif()
 
 add_library(iio_tests_helper STATIC iio_common.c gen_code.c)
 target_link_libraries(iio_tests_helper LINK_PRIVATE iio iio_common_config)
+target_compile_definitions(iio_common_config INTERFACE _POSIX_C_SOURCE=200809L)
 if (MSVC)
 	target_sources(iio_tests_helper PRIVATE ../deps/wingetopt/src/getopt.c)
 	target_include_directories(iio_tests_helper PUBLIC ../deps/wingetopt/src)
