@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/pcercuei/libini.git
 	branch = master
-	commit = e22154361dfc63778a1ca4f153f085c5236ed8f7
-	parent = 5bc8021369d5f877a6b8445f686ee776f31b7623
+	commit = 27b90deb2afd9f9b907f724b7d8e27b2ef65f8be
+	parent = ac52e1066890d3d6c9eae7ba8deb381e66221809
 	method = merge
-	cmdver = 0.4.3
+	cmdver = 0.4.9
