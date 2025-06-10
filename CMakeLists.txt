@@ -633,6 +633,12 @@ if (IIOD_CLIENT OR WITH_IIOD OR WITH_LIBTINYIIOD)
 
 	# Use the same compile options as Libiio
 	target_compile_options(iiod-responder PUBLIC $<TARGET_PROPERTY:iio,INTERFACE_COMPILE_OPTIONS>)
+
+	include(CheckIncludeFile)
+	check_include_file("netinet/in.h" HAS_NETINET_IN_H)
+	if (HAS_NETINET_IN_H)
+		target_compile_definitions(iiod-responder PRIVATE HAS_NETINET_IN_H=1)
+	endif()
 endif()
 
 if (IIOD_CLIENT)
