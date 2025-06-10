@@ -492,7 +492,7 @@ function(collect_sources tgt out_list)
                 string(JOIN " " include_flags_str ${include_flags})
                 string(JOIN " " def_flags_str ${def_flags})
                 string(JOIN " " opt_flags_str ${ALL_OPTS})
-                # message(STATUS "cmd : ${preproc_compiler} ${pp_flags} ${include_trace_flag} ${ALL_OPTS} ${include_flags_str} ${def_flags_str} ${src_flags} ${sdk_flag} ${full_path} ${preproc_flags} ${opt_flags_str} ${std_flag}")
+                message(STATUS "cmd : ${preproc_compiler} ${pp_flags} ${include_trace_flag} ${ALL_OPTS} ${include_flags_str} ${def_flags_str} ${src_flags} ${sdk_flag} ${full_path} ${preproc_flags} ${opt_flags_str} ${std_flag}")
 
 		if (MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/run_cl_with_env.bat")
 			execute_process(
