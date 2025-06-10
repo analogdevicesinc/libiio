@@ -426,7 +426,7 @@ function(collect_sources tgt out_list)
                 string(JOIN " " include_flags_str ${include_flags})
                 string(JOIN " " def_flags_str ${def_flags})
                 string(JOIN " " opt_flags_str ${ALL_OPTS})
-                # message(STATUS "cmd : ${preproc_compiler} ${pp_flags} ${include_trace_flag} ${include_flags} ${def_flags} ${sdk_flag} ${full_path} ${preproc_flags} ${opt_flags_str} ${std_flag}")
+                message(STATUS "cmd : ${preproc_compiler} ${pp_flags} ${include_trace_flag} ${include_flags} ${def_flags} ${sdk_flag} ${full_path} ${preproc_flags} ${opt_flags_str} ${std_flag}")
 
                 execute_process(
                         COMMAND
