@@ -13,12 +13,23 @@
 
 #include <fcntl.h>
 #include <iio/iio-lock.h>
+#if HAS_NETINET_IN_H
 #include <netinet/in.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+
+#ifndef HAS_NETINET_IN_H
+static inline uint32_t ntohl(uint32_t n) {
+    return ((n & 0xFF000000) >> 24) |
+           ((n & 0x00FF0000) >> 8)  |
+           ((n & 0x0000FF00) << 8)  |
+           ((n & 0x000000FF) << 24);
+}
+#endif
 
 /* Forward declaration */
 static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
