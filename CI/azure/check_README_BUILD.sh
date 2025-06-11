@@ -32,14 +32,25 @@ done
 # check if any cmake options don't print out at the end of the cmake process
 for f in $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt)
 do
-	for i in $(grep -i "option[[:space:]]*(" "${f}" | sed -e "s/^[[:space:]]*//g" -e "s/(/ /g" | awk '{print $2}' | sort | uniq)
-	do
-		a=$(grep -i "toggle_iio_feature.*${i}" $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt))
-		if [ -z "${a}" ] ; then
-			echo "${f} defines \"${i}\" as option, but it is missing toggle_iio_feature"
-			error=1
-		fi
-	done
+    for i in $(grep -i "option[[:space:]]*(" "${f}" | sed -e "s/^[[:space:]]*//g" -e "s/(/ /g" | awk '{print $2}' | sort | uniq)
+    do
+        a=$(grep -i "toggle_iio_feature.*${i}" $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt))
+        if [ -z "${a}" ] ; then
+            # Check if the option is appended to OPTIONS_LISTS
+            b=$(awk -v opt="$i" '
+                /list[[:space:]]*\([[:space:]]*APPEND[[:space:]]+OPTIONS_LISTS/ {inlist=1}
+                inlist {
+                    if ($0 ~ /\)/) inlist=0
+                    if (index($0, opt)) found=1
+                }
+                END {exit !found}
+            ' $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt))
+            if [ $? -ne 0 ]; then
+                echo "${f} defines \"${i}\" as option, but it is missing toggle_iio_feature and is not appended to OPTIONS_LISTS"
+                error=1
+            fi
+        fi
+    done
 done
 
 if [ "${error}" -eq "1" ] ; then
