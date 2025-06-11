@@ -18,13 +18,20 @@ for opt in $(options)
 do
 	default=$(for file in $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt)
 	do
-		grep "option[[:space:]]*(${opt} " "${file}" | \
-			sed -e "s/^[[:space:]]*//g" -e "s/)[[:space:]]*$//" | \
-			awk '{print $NF}'
+		grep -E "(^|\s)(option|iio_option)[[:space:]]*\([[:space:]]*${opt}[[:space:]]+" "${file}" | \
+        sed -e "s/^[[:space:]]*//g" -e "s/)[[:space:]]*$//" | \
+        awk '{
+            for(i=1;i<=NF;i++) {
+                if ($i == "ON" || $i == "OFF") {
+                    print $i
+                    break
+                }
+            }
+        }'
 	done)
 	if ! grep -q "${opt}.*${default}" README_BUILD.md ; then
 		echo "no match with ${opt} set with ${default}"
-		grep -R "${opt}" ./*
+		# grep -R "${opt}" ./*
 		error=1
 	fi
 done
