@@ -812,7 +812,7 @@ __api __check_ret __pure struct iio_channel * iio_device_get_channel(
 /** @brief Get the device-specific attribute present at the given index
  * @param dev A pointer to an iio_device structure
  * @param index The index corresponding to the attribute
- * @return On success, a pointer to a static NULL-terminated string
+ * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
 __api __check_ret __pure const struct iio_attr *
 iio_device_get_attr(const struct iio_device *dev, unsigned int index);
@@ -834,7 +834,7 @@ __api __check_ret __pure struct iio_channel * iio_device_find_channel(
  * @param dev A pointer to an iio_device structure
  * @param name A NULL-terminated string corresponding to the name of the
  * attribute
- * @return On success, a pointer to a static NULL-terminated string
+ * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known attribute of the given
  * device, NULL is returned
  *
@@ -945,7 +945,7 @@ iio_channel_get_attrs_count(const struct iio_channel *chn);
 /** @brief Get the channel-specific attribute present at the given index
  * @param chn A pointer to an iio_channel structure
  * @param index The index corresponding to the attribute
- * @return On success, a pointer to a static NULL-terminated string
+ * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
 __api __check_ret __pure const struct iio_attr *
 iio_channel_get_attr(const struct iio_channel *chn, unsigned int index);
@@ -955,7 +955,7 @@ iio_channel_get_attr(const struct iio_channel *chn, unsigned int index);
  * @param chn A pointer to an iio_channel structure
  * @param name A NULL-terminated string corresponding to the name of the
  * attribute
- * @return On success, a pointer to a static NULL-terminated string
+ * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known attribute of the given
  * channel, NULL is returned */
 __api __check_ret __pure const struct iio_attr *
