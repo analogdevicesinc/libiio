@@ -39,9 +39,9 @@ done
 # check if any cmake options don't print out at the end of the cmake process
 for f in $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt)
 do
-    for i in $(grep -i "option[[:space:]]*(" "${f}" | sed -e "s/^[[:space:]]*//g" -e "s/(/ /g" | awk '{print $2}' | sort | uniq)
+    for i in $(grep -i "^[[:space:]]*option[[:space:]]*(" "${f}" | grep -v "^[[:space:]]*#" | sed -e "s/^[[:space:]]*//g" -e "s/(/ /g" | awk '{print $2}' | sort | uniq)
     do
-        a=$(grep -i "toggle_iio_feature.*${i}" $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt))
+        a=$(grep -i "^[[:space:]]*toggle_iio_feature.*${i}" $(find ./ -not \( -path ./deps -prune \) -name CMakeLists.txt) | grep -v "^[[:space:]]*#")
         if [ -z "${a}" ] ; then
             # Check if the option is appended to OPTIONS_LISTS
             awk -v opt="$i" '
