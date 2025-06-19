@@ -43,7 +43,7 @@ if [ -z "${BUILD_SOURCEBRANCH}" ] ; then
 	exit 0
 fi
 
-if [ "${BUILD_SOURCEBRANCH}" = "refs/heads/master" ] || [ "${BUILD_SOURCEBRANCH}" = "refs/tags/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" ]; then
+if [ "${BUILD_SOURCEBRANCH}" = "refs/heads/main" ] || [ "${BUILD_SOURCEBRANCH}" = "refs/tags/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" ]; then
 	# Fetch gh-pages branch
 	git fetch origin +refs/heads/gh-pages:gh-pages
 	git checkout gh-pages
@@ -56,7 +56,7 @@ if [ "${BUILD_SOURCEBRANCH}" = "refs/heads/master" ] || [ "${BUILD_SOURCEBRANCH}
 	rm -rf v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@/*
 	cd ../
 	cp -r ./build/html/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@ ./
-	cp -r ./build/html/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@/* ./master
+	cp -r ./build/html/v@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@/* ./main
 	rm -rf build
 	rm -rf bindings
 
