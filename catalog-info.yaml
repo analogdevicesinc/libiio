@@ -186,9 +186,9 @@ metadata:
     - linux
     - cmake
   annotations:
-    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.26-rc.1
+    backstage.io/source-location: url:https://github.com/analogdevicesinc/libiio/releases/tag/v0.26
     hub.blackduck/project-name: oa_libiio
-    hub.blackduck/project-version: "0.26-rc.1"
+    hub.blackduck/project-version: "0.26"
 spec:
   type: library
   lifecycle: release
