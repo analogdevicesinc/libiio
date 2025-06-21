@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,14 +87,6 @@ static void print_attr(const struct iio_attr *attr,
 
 	buf[BUF_SIZE - 1] = '\0';
 
-	value = iio_attr_get_static_value(attr);
-	if (!value) {
-		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
-		if (ret < 0)
-			iio_strerror((int)ret, buf, sizeof(buf));
-		value = buf;
-	}
-
 	printf("%.*sattr %2u: ", level, "\t\t\t\t", idx);
 
 	name = iio_attr_get_name(attr);
@@ -107,6 +100,23 @@ static void print_attr(const struct iio_attr *attr,
 	if (strcmp(name, fn))
 		printf(" (%s)", fn);
 
+	/*
+	 * Reading debug attributes can have unintended side effects, so skip
+	 * printing the value for them.
+	 */
+	if (attr->type == IIO_ATTR_TYPE_DEBUG) {
+		printf("\n");
+		return;
+	}
+
+	value = iio_attr_get_static_value(attr);
+	if (!value) {
+		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		if (ret < 0)
+			iio_strerror((int)ret, buf, sizeof(buf));
+		value = buf;
+	}
+	
 	if (ret >= 0)
 		printf(" value: %s\n", value);
 	else if (colors)
