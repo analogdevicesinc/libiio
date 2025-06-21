@@ -14,7 +14,7 @@ description and try to push all related PRs simultaneously.
 
 ## PR Checklist
 - [ ] I have conducted a self-review of my own code changes
-- [ ] I have commented new code, particulary complex or unclear areas
-- [ ] I have checked that I did not intoduced new warnings or errors (CI output)
+- [ ] I have commented new code, particularly complex or unclear areas
+- [ ] I have checked that I did not introduce new warnings or errors (CI output)
 - [ ] I have checked that components that use libiio did not get broken
 - [ ] I have updated the documentation accordingly (GitHub Pages, READMEs, etc)
