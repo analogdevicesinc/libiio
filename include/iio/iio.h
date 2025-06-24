@@ -445,6 +445,27 @@ iio_attr_get_filename(const struct iio_attr *attr);
 __api __pure const char *
 iio_attr_get_static_value(const struct iio_attr *attr);
 
+/** @brief Extract the range from a string originating from an '_available" attribute
+ * @param input A string that is expected to have the [min step max] format
+ * @param min Will be set with the range minimum value if string was successfully parsed
+ * @param step Will be set with the range step value if string was successfully parsed
+ * @param max Will be set with the range maximum value if string was successfully parsed
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api __pure
+int iio_get_range_from_available(const char *input, double *min, double *step, double *max);
+
+/** @brief 
+ * @param input A string that is expected to contain multiple words separated by spaces
+ * or newlines
+ * @param count Will be set with the number of words found if the string was successfully
+ * parsed. On fail, it will be set to 0
+ * @return On success, a dynamically allocated array of strings. It is the caller’s
+ * responsibility to free these newly allocated resources
+ * @return On error, NULL is returned */
+__api __pure
+char **iio_get_list_from_available(const char *input, size_t *count);
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
 /** @defgroup Scan Functions for scanning available contexts
