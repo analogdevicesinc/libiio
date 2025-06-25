@@ -158,7 +158,7 @@ static int usb_reset_pipes(struct iio_context_pdata *pdata)
 			unsigned int timeout)
 */
 	ret = libusb_control_transfer(pdata->hdl,
-			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE,
+			(uint8_t)LIBUSB_REQUEST_TYPE_VENDOR | (uint8_t)LIBUSB_RECIPIENT_INTERFACE,
 			IIO_USD_CMD_RESET_PIPES,
 			0,
 			pdata->intrfc,
@@ -185,7 +185,7 @@ static int usb_open_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 */
 	ret = libusb_control_transfer(
 			pdata->hdl,
-			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE,
+			(uint8_t)LIBUSB_REQUEST_TYPE_VENDOR | (uint8_t)LIBUSB_RECIPIENT_INTERFACE,
 			IIO_USD_CMD_OPEN_PIPE,
 			pipe_id,
 			pdata->intrfc,
@@ -201,8 +201,8 @@ static int usb_close_pipe(struct iio_context_pdata *pdata, uint16_t pipe_id)
 {
 	int ret;
 
-	ret = libusb_control_transfer(pdata->hdl, LIBUSB_REQUEST_TYPE_VENDOR |
-		LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_CLOSE_PIPE,
+	ret = libusb_control_transfer(pdata->hdl, (uint8_t)LIBUSB_REQUEST_TYPE_VENDOR |
+		(uint8_t)LIBUSB_RECIPIENT_INTERFACE, IIO_USD_CMD_CLOSE_PIPE,
 		pipe_id, pdata->intrfc, NULL, 0, USB_PIPE_CTRL_TIMEOUT);
 	if (ret < 0)
 		return -(int) libusb_to_errno(ret);
