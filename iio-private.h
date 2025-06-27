@@ -208,8 +208,6 @@ bool iio_device_is_tx(const struct iio_device *dev);
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
 
-bool iio_list_has_elem(const char *list, const char *elem);
-
 struct iio_context *
 iio_create_dynamic_context(const struct iio_context_params *params,
 			   const char *uri);
