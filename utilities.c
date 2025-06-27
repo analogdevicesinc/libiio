@@ -359,27 +359,6 @@ ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
 	return (ssize_t)ret;
 }
 
-bool iio_list_has_elem(const char *list, const char *elem)
-{
-	const char *ptr;
-
-	if (!list)
-		return false;
-
-	while (true) {
-		ptr = strchr(list, ',');
-		if (!ptr)
-			return !strcmp(list, elem);
-
-		if (!strncmp(list, elem,
-			     (uintptr_t) ptr - (uintptr_t) list)) {
-			return true;
-		}
-
-		list = ptr + 1;
-	}
-}
-
 void iio_prm_printf(const struct iio_context_params *params,
 		    enum iio_log_level msg_level,
 		    const char *fmt, ...)
