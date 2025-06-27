@@ -435,3 +435,76 @@ uint64_t iio_read_counter_us(void)
 
 	return value;
 }
+
+int iio_get_range_from_available(const char *input, double *min, double *step, double *max)
+{
+	double lmin, lstep, lmax;
+	char extra;
+	int n;
+
+	if (!input)
+		return -EINVAL;
+
+	// Expect format: [min step max]
+	#if defined(_MSC_VER)
+    n = iio_sscanf(input, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra, (unsigned int)sizeof(extra));
+#else
+    n = iio_sscanf(input, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra);
+#endif
+
+	if (n == 4 && extra == ']') {
+		*min = lmin;
+		*step = lstep;
+		*max = lmax;
+	} else {
+		return EINVAL;
+	}
+
+	return 0;
+}
+
+char **iio_get_list_from_available(const char *input, size_t *count)
+{
+	char **result = NULL;
+	*count = 0;
+	size_t n = 0;
+	size_t capacity = 4;
+	char *saveptr;
+
+	if (!input || input[0] == '[')
+		goto exit;
+
+	char *copy = iio_strdup(input);
+	if (!copy)
+		goto exit;
+
+	result = (char **)malloc(capacity * sizeof(char *));
+	if (!result)
+		goto copy_free;
+
+	char *token = iio_strtok_r(copy, " \n", &saveptr);
+	while (token) {
+		if (n >= capacity) {
+			capacity *= 2;
+			char **tmp = (char **)realloc(result, capacity * sizeof(char *));
+			if (!tmp) {
+				// Free previously allocated strings
+				size_t i = 0;
+				for (; i < n; ++i)
+					free(result[i]);
+				free(result);
+				goto copy_free;
+			}
+			result = tmp;
+		}
+		result[n++] = iio_strdup(token);
+		token = iio_strtok_r(NULL, " \n", &saveptr);
+	}
+
+copy_free:
+	free(copy);
+	*count = n;
+exit:
+
+    return result;
+}
