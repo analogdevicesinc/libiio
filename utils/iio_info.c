@@ -40,8 +40,7 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	("[-x <xml_file>]\n"
-		"\t\t\t\t[-u <uri>]"),
+	("\t[-u <uri>]"),
 	("Read and print the value of debug attributes."),
 	("Do not read or print the value of regular attributes."),
 };
