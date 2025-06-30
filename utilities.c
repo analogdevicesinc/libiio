@@ -23,7 +23,7 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#else
+#elif CLOCK_GETTIME_AVAILABLE
 #include <time.h>
 #endif
 
@@ -385,7 +385,6 @@ void iio_prm_printf(const struct iio_context_params *params,
 		    const char *fmt, ...)
 {
 	FILE *out = NULL;
-	uint64_t now;
 	va_list ap;
 
 	va_start(ap, fmt);
@@ -403,9 +402,12 @@ void iio_prm_printf(const struct iio_context_params *params,
 		if (params
 		    && params->timestamp_level > LEVEL_NOLOG
 		    && params->timestamp_level <= msg_level) {
+#if defined(CLOCK_GETTIME_AVAILABLE) || defined(_WIN32)
+			uint64_t now;
 			now = iio_read_counter_us() - library_startup_time_us;
 			fprintf(out, "(%u.%06us) ", (unsigned int)(now / 1000000),
 				(unsigned int)now % 1000000);
+#endif
 		}
 
 		vfprintf(out, fmt, ap);
@@ -425,12 +427,14 @@ uint64_t iio_read_counter_us(void)
 	QueryPerformanceCounter(&cnt);
 
 	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
-#else
+#elif CLOCK_GETTIME_AVAILABLE
 	struct timespec ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	value = ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
+#else
+	value = 0;
 #endif
 
 	return value;
