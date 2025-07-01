@@ -100,7 +100,6 @@ static const struct option options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"uri", required_argument, 0, 'u'},
 	{"buffer-size", required_argument, 0, 'b'},
-	{"samples", required_argument, 0, 's' },
 	{"duration", required_argument, 0, 'd'},
 	{"threads", required_argument, 0, 't'},
 	{"cma", no_argument, 0, 'C'},
@@ -109,12 +108,11 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	("[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>] [-s <samples>]"
+	("[-n <hostname>] [-u <vid>:<pid>] [-t <trigger>] [-b <buffer-size>]"
 		"<iio_device> [<channel> ...] [-C]"),
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",
-	"Number of samples to capture, 0 = infinite. Default is 0.",
 	"Time to wait (in s) between stopping all threads",
 	"Number of Threads",
 	"Use CMA-Linux allocator for DMA buffer.",
@@ -430,7 +428,7 @@ int main(int argc, char **argv)
 	if(!min_samples)
 		min_samples = 128;
 
-	while ((c = getopt_long(argc, argv, "hvu:b:s:t:T:C",
+	while ((c = getopt_long(argc, argv, "hvu:b:t:T:C",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
