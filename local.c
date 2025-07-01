@@ -849,7 +849,8 @@ static int add_attr_to_channel(struct iio_channel *chn,
 		if (ret > 0)
 			chn->label = iio_strdup(label);
 		else
-			chn_perror(chn, ret, "Unable to read channel label");
+			chn_dbg(chn, "Unable to read channel label: %s (%d)\n",
+				strerror(-ret), -ret);
 
 		return 0;
 	}
