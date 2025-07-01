@@ -310,11 +310,10 @@ static void *client_thread(void *data)
 		if (info->verbose == VERYVERBOSE)
 			printf("%2d: Running\n", id);
 
-		buffer_params.idx = info->buffer_size;
 		i = 0;
 		while (threads_running || i == 0) {
 			info->buffers[id]++;
-			buffer = iio_device_create_buffer(dev, &buffer_params, false);
+			buffer = iio_device_create_buffer(dev, &buffer_params, mask);
 			ret = iio_err(buffer);
 			if (ret) {
 				struct timespec wait;
