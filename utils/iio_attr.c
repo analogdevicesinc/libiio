@@ -108,7 +108,8 @@ static inline const char *get_label_or_name_or_id(const struct iio_device *dev)
 static int dump_device_attributes(const struct iio_device *dev,
 				  const struct iio_attr *attr,
 				  const char *type, const char *var,
-				  const char *wbuf, enum verbosity quiet)
+				  const char *wbuf, bool write_only,
+				  enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
@@ -138,7 +139,8 @@ static int dump_device_attributes(const struct iio_device *dev,
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret,
 				       iio_attr_get_name(attr));
-			dump_device_attributes(dev, attr, type, var, NULL, quiet);
+			if (!write_only)
+				dump_device_attributes(dev, attr, type, var, NULL, false, quiet);
 		} else {
 			IIO_PERROR((int)ret, "Unable to write attribute");
 		}
@@ -151,7 +153,8 @@ static int dump_device_attributes(const struct iio_device *dev,
 static int dump_channel_attributes(const struct iio_device *dev,
 				   struct iio_channel *ch,
 				   const struct iio_attr *attr,
-				   const char *wbuf, enum verbosity quiet)
+				   const char *wbuf, bool write_only,
+				   enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
@@ -196,7 +199,8 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret,
 				       iio_attr_get_name(attr));
-			dump_channel_attributes(dev, ch, attr, NULL, quiet);
+			if (!write_only)
+				dump_channel_attributes(dev, ch, attr, NULL, false, quiet);
 		} else {
 			IIO_PERROR((int)ret, "Unable to write channel attribute");
 		}
@@ -207,6 +211,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 
 static const struct option options[] = {
 	{"ignore-case", no_argument, 0, 'I'},
+	{"write-only", no_argument, 0, 'w'},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"generate-code", required_argument, 0, 'g'},
@@ -231,6 +236,7 @@ static const char *options_descriptions[] = {
 		"\t\t\t\t-C [attr]"),
 	/* help */
 	"Ignore case distinctions.",
+	"Do not readback on Writes.",
 	"Return result only.",
 	"Verbose, say what is going on",
 	"Generate code.",
@@ -246,7 +252,7 @@ static const char *options_descriptions[] = {
 	"Read/Write debug attributes.",
 };
 
-#define MY_OPTS "CdcBDiosIqvg:"
+#define MY_OPTS "CdcBDiosIwqvg:"
 int main(int argc, char **argv)
 {
 	char **argw;
@@ -259,7 +265,7 @@ int main(int argc, char **argv)
 		search_context = false, input_only = false, output_only = false,
 		scan_only = false, gen_code = false;
 	enum verbosity quiet = ATTR_NORMAL;
-	bool found_err = false, read_err = false, write_err = false,
+	bool found_err = false, read_err = false, write_err = false, write_only = false,
 		dev_found = false, attr_found = false, ctx_found = false,
 		debug_found = false, channel_found = false ;
 	const struct iio_attr *attr;
@@ -334,6 +340,9 @@ int main(int argc, char **argv)
 		/* options */
 		case 'I':
 			ignore_case = true;
+			break;
+		case 'w':
+			write_only = true;
 			break;
 		case 'q':
 			quiet = ATTR_QUIET;
@@ -705,7 +714,7 @@ int main(int argc, char **argv)
 					found_err = false;
 					attr_found = true;
 					gen_ch(ch);
-					ret = dump_channel_attributes(dev, ch, attr, wbuf,
+					ret = dump_channel_attributes(dev, ch, attr, wbuf, write_only,
 								attr_index ? quiet : ATTR_VERBOSE);
 					if (wbuf && ret < 0)
 						write_err = true;
@@ -737,6 +746,7 @@ int main(int argc, char **argv)
 					found_err = false;
 					attr_found = true;
 					ret = dump_device_attributes(dev, attr, "device", "dev", wbuf,
+								     write_only,
 								     attr_index ? quiet : ATTR_VERBOSE);
 					if (wbuf && ret < 0)
 						write_err = true;
@@ -771,7 +781,7 @@ int main(int argc, char **argv)
 							found_err = false;
 							attr_found = true;
 							ret = dump_device_attributes(dev, attr, "buffer",
-										     "buf", wbuf,
+										     "buf", wbuf, write_only,
 										     attr_index ? quiet : ATTR_VERBOSE);
 							if (wbuf && ret < 0)
 								write_err = true;
@@ -806,7 +816,7 @@ int main(int argc, char **argv)
 						attr_found = true;
 						debug_found = true;
 						ret = dump_device_attributes(dev, attr, "device_debug",
-									     "dev", wbuf,
+									     "dev", wbuf, write_only,
 									     attr_index ? quiet : ATTR_VERBOSE);
 						if (wbuf && ret < 0)
 							write_err = true;
