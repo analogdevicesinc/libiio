@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,12 +34,16 @@
 static struct iio_context *ctx;
 
 static const struct option options[] = {
-	{0, 0, 0, 0},
+	{ "read-debug-attr", no_argument, NULL, 'd' },
+	{ "no-read-attr", no_argument, NULL, 'n' },
+	{ }
 };
 
 static const char *options_descriptions[] = {
 	("[-x <xml_file>]\n"
 		"\t\t\t\t[-u <uri>]"),
+	("Read and print the value of debug attributes."),
+	("Do not read or print the value of regular attributes."),
 };
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
@@ -56,7 +61,7 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 	return false;
 }
 
-#define MY_OPTS ""
+#define MY_OPTS "dn"
 
 static bool colors;
 
@@ -78,21 +83,12 @@ static bool colors;
 #define print_fmt(fmt, ...) printf(fmt, __VA_ARGS__) /* Flawfinder: ignore */
 
 static void print_attr(const struct iio_attr *attr,
-		       unsigned int level, unsigned int idx)
+		       unsigned int level, unsigned int idx,
+		       bool read_sysfs_attr, bool read_debug_attr)
 {
 	char buf[BUF_SIZE];
 	const char *name, *fn, *value;
 	ssize_t ret = 0;
-
-	buf[BUF_SIZE - 1] = '\0';
-
-	value = iio_attr_get_static_value(attr);
-	if (!value) {
-		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
-		if (ret < 0)
-			iio_strerror((int)ret, buf, sizeof(buf));
-		value = buf;
-	}
 
 	printf("%.*sattr %2u: ", level, "\t\t\t\t", idx);
 
@@ -107,6 +103,28 @@ static void print_attr(const struct iio_attr *attr,
 	if (strcmp(name, fn))
 		printf(" (%s)", fn);
 
+	/*
+	 * Depending on command line options, we may or may not read and print
+	 * the value of the attribute. Context attributes are always printed.
+	 * Sysfs attributes (device, channel, buffer) are controlled by the -n
+	 * option. Debug attributes are controlled by the -d option.
+	 */
+	if (attr->type != IIO_ATTR_TYPE_CONTEXT &&
+	    ((!read_sysfs_attr && attr->type != IIO_ATTR_TYPE_DEBUG) ||
+	     (!read_debug_attr && attr->type == IIO_ATTR_TYPE_DEBUG))) {
+		printf("\n");
+		return;
+	}
+
+	buf[BUF_SIZE - 1] = '\0';
+	value = iio_attr_get_static_value(attr);
+	if (!value) {
+		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		if (ret < 0)
+			iio_strerror((int)ret, buf, sizeof(buf));
+		value = buf;
+	}
+	
 	if (ret >= 0)
 		printf(" value: %s\n", value);
 	else if (colors)
@@ -191,6 +209,8 @@ int main(int argc, char **argv)
 	struct iio_event_stream *stream;
 	struct option *opts;
 	int c, ret = EXIT_FAILURE;
+	bool read_sysfs_attr = true;
+	bool read_debug_attr = false;
 
 #ifndef _MSC_BUILD
 	colors = isatty(STDOUT_FILENO) == 1;
@@ -213,6 +233,12 @@ int main(int argc, char **argv)
 		case 'V':
 		case 'u':
 		case 'T':
+			break;
+		case 'd':
+			read_debug_attr = true;
+			break;
+		case 'n':
+			read_sysfs_attr = false;
 			break;
 		case 'S':
 		case 'a':
@@ -254,7 +280,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < nb_ctx_attrs; i++) {
 		attr = iio_context_get_attr(ctx, i);
-		print_attr(attr, 1, i);
+		print_attr(attr, 1, i, read_sysfs_attr, read_debug_attr);
 	}
 
 	nb_devices = iio_context_get_devices_count(ctx);
@@ -309,7 +335,7 @@ int main(int argc, char **argv)
 
 			for (k = 0; k < nb_attrs; k++) {
 				attr = iio_channel_get_attr(ch, k);
-				print_attr(attr, 4, k);
+				print_attr(attr, 4, k, read_sysfs_attr, read_debug_attr);
 			}
 		}
 
@@ -319,7 +345,7 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_attr(dev, j);
-				print_attr(attr, 3, j);
+				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
 			}
 		}
 
@@ -331,7 +357,7 @@ int main(int argc, char **argv)
 				printf("\t\t%u buffer attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_buffer_get_attr(buffer, j);
-				print_attr(attr, 3, j);
+				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
 			}
 
 			iio_buffer_destroy(buffer);
@@ -342,7 +368,7 @@ int main(int argc, char **argv)
 			printf("\t\t%u debug attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_debug_attr(dev, j);
-				print_attr(attr, 3, j);
+				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
 			}
 		}
 
