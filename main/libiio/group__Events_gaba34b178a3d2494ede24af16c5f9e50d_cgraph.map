@@ -1,0 +1,4 @@
+<map id="iio_event_get_channel" name="iio_event_get_channel">
+<area shape="rect" id="node1" title="Get a pointer to the IIO channel that corresponds to this event." alt="" coords="5,5,156,32"/>
+<area shape="rect" id="node2" href="$group__Channel.html#gafda1782de4655905ad08a40492f3dc64" title="Retrieve the channel ID (e.g. voltage0)" alt="" coords="204,5,333,32"/>
+</map>

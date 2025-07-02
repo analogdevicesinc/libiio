@@ -1,0 +1,4 @@
+<map id="iio_buffer_stream_create_block" name="iio_buffer_stream_create_block">
+<area shape="rect" id="node1" title="Create a data block for the given buffer stream." alt="" coords="5,5,169,47"/>
+<area shape="rect" id="node2" href="$group__Debug.html#ga699a284f90db114896c7726b1f042d1d" title="Get the current sample size." alt="" coords="217,13,401,39"/>
+</map>

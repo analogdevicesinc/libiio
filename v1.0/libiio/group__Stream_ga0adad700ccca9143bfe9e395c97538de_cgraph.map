@@ -1,0 +1,8 @@
+<map id="iio_stream_destroy" name="iio_stream_destroy">
+<area shape="rect" id="node1" title="Destroy the given stream object." alt="" coords="5,56,137,83"/>
+<area shape="rect" id="node2" href="$group__Block.html#ga933cced17b0175f478706aeb3f8cace5" title="Dequeue the given iio_block from the buffer&#39;s queue." alt="" coords="185,5,315,32"/>
+<area shape="rect" id="node3" href="$group__Block.html#ga1f7204afe12a4ebb3873f4ec99796ce3" title="Destroy the given block." alt="" coords="189,56,311,83"/>
+<area shape="rect" id="node4" href="$group__BufferStream.html#gae4ff8cd9b49e9c09370ed5e536b81828" title="Close a buffer stream." alt="" coords="194,107,306,133"/>
+<area shape="rect" id="node5" href="$group__BufferStream.html#gad95591a602cec9291c9c9a5faaf943df" title="Cancel all buffer stream operations." alt="" coords="371,81,537,108"/>
+<area shape="rect" id="node6" href="$group__Debug.html#ga9dcf4f529878f28b82b9c3ba954f9547" title="Destroy a channels mask." alt="" coords="363,132,545,159"/>
+</map>

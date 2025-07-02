@@ -1,0 +1,5 @@
+<map id="iio_attr_get_available" name="iio_attr_get_available">
+<area shape="rect" id="node1" title="Extract the list of elements from an attribute with suffix &#39;_available&#39;." alt="" coords="5,31,148,57"/>
+<area shape="rect" id="node2" href="$group__Attributes.html#gaed2fd3b8ae003f1a9c6d3487821374fa" title="Retrieve the name of an attribute." alt="" coords="196,5,321,32"/>
+<area shape="rect" id="node3" href="$group__Attributes.html#gad47b24bee0df07e03fae49c2dae27b76" title="Read the content of the given attribute." alt="" coords="198,56,319,83"/>
+</map>

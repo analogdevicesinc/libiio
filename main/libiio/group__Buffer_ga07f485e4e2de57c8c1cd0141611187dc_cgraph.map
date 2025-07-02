@@ -1,0 +1,4 @@
+<map id="iio_buffer_set_data" name="iio_buffer_set_data">
+<area shape="rect" id="node1" title="Associate a pointer to an iio_buffer structure." alt="" coords="5,5,136,32"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#gac110da795a50dc45fe998cace656329b" title="Retrieve a previously associated pointer of an iio_buffer structure." alt="" coords="184,5,315,32"/>
+</map>

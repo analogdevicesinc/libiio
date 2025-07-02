@@ -1,0 +1,6 @@
+<map id="iio_attr_read_raw" name="iio_attr_read_raw">
+<area shape="rect" id="node1" title="Read the content of the given attribute." alt="" coords="221,56,343,83"/>
+<area shape="rect" id="node2" href="$group__Attributes.html#ga89d05b559d671e7e18482d681e4de8de" title="Extract the list of elements from an attribute with suffix &#39;_available&#39;." alt="" coords="18,5,161,32"/>
+<area shape="rect" id="node3" href="$group__Attributes.html#gaa7d84a6c2c5775651676f8b42831f7b0" title="A variant of iio_attr_get_available() that uses a caller&#45;supplied, preallocated buffer...." alt="" coords="5,56,173,83"/>
+<area shape="rect" id="node4" href="$group__Attributes.html#gaf25a01853543aa371baaa17715a014ee" title="Extract the range from an attribute with suffix &#39;_available&#39;." alt="" coords="27,107,152,133"/>
+</map>

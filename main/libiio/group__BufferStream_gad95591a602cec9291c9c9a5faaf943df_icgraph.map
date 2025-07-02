@@ -1,0 +1,6 @@
+<map id="iio_buffer_stream_cancel" name="iio_buffer_stream_cancel">
+<area shape="rect" id="node1" title="Cancel all buffer stream operations." alt="" coords="360,31,527,57"/>
+<area shape="rect" id="node2" href="$group__BufferStream.html#gae4ff8cd9b49e9c09370ed5e536b81828" title="Close a buffer stream." alt="" coords="193,5,305,32"/>
+<area shape="rect" id="node4" href="$group__Stream.html#ga4d6f688febbbd18f08c5d7285e8d4fa9" title="Cancel all stream operations." alt="" coords="185,56,312,83"/>
+<area shape="rect" id="node3" href="$group__Stream.html#ga0adad700ccca9143bfe9e395c97538de" title="Destroy the given stream object." alt="" coords="5,5,137,32"/>
+</map>

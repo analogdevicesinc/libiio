@@ -1,0 +1,4 @@
+<map id="iio_block_destroy" name="iio_block_destroy">
+<area shape="rect" id="node1" title="Destroy the given block." alt="" coords="185,5,308,32"/>
+<area shape="rect" id="node2" href="$group__Stream.html#ga0adad700ccca9143bfe9e395c97538de" title="Destroy the given stream object." alt="" coords="5,5,137,32"/>
+</map>

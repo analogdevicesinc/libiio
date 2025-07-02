@@ -1,0 +1,6 @@
+<map id="iio_channel_is_output" name="iio_channel_is_output">
+<area shape="rect" id="node1" title="Return True if the given channel is an output channel." alt="" coords="400,38,547,65"/>
+<area shape="rect" id="node2" href="$group__Buffer.html#ga6326ab9074982731086a8df1d105c32c" title="Returns true if the buffer is an output buffer." alt="" coords="205,13,339,39"/>
+<area shape="rect" id="node4" href="$group__Device.html#gaffc6086189ba801ab5e95341d68f882b" title="Try to find a channel structure by its ID, label or name." alt="" coords="192,63,352,90"/>
+<area shape="rect" id="node3" href="$group__Stream.html#ga1c73a6fbb401a576d420c293d066101a" title="Get a pointer to the next data block." alt="" coords="5,5,144,47"/>
+</map>

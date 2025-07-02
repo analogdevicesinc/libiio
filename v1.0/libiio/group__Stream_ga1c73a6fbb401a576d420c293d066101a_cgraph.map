@@ -1,0 +1,7 @@
+<map id="iio_stream_get_next_block" name="iio_stream_get_next_block">
+<area shape="rect" id="node1" title="Get a pointer to the next data block." alt="" coords="5,23,144,65"/>
+<area shape="rect" id="node2" href="$group__Block.html#ga5b87659e186a4934d535bbf1f34eeebd" title="Enqueue the given iio_block to the buffer&#39;s queue." alt="" coords="195,5,324,32"/>
+<area shape="rect" id="node3" href="$group__Buffer.html#ga6326ab9074982731086a8df1d105c32c" title="Returns true if the buffer is an output buffer." alt="" coords="192,56,327,83"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga3c24e9c93e2217c9506073d04b878461" title="Return True if the given channel is an output channel." alt="" coords="375,27,521,53"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga07892a3c0c31e7a3eecf76ec72a8669d" title="Return True if the given channel is a scan element." alt="" coords="379,78,517,119"/>
+</map>

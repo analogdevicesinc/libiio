@@ -1,0 +1,12 @@
+<map id="iio_attr_get_name" name="iio_attr_get_name">
+<area shape="rect" id="node1" title="Retrieve the name of an attribute." alt="" coords="229,208,355,235"/>
+<area shape="rect" id="node2" href="$group__Attributes.html#ga89d05b559d671e7e18482d681e4de8de" title="Extract the list of elements from an attribute with suffix &#39;_available&#39;." alt="" coords="22,5,165,32"/>
+<area shape="rect" id="node3" href="$group__Attributes.html#gaa7d84a6c2c5775651676f8b42831f7b0" title="A variant of iio_attr_get_available() that uses a caller&#45;supplied, preallocated buffer...." alt="" coords="9,56,177,83"/>
+<area shape="rect" id="node4" href="$group__Attributes.html#gaf25a01853543aa371baaa17715a014ee" title="Extract the range from an attribute with suffix &#39;_available&#39;." alt="" coords="31,107,156,133"/>
+<area shape="rect" id="node5" href="$group__Channel.html#ga915e5f00c824fc53d8a77a11f3bfa31f" title="Try to find a channel&#45;specific attribute by its name." alt="" coords="23,157,164,184"/>
+<area shape="rect" id="node6" href="$group__Channel.html#ga167ad8fba2e12b6c1c72b0e9beeddfab" title="Get the channel&#45;specific attribute present at the given index." alt="" coords="24,208,163,235"/>
+<area shape="rect" id="node7" href="$group__Device.html#gaedf21a4b681b5faa016734dfbbf34287" title="Try to find a device&#45;specific attribute by its name." alt="" coords="26,259,161,285"/>
+<area shape="rect" id="node8" href="$group__Debug.html#ga522737cfafe332a15f50cc7636305d32" title="Try to find a debug attribute by its name." alt="" coords="5,309,181,336"/>
+<area shape="rect" id="node9" href="$group__Device.html#ga30b42a6a54993125467a843e2206356b" title="Get the device&#45;specific attribute present at the given index." alt="" coords="28,360,159,387"/>
+<area shape="rect" id="node10" href="$group__Debug.html#gad8a60c6b92f51592f5d4142526c10287" title="Get the debug attribute present at the given index." alt="" coords="7,411,180,437"/>
+</map>

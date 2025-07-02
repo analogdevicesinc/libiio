@@ -1,0 +1,193 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of iio_stresstest</TITLE>
+</HEAD><BODY>
+<H1>iio_stresstest</H1>
+Section: LibIIO Utilities (1)<BR>Updated: 05 May 2026<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="ixAAB"></A>
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+iio_stresstest - Stress test program for Libiio
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>iio_stresstest</B>
+
+[
+<I>options</I>
+
+]
+-u &lt;uri&gt;
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>iio_stresstest</B>
+
+is a stress-testing program that can be used to find bugs in Libiio or in the Libiio daemon (IIOD).
+<P>
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT><B>-h, --help</B>
+
+<DD>
+Tells
+<I>iio_stresstest</I>
+
+to display some help, and then quit.
+<DT><B>-V, --version</B>
+
+<DD>
+Prints the version information for this particular copy of
+<I>iio_stresstest</I>
+
+and the version of the libiio library it is using. This is useful for knowing if the version of the library and
+<I>iio_stresstest</I>
+
+on your system are up to date. This is also useful when reporting bugs.
+<DT><B>-S, --scan [backends]</B>
+
+<DD>
+Scan for available IIO contexts, optional arg of specific backend(s) 'ip', 'usb' or 'ip,usb'.
+Specific options for USB include Vendor ID, Product ID to limit scanning to specific devices 'usb=0456:b673'.
+vid,pid are hexadecimal numbers (no prefix needed), &quot;*&quot; (match any for pid only)
+If no argument is given, it checks all that are available.
+<DT><B>-u, --uri</B>
+
+<DD>
+The Uniform Resource Identifier
+<I>(uri)</I>
+
+for connecting to devices, can be one of:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT>ip:[address]<DD>
+network address, either numeric (192.168.0.1) or network hostname
+<DT>ip:<DD>
+blank, if compiled with zeroconf support, will find an IIO device on network
+<DT>usb:[device:port:instance]<DD>
+normally returned from
+<B>iio_stresstest -S</B>
+
+<DT>serial:[port],[baud],[settings]<DD>
+which are controlled, and need to match the iiod (or tinyiiod) on the other end of the serial port.
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT>[port]<DD>
+is something like '/dev/ttyUSB0' on Linux, and 'COM4' on Windows.
+<DT>[baud]<DD>
+is is normally one of 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200 [default], 128000 or 256000, but can vary system to system.
+<DT>[settings]<DD>
+would normally be configured as '8n1' this is controlled by:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT>data_bits:<DD>
+(5, 6, 7, 8 [default], or 9)
+<DT>parity_bits:<DD>
+('n' none [default], 'o' odd, 'e' even, 'm' mark, or 's' space)
+<DT>stop_bits:<DD>
+(1 [default, or 2)
+<DT>flow_control:<DD>
+('0' none [default], 'x' Xon Xoff, 'r' RTSCTS, or 'd' DTRDSR)
+</DL>
+</DL>
+
+</DL>
+</DL>
+
+<DT>local:<DD>
+with no address part.
+</DL>
+</DL>
+
+<DT><B>-T, --timeout &lt;arg&gt;</B>
+
+<DD>
+Context timeout in milliseconds. 0 = no timeout (wait forever). Default is 0.
+<DT><B>-a, --auto</B>
+
+<DD>
+Scan for available contexts and if only one is available use it.
+<DT><B>-b, --buffer-size &lt;arg&gt;</B>
+
+<DD>
+Size of the capture buffer. Default is 256.
+<DT><B>-d, --duration &lt;arg&gt;</B>
+
+<DD>
+Time to wait (in seconds) before stopping all threads
+<DT><B>-t, --threads &lt;arg&gt;</B>
+
+<DD>
+Number of threads to use
+<DT><B>-v, --verbose</B>
+
+<DD>
+Increase verbosity (-vv and -vvv for more)
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>RETURN VALUE</H2>
+
+If the specified device is not found, a non-zero exit code is returned.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+
+<B><A HREF="../man1/iio_attr.1.html">iio_attr</A></B>(1),
+
+<B><A HREF="../man1/iio_info.1.html">iio_info</A></B>(1),
+
+<B><A HREF="../man1/iio_rwdev.1.html">iio_rwdev</A></B>(1),
+
+<B><A HREF="../man1/iio_reg.1.html">iio_reg</A></B>(1),
+
+<B><A HREF="../man3/libiio.3.html">libiio</A></B>(3)
+
+<P>
+
+libiio home page:
+<B><A HREF="https://wiki.analog.com/resources/tools-software/linux-software/libiio">https://wiki.analog.com/resources/tools-software/linux-software/libiio</A></B>
+
+<P>
+
+libiio code:
+<B><A HREF="https://github.com/analogdevicesinc/libiio">https://github.com/analogdevicesinc/libiio</A></B>
+
+<P>
+
+Doxygen for libiio
+<B><A HREF="https://analogdevicesinc.github.io/libiio/">https://analogdevicesinc.github.io/libiio/</A></B>
+
+<A NAME="lbAH">&nbsp;</A>
+<H2>BUGS</H2>
+
+All bugs are tracked at:
+<B><A HREF="https://github.com/analogdevicesinc/libiio/issues">https://github.com/analogdevicesinc/libiio/issues</A></B>
+
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">RETURN VALUE</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+<DT><A HREF="#lbAH">BUGS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:36:09 GMT, May 05, 2026
+</BODY>
+</HTML>

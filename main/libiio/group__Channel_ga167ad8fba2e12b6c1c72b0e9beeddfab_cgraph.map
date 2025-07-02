@@ -1,0 +1,4 @@
+<map id="iio_channel_get_attr" name="iio_channel_get_attr">
+<area shape="rect" id="node1" title="Get the channel&#45;specific attribute present at the given index." alt="" coords="5,5,144,32"/>
+<area shape="rect" id="node2" href="$group__Attributes.html#gaed2fd3b8ae003f1a9c6d3487821374fa" title="Retrieve the name of an attribute." alt="" coords="192,5,317,32"/>
+</map>

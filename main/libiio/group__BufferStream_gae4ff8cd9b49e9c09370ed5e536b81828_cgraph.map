@@ -1,0 +1,5 @@
+<map id="iio_buffer_close" name="iio_buffer_close">
+<area shape="rect" id="node1" title="Close a buffer stream." alt="" coords="5,31,117,57"/>
+<area shape="rect" id="node2" href="$group__BufferStream.html#gad95591a602cec9291c9c9a5faaf943df" title="Cancel all buffer stream operations." alt="" coords="173,5,340,32"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga9dcf4f529878f28b82b9c3ba954f9547" title="Destroy a channels mask." alt="" coords="165,56,348,83"/>
+</map>
