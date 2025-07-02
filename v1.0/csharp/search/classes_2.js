@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['device_58',['Device',['../classiio_1_1Device.html',1,'iio']]]
+  ['channel_73',['Channel',['../classiio_1_1Channel.html',1,'iio']]],
+  ['context_74',['Context',['../classiio_1_1Context.html',1,'iio']]]
 ];

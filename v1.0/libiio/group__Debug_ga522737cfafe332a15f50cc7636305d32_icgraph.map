@@ -1,0 +1,5 @@
+<map id="iio_device_find_debug_attr" name="iio_device_find_debug_attr">
+<area shape="rect" id="node1" title="Try to find a debug attribute by its name." alt="" coords="193,31,369,57"/>
+<area shape="rect" id="node2" href="$group__Debug.html#ga70829552f676ef9fc74e755933da05d8" title="Get the value of a hardware register." alt="" coords="7,5,144,32"/>
+<area shape="rect" id="node3" href="$group__Debug.html#ga170d5a84de1d5fdb987113aa90e2a19b" title="Set the value of a hardware register." alt="" coords="5,56,145,83"/>
+</map>

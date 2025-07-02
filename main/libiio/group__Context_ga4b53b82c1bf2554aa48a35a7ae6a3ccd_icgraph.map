@@ -1,0 +1,5 @@
+<map id="iio_context_get_data" name="iio_context_get_data">
+<area shape="rect" id="node1" title="Retrieve a previously associated pointer of an iio_context structure." alt="" coords="192,31,335,57"/>
+<area shape="rect" id="node2" href="$group__Context.html#ga75de8dae515c539818e52b408830d3ba" title="Destroy the given context." alt="" coords="7,5,142,32"/>
+<area shape="rect" id="node3" href="$group__Context.html#gad26ca14668c7b8e80e95398354e1e313" title="Obtain a XML representation of the given context." alt="" coords="5,56,144,83"/>
+</map>

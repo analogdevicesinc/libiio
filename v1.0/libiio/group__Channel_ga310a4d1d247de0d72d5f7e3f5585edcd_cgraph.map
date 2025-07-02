@@ -1,0 +1,9 @@
+<map id="iio_channel_read" name="iio_channel_read">
+<area shape="rect" id="node1" title="Demultiplex and convert the samples of a given channel." alt="" coords="5,128,124,154"/>
+<area shape="rect" id="node2" href="$group__Block.html#ga514f79a7b3a9ca9f038d5142d66ccc72" title="Get the address after the last sample in a block." alt="" coords="404,14,505,41"/>
+<area shape="rect" id="node3" href="$group__Block.html#gaefbcc70a63db0f74f284278c180a8c1a" title="Find the first sample of a channel in a block." alt="" coords="213,40,315,66"/>
+<area shape="rect" id="node4" href="$group__Block.html#ga0c592fdee0969874a25951c5e0d01e33" title="Retrieve a pointer to the iio_buffer_stream structure." alt="" coords="195,91,333,132"/>
+<area shape="rect" id="node5" href="$group__Block.html#ga06c397d64cb4a4b89a28afcf1284c3c4" title="Get the start address of the block." alt="" coords="211,157,317,184"/>
+<area shape="rect" id="node6" href="$group__Debug.html#gaf910dce06335badc1ba307526c4112a6" title="Convert the sample from hardware format to host format." alt="" coords="195,208,333,234"/>
+<area shape="rect" id="node7" href="$group__Debug.html#ga699a284f90db114896c7726b1f042d1d" title="Get the current sample size." alt="" coords="172,258,356,285"/>
+</map>

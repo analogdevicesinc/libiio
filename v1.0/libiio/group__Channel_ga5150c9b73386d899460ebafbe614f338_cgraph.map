@@ -1,0 +1,4 @@
+<map id="iio_channel_set_data" name="iio_channel_set_data">
+<area shape="rect" id="node1" title="Associate a pointer to an iio_channel structure." alt="" coords="5,5,149,32"/>
+<area shape="rect" id="node2" href="$group__Channel.html#gacbce92eaefb8d61c1e4f0dc042b211e6" title="Retrieve a previously associated pointer of an iio_channel structure." alt="" coords="197,5,341,32"/>
+</map>

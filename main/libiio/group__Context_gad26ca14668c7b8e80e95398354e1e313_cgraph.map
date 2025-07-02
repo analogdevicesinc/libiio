@@ -1,0 +1,4 @@
+<map id="iio_context_get_xml" name="iio_context_get_xml">
+<area shape="rect" id="node1" title="Obtain a XML representation of the given context." alt="" coords="5,5,144,32"/>
+<area shape="rect" id="node2" href="$group__Context.html#ga4b53b82c1bf2554aa48a35a7ae6a3ccd" title="Retrieve a previously associated pointer of an iio_context structure." alt="" coords="192,5,335,32"/>
+</map>

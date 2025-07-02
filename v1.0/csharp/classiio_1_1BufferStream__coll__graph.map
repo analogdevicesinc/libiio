@@ -1,0 +1,6 @@
+<map id="iio.BufferStream" name="iio.BufferStream">
+<area shape="rect" id="node1" title="iio.BufferStream class: The class used for streaming operations on opened buffers." alt="" coords="5,273,120,300"/>
+<area shape="rect" id="node2" href="$classiio_1_1IOBuffer.html" title="iio.IOBuffer class: The class used for all I/O operations." alt="" coords="19,184,106,211"/>
+<area shape="rect" id="node3" href="$classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="23,95,103,121"/>
+<area shape="rect" id="node4" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="20,5,105,32"/>
+</map>

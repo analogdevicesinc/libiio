@@ -1,0 +1,4 @@
+<map id="iio_get_builtin_backend" name="iio_get_builtin_backend">
+<area shape="rect" id="node1" title="Retrieve the name of a given built&#45;in backend." alt="" coords="172,5,328,32"/>
+<area shape="rect" id="node2" href="$group__TopLevel.html#ga3bfc88f8a3084c8f779e173f1334caef" title="Check if the specified backend is available." alt="" coords="5,5,124,32"/>
+</map>

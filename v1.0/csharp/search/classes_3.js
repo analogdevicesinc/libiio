@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['iobuffer_59',['IOBuffer',['../classiio_1_1IOBuffer.html',1,'iio']]]
+  ['device_75',['Device',['../classiio_1_1Device.html',1,'iio']]]
 ];

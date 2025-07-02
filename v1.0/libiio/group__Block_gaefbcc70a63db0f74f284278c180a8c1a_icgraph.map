@@ -1,0 +1,5 @@
+<map id="iio_block_first" name="iio_block_first">
+<area shape="rect" id="node1" title="Find the first sample of a channel in a block." alt="" coords="176,31,279,57"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga310a4d1d247de0d72d5f7e3f5585edcd" title="Demultiplex and convert the samples of a given channel." alt="" coords="7,5,126,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga4773b1b0684c2f03a8eea92bf900174f" title="Convert and multiplex the samples of a given channel." alt="" coords="5,56,128,83"/>
+</map>
