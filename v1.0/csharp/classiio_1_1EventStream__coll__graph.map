@@ -1,0 +1,5 @@
+<map id="iio.EventStream" name="iio.EventStream">
+<area shape="rect" id="node1" title="iio.EventStream class: Contains the representation of an event stream." alt="" coords="5,184,120,211"/>
+<area shape="rect" id="node2" href="$classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="23,95,103,121"/>
+<area shape="rect" id="node3" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="20,5,105,32"/>
+</map>
