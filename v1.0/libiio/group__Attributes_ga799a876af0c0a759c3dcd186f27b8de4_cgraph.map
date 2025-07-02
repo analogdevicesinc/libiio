@@ -1,0 +1,5 @@
+<map id="iio_attr_get_available_buf" name="iio_attr_get_available_buf">
+<area shape="rect" id="node1" title="A variant of iio_attr_get_available() that uses a caller&#45;supplied, preallocated buffer...." alt="" coords="5,31,173,57"/>
+<area shape="rect" id="node2" href="$group__Attributes.html#gaed2fd3b8ae003f1a9c6d3487821374fa" title="Retrieve the name of an attribute." alt="" coords="221,5,347,32"/>
+<area shape="rect" id="node3" href="$group__Attributes.html#gad47b24bee0df07e03fae49c2dae27b76" title="Read the content of the given attribute." alt="" coords="223,56,345,83"/>
+</map>

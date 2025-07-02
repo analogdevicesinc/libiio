@@ -1,0 +1,4 @@
+<map id="iio_device_set_data" name="iio_device_set_data">
+<area shape="rect" id="node1" title="Associate a pointer to an iio_device structure." alt="" coords="5,5,143,32"/>
+<area shape="rect" id="node2" href="$group__Device.html#ga87cff8d90e1a68e73410e4a527cc5334" title="Retrieve a previously associated pointer of an iio_device structure." alt="" coords="191,5,328,32"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="iio_channels_mask_destroy" name="iio_channels_mask_destroy">
+<area shape="rect" id="node1" title="Destroy a channels mask." alt="" coords="345,5,528,32"/>
+<area shape="rect" id="node2" href="$group__BufferStream.html#gae4ff8cd9b49e9c09370ed5e536b81828" title="Close a buffer stream." alt="" coords="185,5,297,32"/>
+<area shape="rect" id="node3" href="$group__Stream.html#ga0adad700ccca9143bfe9e395c97538de" title="Destroy the given stream object." alt="" coords="5,5,137,32"/>
+</map>

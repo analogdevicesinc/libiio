@@ -1,0 +1,4 @@
+<map id="iio_block_dequeue" name="iio_block_dequeue">
+<area shape="rect" id="node1" title="Dequeue the given iio_block from the buffer&#39;s queue." alt="" coords="185,5,315,32"/>
+<area shape="rect" id="node2" href="$group__Stream.html#ga0adad700ccca9143bfe9e395c97538de" title="Destroy the given stream object." alt="" coords="5,5,137,32"/>
+</map>

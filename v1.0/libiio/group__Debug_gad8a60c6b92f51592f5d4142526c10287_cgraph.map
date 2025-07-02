@@ -1,0 +1,4 @@
+<map id="iio_device_get_debug_attr" name="iio_device_get_debug_attr">
+<area shape="rect" id="node1" title="Get the debug attribute present at the given index." alt="" coords="5,5,179,32"/>
+<area shape="rect" id="node2" href="$group__Attributes.html#gaed2fd3b8ae003f1a9c6d3487821374fa" title="Retrieve the name of an attribute." alt="" coords="227,5,352,32"/>
+</map>

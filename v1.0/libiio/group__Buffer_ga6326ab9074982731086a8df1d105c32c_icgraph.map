@@ -1,0 +1,4 @@
+<map id="iio_buffer_is_output" name="iio_buffer_is_output">
+<area shape="rect" id="node1" title="Returns true if the buffer is an output buffer." alt="" coords="192,13,327,39"/>
+<area shape="rect" id="node2" href="$group__Stream.html#ga1c73a6fbb401a576d420c293d066101a" title="Get a pointer to the next data block." alt="" coords="5,5,144,47"/>
+</map>

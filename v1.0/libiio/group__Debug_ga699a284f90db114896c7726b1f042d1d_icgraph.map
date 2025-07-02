@@ -1,0 +1,6 @@
+<map id="iio_device_get_sample_size" name="iio_device_get_sample_size">
+<area shape="rect" id="node1" title="Get the current sample size." alt="" coords="217,71,401,98"/>
+<area shape="rect" id="node2" href="$group__Block.html#gaf03eb49319bea976d9f8ac27a97f54f5" title="Create a data block for the given buffer stream." alt="" coords="5,5,169,47"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga310a4d1d247de0d72d5f7e3f5585edcd" title="Demultiplex and convert the samples of a given channel." alt="" coords="28,71,147,98"/>
+<area shape="rect" id="node4" href="$group__Channel.html#ga4773b1b0684c2f03a8eea92bf900174f" title="Convert and multiplex the samples of a given channel." alt="" coords="26,122,149,149"/>
+</map>

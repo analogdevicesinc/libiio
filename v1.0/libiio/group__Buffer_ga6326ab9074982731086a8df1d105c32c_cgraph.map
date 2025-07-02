@@ -1,0 +1,5 @@
+<map id="iio_buffer_is_output" name="iio_buffer_is_output">
+<area shape="rect" id="node1" title="Returns true if the buffer is an output buffer." alt="" coords="5,35,140,61"/>
+<area shape="rect" id="node2" href="$group__Channel.html#ga3c24e9c93e2217c9506073d04b878461" title="Return True if the given channel is an output channel." alt="" coords="188,5,335,32"/>
+<area shape="rect" id="node3" href="$group__Channel.html#ga07892a3c0c31e7a3eecf76ec72a8669d" title="Return True if the given channel is a scan element." alt="" coords="192,57,331,98"/>
+</map>

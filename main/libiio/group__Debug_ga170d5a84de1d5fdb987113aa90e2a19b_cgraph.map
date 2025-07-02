@@ -1,0 +1,4 @@
+<map id="iio_device_reg_write" name="iio_device_reg_write">
+<area shape="rect" id="node1" title="Set the value of a hardware register." alt="" coords="5,5,145,32"/>
+<area shape="rect" id="node2" href="$group__Debug.html#ga522737cfafe332a15f50cc7636305d32" title="Try to find a debug attribute by its name." alt="" coords="193,5,369,32"/>
+</map>

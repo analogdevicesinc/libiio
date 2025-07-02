@@ -1,0 +1,6 @@
+<map id="iio.IIOEvent" name="iio.IIOEvent">
+<area shape="rect" id="node1" title="iio.IIOEvent class: Contains the representation of an iio_event." alt="" coords="5,288,96,315"/>
+<area shape="rect" id="node2" href="$classiio_1_1Channel.html" title="iio.Channel class: Contains the representation of an input or output channel." alt="" coords="7,184,94,211"/>
+<area shape="rect" id="node3" href="$classiio_1_1Device.html" title="iio.Device class: Contains the representation of an IIO device." alt="" coords="11,95,91,121"/>
+<area shape="rect" id="node4" href="$classiio_1_1Context.html" title="iio.Context class: Contains the representation of an IIO context." alt="" coords="8,5,93,32"/>
+</map>
