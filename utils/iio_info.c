@@ -36,7 +36,7 @@ static struct iio_context *ctx;
 static const struct option options[] = {
 	{ "read-debug-attr", no_argument, NULL, 'd' },
 	{ "no-read-attr", no_argument, NULL, 'n' },
-	{ }
+	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
