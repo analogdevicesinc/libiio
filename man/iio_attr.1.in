@@ -88,6 +88,9 @@ Read and Write IIO Debug attributes
 ##COMMON_OPTION_START##
 ##COMMON_OPTION_STOP##
 .TP
+.B \-w, \-\-write-only
+Do not readback on Writes
+.TP
 .B \-i, \-\-input-channel
 Filters channels by input channels only
 .TP
