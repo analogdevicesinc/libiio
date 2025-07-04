@@ -291,6 +291,25 @@ int iio_context_add_attr(struct iio_context *ctx,
 		return ret;
 	}
 
+	/* Keep attr values in sync with the names which just got sorted in iio_add_attr() */
+	unsigned int j, new_idx = ctx->attrlist.num - 1;
+
+	/* Find the new index of the added attr */
+	for (j = 0; j < ctx->attrlist.num - 1; j++) {
+		if (!strcmp(ctx->attrlist.attrs[j].name, key)) {
+			new_idx = j;
+			break;
+		}
+	}
+
+	/* If the new position is not at the end, it was inserted at a position
+	causing subsequent attributes to shift forward as they were already sorted */
+	if (new_idx != ctx->attrlist.num - 1) {
+		memmove(&ctx->values[new_idx + 1], &ctx->values[new_idx],
+			(ctx->attrlist.num - new_idx - 1) * sizeof(*ctx->values));
+		ctx->values[new_idx] = new_val;
+	}
+
 	return 0;
 }
 
