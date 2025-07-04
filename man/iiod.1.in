@@ -43,16 +43,10 @@ network, USB, or a UART link.
 Display the version of this program.
 .TP
 .B \-d, \-\-debug
-Use alternative (incompatible) debug interface.
+Output debug log to the standard output.
 .TP
 .B \-D, \-\-demux
 Demux channels directly on the server.
-.TP
-.B \-i, \-\-interactive
-Run iiod in the controlling terminal.
-.TP
-.B \-a, \-\-aio
-Use asynchronous I/O.
 .TP
 .B \-F, \-\-ffs <arg>
 Use the given FunctionFS mountpoint to serve over USB.

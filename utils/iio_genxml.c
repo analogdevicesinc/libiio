@@ -24,9 +24,7 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	("\t[-x <xml_file>]\n"
-		"\t\t\t\t[-u <uri>]\n"
-		"\t\t\t\t[-n <hostname>]"),
+	("[-u <uri>]\n"),
 };
 
 int main(int argc, char **argv)

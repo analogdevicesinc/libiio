@@ -88,6 +88,12 @@ Read and Write IIO Debug attributes
 ##COMMON_OPTION_START##
 ##COMMON_OPTION_STOP##
 .TP
+.B \-w, \-\-write-only
+Do not readback on Writes
+.TP
+.B \-T, \-\-timeout <arg>
+Context timeout in milliseconds. 0 = no timeout (wait forever)
+.TP
 .B \-i, \-\-input-channel
 Filters channels by input channels only
 .TP

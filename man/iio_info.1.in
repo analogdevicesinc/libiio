@@ -44,6 +44,15 @@ is a utility for displaying information about local or remote IIO devices
 .TP
 .B \-a, \-\-auto
 Scan for available contexts and if only one is available use it.
+.TP
+.B \-T, \-\-timeout <arg>
+Context timeout in milliseconds. 0 = no timeout (wait forever)
+.TP
+.B \-d, \-\-read-debug-attr
+Read and print the value of debug attributes.
+.TP
+.B \-n, \-\-no-read-attr
+Do not read or print the value of regular attributes.
 
 .SH RETURN VALUE
 If the specified device is not found, a non-zero exit code is returned.

@@ -52,14 +52,14 @@ Context timeout in milliseconds. 0 = no timeout (wait forever)
 .B \-b, \-\-buffer\-size <arg>
 Size of the capture buffer. Default is 256.
 .TP
-.B \-s, \-\-samples <arg>
-Number of samples to capture, 0 = infinite. Default is 0.
-.TP
 .B \-d, \-\-duration <arg>
 Time to wait (in seconds) before stopping all threads
 .TP
 .B \-t, \-\-threads <arg>
 Number of threads to use
+.TP
+.B \-C, \-\-cma
+Use CMA-Linux allocator for DMA buffer
 .TP
 .B \-v, \-\-verbose
 Increase verbosity (-vv and -vvv for more)

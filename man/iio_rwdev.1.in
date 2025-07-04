@@ -33,7 +33,7 @@ iio_rwdev \- read/write buffers from/to an IIO device
 ]
 [-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] [-w] <iio_device> [<channel> ...]
 .SH DESCRIPTION
-.B iio_reg
+.B iio_rwdev
 is a utility for reading buffers from connected IIO devices, and sending results to standard out.
 
 .SH OPTIONS
@@ -43,17 +43,29 @@ is a utility for reading buffers from connected IIO devices, and sending results
 .B \-w \-\-write
 Write sample data to the IIO device. The default is to read samples from it.
 .TP
-.B \-t \-\-trigger
+.B \-t \-\-trigger <arg>
 Use the specified trigger, if needed on the specified channel
 .TP
-.B \-b \-\-buffer-size
+.B \-r \-\-trigger-rate <arg>
+Set the trigger to the specified rate (Hz). Default is 100 Hz.
+.TP
+.B \-b \-\-buffer-size <arg>
 Size of the capture buffer. Default is 256.
 .TP
-.B \-s \-\-samples
+.B \-s \-\-samples <arg>
 Number of samples (not bytes) to capture, 0 = infinite. Default is 0.
+.TP
+.B \-c \-\-cyclic
+Use cyclic buffer mode.
+.TP
+.B \-B \-\-benchmark
+Benchmark throughput. Statistics will be printed on the standard input.
 .TP
 .B \-T \-\-timeout
 Buffer timeout in milliseconds. 0 = no timeout. Default is 0.
+.TP
+.B \-C, \-\-cma
+Use CMA-Linux allocator for DMA buffer.
 ##COMMON_OPTION_START##
 ##COMMON_OPTION_STOP##
 .SH RETURN VALUE
