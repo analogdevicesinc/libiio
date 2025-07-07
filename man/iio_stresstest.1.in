@@ -46,9 +46,6 @@ is a stress-testing program that can be used to find bugs in Libiio or in the Li
 .B \-a, \-\-auto
 Scan for available contexts and if only one is available use it.
 .TP
-.B \-T, \-\-timeout <arg>
-Context timeout in milliseconds. 0 = no timeout (wait forever)
-.TP
 .B \-b, \-\-buffer\-size <arg>
 Size of the capture buffer. Default is 256.
 .TP
