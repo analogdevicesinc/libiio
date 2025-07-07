@@ -51,9 +51,6 @@ Size of the capture buffer. Default is 256.
 .TP
 .B \-s \-\-samples
 Number of samples (not bytes) to capture, 0 = infinite. Default is 0.
-.TP
-.B \-T \-\-timeout
-Buffer timeout in milliseconds. 0 = no timeout. Default is 0.
 ##COMMON_OPTION_START##
 ##COMMON_OPTION_STOP##
 .SH RETURN VALUE
