@@ -60,6 +60,14 @@ static int iio_attr_compare(const void *p1, const void *p2)
 	return strcmp(attr1->name, attr2->name);
 }
 
+static int iio_attr_val_compare(const void *p1, const void *p2)
+{
+	const struct iio_attr_val *pair1 = (const struct iio_attr_val *)p1;
+	const struct iio_attr_val *pair2 = (const struct iio_attr_val *)p2;
+
+	return strcmp(pair1->attr->name, pair2->attr->name);
+}
+
 void iio_sort_attrs(struct iio_attr_list *attrs)
 {
 	if (attrs->num > 0) {
@@ -78,4 +86,12 @@ void iio_sort_channels(struct iio_device *dev)
 {
 	qsort(dev->channels, dev->nb_channels,
 	      sizeof(*dev->channels), iio_channel_compare);
+}
+
+void iio_sort_attr_val(struct iio_attr_val_list *list)
+{
+	if (list->num > 0) {
+		qsort(list->attr_val_pairs, list->num,
+		      sizeof(*list->attr_val_pairs), iio_attr_val_compare);
+	}
 }

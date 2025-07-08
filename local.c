@@ -858,7 +858,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	name = get_short_attr_name(chn, name);
 
 	attrs = is_scan_element ? &pdata->protected : &chn->attrlist;
-	ret = iio_add_attr(p, attrs, name, path, IIO_ATTR_TYPE_CHANNEL);
+	ret = iio_add_attr(p, attrs, name, NULL, NULL, path, IIO_ATTR_TYPE_CHANNEL);
 	if (ret)
 		return ret;
 
