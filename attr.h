@@ -24,7 +24,7 @@ void iio_free_attr_data(struct iio_attr *attr);
 void iio_free_attrs(const struct iio_attr_list *attrs);
 
 int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
-		 const char *name, const char *filename,
-		 enum iio_attr_type type);
+		 const char *name, char ***values, char *value,
+		 const char *filename, enum iio_attr_type type);
 
 #endif /* __IIO_ATTR_H__ */

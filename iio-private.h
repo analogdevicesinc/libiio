@@ -78,6 +78,16 @@ struct iio_attr_list {
 	unsigned int num;
 };
 
+struct iio_attr_val {
+	struct iio_attr *attr;
+	char *value;
+};
+
+struct iio_attr_val_list {
+	struct iio_attr_val *attr_val_pairs;
+	unsigned int num;
+};
+
 struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;

@@ -182,10 +182,22 @@ iio_attr_get_static_value(const struct iio_attr *attr)
 }
 
 int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
-		 const char *name, const char *filename,
-		 enum iio_attr_type type)
+		 const char *name, char ***values, char *value,
+		 const char *filename, enum iio_attr_type type)
 {
 	struct iio_attr *attr;
+	char **lvalues = NULL;
+	struct iio_attr_val_list attrs_and_vals;
+	unsigned int i;
+
+	if (value || value) {
+		lvalues = realloc(*values, (1 + attrs->num) * sizeof(*values[0]));
+		if (!lvalues)
+			return -ENOMEM;
+
+		lvalues[attrs->num] = value;
+		*values = lvalues;
+	}
 
 	attr = realloc(attrs->attrs, (1 + attrs->num) * sizeof(*attrs->attrs));
 	if (!attr)
@@ -215,7 +227,30 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 
 	attrs->num++;
 
-	iio_sort_attrs(attrs);
+	if (lvalues) {
+		attrs_and_vals.attr_val_pairs = malloc(attrs->num * sizeof(struct iio_attr_val));
+		if (!attrs_and_vals.attr_val_pairs)
+			return -ENOMEM;
+		attrs_and_vals.num = attrs->num;
+		for (i = 0; i < attrs->num; i++) {
+			attrs_and_vals.attr_val_pairs[i].attr = &attrs->attrs[i];
+			attrs_and_vals.attr_val_pairs[i].value = lvalues[i];
+		}
+		iio_sort_attr_val(&attrs_and_vals);
+		struct iio_attr *ordered_attrs = malloc(attrs->num * sizeof(ordered_attrs[0]));
+		char ** ordered_vals = malloc(attrs->num * sizeof(ordered_vals[0]));
+		for (i = 0; i < attrs->num; i++) {
+			ordered_attrs[i] = *attrs_and_vals.attr_val_pairs[i].attr;
+			ordered_vals[i] = attrs_and_vals.attr_val_pairs[i].value;
+		}
+		memcpy(attrs->attrs, ordered_attrs, sizeof(ordered_attrs[0]));
+		memcpy(lvalues, ordered_vals, sizeof(ordered_vals[0]));
+		free(ordered_attrs);
+		free(ordered_vals);
+		free(attrs_and_vals.attr_val_pairs);
+	} else {
+		iio_sort_attrs(attrs);
+	}
 
 	return 0;
 }
@@ -232,7 +267,7 @@ int iio_device_add_attr(struct iio_device *dev,
 	union iio_pointer p = { .dev = dev, };
 	int ret;
 
-	ret = iio_add_attr(p, &dev->attrlist[type], name, NULL, type);
+	ret = iio_add_attr(p, &dev->attrlist[type], name, NULL, NULL, NULL, type);
 	if (ret < 0)
 		return ret;
 
@@ -246,7 +281,7 @@ int iio_channel_add_attr(struct iio_channel *chn,
 	union iio_pointer p = { .chn = chn, };
 	int ret;
 
-	ret = iio_add_attr(p, &chn->attrlist, name, filename,
+	ret = iio_add_attr(p, &chn->attrlist, name, NULL, NULL, filename,
 			   IIO_ATTR_TYPE_CHANNEL);
 	if (ret < 0)
 		return ret;
@@ -258,7 +293,7 @@ int iio_channel_add_attr(struct iio_channel *chn,
 int iio_context_add_attr(struct iio_context *ctx,
 			 const char *key, const char *value)
 {
-	char **values, *new_val;
+	char *new_val;
 	union iio_pointer p = { .ctx = ctx, };
 	unsigned int i;
 	int ret;
@@ -275,17 +310,8 @@ int iio_context_add_attr(struct iio_context *ctx,
 		}
 	}
 
-	values = realloc(ctx->values,
-			(ctx->attrlist.num + 1) * sizeof(*ctx->values));
-	if (!values) {
-		free(new_val);
-		return -ENOMEM;
-	}
-
-	values[ctx->attrlist.num] = new_val;
-	ctx->values = values;
-
-	ret = iio_add_attr(p, &ctx->attrlist, key, NULL, IIO_ATTR_TYPE_CONTEXT);
+	ret = iio_add_attr(p, &ctx->attrlist, key, &ctx->values, new_val, NULL,
+		IIO_ATTR_TYPE_CONTEXT);
 	if (ret) {
 		free(new_val);
 		return ret;
