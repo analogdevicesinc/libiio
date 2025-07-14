@@ -119,7 +119,7 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 
 	if (ZSTD_isError(ret)) {
 		IIO_WARNING("Unable to compress XML string: %s\n",
-			    ZSTD_getErrorName(xml_len));
+			    ZSTD_getErrorName(ret));
 		free(buf);
 		return NULL;
 	}
