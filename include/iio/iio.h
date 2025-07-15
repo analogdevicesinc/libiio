@@ -1285,6 +1285,10 @@ __api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyc
  * @return On error, a negative error code is returned */
 __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
 
+/** @brief Obtain the number of bytes used in the current block
+ * @return Number of bytes used in the current block */
+__api size_t iio_block_get_bytes_used(const struct iio_block *block);
+
 
 /** @brief Retrieve a pointer to the iio_buffer structure
  * @param block A pointer to an iio_block structure

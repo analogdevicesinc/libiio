@@ -485,7 +485,7 @@ int main(int argc, char **argv)
 			total += after - before;
 
 			if (++i == refill_per_benchmark) {
-				rate = buffer_size * sample_size *
+				rate = iio_block_get_bytes_used(block) * sample_size *
 					refill_per_benchmark * 1000000ull / total;
 				mib = rate > 1048576;
 

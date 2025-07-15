@@ -318,3 +318,7 @@ int iio_block_disable_cpu_access(struct iio_block *block, bool disable)
 
 	return -ENOSYS;
 }
+
+size_t iio_block_get_bytes_used(const struct iio_block *block) {
+	return block->bytes_used;
+}
