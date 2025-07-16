@@ -24,6 +24,17 @@ jobs:
           pkg update
           pkg install -y git cmake ninja libxml2 bison flex libserialport avahi doxygen graphviz pkgconf
         run: |
+         LIBXML2_VERSION=$(pkg query '%v' libxml2)
+         echo "LIBXML2_VERSION is: $LIBXML2_VERSION"
+         # Compare versions (removes dots for integer comparison, e.g., 2.12.3 -> 2123)
+         MIN_VERSION=21405
+         INSTALLED_VERSION=$(echo $LIBXML2_VERSION | awk -F. '{ printf "%d%02d%02d\n", $1,$2,$3 }')
+         if [ "$INSTALLED_VERSION" -lt "$MIN_VERSION" ]; then
+           echo "libxml2 version is lower than 2.14.5, remove broken libxml2-config.cmake..."
+           rm /usr/local/lib/cmake/libxml2/libxml2-config.cmake
+         else
+           echo "libxml2 version is >= 2.14.5, no .cmake file removal needed. Consider removing this step."
+         fi
          mkdir build
          cd build
          cmake .. -DWITH_SERIAL_BACKEND=ON
