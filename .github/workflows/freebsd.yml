@@ -22,7 +22,7 @@ jobs:
         usesh: true
         prepare: |
           pkg update
-          pkg install -y git cmake ninja libxml2 bison flex libserialport avahi doxygen graphviz
+          pkg install -y git cmake ninja libxml2 bison flex libserialport avahi doxygen graphviz pkgconf
         run: |
          mkdir build
          cd build
