@@ -456,5 +456,7 @@ void libiio_cleanup_xml_backend(void)
 	 * detect a memory leak.
 	 */
 	xmlCleanupParser();
+#if LIBXML_VERSION < 21200  /* Version 2.12.0 */
 	xmlMemoryDump();
+#endif
 }
