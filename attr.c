@@ -314,3 +314,100 @@ void iio_free_attrs(const struct iio_attr_list *attrs)
 
 	free(attrs->attrs);
 }
+
+int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, double *max)
+{
+	double lmin, lstep, lmax;
+	char extra;
+	ssize_t ret;
+	int n;
+
+	if (!attr)
+		return -EINVAL;
+
+	if (!string_ends_with(iio_attr_get_name(attr), "available"))
+		return -ENXIO;
+
+	char buf[MAX_ATTR_VALUE];
+	ret = iio_attr_read_raw(attr, buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	// Expect format: [min step max]
+#if defined(_MSC_VER)
+    n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra, (unsigned int)sizeof(extra));
+#else
+    n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra);
+#endif
+
+	if (n == 4 && extra == ']') {
+		*min = lmin;
+		*step = lstep;
+		*max = lmax;
+	} else {
+		return 0;
+	}
+
+	return 1;
+}
+
+int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count)
+{
+	*count = 0;
+	size_t n = 0;
+	size_t capacity = 4;
+	char *saveptr;
+	int ret;
+
+	if (!attr)
+		return -EINVAL;
+
+	if (!string_ends_with(iio_attr_get_name(attr), "available"))
+		return -ENXIO;
+
+	char buf[MAX_ATTR_VALUE];
+	ret = (int)iio_attr_read_raw(attr, buf, sizeof(buf));
+	if (ret < 0)
+		return ret;
+
+	if (buf[0] == '[')
+		return 0;
+
+	*list = (char **)malloc(capacity * sizeof(char *));
+	if (!*list)
+		return -ENOMEM;
+
+	char *token = iio_strtok_r(buf, " \n", &saveptr);
+	while (token) {
+		if (n >= capacity) {
+			capacity *= 2;
+			char **tmp = (char **)realloc(*list, capacity * sizeof(char *));
+			if (!tmp) {
+				// Free previously allocated strings
+				size_t i = 0;
+				for (; i < n; ++i)
+					free(*list[i]);
+				free(*list);
+				return -ENOMEM;
+			}
+			*list = tmp;
+		}
+		*list[n++] = iio_strdup(token);
+		token = iio_strtok_r(NULL, " \n", &saveptr);
+	}
+
+	*count = n;
+
+    return 1;
+}
+
+void iio_available_list_free(char **list, size_t count)
+{
+	if (list) {
+		size_t i = 0;
+		for (; i < count; i++)
+			if (list[i])
+				free(list[i]);
+		free(list);
+	}
+}
