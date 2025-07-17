@@ -106,6 +106,8 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 	void *buf;
 #if WITH_ZSTD
 	size_t ret;
+	char *bytes;
+	size_t i;
 
 	len = ZSTD_compressBound(xml_len);
 	buf = malloc(len);
@@ -120,6 +122,13 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 	if (ZSTD_isError(ret)) {
 		IIO_WARNING("Unable to compress XML string: %s\n",
 			    ZSTD_getErrorName(ret));
+		fprintf(stderr, "Showing data (buf) from failed compression: \n");
+		bytes = (char *)buf;
+		for (i = 0; i < len; i++) {
+			fprintf(stderr, "%02X",bytes[i]);
+		}
+		fprintf(stderr, "\n");
+
 		free(buf);
 		return NULL;
 	}
