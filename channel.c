@@ -569,8 +569,11 @@ void iio_channel_convert_inverse(const struct iio_channel *chn,
 	uint8_t buf[1024];
 
 	/* Somehow I doubt we will have samples of 8192 bits each. */
-	if (len > sizeof(buf))
+	if (len > sizeof(buf)) {
+		chn_err(chn, "Sample size %u bytes exceeds maximum supported size %zu"
+			"bytes\n", len, sizeof(buf));
 		return;
+	}
 
 	for (dst_ptr = (uintptr_t) dst; dst_ptr < end_ptr;
 			src_ptr += len, dst_ptr += len) {
