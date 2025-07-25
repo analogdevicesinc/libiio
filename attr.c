@@ -314,3 +314,155 @@ void iio_free_attrs(const struct iio_attr_list *attrs)
 
 	free(attrs->attrs);
 }
+
+int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, double *max)
+{
+	double lmin, lstep, lmax;
+	char extra;
+	ssize_t ret;
+	int n;
+
+	if (!attr)
+		return -EINVAL;
+
+	if (!string_ends_with(iio_attr_get_name(attr), "available"))
+		return -ENXIO;
+
+	char buf[MAX_ATTR_VALUE];
+	ret = iio_attr_read_raw(attr, buf, sizeof(buf));
+	if (ret < 0)
+		return (int) ret;
+
+	// Expect format: [min step max]
+#if defined(_MSC_VER)
+	n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra, (unsigned int)sizeof(extra));
+#else
+	n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra);
+#endif
+
+	if (n == 4 && extra == ']') {
+		*min = lmin;
+		*step = lstep;
+		*max = lmax;
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	return 0;
+}
+
+int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count)
+{
+	size_t n = 0;
+	size_t capacity = 4;
+	char *saveptr;
+	char **local_list = NULL;
+	int ret;
+
+	if (!attr)
+		return -EINVAL;
+
+	if (!string_ends_with(iio_attr_get_name(attr), "available"))
+		return -ENXIO;
+
+	char buf[MAX_ATTR_VALUE];
+	ret = (int)iio_attr_read_raw(attr, buf, sizeof(buf));
+	if (ret < 0)
+		return ret;
+
+	if (buf[0] == '[')
+		return -EOPNOTSUPP;
+
+	local_list = malloc(capacity * sizeof(char *));
+	if (!local_list)
+		return -ENOMEM;
+
+	char *token = iio_strtok_r(buf, " \n", &saveptr);
+	while (token) {
+		if (n >= capacity) {
+			capacity *= 2;
+			char **tmp = (char **)realloc(local_list, capacity * sizeof(char *));
+			if (!tmp) {
+				// Free previously allocated strings
+				size_t i = 0;
+				for (; i < n; ++i)
+					free(local_list[i]);
+				free(local_list);
+				return -ENOMEM;
+			}
+			local_list = tmp;
+		}
+		local_list[n++] = iio_strdup(token);
+		token = iio_strtok_r(NULL, " \n", &saveptr);
+	}
+
+	*list = local_list;
+	*count = n;
+
+    return 0;
+}
+
+void iio_available_list_free(char **list, size_t count)
+{
+	size_t i;
+
+	if (list) {
+		for (i = 0; i < count; i++)
+			if (list[i])
+				free(list[i]);
+		free(list);
+	}
+}
+
+int iio_attr_get_available_buf(const struct iio_attr *attr, char *buf,
+	size_t buflen, char **list, size_t *count)
+{
+	ssize_t ret;
+	size_t n = 0, max = (size_t)-1;
+	char *p, *delim;
+	size_t remaining;
+
+	if (!buf || buflen == 0)
+		return -EINVAL;
+
+	if (!string_ends_with(iio_attr_get_name(attr), "available"))
+		return -ENXIO;
+
+	if (list && count)
+		max = *count;
+	else if (list && !count)
+		max = buflen / 2 + 1; // heuristic: max tokens if all single chars and spaces
+
+	ret = iio_attr_read_raw(attr, buf, buflen);
+	if (ret < 0)
+		return (int)ret;
+
+	if (buf[0] == '[')
+		return -EOPNOTSUPP;
+
+	p = buf;
+	remaining = buflen - (size_t)(p - buf);
+
+	while (n < max && remaining && *p) {
+		if (list)
+			list[n] = p;
+		n++;
+
+		delim = (char *)memchr((void *)p, (int)' ', remaining);
+		if (delim) {
+			*delim = '\0';
+			p = delim + 1;
+			remaining = buflen - (size_t)(p - buf);
+		} else {
+			break;
+		}
+	}
+
+	if (list && count && *p && n == max)
+		return -ENOSPC;
+
+	if (count)
+		*count = n;
+
+	return 0;
+}
