@@ -421,3 +421,14 @@ uint64_t iio_read_counter_us(void)
 
 	return value;
 }
+
+bool string_ends_with(const char *string, const char *suffix)
+{
+	size_t string_len = strlen(string);
+	size_t suffix_len = strlen(suffix);
+
+	if (string_len < suffix_len)
+		return false;
+
+	return strcmp(string + string_len - suffix_len, suffix) == 0;
+}
