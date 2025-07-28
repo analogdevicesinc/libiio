@@ -445,6 +445,65 @@ iio_attr_get_filename(const struct iio_attr *attr);
 __api __pure const char *
 iio_attr_get_static_value(const struct iio_attr *attr);
 
+/** @brief Extract the range from an attribute with suffix '_available'
+ * @param attr A pointer to an iio_attr structure
+ * @param min Will be set with the range minimum value if string was successfully parsed
+ * @param step Will be set with the range step value if string was successfully parsed
+ * @param max Will be set with the range maximum value if string was successfully parsed
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned. For attributes without the
+ * '_available' suffix, -ENXIO is returned. For attributes whose values do not follow
+ * the [min step max] format, -EOPNOTSUPP is returned. */
+__api __pure int
+iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, double *max);
+
+/** @brief Extract the list of elements from an attribute with suffix '_available'
+ * @param attr A pointer to an iio_attr structure
+ * @param list A pointer to pointer to a dynamically allocated array of strings
+ * @param count Will be set with the number of words found only if the string was
+ * successfully parsed.
+ * @return On success, a dynamically allocated array of strings. It is the caller’s
+ * responsibility to free these newly allocated resources
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned. For attributes without the
+ * '_available' suffix, -ENXIO is returned. For attributes whose values are in a range
+ * format, -EOPNOTSUPP is returned. */
+__api __pure int
+iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count);
+
+ /** @brief A variant of iio_attr_get_available() that uses a caller-supplied,
+ * preallocated buffer. If the optional 'list' and 'count' parameters are
+ * provided, the buffer will be tokenized in place by replacing each delimiter
+ * with a null terminator ('\0'). As a result, each element in 'list' will
+ * point to the start of a substring in the buffer, representing one of the
+ * available values. For instance, 'list[0]' points to the first value,
+ * 'list[1]' to the second, and so forth.
+ * @param attr A pointer to an iio_attr structure
+ * @param buf A buffer where the available data will be stored
+ * @param buflen The available length of the buffer, in bytes
+ * @param list Optional output array of char* pointers. Each element points to
+ * a token within the provided buffer and must not be freed, as the data is
+ * part of the buffer itself.
+ * @param count On input: should contain the size of the list[] array (number
+ * of available slots). On output: will contain the actual number of tokens
+ * (strings) found and stored in list[].
+ * parsed. On fail, it will be set to 0
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned. For attributes without
+ * the '_available' suffix, -ENXIO is returned. For attributes whose values are
+ * in a range format, -EOPNOTSUPP is returned. If not enough space is available in
+ * list[], the function returns -ENOSPC*/
+__api __pure int
+iio_attr_get_available_buf(const struct iio_attr *attr, char *buf,
+		size_t buflen, char **list, size_t *count);
+
+/** @brief Free the resources allocated only by iio_attr_get_available()
+ * @param list A pointer to a dynamically allocated array to be freed
+ * @param count The number of elements counted by iio_attr_get_available()
+*/
+__api
+void iio_available_list_free(char **list, size_t count);
+
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
 /** @defgroup Scan Functions for scanning available contexts
