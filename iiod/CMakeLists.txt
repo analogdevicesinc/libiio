@@ -144,6 +144,10 @@ if (WITH_UPSTART)
 	)
 endif()
 
+if (WITH_GCOV)
+	enable_coverage(iiod)
+endif()
+
 toggle_iio_feature("${WITH_IIOD_SERIAL}" iiod-serial)
 toggle_iio_feature("${WITH_IIOD_NETWORK}" iiod-network)
 toggle_iio_feature("${WITH_IIOD_V0_COMPAT}" iiod-v0-compat)

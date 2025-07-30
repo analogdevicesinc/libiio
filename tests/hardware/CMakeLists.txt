@@ -14,4 +14,7 @@ foreach(TEST_SRC ${TEST_SOURCES})
         COMMAND ${TEST_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+    if (WITH_GCOV)
+      enable_coverage(${TEST_NAME})
+    endif()
 endforeach()

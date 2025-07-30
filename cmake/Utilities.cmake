@@ -9,3 +9,8 @@ function(check_pthread_set_name HAS_PTHREAD)
         set(CMAKE_REQUIRED_LIBRARIES)
         set(CMAKE_REQUIRED_DEFINITIONS)
 endfunction()
+
+function(enable_coverage TARGET_NAME)
+    target_compile_options(${TARGET_NAME} PRIVATE -O0 -g --coverage)
+    target_link_options(${TARGET_NAME} PRIVATE --coverage)
+endfunction()
