@@ -144,6 +144,10 @@ if (WITH_UPSTART)
 	)
 endif()
 
+if (WITH_GCOV)
+	enable_coverage(iiod)
+endif()
+
 list(APPEND OPTIONS_LISTS
 	"WITH_IIOD_SERIAL"
 	"WITH_IIOD_NETWORK"

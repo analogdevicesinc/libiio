@@ -24,3 +24,7 @@ macro(iio_option variable help_text value group)
 	endif()
 
 endmacro()
+function(enable_coverage TARGET_NAME)
+    target_compile_options(${TARGET_NAME} PRIVATE -O0 -g --coverage)
+    target_link_options(${TARGET_NAME} PRIVATE --coverage)
+endfunction()
