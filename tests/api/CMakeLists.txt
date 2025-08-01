@@ -7,6 +7,7 @@ set(API_TEST_TARGETS
     test_toplevel
     test_context
     test_device
+    test_events
 )
 
 # Create a helper library for common test utilities
