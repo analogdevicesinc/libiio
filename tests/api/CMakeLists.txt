@@ -11,6 +11,7 @@ set(API_TEST_TARGETS
     test_hwmon
     test_channel
     test_attr
+    test_typed_attr
 )
 
 # Create a helper library for common test utilities
