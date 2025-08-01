@@ -9,6 +9,7 @@ set(API_TEST_TARGETS
     test_device
     test_events
     test_hwmon
+    test_channel
 )
 
 # Create a helper library for common test utilities
