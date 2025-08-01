@@ -5,6 +5,7 @@ set(API_TEST_TARGETS
     test_error_handling
     test_scan
     test_toplevel
+    test_context
 )
 
 # Create a helper library for common test utilities
@@ -19,6 +20,7 @@ foreach(test ${API_TEST_TARGETS})
     target_link_libraries(${test} PRIVATE test_common iio)
     target_include_directories(${test} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}
     )
