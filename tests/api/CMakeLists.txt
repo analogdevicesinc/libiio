@@ -8,6 +8,7 @@ set(API_TEST_TARGETS
     test_context
     test_device
     test_events
+    test_hwmon
 )
 
 # Create a helper library for common test utilities
