@@ -4,6 +4,7 @@ enable_testing()
 set(API_TEST_TARGETS
     test_error_handling
     test_scan
+    test_toplevel
 )
 
 # Create a helper library for common test utilities
