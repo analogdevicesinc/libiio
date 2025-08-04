@@ -62,20 +62,24 @@ static int iio_attr_compare(const void *p1, const void *p2)
 
 void iio_sort_attrs(struct iio_attr_list *attrs)
 {
-	if (attrs->num > 0) {
+	if (attrs && attrs->num > 1) {
 		qsort(attrs->attrs, attrs->num,
-		      sizeof(*attrs->attrs), iio_attr_compare);
+			sizeof(*attrs->attrs), iio_attr_compare);
 	}
 }
 
 void iio_sort_devices(struct iio_context *ctx)
 {
-	qsort(ctx->devices, ctx->nb_devices,
-	      sizeof(*ctx->devices), iio_device_compare);
+	if (ctx->devices && ctx->nb_devices > 1) {
+		qsort(ctx->devices, ctx->nb_devices,
+			sizeof(*ctx->devices), iio_device_compare);
+	}
 }
 
 void iio_sort_channels(struct iio_device *dev)
 {
-	qsort(dev->channels, dev->nb_channels,
-	      sizeof(*dev->channels), iio_channel_compare);
+	if (dev->channels && dev->nb_channels > 1) {
+		qsort(dev->channels, dev->nb_channels,
+			sizeof(*dev->channels), iio_channel_compare);
+	}
 }
