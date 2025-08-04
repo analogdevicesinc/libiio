@@ -45,5 +45,19 @@ foreach(test ${API_TEST_TARGETS})
     endif()
 endforeach()
 
+# Master test runner
+add_executable(run_all_api_tests run_all_api_tests.c)
+target_link_libraries(run_all_api_tests PRIVATE test_common iio)
+target_include_directories(run_all_api_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}
+)
+set_target_properties(run_all_api_tests PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED ON
+    C_EXTENSIONS OFF
+)
+
 # Make targets available to parent scope
 set(API_TEST_TARGETS ${API_TEST_TARGETS} PARENT_SCOPE)
