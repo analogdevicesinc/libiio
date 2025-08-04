@@ -13,6 +13,7 @@ set(API_TEST_TARGETS
     test_attr
     test_typed_attr
     test_buffer
+    test_lowlevel
 )
 
 # Create a helper library for common test utilities
