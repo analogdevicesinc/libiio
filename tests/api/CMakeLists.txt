@@ -12,6 +12,7 @@ set(API_TEST_TARGETS
     test_channel
     test_attr
     test_typed_attr
+    test_buffer
 )
 
 # Create a helper library for common test utilities
