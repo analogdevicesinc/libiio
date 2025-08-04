@@ -60,7 +60,7 @@ ssize_t iio_scan_context_get_info_list(struct iio_scan_context *ctx,
 
 	*info = scan_result.info;
 
-	if (scan_result.size > 1) {
+	if (scan_result.info && scan_result.size > 1) {
 		qsort(scan_result.info, scan_result.size,
 		      sizeof(struct iio_context_info *),
 		      iio_context_info_compare);
