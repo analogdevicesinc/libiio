@@ -744,7 +744,9 @@ if(WITH_TESTS)
 		# Add custom target to run tests with coverage
 		add_custom_target(
 			coverage
-			COMMAND ${CMAKE_CTEST_COMMAND} --progress &&  lcov -c -d ${CMAKE_BINARY_DIR} -o main_coverage.info && genhtml main_coverage.info -o coverage
+			COMMAND ${CMAKE_CTEST_COMMAND} --progress &&  lcov -c -d ${CMAKE_BINARY_DIR} -o main_coverage.info
+			COMMAND lcov --remove main_coverage.info 'deps/*' '/usr/include/libusb-1.0' -o main_coverage.filtered.info
+			COMMAND genhtml main_coverage.filtered.info -o coverage
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 		message(STATUS "Coverage flags enabled")
