@@ -88,6 +88,9 @@ static void print_attr(const struct iio_attr *attr,
 	char buf[BUF_SIZE];
 	const char *name, *fn, *value;
 	ssize_t ret = 0;
+	char **available_list;
+	size_t available_count, i;
+	double min, step, max;
 
 	printf("%.*sattr %2u: ", level, "\t\t\t\t", idx);
 
@@ -117,19 +120,36 @@ static void print_attr(const struct iio_attr *attr,
 
 	buf[BUF_SIZE - 1] = '\0';
 	value = iio_attr_get_static_value(attr);
-	if (!value) {
-		ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
-		if (ret < 0)
-			iio_strerror((int)ret, buf, sizeof(buf));
-		value = buf;
-	}
-	
-	if (ret >= 0)
+	if (value) {
 		printf(" value: %s\n", value);
-	else if (colors)
-		print_fmt(" value: " FMT_ERR "\n", value);
-	else
-		printf(" value: ERROR: %s\n", value);
+	} else {
+		ret = iio_attr_get_available(attr, &available_list, &available_count);
+		if (ret == 0) {
+			printf(" value:");
+			for (i = 0; i < available_count; i++) {
+				printf(" %s", available_list[i]);
+			}
+			printf("\n");
+			iio_available_list_free(available_list, available_count);
+		} else if (ret == -EOPNOTSUPP) {
+			ret = iio_attr_get_range(attr, &min, &step, &max);
+			if (ret == 0)
+				printf(" value: range[min: %g step: %g max: %g]\n", min, step,
+					max);
+		} else if (ret == -ENXIO) {
+			ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+			if (ret >= 0)
+				printf(" value: %s\n", buf);
+		}
+	}
+
+	if (ret < 0) {
+		iio_strerror((int)ret, buf, sizeof(buf));
+		if (colors)
+			print_fmt(" value: " FMT_ERR "\n", buf);
+		else
+			printf(" value: ERROR: %s\n", buf);
+	}
 }
 
 static void print_channel(const struct iio_channel *chn)
