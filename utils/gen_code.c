@@ -99,7 +99,7 @@ void gen_start(const char *gen_file)
 		    " *******************************************************************\n");
 		fprintf(fd, " * Compile with 'gcc %s -o /tmp/aout -liio'\n", gen_file);
 		fprintf(fd, " *******************************************************************/\n");
-		fprintf(fd, "#include <stdio.h>\n#include <errno.h>\n#include <iio.h>\n\n");
+		fprintf(fd, "#include <stdio.h>\n#include <errno.h>\n#include <iio/iio.h>\n\n");
 
 		fprintf(fd, "/* These macros are for illustrative purposes only */\n");
 		fprintf(fd, "#define IIO_ASSERT(expr) { \\\n");
