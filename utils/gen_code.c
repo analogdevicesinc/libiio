@@ -280,13 +280,13 @@ void gen_function(const char* prefix, const char* target,
 		fprintf(fd, "\t/* For other types, use:\n");
 		fprintf(fd, "\t *  attr = iio_%s_find_attr(%s, \"%s\");\n"
 			    "\t    ret = iio_attr_%s_bool(attr, v_bool);\n",
-			prefix, rw, target, iio_attr_get_name(attr));
+			prefix, target, iio_attr_get_name(attr), rw);
 		fprintf(fd, "\t *  attr = iio_%s_find_attr(%s, \"%s\");\n"
 			    "\t    ret = iio_attr_%s_double(attr, v_double);\n",
-			prefix, rw, target, iio_attr_get_name(attr));
+			prefix, target, iio_attr_get_name(attr), rw);
 		fprintf(fd, "\t *  attr = iio_%s_find_attr(%s, \"%s\");\n"
 			    "\t    ret = iio_attr_%s_longlong(attr, v_ll);\n",
-			prefix, rw, target, iio_attr_get_name(attr));
+			prefix, target, iio_attr_get_name(attr), rw);
 		fprintf(fd, "\t *******************************************************************/\n");
 		if (wbuf) {
 			fprintf(fd, "\tprintf(\"Wrote %%zi bytes\\n\", ret);\n\n");
