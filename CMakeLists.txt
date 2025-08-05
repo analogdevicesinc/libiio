@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.13)
 cmake_policy(SET CMP0048 NEW) # project() sets the VERSION variables
 project(libiio LANGUAGES C VERSION 1.0)
 
+include(cmake/Utilities.cmake)
+
 # Set the default install path to /usr
 if (NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "default install path" FORCE)
@@ -88,6 +90,9 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
 		)
 		if (NOT WIN32)
 			set_target_properties(iio-compat PROPERTIES SUFFIX .so.0)
+		endif()
+		if (WITH_GCOV)
+			enable_coverage(iio-compat)
 		endif()
 	endif()
 endif()
@@ -320,11 +325,7 @@ if (MSVC)
 elseif (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	option(WITH_GCOV "Build with gcov profiling flags" OFF)
 	if (WITH_GCOV)
-		target_compile_options(iio PRIVATE -fprofile-arcs -ftest-coverage)
-
-		# TODO: Use cmake_link_options() in CMake 3.13+
-		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
-		SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}  -fprofile-arcs -ftest-coverage")
+		enable_coverage(iio)
 	endif()
 	if(COMPILE_WARNING_AS_ERROR)
 		message(STATUS "Setting -Werror")
@@ -627,6 +628,10 @@ if (IIOD_CLIENT OR WITH_IIOD OR WITH_LIBTINYIIOD)
 
 	# Use the same compile options as Libiio
 	target_compile_options(iiod-responder PUBLIC $<TARGET_PROPERTY:iio,INTERFACE_COMPILE_OPTIONS>)
+
+	if (WITH_GCOV)
+		enable_coverage(iiod-responder)
+	endif()
 endif()
 
 if (IIOD_CLIENT)
@@ -689,6 +694,36 @@ add_subdirectory(bindings)
 
 option(WITH_MAN "Generate on-line reference manuals (man pages)" OFF)
 add_subdirectory(man)
+
+# Testing
+option(TESTS "Enabling unit testing" OFF)
+option(TESTS_DEBUG "Enable test debugging" OFF)
+if(TESTS)
+	include(CTest)
+	enable_testing()
+	add_subdirectory(tests)
+	if(WITH_GCOV)
+		if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+			message(FATAL_ERROR "Coverage only supported on Linux")
+		endif()
+		# Verify that lcov is installed
+		find_program(LCOV_PATH lcov)
+		if(NOT LCOV_PATH)
+			message(FATAL_ERROR "lcov not found! Aborting...")
+		endif()
+
+		# Add custom target to run tests with coverage
+		add_custom_target(
+			coverage
+			COMMAND ${CMAKE_CTEST_COMMAND} --progress &&  lcov -c -d ${CMAKE_BINARY_DIR} -o main_coverage.info
+			COMMAND lcov --remove main_coverage.info 'deps/*' '/usr/include/libusb-1.0' -o main_coverage.filtered.info
+			COMMAND genhtml main_coverage.filtered.info -o coverage
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+		message(STATUS "Coverage flags enabled")
+	endif()
+
+endif()
 
 include(cmake/Install.cmake)
 
