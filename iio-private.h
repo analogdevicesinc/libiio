@@ -234,6 +234,7 @@ extern const struct iio_backend * const iio_backends[];
 extern const unsigned int iio_backends_size;
 
 extern uint64_t library_startup_time_us;
+extern iio_get_ticks_us platform_get_ticks_us;
 
 ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
 					  const char *before,

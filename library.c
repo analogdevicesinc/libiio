@@ -9,6 +9,7 @@
 #include "iio-private.h"
 #include <iio-config.h>
 
+iio_get_ticks_us platform_get_ticks_us = NULL;
 uint64_t library_startup_time_us;
 
 static void libiio_init(void)
@@ -20,6 +21,13 @@ static void libiio_exit(void)
 {
 	if (WITH_XML_BACKEND)
 		libiio_cleanup_xml_backend();
+}
+
+void iio_set_get_ticks_us_cb(iio_get_ticks_us cb)
+{
+	if (platform_get_ticks_us != cb) {
+		platform_get_ticks_us = cb;
+	}
 }
 
 #if defined(_MSC_BUILD)
