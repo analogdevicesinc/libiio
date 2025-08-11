@@ -105,6 +105,61 @@ static inline const char *get_label_or_name_or_id(const struct iio_device *dev)
 	return iio_device_get_id(dev);
 }
 
+static void print_attribute_value(const struct iio_device *dev,
+                                  const struct iio_attr *attr,
+                                  const char *prefix,
+                                  enum verbosity quiet)
+{
+	ssize_t ret;
+	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	char **available_list;
+	size_t available_count, i;
+	double min, step, max;
+	bool has_options = false;
+	bool has_range = false;
+
+	ret = iio_attr_get_available(attr, &available_list, &available_count);
+	if (ret == 0) {
+		has_options = true;
+	} else if (ret == -EOPNOTSUPP) {
+		ret = iio_attr_get_range(attr, &min, &step, &max);
+		has_range = (ret == 0);
+	} else if (ret == -ENXIO) {
+		ret = iio_attr_read_raw(attr, buf, BUF_SIZE);
+	}
+
+	if (ret >= 0) {
+		if (quiet == ATTR_NORMAL) {
+			if (has_options) {
+				for (i = 0; i < available_count; i++)
+					printf("%s ", available_list[i]);
+				printf("\n");
+				iio_available_list_free(available_list, available_count);
+			} else if (has_range) {
+				printf("%g %g %g\n", min, step, max);
+			} else {
+				printf("%s\n", buf);
+			}
+		} else if (quiet == ATTR_VERBOSE) {
+			printf("%s", prefix);
+			if (has_options) {
+				printf("options");
+				for (i = 0; i < available_count; i++)
+					printf(" '%s'", available_list[i]);
+				printf("\n");
+				iio_available_list_free(available_list, available_count);
+			} else if (has_range) {
+				printf("range '[min: %g step: %g max: %g]'\n", min, step, max);
+			} else {
+				printf("value '%s'\n", buf);
+			}
+		}
+	} else {
+		printf("\n");
+		IIO_PERROR((int)ret, "Unable to read attribute");
+	}
+}
+
 static int dump_device_attributes(const struct iio_device *dev,
 				  const struct iio_attr *attr,
 				  const char *type, const char *var,
@@ -118,19 +173,11 @@ static int dump_device_attributes(const struct iio_device *dev,
 		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			printf("'%s'", get_label_or_name_or_id(dev));
-			printf(", %s attr '%s', value :",
+			printf(", %s attr '%s', ",
 			       type, iio_attr_get_name(attr));
 		}
 		gen_function(type, var, attr, NULL);
-		ret = iio_attr_read_raw(attr, buf, BUF_SIZE);
-		if (ret > 0) {
-			if (quiet == ATTR_NORMAL)
-				printf("%s\n", buf);
-			else if (quiet == ATTR_VERBOSE)
-				printf("'%s'\n", buf);
-		} else {
-			IIO_PERROR((int)ret, "Unable to read attribute");
-		}
+		print_attribute_value(dev, attr, "", quiet);
 	}
 	if (wbuf) {
 		gen_function(type, var, attr, wbuf);
@@ -167,30 +214,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			type_name = "input";
 
 		gen_function("channel", "ch", attr, NULL);
-		ret = iio_attr_read_raw(attr, buf, BUF_SIZE);
-		if (quiet == ATTR_VERBOSE) {
-			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
-			printf("'%s'", get_label_or_name_or_id(dev));
-			printf(", channel '%s' (%s), ",
-					iio_channel_get_id(ch),
-					type_name);
-		}
-		if (iio_channel_get_name(ch) && quiet == ATTR_VERBOSE)
-			printf("id '%s', ", iio_channel_get_name(ch));
-		if (iio_channel_get_label(ch) && quiet == ATTR_VERBOSE)
-			printf("label '%s', ", iio_channel_get_label(ch));
-
-		if (quiet == ATTR_VERBOSE)
-			printf("attr '%s', ", iio_attr_get_name(attr));
-
-		if (ret > 0) {
-			if (quiet == ATTR_NORMAL)
-				printf("%s\n", buf);
-			else if (quiet == ATTR_VERBOSE)
-				printf("value '%s'\n", buf);
-		} else {
-			IIO_PERROR((int)ret, "Unable to read channel attribute");
-		}
+		print_attribute_value(dev, attr, "", quiet);
 	}
 	if (wbuf) {
 		gen_function("channel", "ch", attr, wbuf);
