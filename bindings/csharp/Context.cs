@@ -85,9 +85,6 @@ namespace iio
         private static extern int iio_context_set_timeout(IntPtr ctx, uint timeout_ms);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IIOPtr iio_context_clone(IntPtr ctx);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_attrs_count(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -167,12 +164,6 @@ namespace iio
         protected override void Destroy()
         {
             iio_context_destroy(hdl);
-        }
-
-        /// <summary>Clone this instance.</summary>
-        public Context clone()
-        {
-            return new Context(iio_context_clone(this.hdl));
         }
 
         /// <summary>Get the <see cref="iio.Device"/> object of the specified name.</summary>
