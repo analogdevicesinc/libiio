@@ -50,6 +50,61 @@ namespace iio
         }
     }
 
+    /// <summary>
+    /// Represents the log levels for IIO.
+    /// </summary>
+    public enum IioLogLevel
+    {
+        NoLog = 1,
+        Error = 2,
+        Warning = 3,
+        Info = 4,
+        Debug = 5
+    }
+
+    /// <summary>
+    /// Represents the parameters for creating an IIO context.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct IioContextParams
+    {
+        /// <summary>
+        /// Handle to the standard output. If null, defaults to stdout.
+        /// </summary>
+        public IntPtr Out;
+
+        /// <summary>
+        /// Handle to the error output. If null, defaults to stderr.
+        /// </summary>
+        public IntPtr Err;
+
+        /// <summary>
+        /// Log level to use. Defaults to the log level specified at compilation.
+        /// </summary>
+        public IioLogLevel LogLevel;
+
+        /// <summary>
+        /// Log level threshold for sending messages to stderr.
+        /// </summary>
+        public IioLogLevel StderrLevel;
+
+        /// <summary>
+        /// Log level threshold for including timestamps in messages.
+        /// </summary>
+        public IioLogLevel TimestampLevel;
+
+        /// <summary>
+        /// Timeout for I/O operations in milliseconds. If zero, the default timeout is used.
+        /// </summary>
+        public uint TimeoutMs;
+
+        /// <summary>
+        /// Reserved for future fields. Must remain unused.
+        /// </summary>
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+        public byte[] Reserved;
+    }
+
     /// <summary><see cref="iio.Context"/> class:
     /// Contains the representation of an IIO context.</summary>
     public class Context : IIOObject
@@ -106,6 +161,44 @@ namespace iio
 
         /// <summary>A <c>Dictionary</c> of all the attributes of the current channel. (key, value) = (name, value)</summary>
         public Dictionary<string, string> attrs { get; private set; }
+
+        /// <summary>
+        /// Creates an IIO context with the specified parameters and URI.
+        /// </summary>
+        /// <param name="ctxParams">The IIO context parameters.</param>
+        /// <param name="uri">The URI for the IIO context.</param>
+        /// <returns>A pointer to the created IIO context, or NULL in case of failure.</returns>
+        /// <remarks>
+        /// This method allocates unmanaged memory to convert the managed structure to a format usable by the native function,
+        /// then ensures the memory is freed even if an exception occurs.
+        /// </remarks>
+        static IIOPtr CreateIioContext(IioContextParams ctxParams, string uri)
+        {
+            // Allocate unmanaged memory for the structure
+            IntPtr contextParamsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<IioContextParams>());
+            try
+            {
+                // Copy the managed structure to unmanaged memory
+                Marshal.StructureToPtr(ctxParams, contextParamsPtr, false);
+
+                // Call the native function
+                return iio_create_context(contextParamsPtr, uri);
+            }
+            finally
+            {
+                // Free the unmanaged memory
+                Marshal.FreeHGlobal(contextParamsPtr);
+            }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="iio.Context"/> class using the specified context parameters.
+        /// </summary>
+        /// <param name="contextParams">The parameters used to configure the IIO context.</param>
+        /// <param name="uri">URI to use for the IIO context creation</param>
+        /// <returns>an instance of the <see cref="iio.Context"/> class</returns>
+        /// <exception cref="IioLib.IIOException">The IIO context could not be created.</exception>
+        public Context(IioContextParams contextParams, string uri = null) : this(CreateIioContext(contextParams, uri)) {}
 
         /// <summary>Initializes a new instance of the <see cref="iio.Context"/> class,
         /// using the provided URI. For compatibility with existing code, providing
