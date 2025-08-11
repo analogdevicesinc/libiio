@@ -145,6 +145,9 @@ namespace iio
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_context_get_attr(IntPtr ctx, uint index);
 
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_context_get_params(IntPtr ctx);
+
         /// <summary>A XML representation of the current context.</summary>
         public readonly string xml;
 
@@ -284,6 +287,23 @@ namespace iio
             int ret = iio_context_set_timeout(hdl, timeout);
             if (ret < 0)
                 throw new IIOException("Unable to set timeout", ret);
+        }
+
+        /// <summary>
+        /// Retrieves the parameters of the current IIO context.
+        /// </summary>
+        /// <returns>An instance of <see cref="IioContextParams"/> representing the context parameters.</returns>
+        /// <exception cref="IioLib.IIOException">Thrown if the parameters could not be retrieved.</exception>
+        public IioContextParams GetContextParams()
+        {
+            IntPtr paramsPtr = iio_context_get_params(hdl);
+            if (paramsPtr == IntPtr.Zero)
+            {
+                throw new IIOException("Unable to retrieve context parameters.");
+            }
+
+            // Marshal the unmanaged structure to a managed structure
+            return Marshal.PtrToStructure<IioContextParams>(paramsPtr);
         }
     }
 }
