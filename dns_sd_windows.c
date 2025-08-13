@@ -9,7 +9,9 @@
  * which should be sync'ed with the mdns.h file and is Licensed under Public Domain
  */
 
+// clang-format off
 #include "dns_sd.h"
+// clang-format on
 #include "deps/mdns/mdns.h"
 #include "iio-private.h"
 
