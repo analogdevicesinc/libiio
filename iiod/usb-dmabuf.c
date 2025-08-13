@@ -11,9 +11,9 @@
 #include <stdint.h>
 #include <sys/ioctl.h>
 
-#define IIO_FFS_DMABUF_ATTACH	_IOW('g', 131, int)
-#define IIO_FFS_DMABUF_DETACH	_IOW('g', 132, int)
-#define IIO_FFS_DMABUF_TRANSFER	_IOW('g', 133, struct iio_ffs_dmabuf_transfer)
+#define IIO_FFS_DMABUF_ATTACH _IOW('g', 131, int)
+#define IIO_FFS_DMABUF_DETACH _IOW('g', 132, int)
+#define IIO_FFS_DMABUF_TRANSFER _IOW('g', 133, struct iio_ffs_dmabuf_transfer)
 
 struct iio_ffs_dmabuf_transfer {
 	int fd;

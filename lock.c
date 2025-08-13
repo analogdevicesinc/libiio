@@ -6,24 +6,23 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-config.h"
-
+#include <errno.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-lock.h>
-
-#include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <time.h>
 
+#include "iio-config.h"
+
 #ifndef PTHREAD_MAX_NAMELEN_NP
-#define PTHREAD_MAX_NAMELEN_NP	16
+#define PTHREAD_MAX_NAMELEN_NP 16
 #endif
 #if defined(HAS_PTHREAD_SETNAME_NP)
 #if defined(__APPLE__)
-#define iio_thrd_create_set_name(thid, name)	pthread_setname_np(name)
+#define iio_thrd_create_set_name(thid, name) pthread_setname_np(name)
 #else
-#define iio_thrd_create_set_name(thid, name)	pthread_setname_np(thid, name)
+#define iio_thrd_create_set_name(thid, name) pthread_setname_np(thid, name)
 #endif
 #else
 #define iio_thrd_create_set_name(thid, name)
@@ -44,7 +43,7 @@ struct iio_thrd {
 	int (*func)(void *);
 };
 
-struct iio_mutex * iio_mutex_create(void)
+struct iio_mutex *iio_mutex_create(void)
 {
 	struct iio_mutex *lock = malloc(sizeof(*lock));
 
@@ -71,7 +70,7 @@ void iio_mutex_unlock(struct iio_mutex *lock)
 	pthread_mutex_unlock(&lock->lock);
 }
 
-struct iio_cond * iio_cond_create(void)
+struct iio_cond *iio_cond_create(void)
 {
 	struct iio_cond *cond = malloc(sizeof(*cond));
 
@@ -89,8 +88,7 @@ void iio_cond_destroy(struct iio_cond *cond)
 	free(cond);
 }
 
-int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-		  unsigned int timeout_ms)
+int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock, unsigned int timeout_ms)
 {
 	struct timespec ts;
 	uint64_t usec;
@@ -107,7 +105,7 @@ int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
 		ts.tv_sec = usec / 1000000;
 		ts.tv_nsec = (usec % 1000000) * 1000;
 
-		ret = - pthread_cond_timedwait(&cond->cond, &lock->lock, &ts);
+		ret = -pthread_cond_timedwait(&cond->cond, &lock->lock, &ts);
 	}
 
 	return ret;
@@ -118,7 +116,7 @@ void iio_cond_signal(struct iio_cond *cond)
 	pthread_cond_signal(&cond->cond);
 }
 
-static void * iio_thrd_wrapper(void *d)
+static void *iio_thrd_wrapper(void *d)
 {
 	struct iio_thrd *thrd = d;
 	/*
@@ -128,11 +126,10 @@ static void * iio_thrd_wrapper(void *d)
 	if (thrd->name[0] != '\0')
 		iio_thrd_create_set_name(thrd->thid, thrd->name);
 
-	return (void *)(intptr_t) thrd->func(thrd->d);
+	return (void *)(intptr_t)thrd->func(thrd->d);
 }
 
-struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
-				  void *d, const char *name)
+struct iio_thrd *iio_thrd_create(int (*thrd)(void *), void *d, const char *name)
 {
 	struct iio_thrd *iio_thrd;
 	int ret;
@@ -149,14 +146,11 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 	if (name)
 		iio_strlcpy(iio_thrd->name, name, sizeof(iio_thrd->name));
 
-	ret = pthread_create(&iio_thrd->thid, NULL,
-			     iio_thrd_wrapper, iio_thrd);
+	ret = pthread_create(&iio_thrd->thid, NULL, iio_thrd_wrapper, iio_thrd);
 	if (ret) {
 		free(iio_thrd);
 		return iio_ptr(ret);
 	}
-
-
 
 	return iio_thrd;
 }
@@ -172,5 +166,5 @@ int iio_thrd_join_and_destroy(struct iio_thrd *thrd)
 
 	free(thrd);
 
-	return (int)(intptr_t) retval;
+	return (int)(intptr_t)retval;
 }

@@ -6,17 +6,16 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "dynamic.h"
-#include "iio-config.h"
-#include "iio-private.h"
-
+#include <errno.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
-
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+
+#include "dynamic.h"
+#include "iio-config.h"
+#include "iio-private.h"
 
 struct iio_module {
 	const struct iio_context_params *params;
@@ -24,8 +23,7 @@ struct iio_module {
 	char *name;
 };
 
-struct iio_module * iio_open_module(const struct iio_context_params *params,
-				    const char *name)
+struct iio_module *iio_open_module(const struct iio_context_params *params, const char *name)
 {
 	char buf[PATH_MAX];
 	struct iio_module *module;
@@ -41,8 +39,7 @@ struct iio_module * iio_open_module(const struct iio_context_params *params,
 
 	module->params = params;
 
-	iio_snprintf(buf, sizeof(buf),
-		     IIO_MODULES_DIR "libiio-%s" IIO_LIBRARY_SUFFIX, name);
+	iio_snprintf(buf, sizeof(buf), IIO_MODULES_DIR "libiio-%s" IIO_LIBRARY_SUFFIX, name);
 
 	prm_dbg(params, "Looking for plugin: \'%s\'\n", buf);
 
@@ -69,7 +66,7 @@ void iio_release_module(struct iio_module *module)
 	free(module);
 }
 
-const struct iio_backend * iio_module_get_backend(struct iio_module *module)
+const struct iio_backend *iio_module_get_backend(struct iio_module *module)
 {
 	const struct iio_backend *backend;
 	char buf[1024];
@@ -85,9 +82,8 @@ const struct iio_backend * iio_module_get_backend(struct iio_module *module)
 	return backend;
 }
 
-static const struct iio_backend *
-get_iio_backend(const struct iio_context_params *params,
-		const char *name, struct iio_module **libp)
+static const struct iio_backend *get_iio_backend(
+		const struct iio_context_params *params, const char *name, struct iio_module **libp)
 {
 	const struct iio_backend *backend;
 	struct iio_module *lib;
@@ -111,9 +107,8 @@ get_iio_backend(const struct iio_context_params *params,
 	return backend;
 }
 
-struct iio_context *
-iio_create_dynamic_context(const struct iio_context_params *params,
-			   const char *uri)
+struct iio_context *iio_create_dynamic_context(
+		const struct iio_context_params *params, const char *uri)
 {
 	struct iio_context_params params2 = *params;
 	const struct iio_backend *backend;
@@ -130,7 +125,7 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 		return iio_ptr(-EINVAL);
 	}
 
-	iio_snprintf(buf, sizeof(buf), "%.*s", (int) (ptr - uri), uri);
+	iio_snprintf(buf, sizeof(buf), "%.*s", (int)(ptr - uri), uri);
 
 	backend = get_iio_backend(params, buf, &lib);
 	ret = iio_err(backend);
@@ -162,8 +157,7 @@ out_release_module:
 	return iio_ptr(ret);
 }
 
-bool iio_has_backend_dynamic(const struct iio_context_params *params,
-			     const char *name)
+bool iio_has_backend_dynamic(const struct iio_context_params *params, const char *name)
 {
 	const struct iio_backend *backend;
 	struct iio_module *lib;

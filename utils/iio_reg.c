@@ -7,22 +7,20 @@
  * */
 
 #include <errno.h>
+#include <getopt.h>
 #include <iio/iio.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include "iio_common.h"
 
 #define MY_NAME "iio_reg"
 
 static const struct option options[] = {
-	{0, 0, 0, 0},
+	{ 0, 0, 0, 0 },
 };
 
-static const char *options_descriptions[] = {
-	"<device> <register> [<value>]\n"
-};
+static const char *options_descriptions[] = { "<device> <register> [<value>]\n" };
 
 static int write_reg(struct iio_device *dev, uint32_t addr, uint32_t val)
 {
@@ -67,20 +65,19 @@ int main(int argc, char **argv)
 	struct iio_context *ctx;
 	struct iio_device *dev;
 	int c, ret = EXIT_FAILURE;
-	char * name;
+	char *name;
 	struct option *opts;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, "",
-				 options, options_descriptions, &ret);
+	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
 	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS, /* Flawfinder: ignore */
-			opts, NULL)) != -1) {
+				opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -90,8 +87,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argv[optind] != NULL
-					&& argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL &&
+					argv[optind][0] != '-')
 				optind++;
 			break;
 		case '?':

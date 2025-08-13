@@ -6,15 +6,11 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-private.h"
-#include "local.h"
-
 #include <errno.h>
-#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <poll.h>
-#include <sys/ioctl.h>
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -23,31 +19,26 @@
 #include <sys/mman.h>
 #include <time.h>
 
-#define container_of(ptr, type, member)	\
+#include "iio-private.h"
+#include "local.h"
+
+#define container_of(ptr, type, member) \
 	((type *)(void *)((uintptr_t)(ptr) - offsetof(type, member)))
 
-#define BLOCK_ALLOC_IOCTL	_IOWR('i', 0xa0, struct block_alloc_req)
-#define BLOCK_FREE_IOCTL	_IO('i', 0xa1)
-#define BLOCK_QUERY_IOCTL	_IOWR('i', 0xa2, struct block)
-#define BLOCK_ENQUEUE_IOCTL	_IOWR('i', 0xa3, struct block)
-#define BLOCK_DEQUEUE_IOCTL	_IOWR('i', 0xa4, struct block)
+#define BLOCK_ALLOC_IOCTL _IOWR('i', 0xa0, struct block_alloc_req)
+#define BLOCK_FREE_IOCTL _IO('i', 0xa1)
+#define BLOCK_QUERY_IOCTL _IOWR('i', 0xa2, struct block)
+#define BLOCK_ENQUEUE_IOCTL _IOWR('i', 0xa3, struct block)
+#define BLOCK_DEQUEUE_IOCTL _IOWR('i', 0xa4, struct block)
 
-#define BLOCK_FLAG_CYCLIC	BIT(1)
+#define BLOCK_FLAG_CYCLIC BIT(1)
 
 struct block_alloc_req {
-	uint32_t type,
-		 size,
-		 count,
-		 id;
+	uint32_t type, size, count, id;
 };
 
 struct block {
-	uint32_t id,
-		 size,
-		 bytes_used,
-		 type,
-		 flags,
-		 offset;
+	uint32_t id, size, bytes_used, type, flags, offset;
 	uint64_t timestamp;
 };
 
@@ -66,8 +57,7 @@ struct iio_block_impl_pdata {
 	bool enqueued;
 };
 
-static struct iio_block_impl_pdata *
-iio_block_get_impl(struct iio_block_pdata *pdata)
+static struct iio_block_impl_pdata *iio_block_get_impl(struct iio_block_pdata *pdata)
 {
 	return container_of(pdata, struct iio_block_impl_pdata, pdata);
 }
@@ -85,9 +75,8 @@ static bool local_is_mmap_api_supported(int fd)
 	return !ioctl_nointr(fd, BLOCK_FREE_IOCTL, NULL);
 }
 
-struct iio_block_pdata *
-local_create_mmap_block(struct iio_buffer_pdata *pdata,
-			size_t size, void **data)
+struct iio_block_pdata *local_create_mmap_block(
+		struct iio_buffer_pdata *pdata, size_t size, void **data)
 {
 	struct iio_buffer_impl_pdata *ppdata = pdata->pdata;
 	struct iio_block_impl_pdata *priv;
@@ -106,14 +95,14 @@ local_create_mmap_block(struct iio_buffer_pdata *pdata,
 	if (!priv)
 		return iio_ptr(-ENOMEM);
 
-	if (ppdata->mmap_block_mask == (uint64_t) -1) {
+	if (ppdata->mmap_block_mask == (uint64_t)-1) {
 		/* 64 blocks is the maximum */
 		dev_err(pdata->dev, "64 blocks is the maximum with the MMAP API.\n");
 		ret = -EINVAL;
 		goto out_free_priv;
 	}
 
-	if (__builtin_popcountl(ppdata->mmap_block_mask) == (int) ppdata->nb_blocks) {
+	if (__builtin_popcountl(ppdata->mmap_block_mask) == (int)ppdata->nb_blocks) {
 		/* All our allocated blocks are used; we need to create one more. */
 		priv->idx = ppdata->nb_blocks;
 		req.id = 0;
@@ -140,8 +129,8 @@ local_create_mmap_block(struct iio_buffer_pdata *pdata,
 	if (ret < 0)
 		goto out_free_priv;
 
-	priv->pdata.data = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED,
-				pdata->fd, priv->block.offset);
+	priv->pdata.data = mmap(
+			0, size, PROT_READ | PROT_WRITE, MAP_SHARED, pdata->fd, priv->block.offset);
 	if (priv->pdata.data == MAP_FAILED) {
 		ret = -errno;
 		goto out_free_priv;
@@ -175,8 +164,7 @@ void local_free_mmap_block(struct iio_block_pdata *pdata)
 	free(priv);
 }
 
-int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
-			     size_t bytes_used, bool cyclic)
+int local_enqueue_mmap_block(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic)
 {
 	struct iio_block_impl_pdata *priv = iio_block_get_impl(pdata);
 	struct iio_buffer_pdata *buf = pdata->buf;
@@ -208,7 +196,7 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 		return 0;
 	}
 
-	priv->block.bytes_used = (uint32_t) bytes_used;
+	priv->block.bytes_used = (uint32_t)bytes_used;
 
 	ret = ioctl_nointr(fd, BLOCK_ENQUEUE_IOCTL, &priv->block);
 	if (ret < 0) {
@@ -268,7 +256,7 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 	return 0;
 }
 
-struct iio_buffer_impl_pdata * local_alloc_mmap_buffer_impl(void)
+struct iio_buffer_impl_pdata *local_alloc_mmap_buffer_impl(void)
 {
 	struct iio_buffer_impl_pdata *pdata;
 

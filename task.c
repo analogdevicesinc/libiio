@@ -6,13 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-config.h"
-
-#include <iio/iio-lock.h>
-
 #include <errno.h>
+#include <iio/iio-lock.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+#include "iio-config.h"
 
 struct iio_task_token {
 	struct iio_task *task;
@@ -87,14 +86,14 @@ static int iio_task_run(void *d)
 
 	return 0;
 }
-static int iio_task_sync_core(struct iio_task_token *token, unsigned int timeout_ms, bool token_destroy)
+static int iio_task_sync_core(
+		struct iio_task_token *token, unsigned int timeout_ms, bool token_destroy)
 {
 	int ret;
 
 	iio_mutex_lock(token->done_lock);
 	while (!token->done) {
-		ret = iio_cond_wait(token->done_cond, token->done_lock,
-				    timeout_ms);
+		ret = iio_cond_wait(token->done_cond, token->done_lock, timeout_ms);
 		if (ret) {
 			iio_mutex_unlock(token->done_lock);
 			iio_task_cancel(token);
@@ -111,8 +110,7 @@ static int iio_task_sync_core(struct iio_task_token *token, unsigned int timeout
 	return ret;
 }
 
-static bool iio_task_token_find(struct iio_task *task, struct iio_task_token *token,
-				bool del)
+static bool iio_task_token_find(struct iio_task *task, struct iio_task_token *token, bool del)
 {
 	struct iio_task_token *tmp;
 
@@ -136,8 +134,7 @@ static bool iio_task_token_find(struct iio_task *task, struct iio_task_token *to
 	return false;
 }
 
-struct iio_task * iio_task_create(int (*fn)(void *, void *),
-				  void *firstarg, const char *name)
+struct iio_task *iio_task_create(int (*fn)(void *, void *), void *firstarg, const char *name)
 {
 	struct iio_task *task;
 	int err = -ENOMEM;
@@ -177,8 +174,8 @@ err_free_task:
 	return iio_ptr(err);
 }
 
-static int iio_task_token_do_enqueue(struct iio_task *task, struct iio_task_token *token,
-				     bool autoclear, bool new_token)
+static int iio_task_token_do_enqueue(
+		struct iio_task *task, struct iio_task_token *token, bool autoclear, bool new_token)
 {
 	struct iio_task_token *tmp;
 
@@ -201,7 +198,7 @@ static int iio_task_token_do_enqueue(struct iio_task *task, struct iio_task_toke
 	if (!task->list) {
 		task->list = token;
 	} else {
-		for (tmp = task->list; tmp->next; ) {
+		for (tmp = task->list; tmp->next;) {
 			tmp = tmp->next;
 		}
 
@@ -222,8 +219,7 @@ static int iio_task_token_do_enqueue(struct iio_task *task, struct iio_task_toke
 	return 0;
 }
 
-static struct iio_task_token *
-iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
+static struct iio_task_token *iio_task_do_enqueue(struct iio_task *task, void *elm, bool autoclear)
 {
 	struct iio_task_token *entry;
 	int err;
@@ -250,7 +246,7 @@ void iio_task_token_destroy(struct iio_task_token *token)
 	free(token);
 }
 
-struct iio_task_token * iio_task_token_create(struct iio_task *task, void *elm)
+struct iio_task_token *iio_task_token_create(struct iio_task *task, void *elm)
 {
 	struct iio_task_token *entry;
 
@@ -291,7 +287,7 @@ int iio_task_token_enqueue(struct iio_task_token *token)
 	return iio_task_token_do_enqueue(token->task, token, false, false);
 }
 
-struct iio_task_token * iio_task_enqueue(struct iio_task *task, void *elm)
+struct iio_task_token *iio_task_enqueue(struct iio_task *task, void *elm)
 {
 	return iio_task_do_enqueue(task, elm, false);
 }

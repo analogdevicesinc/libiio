@@ -6,13 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
-#include "ops.h"
-
-#include "../iiod-responder.h"
-
 #include <fcntl.h>
 #include <iio/iio-lock.h>
+
+#include "../iiod-responder.h"
+#include "debug.h"
+#include "ops.h"
 #if HAS_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -23,18 +22,16 @@
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
 #ifndef HAS_NETINET_IN_H
-static inline uint32_t ntohl(uint32_t n) {
-    return ((n & 0xFF000000) >> 24) |
-           ((n & 0x00FF0000) >> 8)  |
-           ((n & 0x0000FF00) << 8)  |
-           ((n & 0x000000FF) << 24);
+static inline uint32_t ntohl(uint32_t n)
+{
+	return ((n & 0xFF000000) >> 24) | ((n & 0x00FF0000) >> 8) | ((n & 0x0000FF00) << 8) |
+	       ((n & 0x000000FF) << 24);
 }
 #endif
 
 /* Forward declaration */
-static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
-					  const struct iiod_command *cmd,
-					  struct buffer_entry **entry_ptr);
+static struct iio_buffer *get_iio_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct buffer_entry **entry_ptr);
 
 static SLIST_HEAD(BufferList, buffer_entry) bufferlist;
 
@@ -72,8 +69,7 @@ static void free_buffer_entry(struct buffer_entry *entry)
 
 	iio_mutex_lock(entry->lock);
 
-	for (block_entry = SLIST_FIRST(&entry->blocklist);
-	     block_entry; block_entry = block_next) {
+	for (block_entry = SLIST_FIRST(&entry->blocklist); block_entry; block_entry = block_next) {
 		block_next = SLIST_NEXT(block_entry, entry);
 		free_block_entry(block_entry);
 	}
@@ -86,15 +82,14 @@ static void free_buffer_entry(struct buffer_entry *entry)
 	free(entry);
 }
 
-static void handle_print(struct parser_pdata *pdata,
-			 const struct iiod_command *cmd,
-			 struct iiod_command_data *cmd_data)
+static void handle_print(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	struct iiod_buf buf;
 
 	if (pdata->xml_zstd) {
-		buf.ptr = (void *) pdata->xml_zstd;
+		buf.ptr = (void *)pdata->xml_zstd;
 		buf.size = pdata->xml_zstd_len;
 
 		iiod_io_send_response(io, pdata->xml_zstd_len, &buf, 1);
@@ -103,9 +98,8 @@ static void handle_print(struct parser_pdata *pdata,
 	}
 }
 
-static void handle_timeout(struct parser_pdata *pdata,
-			   const struct iiod_command *cmd,
-			   struct iiod_command_data *cmd_data)
+static void handle_timeout(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	int ret;
@@ -114,14 +108,12 @@ static void handle_timeout(struct parser_pdata *pdata,
 	iiod_io_send_response_code(io, ret);
 }
 
-static const struct iio_attr *
-get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
+static const struct iio_attr *get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 {
 	const struct iio_buffer *buf;
 	const struct iio_device *dev;
 	const struct iio_channel *chn;
-	uint16_t arg1 = (uint32_t) cmd->code >> 16,
-		 arg2 = cmd->code & 0xffff;
+	uint16_t arg1 = (uint32_t)cmd->code >> 16, arg2 = cmd->code & 0xffff;
 
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
 	if (!dev)
@@ -155,9 +147,8 @@ get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 	return NULL;
 }
 
-static void handle_read_attr(struct parser_pdata *pdata,
-			     const struct iiod_command *cmd,
-			     struct iiod_command_data *cmd_data)
+static void handle_read_attr(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	ssize_t ret = -EINVAL;
@@ -180,9 +171,8 @@ static void handle_read_attr(struct parser_pdata *pdata,
 	}
 }
 
-static void handle_write_attr(struct parser_pdata *pdata,
-			      const struct iiod_command *cmd,
-			      struct iiod_command_data *cmd_data)
+static void handle_write_attr(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_attr *attr;
@@ -207,13 +197,13 @@ static void handle_write_attr(struct parser_pdata *pdata,
 		goto out_send_response;
 	}
 
-	buf.size = (size_t) len;
+	buf.size = (size_t)len;
 
 	ret = iiod_command_data_read(cmd_data, &buf);
 	if (ret < 0)
 		goto out_free_buf;
 
-	ret = iio_attr_write_raw(attr, buf.ptr, (size_t) len);
+	ret = iio_attr_write_raw(attr, buf.ptr, (size_t)len);
 
 out_free_buf:
 	free(buf.ptr);
@@ -221,9 +211,8 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static void handle_gettrig(struct parser_pdata *pdata,
-			   const struct iiod_command *cmd,
-			   struct iiod_command_data *cmd_data)
+static void handle_gettrig(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_context *ctx = pdata->ctx;
@@ -250,9 +239,8 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static void handle_settrig(struct parser_pdata *pdata,
-			   const struct iiod_command *cmd,
-			   struct iiod_command_data *cmd_data)
+static void handle_settrig(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_context *ctx = pdata->ctx;
@@ -286,8 +274,7 @@ static bool iio_buffer_is_tx(const struct iio_buffer *buf)
 	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
 		ch = iio_device_get_channel(dev, i);
 
-		if (iio_channel_is_output(ch) &&
-		    iio_channel_is_scan_element(ch))
+		if (iio_channel_is_output(ch) && iio_channel_is_scan_element(ch))
 			return true;
 	}
 
@@ -299,8 +286,7 @@ static int buffer_enqueue_block(void *priv, void *d)
 	struct block_entry *entry = d;
 	intptr_t ret;
 
-	ret = iio_block_enqueue(entry->block, (size_t) entry->bytes_used,
-				entry->cyclic);
+	ret = iio_block_enqueue(entry->block, (size_t)entry->bytes_used, entry->cyclic);
 	if (ret) {
 		/* Shift the error code by 16 bits to the left. This notifies
 		 * the client that the error happened during the enqueue, and
@@ -341,9 +327,8 @@ static int buffer_dequeue_block(void *priv, void *d)
 			 * If usb_transfer_dmabuf() fails, we're screwed... */
 			iiod_io_send_response_code(entry->io, entry->bytes_used);
 
-			return usb_transfer_dmabuf(buffer->pdata->fd_out,
-						   entry->dmabuf_fd,
-						   entry->bytes_used);
+			return usb_transfer_dmabuf(
+					buffer->pdata->fd_out, entry->dmabuf_fd, entry->bytes_used);
 		}
 
 		data.ptr = iio_block_start(entry->block);
@@ -358,9 +343,8 @@ out_send_response:
 	return 0;
 }
 
-static void handle_create_buffer(struct parser_pdata *pdata,
-				 const struct iiod_command *cmd,
-				 struct iiod_command_data *cmd_data)
+static void handle_create_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	const struct iio_context *ctx = pdata->ctx;
@@ -371,7 +355,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	struct iio_buffer *buf;
 	struct iiod_buf_params *params;
 	struct iiod_buf data;
- 	struct iio_buffer_params buffer_params = {0};
+	struct iio_buffer_params buffer_params = { 0 };
 	unsigned int i, nb_channels;
 	size_t nb_words;
 	int ret = -EINVAL;
@@ -414,8 +398,8 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 
 	/* sanity check that the number of masks sent by the client matches the one we have */
 	if (params->nb_mask != nb_words) {
-		IIO_ERROR("Buffer %u: unexpected number of words (%u != %zu)\n",
-			  cmd->code, params->nb_mask, nb_words);
+		IIO_ERROR("Buffer %u: unexpected number of words (%u != %zu)\n", cmd->code,
+				params->nb_mask, nb_words);
 		ret = -EINVAL;
 		free(params);
 		goto err_free_words;
@@ -444,20 +428,18 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 			iio_channel_disable(chn, mask);
 	}
 
-	entry->enqueue_task = iio_task_create(buffer_enqueue_block, entry,
-					      "buffer-enqueue");
+	entry->enqueue_task = iio_task_create(buffer_enqueue_block, entry, "buffer-enqueue");
 	ret = iio_err(entry->enqueue_task);
 	if (ret)
 		goto err_free_mask;
 
-	entry->dequeue_task = iio_task_create(buffer_dequeue_block, entry,
-					      "buffer-dequeue");
+	entry->dequeue_task = iio_task_create(buffer_dequeue_block, entry, "buffer-dequeue");
 	ret = iio_err(entry->dequeue_task);
 	if (ret)
 		goto err_destroy_enqueue_task;
 
 	entry->dev = dev;
-	entry->idx = (uint16_t) cmd->code;
+	entry->idx = (uint16_t)cmd->code;
 
 	entry->lock = iio_mutex_create();
 	ret = iio_err(entry->lock);
@@ -520,9 +502,8 @@ err_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
-					  const struct iiod_command *cmd,
-					  struct buffer_entry **entry_ptr)
+static struct iio_buffer *get_iio_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct buffer_entry **entry_ptr)
 {
 	const struct iio_device *dev;
 	struct buffer_entry *entry;
@@ -534,7 +515,8 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 
 	iio_mutex_lock(buflist_lock);
 
-	SLIST_FOREACH(entry, &bufferlist, entry) {
+	SLIST_FOREACH(entry, &bufferlist, entry)
+	{
 		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
 			buf = entry->buf;
 			break;
@@ -549,14 +531,14 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 	return buf ? buf : iio_ptr(-EBADF);
 }
 
-static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
-						 const struct iiod_command *cmd,
-						 struct block_entry **entry_ptr)
+static struct iio_block *get_iio_block_unlocked(struct buffer_entry *entry_buf,
+		const struct iiod_command *cmd, struct block_entry **entry_ptr)
 {
 	struct block_entry *entry;
 	struct iio_block *block = NULL;
 
-	SLIST_FOREACH(entry, &entry_buf->blocklist, entry) {
+	SLIST_FOREACH(entry, &entry_buf->blocklist, entry)
+	{
 		if (entry->idx == cmd->code >> 16) {
 			block = entry->block;
 			break;
@@ -569,10 +551,8 @@ static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
 	return block ? block : iio_ptr(-EBADF);
 }
 
-static struct iio_block * get_iio_block(struct parser_pdata *pdata,
-					struct buffer_entry *entry_buf,
-					const struct iiod_command *cmd,
-					struct block_entry **entry_ptr)
+static struct iio_block *get_iio_block(struct parser_pdata *pdata, struct buffer_entry *entry_buf,
+		const struct iiod_command *cmd, struct block_entry **entry_ptr)
 {
 	struct iio_block *block = NULL;
 
@@ -583,9 +563,8 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	return block;
 }
 
-static void handle_free_buffer(struct parser_pdata *pdata,
-			       const struct iiod_command *cmd,
-			       struct iiod_command_data *cmd_data)
+static void handle_free_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	struct buffer_entry *entry, *buf_entry;
@@ -601,7 +580,8 @@ static void handle_free_buffer(struct parser_pdata *pdata,
 
 	iio_mutex_lock(buflist_lock);
 
-	SLIST_FOREACH(entry, &bufferlist, entry) {
+	SLIST_FOREACH(entry, &bufferlist, entry)
+	{
 		if (entry != buf_entry)
 			continue;
 
@@ -619,10 +599,8 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static void handle_set_enabled_buffer(struct parser_pdata *pdata,
-				      const struct iiod_command *cmd,
-				      struct iiod_command_data *cmd_data,
-				      bool enabled)
+static void handle_set_enabled_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data, bool enabled)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	struct buffer_entry *entry;
@@ -654,23 +632,20 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static void handle_enable_buffer(struct parser_pdata *pdata,
-				 const struct iiod_command *cmd,
-				 struct iiod_command_data *cmd_data)
+static void handle_enable_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	handle_set_enabled_buffer(pdata, cmd, cmd_data, true);
 }
 
-static void handle_disable_buffer(struct parser_pdata *pdata,
-				  const struct iiod_command *cmd,
-				  struct iiod_command_data *cmd_data)
+static void handle_disable_buffer(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	handle_set_enabled_buffer(pdata, cmd, cmd_data, false);
 }
 
-static void handle_create_block(struct parser_pdata *pdata,
-				const struct iiod_command *cmd,
-				struct iiod_command_data *cmd_data)
+static void handle_create_block(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
@@ -709,7 +684,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 		goto out_send_response;
 	}
 
-	block = iio_buffer_create_block(buf, (size_t) block_size);
+	block = iio_buffer_create_block(buf, (size_t)block_size);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
@@ -773,9 +748,8 @@ out_send_response:
 	iiod_io_unref(io);
 }
 
-static void handle_free_block(struct parser_pdata *pdata,
-			      const struct iiod_command *cmd,
-			      struct iiod_command_data *cmd_data)
+static void handle_free_block(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
@@ -824,9 +798,8 @@ out_send_response:
 	iiod_io_unref(io);
 }
 
-static void handle_transfer_block(struct parser_pdata *pdata,
-				  const struct iiod_command *cmd,
-				  struct iiod_command_data *cmd_data)
+static void handle_transfer_block(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct buffer_entry *entry;
 	struct block_entry *block_entry;
@@ -862,16 +835,14 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 
 	if (bytes_used == 0) {
 		IIO_ERROR("Cannot enqueue a block with size 0\n");
-		ret =  -EINVAL;
+		ret = -EINVAL;
 		goto out_send_response;
 	}
 
 	/* Read the data into the block if we are dealing with a TX buffer */
 	if (entry->is_tx) {
 		if (WITH_IIOD_USB_DMABUF && block_entry->dmabuf_fd > 0) {
-			ret = usb_transfer_dmabuf(pdata->fd_in,
-						  block_entry->dmabuf_fd,
-						  bytes_used);
+			ret = usb_transfer_dmabuf(pdata->fd_in, block_entry->dmabuf_fd, bytes_used);
 			if (ret)
 				goto out_send_response;
 		} else {
@@ -900,9 +871,8 @@ out_send_response:
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
-static void handle_retry_dequeue_block(struct parser_pdata *pdata,
-				       const struct iiod_command *cmd,
-				       struct iiod_command_data *cmd_data)
+static void handle_retry_dequeue_block(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct buffer_entry *entry;
 	struct block_entry *block_entry;
@@ -940,9 +910,8 @@ out_send_response:
 	iiod_io_send_response_code(block_entry->io, ret);
 }
 
-void iiod_set_event(struct iio_event_stream *stream,
-		    const struct iio_event *event,
-		    int err_code_or_zero)
+void iiod_set_event(struct iio_event_stream *stream, const struct iio_event *event,
+		int err_code_or_zero)
 {
 	struct evstream_entry *elm, *entry = NULL;
 	struct iiod_buf buf = {
@@ -952,7 +921,8 @@ void iiod_set_event(struct iio_event_stream *stream,
 
 	iio_mutex_lock(evlist_lock);
 
-	SLIST_FOREACH(elm, &evlist, entry) {
+	SLIST_FOREACH(elm, &evlist, entry)
+	{
 		if (elm->stream == stream) {
 			entry = elm;
 			break;
@@ -985,14 +955,13 @@ static int evstream_read(void *priv, void *d)
 	}
 
 	if (ret < 0)
-	      return iiod_io_send_response_code(entry->io, ret);
+		return iiod_io_send_response_code(entry->io, ret);
 
 	return iiod_io_send_response(entry->io, sizeof(event), &buf, 1);
 }
 
-static void handle_create_evstream(struct parser_pdata *pdata,
-				   const struct iiod_command *cmd,
-				   struct iiod_command_data *cmd_data)
+static void handle_create_evstream(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	const struct iio_context *ctx = pdata->ctx;
 	const struct iio_device *dev;
@@ -1029,8 +998,7 @@ static void handle_create_evstream(struct parser_pdata *pdata,
 		goto out_send_response;
 	}
 
-	entry->task = iio_task_create(evstream_read, entry,
-				      "evstream-read");
+	entry->task = iio_task_create(evstream_read, entry, "evstream-read");
 	ret = iio_err(entry->task);
 	if (ret) {
 		iio_event_stream_destroy(entry->stream);
@@ -1052,9 +1020,8 @@ out_send_response:
 	iiod_io_unref(io);
 }
 
-static struct evstream_entry * get_evstream(struct parser_pdata *pdata,
-					    const struct iiod_command *cmd,
-					    uint16_t idx, bool remove)
+static struct evstream_entry *get_evstream(struct parser_pdata *pdata,
+		const struct iiod_command *cmd, uint16_t idx, bool remove)
 {
 	const struct iio_context *ctx = pdata->ctx;
 	const struct iio_device *dev;
@@ -1065,16 +1032,15 @@ static struct evstream_entry * get_evstream(struct parser_pdata *pdata,
 		return NULL;
 
 	iio_mutex_lock(evlist_lock);
-	SLIST_FOREACH(entry, &evlist, entry) {
-		if (entry->client_id == idx
-		    && entry->dev == dev
-		    && entry->pdata == pdata) {
+	SLIST_FOREACH(entry, &evlist, entry)
+	{
+		if (entry->client_id == idx && entry->dev == dev && entry->pdata == pdata) {
 			break;
 		}
 	}
 
 	if (entry && remove)
-	      SLIST_REMOVE(&evlist, entry, evstream_entry, entry);
+		SLIST_REMOVE(&evlist, entry, evstream_entry, entry);
 
 	iio_mutex_unlock(evlist_lock);
 
@@ -1083,7 +1049,6 @@ static struct evstream_entry * get_evstream(struct parser_pdata *pdata,
 
 static void free_evstream(struct evstream_entry *entry)
 {
-
 	iio_event_stream_destroy(entry->stream);
 	iiod_io_cancel(entry->io);
 
@@ -1094,9 +1059,8 @@ static void free_evstream(struct evstream_entry *entry)
 	free(entry);
 }
 
-static void handle_free_evstream(struct parser_pdata *pdata,
-				 const struct iiod_command *cmd,
-				 struct iiod_command_data *cmd_data)
+static void handle_free_evstream(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct evstream_entry *entry;
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
@@ -1114,9 +1078,8 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static void handle_read_event(struct parser_pdata *pdata,
-			      const struct iiod_command *cmd,
-			      struct iiod_command_data *cmd_data)
+static void handle_read_event(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
 {
 	struct evstream_entry *entry;
 	int ret;
@@ -1138,9 +1101,9 @@ static void handle_read_event(struct parser_pdata *pdata,
 		 * and respond here. */
 		ret = iio_event_stream_read(entry->stream, &event, true);
 		if (ret < 0)
-		      iiod_io_send_response_code(entry->io, ret);
+			iiod_io_send_response_code(entry->io, ret);
 		else
-		      iiod_io_send_response(entry->io, sizeof(event), &buf, 1);
+			iiod_io_send_response(entry->io, sizeof(event), &buf, 1);
 	} else {
 		/* Blocking mode: defer the answer. */
 		ret = iio_task_enqueue_autoclear(entry->task, entry);
@@ -1149,42 +1112,40 @@ static void handle_read_event(struct parser_pdata *pdata,
 	}
 }
 
-typedef void (*iiod_opcode_fn)(struct parser_pdata *,
-			       const struct iiod_command *,
-			       struct iiod_command_data *cmd_data);
+typedef void (*iiod_opcode_fn)(struct parser_pdata *, const struct iiod_command *,
+		struct iiod_command_data *cmd_data);
 
 static const iiod_opcode_fn iiod_op_functions[] = {
-	[IIOD_OP_PRINT]			= handle_print,
-	[IIOD_OP_TIMEOUT]		= handle_timeout,
-	[IIOD_OP_READ_ATTR]		= handle_read_attr,
-	[IIOD_OP_READ_DBG_ATTR]		= handle_read_attr,
-	[IIOD_OP_READ_BUF_ATTR]		= handle_read_attr,
-	[IIOD_OP_READ_CHN_ATTR]		= handle_read_attr,
-	[IIOD_OP_WRITE_ATTR]		= handle_write_attr,
-	[IIOD_OP_WRITE_DBG_ATTR]	= handle_write_attr,
-	[IIOD_OP_WRITE_BUF_ATTR]	= handle_write_attr,
-	[IIOD_OP_WRITE_CHN_ATTR]	= handle_write_attr,
-	[IIOD_OP_GETTRIG]		= handle_gettrig,
-	[IIOD_OP_SETTRIG]		= handle_settrig,
+	[IIOD_OP_PRINT] = handle_print,
+	[IIOD_OP_TIMEOUT] = handle_timeout,
+	[IIOD_OP_READ_ATTR] = handle_read_attr,
+	[IIOD_OP_READ_DBG_ATTR] = handle_read_attr,
+	[IIOD_OP_READ_BUF_ATTR] = handle_read_attr,
+	[IIOD_OP_READ_CHN_ATTR] = handle_read_attr,
+	[IIOD_OP_WRITE_ATTR] = handle_write_attr,
+	[IIOD_OP_WRITE_DBG_ATTR] = handle_write_attr,
+	[IIOD_OP_WRITE_BUF_ATTR] = handle_write_attr,
+	[IIOD_OP_WRITE_CHN_ATTR] = handle_write_attr,
+	[IIOD_OP_GETTRIG] = handle_gettrig,
+	[IIOD_OP_SETTRIG] = handle_settrig,
 
-	[IIOD_OP_CREATE_BUFFER]		= handle_create_buffer,
-	[IIOD_OP_FREE_BUFFER]		= handle_free_buffer,
-	[IIOD_OP_ENABLE_BUFFER]		= handle_enable_buffer,
-	[IIOD_OP_DISABLE_BUFFER]	= handle_disable_buffer,
+	[IIOD_OP_CREATE_BUFFER] = handle_create_buffer,
+	[IIOD_OP_FREE_BUFFER] = handle_free_buffer,
+	[IIOD_OP_ENABLE_BUFFER] = handle_enable_buffer,
+	[IIOD_OP_DISABLE_BUFFER] = handle_disable_buffer,
 
-	[IIOD_OP_CREATE_BLOCK]		= handle_create_block,
-	[IIOD_OP_FREE_BLOCK]		= handle_free_block,
-	[IIOD_OP_TRANSFER_BLOCK]	= handle_transfer_block,
-	[IIOD_OP_ENQUEUE_BLOCK_CYCLIC]	= handle_transfer_block,
-	[IIOD_OP_RETRY_DEQUEUE_BLOCK]	= handle_retry_dequeue_block,
+	[IIOD_OP_CREATE_BLOCK] = handle_create_block,
+	[IIOD_OP_FREE_BLOCK] = handle_free_block,
+	[IIOD_OP_TRANSFER_BLOCK] = handle_transfer_block,
+	[IIOD_OP_ENQUEUE_BLOCK_CYCLIC] = handle_transfer_block,
+	[IIOD_OP_RETRY_DEQUEUE_BLOCK] = handle_retry_dequeue_block,
 
-	[IIOD_OP_CREATE_EVSTREAM]	= handle_create_evstream,
-	[IIOD_OP_FREE_EVSTREAM]		= handle_free_evstream,
-	[IIOD_OP_READ_EVENT]		= handle_read_event,
+	[IIOD_OP_CREATE_EVSTREAM] = handle_create_evstream,
+	[IIOD_OP_FREE_EVSTREAM] = handle_free_evstream,
+	[IIOD_OP_READ_EVENT] = handle_read_event,
 };
 
-static int iiod_cmd(const struct iiod_command *cmd,
-		    struct iiod_command_data *data, void *d)
+static int iiod_cmd(const struct iiod_command *cmd, struct iiod_command_data *data, void *d)
 {
 	struct parser_pdata *pdata = d;
 
@@ -1209,9 +1170,9 @@ static ssize_t iiod_write(void *d, const struct iiod_buf *buf, size_t nb)
 }
 
 static const struct iiod_responder_ops iiod_responder_ops = {
-	.cmd	= iiod_cmd,
-	.read	= iiod_read,
-	.write	= iiod_write,
+	.cmd = iiod_cmd,
+	.read = iiod_read,
+	.write = iiod_write,
 };
 
 static void iiod_responder_free_resources(struct parser_pdata *pdata)
@@ -1221,8 +1182,7 @@ static void iiod_responder_free_resources(struct parser_pdata *pdata)
 
 	iio_mutex_lock(buflist_lock);
 
-	for (buf_entry = SLIST_FIRST(&bufferlist);
-	     buf_entry; buf_entry = buf_next) {
+	for (buf_entry = SLIST_FIRST(&bufferlist); buf_entry; buf_entry = buf_next) {
 		buf_next = SLIST_NEXT(buf_entry, entry);
 
 		/* Only free the buffers that this client created */

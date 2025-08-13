@@ -6,9 +6,6 @@
  * Author: Paul Cercueil
  */
 
-#include "iio-config.h"
-#include "network.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <iio/iio-debug.h>
@@ -18,6 +15,9 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include "iio-config.h"
+#include "network.h"
 
 int set_blocking_mode(int fd, bool blocking)
 {
@@ -96,15 +96,13 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	ret = write(io_ctx->cancel_fd[CANCEL_WR_FD], &event, sizeof(event));
 	if (ret == -1) {
 		/* If this happens something went very seriously wrong */
-		prm_perror(io_ctx->params, -errno,
-			   "Unable to signal cancellation event");
+		prm_perror(io_ctx->params, -errno, "Unable to signal cancellation event");
 	}
 }
 
-int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, unsigned int timeout_ms)
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read, unsigned int timeout_ms)
 {
-	int timeout = timeout_ms > 0 ? (int) timeout_ms : -1;
+	int timeout = timeout_ms > 0 ? (int)timeout_ms : -1;
 	struct pollfd pfd[2];
 	int ret;
 
@@ -160,7 +158,6 @@ bool network_connect_in_progress(int err)
 {
 	return err == -EINPROGRESS;
 }
-
 
 /* Use it if available */
 #ifndef SOCK_CLOEXEC

@@ -11,14 +11,13 @@
  * which is also LGPL 2.1 or later.
  */
 
-#include "dns_sd.h"
-#include "network.h"
-
+#include <errno.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
 
-#include <errno.h>
+#include "dns_sd.h"
+#include "network.h"
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -45,7 +44,7 @@ static void dnssd_free_discovery_data(struct dns_sd_discovery_data *d)
 
 /* Some functions for handling common linked list operations */
 static void dnssd_remove_node(const struct iio_context_params *params,
-			      struct dns_sd_discovery_data **ddata, int n)
+		struct dns_sd_discovery_data **ddata, int n)
 {
 	struct dns_sd_discovery_data *d, *ndata, *ldata, *tdata;
 	int i;
@@ -72,8 +71,10 @@ static void dnssd_remove_node(const struct iio_context_params *params,
 			i++;
 		}
 		if (i < n) {
-			prm_err(params, "dnssd_remove_node call when %i exceeds "
-				"list length (%i)\n", n, i);
+			prm_err(params,
+					"dnssd_remove_node call when %i exceeds "
+					"list length (%i)\n",
+					n, i);
 		}
 	}
 
@@ -84,12 +85,11 @@ static void dnssd_remove_node(const struct iio_context_params *params,
  * DNS Service Discovery is turned on
  */
 
-static int dnssd_add_scan_result(const struct iio_context_params *params,
-				 struct iio_scan *scan_ctx,
-				 char *hostname, char *addr_str, uint16_t port)
+static int dnssd_add_scan_result(const struct iio_context_params *params, struct iio_scan *scan_ctx,
+		char *hostname, char *addr_str, uint16_t port)
 {
 	struct iio_context *ctx;
-	char uri[sizeof("ip:") + FQDN_LEN + sizeof (":65535") + 1];
+	char uri[sizeof("ip:") + FQDN_LEN + sizeof(":65535") + 1];
 	char description[255], *p;
 	const char *hw_model = NULL, *serial = NULL;
 	const struct iio_attr *attr;
@@ -122,15 +122,15 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 		serial = iio_attr_get_static_value(attr);
 
 	if (hw_model && serial) {
-		iio_snprintf(description, sizeof(description), "%s (%s), serial=%s",
-				addr_str, hw_model, serial);
+		iio_snprintf(description, sizeof(description), "%s (%s), serial=%s", addr_str,
+				hw_model, serial);
 	} else if (hw_model) {
 		iio_snprintf(description, sizeof(description), "%s %s", addr_str, hw_model);
 	} else if (serial) {
 		iio_snprintf(description, sizeof(description), "%s %s", addr_str, serial);
 	} else if (iio_context_get_devices_count(ctx) == 0) {
 		iio_snprintf(description, sizeof(description), "%s",
-			     iio_context_get_description(ctx));
+				iio_context_get_description(ctx));
 	} else {
 		iio_snprintf(description, sizeof(description), "%s (", addr_str);
 		p = description + strlen(description);
@@ -138,8 +138,8 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
 			const struct iio_device *dev = iio_context_get_device(ctx, i);
 			const char *name = iio_device_get_name(dev);
 			if (name) {
-				iio_snprintf(p, sizeof(description) - strlen(description) -1,
-						"%s,",  name);
+				iio_snprintf(p, sizeof(description) - strlen(description) - 1,
+						"%s,", name);
 				p += strlen(p);
 			}
 		}
@@ -157,8 +157,8 @@ static int dnssd_add_scan_result(const struct iio_context_params *params,
  * This is sort of silly, but we have seen non-iio devices advertised
  * and discovered on the network. Oh well....
  */
-void port_knock_discovery_data(const struct iio_context_params *params,
-			       struct dns_sd_discovery_data **ddata)
+void port_knock_discovery_data(
+		const struct iio_context_params *params, struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d, *ndata;
 	unsigned int timeout_ms;
@@ -171,7 +171,7 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 
 	d = *ddata;
 	iio_mutex_lock(d->lock);
-	for (i = 0, ndata = d; ndata->next != NULL; ) {
+	for (i = 0, ndata = d; ndata->next != NULL;) {
 		char port_str[6];
 		struct addrinfo hints, *res, *rp;
 		int fd;
@@ -186,25 +186,24 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 
 		/* getaddrinfo() returns a list of address structures */
 		if (ret) {
-			prm_dbg(params, "Unable to find host ('%s'): %s\n",
-				ndata->hostname,
-				gai_strerror(ret));
+			prm_dbg(params, "Unable to find host ('%s'): %s\n", ndata->hostname,
+					gai_strerror(ret));
 		} else {
 			for (rp = res; rp != NULL; rp = rp->ai_next) {
 				fd = create_socket(rp, timeout_ms);
 				if (fd < 0) {
 					prm_dbg(params, "Unable to open %s%s socket ('%s:%d' %s)\n",
-						rp->ai_family == AF_INET ? "ipv4" : "",
-						rp->ai_family == AF_INET6? "ipv6" : "",
-						ndata->hostname, ndata->port,
-						ndata->addr_str);
+							rp->ai_family == AF_INET ? "ipv4" : "",
+							rp->ai_family == AF_INET6 ? "ipv6" : "",
+							ndata->hostname, ndata->port,
+							ndata->addr_str);
 				} else {
 					close(fd);
 					prm_dbg(params, "Something %s%s at '%s:%d' %s)\n",
-						rp->ai_family == AF_INET ? "ipv4" : "",
-						rp->ai_family == AF_INET6? "ipv6" : "",
-						ndata->hostname, ndata->port,
-						ndata->addr_str);
+							rp->ai_family == AF_INET ? "ipv4" : "",
+							rp->ai_family == AF_INET6 ? "ipv6" : "",
+							ndata->hostname, ndata->port,
+							ndata->addr_str);
 					found = true;
 				}
 			}
@@ -223,8 +222,8 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 	return;
 }
 
-void remove_dup_discovery_data(const struct iio_context_params *params,
-			       struct dns_sd_discovery_data **ddata)
+void remove_dup_discovery_data(
+		const struct iio_context_params *params, struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d, *ndata, *mdata, *prev;
 	int i, j;
@@ -246,11 +245,9 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 		for (j = i + 1, mdata = ndata->next; mdata->next != NULL; mdata = mdata->next) {
 			if (!strcmp(mdata->hostname, ndata->hostname) &&
 					!strcmp(mdata->addr_str, ndata->addr_str) &&
-					mdata->port == ndata->port){
-				prm_dbg(params,
-					"Removing duplicate in list: %i '%s' '%s' port: %hu\n",
-					j, ndata->hostname, ndata->addr_str,
-					ndata->port);
+					mdata->port == ndata->port) {
+				prm_dbg(params, "Removing duplicate in list: %i '%s' '%s' port: %hu\n",
+						j, ndata->hostname, ndata->addr_str, ndata->port);
 				dnssd_remove_node(params, &d, j);
 
 				/* back up one, so the mdata->next will point to the
@@ -269,11 +266,9 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 	ndata = d;
 	i = 0;
 	while (ndata->next) {
-		if (!strcmp(ndata->addr_str, "127.0.0.1") ||
-				!strcmp(ndata->addr_str, "::1")) {
-			prm_dbg(params,
-				"Removing localhost in list: %i '%s' '%s' port: %hu\n",
-				i, ndata->hostname, ndata->addr_str, ndata->port);
+		if (!strcmp(ndata->addr_str, "127.0.0.1") || !strcmp(ndata->addr_str, "::1")) {
+			prm_dbg(params, "Removing localhost in list: %i '%s' '%s' port: %hu\n", i,
+					ndata->hostname, ndata->addr_str, ndata->port);
 			dnssd_remove_node(params, &d, i);
 			if (!prev)
 				ndata = d;
@@ -290,8 +285,8 @@ void remove_dup_discovery_data(const struct iio_context_params *params,
 	*ddata = d;
 }
 
-int dnssd_context_scan(const struct iio_context_params *params,
-		       struct iio_scan *ctx, const char *args)
+int dnssd_context_scan(
+		const struct iio_context_params *params, struct iio_scan *ctx, const char *args)
 {
 	struct dns_sd_discovery_data *ddata, *ndata;
 	int ret = 0;
@@ -308,11 +303,11 @@ int dnssd_context_scan(const struct iio_context_params *params,
 		goto fail;
 
 	for (ndata = ddata; ndata->next != NULL; ndata = ndata->next) {
-		ret = dnssd_add_scan_result(params, ctx, ndata->hostname,
-					    ndata->addr_str,ndata->port);
+		ret = dnssd_add_scan_result(
+				params, ctx, ndata->hostname, ndata->addr_str, ndata->port);
 		if (ret < 0) {
-			prm_dbg(params, "Failed to add %s (%s) err: %d\n",
-				ndata->hostname, ndata->addr_str, ret);
+			prm_dbg(params, "Failed to add %s (%s) err: %d\n", ndata->hostname,
+					ndata->addr_str, ret);
 			break;
 		}
 	}
@@ -322,8 +317,8 @@ fail:
 	return ret;
 }
 
-int dnssd_discover_host(const struct iio_context_params *params, char *addr_str,
-			size_t addr_len, uint16_t *port)
+int dnssd_discover_host(const struct iio_context_params *params, char *addr_str, size_t addr_len,
+		uint16_t *port)
 {
 	struct dns_sd_discovery_data *ddata, *ndata;
 	int ret = 0;
@@ -353,8 +348,8 @@ host_fail:
 	return ret;
 }
 
-void dnssd_free_all_discovery_data(const struct iio_context_params *params,
-				   struct dns_sd_discovery_data *d)
+void dnssd_free_all_discovery_data(
+		const struct iio_context_params *params, struct dns_sd_discovery_data *d)
 {
 	while (d)
 		dnssd_remove_node(params, &d, 0);

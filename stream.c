@@ -6,12 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-private.h"
-
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+#include "iio-private.h"
 
 struct iio_stream {
 	struct iio_buffer *buffer;
@@ -21,9 +21,8 @@ struct iio_stream {
 	unsigned int curr;
 };
 
-struct iio_stream *
-iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
-			 size_t samples_count)
+struct iio_stream *iio_buffer_create_stream(
+		struct iio_buffer *buffer, size_t nb_blocks, size_t samples_count)
 {
 	struct iio_stream *stream;
 	size_t i, sample_size, buf_size;
@@ -91,8 +90,7 @@ void iio_stream_destroy(struct iio_stream *stream)
 	free(stream);
 }
 
-const struct iio_block *
-iio_stream_get_next_block(struct iio_stream *stream)
+const struct iio_block *iio_stream_get_next_block(struct iio_stream *stream)
 {
 	const struct iio_device *dev = stream->buffer->dev;
 	bool is_tx = iio_device_is_tx(dev);

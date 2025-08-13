@@ -6,21 +6,21 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
-#include "ops.h"
-#include "parser.h"
-#include "thread-pool.h"
-
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
-#include <pthread.h>
 #include <poll.h>
+#include <pthread.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/eventfd.h>
 #include <time.h>
-#include <fcntl.h>
-#include <signal.h>
+
+#include "debug.h"
+#include "ops.h"
+#include "parser.h"
+#include "thread-pool.h"
 
 int yyparse(yyscan_t scanner);
 
@@ -53,8 +53,7 @@ static void thd_entry_event_signal(struct ThdEntry *thd)
 	} while (ret == -1 && errno == EINTR);
 }
 
-static int thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex,
-	int fd_in)
+static int thd_entry_event_wait(struct ThdEntry *thd, pthread_mutex_t *mutex, int fd_in)
 {
 	struct pollfd pfd[3];
 	uint64_t e;
@@ -144,8 +143,7 @@ static void print_value(struct parser_pdata *pdata, long value)
 	output(pdata, buf);
 }
 
-static ssize_t send_sample(const struct iio_channel *chn,
-		void *src, size_t length, void *d)
+static ssize_t send_sample(const struct iio_channel *chn, void *src, size_t length, void *d)
 {
 	struct sample_cb_info *info = d;
 
@@ -170,8 +168,7 @@ static ssize_t send_sample(const struct iio_channel *chn,
 	return write_all(info->pdata, src, length);
 }
 
-static ssize_t receive_sample(const struct iio_channel *chn,
-		void *dst, size_t length, void *d)
+static ssize_t receive_sample(const struct iio_channel *chn, void *dst, size_t length, void *d)
 {
 	struct sample_cb_info *info = d;
 
@@ -234,8 +231,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 
 		length = sizeof(buf);
 		/* Send the current mask */
-		for (i = nb_words; i > 0 && ptr < buf + sizeof(buf);
-				i--, ptr += 8) {
+		for (i = nb_words; i > 0 && ptr < buf + sizeof(buf); i--, ptr += 8) {
 			snprintf(ptr, length, "%08x", words[i - 1]);
 			length -= 8;
 		}
@@ -268,8 +264,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 			.nb_bytes = len,
 		};
 
-		return iio_block_foreach_sample(block, thd->mask,
-						send_sample, &info);
+		return iio_block_foreach_sample(block, thd->mask, send_sample, &info);
 	}
 }
 
@@ -304,8 +299,7 @@ static ssize_t receive_data(struct DevEntry *dev, struct ThdEntry *thd)
 			.nb_bytes = thd->nb,
 		};
 
-		return iio_block_foreach_sample(block, thd->mask,
-						receive_sample, &info);
+		return iio_block_foreach_sample(block, thd->mask, receive_sample, &info);
 	}
 }
 
@@ -336,8 +330,8 @@ static void signal_thread(struct ThdEntry *thd, ssize_t ret)
 	thd_entry_event_signal(thd);
 }
 
-static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
-				 struct iio_channels_mask *mask)
+static int create_buf_and_blocks(
+		struct DevEntry *entry, size_t samples_count, struct iio_channels_mask *mask)
 {
 	struct iio_device_pdata *dev_pdata;
 	size_t buf_size;
@@ -373,7 +367,7 @@ static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
 
 err_free_blocks:
 	for (; i; i--)
-	      iio_block_destroy(entry->blocks[i - 1]);
+		iio_block_destroy(entry->blocks[i - 1]);
 	iio_buffer_destroy(entry->buf);
 err_free_blocks_array:
 	entry->buf = NULL;
@@ -417,12 +411,10 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	struct iio_block *block;
 	ssize_t nb_bytes, ret = 0;
 
-	IIO_DEBUG("R/W thread started for device %s\n",
-		  dev_label_or_name_or_id(dev));
+	IIO_DEBUG("R/W thread started for device %s\n", dev_label_or_name_or_id(dev));
 
 	while (true) {
-		bool has_readers = false, has_writers = false,
-		     mask_updated = false;
+		bool has_readers = false, has_writers = false, mask_updated = false;
 		unsigned int sample_size;
 
 		/* NOTE: this while loop must exit with thdlist_lock locked. */
@@ -442,7 +434,8 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				iio_channel_disable(chn, entry->mask);
 			}
 
-			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
+			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry)
+			{
 				for (i = 0; i < nb_channels; i++) {
 					chn = iio_device_get_channel(dev, i);
 
@@ -477,7 +470,8 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			}
 
 			/* Signal the threads that we opened the device */
-			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
+			SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry)
+			{
 				if (thd->wait_for_open) {
 					thd->wait_for_open = false;
 					signal_thread(thd, 0);
@@ -485,7 +479,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			}
 
 			IIO_DEBUG("IIO device %s reopened with new mask\n",
-				  dev_label_or_name_or_id(dev));
+					dev_label_or_name_or_id(dev));
 			entry->update_mask = false;
 
 			entry->sample_size = iio_device_get_sample_size(dev, entry->mask);
@@ -495,7 +489,8 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 		sample_size = entry->sample_size;
 
-		SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry) {
+		SLIST_FOREACH(thd, &entry->thdlist_head, dev_list_entry)
+		{
 			thd->active = !thd->err && thd->nb >= sample_size;
 			if (mask_updated && thd->active)
 				signal_thread(thd, thd->nb);
@@ -507,8 +502,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		}
 
 		if (!has_readers && !has_writers) {
-			pthread_cond_wait(&entry->rw_ready_cond,
-					&entry->thdlist_lock);
+			pthread_cond_wait(&entry->rw_ready_cond, &entry->thdlist_lock);
 		}
 
 		pthread_mutex_unlock(&entry->thdlist_lock);
@@ -527,8 +521,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			 * error to all connected clients. */
 
 			/* Don't use SLIST_FOREACH - see comment below */
-			for (thd = SLIST_FIRST(&entry->thdlist_head);
-			     thd; thd = next_thd) {
+			for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
 				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
 				if (!thd->active || thd->is_writer)
@@ -561,8 +554,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			 * signaled, its "thd" structure might be freed;
 			 * SLIST_FOREACH would then cause a segmentation fault, as it
 			 * reads "thd" to get the address of the next element. */
-			for (thd = SLIST_FIRST(&entry->thdlist_head);
-					thd; thd = next_thd) {
+			for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
 				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
 				if (!thd->active || thd->is_writer)
@@ -573,8 +565,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 					thd->nb -= ret;
 
 				if (ret < 0 || thd->nb < sample_size)
-					signal_thread(thd, (ret < 0) ?
-							ret : (ssize_t) thd->nb);
+					signal_thread(thd, (ret < 0) ? ret : (ssize_t)thd->nb);
 			}
 		}
 
@@ -594,8 +585,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			 */
 
 			/* Same comment as above */
-			for (thd = SLIST_FIRST(&entry->thdlist_head);
-					thd; thd = next_thd) {
+			for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
 				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
 				if (!thd->active || !thd->is_writer)
@@ -623,8 +613,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 		if (has_writers) {
 			/* Signal threads which completed their RW command */
-			for (thd = SLIST_FIRST(&entry->thdlist_head);
-					thd; thd = next_thd) {
+			for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
 				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
 				if (!thd->active || !thd->is_writer)
@@ -659,18 +648,17 @@ static void rw_thd(struct thread_pool *pool, void *d)
 		dev_pdata->entry = NULL;
 	pthread_mutex_unlock(&devlist_lock);
 
-	IIO_DEBUG("Stopping R/W thread for device %s\n",
-		  dev_label_or_name_or_id(dev));
+	IIO_DEBUG("Stopping R/W thread for device %s\n", dev_label_or_name_or_id(dev));
 
 	dev_entry_put(entry);
 }
 
-static struct ThdEntry *parser_lookup_thd_entry(struct parser_pdata *pdata,
-	struct iio_device *dev)
+static struct ThdEntry *parser_lookup_thd_entry(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct ThdEntry *t;
 
-	SLIST_FOREACH(t, &pdata->thdlist_head, parser_list_entry) {
+	SLIST_FOREACH(t, &pdata->thdlist_head, parser_list_entry)
+	{
 		if (t->dev == dev)
 			return t;
 	}
@@ -678,8 +666,8 @@ static struct ThdEntry *parser_lookup_thd_entry(struct parser_pdata *pdata,
 	return NULL;
 }
 
-static ssize_t rw_buffer(struct parser_pdata *pdata,
-		struct iio_device *dev, unsigned int nb, bool is_write)
+static ssize_t rw_buffer(
+		struct parser_pdata *pdata, struct iio_device *dev, unsigned int nb, bool is_write)
 {
 	struct DevEntry *entry;
 	struct ThdEntry *thd;
@@ -726,10 +714,10 @@ static ssize_t rw_buffer(struct parser_pdata *pdata,
 		ret = thd->err;
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
-	if (ret > 0 && ret < (ssize_t) nb)
+	if (ret > 0 && ret < (ssize_t)nb)
 		print_value(thd->pdata, 0);
 
-	IIO_DEBUG("Exiting rw_buffer with code %li\n", (long) ret);
+	IIO_DEBUG("Exiting rw_buffer with code %li\n", (long)ret);
 	if (ret < 0)
 		return ret;
 	else
@@ -746,8 +734,7 @@ static void get_mask(const char *mask, size_t len, uint32_t *words)
 		snprintf(buf, sizeof(buf), "%.*s", 8, mask);
 		sscanf(buf, "%08x", --ptr);
 		mask += 8;
-		IIO_DEBUG("Mask[%lu]: 0x%08x\n",
-				(unsigned long) (words - ptr) / 4, *ptr);
+		IIO_DEBUG("Mask[%lu]: 0x%08x\n", (unsigned long)(words - ptr) / 4, *ptr);
 	}
 }
 
@@ -779,8 +766,8 @@ static void remove_thd_entry(struct ThdEntry *t)
 	free_thd_entry(t);
 }
 
-static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
-			   size_t samples_count, uint32_t *words, bool cyclic)
+static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev, size_t samples_count,
+		uint32_t *words, bool cyclic)
 {
 	int ret = -ENOMEM;
 	struct DevEntry *entry;
@@ -888,7 +875,7 @@ retry:
 			pthread_mutex_unlock(&entry->thdlist_lock);
 
 			if (ret == 0)
-				ret = (int) thd->err;
+				ret = (int)thd->err;
 			if (ret < 0)
 				remove_thd_entry(thd);
 			else
@@ -945,7 +932,7 @@ retry:
 	pthread_mutex_unlock(&entry->thdlist_lock);
 
 	if (ret == 0)
-		ret = (int) thd->err;
+		ret = (int)thd->err;
 	if (ret < 0)
 		remove_thd_entry(thd);
 	else
@@ -981,8 +968,8 @@ static int close_dev_helper(struct parser_pdata *pdata, struct iio_device *dev)
 	return 0;
 }
 
-int open_dev(struct parser_pdata *pdata, struct iio_device *dev,
-		size_t samples_count, const char *mask, bool cyclic)
+int open_dev(struct parser_pdata *pdata, struct iio_device *dev, size_t samples_count,
+		const char *mask, bool cyclic)
 {
 	size_t nb_channels, nb_words, len = strlen(mask);
 	uint32_t *words;
@@ -1016,8 +1003,7 @@ int close_dev(struct parser_pdata *pdata, struct iio_device *dev)
 	return ret;
 }
 
-ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev,
-		unsigned int nb, bool is_write)
+ssize_t rw_dev(struct parser_pdata *pdata, struct iio_device *dev, unsigned int nb, bool is_write)
 {
 	ssize_t ret = rw_buffer(pdata, dev, nb, is_write);
 	if (ret <= 0 || is_write)
@@ -1032,8 +1018,8 @@ static inline uint32_t iiod_htobe32(uint32_t word)
 #elif defined(__GNUC__)
 	return __builtin_bswap32(word);
 #else
-	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) |
-		((word >> 8) & 0xff00) | ((word >> 24) & 0xff);
+	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) | ((word >> 8) & 0xff00) |
+	       ((word >> 24) & 0xff);
 #endif
 }
 
@@ -1042,7 +1028,7 @@ static inline uint32_t iiod_be32toh(uint32_t word)
 	return iiod_htobe32(word);
 }
 
-typedef struct iio_attr * (*rw_attr_cb_t)(const void *, unsigned int);
+typedef struct iio_attr *(*rw_attr_cb_t)(const void *, unsigned int);
 
 static int buffer_analyze(unsigned int nb, const char *src, size_t len)
 {
@@ -1052,12 +1038,12 @@ static int buffer_analyze(unsigned int nb, const char *src, size_t len)
 		if (len < 4)
 			return -EINVAL;
 
-		val = (int32_t) iiod_be32toh(*(uint32_t *) src);
+		val = (int32_t)iiod_be32toh(*(uint32_t *)src);
 		src += 4;
 		len -= 4;
 
 		if (val > 0) {
-			if ((uint32_t) val > len)
+			if ((uint32_t)val > len)
 				return -EINVAL;
 
 			/* Align the length to 4 bytes */
@@ -1072,15 +1058,15 @@ static int buffer_analyze(unsigned int nb, const char *src, size_t len)
 	return !len ? 0 : -EINVAL;
 }
 
-static ssize_t read_each_attr(const void *iio, char *buf, size_t len,
-			      unsigned int nb, rw_attr_cb_t cb)
+static ssize_t read_each_attr(
+		const void *iio, char *buf, size_t len, unsigned int nb, rw_attr_cb_t cb)
 {
 	const struct iio_attr *attr;
-        unsigned int i;
-        char *ptr = buf;
+	unsigned int i;
+	char *ptr = buf;
 	ssize_t ret;
 
-        for (i = 0; len >= 4 && i < nb; i++) {
+	for (i = 0; len >= 4 && i < nb; i++) {
 		attr = (*cb)(iio, i);
 		if (!attr)
 			ret = -ENOENT;
@@ -1088,17 +1074,17 @@ static ssize_t read_each_attr(const void *iio, char *buf, size_t len,
 			ret = iio_attr_read_raw(attr, ptr + 4, len - 4);
 		*(uint32_t *)ptr = iiod_htobe32(ret);
 
-                /* Align the length to 4 bytes */
+		/* Align the length to 4 bytes */
 		ret = ret < 0 ? 0 : (ret + 3) & ~0x3;
-                ptr += 4 + ret;
-                len -= 4 + ret;
-        }
+		ptr += 4 + ret;
+		len -= 4 + ret;
+	}
 
-        return ptr - buf;
+	return ptr - buf;
 }
 
-static ssize_t write_each_attr(const void *iio, const char *buf, size_t len,
-			       unsigned int nb, rw_attr_cb_t cb)
+static ssize_t write_each_attr(
+		const void *iio, const char *buf, size_t len, unsigned int nb, rw_attr_cb_t cb)
 {
 	const struct iio_attr *attr;
 	const char *ptr = buf;
@@ -1111,7 +1097,7 @@ static ssize_t write_each_attr(const void *iio, const char *buf, size_t len,
 		return ret;
 
 	for (i = 0; i < nb; i++) {
-		val = (int32_t) iiod_be32toh(*(uint32_t *)ptr);
+		val = (int32_t)iiod_be32toh(*(uint32_t *)ptr);
 		ptr += 4;
 
 		if (val > 0) {
@@ -1129,8 +1115,8 @@ static ssize_t write_each_attr(const void *iio, const char *buf, size_t len,
 	return ptr - buf;
 }
 
-ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		      const char *name, enum iio_attr_type type)
+ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev, const char *name,
+		enum iio_attr_type type)
 {
 	const struct iio_device_pdata *dev_pdata;
 	const struct iio_attr *attr;
@@ -1148,57 +1134,57 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 
 	if (!name) {
 		switch (type) {
-			case IIO_ATTR_TYPE_DEVICE:
-				nb = iio_device_get_attrs_count(dev);
-				ret = read_each_attr(dev, buf, sizeof(buf) - 1, nb,
-						     (rw_attr_cb_t)iio_device_get_attr);
-				break;
-			case IIO_ATTR_TYPE_DEBUG:
-				nb = iio_device_get_debug_attrs_count(dev);
-				ret = read_each_attr(dev, buf, sizeof(buf) - 1, nb,
-						     (rw_attr_cb_t)iio_device_get_debug_attr);
-				break;
-			default:
-				return -EINVAL;
+		case IIO_ATTR_TYPE_DEVICE:
+			nb = iio_device_get_attrs_count(dev);
+			ret = read_each_attr(dev, buf, sizeof(buf) - 1, nb,
+					(rw_attr_cb_t)iio_device_get_attr);
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			nb = iio_device_get_debug_attrs_count(dev);
+			ret = read_each_attr(dev, buf, sizeof(buf) - 1, nb,
+					(rw_attr_cb_t)iio_device_get_debug_attr);
+			break;
+		default:
+			return -EINVAL;
 		}
 
 		goto out_print_value;
 	}
 
 	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			attr = iio_device_find_attr(dev, name);
+	case IIO_ATTR_TYPE_DEVICE:
+		attr = iio_device_find_attr(dev, name);
+		if (attr)
+			ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		else
+			ret = -ENOENT;
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		attr = iio_device_find_debug_attr(dev, name);
+		if (attr)
+			ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+		else
+			ret = -ENOENT;
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		pthread_mutex_lock(&devlist_lock);
+
+		dev_pdata = iio_device_get_data(dev);
+		if (dev_pdata->entry && dev_pdata->entry->buf) {
+			attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
 			if (attr)
 				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
 			else
 				ret = -ENOENT;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			attr = iio_device_find_debug_attr(dev, name);
-			if (attr)
-				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
-			else
-				ret = -ENOENT;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			pthread_mutex_lock(&devlist_lock);
+		} else {
+			ret = -EBADF;
+		}
 
-			dev_pdata = iio_device_get_data(dev);
-			if (dev_pdata->entry && dev_pdata->entry->buf) {
-				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
-				if (attr)
-					ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
-				else
-					ret = -ENOENT;
-			} else {
-				ret = -EBADF;
-			}
-
-			pthread_mutex_unlock(&devlist_lock);
-			break;
-		default:
-			ret = -EINVAL;
-			break;
+		pthread_mutex_unlock(&devlist_lock);
+		break;
+	default:
+		ret = -EINVAL;
+		break;
 	}
 
 out_print_value:
@@ -1210,8 +1196,8 @@ out_print_value:
 	return write_all(pdata, buf, ret + 1);
 }
 
-ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
-		       const char *name, size_t len, enum iio_attr_type type)
+ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev, const char *name,
+		size_t len, enum iio_attr_type type)
 {
 	const struct iio_device_pdata *dev_pdata;
 	const struct iio_attr *attr;
@@ -1234,57 +1220,57 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 
 	if (!name) {
 		switch (type) {
-			case IIO_ATTR_TYPE_DEVICE:
-				nb = iio_device_get_attrs_count(dev);
-				ret = write_each_attr(dev, buf, len - 1, nb,
-						      (rw_attr_cb_t)iio_device_get_attr);
-				break;
-			case IIO_ATTR_TYPE_DEBUG:
-				nb = iio_device_get_debug_attrs_count(dev);
-				ret = write_each_attr(dev, buf, len - 1, nb,
-						      (rw_attr_cb_t)iio_device_get_debug_attr);
-				break;
-			default:
-				return -EINVAL;
+		case IIO_ATTR_TYPE_DEVICE:
+			nb = iio_device_get_attrs_count(dev);
+			ret = write_each_attr(
+					dev, buf, len - 1, nb, (rw_attr_cb_t)iio_device_get_attr);
+			break;
+		case IIO_ATTR_TYPE_DEBUG:
+			nb = iio_device_get_debug_attrs_count(dev);
+			ret = write_each_attr(dev, buf, len - 1, nb,
+					(rw_attr_cb_t)iio_device_get_debug_attr);
+			break;
+		default:
+			return -EINVAL;
 		}
 
 		goto out_print_value;
 	}
 
 	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-			attr = iio_device_find_attr(dev, name);
+	case IIO_ATTR_TYPE_DEVICE:
+		attr = iio_device_find_attr(dev, name);
+		if (attr)
+			ret = iio_attr_write_raw(attr, buf, len);
+		else
+			ret = -ENOENT;
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		attr = iio_device_find_debug_attr(dev, name);
+		if (attr)
+			ret = iio_attr_write_raw(attr, buf, len);
+		else
+			ret = -ENOENT;
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		pthread_mutex_lock(&devlist_lock);
+
+		dev_pdata = iio_device_get_data(dev);
+		if (dev_pdata->entry && dev_pdata->entry->buf) {
+			attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
 			if (attr)
 				ret = iio_attr_write_raw(attr, buf, len);
 			else
 				ret = -ENOENT;
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			attr = iio_device_find_debug_attr(dev, name);
-			if (attr)
-				ret = iio_attr_write_raw(attr, buf, len);
-			else
-				ret = -ENOENT;
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			pthread_mutex_lock(&devlist_lock);
+		} else {
+			ret = -EBADF;
+		}
 
-			dev_pdata = iio_device_get_data(dev);
-			if (dev_pdata->entry && dev_pdata->entry->buf) {
-				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
-				if (attr)
-					ret = iio_attr_write_raw(attr, buf, len);
-				else
-					ret = -ENOENT;
-			} else {
-				ret = -EBADF;
-			}
-
-			pthread_mutex_unlock(&devlist_lock);
-			break;
-		default:
-			ret = -EINVAL;
-			break;
+		pthread_mutex_unlock(&devlist_lock);
+		break;
+	default:
+		ret = -EINVAL;
+		break;
 	}
 
 out_free_buffer:
@@ -1294,8 +1280,7 @@ out_print_value:
 	return ret;
 }
 
-ssize_t read_chn_attr(struct parser_pdata *pdata,
-		      struct iio_channel *chn, const char *name)
+ssize_t read_chn_attr(struct parser_pdata *pdata, struct iio_channel *chn, const char *name)
 {
 	/* We use a very large buffer here, as if attr is NULL all the
 	 * attributes will be read, which may represents a few kilobytes worth
@@ -1312,8 +1297,8 @@ ssize_t read_chn_attr(struct parser_pdata *pdata,
 
 	if (!name) {
 		nb = iio_channel_get_attrs_count(chn);
-		ret = read_each_attr(chn, buf, sizeof(buf) - 1, nb,
-				     (rw_attr_cb_t)iio_channel_get_attr);
+		ret = read_each_attr(
+				chn, buf, sizeof(buf) - 1, nb, (rw_attr_cb_t)iio_channel_get_attr);
 	} else {
 		attr = iio_channel_find_attr(chn, name);
 		if (attr)
@@ -1331,8 +1316,8 @@ out_print_value:
 	return write_all(pdata, buf, ret + 1);
 }
 
-ssize_t write_chn_attr(struct parser_pdata *pdata,
-		       struct iio_channel *chn, const char *name, size_t len)
+ssize_t write_chn_attr(
+		struct parser_pdata *pdata, struct iio_channel *chn, const char *name, size_t len)
 {
 	const struct iio_attr *attr;
 	ssize_t ret = -ENOMEM;
@@ -1354,8 +1339,8 @@ ssize_t write_chn_attr(struct parser_pdata *pdata,
 
 	if (!name) {
 		nb = iio_channel_get_attrs_count(chn);
-		ret = write_each_attr(chn, buf, sizeof(buf) - 1, nb,
-				      (rw_attr_cb_t)iio_channel_get_attr);
+		ret = write_each_attr(
+				chn, buf, sizeof(buf) - 1, nb, (rw_attr_cb_t)iio_channel_get_attr);
 	} else {
 		attr = iio_channel_find_attr(chn, name);
 		if (attr)
@@ -1371,8 +1356,7 @@ err_print_value:
 	return ret;
 }
 
-ssize_t set_trigger(struct parser_pdata *pdata,
-		struct iio_device *dev, const char *trigger)
+ssize_t set_trigger(struct parser_pdata *pdata, struct iio_device *dev, const char *trigger)
 {
 	struct iio_device *trig = NULL;
 	ssize_t ret = -ENOENT;
@@ -1428,10 +1412,9 @@ int set_timeout(struct parser_pdata *pdata, unsigned int timeout)
 	return ret;
 }
 
-int set_buffers_count(struct parser_pdata *pdata,
-		struct iio_device *dev, long value)
+int set_buffers_count(struct parser_pdata *pdata, struct iio_device *dev, long value)
 {
-	unsigned int nb = (unsigned int) value;
+	unsigned int nb = (unsigned int)value;
 	struct iio_device_pdata *dev_pdata;
 	int ret = 0;
 
@@ -1460,7 +1443,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 	bool found;
 
 	if (pdata->is_usb)
-	      return pdata->readfd(pdata, buf, len);
+		return pdata->readfd(pdata, buf, len);
 
 	if (pdata->fd_in_is_socket) {
 		struct pollfd pfd[2];
@@ -1477,32 +1460,30 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 
 			poll_nointr(pfd, 2);
 
-			if (pfd[1].revents & POLLIN ||
-					pfd[0].revents & POLLRDHUP) {
+			if (pfd[1].revents & POLLIN || pfd[0].revents & POLLRDHUP) {
 				pdata->stop = true;
 				return 0;
 			}
 
 			/* First read from the socket, without advancing the
 			 * read offset */
-			ret = recv(pdata->fd_in, buf, len,
-					MSG_NOSIGNAL | MSG_PEEK);
+			ret = recv(pdata->fd_in, buf, len, MSG_NOSIGNAL | MSG_PEEK);
 			if (ret < 0)
 				return -errno;
 
 			/* Lookup for the trailing \n */
-			for (i = 0; i < (size_t) ret && buf[i] != '\n'; i++);
-			found = i < (size_t) ret;
+			for (i = 0; i < (size_t)ret && buf[i] != '\n'; i++)
+				;
+			found = i < (size_t)ret;
 
 			len -= ret;
 			buf += ret;
 
-			to_trunc = found ? i + 1 : (size_t) ret;
+			to_trunc = found ? i + 1 : (size_t)ret;
 
 			/* Advance the read offset after the \n if found, or
 			 * after the last character read otherwise */
-			ret = recv(pdata->fd_in, NULL, to_trunc,
-					MSG_NOSIGNAL | MSG_TRUNC);
+			ret = recv(pdata->fd_in, NULL, to_trunc, MSG_NOSIGNAL | MSG_TRUNC);
 			if (ret < 0)
 				return -errno;
 
@@ -1512,12 +1493,12 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		while (len) {
 			ret = pdata->readfd(pdata, buf, 1);
 			if (ret < 0)
-			      return ret;
+				return ret;
 
 			bytes_read++;
 
 			if (*buf == '\n')
-			      break;
+				break;
 
 			len--;
 			buf++;
@@ -1526,7 +1507,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len)
 		found = !!len;
 	}
 
-	return found ? (ssize_t) bytes_read : -EIO;
+	return found ? (ssize_t)bytes_read : -EIO;
 }
 
 void ascii_interpreter(struct parser_pdata *pdata)

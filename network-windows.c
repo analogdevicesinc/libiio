@@ -6,10 +6,10 @@
  * Author: Paul Cercueil
  */
 
-#include "network.h"
-
 #include <errno.h>
 #include <ws2tcpip.h>
+
+#include "network.h"
 #define close(s) closesocket(s)
 
 int set_blocking_mode(int s, bool blocking)
@@ -54,11 +54,10 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	WSASetEvent(io_ctx->events[1]);
 }
 
-int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, unsigned int timeout_ms)
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read, unsigned int timeout_ms)
 {
 	long wsa_events = FD_CLOSE;
-	DWORD ret, timeout = timeout_ms > 0 ? (DWORD) timeout_ms : WSA_INFINITE;
+	DWORD ret, timeout = timeout_ms > 0 ? (DWORD)timeout_ms : WSA_INFINITE;
 
 	if (read)
 		wsa_events |= FD_READ;
@@ -69,8 +68,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 	WSAResetEvent(io_ctx->events[0]);
 	WSAEventSelect(io_ctx->fd, io_ctx->events[0], wsa_events);
 
-	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
-				       timeout, FALSE);
+	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE, timeout, FALSE);
 
 	if (ret == WSA_WAIT_TIMEOUT)
 		return -ETIMEDOUT;
@@ -111,11 +109,11 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	SOCKET s;
 
 	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
-		WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
+			WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
 	if (s == INVALID_SOCKET)
 		return -WSAGetLastError();
 
-	return (int) s;
+	return (int)s;
 }
 
 int do_select(int fd, unsigned int timeout)
@@ -135,7 +133,7 @@ int do_select(int fd, unsigned int timeout)
 	FD_ZERO(&set);
 	FD_SET(fd, &set);
 #ifdef _MSC_BUILD
-#pragma warning(default: 4389)
+#pragma warning(default : 4389)
 #endif
 
 	if (timeout != 0) {

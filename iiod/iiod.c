@@ -6,17 +6,16 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include <fcntl.h>
+#include <getopt.h>
+#include <iio/iio-lock.h>
+#include <poll.h>
+#include <signal.h>
+
 #include "../iio-config.h"
 #include "debug.h"
 #include "ops.h"
 #include "thread-pool.h"
-
-#include <iio/iio-lock.h>
-
-#include <fcntl.h>
-#include <getopt.h>
-#include <poll.h>
-#include <signal.h>
 #if WITH_ZSTD
 #include <zstd.h>
 #endif
@@ -26,9 +25,8 @@
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
-static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params,
-		      uint16_t port, unsigned int nb_pipes, int ep0_fd);
+static int start_iiod(const char *uri, const char *ffs_mountpoint, const char *uart_params,
+		uint16_t port, unsigned int nb_pipes, int ep0_fd);
 
 bool server_demux;
 
@@ -39,16 +37,16 @@ struct iio_context_params iiod_params = {
 };
 
 static const struct option options[] = {
-	  {"help", no_argument, 0, 'h'},
-	  {"version", no_argument, 0, 'V'},
-	  {"debug", no_argument, 0, 'd'},
-	  {"demux", no_argument, 0, 'D'},
-	  {"ffs", required_argument, 0, 'F'},
-	  {"nb-pipes", required_argument, 0, 'n'},
-	  {"serial", required_argument, 0, 's'},
-	  {"port", required_argument, 0, 'p'},
-	  {"uri", required_argument, 0, 'u'},
-	  {0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "version", no_argument, 0, 'V' },
+	{ "debug", no_argument, 0, 'd' },
+	{ "demux", no_argument, 0, 'D' },
+	{ "ffs", required_argument, 0, 'F' },
+	{ "nb-pipes", required_argument, 0, 'n' },
+	{ "serial", required_argument, 0, 's' },
+	{ "port", required_argument, 0, 'p' },
+	{ "uri", required_argument, 0, 'u' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -61,10 +59,10 @@ static const char *options_descriptions[] = {
 	"Run " MY_NAME " on the specified UART.",
 	"Port to listen on (default = " STRINGIFY(IIOD_PORT) ").",
 	("Use the context at the provided URI."
-		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
-		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
-		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
-		"\n\t\t\t    'local:' (default)"),
+	 "\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
+	 "\n\t\t\t    'usb:1.2.3', or 'usb:'"
+	 "\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
+	 "\n\t\t\t    'local:' (default)"),
 };
 
 static void usage(void)
@@ -73,9 +71,8 @@ static void usage(void)
 
 	printf("Usage:\n\t" MY_NAME " [OPTIONS ...]\n\nOptions:\n");
 	for (i = 0; options[i].name; i++)
-		printf("\t-%c, --%s\n\t\t\t%s\n",
-					options[i].val, options[i].name,
-					options_descriptions[i]);
+		printf("\t-%c, --%s\n\t\t\t%s\n", options[i].val, options[i].name,
+				options_descriptions[i]);
 }
 
 static void set_handler(int signal, void (*handler)(int))
@@ -120,12 +117,11 @@ static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
 	free(xml);
 
 	if (ZSTD_isError(ret)) {
-		IIO_WARNING("Unable to compress XML string: %s\n",
-			    ZSTD_getErrorName(ret));
+		IIO_WARNING("Unable to compress XML string: %s\n", ZSTD_getErrorName(ret));
 		fprintf(stderr, "Showing data (buf) from failed compression: \n");
 		bytes = (char *)buf;
 		for (i = 0; i < len; i++) {
-			fprintf(stderr, "%02X",bytes[i]);
+			fprintf(stderr, "%02X", bytes[i]);
 		}
 		fprintf(stderr, "\n");
 
@@ -191,8 +187,7 @@ int main(int argc, char **argv)
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
 
-	while ((c = getopt_long(argc, argv, "+hVdDF:n:s:p:u:",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "+hVdDF:n:s:p:u:", options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
 			iiod_params.log_level = LEVEL_DEBUG;
@@ -225,7 +220,6 @@ int main(int argc, char **argv)
 			if (!WITH_IIOD_SERIAL) {
 				IIO_ERROR("IIOD was not compiled with serial support.\n");
 				return EXIT_FAILURE;
-
 			}
 
 			uart_params = optarg;
@@ -245,8 +239,7 @@ int main(int argc, char **argv)
 			usage();
 			return EXIT_SUCCESS;
 		case 'V':
-			printf("%u.%u\n", LIBIIO_VERSION_MAJOR,
-					LIBIIO_VERSION_MINOR);
+			printf("%u.%u\n", LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR);
 			return EXIT_SUCCESS;
 		case '?':
 			return EXIT_FAILURE;
@@ -281,8 +274,7 @@ int main(int argc, char **argv)
 		thread_pool_restart(main_thread_pool);
 		restart_usr1 = false;
 
-		ret = start_iiod(uri, ffs_mountpoint, uart_params,
-				 port, nb_pipes, ep0_fd);
+		ret = start_iiod(uri, ffs_mountpoint, uart_params, port, nb_pipes, ep0_fd);
 	} while (!ret && restart_usr1);
 
 	thread_pool_destroy(main_thread_pool);
@@ -293,22 +285,19 @@ int main(int argc, char **argv)
 	return ret;
 }
 
-static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params,
-		      uint16_t port, unsigned int nb_pipes, int ep0_fd)
+static int start_iiod(const char *uri, const char *ffs_mountpoint, const char *uart_params,
+		uint16_t port, unsigned int nb_pipes, int ep0_fd)
 {
 	struct iio_context *ctx;
 	void *xml_zstd;
 	size_t xml_zstd_len = 0;
 	int ret;
 
-	IIO_INFO("Starting IIO Daemon version %u.%u.%s\n",
-		 LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
-		 LIBIIO_VERSION_GIT);
+	IIO_INFO("Starting IIO Daemon version %u.%u.%s\n", LIBIIO_VERSION_MAJOR,
+			LIBIIO_VERSION_MINOR, LIBIIO_VERSION_GIT);
 
-	if (!WITH_IIOD_NETWORK
-	    && (!WITH_IIOD_USBD || !ffs_mountpoint)
-	    && (!WITH_IIOD_SERIAL || !uart_params)) {
+	if (!WITH_IIOD_NETWORK && (!WITH_IIOD_USBD || !ffs_mountpoint) &&
+			(!WITH_IIOD_SERIAL || !uart_params)) {
 		IIO_ERROR("Not enough parameters given.\n");
 		return EXIT_FAILURE;
 	}
@@ -340,8 +329,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 	}
 
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
-		ret = start_usb_daemon(ctx, ffs_mountpoint,
-				(unsigned int) nb_pipes, ep0_fd,
+		ret = start_usb_daemon(ctx, ffs_mountpoint, (unsigned int)nb_pipes, ep0_fd,
 				main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start USB daemon");
@@ -351,9 +339,8 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 	}
 
 	if (WITH_IIOD_SERIAL && uart_params) {
-		ret = start_serial_daemon(ctx, uart_params,
-					  main_thread_pool,
-					  xml_zstd, xml_zstd_len);
+		ret = start_serial_daemon(
+				ctx, uart_params, main_thread_pool, xml_zstd, xml_zstd_len);
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start serial daemon");
 			ret = EXIT_FAILURE;
@@ -362,8 +349,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 	}
 
 	if (WITH_IIOD_NETWORK) {
-		ret = start_network_daemon(ctx, main_thread_pool,
-					   xml_zstd, xml_zstd_len, port);
+		ret = start_network_daemon(ctx, main_thread_pool, xml_zstd, xml_zstd_len, port);
 		if (ret) {
 			IIO_PERROR(ret, "Unable to start network daemon");
 			ret = EXIT_FAILURE;

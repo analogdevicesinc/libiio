@@ -6,14 +6,14 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iiod-responder.h"
-#include "iio-config.h"
-
 #include <errno.h>
-#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-lock.h>
+#include <iio/iio.h>
 #include <string.h>
+
+#include "iio-config.h"
+#include "iiod-responder.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -126,10 +126,8 @@ static void __iiod_io_cancel_unlocked(struct iiod_io *io)
 	}
 }
 
-static ssize_t iiod_rw_all(struct iiod_responder *priv,
-			   const struct iiod_buf *cmd_buf,
-			   const struct iiod_buf *buf, size_t nb,
-			   size_t bytes, bool is_read)
+static ssize_t iiod_rw_all(struct iiod_responder *priv, const struct iiod_buf *cmd_buf,
+		const struct iiod_buf *buf, size_t nb, size_t bytes, bool is_read)
 {
 	ssize_t ret, count = 0;
 	struct iiod_buf bufs[32], *curr = &bufs[0];
@@ -161,7 +159,7 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 		if (ret <= 0)
 			return ret;
 
-		while (ret && (size_t) ret >= curr->size) {
+		while (ret && (size_t)ret >= curr->size) {
 			ret -= curr->size;
 			count += curr->size;
 			nb--;
@@ -172,7 +170,7 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 			break;
 
 		count += ret;
-		curr->ptr = (char *) curr->ptr + ret;
+		curr->ptr = (char *)curr->ptr + ret;
 		curr->size -= ret;
 	}
 
@@ -186,33 +184,31 @@ static int iiod_discard_data(struct iiod_responder *priv, size_t bytes)
 	while (bytes) {
 		ret = priv->ops->discard(priv->d, bytes);
 		if (ret < 0)
-			return (int) ret;
+			return (int)ret;
 
-		bytes -= (size_t) ret;
+		bytes -= (size_t)ret;
 	}
 
 	return 0;
 }
 
-int iiod_command_data_read(struct iiod_command_data *data,
-			   const struct iiod_buf *buf)
+int iiod_command_data_read(struct iiod_command_data *data, const struct iiod_buf *buf)
 {
-	struct iiod_responder *priv = (struct iiod_responder *) data;
+	struct iiod_responder *priv = (struct iiod_responder *)data;
 	ssize_t ret;
 
 	ret = iiod_rw_all(priv, NULL, buf, 1, buf->size, true);
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 	if (ret != buf->size)
 		return -EIO;
 
 	return 0;
 }
 
-static ssize_t iiod_run_command(struct iiod_responder *priv,
-				struct iiod_command *cmd)
+static ssize_t iiod_run_command(struct iiod_responder *priv, struct iiod_command *cmd)
 {
-	return priv->ops->cmd(cmd, (struct iiod_command_data *) priv, priv->d);
+	return priv->ops->cmd(cmd, (struct iiod_command_data *)priv, priv->d);
 }
 
 static void iiod_responder_signal_io(struct iiod_io *io, int32_t code)
@@ -307,16 +303,16 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		iio_mutex_unlock(priv->lock);
 
 		if (io->r_io.nb_buf && cmd.code > 0) {
-			ret = iiod_rw_all(priv, NULL, io->r_io.buf,
-					  io->r_io.nb_buf, cmd.code, true);
+			ret = iiod_rw_all(
+					priv, NULL, io->r_io.buf, io->r_io.nb_buf, cmd.code, true);
 
-			if (ret > 0 && (size_t) ret < (size_t) cmd.code)
+			if (ret > 0 && (size_t)ret < (size_t)cmd.code)
 				iiod_discard_data(priv, cmd.code - ret);
 
 			iio_mutex_lock(priv->lock);
 
 			if (ret <= 0) {
-				iiod_responder_signal_io(io, (int32_t) ret);
+				iiod_responder_signal_io(io, (int32_t)ret);
 				iiod_io_unref_unlocked(io);
 				break;
 			}
@@ -329,7 +325,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 		iiod_io_unref_unlocked(io);
 	}
 
-	priv->thrd_err_code = priv->thrd_stop ? -EINTR : (int) ret;
+	priv->thrd_err_code = priv->thrd_stop ? -EINTR : (int)ret;
 	priv->thrd_stop = true;
 
 	iiod_responder_cancel_responses(priv);
@@ -338,7 +334,7 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 	iio_mutex_unlock(priv->lock);
 
-	return (int) ret;
+	return (int)ret;
 }
 
 static int iiod_responder_reader_thrd(void *d)
@@ -357,16 +353,14 @@ static int iiod_responder_write(void *p, void *elm)
 	cmd_buf.ptr = &writer->w_io.cmd;
 	cmd_buf.size = sizeof(cmd);
 
-	ret = iiod_rw_all(priv, &cmd_buf, writer->w_io.buf,
-			  writer->w_io.nb_buf, 0, false);
-	writer->w_io.cmd.code = (int32_t) ret;
+	ret = iiod_rw_all(priv, &cmd_buf, writer->w_io.buf, writer->w_io.nb_buf, 0, false);
+	writer->w_io.cmd.code = (int32_t)ret;
 
 	return 0;
 }
 
-static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op,
-				uint8_t dev, int32_t code,
-				const struct iiod_buf *buf, size_t nb)
+static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op, uint8_t dev, int32_t code,
+		const struct iiod_buf *buf, size_t nb)
 {
 	struct iiod_responder *priv = writer->responder;
 
@@ -469,8 +463,7 @@ static int iiod_io_cond_wait(const struct iiod_io *io)
 	diff_ms = (read_counter_us() - io->r_io.start_time) / 1000;
 
 	if (diff_ms < timeout_ms) {
-		return iio_cond_wait(io->cond, io->lock,
-				     (unsigned int)(timeout_ms - diff_ms));
+		return iio_cond_wait(io->cond, io->lock, (unsigned int)(timeout_ms - diff_ms));
 	}
 
 	return -ETIMEDOUT;
@@ -506,17 +499,14 @@ void iiod_io_cancel_response(struct iiod_io *io)
 	iiod_responder_signal_io(io, -EINTR);
 }
 
-int iiod_io_send_command_async(struct iiod_io *io,
-			       const struct iiod_command *cmd,
-			       const struct iiod_buf *buf, size_t nb)
+int iiod_io_send_command_async(struct iiod_io *io, const struct iiod_command *cmd,
+		const struct iiod_buf *buf, size_t nb)
 {
-	return iiod_enqueue_command(io, cmd->op, cmd->dev,
-				    cmd->code, buf, nb);
+	return iiod_enqueue_command(io, cmd->op, cmd->dev, cmd->code, buf, nb);
 }
 
-int iiod_io_send_command(struct iiod_io *io,
-			 const struct iiod_command *cmd,
-			 const struct iiod_buf *buf, size_t nb)
+int iiod_io_send_command(struct iiod_io *io, const struct iiod_command *cmd,
+		const struct iiod_buf *buf, size_t nb)
 {
 	int ret;
 
@@ -527,14 +517,13 @@ int iiod_io_send_command(struct iiod_io *io,
 	return iiod_io_wait_for_command_done(io);
 }
 
-int iiod_io_send_response_async(struct iiod_io *io, int32_t code,
-				const struct iiod_buf *buf, size_t nb)
+int iiod_io_send_response_async(
+		struct iiod_io *io, int32_t code, const struct iiod_buf *buf, size_t nb)
 {
 	return iiod_enqueue_command(io, IIOD_OP_RESPONSE, 0, code, buf, nb);
 }
 
-int iiod_io_send_response(struct iiod_io *io, int32_t code,
-			  const struct iiod_buf *buf, size_t nb)
+int iiod_io_send_response(struct iiod_io *io, int32_t code, const struct iiod_buf *buf, size_t nb)
 {
 	int ret;
 
@@ -545,8 +534,7 @@ int iiod_io_send_response(struct iiod_io *io, int32_t code,
 	return iiod_io_wait_for_command_done(io);
 }
 
-int iiod_io_get_response_async(struct iiod_io *io,
-			       const struct iiod_buf *buf, size_t nb)
+int iiod_io_get_response_async(struct iiod_io *io, const struct iiod_buf *buf, size_t nb)
 {
 	struct iiod_responder *priv = io->responder;
 	struct iiod_io *tmp;
@@ -572,7 +560,7 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	if (!priv->readers) {
 		priv->readers = io;
 	} else {
-		for (tmp = priv->readers; tmp->r_next; )
+		for (tmp = priv->readers; tmp->r_next;)
 			tmp = tmp->r_next;
 		tmp->r_next = io;
 	}
@@ -582,10 +570,8 @@ int iiod_io_get_response_async(struct iiod_io *io,
 	return 0;
 }
 
-int iiod_io_exec_command(struct iiod_io *io,
-			 const struct iiod_command *cmd,
-			 const struct iiod_buf *cmd_buf,
-			 const struct iiod_buf *buf)
+int iiod_io_exec_command(struct iiod_io *io, const struct iiod_command *cmd,
+		const struct iiod_buf *cmd_buf, const struct iiod_buf *buf)
 {
 	int ret;
 
@@ -599,11 +585,10 @@ int iiod_io_exec_command(struct iiod_io *io,
 		return ret;
 	}
 
-	return (int) iiod_io_wait_for_response(io);
+	return (int)iiod_io_wait_for_response(io);
 }
 
-struct iiod_io *
-iiod_responder_create_io(struct iiod_responder *priv, uint16_t id)
+struct iiod_io *iiod_responder_create_io(struct iiod_responder *priv, uint16_t id)
 {
 	struct iiod_io *io;
 	int err;
@@ -637,21 +622,18 @@ err_free_io:
 	return iio_ptr(err);
 }
 
-void
-iiod_responder_set_timeout(struct iiod_responder *priv, unsigned int timeout_ms)
+void iiod_responder_set_timeout(struct iiod_responder *priv, unsigned int timeout_ms)
 {
 	priv->timeout_ms = timeout_ms;
 	priv->default_io->timeout_ms = timeout_ms;
 }
 
-void
-iiod_io_set_timeout(struct iiod_io *io, unsigned int timeout_ms)
+void iiod_io_set_timeout(struct iiod_io *io, unsigned int timeout_ms)
 {
 	io->timeout_ms = timeout_ms;
 }
 
-struct iiod_responder *
-iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
+struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 {
 	struct iiod_responder *priv;
 	int err;
@@ -671,17 +653,15 @@ iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
 	priv->default_io = iiod_responder_create_io(priv, 0);
 	err = iio_err(priv->default_io);
 	if (err)
-	      goto err_free_lock;
+		goto err_free_lock;
 
-	priv->write_task = iio_task_create(iiod_responder_write, priv,
-					   "writer-task");
+	priv->write_task = iio_task_create(iiod_responder_write, priv, "writer-task");
 	err = iio_err(priv->write_task);
 	if (err)
 		goto err_free_io;
 
 	if (!NO_THREADS) {
-		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv,
-						  "reader-thd");
+		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv, "reader-thd");
 		err = iio_err(priv->read_thrd);
 		if (err)
 			goto err_free_write_task;
@@ -730,10 +710,10 @@ void iiod_responder_wait_done(struct iiod_responder *priv)
 	}
 }
 
-struct iiod_io * iiod_command_create_io(const struct iiod_command *cmd,
-					struct iiod_command_data *data)
+struct iiod_io *iiod_command_create_io(
+		const struct iiod_command *cmd, struct iiod_command_data *data)
 {
-	struct iiod_responder *priv = (struct iiod_responder *) data;
+	struct iiod_responder *priv = (struct iiod_responder *)data;
 
 	return iiod_responder_create_io(priv, cmd->client_id);
 }
@@ -797,14 +777,12 @@ void iiod_io_unref(struct iiod_io *io)
 	iio_mutex_unlock(priv->lock);
 }
 
-struct iiod_io *
-iiod_responder_get_default_io(struct iiod_responder *priv)
+struct iiod_io *iiod_responder_get_default_io(struct iiod_responder *priv)
 {
 	return priv->default_io;
 }
 
-struct iiod_io *
-iiod_command_get_default_io(struct iiod_command_data *data)
+struct iiod_io *iiod_command_get_default_io(struct iiod_command_data *data)
 {
-	return iiod_responder_get_default_io((struct iiod_responder *) data);
+	return iiod_responder_get_default_io((struct iiod_responder *)data);
 }

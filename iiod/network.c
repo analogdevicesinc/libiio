@@ -6,12 +6,6 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "../iio-config.h"
-#include "debug.h"
-#include "dns-sd.h"
-#include "ops.h"
-#include "thread-pool.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <iio/iio.h>
@@ -23,9 +17,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/eventfd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+#include "../iio-config.h"
+#include "debug.h"
+#include "dns-sd.h"
+#include "ops.h"
+#include "thread-pool.h"
 #if WITH_ZSTD
 #include <zstd.h>
 #endif
@@ -68,8 +68,8 @@ static void client_thd(struct thread_pool *pool, void *d)
 {
 	struct client_data *cdata = d;
 
-	interpreter(cdata->ctx, cdata->fd, cdata->fd, true, false, pool,
-		    cdata->xml_zstd, cdata->xml_zstd_len);
+	interpreter(cdata->ctx, cdata->fd, cdata->fd, true, false, pool, cdata->xml_zstd,
+			cdata->xml_zstd_len);
 
 	IIO_INFO("Client exited\n");
 	close(cdata->fd);
@@ -80,10 +80,7 @@ static void network_main(struct thread_pool *pool, void *d)
 {
 	struct network_pdata *pdata = d;
 	uint16_t port = pdata->port;
-	int ret, fd = -1, yes = 1,
-	    keepalive_time = 10,
-	    keepalive_intvl = 10,
-	    keepalive_probes = 6;
+	int ret, fd = -1, yes = 1, keepalive_time = 10, keepalive_intvl = 10, keepalive_probes = 6;
 	struct pollfd pfd[2];
 	bool ipv6;
 
@@ -109,11 +106,10 @@ static void network_main(struct thread_pool *pool, void *d)
 
 #ifdef HAVE_IPV6
 	if (ipv6)
-		ret = bind(fd, (struct sockaddr *) &sockaddr6,
-				sizeof(sockaddr6));
+		ret = bind(fd, (struct sockaddr *)&sockaddr6, sizeof(sockaddr6));
 #endif
 	if (!ipv6)
-		ret = bind(fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
+		ret = bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
 	if (ret < 0) {
 		IIO_PERROR(errno, "Bind failed");
 		goto err_close_socket;
@@ -167,8 +163,7 @@ static void network_main(struct thread_pool *pool, void *d)
 		if (pfd[1].revents & POLLIN) /* STOP event */
 			break;
 
-		new = accept4(fd, (struct sockaddr *) &caddr, &addr_len,
-			      dft_socket_flags);
+		new = accept4(fd, (struct sockaddr *)&caddr, &addr_len, dft_socket_flags);
 		if (new == -1) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
@@ -271,9 +266,8 @@ err_close_socket:
 	free(pdata);
 }
 
-int start_network_daemon(struct iio_context *ctx,
-			 struct thread_pool *pool, const void *xml_zstd,
-			 size_t xml_zstd_len, uint16_t port)
+int start_network_daemon(struct iio_context *ctx, struct thread_pool *pool, const void *xml_zstd,
+		size_t xml_zstd_len, uint16_t port)
 {
 	struct network_pdata *pdata;
 	int err;

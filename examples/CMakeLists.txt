@@ -18,8 +18,7 @@ endif ()
 if (MSVC)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src)
     set(GETOPT_C_FILE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src/getopt.c
-    )
+        ${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src/getopt.c)
 endif (MSVC)
 
 if (WIN32)
@@ -32,18 +31,14 @@ if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIIO_CHECK_RET")
 endif ()
 
-add_executable(
-    ad9361-iiostream ad9361-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
-)
-add_executable(
-    ad9371-iiostream ad9371-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
-)
-add_executable(
-    adrv9009-iiostream adrv9009-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
-)
-add_executable(
-    adrv9002-iiostream adrv9002-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
-)
+add_executable(ad9361-iiostream ad9361-iiostream.c ${GETOPT_C_FILE}
+                                ${LIBIIO_RC})
+add_executable(ad9371-iiostream ad9371-iiostream.c ${GETOPT_C_FILE}
+                                ${LIBIIO_RC})
+add_executable(adrv9009-iiostream adrv9009-iiostream.c ${GETOPT_C_FILE}
+                                  ${LIBIIO_RC})
+add_executable(adrv9002-iiostream adrv9002-iiostream.c ${GETOPT_C_FILE}
+                                  ${LIBIIO_RC})
 add_executable(dummy-iiostream dummy-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC})
 
 target_link_libraries(ad9361-iiostream iiostream_helper)
@@ -53,8 +48,7 @@ target_link_libraries(dummy-iiostream iiostream_helper)
 target_link_libraries(adrv9002-iiostream iiostream_helper)
 
 set(IIO_EXAMPLES_TARGETS ad9361-iiostream ad9371-iiostream adrv9009-iiostream
-                         dummy-iiostream adrv9002-iiostream
-)
+                         dummy-iiostream adrv9002-iiostream)
 
 find_library(PTHREAD_LIBRARIES pthread)
 find_library(CURSES_LIBRARY curses)
@@ -64,8 +58,7 @@ include(CheckSymbolExists)
 
 if (PTHREAD_LIBRARIES
     AND CURSES_LIBRARY
-    AND CDK_LIBRARY
-)
+    AND CDK_LIBRARY)
     find_path(LIBCKD_INCLUDE_DIR cdk.h PATH_SUFFIXES cdk)
 
     set(TEMP ${CMAKE_REQUIRED_LIBRARIES})
@@ -78,31 +71,35 @@ if (PTHREAD_LIBRARIES
     set(CMAKE_C_FLAGS "${TMP_FLAGS}")
     set(CMAKE_REQUIRED_LIBRARIES ${TEMP})
     set(CMAKE_REQUIRED_INCLUDES ${TEMP1})
-endif()
+endif ()
 
-if(HAS_CDK_CSTRING2)
+if (HAS_CDK_CSTRING2)
     include_directories(${LIBCKD_INCLUDE_DIR})
     project(iio-monitor C)
     add_executable(iio-monitor iio-monitor.c)
-    target_link_libraries(
-        iio-monitor iio ${PTHREAD_LIBRARIES} ${CURSES_LIBRARY} ${CDK_LIBRARY}
-    )
+    target_link_libraries(iio-monitor iio ${PTHREAD_LIBRARIES}
+                          ${CURSES_LIBRARY} ${CDK_LIBRARY})
     set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio-monitor)
-else()
-    message(STATUS "Curses Development Kit (CDK) missing or too old, skipping iio-monitor")
+else ()
+    message(
+        STATUS
+            "Curses Development Kit (CDK) missing or too old, skipping iio-monitor"
+    )
 endif ()
 
 if (PTHREAD_LIBRARIES OR ANDROID)
-	project(iio_adi_xflow_check C)
-	add_executable(iio_adi_xflow_check iio_adi_xflow_check.c)
-	target_link_libraries(iio_adi_xflow_check iio iio_tests_helper ${PTHREAD_LIBRARIES})
-	set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio_adi_xflow_check)
-endif()
+    project(iio_adi_xflow_check C)
+    add_executable(iio_adi_xflow_check iio_adi_xflow_check.c)
+    target_link_libraries(iio_adi_xflow_check iio iio_tests_helper
+                          ${PTHREAD_LIBRARIES})
+    set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} iio_adi_xflow_check)
+endif ()
 
 set_target_properties(
-    ${IIO_TESTS_TARGETS} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
-                                    C_EXTENSIONS OFF
-)
+    ${IIO_TESTS_TARGETS}
+    PROPERTIES C_STANDARD 99
+               C_STANDARD_REQUIRED ON
+               C_EXTENSIONS OFF)
 
 # We don't install any of these, they are examples, not tools. We build them to
 # make sure they build/work, not to deploy them.

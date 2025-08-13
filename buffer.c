@@ -6,26 +6,26 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "attr.h"
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
 #include <string.h>
+
+#include "attr.h"
+#include "iio-config.h"
+#include "iio-private.h"
 
 void iio_buffer_set_data(struct iio_buffer *buf, void *data)
 {
 	buf->userdata = data;
 }
 
-void * iio_buffer_get_data(const struct iio_buffer *buf)
+void *iio_buffer_get_data(const struct iio_buffer *buf)
 {
 	return buf->userdata;
 }
 
-const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
+const struct iio_device *iio_buffer_get_device(const struct iio_buffer *buf)
 {
 	return buf->dev;
 }
@@ -65,8 +65,7 @@ int iio_buffer_enable(struct iio_buffer *buffer)
 	int err;
 
 	if (buffer->nb_blocks == 0) {
-		dev_err(buffer->dev,
-			"Cannot enable buffer before creating blocks.\n");
+		dev_err(buffer->dev, "Cannot enable buffer before creating blocks.\n");
 		return -EINVAL;
 	}
 
@@ -97,10 +96,8 @@ static int iio_buffer_enqueue_worker(void *_, void *d)
 	return iio_block_io(d);
 }
 
-struct iio_buffer *
-iio_device_create_buffer(const struct iio_device *dev,
-			 struct iio_buffer_params *params,
-			 const struct iio_channels_mask *mask)
+struct iio_buffer *iio_device_create_buffer(const struct iio_device *dev,
+		struct iio_buffer_params *params, const struct iio_channels_mask *mask)
 {
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	struct iio_buffer *buf;
@@ -114,7 +111,7 @@ iio_device_create_buffer(const struct iio_device *dev,
 
 	sample_size = iio_device_get_sample_size(dev, mask);
 	if (sample_size < 0)
-		return iio_ptr((int) sample_size);
+		return iio_ptr((int)sample_size);
 	if (!sample_size)
 		return iio_ptr(-EINVAL);
 
@@ -149,7 +146,7 @@ iio_device_create_buffer(const struct iio_device *dev,
 	}
 
 	memcpy(buf->attrlist.attrs, /* Flawfinder: ignore */
-	       dev->attrlist[IIO_ATTR_TYPE_BUFFER].attrs, attrlist_size);
+			dev->attrlist[IIO_ATTR_TYPE_BUFFER].attrs, attrlist_size);
 
 	for (i = 0; i < buf->attrlist.num; i++)
 		buf->attrlist.attrs[i].iio.buf = buf;
@@ -169,8 +166,7 @@ iio_device_create_buffer(const struct iio_device *dev,
 	if (err)
 		goto err_free_mask;
 
-	buf->worker = iio_task_create(iio_buffer_enqueue_worker, NULL,
-				      "enqueue-worker");
+	buf->worker = iio_task_create(iio_buffer_enqueue_worker, NULL, "enqueue-worker");
 	err = iio_err(buf->worker);
 	if (err < 0)
 		goto err_free_mutex;
@@ -213,8 +209,7 @@ void iio_buffer_destroy(struct iio_buffer *buf)
 	free(buf);
 }
 
-const struct iio_channels_mask *
-iio_buffer_get_channels_mask(const struct iio_buffer *buf)
+const struct iio_channels_mask *iio_buffer_get_channels_mask(const struct iio_buffer *buf)
 {
 	return buf->mask;
 }
@@ -224,14 +219,12 @@ unsigned int iio_buffer_get_attrs_count(const struct iio_buffer *buf)
 	return buf->attrlist.num;
 }
 
-const struct iio_attr *
-iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index)
+const struct iio_attr *iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index)
 {
 	return iio_attr_get(&buf->attrlist, index);
 }
 
-const struct iio_attr *
-iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
+const struct iio_attr *iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
 {
 	return iio_attr_find(&buf->attrlist, name);
 }

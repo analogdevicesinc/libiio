@@ -6,23 +6,23 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "dynamic.h"
-
 #include <errno.h>
 #include <iio/iio.h>
 #include <windows.h>
 
-void * iio_dlopen(const char *path)
+#include "dynamic.h"
+
+void *iio_dlopen(const char *path)
 {
 	return LoadLibrary(TEXT(path));
 }
 
 void iio_dlclose(void *lib)
 {
-	FreeLibrary((void *) lib);
+	FreeLibrary((void *)lib);
 }
 
-void * iio_dlsym(void *lib, const char *symbol)
+void *iio_dlsym(void *lib, const char *symbol)
 {
 	void *ptr;
 

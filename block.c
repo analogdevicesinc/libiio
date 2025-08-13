@@ -6,12 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-private.h"
-
 #include <errno.h>
 #include <iio/iio-lock.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "iio-private.h"
 
 struct iio_block {
 	struct iio_buffer *buffer;
@@ -25,8 +25,7 @@ struct iio_block {
 	int dmabuf_fd;
 };
 
-struct iio_block *
-iio_buffer_create_block(struct iio_buffer *buf, size_t size)
+struct iio_block *iio_buffer_create_block(struct iio_buffer *buf, size_t size)
 {
 	const struct iio_device *dev = buf->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
@@ -66,7 +65,7 @@ iio_buffer_create_block(struct iio_buffer *buf, size_t size)
 		}
 
 		if (size > buf->length)
-		      buf->length = size;
+			buf->length = size;
 
 		buf->block_size = size;
 	}
@@ -115,7 +114,7 @@ static int iio_block_write(struct iio_block *block)
 		return -ENOSYS;
 
 	ret = ops->writebuf(block->buffer->pdata, block->data, bytes_used);
-	return ret < 0 ? (int) ret : 0;
+	return ret < 0 ? (int)ret : 0;
 }
 
 static int iio_block_read(struct iio_block *block)
@@ -128,7 +127,7 @@ static int iio_block_read(struct iio_block *block)
 		return -ENOSYS;
 
 	ret = ops->readbuf(block->buffer->pdata, block->data, bytes_used);
-	return ret < 0 ? (int) ret : 0;
+	return ret < 0 ? (int)ret : 0;
 }
 
 int iio_block_io(struct iio_block *block)
@@ -201,11 +200,10 @@ void *iio_block_start(const struct iio_block *block)
 
 void *iio_block_end(const struct iio_block *block)
 {
-	return (void *) ((uintptr_t) block->data + block->size);
+	return (void *)((uintptr_t)block->data + block->size);
 }
 
-void *iio_block_first(const struct iio_block *block,
-		      const struct iio_channel *chn)
+void *iio_block_first(const struct iio_block *block, const struct iio_channel *chn)
 {
 	uintptr_t ptr = (uintptr_t)block->data, start = ptr;
 	const struct iio_device *dev = block->buffer->dev;
@@ -242,18 +240,14 @@ void *iio_block_first(const struct iio_block *block,
 	if ((ptr - start) % len)
 		ptr += len - ((ptr - start) % len);
 
-	return (void *) ptr;
+	return (void *)ptr;
 }
 
-ssize_t
-iio_block_foreach_sample(const struct iio_block *block,
-			 const struct iio_channels_mask *mask,
-			 ssize_t (*callback)(const struct iio_channel *,
-					     void *, size_t, void *), void *d)
+ssize_t iio_block_foreach_sample(const struct iio_block *block,
+		const struct iio_channels_mask *mask,
+		ssize_t (*callback)(const struct iio_channel *, void *, size_t, void *), void *d)
 {
-	uintptr_t ptr = (uintptr_t) block->data,
-		  start = ptr,
-		  end = ptr + block->size;
+	uintptr_t ptr = (uintptr_t)block->data, start = ptr, end = ptr + block->size;
 	const struct iio_buffer *buf = block->buffer;
 	const struct iio_device *dev = buf->dev;
 	size_t sample_size;
@@ -263,7 +257,7 @@ iio_block_foreach_sample(const struct iio_block *block,
 	if (sample_size == 0)
 		return -EINVAL;
 
-	while (end - ptr >= (size_t) sample_size) {
+	while (end - ptr >= (size_t)sample_size) {
 		unsigned int i;
 
 		for (i = 0; i < dev->nb_channels; i++) {
@@ -282,16 +276,14 @@ iio_block_foreach_sample(const struct iio_block *block,
 
 			/* Test if the client wants samples from this channel */
 			if (iio_channels_mask_test_bit(mask, chn->number)) {
-				ssize_t ret = callback(chn,
-						(void *) ptr, length, d);
+				ssize_t ret = callback(chn, (void *)ptr, length, d);
 				if (ret < 0)
 					return ret;
 				else
 					processed += ret;
 			}
 
-			if (i == dev->nb_channels - 1 || dev->channels[
-					i + 1]->index != chn->index)
+			if (i == dev->nb_channels - 1 || dev->channels[i + 1]->index != chn->index)
 				ptr += length * chn->format.repeat;
 		}
 	}
@@ -299,7 +291,7 @@ iio_block_foreach_sample(const struct iio_block *block,
 	return processed;
 }
 
-struct iio_buffer * iio_block_get_buffer(const struct iio_block *block)
+struct iio_buffer *iio_block_get_buffer(const struct iio_block *block)
 {
 	return block->buffer;
 }

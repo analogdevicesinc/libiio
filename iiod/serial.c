@@ -6,18 +6,18 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
-#include "ops.h"
-#include "thread-pool.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/serial.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+
+#include "debug.h"
+#include "ops.h"
+#include "thread-pool.h"
 
 struct serial_pdata {
 	struct iio_context *ctx;
@@ -26,9 +26,8 @@ struct serial_pdata {
 	size_t xml_zstd_len;
 };
 
-static char *get_uart_params(const char *str,
-			     unsigned int *bps, unsigned int *bits,
-			     char *parity, unsigned int *stop, char *flow)
+static char *get_uart_params(const char *str, unsigned int *bps, unsigned int *bits, char *parity,
+		unsigned int *stop, char *flow)
 {
 	const char *ptr;
 	char *dev_name;
@@ -56,19 +55,16 @@ static void serial_main(struct thread_pool *pool, void *d)
 	struct serial_pdata *pdata = d;
 
 	do {
-		interpreter(pdata->ctx, pdata->fd, pdata->fd, false, false,
-			    pool, pdata->xml_zstd, pdata->xml_zstd_len);
+		interpreter(pdata->ctx, pdata->fd, pdata->fd, false, false, pool, pdata->xml_zstd,
+				pdata->xml_zstd_len);
 	} while (!thread_pool_is_stopped(pool));
 
 	close(pdata->fd);
 	free(pdata);
 }
 
-static int serial_configure(int fd, unsigned int uart_bps,
-			    unsigned int uart_bits,
-			    char uart_parity,
-			    unsigned int uart_stop,
-			    char uart_flow)
+static int serial_configure(int fd, unsigned int uart_bps, unsigned int uart_bits, char uart_parity,
+		unsigned int uart_stop, char uart_flow)
 {
 	struct termios tty_attrs;
 	int err;
@@ -83,8 +79,8 @@ static int serial_configure(int fd, unsigned int uart_bps,
 	tty_attrs.c_lflag &= ~(ISIG | ICANON | ECHO | IEXTEN);
 	tty_attrs.c_oflag &= ~(OPOST | ONLCR | OCRNL | ONOCR | ONLRET);
 
-	tty_attrs.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR |
-				IGNCR | ICRNL | IMAXBEL | IXON | IXOFF);
+	tty_attrs.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IMAXBEL |
+			       IXON | IXOFF);
 
 	tty_attrs.c_cflag |= CLOCAL | CREAD | PARENB;
 	tty_attrs.c_cflag &= ~(CSIZE | CBAUD | CRTSCTS);
@@ -95,45 +91,48 @@ static int serial_configure(int fd, unsigned int uart_bps,
 	tty_attrs.c_cc[VMIN] = 1;
 	tty_attrs.c_cc[VTIME] = 0;
 
-#define CASE_BPS(bps, attr) case bps: (attr)->c_cflag |= B##bps; break
+#define CASE_BPS(bps, attr)                \
+	case bps:                          \
+		(attr)->c_cflag |= B##bps; \
+		break
 	switch (uart_bps) {
-	CASE_BPS(50, &tty_attrs);
-	CASE_BPS(75, &tty_attrs);
-	CASE_BPS(110, &tty_attrs);
-	CASE_BPS(134, &tty_attrs);
-	CASE_BPS(150, &tty_attrs);
-	CASE_BPS(200, &tty_attrs);
-	CASE_BPS(300, &tty_attrs);
-	CASE_BPS(600, &tty_attrs);
-	CASE_BPS(1200, &tty_attrs);
-	CASE_BPS(1800, &tty_attrs);
-	CASE_BPS(2400, &tty_attrs);
-	CASE_BPS(4800, &tty_attrs);
-	CASE_BPS(9600, &tty_attrs);
-	CASE_BPS(19200, &tty_attrs);
-	CASE_BPS(38400, &tty_attrs);
-	CASE_BPS(57600, &tty_attrs);
-	CASE_BPS(115200, &tty_attrs);
-	CASE_BPS(230400, &tty_attrs);
-	CASE_BPS(460800, &tty_attrs);
-	CASE_BPS(500000, &tty_attrs);
-	CASE_BPS(576000, &tty_attrs);
-	CASE_BPS(921600, &tty_attrs);
-	CASE_BPS(1000000, &tty_attrs);
-	CASE_BPS(1152000, &tty_attrs);
-	CASE_BPS(1500000, &tty_attrs);
-	CASE_BPS(2000000, &tty_attrs);
+		CASE_BPS(50, &tty_attrs);
+		CASE_BPS(75, &tty_attrs);
+		CASE_BPS(110, &tty_attrs);
+		CASE_BPS(134, &tty_attrs);
+		CASE_BPS(150, &tty_attrs);
+		CASE_BPS(200, &tty_attrs);
+		CASE_BPS(300, &tty_attrs);
+		CASE_BPS(600, &tty_attrs);
+		CASE_BPS(1200, &tty_attrs);
+		CASE_BPS(1800, &tty_attrs);
+		CASE_BPS(2400, &tty_attrs);
+		CASE_BPS(4800, &tty_attrs);
+		CASE_BPS(9600, &tty_attrs);
+		CASE_BPS(19200, &tty_attrs);
+		CASE_BPS(38400, &tty_attrs);
+		CASE_BPS(57600, &tty_attrs);
+		CASE_BPS(115200, &tty_attrs);
+		CASE_BPS(230400, &tty_attrs);
+		CASE_BPS(460800, &tty_attrs);
+		CASE_BPS(500000, &tty_attrs);
+		CASE_BPS(576000, &tty_attrs);
+		CASE_BPS(921600, &tty_attrs);
+		CASE_BPS(1000000, &tty_attrs);
+		CASE_BPS(1152000, &tty_attrs);
+		CASE_BPS(1500000, &tty_attrs);
+		CASE_BPS(2000000, &tty_attrs);
 #ifdef B2500000 /* Not available on all architectures, i.e. sparc */
-	CASE_BPS(2500000, &tty_attrs);
+		CASE_BPS(2500000, &tty_attrs);
 #endif
 #ifdef B3000000 /* Not available on all architectures, i.e. sparc */
-	CASE_BPS(3000000, &tty_attrs);
+		CASE_BPS(3000000, &tty_attrs);
 #endif
 #ifdef B3500000 /* Not available on all architectures, i.e. sparc */
-	CASE_BPS(3500000, &tty_attrs);
+		CASE_BPS(3500000, &tty_attrs);
 #endif
 #ifdef B4000000 /* Not available on all architectures, i.e. sparc */
-	CASE_BPS(4000000, &tty_attrs);
+		CASE_BPS(4000000, &tty_attrs);
 #endif
 	default:
 		IIO_ERROR("Invalid baud rate\n");
@@ -228,17 +227,16 @@ static int serial_configure(int fd, unsigned int uart_bps,
 	return 0;
 }
 
-int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
-			struct thread_pool *pool,
-			const void *xml_zstd, size_t xml_zstd_len)
+int start_serial_daemon(struct iio_context *ctx, const char *uart_params, struct thread_pool *pool,
+		const void *xml_zstd, size_t xml_zstd_len)
 {
 	struct serial_pdata *pdata;
 	char *dev, uart_parity, uart_flow;
 	unsigned int uart_bps, uart_bits, uart_stop;
 	int fd, err = -ENOMEM;
 
-	dev = get_uart_params(uart_params, &uart_bps, &uart_bits,
-			      &uart_parity, &uart_stop, &uart_flow);
+	dev = get_uart_params(
+			uart_params, &uart_bps, &uart_bits, &uart_parity, &uart_stop, &uart_flow);
 	if (!dev)
 		return -ENOMEM;
 
@@ -252,8 +250,7 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 		goto err_free_pdata;
 	}
 
-	err = serial_configure(fd, uart_bps, uart_bits,
-			       uart_parity, uart_stop, uart_flow);
+	err = serial_configure(fd, uart_bps, uart_bits, uart_parity, uart_stop, uart_flow);
 	if (err)
 		goto err_close_fd;
 
@@ -262,8 +259,7 @@ int start_serial_daemon(struct iio_context *ctx, const char *uart_params,
 	pdata->xml_zstd = xml_zstd;
 	pdata->xml_zstd_len = xml_zstd_len;
 
-	IIO_DEBUG("Serving over UART on %s at %u bps, %u bits\n",
-		  dev, uart_bps, uart_bits);
+	IIO_DEBUG("Serving over UART on %s at %u bps, %u bits\n", dev, uart_bps, uart_bits);
 
 	err = thread_pool_add_thread(pool, serial_main, pdata, "iiod_serial_thd");
 	if (err)

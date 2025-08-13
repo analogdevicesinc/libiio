@@ -12,20 +12,19 @@
 #include "iio-config.h"
 
 /* Include public interface */
-#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
-
+#include <iio/iio.h>
 #include <stdbool.h>
 
-#define MAX_CHN_ID     NAME_MAX  /* encoded in the sysfs filename */
-#define MAX_CHN_NAME   NAME_MAX  /* encoded in the sysfs filename */
-#define MAX_DEV_ID     NAME_MAX  /* encoded in the sysfs filename */
-#define MAX_DEV_NAME   NAME_MAX  /* encoded in the sysfs filename */
-#define MAX_CTX_NAME   NAME_MAX  /* nominally "xml" */
-#define MAX_CTX_DESC   NAME_MAX  /* nominally "linux ..." */
-#define MAX_ATTR_NAME  NAME_MAX  /* encoded in the sysfs filename */
-#define MAX_ATTR_VALUE (8 * PAGESIZE)  /* 8x Linux page size, could be anything */
+#define MAX_CHN_ID NAME_MAX	      /* encoded in the sysfs filename */
+#define MAX_CHN_NAME NAME_MAX	      /* encoded in the sysfs filename */
+#define MAX_DEV_ID NAME_MAX	      /* encoded in the sysfs filename */
+#define MAX_DEV_NAME NAME_MAX	      /* encoded in the sysfs filename */
+#define MAX_CTX_NAME NAME_MAX	      /* nominally "xml" */
+#define MAX_CTX_DESC NAME_MAX	      /* nominally "linux ..." */
+#define MAX_ATTR_NAME NAME_MAX	      /* encoded in the sysfs filename */
+#define MAX_ATTR_VALUE (8 * PAGESIZE) /* 8x Linux page size, could be anything */
 
 #ifdef _MSC_BUILD
 /* Windows only runs on little-endian systems */
@@ -49,8 +48,8 @@ static inline uint32_t iio_be32toh(uint32_t word)
 #ifdef __GNUC__
 	return __builtin_bswap32(word);
 #else
-	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) |
-		((word >> 8) & 0xff00) | ((word >> 24) & 0xff);
+	return ((word & 0xff) << 24) | ((word & 0xff00) << 8) | ((word >> 8) & 0xff00) |
+	       ((word >> 24) & 0xff);
 #endif
 }
 
@@ -165,41 +164,34 @@ struct iio_channels_mask {
 	uint32_t mask[];
 };
 
-int iio_channels_mask_copy(struct iio_channels_mask *dst,
-			   const struct iio_channels_mask *src);
+int iio_channels_mask_copy(struct iio_channels_mask *dst, const struct iio_channels_mask *src);
 
-static inline bool
-iio_channels_mask_test_bit(const struct iio_channels_mask *mask,
-			   unsigned int bit)
+static inline bool iio_channels_mask_test_bit(
+		const struct iio_channels_mask *mask, unsigned int bit)
 {
 	return mask->mask[BIT_WORD(bit)] & BIT_MASK(bit);
 }
 
-static inline void
-iio_channels_mask_set_bit(struct iio_channels_mask *mask, unsigned int bit)
+static inline void iio_channels_mask_set_bit(struct iio_channels_mask *mask, unsigned int bit)
 {
 	mask->mask[BIT_WORD(bit)] |= BIT_MASK(bit);
 }
 
-static inline void
-iio_channels_mask_clear_bit(struct iio_channels_mask *mask, unsigned int bit)
+static inline void iio_channels_mask_clear_bit(struct iio_channels_mask *mask, unsigned int bit)
 {
 	mask->mask[BIT_WORD(bit)] &= ~BIT_MASK(bit);
 }
 
-struct iio_module * iio_open_module(const struct iio_context_params *params,
-				    const char *name);
+struct iio_module *iio_open_module(const struct iio_context_params *params, const char *name);
 void iio_release_module(struct iio_module *module);
 
-const struct iio_backend * iio_module_get_backend(struct iio_module *module);
+const struct iio_backend *iio_module_get_backend(struct iio_module *module);
 
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 
-ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen,
-				 const struct iio_channel *chn);
-ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
-				const struct iio_device *dev);
+ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen, const struct iio_channel *chn);
+ssize_t iio_snprintf_device_xml(char *str, ssize_t slen, const struct iio_device *dev);
 
 int iio_context_init(struct iio_context *ctx);
 
@@ -208,18 +200,17 @@ bool iio_device_is_tx(const struct iio_device *dev);
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
 
-struct iio_context *
-iio_create_dynamic_context(const struct iio_context_params *params,
-			   const char *uri);
-int iio_dynamic_scan(const struct iio_context_params *params,
-		     struct iio_scan *ctx, const char *backends);
+struct iio_context *iio_create_dynamic_context(
+		const struct iio_context_params *params, const char *uri);
+int iio_dynamic_scan(const struct iio_context_params *params, struct iio_scan *ctx,
+		const char *backends);
 
 void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
 char *iio_strndup(const char *str, size_t n);
 char *iio_strtok_r(char *str, const char *delim, char **saveptr);
-char * iio_getenv (char * envvar);
+char *iio_getenv(char *envvar);
 uint64_t iio_read_counter_us(void);
 bool string_ends_with(const char *string, const char *suffix);
 
@@ -231,19 +222,16 @@ extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;
 extern const struct iio_backend iio_xml_backend;
 
-extern const struct iio_backend * const iio_backends[];
+extern const struct iio_backend *const iio_backends[];
 extern const unsigned int iio_backends_size;
 
 extern uint64_t library_startup_time_us;
 extern iio_get_ticks_us platform_get_ticks_us;
 
-ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
-					  const char *before,
-					  const char *param,
-					  const char *after);
+ssize_t iio_xml_print_and_sanitized_param(
+		char *ptr, ssize_t len, const char *before, const char *param, const char *after);
 
-static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len,
-					  ssize_t *alen)
+static inline void iio_update_xml_indexes(ssize_t ret, char **ptr, ssize_t *len, ssize_t *alen)
 {
 	if (*ptr) {
 		*ptr += ret;
