@@ -8,9 +8,9 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@ static struct iio_context *ctx;
 static const struct option options[] = {
 	{ "read-debug-attr", no_argument, NULL, 'd' },
 	{ "no-read-attr", no_argument, NULL, 'n' },
-	{0, 0, 0, 0},
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -81,9 +81,8 @@ static bool colors;
 /* Keeps Codacy happy */
 #define print_fmt(fmt, ...) printf(fmt, __VA_ARGS__) /* Flawfinder: ignore */
 
-static void print_attr(const struct iio_attr *attr,
-		       unsigned int level, unsigned int idx,
-		       bool read_sysfs_attr, bool read_debug_attr)
+static void print_attr(const struct iio_attr *attr, unsigned int level, unsigned int idx,
+		bool read_sysfs_attr, bool read_debug_attr)
 {
 	char buf[BUF_SIZE];
 	const char *name, *fn, *value;
@@ -112,8 +111,8 @@ static void print_attr(const struct iio_attr *attr,
 	 * option. Debug attributes are controlled by the -d option.
 	 */
 	if (attr->type != IIO_ATTR_TYPE_CONTEXT &&
-	    ((!read_sysfs_attr && attr->type != IIO_ATTR_TYPE_DEBUG) ||
-	     (!read_debug_attr && attr->type == IIO_ATTR_TYPE_DEBUG))) {
+			((!read_sysfs_attr && attr->type != IIO_ATTR_TYPE_DEBUG) ||
+					(!read_debug_attr && attr->type == IIO_ATTR_TYPE_DEBUG))) {
 		printf("\n");
 		return;
 	}
@@ -165,13 +164,9 @@ static void print_channel(const struct iio_channel *chn)
 	name = iio_channel_get_name(chn);
 	label = iio_channel_get_label(chn);
 	if (colors) {
-		print_fmt("\t\t\t" FMT_CHN ": " FMT_CHN,
-			  iio_channel_get_id(chn),
-			  name ? name : "");
+		print_fmt("\t\t\t" FMT_CHN ": " FMT_CHN, iio_channel_get_id(chn), name ? name : "");
 	} else {
-		printf("\t\t\t%s: %s",
-		       iio_channel_get_id(chn),
-		       name ? name : "");
+		printf("\t\t\t%s: %s", iio_channel_get_id(chn), name ? name : "");
 	}
 
 	if (label)
@@ -200,15 +195,11 @@ static void print_channel(const struct iio_channel *chn)
 			sign += 'A' - 'a';
 
 		if (format->repeat > 1)
-			snprintf(repeat, sizeof(repeat), "X%u",
-				format->repeat);
+			snprintf(repeat, sizeof(repeat), "X%u", format->repeat);
 
-		printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n",
-			iio_channel_get_index(chn),
-			format->is_be ? 'b' : 'l',
-			sign, format->bits,
-			format->length, repeat,
-			format->shift);
+		printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n", iio_channel_get_index(chn),
+				format->is_be ? 'b' : 'l', sign, format->bits, format->length,
+				repeat, format->shift);
 	} else {
 		printf(")\n");
 	}
@@ -236,15 +227,14 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
-				 options, options_descriptions, &ret);
+	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS, options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
 	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
-					opts, NULL)) != -1) {
+				opts, NULL)) != -1) {
 		switch (c) {
 			/* All these are handled in the common */
 		case 'h':
@@ -260,8 +250,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argw[optind] != NULL
-					&& argw[optind][0] != '-')
+			if (!optarg && argc > optind && argw[optind] != NULL &&
+					argw[optind][0] != '-')
 				optind++;
 			break;
 		case '?':
@@ -281,16 +271,12 @@ int main(int argc, char **argv)
 		return ret;
 
 	version(MY_NAME);
-	printf("IIO context created with %s backend.\n",
-			iio_context_get_name(ctx));
+	printf("IIO context created with %s backend.\n", iio_context_get_name(ctx));
 
-	printf("Backend version: %u.%u (git tag: %s)\n",
-	       iio_context_get_version_major(ctx),
-	       iio_context_get_version_minor(ctx),
-	       iio_context_get_version_tag(ctx));
+	printf("Backend version: %u.%u (git tag: %s)\n", iio_context_get_version_major(ctx),
+			iio_context_get_version_minor(ctx), iio_context_get_version_tag(ctx));
 
-	printf("Backend description string: %s\n",
-			iio_context_get_description(ctx));
+	printf("Backend description string: %s\n", iio_context_get_description(ctx));
 
 	nb_ctx_attrs = iio_context_get_attrs_count(ctx);
 	if (nb_ctx_attrs > 0)
@@ -348,8 +334,7 @@ int main(int argc, char **argv)
 			if (!nb_attrs)
 				continue;
 
-			printf("\t\t\t%u channel-specific attributes found:\n",
-					nb_attrs);
+			printf("\t\t\t%u channel-specific attributes found:\n", nb_attrs);
 
 			for (k = 0; k < nb_attrs; k++) {
 				attr = iio_channel_get_attr(ch, k);
@@ -359,8 +344,7 @@ int main(int argc, char **argv)
 
 		nb_attrs = iio_device_get_attrs_count(dev);
 		if (nb_attrs) {
-			printf("\t\t%u device-specific attributes found:\n",
-					nb_attrs);
+			printf("\t\t%u device-specific attributes found:\n", nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_attr(dev, j);
 				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
@@ -394,8 +378,7 @@ int main(int argc, char **argv)
 		ret = iio_err(trig);
 		if (ret == 0) {
 			name = iio_device_get_name(trig);
-			printf("\t\tCurrent trigger: %s(%s)\n",
-					iio_device_get_id(trig),
+			printf("\t\tCurrent trigger: %s(%s)\n", iio_device_get_id(trig),
 					name ? name : "");
 		} else if (ret == -ENODEV) {
 			printf("\t\tNo trigger assigned to device\n");

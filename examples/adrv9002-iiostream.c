@@ -6,25 +6,26 @@
  * Author: Nuno Sá <nuno.sa@analog.com>
  */
 
-#include "iiostream-common.h"
-
-#include <iio/iio.h>
+#include <errno.h>
 #include <iio/iio-debug.h>
-#include <stdio.h>
-#include <stdint.h>
+#include <iio/iio.h>
 #include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <stdbool.h>
 
-#define ARGS(fmt, ...)	__VA_ARGS__
-#define FMT(fmt, ...)	fmt
-#define error(...) \
-	printf("%s, %d: ERROR: " FMT(__VA_ARGS__, 0)"%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
+#include "iiostream-common.h"
+
+#define ARGS(fmt, ...) __VA_ARGS__
+#define FMT(fmt, ...) fmt
+#define error(...)                                                             \
+	printf("%s, %d: ERROR: " FMT(__VA_ARGS__, 0) "%s", __func__, __LINE__, \
+			ARGS(__VA_ARGS__, ""))
 
 #define info(...) \
-	printf("%s, %d: INFO: " FMT(__VA_ARGS__, 0)"%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
+	printf("%s, %d: INFO: " FMT(__VA_ARGS__, 0) "%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
 
 /* helper macros */
 #define GHZ(x) ((long long)(x * 1000000000.0 + .5))
@@ -47,9 +48,9 @@ enum {
 };
 
 #ifdef _WIN32
-#include <windows.h>
-#include <io.h>
 #include <fcntl.h>
+#include <io.h>
+#include <windows.h>
 
 BOOL WINAPI sig_handler(DWORD dwCtrlType)
 {
@@ -82,8 +83,8 @@ static void sig_handler(int signum)
 
 static int register_signals(void)
 {
-	struct sigaction sa = {0};
-	sigset_t mask = {0};
+	struct sigaction sa = { 0 };
+	sigset_t mask = { 0 };
 
 	sa.sa_handler = sig_handler;
 	sigemptyset(&sa.sa_mask);
@@ -188,13 +189,10 @@ static void cleanup(void)
 	iio_context_destroy(ctx);
 }
 
-static struct iio_channels_mask *
-stream_channels_get_mask(const struct iio_device *dev, struct iio_channel **chan,
-				      bool tx)
+static struct iio_channels_mask *stream_channels_get_mask(
+		const struct iio_device *dev, struct iio_channel **chan, bool tx)
 {
-	const char * const channels[] = {
-		"voltage0_i", "voltage0_q", "voltage0", "voltage1"
-	};
+	const char *const channels[] = { "voltage0_i", "voltage0_q", "voltage0", "voltage1" };
 	unsigned int c, nb_channels = iio_device_get_channels_count(dev);
 	struct iio_channels_mask *mask;
 	const char *str;
@@ -292,8 +290,8 @@ int main(void)
 	tx_sample_sz = iio_device_get_sample_size(tx, txmask);
 
 	info("* Starting IO streaming (press CTRL+C to cancel)\n");
-	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE, rxstream, txstream,
-	       rx_chan[I_CHAN], tx_chan[I_CHAN]);
+	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE, rxstream, txstream, rx_chan[I_CHAN],
+			tx_chan[I_CHAN]);
 
 	ret = EXIT_SUCCESS;
 clean:

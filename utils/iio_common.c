@@ -6,18 +6,18 @@
  * Author: Paul Cercueil
  * */
 
-#include <iio/iio.h>
-#include <iio/iio-debug.h>
-#include <stdio.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <getopt.h>
+#include <iio/iio-debug.h>
+#include <iio/iio.h>
+#include <inttypes.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
-#include "iio_common.h"
 #include "gen_code.h"
 #include "iio-config.h"
+#include "iio_common.h"
 
 #ifdef _MSC_BUILD
 #define inline __inline
@@ -26,14 +26,13 @@
 #define iio_snprintf snprintf
 #endif
 
-void * xmalloc(size_t n, const char * name)
+void *xmalloc(size_t n, const char *name)
 {
 	void *p = malloc(n);
 
 	if (!p && n != 0) {
 		if (name) {
-			fprintf(stderr, "%s fatal error: allocating %zu bytes failed\n",
-				name, n);
+			fprintf(stderr, "%s fatal error: allocating %zu bytes failed\n", name, n);
 		} else {
 			fprintf(stderr, "Fatal error: allocating %zu bytes failed\n", n);
 		}
@@ -59,7 +58,7 @@ char *cmn_strndup(const char *str, size_t n)
 #endif
 }
 
-struct iio_context * autodetect_context(bool rtn, const char * name, const char * scan)
+struct iio_context *autodetect_context(bool rtn, const char *name, const char *scan)
 {
 	struct iio_scan *scan_ctx;
 	struct iio_context *ctx = NULL;
@@ -83,7 +82,7 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 	}
 	if (rtn && results == 1) {
 		fprintf(stderr, "Using auto-detected IIO context at URI \"%s\"\n",
-			iio_scan_get_uri(scan_ctx, 0));
+				iio_scan_get_uri(scan_ctx, 0));
 		ctx = iio_create_context(NULL, iio_scan_get_uri(scan_ctx, 0));
 	} else {
 		if (rtn) {
@@ -94,8 +93,7 @@ struct iio_context * autodetect_context(bool rtn, const char * name, const char 
 			fprintf(out, "Available contexts:\n");
 		}
 		for (i = 0; i < results; i++) {
-			fprintf(out, "\t%u: %s [%s]\n", i,
-					iio_scan_get_description(scan_ctx, i),
+			fprintf(out, "\t%u: %s [%s]\n", i, iio_scan_get_description(scan_ctx, i),
 					iio_scan_get_uri(scan_ctx, i));
 		}
 	}
@@ -105,8 +103,8 @@ err_free_ctx:
 	return ctx;
 }
 
-int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
-			      bool type, struct iio_channels_mask *mask)
+int iio_device_enable_channel(const struct iio_device *dev, const char *channel, bool type,
+		struct iio_channels_mask *mask)
 {
 	const struct iio_channel *ch;
 
@@ -122,8 +120,7 @@ int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
 	return 0;
 }
 
-unsigned long int sanitize_clamp(const char *name, const char *argv,
-	uint64_t min, uint64_t max)
+unsigned long int sanitize_clamp(const char *name, const char *argv, uint64_t min, uint64_t max)
 {
 	uint64_t val;
 	char buf[20], *end;
@@ -147,19 +144,19 @@ unsigned long int sanitize_clamp(const char *name, const char *argv,
 		val = min;
 		fprintf(stderr, "Clamped %s to min %" PRIu64 "\n", name, min);
 	}
-	return (unsigned long int) val;
+	return (unsigned long int)val;
 }
 
-char ** dup_argv(char * name, unsigned int argc, char * argv[])
+char **dup_argv(char *name, unsigned int argc, char *argv[])
 {
 	unsigned int i;
-	char** new_argv;
+	char **new_argv;
 
 	new_argv = xmalloc((argc + 1) * sizeof(char *), name);
 	if (!new_argv)
 		goto err_oom;
 
-	for(i = 0; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		new_argv[i] = cmn_strndup(argv[i], NAME_MAX);
 		if (!new_argv[i])
 			goto err_dup;
@@ -178,27 +175,27 @@ err_oom:
 	exit(0);
 }
 
-void free_argw(unsigned int argc, char * argw[])
+void free_argw(unsigned int argc, char *argw[])
 {
 	unsigned int i;
 
-	for(i = 0; i < argc; i++)
+	for (i = 0; i < argc; i++)
 		free(argw[i]);
 
 	free(argw);
 }
 
 static const struct option common_options[] = {
-	{"help", no_argument, 0, 'h'},
-	{"version", no_argument, 0, 'V'},
-	{"uri", required_argument, 0, 'u'},
-	{"scan", optional_argument, 0, 'S'},
-	{"auto", optional_argument, 0, 'a'},
-	{"timeout", required_argument, 0, 'T'},
-	{0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "version", no_argument, 0, 'V' },
+	{ "uri", required_argument, 0, 'u' },
+	{ "scan", optional_argument, 0, 'S' },
+	{ "auto", optional_argument, 0, 'a' },
+	{ "timeout", required_argument, 0, 'T' },
+	{ 0, 0, 0, 0 },
 };
 
-struct option * add_common_options(const struct option * longopts)
+struct option *add_common_options(const struct option *longopts)
 {
 	unsigned int i = 0, j = 0;
 	struct option *opts;
@@ -235,28 +232,26 @@ static const char *common_options_descriptions[] = {
 	"Show this help and quit.",
 	"Display libiio version information.",
 	("Use the context at the provided URI."
-		"\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
-		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
-		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
-		"\n\t\t\t    'local:' (Linux only)"),
+	 "\n\t\t\teg: 'ip:192.168.2.1', 'ip:pluto.local', or 'ip:'"
+	 "\n\t\t\t    'usb:1.2.3', or 'usb:'"
+	 "\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
+	 "\n\t\t\t    'local:' (Linux only)"),
 	("Scan for available backends."
-		"\n\t\t\toptional arg of specific backend(s)"
-		"\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
+	 "\n\t\t\toptional arg of specific backend(s)"
+	 "\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
 	("Scan for available contexts and if a single context is"
-		"\n\t\t\tavailable use it. <arg> filters backend(s)"
-		"\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
+	 "\n\t\t\tavailable use it. <arg> filters backend(s)"
+	 "\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
 	("Context timeout in milliseconds."
-		"\n\t\t\t0 = no timeout (wait forever)"),
+	 "\n\t\t\t0 = no timeout (wait forever)"),
 };
 
-
-struct iio_context * handle_common_opts(char * name, int argc,
-		char * const argv[], const char *optstring,
-		const struct option *options, const char *options_descriptions[],
-		int *err_code)
+struct iio_context *handle_common_opts(char *name, int argc, char *const argv[],
+		const char *optstring, const struct option *options,
+		const char *options_descriptions[], int *err_code)
 {
 	struct iio_context *ctx = NULL;
-	struct iio_context_params params = {0};
+	struct iio_context_params params = { 0 };
 	enum backend backend = IIO_LOCAL;
 	const char *arg = NULL, *prefix = NULL;
 	bool do_scan = false, detect_context = false;
@@ -276,8 +271,8 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		goto err_fail;
 	}
 
-	while ((c = getopt_long(argc, argv, buf,	/* Flawfinder: ignore */
-			opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, buf, /* Flawfinder: ignore */
+				opts, NULL)) != -1) {
 		switch (c) {
 		case 'h':
 			usage(name, options, options_descriptions);
@@ -372,7 +367,6 @@ struct iio_context * handle_common_opts(char * name, int argc,
 		goto err_fail;
 	}
 
-
 	return ctx;
 
 err_fail:
@@ -381,8 +375,7 @@ err_fail:
 	return NULL;
 }
 
-void usage(char *name, const struct option *options,
-	const char *options_descriptions[])
+void usage(char *name, const struct option *options, const char *options_descriptions[])
 {
 	unsigned int i;
 
@@ -395,8 +388,7 @@ void usage(char *name, const struct option *options,
 			printf(" [arg]");
 		else if (common_options[i].has_arg == optional_argument)
 			printf(" <arg>");
-		printf("\n\t\t\t%s\n",
-				common_options_descriptions[i]);
+		printf("\n\t\t\t%s\n", common_options_descriptions[i]);
 	}
 	for (i = 0; options[i].name; i++) {
 		printf("\t-%c, --%s", options[i].val, options[i].name);
@@ -404,12 +396,10 @@ void usage(char *name, const struct option *options,
 			printf(" [arg]");
 		else if (options[i].has_arg == optional_argument)
 			printf(" <arg>");
-		printf("\n\t\t\t%s\n",
-			options_descriptions[i + 1]);
-
+		printf("\n\t\t\t%s\n", options_descriptions[i + 1]);
 	}
 	printf("\nThis is free software; see the source for copying conditions.  There is NO\n"
-			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
+	       "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 
 	exit(0);
 }
@@ -418,14 +408,13 @@ void version(char *name)
 {
 	unsigned int i;
 
-	printf("%s version: %u.%u (git tag:%s)\n", name, LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR, LIBIIO_VERSION_GIT);
-        printf("Libiio version: %u.%u (git tag: %s) backends:",
-	       iio_context_get_version_major(NULL),
-	       iio_context_get_version_minor(NULL),
-	       iio_context_get_version_tag(NULL));
-        for (i = 0; i < iio_get_builtin_backends_count(); i++)
-                printf(" %s", iio_get_builtin_backend(i));
-        printf("\n");
+	printf("%s version: %u.%u (git tag:%s)\n", name, LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
+			LIBIIO_VERSION_GIT);
+	printf("Libiio version: %u.%u (git tag: %s) backends:", iio_context_get_version_major(NULL),
+			iio_context_get_version_minor(NULL), iio_context_get_version_tag(NULL));
+	for (i = 0; i < iio_get_builtin_backends_count(); i++)
+		printf(" %s", iio_get_builtin_backend(i));
+	printf("\n");
 }
 
 uint64_t get_time_us(void)
@@ -441,7 +430,7 @@ uint64_t get_time_us(void)
 	return tp.tv_sec * 1000000ull + tp.tv_nsec / 1000;
 }
 
-const char * dev_name(const struct iio_device *dev)
+const char *dev_name(const struct iio_device *dev)
 {
 	const char *name;
 

@@ -6,20 +6,19 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "iio-config.h"
+#include "iio-private.h"
 
 struct iio_scan {
 	struct iio_context_info *info;
 	size_t count;
 };
 
-struct iio_scan * iio_scan(const struct iio_context_params *params,
-			   const char *backends)
+struct iio_scan *iio_scan(const struct iio_context_params *params, const char *backends)
 {
 	const struct iio_context_params *default_params = get_default_params();
 	struct iio_context_params params2 = { 0 };
@@ -53,8 +52,7 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 	/* Copy the string into an intermediate buffer for strtok() usage */
 	iio_snprintf(buf, sizeof(buf), "%s", backends);
 
-	for (token = iio_strtok_r(buf, ",", &rest);
-	     token; token = iio_strtok_r(NULL, ",", &rest)) {
+	for (token = iio_strtok_r(buf, ",", &rest); token; token = iio_strtok_r(NULL, ",", &rest)) {
 		args = NULL;
 
 		for (i = 0; i < iio_backends_size; i++) {
@@ -103,14 +101,12 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 		}
 
 		if (!backend) {
-			prm_warn(params, "No backend found for scan string \'%s\'\n",
-				 token);
+			prm_warn(params, "No backend found for scan string \'%s\'\n", token);
 			continue;
 		}
 
 		if (!backend->ops || !backend->ops->scan) {
-			prm_warn(params, "Backend %s does not support scanning.\n",
-				 token);
+			prm_warn(params, "Backend %s does not support scanning.\n", token);
 			continue;
 		}
 
@@ -121,8 +117,7 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 
 		ret = backend->ops->scan(&params2, ctx, args);
 		if (ret < 0) {
-			prm_perror(&params2, ret,
-				   "Unable to scan %s context", token);
+			prm_perror(&params2, ret, "Unable to scan %s context", token);
 		}
 
 		if (WITH_MODULES && module)
@@ -150,8 +145,7 @@ size_t iio_scan_get_results_count(const struct iio_scan *ctx)
 	return ctx->count;
 }
 
-const char *
-iio_scan_get_description(const struct iio_scan *ctx, size_t idx)
+const char *iio_scan_get_description(const struct iio_scan *ctx, size_t idx)
 {
 	if (idx >= ctx->count)
 		return NULL;
@@ -159,7 +153,7 @@ iio_scan_get_description(const struct iio_scan *ctx, size_t idx)
 	return ctx->info[idx].description;
 }
 
-const char * iio_scan_get_uri(const struct iio_scan *ctx, size_t idx)
+const char *iio_scan_get_uri(const struct iio_scan *ctx, size_t idx)
 {
 	if (idx >= ctx->count)
 		return NULL;

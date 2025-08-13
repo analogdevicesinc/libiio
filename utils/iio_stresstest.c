@@ -8,20 +8,20 @@
 
 #define _DEFAULT_SOURCE
 
+#include <errno.h>
 #include <getopt.h>
-#include <iio/iio.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
+#include <limits.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <errno.h>
-#include <limits.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #ifdef __APPLE__
-	/* Needed for sysctlbyname */
+/* Needed for sysctlbyname */
 #include <sys/sysctl.h>
 #endif
 
@@ -34,9 +34,10 @@
 #define MY_NAME "iio_stresstest"
 
 #define SAMPLES_PER_READ 256
-#define NUM_TIMESTAMPS (16*1024)
+#define NUM_TIMESTAMPS (16 * 1024)
 
-static int getNumCores(void) {
+static int getNumCores(void)
+{
 #ifdef _WIN32
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);
@@ -51,7 +52,6 @@ static int getNumCores(void) {
 #endif
 }
 
-
 /* Code snippet insired by Nick Strupat
  * https://stackoverflow.com/questions/794632/programmatically-get-the-cache-line-size
  * released under the "Feel free to do whatever you want with it." license.
@@ -63,7 +63,7 @@ static size_t cache_line_size(void)
 #ifdef _WIN32
 	DWORD buffer_size = 0;
 	DWORD i = 0;
-	SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
+	SYSTEM_LOGICAL_PROCESSOR_INFORMATION *buffer = 0;
 
 	GetLogicalProcessorInformation(0, &buffer_size);
 	buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
@@ -82,7 +82,7 @@ static size_t cache_line_size(void)
 	sysctlbyname("hw.cachelinesize", &cacheline, &sizeof_line_size, 0, 0);
 
 #elif __linux__
-	FILE * p = 0;
+	FILE *p = 0;
 	int ret;
 
 	p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
@@ -97,20 +97,20 @@ static size_t cache_line_size(void)
 }
 
 static const struct option options[] = {
-	{"help", no_argument, 0, 'h'},
-	{"uri", required_argument, 0, 'u'},
-	{"buffer-size", required_argument, 0, 'b'},
-	{"duration", required_argument, 0, 'd'},
-	{"threads", required_argument, 0, 't'},
-	{"cma", no_argument, 0, 'C'},
-	{"verbose", no_argument, 0, 'v'},
-	{0, 0, 0, 0},
+	{ "help", no_argument, 0, 'h' },
+	{ "uri", required_argument, 0, 'u' },
+	{ "buffer-size", required_argument, 0, 'b' },
+	{ "duration", required_argument, 0, 'd' },
+	{ "threads", required_argument, 0, 't' },
+	{ "cma", no_argument, 0, 'C' },
+	{ "verbose", no_argument, 0, 'v' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
 	("[-u <uri>] [-b <buffer-size>] [-d <duration>]"
-		"[-t <threads>] [-C <cma>]"
-		"<iio_device> [<channel> ...]"),
+	 "[-t <threads>] [-C <cma>]"
+	 "<iio_device> [<channel> ...]"),
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",
@@ -165,8 +165,7 @@ static void set_handler(int signal_nb, void (*handler)(int))
 #endif
 }
 
-static struct iio_device * get_device(const struct iio_context *ctx,
-		const char *id)
+static struct iio_device *get_device(const struct iio_context *ctx, const char *id)
 {
 	unsigned int i, nb_devices = iio_context_get_devices_count(ctx);
 	struct iio_device *device;
@@ -210,7 +209,7 @@ struct info {
 	struct timeval **start;
 };
 
-static void thread_err(int id, ssize_t ret, char * what)
+static void thread_err(int id, ssize_t ret, char *what)
 {
 	if (ret < 0)
 		prm_perror(NULL, (int)ret, "%d: %s", id, what);
@@ -227,7 +226,7 @@ static void *client_thread(void *data)
 	const struct iio_device *dev;
 	const struct iio_channel *ch;
 	struct iio_channels_mask *mask;
-	struct iio_buffer_params buffer_params = {0};
+	struct iio_buffer_params buffer_params = { 0 };
 	struct timeval start, end;
 	int id = -1, stamp, r_errno;
 	ssize_t ret;
@@ -260,7 +259,7 @@ static void *client_thread(void *data)
 			gettimeofday(&end, NULL);
 
 			duration = ((end.tv_sec - start.tv_sec) * 1000) +
-					((end.tv_usec - start.tv_usec) / 1000);
+				   ((end.tv_usec - start.tv_usec) / 1000);
 		} while (threads_running && r_errno && duration < info->timeout);
 
 		if (r_errno) {
@@ -272,7 +271,7 @@ static void *client_thread(void *data)
 		info->start[id][stamp].tv_sec = end.tv_sec;
 		info->start[id][stamp].tv_usec = end.tv_usec;
 		stamp++;
-		if (stamp > NUM_TIMESTAMPS - 10 )
+		if (stamp > NUM_TIMESTAMPS - 10)
 			threads_running = false;
 
 		/* started another context */
@@ -302,7 +301,7 @@ static void *client_thread(void *data)
 				iio_channel_enable(ch, mask);
 			}
 		} else {
-			for (i = info->arg_index + 2; i < (unsigned int) info->argc; i++)
+			for (i = info->arg_index + 2; i < (unsigned int)info->argc; i++)
 				iio_device_enable_channel(dev, info->argv[i], false, mask);
 		}
 
@@ -344,7 +343,7 @@ static void *client_thread(void *data)
 				i = 1;
 
 				/* depending on backend, do more */
-				if(info->back == IIO_USB && rand() % 3 == 0)
+				if (info->back == IIO_USB && rand() % 3 == 0)
 					break;
 				else if (info->back == IIO_NETWORK && rand() % 5 == 0)
 					break;
@@ -355,7 +354,7 @@ static void *client_thread(void *data)
 			iio_buffer_destroy(buffer);
 
 			/* depending on backend, do more */
-			if(info->back == IIO_USB) {
+			if (info->back == IIO_USB) {
 				break;
 			} else if (info->back == IIO_NETWORK) {
 				if (rand() % 5 == 0)
@@ -380,14 +379,16 @@ static void *client_thread(void *data)
 	if (info->verbose == VERYVERBOSE)
 		printf("%2d: Stopped normal\n", id);
 	info->tid[id] = 0;
-	info->start[id][stamp].tv_sec = 0; info->start[id][stamp].tv_usec = 0;
+	info->start[id][stamp].tv_sec = 0;
+	info->start[id][stamp].tv_usec = 0;
 	return (void *)0;
 
 thread_fail:
 	if (info->verbose == VERYVERBOSE)
 		printf("%2d: Stopped via error\n", id);
 	info->tid[id] = 0;
-	info->start[id][stamp].tv_sec = 0; info->start[id][stamp].tv_usec = 0;
+	info->start[id][stamp].tv_sec = 0;
+	info->start[id][stamp].tv_usec = 0;
 	return (void *)EXIT_FAILURE;
 }
 
@@ -400,7 +401,7 @@ int main(int argc, char **argv)
 	struct iio_buffer *buffer;
 	struct iio_context *ctx;
 	struct iio_channel *ch;
-	struct iio_buffer_params buffer_params = {0};
+	struct iio_buffer_params buffer_params = { 0 };
 	struct iio_channels_mask *mask;
 	const char *name;
 	int c, pret, option_index, err;
@@ -426,11 +427,10 @@ int main(int argc, char **argv)
 	info.argv = argv;
 
 	min_samples = cache_line_size();
-	if(!min_samples)
+	if (!min_samples)
 		min_samples = 128;
 
-	while ((c = getopt_long(argc, argv, "hvu:b:t:T:C",
-					options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "hvu:b:t:T:C", options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
 			usage(MY_NAME, options, options_descriptions);
@@ -446,16 +446,16 @@ int main(int argc, char **argv)
 					min_samples, 1024 * 1024 * 4);
 			break;
 		case 'T':
-			info.arg_index +=2;
+			info.arg_index += 2;
 			/* ensure between least once a day and never (0) */
 			info.timeout = 1000 * sanitize_clamp("timeout", info.argv[info.arg_index],
-					0, 60 * 60 * 24);
+							      0, 60 * 60 * 24);
 			break;
 		case 't':
-			info.arg_index +=2;
+			info.arg_index += 2;
 			/* Max number threads 1024, min 1 */
-			info.num_threads = sanitize_clamp("threads", info.argv[info.arg_index],
-					1, 1024);
+			info.num_threads = sanitize_clamp(
+					"threads", info.argv[info.arg_index], 1, 1024);
 			break;
 		case 'C':
 			buffer_params.dma_allocator = IIO_DMA_ALLOCATOR_CMA_LINUX;
@@ -498,7 +498,8 @@ int main(int argc, char **argv)
 							iio_channel_enable(ch, mask);
 					}
 
-					buffer = iio_device_create_buffer(dev, &buffer_params, mask);
+					buffer = iio_device_create_buffer(
+							dev, &buffer_params, mask);
 					if (!iio_err(buffer)) {
 						iio_buffer_destroy(buffer);
 
@@ -555,8 +556,8 @@ int main(int argc, char **argv)
 
 	ret = (void *)calloc(info.num_threads, sizeof(void *));
 
-	if (!ret || !info.start || !info.refills || !info.buffers || !info.starts ||
-			!info.tid || !info.threads) {
+	if (!ret || !info.start || !info.refills || !info.buffers || !info.starts || !info.tid ||
+			!info.threads) {
 		fprintf(stderr, "Memory allocation failure\n");
 		return 0;
 	}
@@ -578,7 +579,8 @@ int main(int argc, char **argv)
 		pthread_sigmask(SIG_BLOCK, &set, &oldset);
 		for (i = 0; i < info.num_threads; i++) {
 			/* before starting a thread, set up things */
-			info.start[i][0].tv_sec = 0; info.start[i][0].tv_usec = 0;
+			info.start[i][0].tv_sec = 0;
+			info.start[i][0].tv_usec = 0;
 			memset(&info.tid[i], -1, sizeof(pthread_t));
 			pthread_create(&info.threads[i], NULL, client_thread, &info);
 		}
@@ -588,8 +590,8 @@ int main(int argc, char **argv)
 		/* If a thread prematurely dies, start it again */
 		while (app_running && threads_running) {
 			/* If we find a thread that isn't running, restart it */
-			for (i = 0; i < info.num_threads && threads_running; i++){
-				if (info.tid[i] == 0){
+			for (i = 0; i < info.num_threads && threads_running; i++) {
+				if (info.tid[i] == 0) {
 					if (info.verbose == VERYVERBOSE)
 						printf("waiting for %u\n", i);
 					pret = pthread_join(info.threads[i], &ret[i]);
@@ -598,7 +600,8 @@ int main(int argc, char **argv)
 						app_running = 0;
 					} else {
 						memset(&info.tid[i], -1, sizeof(pthread_t));
-						pthread_create(&info.threads[i], NULL, client_thread, &info);
+						pthread_create(&info.threads[i], NULL,
+								client_thread, &info);
 					}
 				}
 			}
@@ -606,7 +609,7 @@ int main(int argc, char **argv)
 			/* if we timeout, stop */
 			gettimeofday(&end, NULL);
 			duration = ((end.tv_sec - start.tv_sec) * 1000) +
-					((end.tv_usec - start.tv_usec) / 1000);
+				   ((end.tv_usec - start.tv_usec) / 1000);
 			if (info.timeout && duration >= info.timeout) {
 				threads_running = false;
 			} else {
@@ -619,7 +622,7 @@ int main(int argc, char **argv)
 
 		gettimeofday(&end, NULL);
 		duration = ((end.tv_sec - s_loop.tv_sec) * 1000) +
-			((end.tv_usec - s_loop.tv_usec) / 1000);
+			   ((end.tv_usec - s_loop.tv_usec) / 1000);
 
 		flag = 0;
 		threads_running = false;
@@ -635,7 +638,7 @@ int main(int argc, char **argv)
 		}
 		/* Did at least one thread end in success? */
 		for (i = 0; i < info.num_threads; i++) {
-			if (!((int) (intptr_t)ret[i])) {
+			if (!((int)(intptr_t)ret[i])) {
 				flag = 1;
 				break;
 			}
@@ -646,44 +649,45 @@ int main(int argc, char **argv)
 		}
 
 		/* Calculate some stats about the threads */
-		unsigned int a =0, b = 0;
+		unsigned int a = 0, b = 0;
 		c = 0;
 		for (i = 0; i < info.num_threads; i++) {
-			a+= info.starts[i];
-			b+= info.buffers[i];
-			c+= info.refills[i];
+			a += info.starts[i];
+			b += info.buffers[i];
+			c += info.refills[i];
 			if (!app_running || info.verbose >= VERBOSE)
 				printf("%2u: Ran : %u times, opening %u buffers, doing %u refills\n",
-						i, info.starts[i], info.buffers[i], info.refills[i]);
+						i, info.starts[i], info.buffers[i],
+						info.refills[i]);
 		}
 		if (!app_running || info.verbose >= SUMMARY)
 			printf("total: ");
-		i = duration/1000;
-		flag=0;
-		if (i > 60*60*24) {
+		i = duration / 1000;
+		flag = 0;
+		if (i > 60 * 60 * 24) {
 			if (!app_running || info.verbose >= SUMMARY)
-				printf("%ud", i/(60*60*24));
-			i -= (i/(60*60*24))*60*60*24;
+				printf("%ud", i / (60 * 60 * 24));
+			i -= (i / (60 * 60 * 24)) * 60 * 60 * 24;
 			flag = 1;
 		}
-		if (flag || i > 60*60) {
+		if (flag || i > 60 * 60) {
 			if (!app_running || info.verbose >= SUMMARY) {
 				if (flag)
-					printf("%02uh", i/(60*60));
+					printf("%02uh", i / (60 * 60));
 				else
-					printf("%uh", i/(60*60));
+					printf("%uh", i / (60 * 60));
 			}
-			i -= (i/(60*60))*60*60;
+			i -= (i / (60 * 60)) * 60 * 60;
 			flag = 1;
 		}
 		if (flag || i > 60) {
 			if (!app_running || info.verbose >= SUMMARY) {
 				if (flag)
-					printf("%02um", i/60);
+					printf("%02um", i / 60);
 				else
-					printf("%um", i/60);
+					printf("%um", i / 60);
 			}
-			i -= (i/60)*60;
+			i -= (i / 60) * 60;
 			flag = 1;
 		}
 		if (flag || i) {
@@ -693,9 +697,9 @@ int main(int argc, char **argv)
 
 		if (!app_running || info.verbose >= SUMMARY) {
 			printf(" Context : %i (%2.2f/s), buffers: %i (%2.2f/s), refills : %i (%2.2f/s)\n",
-					a, (double)a * 1000 / duration,
-					b, (double)b * 1000 / duration,
-					c, (double)c * 1000 / duration);
+					a, (double)a * 1000 / duration, b,
+					(double)b * 1000 / duration, c,
+					(double)c * 1000 / duration);
 		}
 		/* gather and sort things, so we can print out a histogram */
 		struct timeval *sort;
@@ -723,8 +727,8 @@ int main(int argc, char **argv)
 		qsort(sort, b, sizeof(struct timeval), compare_timeval);
 		/* bin */
 		for (i = 1; i < b; i++) {
-			duration = (sort[i].tv_sec - sort[i -1].tv_sec) * 1000000 +
-				sort[i].tv_usec - sort[i - 1].tv_usec;
+			duration = (sort[i].tv_sec - sort[i - 1].tv_sec) * 1000000 +
+				   sort[i].tv_usec - sort[i - 1].tv_usec;
 			histogram[8]++;
 			if (duration == 0)
 				histogram[0]++;
@@ -745,30 +749,22 @@ int main(int argc, char **argv)
 		}
 		/* dump */
 		if (!app_running || info.verbose >= SUMMARY) {
-			printf("    0        : %7zu (%5.2f%%)\n",
-					histogram[0],
-					(double)histogram[0]*100/histogram[8]);
-			printf("  1 - 9   μs : %7zu (%5.2f%%)\n",
-					histogram[1],
-					(double)histogram[1]*100/histogram[8]);
-			printf(" 10 - 99  μs : %7zu (%5.2f%%)\n",
-					histogram[2],
-					(double)histogram[2]*100/histogram[8]);
-			printf("100 - 999 μs : %7zu (%5.2f%%)\n",
-					histogram[3],
-					(double)histogram[3]*100/histogram[8]);
-			printf("  1 - 9.9 ms : %7zu (%5.2f%%)\n",
-					histogram[4],
-					(double)histogram[4]*100/histogram[8]);
-			printf(" 10 - 99  ms : %7zu (%5.2f%%)\n",
-					histogram[5],
-					(double)histogram[5]*100/histogram[8]);
-			printf("100 - 999 ms : %7zu (%5.2f%%)\n",
-					histogram[6],
-					(double)histogram[6]*100/histogram[8]);
-			printf("over 1 s     : %7zu (%5.2f%%)\n",
-					histogram[7],
-					(double)histogram[7]*100/histogram[8]);
+			printf("    0        : %7zu (%5.2f%%)\n", histogram[0],
+					(double)histogram[0] * 100 / histogram[8]);
+			printf("  1 - 9   μs : %7zu (%5.2f%%)\n", histogram[1],
+					(double)histogram[1] * 100 / histogram[8]);
+			printf(" 10 - 99  μs : %7zu (%5.2f%%)\n", histogram[2],
+					(double)histogram[2] * 100 / histogram[8]);
+			printf("100 - 999 μs : %7zu (%5.2f%%)\n", histogram[3],
+					(double)histogram[3] * 100 / histogram[8]);
+			printf("  1 - 9.9 ms : %7zu (%5.2f%%)\n", histogram[4],
+					(double)histogram[4] * 100 / histogram[8]);
+			printf(" 10 - 99  ms : %7zu (%5.2f%%)\n", histogram[5],
+					(double)histogram[5] * 100 / histogram[8]);
+			printf("100 - 999 ms : %7zu (%5.2f%%)\n", histogram[6],
+					(double)histogram[6] * 100 / histogram[8]);
+			printf("over 1 s     : %7zu (%5.2f%%)\n", histogram[7],
+					(double)histogram[7] * 100 / histogram[8]);
 			printf("\n");
 		}
 		free(sort);

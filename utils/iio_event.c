@@ -8,8 +8,8 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <iio/iio.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
@@ -22,12 +22,10 @@ static struct iio_event_stream *stream;
 static int exit_code = EXIT_FAILURE;
 
 static const struct option options[] = {
-	{0, 0, 0, 0},
+	{ 0, 0, 0, 0 },
 };
 
-static const char *options_descriptions[] = {
-	"<device>\n"
-};
+static const char *options_descriptions[] = { "<device>\n" };
 
 static void quit_stream(int sig)
 {
@@ -38,7 +36,7 @@ static void quit_stream(int sig)
 	stream = NULL;
 }
 
-static const char * const iio_ev_type_text[] = {
+static const char *const iio_ev_type_text[] = {
 	[IIO_EV_TYPE_THRESH] = "thresh",
 	[IIO_EV_TYPE_MAG] = "mag",
 	[IIO_EV_TYPE_ROC] = "roc",
@@ -50,7 +48,7 @@ static const char * const iio_ev_type_text[] = {
 	[IIO_EV_TYPE_FAULT] = "fault",
 };
 
-static const char * const iio_ev_dir_text[] = {
+static const char *const iio_ev_dir_text[] = {
 	[IIO_EV_DIR_EITHER] = "either",
 	[IIO_EV_DIR_RISING] = "rising",
 	[IIO_EV_DIR_FALLING] = "falling",
@@ -59,14 +57,13 @@ static const char * const iio_ev_dir_text[] = {
 	[IIO_EV_DIR_FAULT_OPENWIRE] = "openwire",
 };
 
-static void print_event(const struct iio_device *dev,
-			const struct iio_event *event)
+static void print_event(const struct iio_device *dev, const struct iio_event *event)
 {
 	const struct iio_channel *chn;
 	enum iio_event_type type = iio_event_get_type(event);
 	enum iio_event_direction dir = iio_event_get_direction(event);
 
-	printf("Event: time: %"PRId64, event->timestamp); /* Flawfinder: ignore */
+	printf("Event: time: %" PRId64, event->timestamp); /* Flawfinder: ignore */
 
 	chn = iio_event_get_channel(event, dev, false);
 	if (chn)
@@ -97,8 +94,7 @@ int main(int argc, char **argv)
 	if (!argw)
 		return EXIT_FAILURE;
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, "",
-				 options, options_descriptions, &ret);
+	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -106,7 +102,7 @@ int main(int argc, char **argv)
 		goto out_ctx_destroy;
 	}
 	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS, /* Flawfinder: ignore */
-			opts, NULL)) != -1) {
+				opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -116,8 +112,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argv[optind] != NULL
-					&& argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL &&
+					argv[optind][0] != '-')
 				optind++;
 			break;
 		case '?':

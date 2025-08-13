@@ -23,8 +23,8 @@
 #include <locale.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef _MSC_BUILD
 #define inline __inline
@@ -35,9 +35,9 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
-#define RED	020u
-#define YELLOW	040u
-#define BLUE	050u
+#define RED 020u
+#define YELLOW 040u
+#define BLUE 050u
 
 static int selected = -1;
 
@@ -52,8 +52,7 @@ static bool channel_has_attr(struct iio_channel *chn, const char *name)
 static bool is_valid_channel(struct iio_channel *chn)
 {
 	return !iio_channel_is_output(chn) &&
-		(channel_has_attr(chn, "raw") ||
-		 channel_has_attr(chn, "input"));
+	       (channel_has_attr(chn, "raw") || channel_has_attr(chn, "input"));
 }
 
 static void err_str(int ret)
@@ -140,10 +139,10 @@ static struct {
 	const char *id;
 	const char *unit;
 } map[] = {
-	{ "current",	"A" },
-	{ "power",	"W" },
-	{ "temp",	"°C" },
-	{ "voltage",	"V" },
+	{ "current", "A" },
+	{ "power", "W" },
+	{ "temp", "°C" },
+	{ "voltage", "V" },
 	{ NULL, NULL },
 };
 
@@ -159,7 +158,7 @@ static const char *id_to_unit(const char *id)
 	return "";
 }
 
-static void * read_thd(void *d)
+static void *read_thd(void *d)
 {
 	struct iio_context *ctx = d;
 
@@ -171,7 +170,7 @@ static void * read_thd(void *d)
 		char buf[1024];
 		chtype *str;
 		struct timespec wait;
-		(void) row; /* Prevent warning */
+		(void)row; /* Prevent warning */
 
 		wait.tv_sec = 0;
 		wait.tv_nsec = (100000 * 1000);
@@ -190,8 +189,8 @@ static void * read_thd(void *d)
 
 		werase(right);
 
-		iio_snprintf(buf, sizeof(buf), "</B>Device selected: </%u>%s<!%u><!B>",
-				RED, name, RED);
+		iio_snprintf(buf, sizeof(buf), "</B>Device selected: </%u>%s<!%u><!B>", RED, name,
+				RED);
 		str = char2Chtype(buf, &len, &align);
 		writeChtype(right, 2, line, str, HORIZONTAL, 0, len);
 		freeChtype(str);
@@ -201,8 +200,7 @@ static void * read_thd(void *d)
 		for (i = 0; i < nb_channels; i++) {
 			const char *id;
 			const char *unit;
-			struct iio_channel *chn =
-				iio_device_get_channel(dev, i);
+			struct iio_channel *chn = iio_device_get_channel(dev, i);
 			if (!is_valid_channel(chn))
 				continue;
 
@@ -216,26 +214,21 @@ static void * read_thd(void *d)
 				name = label;
 			unit = id_to_unit(id);
 
-			iio_snprintf(buf, sizeof(buf), "</%u></B>%s<!B><!%u>",
-					BLUE, name, BLUE);
+			iio_snprintf(buf, sizeof(buf), "</%u></B>%s<!B><!%u>", BLUE, name, BLUE);
 			str = char2Chtype(buf, &len, &align);
-			writeChtype(right, 2, line, str,
-					HORIZONTAL, 0, len);
+			writeChtype(right, 2, line, str, HORIZONTAL, 0, len);
 			freeChtype(str);
 
-			iio_snprintf(buf, sizeof(buf), "</%u></B>%.3lf %s<!B><!%u>",
-					YELLOW, get_channel_value(chn), unit,
-					YELLOW);
+			iio_snprintf(buf, sizeof(buf), "</%u></B>%.3lf %s<!B><!%u>", YELLOW,
+					get_channel_value(chn), unit, YELLOW);
 			str = char2Chtype(buf, &len, &align);
-			writeChtype(right, col / 2, line++,
-					str, HORIZONTAL, 0, len);
+			writeChtype(right, col / 2, line++, str, HORIZONTAL, 0, len);
 			freeChtype(str);
 		}
 
 		if (nb == 0) {
 			char msg[] = "No valid input channels found.";
-			writeChar(right, 2, line++, msg,
-					HORIZONTAL, 0, sizeof(msg) - 1);
+			writeChar(right, 2, line++, msg, HORIZONTAL, 0, sizeof(msg) - 1);
 		}
 
 		boxWindow(right, 0);
@@ -278,10 +271,8 @@ static struct iio_context *show_contexts_screen(void)
 
 		for (i = 0; i < num_contexts; i++) {
 			ret = asprintf(&items[i], "</%d>%s<!%d> </%d>[%s]<!%d>", YELLOW,
-				iio_scan_get_description(scan_ctx, i),
-				YELLOW, BLUE,
-				iio_scan_get_uri(scan_ctx, i),
-				BLUE);
+					iio_scan_get_description(scan_ctx, i), YELLOW, BLUE,
+					iio_scan_get_uri(scan_ctx, i), BLUE);
 			if (ret < 0) {
 				fprintf(stderr, "asprintf failed, out of memory?\n");
 				break;
@@ -294,9 +285,8 @@ static struct iio_context *show_contexts_screen(void)
 		items[i] = "Enter location";
 
 		list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
-				"\n Select a IIO context to use:\n",
-				(CDK_CSTRING2) items, num_contexts + 1, TRUE,
-				A_BOLD | A_REVERSE, TRUE, FALSE);
+				"\n Select a IIO context to use:\n", (CDK_CSTRING2)items,
+				num_contexts + 1, TRUE, A_BOLD | A_REVERSE, TRUE, FALSE);
 
 		drawCDKScroll(list, TRUE);
 
@@ -305,8 +295,7 @@ static struct iio_context *show_contexts_screen(void)
 			uri = iio_scan_get_uri(scan_ctx, ret);
 			free_uri = FALSE;
 		} else if (ret == num_contexts) {
-			uri = getString(screen,
-					"Please enter the location of the server",
+			uri = getString(screen, "Please enter the location of the server",
 					"Location:  ", "ip:localhost");
 			free_uri = TRUE;
 		} else {
@@ -380,10 +369,9 @@ static void show_main_screen(struct iio_context *ctx)
 	}
 
 	boxWindow(right, 0);
-	list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0,
-			"\n List of available IIO devices:\n",
-			(CDK_CSTRING2) dev_names, nb_devices, FALSE,
-			A_BOLD | A_REVERSE, TRUE, FALSE);
+	list = newCDKScroll(screen, LEFT, TOP, RIGHT, 0, 0, "\n List of available IIO devices:\n",
+			(CDK_CSTRING2)dev_names, nb_devices, FALSE, A_BOLD | A_REVERSE, TRUE,
+			FALSE);
 
 	drawCDKScroll(list, TRUE);
 

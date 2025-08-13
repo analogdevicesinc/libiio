@@ -6,14 +6,9 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "attr.h"
-#include "iio-private.h"
-#include "local.h"
-#include "sort.h"
-#include "deps/libini/ini.h"
-
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
@@ -26,29 +21,30 @@
 #include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <string.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
+
+#include "attr.h"
+#include "deps/libini/ini.h"
+#include "iio-private.h"
+#include "local.h"
+#include "sort.h"
 
 #define NB_BLOCKS 4
 
-#define IIO_GET_EVENT_FD_IOCTL		 _IOR('i', 0x90, int)
-#define IIO_BUFFER_GET_FD_IOCTL		_IOWR('i', 0x91, int)
+#define IIO_GET_EVENT_FD_IOCTL _IOR('i', 0x90, int)
+#define IIO_BUFFER_GET_FD_IOCTL _IOWR('i', 0x91, int)
 
 /* Forward declarations */
-static ssize_t local_write_dev_attr(const struct iio_device *dev,
-				    unsigned int buf_id, const char *attr,
-				    const char *src, size_t len,
-				    enum iio_attr_type type);
-static struct iio_context *
-local_create_context(const struct iio_context_params *params, const char *args);
-static int local_context_scan(const struct iio_context_params *params,
-			      struct iio_scan *ctx, const char *args);
+static ssize_t local_write_dev_attr(const struct iio_device *dev, unsigned int buf_id,
+		const char *attr, const char *src, size_t len, enum iio_attr_type type);
+static struct iio_context *local_create_context(
+		const struct iio_context_params *params, const char *args);
+static int local_context_scan(
+		const struct iio_context_params *params, struct iio_scan *ctx, const char *args);
 
 struct iio_context_pdata {
 	struct iio_mutex *lock;
@@ -68,13 +64,13 @@ struct iio_channel_pdata {
 	struct iio_attr_list protected;
 };
 
-static const char * const device_attrs_denylist[] = {
+static const char *const device_attrs_denylist[] = {
 	"dev",
 	"uevent",
 	"waiting_for_supplier",
 };
 
-static const char * const buffer_attrs_reserved[] = {
+static const char *const buffer_attrs_reserved[] = {
 	"length",
 	"enable",
 	"watermark",
@@ -168,10 +164,8 @@ static int set_channel_name(struct iio_channel *chn)
 		for (i = 1; can_fix && i < chn->attrlist.num; i++)
 			can_fix = !strncmp(attr0, chn->attrlist.attrs[i].name, len);
 
-		for (i = !chn->attrlist.num;
-				can_fix && i < pdata->protected.num; i++) {
-			can_fix = !strncmp(attr0,
-					pdata->protected.attrs[i].name, len);
+		for (i = !chn->attrlist.num; can_fix && i < pdata->protected.num; i++) {
+			can_fix = !strncmp(attr0, pdata->protected.attrs[i].name, len);
 		}
 
 		if (!can_fix)
@@ -193,9 +187,9 @@ static int set_channel_name(struct iio_channel *chn)
 
 		/* Shrink the attribute name */
 		for (i = 0; i < chn->attrlist.num; i++)
-			strcut((char *) chn->attrlist.attrs[i].name, prefix_len);
+			strcut((char *)chn->attrlist.attrs[i].name, prefix_len);
 		for (i = 0; i < pdata->protected.num; i++)
-			strcut((char *) pdata->protected.attrs[i].name, prefix_len);
+			strcut((char *)pdata->protected.attrs[i].name, prefix_len);
 	}
 
 	return 0;
@@ -230,28 +224,26 @@ static int get_rel_timeout_ms(struct timespec *start, unsigned int timeout_rel)
 	diff_ms = (now.tv_sec - start->tv_sec) * 1000;
 	diff_ms += (now.tv_nsec - start->tv_nsec) / 1000000;
 
-	if (diff_ms >= (int) timeout_rel) /* Expired */
+	if (diff_ms >= (int)timeout_rel) /* Expired */
 		return 0;
 	if (diff_ms > 0) /* Should never be false, but lets be safe */
 		timeout_rel -= diff_ms;
 	if (timeout_rel > INT_MAX)
 		return INT_MAX;
 
-	return (int) timeout_rel;
+	return (int)timeout_rel;
 }
 
-int buffer_check_ready(struct iio_buffer_pdata *pdata, int fd,
-		       short events, struct timespec *start)
+int buffer_check_ready(struct iio_buffer_pdata *pdata, int fd, short events, struct timespec *start)
 {
-	struct pollfd pollfd[2] = {
+	struct pollfd pollfd[2] = { {
+						    .fd = fd,
+						    .events = events,
+				    },
 		{
-			.fd = fd,
-			.events = events,
-		}, {
-			.fd = pdata->cancel_fd,
-			.events = POLLIN,
-		}
-	};
+				.fd = pdata->cancel_fd,
+				.events = POLLIN,
+		} };
 	unsigned int rw_timeout_ms = pdata->dev->ctx->params.timeout_ms;
 	int timeout_rel, ret;
 
@@ -278,34 +270,32 @@ int buffer_check_ready(struct iio_buffer_pdata *pdata, int fd,
 	return 0;
 }
 
-static int
-local_set_buffer_size(const struct iio_buffer_pdata *pdata, size_t nb_samples)
+static int local_set_buffer_size(const struct iio_buffer_pdata *pdata, size_t nb_samples)
 {
 	char buf[32];
 	ssize_t ret;
 
 	iio_snprintf(buf, sizeof(buf), "%zu", nb_samples);
 
-	ret = local_write_dev_attr(pdata->dev, pdata->params->idx, "length",
-				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
+	ret = local_write_dev_attr(pdata->dev, pdata->params->idx, "length", buf, strlen(buf) + 1,
+			IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 
 	return 0;
 }
 
-static int
-local_set_watermark(const struct iio_buffer_pdata *pdata, size_t nb_samples)
+static int local_set_watermark(const struct iio_buffer_pdata *pdata, size_t nb_samples)
 {
 	char buf[32];
 	ssize_t ret;
 
 	iio_snprintf(buf, sizeof(buf), "%zu", nb_samples);
 
-	ret = local_write_dev_attr(pdata->dev, pdata->params->idx, "watermark",
-				   buf, strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
+	ret = local_write_dev_attr(pdata->dev, pdata->params->idx, "watermark", buf,
+			strlen(buf) + 1, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0 && ret != -ENOENT && ret != -EACCES)
-		return (int) ret;
+		return (int)ret;
 
 	return 0;
 }
@@ -314,17 +304,16 @@ static int local_do_enable_buffer(struct iio_buffer_pdata *pdata, bool enable)
 {
 	int ret;
 
-	ret = (int) local_write_dev_attr(pdata->dev, pdata->params->idx, "enable",
-					 enable ? "1" : "0",
-					 2, IIO_ATTR_TYPE_BUFFER);
+	ret = (int)local_write_dev_attr(pdata->dev, pdata->params->idx, "enable",
+			enable ? "1" : "0", 2, IIO_ATTR_TYPE_BUFFER);
 	if (ret < 0)
 		return ret;
 
 	return 0;
 }
 
-static int local_enable_buffer(struct iio_buffer_pdata *pdata,
-			       size_t nb_samples, bool enable, bool cyclic)
+static int local_enable_buffer(
+		struct iio_buffer_pdata *pdata, size_t nb_samples, bool enable, bool cyclic)
 {
 	int ret;
 
@@ -344,10 +333,9 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 	return local_do_enable_buffer(pdata, enable);
 }
 
-static ssize_t local_readbuf(struct iio_buffer_pdata *buffer,
-			     void *dst, size_t len)
+static ssize_t local_readbuf(struct iio_buffer_pdata *buffer, void *dst, size_t len)
 {
-	uintptr_t ptr = (uintptr_t) dst;
+	uintptr_t ptr = (uintptr_t)dst;
 	struct timespec start;
 	int fd = buffer->fd;
 	ssize_t readsize;
@@ -367,7 +355,7 @@ static ssize_t local_readbuf(struct iio_buffer_pdata *buffer,
 			break;
 
 		do {
-			ret = read(fd, (void *) ptr, len);
+			ret = read(fd, (void *)ptr, len);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1) {
@@ -384,17 +372,16 @@ static ssize_t local_readbuf(struct iio_buffer_pdata *buffer,
 		len -= ret;
 	}
 
-	readsize = (ssize_t)(ptr - (uintptr_t) dst);
+	readsize = (ssize_t)(ptr - (uintptr_t)dst);
 	if ((ret > 0 || ret == -EAGAIN) && (readsize > 0))
 		return readsize;
 	else
 		return ret;
 }
 
-static ssize_t
-local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
+static ssize_t local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
 {
-	uintptr_t ptr = (uintptr_t) src;
+	uintptr_t ptr = (uintptr_t)src;
 	struct timespec start;
 	int fd = buffer->fd;
 	ssize_t writtensize;
@@ -414,7 +401,7 @@ local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
 			break;
 
 		do {
-			ret = write(fd, (void *) ptr, len);
+			ret = write(fd, (void *)ptr, len);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1) {
@@ -432,16 +419,15 @@ local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
 		len -= ret;
 	}
 
-	writtensize = (ssize_t)(ptr - (uintptr_t) src);
+	writtensize = (ssize_t)(ptr - (uintptr_t)src);
 	if ((ret > 0 || ret == -EAGAIN) && (writtensize > 0))
 		return writtensize;
 	else
 		return ret;
 }
 
-static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
-				      const char *attr, char *dst, size_t len,
-				      enum iio_attr_type type)
+static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id, const char *attr,
+		char *dst, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
 	char buf[1024];
@@ -451,33 +437,28 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 		return -ENOSYS;
 
 	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-		case IIO_ATTR_TYPE_CHANNEL:
-			if (WITH_HWMON && id[0] == 'h') {
-				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
-							id, attr);
-			} else {
-				iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-							id, attr);
-			}
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-					id, attr);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			if (buf_id > 0) {
-				iio_snprintf(buf, sizeof(buf),
-					     "/sys/bus/iio/devices/%s/buffer%u/%s",
-					     id, buf_id, attr);
-			} else {
-				iio_snprintf(buf, sizeof(buf),
-					     "/sys/bus/iio/devices/%s/buffer/%s",
-					     id, attr);
-			}
-			break;
-		default:
-			return -EINVAL;
+	case IIO_ATTR_TYPE_DEVICE:
+	case IIO_ATTR_TYPE_CHANNEL:
+		if (WITH_HWMON && id[0] == 'h') {
+			iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s", id, attr);
+		} else {
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s", id, attr);
+		}
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s", id, attr);
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		if (buf_id > 0) {
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer%u/%s", id,
+					buf_id, attr);
+		} else {
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s", id,
+					attr);
+		}
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	f = fopen(buf, "re");
@@ -502,20 +483,16 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 	return ret;
 }
 
-static ssize_t local_read_dev_attr(const struct iio_device *dev,
-				   unsigned int buf_id, const char *attr,
-				   char *dst, size_t len,
-				   enum iio_attr_type type)
+static ssize_t local_read_dev_attr(const struct iio_device *dev, unsigned int buf_id,
+		const char *attr, char *dst, size_t len, enum iio_attr_type type)
 {
 	const char *id = iio_device_get_id(dev);
 
 	return local_do_read_dev_attr(id, buf_id, attr, dst, len, type);
 }
 
-static ssize_t local_write_dev_attr(const struct iio_device *dev,
-				    unsigned int buf_id, const char *attr,
-				    const char *src, size_t len,
-				    enum iio_attr_type type)
+static ssize_t local_write_dev_attr(const struct iio_device *dev, unsigned int buf_id,
+		const char *attr, const char *src, size_t len, enum iio_attr_type type)
 {
 	FILE *f;
 	char buf[1024];
@@ -525,33 +502,28 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		return -ENOSYS;
 
 	switch (type) {
-		case IIO_ATTR_TYPE_DEVICE:
-		case IIO_ATTR_TYPE_CHANNEL:
-			if (WITH_HWMON && iio_device_is_hwmon(dev)) {
-				iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s",
-					dev->id, attr);
-			} else {
-				iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s",
-					dev->id, attr);
-			}
-			break;
-		case IIO_ATTR_TYPE_DEBUG:
-			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
-					dev->id, attr);
-			break;
-		case IIO_ATTR_TYPE_BUFFER:
-			if (buf_id > 0) {
-				iio_snprintf(buf, sizeof(buf),
-					     "/sys/bus/iio/devices/%s/buffer%u/%s",
-					     dev->id, buf_id, attr);
-			} else {
-				iio_snprintf(buf, sizeof(buf),
-					     "/sys/bus/iio/devices/%s/buffer/%s",
-					     dev->id, attr);
-			}
-			break;
-		default:
-			return -EINVAL;
+	case IIO_ATTR_TYPE_DEVICE:
+	case IIO_ATTR_TYPE_CHANNEL:
+		if (WITH_HWMON && iio_device_is_hwmon(dev)) {
+			iio_snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s/%s", dev->id, attr);
+		} else {
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/%s", dev->id, attr);
+		}
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s", dev->id, attr);
+		break;
+	case IIO_ATTR_TYPE_BUFFER:
+		if (buf_id > 0) {
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer%u/%s",
+					dev->id, buf_id, attr);
+		} else {
+			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer/%s", dev->id,
+					attr);
+		}
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	f = fopen(buf, "we");
@@ -566,8 +538,7 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	return ret ? ret : -EIO;
 }
 
-static int channel_write_state(const struct iio_channel *chn,
-			       unsigned int idx, bool en)
+static int channel_write_state(const struct iio_channel *chn, unsigned int idx, bool en)
 {
 	enum iio_attr_type type = idx ? IIO_ATTR_TYPE_BUFFER : IIO_ATTR_TYPE_DEVICE;
 	ssize_t ret;
@@ -577,10 +548,9 @@ static int channel_write_state(const struct iio_channel *chn,
 		return -EINVAL;
 	}
 
-	ret = local_write_dev_attr(chn->dev, idx, chn->pdata->enable_fn,
-				   en ? "1" : "0", 2, type);
+	ret = local_write_dev_attr(chn->dev, idx, chn->pdata->enable_fn, en ? "1" : "0", 2, type);
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 	else
 		return 0;
 }
@@ -591,23 +561,22 @@ static int channel_read_state(const struct iio_channel *chn, unsigned int idx)
 	char buf[8];
 	int err;
 
-	err = local_read_dev_attr(chn->dev, idx, chn->pdata->enable_fn,
-				  buf, sizeof(buf), type);
+	err = local_read_dev_attr(chn->dev, idx, chn->pdata->enable_fn, buf, sizeof(buf), type);
 	if (err < 0)
 		return err;
 
 	return buf[0] == '1';
 }
 
-static const struct iio_device * local_get_trigger(const struct iio_device *dev)
+static const struct iio_device *local_get_trigger(const struct iio_device *dev)
 {
 	const struct iio_device *cur;
 	char buf[1024];
 	unsigned int i;
 	ssize_t nb;
 
-	nb = local_read_dev_attr(dev, 0, "trigger/current_trigger",
-				 buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
+	nb = local_read_dev_attr(
+			dev, 0, "trigger/current_trigger", buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 	if (nb < 0)
 		return iio_ptr(nb);
 
@@ -615,7 +584,7 @@ static const struct iio_device * local_get_trigger(const struct iio_device *dev)
 		return iio_ptr(-ENODEV);
 
 	nb = iio_context_get_devices_count(dev->ctx);
-	for (i = 0; i < (size_t) nb; i++) {
+	for (i = 0; i < (size_t)nb; i++) {
 		cur = iio_context_get_device(dev->ctx, i);
 
 		if (cur->name && !strcmp(cur->name, buf))
@@ -625,16 +594,15 @@ static const struct iio_device * local_get_trigger(const struct iio_device *dev)
 	return iio_ptr(-ENXIO);
 }
 
-static int local_set_trigger(const struct iio_device *dev,
-		const struct iio_device *trigger)
+static int local_set_trigger(const struct iio_device *dev, const struct iio_device *trigger)
 {
 	ssize_t nb;
 	const char *value = trigger ? trigger->name : "";
 
-	nb = local_write_dev_attr(dev, 0, "trigger/current_trigger", value,
-				  strlen(value) + 1, IIO_ATTR_TYPE_DEVICE);
+	nb = local_write_dev_attr(dev, 0, "trigger/current_trigger", value, strlen(value) + 1,
+			IIO_ATTR_TYPE_DEVICE);
 	if (nb < 0)
-		return (int) nb;
+		return (int)nb;
 
 	return 0;
 }
@@ -663,7 +631,7 @@ static bool is_channel(const struct iio_device *dev, const char *attr, bool stri
 	return false;
 }
 
-static char * get_channel_id(struct iio_device *dev, const char *attr)
+static char *get_channel_id(struct iio_device *dev, const char *attr)
 {
 	char *res, *ptr = strchr(attr, '_');
 	size_t len;
@@ -690,8 +658,7 @@ static char * get_channel_id(struct iio_device *dev, const char *attr)
 	return res;
 }
 
-static const char *
-get_short_attr_name(struct iio_channel *chn, const char *attr)
+static const char *get_short_attr_name(struct iio_channel *chn, const char *attr)
 {
 	char *ptr = strchr(attr, '_');
 	size_t len;
@@ -732,16 +699,15 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEVICE);
 }
 
-static int handle_protected_scan_element_attr(struct iio_channel *chn,
-			const char *name, const char *path)
+static int handle_protected_scan_element_attr(
+		struct iio_channel *chn, const char *name, const char *path)
 {
 	struct iio_device *dev = chn->dev;
 	char buf[1024];
 	int ret;
 
 	if (!strcmp(name, "index")) {
-		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf),
-					  IIO_ATTR_TYPE_DEVICE);
+		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
 			char *end;
 			long long value;
@@ -751,47 +717,45 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			if (end == buf || value < 0 || errno == ERANGE)
 				return -EINVAL;
 
-			chn->index = (long) value;
+			chn->index = (long)value;
 		}
 	} else if (!strcmp(name, "type")) {
-		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf),
-					  IIO_ATTR_TYPE_DEVICE);
+		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
 			char endian, sign;
 
 			if (strchr(buf, 'X')) {
 				iio_sscanf(buf, "%ce:%c%u/%uX%u>>%u",
 #ifdef _MSC_BUILD
-					&endian, sizeof(endian),
-					&sign, sizeof(sign),
+						&endian, sizeof(endian), &sign, sizeof(sign),
 #else
-					&endian, &sign,
+						&endian, &sign,
 #endif
-					&chn->format.bits, &chn->format.length,
-					&chn->format.repeat, &chn->format.shift);
+						&chn->format.bits, &chn->format.length,
+						&chn->format.repeat, &chn->format.shift);
 			} else {
 				chn->format.repeat = 1;
 				iio_sscanf(buf, "%ce:%c%u/%u>>%u",
 #ifdef _MSC_BUILD
-					&endian, sizeof(endian),
-					&sign, sizeof(sign),
+						&endian, sizeof(endian), &sign, sizeof(sign),
 #else
-					&endian, &sign,
+						&endian, &sign,
 #endif
-					&chn->format.bits, &chn->format.length,
-					&chn->format.shift);
+						&chn->format.bits, &chn->format.length,
+						&chn->format.shift);
 			}
 			chn->format.is_signed = (sign == 's' || sign == 'S');
-			chn->format.is_fully_defined =
-					(sign == 'S' || sign == 'U'||
-					chn->format.bits == chn->format.length);
+			chn->format.is_fully_defined = (sign == 'S' || sign == 'U' ||
+							chn->format.bits == chn->format.length);
 			chn->format.is_be = endian == 'b';
 		}
 
 	} else if (!strcmp(name, "en")) {
 		if (chn->pdata->enable_fn) {
-			chn_err(chn, "Libiio bug: \"en\" attribute already "
-				"parsed for channel %s!\n", chn->id);
+			chn_err(chn,
+					"Libiio bug: \"en\" attribute already "
+					"parsed for channel %s!\n",
+					chn->id);
 			return -EINVAL;
 		}
 
@@ -812,8 +776,7 @@ static int handle_scan_elements(struct iio_channel *chn)
 	unsigned int i;
 
 	for (i = 0; i < pdata->protected.num; i++) {
-		int ret = handle_protected_scan_element_attr(chn,
-				pdata->protected.attrs[i].name,
+		int ret = handle_protected_scan_element_attr(chn, pdata->protected.attrs[i].name,
 				pdata->protected.attrs[i].filename);
 		if (ret < 0)
 			return ret;
@@ -829,28 +792,28 @@ static void free_protected_attrs(struct iio_channel *chn)
 	iio_free_attrs(&pdata->protected);
 }
 
-static int add_attr_to_channel(struct iio_channel *chn,
-			       const char *name, const char *path,
-			       bool is_scan_element)
+static int add_attr_to_channel(
+		struct iio_channel *chn, const char *name, const char *path, bool is_scan_element)
 {
 	struct iio_channel_pdata *pdata = chn->pdata;
-	union iio_pointer p = { .chn = chn, };
+	union iio_pointer p = {
+		.chn = chn,
+	};
 	struct iio_attr_list *attrs;
 	int ret;
 	size_t lbl_len = strlen("_label");
 	char label[512];
 	const char *dev_id;
 
-	if (strlen(name) >= lbl_len &&
-		!strcmp(name + strlen(name) - lbl_len, "_label")) {
+	if (strlen(name) >= lbl_len && !strcmp(name + strlen(name) - lbl_len, "_label")) {
 		dev_id = iio_device_get_id(iio_channel_get_device(chn));
-		ret = local_do_read_dev_attr(dev_id, 0, name,
-			label, sizeof(label), IIO_ATTR_TYPE_CHANNEL);
+		ret = local_do_read_dev_attr(
+				dev_id, 0, name, label, sizeof(label), IIO_ATTR_TYPE_CHANNEL);
 		if (ret > 0)
 			chn->label = iio_strdup(label);
 		else
-			chn_dbg(chn, "Unable to read channel label: %s (%d)\n",
-				strerror(-ret), -ret);
+			chn_dbg(chn, "Unable to read channel label: %s (%d)\n", strerror(-ret),
+					-ret);
 
 		return 0;
 	}
@@ -862,16 +825,15 @@ static int add_attr_to_channel(struct iio_channel *chn,
 	if (ret)
 		return ret;
 
-	chn_dbg(chn, "Added%s attr \'%s\' to channel \'%s\'\n",
-		is_scan_element ? " protected" : "", name, chn->id);
+	chn_dbg(chn, "Added%s attr \'%s\' to channel \'%s\'\n", is_scan_element ? " protected" : "",
+			name, chn->id);
 	return 0;
 }
 
-static int add_channel_to_device(struct iio_device *dev,
-		struct iio_channel *chn)
+static int add_channel_to_device(struct iio_device *dev, struct iio_channel *chn)
 {
-	struct iio_channel **channels = realloc(dev->channels,
-			(dev->nb_channels + 1) * sizeof(struct iio_channel *));
+	struct iio_channel **channels = realloc(
+			dev->channels, (dev->nb_channels + 1) * sizeof(struct iio_channel *));
 	if (!channels)
 		return -ENOMEM;
 
@@ -879,14 +841,13 @@ static int add_channel_to_device(struct iio_device *dev,
 	dev->channels = channels;
 
 	dev_dbg(dev, "Added %s channel \'%s\' to device \'%s\'\n",
-		chn->is_output ? "output" : "input", chn->id, dev->id);
+			chn->is_output ? "output" : "input", chn->id, dev->id);
 
 	return 0;
 }
 
-static struct iio_channel *create_channel(struct iio_device *dev,
-		char *id, const char *attr, const char *path,
-		bool is_scan_element)
+static struct iio_channel *create_channel(struct iio_device *dev, char *id, const char *attr,
+		const char *path, bool is_scan_element)
 {
 	struct iio_channel *chn;
 	int err = -ENOMEM;
@@ -927,8 +888,8 @@ err_free_chn:
 	return iio_ptr(err);
 }
 
-static int add_channel(struct iio_device *dev, const char *name,
-	const char *path, bool dir_is_scan_elements)
+static int add_channel(struct iio_device *dev, const char *name, const char *path,
+		bool dir_is_scan_elements)
 {
 	struct iio_channel *chn;
 	char *channel_id;
@@ -941,11 +902,9 @@ static int add_channel(struct iio_device *dev, const char *name,
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
-		if (!strcmp(chn->id, channel_id)
-				&& chn->is_output == (name[0] == 'o')) {
+		if (!strcmp(chn->id, channel_id) && chn->is_output == (name[0] == 'o')) {
 			free(channel_id);
-			ret = add_attr_to_channel(chn, name, path,
-					dir_is_scan_elements);
+			ret = add_attr_to_channel(chn, name, path, dir_is_scan_elements);
 			chn->is_scan_element |= dir_is_scan_elements && !ret;
 			return ret;
 		}
@@ -997,14 +956,14 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	if (dashptr && dashptr > attr && dashptr < ptr) {
 		unsigned int len1 = dashptr - attr;
 		unsigned int len2 = ptr - dashptr - 1;
-		const char*  iddashptr = strchr(chn->id, '-');
+		const char *iddashptr = strchr(chn->id, '-');
 
 		if (iddashptr && strlen(iddashptr + 1) > len2 &&
-			(unsigned int)(iddashptr - chn->id) > len1 &&
-			chn->id[len1] >= '0' && chn->id[len1] <= '9' &&
-			!strncmp(chn->id, attr, len1) &&
-			iddashptr[len2 + 1] >= '0' && iddashptr[len2 + 1] <= '9' &&
-			!strncmp(iddashptr + 1, dashptr + 1, len2))
+				(unsigned int)(iddashptr - chn->id) > len1 &&
+				chn->id[len1] >= '0' && chn->id[len1] <= '9' &&
+				!strncmp(chn->id, attr, len1) && iddashptr[len2 + 1] >= '0' &&
+				iddashptr[len2 + 1] <= '9' &&
+				!strncmp(iddashptr + 1, dashptr + 1, len2))
 			return 1;
 	}
 
@@ -1016,7 +975,7 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 		if (chn->name) {
 			size_t name_len = strlen(chn->name);
 			if (strncmp(chn->name, attr + len + 1, name_len) == 0 &&
-				attr[len + 1 + name_len] == '_')
+					attr[len + 1 + name_len] == '_')
 				return 2;
 		}
 		return 1;
@@ -1031,8 +990,8 @@ static unsigned int is_global_attr(struct iio_channel *chn, const char *attr)
 	return 0;
 }
 
-static int detect_global_attr(struct iio_device *dev, const char *attr,
-	unsigned int level, bool *match)
+static int detect_global_attr(
+		struct iio_device *dev, const char *attr, unsigned int level, bool *match)
 {
 	unsigned int i;
 
@@ -1108,7 +1067,7 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 
 static int add_buffer_attr(void *d, const char *path)
 {
-	struct iio_device *dev = (struct iio_device *) d;
+	struct iio_device *dev = (struct iio_device *)d;
 	const char *name = strrchr(path, '/') + 1;
 	unsigned int i;
 
@@ -1119,15 +1078,14 @@ static int add_buffer_attr(void *d, const char *path)
 	return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_BUFFER);
 }
 
-static int add_attr_or_channel_helper(struct iio_device *dev,
-		const char *path, const char *prefix,
+static int add_attr_or_channel_helper(struct iio_device *dev, const char *path, const char *prefix,
 		bool dir_is_scan_elements)
 {
 	char buf[1024];
 	const char *name = strrchr(path, '/') + 1;
 
 	if (!dir_is_scan_elements && !is_channel(dev, name, true))
-	      return add_attr_to_device(dev, name);
+		return add_attr_to_device(dev, name);
 
 	iio_snprintf(buf, sizeof(buf), "%s%s", prefix, name);
 
@@ -1136,25 +1094,21 @@ static int add_attr_or_channel_helper(struct iio_device *dev,
 
 static int add_attr_or_channel(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "", false);
+	return add_attr_or_channel_helper((struct iio_device *)d, path, "", false);
 }
 
 static int add_event(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "events/", false);
+	return add_attr_or_channel_helper((struct iio_device *)d, path, "events/", false);
 }
 
 static int add_scan_element(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "scan_elements/", true);
+	return add_attr_or_channel_helper((struct iio_device *)d, path, "scan_elements/", true);
 }
 
-static int foreach_in_dir(const struct iio_context *ctx,
-			  void *d, const char *path, bool is_dir,
-			  int (*callback)(void *, const char *))
+static int foreach_in_dir(const struct iio_context *ctx, void *d, const char *path, bool is_dir,
+		int (*callback)(void *, const char *))
 {
 	struct dirent *entry;
 	DIR *dir;
@@ -1266,13 +1220,12 @@ static int create_device(void *d, const char *path)
 
 	id = strrchr(path, '/') + 1;
 
-	ret = (int)local_do_read_dev_attr(id, 0, "name", name, sizeof(name),
-					  IIO_ATTR_TYPE_DEVICE);
+	ret = (int)local_do_read_dev_attr(id, 0, "name", name, sizeof(name), IIO_ATTR_TYPE_DEVICE);
 	if (ret > 0)
 		name_ptr = name;
 
-	ret = (int)local_do_read_dev_attr(id, 0, "label", label, sizeof(label),
-					  IIO_ATTR_TYPE_DEVICE);
+	ret = (int)local_do_read_dev_attr(
+			id, 0, "label", label, sizeof(label), IIO_ATTR_TYPE_DEVICE);
 	if (ret > 0)
 		label_ptr = label;
 
@@ -1367,27 +1320,26 @@ static void local_cancel_buffer(struct iio_buffer_pdata *pdata)
 	local_signal_cancel_fd(pdata->dev, pdata->cancel_fd);
 }
 
-static char * local_get_description(const struct iio_context *ctx)
+static char *local_get_description(const struct iio_context *ctx)
 {
 	char *description;
 	unsigned int len;
 	struct utsname uts;
 
 	uname(&uts);
-	len = strlen(uts.sysname) + strlen(uts.nodename) + strlen(uts.release)
-		+ strlen(uts.version) + strlen(uts.machine);
+	len = strlen(uts.sysname) + strlen(uts.nodename) + strlen(uts.release) +
+	      strlen(uts.version) + strlen(uts.machine);
 	description = malloc(len + 5); /* 4 spaces + EOF */
 	if (!description)
 		return NULL;
 
-	iio_snprintf(description, len + 5, "%s %s %s %s %s", uts.sysname,
-			uts.nodename, uts.release, uts.version, uts.machine);
+	iio_snprintf(description, len + 5, "%s %s %s %s %s", uts.sysname, uts.nodename, uts.release,
+			uts.version, uts.machine);
 
 	return description;
 }
 
-static ssize_t
-local_read_attr(const struct iio_attr *attr, char *dst, size_t len)
+static ssize_t local_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 {
 	const struct iio_device *dev = iio_attr_get_device(attr);
 	enum iio_attr_type type = attr->type;
@@ -1400,8 +1352,7 @@ local_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 	return local_read_dev_attr(dev, buf_id, filename, dst, len, type);
 }
 
-static ssize_t
-local_write_attr(const struct iio_attr *attr, const char *src, size_t len)
+static ssize_t local_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 {
 	const struct iio_device *dev = iio_attr_get_device(attr);
 	enum iio_attr_type type = attr->type;
@@ -1414,8 +1365,7 @@ local_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 	return local_write_dev_attr(dev, buf_id, filename, src, len, type);
 }
 
-static int
-local_open_fd(const struct iio_device *dev, bool events, unsigned int idx)
+static int local_open_fd(const struct iio_device *dev, bool events, unsigned int idx)
 {
 	struct iio_mutex *lock = dev->ctx->pdata->lock;
 	int ret, dev_fd, fd;
@@ -1477,10 +1427,8 @@ static void local_close_fd(const struct iio_device *dev, int fd)
 	iio_mutex_unlock(lock);
 }
 
-static struct iio_buffer_pdata *
-local_create_buffer(const struct iio_device *dev,
-		    struct iio_buffer_params *params,
-		    struct iio_channels_mask *mask)
+static struct iio_buffer_pdata *local_create_buffer(const struct iio_device *dev,
+		struct iio_buffer_params *params, struct iio_channels_mask *mask)
 {
 	struct iio_buffer_pdata *pdata;
 	const struct iio_channel *chn;
@@ -1578,8 +1526,8 @@ static void local_free_buffer(struct iio_buffer_pdata *pdata)
 	free(pdata);
 }
 
-static struct iio_block_pdata *
-local_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
+static struct iio_block_pdata *local_create_block(
+		struct iio_buffer_pdata *pdata, size_t size, void **data)
 {
 	struct iio_block_pdata *block;
 	int ret;
@@ -1611,8 +1559,7 @@ static void local_free_block(struct iio_block_pdata *pdata)
 		local_free_mmap_block(pdata);
 }
 
-static int local_enqueue_block(struct iio_block_pdata *pdata,
-			       size_t bytes_used, bool cyclic)
+static int local_enqueue_block(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
 		return local_enqueue_dmabuf(pdata, bytes_used, cyclic);
@@ -1634,8 +1581,7 @@ int local_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 	return -ENOSYS;
 }
 
-static struct iio_event_stream_pdata *
-local_open_events_fd(const struct iio_device *dev)
+static struct iio_event_stream_pdata *local_open_events_fd(const struct iio_device *dev)
 {
 	struct iio_event_stream_pdata *pdata;
 	int err;
@@ -1679,18 +1625,17 @@ static void local_close_events_fd(struct iio_event_stream_pdata *pdata)
 	free(pdata);
 }
 
-static int local_read_event(struct iio_event_stream_pdata *pdata,
-			    struct iio_event *out_event, bool nonblock)
+static int local_read_event(
+		struct iio_event_stream_pdata *pdata, struct iio_event *out_event, bool nonblock)
 {
-	struct pollfd pollfd[2] = {
+	struct pollfd pollfd[2] = { {
+						    .fd = pdata->fd,
+						    .events = POLLIN,
+				    },
 		{
-			.fd = pdata->fd,
-			.events = POLLIN,
-		}, {
-			.fd = pdata->cancel_fd,
-			.events = POLLIN,
-		}
-	};
+				.fd = pdata->cancel_fd,
+				.events = POLLIN,
+		} };
 	int ret, timeout_rel = nonblock ? 0 : -1;
 
 	do {
@@ -1707,7 +1652,6 @@ static int local_read_event(struct iio_event_stream_pdata *pdata,
 		/* No event available */
 		return nonblock ? -EAGAIN : -EBUSY;
 	}
-
 
 	if (!(pollfd[0].revents & POLLIN)) {
 		/* Unknown error */
@@ -1848,8 +1792,8 @@ out_close_ini:
 	return ret;
 }
 
-static struct iio_context *
-local_create_context(const struct iio_context_params *params, const char *args)
+static struct iio_context *local_create_context(
+		const struct iio_context_params *params, const char *args)
 {
 	struct iio_context *ctx;
 	char *description;
@@ -1861,8 +1805,7 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	if (!description)
 		return iio_ptr(-ENOMEM);
 
-	ctx = iio_context_create_from_backend(params, &iio_local_backend,
-					      description, 0, 0, NULL);
+	ctx = iio_context_create_from_backend(params, &iio_local_backend, description, 0, 0, NULL);
 	free(description);
 	ret = iio_err(ctx);
 	if (ret)
@@ -1879,17 +1822,15 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	if (ret < 0)
 		goto err_context_destroy;
 
-	ret = foreach_in_dir(ctx, ctx, "/sys/bus/iio/devices",
-			     true, create_device);
+	ret = foreach_in_dir(ctx, ctx, "/sys/bus/iio/devices", true, create_device);
 	no_iio = ret == -ENOENT;
 	if (WITH_HWMON && no_iio)
-	      ret = 0; /* Not an error, unless we also have no hwmon devices */
+		ret = 0; /* Not an error, unless we also have no hwmon devices */
 	if (ret < 0)
-	      goto err_context_destroy;
+		goto err_context_destroy;
 
 	if (WITH_HWMON) {
-		ret = foreach_in_dir(ctx, ctx, "/sys/class/hwmon",
-				     true, create_device);
+		ret = foreach_in_dir(ctx, ctx, "/sys/class/hwmon", true, create_device);
 		if (ret == -ENOENT && !no_iio)
 			ret = 0; /* IIO devices but no hwmon devices - not an error */
 		if (ret < 0)
@@ -1932,7 +1873,7 @@ err_context_destroy:
 
 #define BUF_SIZE 128
 
-static char * cat_file(const char *path)
+static char *cat_file(const char *path)
 {
 	char buf[BUF_SIZE];
 	ssize_t ret;
@@ -1942,7 +1883,7 @@ static char * cat_file(const char *path)
 	if (!f)
 		return NULL;
 
-	ret = fread(buf, 1, sizeof(buf)-1, f);
+	ret = fread(buf, 1, sizeof(buf) - 1, f);
 	fclose(f);
 	if (ret <= 0)
 		return NULL;
@@ -1977,8 +1918,8 @@ static int check_device(void *d, const char *path)
 	return 0;
 }
 
-static int local_context_scan(const struct iio_context_params *params,
-			      struct iio_scan *ctx, const char *args)
+static int local_context_scan(
+		const struct iio_context_params *params, struct iio_scan *ctx, const char *args)
 {
 	char *machine, buf[2 * BUF_SIZE], names[BUF_SIZE];
 	bool no_iio, exists = false;
@@ -1994,23 +1935,20 @@ static int local_context_scan(const struct iio_context_params *params,
 
 	names[0] = '\0';
 	if (exists) {
-		ret = foreach_in_dir(NULL, &names, "/sys/bus/iio/devices",
-				     true, build_names);
+		ret = foreach_in_dir(NULL, &names, "/sys/bus/iio/devices", true, build_names);
 		if (ret < 0)
 			return 0;
 	}
 
 	if (WITH_HWMON) {
 		exists = false;
-		ret = foreach_in_dir(NULL, &exists, "/sys/class/hwmon",
-				     true, check_device);
+		ret = foreach_in_dir(NULL, &exists, "/sys/class/hwmon", true, check_device);
 		if (!exists && !no_iio)
 			ret = 0; /* IIO devices but no hwmon devices - not an error */
 		if (ret < 0)
 			return 0;
 
-		ret = foreach_in_dir(NULL, &names, "/sys/class/hwmon",
-				     true, build_names);
+		ret = foreach_in_dir(NULL, &names, "/sys/class/hwmon", true, build_names);
 		if (ret < 0)
 			return 0;
 	}

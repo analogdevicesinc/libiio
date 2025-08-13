@@ -20,7 +20,7 @@
 #endif
 
 static const struct option options[] = {
-	{0, 0, 0, 0},
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -37,15 +37,14 @@ int main(int argc, char **argv)
 	int err;
 
 	argw = dup_argv(MY_NAME, argc, argv);
-	ctx = handle_common_opts(MY_NAME, argc, argw, "",
-				 options, options_descriptions, &ret);
+	ctx = handle_common_opts(MY_NAME, argc, argw, "", options, options_descriptions, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS,  /* Flawfinder: ignore */
-					opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS, /* Flawfinder: ignore */
+				opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -55,8 +54,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argv[optind] != NULL
-					&& argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL &&
+					argv[optind][0] != '-')
 				optind++;
 			break;
 		case '?':

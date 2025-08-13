@@ -9,15 +9,14 @@
 #define __IIO_BACKEND_H__
 
 #include <iio/iio.h>
-
 #include <stdbool.h>
 
 #define __api __iio_api
 
-#define __api_export_if(x)	___api_export_if(x)
-#define ___api_export_if(x)	___api_export_if_##x
+#define __api_export_if(x) ___api_export_if(x)
+#define ___api_export_if(x) ___api_export_if_##x
 #define ___api_export_if_0
-#define ___api_export_if_1	__iio_api_export
+#define ___api_export_if_1 __iio_api_export
 
 /* https://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
  * {NAME_MAX} : Maximum number of bytes in a filename
@@ -26,13 +25,13 @@
  * Too bad we work on non-POSIX systems
  */
 #ifndef NAME_MAX
-#  define NAME_MAX 256
+#define NAME_MAX 256
 #endif
 #ifndef PATH_MAX
-#  define PATH_MAX 4096
+#define PATH_MAX 4096
 #endif
 #ifndef PAGESIZE
-#  define PAGESIZE 4096
+#define PAGESIZE 4096
 #endif
 
 #ifdef _MSC_BUILD
@@ -88,46 +87,38 @@ struct iio_attr {
 };
 
 struct iio_backend_ops {
-	int (*scan)(const struct iio_context_params *params,
-		    struct iio_scan *ctx, const char *args);
-	struct iio_context * (*create)(const struct iio_context_params *params,
-				       const char *uri);
+	int (*scan)(const struct iio_context_params *params, struct iio_scan *ctx,
+			const char *args);
+	struct iio_context *(*create)(const struct iio_context_params *params, const char *uri);
 
-	ssize_t (*read_attr)(const struct iio_attr *attr,
-			     char *dst, size_t len);
-	ssize_t (*write_attr)(const struct iio_attr *attr,
-			      const char *src, size_t len);
+	ssize_t (*read_attr)(const struct iio_attr *attr, char *dst, size_t len);
+	ssize_t (*write_attr)(const struct iio_attr *attr, const char *src, size_t len);
 
-	const struct iio_device * (*get_trigger)(const struct iio_device *dev);
-	int (*set_trigger)(const struct iio_device *dev,
-			const struct iio_device *trigger);
+	const struct iio_device *(*get_trigger)(const struct iio_device *dev);
+	int (*set_trigger)(const struct iio_device *dev, const struct iio_device *trigger);
 
 	void (*shutdown)(struct iio_context *ctx);
 
-	int (*get_version)(const struct iio_context *ctx, unsigned int *major,
-			unsigned int *minor, char git_tag[8]);
+	int (*get_version)(const struct iio_context *ctx, unsigned int *major, unsigned int *minor,
+			char git_tag[8]);
 
 	int (*set_timeout)(struct iio_context *ctx, unsigned int timeout);
 
 	struct iio_buffer_pdata *(*create_buffer)(const struct iio_device *dev,
-						  struct iio_buffer_params *params,
-						  struct iio_channels_mask *mask);
+			struct iio_buffer_params *params, struct iio_channels_mask *mask);
 	void (*free_buffer)(struct iio_buffer_pdata *pdata);
-	int (*enable_buffer)(struct iio_buffer_pdata *pdata,
-			     size_t nb_samples, bool enable, bool cyclic);
+	int (*enable_buffer)(struct iio_buffer_pdata *pdata, size_t nb_samples, bool enable,
+			bool cyclic);
 	void (*cancel_buffer)(struct iio_buffer_pdata *pdata);
 
-	ssize_t (*readbuf)(struct iio_buffer_pdata *pdata,
-			   void *dst, size_t len);
-	ssize_t (*writebuf)(struct iio_buffer_pdata *pdata,
-			    const void *src, size_t len);
+	ssize_t (*readbuf)(struct iio_buffer_pdata *pdata, void *dst, size_t len);
+	ssize_t (*writebuf)(struct iio_buffer_pdata *pdata, const void *src, size_t len);
 
-	struct iio_block_pdata *(*create_block)(struct iio_buffer_pdata *pdata,
-						size_t size, void **data);
+	struct iio_block_pdata *(*create_block)(
+			struct iio_buffer_pdata *pdata, size_t size, void **data);
 	void (*free_block)(struct iio_block_pdata *pdata);
 
-	int (*enqueue_block)(struct iio_block_pdata *pdata,
-			     size_t bytes_used, bool cyclic);
+	int (*enqueue_block)(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic);
 	int (*dequeue_block)(struct iio_block_pdata *pdata, bool nonblock);
 
 	int (*get_dmabuf_fd)(struct iio_block_pdata *pdata);
@@ -135,9 +126,8 @@ struct iio_backend_ops {
 
 	struct iio_event_stream_pdata *(*open_ev)(const struct iio_device *dev);
 	void (*close_ev)(struct iio_event_stream_pdata *pdata);
-	int (*read_ev)(struct iio_event_stream_pdata *pdata,
-		       struct iio_event *out_event,
-		       bool nonblock);
+	int (*read_ev)(struct iio_event_stream_pdata *pdata, struct iio_event *out_event,
+			bool nonblock);
 };
 
 /**
@@ -148,11 +138,11 @@ struct iio_backend_ops {
  * @ops				Reference to backend ops
  */
 struct iio_backend {
-	unsigned int			api_version;
-	const char			*name;
-	const char			*uri_prefix;
-	const struct iio_backend_ops	*ops;
-	unsigned int			default_timeout_ms;
+	unsigned int api_version;
+	const char *name;
+	const char *uri_prefix;
+	const struct iio_backend_ops *ops;
+	unsigned int default_timeout_ms;
 };
 
 /*
@@ -162,79 +152,57 @@ struct iio_backend {
  */
 extern const struct iio_backend iio_external_backend;
 
-__api struct iio_context *
-iio_context_create_from_backend(const struct iio_context_params *params,
-				const struct iio_backend *backend,
-				const char *description, unsigned int minor,
-				unsigned int major, const char *git_tag);
+__api struct iio_context *iio_context_create_from_backend(const struct iio_context_params *params,
+		const struct iio_backend *backend, const char *description, unsigned int minor,
+		unsigned int major, const char *git_tag);
 
-__api struct iio_device *
-iio_context_add_device(struct iio_context *ctx,
-		       const char *id, const char *name, const char *label);
+__api struct iio_device *iio_context_add_device(
+		struct iio_context *ctx, const char *id, const char *name, const char *label);
 
-__api struct iio_channel *
-iio_device_add_channel(struct iio_device *dev, long index,
-		       const char *id, const char *name, const char *label,
-			   bool output, bool scan_element,
-			   const struct iio_data_format *fmt);
+__api struct iio_channel *iio_device_add_channel(struct iio_device *dev, long index, const char *id,
+		const char *name, const char *label, bool output, bool scan_element,
+		const struct iio_data_format *fmt);
 
-__api int
-iio_context_add_attr(struct iio_context *ctx,
-		     const char *key, const char *value);
-__api int
-iio_device_add_attr(struct iio_device *dev,
-		    const char *name, enum iio_attr_type type);
-__api int
-iio_channel_add_attr(struct iio_channel *chn,
-		     const char *name, const char *filename);
+__api int iio_context_add_attr(struct iio_context *ctx, const char *key, const char *value);
+__api int iio_device_add_attr(struct iio_device *dev, const char *name, enum iio_attr_type type);
+__api int iio_channel_add_attr(struct iio_channel *chn, const char *name, const char *filename);
 
-__api struct iio_context_pdata *
-iio_context_get_pdata(const struct iio_context *ctx);
+__api struct iio_context_pdata *iio_context_get_pdata(const struct iio_context *ctx);
 
-__api void
-iio_context_set_pdata(struct iio_context *ctx, struct iio_context_pdata *data);
+__api void iio_context_set_pdata(struct iio_context *ctx, struct iio_context_pdata *data);
 
-__api struct iio_device_pdata *
-iio_device_get_pdata(const struct iio_device *dev);
+__api struct iio_device_pdata *iio_device_get_pdata(const struct iio_device *dev);
 
-__api void
-iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *data);
+__api void iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *data);
 
-__api struct iio_channel_pdata *
-iio_channel_get_pdata(const struct iio_channel *chn);
+__api struct iio_channel_pdata *iio_channel_get_pdata(const struct iio_channel *chn);
 
-__api void
-iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *data);
+__api void iio_channel_set_pdata(struct iio_channel *chn, struct iio_channel_pdata *data);
 
-__api int
-iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char *uri);
+__api int iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char *uri);
 
 #if defined(__MINGW32__)
-#   define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
+#define __iio_printf __attribute__((__format__(gnu_printf, 3, 4)))
 #elif defined(__GNUC__)
-#   define __iio_printf __attribute__((__format__(printf, 3, 4)))
+#define __iio_printf __attribute__((__format__(printf, 3, 4)))
 #else
-#   define __iio_printf
+#define __iio_printf
 #endif
 
-__api __iio_printf ssize_t
-iio_snprintf(char *buf, size_t len, const char *fmt, ...);
+__api __iio_printf ssize_t iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 __api char *iio_strdup(const char *str);
-__api size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
+__api size_t iio_strlcpy(char *__restrict dst, const char *__restrict src, size_t dsize);
 
-__api struct iio_context *
-iio_create_context_from_xml(const struct iio_context_params *params,
-			    const char *uri, const struct iio_backend *backend,
-			    const char *description, const char **ctx_attr,
-			    const char **ctx_values, unsigned int nb_ctx_attrs);
+__api struct iio_context *iio_create_context_from_xml(const struct iio_context_params *params,
+		const char *uri, const struct iio_backend *backend, const char *description,
+		const char **ctx_attr, const char **ctx_values, unsigned int nb_ctx_attrs);
 
 /**
  * Register a callback that returns the current time in micro-second ticks for
  * libiio’s log-timestamping. Useful when clock_gettime() isn’t available.
  * Call this once during system start-up, before any other libiio calls.
  */
-__api void
-iio_register_get_ticks_us_cb(iio_get_ticks_us cb);
+__api void iio_register_get_ticks_us_cb(iio_get_ticks_us cb);
 
 /* Allocate zeroed out memory */
 static inline void *zalloc(size_t size)
@@ -242,8 +210,7 @@ static inline void *zalloc(size_t size)
 	return calloc(1, size);
 }
 
-static inline const struct iio_device *
-iio_attr_get_device(const struct iio_attr *attr)
+static inline const struct iio_device *iio_attr_get_device(const struct iio_attr *attr)
 {
 	switch (attr->type) {
 	case IIO_ATTR_TYPE_CONTEXT:

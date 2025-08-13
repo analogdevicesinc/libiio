@@ -39,29 +39,26 @@ struct iio_block_pdata {
 
 int ioctl_nointr(int fd, unsigned long request, void *data);
 
-int buffer_check_ready(struct iio_buffer_pdata *pdata, int fd,
-		       short events, struct timespec *start);
+int buffer_check_ready(
+		struct iio_buffer_pdata *pdata, int fd, short events, struct timespec *start);
 
-struct iio_block_pdata *
-local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data);
+struct iio_block_pdata *local_create_dmabuf(
+		struct iio_buffer_pdata *pdata, size_t size, void **data);
 void local_free_dmabuf(struct iio_block_pdata *pdata);
 
-int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
-			 size_t bytes_used, bool cyclic);
+int local_enqueue_dmabuf(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic);
 int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock);
 
 int local_dmabuf_get_fd(struct iio_block_pdata *pdata);
 int local_dmabuf_disable_cpu_access(struct iio_block_pdata *pdata, bool disable);
 
-struct iio_block_pdata *
-local_create_mmap_block(struct iio_buffer_pdata *pdata,
-			size_t size, void **data);
+struct iio_block_pdata *local_create_mmap_block(
+		struct iio_buffer_pdata *pdata, size_t size, void **data);
 void local_free_mmap_block(struct iio_block_pdata *pdata);
 
-int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
-			     size_t bytes_used, bool cyclic);
+int local_enqueue_mmap_block(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic);
 int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock);
 
-struct iio_buffer_impl_pdata * local_alloc_mmap_buffer_impl(void);
+struct iio_buffer_impl_pdata *local_alloc_mmap_buffer_impl(void);
 
 #endif /* __IIO_LOCAL_H */

@@ -6,12 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include <iio/iio-lock.h>
+
 #include "../iiod/ops.h"
 #include "tinyiiod.h"
 
-#include <iio/iio-lock.h>
-
-#define container_of(ptr, type, member)	\
+#define container_of(ptr, type, member) \
 	((type *)(void *)((uintptr_t)(ptr) - offsetof(type, member)))
 
 struct iiod_pdata;
@@ -41,11 +41,10 @@ static ssize_t iiod_writefd(struct parser_pdata *pdata, const void *buf, size_t 
 	return ctx->write_cb(ctx->pdata, buf, len);
 }
 
-int iiod_interpreter(struct iio_context *ctx,
-		     struct iiod_pdata *pdata,
-		     ssize_t (*read_cb)(struct iiod_pdata *, void *, size_t),
-		     ssize_t (*write_cb)(struct iiod_pdata *, const void *, size_t),
-		     const void *xml_zstd, size_t xml_zstd_len)
+int iiod_interpreter(struct iio_context *ctx, struct iiod_pdata *pdata,
+		ssize_t (*read_cb)(struct iiod_pdata *, void *, size_t),
+		ssize_t (*write_cb)(struct iiod_pdata *, const void *, size_t),
+		const void *xml_zstd, size_t xml_zstd_len)
 {
 	struct iiod_ctx iiod_ctx = {
 		.parser_pdata = {

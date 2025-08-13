@@ -6,14 +6,13 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-config.h"
-
+#include <errno.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-lock.h>
-
-#include <errno.h>
 #include <stdlib.h>
 #include <windows.h>
+
+#include "iio-config.h"
 
 struct iio_mutex {
 	CRITICAL_SECTION lock;
@@ -30,7 +29,7 @@ struct iio_thrd {
 	int (*func)(void *d);
 };
 
-struct iio_mutex * iio_mutex_create(void)
+struct iio_mutex *iio_mutex_create(void)
 {
 	struct iio_mutex *lock = malloc(sizeof(*lock));
 
@@ -58,7 +57,7 @@ void iio_mutex_unlock(struct iio_mutex *lock)
 	LeaveCriticalSection(&lock->lock);
 }
 
-struct iio_cond * iio_cond_create(void)
+struct iio_cond *iio_cond_create(void)
 {
 	struct iio_cond *cond = malloc(sizeof(*cond));
 
@@ -75,8 +74,7 @@ void iio_cond_destroy(struct iio_cond *cond)
 	free(cond);
 }
 
-int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-		  unsigned int timeout_ms)
+int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock, unsigned int timeout_ms)
 {
 	BOOL ret;
 
@@ -97,11 +95,10 @@ static DWORD iio_thrd_wrapper(void *d)
 {
 	struct iio_thrd *thrd = d;
 
-	return (DWORD) thrd->func(thrd->d);
+	return (DWORD)thrd->func(thrd->d);
 }
 
-struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
-				  void *d, const char *name)
+struct iio_thrd *iio_thrd_create(int (*thrd)(void *), void *d, const char *name)
 {
 	struct iio_thrd *iio_thrd;
 
@@ -115,12 +112,11 @@ struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
 	iio_thrd->func = thrd;
 	iio_thrd->d = d;
 
-	iio_thrd->thid = CreateThread(NULL, 0,
-				      (LPTHREAD_START_ROUTINE) iio_thrd_wrapper,
-				      iio_thrd, 0, NULL);
+	iio_thrd->thid = CreateThread(
+			NULL, 0, (LPTHREAD_START_ROUTINE)iio_thrd_wrapper, iio_thrd, 0, NULL);
 	if (!iio_thrd->thid) {
 		free(iio_thrd);
-		return iio_ptr(-(int) GetLastError());
+		return iio_ptr(-(int)GetLastError());
 	}
 
 	/* TODO: set name */
@@ -137,5 +133,5 @@ int iio_thrd_join_and_destroy(struct iio_thrd *thrd)
 	GetExitCodeThread(thrd->thid, &ret);
 	free(thrd);
 
-	return (int) ret;
+	return (int)ret;
 }

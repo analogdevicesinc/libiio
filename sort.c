@@ -6,9 +6,10 @@
  * Author: Robin Getz <robin.getz@analog.com>
  */
 
-#include "iio-private.h"
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "iio-private.h"
 
 /* These are a few functions to do sorting via qsort for various
  * iio structures. For more info, see the qsort(3) man page.
@@ -63,23 +64,20 @@ static int iio_attr_compare(const void *p1, const void *p2)
 void iio_sort_attrs(struct iio_attr_list *attrs)
 {
 	if (attrs && attrs->num > 1) {
-		qsort(attrs->attrs, attrs->num,
-			sizeof(*attrs->attrs), iio_attr_compare);
+		qsort(attrs->attrs, attrs->num, sizeof(*attrs->attrs), iio_attr_compare);
 	}
 }
 
 void iio_sort_devices(struct iio_context *ctx)
 {
 	if (ctx->devices && ctx->nb_devices > 1) {
-		qsort(ctx->devices, ctx->nb_devices,
-			sizeof(*ctx->devices), iio_device_compare);
+		qsort(ctx->devices, ctx->nb_devices, sizeof(*ctx->devices), iio_device_compare);
 	}
 }
 
 void iio_sort_channels(struct iio_device *dev)
 {
 	if (dev->channels && dev->nb_channels > 1) {
-		qsort(dev->channels, dev->nb_channels,
-			sizeof(*dev->channels), iio_channel_compare);
+		qsort(dev->channels, dev->nb_channels, sizeof(*dev->channels), iio_channel_compare);
 	}
 }

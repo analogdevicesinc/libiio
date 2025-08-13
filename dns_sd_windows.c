@@ -12,17 +12,16 @@
 // clang-format off
 #include "dns_sd.h"
 // clang-format on
-#include "deps/mdns/mdns.h"
-#include "iio-private.h"
-
-#include <stdio.h>
 #include <errno.h>
-#include <winsock2.h>
-#include <iphlpapi.h>
-
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
+#include <iphlpapi.h>
+#include <stdio.h>
+#include <winsock2.h>
+
+#include "deps/mdns/mdns.h"
+#include "iio-private.h"
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
@@ -32,30 +31,23 @@ static uint64_t lasttime;
 #define TIMEOUT 2
 
 #ifdef HAVE_IPV6
-static const unsigned char localhost[] = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 1
-};
-static const unsigned char localhost_mapped[] = {
-	0, 0, 0,    0,    0,    0, 0, 0,
-	0, 0, 0xff, 0xff, 0x7f, 0, 0, 1
-};
+static const unsigned char localhost[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+static const unsigned char localhost_mapped[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0,
+	0, 1 };
 
 static bool is_localhost6(const struct sockaddr_in6 *saddr6)
 {
 	const uint8_t *addr = saddr6->sin6_addr.s6_addr;
 
 	return !memcmp(addr, localhost, sizeof(localhost)) ||
-		!memcmp(addr, localhost_mapped, sizeof(localhost_mapped));
+	       !memcmp(addr, localhost_mapped, sizeof(localhost_mapped));
 }
 #endif
 
 static bool is_localhost4(const struct sockaddr_in *saddr)
 {
-	return saddr->sin_addr.S_un.S_un_b.s_b1 == 127 &&
-		saddr->sin_addr.S_un.S_un_b.s_b2 == 0 &&
-		saddr->sin_addr.S_un.S_un_b.s_b3 == 0 &&
-		saddr->sin_addr.S_un.S_un_b.s_b4 == 1;
+	return saddr->sin_addr.S_un.S_un_b.s_b1 == 127 && saddr->sin_addr.S_un.S_un_b.s_b2 == 0 &&
+	       saddr->sin_addr.S_un.S_un_b.s_b3 == 0 && saddr->sin_addr.S_un.S_un_b.s_b4 == 1;
 }
 
 static struct dns_sd_discovery_data *new_discovery_data(struct dns_sd_discovery_data *dd)
@@ -72,8 +64,8 @@ static struct dns_sd_discovery_data *new_discovery_data(struct dns_sd_discovery_
 	return d;
 }
 
-static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
-					  const struct sockaddr *addr, size_t addrlen)
+static mdns_string_t ip_address_to_string(
+		char *buffer, size_t capacity, const struct sockaddr *addr, size_t addrlen)
 {
 	struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
 	struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
@@ -82,19 +74,19 @@ static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
 	int ret, len = 0;
 	mdns_string_t str;
 
-	ret = getnameinfo((const struct sockaddr *)addr, (socklen_t)addrlen, host,
-			NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
+	ret = getnameinfo((const struct sockaddr *)addr, (socklen_t)addrlen, host, NI_MAXHOST,
+			service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
 
 	if (ret == 0) {
 		if (addr->sa_family == AF_INET6) {
-			if (addr6->sin6_port != 0
-			    && strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
+			if (addr6->sin6_port != 0 &&
+					strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
 				len = snprintf(buffer, capacity, "[%s]:%s", host, service);
 			} else {
 				len = snprintf(buffer, capacity, "%s", host);
 			}
-		} else if (addr4->sin_port != 0
-			   && strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
+		} else if (addr4->sin_port != 0 &&
+				strncmp(service, MDNS_PORT_STR, sizeof(MDNS_PORT_STR))) {
 			len = snprintf(buffer, capacity, "%s:%s", host, service);
 		} else {
 			len = snprintf(buffer, capacity, "%s", host);
@@ -110,8 +102,8 @@ static mdns_string_t ip_address_to_string(char *buffer, size_t capacity,
 	return str;
 }
 
-static int open_client_sockets(const struct iio_context_params *params,
-			       int *sockets, unsigned int max_sockets)
+static int open_client_sockets(
+		const struct iio_context_params *params, int *sockets, unsigned int max_sockets)
 {
 	IP_ADAPTER_UNICAST_ADDRESS *unicast;
 	IP_ADAPTER_ADDRESSES *adapter_address = 0;
@@ -131,12 +123,12 @@ static int open_client_sockets(const struct iio_context_params *params,
 			return -ENOMEM;
 
 		ret = GetAdaptersAddresses(AF_UNSPEC,
-					   GAA_FLAG_SKIP_MULTICAST
+				GAA_FLAG_SKIP_MULTICAST
 #ifndef HAVE_IPV6
-					   | GAA_FLAG_SKIP_ANYCAST
+						| GAA_FLAG_SKIP_ANYCAST
 #endif
-					   , 0,
-					   adapter_address, &address_size);
+				,
+				0, adapter_address, &address_size);
 		if (ret != ERROR_BUFFER_OVERFLOW)
 			break;
 
@@ -156,13 +148,11 @@ static int open_client_sockets(const struct iio_context_params *params,
 		if (adapter->OperStatus != IfOperStatusUp)
 			continue;
 
-		for (unicast = adapter->FirstUnicastAddress;
-		     unicast; unicast = unicast->Next) {
+		for (unicast = adapter->FirstUnicastAddress; unicast; unicast = unicast->Next) {
 			if (unicast->Address.lpSockaddr->sa_family == AF_INET) {
 				saddr = (struct sockaddr_in *)unicast->Address.lpSockaddr;
 
-				if (!is_localhost4(saddr) &&
-				    num_sockets < max_sockets) {
+				if (!is_localhost4(saddr) && num_sockets < max_sockets) {
 					saddr->sin_port = htons((unsigned short)MDNS_PORT);
 					sock = mdns_socket_open_ipv4(saddr);
 					if (sock >= 0)
@@ -175,9 +165,8 @@ static int open_client_sockets(const struct iio_context_params *params,
 
 				saddr6 = (struct sockaddr_in6 *)unicast->Address.lpSockaddr;
 
-				if (unicast->DadState == NldsPreferred &&
-				    !is_localhost6(saddr6) &&
-				    num_sockets < max_sockets) {
+				if (unicast->DadState == NldsPreferred && !is_localhost6(saddr6) &&
+						num_sockets < max_sockets) {
 					saddr6->sin6_port = htons((unsigned short)MDNS_PORT);
 					sock = mdns_socket_open_ipv6(saddr6);
 					if (sock >= 0)
@@ -205,12 +194,9 @@ static int open_client_sockets(const struct iio_context_params *params,
  * mdns - it usually is.
  */
 static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
-			  mdns_entry_type_t entry, uint16_t query_id,
-			  uint16_t rtype, uint16_t rclass, uint32_t ttl,
-			  const void *data, size_t size, size_t name_offset,
-			  size_t name_length,
-			  size_t record_offset, size_t record_length,
-			  void *user_data)
+		mdns_entry_type_t entry, uint16_t query_id, uint16_t rtype, uint16_t rclass,
+		uint32_t ttl, const void *data, size_t size, size_t name_offset, size_t name_length,
+		size_t record_offset, size_t record_length, void *user_data)
 {
 	struct dns_sd_cb_data *cb_data = user_data;
 	struct dns_sd_discovery_data *dd = cb_data->d;
@@ -239,8 +225,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	if (entry != MDNS_ENTRYTYPE_ANSWER)
 		goto quit;
 
-	entrystr = mdns_string_extract(data, size, &name_offset,
-				       entrybuffer, sizeof(entrybuffer));
+	entrystr = mdns_string_extract(data, size, &name_offset, entrybuffer, sizeof(entrybuffer));
 
 	if (!strstr(entrystr.str, "_iio._tcp.local"))
 		goto quit;
@@ -248,15 +233,14 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	iio_mutex_lock(dd->lock);
 
 	if (rtype == MDNS_RECORDTYPE_SRV) {
-		srv = mdns_record_parse_srv(data, size, record_offset, record_length,
-					    namebuffer, sizeof(namebuffer));
+		srv = mdns_record_parse_srv(data, size, record_offset, record_length, namebuffer,
+				sizeof(namebuffer));
 
-		fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer),
-						   from, addrlen);
+		fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer), from, addrlen);
 
 		prm_dbg(params, "%.*s : %.*s SRV %.*s priority %d weight %d port %d\n",
-			MDNS_STRING_FORMAT(fromaddrstr), MDNS_STRING_FORMAT(entrystr),
-			MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
+				MDNS_STRING_FORMAT(fromaddrstr), MDNS_STRING_FORMAT(entrystr),
+				MDNS_STRING_FORMAT(srv.name), srv.priority, srv.weight, srv.port);
 	}
 #ifdef HAVE_IPV6
 	else {
@@ -266,15 +250,14 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 
 		/* Find a match based on hostname */
 		for (; dd->next; dd = dd->next) {
-			if (dd->hostname
-			    && dd->found
-			    && !strncmp(dd->hostname, entrystr.str, entrystr.length - 1))
+			if (dd->hostname && dd->found &&
+					!strncmp(dd->hostname, entrystr.str, entrystr.length - 1))
 				break;
 		}
 
 		if (!dd->next) {
 			prm_dbg(params, "No SRV found for hostname %.*s\n",
-				MDNS_STRING_FORMAT(entrystr));
+					MDNS_STRING_FORMAT(entrystr));
 			iio_mutex_unlock(dd->lock);
 			goto quit;
 		}
@@ -289,10 +272,10 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 			addr.sin6_scope_id = 0;
 
 		fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer),
-						   (struct sockaddr *)&addr, sizeof(addr));
+				(struct sockaddr *)&addr, sizeof(addr));
 
 		prm_dbg(params, "Found IPv6 address %.*s for hostname %s\n",
-			MDNS_STRING_FORMAT(fromaddrstr), dd->hostname);
+				MDNS_STRING_FORMAT(fromaddrstr), dd->hostname);
 	}
 #endif
 
@@ -301,8 +284,7 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 
 	/* new hostname and port */
 	if (srv.name.length > 1) {
-		dd->hostname = iio_strndup(srv.name.str,
-					   srv.name.length - 1);
+		dd->hostname = iio_strndup(srv.name.str, srv.name.length - 1);
 		if (!dd->hostname)
 			goto mem_fail;
 	}
@@ -314,8 +296,8 @@ static int query_callback(int sock, const struct sockaddr *from, size_t addrlen,
 	if (dd->found)
 		dd->iface = (uint16_t)((struct sockaddr_in6 *)from)->sin6_scope_id;
 #endif
-	prm_dbg(params, "DNS SD: added SRV %s (%s port: %hu)\n",
-		dd->hostname, dd->addr_str, dd->port);
+	prm_dbg(params, "DNS SD: added SRV %s (%s port: %hu)\n", dd->hostname, dd->addr_str,
+			dd->port);
 
 	/* A list entry was filled, prepare new item on the list */
 	dd->next = new_discovery_data(dd);
@@ -333,8 +315,7 @@ mem_fail:
 	return -ENOMEM;
 }
 
-int dnssd_find_hosts(const struct iio_context_params *params,
-		     struct dns_sd_discovery_data **ddata)
+int dnssd_find_hosts(const struct iio_context_params *params, struct dns_sd_discovery_data **ddata)
 {
 	WORD versionWanted = MAKEWORD(1, 1);
 	WSADATA wsaData;
@@ -382,16 +363,15 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	}
 
 	num_sockets = (unsigned int)ret;
-	prm_dbg(params, "Opened %d socket%s for mDNS query\n",
-		num_sockets, (num_sockets > 1) ? "s" : "");
+	prm_dbg(params, "Opened %d socket%s for mDNS query\n", num_sockets,
+			(num_sockets > 1) ? "s" : "");
 
 	prm_dbg(params, "Sending mDNS query: %s\n", service);
 
 	/* Walk through all the open interfaces/sockets, and send a query */
 	for (isock = 0; isock < num_sockets; isock++) {
-		ret = mdns_query_send(sockets[isock], MDNS_RECORDTYPE_PTR,
-				      service, sizeof(service)-1, buffer,
-				      capacity, 0);
+		ret = mdns_query_send(sockets[isock], MDNS_RECORDTYPE_PTR, service,
+				sizeof(service) - 1, buffer, capacity, 0);
 		if (ret < 0)
 			prm_err(params, "Failed to send mDNS query: errno %d\n", errno);
 
@@ -421,9 +401,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 		if (res > 0) {
 			for (isock = 0; isock < num_sockets; ++isock) {
 				if (FD_ISSET(sockets[isock], &readfs)) {
-					rec = mdns_query_recv(sockets[isock], buffer,
-							      capacity, query_callback,
-							      d, transaction_id[isock]);
+					rec = mdns_query_recv(sockets[isock], buffer, capacity,
+							query_callback, d, transaction_id[isock]);
 					if (rec > 0)
 						records += rec;
 				}
@@ -445,9 +424,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	for (isock = 0; isock < num_sockets; ++isock)
 		mdns_socket_close(sockets[isock]);
 
-	prm_dbg(params, "Closed %i socket%s, processed %zu record%s\n",
-		   num_sockets, (num_sockets > 1) ? "s" : "",
-		   records, (records > 1) ? "s" : "" );
+	prm_dbg(params, "Closed %i socket%s, processed %zu record%s\n", num_sockets,
+			(num_sockets > 1) ? "s" : "", records, (records > 1) ? "s" : "");
 
 	remove_dup_discovery_data(params, &d);
 	port_knock_discovery_data(params, &d);
@@ -465,8 +443,8 @@ out_wsa_cleanup:
 	return ret;
 }
 
-int dnssd_resolve_host(const struct iio_context_params *params,
-		       const char *hostname, char *ip_addr, const int addr_len)
+int dnssd_resolve_host(const struct iio_context_params *params, const char *hostname, char *ip_addr,
+		const int addr_len)
 {
 	return -ENOENT;
 }

@@ -6,27 +6,28 @@
  * Author: Michael Feilen <feilen_at_iabg.de>
  **/
 
-#include "iiostream-common.h"
-
-#include <iio/iio.h>
+#include <errno.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <signal.h>
 #include <stdio.h>
-#include <errno.h>
+#include <string.h>
+
+#include "iiostream-common.h"
 
 /* helper macros */
-#define MHZ(x) ((long long)(x*1000000.0 + .5))
-#define GHZ(x) ((long long)(x*1000000000.0 + .5))
+#define MHZ(x) ((long long)(x * 1000000.0 + .5))
+#define GHZ(x) ((long long)(x * 1000000000.0 + .5))
 
-#define IIO_ENSURE(expr) { \
-	if (!(expr)) { \
-		(void) fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
-		(void) abort(); \
-	} \
-}
+#define IIO_ENSURE(expr)                                                                         \
+	{                                                                                        \
+		if (!(expr)) {                                                                   \
+			(void)fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
+			(void)abort();                                                           \
+		}                                                                                \
+	}
 
 #define BLOCK_SIZE (1024 * 1024)
 
@@ -35,25 +36,25 @@ enum iodev { RX, TX };
 
 /* common RX and TX streaming params */
 struct stream_cfg {
-	long long bw_hz; // Analog banwidth in Hz
-	long long fs_hz; // Baseband sample rate in Hz
-	long long lo_hz; // Local oscillator frequency in Hz
-	const char* rfport; // Port name
+	long long bw_hz;    // Analog banwidth in Hz
+	long long fs_hz;    // Baseband sample rate in Hz
+	long long lo_hz;    // Local oscillator frequency in Hz
+	const char *rfport; // Port name
 };
 
 /* static scratch mem for strings */
 static char tmpstr[64];
 
 /* IIO structs required for streaming */
-static struct iio_context *ctx   = NULL;
+static struct iio_context *ctx = NULL;
 static struct iio_channel *rx0_i = NULL;
 static struct iio_channel *rx0_q = NULL;
 static struct iio_channel *tx0_i = NULL;
 static struct iio_channel *tx0_q = NULL;
-static struct iio_buffer  *rxbuf = NULL;
-static struct iio_buffer  *txbuf = NULL;
-static struct iio_stream  *rxstream = NULL;
-static struct iio_stream  *txstream = NULL;
+static struct iio_buffer *rxbuf = NULL;
+static struct iio_buffer *txbuf = NULL;
+static struct iio_stream *rxstream = NULL;
+static struct iio_stream *txstream = NULL;
 static struct iio_channels_mask *rxmask = NULL;
 static struct iio_channels_mask *txmask = NULL;
 
@@ -61,19 +62,33 @@ static struct iio_channels_mask *txmask = NULL;
 static void shutdown(void)
 {
 	printf("* Destroying streams\n");
-	if (rxstream) {iio_stream_destroy(rxstream); }
-	if (txstream) { iio_stream_destroy(txstream); }
+	if (rxstream) {
+		iio_stream_destroy(rxstream);
+	}
+	if (txstream) {
+		iio_stream_destroy(txstream);
+	}
 
 	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
-	if (txbuf) { iio_buffer_destroy(txbuf); }
+	if (rxbuf) {
+		iio_buffer_destroy(rxbuf);
+	}
+	if (txbuf) {
+		iio_buffer_destroy(txbuf);
+	}
 
 	printf("* Destroying channel masks\n");
-	if (rxmask) { iio_channels_mask_destroy(rxmask); }
-	if (txmask) { iio_channels_mask_destroy(txmask); }
+	if (rxmask) {
+		iio_channels_mask_destroy(rxmask);
+	}
+	if (txmask) {
+		iio_channels_mask_destroy(txmask);
+	}
 
 	printf("* Destroying context\n");
-	if (ctx) { iio_context_destroy(ctx); }
+	if (ctx) {
+		iio_context_destroy(ctx);
+	}
 	exit(0);
 }
 
@@ -84,12 +99,17 @@ static void handle_sig(int sig)
 }
 
 /* check return value of attr_write function */
-static void errchk(int v, const char* what) {
-	 if (v < 0) { fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n", v, what); shutdown(); }
+static void errchk(int v, const char *what)
+{
+	if (v < 0) {
+		fprintf(stderr, "Error %d writing to channel \"%s\"\nvalue may not be supported.\n",
+				v, what);
+		shutdown();
+	}
 }
 
 /* write attribute: long long int */
-static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
+static void wr_ch_lli(struct iio_channel *chn, const char *what, long long val)
 {
 	const struct iio_attr *attr = iio_channel_find_attr(chn, what);
 
@@ -97,16 +117,16 @@ static void wr_ch_lli(struct iio_channel *chn, const char* what, long long val)
 }
 
 /* helper function generating channel names */
-static char* get_ch_name(const char* type, int id)
+static char *get_ch_name(const char *type, int id)
 {
 	snprintf(tmpstr, sizeof(tmpstr), "%s%d", type, id);
 	return tmpstr;
 }
 
 /* returns ad9361 phy device */
-static struct iio_device* get_ad9361_phy(void)
+static struct iio_device *get_ad9361_phy(void)
 {
-	struct iio_device *dev =  iio_context_find_device(ctx, "ad9361-phy");
+	struct iio_device *dev = iio_context_find_device(ctx, "ad9361-phy");
 	IIO_ENSURE(dev && "No ad9361-phy found");
 	return dev;
 }
@@ -115,14 +135,21 @@ static struct iio_device* get_ad9361_phy(void)
 static bool get_ad9361_stream_dev(enum iodev d, struct iio_device **dev)
 {
 	switch (d) {
-	case TX: *dev = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc"); return *dev != NULL;
-	case RX: *dev = iio_context_find_device(ctx, "cf-ad9361-lpc");  return *dev != NULL;
-	default: IIO_ENSURE(0); return false;
+	case TX:
+		*dev = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
+		return *dev != NULL;
+	case RX:
+		*dev = iio_context_find_device(ctx, "cf-ad9361-lpc");
+		return *dev != NULL;
+	default:
+		IIO_ENSURE(0);
+		return false;
 	}
 }
 
 /* finds AD9361 streaming IIO channels */
-static bool get_ad9361_stream_ch(enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
+static bool get_ad9361_stream_ch(
+		enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
 {
 	*chn = iio_device_find_channel(dev, get_ch_name("voltage", chid), d == TX);
 	if (!*chn)
@@ -134,9 +161,17 @@ static bool get_ad9361_stream_ch(enum iodev d, struct iio_device *dev, int chid,
 static bool get_phy_chan(enum iodev d, int chid, struct iio_channel **chn)
 {
 	switch (d) {
-	case RX: *chn = iio_device_find_channel(get_ad9361_phy(), get_ch_name("voltage", chid), false); return *chn != NULL;
-	case TX: *chn = iio_device_find_channel(get_ad9361_phy(), get_ch_name("voltage", chid), true);  return *chn != NULL;
-	default: IIO_ENSURE(0); return false;
+	case RX:
+		*chn = iio_device_find_channel(
+				get_ad9361_phy(), get_ch_name("voltage", chid), false);
+		return *chn != NULL;
+	case TX:
+		*chn = iio_device_find_channel(
+				get_ad9361_phy(), get_ch_name("voltage", chid), true);
+		return *chn != NULL;
+	default:
+		IIO_ENSURE(0);
+		return false;
 	}
 }
 
@@ -144,10 +179,18 @@ static bool get_phy_chan(enum iodev d, int chid, struct iio_channel **chn)
 static bool get_lo_chan(enum iodev d, struct iio_channel **chn)
 {
 	switch (d) {
-	 // LO chan is always output, i.e. true
-	case RX: *chn = iio_device_find_channel(get_ad9361_phy(), get_ch_name("altvoltage", 0), true); return *chn != NULL;
-	case TX: *chn = iio_device_find_channel(get_ad9361_phy(), get_ch_name("altvoltage", 1), true); return *chn != NULL;
-	default: IIO_ENSURE(0); return false;
+		// LO chan is always output, i.e. true
+	case RX:
+		*chn = iio_device_find_channel(
+				get_ad9361_phy(), get_ch_name("altvoltage", 0), true);
+		return *chn != NULL;
+	case TX:
+		*chn = iio_device_find_channel(
+				get_ad9361_phy(), get_ch_name("altvoltage", 1), true);
+		return *chn != NULL;
+	default:
+		IIO_ENSURE(0);
+		return false;
 	}
 }
 
@@ -159,17 +202,21 @@ bool cfg_ad9361_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 
 	// Configure phy and lo channels
 	printf("* Acquiring AD9361 phy channel %d\n", chid);
-	if (!get_phy_chan(type, chid, &chn)) {	return false; }
+	if (!get_phy_chan(type, chid, &chn)) {
+		return false;
+	}
 
 	attr = iio_channel_find_attr(chn, "rf_port_select");
 	if (attr)
 		errchk(iio_attr_write_string(attr, cfg->rfport), cfg->rfport);
-	wr_ch_lli(chn, "rf_bandwidth",       cfg->bw_hz);
+	wr_ch_lli(chn, "rf_bandwidth", cfg->bw_hz);
 	wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
 
 	// Configure LO channel
 	printf("* Acquiring AD9361 %s lo channel\n", type == TX ? "TX" : "RX");
-	if (!get_lo_chan(type, &chn)) { return false; }
+	if (!get_lo_chan(type, &chn)) {
+		return false;
+	}
 	wr_ch_lli(chn, "frequency", cfg->lo_hz);
 	return true;
 }
@@ -181,7 +228,7 @@ bool cfg_ad9361_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
  * URI context, find out the uri by typing `iio_info -s` at the command line of the host PC
  $./a.out usb:x.x.x
  */
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
 	// Streaming devices
 	struct iio_device *tx;
@@ -200,24 +247,23 @@ int main (int argc, char **argv)
 	signal(SIGINT, handle_sig);
 
 	// RX stream config
-	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
+	rxcfg.bw_hz = MHZ(2);	     // 2 MHz rf bandwidth
+	rxcfg.fs_hz = MHZ(2.5);	     // 2.5 MS/s rx sample rate
+	rxcfg.lo_hz = GHZ(2.5);	     // 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
 	// TX stream config
 	txcfg.bw_hz = MHZ(1.5); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
+	txcfg.fs_hz = MHZ(2.5); // 2.5 MS/s tx sample rate
 	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
-	txcfg.rfport = "A"; // port A (select for rf freq.)
+	txcfg.rfport = "A";	// port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
 	if (argc == 1) {
 		ctx = iio_create_context(NULL, NULL);
 		err = iio_err(ctx);
 		IIO_ENSURE(!err && "No context");
-	}
-	else if (argc == 2) {
+	} else if (argc == 2) {
 		ctx = iio_create_context(NULL, argv[1]);
 		err = iio_err(ctx);
 		IIO_ENSURE(!err && "No context");
@@ -292,8 +338,7 @@ int main (int argc, char **argv)
 	tx_sample_sz = iio_device_get_sample_size(tx, txmask);
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
-	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE,
-	       rxstream, txstream, rx0_i, tx0_i);
+	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE, rxstream, txstream, rx0_i, tx0_i);
 
 	shutdown();
 

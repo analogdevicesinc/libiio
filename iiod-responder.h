@@ -77,21 +77,18 @@ struct iiod_buf {
 };
 
 struct iiod_responder_ops {
-	int (*cmd)(const struct iiod_command *cmd,
-		   struct iiod_command_data *data, void *d);
+	int (*cmd)(const struct iiod_command *cmd, struct iiod_command_data *data, void *d);
 	ssize_t (*read)(void *d, const struct iiod_buf *buf, size_t nb);
 	ssize_t (*write)(void *d, const struct iiod_buf *buf, size_t nb);
 	ssize_t (*discard)(void *d, size_t bytes);
 };
 
 /* Create / Destroy IIOD Responder. */
-struct iiod_responder *
-iiod_responder_create(const struct iiod_responder_ops *ops, void *d);
+struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d);
 void iiod_responder_destroy(struct iiod_responder *responder);
 
 /* Set the timeout for I/O operations (default is 0 == infinite) */
-void iiod_responder_set_timeout(struct iiod_responder *priv,
-				unsigned int timeout_ms);
+void iiod_responder_set_timeout(struct iiod_responder *priv, unsigned int timeout_ms);
 void iiod_io_set_timeout(struct iiod_io *io, unsigned int timeout_ms);
 
 /* Read the current value of the micro-second counter */
@@ -104,20 +101,16 @@ void iiod_responder_stop(struct iiod_responder *responder);
 void iiod_responder_wait_done(struct iiod_responder *responder);
 
 /* Create a iiod_io instance, to be used for I/O. */
-struct iiod_io *
-iiod_responder_create_io(struct iiod_responder *responder, uint16_t id);
+struct iiod_io *iiod_responder_create_io(struct iiod_responder *responder, uint16_t id);
 
-struct iiod_io *
-iiod_responder_get_default_io(struct iiod_responder *responder);
+struct iiod_io *iiod_responder_get_default_io(struct iiod_responder *responder);
 
 /* Create a iiod_io suitable for responding to the given command.
  * Initialized with the reference counter set to 1. */
-struct iiod_io *
-iiod_command_create_io(const struct iiod_command *cmd,
-		       struct iiod_command_data *data);
+struct iiod_io *iiod_command_create_io(
+		const struct iiod_command *cmd, struct iiod_command_data *data);
 
-struct iiod_io *
-iiod_command_get_default_io(struct iiod_command_data *data);
+struct iiod_io *iiod_command_get_default_io(struct iiod_command_data *data);
 
 /* Remove queued asynchronous requests for commands or responses. */
 void iiod_io_cancel(struct iiod_io *io);
@@ -129,37 +122,29 @@ void iiod_io_ref(struct iiod_io *io);
 void iiod_io_unref(struct iiod_io *io);
 
 /* Read the command's additional data, if any. */
-int iiod_command_data_read(struct iiod_command_data *data,
-			   const struct iiod_buf *buf);
+int iiod_command_data_read(struct iiod_command_data *data, const struct iiod_buf *buf);
 
 /* Send command or response to the remote */
-int iiod_io_send_command(struct iiod_io *io,
-			 const struct iiod_command *cmd,
-			 const struct iiod_buf *buf, size_t nb);
-int iiod_io_send_response(struct iiod_io *io, int32_t code,
-			  const struct iiod_buf *buf, size_t nb);
+int iiod_io_send_command(struct iiod_io *io, const struct iiod_command *cmd,
+		const struct iiod_buf *buf, size_t nb);
+int iiod_io_send_response(struct iiod_io *io, int32_t code, const struct iiod_buf *buf, size_t nb);
 
 /* Send command, then read the response. */
-int iiod_io_exec_command(struct iiod_io *io,
-			 const struct iiod_command *cmd,
-			 const struct iiod_buf *cmd_buf,
-			 const struct iiod_buf *buf);
+int iiod_io_exec_command(struct iiod_io *io, const struct iiod_command *cmd,
+		const struct iiod_buf *cmd_buf, const struct iiod_buf *buf);
 
 /* Simplified version of iiod_io_exec_command.
  * Send a simple command then read the response code. */
-static inline int
-iiod_io_exec_simple_command(struct iiod_io *io,
-			    const struct iiod_command *cmd)
+static inline int iiod_io_exec_simple_command(struct iiod_io *io, const struct iiod_command *cmd)
 {
 	return iiod_io_exec_command(io, cmd, NULL, NULL);
 }
 
 /* Asynchronous variants of the functions above */
-int iiod_io_send_command_async(struct iiod_io *io,
-			       const struct iiod_command *cmd,
-			       const struct iiod_buf *buf, size_t nb);
-int iiod_io_send_response_async(struct iiod_io *io, int32_t code,
-				const struct iiod_buf *buf, size_t nb);
+int iiod_io_send_command_async(struct iiod_io *io, const struct iiod_command *cmd,
+		const struct iiod_buf *buf, size_t nb);
+int iiod_io_send_response_async(
+		struct iiod_io *io, int32_t code, const struct iiod_buf *buf, size_t nb);
 
 /* Wait for an async. command or response to be done sending */
 int iiod_io_wait_for_command_done(struct iiod_io *io);
@@ -167,15 +152,13 @@ int iiod_io_wait_for_command_done(struct iiod_io *io);
 _Bool iiod_io_command_is_done(struct iiod_io *io);
 
 /* Simplified version of iiod_io_send_response, to just send a code. */
-static inline int
-iiod_io_send_response_code(struct iiod_io *io, int32_t code)
+static inline int iiod_io_send_response_code(struct iiod_io *io, int32_t code)
 {
 	return iiod_io_send_response(io, code, NULL, 0);
 }
 
 /* Asynchronous variant of iiod_io_get_response */
-int iiod_io_get_response_async(struct iiod_io *io,
-			       const struct iiod_buf *buf, size_t nb);
+int iiod_io_get_response_async(struct iiod_io *io, const struct iiod_buf *buf, size_t nb);
 
 /* Wait for iiod_io_get_response_async to be done. */
 int32_t iiod_io_wait_for_response(struct iiod_io *io);

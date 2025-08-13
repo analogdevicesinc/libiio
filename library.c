@@ -6,8 +6,9 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-private.h"
 #include <iio-config.h>
+
+#include "iio-private.h"
 
 iio_get_ticks_us platform_get_ticks_us = NULL;
 uint64_t library_startup_time_us;
@@ -32,11 +33,10 @@ void iio_set_get_ticks_us_cb(iio_get_ticks_us cb)
 
 #if defined(_MSC_BUILD)
 #pragma section(".CRT$XCU", read)
-#define __CONSTRUCTOR(f, p) \
-  static void f(void); \
-  __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
-  __pragma(comment(linker,"/include:" p #f "_")) \
-  static void f(void)
+#define __CONSTRUCTOR(f, p)                                      \
+	static void f(void);                                     \
+	__declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+	__pragma(comment(linker, "/include:" p #f "_")) static void f(void)
 #ifdef _WIN64
 #define _CONSTRUCTOR(f) __CONSTRUCTOR(f, "")
 #else
