@@ -14,9 +14,11 @@
 #include <stdint.h>
 
 #ifdef _WIN32
+// clang-format off
 #include <winsock2.h>
 #include <ntddndis.h>
 #include <netioapi.h>
+// clang-format on
 #else
 #include <net/if.h>
 #include <sys/param.h>
