@@ -13,6 +13,7 @@ trigger:
     - libiio-v0
     - staging/*
     - 20*
+    - test-format-checking-job
   tags:
     include:
     - v*
@@ -24,6 +25,7 @@ pr:
     - next_stable
     - dev
     - 20*
+    - code-formatting
 
 stages:
 - stage: FormatCheck
