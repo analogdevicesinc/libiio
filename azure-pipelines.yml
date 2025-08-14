@@ -26,6 +26,61 @@ pr:
     - 20*
 
 stages:
+- stage: FormatCheck
+  #############################################
+  # Format Check
+  #############################################
+  displayName: 'Check Code Formatting'
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+  jobs:
+  - job: FormatCheck
+    displayName: 'Check code formatting for C/C++ and CMake files'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+      fetchDepth: 0 # Fetch full history for PR diffing
+      clean: true
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format cmake-format
+      displayName: 'Install clang-format and cmake-format'
+    - script: |
+        set -e
+        # Get PR target branch and source branch
+        TARGET_BRANCH=${SYSTEM_PULLREQUEST_TARGETBRANCH#refs/heads/}
+        git fetch origin $TARGET_BRANCH:$TARGET_BRANCH
+        # Check for a merge base between HEAD and target branch
+        if ! git merge-base $TARGET_BRANCH HEAD >/dev/null 2>&1; then
+          echo "No merge base found between HEAD and $TARGET_BRANCH. Skipping format check."
+          exit 0
+        fi
+        # Source the format.sh script for helper functions
+        source ./format.sh
+        # Get changed files between PR branch and target branch
+        changed_files=$(git diff --name-only $TARGET_BRANCH...HEAD)
+        for f in $changed_files; do
+          if [ -f "$f" ]; then
+            if is_source_file "$f" && is_not_ignored_in "$f" .clangformatignore; then
+              if ! clang-format --dry-run --Werror "$f"; then
+                echo "\n\033[1;31mFormatting issues in $f (C/C++):\033[0m"
+                clang-format -style=file "$f" | diff -u "$f" - || true
+                exit 1
+              fi
+            fi
+            if is_cmake_file "$f" && is_not_ignored_in "$f" .cmakeformatignore; then
+              if ! cmake-format --check "$f"; then
+                echo "\n\033[1;31mFormatting issues in $f (CMake):\033[0m"
+                diff -u "$f" <(cmake-format "$f") || true
+                exit 1
+              fi
+            fi
+          fi
+        done
+      displayName: 'Check formatting on changed files only (PRs, with ignore logic)'
+      env:
+        BUILD_REASON: $(Build.Reason)
+        SYSTEM_PULLREQUEST_TARGETBRANCH: $(System.PullRequest.TargetBranch)
 - stage: Builds
   #############################################
   # Builds
