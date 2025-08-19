@@ -77,6 +77,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		.len = size,
 		.fd_flags = O_CLOEXEC | O_RDWR,
 	};
+	char allocator[256];
 	struct iio_block_pdata *priv;
 	int ret, fd, devfd = -1;
 
@@ -84,14 +85,9 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 	if (!priv)
 		return iio_ptr(-ENOMEM);
 
-	switch (pdata->params->dma_allocator) {
-	case IIO_DMA_ALLOCATOR_SYSTEM:
-		devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
-		break;
-	case IIO_DMA_ALLOCATOR_CMA_LINUX:
-		devfd = open("/dev/dma_heap/linux,cma", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
-		break;
-	}
+	snprintf(allocator, sizeof(allocator), "/dev/dma_heap/%s", pdata->params->dma_allocator ?
+		pdata->params->dma_allocator : "system");
+	devfd = open(allocator, O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
 	if (devfd < 0) {
 		ret = -errno;
 
