@@ -66,7 +66,7 @@ struct iiod_command {
 };
 
 struct iiod_buf_params {
-	unsigned int dma_allocator;
+	const char *dma_allocator;
 	unsigned int nb_mask;
 	unsigned int mask[];
 };
