@@ -27,334 +27,7 @@ pr:
 
 stages:
 - stage: Builds
-  #############################################
-  # Builds
-  #############################################
   jobs:
-  - job: LinuxBuilds
-    # Host Box
-    pool:
-      vmImage: 'ubuntu-latest'
-    # Docker Images
-    strategy:
-      matrix:
-        ubuntu_20_04:
-          image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
-          artifactName: 'Linux-Ubuntu-20.04'
-        ubuntu_22_04:
-          image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
-          artifactName: 'Linux-Ubuntu-22.04'        
-        ubuntu_24_04:
-          image: 'tfcollins/libiio_ubuntu_24_04-ci:latest'
-          artifactName: 'Linux-Ubuntu-24.04'
-        fedora28:
-          image: 'tfcollins/libiio_fedora_28-ci:latest'
-          artifactName: 'Linux-Fedora-28'
-        fedora34:
-          image: 'tfcollins/libiio_fedora_34-ci:latest'
-          artifactName: 'Linux-Fedora-34'
-        debian_bullseye:
-          image: 'tfcollins/libiio_debian_bullseye-ci:latest'
-          artifactName: 'Linux-Debian-11'
-        debian_bookworm:
-          image: 'tfcollins/libiio_debian_bookworm-ci:latest'
-          artifactName: 'Linux-Debian-12'
-        opensuse_15_4:
-          image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
-          artifactName: 'Linux-openSUSE-15.4'
-    container: $[ variables['image'] ]
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-      persistCredentials: true
-    - script: |
-        set -e
-        mkdir build && cd build
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
-        make
-        make package
-        make required2tar
-      displayName: 'Build'
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-        contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - script: |
-        cd $(Agent.BuildDirectory)/s/build/
-        sh generateDocumentationAndDeploy.sh
-      displayName: 'Documentation'
-      condition: eq(variables['artifactName'], 'Linux-Fedora-34')
-    - script: ./CI/azure/check_kernel.sh
-      displayName: 'Kernel check'
-      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
-    - script: ./CI/azure/check_README_BUILD.sh
-      displayName: 'README_BUILD check'
-      condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: '$(artifactName)'
-
-  #############################################
-  - job: MinGWBuilds
-    strategy:
-      matrix:
-        MinGW_W64:
-           COMPILER: 'MinGW Makefiles'
-           artifactName: 'Windows-MinGW-W64'
-    pool:
-      vmImage: 'windows-2022'
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-    - task: PowerShell@2
-      displayName: 'Dependencies'
-      inputs:
-        targetType: inline
-        script: |
-          git submodule update --init
-          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
-          C:\msys64\usr\bin\bash.exe -c "./CI/azure/build_mingw.sh install_pacman_deps"
-    - task: PowerShell@2
-      inputs:
-        targetType: inline
-        script: |
-          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
-          mkdir build-mingw
-          cd build-mingw
-          C:\msys64\usr\bin\bash.exe -c "../CI/azure/build_mingw.sh build_libiio"
-      displayName: 'Build'
-    - task: CopyFiles@2
-      displayName: 'Copy .exe files'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw/utils'
-        contents: '*.exe'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy public headers'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/include'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy libiio.dll, libiio.dll.a and libiio1.dll'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw'
-        contents: |
-          libiio.dll
-          libiio.dll.a
-          libiio1.dll
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy .tar.gz files'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw/bindings/python'
-        contents: '*.gz'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: PowerShell@2
-      displayName: 'Copy dependencies'
-      inputs:
-        targetType: 'filePath'
-        filePath: .\CI\publish_deps.ps1
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: '$(artifactName)'
-
-  #############################################
-  - job: WindowsBuilds
-    # Host Box
-    strategy:
-      matrix:
-        VS2022:
-          vmImage: 'windows-2022'
-          COMPILER: 'Visual Studio 17 2022'
-          ARCH: 'x64'
-          PLATFORM_TOOLSET: 'v143'
-          artifactName: 'Windows-VS-2022-x64'
-        VS2019:
-          vmImage: 'windows-2019'
-          COMPILER: 'Visual Studio 16 2019'
-          ARCH: 'x64'
-          PLATFORM_TOOLSET: 'v142'
-          artifactName: 'Windows-VS-2019-x64'
-    pool:
-      vmImage: $[ variables['vmImage'] ]
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-    - task: CmdLine@2
-      displayName: 'Build dependecies'
-      inputs:
-        script: |
-          git submodule update --init
-          .\CI\azure\windows_build_deps.cmd
-    - task: PowerShell@2
-      inputs:
-        targetType: 'filePath'
-        filePath: .\CI\build_win_msvc.ps1
-      displayName: 'Build'
-    - task: CopyFiles@2
-      displayName: 'Copy libraries'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/Release'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy public headers'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/include'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy .exe files'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/utils/Release'
-        contents: '*.exe'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy .tar.gz files'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/python'
-        contents: '*.gz'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy libiio-sharp.dll file'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/csharp'
-        contents: 'libiio-sharp.dll'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      displayName: 'Copy dependencies sources archive'
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/'
-        contents: 'Windows-msvc-deps.zip'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: PowerShell@2
-      displayName: 'Copy dependencies'
-      inputs:
-        targetType: 'filePath'
-        filePath: .\CI\publish_deps.ps1
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: '$(artifactName)'
-
-  #############################################
-  - job: GenerateSetupExe
-    dependsOn: WindowsBuilds
-    pool:
-      vmImage: 'windows-2019'
-    steps:
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        path: '$(Build.ArtifactStagingDirectory)'
-    - task: PowerShell@2
-      inputs:
-        targetType: 'filePath'
-        filePath: .\CI\generate_exe.ps1
-      displayName: 'Generate libiio-setup.exe'
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'Libiio-Setup-Exe'
-
-  #############################################
-  - job: macOSBuilds
-    # Host Box
-    workspace:
-      clean: all
-    strategy:
-      matrix:
-        macOS_15_x64:
-          poolName: 'Azure Pipelines'
-          vmImage: 'macOS-15'
-          agentName: 'Azure Pipelines 11'
-          artifactName: 'macOS-15-x64'
-        macOS_14_x64:
-          poolName: 'Azure Pipelines'
-          vmImage: 'macOS-14'
-          agentName: 'Azure Pipelines 3'
-          artifactName: 'macOS-14-x64'
-        macOS_13_x64:
-          poolName: 'Azure Pipelines'
-          vmImage: 'macOS-13'
-          agentName: 'Azure Pipelines 2'
-          artifactName: 'macOS-13-x64'
-        macOS_13_arm64:
-          poolName: 'Default'
-          vmImage: 
-          agentName: 'miniMAC_arm64'
-          artifactName: 'macOS-13-arm64'
-    pool:
-      name: $(poolName)
-      vmImage: $(vmImage)
-      demands:
-        - agent.name -equals $(agentName)
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-    - task: UsePythonVersion@0
-      condition: ne(variables['agentName'],'miniMAC_arm64')
-      inputs:
-        versionSpec: '3.x'
-        addToPath: true
-    - script: |
-          set -e
-          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
-          pip3 install sphinx setuptools
-      displayName: 'Dependencies'
-      condition: ne(variables['agentName'],'miniMAC_arm64')
-    - script: |
-        set -e
-        mkdir build && cd build
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '/python')") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
-        make
-        sudo make install
-        cd ..
-      displayName: 'Build'
-    - script: |
-        set -e
-        mkdir build_tar && cd build_tar
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '/python')") -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
-        make
-        make package
-        mv ../CI/azure/macos_tar_fixup.sh .
-        chmod +x macos_tar_fixup.sh
-        ./macos_tar_fixup.sh
-        cd ..
-      displayName: 'Build tar'
-    - script: |
-        set -e
-        cd build
-        cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON
-        make
-        cd ..
-      displayName: 'Build With Doc'
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build/'
-        contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build_tar/'
-        contents: '$(Agent.BuildDirectory)/s/build_tar/?(*.gz)'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifactName: '$(artifactName)'
-
-  #############################################
   - job: ARMBuilds
     # Host Box
     pool:
@@ -409,35 +82,362 @@ stages:
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         artifactName: '$(artifactName)'
+  #############################################
+  # Builds
+  #############################################
+  # jobs:
+  # - job: LinuxBuilds
+  #   # Host Box
+  #   pool:
+  #     vmImage: 'ubuntu-latest'
+  #   # Docker Images
+  #   strategy:
+  #     matrix:
+  #       ubuntu_20_04:
+  #         image: 'tfcollins/libiio_ubuntu_20_04-ci:latest'
+  #         artifactName: 'Linux-Ubuntu-20.04'
+  #       ubuntu_22_04:
+  #         image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
+  #         artifactName: 'Linux-Ubuntu-22.04'        
+  #       ubuntu_24_04:
+  #         image: 'tfcollins/libiio_ubuntu_24_04-ci:latest'
+  #         artifactName: 'Linux-Ubuntu-24.04'
+  #       fedora28:
+  #         image: 'tfcollins/libiio_fedora_28-ci:latest'
+  #         artifactName: 'Linux-Fedora-28'
+  #       fedora34:
+  #         image: 'tfcollins/libiio_fedora_34-ci:latest'
+  #         artifactName: 'Linux-Fedora-34'
+  #       debian_bullseye:
+  #         image: 'tfcollins/libiio_debian_bullseye-ci:latest'
+  #         artifactName: 'Linux-Debian-11'
+  #       debian_bookworm:
+  #         image: 'tfcollins/libiio_debian_bookworm-ci:latest'
+  #         artifactName: 'Linux-Debian-12'
+  #       opensuse_15_4:
+  #         image: 'tfcollins/libiio_opensuse_15_4-ci:latest'
+  #         artifactName: 'Linux-openSUSE-15.4'
+  #   container: $[ variables['image'] ]
+  #   steps:
+  #   - checkout: self
+  #     fetchDepth: 1
+  #     clean: true
+  #     persistCredentials: true
+  #   - script: |
+  #       set -e
+  #       mkdir build && cd build
+  #       cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+  #       make
+  #       make package
+  #       make required2tar
+  #     displayName: 'Build'
+  #   - task: CopyFiles@2
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+  #       contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - script: |
+  #       cd $(Agent.BuildDirectory)/s/build/
+  #       sh generateDocumentationAndDeploy.sh
+  #     displayName: 'Documentation'
+  #     condition: eq(variables['artifactName'], 'Linux-Fedora-34')
+  #   - script: ./CI/azure/check_kernel.sh
+  #     displayName: 'Kernel check'
+  #     condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+  #   - script: ./CI/azure/check_README_BUILD.sh
+  #     displayName: 'README_BUILD check'
+  #     condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
+  #   - task: PublishPipelineArtifact@1
+  #     inputs:
+  #       targetPath: '$(Build.ArtifactStagingDirectory)'
+  #       artifactName: '$(artifactName)'
 
   #############################################
-  - job: MCUsBuilds
-    # Host Box
-    pool:
-      vmImage: 'ubuntu-latest'
-    # Docker Images
-    strategy:
-      matrix:
-        ubuntu_22_04:
-          image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
-          artifactName: 'MCU-ARM-Cortex-M4'
-    container: $[ variables['image'] ]
-    steps:
-    - checkout: self
-      fetchDepth: 1
-      clean: true
-      persistCredentials: true
-    - script: |
-        set -e
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi
-      displayName: 'Setup'
-    - script: |
-        set -e
-        mkdir build && cd build
-        cmake .. -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-cross-compile.cmake -DWITH_LIBTINYIIOD=ON
-        make
-      displayName: 'Build'
+  # - job: MinGWBuilds
+  #   strategy:
+  #     matrix:
+  #       MinGW_W64:
+  #          COMPILER: 'MinGW Makefiles'
+  #          artifactName: 'Windows-MinGW-W64'
+  #   pool:
+  #     vmImage: 'windows-2022'
+  #   steps:
+  #   - checkout: self
+  #     fetchDepth: 1
+  #     clean: true
+  #   - task: UsePythonVersion@0
+  #     inputs:
+  #       versionSpec: '3.9'
+  #   - task: PowerShell@2
+  #     displayName: 'Dependencies'
+  #     inputs:
+  #       targetType: inline
+  #       script: |
+  #         git submodule update --init
+  #         $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+  #         C:\msys64\usr\bin\bash.exe -c "./CI/azure/build_mingw.sh install_pacman_deps"
+  #   - task: PowerShell@2
+  #     inputs:
+  #       targetType: inline
+  #       script: |
+  #         $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+  #         mkdir build-mingw
+  #         cd build-mingw
+  #         C:\msys64\usr\bin\bash.exe -c "../CI/azure/build_mingw.sh build_libiio"
+  #     displayName: 'Build'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy .exe files'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw/utils'
+  #       contents: '*.exe'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy public headers'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/include'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy libiio.dll, libiio.dll.a and libiio1.dll'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw'
+  #       contents: |
+  #         libiio.dll
+  #         libiio.dll.a
+  #         libiio1.dll
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy .tar.gz files'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-mingw/bindings/python'
+  #       contents: '*.gz'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: PowerShell@2
+  #     displayName: 'Copy dependencies'
+  #     inputs:
+  #       targetType: 'filePath'
+  #       filePath: .\CI\publish_deps.ps1
+  #   - task: PublishPipelineArtifact@1
+  #     inputs:
+  #       targetPath: '$(Build.ArtifactStagingDirectory)'
+  #       artifactName: '$(artifactName)'
+
+  #############################################
+  # - job: WindowsBuilds
+  #   # Host Box
+  #   strategy:
+  #     matrix:
+  #       VS2022:
+  #         vmImage: 'windows-2022'
+  #         COMPILER: 'Visual Studio 17 2022'
+  #         ARCH: 'x64'
+  #         PLATFORM_TOOLSET: 'v143'
+  #         artifactName: 'Windows-VS-2022-x64'
+  #       VS2019:
+  #         vmImage: 'windows-2019'
+  #         COMPILER: 'Visual Studio 16 2019'
+  #         ARCH: 'x64'
+  #         PLATFORM_TOOLSET: 'v142'
+  #         artifactName: 'Windows-VS-2019-x64'
+  #   pool:
+  #     vmImage: $[ variables['vmImage'] ]
+  #   steps:
+  #   - checkout: self
+  #     fetchDepth: 1
+  #     clean: true
+  #   - task: UsePythonVersion@0
+  #     inputs:
+  #       versionSpec: '3.9'
+  #   - task: CmdLine@2
+  #     displayName: 'Build dependecies'
+  #     inputs:
+  #       script: |
+  #         git submodule update --init
+  #         .\CI\azure\windows_build_deps.cmd
+  #   - task: PowerShell@2
+  #     inputs:
+  #       targetType: 'filePath'
+  #       filePath: .\CI\build_win_msvc.ps1
+  #     displayName: 'Build'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy libraries'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/Release'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy public headers'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/include'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy .exe files'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/utils/Release'
+  #       contents: '*.exe'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy .tar.gz files'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/python'
+  #       contents: '*.gz'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy libiio-sharp.dll file'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/bindings/csharp'
+  #       contents: 'libiio-sharp.dll'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     displayName: 'Copy dependencies sources archive'
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/'
+  #       contents: 'Windows-msvc-deps.zip'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: PowerShell@2
+  #     displayName: 'Copy dependencies'
+  #     inputs:
+  #       targetType: 'filePath'
+  #       filePath: .\CI\publish_deps.ps1
+  #   - task: PublishPipelineArtifact@1
+  #     inputs:
+  #       targetPath: '$(Build.ArtifactStagingDirectory)'
+  #       artifactName: '$(artifactName)'
+
+  #############################################
+  # - job: GenerateSetupExe
+  #   dependsOn: WindowsBuilds
+  #   pool:
+  #     vmImage: 'windows-2019'
+  #   steps:
+  #   - task: DownloadPipelineArtifact@2
+  #     inputs:
+  #       path: '$(Build.ArtifactStagingDirectory)'
+  #   - task: PowerShell@2
+  #     inputs:
+  #       targetType: 'filePath'
+  #       filePath: .\CI\generate_exe.ps1
+  #     displayName: 'Generate libiio-setup.exe'
+  #   - task: PublishPipelineArtifact@1
+  #     inputs:
+  #       targetPath: '$(Build.ArtifactStagingDirectory)'
+  #       artifactName: 'Libiio-Setup-Exe'
+
+  #############################################
+  # - job: macOSBuilds
+  #   # Host Box
+  #   workspace:
+  #     clean: all
+  #   strategy:
+  #     matrix:
+  #       macOS_15_x64:
+  #         poolName: 'Azure Pipelines'
+  #         vmImage: 'macOS-15'
+  #         agentName: 'Azure Pipelines 11'
+  #         artifactName: 'macOS-15-x64'
+  #       macOS_14_x64:
+  #         poolName: 'Azure Pipelines'
+  #         vmImage: 'macOS-14'
+  #         agentName: 'Azure Pipelines 3'
+  #         artifactName: 'macOS-14-x64'
+  #       macOS_13_x64:
+  #         poolName: 'Azure Pipelines'
+  #         vmImage: 'macOS-13'
+  #         agentName: 'Azure Pipelines 2'
+  #         artifactName: 'macOS-13-x64'
+  #       macOS_13_arm64:
+  #         poolName: 'Default'
+  #         vmImage: 
+  #         agentName: 'miniMAC_arm64'
+  #         artifactName: 'macOS-13-arm64'
+  #   pool:
+  #     name: $(poolName)
+  #     vmImage: $(vmImage)
+  #     demands:
+  #       - agent.name -equals $(agentName)
+  #   steps:
+  #   - checkout: self
+  #     fetchDepth: 1
+  #     clean: true
+  #   - task: UsePythonVersion@0
+  #     condition: ne(variables['agentName'],'miniMAC_arm64')
+  #     inputs:
+  #       versionSpec: '3.x'
+  #       addToPath: true
+  #   - script: |
+  #         set -e
+  #         brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
+  #         pip3 install sphinx setuptools
+  #     displayName: 'Dependencies'
+  #     condition: ne(variables['agentName'],'miniMAC_arm64')
+  #   - script: |
+  #       set -e
+  #       mkdir build && cd build
+  #       cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '/python')") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
+  #       make
+  #       sudo make install
+  #       cd ..
+  #     displayName: 'Build'
+  #   - script: |
+  #       set -e
+  #       mkdir build_tar && cd build_tar
+  #       cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '/python')") -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+  #       make
+  #       make package
+  #       mv ../CI/azure/macos_tar_fixup.sh .
+  #       chmod +x macos_tar_fixup.sh
+  #       ./macos_tar_fixup.sh
+  #       cd ..
+  #     displayName: 'Build tar'
+  #   - script: |
+  #       set -e
+  #       cd build
+  #       cmake .. -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DPYTHON_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON
+  #       make
+  #       cd ..
+  #     displayName: 'Build With Doc'
+  #   - task: CopyFiles@2
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build/'
+  #       contents: '$(Agent.BuildDirectory)/s/build/?(*.pkg)'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: CopyFiles@2
+  #     inputs:
+  #       sourceFolder: '$(Agent.BuildDirectory)/s/build_tar/'
+  #       contents: '$(Agent.BuildDirectory)/s/build_tar/?(*.gz)'
+  #       targetFolder: '$(Build.ArtifactStagingDirectory)'
+  #   - task: PublishPipelineArtifact@1
+  #     inputs:
+  #       targetPath: '$(Build.ArtifactStagingDirectory)'
+  #       artifactName: '$(artifactName)'
+
+  #############################################
+  #############################################
+  # - job: MCUsBuilds
+  #   # Host Box
+  #   pool:
+  #     vmImage: 'ubuntu-latest'
+  #   # Docker Images
+  #   strategy:
+  #     matrix:
+  #       ubuntu_22_04:
+  #         image: 'tfcollins/libiio_ubuntu_22_04-ci:latest'
+  #         artifactName: 'MCU-ARM-Cortex-M4'
+  #   container: $[ variables['image'] ]
+  #   steps:
+  #   - checkout: self
+  #     fetchDepth: 1
+  #     clean: true
+  #     persistCredentials: true
+  #   - script: |
+  #       set -e
+  #       sudo apt-get update
+  #       sudo apt-get install -y gcc-arm-none-eabi
+  #     displayName: 'Setup'
+  #   - script: |
+  #       set -e
+  #       mkdir build && cd build
+  #       cmake .. -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-cross-compile.cmake -DWITH_LIBTINYIIOD=ON
+  #       make
+  #     displayName: 'Build'
 
   #############################################
 - stage: ManageArtifacts
