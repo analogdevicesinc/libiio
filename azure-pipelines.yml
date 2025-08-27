@@ -1,6 +1,6 @@
 # If you make changes to builds or artifacts, please check and update the following files if needed:
 # README.md, CI/azure/prepare_assets.sh, artifact_manifest.txt.cmakein, CI/publish_deps.ps1
-
+#duma slaba
 variables:
   isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
 
