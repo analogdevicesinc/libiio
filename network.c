@@ -21,6 +21,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+
 #ifdef _WIN32
 #include <netioapi.h>
 #include <winsock2.h>
@@ -49,6 +50,10 @@
 
 #ifdef _WIN32
 #define close(s) closesocket(s)
+
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
 #endif
 
 #define NETWORK_TIMEOUT_MS 5000
@@ -548,7 +553,7 @@ static ssize_t network_write_data(struct iiod_client_pdata *io_ctx,
 				  const char *src, size_t len,
 				  unsigned int timeout_ms)
 {
-	return network_send(io_ctx, src, len, 0, timeout_ms);
+	return network_send(io_ctx, src, len, MSG_NOSIGNAL, timeout_ms);
 }
 
 static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
