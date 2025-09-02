@@ -115,7 +115,7 @@ metadata:
     Linux, Windows or MAC over USB or Ethernet or Serial.
   classification: software
   license:
-    - GPL-2.0-or-later
+    - LGPL-2.1+
   links:
     - url: https://codedocs.xyz/analogdevicesinc/libiio/
       title: Documentation
@@ -144,7 +144,7 @@ metadata:
   description: Release version of libiio
   classification: software
   license:
-    - GPL-2.0-or-later
+    - LGPL-2.1+
   links:
     - url: https://codedocs.xyz/analogdevicesinc/libiio/
       title: Documentation
@@ -174,7 +174,7 @@ metadata:
   description: Release version of libiio
   classification: software
   license:
-    - GPL-2.0-or-later
+    - LGPL-2.1+
   links:
     - url: https://codedocs.xyz/analogdevicesinc/libiio/
       title: Documentation
