@@ -50,61 +50,6 @@ namespace iio
         }
     }
 
-    /// <summary>
-    /// Represents the log levels for IIO.
-    /// </summary>
-    public enum IioLogLevel
-    {
-        NoLog = 1,
-        Error = 2,
-        Warning = 3,
-        Info = 4,
-        Debug = 5
-    }
-
-    /// <summary>
-    /// Represents the parameters for creating an IIO context.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct IioContextParams
-    {
-        /// <summary>
-        /// Handle to the standard output. If null, defaults to stdout.
-        /// </summary>
-        public IntPtr Out;
-
-        /// <summary>
-        /// Handle to the error output. If null, defaults to stderr.
-        /// </summary>
-        public IntPtr Err;
-
-        /// <summary>
-        /// Log level to use. Defaults to the log level specified at compilation.
-        /// </summary>
-        public IioLogLevel LogLevel;
-
-        /// <summary>
-        /// Log level threshold for sending messages to stderr.
-        /// </summary>
-        public IioLogLevel StderrLevel;
-
-        /// <summary>
-        /// Log level threshold for including timestamps in messages.
-        /// </summary>
-        public IioLogLevel TimestampLevel;
-
-        /// <summary>
-        /// Timeout for I/O operations in milliseconds. If zero, the default timeout is used.
-        /// </summary>
-        public uint TimeoutMs;
-
-        /// <summary>
-        /// Reserved for future fields. Must remain unused.
-        /// </summary>
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-        public byte[] Reserved;
-    }
-
     /// <summary><see cref="iio.Context"/> class:
     /// Contains the representation of an IIO context.</summary>
     public class Context : IIOObject
