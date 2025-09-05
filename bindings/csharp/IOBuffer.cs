@@ -22,7 +22,7 @@ namespace iio
     public class IOBuffer : IIOObject
     {
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IIOPtr iio_device_create_buffer(IntPtr dev, IntPtr buffer_params, IntPtr mask);
+        private static extern IIOPtr iio_device_create_buffer(IntPtr dev, uint index, IntPtr mask);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_buffer_destroy(IntPtr buf);
@@ -75,12 +75,12 @@ namespace iio
         /// <param name="mask">The channels mask to use to create the buffer object.</param>
         /// <param name="index">The index of the hardware buffer. Should be 0 in most cases.</param>
         /// <exception cref="IioLib.IIOException">The buffer could not be created.</exception>
-        public IOBuffer(Device dev, ChannelsMask mask)
+        public IOBuffer(Device dev, ChannelsMask mask, uint index = 0)
         {
             this.mask = mask;
             this.dev = dev;
 
-            IIOPtr ptr = iio_device_create_buffer(dev.dev, IntPtr.Zero, mask.hdl);
+            IIOPtr ptr = iio_device_create_buffer(dev.dev, index, mask.hdl);
             if (!ptr)
                 throw new IIOException("Unable to create buffer", ptr);
 

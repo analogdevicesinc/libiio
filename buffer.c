@@ -98,8 +98,7 @@ static int iio_buffer_enqueue_worker(void *_, void *d)
 }
 
 struct iio_buffer *
-iio_device_create_buffer(const struct iio_device *dev,
-			 struct iio_buffer_params *params,
+iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 			 const struct iio_channels_mask *mask)
 {
 	const struct iio_backend_ops *ops = dev->ctx->ops;
@@ -122,10 +121,8 @@ iio_device_create_buffer(const struct iio_device *dev,
 	if (!buf)
 		return iio_ptr(-ENOMEM);
 
-	if (params)
-		buf->params = *params;
-
 	buf->dev = dev;
+	buf->idx = idx;
 
 	/* Duplicate buffer attributes from the iio_device.
 	 * This ensures that those can contain a pointer to our iio_buffer */
@@ -164,7 +161,7 @@ iio_device_create_buffer(const struct iio_device *dev,
 	if (err < 0)
 		goto err_free_mutex;
 
-	buf->pdata = ops->create_buffer(dev, &buf->params, buf->mask);
+	buf->pdata = ops->create_buffer(dev, idx, buf->mask);
 	err = iio_err(buf->pdata);
 	if (err < 0)
 		goto err_destroy_worker;
