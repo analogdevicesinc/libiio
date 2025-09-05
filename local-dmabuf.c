@@ -23,6 +23,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#define LIBIIO_DMA_HEAP_ENV_VAR "LIBIIO_DMA_HEAP_PATH"
+#define MAX_DMA_HEAP_PATH 256
+#define MAX_DEVICE_LIST 256
+
 struct iio_dmabuf_heap_data {
 	uint64_t len;
 	uint32_t fd;
@@ -55,6 +59,87 @@ struct dma_buf_sync {
 	uint64_t flags;
 };
 
+/* Parse environment variable to get DMA heap path for all or a specific device.
+ * Environment variable format:
+ * - LIBIIO_DMA_HEAP_PATH=heap_name (applies to all devices)
+ * - LIBIIO_DMA_HEAP_PATH=heap_name:device1 (applies only to device1)
+ * - LIBIIO_DMA_HEAP_PATH=heap_name:device1,device2 (applies to device1 and device2)
+ *
+ * Returns the heap name to use, or "system" if no match or no env var set.
+ * The heap name must not exceed 64 characters.
+ */
+static const char *get_dma_heap_name_for_device(const char *device_name)
+{
+	const char *env_value;
+	static char heap_name[65]; /* 64 chars + null terminator */
+	char *colon_pos, *device_list, *device_token;
+	char env_copy[MAX_DMA_HEAP_PATH];
+	bool device_matches = false;
+
+	if (!device_name)
+		return "system";
+
+	env_value = getenv(LIBIIO_DMA_HEAP_ENV_VAR);
+	if (!env_value)
+		return "system";
+
+	/* Check if environment variable is empty or too long using strnlen for safety */
+	size_t env_len = strnlen(env_value, MAX_DMA_HEAP_PATH);
+	if (env_len == 0 || env_len >= MAX_DMA_HEAP_PATH)
+		return "system";
+
+	/* Make a copy to avoid modifying the original environment variable */
+	if (env_len >= sizeof(env_copy))
+		return "system";
+
+	strncpy(env_copy, env_value, env_len);
+	env_copy[env_len] = '\0'; /* Ensure null termination */
+
+	/* Look for colon separator */
+	colon_pos = strchr(env_copy, ':');
+	if (!colon_pos) {
+		/* No device specification, applies to all devices */
+		if (env_len < sizeof(heap_name) && env_len <= 64) {
+			strncpy(heap_name, env_value, env_len);
+			heap_name[env_len] = '\0'; /* Ensure null termination */
+			return heap_name;
+		}
+		return "system";
+	}
+
+	/* Split heap name and device list */
+	*colon_pos = '\0';
+	device_list = colon_pos + 1;
+
+	/* Check if heap name is valid (not empty and within 64 char limit) using strnlen for safety */
+	size_t heap_len = strnlen(env_copy, 65); /* 64 + 1 to detect overflow */
+	if (heap_len == 0 || heap_len > 64)
+		return "system";
+
+	strncpy(heap_name, env_copy, heap_len);
+	heap_name[heap_len] = '\0'; /* Ensure null termination */
+
+	/* Parse device list */
+	device_token = strtok(device_list, ",");
+	while (device_token) {
+		/* Remove leading/trailing spaces */
+		while (*device_token == ' ')
+			device_token++;
+
+		char *end = device_token + strlen(device_token) - 1;
+		while (end > device_token && *end == ' ')
+			*end-- = '\0';
+
+		if (strcmp(device_token, device_name) == 0) {
+			device_matches = true;
+			break;
+		}
+		device_token = strtok(NULL, ",");
+	}
+
+	return device_matches ? heap_name : "system";
+}
+
 static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 {
 	struct dma_buf_sync dbuf_sync = { 0 };
@@ -78,13 +163,25 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		.fd_flags = O_CLOEXEC | O_RDWR,
 	};
 	struct iio_block_pdata *priv;
+	const char *device_name, *heap_name;
+	char dma_heap_path[MAX_DMA_HEAP_PATH];
 	int ret, fd, devfd;
 
 	priv = zalloc(sizeof(*priv));
 	if (!priv)
 		return iio_ptr(-ENOMEM);
 
-	devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
+	/* Determine the appropriate DMA heap path based on potential data from environment variables */
+	device_name = iio_device_get_name(pdata->dev);
+	heap_name = get_dma_heap_name_for_device(device_name);
+
+	ret = snprintf(dma_heap_path, sizeof(dma_heap_path), "/dev/dma_heap/%s", heap_name);
+	if (ret < 0 || ret >= (int)sizeof(dma_heap_path)) {
+		ret = -EINVAL;
+		goto err_free_priv;
+	}
+
+	devfd = open(dma_heap_path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
 	if (devfd < 0) {
 		ret = -errno;
 
