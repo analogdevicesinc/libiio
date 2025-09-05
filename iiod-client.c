@@ -1461,8 +1461,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 			err = -ENOMEM;
 			goto err_free_pdata;
 		}
-
-		buf_params->dma_allocator = htonl(params->dma_allocator);
+		buf_params->dma_allocator = params->dma_allocator;
 		buf_params->nb_mask = (unsigned int) mask->words;
 		for (unsigned int i = 0; i < mask->words; i++)
 			buf_params->mask[i] = htonl(mask->mask[i]);
