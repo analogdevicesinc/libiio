@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 	printf("Monitoring %s for underflows/overflows\n",
 		iio_device_get_name(dev));
 
-	buffer = iio_device_create_buffer(dev, NULL, mask);
+	buffer = iio_device_create_buffer(dev, 0, mask);
 	ret = iio_err(buffer);
 	if (ret) {
 		IIO_PERROR(ret, "Unable to create buffer");
