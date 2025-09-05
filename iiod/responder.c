@@ -394,7 +394,6 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	struct iio_channel *chn;
 	struct buffer_entry *entry;
 	struct iio_buffer *buf;
-	struct iiod_buf_params *params;
 	struct iiod_buf data;
  	struct iio_buffer_params buffer_params = {0};
 	unsigned int i, nb_channels;
@@ -422,35 +421,13 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		goto err_free_entry;
 	}
 
-	params = malloc(sizeof(*params) + nb_words * sizeof(uint32_t));
-	if (!params) {
-		ret = -ENOMEM;
-		goto err_free_words;
-	}
-
-	data.ptr = params;
-	data.size = nb_words * 4 + sizeof(*params);
+	/* TODO: endianness */
+	data.ptr = entry->words;
+	data.size = nb_words * 4;
 
 	ret = iiod_command_data_read(cmd_data, &data);
-	if (ret < 0) {
-		free(params);
+	if (ret < 0)
 		goto err_free_words;
-	}
-
-	/* sanity check that the number of masks sent by the client matches the one we have */
-	if (params->nb_mask != nb_words) {
-		IIO_ERROR("Buffer %u: unexpected number of words (%u != %zu)\n",
-			  cmd->code, params->nb_mask, nb_words);
-		ret = -EINVAL;
-		free(params);
-		goto err_free_words;
-	}
-
-	buffer_params.dma_allocator = ntohl(params->dma_allocator);
-	for (i = 0; i < nb_words; i++)
-		entry->words[i] = ntohl(params->mask[i]);
-
-	free(params);
 
 	/* Create a temporary mask object */
 	mask = iio_create_channels_mask(nb_channels);
