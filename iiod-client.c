@@ -53,7 +53,7 @@ struct iiod_client_buffer_pdata {
 
 	struct iio_channels_mask *mask;
 	const struct iio_device *dev;
-	struct iio_buffer_params params;
+	uint16_t idx;
 
 	/* TODO: atomic? */
 	uint16_t next_block_idx;
@@ -578,7 +578,7 @@ static ssize_t iiod_client_read_attr_new(struct iiod_client *client,
 			return -ENOENT;
 
 		arg1 = (uint16_t) i;
-		arg2 = (uint16_t) buf->params.idx;
+		arg2 = (uint16_t) buf->idx;
 		break;
 	default:
 		return -EINVAL;
@@ -744,7 +744,7 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 			return -ENOENT;
 
 		arg1 = (uint16_t) i;
-		arg2 = (uint16_t) buf->params.idx;
+		arg2 = (uint16_t) buf->idx;
 		break;
 	default:
 		return -EINVAL;
@@ -1421,7 +1421,7 @@ ssize_t iiod_client_writebuf(struct iiod_client_buffer_pdata *pdata,
 struct iiod_client_buffer_pdata *
 iiod_client_create_buffer(struct iiod_client *client,
 			  struct iiod_client *client_fb,
-			  const struct iio_device *dev, const struct iio_buffer_params *params,
+			  const struct iio_device *dev, unsigned int idx,
 			  struct iio_channels_mask *mask)
 {
 	struct iiod_io *io;
@@ -1435,7 +1435,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 		return iio_ptr(-ENOMEM);
 
 	pdata->dev = dev;
-	pdata->params = *params;
+	pdata->idx = (uint16_t) idx;
 	pdata->client = client;
 	pdata->client_fb = client_fb;
 	pdata->mask = mask;
@@ -1445,7 +1445,7 @@ iiod_client_create_buffer(struct iiod_client *client,
 
 		cmd.op = IIOD_OP_CREATE_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(dev);
-		cmd.code = pdata->params.idx;
+		cmd.code = pdata->idx;
 
 		/* TODO: endianness */
 		buf.ptr = mask->mask;
@@ -1474,7 +1474,7 @@ void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata)
 
 		cmd.op = IIOD_OP_FREE_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-		cmd.code = pdata->params.idx;
+		cmd.code = pdata->idx;
 
 		iiod_io_exec_simple_command(io, &cmd);
 	}
@@ -1517,7 +1517,7 @@ int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
 
 	cmd.op = enable ? IIOD_OP_ENABLE_BUFFER : IIOD_OP_DISABLE_BUFFER;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx;
+	cmd.code = pdata->idx;
 
 	io = iiod_responder_get_default_io(client->responder);
 
@@ -1563,7 +1563,7 @@ iiod_client_create_block(struct iiod_client_buffer_pdata *pdata,
 
 	cmd.op = IIOD_OP_CREATE_BLOCK;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx | (block->idx << 16);
+	cmd.code = pdata->idx | (block->idx << 16);
 
 	ret = iiod_io_exec_command(block->io, &cmd, &buf, NULL);
 	if (ret < 0)
@@ -1599,7 +1599,7 @@ void iiod_client_free_block(struct iio_block_pdata *block)
 
 	cmd.op = IIOD_OP_FREE_BLOCK;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx | (block->idx << 16);
+	cmd.code = pdata->idx | (block->idx << 16);
 
 	/* Cancel any I/O going on. This means we must send the block free
 	 * command through the main I/O as the block's I/O stream is
@@ -1627,7 +1627,7 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 
 	cmd.op = cyclic ? IIOD_OP_ENQUEUE_BLOCK_CYCLIC : IIOD_OP_TRANSFER_BLOCK;
 	cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-	cmd.code = pdata->params.idx | (block->idx << 16);
+	cmd.code = pdata->idx | (block->idx << 16);
 
 	block->bytes_used = bytes_used;
 	buf[0].ptr = &block->bytes_used;
@@ -1677,7 +1677,7 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 		/* The previous enqueue succeeded, but the dequeue failed. */
 		cmd.op = IIOD_OP_RETRY_DEQUEUE_BLOCK;
 		cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
-		cmd.code = pdata->params.idx | (block->idx << 16);
+		cmd.code = pdata->idx | (block->idx << 16);
 		buf.ptr = block->data;
 		buf.size = block->bytes_used;
 
