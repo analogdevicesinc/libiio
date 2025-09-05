@@ -1146,15 +1146,12 @@ iio_buffer_find_attr(const struct iio_buffer *buf, const char *name);
 
 /** @brief Create an input or output buffer associated to the given device
  * @param dev A pointer to an iio_device structure
- * @param params A pointer to an iio_buffer_params structure. If NULL is passed,
- *        default values are used, for more information see comments in
- *        struct iio_buffer_params.
+ * @param idx The index of the hardware buffer. Should be 0 in most cases.
  * @param mask A pointer to an iio_channels_mask structure.
  * @return On success, a pointer to an iio_buffer structure
  * @return On failure, a pointer-encoded error is returned */
 __api __check_ret struct iio_buffer *
-iio_device_create_buffer(const struct iio_device *dev,
-			 struct iio_buffer_params *params,
+iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 			 const struct iio_channels_mask *mask);
 
 

@@ -140,7 +140,8 @@ struct iio_buffer {
 	size_t length;
 
 	struct iio_channels_mask *mask;
-	struct iio_buffer_params params;
+	unsigned int idx;
+
 	struct iio_task *worker;
 
 	/* These two fields are set by the last block created. They are only

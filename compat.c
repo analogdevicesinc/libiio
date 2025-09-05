@@ -39,7 +39,6 @@ struct iio_channel;
 struct iio_channels_mask;
 struct iio_context;
 struct iio_context_params;
-struct iio_buffer_params;
 struct iio_data_format;
 struct iio_device;
 struct iio_scan;
@@ -168,7 +167,7 @@ struct compat {
 
 	/* Buffers */
 	struct iio_buffer * (*iio_device_create_buffer)(const struct iio_device *,
-							struct iio_buffer_params *,
+							unsigned int,
 							const struct iio_channels_mask *);
 	void (*iio_buffer_destroy)(struct iio_buffer *);
 	void (*iio_buffer_cancel)(struct iio_buffer *);
@@ -2038,7 +2037,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	len = samples_count * compat->sample_size;
 	compat->size = len;
 
-	buf = IIO_CALL(iio_device_create_buffer)(dev, NULL, dev_compat->mask);
+	buf = IIO_CALL(iio_device_create_buffer)(dev, 0, dev_compat->mask);
 	err = iio_err(buf);
 	if (err)
 		goto err_free_compat;

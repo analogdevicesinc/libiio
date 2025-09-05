@@ -395,7 +395,6 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	struct buffer_entry *entry;
 	struct iio_buffer *buf;
 	struct iiod_buf data;
- 	struct iio_buffer_params buffer_params = {0};
 	unsigned int i, nb_channels;
 	size_t nb_words;
 	int ret = -EINVAL;
@@ -478,8 +477,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	if (ret)
 		goto err_destroy_dequeue_task;
 
-	buffer_params.idx = entry->idx;
-	buf = iio_device_create_buffer(dev, &buffer_params, mask);
+	buf = iio_device_create_buffer(dev, entry->idx, mask);
 	ret = iio_err(buf);
 	if (ret)
 		goto err_destroy_lock;
