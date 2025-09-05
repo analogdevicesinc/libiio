@@ -156,34 +156,6 @@ struct iio_context_params {
 	char __rsrv[32];
 };
 
-/**
- * @enum iio_buffer_dma_allocator
- * @brief Provides low-level control over DMA buffer allocation.
- */
-enum iio_buffer_dma_allocator {
-	/** @brief May use scattered DMA memory (default). */
-	IIO_DMA_ALLOCATOR_SYSTEM = 0,
-
-	/** @brief Enforces contiguous DMA memory (for expert use only). */
-	IIO_DMA_ALLOCATOR_CMA_LINUX = 1,
-};
-
-/**
- * @struct iio_buffer_params
- * @brief Used to pass parameters to the iio_device_create_buffer function
- */
-struct iio_buffer_params {
-	/** @brief The index of the hardware buffer. Should be 0 in most cases.
-	 * (default: 0) */
-	unsigned int idx;
-
-	/** @brief Use the allocator to allocate a DMA buffer.
-	 * In most cases, this should be set to IIO_DMA_ALLOCATOR_SYSTEM.
-	 * ONLY change this to a different option if you fully understand the
-	 * implications. (default: IIO_DMA_ALLOCATOR_SYSTEM) */
-	enum iio_buffer_dma_allocator dma_allocator;
-};
-
 /*
  * <linux/iio/types.h> header guard to protect these enums from being defined
  * twice
