@@ -182,8 +182,6 @@ struct iio_buffer_params {
 	 * ONLY change this to a different option if you fully understand the
 	 * implications. (default: IIO_DMA_ALLOCATOR_SYSTEM) */
 	enum iio_buffer_dma_allocator dma_allocator;
-	/** @brief Reserved for future fields. Should always be 0 initialized. */
-	unsigned char __rsrv[64];
 };
 
 /*
