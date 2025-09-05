@@ -1433,7 +1433,7 @@ local_open_fd(const struct iio_device *dev, bool events, unsigned int idx)
 	iio_mutex_lock(lock);
 
 	dev_fd = dev->pdata->fd;
-	open_dev_fd = !dev_fd;
+	open_dev_fd = dev_fd < 0;
 
 	if (open_dev_fd) {
 		dev_fd = open(buf, O_RDWR | O_CLOEXEC | O_NONBLOCK);
@@ -1471,7 +1471,7 @@ static void local_close_fd(const struct iio_device *dev, int fd)
 
 	iio_mutex_lock(lock);
 	if (dev->pdata->fd == fd)
-		dev->pdata->fd = 0;
+		dev->pdata->fd = -1;
 
 	close(fd);
 	iio_mutex_unlock(lock);
@@ -1789,6 +1789,7 @@ static int init_devices(struct iio_context *ctx)
 		dev->pdata = calloc(1, sizeof(*dev->pdata));
 		if (!dev->pdata)
 			return -ENOMEM;
+		dev->pdata->fd = -1;
 	}
 
 	return 0;
