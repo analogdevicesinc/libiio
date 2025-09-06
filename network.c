@@ -210,6 +210,28 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 
 	return 0;
 }
+#ifdef _WIN32
+static inline int translate_wsa_error_to_posix(const struct iio_context_params *params, int wsa_error)
+{
+	// Translate Windows-specific errors to standard errno values
+	if (wsa_error == -WSAETIMEDOUT)
+		return -ETIMEDOUT;
+	else if (wsa_error == -WSAECONNREFUSED)
+		return -ECONNREFUSED;
+	else if (wsa_error == -WSAEHOSTUNREACH)
+		return -EHOSTUNREACH;
+	else if (wsa_error == -WSAECONNRESET)
+		return -ECONNRESET;
+	else if (wsa_error == -WSAECONNABORTED)
+		return -ECONNABORTED;
+	else if (wsa_error < -4095) {
+		prm_perror(params, wsa_error, "Unhandled WSA error outside of range [-4095 -1], mapping to ENETUNREACH");
+		return -ENETUNREACH;
+	}
+
+	return wsa_error;
+}
+#endif
 
 int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 {
@@ -321,6 +343,9 @@ network_setup_iiod_client(const struct iio_device *dev,
 	 * See commit 9eff490 for more info.
 	 */
 	ret = create_socket(pdata->addrinfo, NETWORK_TIMEOUT_MS);
+#ifdef _WIN32
+	ret = translate_wsa_error_to_posix(pdata->io_ctx.params, ret);
+#endif
 	if (ret < 0) {
 		dev_perror(dev, ret, "Unable to create socket");
 		return iio_ptr(ret);
@@ -707,7 +732,11 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	fd = create_socket(res, params->timeout_ms);
 	if (fd < 0) {
+#ifdef _WIN32
+		ret = translate_wsa_error_to_posix(params, fd);
+#else
 		ret = fd;
+#endif
 		goto err_free_addrinfo;
 	}
 
