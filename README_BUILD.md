@@ -161,6 +161,65 @@ It will try to link against the `call_function` symbol even though it's clearly 
 
 For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
 
+## Environment Variable Configuration
+
+### DMA Heap Path Configuration
+
+libiio supports configuring DMA heap paths through the `LIBIIO_DMA_HEAP_PATH` environment variable. This allows users to specify which DMA heap to use for buffer allocation, replacing the default `/dev/dma_heap/system` path.
+
+#### Supported Formats
+
+The environment variable supports three different configuration formats:
+
+##### 1. Global Configuration
+```bash
+export LIBIIO_DMA_HEAP_PATH=heap_name
+```
+Applies the specified heap to all IIO devices.
+
+**Example:**
+```bash
+export LIBIIO_DMA_HEAP_PATH=cma,linux
+./an_iio_application
+```
+This will use `/dev/dma_heap/cma,linux` for all devices.
+
+##### 2. Device-Specific Configuration
+```bash
+export LIBIIO_DMA_HEAP_PATH=heap_name:device_name
+```
+Applies the specified heap only to the named device.
+
+**Example:**
+```bash
+export LIBIIO_DMA_HEAP_PATH=reserved:cf-ad9361-lpc
+./an_iio_application
+```
+This will use `/dev/dma_heap/reserved` for the `cf-ad9361-lpc` device only, while other devices continue using `/dev/dma_heap/system`.
+
+##### 3. Multiple Device Configuration
+```bash
+export LIBIIO_DMA_HEAP_PATH=heap_name:device1,device2,device3
+```
+Applies the specified heap to multiple named devices.
+
+**Example:**
+```bash
+export LIBIIO_DMA_HEAP_PATH=cma,linux:cf-ad9361-lpc,cf-ad9144-hpc
+./an_iio_application
+```
+This will use `/dev/dma_heap/cma,linux` for both `cf-ad9361-lpc` and `cf-ad9144-hpc` devices.
+
+#### Constraints and Error Handling
+
+- Heap names must not exceed 64 characters
+- Device names are matched exactly (case-sensitive)
+- Whitespace around device names is automatically trimmed
+- Invalid configurations fall back to the default "system" heap
+- If the environment variable is not set, the default `/dev/dma_heap/system` is used
+
+This feature is intended for advanced users who understand the implications of customizing DMA heap selection. It is especially useful on systems with multiple DMA heap types, allowing experienced users to exercise fine-grained control over memory allocation for specific IIO devices.
+
 ## Instructions applicable to Microcontroller configurations
 
 ### Install Prerequisites/Dependencies
