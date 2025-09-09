@@ -5,6 +5,7 @@
 name: MainPipeline
 trigger:
 - main
+- staging/*
 
 pool:
   vmImage: ubuntu-latest
