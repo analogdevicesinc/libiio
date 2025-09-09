@@ -18,7 +18,7 @@ steps:
     echo "Build complete."
     echo "Trigger the next Pipeline..."
     echo "Oh man - this is nice!"
-    echo "Again! Jumbo"
+    echo "Again! Jumbo sad"
   displayName: 'Build Binaries'
 
 - task: PublishBuildArtifacts@1
