@@ -19,7 +19,7 @@ steps:
     echo "Trigger the next Pipeline..."
     echo "Oh man - this is nice!"
     echo "Again! Jumbo sadasdd"
-  displayName: 'Build Binaries'
+  displayName: 'Build Binaries sadasd'
 
 - task: PublishBuildArtifacts@1
   inputs:
