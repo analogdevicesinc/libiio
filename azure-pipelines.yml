@@ -18,7 +18,7 @@ steps:
     echo "Build complete."
     echo "Trigger the next Pipeline..."
     echo "Oh man - this is nice!"
-    echo "Again! Jumbo run it again! Inca una pentru nasa mare. Mai bag o fisa"
+    echo "Again! Jumbo run it again! Inca una pentru nasa mare. Mai bag o fisa. Hop si-asa"
   displayName: 'Build Binaries sadasd'
 
 - task: PublishBuildArtifacts@1
