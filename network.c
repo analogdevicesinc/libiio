@@ -49,7 +49,58 @@
 
 #ifdef _WIN32
 #define close(s) closesocket(s)
+
+static int translate_wsa_error_to_posix(int wsa_err)
+{
+	switch (wsa_err) {
+	case WSAEACCES:          return -EACCES;
+	case WSAEADDRINUSE:      return -EADDRINUSE;
+	case WSAEADDRNOTAVAIL:   return -EADDRNOTAVAIL;
+	case WSAEAFNOSUPPORT:    return -EAFNOSUPPORT;
+	case WSAEALREADY:        return -EALREADY;
+	case WSAECONNREFUSED:    return -ECONNREFUSED;
+	case WSAECONNRESET:      return -ECONNRESET;
+	case WSAECONNABORTED:    return -ECONNABORTED;
+	case WSAEFAULT:          return -EFAULT;
+	case WSAEINPROGRESS:     return -EINPROGRESS;
+	case WSAEISCONN:         return -EISCONN;
+	case WSAEMFILE:          return -EMFILE;
+	case WSAENETDOWN:        return -ENETDOWN;
+	case WSAENETUNREACH:     return -ENETUNREACH;
+	case WSAENOBUFS:         return -ENOBUFS;
+	case WSAENOTSOCK:        return -ENOTSOCK;
+	case WSAEPROTONOSUPPORT: return -EPROTONOSUPPORT;
+	case WSAETIMEDOUT:       return -ETIMEDOUT;
+	case WSAEHOSTUNREACH:    return -EHOSTUNREACH;
+	case WSAEINVAL:          return -EINVAL;
+	case WSAEWOULDBLOCK:     return -EAGAIN;
+#ifdef ESHUTDOWN
+	case WSAESHUTDOWN:       return -ESHUTDOWN;
+#else
+	case WSAESHUTDOWN:       return -ECONNABORTED;
 #endif
+	case WSAENOTCONN:        return -ENOTCONN;
+	case WSAEOPNOTSUPP:      return -EOPNOTSUPP;
+	default: {
+		if (wsa_err > -4096 && wsa_err < 0) // pass through for POSIX errors
+			return wsa_err;
+		else
+			return -EIO;   // generic fallback
+	}
+	}
+}
+#endif
+
+/* Helper function to translate WSA errors to POSIX at API boundary.
+   ret is expected to be negative. */
+static int translate_error_for_api(int ret)
+{
+#ifdef _WIN32
+	if (ret < 0)
+		return translate_wsa_error_to_posix(-ret);
+#endif
+	return ret;
+}
 
 #define NETWORK_TIMEOUT_MS 5000
 
@@ -321,6 +372,7 @@ network_setup_iiod_client(const struct iio_device *dev,
 	 * See commit 9eff490 for more info.
 	 */
 	ret = create_socket(pdata->addrinfo, NETWORK_TIMEOUT_MS);
+	ret = translate_error_for_api(ret);
 	if (ret < 0) {
 		dev_perror(dev, ret, "Unable to create socket");
 		return iio_ptr(ret);
@@ -343,6 +395,7 @@ network_setup_iiod_client(const struct iio_device *dev,
 	}
 
 	ret = set_blocking_mode(io_ctx->fd, false);
+	ret = translate_error_for_api(ret);
 	if (ret < 0) {
 		dev_perror(dev, ret, "Unable to set blocking mode");
 		goto err_free_iiod_client;
@@ -375,7 +428,8 @@ static ssize_t network_read_attr(const struct iio_attr *attr,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_attr_read(pdata->iiod_client, attr, dst, len);
+	return (ssize_t)translate_error_for_api(
+		(int)iiod_client_attr_read(pdata->iiod_client, attr, dst, len));
 }
 
 static ssize_t network_write_attr(const struct iio_attr *attr,
@@ -385,7 +439,8 @@ static ssize_t network_write_attr(const struct iio_attr *attr,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_attr_write(pdata->iiod_client, attr, src, len);
+	return (ssize_t)translate_error_for_api(
+		(int)iiod_client_attr_write(pdata->iiod_client, attr, src, len));
 }
 
 static const struct iio_device *
@@ -403,7 +458,8 @@ static int network_set_trigger(const struct iio_device *dev,
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
-	return iiod_client_set_trigger(pdata->iiod_client, dev, trigger);
+	return translate_error_for_api(
+		iiod_client_set_trigger(pdata->iiod_client, dev, trigger));
 }
 
 static void network_shutdown(struct iio_context *ctx)
@@ -548,13 +604,15 @@ static ssize_t network_write_data(struct iiod_client_pdata *io_ctx,
 				  const char *src, size_t len,
 				  unsigned int timeout_ms)
 {
-	return network_send(io_ctx, src, len, 0, timeout_ms);
+	return (ssize_t)translate_error_for_api(
+		(int)network_send(io_ctx, src, len, 0, timeout_ms));
 }
 
 static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
 				 char *dst, size_t len, unsigned int timeout_ms)
 {
-	return network_recv(io_ctx, dst, len, 0, timeout_ms);
+	return (ssize_t)translate_error_for_api(
+		(int)network_recv(io_ctx, dst, len, 0, timeout_ms));
 }
 
 static struct iio_context * network_create_context(const struct iio_context_params *params,
@@ -581,7 +639,8 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	WSADATA wsaData;
 
 	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
-	if (ret < 0) {
+	if (ret != 0) {
+		ret = translate_wsa_error_to_posix(ret);
 		prm_perror(params, ret, "WSAStartup failed");
 		return iio_ptr(ret);
 	}
@@ -650,6 +709,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 		ret = dnssd_discover_host(params, addr_str,
 					  sizeof(addr_str), &port_num);
+		ret = translate_error_for_api(ret);
 		if (ret < 0) {
 			char buf[1024];
 			iio_strerror(-ret, buf, sizeof(buf));
@@ -706,6 +766,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	}
 
 	fd = create_socket(res, params->timeout_ms);
+	fd = translate_error_for_api(fd);
 	if (fd < 0) {
 		ret = fd;
 		goto err_free_addrinfo;
