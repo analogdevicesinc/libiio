@@ -58,7 +58,7 @@ Windows-VS-2019-x64/iio/iiod-client.h
 Windows-VS-2019-x64/iio/iio-debug.h
 Windows-VS-2019-x64/iio/iio-lock.h
 Windows-VS-2019-x64/iio_attr.exe
-Windows-VS-2019-x64/iio_attr.exe
+Windows-VS-2019-x64/iio_genxml.exe
 Windows-VS-2019-x64/iio_event.exe
 Windows-VS-2019-x64/iio_info.exe
 Windows-VS-2019-x64/iio_rwdev.exe
@@ -86,7 +86,7 @@ Windows-VS-2022-x64/iio/iiod-client.h
 Windows-VS-2022-x64/iio/iio-debug.h
 Windows-VS-2022-x64/iio/iio-lock.h
 Windows-VS-2022-x64/iio_attr.exe
-Windows-VS-2022-x64/iio_attr.exe
+Windows-VS-2022-x64/iio_genxml.exe
 Windows-VS-2022-x64/iio_event.exe
 Windows-VS-2022-x64/iio_info.exe
 Windows-VS-2022-x64/iio_rwdev.exe
