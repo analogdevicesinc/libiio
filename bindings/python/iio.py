@@ -132,9 +132,6 @@ class _Attr(Structure):
 class ContextParams(Structure):
     pass # TODO
 
-class BufferParams(Structure):
-    pass # TODO
-
 class DataFormat(Structure):
     """Represents the data format of an IIO channel."""
 
@@ -311,7 +308,6 @@ _BufferPtr = _POINTER(_Buffer)
 _BlockPtr = _POINTER(_Block)
 _DataFormatPtr = _POINTER(DataFormat)
 _ContextParamsPtr = _POINTER(ContextParams)
-_BufferParamsPtr = _POINTER(BufferParams)
 _StreamPtr = _POINTER(_Stream)
 _AttrPtr = _POINTER(_Attr)
 
@@ -639,7 +635,7 @@ _create_buffer = _lib.iio_device_create_buffer
 _create_buffer.restype = _BufferPtr
 _create_buffer.argtypes = (
     _DevicePtr,
-    _BufferParamsPtr,
+    c_uint,
     _ChannelsMaskPtr,
 )
 _create_buffer.errcheck = _check_ptr_err
@@ -1088,7 +1084,7 @@ class Block(_IIO_Object):
 class Buffer(_IIO_Object):
     """Represents a hardware I/O buffer."""
 
-    def __init__(self, device, mask, params):
+    def __init__(self, device, mask, idx=0):
         """
         Initialize a new instance of the Buffer class.
 
@@ -1104,7 +1100,7 @@ class Buffer(_IIO_Object):
             An new instance of this class
         """
         try:
-            self._buffer = _create_buffer(device._device, params._params, mask._mask)
+            self._buffer = _create_buffer(device._device, idx, mask._mask)
         except Exception:
             self._buffer = None
             raise
