@@ -50,13 +50,13 @@ if(NOT SKIP_INSTALL_ALL)
 		FRAMEWORK DESTINATION ${OSX_INSTALL_FRAMEWORKSDIR})
 
 	if (WITH_UTILS)
-		#install(TARGETS ${IIO_TESTS_TARGETS}
+		#install(TARGETS ${IIO_UTILS_TARGETS}
 		#	RUNTIME DESTINATION ${IIO_TESTS_INSTALL_DIR})
 
 		# Workaround for CMake < 3.13, which do not support installing
 		# targets built outside the current directory.
 		set(IIO_TEST_PROGRAMS)
-		foreach(_tool ${IIO_TESTS_TARGETS})
+		foreach(_tool ${IIO_UTILS_TARGETS})
 			list(APPEND IIO_TEST_PROGRAMS $<TARGET_FILE:${_tool}>)
 		endforeach()
 		install(PROGRAMS ${IIO_TEST_PROGRAMS} DESTINATION ${IIO_TESTS_INSTALL_DIR})
@@ -93,7 +93,7 @@ if(WITH_DOC)
 		FILES_MATCHING PATTERN "*.svg")
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc/html/ DESTINATION ${CMAKE_HTML_DEST_DIR})
 	set(IIO_TESTS_MAN_PAGES_HTML "")
-	foreach(_page ${IIO_TESTS_TARGETS})
+	foreach(_page ${IIO_UTILS_TARGETS})
 		set(IIO_TESTS_MAN_PAGES_HTML "${IIO_TESTS_MAN_PAGES_HTML}<li><a href=\"./man1/${_page}.1.html\">${_page}</a></li>")
 	endforeach()
 	configure_file(
@@ -134,7 +134,7 @@ if(OSX_PACKAGE)
 	mark_as_advanced(PRODUCTBUILD_EXECUTABLE)
 
 	set(COPY_TOOLS_COMMAND)
-	foreach(_tool ${IIO_TESTS_TARGETS})
+	foreach(_tool ${IIO_UTILS_TARGETS})
 		list(APPEND COPY_TOOLS_COMMAND
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_tool}> ${LIBIIO_FRAMEWORK_DIR}/Tools)
 	endforeach()
@@ -149,7 +149,7 @@ if(OSX_PACKAGE)
 		COMMAND ${PRODUCTBUILD_EXECUTABLE}
 			--distribution ${LIBIIO_DISTRIBUTION_XML} ${LIBIIO_PKG}
 		COMMAND ${CMAKE_COMMAND} -E remove ${LIBIIO_TEMP_PKG}
-		DEPENDS iio ${IIO_TESTS_TARGETS} ${LIBIIO_DISTRIBUTION_XML}
+		DEPENDS iio ${IIO_UTILS_TARGETS} ${LIBIIO_DISTRIBUTION_XML}
 	)
 
 	if (PKGBUILD_EXECUTABLE AND PRODUCTBUILD_EXECUTABLE)

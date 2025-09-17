@@ -38,7 +38,7 @@ if (WITH_MAN)
 		)
 	endif()
 	if (WITH_UTILS)
-		foreach(_page ${IIO_TESTS_TARGETS})
+		foreach(_page ${IIO_UTILS_TARGETS})
 			execute_process(
 				COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/make_util_pages.sh
 				${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${_page}.1.in
