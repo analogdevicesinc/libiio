@@ -188,7 +188,14 @@ bool cfg_ad9371_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 }
 
 /* simple configuration and streaming */
-int main (__notused int argc, __notused char **argv)
+/* usage:
+ * Default context, assuming local IIO devices, i.e., this script is run on a platform to
+ * which ad9371 is connected.
+ $./a.out
+ * URI context, find out the uri by typing `iio_info -s` at the command line of the host PC
+ $./a.out usb:x.x.x
+ */
+int main (int argc, char **argv)
 {
 	// Streaming devices
 	struct iio_device *tx;
@@ -213,10 +220,15 @@ int main (__notused int argc, __notused char **argv)
 	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
 
 	printf("* Acquiring IIO context\n");
-
-	ctx = iio_create_context(NULL, NULL);
-	err = iio_err(ctx);
-	IIO_ENSURE(!err && "No context");
+	if (argc == 1) {
+		ctx = iio_create_context(NULL, NULL);
+		err = iio_err(ctx);
+		IIO_ENSURE(!err && "No context");
+	} else if (argc == 2) {
+		ctx = iio_create_context(NULL, argv[1]);
+		err = iio_err(ctx);
+		IIO_ENSURE(!err && "No context");
+	}
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9371 streaming devices\n");
