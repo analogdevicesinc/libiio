@@ -23,6 +23,13 @@ It takes the uri as the only argument. for example : `./ad9361-iiostream usb:3.3
 This example libiio program is meant to exercise the features of IIO functionality on the AD9371.
 It takes the uri as the only argument. for example : `./ad9371-iiostream ip:192.168.2.1`
 
+## adrv9002-iiostream
+  * Language : C
+
+This example libiio program is meant to exercise the features of IIO functionality on the ADRV9002.
+It takes the uri as the only argument. for example : `./adrv9002-iiostream ip:192.168.2.1`
+
+
 ## adrv9009-iiostream
   * Language : C
 
