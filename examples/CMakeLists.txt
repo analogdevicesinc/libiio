@@ -87,7 +87,7 @@ if(HAS_CDK_CSTRING2)
     target_link_libraries(
         iio-monitor iio ${PTHREAD_LIBRARIES} ${CURSES_LIBRARY} ${CDK_LIBRARY}
     )
-    set(IIO_UTILS_TARGETS ${IIO_UTILS_TARGETS} iio-monitor)
+    set(IIO_EXAMPLES_TARGETS ${IIO_EXAMPLES_TARGETS} iio-monitor)
 else()
     message(STATUS "Curses Development Kit (CDK) missing or too old, skipping iio-monitor")
 endif ()
@@ -96,11 +96,11 @@ if (PTHREAD_LIBRARIES OR ANDROID)
 	project(iio_adi_xflow_check C)
 	add_executable(iio_adi_xflow_check iio_adi_xflow_check.c)
 	target_link_libraries(iio_adi_xflow_check iio iio_tests_helper ${PTHREAD_LIBRARIES})
-	set(IIO_UTILS_TARGETS ${IIO_UTILS_TARGETS} iio_adi_xflow_check)
+	set(IIO_EXAMPLES_TARGETS ${IIO_EXAMPLES_TARGETS} iio_adi_xflow_check)
 endif()
 
 set_target_properties(
-    ${IIO_UTILS_TARGETS} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
+    ${IIO_EXAMPLES_TARGETS} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
                                     C_EXTENSIONS OFF
 )
 
