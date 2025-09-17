@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(IIO_TESTS_TARGETS iio_genxml iio_info iio_attr iio_rwdev iio_reg iio_event)
+set(IIO_UTILS_TARGETS iio_genxml iio_info iio_attr iio_rwdev iio_reg iio_event)
 if (PTHREAD_LIBRARIES OR ANDROID)
-	LIST(APPEND IIO_TESTS_TARGETS iio_stresstest)
+	LIST(APPEND IIO_UTILS_TARGETS iio_stresstest)
 endif()
 
 if(APPLE)
@@ -31,7 +31,7 @@ set_target_properties(iio_tests_helper PROPERTIES
 	C_EXTENSIONS OFF
 )
 
-foreach (test ${IIO_TESTS_TARGETS})
+foreach (test ${IIO_UTILS_TARGETS})
 	project(${test} LANGUAGES C)
 	add_executable(${test} ${test}.c ${GETOPT_C_FILE} ${LIBIIO_RC})
 	set_target_properties(${test} PROPERTIES
@@ -57,4 +57,4 @@ if(PTHREAD_LIBRARIES)
 endif()
 
 # Make the test targets available to the main CMakeLists.txt
-set(IIO_TESTS_TARGETS ${IIO_TESTS_TARGETS} PARENT_SCOPE)
+set(IIO_UTILS_TARGETS ${IIO_UTILS_TARGETS} PARENT_SCOPE)
