@@ -222,7 +222,14 @@ stream_channels_get_mask(const struct iio_device *dev, struct iio_channel **chan
 	return mask;
 }
 
-int main(void)
+/* usage:
+ * Default context, assuming local IIO devices, i.e., this script is run on a platform to
+ * which adrv9002 is connected.
+ $./a.out
+ * URI context, find out the uri by typing `iio_info -s` at the command line of the host PC
+ $./a.out usb:x.x.x
+ */
+int main(int argc, char **argv)
 {
 	struct iio_device *tx;
 	struct iio_device *rx;
@@ -232,11 +239,21 @@ int main(void)
 	if (register_signals() < 0)
 		return EXIT_FAILURE;
 
-	ctx = iio_create_context(NULL, NULL);
-	ret = iio_err(ctx);
-	if (ret) {
-		error("Could not create IIO context\n");
-		return EXIT_FAILURE;
+	printf("* Acquiring IIO context\n");
+	if (argc == 1) {
+		ctx = iio_create_context(NULL, NULL);
+		ret = iio_err(ctx);
+		if (ret) {
+			error("Could not create IIO context\n");
+			return EXIT_FAILURE;
+		}
+	} else if (argc == 2) {
+		ctx = iio_create_context(NULL, argv[1]);
+		ret = iio_err(ctx);
+		if (ret) {
+			error("Could not create IIO context\n");
+			return EXIT_FAILURE;
+		}
 	}
 
 	ret = configure_tx_lo();
