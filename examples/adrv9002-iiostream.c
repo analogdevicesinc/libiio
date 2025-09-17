@@ -18,13 +18,17 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#define ARGS(fmt, ...)	__VA_ARGS__
-#define FMT(fmt, ...)	fmt
 #define error(...) \
-	printf("%s, %d: ERROR: " FMT(__VA_ARGS__, 0)"%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
+	do { \
+		printf("%s, %d: ERROR: ", __func__, __LINE__); \
+		printf(__VA_ARGS__); \
+	} while(0)
 
 #define info(...) \
-	printf("%s, %d: INFO: " FMT(__VA_ARGS__, 0)"%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
+	do { \
+		printf("%s, %d: INFO: ", __func__, __LINE__); \
+		printf(__VA_ARGS__); \
+	} while(0)
 
 /* helper macros */
 #define GHZ(x) ((long long)(x * 1000000000.0 + .5))
