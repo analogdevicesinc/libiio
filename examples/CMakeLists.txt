@@ -17,9 +17,10 @@ endif ()
 
 if (MSVC)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src)
-    set(GETOPT_C_FILE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src/getopt.c
-    )
+    add_library(wingetopt_lib STATIC ${CMAKE_CURRENT_SOURCE_DIR}/../deps/wingetopt/src/getopt.c)
+    set(GETOPT_LIBRARIES wingetopt_lib)
+else()
+    set(GETOPT_LIBRARIES "")
 endif (MSVC)
 
 if (WIN32)
@@ -33,24 +34,24 @@ if (CMAKE_COMPILER_IS_GNUCC)
 endif ()
 
 add_executable(
-    ad9361-iiostream ad9361-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
+    ad9361-iiostream ad9361-iiostream.c ${LIBIIO_RC}
 )
 add_executable(
-    ad9371-iiostream ad9371-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
+    ad9371-iiostream ad9371-iiostream.c ${LIBIIO_RC}
 )
 add_executable(
-    adrv9009-iiostream adrv9009-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
+    adrv9009-iiostream adrv9009-iiostream.c ${LIBIIO_RC}
 )
 add_executable(
-    adrv9002-iiostream adrv9002-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC}
+    adrv9002-iiostream adrv9002-iiostream.c ${LIBIIO_RC}
 )
-add_executable(dummy-iiostream dummy-iiostream.c ${GETOPT_C_FILE} ${LIBIIO_RC})
+add_executable(dummy-iiostream dummy-iiostream.c ${LIBIIO_RC})
 
-target_link_libraries(ad9361-iiostream iiostream_helper)
-target_link_libraries(ad9371-iiostream iiostream_helper)
-target_link_libraries(adrv9009-iiostream iiostream_helper)
-target_link_libraries(dummy-iiostream iiostream_helper)
-target_link_libraries(adrv9002-iiostream iiostream_helper)
+target_link_libraries(ad9361-iiostream iiostream_helper ${GETOPT_LIBRARIES})
+target_link_libraries(ad9371-iiostream iiostream_helper ${GETOPT_LIBRARIES})
+target_link_libraries(adrv9009-iiostream iiostream_helper ${GETOPT_LIBRARIES})
+target_link_libraries(dummy-iiostream iiostream_helper ${GETOPT_LIBRARIES})
+target_link_libraries(adrv9002-iiostream iiostream_helper ${GETOPT_LIBRARIES})
 
 set(IIO_EXAMPLES_TARGETS ad9361-iiostream ad9371-iiostream adrv9009-iiostream
                          dummy-iiostream adrv9002-iiostream
