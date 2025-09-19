@@ -121,7 +121,7 @@ static int configure_tx_lo(void)
 	struct iio_channel *chan;
 	const struct iio_attr *attr;
 	int ret;
-	long long val;
+	long long val = 0;
 
 	phy = iio_context_find_device(ctx, "adrv9002-phy");
 	if (!phy) {
