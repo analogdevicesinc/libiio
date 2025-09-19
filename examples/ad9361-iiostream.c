@@ -169,7 +169,7 @@ bool cfg_ad9361_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 
 	attr = iio_channel_find_attr(chn, "rf_port_select");
 	if (attr)
-		errchk(iio_attr_write_string(attr, cfg->rfport), cfg->rfport);
+		errchk((int)iio_attr_write_string(attr, cfg->rfport), cfg->rfport);
 	wr_ch_lli(chn, "rf_bandwidth",       cfg->bw_hz);
 	wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
 
