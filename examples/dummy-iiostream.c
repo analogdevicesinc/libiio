@@ -374,10 +374,10 @@ int main (int argc, char **argv)
 			break;
 
 		case SAMPLE_CALLBACK: {
-			int ret;
+			ssize_t ret;
 			ret = iio_block_foreach_sample(rxblock, rxmask, sample_cb, NULL);
 			if (ret < 0)
-				dev_perror(dev, ret, "Unable to process buffer");
+				dev_perror(dev, (int)ret, "Unable to process buffer");
 			printf("\n");
 			break;
 		}
