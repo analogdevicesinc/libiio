@@ -244,12 +244,16 @@ int main (int argc, char **argv)
 	IIO_ENSURE(get_adrv9009_stream_ch(TX, tx, 1, 0, &tx0_q) && "TX chan q not found");
 
 	rxmask = iio_create_channels_mask(iio_device_get_channels_count(rx));
-	if (!rxmask)
+	if (!rxmask) {
+		fprintf(stderr, "Unable to alloc RX channels mask\n");
 		shutdown();
+	}
 
 	txmask = iio_create_channels_mask(iio_device_get_channels_count(tx));
-	if (!txmask)
+	if (!txmask) {
+		fprintf(stderr, "Unable to alloc TX channels mask\n");
 		shutdown();
+	}
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i, rxmask);
