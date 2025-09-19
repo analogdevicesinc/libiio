@@ -164,7 +164,7 @@ list(APPEND FEATURES_LISTS
 	"iiod-usb"
 	"iiod-systemd"
 	"iiod-sysvinit"
-	"iod-upstart"
+	"iiod-upstart"
 	"iiod-usb-dmabuf"
 )
 

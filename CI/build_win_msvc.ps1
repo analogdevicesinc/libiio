@@ -16,7 +16,8 @@ cmake -G "$Env:COMPILER" -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sy
 -DLIBXML2_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\lib\libxml2.lib" -DLIBXML2_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\include\libxml2" `
 -DLIBUSB_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\$VS_version\MS64\dll\libusb-1.0.lib" -DLIBUSB_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\include" `
 -DLIBSERIALPORT_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libserialport\x64\Release\libserialport.lib" -DLIBSERIALPORT_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libserialport" `
--DLIBZSTD_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" -DLIBZSTD_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\lib" ..
+-DLIBZSTD_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" -DLIBZSTD_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\lib" `
+-DWITH_EXAMPLES=ON ..
 
 cmake --build . --config Release
 

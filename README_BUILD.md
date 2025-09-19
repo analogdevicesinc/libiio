@@ -102,7 +102,7 @@ Cmake Options     | Default | Description                                    |
 |                 |   Info  | Info    : Print info, warnings and errors      |
 |                 |         | Debug   : Print debug/info/warnings/errors (very verbose)  |
 
-Options which effect iiod only. These are only available on Linux.
+Options which affect iiod only. These are only available on Linux.
 
 Cmake Options       | Default | Description                                    |
 ------------------- | ------- | ---------------------------------------------- |

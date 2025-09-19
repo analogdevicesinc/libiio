@@ -18,13 +18,17 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#define ARGS(fmt, ...)	__VA_ARGS__
-#define FMT(fmt, ...)	fmt
 #define error(...) \
-	printf("%s, %d: ERROR: " FMT(__VA_ARGS__, 0)"%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
+	do { \
+		printf("%s, %d: ERROR: ", __func__, __LINE__); \
+		printf(__VA_ARGS__); \
+	} while(0)
 
 #define info(...) \
-	printf("%s, %d: INFO: " FMT(__VA_ARGS__, 0)"%s", __func__, __LINE__, ARGS(__VA_ARGS__, ""))
+	do { \
+		printf("%s, %d: INFO: ", __func__, __LINE__); \
+		printf(__VA_ARGS__); \
+	} while(0)
 
 /* helper macros */
 #define GHZ(x) ((long long)(x * 1000000000.0 + .5))
@@ -117,7 +121,7 @@ static int configure_tx_lo(void)
 	struct iio_channel *chan;
 	const struct iio_attr *attr;
 	int ret;
-	long long val;
+	long long val = 0;
 
 	phy = iio_context_find_device(ctx, "adrv9002-phy");
 	if (!phy) {
@@ -218,7 +222,14 @@ stream_channels_get_mask(const struct iio_device *dev, struct iio_channel **chan
 	return mask;
 }
 
-int main(void)
+/* usage:
+ * Default context, assuming local IIO devices, i.e., this script is run on a platform to
+ * which adrv9002 is connected.
+ $./a.out
+ * URI context, find out the uri by typing `iio_info -s` at the command line of the host PC
+ $./a.out usb:x.x.x
+ */
+int main(int argc, char **argv)
 {
 	struct iio_device *tx;
 	struct iio_device *rx;
@@ -228,11 +239,21 @@ int main(void)
 	if (register_signals() < 0)
 		return EXIT_FAILURE;
 
-	ctx = iio_create_context(NULL, NULL);
-	ret = iio_err(ctx);
-	if (ret) {
-		error("Could not create IIO context\n");
-		return EXIT_FAILURE;
+	printf("* Acquiring IIO context\n");
+	if (argc == 1) {
+		ctx = iio_create_context(NULL, NULL);
+		ret = iio_err(ctx);
+		if (ret) {
+			error("Could not create IIO context\n");
+			return EXIT_FAILURE;
+		}
+	} else if (argc == 2) {
+		ctx = iio_create_context(NULL, argv[1]);
+		ret = iio_err(ctx);
+		if (ret) {
+			error("Could not create IIO context\n");
+			return EXIT_FAILURE;
+		}
 	}
 
 	ret = configure_tx_lo();

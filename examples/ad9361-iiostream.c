@@ -57,8 +57,8 @@ static struct iio_stream  *txstream = NULL;
 static struct iio_channels_mask *rxmask = NULL;
 static struct iio_channels_mask *txmask = NULL;
 
-/* cleanup and exit */
-static void shutdown(void)
+/* cleanup resources */
+static void cleanup(void)
 {
 	printf("* Destroying streams\n");
 	if (rxstream) {iio_stream_destroy(rxstream); }
@@ -74,7 +74,13 @@ static void shutdown(void)
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
-	exit(0);
+}
+
+/* cleanup and exit with error */
+static void shutdown(void)
+{
+	cleanup();
+	exit(1);
 }
 
 static void handle_sig(int sig)
@@ -163,7 +169,7 @@ bool cfg_ad9361_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 
 	attr = iio_channel_find_attr(chn, "rf_port_select");
 	if (attr)
-		errchk(iio_attr_write_string(attr, cfg->rfport), cfg->rfport);
+		errchk((int)iio_attr_write_string(attr, cfg->rfport), cfg->rfport);
 	wr_ch_lli(chn, "rf_bandwidth",       cfg->bw_hz);
 	wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
 
@@ -295,7 +301,7 @@ int main (int argc, char **argv)
 	stream(rx_sample_sz, tx_sample_sz, BLOCK_SIZE,
 	       rxstream, txstream, rx0_i, tx0_i);
 
-	shutdown();
+	cleanup();
 
 	return 0;
 }
