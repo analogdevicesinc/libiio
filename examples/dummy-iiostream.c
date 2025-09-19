@@ -111,8 +111,8 @@ static struct iio_stream *rxstream;
 static bool stop;
 static bool has_repeat;
 
-/* cleanup and exit */
-static void shutdown(void)
+/* cleanup resources */
+static void cleanup(void)
 {
 	int ret;
 
@@ -140,7 +140,13 @@ static void shutdown(void)
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
-	exit(0);
+}
+
+/* cleanup and exit with error */
+static void shutdown(void)
+{
+	cleanup();
+	exit(1);
 }
 
 static void handle_sig(int sig)
@@ -196,7 +202,7 @@ static void parse_options(int argc, char *argv[])
 				buffer_read_method = atoi(optarg);
 			} else {
 				usage(argc, argv);
-				exit(1);
+				shutdown();
 			}
 			break;
 		case 'c':
@@ -204,13 +210,13 @@ static void parse_options(int argc, char *argv[])
 				count = atoi(optarg);
 			} else {
 				usage(argc, argv);
-				exit(1);
+				shutdown();
 			}
 			break;
 		case 'h':
 		default:
 			usage(argc, argv);
-			exit(1);
+			shutdown();
 		}
 	}
 }
@@ -414,7 +420,7 @@ int main (int argc, char **argv)
 			break;
 	}
 
-	shutdown();
+	cleanup();
 
 	return 0;
 }
