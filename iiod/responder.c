@@ -421,7 +421,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		goto err_free_words;
 	}
 
-	buffer_params.dma_allocator = ntohl(params->dma_allocator);
+	buffer_params.dma_allocator = params->dma_allocator;
 	for (i = 0; i < nb_words; i++)
 		entry->words[i] = ntohl(params->mask[i]);
 
