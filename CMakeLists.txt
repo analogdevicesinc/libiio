@@ -489,6 +489,10 @@ if (WITH_ZSTD OR
 	target_include_directories(iio PRIVATE ${LIBZSTD_INCLUDE_DIR})
 endif ()
 
+if (WIN32 AND IIOD_CLIENT)
+	target_link_libraries(iio PRIVATE ws2_32)
+endif()
+
 iio_option(WITH_NETWORK_BACKEND "Enable the network backend" ON "POSIX")
 if(WITH_NETWORK_BACKEND)
 	if (WIN32)
