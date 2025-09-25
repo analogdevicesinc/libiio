@@ -60,9 +60,6 @@ Use cyclic buffer mode.
 .TP
 .B \-B \-\-benchmark
 Benchmark throughput. Statistics will be printed on the standard input.
-.TP
-.B \-C, \-\-cma
-Use CMA-Linux allocator for DMA buffer.
 ##COMMON_OPTION_START##
 ##COMMON_OPTION_STOP##
 .SH RETURN VALUE

@@ -102,21 +102,18 @@ static const struct option options[] = {
 	{"buffer-size", required_argument, 0, 'b'},
 	{"duration", required_argument, 0, 'd'},
 	{"threads", required_argument, 0, 't'},
-	{"cma", no_argument, 0, 'C'},
 	{"verbose", no_argument, 0, 'v'},
 	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
-	("[-u <uri>] [-b <buffer-size>] [-d <duration>]"
-		"[-t <threads>] [-C <cma>]"
+	("[-u <uri>] [-b <buffer-size>] [-d <duration>] [-t <threads>]"
 		"<iio_device> [<channel> ...]"),
 	"Show this help and quit.",
 	"Use the context at the provided URI.",
 	"Size of the capture buffer. Default is 256.",
 	"Time to wait (in s) between stopping all threads",
 	"Number of Threads",
-	"Use CMA-Linux allocator for DMA buffer.",
 	"Increase verbosity (-vv and -vvv for more)",
 };
 
@@ -227,7 +224,6 @@ static void *client_thread(void *data)
 	const struct iio_device *dev;
 	const struct iio_channel *ch;
 	struct iio_channels_mask *mask;
-	struct iio_buffer_params buffer_params = {0};
 	struct timeval start, end;
 	int id = -1, stamp, r_errno;
 	ssize_t ret;
@@ -312,7 +308,7 @@ static void *client_thread(void *data)
 		i = 0;
 		while (threads_running || i == 0) {
 			info->buffers[id]++;
-			buffer = iio_device_create_buffer(dev, &buffer_params, mask);
+			buffer = iio_device_create_buffer(dev, info->buffer_size, mask);
 			ret = iio_err(buffer);
 			if (ret) {
 				struct timespec wait;
@@ -400,7 +396,6 @@ int main(int argc, char **argv)
 	struct iio_buffer *buffer;
 	struct iio_context *ctx;
 	struct iio_channel *ch;
-	struct iio_buffer_params buffer_params = {0};
 	struct iio_channels_mask *mask;
 	const char *name;
 	int c, pret, option_index, err;
@@ -429,7 +424,7 @@ int main(int argc, char **argv)
 	if(!min_samples)
 		min_samples = 128;
 
-	while ((c = getopt_long(argc, argv, "hvu:b:t:T:C",
+	while ((c = getopt_long(argc, argv, "hvu:b:t:T",
 					options, &option_index)) != -1) {
 		switch (c) {
 		case 'h':
@@ -456,9 +451,6 @@ int main(int argc, char **argv)
 			/* Max number threads 1024, min 1 */
 			info.num_threads = sanitize_clamp("threads", info.argv[info.arg_index],
 					1, 1024);
-			break;
-		case 'C':
-			buffer_params.dma_allocator = IIO_DMA_ALLOCATOR_CMA_LINUX;
 			break;
 		case 'v':
 			if (!info.verbose)
@@ -498,7 +490,7 @@ int main(int argc, char **argv)
 							iio_channel_enable(ch, mask);
 					}
 
-					buffer = iio_device_create_buffer(dev, &buffer_params, mask);
+					buffer = iio_device_create_buffer(dev, 0, mask);
 					if (!iio_err(buffer)) {
 						iio_buffer_destroy(buffer);
 
