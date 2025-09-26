@@ -7,9 +7,12 @@
  */
 
 #include "network.h"
+#include "utils-windows.h"
 
 #include <errno.h>
 #include <ws2tcpip.h>
+#include <iio/iio-debug.h>
+
 #define close(s) closesocket(s)
 
 int set_blocking_mode(int s, bool blocking)
@@ -152,6 +155,21 @@ int do_select(int fd, unsigned int timeout)
 
 	if (ret == 0)
 		return -WSAETIMEDOUT;
+
+	return 0;
+}
+
+int network_platform_init(const struct iio_context_params *params)
+{
+	WSADATA wsaData;
+	WORD versionWanted = MAKEWORD(2, 2);
+	int ret;
+
+	ret = WSAStartup(versionWanted, &wsaData);
+	if (ret) {
+		prm_err(params, "Failed to initialize WinSock\n");
+		return translate_wsa_error_to_posix(ret);
+	}
 
 	return 0;
 }

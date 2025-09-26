@@ -199,3 +199,9 @@ int do_select(int fd, unsigned int timeout)
 
 	return 0;
 }
+
+int network_platform_init(const struct iio_context_params *params)
+{
+	/* No initialization needed on Unix systems */
+	return 0;
+}
