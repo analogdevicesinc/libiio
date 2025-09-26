@@ -586,9 +586,9 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	WSADATA wsaData;
 
 	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
-	if (ret < 0) {
+	if (ret > 0) {
 		prm_perror(params, ret, "WSAStartup failed");
-		return iio_ptr(ret);
+		return iio_ptr(-ret);
 	}
 #endif
 	/* ipv4 addresses are simply ip:port, e.g. 192.168.1.67:80
