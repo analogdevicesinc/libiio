@@ -46,4 +46,6 @@ bool network_should_retry(int err);
 bool network_is_interrupted(int err);
 bool network_connect_in_progress(int err);
 
+int network_platform_init(const struct iio_context_params *params);
+
 #endif /* __IIO_NETWORK_H */

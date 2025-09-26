@@ -581,16 +581,10 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	iio_strlcpy(host_buf, hostname, sizeof(host_buf));
 
-#ifdef _WIN32
-	unsigned int i;
-	WSADATA wsaData;
+	ret = network_platform_init(params);
+	if (ret < 0)
+		return iio_ptr(ret);
 
-	ret = WSAStartup(MAKEWORD(2, 0), &wsaData);
-	if (ret > 0) {
-		prm_perror(params, ret, "WSAStartup failed");
-		return iio_ptr(-ret);
-	}
-#endif
 	/* ipv4 addresses are simply ip:port, e.g. 192.168.1.67:80
 	 * Because IPv6 addresses contain colons, and URLs use colons to separate
 	 * the host from the port number, RFC2732 (Format for Literal IPv6
@@ -670,6 +664,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	} else {
 		ret = getaddrinfo(host, port, &hints, &res);
 #ifdef _WIN32
+		int i;
 		/* Yes, This is lame, but Windows is flakey with local addresses
 		 * WSANO_DATA = Valid name, no data record of requested type.
 		 * Normally when the host does not have the correct associated data
