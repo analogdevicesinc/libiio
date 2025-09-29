@@ -24,8 +24,7 @@ int set_blocking_mode(int s, bool blocking)
 
 	ret = ioctlsocket(s, FIONBIO, &nonblock);
 	if (ret == SOCKET_ERROR) {
-		ret = -WSAGetLastError();
-		return ret;
+		return network_get_error();
 	}
 
 	return 0;
@@ -86,12 +85,12 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 
 int network_get_error(void)
 {
-	return -WSAGetLastError();
+	return translate_wsa_error_to_posix(WSAGetLastError());
 }
 
 bool network_should_retry(int err)
 {
-	return err == -WSAEWOULDBLOCK || err == -WSAETIMEDOUT;
+	return err == -EAGAIN || err == -ETIMEDOUT;
 }
 
 bool network_is_interrupted(int err)
@@ -101,7 +100,7 @@ bool network_is_interrupted(int err)
 
 bool network_connect_in_progress(int err)
 {
-	return err == -WSAEWOULDBLOCK;
+	return err == -EAGAIN;
 }
 
 /* Use it if available */
@@ -116,7 +115,7 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
 		WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
 	if (s == INVALID_SOCKET)
-		return -WSAGetLastError();
+		return network_get_error();
 
 	return (int) s;
 }
@@ -151,10 +150,10 @@ int do_select(int fd, unsigned int timeout)
 
 	ret = select(fd + 1, NULL, &set, &set, ptv);
 	if (ret < 0)
-		return -WSAGetLastError();
+		return network_get_error();
 
 	if (ret == 0)
-		return -WSAETIMEDOUT;
+		return -ETIMEDOUT;
 
 	return 0;
 }
