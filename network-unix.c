@@ -161,6 +161,11 @@ bool network_connect_in_progress(int err)
 	return err == -EINPROGRESS;
 }
 
+int network_translate_so_error(int so_error)
+{
+	return -so_error;
+}
+
 
 /* Use it if available */
 #ifndef SOCK_CLOEXEC
