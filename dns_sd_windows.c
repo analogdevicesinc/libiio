@@ -21,6 +21,7 @@
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
+#include "utils-windows.h"
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
@@ -348,9 +349,10 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	uint64_t nowtime;
 	int64_t diff;
 
-	if (WSAStartup(versionWanted, &wsaData)) {
+	ret = WSAStartup(versionWanted, &wsaData);
+	if (ret) {
 		prm_err(params, "Failed to initialize WinSock\n");
-		return -WSAGetLastError();
+		return translate_wsa_error_to_posix(ret);
 	}
 
 	prm_dbg(params, "DNS SD: Start service discovery.\n");
