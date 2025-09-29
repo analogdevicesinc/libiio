@@ -103,6 +103,11 @@ bool network_connect_in_progress(int err)
 	return err == -EAGAIN;
 }
 
+int network_translate_so_error(int so_error)
+{
+	return translate_wsa_error_to_posix(so_error);
+}
+
 /* Use it if available */
 #ifndef WSA_FLAG_NO_HANDLE_INHERIT
 #define WSA_FLAG_NO_HANDLE_INHERIT 0

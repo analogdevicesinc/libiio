@@ -45,6 +45,7 @@ int network_get_error(void);
 bool network_should_retry(int err);
 bool network_is_interrupted(int err);
 bool network_connect_in_progress(int err);
+int network_translate_so_error(int so_error);
 
 int network_platform_init(const struct iio_context_params *params);
 

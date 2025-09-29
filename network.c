@@ -206,8 +206,9 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	if(ret < 0)
 		return network_get_error();
 
-	if (error)
-		return -error;
+	if (error) {
+		return network_translate_so_error(error);
+	}
 
 	ret = set_blocking_mode(fd, true);
 	if (ret < 0)
