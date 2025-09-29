@@ -34,6 +34,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/file.h>
+#include <inttypes.h>
 
 #define NB_BLOCKS 4
 
@@ -495,7 +497,6 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 	else
 		dst[0] = '\0';
 
-	fflush(f);
 	if (ferror(f))
 		ret = -errno;
 	fclose(f);
@@ -637,6 +638,115 @@ static int local_set_trigger(const struct iio_device *dev,
 		return (int) nb;
 
 	return 0;
+}
+
+static int local_reg_read(const struct iio_device *dev,
+		uint32_t address, uint32_t *value)
+{
+	char buf[1024];
+	char addr_str[32];
+	char val_str[32];
+	FILE *f;
+	int fd;
+	ssize_t ret;
+
+	iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/direct_reg_access",
+			dev->id);
+
+	f = fopen(buf, "r+");
+	if (!f)
+		return -errno;
+
+	fd = fileno(f);
+
+	/* Get exclusive lock for atomic write-then-read */
+	if (flock(fd, LOCK_EX) < 0) {
+		ret = -errno;
+		fclose(f);
+		return ret;
+	}
+
+	iio_snprintf(addr_str, sizeof(addr_str), "0x%" PRIx32, address);
+	ret = fwrite(addr_str, 1, strlen(addr_str), f);
+	fflush(f);
+	if ((size_t)ret < strlen(addr_str)) {
+		if (ferror(f))
+			ret = -errno;
+		else
+			ret = -EIO;
+
+		goto unlock;
+	}
+
+	rewind(f);
+	ret = fread(val_str, 1, sizeof(val_str) - 1, f);
+	if (!feof(f)){
+		ret = -EFBIG;
+		goto unlock;
+	}
+	if (ferror(f)) {
+		ret = -errno;
+		goto unlock;
+	}
+
+	if (ret > 0)
+		val_str[ret - 1] = '\0';
+	else
+		val_str[0] = '\0';
+
+	if (sscanf(val_str, "0x%x", value) != 1) {
+		ret = -EIO;
+		goto unlock;
+	}
+
+	ret = 0;
+
+unlock:
+	flock(fd, LOCK_UN);
+	fclose(f);
+	return ret;
+}
+
+static int local_reg_write(const struct iio_device *dev,
+		uint32_t address, uint32_t value)
+{
+	char buf[1024];
+	char write_str[64];
+	FILE *f;
+	int fd;
+	ssize_t ret;
+
+	iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/direct_reg_access",
+			dev->id);
+
+	f = fopen(buf, "w");
+	if (!f)
+		return -errno;
+
+	fd = fileno(f);
+
+	/* Get exclusive lock for atomic write operation */
+	if (flock(fd, LOCK_EX) < 0) {
+		ret = -errno;
+		fclose(f);
+		return ret;
+	}
+
+	iio_snprintf(write_str, sizeof(write_str), "0x%" PRIx32 " 0x%" PRIx32, address, value);
+	ret = fwrite(write_str, 1, strlen(write_str), f);
+	fflush(f);
+	if ((size_t)ret < strlen(write_str)) {
+		if (ferror(f))
+			ret = -errno;
+		else
+			ret = -EIO;
+	} else {
+		ret = 0;
+	}
+
+	flock(fd, LOCK_UN);
+	fclose(f);
+	return ret;
 }
 
 static bool is_channel(const struct iio_device *dev, const char *attr, bool strict)
@@ -1768,6 +1878,8 @@ static const struct iio_backend_ops local_ops = {
 
 	.get_dmabuf_fd = local_get_dmabuf_fd,
 	.disable_cpu_access = local_disable_cpu_access,
+	.reg_read = local_reg_read,
+	.reg_write = local_reg_write,
 };
 
 const struct iio_backend iio_local_backend = {
