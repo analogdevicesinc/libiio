@@ -63,6 +63,10 @@ struct iio_backend_ops {
 	int (*get_version)(const struct iio_context *ctx, unsigned int *major,
 			unsigned int *minor, char git_tag[8]);
 
+	/* Atomic register operations - optional, for thread-safe local backend */
+	int (*reg_read)(const struct iio_device *dev, uint32_t address, uint32_t *value);
+	int (*reg_write)(const struct iio_device *dev, uint32_t address, uint32_t value);
+
 	int (*set_timeout)(struct iio_context *ctx, unsigned int timeout);
 };
 
