@@ -339,6 +339,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	const char service[] = "_iio._tcp.local";
 	size_t rec, records, capacity = 2048;
 	struct dns_sd_discovery_data *d;
+	struct dns_sd_cb_data cb_data;
 	unsigned int isock, num_sockets;
 	void *buffer;
 	int sockets[32];
@@ -366,6 +367,9 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 	ret = iio_err(d->lock);
 	if (ret)
 		goto out_wsa_cleanup;
+
+	cb_data.d = d;
+	cb_data.params = params;
 
 	buffer = malloc(capacity);
 	if (!buffer)
@@ -421,7 +425,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 				if (FD_ISSET(sockets[isock], &readfs)) {
 					rec = mdns_query_recv(sockets[isock], buffer,
 							      capacity, query_callback,
-							      d, transaction_id[isock]);
+							      &cb_data, transaction_id[isock]);
 					if (rec > 0)
 						records += rec;
 				}
