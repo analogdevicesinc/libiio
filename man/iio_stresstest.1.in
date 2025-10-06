@@ -55,9 +55,6 @@ Time to wait (in seconds) before stopping all threads
 .B \-t, \-\-threads <arg>
 Number of threads to use
 .TP
-.B \-C, \-\-cma
-Use CMA-Linux allocator for DMA buffer
-.TP
 .B \-v, \-\-verbose
 Increase verbosity (-vv and -vvv for more)
 
