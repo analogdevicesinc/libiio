@@ -459,6 +459,21 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		goto err_free_words;
 	}
 
+	iio_mutex_lock(buflist_lock);
+
+	entry->dev = dev;
+	entry->idx = (uint16_t) cmd->code;
+
+	buf = get_iio_buffer_unblocked(pdata, cmd, &entry);
+	ret = iio_err(buf);
+	if (ret == 0) {
+		/* No error? This buffer already exists, so return
+		 * -EEXIST. */
+		ret = -EEXIST;
+		iio_mutex_unlock(buflist_lock);
+		goto err_free_mask;
+	}
+
 	/* Fill it according to the "words" bitmask */
 	for (i = 0; i < nb_channels; i++) {
 		chn = iio_device_get_channel(dev, i);
@@ -480,9 +495,6 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	ret = iio_err(entry->dequeue_task);
 	if (ret)
 		goto err_destroy_enqueue_task;
-
-	entry->dev = dev;
-	entry->idx = (uint16_t) cmd->code;
 
 	entry->lock = iio_mutex_create();
 	ret = iio_err(entry->lock);
@@ -514,7 +526,6 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	entry->buf = buf;
 	entry->pdata = pdata;
 
-	iio_mutex_lock(buflist_lock);
 	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
 	iio_mutex_unlock(buflist_lock);
 
