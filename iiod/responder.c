@@ -1229,10 +1229,36 @@ static ssize_t iiod_write(void *d, const struct iiod_buf *buf, size_t nb)
 	return write_all(d, buf->ptr, buf->size);
 }
 
+static ssize_t iiod_discard(void *d, size_t bytes)
+{
+	struct parser_pdata *pdata = d;
+	char buf[4096];
+	size_t remaining = bytes;
+
+	while (remaining) {
+		size_t read_len;
+		ssize_t ret;
+
+		if (remaining > sizeof(buf))
+			read_len = sizeof(buf);
+		else
+			read_len = remaining;
+
+		ret = read_all(pdata, buf, read_len);
+		if (ret < 0)
+			return ret;
+
+		remaining -= (size_t) ret;
+	}
+
+	return bytes;
+}
+
 static const struct iiod_responder_ops iiod_responder_ops = {
 	.cmd	= iiod_cmd,
 	.read	= iiod_read,
 	.write	= iiod_write,
+	.discard = iiod_discard,
 };
 
 static void iiod_responder_free_resources(struct parser_pdata *pdata)
