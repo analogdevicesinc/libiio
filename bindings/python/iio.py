@@ -251,6 +251,10 @@ class ChannelModifier(Enum):
     IIO_MOD_ROLL = 50
     IIO_MOD_LIGHT_UVA = 51
     IIO_MOD_LIGHT_UVB = 52
+    IIO_MOD_RMS = 53
+    IIO_MOD_ACTIVE = 54
+    IIO_MOD_REACTIVE = 55
+    IIO_MOD_APPARENT = 56
 
 
 class ChannelType(Enum):
@@ -296,6 +300,7 @@ class ChannelType(Enum):
     IIO_COLORTEMP = 37
     IIO_CHROMATICITY = 38
     IIO_ATTENTION = 39
+    IIO_ALTCURRENT = 40
     IIO_CHAN_TYPE_UNKNOWN = 0x7FFFFFFF
 
 
