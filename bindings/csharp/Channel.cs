@@ -76,7 +76,11 @@ namespace iio
             IIO_MOD_YAW,
             IIO_MOD_ROLL,
             IIO_MOD_LIGHT_UVA,
-            IIO_MOD_LIGHT_UVB
+            IIO_MOD_LIGHT_UVB,
+            IIO_MOD_RMS,
+            IIO_MOD_ACTIVE,
+            IIO_MOD_REACTIVE,
+            IIO_MOD_APPARENT
         }
 
         /// <summary><see cref="iio.Channel.ChannelType"/> class:
@@ -123,6 +127,7 @@ namespace iio
             IIO_COLORTEMP,
             IIO_CHROMATICITY,
             IIO_ATTENTION,
+            IIO_ALTCURRENT,
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
