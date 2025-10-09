@@ -114,6 +114,31 @@ static void handle_timeout(struct parser_pdata *pdata,
 	iiod_io_send_response_code(io, ret);
 }
 
+static struct iio_buffer * get_iio_buffer_unblocked(struct parser_pdata *pdata,
+					  const struct iiod_command *cmd,
+					  struct buffer_entry **entry_ptr)
+{
+	const struct iio_device *dev;
+	struct buffer_entry *entry;
+	struct iio_buffer *buf = NULL;
+
+	dev = iio_context_get_device(pdata->ctx, cmd->dev);
+	if (!dev)
+		return iio_ptr(-EINVAL);
+
+	SLIST_FOREACH(entry, &bufferlist, entry) {
+		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
+			buf = entry->buf;
+			break;
+		}
+	}
+
+	if (buf && entry_ptr)
+		*entry_ptr = entry;
+
+	return buf ? buf : iio_ptr(-EBADF);
+}
+
 static const struct iio_attr *
 get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 {
@@ -524,29 +549,14 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 					  const struct iiod_command *cmd,
 					  struct buffer_entry **entry_ptr)
 {
-	const struct iio_device *dev;
-	struct buffer_entry *entry;
 	struct iio_buffer *buf = NULL;
 
-	dev = iio_context_get_device(pdata->ctx, cmd->dev);
-	if (!dev)
-		return iio_ptr(-EINVAL);
 
 	iio_mutex_lock(buflist_lock);
-
-	SLIST_FOREACH(entry, &bufferlist, entry) {
-		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
-			buf = entry->buf;
-			break;
-		}
-	}
-
+	buf = get_iio_buffer_unblocked(pdata, cmd, entry_ptr);
 	iio_mutex_unlock(buflist_lock);
 
-	if (buf && entry_ptr)
-		*entry_ptr = entry;
-
-	return buf ? buf : iio_ptr(-EBADF);
+	return buf;
 }
 
 static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
