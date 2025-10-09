@@ -20,6 +20,7 @@ pr:
     - main
     - master
     - 20*
+    - libiio-v0
 
 stages:
 - stage: Builds
