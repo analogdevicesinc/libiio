@@ -13,16 +13,16 @@ jobs:
         os: ["13.5"]
     name: Test FreeBSD
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Install libiio dependencies of FreeBSD
       id: test
-      uses: vmactions/freebsd-vm@v1
+      uses: vmactions/freebsd-vm@v1.2.4
       with:
         release: ${{ matrix.os }}
         usesh: true
         prepare: |
           pkg update
-          pkg install -y git cmake ninja libxml2 bison flex libserialport avahi doxygen graphviz pkgconf
+          pkg install -y git cmake-core ninja libxml2 bison flex libserialport avahi doxygen graphviz pkgconf
         run: |
          LIBXML2_VERSION=$(pkg query '%v' libxml2)
          echo "LIBXML2_VERSION is: $LIBXML2_VERSION"
