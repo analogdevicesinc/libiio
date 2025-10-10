@@ -725,8 +725,8 @@ static void handle_create_block(struct parser_pdata *pdata,
 	ret = iio_err(block);
 	if (ret == 0) {
 		/* No error? This block already exists, so return
-		 * -EINVAL. */
-		ret = -EINVAL;
+		 * -EEXIST. */
+		ret = -EEXIST;
 		goto out_send_response;
 	}
 
