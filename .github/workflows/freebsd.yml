@@ -13,7 +13,7 @@ jobs:
         os: ["13.5"]
     name: Test FreeBSD
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Install libiio dependencies of FreeBSD
       id: test
       uses: vmactions/freebsd-vm@v1.2.4
