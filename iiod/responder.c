@@ -114,6 +114,31 @@ static void handle_timeout(struct parser_pdata *pdata,
 	iiod_io_send_response_code(io, ret);
 }
 
+static struct iio_buffer * get_iio_buffer_unblocked(struct parser_pdata *pdata,
+					  const struct iiod_command *cmd,
+					  struct buffer_entry **entry_ptr)
+{
+	const struct iio_device *dev;
+	struct buffer_entry *entry;
+	struct iio_buffer *buf = NULL;
+
+	dev = iio_context_get_device(pdata->ctx, cmd->dev);
+	if (!dev)
+		return iio_ptr(-EINVAL);
+
+	SLIST_FOREACH(entry, &bufferlist, entry) {
+		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
+			buf = entry->buf;
+			break;
+		}
+	}
+
+	if (buf && entry_ptr)
+		*entry_ptr = entry;
+
+	return buf ? buf : iio_ptr(-EBADF);
+}
+
 static const struct iio_attr *
 get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 {
@@ -434,6 +459,21 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		goto err_free_words;
 	}
 
+	iio_mutex_lock(buflist_lock);
+
+	entry->dev = dev;
+	entry->idx = (uint16_t) cmd->code;
+
+	buf = get_iio_buffer_unblocked(pdata, cmd, &entry);
+	ret = iio_err(buf);
+	if (ret == 0) {
+		/* No error? This buffer already exists, so return
+		 * -EEXIST. */
+		ret = -EEXIST;
+		iio_mutex_unlock(buflist_lock);
+		goto err_free_mask;
+	}
+
 	/* Fill it according to the "words" bitmask */
 	for (i = 0; i < nb_channels; i++) {
 		chn = iio_device_get_channel(dev, i);
@@ -455,9 +495,6 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	ret = iio_err(entry->dequeue_task);
 	if (ret)
 		goto err_destroy_enqueue_task;
-
-	entry->dev = dev;
-	entry->idx = (uint16_t) cmd->code;
 
 	entry->lock = iio_mutex_create();
 	ret = iio_err(entry->lock);
@@ -489,7 +526,6 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	entry->buf = buf;
 	entry->pdata = pdata;
 
-	iio_mutex_lock(buflist_lock);
 	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
 	iio_mutex_unlock(buflist_lock);
 
@@ -524,29 +560,14 @@ static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
 					  const struct iiod_command *cmd,
 					  struct buffer_entry **entry_ptr)
 {
-	const struct iio_device *dev;
-	struct buffer_entry *entry;
 	struct iio_buffer *buf = NULL;
 
-	dev = iio_context_get_device(pdata->ctx, cmd->dev);
-	if (!dev)
-		return iio_ptr(-EINVAL);
 
 	iio_mutex_lock(buflist_lock);
-
-	SLIST_FOREACH(entry, &bufferlist, entry) {
-		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
-			buf = entry->buf;
-			break;
-		}
-	}
-
+	buf = get_iio_buffer_unblocked(pdata, cmd, entry_ptr);
 	iio_mutex_unlock(buflist_lock);
 
-	if (buf && entry_ptr)
-		*entry_ptr = entry;
-
-	return buf ? buf : iio_ptr(-EBADF);
+	return buf;
 }
 
 static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
@@ -704,8 +725,8 @@ static void handle_create_block(struct parser_pdata *pdata,
 	ret = iio_err(block);
 	if (ret == 0) {
 		/* No error? This block already exists, so return
-		 * -EINVAL. */
-		ret = -EINVAL;
+		 * -EEXIST. */
+		ret = -EEXIST;
 		goto out_send_response;
 	}
 
@@ -1208,10 +1229,36 @@ static ssize_t iiod_write(void *d, const struct iiod_buf *buf, size_t nb)
 	return write_all(d, buf->ptr, buf->size);
 }
 
+static ssize_t iiod_discard(void *d, size_t bytes)
+{
+	struct parser_pdata *pdata = d;
+	char buf[4096];
+	size_t remaining = bytes;
+
+	while (remaining) {
+		size_t read_len;
+		ssize_t ret;
+
+		if (remaining > sizeof(buf))
+			read_len = sizeof(buf);
+		else
+			read_len = remaining;
+
+		ret = read_all(pdata, buf, read_len);
+		if (ret < 0)
+			return ret;
+
+		remaining -= (size_t) ret;
+	}
+
+	return bytes;
+}
+
 static const struct iiod_responder_ops iiod_responder_ops = {
 	.cmd	= iiod_cmd,
 	.read	= iiod_read,
 	.write	= iiod_write,
+	.discard = iiod_discard,
 };
 
 static void iiod_responder_free_resources(struct parser_pdata *pdata)
