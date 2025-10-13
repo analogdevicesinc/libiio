@@ -46,6 +46,9 @@ static SLIST_HEAD(EventStreamList, evstream_entry) evlist;
 /* Protect evlist from parallel access */
 struct iio_mutex *evlist_lock;
 
+/* Protect register access operations from parallel access */
+struct iio_mutex *reg_access_lock;
+
 static void free_block_entry(struct block_entry *entry)
 {
 	iiod_io_cancel(entry->io);

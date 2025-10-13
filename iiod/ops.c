@@ -11,6 +11,8 @@
 #include "parser.h"
 #include "thread-pool.h"
 
+#include <iio/iio-lock.h>
+
 #include <errno.h>
 #include <limits.h>
 #include <pthread.h>
@@ -1175,10 +1177,18 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			attr = iio_device_find_debug_attr(dev, name);
-			if (attr)
-				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
-			else
+			if (attr) {
+				/* Protect register access operations for atomicity */
+				if (name && strcmp(name, "direct_reg_access") == 0) {
+					iio_mutex_lock(reg_access_lock);
+					ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+					iio_mutex_unlock(reg_access_lock);
+				} else {
+					ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+				}
+			} else {
 				ret = -ENOENT;
+			}
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
 			pthread_mutex_lock(&devlist_lock);
@@ -1261,10 +1271,18 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			attr = iio_device_find_debug_attr(dev, name);
-			if (attr)
-				ret = iio_attr_write_raw(attr, buf, len);
-			else
+			if (attr) {
+				/* Protect register access operations for atomicity */
+				if (name && strcmp(name, "direct_reg_access") == 0) {
+					iio_mutex_lock(reg_access_lock);
+					ret = iio_attr_write_raw(attr, buf, len);
+					iio_mutex_unlock(reg_access_lock);
+				} else {
+					ret = iio_attr_write_raw(attr, buf, len);
+				}
+			} else {
 				ret = -ENOENT;
+			}
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
 			pthread_mutex_lock(&devlist_lock);

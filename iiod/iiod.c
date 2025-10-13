@@ -339,6 +339,12 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		goto out_free_buflist_lock;
 	}
 
+	reg_access_lock = iio_mutex_create();
+	if (iio_err(reg_access_lock)) {
+		ret = EXIT_FAILURE;
+		goto out_free_evlist_lock;
+	}
+
 	if (WITH_IIOD_USBD && ffs_mountpoint) {
 		ret = start_usb_daemon(ctx, ffs_mountpoint,
 				(unsigned int) nb_pipes, ep0_fd,
@@ -379,6 +385,7 @@ out_thread_pool_stop:
 	 * the worker threads are signaled to shutdown.
 	 */
 	thread_pool_stop_and_wait(main_thread_pool);
+	iio_mutex_destroy(reg_access_lock);
 out_free_evlist_lock:
 	iio_mutex_destroy(evlist_lock);
 out_free_buflist_lock:

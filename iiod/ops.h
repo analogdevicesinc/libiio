@@ -55,6 +55,7 @@ struct DevEntry;
 
 extern struct iio_mutex *buflist_lock;
 extern struct iio_mutex *evlist_lock;
+extern struct iio_mutex *reg_access_lock;
 
 struct block_entry {
 	SLIST_ENTRY(block_entry) entry;
