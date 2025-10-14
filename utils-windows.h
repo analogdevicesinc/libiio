@@ -16,18 +16,36 @@
  * @brief Translate WSA error codes to POSIX error codes
  * 
  * This function provides comprehensive mapping of Windows Socket API error codes
- * to their POSIX equivalents. It handles most common networking errors that can
- * occur in socket operations on Windows systems.
+ * to their POSIX equivalents. It handles networking errors, Winsock initialization
+ * issues, DNS resolution failures, and system-level errors that can occur in 
+ * socket operations on Windows systems.
  * 
  * @param wsa_err WSA error code (positive value from WSAGetLastError())
  * @return Negative POSIX error code suitable for errno usage
  * 
  * @note Some WSA errors don't have direct POSIX equivalents and are mapped
  *       to the closest available error code. Falls back to -EIO for unknown errors.
+ *       Covers both standard socket errors and Windows-specific system errors.
  */
 static inline int translate_wsa_error_to_posix(int wsa_err)
 {
 	switch (wsa_err) {
+	/* Generic Windows/WSA errors */
+	case WSA_INVALID_HANDLE:
+		return -EBADF; // Invalid handle, closest equivalent
+	case WSA_NOT_ENOUGH_MEMORY:
+		return -ENOMEM;
+	case WSA_INVALID_PARAMETER:
+		return -EINVAL;
+	case WSA_OPERATION_ABORTED:
+#ifdef ECANCELED
+		return -ECANCELED; // Operation was aborted
+#else
+		return -EINTR; // Fallback to interrupted system call
+#endif
+	case WSA_IO_PENDING:
+		return -EINPROGRESS; // Operation will complete later
+	/* Standard socket errors */
 	case WSAEACCES:
 		return -EACCES;
 	case WSAEADDRINUSE:
@@ -161,6 +179,26 @@ static inline int translate_wsa_error_to_posix(int wsa_err)
 #endif
 	case WSAEWOULDBLOCK:
 		return -EAGAIN;
+	/* Winsock initialization and system errors */
+	case WSASYSNOTREADY:
+		return -ENODEV; // Network subsystem unavailable
+	case WSAVERNOTSUPPORTED:
+		return -ENOSYS; // Version not supported
+	case WSANOTINITIALISED:
+		return -ENODEV; // WSAStartup not performed
+	/* DNS resolution errors */
+	case WSAHOST_NOT_FOUND:
+		return -ENOENT; // Host not found
+	case WSATRY_AGAIN:
+		return -EAGAIN; // Temporary DNS failure
+	case WSANO_RECOVERY:
+		return -EIO; // Non-recoverable DNS error
+	case WSANO_DATA:
+#ifdef ENODATA
+		return -ENODATA; // Valid name but no data record
+#else
+		return -ENOENT; // Fallback to "no such file or directory"
+#endif
 	default:
 		if (wsa_err > -4096 && wsa_err < 0) // pass through for POSIX errors
 			return wsa_err;
