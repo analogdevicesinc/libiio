@@ -133,7 +133,7 @@ do
 	echo "looking for ${python_enums[i]}"
 	sed "0,/^class ${python_enums[i]}/d" ${IIO_PY} | \
 		sed '0,/^$/d' | sed -n '/^$/q;p'| sed -e 's/^[ \t]*//' -e 's/ .*//' | \
-		grep -v IIO_CHAN_TYPE_UNKNOWN > "/tmp/libiio_py_${python_enums[i]}"
+		grep -v IIO_CHAN_TYPE_UNKNOWN > "/tmp/libiio_py_${python_enums[i]}" || true
 
 	echo "Differences in ${python_enums[i]}"
 	set +e
