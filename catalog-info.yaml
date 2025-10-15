@@ -133,7 +133,7 @@ metadata:
 spec:
   type: library
   lifecycle: execution
-  owner: group:default/libiio-sw-team
+  owner: user:default/dnechita
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
