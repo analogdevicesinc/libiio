@@ -400,11 +400,9 @@ stages:
     - script: |
         set -e
         sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
-        sudo apt-get install -y g++-arm-linux-gnueabihf
-        sudo apt-get install -y g++-aarch64-linux-gnu
         sudo apt-get install -y qemu-system-ppc64
-        sudo apt-get install qemu
+        sudo apt-get install qemu-user-static
+        sudo sysctl kernel.randomize_va_space=0
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       displayName: 'Setup'
     - script: |
