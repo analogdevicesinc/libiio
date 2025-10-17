@@ -131,9 +131,11 @@ python_enums=("ChannelType" "ChannelModifier" "EventType" "EventDirection")
 for i in {0..3}
 do
 	echo "looking for ${python_enums[i]}"
+	set +e
 	sed "0,/^class ${python_enums[i]}/d" ${IIO_PY} | \
 		sed '0,/^$/d' | sed -n '/^$/q;p'| sed -e 's/^[ \t]*//' -e 's/ .*//' | \
 		grep -v IIO_CHAN_TYPE_UNKNOWN > "/tmp/libiio_py_${python_enums[i]}"
+	set -e
 
 	echo "Differences in ${python_enums[i]}"
 	set +e
