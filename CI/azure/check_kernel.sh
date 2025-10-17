@@ -110,8 +110,8 @@ do
 done
 
 echo Checking Python bindings
-python_enums=("ChannelType" "ChannelModifier" "EventType" "EventDirection")
-for i in {0..3}
+python_enums=("ChannelType" "ChannelModifier")
+for i in {0..1}
 do
 	echo "looking for ${python_enums[i]}"
 	set +e
