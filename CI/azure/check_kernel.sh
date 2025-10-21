@@ -43,10 +43,8 @@ do
 	sed "0,/^enum.*${enum}/d" ${IIOH} | sed -n '/}/q;p' | grep -v IIO_CHAN_TYPE_UNKNOWN > /tmp/libiio_${enum}
 	echo Differences in ${enum}
 	# diff exit status of 1 means a difference, not an error
-	set +e
-	diff -u  /tmp/libiio_${enum} /tmp/kernel_${enum}
+	diff -u  /tmp/libiio_${enum} /tmp/kernel_${enum} || true
 	count=$(diff -u  /tmp/libiio_${enum} /tmp/kernel_${enum} | wc -l)
-	set -e
 	if [ "$count" -ne "0" ] ; then
 		ret=1
 		echo difference between upstream kernel types.h and iio.h in ${enum}
@@ -112,10 +110,8 @@ do
 		grep -v IIO_CHAN_TYPE_UNKNOWN > "/tmp/libiio_csharp_${csharp_enums[i]}"
 
 	echo "Differences in ${csharp_enums[i]}"
-	set +e
-	diff -u -w "/tmp/libiio_csharp_${csharp_enums[i]}" "/tmp/kernel_${iio_groups[i]}"
+	diff -u -w "/tmp/libiio_csharp_${csharp_enums[i]}" "/tmp/kernel_${iio_groups[i]}" || true
 	count=$(diff -u -w  "/tmp/libiio_csharp_${csharp_enums[i]}" "/tmp/kernel_${iio_groups[i]}" | wc -l)
-	set -e
 	if [ "$count" -ne "0" ] ; then
 		ret=1
 		echo "difference between upstream kernel types.h and Channels.cs in ${csharp_enums[i]}"
@@ -136,10 +132,8 @@ do
 		grep -v IIO_CHAN_TYPE_UNKNOWN > "/tmp/libiio_py_${python_enums[i]}" || true
 
 	echo "Differences in ${python_enums[i]}"
-	set +e
-	diff -u -w "/tmp/libiio_py_${python_enums[i]}" "/tmp/kernel_${iio_groups[i]}"
+	diff -u -w "/tmp/libiio_py_${python_enums[i]}" "/tmp/kernel_${iio_groups[i]}" || true
 	count=$(diff -u -w  "/tmp/libiio_py_${python_enums[i]}" "/tmp/kernel_${iio_groups[i]}" | wc -l)
-	set -e
 	if [ "$count" -ne "0" ] ; then
 		ret=1
 		echo "difference between upstream kernel types.h and iio.py in ${python_enums[i]}"
