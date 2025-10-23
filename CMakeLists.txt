@@ -626,6 +626,12 @@ else ()
 	target_sources(iio PRIVATE lock.c)
 endif()
 
+if (WITH_LIBTINYIIOD)
+	set(NO_THREADS 1)
+else()
+	set(NO_THREADS 0)
+endif()
+
 if (IIOD_CLIENT OR WITH_IIOD OR WITH_LIBTINYIIOD)
 	add_library(iiod-responder STATIC iiod-responder.c)
 	target_include_directories(iiod-responder PRIVATE include ${CMAKE_BINARY_DIR})
