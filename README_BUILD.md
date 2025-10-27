@@ -146,6 +146,23 @@ Note: Some things (specifically building doc)  need to find libiio or the bindin
 That means that you configure (with -DWITH_DOC=OFF), build, install, configure
 (with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
 
+### Python Virtual Environment
+
+The python binding (iio.py) is installed to /usr/lib/python3.X/site-packages,
+which is not on path inside python virtual environments.
+
+A simple solution is to add it to one of the sources paths by virtual environment:
+
+```
+analog@precision:~/some/library$ python3 -m venv venv
+analog@precision:~/some/library$ source venv/bin/activate
+analog@precision:~/some/library$ python3 -c "import sys; print('\n'.join(sys.path))"
+...
+/home/analog/some/library/venv/lib/python3.x/site-packages
+/home/analog/some/library
+
+analog@precision:~/some/library$ ln -s /usr/lib/python3.x/site-packages/iio.py
+```
 
 ## Notes
 
