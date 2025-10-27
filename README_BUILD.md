@@ -125,11 +125,19 @@ Cmake Options       | Default | Description                                    |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON -DENABLE_PACKAGING=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
 ## Install
+If using the .deb/.rpm
+```shell
+analog@precision:~/libiio/build$ make package
+analog@precision:~/libiio/build$ sudo apt install libiio-*.deb
+analog@precision:~/libiio/build$ sudo dnf install libiio-*.rpm
+```
+
+Or directly
 ```shell
 analog@precision:~/libiio/build$ sudo make install
 ```
