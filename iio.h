@@ -1509,6 +1509,20 @@ __api __check_ret int iio_buffer_get_poll_fd(struct iio_buffer *buf);
  */
 __api __check_ret int iio_buffer_set_blocking_mode(struct iio_buffer *buf, bool blocking);
 
+/** @brief Releases the last dequeued buffer back to the kernel.
+ *         This is optional since it is implicitly called inside iio_buffer_refill().
+ * 		   This is only applicable to the **local** backend.
+ * 		   This may be useful when manually waiting on data, for example using poll()
+ * 		   on the file descriptor returned by iio_buffer_get_poll_fd() and when the 
+ * 		   number of kernel buffers set by iio_device_set_kernel_buffers_count() is 
+ * 		   exactly 1. Otherwise the expected usage is to call iio_buffer_refill(), then
+ * 		   once actioned, call iio_buffer_release().
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, returns 0
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> Only valid for input buffers */
+__api __check_ret ssize_t iio_buffer_release(struct iio_buffer *buf);
 
 /** @brief Fetch more samples from the hardware
  * @param buf A pointer to an iio_buffer structure

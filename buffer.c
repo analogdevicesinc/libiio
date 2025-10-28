@@ -120,6 +120,16 @@ int iio_buffer_set_blocking_mode(struct iio_buffer *buffer, bool blocking)
 	return iio_device_set_blocking_mode(buffer->dev, blocking);
 }
 
+ssize_t iio_buffer_release(struct iio_buffer *buffer)
+{
+	const struct iio_device *dev = buffer->dev;
+	ssize_t ret = 0;
+	if (dev->ctx->ops->release_buffer) {
+		ret = dev->ctx->ops->release_buffer(dev, &buffer->buffer, buffer->length);
+	}
+	return ret;
+}
+
 ssize_t iio_buffer_refill(struct iio_buffer *buffer)
 {
 	ssize_t read;
