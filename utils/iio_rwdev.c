@@ -41,13 +41,12 @@ static const struct option options[] = {
 	  {"write", no_argument, 0, 'w'},
 	  {"cyclic", no_argument, 0, 'c'},
 	  {"benchmark", no_argument, 0, 'B'},
-	  {"cma", no_argument, 0, 'C'},
 	  {0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	"[-t <trigger>] [-b <buffer-size>]"
-		"[-s <samples>] <iio_device> [<channel> ...] [-C]",
+		"[-s <samples>] <iio_device> [<channel> ...]",
 	"Use the specified trigger.",
 	"Set the trigger to the specified rate (Hz). Default is 100 Hz.",
 	"Size of the transfer buffer. Default is 256.",
@@ -57,7 +56,6 @@ static const char *options_descriptions[] = {
 	"Use cyclic buffer mode.",
 	"Benchmark throughput."
 		"\n\t\t\tStatistics will be printed on the standard input.",
-	"Use CMA-Linux allocator for DMA buffer."
 };
 
 static struct iio_context *ctx;
@@ -207,7 +205,7 @@ static ssize_t transfer_sample(const struct iio_channel *chn,
 	return (ssize_t) nb;
 }
 
-#define MY_OPTS "t:b:s:T:r:wcBC"
+#define MY_OPTS "t:b:s:T:r:wcB"
 
 int main(int argc, char **argv)
 {
@@ -225,7 +223,6 @@ int main(int argc, char **argv)
 	struct iio_stream *stream;
 	const struct iio_block *block;
 	struct iio_channels_mask *mask;
-	struct iio_buffer_params buffer_params = {0};
 	const struct iio_channels_mask *hw_mask;
 	const struct iio_attr *uri, *attr;
 	struct option *opts;
@@ -296,9 +293,6 @@ int main(int argc, char **argv)
 			break;
 		case 'w':
 			is_write = true;
-			break;
-		case 'C':
-			buffer_params.dma_allocator = IIO_DMA_ALLOCATOR_CMA_LINUX;
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
@@ -443,7 +437,7 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	}
 
-	buffer = iio_device_create_buffer(dev, &buffer_params, mask);
+	buffer = iio_device_create_buffer(dev, 0, mask);
 	ret = iio_err(buffer);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to allocate buffer");

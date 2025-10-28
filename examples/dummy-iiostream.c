@@ -304,7 +304,7 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Creating non-cyclic RX IIO buffer\n");
-	rxbuf = iio_device_create_buffer(dev, NULL, rxmask);
+	rxbuf = iio_device_create_buffer(dev, 0, rxmask);
 	err = iio_err(rxbuf);
 	if (err) {
 		rxbuf = NULL;
