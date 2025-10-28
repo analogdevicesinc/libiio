@@ -431,6 +431,32 @@ static int local_set_kernel_buffers_count(const struct iio_device *dev,
 	return 0;
 }
 
+static ssize_t local_release_buffer(const struct iio_device *dev, void **addr_ptr, size_t bytes_used)
+{
+	struct iio_device_pdata *pdata = dev->pdata;
+	char err_str[1024];
+	int f = pdata->fd;
+	ssize_t ret;
+
+	if (!WITH_LOCAL_MMAP_API || !pdata->is_high_speed) 	return -ENOSYS;
+	if (pdata->cyclic) 									return -ENOSYS;
+	if (f == -1) 										return -EBADF;
+	if (!addr_ptr) 										return -EINVAL;
+
+	if (pdata->last_dequeued >= 0) {
+		struct block *last_block = &pdata->blocks[pdata->last_dequeued];
+		last_block->bytes_used 	 = bytes_used;
+		ret 					 = (ssize_t) ioctl_nointr(f, BLOCK_ENQUEUE_IOCTL, last_block);
+		if (ret) {
+			iio_strerror(-ret, err_str, sizeof(err_str));
+			IIO_ERROR("Unable to enqueue block: %s\n", err_str);
+			return ret;
+		}
+		pdata->last_dequeued = -1;
+	}
+	return 0;
+}
+
 static ssize_t local_get_buffer(const struct iio_device *dev,
 		void **addr_ptr, size_t bytes_used,
 		uint32_t *mask, size_t words)
@@ -2082,6 +2108,7 @@ static const struct iio_backend_ops local_ops = {
 	.write = local_write,
 	.set_kernel_buffers_count = local_set_kernel_buffers_count,
 	.get_buffer = local_get_buffer,
+	.release_buffer = local_release_buffer,
 	.read_device_attr = local_read_dev_attr,
 	.write_device_attr = local_write_dev_attr,
 	.read_channel_attr = local_read_chn_attr,

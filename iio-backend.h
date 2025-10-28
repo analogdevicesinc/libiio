@@ -42,7 +42,8 @@ struct iio_backend_ops {
 	ssize_t (*get_buffer)(const struct iio_device *dev,
 			void **addr_ptr, size_t bytes_used,
 			uint32_t *mask, size_t words);
-
+	ssize_t (*release_buffer)(const struct iio_device *dev,
+			void **addr_ptr, size_t bytes_used);
 	ssize_t (*read_device_attr)(const struct iio_device *dev,
 			const char *attr, char *dst, size_t len, enum iio_attr_type);
 	ssize_t (*write_device_attr)(const struct iio_device *dev,
