@@ -433,6 +433,8 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 				}
 				FD_SET(sockets[isock], &readfs);
 			}
+		} else if (res == SOCKET_ERROR) {
+			return translate_wsa_error_to_posix(WSAGetLastError());
 		}
 
 		/* res > 0 even if we didn't process anything :(
