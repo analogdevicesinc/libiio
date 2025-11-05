@@ -233,7 +233,7 @@ int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
 
 	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
 				(const char *) &yes, sizeof(yes)) < 0) {
-		ret = -errno;
+		ret = network_get_error();
 		close(fd);
 		return ret;
 	}
@@ -269,7 +269,7 @@ static char * network_get_description(struct addrinfo *res,
 		ptr2 = inet_ntop(AF_INET6, &in->sin6_addr,
 				description, INET6_ADDRSTRLEN);
 		if (!ptr2) {
-			err = -errno;
+			err = network_get_error();
 			prm_perror(params, err, "Unable to look up IPv6 address");
 			free(description);
 			return iio_ptr(err);
