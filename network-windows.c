@@ -108,6 +108,15 @@ int network_translate_so_error(int so_error)
 	return translate_wsa_error_to_posix(so_error);
 }
 
+int network_normalize_gai_error(int ret)
+{
+	if (ret == 0)
+		return 0;
+	if (ret >= 10000)
+		return translate_wsa_error_to_posix(ret);
+	return network_map_eai_code(ret);
+}
+
 /* Use it if available */
 #ifndef WSA_FLAG_NO_HANDLE_INHERIT
 #define WSA_FLAG_NO_HANDLE_INHERIT 0

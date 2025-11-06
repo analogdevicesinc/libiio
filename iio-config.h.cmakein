@@ -52,6 +52,7 @@
 #cmakedefine HAS_NEWLOCALE
 #cmakedefine HAS_PTHREAD_SETNAME_NP
 #cmakedefine HAVE_IPV6
+#cmakedefine01 HAVE_NETDB_H
 
 #define IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
 

@@ -21,6 +21,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* For getaddrinfo() EAI_* codes */
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#elif defined(__has_include)
+#  if __has_include(<netdb.h>)
+#    include <netdb.h>
+#  endif
+#elif defined(HAVE_NETDB_H)
+#include <netdb.h>
+#endif
+
 #ifdef _WIN32
 #include <Windows.h>
 #elif CLOCK_GETTIME_AVAILABLE
@@ -431,4 +442,41 @@ bool string_ends_with(const char *string, const char *suffix)
 		return false;
 
 	return strcmp(string + string_len - suffix_len, suffix) == 0;
+}
+
+/* Central mapping of getaddrinfo() return codes (EAI_*) to libiio-compatible
+ * negative errno values (-4095..-1). */
+int network_map_eai_code(int ret)
+{
+	switch (ret) {
+#ifdef EAI_AGAIN
+	case EAI_AGAIN: return -EAGAIN;
+#endif
+#ifdef EAI_MEMORY
+	case EAI_MEMORY: return -ENOMEM;
+#endif
+#ifdef EAI_FAIL
+	case EAI_FAIL: return -EIO;
+#endif
+#ifdef EAI_NONAME
+	case EAI_NONAME: return -ENOENT;
+#endif
+#ifdef EAI_SERVICE
+	case EAI_SERVICE: return -EOPNOTSUPP;
+#endif
+#ifdef EAI_FAMILY
+	case EAI_FAMILY: return -EAFNOSUPPORT;
+#endif
+#ifdef EAI_SOCKTYPE
+	case EAI_SOCKTYPE: return -EPROTOTYPE;
+#endif
+#ifdef EAI_BADFLAGS
+	case EAI_BADFLAGS: return -EINVAL;
+#endif
+#ifdef EAI_OVERFLOW
+	case EAI_OVERFLOW: return -EOVERFLOW;
+#endif
+	default:
+		return -EIO;
+	}
 }

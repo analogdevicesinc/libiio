@@ -166,6 +166,13 @@ int network_translate_so_error(int so_error)
 	return -so_error;
 }
 
+int network_normalize_gai_error(int ret)
+{
+	if (ret == 0)
+		return 0;
+	return network_map_eai_code(ret);
+}
+
 
 /* Use it if available */
 #ifndef SOCK_CLOEXEC
