@@ -703,7 +703,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 
 	if (ret) {
 		prm_err(params, "Unable to find host: %s\n", gai_strerror(ret));
-		return iio_ptr(ret);
+		return iio_ptr(network_normalize_gai_error(ret));
 	}
 
 	fd = create_socket(res, params->timeout_ms);

@@ -248,6 +248,10 @@ check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 check_symbol_exists(clock_gettime "time.h" HAS_CLOCK_GETTIME)
 
+# For EAI_* codes
+include(CheckIncludeFile)
+check_include_file("netdb.h" HAVE_NETDB_H)
+
 if (HAS_CLOCK_GETTIME)
 	target_compile_definitions(iio PRIVATE CLOCK_GETTIME_AVAILABLE=1)
 endif()
