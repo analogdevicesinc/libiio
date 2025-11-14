@@ -23,6 +23,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#define LIBIIO_DMA_HEAP_ENV_VAR "LIBIIO_DMA_HEAP_PATH"
+#define MAX_DMA_HEAP_PATH 64
+
 struct iio_dmabuf_heap_data {
 	uint64_t len;
 	uint32_t fd;
@@ -55,6 +58,41 @@ struct dma_buf_sync {
 	uint64_t flags;
 };
 
+/* Return global DMA heap name from environment.
+ * Format:
+ *   LIBIIO_DMA_HEAP_PATH=heap_name
+ * Returns validated heap name, or NULL if invalid value is set.
+ * If environment variable is unset or empty, defaults to "system".
+ */
+static const char *get_dma_heap_name(void)
+{
+	const char *env_value = getenv(LIBIIO_DMA_HEAP_ENV_VAR);
+	static const char *accepted_heaps[] = {
+		"system",
+		"default_cma_region",
+		"reserved",
+		"linux,cma",
+		"default-pool"
+	};
+	size_t num_accepted_heaps = ARRAY_SIZE(accepted_heaps);
+	size_t i;
+
+	if (!env_value || !*env_value)
+		return "system";
+
+	for (i = 0; i < num_accepted_heaps; i++) {
+		if (!strcmp(env_value, accepted_heaps[i]))
+			return accepted_heaps[i];
+	}
+
+	/* Environment variable value is not in the accepted pool */
+	prm_err(NULL, "LIBIIO_DMA_HEAP_PATH value '%s' is not recognized. "
+		"Accepted values are: \"system\", \"default_cma_region\", "
+		"\"reserved\", \"linux,cma\", \"default-pool\"\n", env_value);
+
+	return NULL;
+}
+
 static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 {
 	struct dma_buf_sync dbuf_sync = { 0 };
@@ -78,13 +116,28 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		.fd_flags = O_CLOEXEC | O_RDWR,
 	};
 	struct iio_block_pdata *priv;
+	const char *heap_name;
+	char dma_heap_path[MAX_DMA_HEAP_PATH];
 	int ret, fd, devfd;
 
 	priv = zalloc(sizeof(*priv));
 	if (!priv)
 		return iio_ptr(-ENOMEM);
 
-	devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
+	/* Determine DMA heap path from global environment variable */
+	heap_name = get_dma_heap_name();
+	if (!heap_name) {
+		ret = -EINVAL;
+		goto err_free_priv;
+	}
+
+	ret = snprintf(dma_heap_path, sizeof(dma_heap_path), "/dev/dma_heap/%s", heap_name);
+	if (ret < 0 || ret >= (int)sizeof(dma_heap_path)) {
+		ret = -EINVAL;
+		goto err_free_priv;
+	}
+
+	devfd = open(dma_heap_path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
 	if (devfd < 0) {
 		ret = -errno;
 
