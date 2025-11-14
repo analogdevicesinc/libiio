@@ -6,7 +6,7 @@ KERNEL_MODIFIER="/tmp/modifier.c"
 IIOH="./include/iio/iio.h"
 CHANNELC="./channel.c"
 CHANNELC_SHARP="./bindings/csharp/Channel.cs"
-IIO_PY="./bindings/python/iio.py"
+IIO_PY="./bindings/python/iio/__init__.py"
 
 if [ ! -f ${IIOH} ] ; then
 	echo can not find ${IIOH}

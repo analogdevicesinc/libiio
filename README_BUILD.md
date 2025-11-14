@@ -43,10 +43,9 @@ Cmake Options          | Default | Target | Description                         
 `BUILD_SHARED_LIBS`    |  ON |        All | Build shared libraries            |
 `LIBIIO_COMPAT`        |  ON |        All | Build Libiio v0.x compatibility layer |
 `WITH_MODULES`         | OFF |        All | Build modular backends |
-'COMPILE_WARNING_AS_ERROR' | OFF |    All | Make all C warnings into errors     |
+`COMPILE_WARNING_AS_ERROR` | OFF |    All | Make all C warnings into errors     |
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings |
 `CPP_EXAMPLES`         | OFF |        All | Build C++ examples (C++17 required) |
-`PYTHON_BINDINGS`      | OFF |        All | Install PYTHON bindings                            |
 `WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
 `CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
@@ -126,7 +125,7 @@ Cmake Options       | Default | Description                                    |
 ```shell
 analog@precision:~/libiio$ mkdir build
 analog@precision:~/libiio/build$ cd build
-analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON -DPYTHON_BINDINGS=ON
+analog@precision:~/libiio/build$ cmake ../ -DCPP_BINDINGS=ON
 analog@precision:~/libiio/build$ make -j$(nproc)
 ```
 
@@ -137,6 +136,10 @@ analog@precision:~/libiio/build$ sudo make install
 
 Note: As specified above, the default installation path on Linux based systems is '/usr'.
 This can be changed by setting the `CMAKE_INSTALL_PREFIX` var during the `cmake` step.
+
+### Python bindings
+
+For building or installing the optional Python bindings, see [`bindings/python/README.md`](bindings/python/README.md) for supported versions and setup steps.
 
 ### Uninstall
 ```shell

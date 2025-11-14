@@ -11,18 +11,12 @@ if (CSHARP_BINDINGS)
 	add_subdirectory(csharp)
 endif()
 
-if (PYTHON_BINDINGS)
-	add_subdirectory(python)
-endif()
-
 list(APPEND OPTIONS_LISTS
-	"PYTHON_BINDINGS"
 	"CSHARP_BINDINGS"
 	"CPP_BINDINGS"
 	"CPP_EXAMPLES"
 )
 list(APPEND FEATURES_LISTS
-	"python-bindings"
 	"c#-bindings"
 	"c++-bindings"
 	"c++-examples"
