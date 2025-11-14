@@ -161,6 +161,32 @@ It will try to link against the `call_function` symbol even though it's clearly 
 
 For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
 
+## Environment Variable Configuration
+
+### DMA Heap Path Configuration
+
+libiio supports configuring the DMA heap path globally through the `LIBIIO_DMA_HEAP_PATH` environment variable. This overrides the default `/dev/dma_heap/system` path for all IIO devices.
+
+#### Supported Format (Global Only)
+```bash
+export LIBIIO_DMA_HEAP_PATH=heap_name
+```
+This will use `/dev/dma_heap/<heap_name>` for every device.
+
+**Example:**
+```bash
+export LIBIIO_DMA_HEAP_PATH=cma,linux
+./an_iio_application
+```
+Uses `/dev/dma_heap/cma,linux` globally.
+
+#### Constraints and Fallback Behavior
+
+- Heap name must be 1-64 characters
+- Empty, unset, or too-long values fall back to the default `system` heap
+
+This feature is intended for users who need to select an alternative DMA heap present under `/dev/dma_heap/` (for example a reserved or CMA heap).
+
 ## Instructions applicable to Microcontroller configurations
 
 ### Install Prerequisites/Dependencies

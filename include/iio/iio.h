@@ -156,36 +156,6 @@ struct iio_context_params {
 	char __rsrv[32];
 };
 
-/**
- * @enum iio_buffer_dma_allocator
- * @brief Provides low-level control over DMA buffer allocation.
- */
-enum iio_buffer_dma_allocator {
-	/** @brief May use scattered DMA memory (default). */
-	IIO_DMA_ALLOCATOR_SYSTEM = 0,
-
-	/** @brief Enforces contiguous DMA memory (for expert use only). */
-	IIO_DMA_ALLOCATOR_CMA_LINUX = 1,
-};
-
-/**
- * @struct iio_buffer_params
- * @brief Used to pass parameters to the iio_device_create_buffer function
- */
-struct iio_buffer_params {
-	/** @brief The index of the hardware buffer. Should be 0 in most cases.
-	 * (default: 0) */
-	unsigned int idx;
-
-	/** @brief Use the allocator to allocate a DMA buffer.
-	 * In most cases, this should be set to IIO_DMA_ALLOCATOR_SYSTEM.
-	 * ONLY change this to a different option if you fully understand the
-	 * implications. (default: IIO_DMA_ALLOCATOR_SYSTEM) */
-	enum iio_buffer_dma_allocator dma_allocator;
-	/** @brief Reserved for future fields. Should always be 0 initialized. */
-	unsigned char __rsrv[64];
-};
-
 /*
  * <linux/iio/types.h> header guard to protect these enums from being defined
  * twice
@@ -1148,15 +1118,12 @@ iio_buffer_find_attr(const struct iio_buffer *buf, const char *name);
 
 /** @brief Create an input or output buffer associated to the given device
  * @param dev A pointer to an iio_device structure
- * @param params A pointer to an iio_buffer_params structure. If NULL is passed,
- *        default values are used, for more information see comments in
- *        struct iio_buffer_params.
+ * @param idx The index of the hardware buffer. Should be 0 in most cases.
  * @param mask A pointer to an iio_channels_mask structure.
  * @return On success, a pointer to an iio_buffer structure
  * @return On failure, a pointer-encoded error is returned */
 __api __check_ret struct iio_buffer *
-iio_device_create_buffer(const struct iio_device *dev,
-			 struct iio_buffer_params *params,
+iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 			 const struct iio_channels_mask *mask);
 
 

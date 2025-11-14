@@ -15,14 +15,13 @@
 struct iio_buffer_impl_pdata;
 struct iio_block_impl_pdata;
 struct iio_device;
-struct iio_buffer_params;
 struct timespec;
 
 struct iio_buffer_pdata {
 	const struct iio_device *dev;
 	struct iio_buffer_impl_pdata *pdata;
 	int fd, cancel_fd;
-	struct iio_buffer_params *params;
+	unsigned int idx;
 	bool dmabuf_supported;
 	bool mmap_supported;
 	size_t size;

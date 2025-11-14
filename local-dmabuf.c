@@ -23,6 +23,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#define LIBIIO_DMA_HEAP_ENV_VAR "LIBIIO_DMA_HEAP_PATH"
+#define MAX_DMA_HEAP_PATH 256
+
 struct iio_dmabuf_heap_data {
 	uint64_t len;
 	uint32_t fd;
@@ -55,6 +58,33 @@ struct dma_buf_sync {
 	uint64_t flags;
 };
 
+/* Return global DMA heap name from environment.
+ * Format:
+ *   LIBIIO_DMA_HEAP_PATH=heap_name
+ * Fallback to "system" if unset, empty, or >64 chars.
+ */
+static const char *get_dma_heap_name(void)
+{
+    const char *env_value = getenv(LIBIIO_DMA_HEAP_ENV_VAR);
+    static char heap_name[65]; /* 64 chars + null terminator */
+
+    if (!env_value)
+        return "system";
+
+    size_t env_len = strnlen(env_value, 65); /* detect overflow beyond 64 */
+	if (env_len == 0) {
+		return "system";
+	}
+	if (env_len > 64) {
+		prm_warn(NULL, "LIBIIO_DMA_HEAP_PATH value too long (>64); falling back to system heap\n");
+		return "system";
+	}
+
+    memcpy(heap_name, env_value, env_len);
+    heap_name[env_len] = '\0';
+    return heap_name;
+}
+
 static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 {
 	struct dma_buf_sync dbuf_sync = { 0 };
@@ -78,20 +108,24 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		.fd_flags = O_CLOEXEC | O_RDWR,
 	};
 	struct iio_block_pdata *priv;
-	int ret, fd, devfd = -1;
+	const char *heap_name;
+	char dma_heap_path[MAX_DMA_HEAP_PATH];
+	int ret, fd, devfd;
 
 	priv = zalloc(sizeof(*priv));
 	if (!priv)
 		return iio_ptr(-ENOMEM);
 
-	switch (pdata->params->dma_allocator) {
-	case IIO_DMA_ALLOCATOR_SYSTEM:
-		devfd = open("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
-		break;
-	case IIO_DMA_ALLOCATOR_CMA_LINUX:
-		devfd = open("/dev/dma_heap/linux,cma", O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
-		break;
+	/* Determine DMA heap path from global environment variable */
+	heap_name = get_dma_heap_name();
+
+	ret = snprintf(dma_heap_path, sizeof(dma_heap_path), "/dev/dma_heap/%s", heap_name);
+	if (ret < 0 || ret >= (int)sizeof(dma_heap_path)) {
+		ret = -EINVAL;
+		goto err_free_priv;
 	}
+
+	devfd = open(dma_heap_path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW); /* Flawfinder: ignore */
 	if (devfd < 0) {
 		ret = -errno;
 
