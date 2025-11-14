@@ -164,6 +164,46 @@ It will try to link against the `call_function` symbol even though it's clearly 
 
 For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
 
+## Environment Variable Configuration
+
+### DMA Heap Path Configuration
+
+libiio supports configuring the DMA heap path globally through the `LIBIIO_DMA_HEAP_PATH` environment variable. This overrides the default `/dev/dma_heap/system` path for all IIO devices.
+
+#### Supported Format (Global Only)
+```bash
+export LIBIIO_DMA_HEAP_PATH=heap_name
+```
+This will use `/dev/dma_heap/<heap_name>` for every device.
+
+#### Accepted Values
+
+The environment variable accepts only the following predefined heap names:
+- `system` (default when unset or empty)
+- `default_cma_region`
+- `reserved`
+- `linux,cma`
+- `default-pool`
+
+**Examples:**
+```bash
+export LIBIIO_DMA_HEAP_PATH=default_cma_region
+./an_iio_application
+
+export LIBIIO_DMA_HEAP_PATH=reserved
+./an_iio_application
+```
+
+#### Behavior and Error Handling
+
+- **Unset or empty**: Defaults to `system` heap (`/dev/dma_heap/system`)
+- **Valid value**: Uses the specified heap (`/dev/dma_heap/<heap_name>`)
+- **Invalid value**: **Operation fails with error** - no fallback occurs
+
+Setting an invalid heap name will cause DMABUF operations to fail immediately with an error message listing the accepted values. This ensures users are aware when their configuration is incorrect rather than silently using a fallback.
+
+This feature is intended for users who need to select an alternative DMA heap present under `/dev/dma_heap/` (for example a reserved or CMA heap).
+
 ## Instructions applicable to Microcontroller configurations
 
 ### Install Prerequisites/Dependencies
