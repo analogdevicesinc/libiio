@@ -137,6 +137,10 @@ analog@precision:~/libiio/build$ sudo make install
 Note: As specified above, the default installation path on Linux based systems is '/usr'.
 This can be changed by setting the `CMAKE_INSTALL_PREFIX` var during the `cmake` step.
 
+### Python bindings
+
+For building or installing the optional Python bindings, see [`bindings/python/README.md`](bindings/python/README.md) for supported versions and setup steps.
+
 ### Uninstall
 ```shell
 analog@precision:~/libiio/build$ sudo make uninstall
