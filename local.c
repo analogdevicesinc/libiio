@@ -65,6 +65,7 @@ struct iio_event_stream_pdata {
 
 struct iio_channel_pdata {
 	char *enable_fn;
+	char *type_fn;
 	struct iio_attr_list protected;
 };
 
@@ -98,6 +99,7 @@ static void local_free_channel_pdata(struct iio_channel *chn)
 {
 	if (chn->pdata) {
 		free(chn->pdata->enable_fn);
+		free(chn->pdata->type_fn);
 		free(chn->pdata);
 	}
 }
@@ -323,10 +325,20 @@ static int local_do_enable_buffer(struct iio_buffer_pdata *pdata, bool enable)
 	return 0;
 }
 
+static int local_refresh_channel_format(struct iio_channel *cchn);
+
 static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 			       size_t nb_samples, bool enable, bool cyclic)
 {
+	const struct iio_device *dev = pdata->dev;
+	unsigned int i;
 	int ret;
+
+	/* Refresh all channel formats immediately before enabling the buffer */
+	if (enable) {
+		for (i = 0; i < dev->nb_channels; i++)
+			(void) local_refresh_channel_format(dev->channels[i]);
+	}
 
 	if ((pdata->dmabuf_supported | pdata->mmap_supported) != !nb_samples)
 		return -EINVAL;
@@ -732,6 +744,62 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEVICE);
 }
 
+static int parse_channel_format(struct iio_channel *chn, const char *fmt_str, bool refresh)
+{
+	char endian, sign;
+	unsigned int bits = 0, length = 0, repeat = 1, shift = 0;
+	unsigned int old_length = chn->format.length;
+	int n;
+
+	if (!fmt_str || !*fmt_str)
+		return -EINVAL;
+
+	if (strchr(fmt_str, 'X')) {
+		n = iio_sscanf(fmt_str, "%ce:%c%u/%uX%u>>%u",
+#ifdef _MSC_BUILD
+			&endian, sizeof(endian),
+			&sign, sizeof(sign),
+#else
+			&endian, &sign,
+#endif
+			&bits, &length, &repeat, &shift);
+		if (n != 6)
+			return -EINVAL;
+	} else {
+		repeat = 1; /* default */
+		n = iio_sscanf(fmt_str, "%ce:%c%u/%u>>%u",
+#ifdef _MSC_BUILD
+			&endian, sizeof(endian),
+			&sign, sizeof(sign),
+#else
+			&endian, &sign,
+#endif
+			&bits, &length, &shift);
+		if (n != 5)
+			return -EINVAL;
+	}
+
+	if (!length || !bits)
+		return -EINVAL;
+	if (!repeat)
+		repeat = 1;
+
+	chn->format.bits = bits;
+	chn->format.length = length;
+	chn->format.repeat = repeat;
+	chn->format.shift = shift;
+	chn->format.is_signed = (sign == 's' || sign == 'S');
+	chn->format.is_fully_defined = (sign == 'S' || sign == 'U' || bits == length);
+	chn->format.is_be = (endian == 'b');
+
+	if (refresh && length != old_length) {
+		chn_dbg(chn, "Channel %s format length changed %u->%u; buffer recreation may be required\n",
+			chn->id, old_length, length);
+	}
+
+	return 0;
+}
+
 static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			const char *name, const char *path)
 {
@@ -757,35 +825,16 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf),
 					  IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
-			char endian, sign;
+			ret = parse_channel_format(chn, buf, false);
+			if (ret < 0)
+				return ret;
+		}
 
-			if (strchr(buf, 'X')) {
-				iio_sscanf(buf, "%ce:%c%u/%uX%u>>%u",
-#ifdef _MSC_BUILD
-					&endian, sizeof(endian),
-					&sign, sizeof(sign),
-#else
-					&endian, &sign,
-#endif
-					&chn->format.bits, &chn->format.length,
-					&chn->format.repeat, &chn->format.shift);
-			} else {
-				chn->format.repeat = 1;
-				iio_sscanf(buf, "%ce:%c%u/%u>>%u",
-#ifdef _MSC_BUILD
-					&endian, sizeof(endian),
-					&sign, sizeof(sign),
-#else
-					&endian, &sign,
-#endif
-					&chn->format.bits, &chn->format.length,
-					&chn->format.shift);
-			}
-			chn->format.is_signed = (sign == 's' || sign == 'S');
-			chn->format.is_fully_defined =
-					(sign == 'S' || sign == 'U'||
-					chn->format.bits == chn->format.length);
-			chn->format.is_be = endian == 'b';
+		/* Remember the path to the type file for later refresh. */
+		if (!chn->pdata->type_fn) {
+			chn->pdata->type_fn = iio_strdup(path);
+			if (!chn->pdata->type_fn)
+				return -ENOMEM;
 		}
 
 	} else if (!strcmp(name, "en")) {
@@ -880,6 +929,28 @@ static int add_channel_to_device(struct iio_device *dev,
 
 	dev_dbg(dev, "Added %s channel \'%s\' to device \'%s\'\n",
 		chn->is_output ? "output" : "input", chn->id, dev->id);
+
+	return 0;
+}
+
+/* Refresh a channel's data format by reading its scan_elements type file. */
+static int local_refresh_channel_format(struct iio_channel *chn)
+{
+	struct iio_device *dev = chn->dev;
+	char buf[1024];
+	int ret;
+
+	if (!chn->pdata || !chn->pdata->type_fn)
+		return -ENOSYS;
+
+	ret = local_read_dev_attr(dev, 0, chn->pdata->type_fn,
+			buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
+	if (ret <= 0)
+		return ret < 0 ? ret : -EIO;
+
+	ret = parse_channel_format(chn, buf, true);
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
@@ -1768,6 +1839,7 @@ static const struct iio_backend_ops local_ops = {
 
 	.get_dmabuf_fd = local_get_dmabuf_fd,
 	.disable_cpu_access = local_disable_cpu_access,
+	.refresh_format = local_refresh_channel_format,
 };
 
 const struct iio_backend iio_local_backend = {
