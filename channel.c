@@ -414,6 +414,25 @@ const struct iio_data_format * iio_channel_get_data_format(
 	return &chn->format;
 }
 
+int iio_channel_refresh_data_format(struct iio_channel *chn)
+{
+	const struct iio_device *dev;
+	const struct iio_context *ctx;
+
+	if (!chn)
+		return -EINVAL;
+
+	dev = iio_channel_get_device(chn);
+	if (!dev)
+		return -EINVAL;
+
+	ctx = iio_device_get_context(dev);
+	if (!ctx || !ctx->ops || !ctx->ops->refresh_format)
+		return -ENOSYS;
+
+	return ctx->ops->refresh_format(chn);
+}
+
 bool iio_channel_is_enabled(const struct iio_channel *chn,
 			    const struct iio_channels_mask *mask)
 {
