@@ -133,7 +133,13 @@ class ContextParams(Structure):
     pass # TODO
 
 class BufferParams(Structure):
-    pass # TODO
+    """Represents the low-level control over DMA buffer allocation."""
+
+    _fields_ = [
+        ("idx", c_uint),
+        ("dma_allocator", c_int),
+        ("__rsrv", c_char * 64),
+    ]
 
 class DataFormat(Structure):
     """Represents the data format of an IIO channel."""
@@ -302,6 +308,13 @@ class ChannelType(Enum):
     IIO_ATTENTION = 39
     IIO_ALTCURRENT = 40
     IIO_CHAN_TYPE_UNKNOWN = 0x7FFFFFFF
+
+
+class BufferDMAAllocator(Enum):
+    """Contains DMA allocator options."""
+
+    IIO_DMA_ALLOCATOR_SYSTEM = 0
+    IIO_DMA_ALLOCATOR_CMA_LINUX = 1
 
 
 # pylint: disable=invalid-name
@@ -814,6 +827,36 @@ class Attr(_IIO_Object):
         "Current value of this attribute.\n\ttype=str",
     )
 
+class ChannelsBufferParams(_IIO_Object):
+    """Represents buffer creation parameters."""
+
+    def __init__(self, idx=0, dma_allocator=BufferDMAAllocator.IIO_DMA_ALLOCATOR_SYSTEM):
+        """
+        Initialize a new instance of the ChannelsBufferParams class.
+
+        :param idx: type=int
+            The index of the hardware buffer. Should be 0 in most cases.
+        :param dma_allocator: type=BufferDMAAllocator
+
+        returns: type=iio.ChannelsBufferParams
+            A new instance of this class
+        """
+        self._params = BufferParams()
+        self._params.idx = idx
+        self._params.dma_allocator = dma_allocator.value
+
+        super(ChannelsBufferParams, self).__init__(self._params, None)
+
+    @property
+    def idx(self):
+        """Get the buffer index."""
+        return self._params.idx
+
+    @property
+    def dma_allocator(self):
+        """Get the DMA allocator type."""
+        return self._params.dma_allocator
+
 class ChannelsMask(_IIO_Object):
     """A bitmask where each bit corresponds to an enabled channel."""
 
@@ -1093,7 +1136,7 @@ class Block(_IIO_Object):
 class Buffer(_IIO_Object):
     """Represents a hardware I/O buffer."""
 
-    def __init__(self, device, mask, params):
+    def __init__(self, device, mask, params=None):
         """
         Initialize a new instance of the Buffer class.
 
@@ -1102,21 +1145,23 @@ class Buffer(_IIO_Object):
             operations will be performed
         :param mask: type=ChannelsMask
             The mask of enabled channels
-        :param idx: type=int
-            The hardware index of the buffer to use. If unsure, leave it to 0
+        :param params: type=ChannelsBufferParams
+            The parameters of the buffer to use.
 
         returns: type=iio.Buffer
             An new instance of this class
         """
+        if params is None:
+            params = ChannelsBufferParams()
         try:
-            self._buffer = _create_buffer(device._device, params._params, mask._mask)
+            self._buffer = _create_buffer(device._device, _byref(params._params), mask._mask)
         except Exception:
             self._buffer = None
             raise
 
         super(Buffer, self).__init__(self._buffer, device)
 
-        self._idx = idx
+        self._params = params
         self._enabled = False
 
     def __del__(self):
@@ -1158,6 +1203,14 @@ class Buffer(_IIO_Object):
         None,
         "List of attributes for this buffer.\n\ttype=dict of iio.Attr",
     )
+
+    @property
+    def idx(self):
+        """
+        Get the buffer index from the buffer parameters.
+        type: int
+        """
+        return self._params.idx
 
 
 class Stream(_IIO_Object):
