@@ -387,9 +387,7 @@ int main(int argc, char **argv)
 
 		if (!attr || iio_attr_write_longlong(attr, trigger_rate) < 0) {
 			attr = iio_device_find_attr(trigger, "frequency");
-			if (!attr)
-				ret = -ENOENT;
-			else
+			if (attr)
 				ret = iio_attr_write_longlong(attr, trigger_rate);
 			if (ret < 0)
 				dev_perror(trigger, ret, "Sample rate not set");
