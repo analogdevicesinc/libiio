@@ -1865,3 +1865,52 @@ int iiod_client_read_event(struct iio_event_stream_pdata *pdata,
 
 	return ret;
 }
+
+int iiod_client_reg_read(struct iiod_client *client,
+			 const struct iio_device *dev,
+			 uint32_t address, uint32_t *value)
+{
+	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_command cmd;
+	struct iiod_buf buf;
+	int ret;
+
+	cmd.op = IIOD_OP_REG_READ;
+	cmd.dev = (uint8_t) iio_device_get_index(dev);
+	cmd.code = (int32_t) address;
+
+	buf.ptr = value;
+	buf.size = sizeof(*value);
+
+	ret = iiod_io_exec_command(io, &cmd, NULL, &buf);
+	if (ret < 0)
+		return ret;
+
+	if (ret != sizeof(*value))
+		return -EIO;
+
+	return 0;
+}
+
+int iiod_client_reg_write(struct iiod_client *client,
+			  const struct iio_device *dev,
+			  uint32_t address, uint32_t value)
+{
+	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_command cmd;
+	struct iiod_buf buf;
+	int ret;
+
+	cmd.op = IIOD_OP_REG_WRITE;
+	cmd.dev = (uint8_t) iio_device_get_index(dev);
+	cmd.code = (int32_t) address;
+
+	buf.ptr = &value;
+	buf.size = sizeof(value);
+
+	ret = iiod_io_send_command(io, &cmd, &buf, 1);
+	if (ret < 0)
+		return ret;
+
+	return iiod_io_wait_for_command_done(io);
+}
