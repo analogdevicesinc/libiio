@@ -301,13 +301,14 @@ int iio_device_reg_write(struct iio_device *dev,
 	const struct iio_attr *attr;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 
-	/* Use atomic backend operation if available (thread-safe for local backend) */
+	/* Use atomic backend operation if available */
 	if (ops && ops->reg_write) {
 		return ops->reg_write(dev, address, value);
 	}
 
-	/* Fallback to the original implementation for other backends.
-	 * NOTE: This has a potential race condition with reg_read operations. */
+	/* Fallback to the original attribute-based implementation.
+	 * NOTE: This has a potential race condition with reg_read operations
+	 * when multiple clients access the same IIOD server. */
 	ssize_t ret;
 	char buf[1024];
 
@@ -329,13 +330,12 @@ int iio_device_reg_read(struct iio_device *dev,
 	const struct iio_attr *attr;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 
-	/* Use atomic backend operation if available (thread-safe for local backend) */
+	/* Use atomic backend operation if available */
 	if (ops && ops->reg_read) {
 		return ops->reg_read(dev, address, value);
 	}
 
-	/* Fallback to the original implementation for other backends.
-	 * NOTE: This has a race condition but it's unlikely to happen in practice. */
+	/* Fallback to the original attribute-based implementation. */
 	long long val;
 	int ret;
 

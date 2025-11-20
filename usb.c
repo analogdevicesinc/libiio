@@ -275,6 +275,36 @@ static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
 	return iiod_client_set_timeout(pdata->io_ctx.iiod_client, timeout);
 }
 
+static int usb_reg_read(const struct iio_device *dev,
+			uint32_t address, uint32_t *value)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		/* Fallback to attribute-based method for ASCII protocol */
+		return -ENOSYS;
+	}
+
+	return iiod_client_reg_read(client, dev, address, value);
+}
+
+static int usb_reg_write(const struct iio_device *dev,
+			 uint32_t address, uint32_t value)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->io_ctx.iiod_client;
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		/* Fallback to attribute-based method for ASCII protocol */
+		return -ENOSYS;
+	}
+
+	return iiod_client_reg_write(client, dev, address, value);
+}
+
 static const struct iio_device * usb_get_trigger(const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -538,6 +568,9 @@ static const struct iio_backend_ops usb_ops = {
 	.open_ev = usb_open_events_fd,
 	.close_ev = iiod_client_close_event_stream,
 	.read_ev = iiod_client_read_event,
+
+	.reg_read = usb_reg_read,
+	.reg_write = usb_reg_write,
 };
 
 __api_export_if(WITH_USB_BACKEND_DYNAMIC)

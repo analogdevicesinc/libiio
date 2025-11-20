@@ -291,6 +291,36 @@ serial_open_events_fd(const struct iio_device *dev)
 	return iiod_client_open_event_stream(pdata->iiod_client, dev);
 }
 
+static int serial_reg_read(const struct iio_device *dev,
+			   uint32_t address, uint32_t *value)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->iiod_client;
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		/* Fallback to attribute-based method for ASCII protocol */
+		return -ENOSYS;
+	}
+
+	return iiod_client_reg_read(client, dev, address, value);
+}
+
+static int serial_reg_write(const struct iio_device *dev,
+			    uint32_t address, uint32_t value)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->iiod_client;
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		/* Fallback to attribute-based method for ASCII protocol */
+		return -ENOSYS;
+	}
+
+	return iiod_client_reg_write(client, dev, address, value);
+}
+
 static const struct iio_backend_ops serial_ops = {
 	.create = serial_create_context_from_args,
 	.read_attr = serial_read_attr,
@@ -314,6 +344,9 @@ static const struct iio_backend_ops serial_ops = {
 	.open_ev = serial_open_events_fd,
 	.close_ev = iiod_client_close_event_stream,
 	.read_ev = iiod_client_read_event,
+
+	.reg_read = serial_reg_read,
+	.reg_write = serial_reg_write,
 };
 
 __api_export_if(WITH_SERIAL_BACKEND_DYNAMIC)

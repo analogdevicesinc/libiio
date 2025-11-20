@@ -139,7 +139,7 @@ struct iio_backend_ops {
 		       struct iio_event *out_event,
 		       bool nonblock);
 
-	/* Atomic register operations - optional, for thread-safe local backend */
+	/* Atomic register operations */
 	int (*reg_read)(const struct iio_device *dev, uint32_t address, uint32_t *value);
 	int (*reg_write)(const struct iio_device *dev, uint32_t address, uint32_t value);
 };

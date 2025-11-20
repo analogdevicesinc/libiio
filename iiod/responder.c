@@ -1170,6 +1170,70 @@ static void handle_read_event(struct parser_pdata *pdata,
 	}
 }
 
+static void handle_reg_read(struct parser_pdata *pdata,
+			    const struct iiod_command *cmd,
+			    struct iiod_command_data *cmd_data)
+{
+	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
+	const struct iio_context *ctx = pdata->ctx;
+	const struct iio_device *dev;
+	uint32_t address, value;
+	struct iiod_buf buf;
+	int ret;
+
+	dev = iio_context_get_device(ctx, cmd->dev);
+	if (!dev) {
+		ret = -ENODEV;
+		goto out_send_response;
+	}
+
+	address = (uint32_t) cmd->code;
+
+	ret = iio_device_reg_read((struct iio_device *)dev, address, &value);
+	if (ret < 0) {
+		iiod_io_send_response_code(io, ret);
+	} else {
+		buf.ptr = &value;
+		buf.size = sizeof(value);
+		iiod_io_send_response(io, sizeof(value), &buf, 1);
+	}
+
+	return;
+
+out_send_response:
+	iiod_io_send_response_code(io, ret);
+}
+
+static void handle_reg_write(struct parser_pdata *pdata,
+			     const struct iiod_command *cmd,
+			     struct iiod_command_data *cmd_data)
+{
+	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
+	const struct iio_context *ctx = pdata->ctx;
+	const struct iio_device *dev;
+	uint32_t address, value;
+	struct iiod_buf buf;
+	int ret;
+
+	dev = iio_context_get_device(ctx, cmd->dev);
+	if (!dev) {
+		ret = -ENODEV;
+		goto out_send_response;
+	}
+
+	address = (uint32_t) cmd->code;
+	buf.ptr = &value;
+	buf.size = sizeof(value);
+	ret = iiod_command_data_read(cmd_data, &buf);
+	if (ret < 0)
+		goto out_send_response;
+
+	ret = iio_device_reg_write((struct iio_device *)dev, address, value);
+
+out_send_response:
+	iiod_io_send_response_code(io, ret);
+}
+
 typedef void (*iiod_opcode_fn)(struct parser_pdata *,
 			       const struct iiod_command *,
 			       struct iiod_command_data *cmd_data);
@@ -1202,6 +1266,9 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 	[IIOD_OP_CREATE_EVSTREAM]	= handle_create_evstream,
 	[IIOD_OP_FREE_EVSTREAM]		= handle_free_evstream,
 	[IIOD_OP_READ_EVENT]		= handle_read_event,
+
+	[IIOD_OP_REG_READ]		= handle_reg_read,
+	[IIOD_OP_REG_WRITE]		= handle_reg_write,
 };
 
 static int iiod_cmd(const struct iiod_command *cmd,
