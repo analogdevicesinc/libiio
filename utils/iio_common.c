@@ -331,6 +331,9 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				goto err_fail;
 			}
 			params.timeout_ms = sanitize_clamp("timeout", optarg, 0, INT_MAX);
+			/* Wait forever if timeout is explicitly set to 0 */
+			if (!params.timeout_ms)
+				params.timeout_ms = -1;
 			break;
 		case '?':
 			break;
