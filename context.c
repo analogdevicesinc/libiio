@@ -484,8 +484,13 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	}
 
 	if (backend) {
-		if (!params2.timeout_ms)
+		if (!params2.timeout_ms) {
+			/* Zero means use backend default */
 			params2.timeout_ms = backend->default_timeout_ms;
+		} else if (params2.timeout_ms < 0) {
+			/* Negative means infinite - translate to 0 for backends */
+			params2.timeout_ms = 0;
+		} /* Positive values pass through unchanged */
 
 		ctx = backend->ops->create(&params2,
 					   uri + strlen(backend->uri_prefix));
