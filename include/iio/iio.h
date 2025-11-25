@@ -149,8 +149,11 @@ struct iio_context_params {
 	 * If zero, defaults to LEVEL_DEBUG. */
 	enum iio_log_level timestamp_level;
 
-	/** @brief Timeout for I/O operations. If zero, the default timeout is used. */
-	unsigned int timeout_ms;
+	/** @brief Timeout for I/O operations in milliseconds.
+	 * - Zero: use backend default timeout
+	 * - Negative values: no timeout (wait indefinitely)
+	 * - Positive values: timeout after specified milliseconds */
+	int timeout_ms;
 
 	/** @brief Reserved for future fields. */
 	char __rsrv[32];
