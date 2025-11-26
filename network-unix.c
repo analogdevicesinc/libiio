@@ -194,13 +194,19 @@ int do_select(int fd, unsigned int timeout)
 {
 	struct pollfd pfd;
 	int ret;
+	int poll_timeout;
 
 	pfd.fd = fd;
 	pfd.events = POLLOUT | POLLERR;
 	pfd.revents = 0;
 
+	if (!timeout)
+		poll_timeout = -1;
+	else
+		poll_timeout = (int)timeout;
+
 	do {
-		ret = poll(&pfd, 1, timeout);
+		ret = poll(&pfd, 1, poll_timeout);
 	} while (ret == -1 && errno == EINTR);
 
 	if (ret < 0)
