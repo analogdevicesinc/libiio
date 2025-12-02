@@ -115,7 +115,7 @@ namespace iio
                 debug_attrs.Add(new Attr(iio_device_get_debug_attr(dev, i)));
             }
 
-            id = Marshal.PtrToStringAnsi(iio_device_get_id(dev));
+            id = Marshal.PtrToStringAnsi(iio_device_get_id(dev)); // Device IDs are ASCII (kernel-defined)
 
             IntPtr name_ptr = iio_device_get_name(dev);
             if (name_ptr == IntPtr.Zero)
@@ -124,12 +124,12 @@ namespace iio
             }
             else
             {
-                name = Marshal.PtrToStringAnsi(name_ptr);
+                name = UTF8Marshaler.PtrToStringUTF8(name_ptr);
             }
 
             IntPtr label_ptr = iio_device_get_label(dev);
 
-            label = label_ptr == IntPtr.Zero ? "" : Marshal.PtrToStringAnsi(label_ptr);
+            label = label_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(label_ptr);
             hwmon = id[0] == 'h';
         }
 
