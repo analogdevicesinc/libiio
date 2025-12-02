@@ -40,7 +40,7 @@ namespace iio
         internal Version(IntPtr ctx)
 	    : this(iio_context_get_version_major(ctx),
                    iio_context_get_version_minor(ctx),
-                   Marshal.PtrToStringAnsi(iio_context_get_version_tag(ctx)))
+                   UTF8Marshaler.PtrToStringUTF8(iio_context_get_version_tag(ctx)))
 	{
         }
 
@@ -184,11 +184,11 @@ namespace iio
             {
                 throw new IIOException("Unable to create the context xml", xml_hdl);
             }
-            xml = Marshal.PtrToStringAnsi(xml_hdl.ptr);
+            xml = UTF8Marshaler.PtrToStringUTF8(xml_hdl.ptr);
             Marshal.FreeHGlobal(xml_hdl.ptr);
 
-            name = Marshal.PtrToStringAnsi(iio_context_get_name(hdl));
-            description = Marshal.PtrToStringAnsi(iio_context_get_description(hdl));
+            name = UTF8Marshaler.PtrToStringUTF8(iio_context_get_name(hdl));
+            description = UTF8Marshaler.PtrToStringUTF8(iio_context_get_description(hdl));
             library_version = new Version();
             backend_version = new Version(hdl);
 

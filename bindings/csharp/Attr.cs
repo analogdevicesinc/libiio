@@ -48,8 +48,8 @@ namespace iio
         internal Attr(IntPtr attr)
         {
             this.attr = attr;
-            this.name = Marshal.PtrToStringAnsi(iio_attr_get_name(attr));
-            this.filename = Marshal.PtrToStringAnsi(iio_attr_get_filename(attr));
+            this.name = UTF8Marshaler.PtrToStringUTF8(iio_attr_get_name(attr));
+            this.filename = Marshal.PtrToStringAnsi(iio_attr_get_filename(attr)); // Filesystem paths are ASCII
         }
 
         /// <summary>Read the value of this attribute as a <c>string</c>.</summary>
@@ -70,10 +70,18 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The attribute could not be written.</exception>
         public void write(string val)
         {
-            IntPtr valptr = Marshal.StringToHGlobalAnsi(val);
-            int err = iio_attr_write_raw(attr, valptr, (uint)val.Length);
-            if (err < 0)
-                throw new IIOException("Unable to write attribute", err);
+            IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(val);
+            try
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(val);
+                int err = iio_attr_write_raw(attr, valptr, (uint)bytes.Length);
+                if (err < 0)
+                    throw new IIOException("Unable to write attribute", err);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(valptr);
+            }
         }
 
         /// <summary>Read the value of this attribute as a <c>bool</c>.</summary>
