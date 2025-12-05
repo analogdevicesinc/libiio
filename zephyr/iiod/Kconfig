@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+menuconfig LIBIIO_IIOD_UART
+	bool "UART iiod server"
+	help
+	  Enable the iiod server over a UART interface.
+
+if LIBIIO_IIOD_UART
+
+config LIBIIO_IIOD_UART_THREAD_PRIORITY
+	int "Thread priority"
+	default 10
+	help
+	  Priority of the thread running the iiod server.
+
+config LIBIIO_IIOD_UART_THREAD_STACK_SIZE
+	int "Thread stack size"
+	default 4096
+	help
+	  Stack size of the thread running the iiod server.
+
+config LIBIIO_IIOD_UART_RX_BUF_SIZE
+	int "RX buffer size"
+	default 16
+	help
+	  Size of the ring buffer for storing data received from the UART
+	  device before it can be processed by the iiod server.
+
+config LIBIIO_IIOD_UART_TX_BUF_SIZE
+	int "TX buffer size"
+	default 16
+	help
+	  Size of the ring buffer for storing data written by the iiod server
+	  before it can be transmitted by the UART device.
+
+endif # LIBIIO_IIOD_UART

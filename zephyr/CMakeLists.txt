@@ -62,5 +62,6 @@ if(CONFIG_LIBIIO)
   )
 
   add_subdirectory(drivers)
+  add_subdirectory(iiod)
 
 endif()

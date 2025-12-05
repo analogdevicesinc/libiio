@@ -14,5 +14,6 @@ module-str = libiio
 source "subsys/logging/Kconfig.template.log_config"
 
 rsource "drivers/Kconfig"
+rsource "iiod/Kconfig"
 
 endif # LIBIIO
