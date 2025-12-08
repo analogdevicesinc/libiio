@@ -1,0 +1,22 @@
+# udev rules for IIO device hotplug notification to iiod
+#
+# This rule sends SIGUSR1 to iiod whenever an IIO device is added or removed.
+# This is useful in the following scenarios:
+#
+# - Deferred probe: Drivers return -EPROBE_DEFER waiting for firmware files
+#   from the root filesystem, causing devices to appear after iiod starts
+#
+# - Loadable modules: IIO drivers loaded as kernel modules after boot
+#
+# - Device tree overlays: Dynamic loading of DT overlays that instantiate
+#   new IIO devices at runtime (e.g., via configfs or fpgautil)
+#
+# Install to: /lib/udev/rules.d/99-iiod-hotplug.rules
+#
+# SIGUSR1 causes iiod to rescan for IIO devices and update its context.
+
+# Send SIGUSR1 to iiod when an IIO device is added
+ACTION=="add", SUBSYSTEM=="iio", KERNEL=="iio:device*", RUN+="/usr/bin/pkill -SIGUSR1 iiod"
+
+# Send SIGUSR1 to iiod when an IIO device is removed
+ACTION=="remove", SUBSYSTEM=="iio", KERNEL=="iio:device*", RUN+="/usr/bin/pkill -SIGUSR1 iiod"

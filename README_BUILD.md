@@ -119,6 +119,7 @@ Cmake Options       | Default | Description                                    |
 `SYSVINIT_INSTALL_DIR`      | /etc/init.d         | default install path for SysVinit scripts   |
 `WITH_UPSTART`      | OFF | Enable installation of upstart config file for iiod  |
 `UPSTART_CONF_INSTALL_DIR`: | /etc/init           | default install path for upstart conf files |
+`INSTALL_IIOD_HOTPLUG_RULE` | OFF | Install udev rule to notify iiod of IIO device hotplug events |
 
 
 
