@@ -187,6 +187,16 @@ if (WITH_USB_BACKEND AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
 	endif()
 endif()
 
+if (WITH_IIOD AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
+	iio_option(INSTALL_IIOD_HOTPLUG_RULE "Install a udev rule to notify iiod of IIO device hotplug events" OFF "POSIX")
+
+	if (INSTALL_IIOD_HOTPLUG_RULE)
+		set(UDEV_RULES_INSTALL_DIR /lib/udev/rules.d CACHE PATH "default install path for udev rules")
+
+		install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/99-iiod-hotplug.rules DESTINATION ${UDEV_RULES_INSTALL_DIR})
+	endif()
+endif()
+
 if (WITH_NETWORK_BACKEND_DYNAMIC)
 	install(TARGETS iio-ip LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/libiio)
 endif()
