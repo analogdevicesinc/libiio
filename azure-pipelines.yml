@@ -278,11 +278,6 @@ stages:
           vmImage: 'macOS-14'
           agentName: 'Azure Pipelines 3'
           artifactName: 'macOS-14-x64'
-        macOS_13_x64:
-          poolName: 'Azure Pipelines'
-          vmImage: 'macOS-13'
-          agentName: 'Azure Pipelines 2'
-          artifactName: 'macOS-13-x64'
         macOS_13_arm64:
           poolName: 'Default'
           vmImage: 
