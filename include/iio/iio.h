@@ -1576,6 +1576,13 @@ __api __check_ret __pure long iio_channel_get_index(const struct iio_channel *ch
 __api __check_ret __cnst const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn);
 
+/** @brief Refresh the data format for a given channel
+ * @param chn A pointer to an iio_channel structure
+ * @return On error, a negative errno code is returned. -ENOSYS if
+ *         operation is not supported.
+ */
+__api __check_ret int iio_channel_refresh_data_format(struct iio_channel *chn);
+
 
 /** @brief Convert the sample from hardware format to host format
  * @param chn A pointer to an iio_channel structure
