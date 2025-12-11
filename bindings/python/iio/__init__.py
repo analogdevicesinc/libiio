@@ -743,7 +743,7 @@ _libc_free.argtypes = (c_void_p,)
 
 def _get_lib_version(ctx = None):
     return (_get_version_major(ctx), _get_version_minor(ctx),
-            _get_version_tag(ctx).decode("ascii"))
+            _get_version_tag(ctx).decode("utf-8"))
 
 
 def _has_backend(backend):
@@ -758,7 +758,7 @@ def iio_strerror(err, buf, length):
 
 
 version = _get_lib_version()
-backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
+backends = [_get_backend(b).decode("utf-8") for b in range(0, _get_backends_count())]
 bindings_version = "1.0"
 
 class _IIO_Object(object):
@@ -787,7 +787,7 @@ class Attr(_IIO_Object):
             A new instance of this class
         """
         self._attr = attr
-        self._name = _a_get_name(attr).decode("ascii")
+        self._name = _a_get_name(attr).decode("utf-8", errors="replace")
         self._filename = _a_get_fname(attr).decode("ascii")
         super().__init__(self._attr, parent)
 
@@ -797,10 +797,10 @@ class Attr(_IIO_Object):
     def _read(self):
         buf = create_string_buffer(4096)
         _a_read(self._attr, buf, len(buf))
-        return buf.value.decode("ascii")
+        return buf.value.decode("utf-8", errors="replace")
 
     def _write(self, value):
-        _a_write(self._attr, value.encode("ascii"))
+        _a_write(self._attr, value.encode("utf-8"))
 
     name = property(
         lambda self: self._name, None, None, "The name of this attribute.\n\ttype=str"
@@ -877,12 +877,12 @@ class Channel(_IIO_Object):
         self._id = _c_get_id(self._channel).decode("ascii")
 
         name_raw = _c_get_name(self._channel)
-        self._name = name_raw.decode("ascii") if name_raw is not None else None
+        self._name = name_raw.decode("utf-8", errors="replace") if name_raw is not None else None
         self._output = _c_is_output(self._channel)
         self._scan_element = _c_is_scan_element(self._channel)
 
         label_raw = _c_get_label(self._channel)
-        self._name = label_raw.decode("ascii") if label_raw is not None else None
+        self._label = label_raw.decode("utf-8", errors="replace") if label_raw is not None else None
 
     def read(self, block, raw=False):
         """
@@ -1253,10 +1253,10 @@ class _DeviceOrTrigger(_IIO_Object):
         self._id = _d_get_id(self._device).decode("ascii")
 
         name_raw = _d_get_name(self._device)
-        self._name = name_raw.decode("ascii") if name_raw is not None else None
+        self._name = name_raw.decode("utf-8", errors="replace") if name_raw is not None else None
 
         label_raw = _d_get_label(self._device)
-        self._label = label_raw.decode("ascii") if label_raw is not None else None
+        self._label = label_raw.decode("utf-8", errors="replace") if label_raw is not None else None
 
     def reg_write(self, reg, value):
         """
@@ -1296,7 +1296,7 @@ class _DeviceOrTrigger(_IIO_Object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        chn = _d_find_channel(self._device, name_or_id.encode("ascii"), is_output)
+        chn = _d_find_channel(self._device, name_or_id.encode("utf-8"), is_output)
         return None if bool(chn) is False else Channel(self, chn)
 
     id = property(
@@ -1464,10 +1464,10 @@ class Context(_IIO_Object):
 
         super(Context, self).__init__(self._context, None)
 
-        self._name = _get_name(self._context).decode("ascii")
-        self._description = _get_description(self._context).decode("ascii")
+        self._name = _get_name(self._context).decode("utf-8", errors="replace")
+        self._description = _get_description(self._context).decode("utf-8", errors="replace")
         self._xml_hdl = _get_xml(self._context)
-        self._xml = bytes(string_at(self._xml_hdl)).decode("ascii")
+        self._xml = bytes(string_at(self._xml_hdl)).decode("utf-8", errors="replace")
         self._version = _get_lib_version(self._context)
 
     def __del__(self):
@@ -1496,7 +1496,7 @@ class Context(_IIO_Object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        dev = _find_device(self._context, name_or_id_or_label.encode("ascii"))
+        dev = _find_device(self._context, name_or_id_or_label.encode("utf-8"))
         return None if bool(dev) is False else Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev)
 
     name = property(
@@ -1599,8 +1599,8 @@ def scan_contexts():
     ctx_nb = _scan_get_results_count(ctx)
 
     for i in range(0, ctx_nb):
-        uri = _scan_get_uri(ctx, i).decode("ascii")
-        desc = _scan_get_description(ctx, i).decode("ascii")
+        uri = _scan_get_uri(ctx, i).decode("utf-8")
+        desc = _scan_get_description(ctx, i).decode("utf-8", errors="replace")
         scan_ctx[uri] = desc
 
     _scan_destroy(ctx)
