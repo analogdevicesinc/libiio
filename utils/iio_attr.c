@@ -172,10 +172,24 @@ static int dump_device_attributes(const struct iio_device *dev,
 
 	if (!wbuf || quiet == ATTR_VERBOSE) {
 		if (quiet == ATTR_VERBOSE) {
+			const char *attr_type_str;
+
+			switch (attr->type) {
+			case IIO_ATTR_TYPE_DEBUG:
+				attr_type_str = "debug ";
+				break;
+			case IIO_ATTR_TYPE_EVENT:
+				attr_type_str = "event ";
+				break;
+			default:
+				attr_type_str = "";
+				break;
+			}
+
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			printf("'%s'", get_label_or_name_or_id(dev));
 			printf(", %s %sattr '%s', ",
-			       type, attr->type == IIO_ATTR_TYPE_DEBUG ? "debug " : "",
+			       type, attr_type_str,
                               iio_attr_get_name(attr));
 		}
 		gen_function(type, var, attr, NULL);
