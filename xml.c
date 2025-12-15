@@ -6,12 +6,15 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include <asm-generic/errno-base.h>
 #include <errno.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <string.h>
+
+#include "iio-private.h"
 
 #define XML_HEADER "<?xml version=\"1.0\""
 
@@ -42,25 +45,69 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	return iio_channel_add_attr(chn, name, filename);
 }
 
-static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
+static int __get_attr_name(struct iio_device *dev, xmlNode *n, char **name)
 {
 	xmlAttr *attr;
-	char *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
 		if (!strcmp((char *) attr->name, "name")) {
-			name = (char *) attr->children->content;
-		} else {
-			dev_dbg(dev, "Unknown field \'%s\'\n", attr->name);
+			*name = (char *) attr->children->content;
+			return 0;
 		}
 	}
 
-	if (!name) {
-		dev_err(dev, "Incomplete attribute\n");
-		return -EINVAL;
+	dev_err(dev, "Incomplete attribute\n");
+	return -EINVAL;
+}
+
+static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
+{
+	char *name = NULL;
+	int ret;
+
+	if (type == IIO_ATTR_TYPE_BUFFER && !dev->nb_buffers) {
+		struct iio_channel *scan;
+		unsigned int c;
+		/*
+		 * If we are adding a buffer-attribute, it means we're using the legacy
+		 * buffer interface and we just have one buffer. Let's still add it.
+		 * At this point, all channels we're already created and all of the them
+		 * which are scan_elements will be available in the only buffer we have.
+		 * Search and add them to the buffer.
+		 */
+		ret = iio_device_add_buffer(dev, 0);
+		if (ret < 0)
+			return ret;
+
+		for (c = 0; c < dev->nb_channels; c++) {
+			scan = dev->channels[c];
+			if (!scan->is_scan_element)
+				continue;
+
+			ret = iio_device_add_scan_element_to_buffer(dev, scan, 0);
+			if (ret < 0)
+				return ret;
+		}
 	}
 
+	ret = __get_attr_name(dev, n, &name);
+	if (ret < 0)
+		return ret;
+
 	return iio_device_add_attr(dev, name, type);
+}
+
+static int add_attr_to_buffer(struct iio_device *dev, xmlNode *n, unsigned int index)
+{
+	char *name = NULL;
+	int ret;
+
+	ret = __get_attr_name(dev, n, &name);
+	if (ret < 0)
+		return ret;
+
+	ret = iio_buffer_add_attr(dev, index, name);
+	return ret;
 }
 
 static int setup_scan_element(const struct iio_device *dev,
@@ -227,6 +274,77 @@ err_free_name_id:
 	return err;
 }
 
+static int add_scan_element_to_buffer(struct iio_device *dev, xmlNode *node,
+				      unsigned int buf_idx)
+{
+	char *chan_id = NULL, *type = NULL;
+	struct iio_channel *chn;
+	bool output = false;
+	xmlAttr *attr;
+
+	for (attr = node->properties; attr; attr = attr->next) {
+		if (!strcmp((const char *) attr->name, "id"))
+			chan_id = (char *) attr->children->content;
+		else if (!strcmp((const char *) attr->name, "type"))
+			type = (char *) attr->children->content;
+		else
+			dev_dbg(dev, "Unhandled attribute \'%s\' in <channel>\n",
+				attr->name);
+	}
+
+	if (!chan_id || !type) {
+		dev_dbg(dev, "Missing name or type property in <channel>\n");
+		return -ENOENT;
+	}
+
+	if (!strcmp(type, "output"))
+		output = true;
+
+	chn = iio_device_find_channel(dev, chan_id, output);
+	if (!chn)
+		return -ENOENT;
+
+	return iio_device_add_scan_element_to_buffer(dev, chn, buf_idx);
+}
+
+static int add_buffers_to_device(struct iio_device *dev, xmlNode *node)
+{
+	unsigned int buf_idx = 0;
+	xmlAttr *attr;
+	xmlNode *n;
+	int err;
+
+	/* Parse buffer index */
+	for (attr = node->properties; attr; attr = attr->next) {
+		if (!strcmp((const char *) attr->name, "index"))
+			buf_idx = (unsigned int) strtoul((const char *)attr->children->content,
+							 NULL, 10);
+		else
+			dev_dbg(dev, "Unknown attribute \'%s\' in <buffer>\n",
+				attr->name);
+	}
+
+	err = iio_device_add_buffer(dev, buf_idx);
+	if (err < 0)
+		return err;
+
+	/* Parse children: buffer-attribute and scan-element */
+	for (n = node->children; n; n = n->next) {
+		if (!strcmp((const char *)n->name, "buffer-attribute")) {
+			err = add_attr_to_buffer(dev, n, buf_idx);
+			if (err < 0)
+				return err;
+		} else if (!strcmp((const char *)n->name, "channel")) {
+			add_scan_element_to_buffer(dev, n, buf_idx);
+		} else {
+			dev_dbg(dev, "Unknown children \'%s\' in <buffer>\n",
+				n->name);
+		}
+	}
+
+	return 0;
+}
+
 static int create_device(struct iio_context *ctx, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -285,6 +403,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 				return err;
 		} else if (!strcmp((char *) n->name, "buffer-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER);
+			if (err < 0)
+				return err;
+		} else if (!strcmp((char *) n->name, "buffer")) {
+			err = add_buffers_to_device(dev, n);
 			if (err < 0)
 				return err;
 		} else if (strcmp((char *) n->name, "text")) {

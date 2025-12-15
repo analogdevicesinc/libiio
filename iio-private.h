@@ -78,6 +78,13 @@ struct iio_attr_list {
 	unsigned int num;
 };
 
+/* Per-buffer metadata (for multi-buffer devices) */
+struct iio_buffer_meta {
+	struct iio_attr_list attrlist;
+	struct iio_channel **scan_elements;
+	unsigned int nb_scan_elements;
+};
+
 struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
@@ -130,6 +137,10 @@ struct iio_device {
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
+
+	/* Multi-buffer support: 1 = legacy single-buffer */
+	unsigned int nb_buffers;
+	struct iio_buffer_meta *buffers;
 };
 
 struct iio_buffer {

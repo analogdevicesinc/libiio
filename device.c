@@ -10,6 +10,7 @@
 #include "iio-private.h"
 #include "sort.h"
 
+#include <asm-generic/errno-base.h>
 #include <iio/iio-debug.h>
 #include <inttypes.h>
 #include <errno.h>
@@ -93,6 +94,42 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		}
 	}
 
+	for (i = 0; i < dev->nb_buffers; i++) {
+		const struct iio_buffer_meta *buf = &dev->buffers[i];
+		unsigned int j;
+
+		ret = iio_snprintf(ptr, len, "<buffer index=\"%u\" >", i);
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+		for (j = 0; j < buf->attrlist.num; j++) {
+			ret = iio_snprintf_xml_attr(&buf->attrlist.attrs[j], ptr, len);
+			if (ret < 0)
+				return ret;
+
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+		}
+
+		for (j = 0; j < buf->nb_scan_elements; j++) {
+			const struct iio_channel *scan = buf->scan_elements[j];
+
+			ret = iio_snprintf(ptr, len, "<channel id=\"%s\" type=\"%s\" />",
+					   scan->id, scan->is_output ? "output" : "input");
+			if (ret < 0)
+				return ret;
+
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+		}
+
+		ret = iio_snprintf(ptr, len, "</buffer>");
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	}
+
 	ret = iio_snprintf(ptr, len, "</device>");
 	if (ret < 0)
 		return ret;
@@ -118,6 +155,33 @@ const char * iio_device_get_label(const struct iio_device *dev)
 unsigned int iio_device_get_channels_count(const struct iio_device *dev)
 {
 	return dev->nb_channels;
+}
+
+unsigned int iio_device_get_buffers_count(const struct iio_device *dev)
+{
+	return dev->nb_buffers;
+}
+
+int iio_device_get_buffer_scans_count(const struct iio_device *dev,
+				      unsigned int buffer_idx, unsigned int *nb_scans)
+{
+	if (buffer_idx >= dev->nb_buffers)
+		return -EINVAL;
+
+	*nb_scans = dev->buffers[buffer_idx].nb_scan_elements;
+	return 0;
+}
+
+const struct iio_channel *
+iio_device_get_buffer_scan_element(const struct iio_device *dev,
+				   unsigned int buffer_idx, unsigned int scan_idx)
+{
+	if (buffer_idx >= dev->nb_buffers)
+		return iio_ptr(-ENOENT);
+	if (scan_idx >= dev->buffers[buffer_idx].nb_scan_elements)
+		return iio_ptr(-ENOENT);
+
+	return dev->buffers[buffer_idx].scan_elements[scan_idx];
 }
 
 struct iio_channel * iio_device_get_channel(const struct iio_device *dev,
@@ -244,6 +308,13 @@ void free_device(struct iio_device *dev)
 	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_BUFFER; type++)
 		iio_free_attrs(&dev->attrlist[type]);
 
+	/* Free multi-buffer metadata */
+	for (i = 0; i < dev->nb_buffers; i++) {
+		iio_free_attrs(&dev->buffers[i].attrlist);
+		free(dev->buffers[i].scan_elements);
+	}
+	free(dev->buffers);
+
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
 	free(dev->channels);
@@ -352,6 +423,65 @@ struct iio_device_pdata * iio_device_get_pdata(const struct iio_device *dev)
 void iio_device_set_pdata(struct iio_device *dev, struct iio_device_pdata *d)
 {
 	dev->pdata = d;
+}
+
+int iio_device_add_scan_element_to_buffer(struct iio_device *dev, struct iio_channel *chn,
+					  unsigned int buf_idx)
+{
+	struct iio_buffer_meta *buf;
+	struct iio_channel **scans;
+	unsigned int i;
+
+	if (buf_idx >= dev->nb_buffers)
+		return -EINVAL;
+	if (!chn->is_scan_element)
+		return -EINVAL;
+
+	buf = &dev->buffers[buf_idx];
+	printf("Add scan element %s to buffer %u. Existing(%u)\n", chn->id, buf_idx,
+	       buf->nb_scan_elements);
+	/* Check if the scan element is already in the buffer */
+	for (i = 0; i < buf->nb_scan_elements; i++) {
+		if (buf->scan_elements[i] == chn)
+			return -EEXIST;
+	}
+
+	scans = realloc(buf->scan_elements,
+			(buf->nb_scan_elements + 1) * sizeof(*buf->scan_elements));
+	if (!scans)
+		return -ENOMEM;
+
+	buf->scan_elements = scans;
+	buf->scan_elements[buf->nb_scan_elements++] = chn;
+
+	return 0;
+}
+
+int iio_device_add_buffer(struct iio_device *dev, unsigned int buf_idx)
+{
+	struct iio_buffer_meta *buf, *bufs;
+
+	/* This assumes buffers are added in order */
+	if (buf_idx != dev->nb_buffers) {
+		dev_err(dev, "Invalid index(%u) for buffer. Expected %u\n",
+			buf_idx, dev->nb_buffers);
+		return -EINVAL;
+	}
+
+	buf = zalloc(sizeof(*buf));
+	if (!buf)
+		return -ENOMEM;
+
+	bufs = realloc(dev->buffers, (buf_idx + 1) * sizeof(*dev->buffers));
+	if (!bufs) {
+		free(buf);
+		return -ENOMEM;
+	}
+
+	bufs[dev->nb_buffers++] = *buf;
+	dev->buffers = bufs;
+
+	return 0;
 }
 
 struct iio_channel * iio_device_add_channel(struct iio_device *dev, long index,

@@ -7,6 +7,7 @@
  */
 
 #include "iio-private.h"
+#include "iio/iio-backend.h"
 #include "sort.h"
 
 #include <inttypes.h>
@@ -225,6 +226,21 @@ static const char * const attr_type_string[] = {
 	" debug",
 	" buffer",
 };
+
+int iio_buffer_add_attr(struct iio_device *dev, unsigned int buf_idx,
+			const char *name)
+{
+	union iio_pointer p = { .dev = dev, };
+	int ret;
+
+	ret = iio_add_attr(p, &dev->buffers[buf_idx].attrlist, name,
+			   NULL, IIO_ATTR_TYPE_BUFFER);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(dev, "Added attr \'%s\'\n", name);
+	return 0;
+}
 
 int iio_device_add_attr(struct iio_device *dev,
 			const char *name, enum iio_attr_type type)

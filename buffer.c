@@ -97,16 +97,25 @@ static int iio_buffer_enqueue_worker(void *_, void *d)
 	return iio_block_io(d);
 }
 
+/*
+ * \!TODO: Evaluate matching mask with a buffer mask (might be meaningfull for
+ * multi-buffer devices). Things will error out anyways but the error won't be
+ * very meaningful for users.
+ */
 struct iio_buffer *
 iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 			 const struct iio_channels_mask *mask)
 {
 	const struct iio_backend_ops *ops = dev->ctx->ops;
+	const struct iio_attr_list *src_attrlist;
 	struct iio_buffer *buf;
 	ssize_t sample_size;
 	size_t attrlist_size;
 	unsigned int i;
 	int err;
+
+	if (idx >= dev->nb_buffers)
+		return iio_ptr(-EINVAL);
 
 	if (!ops->create_buffer)
 		return iio_ptr(-ENOSYS);
@@ -125,8 +134,14 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	buf->idx = idx;
 
 	/* Duplicate buffer attributes from the iio_device.
-	 * This ensures that those can contain a pointer to our iio_buffer */
-	buf->attrlist.num = dev->attrlist[IIO_ATTR_TYPE_BUFFER].num;
+	 * This ensures that those can contain a pointer to our iio_buffer.
+	 * For multi-buffer devices, use per-buffer attrlist; otherwise use legacy. */
+	if (dev->nb_buffers > 1)
+		src_attrlist = &dev->buffers[idx].attrlist;
+	else
+		src_attrlist = &dev->attrlist[IIO_ATTR_TYPE_BUFFER];
+
+	buf->attrlist.num = src_attrlist->num;
 	attrlist_size = buf->attrlist.num * sizeof(*buf->attrlist.attrs);
 	buf->attrlist.attrs = malloc(attrlist_size);
 	if (!buf->attrlist.attrs) {
@@ -135,7 +150,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	}
 
 	memcpy(buf->attrlist.attrs, /* Flawfinder: ignore */
-	       dev->attrlist[IIO_ATTR_TYPE_BUFFER].attrs, attrlist_size);
+	       src_attrlist->attrs, attrlist_size);
 
 	for (i = 0; i < buf->attrlist.num; i++)
 		buf->attrlist.attrs[i].iio.buf = buf;
@@ -161,6 +176,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	if (err < 0)
 		goto err_free_mutex;
 
+	printf("buffer %u go to local create_buffer\n", idx);
 	buf->pdata = ops->create_buffer(dev, idx, buf->mask);
 	err = iio_err(buf->pdata);
 	if (err < 0)
