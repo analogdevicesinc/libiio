@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
+#include <stdio.h>
 #include <string.h>
 
 void iio_buffer_set_data(struct iio_buffer *buf, void *data)
@@ -48,9 +49,13 @@ static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
 	size_t sample_size, nb_samples = 0;
 	bool cyclic = false;
 
+	printf("iio_buffer_set_enabled: block_size=%zu\n",
+	       buf->block_size);
+
 	if (buf->block_size) {
 		sample_size = iio_device_get_sample_size(buf->dev, buf->mask);
 		nb_samples = buf->block_size / sample_size;
+		printf("iio_buffer_set_enabled: sample_size=%zu\n", sample_size);
 		cyclic = buf->cyclic;
 	}
 
@@ -63,6 +68,8 @@ static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
 int iio_buffer_enable(struct iio_buffer *buffer)
 {
 	int err;
+
+	printf("iio_buffer_enable: nb_blocks=%u\n", buffer->nb_blocks);
 
 	if (buffer->nb_blocks == 0) {
 		dev_err(buffer->dev,
@@ -97,23 +104,37 @@ static int iio_buffer_enqueue_worker(void *_, void *d)
 	return iio_block_io(d);
 }
 
+/*
+ * \!TODO: Evaluate matching mask with a buffer mask (might be meaningfull for
+ * multi-buffer devices). Things will error out anyways but the error won't be
+ * very meaningful for users.
+ */
 struct iio_buffer *
 iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 			 const struct iio_channels_mask *mask)
 {
 	const struct iio_backend_ops *ops = dev->ctx->ops;
+	const struct iio_attr_list *src_attrlist;
 	struct iio_buffer *buf;
 	ssize_t sample_size;
 	size_t attrlist_size;
 	unsigned int i;
 	int err;
 
+	if (idx >= dev->nb_buffers) {
+		printf("Requested buffer index %u but device has only %u buffers\n",
+		       idx, dev->nb_buffers);
+		return iio_ptr(-EINVAL);
+	}
 	if (!ops->create_buffer)
 		return iio_ptr(-ENOSYS);
 
 	sample_size = iio_device_get_sample_size(dev, mask);
-	if (sample_size < 0)
+	if (sample_size < 0) {
+		printf("Failed to get sample size for buffer creation %d\n",
+		       (int) sample_size);
 		return iio_ptr((int) sample_size);
+	}
 	if (!sample_size)
 		return iio_ptr(-EINVAL);
 
@@ -125,8 +146,14 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	buf->idx = idx;
 
 	/* Duplicate buffer attributes from the iio_device.
-	 * This ensures that those can contain a pointer to our iio_buffer */
-	buf->attrlist.num = dev->attrlist[IIO_ATTR_TYPE_BUFFER].num;
+	 * This ensures that those can contain a pointer to our iio_buffer.
+	 * For multi-buffer devices, use per-buffer attrlist; otherwise use legacy. */
+	if (dev->nb_buffers > 1)
+		src_attrlist = &dev->buffers[idx].attrlist;
+	else
+		src_attrlist = &dev->attrlist[IIO_ATTR_TYPE_BUFFER];
+
+	buf->attrlist.num = src_attrlist->num;
 	attrlist_size = buf->attrlist.num * sizeof(*buf->attrlist.attrs);
 	buf->attrlist.attrs = malloc(attrlist_size);
 	if (!buf->attrlist.attrs) {
@@ -135,7 +162,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	}
 
 	memcpy(buf->attrlist.attrs, /* Flawfinder: ignore */
-	       dev->attrlist[IIO_ATTR_TYPE_BUFFER].attrs, attrlist_size);
+	       src_attrlist->attrs, attrlist_size);
 
 	for (i = 0; i < buf->attrlist.num; i++)
 		buf->attrlist.attrs[i].iio.buf = buf;

@@ -7,6 +7,7 @@
  */
 
 #include "iio-private.h"
+#include "iio/iio-backend.h"
 #include "sort.h"
 
 #include <inttypes.h>
@@ -226,6 +227,21 @@ static const char * const attr_type_string[] = {
 	" buffer",
 };
 
+int iio_buffer_add_attr(struct iio_device *dev, unsigned int buf_idx,
+			const char *name)
+{
+	union iio_pointer p = { .dev = dev, };
+	int ret;
+
+	ret = iio_add_attr(p, &dev->buffers[buf_idx].attrlist, name,
+			   NULL, IIO_ATTR_TYPE_BUFFER);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(dev, "Added attr \'%s\'\n", name);
+	return 0;
+}
+
 int iio_device_add_attr(struct iio_device *dev,
 			const char *name, enum iio_attr_type type)
 {
@@ -380,6 +396,15 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 
 	if (!attr)
 		return -EINVAL;
+
+	/* As of now there are no available attributes for buffers and the
+	 * below wrongly detects data_available as an available kind of
+	 * attribute. If we start to see more exceptions or buffers with
+	 * valid available attributes, we can think about something like
+	 * a blacklist array.
+	 */
+	if (attr->type == IIO_ATTR_TYPE_BUFFER)
+		return -ENXIO;
 
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;

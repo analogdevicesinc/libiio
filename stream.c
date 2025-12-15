@@ -44,6 +44,8 @@ iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
 
 	sample_size = iio_device_get_sample_size(buffer->dev, buffer->mask);
 	buf_size = samples_count * sample_size;
+	printf("iio_buffer_create_stream: nb_blocks=%zu, samples_count=%zu, sample_size=%zu, buf_size=%zu\n",
+	       nb_blocks, samples_count, sample_size, buf_size);
 
 	for (i = 0; i < nb_blocks; i++) {
 		stream->blocks[i] = iio_buffer_create_block(buffer, buf_size);

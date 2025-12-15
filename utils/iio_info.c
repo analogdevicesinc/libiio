@@ -15,6 +15,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* For multi-buffer structures */
+#include "iio-private.h"
+
 /* For isatty() */
 #ifdef _WIN32
 #include <io.h>
@@ -68,6 +71,7 @@ static bool colors;
 #define FMT_ERR "\e[1;31mERROR: %s\e[0m"
 #define FMT_DEV "\e[1;32m%s\e[0m"
 #define FMT_CHN "\e[0;33m%s\e[0m"
+#define FMT_BUF "\e[0;36m%s\e[0m"
 #define FMT_ATTR "\e[1;34m%s\e[0m"
 #else
 /* MSVC doesn't like escape codes. But those will never be used anyway,
@@ -214,6 +218,92 @@ static void print_channel(const struct iio_channel *chn)
 	}
 }
 
+static void print_buffers(const struct iio_device *dev,
+			  unsigned int nb_channels,
+			  bool read_sys, bool read_debug)
+{
+	unsigned int nb_buffers = iio_device_get_buffers_count(dev);
+	const struct iio_channel *scan;
+	struct iio_channels_mask *mask;
+	unsigned int nb_scan_elements;
+	struct iio_buffer *buffer;
+	unsigned int i, nb_attrs, j;
+	const struct iio_attr *attr;
+	int ret;
+
+	mask = iio_create_channels_mask(nb_channels);
+	if (!mask)
+		return;
+
+	if (!nb_buffers) {
+		printf("\t\tNo buffers on this device\n");
+		return;
+	}
+
+	printf("\t\t%u buffers found:\n", nb_buffers);
+	for (i = 0; i < nb_buffers; i++) {
+		/*
+		 * For multibuffer support we need to be careful to only enable the scan
+		 * elements we are interested in. It is not guaranteed that all the scan
+		 * elements are available for all the buffers.
+		 */
+		ret = iio_device_get_buffer_scans_count(dev, i, &nb_scan_elements);
+		if (ret < 0) {
+			printf("[ERROR] Failed to get buffer %u scan elements count\n", i);
+			continue;
+		}
+
+		if (colors) {
+			char buf[16];
+
+			sprintf(buf, "buffer%u", i);
+			print_fmt("\t\t\t" FMT_BUF ":\n", buf);
+		} else {
+			printf("\t\t\tbuffer%u:\n", i);
+		}
+
+		printf("\t\t\t%u scan elements found:\n", nb_scan_elements);
+		for (j = 0; j < nb_scan_elements; j++) {
+			scan = iio_device_get_buffer_scan_element(dev, i, j);
+			if (iio_err(scan)) {
+				printf("[ERROR] Failed to get buffer %u scan element %u\n", i, j);
+				continue;
+			}
+
+			printf("\t\t\t\tScan element %u: %s (%s)\n", j, iio_channel_get_id(scan),
+			       iio_channel_is_output(scan) ? "output" : "input");
+
+			iio_channel_enable(scan, mask);
+		}
+
+		buffer = iio_device_create_buffer(dev, i, mask);
+
+		for (j = 0; j < nb_scan_elements; j++) {
+			scan = iio_device_get_buffer_scan_element(dev, i, j);
+			/* no point in checking for errors again */
+			iio_channel_disable(scan, mask);
+		}
+
+		if (iio_err(buffer)) {
+			printf("[ERROR] Failed to create buffer %u, err=%d\n", i,
+			       iio_err(buffer));
+			continue;
+		}
+
+		nb_attrs = iio_buffer_get_attrs_count(buffer);
+		if (nb_attrs)
+			printf("\t\t\t%u buffer attributes found:\n", nb_attrs);
+		for (j = 0; j < nb_attrs; j++) {
+			attr = iio_buffer_get_attr(buffer, j);
+			print_attr(attr, 4, j, read_sys, read_debug);
+		}
+
+		iio_buffer_destroy(buffer);
+	}
+
+	iio_channels_mask_destroy(mask);
+}
+
 int main(int argc, char **argv)
 {
 	char **argw;
@@ -309,6 +399,7 @@ int main(int argc, char **argv)
 		name = iio_device_get_name(dev);
 		label = iio_device_get_label(dev);
 		stream = iio_device_create_event_stream(dev);
+		bool is_multi_buffer = (dev->nb_buffers > 0);
 
 		if (colors)
 			print_fmt("\t" FMT_DEV ":", iio_device_get_id(dev));
@@ -339,9 +430,6 @@ int main(int argc, char **argv)
 		for (j = 0; j < nb_channels; j++) {
 			ch = iio_device_get_channel(dev, j);
 
-			if (mask)
-				iio_channel_enable(ch, mask);
-
 			print_channel(ch);
 
 			nb_attrs = iio_channel_get_attrs_count(ch);
@@ -367,19 +455,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		if (mask)
-			buffer = iio_device_create_buffer(dev, 0, mask);
-		if (mask && !iio_err(buffer)) {
-			nb_attrs = iio_buffer_get_attrs_count(buffer);
-			if (nb_attrs)
-				printf("\t\t%u buffer attributes found:\n", nb_attrs);
-			for (j = 0; j < nb_attrs; j++) {
-				attr = iio_buffer_get_attr(buffer, j);
-				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
-			}
-
-			iio_buffer_destroy(buffer);
-		}
+		print_buffers(dev, nb_channels, read_sysfs_attr, read_debug_attr);
 
 		nb_attrs = iio_device_get_debug_attrs_count(dev);
 		if (nb_attrs) {
@@ -404,9 +480,6 @@ int main(int argc, char **argv)
 		} else if (ret < 0) {
 			ctx_perror(ctx, ret, "Unable to get trigger");
 		}
-
-		if (mask)
-			iio_channels_mask_destroy(mask);
 	}
 
 	free_argw(argc, argw);

@@ -9,6 +9,7 @@
 #include "attr.h"
 #include "iio-private.h"
 #include "local.h"
+#include "iio/iio.h"
 #include "sort.h"
 #include "deps/libini/ini.h"
 
@@ -63,8 +64,15 @@ struct iio_event_stream_pdata {
 	int fd, cancel_fd;
 };
 
-struct iio_channel_pdata {
+struct iio_channel_buffer_pdata {
 	char *enable_fn;
+	unsigned int buf_idx;
+};
+
+struct iio_channel_pdata {
+	struct iio_channel_buffer_pdata *buf;
+	/* Number of buffers where this channel is a scan element */
+	unsigned int nb_buffers;
 	struct iio_attr_list protected;
 };
 
@@ -78,6 +86,11 @@ static const char * const buffer_attrs_reserved[] = {
 	"length",
 	"enable",
 	"watermark",
+};
+
+struct iio_buffer_helper {
+	struct iio_device *dev;
+	unsigned int buf_idx;
 };
 
 int ioctl_nointr(int fd, unsigned long request, void *data)
@@ -96,8 +109,12 @@ int ioctl_nointr(int fd, unsigned long request, void *data)
 
 static void local_free_channel_pdata(struct iio_channel *chn)
 {
+	unsigned int i;
+
 	if (chn->pdata) {
-		free(chn->pdata->enable_fn);
+		for (i = 0; i < chn->pdata->nb_buffers; i++)
+			free(chn->pdata->buf[i].enable_fn);
+		free(chn->pdata->buf);
 		free(chn->pdata);
 	}
 }
@@ -317,8 +334,11 @@ static int local_do_enable_buffer(struct iio_buffer_pdata *pdata, bool enable)
 	ret = (int) local_write_dev_attr(pdata->dev, pdata->idx, "enable",
 					 enable ? "1" : "0",
 					 2, IIO_ATTR_TYPE_BUFFER);
-	if (ret < 0)
+	if (ret < 0) {
+		printf("local_do_enable_buffer: failed to %sable buffer %u: %d\n",
+		       enable ? "en" : "dis", pdata->idx, ret);
 		return ret;
+	}
 
 	return 0;
 }
@@ -328,17 +348,25 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 {
 	int ret;
 
+	printf("local_enable_buffer: nb_samples=%zu, enable=%d, cyclic=%d mmap=%d, dmabuf=%d\n",
+	       nb_samples, enable, cyclic, pdata->mmap_supported, pdata->dmabuf_supported);
+
 	if ((pdata->dmabuf_supported | pdata->mmap_supported) != !nb_samples)
 		return -EINVAL;
 
 	if (enable && nb_samples) {
 		ret = local_set_buffer_size(pdata, nb_samples);
-		if (ret)
+		if (ret) {
+			printf("local_enable_buffer: failed to set buffer size to %zu samples: %d\n",
+			       nb_samples, ret);
 			return ret;
-
+		}
 		ret = local_set_watermark(pdata, nb_samples);
-		if (ret)
+		if (ret) {
+			printf("local_enable_buffer: failed to set watermark to %zu samples: %d\n",
+			       nb_samples, ret);
 			return ret;
+		}
 	}
 
 	return local_do_enable_buffer(pdata, enable);
@@ -441,14 +469,12 @@ local_writebuf(struct iio_buffer_pdata *buffer, const void *src, size_t len)
 
 static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 				      const char *attr, char *dst, size_t len,
-				      enum iio_attr_type type)
+				      enum iio_attr_type type,
+				      bool has_multi_buffer)
 {
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
-
-	if (buf_id > 0)
-		return -ENOSYS;
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
@@ -466,10 +492,10 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 					id, attr);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			if (buf_id > 0) {
+			if (has_multi_buffer) {
 				iio_snprintf(buf, sizeof(buf),
-					     "/sys/bus/iio/devices/%s/buffer%u/%s",
-					     id, buf_id, attr);
+					     "/sys/bus/iio/devices/%s/buffer%u/%s", id,
+					     buf_id, attr);
 			} else {
 				iio_snprintf(buf, sizeof(buf),
 					     "/sys/bus/iio/devices/%s/buffer/%s",
@@ -508,8 +534,10 @@ static ssize_t local_read_dev_attr(const struct iio_device *dev,
 				   enum iio_attr_type type)
 {
 	const char *id = iio_device_get_id(dev);
+	bool has_multi_buffer = dev->nb_buffers > 1;
 
-	return local_do_read_dev_attr(id, buf_id, attr, dst, len, type);
+	return local_do_read_dev_attr(id, buf_id, attr, dst, len, type,
+				      has_multi_buffer);
 }
 
 static ssize_t local_write_dev_attr(const struct iio_device *dev,
@@ -520,9 +548,6 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
-
-	if (buf_id > 0)
-		return -ENOSYS;
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
@@ -540,10 +565,10 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 					dev->id, attr);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			if (buf_id > 0) {
+			if (dev->nb_buffers > 1) {
 				iio_snprintf(buf, sizeof(buf),
-					     "/sys/bus/iio/devices/%s/buffer%u/%s",
-					     dev->id, buf_id, attr);
+					     "/sys/bus/iio/devices/%s/buffer%u/%s", dev->id,
+					     buf_id, attr);
 			} else {
 				iio_snprintf(buf, sizeof(buf),
 					     "/sys/bus/iio/devices/%s/buffer/%s",
@@ -566,32 +591,75 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	return ret ? ret : -EIO;
 }
 
+static struct iio_channel_buffer_pdata *
+channel_get_buffer_pdata(const struct iio_channel *chn, unsigned int buf_idx)
+{
+	unsigned int i;
+
+	for (i = 0; i < chn->pdata->nb_buffers; i++) {
+		if (chn->pdata->buf[i].buf_idx == buf_idx)
+			return &chn->pdata->buf[i];
+	}
+
+	return NULL;
+}
+
 static int channel_write_state(const struct iio_channel *chn,
 			       unsigned int idx, bool en)
 {
-	enum iio_attr_type type = idx ? IIO_ATTR_TYPE_BUFFER : IIO_ATTR_TYPE_DEVICE;
+	struct iio_channel_buffer_pdata *buf_pdata;
+	enum iio_attr_type type;
 	ssize_t ret;
 
-	if (!chn->pdata->enable_fn) {
-		chn_err(chn, "Libiio bug: No \"en\" attribute parsed\n");
+	buf_pdata = channel_get_buffer_pdata(chn, idx);
+	if (!buf_pdata) {
+		chn_err(chn, "Libiio bug: No \"en\" attribute parsed for buffer(%u)\n", idx);
 		return -EINVAL;
 	}
 
-	ret = local_write_dev_attr(chn->dev, idx, chn->pdata->enable_fn,
-				   en ? "1" : "0", 2, type);
-	if (ret < 0)
-		return (int) ret;
+	/* The below is another reason why the way we handle the buffer attributes is suboptimal.
+	 * The same check needs to be done in local_write_dev_attr() for things to work.
+	 * The comment in handle_protected_scan_element_en_attr() might be an alternative for
+	 * this.
+	 */
+	if (chn->dev->nb_buffers > 1)
+		type = IIO_ATTR_TYPE_BUFFER;
 	else
+		type = IIO_ATTR_TYPE_CHANNEL;
+
+	chn_dbg(chn, "handling scan element, buffer(%u) en(%u) path(%s)\n", idx, en,
+		buf_pdata->enable_fn);
+
+	ret = local_write_dev_attr(chn->dev, idx, buf_pdata->enable_fn,
+				   en ? "1" : "0", 2, type);
+	if (ret < 0) {
+		return (int) ret;
+	} else
 		return 0;
 }
 
 static int channel_read_state(const struct iio_channel *chn, unsigned int idx)
 {
-	enum iio_attr_type type = idx ? IIO_ATTR_TYPE_BUFFER : IIO_ATTR_TYPE_DEVICE;
+	struct iio_channel_buffer_pdata *buf_pdata;
+	enum iio_attr_type type;
 	char buf[8];
 	int err;
 
-	err = local_read_dev_attr(chn->dev, idx, chn->pdata->enable_fn,
+	buf_pdata = channel_get_buffer_pdata(chn, idx);
+	if (!buf_pdata) {
+		chn_err(chn, "Libiio bug: No \"en\" attribute parsed for buffer(%u)\n", idx);
+		return -EINVAL;
+	}
+
+	if (chn->dev->nb_buffers > 1)
+		type = IIO_ATTR_TYPE_BUFFER;
+	else
+		type = IIO_ATTR_TYPE_CHANNEL;
+
+	chn_dbg(chn, "handling read scan element, buffer(%u) path(%s)\n", idx,
+		buf_pdata->enable_fn);
+
+	err = local_read_dev_attr(chn->dev, idx, buf_pdata->enable_fn,
 				  buf, sizeof(buf), type);
 	if (err < 0)
 		return err;
@@ -732,6 +800,66 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEVICE);
 }
 
+static int handle_protected_scan_element_en_attr(struct iio_channel *chn,
+						 const char *name, const char *path)
+{
+	struct iio_channel_buffer_pdata *buf;
+	struct iio_device *dev = chn->dev;
+	unsigned int buf_idx, i;
+	const char *en_name;
+
+	if (dev->nb_buffers == 1) {
+		if (chn->pdata->buf) {
+			chn_err(chn, "Libiio bug: \"en\" attribute already "
+				"parsed for channel %s!\n", chn->id);
+			return -EINVAL;
+		}
+
+		buf = calloc(1, sizeof(*buf));
+		if (!buf)
+			return -ENOMEM;
+
+		buf->enable_fn = iio_strdup(path);
+		buf->buf_idx = 0;
+		chn->pdata->buf = buf;
+		chn->pdata->nb_buffers = 1;
+		return 0;
+	}
+
+	iio_sscanf(path, "buffer%u", &buf_idx);
+
+	for (i = 0; i < chn->pdata->nb_buffers; i++) {
+		if (chn->pdata->buf[i].buf_idx == buf_idx) {
+			chn_err(chn, "Libiio bug: \"en\" attribute already "
+				"parsed for channel %s, buffer %u!\n", chn->id, buf_idx);
+			return -EEXIST;
+		}
+	}
+
+	buf = realloc(chn->pdata->buf, (chn->pdata->nb_buffers + 1) * sizeof(*buf));
+	if (!buf)
+		return -ENOMEM;
+
+	/* !REVISIT: For multi buffer support both scan elements and attributes reside in
+	 * the same directory. And the way libiio is handling buffer attributes is by just
+	 * giving the name and construct the proper directory given the buffer index. Hence
+	 * strip the buffer directory!
+	 *
+	 * Not sure the above is the best way to handle this. To me, I would treat both
+	 * scan elements and attributes as buffer attributes (even for the legacy interface)
+	 * and always populate filename with the proper path for the attribute. I don't really
+	 * like that scan elements of buffer 0 get to be seen as device attributes.
+	 */
+	en_name = strrchr(path, '/') + 1;
+	chn_dbg(chan, "Add buffer(%u), en_name=%s\n", buf_idx, en_name);
+
+	buf[chn->pdata->nb_buffers].enable_fn = iio_strdup(en_name);
+	buf[chn->pdata->nb_buffers++].buf_idx = buf_idx;
+	chn->pdata->buf = buf;
+
+	return 0;
+}
+
 static int handle_protected_scan_element_attr(struct iio_channel *chn,
 			const char *name, const char *path)
 {
@@ -789,16 +917,7 @@ static int handle_protected_scan_element_attr(struct iio_channel *chn,
 		}
 
 	} else if (!strcmp(name, "en")) {
-		if (chn->pdata->enable_fn) {
-			chn_err(chn, "Libiio bug: \"en\" attribute already "
-				"parsed for channel %s!\n", chn->id);
-			return -EINVAL;
-		}
-
-		chn->pdata->enable_fn = iio_strdup(path);
-		if (!chn->pdata->enable_fn)
-			return -ENOMEM;
-
+		return handle_protected_scan_element_en_attr(chn, name, path);
 	} else {
 		return -EINVAL;
 	}
@@ -826,7 +945,8 @@ static void free_protected_attrs(struct iio_channel *chn)
 {
 	struct iio_channel_pdata *pdata = chn->pdata;
 
-	iio_free_attrs(&pdata->protected);
+	if (chn->is_scan_element)
+		iio_free_attrs(&pdata->protected);
 }
 
 static int add_attr_to_channel(struct iio_channel *chn,
@@ -834,6 +954,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 			       bool is_scan_element)
 {
 	struct iio_channel_pdata *pdata = chn->pdata;
+	struct iio_device *dev = chn->dev;
 	union iio_pointer p = { .chn = chn, };
 	struct iio_attr_list *attrs;
 	int ret;
@@ -845,7 +966,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 		!strcmp(name + strlen(name) - lbl_len, "_label")) {
 		dev_id = iio_device_get_id(iio_channel_get_device(chn));
 		ret = local_do_read_dev_attr(dev_id, 0, name,
-			label, sizeof(label), IIO_ATTR_TYPE_CHANNEL);
+			label, sizeof(label), IIO_ATTR_TYPE_CHANNEL, false);
 		if (ret > 0)
 			chn->label = iio_strdup(label);
 		else
@@ -857,7 +978,24 @@ static int add_attr_to_channel(struct iio_channel *chn,
 
 	name = get_short_attr_name(chn, name);
 
-	attrs = is_scan_element ? &pdata->protected : &chn->attrlist;
+	if (is_scan_element) {
+		attrs = &pdata->protected;
+		/* For the legacy interface assume always buffer 0*/
+		if (dev->nb_buffers == 1) {
+			/*
+			 * Ignore EEXIST as it means the channel is already in the
+			 * buffer and that is expected to happen when we parse the
+			 * scan_elements/ directory as we'll get all scan (channel)
+			 * attributes.
+			 */
+			ret = iio_device_add_scan_element_to_buffer(dev, chn, 0);
+			if (ret < 0 && ret != -EEXIST)
+				return ret;
+		}
+	} else {
+		attrs = &chn->attrlist;
+	}
+
 	ret = iio_add_attr(p, attrs, name, path, IIO_ATTR_TYPE_CHANNEL);
 	if (ret)
 		return ret;
@@ -920,8 +1058,7 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	return chn;
 
 err_free_chn_pdata:
-	free(chn->pdata->enable_fn);
-	free(chn->pdata);
+	local_free_channel_pdata(chn);
 err_free_chn:
 	free(chn);
 	return iio_ptr(err);
@@ -1106,17 +1243,45 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 	return 0;
 }
 
-static int add_buffer_attr(void *d, const char *path)
+/* Check if an attribute name is a scan element attribute */
+static bool is_scan_element_attr(const char *name)
 {
-	struct iio_device *dev = (struct iio_device *) d;
-	const char *name = strrchr(path, '/') + 1;
+	return string_ends_with(name, "_en") ||
+	       string_ends_with(name, "_type") ||
+	       string_ends_with(name, "_index");
+}
+
+/*
+ * TODO:
+ *
+ * We need to consider a split between buffer attrs and device attrs.
+ * Before we first add buffer attrs to the device list and then duplicate
+ * them when creating the buffer. In fact, IIUC, we can only read those attrs
+ * after calling iio_device_create_buffer() which is odd as there's no real
+ * reason for that other than something imposed by libiio. However having this
+ * separation (which would also help with multi buffer) is not trivial and I'm not
+ * also sure how that would impact the old string based protocol.
+ */
+static int __add_buffer_attr(struct iio_device *dev, const char *name, unsigned int buf_idx)
+{
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(buffer_attrs_reserved); i++)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 
+	if (dev->nb_buffers > 1)
+		return iio_buffer_add_attr(dev, buf_idx, name);
+
 	return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_BUFFER);
+}
+
+static int add_buffer_attr(void *d, const char *path)
+{
+	struct iio_device *dev = (struct iio_device *) d;
+	const char *name = strrchr(path, '/') + 1;
+
+	return __add_buffer_attr(dev, name, 0);
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
@@ -1219,23 +1384,130 @@ static int add_scan_elements(struct iio_device *dev, const char *devpath)
 	return 0;
 }
 
-static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
+static int __add_buffer_attributes(struct iio_device *dev, const char *buf_path)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct stat st;
-	char buf[1024];
+	int ret;
 
-	iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
+	ret = foreach_in_dir(ctx, dev, buf_path, false, add_buffer_attr);
+	if (ret < 0)
+		return ret;
 
-	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		int ret = foreach_in_dir(ctx, dev, buf, false, add_buffer_attr);
+	iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_BUFFER]);
+	return 0;
+}
+
+/* Parse a single bufferN directory */
+static int add_multi_buffer_attributes(void *d, const char *path)
+{
+	struct iio_buffer_helper *helper = (struct iio_buffer_helper *) d;
+	const char *name = strrchr(path, '/') + 1;
+	struct iio_channel *chn;
+	char buf_prefix[64];
+	char *channel_id;
+	int ret;
+
+	printf("Add buffer path: %s attr: %s\n", path, name);
+
+	if (is_scan_element_attr(name)) {
+		channel_id = get_channel_id(helper->dev, name);
+		if (!channel_id)
+			return -ENOENT;
+
+		chn = iio_device_find_channel(helper->dev, channel_id, name[0] == 'o');
+		free(channel_id);
+		if (!chn) {
+			dev_err(helper->dev, "Channel \"%s\" not found", name);
+			return -ENOENT;
+		}
+
+		iio_snprintf(buf_prefix, sizeof(buf_prefix), "buffer%u/", helper->buf_idx);
+		printf("Add scan element to channel, prefix=%s!\n", buf_prefix);
+		ret = add_attr_or_channel_helper(helper->dev, path, buf_prefix, true);
 		if (ret < 0)
 			return ret;
 
-		iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_BUFFER]);
+		/*
+		 * Ignore EEXIST as it means the channel is already in the buffer and that
+		 * is expected to happen when we parse the bufferN directory as we'll get
+		 * all scan (channel) attributes.
+		 */
+		ret = iio_device_add_scan_element_to_buffer(helper->dev, chn, helper->buf_idx);
+		if (ret < 0 && ret != -EEXIST)
+			return ret;
+
+		return 0;
+	}
+
+	ret = __add_buffer_attr(helper->dev, name, helper->buf_idx);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_buffer_helper helper;
+	char buf_legacy[256], buf[256];
+	unsigned int i;
+	struct stat st;
+	int ret;
+
+	iio_snprintf(buf_legacy, sizeof(buf_legacy), "%s/buffer", devpath);
+	if (stat(buf_legacy, &st) < 0 || !S_ISDIR(st.st_mode))
+		return 0;
+
+	dev->nb_buffers = 1;
+	do {
+		iio_snprintf(buf, sizeof(buf), "%s/buffer%u", devpath,
+			     dev->nb_buffers);
+		if (stat(buf, &st) < 0 || !S_ISDIR(st.st_mode))
+			break;
+		dev->nb_buffers++;
+	} while (true);
+
+	dev->buffers = calloc(dev->nb_buffers, sizeof(*dev->buffers));
+	if (!dev->buffers)
+		return -ENOMEM;
+
+	/*
+	 * If we only have one buffer, let's just keep it simple and use the legacy interface.
+	 * That means adding the attributes of the buffer and the scan elements in separated
+	 * directories. If we have multiple buffers, both scan elements and buffer attributes
+	 * are added in the same directory and will be handled together.
+	 */
+	if(dev->nb_buffers == 1) {
+		ret = __add_buffer_attributes(dev, buf_legacy);
+		if (ret < 0)
+			return ret;
+
+		ret = add_scan_elements(dev, devpath);
+		if (ret < 0)
+			goto err_free_scan_elements;
+	}
+
+	for (i = 0; i < dev->nb_buffers; i++) {
+		iio_snprintf(buf, sizeof(buf), "%s/buffer%u", devpath, i);
+
+		helper.dev = dev;
+		helper.buf_idx = i;
+
+		ret = foreach_in_dir(ctx, &helper, buf, false, add_multi_buffer_attributes);
+		if (ret < 0)
+			goto err_free_scan_elements;
+
+		iio_sort_attrs(&dev->buffers[i].attrlist);
 	}
 
 	return 0;
+
+err_free_scan_elements:
+	for (i = 0; i < dev->nb_channels; i++)
+		free_protected_attrs(dev->channels[i]);
+
+	return ret;
 }
 
 static int add_events(struct iio_device *dev, const char *devpath)
@@ -1267,12 +1539,12 @@ static int create_device(void *d, const char *path)
 	id = strrchr(path, '/') + 1;
 
 	ret = (int)local_do_read_dev_attr(id, 0, "name", name, sizeof(name),
-					  IIO_ATTR_TYPE_DEVICE);
+					  IIO_ATTR_TYPE_DEVICE, false);
 	if (ret > 0)
 		name_ptr = name;
 
 	ret = (int)local_do_read_dev_attr(id, 0, "label", label, sizeof(label),
-					  IIO_ATTR_TYPE_DEVICE);
+					  IIO_ATTR_TYPE_DEVICE, false);
 	if (ret > 0)
 		label_ptr = label;
 
@@ -1290,23 +1562,19 @@ static int create_device(void *d, const char *path)
 
 	ret = add_events(dev, path);
 	if (ret < 0)
-		goto err_free_scan_elements;
-
-	ret = add_scan_elements(dev, path);
-	if (ret < 0)
-		goto err_free_scan_elements;
+		goto err_free_device;
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
 
 		ret = set_channel_name(chn);
 		if (ret < 0)
-			goto err_free_scan_elements;
+			goto err_free_device;
 
 		ret = handle_scan_elements(chn);
 		free_protected_attrs(chn);
 		if (ret < 0)
-			goto err_free_scan_elements;
+			goto err_free_device;
 	}
 
 	ret = detect_and_move_global_attrs(dev);
@@ -1321,9 +1589,6 @@ static int create_device(void *d, const char *path)
 
 	return 0;
 
-err_free_scan_elements:
-	for (i = 0; i < dev->nb_channels; i++)
-		free_protected_attrs(dev->channels[i]);
 err_free_device:
 	local_free_pdata(dev);
 	free_device(dev);
@@ -1517,23 +1782,25 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	/* Disable buffer */
 	err = local_do_enable_buffer(pdata, false);
-	if (err < 0)
+	if (err < 0) {
+		printf("Error disabling buffer: %d\n", err);
 		goto err_close;
+	}
 
-	/* Disable all channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0) {
-			err = channel_write_state(chn, idx, false);
-			if (err < 0)
-				goto err_close;
-		}
+	/* Disable all channels (scan_elements) on this buffer */
+	for (i = 0; i < dev->buffers[idx].nb_scan_elements; i++) {
+		chn = dev->buffers[idx].scan_elements[i];
+		printf("Disabling channel %s on buffer %u\n", chn->id, idx);
+		err = channel_write_state(chn, idx, false);
+		if (err < 0)
+			goto err_close;
 	}
 
 	/* Enable channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
+	for (i = 0; i < dev->buffers[idx].nb_scan_elements; i++) {
+		chn = dev->buffers[idx].scan_elements[i];
+		if (iio_channel_is_enabled(chn, mask)) {
+			printf("Enabling channel %s on buffer %u\n", chn->id, idx);
 			err = channel_write_state(chn, idx, true);
 			if (err < 0)
 				goto err_close;
@@ -1542,9 +1809,9 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	/* Finally, update the channels mask by reading the hardware again,
 	 * since some channels may be coupled together. */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0) {
+	for (i = 0; i < dev->buffers[idx].nb_scan_elements; i++) {
+		chn = dev->buffers[idx].scan_elements[i];
+		if (iio_channel_is_enabled(chn, mask)) {
 			err = channel_read_state(chn, idx);
 			if (err < 0)
 				goto err_close;
@@ -1848,6 +2115,14 @@ out_close_ini:
 	return ret;
 }
 
+/*
+ * NS: There is a fundamental issue with the way the error handling! Below, if something
+ * fails we try to catch everuthing in iio_context_destroy() which is very prone to errors
+ * iio_context_destroy() should be used after we have **successfully** created the context!
+ * With the current error handling we can end up with a segfault in iio_context_destroy() if
+ * for example we fail to create a device. create_device() will do free_device() and then
+ * iio_context_destroy() will try to free the same device again.
+ */
 static struct iio_context *
 local_create_context(const struct iio_context_params *params, const char *args)
 {
@@ -1926,6 +2201,7 @@ local_create_context(const struct iio_context_params *params, const char *args)
 	return ctx;
 
 err_context_destroy:
+	printf("Destroy context\n");
 	iio_context_destroy(ctx);
 	return iio_ptr(ret);
 }

@@ -829,6 +829,16 @@ __api __check_ret __pure const char * iio_device_get_label(const struct iio_devi
 __api __check_ret __pure unsigned int iio_device_get_channels_count(
 		const struct iio_device *dev);
 
+__api __check_ret __pure
+unsigned int iio_device_get_buffers_count(const struct iio_device *dev);
+
+__api __check_ret
+int iio_device_get_buffer_scans_count(const struct iio_device *dev,
+				      unsigned int buffer_idx, unsigned int *nb_scans);
+
+__api __check_ret const struct iio_channel *
+iio_device_get_buffer_scan_element(const struct iio_device *dev,
+				   unsigned int buffer_idx, unsigned int scan_idx);
 
 /** @brief Enumerate the device-specific attributes of the given device
  * @param dev A pointer to an iio_device structure
