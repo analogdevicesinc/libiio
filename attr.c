@@ -403,7 +403,7 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 	 * valid available attributes, we can think about something like
 	 * a blacklist array.
 	 */
-	if (attr->type != IIO_ATTR_TYPE_BUFFER)
+	if (attr->type == IIO_ATTR_TYPE_BUFFER)
 		return -ENXIO;
 
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
