@@ -397,6 +397,15 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 	if (!attr)
 		return -EINVAL;
 
+	/* As of now there are no available attributes for buffer and the
+	 * below wrongly detects data_available as an available kind of
+	 * attribute. If we start to see more exceptions or buffer with
+	 * valid available attributes, we can think about something like
+	 * a blacklist array.
+	 */
+	if (attr->type != IIO_ATTR_TYPE_BUFFER)
+		return -ENXIO;
+
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;
 

@@ -176,7 +176,6 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	if (err < 0)
 		goto err_free_mutex;
 
-	printf("buffer %u go to local create_buffer\n", idx);
 	buf->pdata = ops->create_buffer(dev, idx, buf->mask);
 	err = iio_err(buf->pdata);
 	if (err < 0)
