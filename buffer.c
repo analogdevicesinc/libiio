@@ -51,6 +51,8 @@ static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
 
 	if (buf->block_size) {
 		sample_size = iio_device_get_sample_size(buf->dev, buf->mask);
+		printf("iio_buffer_set_enabled: block_size=%zu, sample_size=%zu\n",
+		       buf->block_size, sample_size);
 		nb_samples = buf->block_size / sample_size;
 		cyclic = buf->cyclic;
 	}
