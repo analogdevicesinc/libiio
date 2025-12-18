@@ -20,6 +20,7 @@ static const char * const xml_attr_prefix[] = {
 	"",
 	"debug-",
 	"buffer-",
+	"event-",
 };
 
 static ssize_t iio_snprintf_xml_attr(const struct iio_attr *attr,
@@ -31,6 +32,7 @@ static ssize_t iio_snprintf_xml_attr(const struct iio_attr *attr,
 	switch (attr->type) {
 		case IIO_ATTR_TYPE_DEVICE:
 		case IIO_ATTR_TYPE_DEBUG:
+		case IIO_ATTR_TYPE_EVENT:
 		case IIO_ATTR_TYPE_BUFFER:
 			break;
 		default:
@@ -158,7 +160,7 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_EVENT; type++) {
 		for (i = 0; i < dev->attrlist[type].num; i++) {
 			const char *val = NULL;
 
@@ -276,6 +278,23 @@ iio_device_find_attr(const struct iio_device *dev, const char *name)
 	return iio_attr_find(&dev->attrlist[IIO_ATTR_TYPE_DEVICE], name);
 }
 
+unsigned int iio_device_get_event_attrs_count(const struct iio_device *dev)
+{
+	return dev->attrlist[IIO_ATTR_TYPE_EVENT].num;
+}
+
+const struct iio_attr *
+iio_device_get_event_attr(const struct iio_device *dev, unsigned int index)
+{
+	return iio_attr_get(&dev->attrlist[IIO_ATTR_TYPE_EVENT], index);
+}
+
+const struct iio_attr *
+iio_device_find_event_attr(const struct iio_device *dev, const char *name)
+{
+	return iio_attr_find(&dev->attrlist[IIO_ATTR_TYPE_EVENT], name);
+}
+
 unsigned int iio_device_get_debug_attrs_count(const struct iio_device *dev)
 {
 	return dev->attrlist[IIO_ATTR_TYPE_DEBUG].num;
@@ -340,7 +359,7 @@ void free_device(struct iio_device *dev)
 	enum iio_attr_type type;
 	unsigned int i;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++)
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_EVENT; type++)
 		iio_free_attrs(&dev->attrlist[type]);
 
 	for (i = 0; i < dev->nb_buffers; i++)

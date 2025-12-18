@@ -94,6 +94,9 @@ static xmlNode *getDeviceAttr(xmlDoc *doc, const char *device_id,
 	case IIO_ATTR_TYPE_BUFFER:
 		/* Buffer attributes require special handling for both formats */
 		return find_buffer_attribute(node_device, attr);
+	case IIO_ATTR_TYPE_EVENT:
+		attr_type_name = "event-attribute";
+		break;
 	default:
 		return NULL;
 	}
@@ -542,6 +545,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG);
 			if (err < 0)
 				return err;
+		} else if (!strcmp((char *) n->name, "event-attribute")) {
+			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_EVENT);
+			if (err < 0)
+				return err;
 		} else if (!strcmp((char *) n->name, "buffer-attribute") && buf_legacy) {
 			struct iio_buffer *buf = iio_device_get_buffer(dev, 0);
 
@@ -731,6 +738,9 @@ static int check_available(const struct iio_attr *attr, const char *src)
 		break;
 	case IIO_ATTR_TYPE_DEBUG:
 		avail_attr = iio_device_find_debug_attr(attr->iio.dev, avail_name);
+		break;
+	case IIO_ATTR_TYPE_EVENT:
+		avail_attr = iio_device_find_event_attr(attr->iio.dev, avail_name);
 		break;
 	default:
 		return 0;
