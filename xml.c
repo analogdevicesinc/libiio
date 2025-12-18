@@ -374,6 +374,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			err = add_attr_to_buffer(buf, n);
 			if (err < 0)
 				return err;
+		} else if (!strcmp((char *) n->name, "event-attribute")) {
+			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_EVENT);
+			if (err < 0)
+				return err;
 		} else if (strcmp((char *) n->name, "text")) {
 			dev_dbg(dev, "Unknown children \'%s\' in <device>\n",
 				n->name);
