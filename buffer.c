@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
+#include <stdio.h>
 #include <string.h>
 
 void iio_buffer_set_data(struct iio_buffer *buf, void *data)
@@ -114,15 +115,20 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	unsigned int i;
 	int err;
 
-	if (idx >= dev->nb_buffers)
+	if (idx >= dev->nb_buffers) {
+		printf("Requested buffer index %u but device has only %u buffers\n",
+		       idx, dev->nb_buffers);
 		return iio_ptr(-EINVAL);
-
+	}
 	if (!ops->create_buffer)
 		return iio_ptr(-ENOSYS);
 
 	sample_size = iio_device_get_sample_size(dev, mask);
-	if (sample_size < 0)
+	if (sample_size < 0) {
+		printf("Failed to get sample size for buffer creation %d\n",
+		       (int) sample_size);
 		return iio_ptr((int) sample_size);
+	}
 	if (!sample_size)
 		return iio_ptr(-EINVAL);
 

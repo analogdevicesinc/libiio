@@ -1771,12 +1771,15 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	/* Disable buffer */
 	err = local_do_enable_buffer(pdata, false);
-	if (err < 0)
+	if (err < 0) {
+		printf("Error disabling buffer: %d\n", err);
 		goto err_close;
+	}
 
 	/* Disable all channels (scan_elements) on this buffer */
 	for (i = 0; i < dev->buffers[idx].nb_scan_elements; i++) {
 		chn = dev->buffers[idx].scan_elements[i];
+		printf("Disabling channel %s on buffer %u\n", chn->id, idx);
 		err = channel_write_state(chn, idx, false);
 		if (err < 0)
 			goto err_close;
@@ -1786,6 +1789,7 @@ local_create_buffer(const struct iio_device *dev, unsigned int idx,
 	for (i = 0; i < dev->buffers[idx].nb_scan_elements; i++) {
 		chn = dev->buffers[idx].scan_elements[i];
 		if (iio_channel_is_enabled(chn, mask)) {
+			printf("Enabling channel %s on buffer %u\n", chn->id, idx);
 			err = channel_write_state(chn, idx, true);
 			if (err < 0)
 				goto err_close;
