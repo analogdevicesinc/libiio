@@ -708,6 +708,8 @@ static void handle_create_block(struct parser_pdata *pdata,
 		goto out_send_response;
 	}
 
+	printf("Creating block of size %llu for buffer %u\n",
+	       (unsigned long long) block_size, cmd->code & 0xffff);
 	block = iio_buffer_create_block(buf, (size_t) block_size);
 	ret = iio_err(block);
 	if (ret)
