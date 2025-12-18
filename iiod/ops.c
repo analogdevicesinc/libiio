@@ -1158,6 +1158,11 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 				ret = read_each_attr(dev, buf, sizeof(buf) - 1, nb,
 						     (rw_attr_cb_t)iio_device_get_debug_attr);
 				break;
+			case IIO_ATTR_TYPE_EVENT:
+				nb = iio_device_get_event_attrs_count(dev);
+				ret = read_each_attr(dev, buf, sizeof(buf) - 1, nb,
+						     (rw_attr_cb_t)iio_device_get_event_attr);
+				break;
 			default:
 				return -EINVAL;
 		}
@@ -1175,6 +1180,13 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			attr = iio_device_find_debug_attr(dev, name);
+			if (attr)
+				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
+			else
+				ret = -ENOENT;
+			break;
+		case IIO_ATTR_TYPE_EVENT:
+			attr = iio_device_find_event_attr(dev, name);
 			if (attr)
 				ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
 			else
@@ -1244,6 +1256,11 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 				ret = write_each_attr(dev, buf, len - 1, nb,
 						      (rw_attr_cb_t)iio_device_get_debug_attr);
 				break;
+			case IIO_ATTR_TYPE_EVENT:
+				nb = iio_device_get_event_attrs_count(dev);
+				ret = write_each_attr(dev, buf, len - 1, nb,
+						      (rw_attr_cb_t)iio_device_get_event_attr);
+				break;
 			default:
 				return -EINVAL;
 		}
@@ -1261,6 +1278,13 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			break;
 		case IIO_ATTR_TYPE_DEBUG:
 			attr = iio_device_find_debug_attr(dev, name);
+			if (attr)
+				ret = iio_attr_write_raw(attr, buf, len);
+			else
+				ret = -ENOENT;
+			break;
+		case IIO_ATTR_TYPE_EVENT:
+			attr = iio_device_find_event_attr(dev, name);
 			if (attr)
 				ret = iio_attr_write_raw(attr, buf, len);
 			else
