@@ -345,6 +345,9 @@ static int local_enable_buffer(struct iio_buffer_pdata *pdata,
 {
 	int ret;
 
+	printf("local_enable_buffer: nb_samples=%zu, enable=%d, cyclic=%d mmap=%d, dmabuf=%d\n",
+	       nb_samples, enable, cyclic, pdata->mmap_supported, pdata->dmabuf_supported);
+
 	if ((pdata->dmabuf_supported | pdata->mmap_supported) != !nb_samples)
 		return -EINVAL;
 
