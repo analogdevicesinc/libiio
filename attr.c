@@ -344,6 +344,15 @@ int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, d
 	if (!attr)
 		return -EINVAL;
 
+	/* As of now there are no available attributes for buffers and the
+	 * below wrongly detects data_available as an available kind of
+	 * attribute. If we start to see more exceptions or buffers with
+	 * valid available attributes, we can think about something like
+	 * a blocklist array.
+	 */
+	if (attr->type == IIO_ATTR_TYPE_BUFFER)
+		return -ENXIO;
+
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;
 
@@ -380,6 +389,15 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 
 	if (!attr)
 		return -EINVAL;
+
+	/* As of now there are no available attributes for buffers and the
+	 * below wrongly detects data_available as an available kind of
+	 * attribute. If we start to see more exceptions or buffers with
+	 * valid available attributes, we can think about something like
+	 * a blocklist array.
+	 */
+	if (attr->type == IIO_ATTR_TYPE_BUFFER)
+		return -ENXIO;
 
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;
@@ -443,6 +461,15 @@ int iio_attr_get_available_buf(const struct iio_attr *attr, char *buf,
 
 	if (!buf || buflen == 0)
 		return -EINVAL;
+
+	/* As of now there are no available attributes for buffers and the
+	 * below wrongly detects data_available as an available kind of
+	 * attribute. If we start to see more exceptions or buffers with
+	 * valid available attributes, we can think about something like
+	 * a blocklist array.
+	 */
+	if (attr->type == IIO_ATTR_TYPE_BUFFER)
+		return -ENXIO;
 
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;
