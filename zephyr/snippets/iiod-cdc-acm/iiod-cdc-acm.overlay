@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/ {
+	chosen {
+		iio,iiod-uart = &snippet_iiod_cdc_acm_uart;
+	};
+};
+
+&zephyr_udc0 {
+	snippet_iiod_cdc_acm_uart: snippet_iiod_cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

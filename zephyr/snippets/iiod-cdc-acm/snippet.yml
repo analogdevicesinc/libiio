@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+name: iiod-cdc-acm
+append:
+  EXTRA_CONF_FILE: iiod-cdc-acm.conf
+  EXTRA_DTC_OVERLAY_FILE: iiod-cdc-acm.overlay
