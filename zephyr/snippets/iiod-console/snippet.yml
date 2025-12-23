@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+name: iiod-console
+append:
+  EXTRA_CONF_FILE: iiod-console.conf
+boards:
+  apard32690/max32690/m4:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/apard32690_max32690_m4.overlay
+  frdm_k64f/mk64f12:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/frdm_k64f_mk64f12.overlay
+  adi_sdp_k1/stm32f469xx:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/adi_sdp_k1_stm32f469xx.overlay
