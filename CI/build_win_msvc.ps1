@@ -2,7 +2,12 @@
 $ErrorActionPreference = "Stop"
 $ErrorView = "NormalView"
 
-echo "Running cmake for $Env:COMPILER on 64 bit..."
+# Default to Release if not set
+if (-not $Env:CMAKE_BUILD_TYPE) {
+    $Env:CMAKE_BUILD_TYPE = "Release"
+}
+
+echo "Running cmake for $Env:COMPILER on 64 bit ($Env:CMAKE_BUILD_TYPE)..."
 mkdir build-msvc
 cp .\libiio.iss.cmakein .\build-msvc
 cd build-msvc
@@ -19,7 +24,7 @@ cmake -G "$Env:COMPILER" -DCMAKE_SYSTEM_PREFIX_PATH="C:" `
 -DLIBZSTD_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" -DLIBZSTD_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\lib" `
 -DWITH_EXAMPLES=ON ..
 
-cmake --build . --config Release
+cmake --build . --config $Env:CMAKE_BUILD_TYPE
 
 if ( $LASTEXITCODE -ne 0 ) {
 		throw "[*] cmake build failure"
