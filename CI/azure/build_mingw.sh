@@ -34,11 +34,12 @@ install_pacman_deps() {
 }
 
 build_libiio() {
+    local build_type="${CMAKE_BUILD_TYPE:-Release}"   # default to Release
     $CMAKE -G "MinGW Makefiles" -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.dirname(sys.executable) + '\python.exe')") \
-        -DCMAKE_SYSTEM_PREFIX_PATH="C:" -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON \
+        -DCMAKE_SYSTEM_PREFIX_PATH="C:" -DCMAKE_BUILD_TYPE="$build_type" -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON \
         -DENABLE_IPV6=ON -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON \
         -DCSHARP_BINDINGS:BOOL=OFF ..
-    $CMAKE --build . --config Release
+    $CMAKE --build . --config "$build_type"
 }
 
 init_env
