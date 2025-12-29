@@ -55,7 +55,7 @@ class Information:
 
     def _context_info(self):
         print("IIO context created: " + self.context.name)
-        print("Backend version: %u.%u (git tag: %s" % self.context.version)
+        print("Backend version: %u.%u (git tag: %s)" % self.context.version)
         print("Backend description string: " + self.context.description)
 
         if len(self.context.attrs) > 0:
