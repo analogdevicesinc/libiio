@@ -60,4 +60,6 @@ if(CONFIG_LIBIIO)
     LIBIIO_SCAN_BACKENDS=\"\"
   )
 
+  add_subdirectory(drivers)
+
 endif()

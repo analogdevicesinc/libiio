@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+menu "Drivers"
+
+rsource "iio_device/Kconfig"
+
+endmenu

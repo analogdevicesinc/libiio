@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+menuconfig LIBIIO_IIO_DEVICE
+	bool "IIO device drivers"
+	default y
+	help
+	  Enable IIO device drivers
+
+if LIBIIO_IIO_DEVICE
+
+endif # LIBIIO_IIO_DEVICE
