@@ -8,7 +8,6 @@
 In this archive, you should find the following directories:
 o ./include : Common include files
 o ./Windows-MinGW-W64 : 64-bit binaries compiled by the MinGW toolchain
-o ./Windows-VS-2019-x64 : 64-bit binaries compiled by the MicroSoft toolchain, VS-2019
 o ./Windows-VS-2022-x64 : 64-bit binaries compiled by the MicroSoft toolchain, VS-2022
 
 o Visual Studio:
@@ -16,7 +15,7 @@ o Visual Studio:
   - Copy iio.h, from the include\ directory, into your project and make sure that
     the location where the file reside appears in the 'Additional Include
     Directories' section (Configuration Properties -> C/C++ -> General).
-  - Copy the relevant .lib file from Windows-VS-2019-x64\ or Windows-VS-2022-x64\ and add 'libiio.lib' to
+  - Copy the relevant .lib file from Windows-VS-2022-x64\ and add 'libiio.lib' to
     your 'Additional Dependencies' (Configuration Properties -> Linker -> Input)
     Also make sure that the directory where libiio.lib resides is added to
     'Additional Library Directories' (Configuration Properties -> Linker

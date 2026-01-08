@@ -31,14 +31,14 @@ release_artifacts() {
                 rm -r "${i}"
         done
 
-        local zip_assets='VS-2019-x64 VS-2022-x64 MinGW-W64'
+        local zip_assets='VS-2022-x64 MinGW-W64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
 	mkdir Windows
 	cd Windows
 	mkdir include
 	cd ..
-	cp ./Windows-VS-2019-x64/iio.h ./Windows/include
-        cp ./Windows-VS-2019-x64/Windows-msvc-deps.zip ./
+	cp ./Windows-VS-2022-x64/iio.h ./Windows/include
+        cp ./Windows-VS-2022-x64/Windows-msvc-deps.zip ./
         for i in $zip_assets; do
                 if [ "${i}" != "MinGW-W64" ]; then
                         rm ./"Windows-${i}"/Windows-msvc-deps.zip
@@ -90,7 +90,7 @@ swdownloads_artifacts() {
                 rm -r ../"${distribution}"
         done
 
-	local windows_dist='2019 2022'
+	local windows_dist='2022'
         for distribution in $windows_dist; do
 		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
                 zip -r "Windows-VS-${distribution}-x64-latest_main_libiio".zip "Windows-VS-${distribution}-x64"
