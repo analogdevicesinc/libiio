@@ -41,8 +41,7 @@ As with many open source packages, we use [GitHub](https://github.com/analogdevi
 
 | Operating System | Version | Installer Package |
 |:----------------:|:-------:|:-----------------:|
-| Windows | Windows-64 Server 2019 | [![Windows-64 Server 2019](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://github.com/analogdevicesinc/libiio/releases/download/v0.26/libiio-0.26.ga0eca0d2-setup.exe) |
-| | Windows-64 Server 2022 | [![Windows-64 Server 2022](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://github.com/analogdevicesinc/libiio/releases/download/v0.26/libiio-0.26.ga0eca0d2-setup.exe) |
+| Windows | Windows-64 Server 2022 | [![Windows-64 Server 2022](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/win_box.png)](https://github.com/analogdevicesinc/libiio/releases/download/v0.26/libiio-0.26.ga0eca0d2-setup.exe) |
 | MacOS |  macOS Ventura (v13 x64) | [![macOS Ventura (v13 x64)](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/osx_box.png)](https://github.com/analogdevicesinc/libiio/releases/download/v0.26/libiio-0.26.ga0eca0d-macOS-13-x64.pkg) |
 | | macOS Ventura (v13 arm64) | [![macOS Ventura (v13 arm64)](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/osx_box.png)](https://github.com/analogdevicesinc/libiio/releases/download/v0.26/libiio-0.26.ga0eca0d-macOS-13-arm64.pkg) |
 | | macOS Monterey (v12) | [![macOS Monterey (v12)](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/osx_box.png)](https://github.com/analogdevicesinc/libiio/releases/download/v0.26/libiio-0.26.ga0eca0d-macOS-12.pkg) |

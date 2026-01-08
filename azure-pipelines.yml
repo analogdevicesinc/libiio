@@ -178,12 +178,6 @@ stages:
           ARCH: 'x64'
           PLATFORM_TOOLSET: 'v143'
           artifactName: 'Windows-VS-2022-x64'
-        VS2019:
-          vmImage: 'windows-2019'
-          COMPILER: 'Visual Studio 16 2019'
-          ARCH: 'x64'
-          PLATFORM_TOOLSET: 'v142'
-          artifactName: 'Windows-VS-2019-x64'
     pool:
       vmImage: $[ variables['vmImage'] ]
     steps:
@@ -246,7 +240,7 @@ stages:
   - job: GenerateSetupExe
     dependsOn: WindowsBuilds
     pool:
-      vmImage: 'windows-2019'
+      vmImage: 'windows-2022'
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:
