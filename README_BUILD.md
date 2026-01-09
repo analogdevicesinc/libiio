@@ -209,6 +209,132 @@ Setting an invalid heap name will cause DMABUF operations to fail immediately wi
 
 This feature is intended for users who need to select an alternative DMA heap present under `/dev/dma_heap/` (for example a reserved or CMA heap).
 
+## Instructions for building on Windows with MSVC
+
+### Prerequisites
+
+- Visual Studio 2019 or Visual Studio 2022
+- CMake (version 3.10 or higher)
+- Git
+- Chocolatey package manager (for dependency management, e.g. wget)
+- 7-Zip (for extracting archives)
+
+### Building Dependencies
+
+libiio requires several dependencies on Windows: libxml2, libzstd, libusb, and libserialport. A build script is provided to automatically download and build these dependencies.
+
+#### Step 1: Set Environment Variables
+
+Before running the dependency build script, you need to set three environment variables based on your Visual Studio version and target architecture.
+
+**For Visual Studio 2022 (x64):**
+```powershell
+$env:ARCH = "x64"
+$env:PLATFORM_TOOLSET = "v143"
+$env:COMPILER = "Visual Studio 17 2022"
+```
+
+**For Visual Studio 2019 (x64):**
+```powershell
+$env:ARCH = "x64"
+$env:PLATFORM_TOOLSET = "v142"
+$env:COMPILER = "Visual Studio 16 2019"
+```
+
+**For 32-bit builds**, use `Win32` instead of `x64`:
+```powershell
+$env:ARCH = "Win32"
+```
+
+#### Step 2: Build Dependencies
+
+From the root of the libiio project, run the dependency build script:
+
+```powershell
+.\CI\azure\windows_build_deps.cmd
+```
+
+This script will:
+- Create a `deps` directory in the project root
+- Download libzstd, libserialport, libusb, and libxml2
+- Build libzstd and libserialport using MSBuild
+- Build libxml2 using CMake
+- Create an archive `Windows-msvc-deps.zip` with all dependencies
+
+#### Step 3: Configure libiio with CMake
+
+After the dependencies are built, configure libiio using CMake. Make sure to specify the paths to the dependencies:
+
+**For Visual Studio 2022:**
+```powershell
+mkdir build
+cd build
+cmake .. -G "Visual Studio 17 2022" -A x64 `
+  -DLIBXML2_LIBRARIES="$PWD\..\deps\libxml2-install\lib\libxml2.lib" `
+  -DLIBXML2_INCLUDE_DIR="$PWD\..\deps\libxml2-install\include\libxml2" `
+  -DLIBUSB_LIBRARIES="$PWD\..\deps\libusb\VS2022\MS64\dll\libusb-1.0.lib" `
+  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include\libusb-1.0" `
+  -DLIBSERIALPORT_LIBRARIES="$PWD\..\deps\libserialport\x64\Release\libserialport.lib" `
+  -DLIBSERIALPORT_INCLUDE_DIR="$PWD\..\deps\libserialport" `
+  -DLIBZSTD_LIBRARIES="$PWD\..\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" `
+  -DLIBZSTD_INCLUDE_DIR="$PWD\..\deps\zstd\lib"
+```
+
+**For Visual Studio 2019:**
+```powershell
+mkdir build
+cd build
+cmake .. -G "Visual Studio 16 2019" -A x64 `
+  -DLIBXML2_LIBRARIES="$PWD\..\deps\libxml2-install\lib\libxml2.lib" `
+  -DLIBXML2_INCLUDE_DIR="$PWD\..\deps\libxml2-install\include\libxml2" `
+  -DLIBUSB_LIBRARIES="$PWD\..\deps\libusb\VS2019\MS64\dll\libusb-1.0.lib" `
+  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include\libusb-1.0" `
+  -DLIBSERIALPORT_LIBRARIES="$PWD\..\deps\libserialport\x64\Release\libserialport.lib" `
+  -DLIBSERIALPORT_INCLUDE_DIR="$PWD\..\deps\libserialport" `
+  -DLIBZSTD_LIBRARIES="$PWD\..\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" `
+  -DLibZstd_INCLUDE_DIR="$PWD\..\deps\zstd\lib"
+```
+
+**Note:** Adjust the libusb path according to your Visual Studio version (`VS2019` or `VS2022`).
+
+#### Step 4: Build libiio
+
+Build the library using CMake:
+
+```powershell
+cmake --build . --config RelWithDebInfo
+```
+
+Or using MSBuild directly:
+
+```powershell
+msbuild libiio.sln /p:Configuration=RelWithDebInfo /p:Platform=x64
+```
+
+**Important:** Always build in `RelWithDebInfo` or `Release` mode, not `Debug` mode, due to MSVC linker limitations (see Notes section below).
+
+#### Step 5: Install (Optional)
+
+To install libiio to a specific location:
+
+```powershell
+cmake --build . --config RelWithDebInfo --target install
+```
+
+By default, this installs to `C:\Program Files\libiio`. To change the installation path, set `CMAKE_INSTALL_PREFIX` during the CMake configuration step:
+
+```powershell
+cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="C:\libiio" ...
+```
+
+### Troubleshooting
+
+**Issue:** CMake cannot find dependencies
+- **Solution:** Ensure the dependency paths in the CMake command match the actual directory structure created by the build script. Check that `deps` directory exists and contains the built libraries.
+
+**Issue:** Missing DLL errors at runtime
+- **Solution:** Ensure all dependency DLLs (libusb, libxml2, libserialport, libzstd) are in the same directory as the libiio executable or in your system PATH.
+
 ## Instructions applicable to Microcontroller configurations
 
 ### Install Prerequisites/Dependencies
