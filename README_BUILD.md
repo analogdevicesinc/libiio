@@ -1,5 +1,29 @@
 # Build instructions for libiio
 
+## Table of Contents
+
+- [Instructions applicable to Linux, BSD, and Windows configurations](#instructions-applicable-to-linux-bsd-and-windows-configurations)
+  - [Install Prerequisites/Dependencies](#install-prerequisitesdependencies)
+  - [Clone](#clone)
+  - [Configure & Build](#configure--build)
+  - [Install](#install)
+  - [Python bindings](#python-bindings)
+  - [Uninstall](#uninstall)
+- [Environment Variable Configuration](#environment-variable-configuration)
+  - [DMA Heap Path Configuration](#dma-heap-path-configuration)
+- [Instructions for building on Windows with MSVC](#instructions-for-building-on-windows-with-msvc)
+  - [Prerequisites](#prerequisites)
+  - [Building Dependencies](#building-dependencies)
+  - [Troubleshooting](#troubleshooting)
+  - [Notes](#notes)
+- [Instructions applicable to Microcontroller configurations](#instructions-applicable-to-microcontroller-configurations)
+  - [Install Prerequisites/Dependencies](#install-prerequisitesdependencies-1)
+  - [Clone](#clone-1)
+  - [Configure & Build](#configure--build-1)
+  - [Install](#install-1)
+  - [Uninstall](#uninstall-1)
+  - [Notes](#notes-1)
+
 ## Instructions applicable to Linux, BSD, and Windows configurations
 
 ### Install Prerequisites/Dependencies
