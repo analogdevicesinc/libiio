@@ -5,3 +5,5 @@ zephyr_syscall_header(${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/include/iio_device.h)
 
 zephyr_linker_sources(SECTIONS iio-device-rom.ld)
 zephyr_iterable_section(NAME iio_device_info KVMA RAM_REGION GROUP RODATA_REGION)
+
+zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIO_DEVICE_ADC adc.c)
