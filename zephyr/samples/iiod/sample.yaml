@@ -1,0 +1,39 @@
+sample:
+  description: iiod server sample
+  name: iiod
+common:
+  tags: iiod
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Booting Zephyr OS"
+tests:
+  sample.iiod.network:
+    extra_args:
+      - SNIPPET=iiod-network
+    platform_allow:
+      - native_sim
+
+  sample.iiod.cdc-acm.adc-emul:
+    extra_args:
+      - SNIPPET=iiod-cdc-acm
+    platform_allow:
+      - apard32690/max32690/m4
+      - adi_sdp_k1
+      - frdm_k64f
+
+  sample.iiod.console.adc-emul:
+    extra_args:
+      - SNIPPET=iiod-console
+    platform_allow:
+      - apard32690/max32690/m4
+      - adi_sdp_k1
+      - frdm_k64f
+
+  sample.iiod.console.eval_ad4052_ardz:
+    extra_args:
+      - SNIPPET=iiod-console
+      - SHIELD=eval_ad4052_ardz
+    platform_allow:
+      - apard32690/max32690/m4

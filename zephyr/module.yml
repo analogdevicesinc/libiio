@@ -8,3 +8,5 @@ build:
   settings:
     dts_root: zephyr
     snippet_root: zephyr
+samples:
+  - zephyr/samples

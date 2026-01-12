@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/ {
+	iio-context {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		iio-device@0 {
+			compatible = "iio,adc";
+			reg = <0>;
+			io-channels = <&adc4052_eval_ad4052_ardz 0>;
+			io-channel-names = "adc_in_ch0";
+		};
+	};
+};
