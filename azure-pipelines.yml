@@ -1,22 +1,24 @@
-# TEST PIPELINE - Quick test to verify cmakeBuildType variable
-# This is a temporary test pipeline to verify variable values
+# TEST PIPELINE - Verify compile-time vs runtime variable evaluation
+# Testing if ${{ }} template expressions can access Build.SourceBranch
 
 variables:
-  # Check if this is the main branch
+  # COMPILE-TIME: These use ${{ }} - evaluated BEFORE pipeline runs
+  # The question: Is Build.SourceBranch available at compile time?
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
-    isMain: true
+    isMain_compiletime: 'TRUE_compiletime'
   ${{ else }}:
-    isMain: false
-  # Check if this is a release tag
+    isMain_compiletime: 'FALSE_compiletime'
+
   ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
-    isRelease: true
-  ${{ else }}:
-    isRelease: false
-  # Default build type for all builds
-  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
+    isRelease_compiletime: 'TRUE_compiletime'
     cmakeBuildType: 'Release'
   ${{ else }}:
+    isRelease_compiletime: 'FALSE_compiletime'
     cmakeBuildType: 'RelWithDebInfo'
+
+  # RUNTIME: These use $[ ] - evaluated WHEN pipeline runs
+  isMain_runtime: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  isRelease_runtime: $[startsWith(variables['Build.SourceBranch'], 'refs/tags/v')]
 
 trigger:
   branches:
@@ -34,23 +36,23 @@ stages:
     steps:
     - script: |
         echo "======================================"
-        echo "VARIABLE TEST RESULTS"
-        echo "======================================"
-        echo "Build.SourceBranch: $(Build.SourceBranch)"
-        echo "isMain: $(isMain)"
-        echo "isRelease: $(isRelease)"
-        echo "cmakeBuildType: $(cmakeBuildType)"
+        echo "COMPILE-TIME vs RUNTIME TEST"
         echo "======================================"
         echo ""
-        echo "Expected for non-tag branch: cmakeBuildType=RelWithDebInfo"
-        echo "Expected for tag (v*): cmakeBuildType=Release"
+        echo "Build.SourceBranch (actual): $(Build.SourceBranch)"
         echo ""
-        if [ "$(cmakeBuildType)" = "RelWithDebInfo" ]; then
-          echo "SUCCESS: cmakeBuildType is correctly set to RelWithDebInfo for non-tag build"
-        elif [ "$(cmakeBuildType)" = "Release" ]; then
-          echo "INFO: cmakeBuildType is Release (expected only for tag builds)"
-        else
-          echo "ERROR: cmakeBuildType has unexpected value: $(cmakeBuildType)"
-          exit 1
-        fi
-      displayName: 'Test cmakeBuildType variable'
+        echo "--- COMPILE-TIME (\${{ }}) results ---"
+        echo "isMain_compiletime:    $(isMain_compiletime)"
+        echo "isRelease_compiletime: $(isRelease_compiletime)"
+        echo "cmakeBuildType:        $(cmakeBuildType)"
+        echo ""
+        echo "--- RUNTIME (\$[ ]) results ---"
+        echo "isMain_runtime:    $(isMain_runtime)"
+        echo "isRelease_runtime: $(isRelease_runtime)"
+        echo ""
+        echo "======================================"
+        echo "ANALYSIS:"
+        echo "If compile-time shows FALSE but runtime shows true/false correctly,"
+        echo "then Build.SourceBranch is NOT available at compile time!"
+        echo "======================================"
+      displayName: 'Compare compile-time vs runtime'
