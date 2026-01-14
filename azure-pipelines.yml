@@ -8,8 +8,16 @@ variables:
   ${{ else }}:
     isTestBranch_compiletime: 'FALSE'
 
+  # cmakeBuildType using COMPILE-TIME expression (current approach)
+  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
+    cmakeBuildType_compiletime: 'Release'
+  ${{ else }}:
+    cmakeBuildType_compiletime: 'RelWithDebInfo'
+
   # RUNTIME: $[ ] - evaluated WHEN pipeline runs
   isTestBranch_runtime: $[eq(variables['Build.SourceBranch'], 'refs/heads/test-cmakeBuildType')]
+  # cmakeBuildType using RUNTIME expression (alternative approach)
+  cmakeBuildType_runtime: $[if(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), 'Release', 'RelWithDebInfo')]
 
 trigger:
   branches:
@@ -32,15 +40,20 @@ stages:
         echo ""
         echo "Build.SourceBranch (actual): $(Build.SourceBranch)"
         echo ""
-        echo "--- COMPILE-TIME template expression ---"
+        echo "--- isTestBranch ---"
         echo "isTestBranch_compiletime: $(isTestBranch_compiletime)"
+        echo "isTestBranch_runtime:     $(isTestBranch_runtime)"
         echo ""
-        echo "--- RUNTIME expression ---"
-        echo "isTestBranch_runtime: $(isTestBranch_runtime)"
+        echo "--- cmakeBuildType ---"
+        echo "cmakeBuildType_compiletime: $(cmakeBuildType_compiletime)"
+        echo "cmakeBuildType_runtime:     $(cmakeBuildType_runtime)"
         echo ""
         echo "======================================"
-        echo "EXPECTED: Both should be TRUE for test-cmakeBuildType branch"
-        echo "If compile-time is FALSE but runtime is True,"
+        echo "EXPECTED for test-cmakeBuildType branch:"
+        echo "  isTestBranch: TRUE (both)"
+        echo "  cmakeBuildType: RelWithDebInfo (both)"
+        echo ""
+        echo "If compile-time differs from runtime,"
         echo "then Build.SourceBranch is NOT available at compile time!"
         echo "======================================"
       displayName: 'Compare compile-time vs runtime'
