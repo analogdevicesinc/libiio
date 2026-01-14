@@ -5,8 +5,10 @@ variables:
   isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
   isRelease: $[startsWith(variables['Build.SourceBranch'], 'refs/tags/v')]
   # Default build type for all builds
-  cmakeBuildType: $[ if eq(variables.isRelease, true) ]: 'Release'
-                  $[ if ne(variables.isRelease, true) ]: 'RelWithDebInfo'
+  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
+    cmakeBuildType: 'Release'
+  ${{ else }}:
+    cmakeBuildType: 'RelWithDebInfo'
 
 trigger:
   branches:
