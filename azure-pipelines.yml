@@ -2,23 +2,14 @@
 # Testing if ${{ }} template expressions can access Build.SourceBranch
 
 variables:
-  # COMPILE-TIME: These use ${{ }} - evaluated BEFORE pipeline runs
-  # The question: Is Build.SourceBranch available at compile time?
-  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
-    isMain_compiletime: 'TRUE_compiletime'
+  # COMPILE-TIME: ${{ }} - evaluated BEFORE pipeline runs
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/test-cmakeBuildType') }}:
+    isTestBranch_compiletime: 'TRUE'
   ${{ else }}:
-    isMain_compiletime: 'FALSE_compiletime'
+    isTestBranch_compiletime: 'FALSE'
 
-  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
-    isRelease_compiletime: 'TRUE_compiletime'
-    cmakeBuildType: 'Release'
-  ${{ else }}:
-    isRelease_compiletime: 'FALSE_compiletime'
-    cmakeBuildType: 'RelWithDebInfo'
-
-  # RUNTIME: These use $[ ] - evaluated WHEN pipeline runs
-  isMain_runtime: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
-  isRelease_runtime: $[startsWith(variables['Build.SourceBranch'], 'refs/tags/v')]
+  # RUNTIME: $[ ] - evaluated WHEN pipeline runs
+  isTestBranch_runtime: $[eq(variables['Build.SourceBranch'], 'refs/heads/test-cmakeBuildType')]
 
 trigger:
   branches:
@@ -41,18 +32,15 @@ stages:
         echo ""
         echo "Build.SourceBranch (actual): $(Build.SourceBranch)"
         echo ""
-        echo "--- COMPILE-TIME (\${{ }}) results ---"
-        echo "isMain_compiletime:    $(isMain_compiletime)"
-        echo "isRelease_compiletime: $(isRelease_compiletime)"
-        echo "cmakeBuildType:        $(cmakeBuildType)"
+        echo "--- COMPILE-TIME template expression ---"
+        echo "isTestBranch_compiletime: $(isTestBranch_compiletime)"
         echo ""
-        echo "--- RUNTIME (\$[ ]) results ---"
-        echo "isMain_runtime:    $(isMain_runtime)"
-        echo "isRelease_runtime: $(isRelease_runtime)"
+        echo "--- RUNTIME expression ---"
+        echo "isTestBranch_runtime: $(isTestBranch_runtime)"
         echo ""
         echo "======================================"
-        echo "ANALYSIS:"
-        echo "If compile-time shows FALSE but runtime shows true/false correctly,"
+        echo "EXPECTED: Both should be TRUE for test-cmakeBuildType branch"
+        echo "If compile-time is FALSE but runtime is True,"
         echo "then Build.SourceBranch is NOT available at compile time!"
         echo "======================================"
       displayName: 'Compare compile-time vs runtime'
