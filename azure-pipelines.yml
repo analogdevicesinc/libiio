@@ -17,7 +17,6 @@ variables:
   # RUNTIME: $[ ] - evaluated WHEN pipeline runs
   isTestBranch_runtime: $[eq(variables['Build.SourceBranch'], 'refs/heads/test-cmakeBuildType')]
   # cmakeBuildType using RUNTIME expression (alternative approach)
-  cmakeBuildType_runtime: $[if(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), 'Release', 'RelWithDebInfo')]
 
 trigger:
   branches:
