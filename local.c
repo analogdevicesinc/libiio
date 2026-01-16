@@ -476,6 +476,11 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 					     id, attr);
 			}
 			break;
+		case IIO_ATTR_TYPE_EVENT:
+			iio_snprintf(buf, sizeof(buf),
+				     "/sys/bus/iio/devices/%s/events/%s",
+				     id, attr);
+			break;
 		default:
 			return -EINVAL;
 	}
@@ -549,6 +554,11 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 					     "/sys/bus/iio/devices/%s/buffer/%s",
 					     dev->id, attr);
 			}
+			break;
+		case IIO_ATTR_TYPE_EVENT:
+			iio_snprintf(buf, sizeof(buf),
+				     "/sys/bus/iio/devices/%s/events/%s",
+				     dev->id, attr);
 			break;
 		default:
 			return -EINVAL;
@@ -1134,6 +1144,26 @@ static int add_attr_or_channel_helper(struct iio_device *dev,
 	return add_channel(dev, name, buf, dir_is_scan_elements);
 }
 
+static bool is_event_attr(struct iio_device *dev, const char *name)
+{
+	unsigned int i;
+
+	/* Check if this attribute name starts with any channel prefix.
+	 * If it does, it's a channel event attribute, not a device event attribute. */
+	for (i = 0; i < dev->nb_channels; i++) {
+		const char *id = dev->channels[i]->id;
+
+		/* Match patterns like "in_voltage0_" or "in_temp0_" */
+		if (strncmp(name, "in_", 3) == 0 || strncmp(name, "out_", 4) == 0) {
+			if (strstr(name, id) == name + 3 || strstr(name, id) == name + 4)
+				return false; /* It's a channel event attribute */
+		}
+	}
+
+	/* If no channel prefix found, it's a device-level event attribute */
+	return true;
+}
+
 static int add_attr_or_channel(void *d, const char *path)
 {
 	return add_attr_or_channel_helper((struct iio_device *) d,
@@ -1142,8 +1172,13 @@ static int add_attr_or_channel(void *d, const char *path)
 
 static int add_event(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d,
-				path, "events/", false);
+	struct iio_device *dev = (struct iio_device *) d;
+	const char *name = strrchr(path, '/') + 1;
+
+	if (is_event_attr(dev, name))
+		return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_EVENT);
+	else
+		return add_attr_or_channel_helper(dev, path, "events/", false);
 }
 
 static int add_scan_element(void *d, const char *path)

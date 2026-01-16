@@ -221,6 +221,7 @@ int main(int argc, char **argv)
 	const struct iio_channel *ch;
 	const char *name, *label;
 	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
+	unsigned int nb_ev_attrs;
 	struct iio_channels_mask *mask;
 	const struct iio_attr *attr;
 	struct iio_buffer *buffer;
@@ -363,6 +364,16 @@ int main(int argc, char **argv)
 					nb_attrs);
 			for (j = 0; j < nb_attrs; j++) {
 				attr = iio_device_get_attr(dev, j);
+				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
+			}
+		}
+
+		nb_ev_attrs = iio_device_get_event_attrs_count(dev);
+		if (nb_ev_attrs) {
+			printf("\t\t%u device-specific event attributes found:\n",
+					nb_ev_attrs);
+			for (j = 0; j < nb_ev_attrs; j++) {
+				attr = iio_device_get_event_attr(dev, j);
 				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
 			}
 		}
