@@ -214,6 +214,21 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			type_name = "input";
 
 		gen_function("channel", "ch", attr, NULL);
+		if (quiet == ATTR_VERBOSE) {
+			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+			printf("'%s'", get_label_or_name_or_id(dev));
+			printf(", channel '%s' (%s), ",
+					iio_channel_get_id(ch),
+					type_name);
+		}
+		if (iio_channel_get_name(ch) && quiet == ATTR_VERBOSE)
+			printf("id '%s', ", iio_channel_get_name(ch));
+		if (iio_channel_get_label(ch) && quiet == ATTR_VERBOSE)
+			printf("label '%s', ", iio_channel_get_label(ch));
+
+		if (quiet == ATTR_VERBOSE)
+			printf("attr '%s', ", iio_attr_get_name(attr));
+
 		print_attribute_value(dev, attr, "", quiet);
 	}
 	if (wbuf) {
