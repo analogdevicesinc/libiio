@@ -38,5 +38,5 @@ rm .\libxml2-2.9.14.tar.xz
 %msbuild% .\zstd\build\VS2010\zstd.sln /p:Platform=%ARCH% /p:Configuration=Release /p:PlatformToolset=%PLATFORM_TOOLSET%
 %msbuild% .\libserialport\libserialport.vcxproj /p:Platform=%ARCH% /p:Configuration=Release /p:PlatformToolset=%PLATFORM_TOOLSET%
 :: build libxml with cmake
-cmake -DCMAKE_INSTALL_PREFIX=libxml2-install -DLIBXML2_WITH_ICONV=OFF -DLIBXML2_WITH_LZMA=OFF -DLIBXML2_WITH_PYTHON=OFF -DLIBXML2_WITH_ZLIB=OFF -S .\libxml2-2.9.14\ -B libxml2-build
+cmake -G "%COMPILER%" -A %ARCH% -DCMAKE_INSTALL_PREFIX=libxml2-install -DLIBXML2_WITH_ICONV=OFF -DLIBXML2_WITH_LZMA=OFF -DLIBXML2_WITH_PYTHON=OFF -DLIBXML2_WITH_ZLIB=OFF -S .\libxml2-2.9.14\ -B libxml2-build
 cmake --build libxml2-build --config Release --target install
