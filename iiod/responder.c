@@ -13,7 +13,6 @@
 
 #include <fcntl.h>
 #include <iio/iio-lock.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
