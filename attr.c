@@ -356,10 +356,15 @@ int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, d
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;
 
-	char buf[MAX_ATTR_VALUE];
-	ret = iio_attr_read_raw(attr, buf, sizeof(buf));
-	if (ret < 0)
+	char *buf = malloc(MAX_ATTR_VALUE);
+	if (!buf)
+		return -ENOMEM;
+
+	ret = iio_attr_read_raw(attr, buf, MAX_ATTR_VALUE);
+	if (ret < 0) {
+		free(buf);
 		return (int) ret;
+	}
 
 	// Expect format: [min step max]
 #if defined(_MSC_VER)
@@ -373,9 +378,11 @@ int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, d
 		*step = lstep;
 		*max = lmax;
 	} else {
+		free(buf);
 		return -EOPNOTSUPP;
 	}
 
+	free(buf);
 	return 0;
 }
 
@@ -402,17 +409,26 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 	if (!string_ends_with(iio_attr_get_name(attr), "available"))
 		return -ENXIO;
 
-	char buf[MAX_ATTR_VALUE];
-	ret = (int)iio_attr_read_raw(attr, buf, sizeof(buf));
-	if (ret < 0)
-		return ret;
+	char *buf = malloc(MAX_ATTR_VALUE);
+	if (!buf)
+		return -ENOMEM;
 
-	if (buf[0] == '[')
+	ret = (int)iio_attr_read_raw(attr, buf, MAX_ATTR_VALUE);
+	if (ret < 0) {
+		free(buf);
+		return ret;
+	}
+
+	if (buf[0] == '[') {
+		free(buf);
 		return -EOPNOTSUPP;
+	}
 
 	local_list = malloc(capacity * sizeof(char *));
-	if (!local_list)
+	if (!local_list) {
+		free(buf);
 		return -ENOMEM;
+	}
 
 	char *token = iio_strtok_r(buf, " \n", &saveptr);
 	while (token) {
@@ -425,6 +441,7 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 				for (; i < n; ++i)
 					free(local_list[i]);
 				free(local_list);
+				free(buf);
 				return -ENOMEM;
 			}
 			local_list = tmp;
@@ -432,6 +449,8 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 		local_list[n++] = iio_strdup(token);
 		token = iio_strtok_r(NULL, " \n", &saveptr);
 	}
+
+	free(buf);
 
 	*list = local_list;
 	*count = n;
