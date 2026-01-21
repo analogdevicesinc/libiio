@@ -102,9 +102,8 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 }
 
 int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, unsigned int timeout_ms)
+		     bool read, int timeout_ms)
 {
-	int timeout = timeout_ms > 0 ? (int) timeout_ms : -1;
 	struct pollfd pfd[2];
 	int ret;
 
@@ -120,7 +119,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 
 	do {
 		do {
-			ret = poll(pfd, 2, timeout);
+			ret = poll(pfd, 2, timeout_ms);
 		} while (ret == -1 && errno == EINTR);
 
 		if (ret == -1)
@@ -190,23 +189,17 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	return fd;
 }
 
-int do_select(int fd, unsigned int timeout)
+int do_select(int fd, int timeout)
 {
 	struct pollfd pfd;
 	int ret;
-	int poll_timeout;
 
 	pfd.fd = fd;
 	pfd.events = POLLOUT | POLLERR;
 	pfd.revents = 0;
 
-	if (!timeout)
-		poll_timeout = -1;
-	else
-		poll_timeout = (int)timeout;
-
 	do {
-		ret = poll(&pfd, 1, poll_timeout);
+		ret = poll(&pfd, 1, timeout);
 	} while (ret == -1 && errno == EINTR);
 
 	if (ret < 0)
