@@ -375,7 +375,7 @@ const char * iio_context_get_version_tag(const struct iio_context *ctx)
 	return LIBIIO_VERSION_GIT;
 }
 
-int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
+int iio_context_set_timeout(struct iio_context *ctx, int timeout)
 {
 	int ret = 0;
 
@@ -487,10 +487,7 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		if (!params2.timeout_ms) {
 			/* Zero means use backend default */
 			params2.timeout_ms = backend->default_timeout_ms;
-		} else if (params2.timeout_ms < 0) {
-			/* Negative means infinite - translate to 0 for backends */
-			params2.timeout_ms = 0;
-		} /* Positive values pass through unchanged */
+		}
 
 		ctx = backend->ops->create(&params2,
 					   uri + strlen(backend->uri_prefix));
