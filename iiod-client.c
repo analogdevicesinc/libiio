@@ -95,8 +95,9 @@ void iiod_client_mutex_unlock(struct iiod_client *client)
 static ssize_t iiod_client_read_integer(struct iiod_client *client, int *val)
 {
 	bool accept_eol = false, has_read_line = !!client->ops->read_line;
-	unsigned int i, nb, first = 0, timeout_ms = client->params->timeout_ms;
-	unsigned int remaining = 0;
+	unsigned int i, nb, first = 0;
+	int timeout_ms = client->params->timeout_ms;
+	int remaining = 0;
 	int64_t start_time = 0, diff_ms;
 	char buf[1024], *end;
 	ssize_t ret;
@@ -118,11 +119,13 @@ static ssize_t iiod_client_read_integer(struct iiod_client *client, int *val)
 		if (!has_read_line) {
 			diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
 
-			if (timeout_ms) {
+			if (timeout_ms > 0) {
 				if (diff_ms >= timeout_ms)
 					return -ETIMEDOUT;
 
-				remaining = (unsigned int)((int64_t)timeout_ms - diff_ms);
+				remaining = (int)((int64_t)timeout_ms - diff_ms);
+			} else {
+				remaining = timeout_ms;
 			}
 
 			ret = client->ops->read(client->desc, &buf[i], 1, remaining);
@@ -158,23 +161,26 @@ static ssize_t iiod_client_write_all(struct iiod_client *client,
 	const struct iiod_client_ops *ops = client->ops;
 	struct iiod_client_pdata *desc = client->desc;
 	uintptr_t ptr = (uintptr_t) src;
-	unsigned int remaining = 0, timeout_ms = client->params->timeout_ms;
+	int timeout_ms = client->params->timeout_ms;
+	int remaining = 0;
 	uint64_t start_time, diff_ms;
 	ssize_t ret;
 
 	start_time = iiod_responder_read_counter_us();
 
 	if (iiod_client_uses_binary_interface(client))
-		timeout_ms = 0;
+		timeout_ms = -1;
 
 	while (len) {
 		diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
 
-		if (timeout_ms) {
-			if (diff_ms >= timeout_ms)
+		if (timeout_ms > 0) {
+			if (diff_ms >= (uint64_t)timeout_ms)
 				return -ETIMEDOUT;
 
-			remaining = (unsigned int)((int64_t)timeout_ms - diff_ms);
+			remaining = (int)((int64_t)timeout_ms - diff_ms);
+		} else {
+			remaining = timeout_ms;
 		}
 
 		ret = ops->write(desc, (const void *) ptr, len, remaining);
@@ -213,23 +219,26 @@ static ssize_t iiod_client_read_all(struct iiod_client *client,
 {
 	const struct iiod_client_ops *ops = client->ops;
 	uintptr_t ptr = (uintptr_t) dst;
-	unsigned int remaining = 0, timeout_ms = client->params->timeout_ms;
+	int timeout_ms = client->params->timeout_ms;
+	int remaining = 0;
 	uint64_t start_time, diff_ms;
 	ssize_t ret;
 
 	start_time = iiod_responder_read_counter_us();
 
 	if (iiod_client_uses_binary_interface(client))
-		timeout_ms = 0;
+		timeout_ms = -1;
 
 	while (len) {
 		diff_ms = (iiod_responder_read_counter_us() - start_time) / 1000;
 
-		if (timeout_ms) {
-			if (diff_ms >= timeout_ms)
+		if (timeout_ms > 0) {
+			if (diff_ms >= (uint64_t)timeout_ms)
 				return -ETIMEDOUT;
 
-			remaining = (unsigned int)((int64_t)timeout_ms - diff_ms);
+			remaining = (int)((int64_t)timeout_ms - diff_ms);
+		} else {
+			remaining = timeout_ms;
 		}
 
 		ret = ops->read(client->desc, (void *) ptr, len, remaining);
@@ -441,16 +450,22 @@ int iiod_client_set_trigger(struct iiod_client *client,
 	return ret;
 }
 
-static unsigned int calculate_remote_timeout(unsigned int timeout_ms)
+static int calculate_remote_timeout(int timeout_ms)
 {
 	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
 	 * by the remote. Is there something better to do here? */
+
+	/* Don't modify infinite timeout (-1) or default timeout (0) */
+	if (timeout_ms <= 0)
+		return timeout_ms;
+
+	/* For positive timeouts, divide by 2 to account for network latency */
 	return timeout_ms / 2;
 }
 
-int iiod_client_set_timeout(struct iiod_client *client, unsigned int timeout)
+int iiod_client_set_timeout(struct iiod_client *client, int timeout)
 {
-	unsigned int remote_timeout = calculate_remote_timeout(timeout);
+	int remote_timeout = calculate_remote_timeout(timeout);
 	struct iiod_io *io;
 	int ret;
 
@@ -468,7 +483,7 @@ int iiod_client_set_timeout(struct iiod_client *client, unsigned int timeout)
 		char buf[1024];
 
 		iio_mutex_lock(client->lock);
-		iio_snprintf(buf, sizeof(buf), "TIMEOUT %u\r\n", remote_timeout);
+		iio_snprintf(buf, sizeof(buf), "TIMEOUT %d\r\n", remote_timeout);
 		ret = iiod_client_exec_command(client, buf);
 		iio_mutex_unlock(client->lock);
 
