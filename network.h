@@ -33,11 +33,11 @@ int setup_cancel(struct iiod_client_pdata *io_ctx);
 void cleanup_cancel(struct iiod_client_pdata *io_ctx);
 void do_cancel(struct iiod_client_pdata *io_ctx);
 int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, unsigned int timeout_ms);
+		     bool read, int timeout_ms);
 
-int create_socket(const struct addrinfo *addrinfo, unsigned int timeout);
+int create_socket(const struct addrinfo *addrinfo, int timeout);
 int do_create_socket(const struct addrinfo *addrinfo);
-int do_select(int fd, unsigned int timeout);
+int do_select(int fd, int timeout);
 
 int set_blocking_mode(int s, bool blocking);
 
