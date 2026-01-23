@@ -1,6 +1,51 @@
 # Copyright (c) 2025 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
+menuconfig LIBIIO_IIOD_NETWORK
+	bool "Network iiod server"
+	help
+	  Enable the iiod server over a network interface.
+
+if LIBIIO_IIOD_NETWORK
+
+config LIBIIO_IIOD_NETWORK_PORT
+	int "Port number"
+	default 30431
+	help
+	  Port number
+
+config LIBIIO_IIOD_NETWORK_SERVER_THREAD_PRIORITY
+	int "Server thread priority"
+	default 10
+	help
+	  Priority of the thread running the iiod server.
+
+config LIBIIO_IIOD_NETWORK_SERVER_THREAD_STACK_SIZE
+	int "Server thread stack size"
+	default 4096
+	help
+	  Stack size of the thread running the iiod server.
+
+config LIBIIO_IIOD_NETWORK_CLIENT_THREAD_PRIORITY
+	int "Client thread priority"
+	default 5
+	help
+	  Priority of the thread running the network client.
+
+config LIBIIO_IIOD_NETWORK_CLIENT_THREAD_STACK_SIZE
+	int "Client thread stack size"
+	default 8192
+	help
+	  Stack size of the thread running the network client.
+
+config LIBIIO_IIOD_NETWORK_CLIENT_MAX
+	int "Maximum number of clients"
+	default 6
+	help
+	  Maximum number of network clients.
+
+endif # LIBIIO_IIOD_NETWORK
+
 menuconfig LIBIIO_IIOD_UART
 	bool "UART iiod server"
 	help
