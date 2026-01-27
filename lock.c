@@ -90,13 +90,13 @@ void iio_cond_destroy(struct iio_cond *cond)
 }
 
 int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-		  unsigned int timeout_ms)
+		  int timeout_ms)
 {
 	struct timespec ts;
 	uint64_t usec;
 	int ret = 0;
 
-	if (timeout_ms == 0) {
+	if (timeout_ms <= 0) {
 		pthread_cond_wait(&cond->cond, &lock->lock);
 	} else {
 		clock_gettime(CLOCK_REALTIME, &ts);

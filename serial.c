@@ -129,7 +129,7 @@ serial_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 
 static ssize_t serial_write_data(struct iiod_client_pdata *io_data,
 				 const char *data, size_t len,
-				 unsigned int timeout_ms)
+				 int timeout_ms)
 {
 	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
 	enum sp_return sp_ret;
@@ -167,7 +167,7 @@ void sleep_one_ms(void)
 }
 
 static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
-				char *buf, size_t len, unsigned int timeout_ms)
+				char *buf, size_t len, int timeout_ms)
 {
 	struct iio_context_pdata *pdata = (struct iio_context_pdata *) io_data;
 	long long time_left_ms = (long long)timeout_ms;
@@ -175,7 +175,7 @@ static ssize_t serial_read_data(struct iiod_client_pdata *io_data,
 	ssize_t ret = 0;
 
 	while (true) {
-		if (timeout_ms && time_left_ms <= 0)
+		if (timeout_ms > 0 && time_left_ms <= 0)
 			break;
 
 		sp_ret = sp_nonblocking_read(pdata->port, buf, len);
