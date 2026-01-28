@@ -63,6 +63,23 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 	return iio_device_add_attr(dev, name, type);
 }
 
+static int add_attr_to_buffer(struct iio_buffer *buf, xmlNode *n)
+{
+	xmlAttr *attr;
+	char *name = NULL;
+
+	for (attr = n->properties; attr; attr = attr->next) {
+		if (!strcmp((char *) attr->name, "name")) {
+			name = (char *) attr->children->content;
+		}
+	}
+
+	if (!name)
+		return -EINVAL;
+
+	return iio_buffer_add_attr(buf, name);
+}
+
 static int setup_scan_element(const struct iio_device *dev,
 			      xmlNode *n, long *index,
 			      struct iio_data_format *fmt)
@@ -227,6 +244,45 @@ err_free_name_id:
 	return err;
 }
 
+static int create_buffers(struct iio_device *dev, xmlNode *node)
+{
+	struct iio_buffer *buf;
+	unsigned int idx = 0;
+	xmlAttr *attr;
+	xmlNode *n;
+	int err;
+
+	/* Parse buffer index */
+	for (attr = node->properties; attr; attr = attr->next) {
+		if (!strcmp((const char *) attr->name, "index"))
+			idx = (unsigned int) strtoul((const char *)attr->children->content,
+							 NULL, 10);
+		else
+			dev_dbg(dev, "Unknown attribute \'%s\' in <buffer>\n",
+				attr->name);
+	}
+
+	buf = iio_device_add_buffer(dev, idx);
+	if (!buf)
+		return -ENOMEM;
+
+	for (n = node->children; n; n = n->next) {
+		if (!strcmp((const char *)n->name, "attribute")) {
+			err = add_attr_to_buffer(buf, n);
+			if (err < 0) {
+				dev_err(dev, "Failed to add attribute to buffer%u (%d)\n",
+					idx, err);
+				return err;
+			}
+		} else {
+			dev_dbg(dev, "Unknown children \'%s\' in <buffer>\n",
+				n->name);
+		}
+	}
+
+	return 0;
+}
+
 static int create_device(struct iio_context *ctx, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -275,6 +331,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 				dev_perror(dev, err, "Unable to create channel");
 				return err;
 			}
+		} else if (!strcmp((char *) n->name, "buffer")) {
+			err = create_buffers(dev, n);
+			if (err < 0)
+				return err;
 		} else if (!strcmp((char *) n->name, "attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE);
 			if (err < 0)
