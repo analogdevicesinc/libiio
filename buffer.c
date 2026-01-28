@@ -221,3 +221,9 @@ iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
 {
 	return iio_attr_find(&buf->attrlist, name);
 }
+
+void free_buffer(struct iio_buffer *buf)
+{
+	iio_free_attrs(&buf->attrlist);
+	free(buf);
+}

@@ -255,6 +255,19 @@ int iio_channel_add_attr(struct iio_channel *chn,
 	return 0;
 }
 
+int iio_buffer_add_attr(struct iio_buffer *buf, const char *name)
+{
+	union iio_pointer p = { .buf = buf, };
+	int ret;
+
+	ret = iio_add_attr(p, &buf->attrlist, name, NULL, IIO_ATTR_TYPE_BUFFER);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(buf->dev, "Added buffer attr \'%s\'\n", name);
+	return 0;
+}
+
 int iio_context_add_attr(struct iio_context *ctx,
 			 const char *key, const char *value)
 {

@@ -244,6 +244,10 @@ void free_device(struct iio_device *dev)
 	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_BUFFER; type++)
 		iio_free_attrs(&dev->attrlist[type]);
 
+	for (i = 0; i < dev->nb_buffers; i++)
+		free_buffer(dev->buffers[i]);
+	free(dev->buffers);
+
 	for (i = 0; i < dev->nb_channels; i++)
 		free_channel(dev->channels[i]);
 	free(dev->channels);
@@ -342,6 +346,29 @@ int iio_device_reg_read(struct iio_device *dev,
 const struct iio_context * iio_device_get_context(const struct iio_device *dev)
 {
 	return dev->ctx;
+}
+
+struct iio_buffer * iio_device_add_buffer(struct iio_device *dev, unsigned int idx)
+{
+	struct iio_buffer *buf, **bufs;
+
+	buf = zalloc(sizeof(*buf));
+	if (!buf)
+		return NULL;
+
+	buf->dev = dev;
+	buf->idx = idx;
+
+	bufs = realloc(dev->buffers, (dev->nb_buffers + 1) * sizeof(*dev->buffers));
+	if (!bufs) {
+		free(buf);
+		return NULL;
+	}
+
+	bufs[dev->nb_buffers++] = buf;
+	dev->buffers = bufs;
+
+	return buf;
 }
 
 struct iio_device_pdata * iio_device_get_pdata(const struct iio_device *dev)
