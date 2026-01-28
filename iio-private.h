@@ -130,6 +130,9 @@ struct iio_device {
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
+
+	struct iio_buffer **buffers;
+	unsigned int nb_buffers;
 };
 
 struct iio_buffer {
@@ -196,6 +199,7 @@ const struct iio_backend * iio_module_get_backend(struct iio_module *module);
 
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
+void free_buffer(struct iio_buffer *buf);
 
 ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen,
 				 const struct iio_channel *chn);

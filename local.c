@@ -1108,6 +1108,19 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 
 static int add_buffer_attr(void *d, const char *path)
 {
+	struct iio_buffer *buf = (struct iio_buffer *) d;
+	const char *name = strrchr(path, '/') + 1;
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(buffer_attrs_reserved); i++)
+		if (!strcmp(buffer_attrs_reserved[i], name))
+			return 0;
+
+	return iio_buffer_add_attr(buf, name);
+}
+
+static int add_buffer_legacy_attr(void *d, const char *path)
+{
 	struct iio_device *dev = (struct iio_device *) d;
 	const char *name = strrchr(path, '/') + 1;
 	unsigned int i;
@@ -1224,11 +1237,28 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct stat st;
 	char buf[1024];
+	int ret;
 
 	iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		int ret = foreach_in_dir(ctx, dev, buf, false, add_buffer_attr);
+		struct iio_buffer *buffer;
+
+		buffer = iio_device_add_buffer(dev, 0);
+		if (!buffer)
+			return -ENOMEM;
+
+		ret = foreach_in_dir(ctx, buffer, buf, false, add_buffer_attr);
+		if (ret < 0)
+			return ret;
+
+		iio_sort_attrs(&buffer->attrlist);
+
+		/* Keep adding buffer attributes to devices for legacy reasons! Will
+		 * be removed as soon as every bits are updated to use the new context
+		 * based buffer object.
+		 */
+		ret = foreach_in_dir(ctx, dev, buf, false, add_buffer_legacy_attr);
 		if (ret < 0)
 			return ret;
 
