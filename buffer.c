@@ -110,6 +110,8 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 
 	if (!ops->create_buffer)
 		return iio_ptr(-ENOSYS);
+	if (idx >= dev->nb_buffers)
+		return iio_ptr(-EINVAL);
 
 	sample_size = iio_device_get_sample_size(dev, mask);
 	if (sample_size < 0)
@@ -124,9 +126,9 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	buf->dev = dev;
 	buf->idx = idx;
 
-	/* Duplicate buffer attributes from the iio_device.
+	/* Duplicate buffer attributes from the buffer in iio_device.
 	 * This ensures that those can contain a pointer to our iio_buffer */
-	buf->attrlist.num = dev->attrlist[IIO_ATTR_TYPE_BUFFER].num;
+	buf->attrlist.num = dev->buffers[idx]->attrlist.num;
 	attrlist_size = buf->attrlist.num * sizeof(*buf->attrlist.attrs);
 	buf->attrlist.attrs = malloc(attrlist_size);
 	if (!buf->attrlist.attrs) {
@@ -135,7 +137,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	}
 
 	memcpy(buf->attrlist.attrs, /* Flawfinder: ignore */
-	       dev->attrlist[IIO_ATTR_TYPE_BUFFER].attrs, attrlist_size);
+	       dev->buffers[idx]->attrlist.attrs, attrlist_size);
 
 	for (i = 0; i < buf->attrlist.num; i++)
 		buf->attrlist.attrs[i].iio.buf = buf;
