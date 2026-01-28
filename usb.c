@@ -403,7 +403,7 @@ usb_writebuf(struct iio_buffer_pdata *pdata, const void *src, size_t len)
 }
 
 static struct iio_buffer_pdata *
-usb_create_buffer(const struct iio_device *dev, unsigned int idx,
+usb_open_buffer(const struct iio_device *dev, unsigned int idx,
 		  struct iio_channels_mask *mask)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -444,9 +444,9 @@ usb_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_close_pipe;
 	}
 
-	buf->pdata = iiod_client_create_buffer(buf->io_ctx.iiod_client,
-					       ctx_pdata->io_ctx.iiod_client,
-					       dev, idx, mask);
+	buf->pdata = iiod_client_open_buffer(buf->io_ctx.iiod_client,
+					     ctx_pdata->io_ctx.iiod_client,
+					     dev, idx, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create iiod-client buffer");
@@ -472,12 +472,12 @@ err_free_buf:
 	return iio_ptr(ret);
 }
 
-static void usb_free_buffer(struct iio_buffer_pdata *buf)
+static void usb_close_buffer(struct iio_buffer_pdata *buf)
 {
 	const struct iio_context *ctx = iio_device_get_context(buf->dev);
 	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(ctx);
 
-	iiod_client_free_buffer(buf->pdata);
+	iiod_client_close_buffer(buf->pdata);
 
 	iio_mutex_lock(ctx_pdata->ep_lock);
 	usb_close_pipe(ctx_pdata, buf->io_ctx.ep->pipe_id);
@@ -521,8 +521,8 @@ static const struct iio_backend_ops usb_ops = {
 	.set_timeout = usb_set_timeout,
 	.shutdown = usb_shutdown,
 
-	.create_buffer = usb_create_buffer,
-	.free_buffer = usb_free_buffer,
+	.open_buffer = usb_open_buffer,
+	.close_buffer = usb_close_buffer,
 	.enable_buffer = usb_enable_buffer,
 	.cancel_buffer = usb_cancel_buffer,
 

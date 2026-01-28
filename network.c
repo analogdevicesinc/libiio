@@ -441,7 +441,7 @@ static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
 }
 
 static struct iio_buffer_pdata *
-network_create_buffer(const struct iio_device *dev, unsigned int idx,
+network_open_buffer(const struct iio_device *dev, unsigned int idx,
 		      struct iio_channels_mask *mask)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -465,9 +465,9 @@ network_create_buffer(const struct iio_device *dev, unsigned int idx,
 		goto err_free_buf;
 	}
 
-	buf->pdata = iiod_client_create_buffer(buf->iiod_client,
-					       pdata->iiod_client,
-					       dev, idx, mask);
+	buf->pdata = iiod_client_open_buffer(buf->iiod_client,
+					     pdata->iiod_client,
+					     dev, idx, mask);
 	ret = iio_err(buf->pdata);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create buffer");
@@ -484,9 +484,9 @@ err_free_buf:
 	return iio_ptr(ret);
 }
 
-void network_free_buffer(struct iio_buffer_pdata *pdata)
+void network_close_buffer(struct iio_buffer_pdata *pdata)
 {
-	iiod_client_free_buffer(pdata->pdata);
+	iiod_client_close_buffer(pdata->pdata);
 	network_free_iiod_client(pdata->iiod_client, &pdata->io_ctx);
 	free(pdata);
 }
@@ -522,8 +522,8 @@ static const struct iio_backend_ops network_ops = {
 	.shutdown = network_shutdown,
 	.set_timeout = network_set_timeout,
 
-	.create_buffer = network_create_buffer,
-	.free_buffer = network_free_buffer,
+	.open_buffer = network_open_buffer,
+	.close_buffer = network_close_buffer,
 	.enable_buffer = network_enable_buffer,
 	.cancel_buffer = network_cancel_buffer,
 
