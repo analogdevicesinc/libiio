@@ -383,7 +383,7 @@ out_send_response:
 	return 0;
 }
 
-static void handle_create_buffer(struct parser_pdata *pdata,
+static void handle_open_buffer(struct parser_pdata *pdata,
 				 const struct iiod_command *cmd,
 				 struct iiod_command_data *cmd_data)
 {
@@ -579,7 +579,7 @@ static struct iio_block * get_iio_block(struct parser_pdata *pdata,
 	return block;
 }
 
-static void handle_free_buffer(struct parser_pdata *pdata,
+static void handle_close_buffer(struct parser_pdata *pdata,
 			       const struct iiod_command *cmd,
 			       struct iiod_command_data *cmd_data)
 {
@@ -1163,8 +1163,8 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 	[IIOD_OP_GETTRIG]		= handle_gettrig,
 	[IIOD_OP_SETTRIG]		= handle_settrig,
 
-	[IIOD_OP_CREATE_BUFFER]		= handle_create_buffer,
-	[IIOD_OP_FREE_BUFFER]		= handle_free_buffer,
+	[IIOD_OP_OPEN_BUFFER]		= handle_open_buffer,
+	[IIOD_OP_CLOSE_BUFFER]		= handle_close_buffer,
 	[IIOD_OP_ENABLE_BUFFER]		= handle_enable_buffer,
 	[IIOD_OP_DISABLE_BUFFER]	= handle_disable_buffer,
 
