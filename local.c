@@ -1119,19 +1119,6 @@ static int add_buffer_attr(void *d, const char *path)
 	return iio_buffer_add_attr(buf, name);
 }
 
-static int add_buffer_legacy_attr(void *d, const char *path)
-{
-	struct iio_device *dev = (struct iio_device *) d;
-	const char *name = strrchr(path, '/') + 1;
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(buffer_attrs_reserved); i++)
-		if (!strcmp(buffer_attrs_reserved[i], name))
-			return 0;
-
-	return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_BUFFER);
-}
-
 static int add_attr_or_channel_helper(struct iio_device *dev,
 		const char *path, const char *prefix,
 		bool dir_is_scan_elements)
@@ -1253,16 +1240,6 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 			return ret;
 
 		iio_sort_attrs(&buffer->attrlist);
-
-		/* Keep adding buffer attributes to devices for legacy reasons! Will
-		 * be removed as soon as every bits are updated to use the new context
-		 * based buffer object.
-		 */
-		ret = foreach_in_dir(ctx, dev, buf, false, add_buffer_legacy_attr);
-		if (ret < 0)
-			return ret;
-
-		iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_BUFFER]);
 	}
 
 	return 0;

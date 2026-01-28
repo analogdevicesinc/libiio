@@ -107,7 +107,7 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_BUFFER; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
 		for (i = 0; i < dev->attrlist[type].num; i++) {
 			attrs = dev->attrlist[type].attrs;
 
