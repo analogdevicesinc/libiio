@@ -512,6 +512,36 @@ network_open_events_fd(const struct iio_device *dev)
 	return iiod_client_open_event_stream(pdata->iiod_client, dev);
 }
 
+static int network_reg_read(const struct iio_device *dev,
+			    uint32_t address, uint32_t *value)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->iiod_client;
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		/* Fallback to attribute-based method for ASCII protocol */
+		return -ENOSYS;
+	}
+
+	return iiod_client_reg_read(client, dev, address, value);
+}
+
+static int network_reg_write(const struct iio_device *dev,
+			     uint32_t address, uint32_t value)
+{
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iiod_client *client = pdata->iiod_client;
+
+	if (!iiod_client_uses_binary_interface(client)) {
+		/* Fallback to attribute-based method for ASCII protocol */
+		return -ENOSYS;
+	}
+
+	return iiod_client_reg_write(client, dev, address, value);
+}
+
 static const struct iio_backend_ops network_ops = {
 	.scan = IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
@@ -538,6 +568,9 @@ static const struct iio_backend_ops network_ops = {
 	.open_ev = network_open_events_fd,
 	.close_ev = iiod_client_close_event_stream,
 	.read_ev = iiod_client_read_event,
+
+	.reg_read = network_reg_read,
+	.reg_write = network_reg_write,
 };
 
 __api_export_if(WITH_NETWORK_BACKEND_DYNAMIC)
