@@ -226,7 +226,7 @@ static int serial_set_trigger(const struct iio_device *dev,
 }
 
 static struct iio_buffer_pdata *
-serial_create_buffer(const struct iio_device *dev, unsigned int idx,
+serial_open_buffer(const struct iio_device *dev, unsigned int idx,
 		     struct iio_channels_mask *mask)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -251,7 +251,7 @@ serial_create_buffer(const struct iio_device *dev, unsigned int idx,
 	return buf;
 }
 
-static void serial_free_buffer(struct iio_buffer_pdata *buf)
+static void serial_close_buffer(struct iio_buffer_pdata *buf)
 {
 	iiod_client_free_buffer(buf->pdata);
 	free(buf);
@@ -298,8 +298,8 @@ static const struct iio_backend_ops serial_ops = {
 	.get_trigger = serial_get_trigger,
 	.set_trigger = serial_set_trigger,
 
-	.create_buffer = serial_create_buffer,
-	.free_buffer = serial_free_buffer,
+	.open_buffer = serial_open_buffer,
+	.close_buffer = serial_close_buffer,
 	.enable_buffer = serial_enable_buffer,
 
 	.readbuf = serial_readbuf,

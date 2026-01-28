@@ -109,10 +109,10 @@ struct iio_backend_ops {
 
 	int (*set_timeout)(struct iio_context *ctx, unsigned int timeout);
 
-	struct iio_buffer_pdata *(*create_buffer)(const struct iio_device *dev,
-						  unsigned int idx,
-						  struct iio_channels_mask *mask);
-	void (*free_buffer)(struct iio_buffer_pdata *pdata);
+	struct iio_buffer_pdata *(*open_buffer)(const struct iio_device *dev,
+						unsigned int idx,
+						struct iio_channels_mask *mask);
+	void (*close_buffer)(struct iio_buffer_pdata *pdata);
 	int (*enable_buffer)(struct iio_buffer_pdata *pdata,
 			     size_t nb_samples, bool enable, bool cyclic);
 	void (*cancel_buffer)(struct iio_buffer_pdata *pdata);

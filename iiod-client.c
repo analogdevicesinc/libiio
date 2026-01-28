@@ -1419,10 +1419,10 @@ ssize_t iiod_client_writebuf(struct iiod_client_buffer_pdata *pdata,
 }
 
 struct iiod_client_buffer_pdata *
-iiod_client_create_buffer(struct iiod_client *client,
-			  struct iiod_client *client_fb,
-			  const struct iio_device *dev, unsigned int idx,
-			  struct iio_channels_mask *mask)
+iiod_client_open_buffer(struct iiod_client *client,
+			struct iiod_client *client_fb,
+			const struct iio_device *dev, unsigned int idx,
+			struct iio_channels_mask *mask)
 {
 	struct iiod_io *io;
 	struct iiod_client_buffer_pdata *pdata;
@@ -1463,7 +1463,7 @@ err_free_pdata:
 	return iio_ptr(err);
 }
 
-void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata)
+void iiod_client_close_buffer(struct iiod_client_buffer_pdata *pdata)
 {
 	struct iiod_client *client = pdata->client_fb;
 	struct iiod_io *io;
