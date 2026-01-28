@@ -178,12 +178,19 @@ iio_device_add_channel(struct iio_device *dev, long index,
 			   bool output, bool scan_element,
 			   const struct iio_data_format *fmt);
 
+__api struct iio_buffer *
+iio_device_add_buffer(struct iio_device *dev, unsigned int idx);
+
 __api int
 iio_context_add_attr(struct iio_context *ctx,
 		     const char *key, const char *value);
 __api int
 iio_device_add_attr(struct iio_device *dev,
 		    const char *name, enum iio_attr_type type);
+
+__api int
+iio_buffer_add_attr(struct iio_buffer *buf, const char *name);
+
 __api int
 iio_channel_add_attr(struct iio_channel *chn,
 		     const char *name, const char *filename);
