@@ -108,7 +108,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	unsigned int i;
 	int err;
 
-	if (!ops->create_buffer)
+	if (!ops->open_buffer)
 		return iio_ptr(-ENOSYS);
 	if (idx >= dev->nb_buffers)
 		return iio_ptr(-EINVAL);
@@ -163,7 +163,7 @@ iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
 	if (err < 0)
 		goto err_free_mutex;
 
-	buf->pdata = ops->create_buffer(dev, idx, buf->mask);
+	buf->pdata = ops->open_buffer(dev, idx, buf->mask);
 	err = iio_err(buf->pdata);
 	if (err < 0)
 		goto err_destroy_worker;
@@ -191,8 +191,8 @@ void iio_buffer_destroy(struct iio_buffer *buf)
 
 	iio_buffer_cancel(buf);
 
-	if (ops->free_buffer)
-		ops->free_buffer(buf->pdata);
+	if (ops->close_buffer)
+		ops->close_buffer(buf->pdata);
 
 	iio_task_destroy(buf->worker);
 	iio_mutex_destroy(buf->lock);
