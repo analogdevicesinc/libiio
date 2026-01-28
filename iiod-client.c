@@ -1443,7 +1443,7 @@ iiod_client_open_buffer(struct iiod_client *client,
 	if (iiod_client_uses_binary_interface(client)) {
 		io = iiod_responder_get_default_io(client->responder);
 
-		cmd.op = IIOD_OP_CREATE_BUFFER;
+		cmd.op = IIOD_OP_OPEN_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(dev);
 		cmd.code = pdata->idx;
 
@@ -1472,7 +1472,7 @@ void iiod_client_close_buffer(struct iiod_client_buffer_pdata *pdata)
 	if (iiod_client_uses_binary_interface(client)) {
 		io = iiod_responder_get_default_io(client->responder);
 
-		cmd.op = IIOD_OP_FREE_BUFFER;
+		cmd.op = IIOD_OP_CLOSE_BUFFER;
 		cmd.dev = (uint8_t) iio_device_get_index(pdata->dev);
 		cmd.code = pdata->idx;
 
