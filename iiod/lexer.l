@@ -121,6 +121,11 @@ WORD (([[:alpha:]]+,)|(iio:))?(-|_|\.|[[:alnum:]])+
 	return BUFFER_ATTR;
 }
 
+<WANT_CHN_OR_ATTR>EVENT|event {
+	BEGIN(WANT_ATTR);
+	return EVENT_ATTR;
+}
+
 <WANT_CHN_OR_ATTR>INPUT|input|OUTPUT|output {
 	struct parser_pdata *pdata = yyget_extra(yyscanner);
 	pdata->channel_is_output = yytext[0] == 'o' || yytext[0] == 'O';

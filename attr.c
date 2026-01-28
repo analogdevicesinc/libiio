@@ -224,6 +224,7 @@ static const char * const attr_type_string[] = {
 	"",
 	" debug",
 	" buffer",
+	" event",
 };
 
 int iio_device_add_attr(struct iio_device *dev,

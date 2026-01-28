@@ -154,6 +154,9 @@ get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 			break;
 
 		return iio_buffer_get_attr(buf, arg1);
+	case IIOD_OP_READ_EVT_ATTR:
+	case IIOD_OP_WRITE_EVT_ATTR:
+		return iio_device_get_event_attr(dev, arg1);
 	case IIOD_OP_READ_CHN_ATTR:
 	case IIOD_OP_WRITE_CHN_ATTR:
 		chn = iio_device_get_channel(dev, arg2);
@@ -1144,9 +1147,11 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 	[IIOD_OP_READ_DBG_ATTR]		= handle_read_attr,
 	[IIOD_OP_READ_BUF_ATTR]		= handle_read_attr,
 	[IIOD_OP_READ_CHN_ATTR]		= handle_read_attr,
+	[IIOD_OP_READ_EVT_ATTR]		= handle_read_attr,
 	[IIOD_OP_WRITE_ATTR]		= handle_write_attr,
 	[IIOD_OP_WRITE_DBG_ATTR]	= handle_write_attr,
 	[IIOD_OP_WRITE_BUF_ATTR]	= handle_write_attr,
+	[IIOD_OP_WRITE_EVT_ATTR]	= handle_write_attr,
 	[IIOD_OP_WRITE_CHN_ATTR]	= handle_write_attr,
 	[IIOD_OP_GETTRIG]		= handle_gettrig,
 	[IIOD_OP_SETTRIG]		= handle_settrig,
