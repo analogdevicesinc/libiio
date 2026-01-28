@@ -138,6 +138,8 @@ struct iio_backend_ops {
 	int (*read_ev)(struct iio_event_stream_pdata *pdata,
 		       struct iio_event *out_event,
 		       bool nonblock);
+
+	int (*refresh_format)(struct iio_channel *chn);
 };
 
 /**
