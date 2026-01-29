@@ -161,10 +161,10 @@ void port_knock_discovery_data(const struct iio_context_params *params,
 			       struct dns_sd_discovery_data **ddata)
 {
 	struct dns_sd_discovery_data *d, *ndata;
-	unsigned int timeout_ms;
+	int timeout_ms;
 	int i, ret;
 
-	if (params->timeout_ms)
+	if (params->timeout_ms != 0)
 		timeout_ms = params->timeout_ms;
 	else
 		timeout_ms = DEFAULT_TIMEOUT_MS;

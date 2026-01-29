@@ -87,7 +87,7 @@ static int iio_task_run(void *d)
 
 	return 0;
 }
-static int iio_task_sync_core(struct iio_task_token *token, unsigned int timeout_ms, bool token_destroy)
+static int iio_task_sync_core(struct iio_task_token *token, int timeout_ms, bool token_destroy)
 {
 	int ret;
 
@@ -301,7 +301,7 @@ int iio_task_enqueue_autoclear(struct iio_task *task, void *elm)
 	return iio_err(iio_task_do_enqueue(task, elm, true));
 }
 
-int iio_task_sync(struct iio_task_token *token, unsigned int timeout_ms)
+int iio_task_sync(struct iio_task_token *token, int timeout_ms)
 {
 	return iio_task_sync_core(token, timeout_ms, true);
 }
@@ -355,7 +355,7 @@ bool iio_task_is_done(struct iio_task_token *token)
 	return token->done;
 }
 
-int iio_task_cancel_sync(struct iio_task_token *token, unsigned int timeout_ms)
+int iio_task_cancel_sync(struct iio_task_token *token, int timeout_ms)
 {
 	iio_task_cancel(token);
 	return iio_task_sync_core(token, timeout_ms, false);
