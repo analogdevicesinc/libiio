@@ -37,11 +37,11 @@
 	 (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
 #endif
 
-#define BIT(x) (1 << (x))
-#define BIT_MASK(bit) BIT((bit) % 32)
-#define BIT_WORD(bit) ((bit) / 32)
-#define TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + BIT_WORD(bit)) \
-		& BIT_MASK(bit)))
+#define IIO_BIT(x) (1 << (x))
+#define IIO_BIT_MASK(bit) IIO_BIT((bit) % 32)
+#define IIO_BIT_WORD(bit) ((bit) / 32)
+#define IIO_TEST_BIT(addr, bit) (!!(*(((uint32_t *) addr) + IIO_BIT_WORD(bit)) \
+		& IIO_BIT_MASK(bit)))
 
 struct iio_mutex;
 struct iio_task;

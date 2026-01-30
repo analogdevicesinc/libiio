@@ -34,9 +34,9 @@
 #define is_little_endian() (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #endif
 
-#define BIT(x) (1ull << (x))
-#define BIT_MASK(bit) BIT((bit) % 32)
-#define BIT_WORD(bit) ((bit) / 32)
+#define IIO_BIT(x) (1ull << (x))
+#define IIO_BIT_MASK(bit) IIO_BIT((bit) % 32)
+#define IIO_BIT_WORD(bit) ((bit) / 32)
 
 /* ntohl/htonl are a nightmare to use in cross-platform applications,
  * since they are defined in different headers on different platforms.
@@ -173,19 +173,19 @@ static inline bool
 iio_channels_mask_test_bit(const struct iio_channels_mask *mask,
 			   unsigned int bit)
 {
-	return mask->mask[BIT_WORD(bit)] & BIT_MASK(bit);
+	return mask->mask[IIO_BIT_WORD(bit)] & IIO_BIT_MASK(bit);
 }
 
 static inline void
 iio_channels_mask_set_bit(struct iio_channels_mask *mask, unsigned int bit)
 {
-	mask->mask[BIT_WORD(bit)] |= BIT_MASK(bit);
+	mask->mask[IIO_BIT_WORD(bit)] |= IIO_BIT_MASK(bit);
 }
 
 static inline void
 iio_channels_mask_clear_bit(struct iio_channels_mask *mask, unsigned int bit)
 {
-	mask->mask[BIT_WORD(bit)] &= ~BIT_MASK(bit);
+	mask->mask[IIO_BIT_WORD(bit)] &= ~IIO_BIT_MASK(bit);
 }
 
 struct iio_module * iio_open_module(const struct iio_context_params *params,
