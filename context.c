@@ -391,15 +391,15 @@ int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
 }
 
 const struct iio_backend * const iio_backends[] = {
-	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
-	IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
-		   &iio_ip_backend),
-	IF_ENABLED(WITH_SERIAL_BACKEND && !WITH_SERIAL_BACKEND_DYNAMIC,
-		   &iio_serial_backend),
-	IF_ENABLED(WITH_USB_BACKEND && !WITH_USB_BACKEND_DYNAMIC,
-		   &iio_usb_backend),
-	IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
-	IF_ENABLED(WITH_EXTERNAL_BACKEND, &iio_external_backend),
+	IIO_IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
+	IIO_IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
+		       &iio_ip_backend),
+	IIO_IF_ENABLED(WITH_SERIAL_BACKEND && !WITH_SERIAL_BACKEND_DYNAMIC,
+		       &iio_serial_backend),
+	IIO_IF_ENABLED(WITH_USB_BACKEND && !WITH_USB_BACKEND_DYNAMIC,
+		       &iio_usb_backend),
+	IIO_IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
+	IIO_IF_ENABLED(WITH_EXTERNAL_BACKEND, &iio_external_backend),
 };
 const unsigned int iio_backends_size = IIO_ARRAY_SIZE(iio_backends);
 

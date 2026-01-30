@@ -513,7 +513,7 @@ network_open_events_fd(const struct iio_device *dev)
 }
 
 static const struct iio_backend_ops network_ops = {
-	.scan = IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
+	.scan = IIO_IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
 	.read_attr = network_read_attr,
 	.write_attr = network_write_attr,
