@@ -42,7 +42,7 @@
 #define iio_sscanf sscanf
 #endif
 
-#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define IIO_ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
 /*
  * Prototype of a user-supplied function that retrieves the number of ticks

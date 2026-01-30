@@ -379,7 +379,7 @@ int dnssd_find_hosts(const struct iio_context_params *params,
 
 	prm_dbg(params, "Sending DNS-SD discovery\n");
 
-	ret = open_client_sockets(params, sockets, ARRAY_SIZE(sockets));
+	ret = open_client_sockets(params, sockets, IIO_ARRAY_SIZE(sockets));
 	if (ret <= 0) {
 		prm_err(params, "Failed to open any client sockets\n");
 		goto out_free_buffer;

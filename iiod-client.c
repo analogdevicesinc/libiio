@@ -760,7 +760,7 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client,
 
 	iiod_io_get_response_async(io, NULL, 0);
 
-	ret = iiod_io_send_command(io, &cmd, iiod_buf, ARRAY_SIZE(iiod_buf));
+	ret = iiod_io_send_command(io, &cmd, iiod_buf, IIO_ARRAY_SIZE(iiod_buf));
 	if (ret < 0) {
 		iiod_io_cancel(io);
 		return ret;

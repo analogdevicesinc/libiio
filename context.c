@@ -401,7 +401,7 @@ const struct iio_backend * const iio_backends[] = {
 	IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
 	IF_ENABLED(WITH_EXTERNAL_BACKEND, &iio_external_backend),
 };
-const unsigned int iio_backends_size = ARRAY_SIZE(iio_backends);
+const unsigned int iio_backends_size = IIO_ARRAY_SIZE(iio_backends);
 
 static int iio_context_update_scale_offset(struct iio_context *ctx)
 {
@@ -473,7 +473,7 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 		uri = uri_dup ? uri_dup : "local:";
 	}
 
-	for (i = 0; !backend && i < ARRAY_SIZE(iio_backends); i++) {
+	for (i = 0; !backend && i < IIO_ARRAY_SIZE(iio_backends); i++) {
 		if (!iio_backends[i])
 			continue;
 

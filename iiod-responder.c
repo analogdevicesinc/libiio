@@ -137,7 +137,7 @@ static ssize_t iiod_rw_all(struct iiod_responder *priv,
 	if (cmd_buf)
 		nb++;
 
-	if (nb == 0 || nb > ARRAY_SIZE(bufs))
+	if (nb == 0 || nb > IIO_ARRAY_SIZE(bufs))
 		return EINVAL;
 
 	if (cmd_buf) {

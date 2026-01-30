@@ -751,7 +751,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	ctx = iiod_client_create_context(pdata->iiod_client,
 					 &iio_ip_backend, description,
 					 ctx_attrs, ctx_values,
-					 ARRAY_SIZE(ctx_values));
+					 IIO_ARRAY_SIZE(ctx_values));
 	ret = iio_err(ctx);
 	if (ret)
 		goto err_destroy_iiod_client;
