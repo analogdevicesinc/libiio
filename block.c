@@ -15,6 +15,7 @@
 
 struct iio_block {
 	struct iio_buffer *buffer;
+	struct iio_buffer_stream *buf_stream;
 	struct iio_block_pdata *pdata;
 	size_t size;
 	void *data;
@@ -77,6 +78,73 @@ iio_buffer_create_block(struct iio_buffer *buf, size_t size)
 	iio_mutex_lock(buf->lock);
 	buf->nb_blocks++;
 	iio_mutex_unlock(buf->lock);
+
+	return block;
+
+err_free_block:
+	free(block);
+	return iio_ptr(ret);
+}
+
+struct iio_block *
+iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size)
+{
+	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+	struct iio_block_pdata *pdata;
+	struct iio_block *block;
+	size_t sample_size;
+	int ret;
+
+	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
+	if (sample_size == 0 || size < sample_size)
+		return iio_ptr(-EINVAL);
+
+	block = zalloc(sizeof(*block));
+	if (!block)
+		return iio_ptr(-ENOMEM);
+
+	block->dmabuf_fd = -EINVAL;
+
+	if (ops->create_block) {
+		pdata = ops->create_block(buf_stream->pdata, size, &block->data);
+		ret = iio_err(pdata);
+		if (!ret) {
+			block->pdata = pdata;
+
+			if (ops->get_dmabuf_fd)
+				block->dmabuf_fd = ops->get_dmabuf_fd(pdata);
+		} else if (ret != -ENOSYS) {
+			goto err_free_block;
+		}
+	}
+
+	if (!block->pdata) {
+		block->data = malloc(size);
+		if (!block->data) {
+			ret = -ENOMEM;
+			goto err_free_block;
+		}
+
+		if (size > buf_stream->buf->length) {
+			buf_stream->length= size;
+			buf_stream->buf->length = size;
+		}
+
+		buf_stream->block_size = size;
+		buf_stream->buf->block_size = size;
+	}
+
+	block->buf_stream = buf_stream;
+	block->size = size;
+
+	/* Just for legacy reasons. Will be updated as soon as all users are using the new buffer_stream
+	 * API.
+	 */
+	block->buffer = buf_stream->buf;
+	iio_mutex_lock(buf_stream->buf->lock);
+	buf_stream->buf->nb_blocks++;
+	iio_mutex_unlock(buf_stream->buf->lock);
 
 	return block;
 
@@ -302,6 +370,11 @@ iio_block_foreach_sample(const struct iio_block *block,
 struct iio_buffer * iio_block_get_buffer(const struct iio_block *block)
 {
 	return block->buffer;
+}
+
+struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_block *block)
+{
+	return block->buf_stream;
 }
 
 int iio_block_get_dmabuf_fd(const struct iio_block *block)

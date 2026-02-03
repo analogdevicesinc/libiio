@@ -135,6 +135,24 @@ struct iio_device {
 	unsigned int nb_buffers;
 };
 
+struct iio_buffer_stream {
+	struct iio_buffer *buf;
+	struct iio_buffer_pdata *pdata;
+
+	size_t length;
+	struct iio_channels_mask *mask;
+
+	struct iio_task *worker;
+
+	/* These two fields are set by the last block created. They are only
+	 * used when communicating with v0.x IIOD. */
+	size_t block_size;
+	bool cyclic;
+
+	struct iio_mutex *lock;
+	unsigned int nb_blocks;
+};
+
 struct iio_buffer {
 	const struct iio_device *dev;
 	struct iio_buffer_pdata *pdata;
