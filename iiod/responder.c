@@ -56,7 +56,7 @@ static void free_buffer_entry(struct buffer_entry *entry)
 {
 	struct block_entry *block_entry, *block_next;
 
-	iio_buffer_cancel(entry->buf);
+	iio_buffer_stream_cancel(entry->buf_stream);
 
 	if (!NO_THREADS) {
 		iio_task_stop(entry->dequeue_task);
@@ -76,7 +76,7 @@ static void free_buffer_entry(struct buffer_entry *entry)
 
 	iio_mutex_unlock(entry->lock);
 
-	iio_buffer_destroy(entry->buf);
+	iio_buffer_close(entry->buf_stream);
 	iio_mutex_destroy(entry->lock);
 	free(entry->words);
 	free(entry);
@@ -382,6 +382,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	const struct iio_device *dev;
 	struct iio_channel *chn;
 	struct buffer_entry *entry;
+	struct iio_buffer_stream *buf_stream;
 	struct iio_buffer *buf;
 	struct iiod_buf data;
 	unsigned int i, nb_channels;
@@ -464,8 +465,14 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	if (ret)
 		goto err_destroy_dequeue_task;
 
-	buf = iio_device_create_buffer(dev, entry->idx, mask);
-	ret = iio_err(buf);
+	buf = iio_device_get_buffer(dev, entry->idx);
+	if (!buf) {
+		ret = -ENODEV;
+		goto err_destroy_lock;
+	}
+
+	buf_stream = iio_buffer_open(buf, mask);
+	ret = iio_err(buf_stream);
 	if (ret)
 		goto err_destroy_lock;
 
@@ -485,7 +492,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	/* Success, destroy the temporary mask object */
 	iio_channels_mask_destroy(mask);
 
-	entry->buf = buf;
+	entry->buf_stream = buf_stream;
 	entry->pdata = pdata;
 
 	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
@@ -615,7 +622,7 @@ static void handle_set_enabled_buffer(struct parser_pdata *pdata,
 		goto out_send_response;
 
 	if (enabled) {
-		ret = iio_buffer_enable(entry->buf);
+		ret = iio_buffer_stream_start(entry->buf_stream);
 
 		if (NO_THREADS) {
 			iio_task_start(entry->enqueue_task);
@@ -627,7 +634,7 @@ static void handle_set_enabled_buffer(struct parser_pdata *pdata,
 			iio_task_stop(entry->dequeue_task);
 		}
 
-		ret = iio_buffer_disable(entry->buf);
+		ret = iio_buffer_stream_stop(entry->buf_stream);
 	}
 
 out_send_response:
@@ -688,7 +695,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 		goto out_send_response;
 	}
 
-	block = iio_buffer_create_block(buf_entry->buf, (size_t) block_size);
+	block = iio_buffer_stream_create_block(buf_entry->buf_stream, (size_t) block_size);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
