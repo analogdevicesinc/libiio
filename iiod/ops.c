@@ -8,6 +8,8 @@
 
 #include "debug.h"
 #include "ops.h"
+#include "iio-private.h"
+#include "iio/iio.h"
 #include "parser.h"
 #include "thread-pool.h"
 
@@ -92,7 +94,7 @@ struct DevEntry {
 	unsigned int ref_count;
 
 	struct iio_device *dev;
-	struct iio_buffer *buf;
+	struct iio_buffer_stream *buf_stream;
 	struct iio_block **blocks;
 	unsigned int sample_size, nb_clients;
 	unsigned int samples_count;
@@ -340,6 +342,7 @@ static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
 				 struct iio_channels_mask *mask)
 {
 	struct iio_device_pdata *dev_pdata;
+	struct iio_buffer *buf;
 	size_t buf_size;
 	unsigned int nb_blocks;
 	unsigned int i;
@@ -352,15 +355,21 @@ static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
 	if (!entry->blocks)
 		return -ENOMEM;
 
-	entry->buf = iio_device_create_buffer(entry->dev, 0, mask);
-	err = iio_err(entry->buf);
+	buf = iio_device_get_buffer(entry->dev, 0);
+	if (!buf) {
+		err = -ENODEV;
+		goto err_free_blocks_array;
+	}
+
+	entry->buf_stream = iio_buffer_open(buf, mask);
+	err = iio_err(entry->buf_stream);
 	if (err)
 		goto err_free_blocks_array;
 
 	buf_size = samples_count * iio_device_get_sample_size(entry->dev, mask);
 
 	for (i = 0; i < nb_blocks; i++) {
-		entry->blocks[i] = iio_buffer_create_block(entry->buf, buf_size);
+		entry->blocks[i] = iio_buffer_stream_create_block(entry->buf_stream, buf_size);
 		err = iio_err(entry->blocks[i]);
 		if (err)
 			goto err_free_blocks;
@@ -374,9 +383,9 @@ static int create_buf_and_blocks(struct DevEntry *entry, size_t samples_count,
 err_free_blocks:
 	for (; i; i--)
 	      iio_block_destroy(entry->blocks[i - 1]);
-	iio_buffer_destroy(entry->buf);
+	iio_buffer_close(entry->buf_stream);
 err_free_blocks_array:
-	entry->buf = NULL;
+	entry->buf_stream = NULL;
 	free(entry->blocks);
 	entry->blocks = NULL;
 	return err;
@@ -386,9 +395,9 @@ static void free_buf_and_blocks(struct DevEntry *entry)
 {
 	unsigned int i;
 
-	if (entry->buf) {
+	if (entry->buf_stream) {
 		IIO_DEBUG("Disable buffer...\n");
-		iio_buffer_disable(entry->buf);
+		iio_buffer_stream_disable(entry->buf_stream);
 		IIO_DEBUG("Disabled\n");
 	}
 
@@ -396,10 +405,10 @@ static void free_buf_and_blocks(struct DevEntry *entry)
 		if (entry->blocks[i])
 			iio_block_destroy(entry->blocks[i]);
 
-	if (entry->buf) {
-		iio_buffer_destroy(entry->buf);
+	if (entry->buf_stream) {
+		iio_buffer_close(entry->buf_stream);
 		IIO_DEBUG("Buffer destroyed.\n");
-		entry->buf = NULL;
+		entry->buf_stream = NULL;
 	}
 
 	free(entry->blocks);
@@ -470,7 +479,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 				break;
 			}
 
-			ret = iio_buffer_enable(entry->buf);
+			ret = iio_buffer_stream_enable(entry->buf_stream);
 			if (ret) {
 				IIO_ERROR("Unable to enable buffer\n");
 				break;
@@ -766,9 +775,9 @@ static void remove_thd_entry(struct ThdEntry *t)
 	if (!entry->closed) {
 		entry->update_mask = true;
 		SLIST_REMOVE(&entry->thdlist_head, t, ThdEntry, dev_list_entry);
-		if (SLIST_EMPTY(&entry->thdlist_head) && entry->buf) {
+		if (SLIST_EMPTY(&entry->thdlist_head) && entry->buf_stream) {
 			entry->cancelled = true;
-			iio_buffer_cancel(entry->buf); /* Wakeup the rw thread */
+			iio_buffer_stream_cancel(entry->buf_stream); /* Wakeup the rw thread */
 		}
 
 		pthread_cond_signal(&entry->rw_ready_cond);
@@ -916,7 +925,7 @@ retry:
 	entry->cyclic = cyclic;
 	entry->update_mask = true;
 	entry->dev = dev;
-	entry->buf = NULL;
+	entry->buf_stream = NULL;
 	SLIST_INIT(&entry->thdlist_head);
 	SLIST_INSERT_HEAD(&entry->thdlist_head, thd, dev_list_entry);
 	thd->entry = entry;
@@ -1184,8 +1193,8 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			pthread_mutex_lock(&devlist_lock);
 
 			dev_pdata = iio_device_get_data(dev);
-			if (dev_pdata->entry && dev_pdata->entry->buf) {
-				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
+			if (dev_pdata->entry && dev_pdata->entry->buf_stream) {
+				attr = iio_buffer_find_attr(dev_pdata->entry->buf_stream->buf, name);
 				if (attr)
 					ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
 				else
@@ -1270,8 +1279,8 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			pthread_mutex_lock(&devlist_lock);
 
 			dev_pdata = iio_device_get_data(dev);
-			if (dev_pdata->entry && dev_pdata->entry->buf) {
-				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
+			if (dev_pdata->entry && dev_pdata->entry->buf_stream) {
+				attr = iio_buffer_find_attr(dev_pdata->entry->buf_stream->buf, name);
 				if (attr)
 					ret = iio_attr_write_raw(attr, buf, len);
 				else

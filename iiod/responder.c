@@ -7,6 +7,7 @@
  */
 
 #include "debug.h"
+#include "iio/iio.h"
 #include "ops.h"
 
 #include "../iiod-responder.h"
@@ -32,9 +33,8 @@ static inline uint32_t ntohl(uint32_t n) {
 #endif
 
 /* Forward declaration */
-static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
-					  const struct iiod_command *cmd,
-					  struct buffer_entry **entry_ptr);
+static struct buffer_entry * get_iio_buffer_entry(struct parser_pdata *pdata,
+						  const struct iiod_command *cmd);
 
 static SLIST_HEAD(BufferList, buffer_entry) bufferlist;
 
@@ -60,7 +60,7 @@ static void free_buffer_entry(struct buffer_entry *entry)
 {
 	struct block_entry *block_entry, *block_next;
 
-	iio_buffer_cancel(entry->buf);
+	iio_buffer_stream_cancel(entry->buf_stream);
 
 	if (!NO_THREADS) {
 		iio_task_stop(entry->dequeue_task);
@@ -80,7 +80,7 @@ static void free_buffer_entry(struct buffer_entry *entry)
 
 	iio_mutex_unlock(entry->lock);
 
-	iio_buffer_destroy(entry->buf);
+	iio_buffer_close(entry->buf_stream);
 	iio_mutex_destroy(entry->lock);
 	free(entry->words);
 	free(entry);
@@ -114,29 +114,22 @@ static void handle_timeout(struct parser_pdata *pdata,
 	iiod_io_send_response_code(io, ret);
 }
 
-static struct iio_buffer * get_iio_buffer_unblocked(struct parser_pdata *pdata,
-					  const struct iiod_command *cmd,
-					  struct buffer_entry **entry_ptr)
+static struct buffer_entry * get_iio_buffer_entry_unblocked(struct parser_pdata *pdata,
+							    const struct iiod_command *cmd)
 {
 	const struct iio_device *dev;
 	struct buffer_entry *entry;
-	struct iio_buffer *buf = NULL;
 
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
 	if (!dev)
 		return iio_ptr(-EINVAL);
 
 	SLIST_FOREACH(entry, &bufferlist, entry) {
-		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff)) {
-			buf = entry->buf;
-			break;
-		}
+		if (entry->dev == dev && entry->idx == (cmd->code & 0xffff))
+			return entry;
 	}
 
-	if (buf && entry_ptr)
-		*entry_ptr = entry;
-
-	return buf ? buf : iio_ptr(-EBADF);
+	return iio_ptr(-EBADF);
 }
 
 static const struct iio_attr *
@@ -161,8 +154,9 @@ get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 		return iio_device_get_debug_attr(dev, arg1);
 	case IIOD_OP_READ_BUF_ATTR:
 	case IIOD_OP_WRITE_BUF_ATTR:
-		buf = get_iio_buffer(pdata, cmd, NULL);
-		if (iio_err(buf))
+		/*!\TODO: The below change should likely be in it's own patch */
+		buf = iio_device_get_buffer(dev, arg2);
+		if (!buf)
 			break;
 
 		return iio_buffer_get_attr(buf, arg1);
@@ -393,6 +387,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	const struct iio_device *dev;
 	struct iio_channel *chn;
 	struct buffer_entry *entry;
+	struct iio_buffer_stream *buf_stream;
 	struct iio_buffer *buf;
 	struct iiod_buf data;
 	unsigned int i, nb_channels;
@@ -440,8 +435,8 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	entry->dev = dev;
 	entry->idx = (uint16_t) cmd->code;
 
-	buf = get_iio_buffer_unblocked(pdata, cmd, &entry);
-	ret = iio_err(buf);
+	entry = get_iio_buffer_entry_unblocked(pdata, cmd);
+	ret = iio_err(entry);
 	if (ret == 0) {
 		/* No error? This buffer already exists, so return
 		 * -EEXIST. */
@@ -477,8 +472,14 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	if (ret)
 		goto err_destroy_dequeue_task;
 
-	buf = iio_device_create_buffer(dev, entry->idx, mask);
-	ret = iio_err(buf);
+	buf = iio_device_get_buffer(dev, entry->idx);
+	if (!buf) {
+		ret = -ENODEV;
+		goto err_destroy_lock;
+	}
+
+	buf_stream = iio_buffer_open(buf, mask);
+	ret = iio_err(buf_stream);
 	if (ret)
 		goto err_destroy_lock;
 
@@ -498,7 +499,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	/* Success, destroy the temporary mask object */
 	iio_channels_mask_destroy(mask);
 
-	entry->buf = buf;
+	entry->buf_stream = buf_stream;
 	entry->pdata = pdata;
 
 	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
@@ -531,18 +532,18 @@ err_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static struct iio_buffer * get_iio_buffer(struct parser_pdata *pdata,
-					  const struct iiod_command *cmd,
-					  struct buffer_entry **entry_ptr)
+/*!\TODO: Simplifying get_iio_buffer_entry() needs to be a precursor patch */
+static struct buffer_entry * get_iio_buffer_entry(struct parser_pdata *pdata,
+						  const struct iiod_command *cmd)
 {
-	struct iio_buffer *buf = NULL;
+	struct buffer_entry *entry;
 
 
 	iio_mutex_lock(buflist_lock);
-	buf = get_iio_buffer_unblocked(pdata, cmd, entry_ptr);
+	entry = get_iio_buffer_entry_unblocked(pdata, cmd);
 	iio_mutex_unlock(buflist_lock);
 
-	return buf;
+	return entry;
 }
 
 static struct iio_block * get_iio_block_unlocked(struct buffer_entry *entry_buf,
@@ -585,11 +586,10 @@ static void handle_close_buffer(struct parser_pdata *pdata,
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	struct buffer_entry *entry, *buf_entry;
-	struct iio_buffer *buf;
 	int ret = -ENODEV;
 
-	buf = get_iio_buffer(pdata, cmd, &buf_entry);
-	ret = iio_err(buf);
+	buf_entry = get_iio_buffer_entry(pdata, cmd);
+	ret = iio_err(buf_entry);
 	if (ret)
 		goto out_send_response;
 
@@ -622,16 +622,15 @@ static void handle_set_enabled_buffer(struct parser_pdata *pdata,
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	struct buffer_entry *entry;
-	struct iio_buffer *buf;
 	int ret;
 
-	buf = get_iio_buffer(pdata, cmd, &entry);
-	ret = iio_err(buf);
+	entry = get_iio_buffer_entry(pdata, cmd);
+	ret = iio_err(entry);
 	if (ret)
 		goto out_send_response;
 
 	if (enabled) {
-		ret = iio_buffer_enable(buf);
+		ret = iio_buffer_stream_enable(entry->buf_stream);
 
 		if (NO_THREADS) {
 			iio_task_start(entry->enqueue_task);
@@ -643,7 +642,7 @@ static void handle_set_enabled_buffer(struct parser_pdata *pdata,
 			iio_task_stop(entry->dequeue_task);
 		}
 
-		ret = iio_buffer_disable(buf);
+		ret = iio_buffer_stream_disable(entry->buf_stream);
 	}
 
 out_send_response:
@@ -671,7 +670,6 @@ static void handle_create_block(struct parser_pdata *pdata,
 	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
 	struct iio_block *block;
-	struct iio_buffer *buf;
 	struct iiod_buf data;
 	uint64_t block_size;
 	struct iiod_io *io;
@@ -691,8 +689,8 @@ static void handle_create_block(struct parser_pdata *pdata,
 	if (ret < 0)
 		goto out_send_response;
 
-	buf = get_iio_buffer(pdata, cmd, &buf_entry);
-	ret = iio_err(buf);
+	buf_entry = get_iio_buffer_entry(pdata, cmd);
+	ret = iio_err(buf_entry);
 	if (ret)
 		goto out_send_response;
 
@@ -705,7 +703,7 @@ static void handle_create_block(struct parser_pdata *pdata,
 		goto out_send_response;
 	}
 
-	block = iio_buffer_create_block(buf, (size_t) block_size);
+	block = iio_buffer_stream_create_block(buf_entry->buf_stream, (size_t) block_size);
 	ret = iio_err(block);
 	if (ret)
 		goto out_send_response;
@@ -775,13 +773,12 @@ static void handle_free_block(struct parser_pdata *pdata,
 {
 	struct buffer_entry *buf_entry;
 	struct block_entry *entry;
-	struct iio_buffer *buf;
 	struct iio_block *block;
 	struct iiod_io *io;
 	int ret;
 
-	buf = get_iio_buffer(pdata, cmd, &buf_entry);
-	ret = iio_err(buf);
+	buf_entry = get_iio_buffer_entry(pdata, cmd);
+	ret = iio_err(buf_entry);
 	if (ret)
 		goto out_send_response;
 
@@ -827,13 +824,12 @@ static void handle_transfer_block(struct parser_pdata *pdata,
 	struct buffer_entry *entry;
 	struct block_entry *block_entry;
 	struct iio_block *block;
-	struct iio_buffer *buf;
 	struct iiod_buf readbuf;
 	uint64_t bytes_used;
 	int ret;
 
-	buf = get_iio_buffer(pdata, cmd, &entry);
-	ret = iio_err(buf);
+	entry = get_iio_buffer_entry(pdata, cmd);
+	ret = iio_err(entry);
 	if (ret) {
 		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO buffer");
 		return;
@@ -903,11 +899,10 @@ static void handle_retry_dequeue_block(struct parser_pdata *pdata,
 	struct buffer_entry *entry;
 	struct block_entry *block_entry;
 	struct iio_block *block;
-	struct iio_buffer *buf;
 	int ret;
 
-	buf = get_iio_buffer(pdata, cmd, &entry);
-	ret = iio_err(buf);
+	entry = get_iio_buffer_entry(pdata, cmd);
+	ret = iio_err(entry);
 	if (ret) {
 		IIO_PERROR(ret, "handle_transfer_block: Could not find IIO buffer");
 		return;
