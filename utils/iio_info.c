@@ -367,9 +367,8 @@ int main(int argc, char **argv)
 			}
 		}
 
-		if (mask)
-			buffer = iio_device_create_buffer(dev, 0, mask);
-		if (mask && !iio_err(buffer)) {
+		buffer = iio_device_get_buffer(dev, 0);
+		if (buffer) {
 			nb_attrs = iio_buffer_get_attrs_count(buffer);
 			if (nb_attrs)
 				printf("\t\t%u buffer attributes found:\n", nb_attrs);
@@ -377,8 +376,6 @@ int main(int argc, char **argv)
 				attr = iio_buffer_get_attr(buffer, j);
 				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
 			}
-
-			iio_buffer_destroy(buffer);
 		}
 
 		nb_attrs = iio_device_get_debug_attrs_count(dev);
