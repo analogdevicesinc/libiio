@@ -1259,6 +1259,8 @@ iio_buffer_stream_get_mask(const struct iio_buffer_stream *bs);
 __api __check_ret struct iio_block *
 iio_buffer_create_block(struct iio_buffer *buffer, size_t size);
 
+__api __check_ret struct iio_block *
+iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size);
 
 /** @brief Destroy the given block
  * @param block A pointer to an iio_block structure */
@@ -1371,6 +1373,7 @@ __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
  * @return A pointer to an iio_buffer structure */
 __api struct iio_buffer * iio_block_get_buffer(const struct iio_block *block);
 
+__api struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_block *block);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Stream functions --------------------------------*/

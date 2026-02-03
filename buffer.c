@@ -210,6 +210,14 @@ iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask)
 	if (err < 0)
 		goto err_destroy_worker;
 
+	/* For legacy reasons! Just while the old/legacy iio_device_create_buffer() exists!
+	 * internally in libiio.
+	 */
+	buf->lock = buf_stream->lock;
+	buf->worker = buf_stream->worker;
+	buf->pdata = buf_stream->pdata;
+	buf->mask = buf_stream->mask;
+
 	return buf_stream;
 
 err_destroy_worker:
