@@ -107,22 +107,9 @@ TEST_FUNCTION(buffer_attributes)
 		return;
 	}
 
-	struct iio_channels_mask *mask = iio_create_channels_mask(10);
-	if (!mask) {
-		DEBUG_PRINT("  SKIP: Could not create channels mask\n");
-		return;
-	}
-
-	for (unsigned int c = 0; c < test_dev_chn_count; c++) {
-		struct iio_channel *chn = iio_device_get_channel(test_dev, c);
-		if (iio_channel_is_scan_element(chn) && !iio_channel_is_output(chn))
-			iio_channel_enable(chn, mask);
-	}
-
-	struct iio_buffer *buffer = iio_device_create_buffer(test_dev, 0, mask);
-	if (iio_err(buffer)) {
-		DEBUG_PRINT("  SKIP: Could not create buffer for attributes test\n");
-		iio_channels_mask_destroy(mask);
+	struct iio_buffer *buffer = iio_device_get_buffer(test_dev, 0);
+	if (!buffer) {
+		DEBUG_PRINT("  SKIP: Could not get buffer for attributes test\n");
 		return;
 	}
 
@@ -155,9 +142,6 @@ TEST_FUNCTION(buffer_attributes)
 
 	const struct iio_attr *nonexistent = iio_buffer_find_attr(buffer, "nonexistent_attr");
 	TEST_ASSERT_PTR_NULL(nonexistent, "Nonexistent buffer attribute should return NULL");
-
-	iio_buffer_destroy(buffer);
-	iio_channels_mask_destroy(mask);
 }
 
 TEST_FUNCTION(buffer_enable_disable)
@@ -259,22 +243,9 @@ TEST_FUNCTION(buffer_user_data)
 		return;
 	}
 
-	struct iio_channels_mask *mask = iio_create_channels_mask(10);
-	if (!mask) {
-		DEBUG_PRINT("  SKIP: Could not create channels mask\n");
-		return;
-	}
-
-	for (unsigned int c = 0; c < test_dev_chn_count; c++) {
-		struct iio_channel *chn = iio_device_get_channel(test_dev, c);
-		if (iio_channel_is_scan_element(chn) && !iio_channel_is_output(chn))
-			iio_channel_enable(chn, mask);
-	}
-
-	struct iio_buffer *buffer = iio_device_create_buffer(test_dev, 0, mask);
-	if (iio_err(buffer)) {
-		DEBUG_PRINT("  SKIP: Could not create buffer for user data test\n");
-		iio_channels_mask_destroy(mask);
+	struct iio_buffer *buffer = iio_device_get_buffer(test_dev, 0);
+	if (!buffer) {
+		DEBUG_PRINT("  SKIP: Could not get buffer for user data test\n");
 		return;
 	}
 
@@ -290,9 +261,6 @@ TEST_FUNCTION(buffer_user_data)
 	iio_buffer_set_data(buffer, NULL);
 	retrieved_data = iio_buffer_get_data(buffer);
 	TEST_ASSERT_PTR_NULL(retrieved_data, "Buffer data should be NULL after clearing");
-
-	iio_buffer_destroy(buffer);
-	iio_channels_mask_destroy(mask);
 }
 
 TEST_FUNCTION(buffer_destroy_behavior)
