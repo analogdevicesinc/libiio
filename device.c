@@ -141,6 +141,20 @@ const char * iio_device_get_label(const struct iio_device *dev)
 	return dev->label;
 }
 
+
+unsigned int iio_device_get_buffer_count(const struct iio_device *dev)
+{
+	return dev->nb_buffers;
+}
+
+struct iio_buffer * iio_device_get_buffer(const struct iio_device *dev, unsigned int index)
+{
+	if (index >= dev->nb_buffers)
+		return NULL;
+
+	return dev->buffers[index];
+}
+
 unsigned int iio_device_get_channels_count(const struct iio_device *dev)
 {
 	return dev->nb_channels;

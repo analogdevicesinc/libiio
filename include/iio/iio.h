@@ -822,6 +822,11 @@ __api __check_ret __pure const char * iio_device_get_name(const struct iio_devic
  * <b>NOTE:</b> if the device has no label, NULL is returned. */
 __api __check_ret __pure const char * iio_device_get_label(const struct iio_device *dev);
 
+__api __check_ret __pure unsigned int iio_device_get_buffer_count(
+		const struct iio_device *dev);
+
+__api __check_ret __pure struct iio_buffer * iio_device_get_buffer(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Enumerate the channels of the given device
  * @param dev A pointer to an iio_device structure
