@@ -1400,10 +1400,18 @@ iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
 			 size_t samples_count);
 
 
+struct iio_stream *
+iio_buffer_create_stream_new(struct iio_buffer *buffer, size_t nb_blocks,
+			     size_t samples_count, struct iio_channels_mask *mask);
+
+__api void
+iio_stream_cancel(struct iio_stream *stream);
+
 /** @brief Destroy the given stream object
  * @param stream A pointer to an iio_stream structure */
 __api void
 iio_stream_destroy(struct iio_stream *stream);
+
 
 
 /** @brief Get a pointer to the next data block
