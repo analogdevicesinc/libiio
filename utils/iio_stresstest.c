@@ -283,6 +283,13 @@ static void *client_thread(void *data)
 			goto thread_fail;
 		}
 
+		buffer = iio_device_get_buffer(dev, 0);
+		if (!buffer) {
+			fprintf(stderr, "Unable to get buffer\n");
+			iio_context_destroy(ctx);
+			goto thread_fail;
+		}
+
 		nb_channels = iio_device_get_channels_count(dev);
 		mask = iio_create_channels_mask(nb_channels);
 		if (!mask) {
@@ -308,22 +315,16 @@ static void *client_thread(void *data)
 		i = 0;
 		while (threads_running || i == 0) {
 			info->buffers[id]++;
-			buffer = iio_device_create_buffer(dev, info->buffer_size, mask);
-			ret = iio_err(buffer);
-			if (ret) {
-				struct timespec wait;
-				wait.tv_sec = 0;
-				wait.tv_nsec = (1 * 1000);
-				thread_err(id, ret, "iio_device_create_buffer failed");
-				nanosleep(&wait, &wait);
-				continue;
-			}
 
-			stream = iio_buffer_create_stream(buffer, 4, info->buffer_size);
+			stream = iio_buffer_create_stream_new(buffer, 4, info->buffer_size, mask);
 			ret = iio_err(stream);
 			if (ret) {
-				thread_err(id, ret, "iio_buffer_create_stream failed");
-				iio_buffer_destroy(buffer);
+				struct timespec wait;
+
+				wait.tv_sec = 0;
+				wait.tv_nsec = (1 * 1000);
+				thread_err(id, ret, "iio_buffer_create_stream_new failed");
+				nanosleep(&wait, &wait);
 				continue;
 			}
 
@@ -348,7 +349,6 @@ static void *client_thread(void *data)
 					break;
 			}
 			iio_stream_destroy(stream);
-			iio_buffer_destroy(buffer);
 
 			/* depending on backend, do more */
 			if(info->back == IIO_USB) {
@@ -393,6 +393,7 @@ int main(int argc, char **argv)
 	struct info info;
 	unsigned int i, j, nb_channels, duration;
 	const struct iio_device *dev;
+	struct iio_buffer_stream *buf_stream;
 	struct iio_buffer *buffer;
 	struct iio_context *ctx;
 	struct iio_channel *ch;
@@ -490,11 +491,13 @@ int main(int argc, char **argv)
 							iio_channel_enable(ch, mask);
 					}
 
-					buffer = iio_device_create_buffer(dev, 0, mask);
-					if (!iio_err(buffer)) {
-						iio_buffer_destroy(buffer);
-
-						printf("try : %s\n", name);
+					buffer = iio_device_get_buffer(dev, 0);
+					if (buffer) {
+						buf_stream = iio_buffer_open(buffer, mask);
+						if (!iio_err(buf_stream)) {
+							iio_buffer_close(buf_stream);
+							printf("try : %s\n", name);
+						}
 					}
 
 					iio_channels_mask_destroy(mask);
