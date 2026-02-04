@@ -822,6 +822,11 @@ __api __check_ret __pure const char * iio_device_get_name(const struct iio_devic
  * <b>NOTE:</b> if the device has no label, NULL is returned. */
 __api __check_ret __pure const char * iio_device_get_label(const struct iio_device *dev);
 
+__api __check_ret __pure unsigned int iio_device_get_buffer_count(
+		const struct iio_device *dev);
+
+__api __check_ret __pure struct iio_buffer * iio_device_get_buffer(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Enumerate the channels of the given device
  * @param dev A pointer to an iio_device structure
@@ -1196,6 +1201,52 @@ __api int iio_buffer_disable(struct iio_buffer *buf);
 __api const struct iio_channels_mask *
 iio_buffer_get_channels_mask(const struct iio_buffer *buf);
 
+/* ------------------------- Buffer Stream functions -------------------------*/
+/** @defgroup BufferStream Buffer Stream
+ * @{
+ * @struct iio_buffer_stream
+ * @brief An opened buffer ready for data streaming */
+
+
+/** @brief Open a buffer for data streaming
+ * @param buf A pointer to an iio_buffer structure
+ * @param mask A pointer to an iio_channels_mask structure specifying which
+ *             channels to enable
+ * @return On success, a pointer to an iio_buffer_stream structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret struct iio_buffer_stream *
+iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask);
+
+
+/** @brief Close a buffer stream
+ * @param bs A pointer to an iio_buffer_stream structure */
+__api void iio_buffer_close(struct iio_buffer_stream *bs);
+
+
+/** @brief Cancel all buffer stream operations
+ * @param bs The buffer stream for which operations should be canceled */
+__api void iio_buffer_stream_cancel(struct iio_buffer_stream *bs);
+
+
+/** @brief Enable the buffer stream
+ * @param bs A pointer to an iio_buffer_stream structure
+ * @return On success, 0
+ * @return On error, a negative error code is returned */
+__api __check_ret int iio_buffer_stream_enable(struct iio_buffer_stream *bs);
+
+
+/** @brief Disable the buffer stream
+ * @param bs A pointer to an iio_buffer_stream structure
+ * @return On success, 0
+ * @return On error, a negative error code is returned */
+__api int iio_buffer_stream_disable(struct iio_buffer_stream *bs);
+
+
+/** @brief Retrieve the channels mask of a buffer stream
+ * @param bs A pointer to an iio_buffer_stream structure
+ * @return A pointer to an iio_channels_mask structure */
+__api const struct iio_channels_mask *
+iio_buffer_stream_get_mask(const struct iio_buffer_stream *bs);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* -------------------------- Block functions --------------------------------*/
@@ -1213,6 +1264,8 @@ iio_buffer_get_channels_mask(const struct iio_buffer *buf);
 __api __check_ret struct iio_block *
 iio_buffer_create_block(struct iio_buffer *buffer, size_t size);
 
+__api __check_ret struct iio_block *
+iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size);
 
 /** @brief Destroy the given block
  * @param block A pointer to an iio_block structure */
@@ -1325,6 +1378,7 @@ __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
  * @return A pointer to an iio_buffer structure */
 __api struct iio_buffer * iio_block_get_buffer(const struct iio_block *block);
 
+__api struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_block *block);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Stream functions --------------------------------*/
@@ -1346,10 +1400,18 @@ iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
 			 size_t samples_count);
 
 
+struct iio_stream *
+iio_buffer_create_stream_new(struct iio_buffer *buffer, size_t nb_blocks,
+			     size_t samples_count, struct iio_channels_mask *mask);
+
+__api void
+iio_stream_cancel(struct iio_stream *stream);
+
 /** @brief Destroy the given stream object
  * @param stream A pointer to an iio_stream structure */
 __api void
 iio_stream_destroy(struct iio_stream *stream);
+
 
 
 /** @brief Get a pointer to the next data block

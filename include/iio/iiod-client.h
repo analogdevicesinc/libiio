@@ -68,11 +68,11 @@ iiod_client_create_context(struct iiod_client *client,
 			   unsigned int nb_ctx_attrs);
 
 __api struct iiod_client_buffer_pdata *
-iiod_client_create_buffer(struct iiod_client *client,
-			  struct iiod_client *client_fb,
-			  const struct iio_device *dev, unsigned int idx,
-			  struct iio_channels_mask *mask);
-__api void iiod_client_free_buffer(struct iiod_client_buffer_pdata *pdata);
+iiod_client_open_buffer(struct iiod_client *client,
+			struct iiod_client *client_fb,
+			const struct iio_device *dev, unsigned int idx,
+			struct iio_channels_mask *mask);
+__api void iiod_client_close_buffer(struct iiod_client_buffer_pdata *pdata);
 __api int iiod_client_enable_buffer(struct iiod_client_buffer_pdata *pdata,
 				    size_t nb_samples, bool enable, bool cyclic);
 

@@ -59,7 +59,7 @@ static const char *options_descriptions[] = {
 };
 
 static struct iio_context *ctx;
-static struct iio_buffer *buffer;
+static struct iio_stream *stream;
 static const char *trigger_name = NULL;
 static size_t num_samples;
 
@@ -69,8 +69,8 @@ static int exit_code = EXIT_FAILURE;
 static int quit_all(int sig)
 {
 	exit_code = sig;
-	if (!app_running && buffer) {
-		iio_buffer_cancel(buffer);
+	if (!app_running && stream) {
+		iio_stream_cancel(stream);
 		return 1;
 	}
 
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 	ssize_t sample_size, hw_sample_size;
 	bool hit, mib, is_write = false, cyclic_buffer = false,
 	     benchmark = false, do_write = false;
-	struct iio_stream *stream;
+	struct iio_buffer *buffer;
 	const struct iio_block *block;
 	struct iio_channels_mask *mask;
 	const struct iio_channels_mask *hw_mask;
@@ -435,22 +435,20 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	}
 
-	buffer = iio_device_create_buffer(dev, 0, mask);
-	ret = iio_err(buffer);
-	if (ret) {
-		dev_perror(dev, ret, "Unable to allocate buffer");
+	buffer = iio_device_get_buffer(dev, 0);
+	if (!buffer) {
+		dev_err(dev, "No buffer for device");
+		ret = -ENODEV;
 		goto err_free_mask;
 	}
 
-	hw_mask = iio_buffer_get_channels_mask(buffer);
-	hw_sample_size = iio_device_get_sample_size(dev, hw_mask);
-
-	stream = iio_buffer_create_stream(buffer, 4, buffer_size);
-	ret = iio_err(stream);
+	stream = iio_buffer_create_stream_new(buffer, 4, buffer_size, mask);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create stream");
-		goto err_destroy_buffer;
+		goto err_free_mask;
 	}
+
+	hw_sample_size = iio_device_get_sample_size(dev, mask);
 
 #ifdef _WIN32
 	/*
@@ -549,8 +547,6 @@ int main(int argc, char **argv)
 
 err_destroy_stream:
 	iio_stream_destroy(stream);
-err_destroy_buffer:
-	iio_buffer_destroy(buffer);
 err_free_mask:
 	iio_channels_mask_destroy(mask);
 err_free_ctx:

@@ -119,9 +119,9 @@ TEST_FUNCTION(buffer_attributes)
 			iio_channel_enable(chn, mask);
 	}
 
-	struct iio_buffer *buffer = iio_device_create_buffer(test_dev, 0, mask);
-	if (iio_err(buffer)) {
-		DEBUG_PRINT("  SKIP: Could not create buffer for attributes test\n");
+	struct iio_buffer *buffer = iio_device_get_buffer(test_dev, 0);
+	if (!buffer) {
+		DEBUG_PRINT("  SKIP: There is no buffer for attributes test\n");
 		iio_channels_mask_destroy(mask);
 		return;
 	}
@@ -156,7 +156,6 @@ TEST_FUNCTION(buffer_attributes)
 	const struct iio_attr *nonexistent = iio_buffer_find_attr(buffer, "nonexistent_attr");
 	TEST_ASSERT_PTR_NULL(nonexistent, "Nonexistent buffer attribute should return NULL");
 
-	iio_buffer_destroy(buffer);
 	iio_channels_mask_destroy(mask);
 }
 

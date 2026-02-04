@@ -1108,7 +1108,7 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 
 static int add_buffer_attr(void *d, const char *path)
 {
-	struct iio_device *dev = (struct iio_device *) d;
+	struct iio_buffer *buf = (struct iio_buffer *) d;
 	const char *name = strrchr(path, '/') + 1;
 	unsigned int i;
 
@@ -1116,7 +1116,7 @@ static int add_buffer_attr(void *d, const char *path)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 
-	return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_BUFFER);
+	return iio_buffer_add_attr(buf, name);
 }
 
 static int add_attr_or_channel_helper(struct iio_device *dev,
@@ -1224,15 +1224,22 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 	const struct iio_context *ctx = iio_device_get_context(dev);
 	struct stat st;
 	char buf[1024];
+	int ret;
 
 	iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		int ret = foreach_in_dir(ctx, dev, buf, false, add_buffer_attr);
+		struct iio_buffer *buffer;
+
+		buffer = iio_device_add_buffer(dev, 0);
+		if (!buffer)
+			return -ENOMEM;
+
+		ret = foreach_in_dir(ctx, buffer, buf, false, add_buffer_attr);
 		if (ret < 0)
 			return ret;
 
-		iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_BUFFER]);
+		iio_sort_attrs(&buffer->attrlist);
 	}
 
 	return 0;
@@ -1478,7 +1485,7 @@ static void local_close_fd(const struct iio_device *dev, int fd)
 }
 
 static struct iio_buffer_pdata *
-local_create_buffer(const struct iio_device *dev, unsigned int idx,
+local_open_buffer(const struct iio_device *dev, unsigned int idx,
 		    struct iio_channels_mask *mask)
 {
 	struct iio_buffer_pdata *pdata;
@@ -1567,7 +1574,7 @@ err_free_pdata:
 	return iio_ptr(err);
 }
 
-static void local_free_buffer(struct iio_buffer_pdata *pdata)
+static void local_close_buffer(struct iio_buffer_pdata *pdata)
 {
 	free(pdata->pdata);
 	local_close_fd(pdata->dev, pdata->fd);
@@ -1753,8 +1760,8 @@ static const struct iio_backend_ops local_ops = {
 	.enqueue_block = local_enqueue_block,
 	.dequeue_block = local_dequeue_block,
 
-	.create_buffer = local_create_buffer,
-	.free_buffer = local_free_buffer,
+	.open_buffer = local_open_buffer,
+	.close_buffer = local_close_buffer,
 	.enable_buffer = local_enable_buffer,
 	.cancel_buffer = local_cancel_buffer,
 
