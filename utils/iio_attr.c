@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <iio/iio.h>
+#include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -173,8 +174,9 @@ static int dump_device_attributes(const struct iio_device *dev,
 		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			printf("'%s'", get_label_or_name_or_id(dev));
-			printf(", %s attr '%s', ",
-			       type, iio_attr_get_name(attr));
+			printf(", %s %sattr '%s', ",
+			       type, attr->type == IIO_ATTR_TYPE_DEBUG ? "debug " : "",
+                              iio_attr_get_name(attr));
 		}
 		gen_function(type, var, attr, NULL);
 		print_attribute_value(dev, attr, "", quiet);
@@ -854,7 +856,7 @@ int main(int argc, char **argv)
 						found_err = false;
 						attr_found = true;
 						debug_found = true;
-						ret = dump_device_attributes(dev, attr, "device_debug",
+						ret = dump_device_attributes(dev, attr, "device",
 									     "dev", wbuf, write_only,
 									     attr_index ? quiet : ATTR_VERBOSE);
 						if (wbuf && ret < 0)
