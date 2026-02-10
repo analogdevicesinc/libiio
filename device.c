@@ -146,6 +146,19 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 	return NULL;
 }
 
+unsigned int iio_device_get_buffers_count(const struct iio_device *dev)
+{
+	return dev->nb_buffers;
+}
+
+struct iio_buffer * iio_device_get_buffer(const struct iio_device *dev,
+		unsigned int index)
+{
+	if (index >= dev->nb_buffers)
+		return NULL;
+	return dev->buffers[index];
+}
+
 unsigned int iio_device_get_attrs_count(const struct iio_device *dev)
 {
 	return dev->attrlist[IIO_ATTR_TYPE_DEVICE].num;

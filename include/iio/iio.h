@@ -836,6 +836,11 @@ __api __check_ret __pure unsigned int iio_device_get_channels_count(
 __api __check_ret __pure unsigned int
 iio_device_get_attrs_count(const struct iio_device *dev);
 
+/** @brief Enumerate the buffers of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of buffers found */
+__api __check_ret __pure unsigned int
+iio_device_get_buffers_count(const struct iio_device *dev);
 
 /** @brief Get the channel present at the given index
  * @param dev A pointer to an iio_device structure
@@ -854,6 +859,13 @@ __api __check_ret __pure struct iio_channel * iio_device_get_channel(
 __api __check_ret __pure const struct iio_attr *
 iio_device_get_attr(const struct iio_device *dev, unsigned int index);
 
+/** @brief Get the buffer present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the buffer
+ * @return On success, a pointer to an iio_buffer structure
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __pure struct iio_buffer * iio_device_get_buffer(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Try to find a channel structure by its ID, label or name
  * @param dev A pointer to an iio_device structure
