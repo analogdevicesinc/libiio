@@ -428,7 +428,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	entry->dev = dev;
 	entry->idx = (uint16_t) cmd->code;
 
-	buf = get_iio_buffer_unblocked(pdata, cmd, &entry);
+	buf = get_iio_buffer_unblocked(pdata, cmd, NULL);
 	ret = iio_err(buf);
 	if (ret == 0) {
 		/* No error? This buffer already exists, so return
