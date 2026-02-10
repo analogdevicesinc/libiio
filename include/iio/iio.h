@@ -1289,6 +1289,15 @@ __api __check_ret struct iio_block *
 iio_buffer_create_block(struct iio_buffer *buffer, size_t size);
 
 
+/** @brief Create a data block for the given buffer stream
+ * @param buf_stream A pointer to an iio_buffer_stream structure
+ * @param size The size of the block to create, in bytes
+ * @return On success, a pointer to an iio_block structure
+ * @return On failure, a pointer-encoded error is returned */
+__api __check_ret struct iio_block *
+iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size);
+
+
 /** @brief Destroy the given block
  * @param block A pointer to an iio_block structure */
 __api void iio_block_destroy(struct iio_block *block);
@@ -1400,6 +1409,11 @@ __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
  * @return A pointer to an iio_buffer structure */
 __api struct iio_buffer * iio_block_get_buffer(const struct iio_block *block);
 
+
+/** @brief Retrieve a pointer to the iio_buffer_stream structure
+ * @param block A pointer to an iio_block structure
+ * @return A pointer to an iio_buffer_stream structure */
+__api struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_block *block);
 
 /** @} *//* ------------------------------------------------------------------*/
 /* ------------------------- Stream functions --------------------------------*/
