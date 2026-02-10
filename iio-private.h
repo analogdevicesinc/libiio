@@ -126,7 +126,7 @@ struct iio_device {
 
 	char *name, *id, *label;
 
-	struct iio_attr_list attrlist[3];
+	struct iio_attr_list attrlist[2];
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;

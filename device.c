@@ -298,7 +298,7 @@ void free_device(struct iio_device *dev)
 	enum iio_attr_type type;
 	unsigned int i;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_BUFFER; type++)
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++)
 		iio_free_attrs(&dev->attrlist[type]);
 
 	for (i = 0; i < dev->nb_buffers; i++)
