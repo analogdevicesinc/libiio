@@ -274,13 +274,6 @@ static int create_buffers(struct iio_device *dev, xmlNode *node)
 					idx, err);
 				return err;
 			}
-
-			/* Still add to the device. Will be removed as soon as we no
-			 * longer look at that list.
-			 */
-			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER);
-			if (err < 0)
-				return err;
 		} else {
 			dev_dbg(dev, "Unknown children \'%s\' in <buffer>\n",
 				n->name);
@@ -373,10 +366,6 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			}
 
 			err = add_attr_to_buffer(buf, n);
-			if (err < 0)
-				return err;
-
-			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_BUFFER);
 			if (err < 0)
 				return err;
 		} else if (strcmp((char *) n->name, "text")) {
