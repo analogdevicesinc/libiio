@@ -8,6 +8,7 @@
 
 #include "debug.h"
 #include "ops.h"
+#include "iio/iio.h"
 #include "parser.h"
 #include "thread-pool.h"
 
@@ -1132,8 +1133,8 @@ static ssize_t write_each_attr(const void *iio, const char *buf, size_t len,
 ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 		      const char *name, enum iio_attr_type type)
 {
-	const struct iio_device_pdata *dev_pdata;
 	const struct iio_attr *attr;
+	struct iio_buffer *buffer;
 	/* We use a very large buffer here, as if attr is NULL all the
 	 * attributes will be read, which may represents a few kilobytes worth
 	 * of data. */
@@ -1181,11 +1182,9 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 				ret = -ENOENT;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			pthread_mutex_lock(&devlist_lock);
-
-			dev_pdata = iio_device_get_data(dev);
-			if (dev_pdata->entry && dev_pdata->entry->buf) {
-				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
+			buffer = iio_device_get_buffer(dev, 0);
+			if (buffer) {
+				attr = iio_buffer_find_attr(buffer, name);
 				if (attr)
 					ret = iio_attr_read_raw(attr, buf, sizeof(buf) - 1);
 				else
@@ -1193,8 +1192,6 @@ ssize_t read_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			} else {
 				ret = -EBADF;
 			}
-
-			pthread_mutex_unlock(&devlist_lock);
 			break;
 		default:
 			ret = -EINVAL;
@@ -1213,8 +1210,8 @@ out_print_value:
 ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 		       const char *name, size_t len, enum iio_attr_type type)
 {
-	const struct iio_device_pdata *dev_pdata;
 	const struct iio_attr *attr;
+	struct iio_buffer *buffer;
 	unsigned int nb;
 	ssize_t ret = -ENOMEM;
 	char *buf;
@@ -1267,11 +1264,9 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 				ret = -ENOENT;
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
-			pthread_mutex_lock(&devlist_lock);
-
-			dev_pdata = iio_device_get_data(dev);
-			if (dev_pdata->entry && dev_pdata->entry->buf) {
-				attr = iio_buffer_find_attr(dev_pdata->entry->buf, name);
+			buffer = iio_device_get_buffer(dev, 0);
+			if (buffer) {
+				attr = iio_buffer_find_attr(buffer, name);
 				if (attr)
 					ret = iio_attr_write_raw(attr, buf, len);
 				else
@@ -1279,8 +1274,6 @@ ssize_t write_dev_attr(struct parser_pdata *pdata, struct iio_device *dev,
 			} else {
 				ret = -EBADF;
 			}
-
-			pthread_mutex_unlock(&devlist_lock);
 			break;
 		default:
 			ret = -EINVAL;

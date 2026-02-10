@@ -7,6 +7,7 @@
  */
 
 #include "debug.h"
+#include "iio/iio.h"
 #include "ops.h"
 
 #include "../iiod-responder.h"
@@ -130,7 +131,7 @@ static struct buffer_entry * get_iio_buffer_entry_unblocked(struct parser_pdata 
 static const struct iio_attr *
 get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 {
-	const struct buffer_entry *entry;
+	const struct iio_buffer *buf;
 	const struct iio_device *dev;
 	const struct iio_channel *chn;
 	uint16_t arg1 = (uint32_t) cmd->code >> 16,
@@ -149,11 +150,11 @@ get_attr(struct parser_pdata *pdata, const struct iiod_command *cmd)
 		return iio_device_get_debug_attr(dev, arg1);
 	case IIOD_OP_READ_BUF_ATTR:
 	case IIOD_OP_WRITE_BUF_ATTR:
-		entry = get_iio_buffer_entry(pdata, cmd);
-		if (iio_err(entry))
+		buf = iio_device_get_buffer(dev, arg2);
+		if (!buf)
 			break;
 
-		return iio_buffer_get_attr(entry->buf, arg1);
+		return iio_buffer_get_attr(buf, arg1);
 	case IIOD_OP_READ_CHN_ATTR:
 	case IIOD_OP_WRITE_CHN_ATTR:
 		chn = iio_device_get_channel(dev, arg2);
