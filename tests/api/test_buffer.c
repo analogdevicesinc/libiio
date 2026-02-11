@@ -57,7 +57,7 @@ static void cleanup_test_buffer(void)
 	}
 }
 
-TEST_FUNCTION(buffer_creation_basic)
+TEST_FUNCTION(buffer_open_basic)
 {
 	setup_test_buffer();
 
@@ -78,10 +78,17 @@ TEST_FUNCTION(buffer_creation_basic)
 			iio_channel_enable(chn, mask);
 	}
 
+	struct iio_buffer *buffer = iio_device_get_buffer(test_dev, 0);
+	if (!buffer) {
+		DEBUG_PRINT("  SKIP: Could not get buffer\n");
+		iio_channels_mask_destroy(mask);
+		return;
+	}
 
-	struct iio_buffer *buffer = iio_device_create_buffer(test_dev, 0, mask);
-	if (iio_err(buffer)) {
-		DEBUG_PRINT("  INFO: Buffer creation failed with error %d (may be expected)\n", iio_err(buffer));
+	struct iio_buffer_stream *buf_stream = iio_buffer_open(buffer, mask);
+	if (iio_err(buf_stream)) {
+		DEBUG_PRINT("  INFO: Buffer open failed with error %d (may be expected)\n",
+			    iio_err(buf_stream));
 		iio_channels_mask_destroy(mask);
 		return;
 	}
@@ -91,10 +98,10 @@ TEST_FUNCTION(buffer_creation_basic)
 	const struct iio_device *buf_dev = iio_buffer_get_device(buffer);
 	TEST_ASSERT(buf_dev == test_dev, "Buffer device should match original device");
 
-	const struct iio_channels_mask *buf_mask = iio_buffer_get_channels_mask(buffer);
+	const struct iio_channels_mask *buf_mask = iio_buffer_stream_get_channels_mask(buf_stream);
 	TEST_ASSERT_PTR_NOT_NULL(buf_mask, "Buffer channels mask should not be NULL");
 
-	iio_buffer_destroy(buffer);
+	iio_buffer_close(buf_stream);
 	iio_channels_mask_destroy(mask);
 }
 
@@ -144,7 +151,7 @@ TEST_FUNCTION(buffer_attributes)
 	TEST_ASSERT_PTR_NULL(nonexistent, "Nonexistent buffer attribute should return NULL");
 }
 
-TEST_FUNCTION(buffer_enable_disable)
+TEST_FUNCTION(buffer_stream_enable_disable)
 {
 	setup_test_buffer();
 
@@ -165,23 +172,37 @@ TEST_FUNCTION(buffer_enable_disable)
 			iio_channel_enable(chn, mask);
 	}
 
-	struct iio_buffer *buffer = iio_device_create_buffer(test_dev, 0, mask);
-	if (iio_err(buffer)) {
-		DEBUG_PRINT("  SKIP: Could not create buffer for enable/disable test\n");
+	struct iio_buffer *buffer = iio_device_get_buffer(test_dev, 0);
+	if (!buffer) {
+		DEBUG_PRINT("  SKIP: Could not get buffer for enable/disable test\n");
 		iio_channels_mask_destroy(mask);
 		return;
 	}
 
-	struct iio_block *block = iio_buffer_create_block(buffer, 1024);
+	struct iio_buffer_stream *buf_stream = iio_buffer_open(buffer, mask);
+	if (iio_err(buf_stream)) {
+		DEBUG_PRINT("  SKIP: Could not open buffer stream for enable/disable test\n");
+		iio_channels_mask_destroy(mask);
+		return;
+	}
+
+	struct iio_block *block = iio_buffer_stream_create_block(buf_stream, 1024);
+	if (iio_err(block)) {
+		DEBUG_PRINT("  SKIP: Could not create block for enable/disable test\n");
+		iio_buffer_close(buf_stream);
+		iio_channels_mask_destroy(mask);
+		return;
+	}
+
 	iio_block_enqueue(block, 1024, false);
 
-	int ret = iio_buffer_enable(buffer);
+	int ret = iio_buffer_stream_start(buf_stream);
 	if (ret == 0) {
 		DEBUG_PRINT("  INFO: Buffer enabled successfully\n");
 
 		iio_block_dequeue(block, false);
 
-		ret = iio_buffer_disable(buffer);
+		ret = iio_buffer_stream_stop(buf_stream);
 		if (ret == 0) {
 			DEBUG_PRINT("  INFO: Buffer disabled successfully\n");
 		} else {
@@ -192,11 +213,11 @@ TEST_FUNCTION(buffer_enable_disable)
 	}
 
 	iio_block_destroy(block);
-	iio_buffer_destroy(buffer);
+	iio_buffer_close(buf_stream);
 	iio_channels_mask_destroy(mask);
 }
 
-TEST_FUNCTION(buffer_cancel)
+TEST_FUNCTION(buffer_stream_cancel)
 {
 	setup_test_buffer();
 
@@ -217,20 +238,27 @@ TEST_FUNCTION(buffer_cancel)
 			iio_channel_enable(chn, mask);
 	}
 
-	struct iio_buffer *buffer = iio_device_create_buffer(test_dev, 0, mask);
-	if (iio_err(buffer)) {
-		DEBUG_PRINT("  SKIP: Could not create buffer for cancel test\n");
+	struct iio_buffer *buffer = iio_device_get_buffer(test_dev, 0);
+	if (!buffer) {
+		DEBUG_PRINT("  SKIP: Could not get buffer for cancel test\n");
 		iio_channels_mask_destroy(mask);
 		return;
 	}
 
-	iio_buffer_cancel(buffer);
+	struct iio_buffer_stream *buf_stream = iio_buffer_open(buffer, mask);
+	if (iio_err(buf_stream)) {
+		DEBUG_PRINT("  SKIP: Could not open buffer stream for cancel test\n");
+		iio_channels_mask_destroy(mask);
+		return;
+	}
+
+	iio_buffer_stream_cancel(buf_stream);
 	DEBUG_PRINT("  INFO: Buffer cancel completed without error\n");
 
-	iio_buffer_cancel(buffer);
+	iio_buffer_stream_cancel(buf_stream);
 	DEBUG_PRINT("  INFO: Second buffer cancel completed without error\n");
 
-	iio_buffer_destroy(buffer);
+	iio_buffer_close(buf_stream);
 	iio_channels_mask_destroy(mask);
 }
 
@@ -263,11 +291,9 @@ TEST_FUNCTION(buffer_user_data)
 	TEST_ASSERT_PTR_NULL(retrieved_data, "Buffer data should be NULL after clearing");
 }
 
-TEST_FUNCTION(buffer_destroy_behavior)
+TEST_FUNCTION(buffer_close_behavior)
 {
-	// Note: iio_buffer_destroy(NULL) behavior is not guaranteed safe
-	// API assumes valid buffer pointer
-	DEBUG_PRINT("  INFO: buffer_destroy requires valid pointer (NULL behavior undefined)\n");
+	DEBUG_PRINT("  INFO: Buffer streams must be explicitly closed by users\n");
 	TEST_ASSERT(true, "API behavior documented");
 }
 
@@ -275,12 +301,12 @@ int main(void)
 {
 	DEBUG_PRINT("=== libiio Buffer Tests ===\n\n");
 
-	RUN_TEST(buffer_creation_basic);
+	RUN_TEST(buffer_open_basic);
 	RUN_TEST(buffer_attributes);
-	RUN_TEST(buffer_enable_disable);
-	RUN_TEST(buffer_cancel);
+	RUN_TEST(buffer_stream_enable_disable);
+	RUN_TEST(buffer_stream_cancel);
 	RUN_TEST(buffer_user_data);
-	RUN_TEST(buffer_destroy_behavior);
+	RUN_TEST(buffer_close_behavior);
 
 	cleanup_test_buffer();
 
