@@ -15,18 +15,20 @@ if ("$Env:COMPILER" -eq "MinGW Makefiles") {
 	cp C:\msys64\mingw64\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 } else {
 	if ( "$Env:COMPILER" -eq "Visual Studio 17 2022" ){
-		$VS_version="VS2022"
+		$USB_VS_version="VS2022"
 		cd 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
-		cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-		cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	}elseif ( "$Env:COMPILER" -eq "Visual Studio 16 2019" ) {
-		$VS_version="VS2019"
+		$USB_VS_version="VS2019"
 		cd 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
-		cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-		cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	}elseif ( "$Env:COMPILER" -eq "Visual Studio 18 2026" ) {
+		$USB_VS_version="VS2022"
+		cd 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
 	}
+	cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+
 	cp $Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\bin\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $Env:BUILD_SOURCESDIRECTORY\deps\libusb\$VS_version\MS64\dll\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp $Env:BUILD_SOURCESDIRECTORY\deps\libusb\$USB_VS_version\MS64\dll\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp $Env:BUILD_SOURCESDIRECTORY\deps\libserialport\x64\Release\libserialport.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp $Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 }

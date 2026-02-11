@@ -11,15 +11,16 @@ echo "Running cmake for $Env:COMPILER on 64 bit ($Env:CMAKE_BUILD_TYPE)..."
 mkdir build-msvc
 cp .\libiio.iss.cmakein .\build-msvc
 cd build-msvc
-if ( "$Env:COMPILER" -eq "Visual Studio 17 2022" ){
-	$VS_version="VS2022"
-}elseif ( "$Env:COMPILER" -eq "Visual Studio 16 2019" ) {
-	$VS_version="VS2019"
+if ( "$Env:COMPILER" -eq "Visual Studio 16 2019" ){
+	$USB_VS_version="VS2019"
+}else {
+	# Default
+	$USB_VS_version="VS2022"
 }
 cmake -G "$Env:COMPILER" -DCMAKE_SYSTEM_PREFIX_PATH="C:" `
 -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_IPV6=ON -DWITH_USB_BACKEND=ON -DWITH_SERIAL_BACKEND=ON -DCPP_BINDINGS=ON -DCSHARP_BINDINGS:BOOL=ON `
 -DLIBXML2_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\lib\libxml2.lib" -DLIBXML2_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\include\libxml2" `
--DLIBUSB_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\$VS_version\MS64\dll\libusb-1.0.lib" -DLIBUSB_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\include" `
+-DLIBUSB_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\$USB_VS_version\MS64\dll\libusb-1.0.lib" -DLIBUSB_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\include" `
 -DLIBSERIALPORT_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libserialport\x64\Release\libserialport.lib" -DLIBSERIALPORT_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libserialport" `
 -DLIBZSTD_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" -DLIBZSTD_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\lib" `
 -DWITH_EXAMPLES=ON ..
