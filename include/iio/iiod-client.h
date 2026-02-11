@@ -100,6 +100,13 @@ __api int iiod_client_read_event(struct iio_event_stream_pdata *pdata,
 			   struct iio_event *out_event,
 			   bool nonblock);
 
+__api int iiod_client_reg_read(struct iiod_client *client,
+			 const struct iio_device *dev,
+			 uint32_t address, uint32_t *value);
+__api int iiod_client_reg_write(struct iiod_client *client,
+			  const struct iio_device *dev,
+			  uint32_t address, uint32_t value);
+
 #undef __api
 
 #endif /* _IIOD_CLIENT_H */
