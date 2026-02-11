@@ -21,5 +21,5 @@ void gen_dev(const struct iio_device *dev);
 void gen_ch(const struct iio_channel *ch);
 void gen_function(const char* prefix, const char* target,
 		  const struct iio_attr *attr, const char *wbuf);
-void gen_context_timeout(unsigned int timeout_ms);
+void gen_context_timeout(int timeout_ms);
 #endif

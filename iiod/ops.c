@@ -1421,7 +1421,7 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 	return ret;
 }
 
-int set_timeout(struct parser_pdata *pdata, unsigned int timeout)
+int set_timeout(struct parser_pdata *pdata, int timeout)
 {
 	int ret = iio_context_set_timeout(pdata->ctx, timeout);
 	print_value(pdata, ret);

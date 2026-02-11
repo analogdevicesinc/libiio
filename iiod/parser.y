@@ -180,7 +180,7 @@ Line:
 	| TIMEOUT SPACE WORD END {
 		char *word = $3;
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		unsigned int timeout = (unsigned int) atoi(word);
+		int timeout = atoi(word);
 		int ret = set_timeout(pdata, timeout);
 		free(word);
 		if (ret < 0)

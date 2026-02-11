@@ -109,9 +109,9 @@ usb_create_context_from_args(const struct iio_context_params *params,
 static int usb_context_scan(const struct iio_context_params *params,
 			    struct iio_scan *scan, const char *args);
 static ssize_t write_data_sync(struct iiod_client_pdata *ep, const char *data,
-			       size_t len, unsigned int timeout_ms);
+			       size_t len, int timeout_ms);
 static ssize_t read_data_sync(struct iiod_client_pdata *ep, char *buf,
-			      size_t len, unsigned int timeout_ms);
+			      size_t len, int timeout_ms);
 static void usb_cancel(struct iiod_client_pdata *io_ctx);
 
 static int usb_io_context_init(struct iiod_client_pdata *io_ctx)
@@ -268,7 +268,7 @@ usb_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 	return iiod_client_attr_write(client, attr, src, len);
 }
 
-static int usb_set_timeout(struct iio_context *ctx, unsigned int timeout)
+static int usb_set_timeout(struct iio_context *ctx, int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
@@ -557,7 +557,7 @@ static void LIBUSB_CALL sync_transfer_cb(struct libusb_transfer *transfer)
 static int usb_sync_transfer(struct iio_context_pdata *pdata,
 			     struct iiod_client_pdata *io_ctx,
 			     unsigned int ep_type, char *data, size_t len,
-			     int *transferred, unsigned int timeout_ms)
+			     int *transferred, int timeout_ms)
 {
 	unsigned char ep;
 	struct libusb_transfer *transfer = NULL;
@@ -662,7 +662,7 @@ unlock:
 
 static ssize_t write_data_sync(struct iiod_client_pdata *ep,
 			       const char *data, size_t len,
-			       unsigned int timeout_ms)
+			       int timeout_ms)
 {
 	int transferred, ret;
 
@@ -675,7 +675,7 @@ static ssize_t write_data_sync(struct iiod_client_pdata *ep,
 }
 
 static ssize_t read_data_sync(struct iiod_client_pdata *ep,
-			      char *buf, size_t len, unsigned int timeout_ms)
+			      char *buf, size_t len, int timeout_ms)
 {
 	int transferred, ret;
 

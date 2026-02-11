@@ -59,7 +59,7 @@ void iio_cond_destroy(struct iio_cond *cond)
 }
 
 int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-		  unsigned int timeout_ms)
+		  int timeout_ms)
 {
 	return -ETIMEDOUT;
 }

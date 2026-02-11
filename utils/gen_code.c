@@ -246,7 +246,7 @@ void gen_ch(const struct iio_channel *ch)
 	}
 }
 
-void gen_context_timeout(unsigned int timeout_ms)
+void gen_context_timeout(int timeout_ms)
 {
 	if (!fd)
 		return;
