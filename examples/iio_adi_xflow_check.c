@@ -232,19 +232,17 @@ int main(int argc, char **argv)
 	printf("Monitoring %s for underflows/overflows\n",
 		iio_device_get_name(dev));
 
-	buffer = iio_device_create_buffer(dev, 0, mask);
-	ret = iio_err(buffer);
-	if (ret) {
-		IIO_PERROR(ret, "Unable to create buffer");
+	buffer = iio_device_get_buffer(dev, 0);
+	if (!buffer) {
+		IIO_PERROR(-ENODEV, "Unable to get buffer");
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
 
-	stream = iio_buffer_create_stream(buffer, 4, buffer_size);
+	stream = iio_buffer_create_stream_new(buffer, 4, buffer_size, mask);
 	ret = iio_err(stream);
 	if (ret) {
 		IIO_PERROR(ret, "Unable to create stream");
-		iio_buffer_destroy(buffer);
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
@@ -269,7 +267,7 @@ int main(int argc, char **argv)
 
 	pthread_join(monitor_thread, NULL);
 
-	iio_buffer_destroy(buffer);
+	iio_stream_destroy(stream);
 	iio_context_destroy(ctx);
 	free_argw(argc, argw);
 	return 0;
