@@ -121,9 +121,6 @@ static void cleanup(void)
 	printf("* Destroying stream\n");
 	if (rxstream) { iio_stream_destroy(rxstream); }
 
-	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
-
 	printf("* Disassociate trigger\n");
 	if (dev) {
 		ret = iio_device_set_trigger(dev, NULL);
@@ -304,16 +301,14 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Creating non-cyclic RX IIO buffer\n");
-	rxbuf = iio_device_create_buffer(dev, 0, rxmask);
-	err = iio_err(rxbuf);
-	if (err) {
-		rxbuf = NULL;
-		ctx_perror(ctx, err, "Could not create buffer");
+	rxbuf = iio_device_get_buffer(dev, 0);
+	if (!rxbuf) {
+		ctx_perror(ctx, -ENODEV, "Could not get buffer");
 		shutdown();
 	}
 
 	printf("* Creating IIO blocks of %u bytes\n", buffer_length);
-	rxstream = iio_buffer_create_stream(rxbuf, 4, buffer_length);
+	rxstream = iio_buffer_create_stream_new(rxbuf, 4, buffer_length, rxmask);
 	if (iio_err(rxstream)) {
 		rxstream = NULL;
 		ctx_perror(ctx, iio_err(rxstream), "Could not create RX stream");
