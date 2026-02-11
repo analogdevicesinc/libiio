@@ -41,6 +41,7 @@ const struct iio_attr *attr;
 struct iio_channel *chn;
 struct iio_channels_mask *txmask, *rxmask;
 struct iio_buffer *txbuf, *rxbuf;
+struct iio_buffer_stream *txbuf_stream;
 struct iio_block *txblock;
 const struct iio_block *rxblock;
 struct iio_stream *rxstream;
@@ -77,12 +78,16 @@ int main() {
   assertm(chn, "Unable to find TX channel");
   iio_channel_enable(chn, txmask);
 
-  txbuf = iio_device_create_buffer(tx, 0, txmask);
-  assertm(txbuf, "Unable to create TX buffer");
+  txbuf = iio_device_get_buffer(tx, 0);
+  assertm(txbuf, "Unable to get TX buffer");
 
-  txblock = iio_buffer_create_block(txbuf, N_TX_SAMPLES * BYTES_PER_SAMPLE *
-                                               N_CHANNELS);
-  assertm(txblock, "Unable to create TX block");
+  txbuf_stream = iio_buffer_open(txbuf, txmask);
+  assertm(!iio_err(txbuf_stream), "Unable to open TX buffer stream");
+
+  txblock = iio_buffer_stream_create_block(txbuf_stream,
+                                           N_TX_SAMPLES * BYTES_PER_SAMPLE *
+                                           N_CHANNELS);
+  assertm(!iio_err(txblock), "Unable to create TX block");
 
   // Generate ramp signal on both I and Q channels
   int16_t *p_dat, *p_end;
@@ -101,7 +106,7 @@ int main() {
     idx++;
   }
   iio_block_enqueue(txblock, 0, true);
-  iio_buffer_enable(txbuf);
+  iio_buffer_stream_start(txbuf_stream);
   sleep(2);
 
   // RX Side
@@ -115,11 +120,12 @@ int main() {
   assertm(chn, "Unable to find RX channel voltage1");
   iio_channel_enable(chn, rxmask);
 
-  rxbuf = iio_device_create_buffer(rx, 0, rxmask);
-  assertm(rxbuf, "Unable to create RX buffer");
+  rxbuf = iio_device_get_buffer(rx, 0);
+  assertm(rxbuf, "Unable to get RX buffer");
 
-  rxstream = iio_buffer_create_stream(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES);
-  assertm(rxstream, "Unable to create RX stream");
+  rxstream = iio_buffer_create_stream_new(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES,
+                                          rxmask);
+  assertm(!iio_err(rxstream), "Unable to create RX stream");
 
   p_inc = iio_device_get_sample_size(rx, rxmask);
   chn = iio_device_find_channel(rx, "voltage0", false);
@@ -204,7 +210,6 @@ int main() {
   assertm(!failed_c2, "Ramp was not contiguous in all buffers");
 
   iio_stream_destroy(rxstream);
-  iio_buffer_destroy(rxbuf);
 
   //   // Manual check RX (disable asserts above first)
   //   printf("Open up the time scope to see data. Should be a ramp from
@@ -214,7 +219,7 @@ int main() {
 
   // Cleanup
   iio_block_destroy(txblock);
-  iio_buffer_destroy(txbuf);
+  iio_buffer_close(txbuf_stream);
 
   return 0;
 }
