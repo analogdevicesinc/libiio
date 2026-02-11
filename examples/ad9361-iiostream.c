@@ -64,10 +64,6 @@ static void cleanup(void)
 	if (rxstream) {iio_stream_destroy(rxstream); }
 	if (txstream) { iio_stream_destroy(txstream); }
 
-	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
-	if (txbuf) { iio_buffer_destroy(txbuf); }
-
 	printf("* Destroying channel masks\n");
 	if (rxmask) { iio_channels_mask_destroy(rxmask); }
 	if (txmask) { iio_channels_mask_destroy(txmask); }
@@ -263,22 +259,18 @@ int main (int argc, char **argv)
 	iio_channel_enable(tx0_q, txmask);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 0, rxmask);
-	err = iio_err(rxbuf);
-	if (err) {
-		rxbuf = NULL;
-		dev_perror(rx, err, "Could not create RX buffer");
+	rxbuf = iio_device_get_buffer(rx, 0);
+	if (!rxbuf) {
+		dev_perror(rx, -ENODEV, "Could not get RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 0, txmask);
-	err = iio_err(txbuf);
-	if (err) {
-		txbuf = NULL;
-		dev_perror(tx, err, "Could not create TX buffer");
+	txbuf = iio_device_get_buffer(tx, 0);
+	if (!txbuf) {
+		dev_perror(tx, -ENODEV, "Could not get TX buffer");
 		shutdown();
 	}
 
-	rxstream = iio_buffer_create_stream(rxbuf, 4, BLOCK_SIZE);
+	rxstream = iio_buffer_create_stream_new(rxbuf, 4, BLOCK_SIZE, rxmask);
 	err = iio_err(rxstream);
 	if (err) {
 		rxstream = NULL;
@@ -286,7 +278,7 @@ int main (int argc, char **argv)
 		shutdown();
 	}
 
-	txstream = iio_buffer_create_stream(txbuf, 4, BLOCK_SIZE);
+	txstream = iio_buffer_create_stream_new(txbuf, 4, BLOCK_SIZE, txmask);
 	err = iio_err(txstream);
 	if (err) {
 		txstream = NULL;
