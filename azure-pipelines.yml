@@ -47,6 +47,12 @@ stages:
           ARCH: 'x64'
           PLATFORM_TOOLSET: 'v143'
           artifactName: 'Windows-VS-2022-x64'
+        VS2026: 
+          vmImage: 'windows-2025'
+          COMPILER: 'Visual Studio 18 2026'
+          ARCH: 'x64'
+          PLATFORM_TOOLSET: 'v145'
+          artifactName: 'Windows-VS-2026-x64'
     pool:
       vmImage: $[ variables['vmImage'] ]
     steps:
@@ -56,6 +62,14 @@ stages:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.9'
+    - task: PowerShell@2
+      displayName: 'Install CMake 4.2.3'
+      inputs:
+        targetType: 'inline'
+        script: |
+          choco install cmake --version 4.2.3 -y --no-progress --force
+          echo "##vso[task.prependpath]C:\Program Files\CMake\bin"
+          cmake --version
     - task: CmdLine@2
       displayName: 'Build dependecies'
       inputs:
@@ -108,8 +122,14 @@ stages:
   #############################################
   - job: GenerateSetupExe
     dependsOn: WindowsBuilds
+    strategy:
+      matrix:
+        Win2022:
+          imageName: 'windows-2022'
+        Win2025:
+          imageName: 'windows-2025'
     pool:
-      vmImage: 'windows-2022'
+      vmImage: $(imageName)
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:
