@@ -22,7 +22,7 @@ namespace iio
     {
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_attr_read_raw(IntPtr attr,
-                [Out()] StringBuilder dst, uint len);
+                [Out()] byte[] dst, uint len);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_attr_write_raw(IntPtr attr, IntPtr src,
@@ -48,21 +48,27 @@ namespace iio
         internal Attr(IntPtr attr)
         {
             this.attr = attr;
-            this.name = Marshal.PtrToStringAnsi(iio_attr_get_name(attr));
-            this.filename = Marshal.PtrToStringAnsi(iio_attr_get_filename(attr));
+            this.name = UTF8Marshaler.PtrToStringUTF8(iio_attr_get_name(attr));
+            this.filename = Marshal.PtrToStringAnsi(iio_attr_get_filename(attr)); // Filesystem paths are ASCII
         }
 
         /// <summary>Read the value of this attribute as a <c>string</c>.</summary>
         /// <exception cref="IioLib.IIOException">The attribute could not be read.</exception>
         public string read()
         {
-            StringBuilder builder = new StringBuilder(1024);
-            int err = iio_attr_read_raw(attr, builder, (uint)builder.Capacity);
+            byte[] buffer = new byte[4096];
+            int err = iio_attr_read_raw(attr, buffer, (uint)buffer.Length);
             if (err < 0)
             {
                 throw new IIOException("Unable to read attribute", err);
             }
-            return builder.ToString();
+
+            // Find the null terminator
+            int length = Array.IndexOf(buffer, (byte)0);
+            if (length < 0)
+                length = err > 0 ? err : 0;
+
+            return Encoding.UTF8.GetString(buffer, 0, length);
         }
 
         /// <summary>Set this attribute to the value contained in the <c>string</c> argument.</summary>
@@ -70,10 +76,18 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The attribute could not be written.</exception>
         public void write(string val)
         {
-            IntPtr valptr = Marshal.StringToHGlobalAnsi(val);
-            int err = iio_attr_write_raw(attr, valptr, (uint)val.Length);
-            if (err < 0)
-                throw new IIOException("Unable to write attribute", err);
+            IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(val);
+            try
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(val);
+                int err = iio_attr_write_raw(attr, valptr, (uint)bytes.Length);
+                if (err < 0)
+                    throw new IIOException("Unable to write attribute", err);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(valptr);
+            }
         }
 
         /// <summary>Read the value of this attribute as a <c>bool</c>.</summary>

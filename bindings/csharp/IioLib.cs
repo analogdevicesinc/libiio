@@ -242,7 +242,7 @@ namespace iio
         /// <summary>Gets the builtin backend from the given index.</summary>
         public static string get_builtin_backend(uint index)
         {
-            return Marshal.PtrToStringAnsi(iio_get_builtin_backend(index));
+            return UTF8Marshaler.PtrToStringUTF8(iio_get_builtin_backend(index));
         }
     }
 }

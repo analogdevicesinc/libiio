@@ -64,8 +64,8 @@ namespace iio
             results = new Dictionary<string, string>();
 
             for (uint i = 0; i < nb_results; i++) {
-                string uri = Marshal.PtrToStringAnsi(iio_scan_get_uri(hdl, i));
-                string dsc = Marshal.PtrToStringAnsi(iio_scan_get_description(hdl, i));
+                string uri = Marshal.PtrToStringAnsi(iio_scan_get_uri(hdl, i)); // URIs are ASCII (RFC-compliant)
+                string dsc = UTF8Marshaler.PtrToStringUTF8(iio_scan_get_description(hdl, i));
 
                 results[uri] = dsc;
             }
