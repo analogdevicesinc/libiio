@@ -8,44 +8,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Contexts;
-using System.Security.Authentication.ExtendedProtection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace iio
 {
     /// <summary><see cref="iio.IOBuffer"/> class:
     /// The class used for all I/O operations.</summary>
-    public class IOBuffer : IIOObject
+    public class IOBuffer
     {
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IIOPtr iio_device_create_buffer(IntPtr dev, uint index, IntPtr mask);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_buffer_destroy(IntPtr buf);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_buffer_cancel(IntPtr buf);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_buffer_enable(IntPtr buf);
-
-        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_buffer_disable(IntPtr buf);
-
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_buffer_get_attrs_count(IntPtr buf);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_buffer_get_attr(IntPtr buf, uint index);
-
-        internal ChannelsMask mask;
-
-        /// <summary>The size of this buffer, in samples.</summary>
-        public readonly uint samples_count;
 
         /// <summary>The associated <see cref="iio.Device"/> object.</summary>
         public readonly Device dev;
@@ -53,63 +28,103 @@ namespace iio
         /// <summary>A <c>list</c> of all the attributes that this buffer has.</summary>
         public readonly List<Attr> attrs;
 
-        private bool is_enabled;
+        internal IntPtr buf;
 
-        public bool enabled {
-            get { return is_enabled; }
-            set {
-                int err;
-                if (value)
-                    err = iio_buffer_enable(hdl);
-                else
-                    err = iio_buffer_disable(hdl);
-                if (err != 0)
-                    throw new IIOException("Unable to " + (value ? "en" : "dis") + "able buffer", err);
-                this.is_enabled = value;
+        internal IOBuffer(Device dev, IntPtr buffer)
+        {
+            this.dev = dev;
+            this.buf = buffer;
+
+            attrs = new List<Attr>();
+            uint nb_buffer_attrs = iio_buffer_get_attrs_count(buf);
+            for (uint i = 0; i < nb_buffer_attrs; i++)
+            {
+                attrs.Add(new Attr(iio_buffer_get_attr(buf, i)));
             }
         }
 
-        /// <summary>Initializes a new instance of the <see cref="iio.IOBuffer"/> class.</summary>
-        /// <param name="dev">The <see cref="iio.Device"/> object that represents the device
-        /// where the I/O operations will be performed.</param>
-        /// <param name="mask">The channels mask to use to create the buffer object.</param>
-        /// <param name="index">The index of the hardware buffer. Should be 0 in most cases.</param>
-        /// <exception cref="IioLib.IIOException">The buffer could not be created.</exception>
-        public IOBuffer(Device dev, ChannelsMask mask, uint index = 0)
+        /// <summary>Open this buffer for data streaming.</summary>
+        /// <param name="mask">Channels mask for this stream. If NULL, use the default mask.</param>
+        /// <exception cref="IioLib.IIOException">The buffer stream could not be opened.</exception>
+        public BufferStream open(ChannelsMask mask)
         {
-            this.mask = mask;
-            this.dev = dev;
+            if (mask == null)
+                throw new IIOException("A channels mask is required to open a buffer");
 
-            IIOPtr ptr = iio_device_create_buffer(dev.dev, index, mask.hdl);
+            return new BufferStream(this, mask);
+        }
+    }
+
+    /// <summary><see cref="iio.BufferStream"/> class:
+    /// The class used for streaming operations on opened buffers.</summary>
+    public class BufferStream : IIOObject
+    {
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IIOPtr iio_buffer_open(IntPtr buf, IntPtr mask);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_buffer_close(IntPtr stream);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_buffer_stream_cancel(IntPtr stream);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_buffer_stream_start(IntPtr stream);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_buffer_stream_stop(IntPtr stream);
+
+        public readonly IOBuffer buf;
+        public readonly ChannelsMask mask;
+
+        private bool is_started;
+
+        public bool started {
+            get { return is_started; }
+            set {
+                int err;
+                if (value)
+                    err = iio_buffer_stream_start(hdl);
+                else
+                    err = iio_buffer_stream_stop(hdl);
+                if (err != 0)
+                    throw new IIOException("Unable to " + (value ? "start" : "stop") + " buffer stream", err);
+                this.is_started = value;
+            }
+        }
+
+        public BufferStream(IOBuffer buf, ChannelsMask mask)
+        {
+            this.buf = buf;
+            this.mask = mask;
+
+            IIOPtr ptr = iio_buffer_open(buf.buf, mask.hdl);
             if (!ptr)
-                throw new IIOException("Unable to create buffer", ptr);
+                throw new IIOException("Unable to open buffer stream", ptr);
 
             this.hdl = ptr.ptr;
-            this.is_enabled = false;
+            this.is_started = false;
+        }
 
-            attrs = new List<Attr>();
-            uint nb_buffer_attrs = iio_buffer_get_attrs_count(hdl);
-            for (uint i = 0; i < nb_buffer_attrs; i++)
-            {
-                attrs.Add(new Attr(iio_buffer_get_attr(hdl, i)));
-            }
+        public void cancel()
+        {
+            iio_buffer_stream_cancel(hdl);
+        }
+
+        public Block create_block(uint size)
+        {
+            return new Block(this, size);
+        }
+
+        /// <summary>Gets the step size for this buffer stream.</summary>
+        public uint step()
+        {
+            return buf.dev.get_sample_size(mask);
         }
 
         protected override void Destroy()
         {
-            iio_buffer_destroy(hdl);
-        }
-
-        /// <summary>Cancels the current buffer.</summary>
-        public void cancel()
-        {
-            iio_buffer_cancel(hdl);
-        }
-
-        /// <summary>Gets the step size of the current buffer.</summary>
-        public uint step()
-        {
-            return dev.get_sample_size(mask);
+            iio_buffer_close(hdl);
         }
     }
 }
