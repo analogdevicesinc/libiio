@@ -68,6 +68,7 @@ using boost::optional;
 class Context;
 class Device;
 class Buffer;
+class BufferStream;
 
 /** @brief Non-owning immutable null terminated string
  *
@@ -374,10 +375,29 @@ public:
 
     void enqueue(size_t bytes_used, bool cyclic) {impl::check(iio_block_enqueue(p, bytes_used, cyclic), "iio_block_enqueue");}
     void dequeue(bool nonblock) {impl::check(iio_block_dequeue(p, nonblock), "iio_block_dequeue");}
-    Buffer buffer();
+    BufferStream buffer_stream();
 };
 
 typedef Ptr<Block, iio_block, iio_block_destroy> BlockPtr;
+
+/** @brief C++ wrapper for the @ref BufferStream C-API
+ */
+class BufferStream
+{
+    iio_buffer_stream * const p;
+public:
+    BufferStream() = delete;
+    BufferStream(iio_buffer_stream * stream) : p(stream) {assert(stream);}
+    operator iio_buffer_stream * () const {return p;}
+
+    void cancel() {iio_buffer_stream_cancel(p);}
+    void start() {impl::check(iio_buffer_stream_start(p), "iio_buffer_stream_start");}
+    void stop() {impl::check(iio_buffer_stream_stop(p), "iio_buffer_stream_stop");}
+    ChannelsMask mask() {return iio_buffer_stream_get_channels_mask(p);}
+    BlockPtr create_block(size_t size) { return BlockPtr{impl::check(iio_buffer_stream_create_block(p, size), "iio_buffer_stream_create_block")}; }
+};
+
+typedef Ptr<BufferStream, iio_buffer_stream, iio_buffer_close> BufferStreamPtr;
 
 /** @brief C++ wrapper for the @ref Channel C-API
  */
@@ -439,6 +459,7 @@ public:
     operator iio_stream * () const {return p;}
 
     Block next_block() {return const_cast<iio_block *>(impl::check(iio_stream_get_next_block(p), "iio_stream_get_next_block")); }
+    void cancel() {iio_stream_cancel(p);}
 };
 
 typedef Ptr<Stream, iio_stream, iio_stream_destroy> StreamPtr;
@@ -498,15 +519,9 @@ public:
     optional<Attr> find_attr(cstr name) {return impl::maybe<Attr>(iio_buffer_find_attr(p, name));}
     void set_data(void * data){iio_buffer_set_data(p, data);}
     void * data() {return iio_buffer_get_data(p);}
-    void cancel() {iio_buffer_cancel(p);}
-    void enable() {impl::check(iio_buffer_enable(p), "iio_buffer_enable");}
-    void disable() {impl::check(iio_buffer_disable(p), "iio_buffer_disable");}
-    ChannelsMask channels_mask() {return iio_buffer_get_channels_mask(p);}
-    BlockPtr create_block(size_t size) { return BlockPtr{impl::check(iio_buffer_create_block(p, size), "iio_buffer_create_block")}; }
-    StreamPtr create_stream(size_t nb_blocks, size_t sample_count) { return StreamPtr{impl::check(iio_buffer_create_stream(p, nb_blocks, sample_count), "iio_buffer_create_stream")}; }
+    BufferStreamPtr open(iio_channels_mask const * mask) { return BufferStreamPtr{impl::check(iio_buffer_open(p, mask), "iio_buffer_open")}; }
+    StreamPtr create_stream(size_t nb_blocks, size_t sample_count, iio_channels_mask * mask) { return StreamPtr{impl::check(iio_buffer_create_stream_new(p, nb_blocks, sample_count, mask), "iio_buffer_create_stream_new")}; }
 };
-
-typedef Ptr<Buffer, iio_buffer, iio_buffer_destroy> BufferPtr;
 
 /** @brief C++ wrapper for the @ref Device C-API
  */
@@ -572,7 +587,8 @@ public:
     Device trigger() const {return Device{const_cast<iio_device*>(impl::check(iio_device_get_trigger(p), "iio_device_get_trigger"))};}
     void set_trigger(iio_device const * trigger) {impl::check(iio_device_set_trigger(p, trigger), "iio_device_set_trigger");}
     bool is_trigger() const {return iio_device_is_trigger(p);}
-    BufferPtr create_buffer(unsigned int idx, iio_channels_mask * mask) {return BufferPtr(impl::check(iio_device_create_buffer(p, idx, mask), "iio_device_create_buffer"));}
+    unsigned int buffers_count() const {return iio_device_get_buffers_count(p);}
+    optional<Buffer> buffer(unsigned int idx) const {return impl::maybe<Buffer>(iio_device_get_buffer(p, idx));}
     bool is_hwmon() const {return iio_device_is_hwmon(p);}
     EventStreamPtr create_event_stream() { return EventStreamPtr{impl::check(iio_device_create_event_stream(p), "iio_device_create_event_stream")};}
     ssize_t sample_size(iio_channels_mask * mask) const {return impl::check_n(iio_device_get_sample_size(p, mask), "iio_device_get_sample_size");}
@@ -641,7 +657,7 @@ public:
 
 typedef Ptr<Context, iio_context, iio_context_destroy> ContextPtr;
 
-inline Buffer Block::buffer() {return iio_block_get_buffer(p);}
+inline BufferStream Block::buffer_stream() {return iio_block_get_buffer_stream(p);}
 inline Context Device::context(){return const_cast<iio_context*>(iio_device_get_context(p));}
 inline Device Channel::device() const {return const_cast<iio_device*>(iio_channel_get_device(p));}
 inline Device Buffer::device()  {return const_cast<iio_device*>(iio_buffer_get_device(p));}
