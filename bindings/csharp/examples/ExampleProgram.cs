@@ -113,7 +113,7 @@ namespace IIOCSharp
                     Channel rx0_q = dev.channels[1];
                     rx0_q.enable(chnmask);
 
-                    IOBuffer buf = new IOBuffer(dev, chnmask);
+                    IOBuffer buf = dev.buffers[0];
                     uint sampleSize = dev.get_sample_size(chnmask);
                     Console.WriteLine("* Sample size is " + sampleSize + "\n");
 
@@ -123,7 +123,7 @@ namespace IIOCSharp
                         Console.WriteLine("\t\t\t\t" + attr.name + " " + attr.read());
                     }
 
-                    Stream stream = new Stream(buf, 4, blocksize);
+                    iio.Stream stream = new iio.Stream(buf, chnmask, 4, blocksize);
                     for (int i=0; i < 10; i++) {
                         Block block = stream.next();
                         byte[] databuf = new byte[blocksize];
@@ -132,7 +132,6 @@ namespace IIOCSharp
                     }
 
                     stream.Dispose();
-                    buf.Dispose();
                     chnmask.Dispose();
                 }
 

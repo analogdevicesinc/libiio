@@ -59,6 +59,12 @@ namespace iio
         private static extern int iio_device_get_sample_size(IntPtr dev, IntPtr mask);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_device_get_buffers_count(IntPtr dev);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_buffer(IntPtr dev, uint index);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_reg_write(IntPtr dev, uint addr, uint value);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -88,6 +94,9 @@ namespace iio
         /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
         public readonly List<Channel> channels;
 
+        /// <summary>A <c>list</c> of all the <see cref="iio.IOBuffer"/> objects that this device possesses.</summary>
+        public readonly List<IOBuffer> buffers;
+
         internal Device(Context ctx, IntPtr dev)
         {
             this.ctx = ctx;
@@ -95,10 +104,12 @@ namespace iio
             channels = new List<Channel>();
             attrs = new List<Attr>();
             debug_attrs = new List<Attr>();
+            buffers = new List<IOBuffer>();
 
             uint nb_channels = iio_device_get_channels_count(dev);
             uint nb_attrs = iio_device_get_attrs_count(dev);
             uint nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
+            uint nb_buffers = iio_device_get_buffers_count(dev);
 
             for (uint i = 0; i < nb_channels; i++)
             {
@@ -116,6 +127,11 @@ namespace iio
             }
 
             id = Marshal.PtrToStringAnsi(iio_device_get_id(dev)); // Device IDs are ASCII (kernel-defined)
+
+            for (uint i = 0; i < nb_buffers; i++)
+            {
+                buffers.Add(new IOBuffer(this, iio_device_get_buffer(dev, i)));
+            }
 
             IntPtr name_ptr = iio_device_get_name(dev);
             if (name_ptr == IntPtr.Zero)

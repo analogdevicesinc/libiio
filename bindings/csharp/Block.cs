@@ -14,7 +14,7 @@ namespace iio
     public class Block : IIOObject
     {
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IIOPtr iio_buffer_create_block(IntPtr buf, uint size);
+        private static extern IIOPtr iio_buffer_stream_create_block(IntPtr buf_stream, uint size);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_block_destroy(IntPtr buf);
@@ -40,24 +40,24 @@ namespace iio
 
         public readonly uint size;
 
-        public readonly IOBuffer buf;
+        public readonly BufferStream buf_stream;
 
         internal Block(IntPtr block, uint size)
         {
-            this.buf = null;
+            this.buf_stream = null;
             this.size = size;
             this.stream_block = true;
             this.hdl = block;
         }
 
-        public Block(IOBuffer buf, uint size)
+        public Block(BufferStream buf_stream, uint size)
         {
-            this.buf = buf;
+            this.buf_stream = buf_stream;
             this.size = size;
             this.enqueued = false;
             this.stream_block = false;
 
-            IIOPtr ptr = iio_buffer_create_block(buf.hdl, size);
+            IIOPtr ptr = iio_buffer_stream_create_block(buf_stream.hdl, size);
             if (!ptr)
             {
                 throw new IIOException("Unable to create iio.Block", ptr);
