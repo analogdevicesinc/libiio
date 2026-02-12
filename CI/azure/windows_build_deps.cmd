@@ -17,6 +17,7 @@ choco install -y wget
 SETLOCAL ENABLEDELAYEDEXPANSION
 IF "%COMPILER%" == "Visual Studio 16 2019" SET vswhere_params=-version [16,17) -products *
 IF "%COMPILER%" == "Visual Studio 17 2022" SET vswhere_params=-version [17,18) -products *
+IF "%COMPILER%" == "Visual Studio 18 2026" SET vswhere_params=-version [18,19) -products *
 SET vswhere="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 FOR /F "USEBACKQ TOKENS=*" %%F IN (`%vswhere% !vswhere_params! -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) DO (
 SET msbuild="%%F"
