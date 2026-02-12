@@ -121,6 +121,9 @@ class _EventStream(Structure):
 class _Buffer(Structure):
     pass
 
+class _BufferStream(Structure):
+    pass
+
 class _Block(Structure):
     pass
 
@@ -311,6 +314,7 @@ _ChannelsMaskPtr = _POINTER(_ChannelsMask)
 _EventPtr = _POINTER(Event)
 _EventStreamPtr = _POINTER(_EventStream)
 _BufferPtr = _POINTER(_Buffer)
+_BufferStreamPtr = _POINTER(_BufferStream)
 _BlockPtr = _POINTER(_Block)
 _DataFormatPtr = _POINTER(DataFormat)
 _ContextParamsPtr = _POINTER(ContextParams)
@@ -501,6 +505,14 @@ _d_get_debug_attr.restype = _AttrPtr
 _d_get_debug_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_debug_attr.errcheck = _check_null
 
+_d_buffers_count = _lib.iio_device_get_buffers_count
+_d_buffers_count.restype = c_uint
+_d_buffers_count.argtypes = (_DevicePtr,)
+
+_d_get_buffer = _lib.iio_device_get_buffer
+_d_get_buffer.restype = _BufferPtr
+_d_get_buffer.argtypes = (_DevicePtr, c_uint)
+
 _b_attr_count = _lib.iio_buffer_get_attrs_count
 _b_attr_count.restype = c_uint
 _b_attr_count.argtypes = (_BufferPtr,)
@@ -651,27 +663,6 @@ _channel_get_type = _lib.iio_channel_get_type
 _channel_get_type.restype = c_int
 _channel_get_type.argtypes = (_ChannelPtr,)
 
-_create_buffer = _lib.iio_device_create_buffer
-_create_buffer.restype = _BufferPtr
-_create_buffer.argtypes = (
-    _DevicePtr,
-    c_uint,
-    _ChannelsMaskPtr,
-)
-_create_buffer.errcheck = _check_ptr_err
-
-_buffer_destroy = _lib.iio_buffer_destroy
-_buffer_destroy.argtypes = (_BufferPtr,)
-
-_buffer_enable = _lib.iio_buffer_enable
-_buffer_enable.restype = c_int
-_buffer_enable.argtypes = (_BufferPtr,)
-_buffer_enable.errcheck = _check_negative
-
-_buffer_disable = _lib.iio_buffer_disable
-_buffer_disable.restype = c_int
-_buffer_disable.argtypes = (_BufferPtr,)
-
 _block_start = _lib.iio_block_start
 _block_start.restype = c_void_p
 _block_start.argtypes = (_BlockPtr,)
@@ -680,25 +671,41 @@ _block_end = _lib.iio_block_end
 _block_end.restype = c_void_p
 _block_end.argtypes = (_BlockPtr,)
 
-_block_get_buffer = _lib.iio_block_get_buffer
-_block_get_buffer.restype = _BufferPtr
-_block_get_buffer.argtypes = (_BlockPtr,)
-
-_buffer_cancel = _lib.iio_buffer_cancel
-_buffer_cancel.restype = c_void_p
-_buffer_cancel.argtypes = (_BufferPtr,)
-
 _buffer_get_device = _lib.iio_buffer_get_device
 _buffer_get_device.restype = _DevicePtr
 _buffer_get_device.argtypes = (_BufferPtr,)
 
-_buffer_get_channels_mask = _lib.iio_buffer_get_channels_mask
-_buffer_get_channels_mask.restype = _ChannelsMaskPtr
-_buffer_get_channels_mask.argtypes = (_BufferPtr,)
+_buffer_open = _lib.iio_buffer_open
+_buffer_open.restype = _BufferStreamPtr
+_buffer_open.argtypes = (_BufferPtr, _ChannelsMaskPtr)
+_buffer_open.errcheck = _check_ptr_err
 
-_create_block = _lib.iio_buffer_create_block
+_buffer_close = _lib.iio_buffer_close
+_buffer_close.argtypes = (_BufferStreamPtr,)
+
+_buffer_stream_cancel = _lib.iio_buffer_stream_cancel
+_buffer_stream_cancel.argtypes = (_BufferStreamPtr,)
+
+_buffer_stream_start = _lib.iio_buffer_stream_start
+_buffer_stream_start.restype = c_int
+_buffer_stream_start.argtypes = (_BufferStreamPtr,)
+_buffer_stream_start.errcheck = _check_negative
+
+_buffer_stream_stop = _lib.iio_buffer_stream_stop
+_buffer_stream_stop.restype = c_int
+_buffer_stream_stop.argtypes = (_BufferStreamPtr,)
+
+_buffer_stream_get_mask = _lib.iio_buffer_stream_get_channels_mask
+_buffer_stream_get_mask.restype = _ChannelsMaskPtr
+_buffer_stream_get_mask.argtypes = (_BufferStreamPtr,)
+
+_block_get_buffer_stream = _lib.iio_block_get_buffer_stream
+_block_get_buffer_stream.restype = _BufferStreamPtr
+_block_get_buffer_stream.argtypes = (_BlockPtr,)
+
+_create_block = _lib.iio_buffer_stream_create_block
 _create_block.restype = _BlockPtr
-_create_block.argtypes = (_BufferPtr, c_size_t)
+_create_block.argtypes = (_BufferStreamPtr, c_size_t)
 _create_block.errcheck = _check_ptr_err
 
 _block_destroy = _lib.iio_block_destroy
@@ -714,9 +721,9 @@ _block_dequeue.restype = c_int
 _block_dequeue.argtypes = (_BlockPtr, c_bool)
 _block_dequeue.errcheck = _check_negative
 
-_create_stream = _lib.iio_buffer_create_stream
+_create_stream = _lib.iio_buffer_create_stream_new
 _create_stream.restype = _StreamPtr
-_create_stream.argtypes = (_BufferPtr, c_size_t, c_size_t)
+_create_stream.argtypes = (_BufferPtr, c_size_t, c_size_t, _ChannelsMaskPtr)
 _create_stream.errcheck = _check_ptr_err
 
 _stream_destroy = _lib.iio_stream_destroy
@@ -726,6 +733,9 @@ _stream_get_next_block = _lib.iio_stream_get_next_block
 _stream_get_next_block.restype = _BlockPtr
 _stream_get_next_block.argtypes = (_StreamPtr,)
 _stream_get_next_block.errcheck = _check_ptr_err
+
+_stream_cancel = _lib.iio_stream_cancel
+_stream_cancel.argtypes = (_StreamPtr,)
 
 _evstream_destroy = _lib.iio_event_stream_destroy
 _evstream_destroy.argtypes = (_EventStreamPtr,)
@@ -1002,12 +1012,12 @@ class Channel(_IIO_Object):
 class Block(_IIO_Object):
     """Represents a contiguous block of samples."""
 
-    def __init__(self, buffer, size, _block = None):
+    def __init__(self, buffer_stream, size, _block = None):
         """
         Initialize a new instance of the Block class.
 
-        :param buffer: type=iio.Buffer
-            The iio.Buffer object that represents the hardware buffer where
+        :param buffer_stream: type=iio.BufferStream
+            The iio.BufferStream object that represents the opened hardware buffer where
             the samples will be enqueued to or dequeued from
         :param size: type=int
             The size of the block, in bytes
@@ -1018,12 +1028,12 @@ class Block(_IIO_Object):
             self._block = _block
         else:
             try:
-                self._block = _create_block(buffer._buffer, size)
+                self._block = _create_block(buffer_stream._buffer_stream, size)
             except Exception:
                 self._block = None
                 raise
 
-        super(Block, self).__init__(self._block, buffer)
+        super(Block, self).__init__(self._block, buffer_stream)
 
         self._size = size
         self.enqueued = False
@@ -1093,10 +1103,10 @@ class Block(_IIO_Object):
         return length
 
     @property
-    def buffer(self):
+    def buffer_stream(self):
         """
-        Buffer corresponding to this block object.
-        type: iio.Buffer
+        BufferStream corresponding to this block object.
+        type: iio.BufferStream
         """
         return self._parent
 
@@ -1104,40 +1114,21 @@ class Block(_IIO_Object):
 class Buffer(_IIO_Object):
     """Represents a hardware I/O buffer."""
 
-    def __init__(self, device, mask, idx=0):
+    def __init__(self, device, _buffer):
         """
         Initialize a new instance of the Buffer class.
 
         :param device: type=iio.Device
             The iio.Device object that represents the device where the I/O
             operations will be performed
-        :param mask: type=ChannelsMask
-            The mask of enabled channels
-        :param idx: type=int
-            The hardware index of the buffer to use. If unsure, leave it to 0
+        :param _buffer: type=_BufferPtr
+            pointer to an IIO buffer
 
         returns: type=iio.Buffer
             An new instance of this class
         """
-        try:
-            self._buffer = _create_buffer(device._device, idx, mask._mask)
-        except Exception:
-            self._buffer = None
-            raise
-
+        self._buffer = _buffer
         super(Buffer, self).__init__(self._buffer, device)
-
-        self._idx = idx
-        self._enabled = False
-
-    def __del__(self):
-        """Destroy this buffer."""
-        if self._buffer is not None:
-            _buffer_destroy(self._buffer)
-
-    def cancel(self):
-        """Cancel the current buffer."""
-        _buffer_cancel(self._buffer)
 
     @property
     def device(self):
@@ -1147,18 +1138,14 @@ class Buffer(_IIO_Object):
         """
         return self._parent
 
-    def _set_enabled(self, enabled):
-        if enabled:
-            _buffer_enable(self._buffer)
-        else:
-            _buffer_disable(self._buffer)
+    def open(self, mask):
+        """
+        Open this buffer for data streaming.
 
-    enabled = property(
-            lambda self: self._enabled,
-            _set_enabled,
-            None,
-            "Represents the state (enabled/disabled) of the hardware buffer.",
-    )
+        :param mask: type=ChannelsMask
+            The channels mask used for streaming.
+        """
+        return BufferStream(self, mask)
 
     attrs = property(
         lambda self: {attr.name: attr for attr in [
@@ -1171,24 +1158,108 @@ class Buffer(_IIO_Object):
     )
 
 
+class BufferStream(_IIO_Object):
+    """Represents an opened hardware I/O buffer stream."""
+
+    def __init__(self, buffer, mask, _buffer_stream = None):
+        """
+        Initialize a new instance of the BufferStream class.
+
+        :param buffer: type=iio.Buffer
+            The iio.Buffer object that represents the buffer where the I/O
+            operations will be performed
+        :param mask: type=iio.ChannelsMask
+            The channels mask used for streaming.
+
+        returns: type=iio.BufferStream
+            An new instance of this class
+        """
+
+        self._owns_stream = _buffer_stream is None
+
+        if _buffer_stream is not None:
+            self._buffer_stream = _buffer_stream
+        else:
+            try:
+                self._buffer_stream = _buffer_open(buffer._buffer, mask._mask)
+            except Exception:
+                self._buffer_stream = None
+                raise
+
+        super(BufferStream, self).__init__(self._buffer_stream, buffer)
+        self._mask = mask
+        self._started = False
+
+    def __del__(self):
+        if self._owns_stream and self._buffer_stream is not None:
+            _buffer_close(self._buffer_stream)
+
+    def cancel(self):
+        _buffer_stream_cancel(self._buffer_stream)
+
+    def _set_started(self, started):
+        if started:
+            _buffer_stream_start(self._buffer_stream)
+        else:
+            _buffer_stream_stop(self._buffer_stream)
+
+        self._started = started
+
+    started = property(
+        lambda self: self._started,
+        _set_started,
+        None,
+        "Represents the state (started/stopped) of the hardware buffer stream.",
+    )
+
+    @property
+    def mask(self):
+        """
+        Channels mask for this buffer stream.
+        type: iio.ChannelsMask
+        """
+        return self._mask
+
+    @property
+    def buffer(self):
+        """
+        Buffer corresponding to this stream.
+        type: iio.Buffer
+        """
+        return self._parent
+
+    def create_block(self, size):
+        """
+        Create a block associated with this buffer stream.
+
+        :param size: type=int
+            Block size in bytes.
+        """
+        return Block(self, size)
+
+
 class Stream(_IIO_Object):
-    def __init__(self, buffer, samples_count, nb_blocks = 4):
+    def __init__(self, buffer, mask, samples_count, nb_blocks = 4):
         try:
-            self._stream = _create_stream(buffer._buffer, nb_blocks, samples_count)
+            self._stream = _create_stream(buffer._buffer, nb_blocks, samples_count,
+                                          mask._mask)
         except Exception:
             self._stream = None
             raise
 
         super(Stream, self).__init__(self._stream, buffer)
 
-        mask_hdl = _buffer_get_channels_mask(buffer._buffer)
-        sample_size = _get_sample_size(buffer.device._device, mask_hdl)
+        sample_size = _get_sample_size(buffer.device._device, mask._mask)
 
         self._block_size = sample_size * samples_count
-        self._buffer = buffer
+        self._mask = mask
+        self._buffer_stream = None
 
     def __del__(self):
         _stream_destroy(self._stream)
+
+    def cancel(self):
+        _stream_cancel(self._stream)
 
     def __iter__(self):
         return self
@@ -1196,7 +1267,11 @@ class Stream(_IIO_Object):
     def __next__(self):
         next_hdl = _stream_get_next_block(self._stream)
 
-        return Block(self._buffer, self._block_size, next_hdl)
+        if self._buffer_stream is None:
+            bs_ptr = _block_get_buffer_stream(next_hdl)
+            self._buffer_stream = BufferStream(self._parent, self._mask, bs_ptr)
+
+        return Block(self._buffer_stream, self._block_size, next_hdl)
 
 
 class EventStream(_IIO_Object):
@@ -1437,6 +1512,30 @@ class Device(_DeviceOrTrigger):
         type: iio.Context
         """
         return self.ctx
+
+    def get_buffer(self, idx=0):
+        """
+        Get a buffer for this device.
+
+        :param idx: type=int
+            Buffer index.
+
+        """
+        buf = _d_get_buffer(self._device, idx)
+        if bool(buf) is False:
+            return None
+
+        return Buffer(self, _buffer=buf)
+
+    buffers = property(
+        lambda self: [
+            Buffer(self, _buffer=_d_get_buffer(self._device, i))
+            for i in range(0, _d_buffers_count(self._device))
+        ],
+        None,
+        None,
+        "List of pre-created buffers for this IIO device.\n\ttype=list of iio.Buffer objects",
+    )
 
 
 class Context(_IIO_Object):
