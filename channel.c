@@ -628,12 +628,12 @@ size_t iio_channel_read(const struct iio_channel *chn,
 			const struct iio_block *block,
 			void *dst, size_t len, bool raw)
 {
-	const struct iio_buffer *buf = iio_block_get_buffer(block);
-	const struct iio_device *dev = buf->dev;
+	const struct iio_buffer_stream *buf_stream = iio_block_get_buffer_stream(block);
+	const struct iio_device *dev = buf_stream->buf->dev;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t src_ptr, dst_ptr = (uintptr_t) dst, end = dst_ptr + len;
 	uintptr_t block_end = (uintptr_t) iio_block_end(block);
-	size_t step = iio_device_get_sample_size(dev, buf->mask);
+	size_t step = iio_device_get_sample_size(dev, buf_stream->mask);
 	void (*cb)(const struct iio_channel *, void *, const void *);
 	size_t block_len;
 	const void *src;
@@ -669,12 +669,12 @@ size_t iio_channel_write(const struct iio_channel *chn,
 			 struct iio_block *block,
 			 const void *src, size_t len, bool raw)
 {
-	const struct iio_buffer *buf = iio_block_get_buffer(block);
-	const struct iio_device *dev = buf->dev;
+	const struct iio_buffer_stream *buf_stream = iio_block_get_buffer_stream(block);
+	const struct iio_device *dev = buf_stream->buf->dev;
 	uintptr_t dst_ptr, src_ptr = (uintptr_t) src, end = src_ptr + len;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t block_end = (uintptr_t) iio_block_end(block);
-	size_t step = iio_device_get_sample_size(dev, buf->mask);
+	size_t step = iio_device_get_sample_size(dev, buf_stream->mask);
 	void (*cb)(const struct iio_channel *, void *, const void *);
 	size_t block_len;
 	void *dst;
