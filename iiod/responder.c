@@ -17,7 +17,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define IIO_ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+
+#if WITH_LIBTINYIIOD
+#define READ_ATTR_BUF_SIZE	256
+#define DISCARD_BUF_SIZE	256
+#else
+#define READ_ATTR_BUF_SIZE	0x10000
+#define DISCARD_BUF_SIZE	4096
+#endif
 
 /* Forward declaration */
 static struct buffer_entry * get_iio_buffer_entry(struct parser_pdata *pdata,
@@ -166,7 +174,7 @@ static void handle_read_attr(struct parser_pdata *pdata,
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	ssize_t ret = -EINVAL;
-	char buf[0x10000];
+	char buf[READ_ATTR_BUF_SIZE];
 	const struct iio_attr *attr;
 	struct iiod_buf iiod_buf;
 
@@ -432,7 +440,7 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 	for (i = 0; i < nb_channels; i++) {
 		chn = iio_device_get_channel(dev, i);
 
-		if (TEST_BIT(entry->words, i))
+		if (IIO_TEST_BIT(entry->words, i))
 			iio_channel_enable(chn, mask);
 		else
 			iio_channel_disable(chn, mask);
@@ -466,9 +474,9 @@ static void handle_create_buffer(struct parser_pdata *pdata,
 		chn = iio_device_get_channel(dev, i);
 
 		if (iio_channel_is_enabled(chn, mask))
-			entry->words[BIT_WORD(i)] |= BIT_MASK(i);
+			entry->words[IIO_BIT_WORD(i)] |= IIO_BIT_MASK(i);
 		else
-			entry->words[BIT_WORD(i)] &= ~BIT_MASK(i);
+			entry->words[IIO_BIT_WORD(i)] &= ~IIO_BIT_MASK(i);
 	}
 
 	entry->is_tx = iio_buffer_is_tx(buf);
@@ -1178,7 +1186,7 @@ static ssize_t iiod_write(void *d, const struct iiod_buf *buf, size_t nb)
 static ssize_t iiod_discard(void *d, size_t bytes)
 {
 	struct parser_pdata *pdata = d;
-	char buf[4096];
+	char buf[DISCARD_BUF_SIZE];
 	size_t remaining = bytes;
 
 	while (remaining) {

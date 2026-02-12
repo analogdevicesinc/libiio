@@ -513,7 +513,7 @@ network_open_events_fd(const struct iio_device *dev)
 }
 
 static const struct iio_backend_ops network_ops = {
-	.scan = IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
+	.scan = IIO_IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
 	.read_attr = network_read_attr,
 	.write_attr = network_write_attr,
@@ -751,7 +751,7 @@ static struct iio_context * network_create_context(const struct iio_context_para
 	ctx = iiod_client_create_context(pdata->iiod_client,
 					 &iio_ip_backend, description,
 					 ctx_attrs, ctx_values,
-					 ARRAY_SIZE(ctx_values));
+					 IIO_ARRAY_SIZE(ctx_values));
 	ret = iio_err(ctx);
 	if (ret)
 		goto err_destroy_iiod_client;

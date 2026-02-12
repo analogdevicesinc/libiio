@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+manifest:
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+
+  projects:
+    - name: zephyr
+      remote: zephyrproject-rtos
+      revision: v4.3.0
+      clone-depth: 1
+      import:
+        name-allowlist:
+          - cmsis_6
+          - hal_adi
+          - hal_nxp
+          - hal_stm32
+          - picolibc

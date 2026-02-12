@@ -72,7 +72,7 @@
 #include <iio/iio.h>
 #include <iio/iio-debug.h>
 
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define IIO_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define IIO_ENSURE(expr) { \
 	if (!(expr)) { \

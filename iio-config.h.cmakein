@@ -12,7 +12,7 @@
 #define IIO_MODULES_DIR "@IIO_MODULES_DIR@"
 #define IIO_LIBRARY_SUFFIX "@CMAKE_SHARED_LIBRARY_SUFFIX@"
 
-#define IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
+#define IIO_IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
 
 #define LIBIIO_SCAN_BACKENDS	"@LIBIIO_SCAN_BACKENDS@"
 
@@ -54,6 +54,6 @@
 #cmakedefine HAVE_IPV6
 #cmakedefine01 HAVE_NETDB_H
 
-#define IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
+#define IIO_IF_ENABLED(cfg, ptr) ((cfg) ? (ptr) : NULL)
 
 #endif /* IIO_CONFIG_H */

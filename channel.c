@@ -140,7 +140,7 @@ unsigned int find_channel_modifier(const char *s, size_t *len_p)
 	unsigned int i;
 	size_t len;
 
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
+	for (i = 0; i < IIO_ARRAY_SIZE(modifier_names); i++) {
 		if (!modifier_names[i])
 			continue;
 		len = strlen(modifier_names[i]);
@@ -181,7 +181,7 @@ static int iio_channel_find_type(const char *id,
 bool iio_channel_is_hwmon(const char *id)
 {
 	return iio_channel_find_type(id, hwmon_chan_type_name_spec,
-				ARRAY_SIZE(hwmon_chan_type_name_spec)) >= 0;
+				IIO_ARRAY_SIZE(hwmon_chan_type_name_spec)) >= 0;
 }
 #endif /* WITH_HWMON */
 
@@ -198,10 +198,10 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 
 	if (iio_device_is_hwmon(chn->dev)) {
 		type = iio_channel_find_type(chn->id, hwmon_chan_type_name_spec,
-					ARRAY_SIZE(hwmon_chan_type_name_spec));
+					IIO_ARRAY_SIZE(hwmon_chan_type_name_spec));
 	} else {
 		type = iio_channel_find_type(chn->id, iio_chan_type_name_spec,
-					ARRAY_SIZE(iio_chan_type_name_spec));
+					IIO_ARRAY_SIZE(iio_chan_type_name_spec));
 	}
 
 	chn->type = (type >= 0) ? type : IIO_CHAN_TYPE_UNKNOWN;
@@ -213,7 +213,7 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 
 	mod++;
 
-	for (i = 0; i < ARRAY_SIZE(modifier_names); i++) {
+	for (i = 0; i < IIO_ARRAY_SIZE(modifier_names); i++) {
 		if (!modifier_names[i])
 			continue;
 		len = strlen(modifier_names[i]);

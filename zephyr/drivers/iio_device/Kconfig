@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+menuconfig LIBIIO_IIO_DEVICE
+	bool "IIO device drivers"
+	default y
+	help
+	  Enable IIO device drivers
+
+if LIBIIO_IIO_DEVICE
+
+config LIBIIO_IIO_DEVICE_ADC
+	bool "ADC driver"
+	default y
+	depends on DT_HAS_IIO_ADC_ENABLED && ADC
+	help
+	  Enable the Zephyr ADC iio device driver class.
+
+config LIBIIO_IIO_DEVICE_ADC_INIT_PRIORITY
+	int "ADC driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	depends on LIBIIO_IIO_DEVICE_ADC
+	help
+	  Initialization priority of the Zephyr ADC iio device driver class.
+
+endif # LIBIIO_IIO_DEVICE

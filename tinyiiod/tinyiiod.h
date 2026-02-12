@@ -17,6 +17,18 @@ struct iiod_pdata;
  * You can modify it if needed before calling iiod_interpreter(). */
 extern struct iio_context_params iiod_params;
 
+/* Initialize global tinyiiod resources (mutexes, etc.).
+ * This function is thread-safe and uses reference counting - it can be called
+ * multiple times safely. Must be called before any calls to iiod_interpreter().
+ * Returns 0 on success, negative error code on failure. */
+int iiod_init(void);
+
+/* Clean up global tinyiiod resources.
+ * This function decrements the reference count and only performs actual cleanup
+ * when the count reaches zero. Should be called once for each iiod_init() call.
+ * Safe to call even if iiod_init() was never called or failed. */
+void iiod_cleanup(void);
+
 /* Execute the IIOD interpreter using the specified read_cb/write_cb callbacks.
  * IIOD will run until one of the callbacks returns a negative error code.
  *

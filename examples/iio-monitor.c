@@ -33,7 +33,7 @@
 #define iio_snprintf snprintf
 #endif
 
-#define ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
+#define IIO_ARRAY_SIZE(x) (sizeof(x) ? sizeof(x) / sizeof((x)[0]) : 0)
 
 #define RED	020u
 #define YELLOW	040u

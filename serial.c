@@ -370,7 +370,7 @@ static struct iio_context * serial_create_context(
 	const char *ctx_params[] = {
 		"uri", "serial,port", "serial,description",
 	};
-	const char *ctx_params_values[ARRAY_SIZE(ctx_params)];
+	const char *ctx_params_values[IIO_ARRAY_SIZE(ctx_params)];
 	char *uri, buf[16];
 	size_t uri_len;
 	int ret;
@@ -434,7 +434,7 @@ static struct iio_context * serial_create_context(
 	ctx = iiod_client_create_context(pdata->iiod_client,
 					 &iio_serial_backend, NULL,
 					 ctx_params, ctx_params_values,
-					 ARRAY_SIZE(ctx_params));
+					 IIO_ARRAY_SIZE(ctx_params));
 	ret = iio_err(ctx);
 	if (ret)
 		goto err_destroy_iiod_client;

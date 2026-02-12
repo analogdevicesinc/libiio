@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+include: base.yaml
+
+description: IIO ADC
+
+compatible: "iio,adc"
+
+properties:
+  reg:
+    required: true

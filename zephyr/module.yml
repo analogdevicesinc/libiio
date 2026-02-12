@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+name: libiio
+build:
+  cmake: zephyr
+  kconfig: zephyr/Kconfig
+  settings:
+    dts_root: zephyr
+    snippet_root: zephyr
+samples:
+  - zephyr/samples

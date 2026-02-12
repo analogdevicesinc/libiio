@@ -32,7 +32,7 @@
 #define BLOCK_ENQUEUE_IOCTL	_IOWR('i', 0xa3, struct block)
 #define BLOCK_DEQUEUE_IOCTL	_IOWR('i', 0xa4, struct block)
 
-#define BLOCK_FLAG_CYCLIC	BIT(1)
+#define BLOCK_FLAG_CYCLIC	IIO_BIT(1)
 
 struct block_alloc_req {
 	uint32_t type,
@@ -151,7 +151,7 @@ local_create_mmap_block(struct iio_buffer_pdata *pdata,
 	priv->pdata.buf = pdata;
 
 	*data = priv->pdata.data;
-	ppdata->mmap_block_mask |= BIT(priv->idx);
+	ppdata->mmap_block_mask |= IIO_BIT(priv->idx);
 
 	return &priv->pdata;
 
@@ -167,7 +167,7 @@ void local_free_mmap_block(struct iio_block_pdata *pdata)
 
 	munmap(pdata->data, pdata->size);
 
-	if (!atomic_fetch_xor(&buf->pdata->mmap_block_mask, BIT(priv->idx))) {
+	if (!atomic_fetch_xor(&buf->pdata->mmap_block_mask, IIO_BIT(priv->idx))) {
 		ioctl_nointr(pdata->buf->fd, BLOCK_FREE_IOCTL, 0);
 		pdata->buf->pdata->nb_blocks = 0;
 	}
@@ -200,8 +200,8 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 		return -EPERM;
 	}
 
-	mask = atomic_fetch_or(&buf->pdata->mmap_enqueued_blocks_mask, BIT(priv->idx));
-	if (mask & BIT(priv->idx)) {
+	mask = atomic_fetch_or(&buf->pdata->mmap_enqueued_blocks_mask, IIO_BIT(priv->idx));
+	if (mask & IIO_BIT(priv->idx)) {
 		/* The block was marked as dequeued, but has been enqueued to
 		 * the kernel? This case should never happen. */
 		priv->enqueued = true;
@@ -212,7 +212,7 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 
 	ret = ioctl_nointr(fd, BLOCK_ENQUEUE_IOCTL, &priv->block);
 	if (ret < 0) {
-		atomic_fetch_xor(&buf->pdata->mmap_enqueued_blocks_mask, BIT(priv->idx));
+		atomic_fetch_xor(&buf->pdata->mmap_enqueued_blocks_mask, IIO_BIT(priv->idx));
 		return ret;
 	}
 
@@ -243,7 +243,7 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 	}
 
 	for (;;) {
-		if (!(atomic_load(&buf->pdata->mmap_enqueued_blocks_mask) & BIT(priv->idx))) {
+		if (!(atomic_load(&buf->pdata->mmap_enqueued_blocks_mask) & IIO_BIT(priv->idx))) {
 			/* The block has been dequeued by a previous call to
 			 * local_dequeue_mmap_block() for a different block. */
 			break;
@@ -257,7 +257,7 @@ int local_dequeue_mmap_block(struct iio_block_pdata *pdata, bool nonblock)
 		if (ret < 0)
 			return ret;
 
-		atomic_fetch_xor(&buf->pdata->mmap_enqueued_blocks_mask, BIT(block.id));
+		atomic_fetch_xor(&buf->pdata->mmap_enqueued_blocks_mask, IIO_BIT(block.id));
 
 		if (block.id == priv->idx)
 			break;

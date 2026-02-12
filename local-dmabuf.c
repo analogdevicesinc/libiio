@@ -74,7 +74,7 @@ static const char *get_dma_heap_name(void)
 		"linux,cma",
 		"default-pool"
 	};
-	size_t num_accepted_heaps = ARRAY_SIZE(accepted_heaps);
+	size_t num_accepted_heaps = IIO_ARRAY_SIZE(accepted_heaps);
 	size_t i;
 
 	if (!env_value || !*env_value)

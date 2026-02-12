@@ -722,7 +722,7 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(device_attrs_denylist); i++)
+	for (i = 0; i < IIO_ARRAY_SIZE(device_attrs_denylist); i++)
 		if (!strcmp(device_attrs_denylist[i], attr))
 			return 0;
 
@@ -1112,7 +1112,7 @@ static int add_buffer_attr(void *d, const char *path)
 	const char *name = strrchr(path, '/') + 1;
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(buffer_attrs_reserved); i++)
+	for (i = 0; i < IIO_ARRAY_SIZE(buffer_attrs_reserved); i++)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
 

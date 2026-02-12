@@ -780,7 +780,7 @@ usb_create_context_with_attrs(libusb_device *usb_dev,
 		"usb,release",
 		"usb,libusb",
 	};
-	char *attr_values[ARRAY_SIZE(attr_names)] = {
+	char *attr_values[IIO_ARRAY_SIZE(attr_names)] = {
 		uri,
 		vendor,
 		product,
@@ -821,7 +821,7 @@ usb_create_context_with_attrs(libusb_device *usb_dev,
 					  &iio_usb_backend, description,
 					  attr_names,
 					  (const char **) attr_values,
-					  ARRAY_SIZE(attr_names));
+					  IIO_ARRAY_SIZE(attr_names));
 }
 
 static struct iio_context * usb_create_context(const struct iio_context_params *params,

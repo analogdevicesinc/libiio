@@ -229,7 +229,7 @@ static ssize_t send_data(struct DevEntry *dev, struct ThdEntry *thd, size_t len)
 			chn = iio_device_get_channel(dev->dev, i);
 
 			if (iio_channel_is_enabled(chn, mask))
-				words[BIT_WORD(i)] |= BIT_MASK(i);
+				words[IIO_BIT_WORD(i)] |= IIO_BIT_MASK(i);
 		}
 
 		length = sizeof(buf);
@@ -798,7 +798,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev,
 	for (i = 0; i < nb_channels; i++) {
 		chn = iio_device_get_channel(dev, i);
 
-		if (TEST_BIT(words, i))
+		if (IIO_TEST_BIT(words, i))
 			iio_channel_enable(chn, mask);
 	}
 

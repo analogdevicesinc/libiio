@@ -31,7 +31,7 @@ iio_event_get_channel_id(const struct iio_event *event, unsigned int channel)
 static inline bool
 iio_event_is_differential(const struct iio_event *event)
 {
-	return event->id & BIT(55);
+	return event->id & IIO_BIT(55);
 }
 
 /* Corresponds to IIO_EVENT_CODE_EXTRACT_MODIFIER() of <linux/iio/events.h> */
