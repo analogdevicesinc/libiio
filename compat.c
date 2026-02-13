@@ -35,6 +35,7 @@ typedef ptrdiff_t ssize_t;
 struct iio_attr;
 struct iio_block;
 struct iio_buffer;
+struct iio_buffer_stream;
 struct iio_channel;
 struct iio_channels_mask;
 struct iio_context;
@@ -165,14 +166,15 @@ struct compat {
 	struct iio_channels_mask * (*iio_create_channels_mask)(unsigned int);
 	void (*iio_channels_mask_destroy)(struct iio_channels_mask *);
 
-	/* Buffers */
-	struct iio_buffer * (*iio_device_create_buffer)(const struct iio_device *,
-							unsigned int,
-							const struct iio_channels_mask *);
-	void (*iio_buffer_destroy)(struct iio_buffer *);
-	void (*iio_buffer_cancel)(struct iio_buffer *);
-	int (*iio_buffer_enable)(struct iio_buffer *);
-	int (*iio_buffer_disable)(struct iio_buffer *);
+	/* Buffers / Buffer streams */
+	struct iio_buffer * (*iio_device_get_buffer)(const struct iio_device *,
+						     unsigned int);
+	struct iio_buffer_stream * (*iio_buffer_open)(struct iio_buffer *,
+						      const struct iio_channels_mask *);
+	void (*iio_buffer_close)(struct iio_buffer_stream *);
+	void (*iio_buffer_stream_cancel)(struct iio_buffer_stream *);
+	int (*iio_buffer_stream_start)(struct iio_buffer_stream *);
+	int (*iio_buffer_stream_stop)(struct iio_buffer_stream *);
 
 	unsigned int (*iio_buffer_get_attrs_count)(const struct iio_buffer *);
 	const struct iio_attr * (*iio_buffer_get_attr)(const struct iio_buffer *,
@@ -182,14 +184,14 @@ struct compat {
 
 	const struct iio_device * (*iio_buffer_get_device)(const struct iio_buffer *);
 	const struct iio_channels_mask *
-		(*iio_buffer_get_channels_mask)(const struct iio_buffer *);
+		(*iio_buffer_stream_get_channels_mask)(const struct iio_buffer_stream *);
 	void (*iio_buffer_set_data)(struct iio_buffer *, void *);
 	void * (*iio_buffer_get_data)(const struct iio_buffer *);
 
 	/* Blocks */
-	struct iio_block * (*iio_buffer_create_block)(struct iio_buffer *, size_t);
+	struct iio_block * (*iio_buffer_stream_create_block)(struct iio_buffer_stream *, size_t);
 	void (*iio_block_destroy)(struct iio_block *);
-	struct iio_buffer * (*iio_block_get_buffer)(const struct iio_block *);
+	struct iio_buffer_stream * (*iio_block_get_buffer_stream)(const struct iio_block *);
 	int (*iio_block_enqueue)(struct iio_block *, size_t, bool);
 	int (*iio_block_dequeue)(struct iio_block *, bool);
 	void * (*iio_block_start)(const struct iio_block *);
@@ -270,6 +272,7 @@ struct iio_buffer_compat {
 	bool cyclic, nonblock, enabled, enqueued;
 	unsigned int nb_blocks, curr;
 	bool all_enqueued;
+	struct iio_buffer_stream *bs;
 
 	struct iio_block * blocks[];
 };
@@ -340,6 +343,7 @@ static int iio_init_context_compat(struct iio_context *ctx)
 		dev_compat->nb_channels = nb_channels;
 		dev_compat->is_tx = iio_device_is_tx(dev);
 		dev_compat->nb_kernel_buffers = 4;
+		dev_compat->buf = IIO_CALL(iio_device_get_buffer)(dev, 0);
 
 		IIO_CALL(iio_device_set_data)(dev, dev_compat);
 
@@ -2012,6 +2016,7 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	struct iio_device_compat *dev_compat;
 	struct iio_buffer_compat *compat;
 	struct iio_buffer *buf;
+	struct iio_buffer_stream *bs;
 	unsigned int i, j, nb_blocks;
 	size_t len;
 	int err = -ENOMEM;
@@ -2021,6 +2026,12 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 
 	if (!dev_compat->mask) {
 		errno = EINVAL;
+		return NULL;
+	}
+
+	buf = dev_compat->buf;
+	if (!buf) {
+		errno = ENOENT;
 		return NULL;
 	}
 
@@ -2037,15 +2048,16 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 	len = samples_count * compat->sample_size;
 	compat->size = len;
 
-	buf = IIO_CALL(iio_device_create_buffer)(dev, 0, dev_compat->mask);
-	err = iio_err(buf);
+	bs = IIO_CALL(iio_buffer_open)(buf, dev_compat->mask);
+	err = iio_err(bs);
 	if (err)
 		goto err_free_compat;
 
+	compat->bs = bs;
 	IIO_CALL(iio_buffer_set_data)(buf, compat);
 
 	for (i = 0; i < nb_blocks; i++) {
-		compat->blocks[i] = IIO_CALL(iio_buffer_create_block)(buf, len);
+		compat->blocks[i] = IIO_CALL(iio_buffer_stream_create_block)(bs, len);
 		err = iio_err(compat->blocks[i]);
 		if (err)
 			goto err_free_blocks;
@@ -2059,21 +2071,19 @@ struct iio_buffer * iio_device_create_buffer(const struct iio_device *dev,
 				goto err_free_blocks;
 		}
 
-		err = IIO_CALL(iio_buffer_enable)(buf);
+		err = IIO_CALL(iio_buffer_stream_start)(bs);
 		if (err)
 			goto err_free_blocks;
 
 		compat->all_enqueued = true;
 	}
 
-	dev_compat->buf = buf;
-
 	return buf;
 
 err_free_blocks:
 	for (; i > 0; i--)
 		IIO_CALL(iio_block_destroy)(compat->blocks[i - 1]);
-	IIO_CALL(iio_buffer_destroy)(buf);
+	IIO_CALL(iio_buffer_close)(bs);
 err_free_compat:
 	free(compat);
 err_set_errno:
@@ -2098,27 +2108,25 @@ void iio_buffer_set_data(struct iio_buffer *buf, void *data)
 void iio_buffer_destroy(struct iio_buffer *buf)
 {
 	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
-	const struct iio_device *dev = IIO_CALL(iio_buffer_get_device)(buf);
-	struct iio_device_compat *dev_compat = IIO_CALL(iio_device_get_data)(dev);
 	unsigned int i;
 
-	IIO_CALL(iio_buffer_cancel)(buf);
+	IIO_CALL(iio_buffer_stream_cancel)(compat->bs);
 
 	if (compat->enabled)
-		IIO_CALL(iio_buffer_disable)(buf);
+		IIO_CALL(iio_buffer_stream_stop)(compat->bs);
 
 	for (i = 0; i < compat->nb_blocks; i++)
 		IIO_CALL(iio_block_destroy)(compat->blocks[i]);
 
-	IIO_CALL(iio_buffer_destroy)(buf);
+	IIO_CALL(iio_buffer_close)(compat->bs);
 	free(compat);
-
-	dev_compat->buf = NULL;
 }
 
 void iio_buffer_cancel(struct iio_buffer *buf)
 {
-	IIO_CALL(iio_buffer_cancel)(buf);
+	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
+
+	IIO_CALL(iio_buffer_stream_cancel)(compat->bs);
 }
 
 const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
@@ -2185,7 +2193,7 @@ ssize_t iio_buffer_push_partial(struct iio_buffer *buf, size_t samples_count)
 	}
 
 	if (!compat->enabled) {
-		err = IIO_CALL(iio_buffer_enable)(buf);
+		err = IIO_CALL(iio_buffer_stream_start)(compat->bs);
 		if (err)
 			return err;
 
@@ -2234,10 +2242,11 @@ void * iio_buffer_first(const struct iio_buffer *buf,
 
 ptrdiff_t iio_buffer_step(const struct iio_buffer *buf)
 {
+	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
 	const struct iio_device *dev = IIO_CALL(iio_buffer_get_device)(buf);
 	const struct iio_channels_mask *mask;
 
-	mask = IIO_CALL(iio_buffer_get_channels_mask)(buf);
+	mask = IIO_CALL(iio_buffer_stream_get_channels_mask)(compat->bs);
 
 	return IIO_CALL(iio_device_get_sample_size)(dev, mask);
 }
@@ -2369,16 +2378,17 @@ static void compat_lib_init(void)
 	FIND_SYMBOL(ctx->lib, iio_create_channels_mask);
 	FIND_SYMBOL(ctx->lib, iio_channels_mask_destroy);
 
-	FIND_SYMBOL(ctx->lib, iio_device_create_buffer);
-	FIND_SYMBOL(ctx->lib, iio_buffer_destroy);
-	FIND_SYMBOL(ctx->lib, iio_buffer_cancel);
-	FIND_SYMBOL(ctx->lib, iio_buffer_enable);
-	FIND_SYMBOL(ctx->lib, iio_buffer_disable);
+	FIND_SYMBOL(ctx->lib, iio_device_get_buffer);
+	FIND_SYMBOL(ctx->lib, iio_buffer_open);
+	FIND_SYMBOL(ctx->lib, iio_buffer_close);
+	FIND_SYMBOL(ctx->lib, iio_buffer_stream_cancel);
+	FIND_SYMBOL(ctx->lib, iio_buffer_stream_start);
+	FIND_SYMBOL(ctx->lib, iio_buffer_stream_stop);
 	FIND_SYMBOL(ctx->lib, iio_buffer_get_device);
 	FIND_SYMBOL(ctx->lib, iio_buffer_get_attrs_count);
 	FIND_SYMBOL(ctx->lib, iio_buffer_get_attr);
 	FIND_SYMBOL(ctx->lib, iio_buffer_find_attr);
-	FIND_SYMBOL(ctx->lib, iio_buffer_get_channels_mask);
+	FIND_SYMBOL(ctx->lib, iio_buffer_stream_get_channels_mask);
 	FIND_SYMBOL(ctx->lib, iio_buffer_get_data);
 	FIND_SYMBOL(ctx->lib, iio_buffer_set_data);
 
@@ -2395,9 +2405,9 @@ static void compat_lib_init(void)
 	FIND_SYMBOL(ctx->lib, iio_attr_write_longlong);
 	FIND_SYMBOL(ctx->lib, iio_attr_write_double);
 
-	FIND_SYMBOL(ctx->lib, iio_buffer_create_block);
+	FIND_SYMBOL(ctx->lib, iio_buffer_stream_create_block);
 	FIND_SYMBOL(ctx->lib, iio_block_destroy);
-	FIND_SYMBOL(ctx->lib, iio_block_get_buffer);
+	FIND_SYMBOL(ctx->lib, iio_block_get_buffer_stream);
 	FIND_SYMBOL(ctx->lib, iio_block_enqueue);
 	FIND_SYMBOL(ctx->lib, iio_block_dequeue);
 	FIND_SYMBOL(ctx->lib, iio_block_start);
