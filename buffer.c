@@ -93,68 +93,6 @@ int iio_buffer_stream_stop(struct iio_buffer_stream *buf_stream)
 	return 0;
 }
 
-void iio_buffer_cancel(struct iio_buffer *buf)
-{
-	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
-
-	iio_task_stop(buf->worker);
-
-	if (ops->cancel_buffer)
-		ops->cancel_buffer(buf->pdata);
-
-	iio_task_flush(buf->worker);
-}
-
-static int iio_buffer_set_enabled(const struct iio_buffer *buf, bool enabled)
-{
-	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
-	size_t sample_size, nb_samples = 0;
-	bool cyclic = false;
-
-	if (buf->block_size) {
-		sample_size = iio_device_get_sample_size(buf->dev, buf->mask);
-		nb_samples = buf->block_size / sample_size;
-		cyclic = buf->cyclic;
-	}
-
-	if (ops->enable_buffer)
-		return ops->enable_buffer(buf->pdata, nb_samples, enabled, cyclic);
-
-	return -ENOSYS;
-}
-
-int iio_buffer_enable(struct iio_buffer *buffer)
-{
-	int err;
-
-	if (buffer->nb_blocks == 0) {
-		dev_err(buffer->dev,
-			"Cannot enable buffer before creating blocks.\n");
-		return -EINVAL;
-	}
-
-	err = iio_buffer_set_enabled(buffer, true);
-	if (err < 0 && err != -ENOSYS)
-		return err;
-
-	iio_task_start(buffer->worker);
-
-	return 0;
-}
-
-int iio_buffer_disable(struct iio_buffer *buffer)
-{
-	int err;
-
-	err = iio_buffer_set_enabled(buffer, false);
-	if (err < 0 && err != -ENOSYS)
-		return err;
-
-	iio_task_stop(buffer->worker);
-
-	return 0;
-}
-
 static int iio_buffer_stream_enqueue_worker(void *_, void *d)
 {
 	return iio_block_io(d);
@@ -210,14 +148,6 @@ iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask)
 	if (err < 0)
 		goto err_destroy_worker;
 
-	/* For legacy reasons! Just while the old/legacy iio_device_create_buffer() exists!
-	 * internally in libiio.
-	 */
-	buf->lock = buf_stream->lock;
-	buf->worker = buf_stream->worker;
-	buf->pdata = buf_stream->pdata;
-	buf->mask = buf_stream->mask;
-
 	return buf_stream;
 
 err_destroy_worker:
@@ -228,95 +158,6 @@ err_free_mask:
 	iio_channels_mask_destroy(buf_stream->mask);
 err_free_bs:
 	free(buf_stream);
-	return iio_ptr(err);
-}
-
-
-struct iio_buffer *
-iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
-			 const struct iio_channels_mask *mask)
-{
-	const struct iio_backend_ops *ops = dev->ctx->ops;
-	struct iio_buffer *buf;
-	ssize_t sample_size;
-	size_t attrlist_size;
-	unsigned int i;
-	int err;
-
-	if (!ops->open_buffer)
-		return iio_ptr(-ENOSYS);
-	if (idx >= dev->nb_buffers)
-		return iio_ptr(-EINVAL);
-
-	sample_size = iio_device_get_sample_size(dev, mask);
-	if (sample_size < 0)
-		return iio_ptr((int) sample_size);
-	if (!sample_size)
-		return iio_ptr(-EINVAL);
-
-	buf = zalloc(sizeof(*buf));
-	if (!buf)
-		return iio_ptr(-ENOMEM);
-
-	buf->dev = dev;
-	buf->idx = idx;
-
-	/* Duplicate buffer attributes from the buffer in iio_device.
-	 * This ensures that those can contain a pointer to our iio_buffer */
-	buf->attrlist.num = dev->buffers[idx]->attrlist.num;
-	attrlist_size = buf->attrlist.num * sizeof(*buf->attrlist.attrs);
-	buf->attrlist.attrs = malloc(attrlist_size);
-	if (!buf->attrlist.attrs) {
-		err = -ENOMEM;
-		goto err_free_buf;
-	}
-
-	memcpy(buf->attrlist.attrs, /* Flawfinder: ignore */
-	       dev->buffers[idx]->attrlist.attrs, attrlist_size);
-
-	for (i = 0; i < buf->attrlist.num; i++)
-		buf->attrlist.attrs[i].iio.buf = buf;
-
-	buf->mask = iio_create_channels_mask(dev->nb_channels);
-	if (!buf->mask) {
-		err = -ENOMEM;
-		goto err_free_attrs;
-	}
-
-	err = iio_channels_mask_copy(buf->mask, mask);
-	if (err)
-		goto err_free_mask;
-
-	buf->lock = iio_mutex_create();
-	err = iio_err(buf->lock);
-	if (err)
-		goto err_free_mask;
-
-	buf->worker = iio_task_create(iio_buffer_stream_enqueue_worker, NULL,
-				      "enqueue-worker");
-	err = iio_err(buf->worker);
-	if (err < 0)
-		goto err_free_mutex;
-
-	buf->pdata = ops->open_buffer(dev, idx, buf->mask);
-	err = iio_err(buf->pdata);
-	if (err < 0)
-		goto err_destroy_worker;
-
-	return buf;
-
-err_destroy_worker:
-	iio_task_destroy(buf->worker);
-err_free_mutex:
-	iio_mutex_destroy(buf->lock);
-err_free_mask:
-	iio_channels_mask_destroy(buf->mask);
-err_free_attrs:
-	/* No need to call iio_free_attrs() since the names / filenames
-	 * are allocated by the device */
-	free(buf->attrlist.attrs);
-err_free_buf:
-	free(buf);
 	return iio_ptr(err);
 }
 
@@ -335,32 +176,10 @@ void iio_buffer_close(struct iio_buffer_stream *buf_stream)
        free(buf_stream);
 }
 
-void iio_buffer_destroy(struct iio_buffer *buf)
-{
-	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
-
-	iio_buffer_cancel(buf);
-
-	if (ops->close_buffer)
-		ops->close_buffer(buf->pdata);
-
-	iio_task_destroy(buf->worker);
-	iio_mutex_destroy(buf->lock);
-	iio_channels_mask_destroy(buf->mask);
-	free(buf->attrlist.attrs);
-	free(buf);
-}
-
 const struct iio_channels_mask *
 iio_buffer_stream_get_channels_mask(const struct iio_buffer_stream *buf_stream)
 {
 	return buf_stream->mask;
-}
-
-const struct iio_channels_mask *
-iio_buffer_get_channels_mask(const struct iio_buffer *buf)
-{
-	return buf->mask;
 }
 
 unsigned int iio_buffer_get_attrs_count(const struct iio_buffer *buf)

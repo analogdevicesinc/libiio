@@ -520,7 +520,7 @@ public:
     void set_data(void * data){iio_buffer_set_data(p, data);}
     void * data() {return iio_buffer_get_data(p);}
     BufferStreamPtr open(iio_channels_mask const * mask) { return BufferStreamPtr{impl::check(iio_buffer_open(p, mask), "iio_buffer_open")}; }
-    StreamPtr create_stream(size_t nb_blocks, size_t sample_count, iio_channels_mask * mask) { return StreamPtr{impl::check(iio_buffer_create_stream_new(p, nb_blocks, sample_count, mask), "iio_buffer_create_stream_new")}; }
+    StreamPtr create_stream(size_t nb_blocks, size_t sample_count, iio_channels_mask * mask) { return StreamPtr{impl::check(iio_buffer_create_stream(p, nb_blocks, sample_count, mask), "iio_buffer_create_stream")}; }
 };
 
 /** @brief C++ wrapper for the @ref Device C-API

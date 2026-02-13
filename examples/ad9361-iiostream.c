@@ -270,7 +270,7 @@ int main (int argc, char **argv)
 		shutdown();
 	}
 
-	rxstream = iio_buffer_create_stream_new(rxbuf, 4, BLOCK_SIZE, rxmask);
+	rxstream = iio_buffer_create_stream(rxbuf, 4, BLOCK_SIZE, rxmask);
 	err = iio_err(rxstream);
 	if (err) {
 		rxstream = NULL;
@@ -278,7 +278,7 @@ int main (int argc, char **argv)
 		shutdown();
 	}
 
-	txstream = iio_buffer_create_stream_new(txbuf, 4, BLOCK_SIZE, txmask);
+	txstream = iio_buffer_create_stream(txbuf, 4, BLOCK_SIZE, txmask);
 	err = iio_err(txstream);
 	if (err) {
 		txstream = NULL;

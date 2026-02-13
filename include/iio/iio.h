@@ -1146,17 +1146,6 @@ __api __check_ret __pure const struct iio_attr *
 iio_buffer_find_attr(const struct iio_buffer *buf, const char *name);
 
 
-/** @brief Create an input or output buffer associated to the given device
- * @param dev A pointer to an iio_device structure
- * @param idx The index of the hardware buffer. Should be 0 in most cases.
- * @param mask A pointer to an iio_channels_mask structure.
- * @return On success, a pointer to an iio_buffer structure
- * @return On failure, a pointer-encoded error is returned */
-__api __check_ret struct iio_buffer *
-iio_device_create_buffer(const struct iio_device *dev, unsigned int idx,
-			 const struct iio_channels_mask *mask);
-
-
 /** @brief Associate a pointer to an iio_buffer structure
  * @param buf A pointer to an iio_buffer structure
  * @param data The pointer to be associated */
@@ -1168,60 +1157,6 @@ __api void iio_buffer_set_data(struct iio_buffer *buf, void *data);
  * @return The pointer previously associated if present, or NULL */
 __api void * iio_buffer_get_data(const struct iio_buffer *buf);
 
-
-/** @brief Destroy the given buffer
- * @param buf A pointer to an iio_buffer structure */
-__api void iio_buffer_destroy(struct iio_buffer *buf);
-
-
-/** @brief Cancel all buffer operations
- * @param buf The buffer for which operations should be canceled
- *
- * This function cancels all outstanding buffer operations previously scheduled.
- * This means that any pending iio_block_enqueue() or iio_block_dequeue()
- * operation will abort and return immediately, any further invocation of these
- * functions on the same buffer will return immediately with an error.
- *
- * Usually iio_block_dequeue() will block until all data has been transferred
- * or a timeout occurs. This can depending on the configuration take a
- * significant amount of time. iio_buffer_cancel() is useful to bypass these
- * conditions if the buffer operation is supposed to be stopped in response to
- * an external event (e.g. user input).
- *
- * To be able to transfer additional data after calling this function the buffer
- * should be destroyed and then re-created.
- *
- * This function can be called multiple times for the same buffer, but all but
- * the first invocation will be without additional effect.
- *
- * This function is thread-safe, but not signal-safe, i.e. it must not be called
- * from a signal handler.
- */
-__api void iio_buffer_cancel(struct iio_buffer *buf);
-
-
-/** @brief Enable the buffer
- * @param buf A pointer to an iio_buffer structure
- * @return On success, 0
- * @return On error, a negative error code is returned */
-__api __check_ret int iio_buffer_enable(struct iio_buffer *buf);
-
-
-/** @brief Disable the buffer
- * @param buf A pointer to an iio_buffer structure
- * @return On success, 0
- * @return On error, a negative error code is returned */
-__api int iio_buffer_disable(struct iio_buffer *buf);
-
-
-/** @brief Retrieve a mask of the channels enabled for the given buffer
- * @param buf A pointer to an iio_buffer structure
- * @return A pointer to an iio_channels_mask structure
- *
- * <b>NOTE:</b> The mask returned may contain more enabled channels than
- * the mask used for creating the buffer. */
-__api const struct iio_channels_mask *
-iio_buffer_get_channels_mask(const struct iio_buffer *buf);
 
 /* ------------------------- Buffer Stream functions -------------------------*/
 /** @defgroup BufferStream Buffer Stream
@@ -1276,15 +1211,6 @@ iio_buffer_stream_get_channels_mask(const struct iio_buffer_stream *buf_stream);
  * @{
  * @struct iio_block
  * @brief A block of memory containing data samples */
-
-
-/** @brief Create a data block for the given buffer
- * @param buffer A pointer to an iio_buffer structure
- * @param size The size of the block to create, in bytes
- * @return On success, a pointer to an iio_block structure
- * @return On failure, a pointer-encoded error is returned */
-__api __check_ret struct iio_block *
-iio_buffer_create_block(struct iio_buffer *buffer, size_t size);
 
 
 /** @brief Create a data block for the given buffer stream
@@ -1402,12 +1328,6 @@ __api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyc
 __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
 
 
-/** @brief Retrieve a pointer to the iio_buffer structure
- * @param block A pointer to an iio_block structure
- * @return A pointer to an iio_buffer structure */
-__api struct iio_buffer * iio_block_get_buffer(const struct iio_block *block);
-
-
 /** @brief Retrieve a pointer to the iio_buffer_stream structure
  * @param block A pointer to an iio_block structure
  * @return A pointer to an iio_buffer_stream structure */
@@ -1426,16 +1346,12 @@ __api struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_bl
  * @param nb_blocks The number of iio_block objects to create, internally.
  *   In doubt, a good value is 4.
  * @param samples_count The size of the iio_block objects, in samples
+ * @param mask A pointer to the iio_channels_mask structure
  * @return On success, a pointer to an iio_stream structure
  * @return On failure, a pointer-encoded error is returned */
 __api __check_ret struct iio_stream *
 iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
-			 size_t samples_count);
-
-
-__api __check_ret struct iio_stream *
-iio_buffer_create_stream_new(struct iio_buffer *buffer, size_t nb_blocks,
-			     size_t samples_count, struct iio_channels_mask *mask);
+			 size_t samples_count, struct iio_channels_mask *mask);
 
 /** @brief Cancel all stream operations
  * @param stream A pointer to an iio_stream structure */

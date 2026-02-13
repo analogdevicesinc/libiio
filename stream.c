@@ -16,7 +16,6 @@
 
 struct iio_stream {
 	struct iio_buffer_stream *buf_stream;
-	struct iio_buffer *buffer;
 	struct iio_block **blocks;
 	size_t nb_blocks;
 	bool started, buf_enabled, all_enqueued;
@@ -24,8 +23,8 @@ struct iio_stream {
 };
 
 struct iio_stream *
-iio_buffer_create_stream_new(struct iio_buffer *buffer, size_t nb_blocks,
-			     size_t samples_count, struct iio_channels_mask *mask)
+iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
+			 size_t samples_count, struct iio_channels_mask *mask)
 {
 	struct iio_buffer_stream *buf_stream;
 	size_t i, sample_size, buf_size;
@@ -64,8 +63,6 @@ iio_buffer_create_stream_new(struct iio_buffer *buffer, size_t nb_blocks,
 
 	stream->buf_stream = buf_stream;
 	stream->nb_blocks = nb_blocks;
-	/* Drop it as soon as we can ditch iio_buffer_create_stream() */
-	stream->buffer = buffer;
 
 	return stream;
 
@@ -76,54 +73,6 @@ err_free_stream_blocks:
 	free(stream->blocks);
 err_close_buffer:
 	iio_buffer_close(buf_stream);
-err_free_stream:
-	free(stream);
-	return iio_ptr(err);
-}
-
-struct iio_stream *
-iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
-			 size_t samples_count)
-{
-	struct iio_stream *stream;
-	size_t i, sample_size, buf_size;
-	int err;
-
-	if (!nb_blocks || !samples_count)
-		return iio_ptr(-EINVAL);
-
-	stream = zalloc(sizeof(*stream));
-	if (!stream)
-		return iio_ptr(-ENOMEM);
-
-	stream->blocks = calloc(nb_blocks, sizeof(*stream->blocks));
-	if (!stream->blocks) {
-		err = -ENOMEM;
-		goto err_free_stream;
-	}
-
-	sample_size = iio_device_get_sample_size(buffer->dev, buffer->mask);
-	buf_size = samples_count * sample_size;
-
-	for (i = 0; i < nb_blocks; i++) {
-		stream->blocks[i] = iio_buffer_create_block(buffer, buf_size);
-		err = iio_err(stream->blocks[i]);
-		if (err) {
-			stream->blocks[i] = NULL;
-			goto err_free_stream_blocks;
-		}
-	}
-
-	stream->buffer = buffer;
-	stream->nb_blocks = nb_blocks;
-
-	return stream;
-
-err_free_stream_blocks:
-	for (i = 0; i < nb_blocks; i++)
-		if (stream->blocks[i])
-			iio_block_destroy(stream->blocks[i]);
-	free(stream->blocks);
 err_free_stream:
 	free(stream);
 	return iio_ptr(err);
@@ -153,16 +102,14 @@ void iio_stream_destroy(struct iio_stream *stream)
 	}
 
 	free(stream->blocks);
-	/* Drop the condition as soon as the legacy API get's removed */
-	if (stream->buf_stream)
-		iio_buffer_close(stream->buf_stream);
+	iio_buffer_close(stream->buf_stream);
 	free(stream);
 }
 
 const struct iio_block *
 iio_stream_get_next_block(struct iio_stream *stream)
 {
-	const struct iio_device *dev = stream->buffer->dev;
+	const struct iio_device *dev = stream->buf_stream->buf->dev;
 	bool is_tx = iio_device_is_tx(dev);
 	unsigned int i;
 	int err;
@@ -191,7 +138,7 @@ iio_stream_get_next_block(struct iio_stream *stream)
 	}
 
 	if (!stream->buf_enabled) {
-		err = iio_buffer_enable(stream->buffer);
+		err = iio_buffer_stream_start(stream->buf_stream);
 		if (err) {
 			dev_perror(dev, err, "Unable to enable buffer");
 			return iio_ptr(err);

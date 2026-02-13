@@ -721,7 +721,7 @@ _block_dequeue.restype = c_int
 _block_dequeue.argtypes = (_BlockPtr, c_bool)
 _block_dequeue.errcheck = _check_negative
 
-_create_stream = _lib.iio_buffer_create_stream_new
+_create_stream = _lib.iio_buffer_create_stream
 _create_stream.restype = _StreamPtr
 _create_stream.argtypes = (_BufferPtr, c_size_t, c_size_t, _ChannelsMaskPtr)
 _create_stream.errcheck = _check_ptr_err

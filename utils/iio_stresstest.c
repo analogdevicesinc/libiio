@@ -316,7 +316,7 @@ static void *client_thread(void *data)
 		while (threads_running || i == 0) {
 			info->buffers[id]++;
 
-			stream = iio_buffer_create_stream_new(buffer, 4,
+			stream = iio_buffer_create_stream(buffer, 4,
 							      info->buffer_size,
 							      mask);
 			ret = iio_err(stream);
@@ -325,7 +325,7 @@ static void *client_thread(void *data)
 
 				wait.tv_sec = 0;
 				wait.tv_nsec = (1 * 1000);
-				thread_err(id, ret, "iio_buffer_create_stream_new failed");
+				thread_err(id, ret, "iio_buffer_create_stream failed");
 				nanosleep(&wait, &wait);
 				continue;
 			}

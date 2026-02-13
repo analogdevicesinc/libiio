@@ -14,7 +14,6 @@
 #include <string.h>
 
 struct iio_block {
-	struct iio_buffer *buffer;
 	struct iio_buffer_stream *buf_stream;
 	struct iio_block_pdata *pdata;
 	size_t size;
@@ -25,66 +24,6 @@ struct iio_block {
 
 	int dmabuf_fd;
 };
-
-struct iio_block *
-iio_buffer_create_block(struct iio_buffer *buf, size_t size)
-{
-	const struct iio_device *dev = buf->dev;
-	const struct iio_backend_ops *ops = dev->ctx->ops;
-	struct iio_block_pdata *pdata;
-	size_t sample_size;
-	struct iio_block *block;
-	int ret;
-
-	sample_size = iio_device_get_sample_size(dev, buf->mask);
-	if (sample_size == 0 || size < sample_size)
-		return iio_ptr(-EINVAL);
-
-	block = zalloc(sizeof(*block));
-	if (!block)
-		return iio_ptr(-ENOMEM);
-
-	block->dmabuf_fd = -EINVAL;
-
-	if (ops->create_block) {
-		pdata = ops->create_block(buf->pdata, size, &block->data);
-		ret = iio_err(pdata);
-		if (!ret) {
-			block->pdata = pdata;
-
-			if (ops->get_dmabuf_fd)
-				block->dmabuf_fd = ops->get_dmabuf_fd(pdata);
-		} else if (ret != -ENOSYS) {
-			goto err_free_block;
-		}
-	}
-
-	if (!block->pdata) {
-		block->data = malloc(size);
-		if (!block->data) {
-			ret = -ENOMEM;
-			goto err_free_block;
-		}
-
-		if (size > buf->length)
-		      buf->length = size;
-
-		buf->block_size = size;
-	}
-
-	block->buffer = buf;
-	block->size = size;
-
-	iio_mutex_lock(buf->lock);
-	buf->nb_blocks++;
-	iio_mutex_unlock(buf->lock);
-
-	return block;
-
-err_free_block:
-	free(block);
-	return iio_ptr(ret);
-}
 
 struct iio_block *
 iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size)
@@ -136,13 +75,9 @@ iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size
 	block->buf_stream = buf_stream;
 	block->size = size;
 
-	/* Just for legacy reasons. Will be updated as soon as all users are using the new buffer_stream
-	 * API.
-	 */
-	block->buffer = buf_stream->buf;
-	iio_mutex_lock(buf_stream->buf->lock);
-	buf_stream->buf->nb_blocks++;
-	iio_mutex_unlock(buf_stream->buf->lock);
+	iio_mutex_lock(buf_stream->lock);
+	buf_stream->nb_blocks++;
+	iio_mutex_unlock(buf_stream->lock);
 
 	return block;
 
@@ -153,8 +88,8 @@ err_free_block:
 
 void iio_block_destroy(struct iio_block *block)
 {
-	struct iio_buffer *buf = block->buffer;
-	const struct iio_backend_ops *ops = buf->dev->ctx->ops;
+	struct iio_buffer_stream *buf_stream = block->buf_stream;
+	const struct iio_backend_ops *ops = buf_stream->buf->dev->ctx->ops;
 
 	if (block->token) {
 		iio_task_cancel(block->token);
@@ -166,40 +101,40 @@ void iio_block_destroy(struct iio_block *block)
 		free(block->data);
 	free(block);
 
-	iio_mutex_lock(buf->lock);
-	buf->nb_blocks--;
-	iio_mutex_unlock(buf->lock);
+	iio_mutex_lock(buf_stream->lock);
+	buf_stream->nb_blocks--;
+	iio_mutex_unlock(buf_stream->lock);
 }
 
 static int iio_block_write(struct iio_block *block)
 {
-	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+	const struct iio_backend_ops *ops = block->buf_stream->buf->dev->ctx->ops;
 	size_t bytes_used = block->bytes_used;
 	ssize_t ret;
 
 	if (!ops->writebuf)
 		return -ENOSYS;
 
-	ret = ops->writebuf(block->buffer->pdata, block->data, bytes_used);
+	ret = ops->writebuf(block->buf_stream->pdata, block->data, bytes_used);
 	return ret < 0 ? (int) ret : 0;
 }
 
 static int iio_block_read(struct iio_block *block)
 {
-	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+	const struct iio_backend_ops *ops = block->buf_stream->buf->dev->ctx->ops;
 	size_t bytes_used = block->bytes_used;
 	ssize_t ret;
 
 	if (!ops->readbuf)
 		return -ENOSYS;
 
-	ret = ops->readbuf(block->buffer->pdata, block->data, bytes_used);
+	ret = ops->readbuf(block->buf_stream->pdata, block->data, bytes_used);
 	return ret < 0 ? (int) ret : 0;
 }
 
 int iio_block_io(struct iio_block *block)
 {
-	if (!iio_device_is_tx(block->buffer->dev))
+	if (!iio_device_is_tx(block->buf_stream->buf->dev))
 		return iio_block_read(block);
 
 	return iio_block_write(block);
@@ -207,8 +142,8 @@ int iio_block_io(struct iio_block *block)
 
 int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 {
-	struct iio_buffer *buffer = block->buffer;
-	const struct iio_device *dev = buffer->dev;
+	struct iio_buffer_stream *buf_stream = block->buf_stream;
+	const struct iio_device *dev = buf_stream->buf->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 
 	if (bytes_used > block->size)
@@ -226,31 +161,31 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 	}
 
 	block->bytes_used = bytes_used;
-	buffer->cyclic = cyclic;
-	block->token = iio_task_enqueue(buffer->worker, block);
+	buf_stream->cyclic = cyclic;
+	block->token = iio_task_enqueue(buf_stream->worker, block);
 
 	return iio_err(block->token);
 }
 
 int iio_block_dequeue(struct iio_block *block, bool nonblock)
 {
-	struct iio_buffer *buffer = block->buffer;
-	const struct iio_backend_ops *ops = buffer->dev->ctx->ops;
+	struct iio_buffer_stream *buf_stream = block->buf_stream;
+	const struct iio_backend_ops *ops = buf_stream->buf->dev->ctx->ops;
 	struct iio_task_token *token;
 
 	if (ops->dequeue_block && block->pdata)
 		return ops->dequeue_block(block->pdata, nonblock);
 
-	iio_mutex_lock(buffer->lock);
+	iio_mutex_lock(buf_stream->lock);
 	token = block->token;
 
 	if (nonblock && token && !iio_task_is_done(token)) {
-		iio_mutex_unlock(buffer->lock);
+		iio_mutex_unlock(buf_stream->lock);
 		return -EBUSY;
 	}
 
 	block->token = NULL;
-	iio_mutex_unlock(buffer->lock);
+	iio_mutex_unlock(buf_stream->lock);
 
 	if (!token) {
 		/* Already dequeued */
@@ -274,14 +209,14 @@ void *iio_block_first(const struct iio_block *block,
 		      const struct iio_channel *chn)
 {
 	uintptr_t ptr = (uintptr_t)block->data, start = ptr;
-	const struct iio_device *dev = block->buffer->dev;
-	const struct iio_buffer *buf = block->buffer;
+	const struct iio_device *dev = block->buf_stream->buf->dev;
+	const struct iio_buffer_stream *buf_stream = block->buf_stream;
 	const struct iio_channel *cur;
 	unsigned int i;
 	size_t len;
 
 	/* Test if the block has samples for this channel */
-	if (!iio_channels_mask_test_bit(buf->mask, chn->number))
+	if (!iio_channels_mask_test_bit(buf_stream->mask, chn->number))
 		return iio_block_end(block);
 
 	for (i = 0; i < dev->nb_channels; i++) {
@@ -292,7 +227,7 @@ void *iio_block_first(const struct iio_block *block,
 		if (cur->index < 0 || cur->index == chn->index)
 			break;
 
-		if (!iio_channels_mask_test_bit(buf->mask, cur->number))
+		if (!iio_channels_mask_test_bit(buf_stream->mask, cur->number))
 			continue;
 
 		/* Two channels with the same index use the same samples */
@@ -320,12 +255,12 @@ iio_block_foreach_sample(const struct iio_block *block,
 	uintptr_t ptr = (uintptr_t) block->data,
 		  start = ptr,
 		  end = ptr + block->size;
-	const struct iio_buffer *buf = block->buffer;
-	const struct iio_device *dev = buf->dev;
+	const struct iio_buffer_stream *buf_stream = block->buf_stream;
+	const struct iio_device *dev = buf_stream->buf->dev;
 	size_t sample_size;
 	ssize_t processed = 0;
 
-	sample_size = iio_device_get_sample_size(dev, buf->mask);
+	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
 	if (sample_size == 0)
 		return -EINVAL;
 
@@ -340,7 +275,7 @@ iio_block_foreach_sample(const struct iio_block *block,
 				break;
 
 			/* Test if the block has samples for this channel */
-			if (!iio_channels_mask_test_bit(buf->mask, chn->number))
+			if (!iio_channels_mask_test_bit(buf_stream->mask, chn->number))
 				continue;
 
 			if ((ptr - start) % length)
@@ -365,11 +300,6 @@ iio_block_foreach_sample(const struct iio_block *block,
 	return processed;
 }
 
-struct iio_buffer * iio_block_get_buffer(const struct iio_block *block)
-{
-	return block->buffer;
-}
-
 struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_block *block)
 {
 	return block->buf_stream;
@@ -382,7 +312,7 @@ int iio_block_get_dmabuf_fd(const struct iio_block *block)
 
 int iio_block_disable_cpu_access(struct iio_block *block, bool disable)
 {
-	const struct iio_backend_ops *ops = block->buffer->dev->ctx->ops;
+	const struct iio_backend_ops *ops = block->buf_stream->buf->dev->ctx->ops;
 
 	if (ops->disable_cpu_access)
 		return ops->disable_cpu_access(block->pdata, disable);

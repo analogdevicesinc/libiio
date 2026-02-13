@@ -288,14 +288,14 @@ int main(int argc, char **argv)
 		goto clean;
 	}
 
-	rxstream = iio_buffer_create_stream_new(rxbuf, 4, BLOCK_SIZE, rxmask);
+	rxstream = iio_buffer_create_stream(rxbuf, 4, BLOCK_SIZE, rxmask);
 	if (iio_err(rxstream)) {
 		rxstream = NULL;
 		ctx_perror(ctx, iio_err(rxstream), "Could not create RX stream");
 		goto clean;
 	}
 
-	txstream = iio_buffer_create_stream_new(txbuf, 4, BLOCK_SIZE, txmask);
+	txstream = iio_buffer_create_stream(txbuf, 4, BLOCK_SIZE, txmask);
 	if (iio_err(txstream)) {
 		txstream = NULL;
 		ctx_perror(ctx, iio_err(txstream), "Could not create TX stream");
