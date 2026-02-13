@@ -308,7 +308,7 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Creating IIO blocks of %u bytes\n", buffer_length);
-	rxstream = iio_buffer_create_stream_new(rxbuf, 4, buffer_length, rxmask);
+	rxstream = iio_buffer_create_stream(rxbuf, 4, buffer_length, rxmask);
 	if (iio_err(rxstream)) {
 		rxstream = NULL;
 		ctx_perror(ctx, iio_err(rxstream), "Could not create RX stream");

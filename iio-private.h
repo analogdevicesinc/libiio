@@ -158,26 +158,10 @@ struct iio_buffer_stream {
 
 struct iio_buffer {
 	const struct iio_device *dev;
-	struct iio_buffer_pdata *pdata;
-
 	void *userdata;
-	size_t length;
-
-	struct iio_channels_mask *mask;
 	unsigned int idx;
-
-	struct iio_task *worker;
-
-	/* These two fields are set by the last block created. They are only
-	 * used when communicating with v0.x IIOD. */
-	size_t block_size;
-	bool cyclic;
-
 	struct iio_attr_list attrlist;
 	char **values;
-	/* Mutex to protect nb_blocks. Should really be an atomic... */
-	struct iio_mutex *lock;
-	unsigned int nb_blocks;
 };
 
 struct iio_context_info {

@@ -123,7 +123,7 @@ int main() {
   rxbuf = iio_device_get_buffer(rx, 0);
   assertm(rxbuf, "Unable to get RX buffer");
 
-  rxstream = iio_buffer_create_stream_new(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES,
+  rxstream = iio_buffer_create_stream(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES,
                                           rxmask);
   assertm(!iio_err(rxstream), "Unable to create RX stream");
 

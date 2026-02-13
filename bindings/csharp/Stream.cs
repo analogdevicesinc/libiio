@@ -14,7 +14,7 @@ namespace iio
     public class Stream : IIOObject
     {
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IIOPtr iio_buffer_create_stream_new(IntPtr buf,
+        private static extern IIOPtr iio_buffer_create_stream(IntPtr buf,
                     uint nb_blocks, uint samples_count, IntPtr mask);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -37,7 +37,7 @@ namespace iio
             if (mask == null)
                 throw new IIOException("A channels mask is required to create a stream");
 
-            IIOPtr ptr = iio_buffer_create_stream_new(buf.buf, nb_blocks, samples_count, mask.hdl);
+            IIOPtr ptr = iio_buffer_create_stream(buf.buf, nb_blocks, samples_count, mask.hdl);
             if (!ptr)
                 throw new IIOException("Unable to create iio.Stream", ptr);
 

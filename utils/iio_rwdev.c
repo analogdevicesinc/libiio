@@ -441,7 +441,7 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	}
 
-	stream = iio_buffer_create_stream_new(buffer, 4, buffer_size, mask);
+	stream = iio_buffer_create_stream(buffer, 4, buffer_size, mask);
 	ret = iio_err(stream);
 	if (ret) {
 		dev_perror(dev, ret, "Unable to create stream");

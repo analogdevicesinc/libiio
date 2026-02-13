@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	stream = iio_buffer_create_stream_new(buffer, 4, buffer_size, mask);
+	stream = iio_buffer_create_stream(buffer, 4, buffer_size, mask);
 	ret = iio_err(stream);
 	if (ret) {
 		IIO_PERROR(ret, "Unable to create stream");
