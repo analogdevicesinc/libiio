@@ -420,7 +420,7 @@ function(collect_sources tgt out_list)
 
 		# Deduplicate and filter
 		list(REMOVE_DUPLICATES all_includes)
-		# message(STATUS "all : ${all_includes}")
+		message(STATUS "all : ${all_includes}")
 
 		set(filtered_includes "")
 		foreach(dir IN LISTS all_includes)
@@ -428,7 +428,7 @@ function(collect_sources tgt out_list)
 				list(APPEND filtered_includes "${dir}")
 			endif()
 		endforeach()
-		# message(STATUS "filtered : ${filtered_includes}")
+		message(STATUS "filtered : ${filtered_includes}")
 
 		# Convert to -I flags
 		set(include_flags "")
@@ -456,10 +456,10 @@ function(collect_sources tgt out_list)
 		if(NOT src_flags OR src_flags STREQUAL "NOTFOUND")
 			set(src_flags "")
 		endif()
-		# message(STATUS "target ${tgt} src:${src} : ${full_path}")
-		# message(STATUS "All compile definitions: ${ALL_DEFS}")
-		# message(STATUS "All compile options: ${ALL_OPTS}")
-		# message(STATUS "all specific compiler options : ${src_flags}")
+		message(STATUS "target ${tgt} src:${src} : ${full_path}")
+		message(STATUS "All compile definitions: ${ALL_DEFS}")
+		message(STATUS "All compile options: ${ALL_OPTS}")
+		message(STATUS "all specific compiler options : ${src_flags}")
 
 		# Merge into one list
 		set(all_defs "")
@@ -467,7 +467,9 @@ function(collect_sources tgt out_list)
 		# Turn each into a -D flag, skipping gen-expr defs
 		set(def_flags "")
 		foreach(def IN LISTS ALL_DEFS)
-			list(APPEND def_flags "${def_prefix}${def}")
+			string(STRIP "${def}" def_clean)
+			string(REGEX REPLACE ">$" "" def_clean "${def_clean}")
+			list(APPEND def_flags "${def_prefix}${def_clean}")
 		endforeach()
 
 		if(APPLE)
@@ -540,6 +542,7 @@ function(collect_sources tgt out_list)
 		# Debug output
 		if(NOT preprocess_result EQUAL 0)
 			message(STATUS "Preprocessing failed for ${full_path}:\n${preprocess_err}")
+			message(FATAL_ERROR "fail")
 			continue() # Skip this source file if it can't be preprocessed
 		endif()
 
