@@ -81,11 +81,55 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_BUFFER; type++) {
+	for (i = 0; i < dev->nb_buffers; i++) {
+		const struct iio_buffer *buf = dev->buffers[i];
+		unsigned int j;
+
+		ret = iio_snprintf(ptr, len, "<buffer index=\"%u\" >", buf->idx);
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+		for (j = 0; j < buf->attrlist.num; j++) {
+			ret = iio_snprintf(ptr, len, "<attribute name=\"%s\" />",
+					   buf->attrlist.attrs[j].name);
+			if (ret < 0)
+				return ret;
+
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+		}
+
+		ret = iio_snprintf(ptr, len, "</buffer>");
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	}
+
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
 		for (i = 0; i < dev->attrlist[type].num; i++) {
 			attrs = dev->attrlist[type].attrs;
 
 			ret = iio_snprintf_xml_attr(&attrs[i], ptr, len);
+			if (ret < 0)
+				return ret;
+
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+		}
+	}
+
+	/* Backward compatibility: To make sure that older clients will still work,
+	 * we also need to create <buffer-attributes> tags. Note that given that
+	 * multi buffer is not still supported (and won't ever be in older versions),
+	 * only the first buffer is considered.
+	 */
+	if (dev->nb_buffers == 1) {
+		const struct iio_buffer *buf = dev->buffers[0];
+		unsigned int j;
+
+		for (j = 0; j < buf->attrlist.num; j++) {
+			ret = iio_snprintf_xml_attr(&buf->attrlist.attrs[j], ptr, len);
 			if (ret < 0)
 				return ret;
 
