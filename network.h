@@ -20,7 +20,12 @@ struct addrinfo;
 
 struct iiod_client_pdata {
 	int fd;
-
+	
+#ifdef _WIN32
+	void *event_lock;
+	int read_waiters;
+	int write_waiters;
+#endif
 	bool cancelled;
 	void * events[2];
 	int cancel_fd[2];

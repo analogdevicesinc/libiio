@@ -32,6 +32,8 @@ int set_blocking_mode(int s, bool blocking)
 
 int setup_cancel(struct iiod_client_pdata *io_ctx)
 {
+	CRITICAL_SECTION *lock;
+
 	io_ctx->events[0] = WSACreateEvent();
 	if (io_ctx->events[0] == WSA_INVALID_EVENT)
 		return -ENOMEM; /* Pretty much the only error that can happen */
@@ -42,11 +44,26 @@ int setup_cancel(struct iiod_client_pdata *io_ctx)
 		return -ENOMEM;
 	}
 
+	lock = malloc(sizeof(*lock));
+	if (!lock) {
+		WSACloseEvent(io_ctx->events[0]);
+		WSACloseEvent(io_ctx->events[1]);
+		return -ENOMEM;
+	}
+
+	InitializeCriticalSection(lock);
+	io_ctx->event_lock = lock;
+	io_ctx->read_waiters = 0;
+	io_ctx->write_waiters = 0;
+
 	return 0;
 }
 
 void cleanup_cancel(struct iiod_client_pdata *io_ctx)
 {
+	CRITICAL_SECTION *lock = io_ctx->event_lock;
+	DeleteCriticalSection(lock);
+	free(lock);
 	WSACloseEvent(io_ctx->events[0]);
 	WSACloseEvent(io_ctx->events[1]);
 }
@@ -59,20 +76,38 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 int wait_cancellable(struct iiod_client_pdata *io_ctx,
 		     bool read, unsigned int timeout_ms)
 {
+	CRITICAL_SECTION *lock = io_ctx->event_lock;
 	long wsa_events = FD_CLOSE;
 	DWORD ret, timeout = timeout_ms > 0 ? (DWORD) timeout_ms : WSA_INFINITE;
 
+	EnterCriticalSection(lock);
 	if (read)
-		wsa_events |= FD_READ;
+		io_ctx->read_waiters++;
 	else
+		io_ctx->write_waiters++;
+
+	if (io_ctx->read_waiters > 0) 
+		wsa_events |= FD_READ;
+	if (io_ctx->write_waiters > 0) 
 		wsa_events |= FD_WRITE;
 
+	printf("\nwait_cancellable: read=%d, timeout_ms=%u, fd=0x%d\n\n",
+		read, timeout_ms, io_ctx->fd);
 	WSAEventSelect(io_ctx->fd, NULL, 0);
 	WSAResetEvent(io_ctx->events[0]);
 	WSAEventSelect(io_ctx->fd, io_ctx->events[0], wsa_events);
 
+	LeaveCriticalSection(lock);
+
 	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
 				       timeout, FALSE);
+
+	EnterCriticalSection(lock);
+	if (read)
+		io_ctx->read_waiters--;
+	else
+		io_ctx->write_waiters--;
+	LeaveCriticalSection(lock);
 
 	if (ret == WSA_WAIT_TIMEOUT)
 		return -ETIMEDOUT;
