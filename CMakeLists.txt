@@ -209,8 +209,23 @@ endif()
 add_library(iio_common_config INTERFACE)
 
 if (MSVC)
-	target_compile_options(iio_common_config INTERFACE /Zi /W4 /wd4200 /wd4127 /wd4100)
-	# Zi produces a separate PDB file that contains all the symbolic debugging information
+	string(REPLACE "/RTC1" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
+    target_compile_options(iio_common_config INTERFACE 
+        /W4 /wd4200 /wd4127 /wd4100
+        
+        # Apply Debug flags only when building in debug mode
+        # O1: Triggers constant folding to eliminate 'if (0)' blocks
+        # Ob1: Allow inline expansion for functions to help prune dead code paths
+        $<$<CONFIG:Debug>:/O1 /Ob1>
+    )
+	# Apply Linker flags to strip unreferenced code and data
+    # /OPT:REF: Eliminates functions and data that are never referenced
+    # /INCREMENTAL:NO: Required to enable /OPT:REF stripping
+	target_link_options(iio_common_config INTERFACE
+        $<$<CONFIG:Debug>:/OPT:REF /INCREMENTAL:NO>
+    )	
 	# W4 displays level 1, 2, 3, and 4 (informational) warnings that aren't off by default
 	# C4200: nonstandard extension used : zero-sized array in struct (usb.h)
 	# C4127: conditional expression is constant (IIO_ERROR and IIO_DEBUG macros)
