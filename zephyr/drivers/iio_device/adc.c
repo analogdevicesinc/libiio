@@ -30,6 +30,7 @@ static int iio_device_adc_add_channels(const struct device *dev,
 {
 	const struct iio_device_adc_config *config = dev->config;
 	struct iio_channel *iio_channel;
+	struct adc_dt_spec *channel;
 	bool output = false;
 	bool scan_element = false;
 	const char *name = NULL;
@@ -62,9 +63,12 @@ static int iio_device_adc_add_channels(const struct device *dev,
 			return -EINVAL;
 		}
 
-		if (iio_channel_add_attr(iio_channel, scale_name, filename)) {
-			LOG_ERR("Could not add channel %d attribute %s", index, scale_name);
-			return -EINVAL;
+		channel = &config->channels[index];
+		if (channel->resolution != 0) {
+			if (iio_channel_add_attr(iio_channel, scale_name, filename)) {
+				LOG_ERR("Could not add channel %d attribute %s", index, scale_name);
+				return -EINVAL;
+			}
 		}
 	}
 
