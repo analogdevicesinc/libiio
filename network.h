@@ -18,9 +18,11 @@ struct iio_context_params;
 struct iio_context_pdata;
 struct addrinfo;
 
+struct iiod_client_pdata_os;
 struct iiod_client_pdata {
 	int fd;
-
+	/* Platform-specific private data */
+	struct iiod_client_pdata_os *os_priv;
 	bool cancelled;
 	void * events[2];
 	int cancel_fd[2];

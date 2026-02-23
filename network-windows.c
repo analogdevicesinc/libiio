@@ -12,8 +12,15 @@
 #include <errno.h>
 #include <ws2tcpip.h>
 #include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 
 #define close(s) closesocket(s)
+
+struct iiod_client_pdata_os {
+	struct iio_mutex *event_lock;
+	int read_waiters;
+	int write_waiters;
+};
 
 int set_blocking_mode(int s, bool blocking)
 {
@@ -42,11 +49,33 @@ int setup_cancel(struct iiod_client_pdata *io_ctx)
 		return -ENOMEM;
 	}
 
-	return 0;
+    struct iiod_client_pdata_os *os_priv = malloc(sizeof(*os_priv));
+    if (!os_priv)
+        goto err_close_events;
+
+    os_priv->event_lock = iio_mutex_create();
+    if (!os_priv->event_lock)
+        goto err_free_os_priv;
+
+    os_priv->read_waiters = 0;
+    os_priv->write_waiters = 0;
+    io_ctx->os_priv = os_priv;
+
+    return 0;
+err_free_os_priv:
+	free(os_priv);
+err_close_events:
+    WSACloseEvent(io_ctx->events[0]);
+    WSACloseEvent(io_ctx->events[1]);
+    io_ctx->events[0] = NULL;
+    io_ctx->events[1] = NULL;
+    return -ENOMEM;
 }
 
 void cleanup_cancel(struct iiod_client_pdata *io_ctx)
 {
+	iio_mutex_destroy(io_ctx->os_priv->event_lock);
+	free(io_ctx->os_priv);
 	WSACloseEvent(io_ctx->events[0]);
 	WSACloseEvent(io_ctx->events[1]);
 }
@@ -59,20 +88,36 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 int wait_cancellable(struct iiod_client_pdata *io_ctx,
 		     bool read, unsigned int timeout_ms)
 {
+	struct iio_mutex *lock = io_ctx->os_priv->event_lock;
 	long wsa_events = FD_CLOSE;
 	DWORD ret, timeout = timeout_ms > 0 ? (DWORD) timeout_ms : WSA_INFINITE;
 
+	iio_mutex_lock(lock);
 	if (read)
-		wsa_events |= FD_READ;
+		io_ctx->os_priv->read_waiters++;
 	else
+		io_ctx->os_priv->write_waiters++;
+
+	if (io_ctx->os_priv->read_waiters > 0) 
+		wsa_events |= FD_READ;
+	if (io_ctx->os_priv->write_waiters > 0) 
 		wsa_events |= FD_WRITE;
 
 	WSAEventSelect(io_ctx->fd, NULL, 0);
 	WSAResetEvent(io_ctx->events[0]);
 	WSAEventSelect(io_ctx->fd, io_ctx->events[0], wsa_events);
 
+	iio_mutex_unlock(lock);
+
 	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
 				       timeout, FALSE);
+
+	iio_mutex_lock(lock);
+	if (read)
+		io_ctx->os_priv->read_waiters--;
+	else
+		io_ctx->os_priv->write_waiters--;
+	iio_mutex_unlock(lock);
 
 	if (ret == WSA_WAIT_TIMEOUT)
 		return -ETIMEDOUT;
