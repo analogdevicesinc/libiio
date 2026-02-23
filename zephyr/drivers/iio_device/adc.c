@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(iio_device_adc, CONFIG_LIBIIO_LOG_LEVEL);
 
 #define IIO_DEVICE_INT_REF_VOL_LEN 6 /* max voltage is 65535 which is 5 digits + null terminator */
-
+#define IIO_DEVICE_SCALE_LEN 7 /* scale format is xx.xxx + null terminator */
 struct iio_device_adc_config {
 	const char *name;
 	struct adc_dt_spec *channels;
@@ -118,18 +118,29 @@ static int iio_device_adc_read_channel_raw(const struct device *dev,
 static int iio_device_adc_read_channel_scale(const struct device *dev,
 		int index, char *dst, size_t len)
 {
-	const char *scale_value = "1";
-	int scale_len = strlen(scale_value) + 1;
+	const struct iio_device_adc_config *config = dev->config;
+	struct adc_dt_spec *channel = &config->channels[index];
+	uint8_t resolution;
+	uint32_t scale_uv;
+	uint32_t whole;
+	uint32_t frac;
 
-	if (len < scale_len) {
+	if (len < IIO_DEVICE_SCALE_LEN) {
 		LOG_ERR("Buffer size %u is too small for scale value, need %u",
-			len, scale_len);
+			len, IIO_DEVICE_SCALE_LEN);
 		return -ENOMEM;
 	}
 
-	strcpy(dst, scale_value);
+	resolution = channel->resolution;
+	if (channel->channel_cfg_dt_node_exists && channel->channel_cfg.differential) {
+		resolution -= 1;
+	}
 
-	return scale_len;
+	scale_uv = ((uint32_t)channel->vref_mv * 1000u) / (1u << resolution); /* uV/LSB */
+	whole = scale_uv / 1000u;
+	frac = scale_uv % 1000u;
+
+	return snprintk(dst, len, "%u.%03u", whole, frac) + 1;
 }
 
 static int iio_device_adc_int_ref_voltage_read(const struct device *dev,
