@@ -154,18 +154,20 @@ That means that you configure (with -DWITH_DOC=OFF), build, install, configure
 (with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
 
 
-### Notes
+### Building modes
+To build the library in a specific configuration, use the -DCMAKE_BUILD_TYPE flag available on all supported platforms. The supported options are `Debug`, `Release`, `RelWithDebInfo`, and `MinSizeRel`
+The default mode is set to **RelWithDebInfo**.
 
-Special Note on Microsoft Visual Compiler (MSVC):
+Nightly builds are usually built with `RelWithDebInfo` to provide a balance of performance and debug symbols.
+Official releases should be built with `Release` for maximum optimization.
 
-MSVC in debug mode is just very stupid. If it sees this code:
-```c
-if (0)
-   call_function();
-```
-It will try to link against the `call_function` symbol even though it's clearly dead code.
+**Example for Linux (mode must be set at configuration)**
 
-For this reason, when building with MSVC, please build in `RelWithDebInfo` mode. If you try to build in `Debug` mode, it will error.
+`cmake ../ -DCMAKE_BUILD_TYPE=RelWithDebInfo`
+
+**Windows example (mode is set at build time)**
+
+`cmake --build . --config RelWithDebInfo`
 
 ## Environment Variable Configuration
 
