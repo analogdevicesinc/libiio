@@ -12,6 +12,8 @@
 
 LOG_MODULE_REGISTER(iio_device_adc, CONFIG_LIBIIO_LOG_LEVEL);
 
+#define IIO_DEVICE_INT_REF_VOL_LEN 6 /* max voltage is 65535 which is 5 digits + null terminator */
+
 struct iio_device_adc_config {
 	const char *name;
 	struct adc_dt_spec *channels;
@@ -24,6 +26,7 @@ struct iio_device_adc_data {
 
 static const char *const raw_name = "raw";
 static const char *const scale_name = "scale";
+static const char *const internal_ref_voltage_name = "internal_ref_voltage";
 
 static int iio_device_adc_add_channels(const struct device *dev,
 		struct iio_device *iio_device)
@@ -70,6 +73,11 @@ static int iio_device_adc_add_channels(const struct device *dev,
 				return -EINVAL;
 			}
 		}
+	}
+
+	if (iio_device_add_attr(iio_device, internal_ref_voltage_name, IIO_ATTR_TYPE_DEVICE)) {
+		LOG_ERR("Could not add device %d attribute %s", index, internal_ref_voltage_name);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -124,6 +132,23 @@ static int iio_device_adc_read_channel_scale(const struct device *dev,
 	return scale_len;
 }
 
+static int iio_device_adc_int_ref_voltage_read(const struct device *dev,
+		char *dst, size_t len)
+{
+	const struct iio_device_adc_config *config = dev->config;
+	struct adc_dt_spec *channel = &config->channels[0];
+
+	if (len < IIO_DEVICE_INT_REF_VOL_LEN) {
+		LOG_ERR("Buffer size %u is too small for internal reference voltage value, need %u",
+			len, IIO_DEVICE_INT_REF_VOL_LEN);
+		return -ENOMEM;
+	}
+
+	uint16_t int_ref_mv = adc_ref_internal(channel->dev);
+
+	return snprintk(dst, len, "%u", int_ref_mv) + 1;
+}
+
 static int iio_device_adc_read_attr(const struct device *dev,
 		const struct iio_device *iio_device, const struct iio_attr *attr,
 		char *dst, size_t len)
@@ -144,6 +169,12 @@ static int iio_device_adc_read_attr(const struct device *dev,
 			return iio_device_adc_read_channel_raw(dev, index, dst, len);
 		} else if (!strcmp(attr->name, scale_name)) {
 			return iio_device_adc_read_channel_scale(dev, index, dst, len);
+		}
+		break;
+
+	case IIO_ATTR_TYPE_DEVICE:
+		if (!strcmp(attr->name, internal_ref_voltage_name)) {
+			return iio_device_adc_int_ref_voltage_read(dev, dst, len);
 		}
 		break;
 
