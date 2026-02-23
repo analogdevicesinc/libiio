@@ -125,17 +125,26 @@ static int iio_device_adc_read_attr(const struct device *dev,
 		char *dst, size_t len)
 {
 	const struct iio_device_adc_config *config = dev->config;
-	int index = (int) iio_channel_get_pdata(attr->iio.chn);
+	int index;
 
-	if (index >= config->num_channels) {
-		LOG_ERR("Invalid index: %d", index);
-		return -EINVAL;
-	}
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		index = (int) iio_channel_get_pdata(attr->iio.chn);
 
-	if (!strcmp(attr->name, raw_name)) {
-		return iio_device_adc_read_channel_raw(dev, index, dst, len);
-	} else if (!strcmp(attr->name, scale_name)) {
-		return iio_device_adc_read_channel_scale(dev, index, dst, len);
+		if (index >= config->num_channels) {
+			LOG_ERR("Invalid index: %d", index);
+			return -EINVAL;
+		}
+
+		if (!strcmp(attr->name, raw_name)) {
+			return iio_device_adc_read_channel_raw(dev, index, dst, len);
+		} else if (!strcmp(attr->name, scale_name)) {
+			return iio_device_adc_read_channel_scale(dev, index, dst, len);
+		}
+		break;
+
+	default:
+		break;
 	}
 
 	LOG_ERR("Invalid attr");
