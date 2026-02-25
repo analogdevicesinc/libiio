@@ -149,7 +149,7 @@ static void iiod_uart_thread(void *p1, void *p2, void *p3)
 		return;
 	}
 
-	xml_len = strlen(xml);
+	xml_len = strlen(xml) + 1;
 
 	LOG_DBG("Starting IIOD interpreter");
 

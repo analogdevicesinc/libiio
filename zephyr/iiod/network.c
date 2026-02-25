@@ -312,7 +312,7 @@ static void iiod_network_server_thread(void *p1, void *p2, void *p3)
 		return;
 	}
 
-	shared_xml_len = strlen(shared_xml);
+	shared_xml_len = strlen(shared_xml) + 1;
 	LOG_DBG("XML ready, length: %zu bytes", shared_xml_len);
 
 	/* Initialize client pool */
