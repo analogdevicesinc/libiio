@@ -14,6 +14,8 @@ LOG_MODULE_REGISTER(iio_device_adc, CONFIG_LIBIIO_LOG_LEVEL);
 
 #define IIO_DEVICE_INT_REF_VOL_LEN 6 /* max voltage is 65535 which is 5 digits + null terminator */
 #define IIO_DEVICE_SCALE_LEN 7 /* scale format is xx.xxx + null terminator */
+#define IIO_DEVICE_GAIN_LEN 4 /* max gain is 128 which is 3 digits + null terminator */
+
 struct iio_device_adc_config {
 	const char *name;
 	struct adc_dt_spec *channels;
@@ -22,11 +24,38 @@ struct iio_device_adc_config {
 };
 
 struct iio_device_adc_data {
+	enum adc_gain *gains;
+	uint8_t num_of_channels;
 };
 
 static const char *const raw_name = "raw";
 static const char *const scale_name = "scale";
 static const char *const internal_ref_voltage_name = "internal_ref_voltage";
+static const char *const gain_name = "gain";
+
+static const char *const gain_values[] = {
+	[ADC_GAIN_1_6] = "1/6",
+	[ADC_GAIN_1_5] = "1/5",
+	[ADC_GAIN_1_4] = "1/4",
+	[ADC_GAIN_2_7] = "2/7",
+	[ADC_GAIN_1_3] = "1/3",
+	[ADC_GAIN_2_5] = "2/5",
+	[ADC_GAIN_1_2] = "1/2",
+	[ADC_GAIN_2_3] = "2/3",
+	[ADC_GAIN_4_5] = "4/5",
+	[ADC_GAIN_1] = "1",
+	[ADC_GAIN_2] = "2",
+	[ADC_GAIN_3] = "3",
+	[ADC_GAIN_4] = "4",
+	[ADC_GAIN_6] = "6",
+	[ADC_GAIN_8] = "8",
+	[ADC_GAIN_12] = "12",
+	[ADC_GAIN_16] = "16",
+	[ADC_GAIN_24] = "24",
+	[ADC_GAIN_32] = "32",
+	[ADC_GAIN_64] = "64",
+	[ADC_GAIN_128] = "128",
+};
 
 static int iio_device_adc_add_channels(const struct device *dev,
 		struct iio_device *iio_device)
@@ -72,6 +101,11 @@ static int iio_device_adc_add_channels(const struct device *dev,
 				LOG_ERR("Could not add channel %d attribute %s", index, scale_name);
 				return -EINVAL;
 			}
+		}
+
+		if (iio_channel_add_attr(iio_channel, gain_name, filename)) {
+			LOG_ERR("Could not add channel %d attribute %s", index, gain_name);
+			return -EINVAL;
 		}
 	}
 
@@ -143,6 +177,84 @@ static int iio_device_adc_read_channel_scale(const struct device *dev,
 	return snprintk(dst, len, "%u.%03u", whole, frac) + 1;
 }
 
+static int iio_device_adc_read_channel_gain(const struct device *dev,
+		int index, char *dst, size_t len)
+{
+	struct iio_device_adc_data *data = dev->data;
+
+	if (len < IIO_DEVICE_GAIN_LEN) {
+		LOG_ERR("Buffer size %u is too small for gain value, need %u",
+			len, IIO_DEVICE_GAIN_LEN);
+		return -ENOMEM;
+	}
+
+	return snprintk(dst, len, "%s", gain_values[data->gains[index]]) + 1;
+}
+
+static int iio_device_adc_parse_gain(const char *src, size_t len, enum adc_gain *gain_out)
+{
+	for (uint8_t i = 0; i < ARRAY_SIZE(gain_values); i++) {
+		const char *compare_gain = gain_values[i];
+
+		if (compare_gain == NULL) {
+			continue;
+		}
+
+		if (strcmp(src, compare_gain) == 0) {
+			*gain_out = (enum adc_gain)i;
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+struct adc_channel_cfg iio_device_adc_get_channel_cfg(const struct device *dev, int index)
+{
+	const struct iio_device_adc_config *config = dev->config;
+	struct adc_dt_spec *channel = &config->channels[index];
+	struct iio_device_adc_data *data = dev->data;
+
+	struct adc_channel_cfg channel_cfg = {0};
+
+	if (channel->channel_cfg_dt_node_exists) {
+		channel_cfg.gain = data->gains[index];
+		channel_cfg.acquisition_time = channel->channel_cfg.acquisition_time;
+		channel_cfg.differential = channel->channel_cfg.differential;
+		channel_cfg.channel_id = channel->channel_id;
+		channel_cfg.reference = channel->channel_cfg.reference;
+	}
+	return channel_cfg;
+}
+
+static int iio_device_adc_write_channel_gain(const struct device *dev,
+		int index, const char *src, size_t len)
+{
+	const struct iio_device_adc_config *config = dev->config;
+	struct adc_dt_spec *channel = &config->channels[index];
+	struct iio_device_adc_data *data = dev->data;
+
+	enum adc_gain gain;
+	int ret;
+
+	ret = iio_device_adc_parse_gain(src, len, &gain);
+	if (ret) {
+		LOG_ERR("Invalid gain value '%.*s'", (int)len, src);
+		return ret;
+	}
+
+	struct adc_channel_cfg channel_cfg = iio_device_adc_get_channel_cfg(dev, index);
+	channel_cfg.gain = gain;
+
+	ret = adc_channel_setup(channel->dev, &channel_cfg);
+	if (ret == 0) {
+		data->gains[index] = gain;
+		ret = len;
+	}
+
+	return ret;
+}
+
 static int iio_device_adc_int_ref_voltage_read(const struct device *dev,
 		char *dst, size_t len)
 {
@@ -180,6 +292,8 @@ static int iio_device_adc_read_attr(const struct device *dev,
 			return iio_device_adc_read_channel_raw(dev, index, dst, len);
 		} else if (!strcmp(attr->name, scale_name)) {
 			return iio_device_adc_read_channel_scale(dev, index, dst, len);
+		} else if (!strcmp(attr->name, gain_name)) {
+			return iio_device_adc_read_channel_gain(dev, index, dst, len);
 		}
 		break;
 
@@ -197,14 +311,59 @@ static int iio_device_adc_read_attr(const struct device *dev,
 	return -EINVAL;
 }
 
+static int iio_device_adc_write_attr(const struct device *dev,
+		const struct iio_device *iio_device, const struct iio_attr *attr,
+		const char *src, size_t len)
+{
+	const struct iio_device_adc_config *config = dev->config;
+	int index = 0;
+
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		index = (int) iio_channel_get_pdata(attr->iio.chn);
+
+		if (index >= config->num_channels) {
+			LOG_ERR("Invalid index: %d", index);
+			return -EINVAL;
+		}
+
+		if (!strcmp(attr->name, gain_name)) {
+			return iio_device_adc_write_channel_gain(dev, index, src, len);
+		}
+		break;
+
+	case IIO_ATTR_TYPE_DEVICE:
+		break;
+
+	default:
+		break;
+	}
+
+	LOG_ERR("Invalid attr");
+	return -EINVAL;
+}
+
 static int iio_device_adc_init(const struct device *dev)
 {
+	const struct iio_device_adc_config *config = dev->config;
+	struct iio_device_adc_data *data = dev->data;
+
+	__ASSERT(data->gains != NULL, "gains not set");
+	__ASSERT(data->num_of_channels == config->num_channels, "channel count mismatch");
+
+	for (size_t i = 0; i < config->num_channels; i++) {
+		if (config->channels[i].channel_cfg_dt_node_exists) {
+			data->gains[i] = config->channels[i].channel_cfg.gain;
+		}
+	}
+
 	return 0;
 }
 
 static DEVICE_API(iio_device, iio_device_adc_driver_api) = {
 	.add_channels = iio_device_adc_add_channels,
 	.read_attr = iio_device_adc_read_attr,
+	.write_attr = iio_device_adc_write_attr,
 };
 
 #define DT_DRV_COMPAT iio_adc
@@ -213,7 +372,12 @@ static DEVICE_API(iio_device, iio_device_adc_driver_api) = {
 	ADC_DT_SPEC_GET_BY_IDX(node_id, idx)
 
 #define IIO_DEVICE_ADC_INIT(inst)							\
-static struct iio_device_adc_data iio_device_adc_data_##inst;				\
+static enum adc_gain iio_device_adc_gains_##inst[DT_INST_PROP_LEN(inst, io_channels)];	\
+											\
+static struct iio_device_adc_data iio_device_adc_data_##inst = {			\
+	.gains = iio_device_adc_gains_##inst,						\
+	.num_of_channels = ARRAY_SIZE(iio_device_adc_gains_##inst),			\
+};											\
 											\
 static struct adc_dt_spec iio_device_adc_channels_##inst[] = {				\
 	DT_INST_FOREACH_PROP_ELEM_SEP(inst, io_channels, IIO_DEVICE_ADC_CHANNEL, (,))	\
