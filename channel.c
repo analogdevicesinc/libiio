@@ -436,6 +436,14 @@ void iio_channel_disable(const struct iio_channel *chn,
 
 void free_channel(struct iio_channel *chn)
 {
+	unsigned int i;
+
+	if (chn->values) {
+		for (i = 0; i < chn->attrlist.num; i++)
+			free(chn->values[i]);
+		free(chn->values);
+	}
+
 	iio_free_attrs(&chn->attrlist);
 	free(chn->name);
 	free(chn->label);
