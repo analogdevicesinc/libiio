@@ -115,6 +115,7 @@ struct iio_channel {
 	enum iio_chan_type type;
 
 	struct iio_attr_list attrlist;
+	char **values;
 
 	unsigned int number;
 };
@@ -127,6 +128,7 @@ struct iio_device {
 	char *name, *id, *label;
 
 	struct iio_attr_list attrlist[2];
+	char **values[2];
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
@@ -153,7 +155,7 @@ struct iio_buffer {
 	bool cyclic;
 
 	struct iio_attr_list attrlist;
-
+	char **values;
 	/* Mutex to protect nb_blocks. Should really be an atomic... */
 	struct iio_mutex *lock;
 	unsigned int nb_blocks;
