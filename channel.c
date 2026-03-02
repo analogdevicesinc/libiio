@@ -226,21 +226,35 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 }
 
 static ssize_t iio_snprintf_chan_attr_xml(const struct iio_attr *attr,
+					  const char *value,
 					  char *str, ssize_t len)
 {
 	ssize_t ret, alen = 0;
 
-	if (!attr->filename)
-		return iio_snprintf(str, len, "<attribute name=\"%s\" />", attr->name);
-
-	ret = iio_snprintf(str, len, "<attribute name=\"%s\" ", attr->name);
+	ret = iio_snprintf(str, len, "<attribute name=\"%s\"", attr->name);
 	if (ret < 0)
 		return ret;
-
 	iio_update_xml_indexes(ret, &str, &len, &alen);
 
-	ret = iio_xml_print_and_sanitized_param(str, len, "filename=\"",
-						attr->filename, "\" />");
+	if (attr->filename) {
+		ret = iio_xml_print_and_sanitized_param(str, len,
+							" filename=\"",
+							attr->filename, "\"");
+		if (ret < 0)
+			return ret;
+		iio_update_xml_indexes(ret, &str, &len, &alen);
+	}
+
+	if (value) {
+		ret = iio_xml_print_and_sanitized_param(str, len,
+							" value=\"",
+							value, "\"");
+		if (ret < 0)
+			return ret;
+		iio_update_xml_indexes(ret, &str, &len, &alen);
+	}
+
+	ret = iio_snprintf(str, len, " />");
 	if (ret < 0)
 		return ret;
 
@@ -268,7 +282,8 @@ static ssize_t iio_snprintf_scan_element_xml(char *str, ssize_t len,
 }
 
 ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
-				 const struct iio_channel *chn)
+				 const struct iio_channel *chn,
+				 bool include_values)
 {
 	ssize_t ret, alen = 0;
 	unsigned int i;
@@ -308,7 +323,13 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 	}
 
 	for (i = 0; i < chn->attrlist.num; i++) {
-		ret = iio_snprintf_chan_attr_xml(&chn->attrlist.attrs[i], ptr, len);
+		const char *val = NULL;
+
+		if (include_values && chn->values)
+			val = chn->values[i];
+
+		ret = iio_snprintf_chan_attr_xml(&chn->attrlist.attrs[i],
+						val, ptr, len);
 		if (ret < 0)
 			return ret;
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);

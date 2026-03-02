@@ -116,7 +116,8 @@ ssize_t iio_xml_print_and_sanitized_param(char *ptr, ssize_t len,
 }
 
 static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
-					const struct iio_context *ctx)
+					const struct iio_context *ctx,
+					bool include_values)
 {
 	ssize_t ret, alen = 0;
 	unsigned int i;
@@ -166,7 +167,8 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 	}
 
 	for (i = 0; i < ctx->nb_devices; i++) {
-		ret = iio_snprintf_device_xml(ptr, len, ctx->devices[i]);
+		ret = iio_snprintf_device_xml(ptr, len, ctx->devices[i],
+					      include_values);
 		if (ret < 0)
 			return ret;
 
@@ -180,13 +182,13 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 	return alen + ret;
 }
 
-/* Returns a string containing the XML representation of this context */
-char * iio_context_get_xml(const struct iio_context *ctx)
+char * iio_context_generate_xml(const struct iio_context *ctx,
+				bool include_values)
 {
 	ssize_t len;
 	char *str;
 
-	len = iio_snprintf_context_xml(NULL, 0, ctx);
+	len = iio_snprintf_context_xml(NULL, 0, ctx, include_values);
 	if (len < 0)
 		return iio_ptr((int) len);
 
@@ -195,13 +197,19 @@ char * iio_context_get_xml(const struct iio_context *ctx)
 	if (!str)
 		return iio_ptr(-ENOMEM);
 
-	len = iio_snprintf_context_xml(str, len, ctx);
+	len = iio_snprintf_context_xml(str, len, ctx, include_values);
 	if (len < 0) {
 		free(str);
 		return iio_ptr((int) len);
 	}
 
 	return str;
+}
+
+/* Returns a string containing the XML representation of this context */
+char * iio_context_get_xml(const struct iio_context *ctx)
+{
+	return iio_context_generate_xml(ctx, false);
 }
 
 struct iio_context *

@@ -23,23 +23,45 @@ static const char * const xml_attr_prefix[] = {
 };
 
 static ssize_t iio_snprintf_xml_attr(const struct iio_attr *attr,
+				     const char *value,
 				     char *buf, ssize_t len)
 {
+	ssize_t ret, alen = 0;
+
 	switch (attr->type) {
 		case IIO_ATTR_TYPE_DEVICE:
 		case IIO_ATTR_TYPE_DEBUG:
 		case IIO_ATTR_TYPE_BUFFER:
-			return iio_snprintf(buf, len,
-					    "<%sattribute name=\"%s\" />",
-					    xml_attr_prefix[attr->type],
-					    attr->name);
+			break;
 		default:
 			return -EINVAL;
 	}
+
+	ret = iio_snprintf(buf, len, "<%sattribute name=\"%s\"",
+			   xml_attr_prefix[attr->type], attr->name);
+	if (ret < 0)
+		return ret;
+	iio_update_xml_indexes(ret, &buf, &len, &alen);
+
+	if (value) {
+		ret = iio_xml_print_and_sanitized_param(buf, len,
+							" value=\"",
+							value, "\"");
+		if (ret < 0)
+			return ret;
+		iio_update_xml_indexes(ret, &buf, &len, &alen);
+	}
+
+	ret = iio_snprintf(buf, len, " />");
+	if (ret < 0)
+		return ret;
+
+	return alen + ret;
 }
 
 ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
-				const struct iio_device *dev)
+				const struct iio_device *dev,
+				bool include_values)
 {
 	const struct iio_attr *attrs;
 	ssize_t ret, alen = 0;
@@ -74,7 +96,8 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 	iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 	for (i = 0; i < dev->nb_channels; i++) {
-		ret = iio_snprintf_channel_xml(ptr, len, dev->channels[i]);
+		ret = iio_snprintf_channel_xml(ptr, len, dev->channels[i],
+					       include_values);
 		if (ret < 0)
 			return ret;
 
@@ -83,9 +106,14 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 
 	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_BUFFER; type++) {
 		for (i = 0; i < dev->attrlist[type].num; i++) {
+			const char *val = NULL;
+
 			attrs = dev->attrlist[type].attrs;
 
-			ret = iio_snprintf_xml_attr(&attrs[i], ptr, len);
+			if (include_values && dev->values[type])
+				val = dev->values[type][i];
+
+			ret = iio_snprintf_xml_attr(&attrs[i], val, ptr, len);
 			if (ret < 0)
 				return ret;
 

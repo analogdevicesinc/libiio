@@ -200,9 +200,14 @@ void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 
 ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen,
-				 const struct iio_channel *chn);
+				 const struct iio_channel *chn,
+				 bool include_values);
 ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
-				const struct iio_device *dev);
+				const struct iio_device *dev,
+				bool include_values);
+
+char * iio_context_generate_xml(const struct iio_context *ctx,
+				bool include_values);
 
 int iio_context_init(struct iio_context *ctx);
 
