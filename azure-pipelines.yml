@@ -78,7 +78,8 @@ stages:
         set -e
         mkdir build && cd build
         cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
-        make
+        make VERBOSE=1
+        cmake .. -DLICENSE_CHECK=ON
         make package
         make required2tar
       displayName: 'Build'
@@ -306,8 +307,9 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
-        make
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python'))") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
+        make VERBOSE=1
+        cmake -DLICENSE_CHECK=ON ..
         sudo make install
         cd ..
       displayName: 'Build'

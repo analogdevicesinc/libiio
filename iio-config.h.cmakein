@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 #ifndef IIO_CONFIG_H
 #define IIO_CONFIG_H
 
