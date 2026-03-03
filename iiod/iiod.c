@@ -198,6 +198,7 @@ int main(int argc, char **argv)
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
 	char *vrt_mapping_file = NULL;
+	const char *uart_params = NULL;
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
 
@@ -315,7 +316,7 @@ int main(int argc, char **argv)
 }
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params,
+		      const char *uart_params, const char *vrt_mapping_file,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd)
 {
 	struct iio_context *ctx;
