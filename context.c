@@ -182,11 +182,108 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len,
 	return alen + ret;
 }
 
+static int iio_refresh_device_attr_values(struct iio_device *dev)
+{
+	unsigned int i;
+	ssize_t ret;
+	char buf[4096];
+	enum iio_attr_type type;
+
+	/* Skip IIO_ATTR_TYPE_BUFFER */
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+		unsigned int num = dev->attrlist[type].num;
+
+		if (num == 0)
+			continue;
+
+		if (!dev->values[type]) {
+			dev->values[type] = calloc(num, sizeof(char *));
+			if (!dev->values[type])
+				return -ENOMEM;
+		}
+
+		for (i = 0; i < num; i++) {
+			free(dev->values[type][i]);
+			dev->values[type][i] = NULL;
+
+			ret = iio_attr_read_raw(&dev->attrlist[type].attrs[i],
+						buf, sizeof(buf));
+			if (ret >= 0) {
+				dev->values[type][i] = iio_strdup(buf);
+				if (!dev->values[type][i])
+					return -ENOMEM;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int iio_refresh_channel_attr_values(struct iio_channel *chn)
+{
+	unsigned int i;
+	ssize_t ret;
+	char buf[4096];
+
+	if (chn->attrlist.num == 0)
+		return 0;
+
+	if (!chn->values) {
+		chn->values = calloc(chn->attrlist.num, sizeof(char *));
+		if (!chn->values)
+			return -ENOMEM;
+	}
+
+	for (i = 0; i < chn->attrlist.num; i++) {
+		free(chn->values[i]);
+		chn->values[i] = NULL;
+
+		ret = iio_attr_read_raw(&chn->attrlist.attrs[i],
+					buf, sizeof(buf));
+		if (ret >= 0) {
+			chn->values[i] = iio_strdup(buf);
+			if (!chn->values[i])
+				return -ENOMEM;
+		}
+	}
+
+	return 0;
+}
+
+static int iio_context_refresh_attr_values(struct iio_context *ctx)
+{
+	unsigned int i, j;
+	int ret;
+
+	for (i = 0; i < ctx->nb_devices; i++) {
+		struct iio_device *dev = ctx->devices[i];
+
+		ret = iio_refresh_device_attr_values(dev);
+		if (ret)
+			return ret;
+
+		for (j = 0; j < dev->nb_channels; j++) {
+			ret = iio_refresh_channel_attr_values(dev->channels[j]);
+			if (ret)
+				return ret;
+		}
+	}
+
+	return 0;
+}
+
 char * iio_context_generate_xml(const struct iio_context *ctx,
 				bool include_values)
 {
 	ssize_t len;
 	char *str;
+	int ret;
+
+	if (include_values) {
+		ret = iio_context_refresh_attr_values((struct iio_context *)ctx);
+		if (ret)
+			return iio_ptr(ret);
+	}
 
 	len = iio_snprintf_context_xml(NULL, 0, ctx, include_values);
 	if (len < 0)
