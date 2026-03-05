@@ -758,13 +758,14 @@ __api __check_ret __pure struct iio_device * iio_context_find_device(
 
 /** @brief Set a timeout for I/O operations
  * @param ctx A pointer to an iio_context structure
- * @param timeout_ms A positive integer representing the time in milliseconds
- * after which a timeout occurs. A value of 0 is used to specify that no
- * timeout should occur.
+ * @param timeout_ms Timeout value in milliseconds:
+ * - Negative values: infinite timeout (wait forever)
+ * - Zero: use backend default timeout
+ * - Positive values: explicit timeout in milliseconds
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 __api __check_ret int iio_context_set_timeout(
-		struct iio_context *ctx, unsigned int timeout_ms);
+		struct iio_context *ctx, int timeout_ms);
 
 
 /** @brief Get a pointer to the params structure

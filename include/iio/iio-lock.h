@@ -29,7 +29,7 @@ __api struct iio_cond * iio_cond_create(void);
 __api void iio_cond_destroy(struct iio_cond *cond);
 
 __api int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-			unsigned int timeout_ms);
+			int timeout_ms);
 __api void iio_cond_signal(struct iio_cond *cond);
 
 __api struct iio_thrd * iio_thrd_create(int (*thrd)(void *),
@@ -51,8 +51,8 @@ __api int iio_task_enqueue_autoclear(struct iio_task *task, void *elm);
 __api int iio_task_token_enqueue(struct iio_task_token *token);
 
 __api _Bool iio_task_is_done(struct iio_task_token *token);
-__api int iio_task_sync(struct iio_task_token *token, unsigned int timeout_ms);
-__api int iio_task_cancel_sync(struct iio_task_token *token, unsigned int timeout_ms);
+__api int iio_task_sync(struct iio_task_token *token, int timeout_ms);
+__api int iio_task_cancel_sync(struct iio_task_token *token, int timeout_ms);
 __api void iio_task_cancel(struct iio_task_token *token);
 
 #undef __api

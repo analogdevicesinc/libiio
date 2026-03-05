@@ -20,11 +20,11 @@ struct iio_event_stream_pdata;
 
 struct iiod_client_ops {
 	ssize_t (*write)(struct iiod_client_pdata *desc,
-			 const char *src, size_t len, unsigned int timeout_ms);
+			 const char *src, size_t len, int timeout_ms);
 	ssize_t (*read)(struct iiod_client_pdata *desc,
-			char *dst, size_t len, unsigned int timeout_ms);
+			char *dst, size_t len, int timeout_ms);
 	ssize_t (*read_line)(struct iiod_client_pdata *desc,
-			     char *dst, size_t len, unsigned int timeout_ms);
+			     char *dst, size_t len, int timeout_ms);
 	void (*cancel)(struct iiod_client_pdata *desc);
 };
 
@@ -49,7 +49,7 @@ __api int iiod_client_set_trigger(struct iiod_client *client,
 				  const struct iio_device *trigger);
 
 __api int iiod_client_set_timeout(struct iiod_client *client,
-				  unsigned int timeout);
+				  int timeout);
 
 __api ssize_t iiod_client_attr_read(struct iiod_client *client,
 				    const struct iio_attr *attr,

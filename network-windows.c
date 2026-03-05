@@ -86,11 +86,11 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 }
 
 int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, unsigned int timeout_ms)
+		     bool read, int timeout_ms)
 {
 	struct iio_mutex *lock = io_ctx->os_priv->event_lock;
 	long wsa_events = FD_CLOSE;
-	DWORD ret, timeout = timeout_ms > 0 ? (DWORD) timeout_ms : WSA_INFINITE;
+	DWORD ret, timeout = timeout_ms < 0 ? WSA_INFINITE : (DWORD) timeout_ms;
 
 	iio_mutex_lock(lock);
 	if (read)
@@ -179,7 +179,7 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	return (int) s;
 }
 
-int do_select(int fd, unsigned int timeout)
+int do_select(int fd, int timeout)
 {
 	struct timeval tv;
 	struct timeval *ptv;
@@ -199,12 +199,12 @@ int do_select(int fd, unsigned int timeout)
 #pragma warning(default: 4389)
 #endif
 
-	if (timeout != 0) {
+	if (timeout >= 0) {
 		tv.tv_sec = timeout / 1000;
 		tv.tv_usec = (timeout % 1000) * 1000;
 		ptv = &tv;
 	} else {
-		ptv = NULL;
+		ptv = NULL; /* Infinite timeout */
 	}
 
 	ret = select(fd + 1, NULL, &set, &set, ptv);

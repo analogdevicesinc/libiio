@@ -217,12 +217,12 @@ static int set_channel_name(struct iio_channel *chn)
  * before each poll() invocation the timeout is recalculated relative to the
  * start of refill() or push() operation.
  */
-static int get_rel_timeout_ms(struct timespec *start, unsigned int timeout_rel)
+static int get_rel_timeout_ms(struct timespec *start, int timeout_rel)
 {
 	struct timespec now;
 	int diff_ms;
 
-	if (timeout_rel == 0) /* No timeout */
+	if (timeout_rel <= 0) /* No timeout or infinite timeout */
 		return -1;
 
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -230,14 +230,14 @@ static int get_rel_timeout_ms(struct timespec *start, unsigned int timeout_rel)
 	diff_ms = (now.tv_sec - start->tv_sec) * 1000;
 	diff_ms += (now.tv_nsec - start->tv_nsec) / 1000000;
 
-	if (diff_ms >= (int) timeout_rel) /* Expired */
+	if (diff_ms >= timeout_rel) /* Expired */
 		return 0;
 	if (diff_ms > 0) /* Should never be false, but lets be safe */
 		timeout_rel -= diff_ms;
 	if (timeout_rel > INT_MAX)
 		return INT_MAX;
 
-	return (int) timeout_rel;
+	return timeout_rel;
 }
 
 int buffer_check_ready(struct iio_buffer_pdata *pdata, int fd,
