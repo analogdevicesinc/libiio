@@ -309,6 +309,12 @@ char * iio_context_get_xml(const struct iio_context *ctx)
 	return iio_context_generate_xml(ctx, false);
 }
 
+/* Returns a string containing the XML representation with attribute values */
+char * iio_context_get_xml_with_values(const struct iio_context *ctx)
+{
+	return iio_context_generate_xml(ctx, true);
+}
+
 struct iio_context *
 iio_context_create_from_backend(const struct iio_context_params *params,
 				const struct iio_backend *backend,

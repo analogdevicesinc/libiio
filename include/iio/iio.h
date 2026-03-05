@@ -679,6 +679,15 @@ __api __pure const char * iio_context_get_version_tag(const struct iio_context *
  * @return On failure, a pointer-encoded error is returned */
 __api __check_ret char * iio_context_get_xml(const struct iio_context *ctx);
 
+/** @brief Generate XML representation including current attribute values
+ * @param ctx A pointer to an iio_context structure
+ * @return On success, an allocated string. Must be deallocated with free().
+ * @return On failure, a pointer-encoded error is returned
+ *
+ * <b>NOTE:</b> This function reads all attribute values from the device,
+ * which may perform I/O operations and take significant time depending on
+ * the backend and number of attributes. */
+__api __check_ret char * iio_context_get_xml_with_values(const struct iio_context *ctx);
 
 /** @brief Get the name of the given context
  * @param ctx A pointer to an iio_context structure
