@@ -20,11 +20,13 @@
 #endif
 
 static const struct option options[] = {
+	{"values", no_argument, 0, 'v'},
 	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	("[-u <uri>]\n"),
+	"Include attribute values in the generated XML.",
 };
 
 int main(int argc, char **argv)
@@ -35,6 +37,7 @@ int main(int argc, char **argv)
 	size_t buf_len;
 	int c, ret = EXIT_FAILURE;
 	int err;
+	bool with_values = false;
 
 	argw = dup_argv(MY_NAME, argc, argv);
 	ctx = handle_common_opts(MY_NAME, argc, argw, "",
@@ -44,7 +47,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS,  /* Flawfinder: ignore */
+	while ((c = getopt_long(argc, argv, "+v" COMMON_OPTIONS,  /* Flawfinder: ignore */
 					opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
@@ -58,6 +61,9 @@ int main(int argc, char **argv)
 			if (!optarg && argc > optind && argv[optind] != NULL
 					&& argv[optind][0] != '-')
 				optind++;
+			break;
+		case 'v':
+			with_values = true;
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
@@ -75,7 +81,8 @@ int main(int argc, char **argv)
 	if (!ctx)
 		return ret;
 
-	xml = iio_context_get_xml(ctx);
+	xml = with_values ? iio_context_get_xml_with_values(ctx)
+			  : iio_context_get_xml(ctx);
 	err = iio_err(xml);
 	if (err) {
 		fprintf(stderr, "Unable to retrieve context xml representation!\n");

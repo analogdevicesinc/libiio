@@ -41,6 +41,9 @@ is a utility for generating a XML representation of a Libiio context.
 ##COMMON_COMMANDS_STOP##
 ##COMMON_OPTION_START##
 ##COMMON_OPTION_STOP##
+.TP
+.B \-v, \-\-values
+Include current attribute values in the generated XML output.
 
 .SH RETURN VALUE
 If the specified device is not found, a non-zero exit code is returned.
