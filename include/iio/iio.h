@@ -1076,9 +1076,11 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
 
 
 /** @brief Get the type of the given channel
+ * @note Before calling this function, iio_device_is_hwmon() must be called
+ * to ensure the device is compatible.
  * @param chn A pointer to an iio_channel structure
  * @return The type of the channel */
-__api __check_ret __pure enum iio_chan_type iio_channel_get_type(
+__api __check_ret enum iio_chan_type iio_channel_get_type(
 		const struct iio_channel *chn);
 
 
@@ -1401,13 +1403,12 @@ enum hwmon_chan_type {
 
 /**
  * @brief Get the type of the given hwmon channel
+ * @note Before calling this function, iio_device_is_hwmon() must be called
+ * to ensure the device is compatible.
  * @param chn A pointer to an iio_channel structure
  * @return The type of the hwmon channel */
-static inline enum hwmon_chan_type
-hwmon_channel_get_type(const struct iio_channel *chn)
-{
-	return (enum hwmon_chan_type) iio_channel_get_type(chn);
-}
+__api __check_ret enum hwmon_chan_type
+hwmon_channel_get_type(const struct iio_channel* chn);
 
 /**
  * @brief Get whether or not the device is a hardware monitoring device

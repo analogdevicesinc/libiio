@@ -112,7 +112,7 @@ struct iio_channel {
 	char *name, *id, *label;
 	long index;
 	enum iio_modifier modifier;
-	enum iio_chan_type type;
+	int type;
 
 	struct iio_attr_list attrlist;
 

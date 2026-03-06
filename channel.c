@@ -353,6 +353,9 @@ enum iio_modifier iio_channel_get_modifier(const struct iio_channel *chn)
 
 enum iio_chan_type iio_channel_get_type(const struct iio_channel *chn)
 {
+	if (iio_device_is_hwmon(iio_channel_get_device(chn))) {
+		chn_warn(chn, "iio_channel_get_type() called on non-hwmon channel\n");
+	}
 	return chn->type;
 }
 
@@ -412,6 +415,15 @@ const struct iio_data_format * iio_channel_get_data_format(
 		const struct iio_channel *chn)
 {
 	return &chn->format;
+}
+
+enum hwmon_chan_type hwmon_channel_get_type(
+		const struct iio_channel* chn)
+{
+	if (!iio_device_is_hwmon(iio_channel_get_device(chn))) {
+		chn_warn(chn, "hwmon_channel_get_type() called on non-hwmon channel\n");
+	}
+	return (enum hwmon_chan_type)chn->type;
 }
 
 bool iio_channel_is_enabled(const struct iio_channel *chn,

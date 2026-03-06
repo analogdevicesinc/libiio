@@ -72,7 +72,7 @@ iio_event_get_channel(const struct iio_event *event,
 	for (i = 0; i < dev->nb_channels; i++) {
 		chn = dev->channels[i];
 
-		if (chn->type != iio_event_get_chan_type(event)
+		if (chn->type != (int)iio_event_get_chan_type(event)
 		    || chn->modifier != iio_event_get_modifier(event)) {
 			continue;
 		}
