@@ -282,13 +282,13 @@ namespace iio
             }
             else
             {
-                name = Marshal.PtrToStringAnsi(name_ptr);
+                name = UTF8Marshaler.PtrToStringUTF8(name_ptr);
             }
 
             IntPtr label_ptr = iio_channel_get_label(this.chn);
-            label = label_ptr == IntPtr.Zero ? "" : Marshal.PtrToStringAnsi(label_ptr);
+            label = label_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(label_ptr);
 
-            id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));
+            id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn)); // Channel IDs are ASCII (kernel-defined)
             output = iio_channel_is_output(this.chn);
             scan_element = iio_channel_is_scan_element(this.chn);
             index = (uint) iio_channel_get_index(this.chn);
