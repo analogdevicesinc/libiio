@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(iio_device_adc, CONFIG_LIBIIO_LOG_LEVEL);
 #define IIO_DEVICE_INT_REF_VOL_LEN 6 /* max voltage is 65535 which is 5 digits + null terminator */
 #define IIO_DEVICE_SCALE_LEN 7 /* scale format is xx.xxx + null terminator */
 #define IIO_DEVICE_GAIN_LEN 4 /* max gain is 128 which is 3 digits + null terminator */
+#define IIO_DEVICE_PROCESS_LEN 12 /* process is int type so it needs 11 digits + null terminator */
 
 struct iio_device_adc_config {
 	const char *name;
@@ -32,6 +33,7 @@ static const char *const raw_name = "raw";
 static const char *const scale_name = "scale";
 static const char *const internal_ref_voltage_name = "internal_ref_voltage";
 static const char *const gain_name = "gain";
+static const char *const process_name = "process";
 
 static const char *const gain_values[] = {
 	[ADC_GAIN_1_6] = "1/6",
@@ -106,6 +108,13 @@ static int iio_device_adc_add_channels(const struct device *dev,
 		if (iio_channel_add_attr(iio_channel, gain_name, filename)) {
 			LOG_ERR("Could not add channel %d attribute %s", index, gain_name);
 			return -EINVAL;
+		}
+
+		if (channel->vref_mv != 0) {
+			if (iio_channel_add_attr(iio_channel, process_name, filename)) {
+				LOG_ERR("Could not add channel %d attribute %s", index, process_name);
+				return -EINVAL;
+			}
 		}
 	}
 
@@ -272,6 +281,53 @@ static int iio_device_adc_int_ref_voltage_read(const struct device *dev,
 	return snprintk(dst, len, "%u", int_ref_mv) + 1;
 }
 
+static int iio_device_adc_read_channel_process(const struct device *dev,
+		int index, char *dst, size_t len)
+{
+	struct iio_device_adc_data *data = dev->data;
+	const struct iio_device_adc_config *config = dev->config;
+	struct adc_dt_spec *channel = &config->channels[index];
+	uint32_t tmp_buf = 0;
+	struct adc_sequence sequence = {
+		.buffer = &tmp_buf,
+		.buffer_size = sizeof(tmp_buf),
+	};
+	uint8_t resolution = channel->resolution;
+	int ret;
+
+	if (len < IIO_DEVICE_PROCESS_LEN) {
+		LOG_ERR("Buffer size %u is too small for process value, need %u",
+			len, IIO_DEVICE_PROCESS_LEN);
+		return -ENOMEM;
+	}
+
+	ret = adc_sequence_init_dt(channel, &sequence);
+	if (ret < 0) {
+		LOG_ERR("Error initializing adc sequence");
+		return ret;
+	}
+
+	ret = adc_read_dt(channel, &sequence);
+	if (ret < 0) {
+		LOG_ERR("Error reading adc");
+		return ret;
+	}
+
+	if (data->differentials[index]) {
+		resolution -= 1;
+	}
+
+	ret = adc_raw_to_millivolts(channel->vref_mv, data->gains[index], resolution,
+					&tmp_buf);
+	if (ret < 0) {
+		LOG_ERR("Error converting raw to millivolts");
+		return ret;
+	}
+
+	return snprintk(dst, len, "%d", tmp_buf) + 1;
+}
+
+
 static int iio_device_adc_read_attr(const struct device *dev,
 		const struct iio_device *iio_device, const struct iio_attr *attr,
 		char *dst, size_t len)
@@ -294,6 +350,8 @@ static int iio_device_adc_read_attr(const struct device *dev,
 			return iio_device_adc_read_channel_scale(dev, index, dst, len);
 		} else if (!strcmp(attr->name, gain_name)) {
 			return iio_device_adc_read_channel_gain(dev, index, dst, len);
+		} else if (!strcmp(attr->name, process_name)) {
+			return iio_device_adc_read_channel_process(dev, index, dst, len);
 		}
 		break;
 
