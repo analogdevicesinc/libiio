@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(iio_device_adc, CONFIG_LIBIIO_LOG_LEVEL);
 #define IIO_DEVICE_GAIN_LEN 4 /* max gain is 128 which is 3 digits + null terminator */
 #define IIO_DEVICE_PROCESS_LEN 12 /* process is int type so it needs 11 digits + null terminator */
 #define IIO_DEVICE_REF_LEN 11 /* max reference is External0 so it needs 10 digits + null terminator */
+#define IIO_DEVICE_DIFFERENTIAL_LEN 2 /* max differential is 1 so it needs 1 digit + null terminator */
 
 struct iio_device_adc_config {
 	const char *name;
@@ -28,6 +29,7 @@ struct iio_device_adc_config {
 struct iio_device_adc_data {
 	enum adc_gain *gains;
 	enum adc_reference *references;
+	uint8_t *differentials;
 	uint8_t num_of_channels;
 };
 
@@ -37,6 +39,7 @@ static const char *const internal_ref_voltage_name = "internal_ref_voltage";
 static const char *const gain_name = "gain";
 static const char *const process_name = "process";
 static const char *const reference_name = "reference";
+static const char *const differential_name = "differential";
 
 static const char *const gain_values[] = {
 	[ADC_GAIN_1_6] = "1/6",
@@ -132,6 +135,11 @@ static int iio_device_adc_add_channels(const struct device *dev,
 
 		if (iio_channel_add_attr(iio_channel, reference_name, filename)) {
 			LOG_ERR("Could not add channel %d attribute %s", index, reference_name);
+			return -EINVAL;
+		}
+
+		if (iio_channel_add_attr(iio_channel, differential_name, filename)) {
+			LOG_ERR("Could not add channel %d attribute %s", index, differential_name);
 			return -EINVAL;
 		}
 	}
@@ -247,7 +255,7 @@ struct adc_channel_cfg iio_device_adc_get_channel_cfg(const struct device *dev, 
 	if (channel->channel_cfg_dt_node_exists) {
 		channel_cfg.gain = data->gains[index];
 		channel_cfg.acquisition_time = channel->channel_cfg.acquisition_time;
-		channel_cfg.differential = channel->channel_cfg.differential;
+		channel_cfg.differential = data->differentials[index];
 		channel_cfg.channel_id = channel->channel_id;
 		channel_cfg.reference = data->references[index];
 	}
@@ -406,6 +414,47 @@ static int iio_device_adc_write_channel_reference(const struct device *dev,
 	return ret;
 }
 
+static int iio_device_adc_read_channel_differential(const struct device *dev,
+		int index, char *dst, size_t len)
+{
+	struct iio_device_adc_data *data = dev->data;
+
+	if (len < IIO_DEVICE_DIFFERENTIAL_LEN) {
+		LOG_ERR("Buffer size %u is too small for differential value, need %u",
+			len, IIO_DEVICE_DIFFERENTIAL_LEN);
+		return -ENOMEM;
+	}
+
+	return snprintk(dst, len, "%d", data->differentials[index]) + 1;
+}
+	
+static int iio_device_adc_write_channel_differential(const struct device *dev,
+	int index, const char *src, size_t len)
+{
+	const struct iio_device_adc_config *config = dev->config;
+	struct adc_dt_spec *channel = &config->channels[index];
+	struct iio_device_adc_data *data = dev->data;
+	uint8_t differential;
+	int ret;
+
+	if (len != 2 || (src[0] != '0' && src[0] != '1')) {
+		LOG_ERR("Invalid differential value '%.*s'", (int)len, src);
+		return -EINVAL;
+	}
+
+	differential = src[0] == '1' ? 1 : 0; /* Convert char '0' or '1' to unsigned integer */
+	struct adc_channel_cfg channel_cfg = iio_device_adc_get_channel_cfg(dev, index);
+	channel_cfg.differential = differential;
+
+	ret = adc_channel_setup(channel->dev, &channel_cfg);
+	if (ret == 0) {
+		data->differentials[index] = differential;
+		ret = len;
+	}
+
+	return ret;
+}
+
 static int iio_device_adc_read_attr(const struct device *dev,
 		const struct iio_device *iio_device, const struct iio_attr *attr,
 		char *dst, size_t len)
@@ -432,6 +481,8 @@ static int iio_device_adc_read_attr(const struct device *dev,
 			return iio_device_adc_read_channel_process(dev, index, dst, len);
 		} else if (!strcmp(attr->name, reference_name)) {
 			return iio_device_adc_read_channel_reference(dev, index, dst, len);
+		} else if (!strcmp(attr->name, differential_name)) {
+			return iio_device_adc_read_channel_differential(dev, index, dst, len);
 		}
 		break;
 
@@ -469,6 +520,8 @@ static int iio_device_adc_write_attr(const struct device *dev,
 			return iio_device_adc_write_channel_gain(dev, index, src, len);
 		} else if (!strcmp(attr->name, reference_name)) {
 			return iio_device_adc_write_channel_reference(dev, index, src, len);
+		} else if (!strcmp(attr->name, differential_name)) {
+			return iio_device_adc_write_channel_differential(dev, index, src, len);
 		}
 		break;
 
@@ -496,6 +549,7 @@ static int iio_device_adc_init(const struct device *dev)
 		if (config->channels[i].channel_cfg_dt_node_exists) {
 			data->gains[i] = config->channels[i].channel_cfg.gain;
 			data->references[i] = config->channels[i].channel_cfg.reference;
+			data->differentials[i] = config->channels[i].channel_cfg.differential;
 		}
 	}
 
@@ -517,10 +571,12 @@ static DEVICE_API(iio_device, iio_device_adc_driver_api) = {
 static enum adc_gain iio_device_adc_gains_##inst[DT_INST_PROP_LEN(inst, io_channels)];	\
 static enum adc_reference iio_device_adc_references_##inst				\
 			[DT_INST_PROP_LEN(inst, io_channels)];				\
-											\
+static uint8_t iio_device_adc_differentials_##inst					\
+			[DT_INST_PROP_LEN(inst, io_channels)];				\
 static struct iio_device_adc_data iio_device_adc_data_##inst = {			\
 	.gains = iio_device_adc_gains_##inst,						\
 	.references = iio_device_adc_references_##inst,					\
+	.differentials = iio_device_adc_differentials_##inst,				\
 	.num_of_channels = ARRAY_SIZE(iio_device_adc_gains_##inst),			\
 };											\
 											\
