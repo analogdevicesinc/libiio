@@ -21,6 +21,7 @@ Write-Output "  vcruntime140.dll: ${vcRedistPath}${vcVersion}\x64\Microsoft.VC14
 # Replace placeholder with actual version in the .iss file
 $issFile = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY\Windows-VS-2022-x64\libiio.iss"
 (Get-Content $issFile) -replace 'VCREDIST_VERSION', $vcVersion | Set-Content $issFile
+(Get-Content $issFile) -replace 'BUILD_TYPE', $Env:cmakeBuildType | Set-Content $issFile
 
 iscc $issFile
 

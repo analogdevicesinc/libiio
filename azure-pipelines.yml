@@ -220,21 +220,34 @@ stages:
         filePath: .\CI\build_win_msvc.ps1
       displayName: 'Build'
     - task: CopyFiles@2
-      displayName: 'Copy libraries'
+      displayName: 'Copy libraries ($(cmakeBuildType))'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/Release'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/$(cmakeBuildType)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/$(cmakeBuildType)'
+    - task: CopyFiles@2
+      displayName: 'Copy libraries (Debug)'
+      condition: ne(variables.isRelease, true)
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/Debug'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/Debug'
     - task: CopyFiles@2
       displayName: 'Copy public headers'
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/include'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
-      displayName: 'Copy .exe files'
+      displayName: 'Copy .exe files ($(cmakeBuildType))'
       inputs:
-        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/utils/Release'
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/utils/$(cmakeBuildType)'
         contents: '*.exe'
-        targetFolder: '$(Build.ArtifactStagingDirectory)'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/$(cmakeBuildType)'
+    - task: CopyFiles@2
+      displayName: 'Copy .exe files (Debug)'
+      condition: ne(variables.isRelease, true)
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)/s/build-msvc/utils/Debug'
+        contents: '*.exe'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/Debug'
     - task: CopyFiles@2
       displayName: 'Copy libiio-sharp.dll file'
       inputs:
@@ -242,7 +255,7 @@ stages:
         contents: 'libiio-sharp.dll'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
     - task: CopyFiles@2
-      displayName: 'Copy dependencies sources archive'
+      displayName: 'Copy dependencies sources archive ($(cmakeBuildType))'
       inputs:
         sourceFolder: '$(Agent.BuildDirectory)/s/'
         contents: 'Windows-msvc-deps.zip'
