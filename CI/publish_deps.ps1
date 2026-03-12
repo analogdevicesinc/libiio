@@ -24,11 +24,17 @@ if ("$Env:COMPILER" -eq "MinGW Makefiles") {
 		$USB_VS_version="VS2022"
 		cd 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
 	}
-	cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	$targetDirs = @("$env:BUILD_ARTIFACTSTAGINGDIRECTORY\$Env:cmakeBuildType")
+	if ($Env:isRelease -eq "false") {
+		$targetDirs += "$env:BUILD_ARTIFACTSTAGINGDIRECTORY\Debug"
+	}
 
-	cp $Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\bin\libxml2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $Env:BUILD_SOURCESDIRECTORY\deps\libusb\$USB_VS_version\MS64\dll\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $Env:BUILD_SOURCESDIRECTORY\deps\libserialport\x64\Release\libserialport.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp $Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	foreach ($dir in $targetDirs) {
+		cp .\msvcp140.dll $dir
+		cp .\vcruntime140.dll $dir
+		cp $Env:BUILD_SOURCESDIRECTORY\deps\libxml2-install\bin\libxml2.dll $dir
+		cp $Env:BUILD_SOURCESDIRECTORY\deps\libusb\$USB_VS_version\MS64\dll\libusb-1.0.dll $dir
+		cp $Env:BUILD_SOURCESDIRECTORY\deps\libserialport\x64\Release\libserialport.dll $dir
+		cp $Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.dll $dir
+	}
 }

@@ -2,12 +2,14 @@
 $ErrorActionPreference = "Stop"
 $ErrorView = "NormalView"
 
-# Default to Release if not set
-if (-not $Env:CMAKE_BUILD_TYPE) {
-    $Env:CMAKE_BUILD_TYPE = "Release"
+if ($Env:isRelease -eq "true") {
+	$buildConfigs = @("Release")
+} else {
+	$buildConfigs = @($Env:cmakeBuildType, "Debug")
 }
 
-echo "Running cmake for $Env:COMPILER on 64 bit ($Env:CMAKE_BUILD_TYPE)..."
+echo "Build configurations to build: $($buildConfigs -join ', ')"
+
 mkdir build-msvc
 cp .\libiio.iss.cmakein .\build-msvc
 cd build-msvc
@@ -25,10 +27,15 @@ cmake -G "$Env:COMPILER" -DCMAKE_SYSTEM_PREFIX_PATH="C:" `
 -DLIBZSTD_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" -DLIBZSTD_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\lib" `
 -DWITH_EXAMPLES=ON ..
 
-cmake --build . --config $Env:CMAKE_BUILD_TYPE
+# Build each configuration
+foreach ($config in $buildConfigs) {
+    echo "Building configuration: $config"
+    cmake --build . --config $config
 
-if ( $LASTEXITCODE -ne 0 ) {
-		throw "[*] cmake build failure"
-	}
+    if ( $LASTEXITCODE -ne 0 ) {
+        throw "[*] cmake build failure for configuration: $config"
+    }
+}
+
 cp .\libiio.iss $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
