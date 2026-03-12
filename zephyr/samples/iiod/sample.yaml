@@ -37,3 +37,10 @@ tests:
       - SHIELD=eval_ad4052_ardz
     platform_allow:
       - apard32690/max32690/m4
+
+  sample.iiod.console.adc_max32:
+    extra_args:
+      - SNIPPET=iiod-console
+      - EXTRA_DTC_OVERLAY_FILE=adc-max32.overlay
+    platform_allow:
+      - apard32690/max32690/m4

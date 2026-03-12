@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+menu "iiod sample"
+
+config LIBIIO_IIOD_ADC_EMUL
+	bool "Enable ADC emulator"
+	help
+	  Enable ADC emulator IIO device driver.
+
+endmenu
+
+source "Kconfig.zephyr"
