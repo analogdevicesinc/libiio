@@ -157,19 +157,22 @@ static int iio_device_adc_read_channel_raw(const struct device *dev,
 {
 	const struct iio_device_adc_config *config = dev->config;
 	struct adc_dt_spec *channel = &config->channels[index];
-	int raw_len = 12;
 	uint32_t tmp_buf = 0;
 	struct adc_sequence sequence = {
 		.buffer = &tmp_buf,
 		.buffer_size = sizeof(tmp_buf),
-		.channels = BIT(index),
-		.resolution = channel->resolution,
 	};
 	int ret;
 
-	if (len < raw_len) {
-		LOG_ERR("Buffer size %u is too small for raw value, need %u",
-			len, raw_len);
+	ret = adc_sequence_init_dt(channel, &sequence);
+	if (ret < 0) {
+		LOG_ERR("Error initializing adc sequence");
+		return ret;
+	}
+
+	if (len < sequence.buffer_size) {
+		LOG_ERR("Buffer size %u is too small for process value, need %u",
+			len, sequence.buffer_size);
 		return -ENOMEM;
 	}
 
@@ -179,9 +182,7 @@ static int iio_device_adc_read_channel_raw(const struct device *dev,
 		return ret;
 	}
 
-	raw_len = snprintk(dst, len, "%u", tmp_buf);
-
-	return raw_len + 1;
+	return snprintk(dst, len, "%u", tmp_buf) + 1;
 }
 
 static int iio_device_adc_read_channel_scale(const struct device *dev,
@@ -540,6 +541,7 @@ static int iio_device_adc_init(const struct device *dev)
 {
 	const struct iio_device_adc_config *config = dev->config;
 	struct iio_device_adc_data *data = dev->data;
+	int ret = 0;
 
 	__ASSERT(data->gains != NULL, "gains not set");
 	__ASSERT(data->references != NULL, "references not set");
@@ -551,9 +553,15 @@ static int iio_device_adc_init(const struct device *dev)
 			data->references[i] = config->channels[i].channel_cfg.reference;
 			data->differentials[i] = config->channels[i].channel_cfg.differential;
 		}
+
+		ret = adc_channel_setup_dt(&config->channels[i]);
+		if (ret < 0) {
+			LOG_ERR("Error setting up channel %zu", i);
+			break;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static DEVICE_API(iio_device, iio_device_adc_driver_api) = {
