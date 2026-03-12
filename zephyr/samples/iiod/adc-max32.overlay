@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/ {
+	iio-context {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		iio-device@0 {
+			compatible = "iio,adc";
+			reg = <0>;
+			io-channels = <&adc 0>;
+			io-channel-names = "adc_in_ch0";
+		};
+	};
+};
+
+&adc_clk_ext_p0_9 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&adc {
+	/*clocks = */ 
+	pinctrl-0 = <&adc_clk_ext_p0_9>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	#io-channel-cells = <1>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <1250>;
+	};
+};
+
