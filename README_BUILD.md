@@ -237,7 +237,7 @@ This feature is intended for users who need to select an alternative DMA heap pr
 
 ### Prerequisites
 
-- Visual Studio 2019 or Visual Studio 2022
+- Visual Studio 2019 or Visual Studio 2022 or  Visual Studio 2026
 - CMake (version 3.10 or higher)
 - Git
 - Chocolatey package manager (for dependency management, e.g. wget)
@@ -250,6 +250,13 @@ libiio requires several dependencies on Windows: libxml2, libzstd, libusb, and l
 #### Step 1: Set Environment Variables
 
 Before running the dependency build script, you need to set three environment variables based on your Visual Studio version and target architecture.
+
+**For Visual Studio 2026 (x64):**
+```powershell
+$env:ARCH = "x64"
+$env:PLATFORM_TOOLSET = "v145"
+$env:COMPILER = "Visual Studio 18 2026"
+```
 
 **For Visual Studio 2022 (x64):**
 ```powershell
@@ -289,6 +296,21 @@ This script will:
 
 After the dependencies are built, configure libiio using CMake. Make sure to specify the paths to the dependencies:
 
+**For Visual Studio 2026:**
+```powershell
+mkdir build
+cd build
+cmake .. -G "Visual Studio 18 2026" -A x64 `
+  -DLIBXML2_LIBRARIES="$PWD\..\deps\libxml2-install\lib\libxml2.lib" `
+  -DLIBXML2_INCLUDE_DIR="$PWD\..\deps\libxml2-install\include\libxml2" `
+  -DLIBUSB_LIBRARIES="$PWD\..\deps\libusb\VS2022\MS64\dll\libusb-1.0.lib" `
+  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include\libusb-1.0" `
+  -DLIBSERIALPORT_LIBRARIES="$PWD\..\deps\libserialport\x64\Release\libserialport.lib" `
+  -DLIBSERIALPORT_INCLUDE_DIR="$PWD\..\deps\libserialport" `
+  -DLIBZSTD_LIBRARIES="$PWD\..\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" `
+  -DLIBZSTD_INCLUDE_DIR="$PWD\..\deps\zstd\lib"
+```
+
 **For Visual Studio 2022:**
 ```powershell
 mkdir build
@@ -319,7 +341,7 @@ cmake .. -G "Visual Studio 16 2019" -A x64 `
   -DLibZstd_INCLUDE_DIR="$PWD\..\deps\zstd\lib"
 ```
 
-**Note:** Adjust the libusb path according to your Visual Studio version (`VS2019` or `VS2022`).
+**Note:** Adjust the libusb path according to your Visual Studio version (`VS2019`, `VS2022` or `2026`).
 
 #### Step 4: Build libiio
 
@@ -346,7 +368,7 @@ cmake --build . --config RelWithDebInfo --target install
 By default, this installs to `C:\Program Files\libiio`. To change the installation path, set `CMAKE_INSTALL_PREFIX` during the CMake configuration step:
 
 ```powershell
-cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="C:\libiio" ...
+cmake .. -G "Visual Studio 18 2026" -A x64 -DCMAKE_INSTALL_PREFIX="C:\libiio" ...
 ```
 
 ### Troubleshooting
