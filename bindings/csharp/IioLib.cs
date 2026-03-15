@@ -8,6 +8,7 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -170,6 +171,21 @@ namespace iio
     public static class IioLib
     {
         public const string dllname = "libiio1.dll";
+
+        static IioLib()
+        {
+            NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), (libraryName, assembly, searchPath) =>
+            {
+                if (libraryName != dllname)
+                    return IntPtr.Zero;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                    && NativeLibrary.TryLoad("/Library/Frameworks/iio.framework/iio", out IntPtr handle))
+                    return handle;
+
+                return IntPtr.Zero;
+            });
+        }
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_strerror(int err, [Out()] StringBuilder buf, ulong len);
