@@ -322,12 +322,17 @@ if "Windows" in _system():
 else:
     # Non-windows, possibly Posix system
     _lib_loc = find_library("iio")
-    if _path.islink(_lib_loc):
-        _lib_loc = _path.realpath(_lib_loc)
     if _lib_loc is not None:
+        if _path.islink(_lib_loc):
+            _lib_loc = _path.realpath(_lib_loc)
         filename = _path.basename(_lib_loc)
-        version = filename.split(".so.")[1]
-        if version[0] != "1":
+        if ".so." in filename:
+            version = filename.split(".so.")[1]
+        elif "/Versions/" in _lib_loc:
+            version = _lib_loc.split("/Versions/")[1].split("/")[0]
+        else:
+            version = None
+        if version is not None and not version.startswith("1"):
             raise OSError(2, f"libiio version 1.x required, found version {version}")
 
 if _lib_loc is None:
