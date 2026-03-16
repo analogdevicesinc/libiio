@@ -325,7 +325,8 @@ enum iio_event_direction {
 /* ---------------------------------------------------------------------------*/
 /* ---------------------------- Error handling -------------------------------*/
 /** @defgroup Functions for handling pointer-encoded errors
- * @{
+ * @{ */
+/**
  * @brief Encode an error code into a pointer
  * @param err The error code to be encoded. Must be negative.
  * @return The error-encoding pointer. */
