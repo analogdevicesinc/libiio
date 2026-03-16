@@ -1,3 +1,4 @@
 <configuration>
-  <dllmap dll="libiio@LIBIIO_VERSION_MAJOR@.dll" target="libiio.so.@LIBIIO_VERSION_MAJOR@"/>
+  <dllmap dll="libiio@LIBIIO_VERSION_MAJOR@.dll" os="osx" target="/Library/Frameworks/iio.framework/iio"/>
+  <dllmap dll="libiio@LIBIIO_VERSION_MAJOR@.dll" os="!osx" target="libiio.so.@LIBIIO_VERSION_MAJOR@"/>
 </configuration>
