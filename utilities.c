@@ -26,6 +26,9 @@
 #include <ws2tcpip.h>
 #elif defined(__has_include)
 #  if __has_include(<netdb.h>)
+#      if defined(__ZEPHYR__)
+#        include <sys/socket.h> /* zephyr's netdb.h requires socklen_t */
+#      endif
 #    include <netdb.h>
 #  endif
 #elif defined(HAVE_NETDB_H)
