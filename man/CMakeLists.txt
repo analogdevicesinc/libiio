@@ -52,8 +52,8 @@ if (WITH_MAN)
 			if (WITH_DOC)
 				execute_process(
 					COMMAND ${MAN2HTML} -r
-					INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}
-					OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man1/${_page}.html
+					INPUT_FILE ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/${_page}.1
+					OUTPUT_FILE ${CMAKE_HTML_DEST_DIR}/man1/${_page}.1.html
 				)
 			endif()
 		endforeach()
