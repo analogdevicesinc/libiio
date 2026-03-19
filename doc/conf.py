@@ -9,10 +9,6 @@ project = 'libiio'
 copyright = '2020-2026, Analog Devices, Inc.'
 author = 'Analog Devices, Inc.'
 
-# Version will be read from git or set manually
-version = '1.0'
-release = '1.0'
-
 # -- General configuration ---------------------------------------------------
 
 extensions = [
@@ -31,6 +27,7 @@ source_suffix = '.rst'
 
 interref_repos = [
     'doctools',
+    'documentation',
     'hdl',
     'pyadi-iio',
     'scopy',
@@ -42,7 +39,6 @@ interref_repos = [
 # -- Options for HTML output --------------------------------------------------
 
 html_theme = 'cosmic'
-html_title = f"{project} {version}"
 html_favicon = path.join("sources", "icon.svg")
 html_static_path = ['sources', 'html/img']
 html_css_files = ['custom.css']
