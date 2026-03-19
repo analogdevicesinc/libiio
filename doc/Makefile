@@ -2,7 +2,7 @@ SHELL         = /bin/bash
 SPHINXOPTS   ?= -j auto
 SPHINXBUILD  ?= sphinx-build
 SOURCEDIR     = .
-BUILDDIR      = ../build/html/v1.0/docs
+BUILDDIR      = ../build/html/v1.0
 
 help:
 	$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

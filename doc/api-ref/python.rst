@@ -3,9 +3,9 @@ Python Bindings
 
 .. raw:: html
 
-   <meta http-equiv="refresh" content="0; url=../../../python/index.html">
+   <meta http-equiv="refresh" content="0; url=../python/index.html">
    <script>
-   window.location.href = "../../../python/index.html";
+   window.location.href = "../python/index.html";
    </script>
 
-Redirecting to `Python Bindings Documentation <../../../python/index.html>`_...
+Redirecting to `Python Bindings Documentation <../python/index.html>`_...
