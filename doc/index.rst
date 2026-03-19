@@ -162,6 +162,7 @@ The libiio would not exist without the generous support of `Analog Devices <http
    :caption: Support
    :hidden:
 
+   quick-start
    about
    downloads
    support
