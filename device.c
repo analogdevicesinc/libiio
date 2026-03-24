@@ -23,19 +23,40 @@ static const char * const xml_attr_prefix[] = {
 };
 
 static ssize_t iio_snprintf_xml_attr(const struct iio_attr *attr,
+				     const char *value,
 				     char *buf, ssize_t len)
 {
+	ssize_t ret, alen = 0;
+
 	switch (attr->type) {
 		case IIO_ATTR_TYPE_DEVICE:
 		case IIO_ATTR_TYPE_DEBUG:
 		case IIO_ATTR_TYPE_BUFFER:
-			return iio_snprintf(buf, len,
-					    "<%sattribute name=\"%s\" />",
-					    xml_attr_prefix[attr->type],
-					    attr->name);
+			break;
 		default:
 			return -EINVAL;
 	}
+
+	ret = iio_snprintf(buf, len, "<%sattribute name=\"%s\"",
+			   xml_attr_prefix[attr->type], attr->name);
+	if (ret < 0)
+		return ret;
+	iio_update_xml_indexes(ret, &buf, &len, &alen);
+
+	if (value) {
+		ret = iio_xml_print_and_sanitized_param(buf, len,
+							" value=\"",
+							value, "\"");
+		if (ret < 0)
+			return ret;
+		iio_update_xml_indexes(ret, &buf, &len, &alen);
+	}
+
+	ret = iio_snprintf(buf, len, " />");
+	if (ret < 0)
+		return ret;
+
+	return alen + ret;
 }
 
 ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
@@ -45,6 +66,8 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 	ssize_t ret, alen = 0;
 	unsigned int i;
 	enum iio_attr_type type;
+	bool include_values = dev->ctx->params.flags
+				& IIO_CTX_XML_INCLUDE_VALUES;
 
 	ret = iio_snprintf(ptr, len, "<device id=\"%s\"", dev->id);
 	if (ret < 0)
@@ -92,8 +115,25 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 
 		for (j = 0; j < buf->attrlist.num; j++) {
-			ret = iio_snprintf(ptr, len, "<attribute name=\"%s\" />",
-					   buf->attrlist.attrs[j].name);
+			const char *val = NULL;
+
+			if (include_values && buf->values)
+				val = buf->values[j];
+
+			ret = iio_snprintf(ptr, len, "<attribute name=\"%s\"", buf->attrlist.attrs[j].name);
+			if (ret < 0)
+				return ret;
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+			if (val) {
+				ret = iio_xml_print_and_sanitized_param(ptr, len,
+						" value=\"", val, "\"");
+				if (ret < 0)
+					return ret;
+				iio_update_xml_indexes(ret, &ptr, &len, &alen);
+			}
+
+			ret = iio_snprintf(ptr, len, " />");
 			if (ret < 0)
 				return ret;
 
@@ -109,9 +149,14 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 
 	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
 		for (i = 0; i < dev->attrlist[type].num; i++) {
+			const char *val = NULL;
+
 			attrs = dev->attrlist[type].attrs;
 
-			ret = iio_snprintf_xml_attr(&attrs[i], ptr, len);
+			if (include_values && dev->values[type])
+				val = dev->values[type][i];
+
+			ret = iio_snprintf_xml_attr(&attrs[i], val, ptr, len);
 			if (ret < 0)
 				return ret;
 
@@ -129,7 +174,7 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		unsigned int j;
 
 		for (j = 0; j < buf->attrlist.num; j++) {
-			ret = iio_snprintf_xml_attr(&buf->attrlist.attrs[j], ptr, len);
+			ret = iio_snprintf_xml_attr(&buf->attrlist.attrs[j], NULL, ptr, len);
 			if (ret < 0)
 				return ret;
 
