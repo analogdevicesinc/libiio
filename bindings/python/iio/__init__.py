@@ -442,7 +442,7 @@ _set_timeout = _lib.iio_context_set_timeout
 _set_timeout.restype = c_int
 _set_timeout.argtypes = (
     _ContextPtr,
-    c_uint,
+    c_int,
 )
 _set_timeout.errcheck = _check_negative
 
