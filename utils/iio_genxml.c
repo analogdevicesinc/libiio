@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 	ctx = handle_common_opts(MY_NAME, argc, argw, "",
-				 options, options_descriptions, &ret);
+				 options, options_descriptions, NULL, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
