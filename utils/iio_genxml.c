@@ -20,11 +20,13 @@
 #endif
 
 static const struct option options[] = {
+	{"emulator", no_argument, 0, 'e'},
 	{0, 0, 0, 0},
 };
 
 static const char *options_descriptions[] = {
 	("[-u <uri>]\n"),
+	"Include attribute values in the generated XML.",
 };
 
 int main(int argc, char **argv)
@@ -32,19 +34,18 @@ int main(int argc, char **argv)
 	char **argw, *uri, *xml;
 	struct iio_context *ctx;
 	struct option *opts;
+	struct iio_context_params params = {0};
 	size_t buf_len;
 	int c, ret = EXIT_FAILURE;
 	int err;
 
 	argw = dup_argv(MY_NAME, argc, argv);
-	ctx = handle_common_opts(MY_NAME, argc, argw, "",
-				 options, options_descriptions, NULL, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argv, "+" COMMON_OPTIONS,  /* Flawfinder: ignore */
+	while ((c = getopt_long(argc, argv, "+e" COMMON_OPTIONS,  /* Flawfinder: ignore */
 					opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
@@ -59,6 +60,9 @@ int main(int argc, char **argv)
 					&& argv[optind][0] != '-')
 				optind++;
 			break;
+		case 'e':
+			params.flags |= IIO_CTX_XML_INCLUDE_VALUES;
+			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
 			return EXIT_FAILURE;
@@ -71,6 +75,8 @@ int main(int argc, char **argv)
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
+	ctx = handle_common_opts(MY_NAME, argc, argw, "",
+				 options, options_descriptions, &params, &ret);
 
 	if (!ctx)
 		return ret;
@@ -82,7 +88,7 @@ int main(int argc, char **argv)
 		iio_context_destroy(ctx);
 		return EXIT_FAILURE;
 	}
-	printf("XML generated:\n\n%s\n\n", xml);
+	printf("%s\n", xml);
 
 	buf_len = strlen(xml) + 5;
 	uri = malloc(buf_len);
@@ -102,7 +108,6 @@ int main(int argc, char **argv)
 	if (err) {
 		fprintf(stderr, "Unable to re-generate context\n");
 	} else {
-		printf("Context re-creation from generated XML succeeded!\n");
 		iio_context_destroy(ctx);
 	}
 
