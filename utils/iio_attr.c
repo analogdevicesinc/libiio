@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 	}
 
 	ctx = handle_common_opts(MY_NAME, argd, argw, MY_OPTS,
-				 options, options_descriptions, &ret);
+				 options, options_descriptions, NULL, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");

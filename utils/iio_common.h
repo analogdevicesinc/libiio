@@ -52,7 +52,7 @@ int iio_device_enable_channel(const struct iio_device *dev, const char *channel,
 struct iio_context * handle_common_opts(char * name, int argc,
 	char * const argv[], const char *optstring,
 	const struct option *options, const char *options_descriptions[],
-	int *ret);
+	const struct iio_context_params *default_params, int *ret);
 struct option * add_common_options(const struct option * longopts);
 void usage(char *name, const struct option *options, const char *options_descriptions[]);
 void version(char *name);
