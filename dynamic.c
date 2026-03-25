@@ -145,13 +145,12 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 
 	prm_dbg(params, "Found backend: %s\n", backend->name);
 
-	if (!params2.timeout_ms) {
-		/* Zero means use backend default */
-		params2.timeout_ms = backend->default_timeout_ms;
-	} else if (params2.timeout_ms < 0) {
-		/* Negative means infinite - translate to 0 for backends */
-		params2.timeout_ms = 0;
-	} /* Positive values pass through unchanged */
+	params2.timeout_ms = iio_resolve_timeout(params2.timeout_ms,
+					      backend->default_timeout_ms);
+	if (params2.timeout_ms == -EINVAL) {
+		ret = -EINVAL;
+		goto out_release_module;
+	}
 
 	uri += strlen(backend->uri_prefix);
 	ctx = (*backend->ops->create)(&params2, uri);
@@ -159,6 +158,7 @@ iio_create_dynamic_context(const struct iio_context_params *params,
 	if (ret)
 		goto out_release_module;
 
+	ctx->default_timeout_ms = backend->default_timeout_ms;
 	ctx->lib = lib;
 	return ctx;
 

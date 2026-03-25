@@ -114,10 +114,13 @@ struct iio_scan * iio_scan(const struct iio_context_params *params,
 			continue;
 		}
 
-		if (params->timeout_ms)
-			params2.timeout_ms = params->timeout_ms;
-		else
-			params2.timeout_ms = backend->default_timeout_ms;
+		params2.timeout_ms = iio_resolve_timeout(params->timeout_ms,
+						  backend->default_timeout_ms);
+		if (params2.timeout_ms == -EINVAL) {
+			prm_perror(params, -EINVAL,
+				   "Invalid timeout: %d for backend %s\n", params->timeout_ms, token);
+			continue;
+		}
 
 		ret = backend->ops->scan(&params2, ctx, args);
 		if (ret < 0) {
