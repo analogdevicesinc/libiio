@@ -86,10 +86,9 @@ struct iiod_responder *
 iiod_responder_create(const struct iiod_responder_ops *ops, void *d);
 void iiod_responder_destroy(struct iiod_responder *responder);
 
-/* Set the timeout for I/O operations (default is 0 == infinite) */
-void iiod_responder_set_timeout(struct iiod_responder *priv,
-				unsigned int timeout_ms);
-void iiod_io_set_timeout(struct iiod_io *io, unsigned int timeout_ms);
+/* Set the timeout for I/O operations (default is -1 == infinite) */
+void iiod_responder_set_timeout(struct iiod_responder *priv, int timeout_ms);
+void iiod_io_set_timeout(struct iiod_io *io, int timeout_ms);
 
 /* Read the current value of the micro-second counter */
 uint64_t iiod_responder_read_counter_us(void);
