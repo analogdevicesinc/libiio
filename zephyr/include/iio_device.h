@@ -17,12 +17,14 @@ extern "C" {
 #endif
 
 struct iio_device_info {
+	const char *name;
 	const struct device *dev;
 };
 
-#define IIO_DEVICE_INFO_INITIALIZER(_dev)					\
+#define IIO_DEVICE_INFO_INITIALIZER(_dev, _name)				\
 	{									\
 		.dev = _dev,							\
+		.name = _name,							\
 	}
 
 #define IIO_DEVICE_INFO_DEFINE(name, ...)					\
@@ -32,18 +34,18 @@ struct iio_device_info {
 #define IIO_DEVICE_INFO_DT_NAME(node_id)					\
 	_CONCAT(__iio_device_info, DEVICE_DT_NAME_GET(node_id))
 
-#define IIO_DEVICE_INFO_DT_DEFINE(node_id)					\
+#define IIO_DEVICE_INFO_DT_DEFINE(node_id, name)				\
 	IIO_DEVICE_INFO_DEFINE(IIO_DEVICE_INFO_DT_NAME(node_id),		\
-			       DEVICE_DT_GET(node_id))
+			       DEVICE_DT_GET(node_id), name)
 
-#define IIO_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
+#define IIO_DEVICE_DT_DEFINE(node_id, name, init_fn, pm_device,			\
 			     data_ptr, cfg_ptr, level, prio,			\
 			     api_ptr, ...)					\
 	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,				\
 			 data_ptr, cfg_ptr, level, prio,			\
 			 api_ptr, __VA_ARGS__);					\
 										\
-	IIO_DEVICE_INFO_DT_DEFINE(node_id);
+	IIO_DEVICE_INFO_DT_DEFINE(node_id, name);
 
 
 #define IIO_DEVICE_DT_INST_DEFINE(inst, ...)					\

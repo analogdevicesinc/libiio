@@ -70,7 +70,10 @@ zephyr_create_context(const struct iio_context_params *params, const char *args)
 
 	STRUCT_SECTION_FOREACH(iio_device_info, iio_device_info) {
 		dev = iio_device_info->dev;
-		name = dev->name;
+		name = iio_device_info->name;
+		if (!name) {
+			name = dev->name;
+		}
 
 		snprintk(id, sizeof(id), "iio:device%zu", i);
 

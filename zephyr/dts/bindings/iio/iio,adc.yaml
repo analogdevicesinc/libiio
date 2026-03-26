@@ -10,3 +10,8 @@ compatible: "iio,adc"
 properties:
   reg:
     required: true
+  io-name:
+    type: string
+    description: |
+      The device name for use within IIOD. If not set, the device's node will be used
+      as a fallback.
