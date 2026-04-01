@@ -1092,7 +1092,9 @@ __api void * iio_channel_get_data(const struct iio_channel *chn);
 
 /** @brief Get the type of the given channel
  * @param chn A pointer to an iio_channel structure
- * @return The type of the channel */
+ * @return The type of the channel
+ * <b>NOTE:</b> Before calling this function, iio_device_is_hwmon() should be called
+ * to verify that the passed channel object does not belong to a HWMON device. */
 __api __check_ret __pure enum iio_chan_type iio_channel_get_type(
 		const struct iio_channel *chn);
 
@@ -1417,7 +1419,9 @@ enum hwmon_chan_type {
 /**
  * @brief Get the type of the given hwmon channel
  * @param chn A pointer to an iio_channel structure
- * @return The type of the hwmon channel */
+ * @return The type of the hwmon channel
+ * <b>NOTE:</b>  Before calling this function, iio_device_is_hwmon() should be called
+ * to verify that the passed channel object belongs to a HWMON device. */
 static inline enum hwmon_chan_type
 hwmon_channel_get_type(const struct iio_channel *chn)
 {
