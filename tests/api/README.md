@@ -12,7 +12,7 @@ The test suite covers all public APIs defined in `include/iio/iio.h`:
 - **Context Functions** (`test_context.c`) - Tests for `iio_context_*()` functions
 - **Device Functions** (`test_device.c`) - Tests for `iio_device_*()` functions
 - **Channel Functions** (`test_channel.c`) - Tests for `iio_channel_*()` functions
-- **Buffer Functions** (`test_buffer.c`) - Tests for `iio_buffer_*()` and `iio_device_create_buffer()`
+- **Buffer Functions** (`test_buffer.c`) - Tests for `iio_buffer_open()`, `iio_buffer_stream_*()`, and `iio_buffer_close()`
 - **Attribute Functions** (`test_attr.c`) - Tests for `iio_attr_*()` functions
 - **HWMON Support** (`test_hwmon.c`) - Tests for HWMON-specific functions
 - **Events** (`test_events.c`) - Tests for `iio_event_*()` functions

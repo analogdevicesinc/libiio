@@ -16,7 +16,7 @@ Separately, the IIO Library also includes a set of test examples and utilities, 
 The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
 
 @section code_model Code Model
-The basic bricks of the libiio API are the iio_context, iio_device, iio_channel and iio_buffer classes.
+The basic bricks of the libiio API are the iio_context, iio_device, iio_channel, iio_buffer, iio_buffer_stream and iio_block classes.
 
 ![Caption text](doc/codemodel.svg)
 
@@ -133,44 +133,83 @@ To see if one device is associated with a trigger, use iio_device_get_trigger().
 To assign one trigger to a iio_device, you can use iio_device_set_trigger(). If you want to disassociate a iio_device from its trigger, pass NULL to the "trigger" parameter of this function.
 
 @section capture_upload Capturing or uploading samples
-The process of capturing samples from the hardware and uploading samples to the hardware is done using the functions that apply to the iio_buffer object.
+The process of capturing samples from the hardware and uploading samples to the hardware is done using the iio_buffer, iio_buffer_stream and iio_block objects.
 
-@subsection create_buffer Enabling channels and creating the Buffer object
+@subsection create_buffer Enabling channels and opening a Buffer stream
 The very first step is to enable the capture channels that we want to use, and disable those that we don't need.
-This is done with the functions iio_channel_enable() and iio_channel_disable().
-Note that the channels will really be enabled or disabled when the iio_buffer object is created.
+This is done by creating an iio_channels_mask with iio_create_channels_mask() and then calling iio_channel_enable() for the desired channels.
 
 Also, not all channels can be enabled. To know whether or not one channel can be enabled, use iio_channel_is_scan_element().
 
-Once the channels have been enabled, and triggers assigned (for triggered buffers) the iio_buffer object can be created from the iio_device object that will be used, with the function iio_device_create_buffer().
-This call will fail if no channels have been enabled, or for triggered buffers, if the trigger has not been assigned.
+Buffers are pre-created during device context creation. To obtain a buffer, use iio_device_get_buffer(). To open it for streaming, call iio_buffer_open() with the channels mask, which returns an iio_buffer_stream object.
+This call will fail if no channels have been enabled in the mask, or for triggered buffers, if the trigger has not been assigned.
 
-When the object is no more needed, it can be destroyed with iio_buffer_destroy().
+When the stream is no longer needed, it can be closed with iio_buffer_close().
 
-@subsection refill Refilling the Buffer (input devices only)
-If the Buffer object has been created from a device with input channels, then it must be updated first. This is done with the iio_buffer_refill() function.
+@subsection streaming Streaming with blocks
+Data is transferred to and from the hardware using iio_block objects. There are two approaches: manual block management or the high-level iio_stream API.
 
-@subsection read_write Reading or writing samples to the Buffer
-Libiio offers various ways to interact with the iio_buffer object.
+@subsubsection manual_blocks Manual block management
+Create one or more blocks from the buffer stream with iio_buffer_stream_create_block(). Each block represents a contiguous region of memory for sample data.
+
+To start data flow, call iio_buffer_stream_start(). Then use iio_block_enqueue() to submit a block for I/O, and iio_block_dequeue() to wait for the transfer to complete. To stop, call iio_buffer_stream_stop() or iio_buffer_stream_cancel().
+
+~~~{.c}
+struct iio_buffer *buf = iio_device_get_buffer(dev, 0);
+struct iio_buffer_stream *stream = iio_buffer_open(buf, mask);
+struct iio_block *block = iio_buffer_stream_create_block(stream, block_size);
+
+iio_buffer_stream_start(stream);
+
+/* Streaming loop */
+while (!stop) {
+    iio_block_enqueue(block, 0, false);
+    iio_block_dequeue(block, false);
+    /* Process samples via iio_block_start()/iio_block_end() */
+}
+
+iio_block_destroy(block);
+iio_buffer_close(stream);
+~~~
+
+@subsubsection stream_api High-level Stream API
+The iio_stream API simplifies streaming by managing blocks internally. Create a stream with iio_buffer_create_stream(), specifying the number of blocks and the number of samples per block. Then iterate by calling iio_stream_get_next_block() in a loop.
+
+~~~{.c}
+struct iio_buffer *buf = iio_device_get_buffer(dev, 0);
+struct iio_stream *stream = iio_buffer_create_stream(buf, 4, num_samples, mask);
+
+while (!stop) {
+    const struct iio_block *block = iio_stream_get_next_block(stream);
+    /* Process samples via iio_block_start()/iio_block_end() */
+}
+
+iio_stream_destroy(stream);
+~~~
+
+To abort a running stream from another thread or signal context, use iio_stream_cancel(). Destroying the stream with iio_stream_destroy() will also close the underlying buffer stream.
+
+@subsection read_write Reading or writing samples to a Block
+Libiio offers various ways to interact with the iio_block object.
 
 @subsubsection memcpy Direct copy
 If you already have a buffer of samples, correctly interleaved and in the format that the hardware expects,
-it is possible to copy the samples directly into the iio_buffer object using `memcpy`:
+it is possible to copy the samples directly into the iio_block object using `memcpy`:
 
 ~~~{.c}
-size_t iio_buf_size = iio_buffer_end(buffer) - iio_buffer_start(buffer);
-size_t count = MAX(sizeof(samples_buffer), iio_buf_size);
-memcpy(iio_buffer_start(buffer), samples_buffer, count);
+size_t block_size = iio_block_end(block) - iio_block_start(block);
+size_t count = MIN(sizeof(samples_buffer), block_size);
+memcpy(iio_block_start(block), samples_buffer, count);
 ~~~
 
-Using `memcpy` to copy samples from the iio_buffer is <b>not recommended</b>.
-When capturing samples from an input device, you cannot assume that the iio_buffer object contains only the samples you're interested in.
+Using `memcpy` to copy samples from the iio_block is <b>not recommended</b>.
+When capturing samples from an input device, you cannot assume that the iio_block object contains only the samples you're interested in.
 
-@subsubsection iterating_cb Iterating over the buffer with a callback
-Libiio provides a way to iterate over the buffer by registering a callback function, with the iio_buffer_foreach_sample() function.
+@subsubsection iterating_cb Iterating over a block with a callback
+Libiio provides a way to iterate over a block by registering a callback function, with the iio_block_foreach_sample() function.
 
-The callback function will be called for each "sample slot" of the buffer,
-which will contain a valid sample if the buffer has been refilled,
+The callback function will be called for each "sample slot" of the block,
+which will contain a valid sample if the block has been dequeued from an input device,
 or correspond to an area where a sample should be stored if using an output device.
 
 ~~~{.c}
@@ -182,24 +221,27 @@ ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes, void *
 int main(void)
 {
     ...
-    iio_buffer_foreach_sample(buffer, sample_cb, NULL);
+    iio_block_foreach_sample(block, mask, sample_cb, NULL);
     ...
 }
 ~~~
 
-Note that the callback will be called in the order that the samples appear in the buffer,
+Note that the callback will be called in the order that the samples appear in the block,
 and only for samples that correspond to channels that were enabled.
 
 @subsubsection iterating_for Iterating on the samples with a for loop
-This method allows you to iterate over the samples slots that correspond to one channel.
+This method allows you to iterate over the sample slots that correspond to one channel.
 As such, it is interesting if you want to process the data channel by channel.
 
-It basically consists in a for loop that uses the functions iio_buffer_first(), iio_buffer_step() and iio_buffer_end():
+Use iio_block_first() to find the first sample for a given channel, iio_block_end() for the end,
+and iio_device_get_sample_size() for the step between consecutive samples:
 
 ~~~{.c}
-for (void *ptr = iio_buffer_first(buffer, channel);
-           ptr < iio_buffer_end(buffer);
-           ptr += iio_buffer_step(buffer)) {
+size_t step = iio_device_get_sample_size(dev, mask);
+
+for (void *ptr = iio_block_first(block, channel);
+           ptr < iio_block_end(block);
+           ptr += step) {
     /* Use "ptr" to read or write a sample for this channel */
 }
 ~~~
@@ -207,7 +249,7 @@ for (void *ptr = iio_buffer_first(buffer, channel);
 @subsubsection deinterleave Extracting from/to a second buffer
 
 Finally, it is possible to use the iio_channel_read() and iio_channel_read_raw()
-functions to read samples from the iio_buffer to a second byte array.
+functions to read samples from an iio_block to a second byte array.
 The samples will be deinterleaved if needed.
 The "raw" variant will only deinterleave the samples, while the other variant will deinterleave and convert the samples.
 
@@ -223,15 +265,15 @@ Libiio offers two functions that can be used to convert samples:
 - iio_channel_convert(), to convert from the hardware format
 - iio_channel_convert_inverse(), to convert to the hardware format.
 
-Those two functions should always be used when manipulating the samples of the iio_buffer.
+Those two functions should always be used when manipulating the samples of an iio_block.
 The exception is when iio_channel_read() or iio_channel_write() are used, as the conversion is then done internally.
 
-@subsection push Submitting the Buffer (output devices only)
-When all the samples have been written to the iio_buffer object, you can submit the buffer to the hardware with a call to iio_buffer_push().
-As soon as the buffer has been submitted, it can be reused to store new samples.
+@subsection push Enqueuing blocks (output devices only)
+When all the samples have been written to the iio_block object, you can submit the block to the hardware with a call to iio_block_enqueue().
+As soon as the block has been submitted, it can be dequeued and reused to store new samples.
 
-If the iio_buffer object has been created with the "cyclic" parameter set, and the kernel driver supports cyclic buffers,
-the submitted buffer will be repeated until the iio_buffer is destroyed, and no subsequent call to iio_buffer_push() will be allowed.
+If the iio_block_enqueue() call is made with the "cyclic" parameter set, and the kernel driver supports cyclic buffers,
+the submitted block will be repeated until the buffer stream is closed, and no subsequent call to iio_block_enqueue() will be allowed.
 
 @section advanced Advanced options
 
