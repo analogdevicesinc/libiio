@@ -18,6 +18,7 @@ void gen_context (const char *uri);
 void gen_context_destroy(void);
 void gen_context_attr(const char *key);
 void gen_dev(const struct iio_device *dev);
+void gen_buf(const struct iio_buffer *buffer);
 void gen_ch(const struct iio_channel *ch);
 void gen_function(const char* prefix, const char* target,
 		  const struct iio_attr *attr, const char *wbuf);

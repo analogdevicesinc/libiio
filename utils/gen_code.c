@@ -126,6 +126,7 @@ void gen_start(const char *gen_file)
 		fprintf(fd, "int main(int argc, char **argv)\n{\n"
 			"\tstruct iio_context *ctx;\n\tstruct iio_device *dev;\n\tstruct iio_channel *ch;\n"
 			"\tconst struct iio_attr *attr;\n"
+			"\tstruct iio_buffer *buffer;\n"
 			"\tconst char* val_str;\n\tssize_t ret;\n\tchar buf[256];\n\n");
 
 	} else if (lang == PYTHON_LANG) {
@@ -220,6 +221,17 @@ void gen_dev(const struct iio_device *dev)
 	} else if (lang == PYTHON_LANG) {
 		fprintf(fd, "    # Find IIO device in current context\n");
 		fprintf(fd, "    dev = ctx.find_device(\"%s\")\n\n",iio_device_get_name(dev));
+	}
+}
+
+void gen_buf(const struct iio_buffer *buffer)
+{
+	if (!fd)
+		return;
+
+	if (lang == C_LANG) {
+		fprintf(fd, "\t/* Get pre-allocated buffer for device */\n");
+		fprintf(fd, "\tIIO_ASSERT(buffer = iio_device_get_buffer(dev, 0));\n\n");
 	}
 }
 
