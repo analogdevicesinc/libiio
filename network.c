@@ -8,6 +8,7 @@
 
 #include "dns_sd.h"
 #include "iio-config.h"
+#include "iio-private.h"
 #include "network.h"
 
 #include <iio/iio.h>
@@ -326,7 +327,7 @@ network_setup_iiod_client(const struct iio_device *dev,
 	 * Use the timeout that was set when creating the context.
 	 * See commit 9eff490 for more info.
 	 */
-	ret = create_socket(pdata->addrinfo, NETWORK_TIMEOUT_MS);
+	ret = create_socket(pdata->addrinfo, ctx->params.timeout_ms);
 	if (ret < 0) {
 		dev_perror(dev, ret, "Unable to create socket");
 		return iio_ptr(ret);
