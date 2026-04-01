@@ -811,6 +811,8 @@ int main(int argc, char **argv)
 				}
 
 				if (search_buffer && device_index && nb_attrs) {
+					gen_dev(dev);
+					gen_buf(buffer);
 					for (j = 0; j < nb_attrs; j++) {
 						attr = iio_buffer_get_attr(buffer, j);
 
@@ -821,7 +823,7 @@ int main(int argc, char **argv)
 							found_err = false;
 							attr_found = true;
 							ret = dump_device_attributes(dev, attr, "buffer",
-										     "buf", wbuf, write_only,
+										     "buffer", wbuf, write_only,
 										     attr_index ? quiet : ATTR_VERBOSE);
 							if (wbuf && ret < 0)
 								write_err = true;
