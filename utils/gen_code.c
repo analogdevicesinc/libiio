@@ -124,7 +124,7 @@ void gen_start(const char *gen_file)
 
 		fprintf(fd, "int main(int argc, char **argv)\n{\n"
 			"\tstruct iio_context *ctx;\n\tstruct iio_device *dev;\n\tstruct iio_channel *ch;\n"
-			"\tstruct iio_attr *attr;\n"
+			"\tconst struct iio_attr *attr;\n"
 			"\tconst char* val_str;\n\tssize_t ret;\n\tchar buf[256];\n\n");
 
 	} else if (lang == PYTHON_LANG) {
