@@ -201,7 +201,7 @@ void gen_context_attr(const char *key)
 	if (lang == C_LANG) {
 		fprintf(fd, "\t/* Read IIO Context attribute and return result as string */\n");
 		fprintf(fd, "\tattr = iio_context_find_attr(ctx, \"%s\");\n", key);
-		fprintf(fd, "\tval_str = iio_attr_get_static_value(ctx, attr);\n");
+		fprintf(fd, "\tval_str = iio_attr_get_static_value(attr);\n");
 		fprintf(fd, "\tprintf(\"%s : %%s\\n\", val_str);\n", key);
 	} else if (lang == PYTHON_LANG) {
 		fprintf(fd, "    # Read IIO Context attribute and return result as string\n");
