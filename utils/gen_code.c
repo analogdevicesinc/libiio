@@ -11,6 +11,7 @@
 #include <string.h>
 #include <errno.h>
 #include <iio/iio.h>
+#include <iio/iio-backend.h>
 
 #include "iio_common.h"
 
@@ -266,27 +267,29 @@ void gen_function(const char* prefix, const char* target,
 		return;
 
 	if (lang == C_LANG) {
+		const char *dbg = attr->type == IIO_ATTR_TYPE_DEBUG ? "debug_" : "";
+
 		if (wbuf) {
 			fprintf(fd, "\t/* Write null terminated string to %s attribute: */\n", prefix);
-			fprintf(fd, "\tattr = iio_%s_find_attr(%s, \"%s\");\n"
-				    "\tRET_ASSERT(ret = iio_attr_write_string(attr, \"%s\"));\n",
-				    prefix, target, iio_attr_get_name(attr), wbuf);
+			fprintf(fd, "\tattr = iio_%s_find_%sattr(%s, \"%s\");\n"
+				"\tRET_ASSERT(ret = iio_attr_write_string(attr, \"%s\"));\n",
+				prefix, dbg, target, iio_attr_get_name(attr), wbuf);
 		} else {
 			fprintf(fd, "\t/* Read IIO %s attribute, and put result in string */\n", prefix);
-			fprintf(fd, "\tattr = iio_%s_find_attr(%s, \"%s\");\n"
-				    "\tRET_ASSERT(ret = iio_attr_read_raw(attr, buf, sizeof(buf)));\n",
-				    prefix, target, iio_attr_get_name(attr));
+			fprintf(fd, "\tattr = iio_%s_find_%sattr(%s, \"%s\");\n"
+				"\tRET_ASSERT(ret = iio_attr_read_raw(attr, buf, sizeof(buf)));\n",
+				prefix, dbg, target, iio_attr_get_name(attr));
 		}
 		fprintf(fd, "\t/* For other types, use:\n");
-		fprintf(fd, "\t *  attr = iio_%s_find_attr(%s, \"%s\");\n"
+		fprintf(fd, "\t *  attr = iio_%s_find_%sattr(%s, \"%s\");\n"
 			    "\t    ret = iio_attr_%s_bool(attr, v_bool);\n",
-			prefix, target, iio_attr_get_name(attr), rw);
-		fprintf(fd, "\t *  attr = iio_%s_find_attr(%s, \"%s\");\n"
+			prefix, dbg, target, iio_attr_get_name(attr), rw);
+		fprintf(fd, "\t *  attr = iio_%s_find_%sattr(%s, \"%s\");\n"
 			    "\t    ret = iio_attr_%s_double(attr, v_double);\n",
-			prefix, target, iio_attr_get_name(attr), rw);
-		fprintf(fd, "\t *  attr = iio_%s_find_attr(%s, \"%s\");\n"
+			prefix, dbg, target, iio_attr_get_name(attr), rw);
+		fprintf(fd, "\t *  attr = iio_%s_find_%sattr(%s, \"%s\");\n"
 			    "\t    ret = iio_attr_%s_longlong(attr, v_ll);\n",
-			prefix, target, iio_attr_get_name(attr), rw);
+			prefix, dbg, target, iio_attr_get_name(attr), rw);
 		fprintf(fd, "\t *******************************************************************/\n");
 		if (wbuf) {
 			fprintf(fd, "\tprintf(\"Wrote %%zi bytes\\n\", ret);\n\n");
@@ -298,10 +301,8 @@ void gen_function(const char* prefix, const char* target,
 		if (wbuf) {
 			fprintf(fd, "    # Write string to %s attribute:\n", prefix);
 			if (!strcmp(prefix, "device") || !strcmp(prefix, "channel")) {
-				fprintf(fd, "    %s.attrs[\"%s\"].value = str(\"%s\")\n", target,
-					iio_attr_get_name(attr), wbuf);
-			} else if (!strcmp(prefix, "device_debug")) {
-				fprintf(fd, "    %s.debug_attrs[\"%s\"].value = str(\"%s\")\n", target,
+				fprintf(fd, "    %s.%s[\"%s\"].value = str(\"%s\")\n", target,
+					attr->type == IIO_ATTR_TYPE_DEBUG ? "debug_attrs" : "attrs",
 					iio_attr_get_name(attr), wbuf);
 			} else {
 				fprintf(fd, "    # Write for %s / %s not implemented yet\n", prefix, target);
@@ -311,12 +312,9 @@ void gen_function(const char* prefix, const char* target,
 		} else {
 			fprintf(fd, "    # Read IIO %s attribute\n", prefix);
 			if (!strcmp(prefix, "device") || !strcmp(prefix, "channel")) {
-				fprintf(fd, "    print(\"%s : \" + %s.attrs[\"%s\"].value)\n",
+				fprintf(fd, "    print(\"%s : \" + %s.%s[\"%s\"].value)\n",
 						iio_attr_get_name(attr), target,
-						iio_attr_get_name(attr));
-			} else if (!strcmp(prefix, "device_debug")) {
-				fprintf(fd, "    print(\"%s : \" + %s.debug_attrs[\"%s\"].value)\n",
-						iio_attr_get_name(attr), target,
+						attr->type == IIO_ATTR_TYPE_DEBUG ? "debug_attrs" : "attrs",
 						iio_attr_get_name(attr));
 			} else {
 				fprintf(fd, "    # Read for %s / %s not implemented yet\n", prefix, target);
