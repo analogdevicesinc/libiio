@@ -39,6 +39,7 @@ Components
 
    context
    buffer
+   buffer_stream
    device
    channel
    trigger
