@@ -355,7 +355,7 @@ const struct iio_backend iio_serial_backend = {
 	.name = "serial",
 	.uri_prefix = "serial:",
 	.ops = &serial_ops,
-	.default_timeout_ms = 1000,
+	.default_timeout_ms = 10000,
 };
 
 static const struct iiod_client_ops serial_iiod_client_ops = {
