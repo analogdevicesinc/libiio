@@ -714,7 +714,14 @@ iio_context_find_device(const struct iio_context *ctx, const char *name)
 
 int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout_ms)
 {
-	return IIO_CALL(iio_context_set_timeout)(ctx, timeout_ms);
+	/*
+	 * In libiio 0.x, 0 meant "wait forever". In 1.x, that semantic
+	 * is represented by IIO_TIMEOUT_INFINITE (-1), while 0 now means
+	 * "use backend default". Translate for backwards compatibility.
+	 */
+	int timeout = timeout_ms == 0 ? -1 : (int)timeout_ms;
+
+	return IIO_CALL(iio_context_set_timeout)(ctx, timeout);
 }
 
 unsigned int iio_context_get_attrs_count(const struct iio_context *ctx)

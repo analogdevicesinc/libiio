@@ -448,20 +448,34 @@ int iiod_client_set_trigger(struct iiod_client *client,
 	return ret;
 }
 
-static int calculate_remote_timeout(int timeout_ms)
+static int calculate_remote_timeout(struct iiod_client *client, int timeout_ms)
 {
-	/* Infinite and nonblock are passed through as-is */
-	if (timeout_ms <= 0)
+	/* Handle infinite timeout with backward compatibility:
+	 * - Non-binary servers (v0/tinyiiod) expect 0 for infinite (unsigned int semantic)
+	 * - Binary servers (v1+) expect -1 for infinite (signed int semantic)
+	 */
+	if (timeout_ms == -1) {
+		if (!iiod_client_uses_binary_interface(client))
+			return 0;  /* v0 semantic: 0 = infinite */
+		else
+			return -1; /* v1 semantic: -1 = infinite */
+	}
+
+	/* Nonblock and backend default passed through */
+	if (timeout_ms == 0 || timeout_ms == INT_MIN)
 		return timeout_ms;
 
 	/* XXX(pcercuei): We currently hardcode timeout / 2 for the backend used
 	 * by the remote. Is there something better to do here? */
-	return timeout_ms / 2;
+	if (timeout_ms > 0)
+		return timeout_ms / 2;
+
+	return timeout_ms;
 }
 
 int iiod_client_set_timeout(struct iiod_client *client, int timeout)
 {
-	int remote_timeout = calculate_remote_timeout(timeout);
+	int remote_timeout = calculate_remote_timeout(client, timeout);
 	struct iiod_io *io;
 	int ret;
 

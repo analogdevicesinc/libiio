@@ -1423,7 +1423,19 @@ ssize_t get_trigger(struct parser_pdata *pdata, struct iio_device *dev)
 
 int set_timeout(struct parser_pdata *pdata, int timeout)
 {
-	int ret = iio_context_set_timeout(pdata->ctx, timeout);
+	int translated_timeout = timeout;
+	int ret;
+
+	/* Translate v0 client timeout semantics to v1 semantics:
+	 * - v0 clients (non-binary) use: 0 = infinite, positive = timeout
+	 * - v1 clients (binary) use: -1 = infinite, 0 = backend default, positive = timeout
+	 */
+	if (!pdata->binary && timeout == 0) {
+		/* v0 client sending 0 (infinite) -> translate to v1 infinite (-1) */
+		translated_timeout = -1;
+	}
+
+	ret = iio_context_set_timeout(pdata->ctx, translated_timeout);
 	print_value(pdata, ret);
 	return ret;
 }
