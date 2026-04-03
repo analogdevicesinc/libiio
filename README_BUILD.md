@@ -304,7 +304,7 @@ cmake .. -G "Visual Studio 18 2026" -A x64 `
   -DLIBXML2_LIBRARIES="$PWD\..\deps\libxml2-install\lib\libxml2.lib" `
   -DLIBXML2_INCLUDE_DIR="$PWD\..\deps\libxml2-install\include\libxml2" `
   -DLIBUSB_LIBRARIES="$PWD\..\deps\libusb\VS2022\MS64\dll\libusb-1.0.lib" `
-  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include\libusb-1.0" `
+  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include" `
   -DLIBSERIALPORT_LIBRARIES="$PWD\..\deps\libserialport\x64\Release\libserialport.lib" `
   -DLIBSERIALPORT_INCLUDE_DIR="$PWD\..\deps\libserialport" `
   -DLIBZSTD_LIBRARIES="$PWD\..\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" `
@@ -319,7 +319,7 @@ cmake .. -G "Visual Studio 17 2022" -A x64 `
   -DLIBXML2_LIBRARIES="$PWD\..\deps\libxml2-install\lib\libxml2.lib" `
   -DLIBXML2_INCLUDE_DIR="$PWD\..\deps\libxml2-install\include\libxml2" `
   -DLIBUSB_LIBRARIES="$PWD\..\deps\libusb\VS2022\MS64\dll\libusb-1.0.lib" `
-  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include\libusb-1.0" `
+  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include" `
   -DLIBSERIALPORT_LIBRARIES="$PWD\..\deps\libserialport\x64\Release\libserialport.lib" `
   -DLIBSERIALPORT_INCLUDE_DIR="$PWD\..\deps\libserialport" `
   -DLIBZSTD_LIBRARIES="$PWD\..\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" `
@@ -334,7 +334,7 @@ cmake .. -G "Visual Studio 16 2019" -A x64 `
   -DLIBXML2_LIBRARIES="$PWD\..\deps\libxml2-install\lib\libxml2.lib" `
   -DLIBXML2_INCLUDE_DIR="$PWD\..\deps\libxml2-install\include\libxml2" `
   -DLIBUSB_LIBRARIES="$PWD\..\deps\libusb\VS2019\MS64\dll\libusb-1.0.lib" `
-  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include\libusb-1.0" `
+  -DLIBUSB_INCLUDE_DIR="$PWD\..\deps\libusb\include" `
   -DLIBSERIALPORT_LIBRARIES="$PWD\..\deps\libserialport\x64\Release\libserialport.lib" `
   -DLIBSERIALPORT_INCLUDE_DIR="$PWD\..\deps\libserialport" `
   -DLIBZSTD_LIBRARIES="$PWD\..\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" `
