@@ -338,6 +338,8 @@ if (WITH_USB_BACKEND)
 	endif()
 endif()
 
+iio_option(WITH_EMU_BACKEND "Enable the emulation backend" OFF "POSIX")
+
 # make sure all check_symbol_exists are before this point, otherwise they fail
 # on some versions of compilers
 option(COMPILE_WARNING_AS_ERROR "Make all warnings into errors" OFF)
@@ -593,7 +595,7 @@ endif()
 
 
 iio_option(WITH_XML_BACKEND "Enable the XML backend" ON "POSIX")
-if (WITH_XML_BACKEND)
+if (WITH_XML_BACKEND OR WITH_EMU_BACKEND)
 	# Since libxml2-2.9.2, libxml2 provides its own LibXml2-config.cmake, with all
 	# variables correctly set.
 	# So, try first to find the CMake module provided by libxml2 package, then fallback
@@ -609,16 +611,38 @@ if (WITH_XML_BACKEND)
 
 	if (NOT LIBXML2_FOUND)
 		message(SEND_ERROR "Unable to find libxml2 dependency.\n"
-			"If you want to disable the XML backend, set WITH_XML_BACKEND=OFF.")
+			"If you want to disable the XML and EMU backends, set WITH_XML_BACKEND=OFF and WITH_EMU_BACKEND=OFF.")
 	endif()
+endif()
 
+if (WITH_XML_BACKEND)
 	target_sources(iio PRIVATE xml.c)
-
 	target_include_directories(iio PRIVATE ${LIBXML2_INCLUDE_DIR})
 	target_link_libraries(iio PRIVATE ${LIBXML2_LIBRARIES})
 elseif(NEED_LIBXML2)
 	message(SEND_ERROR "Enabled backends require the XML backend to be enabled as well.\n"
 		"If you want to enable the XML backend, set WITH_XML_BACKEND=ON.")
+endif()
+
+if (WITH_EMU_BACKEND)
+	if (WITH_MODULES)
+		iio_option(WITH_EMU_BACKEND_DYNAMIC "Build EMU backend as a module" ON "POSIX")
+	else()
+		set(WITH_EMU_BACKEND_DYNAMIC OFF)
+	endif()
+
+	if (WITH_EMU_BACKEND_DYNAMIC)
+		add_library(iio-emu SHARED emu.c)
+		target_link_libraries(iio-emu PRIVATE iio ${LIBXML2_LIBRARIES})
+		target_include_directories(iio-emu PRIVATE ${LIBXML2_INCLUDE_DIR})
+		set_target_properties(iio-emu PROPERTIES PREFIX lib)
+	else()
+		target_sources(iio PRIVATE emu.c)
+		target_include_directories(iio PRIVATE ${LIBXML2_INCLUDE_DIR})
+		target_link_libraries(iio PRIVATE ${LIBXML2_LIBRARIES})
+	endif()
+
+	message(STATUS "EMU backend enabled")
 endif()
 
 if (WITH_LIBTINYIIOD)
