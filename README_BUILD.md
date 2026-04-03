@@ -121,6 +121,8 @@ Cmake Options          | Default | Depends on    | Description                  
 `ENABLE_IPV6`          |  ON | Networking    | Define if you want to enable IPv6 support |
 `WITH_LOCAL_BACKEND`   |  ON | Linux         | Enables local support with iiod  |
 `WITH_LOCAL_CONFIG`    |  ON | Local backend | Read local context attributes from /etc/libiio.ini |
+`WITH_EMU_BACKEND`     | OFF | libxml2       | Enable the emulation backend for XML-based device simulation |
+`WITH_EMU_BACKEND_DYNAMIC` |  ON | Modules + emu backend | Compile the emulation backend as a module |
 
 
 There are a few options, which are experimental, which should be left to their default settings:
