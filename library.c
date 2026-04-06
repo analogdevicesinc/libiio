@@ -21,6 +21,8 @@ static void libiio_exit(void)
 {
 	if (WITH_XML_BACKEND)
 		libiio_cleanup_xml_backend();
+	if (WITH_EMU_BACKEND)
+		libiio_cleanup_emu_backend();
 }
 
 void iio_set_get_ticks_us_cb(iio_get_ticks_us cb)

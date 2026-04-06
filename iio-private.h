@@ -239,6 +239,7 @@ extern const struct iio_backend iio_ip_backend;
 extern const struct iio_backend iio_local_backend;
 extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;
+extern const struct iio_backend iio_emu_backend;
 extern const struct iio_backend iio_xml_backend;
 
 extern const struct iio_backend * const iio_backends[];
@@ -266,5 +267,6 @@ bool iio_channel_is_hwmon(const char *id);
 
 int iio_block_io(struct iio_block *block);
 void libiio_cleanup_xml_backend(void);
+void libiio_cleanup_emu_backend(void);
 
 #endif /* __IIO_PRIVATE_H__ */
