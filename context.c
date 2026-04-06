@@ -662,6 +662,8 @@ const struct iio_backend * const iio_backends[] = {
 		       &iio_serial_backend),
 	IIO_IF_ENABLED(WITH_USB_BACKEND && !WITH_USB_BACKEND_DYNAMIC,
 		       &iio_usb_backend),
+	IIO_IF_ENABLED(WITH_EMU_BACKEND && !WITH_EMU_BACKEND_DYNAMIC,
+		       &iio_emu_backend),
 	IIO_IF_ENABLED(WITH_XML_BACKEND, &iio_xml_backend),
 	IIO_IF_ENABLED(WITH_EXTERNAL_BACKEND, &iio_external_backend),
 };
