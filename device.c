@@ -474,6 +474,7 @@ struct iio_buffer * iio_device_add_buffer(struct iio_device *dev, unsigned int i
 
 	buf->dev = dev;
 	buf->idx = idx;
+	buf->direction = -1;
 
 	bufs = realloc(dev->buffers, (dev->nb_buffers + 1) * sizeof(*dev->buffers));
 	if (!bufs) {

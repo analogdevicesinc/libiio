@@ -80,6 +80,7 @@ static const char * const buffer_attrs_reserved[] = {
 	"length",
 	"enable",
 	"watermark",
+	"direction",
 };
 
 int ioctl_nointr(int fd, unsigned long request, void *data)
@@ -1340,10 +1341,23 @@ static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
 
 	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
 		struct iio_buffer *buffer;
+		char dir_buf[16];
 
 		buffer = iio_device_add_buffer(dev, 0);
 		if (!buffer)
 			return -ENOMEM;
+
+		/* A buffer's direction cannot change at runtime, read it now */
+		ret = (int)local_do_read_dev_attr(iio_device_get_id(dev),
+						  0, "direction",
+						  dir_buf, sizeof(dir_buf),
+						  IIO_ATTR_TYPE_BUFFER);
+		if (ret > 0) {
+			if (!strcmp(dir_buf, "in"))
+				buffer->direction = IIO_BUFFER_DIRECTION_INPUT;
+			else
+				buffer->direction = IIO_BUFFER_DIRECTION_OUTPUT;
+		}
 
 		ret = foreach_in_dir(ctx, buffer, buf, false, add_buffer_attr);
 		if (ret < 0)
