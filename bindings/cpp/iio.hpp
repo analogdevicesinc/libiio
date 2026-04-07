@@ -517,6 +517,7 @@ public:
     unsigned int attrs_count() const {return iio_buffer_get_attrs_count(p);}
     optional<Attr> get_attr(unsigned int index) {return impl::maybe<Attr>(iio_buffer_get_attr(p, index));}
     optional<Attr> find_attr(cstr name) {return impl::maybe<Attr>(iio_buffer_find_attr(p, name));}
+    bool is_output() const {return iio_buffer_is_output(p);}
     void set_data(void * data){iio_buffer_set_data(p, data);}
     void * data() {return iio_buffer_get_data(p);}
     BufferStreamPtr open(iio_channels_mask const * mask) { return BufferStreamPtr{impl::check(iio_buffer_open(p, mask), "iio_buffer_open")}; }
