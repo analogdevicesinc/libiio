@@ -1177,6 +1177,12 @@ __api __check_ret __pure const struct iio_attr *
 iio_buffer_find_attr(const struct iio_buffer *buf, const char *name);
 
 
+/** @brief Returns true if the buffer is an output buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return True if the buffer is an output (TX) buffer, false otherwise */
+__api __check_ret __pure bool iio_buffer_is_output(const struct iio_buffer *buf);
+
+
 /** @brief Associate a pointer to an iio_buffer structure
  * @param buf A pointer to an iio_buffer structure
  * @param data The pointer to be associated */
