@@ -759,6 +759,9 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 	device_id = iio_device_get_id(dev);
 	attr_name = iio_attr_get_name(attr);
 
+	if (string_ends_with(attr_name, "_available"))
+		return -EACCES;
+
 	if (check_available(attr, src) < 0)
 		return -EINVAL;
 
