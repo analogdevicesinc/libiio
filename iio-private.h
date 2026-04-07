@@ -156,10 +156,14 @@ struct iio_buffer_stream {
 	unsigned int nb_blocks;
 };
 
+#define IIO_BUFFER_DIRECTION_INPUT	0
+#define IIO_BUFFER_DIRECTION_OUTPUT	1
+
 struct iio_buffer {
 	const struct iio_device *dev;
 	void *userdata;
 	unsigned int idx;
+	int direction;
 	struct iio_attr_list attrlist;
 	char **values;
 };
