@@ -199,6 +199,14 @@ iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
 	return iio_attr_find(&buf->attrlist, name);
 }
 
+void iio_buffer_set_direction(struct iio_buffer *buf, const char *direction)
+{
+	if (!strcmp(direction, "in"))
+		buf->direction = IIO_BUFFER_DIRECTION_INPUT;
+	else
+		buf->direction = IIO_BUFFER_DIRECTION_OUTPUT;
+}
+
 void free_buffer(struct iio_buffer *buf)
 {
 	iio_free_attrs(&buf->attrlist);

@@ -195,6 +195,9 @@ iio_device_add_attr(struct iio_device *dev,
 __api int
 iio_buffer_add_attr(struct iio_buffer *buf, const char *name);
 
+__api void
+iio_buffer_set_direction(struct iio_buffer *buf, const char *direction);
+
 __api int
 iio_channel_add_attr(struct iio_channel *chn,
 		     const char *name, const char *filename);

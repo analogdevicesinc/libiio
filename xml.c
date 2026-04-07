@@ -246,17 +246,20 @@ err_free_name_id:
 
 static int create_buffers(struct iio_device *dev, xmlNode *node)
 {
+	const char *direction = NULL;
 	struct iio_buffer *buf;
 	unsigned int idx = 0;
 	xmlAttr *attr;
 	xmlNode *n;
 	int err;
 
-	/* Parse buffer index */
+	/* Parse buffer attributes */
 	for (attr = node->properties; attr; attr = attr->next) {
 		if (!strcmp((const char *) attr->name, "index"))
 			idx = (unsigned int) strtoul((const char *)attr->children->content,
 							 NULL, 10);
+		else if (!strcmp((const char *) attr->name, "direction"))
+			direction = (const char *) attr->children->content;
 		else
 			dev_dbg(dev, "Unknown attribute \'%s\' in <buffer>\n",
 				attr->name);
@@ -265,6 +268,9 @@ static int create_buffers(struct iio_device *dev, xmlNode *node)
 	buf = iio_device_add_buffer(dev, idx);
 	if (!buf)
 		return -ENOMEM;
+
+	if (direction)
+		iio_buffer_set_direction(buf, direction);
 
 	for (n = node->children; n; n = n->next) {
 		if (!strcmp((const char *)n->name, "attribute")) {
