@@ -291,22 +291,6 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
-static bool iio_buffer_is_tx(const struct iio_buffer *buf)
-{
-	const struct iio_device *dev = iio_buffer_get_device(buf);
-	const struct iio_channel *ch;
-	unsigned int i;
-
-	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
-		ch = iio_device_get_channel(dev, i);
-
-		if (iio_channel_is_output(ch) &&
-		    iio_channel_is_scan_element(ch))
-			return true;
-	}
-
-	return false;
-}
 
 static int buffer_enqueue_block(void *priv, void *d)
 {
@@ -487,7 +471,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 			entry->words[IIO_BIT_WORD(i)] &= ~IIO_BIT_MASK(i);
 	}
 
-	entry->is_tx = iio_buffer_is_tx(buf);
+	entry->is_tx = iio_buffer_is_output(buf);
 
 	/* Success, destroy the temporary mask object */
 	iio_channels_mask_destroy(mask);
