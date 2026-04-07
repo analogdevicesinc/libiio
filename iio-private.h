@@ -217,8 +217,6 @@ ssize_t iio_snprintf_device_xml(char *str, ssize_t slen,
 
 int iio_context_init(struct iio_context *ctx);
 
-bool iio_device_is_tx(const struct iio_device *dev);
-
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
 

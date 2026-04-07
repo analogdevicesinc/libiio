@@ -293,20 +293,6 @@ iio_device_find_debug_attr(const struct iio_device *dev, const char *name)
 	return iio_attr_find(&dev->attrlist[IIO_ATTR_TYPE_DEBUG], name);
 }
 
-bool iio_device_is_tx(const struct iio_device *dev)
-{
-	struct iio_channel *ch;
-	unsigned int i;
-
-	for (i = 0; i < dev->nb_channels; i++) {
-		ch = dev->channels[i];
-		if (iio_channel_is_output(ch) && iio_channel_is_scan_element(ch))
-			return true;
-	}
-
-	return false;
-}
-
 void iio_device_set_data(struct iio_device *dev, void *data)
 {
 	dev->userdata = data;
