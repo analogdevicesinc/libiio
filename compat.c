@@ -187,6 +187,7 @@ struct compat {
 		(*iio_buffer_stream_get_channels_mask)(const struct iio_buffer_stream *);
 	void (*iio_buffer_set_data)(struct iio_buffer *, void *);
 	void * (*iio_buffer_get_data)(const struct iio_buffer *);
+	bool (*iio_buffer_is_output)(const struct iio_buffer *);
 
 	/* Blocks */
 	struct iio_block * (*iio_buffer_stream_create_block)(struct iio_buffer_stream *, size_t);
@@ -282,25 +283,6 @@ static inline int iio_err(const void *ptr)
 	return (uintptr_t) ptr >= (uintptr_t) -4095 ? (int)(intptr_t) ptr : 0;
 }
 
-static bool iio_device_is_tx(const struct iio_device *dev)
-{
-	struct iio_channel *chn;
-	unsigned int i, nb_channels;
-
-	nb_channels = IIO_CALL(iio_device_get_channels_count)(dev);
-
-	for (i = 0; i < nb_channels; i++) {
-		chn = IIO_CALL(iio_device_get_channel)(dev, i);
-
-		if (IIO_CALL(iio_channel_is_output)(chn)
-		    && IIO_CALL(iio_channel_is_scan_element)(chn)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 static int iio_init_context_compat(struct iio_context *ctx)
 {
 	struct iio_context_compat *compat;
@@ -341,9 +323,10 @@ static int iio_init_context_compat(struct iio_context *ctx)
 				      + sizeof(*compat)
 				      + i * sizeof(*dev_compat));
 		dev_compat->nb_channels = nb_channels;
-		dev_compat->is_tx = iio_device_is_tx(dev);
 		dev_compat->nb_kernel_buffers = 4;
 		dev_compat->buf = IIO_CALL(iio_device_get_buffer)(dev, 0);
+		if (dev_compat->buf)
+			dev_compat->is_tx = IIO_CALL(iio_buffer_is_output)(dev_compat->buf);
 
 		IIO_CALL(iio_device_set_data)(dev, dev_compat);
 
@@ -2391,6 +2374,7 @@ static void compat_lib_init(void)
 	FIND_SYMBOL(ctx->lib, iio_buffer_stream_get_channels_mask);
 	FIND_SYMBOL(ctx->lib, iio_buffer_get_data);
 	FIND_SYMBOL(ctx->lib, iio_buffer_set_data);
+	FIND_SYMBOL(ctx->lib, iio_buffer_is_output);
 
 	FIND_SYMBOL(ctx->lib, iio_attr_get_name);
 	FIND_SYMBOL(ctx->lib, iio_attr_get_filename);
