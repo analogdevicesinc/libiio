@@ -22,6 +22,10 @@ namespace iio
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_buffer_get_attr(IntPtr buf, uint index);
 
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool iio_buffer_is_output(IntPtr buf);
+
         /// <summary>The associated <see cref="iio.Device"/> object.</summary>
         public readonly Device dev;
 
@@ -41,6 +45,12 @@ namespace iio
             {
                 attrs.Add(new Attr(iio_buffer_get_attr(buf, i)));
             }
+        }
+
+        /// <summary>Returns true if the buffer is an output (TX) buffer.</summary>
+        public bool output
+        {
+            get { return iio_buffer_is_output(buf); }
         }
 
         /// <summary>Open this buffer for data streaming.</summary>
