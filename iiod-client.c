@@ -1621,7 +1621,7 @@ int iiod_client_enqueue_block(struct iio_block_pdata *block,
 	struct iiod_client_buffer_pdata *pdata = block->buffer;
 	struct iiod_command cmd;
 	struct iiod_buf buf[2];
-	bool is_rx = !iio_device_is_tx(pdata->dev);
+	bool is_rx = !iio_buffer_is_output(iio_device_get_buffer(pdata->dev, pdata->idx));
 	unsigned int nb_buf = 1 + !is_rx;
 	int ret = 0;
 
@@ -1681,7 +1681,7 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 		buf.ptr = block->data;
 		buf.size = block->bytes_used;
 
-		is_rx = !iio_device_is_tx(pdata->dev);
+		is_rx = !iio_buffer_is_output(iio_device_get_buffer(pdata->dev, pdata->idx));
 		iiod_io_get_response_async(block->io, &buf, is_rx);
 
 		ret = iiod_io_send_command_async(block->io, &cmd, NULL, 0);
