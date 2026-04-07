@@ -16,7 +16,7 @@
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include "iio-private.h"
-
+#include <math.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
@@ -677,6 +677,71 @@ static ssize_t emu_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 	return read_device_attr(pdata->doc, device_id, attr->type, attr_name, dst, len);
 }
 
+static int validate_against_available(const struct iio_attr *attr, const char *src)
+{
+	double min = 0, step = 0, max = 0;
+	char **list = NULL;
+	size_t count = 0;
+	bool found;
+	int ret;
+
+	ret = iio_attr_get_range(attr, &min, &step, &max);
+	if (ret == 0) {
+		double value, steps_from_min;
+		if (step == 0 || sscanf(src, "%lf", &value) != 1 ||
+		    value < min || value > max)
+			return -EINVAL;
+		steps_from_min = (value - min) / step;
+		if (fabs(steps_from_min - round(steps_from_min)) > 1e-9)
+			return -EINVAL;
+		return 0;
+	}
+
+	if (ret == -EOPNOTSUPP) {
+		ret = iio_attr_get_available(attr, &list, &count);
+		if (ret < 0)
+			return ret;
+		found = false;
+		for (size_t i = 0; i < count; i++) {
+			if (strcmp(src, list[i]) == 0) {
+				found = true;
+				break;
+			}
+		}
+		iio_available_list_free(list, count);
+		return found ? 0 : -EINVAL;
+	}
+
+	return 0;
+}
+
+static int check_available(const struct iio_attr *attr, const char *src)
+{
+	char avail_name[MAX_ATTR_NAME + sizeof("_available")];
+	const struct iio_attr *avail_attr;
+
+	snprintf(avail_name, sizeof(avail_name), "%s_available", iio_attr_get_name(attr));
+
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		avail_attr = iio_channel_find_attr(attr->iio.chn, avail_name);
+		break;
+	case IIO_ATTR_TYPE_DEVICE:
+		avail_attr = iio_device_find_attr(attr->iio.dev, avail_name);
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		avail_attr = iio_device_find_debug_attr(attr->iio.dev, avail_name);
+		break;
+	default:
+		return 0;
+	}
+
+	if (!avail_attr)
+		return 0;
+
+	return validate_against_available(avail_attr, src);
+}
+
 static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 {
 	const struct iio_device *dev;
@@ -693,6 +758,9 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 		return -EINVAL;
 	device_id = iio_device_get_id(dev);
 	attr_name = iio_attr_get_name(attr);
+
+	if (check_available(attr, src) < 0)
+		return -EINVAL;
 
 	if (attr->type == IIO_ATTR_TYPE_CHANNEL) {
 		const struct iio_channel *chn = attr->iio.chn;
