@@ -25,6 +25,28 @@ void * iio_buffer_get_data(const struct iio_buffer *buf)
 	return buf->userdata;
 }
 
+bool iio_buffer_is_output(const struct iio_buffer *buf)
+{
+	const struct iio_device *dev;
+	struct iio_channel *ch;
+	unsigned int i;
+
+	/* Fast path: use the direction field if available */
+	if (buf->direction >= 0)
+		return buf->direction == IIO_BUFFER_DIRECTION_OUTPUT;
+
+	/* Legacy fallback: scan channels for output scan elements */
+	dev = buf->dev;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		ch = dev->channels[i];
+		if (iio_channel_is_output(ch) && iio_channel_is_scan_element(ch))
+			return true;
+	}
+
+	return false;
+}
+
 const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
 {
 	return buf->dev;
