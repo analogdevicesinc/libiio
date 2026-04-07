@@ -110,7 +110,7 @@ const struct iio_block *
 iio_stream_get_next_block(struct iio_stream *stream)
 {
 	const struct iio_device *dev = stream->buf_stream->buf->dev;
-	bool is_tx = iio_device_is_tx(dev);
+	bool is_tx = iio_buffer_is_output(stream->buf_stream->buf);
 	unsigned int i;
 	int err;
 
