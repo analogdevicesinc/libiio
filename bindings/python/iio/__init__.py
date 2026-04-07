@@ -675,6 +675,10 @@ _buffer_get_device = _lib.iio_buffer_get_device
 _buffer_get_device.restype = _DevicePtr
 _buffer_get_device.argtypes = (_BufferPtr,)
 
+_buffer_is_output = _lib.iio_buffer_is_output
+_buffer_is_output.restype = c_bool
+_buffer_is_output.argtypes = (_BufferPtr,)
+
 _buffer_open = _lib.iio_buffer_open
 _buffer_open.restype = _BufferStreamPtr
 _buffer_open.argtypes = (_BufferPtr, _ChannelsMaskPtr)
@@ -1137,6 +1141,14 @@ class Buffer(_IIO_Object):
         type: iio.Device
         """
         return self._parent
+
+    @property
+    def output(self):
+        """
+        Returns True if the buffer is an output (TX) buffer.
+        type: bool
+        """
+        return _buffer_is_output(self._buffer)
 
     def open(self, mask):
         """
