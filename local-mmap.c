@@ -190,7 +190,8 @@ int local_enqueue_mmap_block(struct iio_block_pdata *pdata,
 		priv->block.flags |= BLOCK_FLAG_CYCLIC;
 	}
 
-	if (bytes_used != priv->block.size && !iio_device_is_tx(buf->dev)) {
+	if (bytes_used != priv->block.size &&
+	    !iio_buffer_is_output(iio_device_get_buffer(buf->dev, buf->idx))) {
 		/* MMAP interface only supports bytes_used on TX */
 		return -EINVAL;
 	}
