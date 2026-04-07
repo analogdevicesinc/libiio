@@ -108,7 +108,18 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		const struct iio_buffer *buf = dev->buffers[i];
 		unsigned int j;
 
-		ret = iio_snprintf(ptr, len, "<buffer index=\"%u\" >", buf->idx);
+		if (buf->direction == IIO_BUFFER_DIRECTION_INPUT)
+			ret = iio_snprintf(ptr, len,
+					   "<buffer index=\"%u\" direction=\"in\" >",
+					   buf->idx);
+		else if (buf->direction == IIO_BUFFER_DIRECTION_OUTPUT)
+			ret = iio_snprintf(ptr, len,
+					   "<buffer index=\"%u\" direction=\"out\" >",
+					   buf->idx);
+		else
+			ret = iio_snprintf(ptr, len,
+					   "<buffer index=\"%u\" >",
+					   buf->idx);
 		if (ret < 0)
 			return ret;
 
