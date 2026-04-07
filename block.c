@@ -134,7 +134,7 @@ static int iio_block_read(struct iio_block *block)
 
 int iio_block_io(struct iio_block *block)
 {
-	if (!iio_device_is_tx(block->buf_stream->buf->dev))
+	if (!iio_buffer_is_output(block->buf_stream->buf))
 		return iio_block_read(block);
 
 	return iio_block_write(block);
