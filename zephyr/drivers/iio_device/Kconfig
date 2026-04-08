@@ -9,18 +9,24 @@ menuconfig LIBIIO_IIO_DEVICE
 
 if LIBIIO_IIO_DEVICE
 
-config LIBIIO_IIO_DEVICE_ADC
-	bool "ADC driver"
-	default y
-	depends on DT_HAS_IIO_ADC_ENABLED && ADC
+config LIBIIO_IIO_DEVICE_FP
+	bool "Support full floating-point operation"
+	select REQUIRES_FULL_LIBC
 	help
-	  Enable the Zephyr ADC iio device driver class.
+	  Enable full floating point support, for inputs/outputs
 
-config LIBIIO_IIO_DEVICE_ADC_INIT_PRIORITY
+config LIBIIO_IIO_DEVICE_IO_CHANNELS
+	bool "ADC/DAC IO channels driver"
+	default y
+	depends on DT_HAS_IIO_IO_CHANNELS_ENABLED && (ADC || DAC)
+	help
+	  Enable the Zephyr ADC/DAC io channels iio device driver class.
+
+config LIBIIO_IIO_DEVICE_IO_CHANNELS_INIT_PRIORITY
 	int "ADC driver init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
-	depends on LIBIIO_IIO_DEVICE_ADC
+	depends on LIBIIO_IIO_DEVICE_IO_CHANNELS
 	help
-	  Initialization priority of the Zephyr ADC iio device driver class.
+	  Initialization priority of the Zephyr ADC/DAC io-channels iio device driver class.
 
 endif # LIBIIO_IIO_DEVICE
