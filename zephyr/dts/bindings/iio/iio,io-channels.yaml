@@ -3,11 +3,15 @@
 
 include: base.yaml
 
-description: IIO ADC
+description: IIO ADC/DAC io-channels
 
-compatible: "iio,adc"
+compatible: "iio,io-channels"
 
 properties:
+  io-channels:
+    required: true
+  io-channel-names:
+    required: true
   reg:
     required: true
   io-name:
