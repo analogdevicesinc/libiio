@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(iio_device_io_channels, CONFIG_LIBIIO_LOG_LEVEL);
 
 #define IIO_DEVICE_INT_REF_VOL_LEN 6 /* max voltage is 65535 which is 5 digits + null terminator */
-#define IIO_DEVICE_SCALE_LEN 7 /* scale format is xx.xxx + null terminator */
+#define IIO_DEVICE_SCALE_LEN 10 /* scale format is xx.xxx + null terminator */
 #define IIO_DEVICE_GAIN_LEN 4 /* max gain is 128 which is 3 digits + null terminator */
 #define IIO_DEVICE_PROCESS_LEN 12 /* process is int type so it needs 11 digits + null terminator */
 #define IIO_DEVICE_REF_LEN 11 /* max reference is External0 so it needs 10 digits + null terminator */
@@ -313,9 +313,9 @@ static int iio_device_io_channels_read_channel_scale(const struct device *dev,
 		resolution = channel->channel_cfg.resolution;
 	}
 
-	scale_uv = ((uint32_t)vref_mv * 1000u) / (1u << resolution); /* uV/LSB */
-	whole = scale_uv / 1000u;
-	frac = scale_uv % 1000u;
+	scale_uv = ((uint32_t)vref_mv * 1000000u) / (1u << resolution); /* uV/LSB */
+	whole = scale_uv / 1000000u;
+	frac = scale_uv % 1000000u;
 
 	return snprintk(dst, len, "%u.%03u", whole, frac) + 1;
 }
