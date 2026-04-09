@@ -476,7 +476,7 @@ iio_attr_get_static_value(const struct iio_attr *attr);
  * @return On error, a negative errno code is returned. For attributes without the
  * '_available' suffix, -ENXIO is returned. For attributes whose values do not follow
  * the [min step max] format, -EOPNOTSUPP is returned. */
-__api __pure int
+__api int
 iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, double *max);
 
 /** @brief Extract the list of elements from an attribute with suffix '_available'
@@ -490,7 +490,7 @@ iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, doubl
  * @return On error, a negative errno code is returned. For attributes without the
  * '_available' suffix, -ENXIO is returned. For attributes whose values are in a range
  * format, -EOPNOTSUPP is returned. */
-__api __pure int
+__api int
 iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count);
 
  /** @brief A variant of iio_attr_get_available() that uses a caller-supplied,
@@ -515,7 +515,7 @@ iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count)
  * the '_available' suffix, -ENXIO is returned. For attributes whose values are
  * in a range format, -EOPNOTSUPP is returned. If not enough space is available in
  * list[], the function returns -ENOSPC*/
-__api __pure int
+__api int
 iio_attr_get_available_buf(const struct iio_attr *attr, char *buf,
 		size_t buflen, char **list, size_t *count);
 
