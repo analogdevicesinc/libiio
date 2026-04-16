@@ -266,6 +266,15 @@ stages:
       inputs:
         targetType: 'filePath'
         filePath: .\CI\publish_deps.ps1
+    - task: PowerShell@2
+      displayName: 'Run C# Integration Tests'
+      condition: eq(variables['COMPILER'], 'Visual Studio 17 2022')
+      inputs:
+        targetType: 'filePath'
+        filePath: .\CI\run_csharp_tests.ps1
+      env:
+        BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+        cmakeBuildType: $(cmakeBuildType)
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
