@@ -244,5 +244,14 @@ namespace iio
         {
             return UTF8Marshaler.PtrToStringUTF8(iio_get_builtin_backend(index));
         }
+
+        /// <summary>Gets the version of the local libiio library.
+        /// This does not require a context and reflects the version of the loaded binary.</summary>
+        public static readonly Version library_version;
+
+        static IioLib()
+        {
+            library_version = new Version();
+        }
     }
 }

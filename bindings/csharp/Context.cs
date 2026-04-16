@@ -101,8 +101,10 @@ namespace iio
 
         /// <summary>Retrieve a human-readable information string about the current context.</summary>
         public readonly string description;
-        /// <summary>Retrieve a information about the version context.</summary>
-        public readonly Version library_version, backend_version;
+        /// <summary>Retrieve the version of the remote backend library.
+        /// For local contexts this equals <see cref="IioLib.library_version"/>.
+        /// Use <see cref="IioLib.library_version"/> to get the local library version.</summary>
+        public readonly Version backend_version;
 
         /// <summary>A <c>List</c> of all the IIO devices present on the current context.</summary>
         public readonly List<Device> devices;
@@ -189,7 +191,6 @@ namespace iio
 
             name = UTF8Marshaler.PtrToStringUTF8(iio_context_get_name(hdl));
             description = UTF8Marshaler.PtrToStringUTF8(iio_context_get_description(hdl));
-            library_version = new Version();
             backend_version = new Version(hdl);
 
             attrs = new Dictionary<string, string>();
