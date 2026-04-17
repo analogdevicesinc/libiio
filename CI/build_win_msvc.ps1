@@ -25,7 +25,8 @@ cmake -G "$Env:COMPILER" -DCMAKE_SYSTEM_PREFIX_PATH="C:" `
 -DLIBUSB_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\$USB_VS_version\MS64\dll\libusb-1.0.lib" -DLIBUSB_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libusb\include" `
 -DLIBSERIALPORT_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\libserialport\x64\Release\libserialport.lib" -DLIBSERIALPORT_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\libserialport" `
 -DLIBZSTD_LIBRARIES="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\build\VS2010\bin\x64_Release\libzstd.lib" -DLIBZSTD_INCLUDE_DIR="$Env:BUILD_SOURCESDIRECTORY\deps\zstd\lib" `
--DWITH_EXAMPLES=ON -DLICENSE_CHECK=ON ..
+-DWITH_EXAMPLES=ON `
+-DLICENSE_CHECK=OFF ..  # To re-enable this once script is fixed
 
 # Build each configuration
 foreach ($config in $buildConfigs) {
