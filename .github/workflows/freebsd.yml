@@ -37,7 +37,7 @@ jobs:
          fi
          mkdir build
          cd build
-         cmake .. -DWITH_SERIAL_BACKEND=ON -DLICENSE_CHECK=ON
+         cmake .. -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DLICENSE_CHECK=ON
          make
 
 

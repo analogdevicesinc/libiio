@@ -77,7 +77,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DCPP_BINDINGS=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make VERBOSE=1
         cmake .. -DLICENSE_CHECK=ON
         make package
@@ -86,7 +86,7 @@ stages:
     - script: |
         set -e
         mkdir build-examples && cd build-examples
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCPP_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EXAMPLES=ON -DCPP_EXAMPLES=ON
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCPP_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DWITH_EXAMPLES=ON -DCPP_EXAMPLES=ON
         make
       displayName: 'Build with Examples'
       condition: eq(variables['artifactName'], 'Linux-Ubuntu-24.04')
@@ -335,7 +335,7 @@ stages:
     - script: |
         set -e
         mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python'))") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python'))") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON
         make VERBOSE=1
         cmake -DLICENSE_CHECK=ON ..
         sudo make install
@@ -344,7 +344,7 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
         mv ../CI/azure/macos_tar_fixup.sh .
@@ -355,7 +355,7 @@ stages:
     - script: |
         set -e
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DWITH_DOC=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON
         make
         cd ..
       displayName: 'Build With Doc'
