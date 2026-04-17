@@ -162,7 +162,7 @@ target_compile_definitions(iio PUBLIC
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|DragonFly|OpenBSD|NetBsd")
 	target_compile_definitions(iio PUBLIC __BSD_VISIBLE)
-	set(CMAKE_REQUIRED_DEFINITIONS -D__BSD_VISIBLE=1)
+	list(APPEND CMAKE_REQUIRED_DEFINITIONS -D__BSD_VISIBLE=1)
 endif()
 
 include(GNUInstallDirs)
