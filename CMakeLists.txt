@@ -120,9 +120,11 @@ set_target_properties(iio PROPERTIES
 	SOVERSION ${PROJECT_VERSION_MAJOR}
 	PUBLIC_HEADER "${IIO_PUBLIC_HEADERS}"
 )
+set(IIO_C_STANDARD 99)
+set(IIO_POSIX_C_SOURCE 200809L)
 set_target_properties(iio ${IIO_COMPAT_LIB} PROPERTIES
 	FRAMEWORK ${OSX_FRAMEWORK}
-	C_STANDARD 99
+	C_STANDARD ${IIO_C_STANDARD}
 	C_STANDARD_REQUIRED ON
 	C_EXTENSIONS OFF
 )
@@ -146,7 +148,7 @@ target_compile_definitions(iio PRIVATE LIBIIO_EXPORTS)
 
 target_compile_definitions(iio PUBLIC
 	# Request Posix 2008.09
-	_POSIX_C_SOURCE=200809L __XSI_VISIBLE=500
+	_POSIX_C_SOURCE=${IIO_POSIX_C_SOURCE} __XSI_VISIBLE=500
 
 	# Per http://www.mingw.org/wiki/Use_more_recent_defined_functions
 	$<$<PLATFORM_ID:MinGW>:_WIN32_WINNT=0x600 WINVER=0x600>
@@ -259,12 +261,25 @@ endif()
 target_link_libraries(iio PRIVATE iio_common_config)
 
 include(CheckSymbolExists)
+# Run the checks with the same flags used during the actual build, so that
+# the probe compilation matches what the compiler will see (e.g. -std=c99
+# sets __STRICT_ANSI__ in GCC, which can hide POSIX extensions in MinGW
+# headers). IIO_C_STANDARD and IIO_POSIX_C_SOURCE are the single source of
+# truth; changing them above automatically updates the checks below.
+set(_saved_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+set(_saved_CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")
+list(APPEND CMAKE_REQUIRED_FLAGS "-std=c${IIO_C_STANDARD}")
+list(APPEND CMAKE_REQUIRED_DEFINITIONS "-D_POSIX_C_SOURCE=${IIO_POSIX_C_SOURCE}" "-D__XSI_VISIBLE=500")
 check_symbol_exists(strdup "string.h" HAS_STRDUP)
 check_symbol_exists(strndup "string.h" HAS_STRNDUP)
 check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 check_symbol_exists(clock_gettime "time.h" HAS_CLOCK_GETTIME)
+set(CMAKE_REQUIRED_FLAGS "${_saved_CMAKE_REQUIRED_FLAGS}")
+set(CMAKE_REQUIRED_DEFINITIONS "${_saved_CMAKE_REQUIRED_DEFINITIONS}")
+unset(_saved_CMAKE_REQUIRED_FLAGS)
+unset(_saved_CMAKE_REQUIRED_DEFINITIONS)
 
 # For EAI_* codes
 include(CheckIncludeFile)
