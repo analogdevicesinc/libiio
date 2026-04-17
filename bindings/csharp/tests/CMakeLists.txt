@@ -60,4 +60,24 @@ add_csharp_test_target(
     COMMENT "Building C# smoke tests"
 )
 
+# --- Integration Tests ---
+
+set(XML_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/tests/resources/xmls")
+
+add_csharp_test_target(
+    TARGET_NAME libiio-csharp-integration-tests
+    EXE_NAME    LibiioIntegrationTests.exe
+    SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/TestFramework.cs
+        ${CMAKE_CURRENT_SOURCE_DIR}/IntegrationTests.cs
+    EXTRA_COMMANDS
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${XML_RESOURCES_DIR} ${CSHARP_TEST_DIR}
+    COMMENT "Building C# integration tests"
+)
+
+# --- Combined target (builds both) ---
+add_custom_target(libiio-csharp-tests ALL
+    DEPENDS libiio-csharp-smoke-tests libiio-csharp-integration-tests
+)
+
 message(STATUS "C# tests configured in: ${CSHARP_TEST_DIR}")
