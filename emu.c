@@ -688,7 +688,7 @@ static int validate_against_available(const struct iio_attr *attr, const char *s
 	ret = iio_attr_get_range(attr, &min, &step, &max);
 	if (ret == 0) {
 		double value, steps_from_min;
-		if (step == 0 || sscanf(src, "%lf", &value) != 1 ||
+		if (step == 0 || iio_sscanf(src, "%lf", &value) != 1 ||
 		    value < min || value > max)
 			return -EINVAL;
 		steps_from_min = (value - min) / step;
