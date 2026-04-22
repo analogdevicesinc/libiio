@@ -44,10 +44,16 @@ namespace iio
         private static extern uint iio_device_get_debug_attrs_count(IntPtr dev);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_device_get_event_attrs_count(IntPtr dev);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_attr(IntPtr dev, uint index);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_debug_attr(IntPtr dev, uint index);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_event_attr(IntPtr dev, uint index);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IIOPtr iio_device_get_trigger(IntPtr dev);
@@ -91,6 +97,9 @@ namespace iio
         /// <summary>A <c>list</c> of all the debug attributes that this device has.</summary>
         public readonly List<Attr> debug_attrs;
 
+        /// <summary>A <c>list</c> of all the event attributes that this device has.</summary>
+        public readonly List<Attr> event_attrs;
+
         /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
         public readonly List<Channel> channels;
 
@@ -104,11 +113,13 @@ namespace iio
             channels = new List<Channel>();
             attrs = new List<Attr>();
             debug_attrs = new List<Attr>();
+            event_attrs = new List<Attr>();
             buffers = new List<IOBuffer>();
 
             uint nb_channels = iio_device_get_channels_count(dev);
             uint nb_attrs = iio_device_get_attrs_count(dev);
             uint nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
+            uint nb_event_attrs = iio_device_get_event_attrs_count(dev);
             uint nb_buffers = iio_device_get_buffers_count(dev);
 
             for (uint i = 0; i < nb_channels; i++)
@@ -124,6 +135,11 @@ namespace iio
             for (uint i = 0; i < nb_debug_attrs; i++)
             {
                 debug_attrs.Add(new Attr(iio_device_get_debug_attr(dev, i)));
+            }
+
+            for (uint i = 0; i < nb_event_attrs; i++)
+            {
+                event_attrs.Add(new Attr(iio_device_get_event_attr(dev, i)));
             }
 
             id = Marshal.PtrToStringAnsi(iio_device_get_id(dev)); // Device IDs are ASCII (kernel-defined)

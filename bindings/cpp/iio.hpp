@@ -568,9 +568,21 @@ public:
 
     DebugAttrSeq debug_attrs;
 
+#ifndef DOXYGEN
+    typedef impl::AttrSeqT<iio_device,
+        iio_device_get_event_attrs_count,
+        iio_device_get_event_attr,
+        iio_device_find_event_attr
+        > EventAttrSeq;
+#else
+    typedef impl::AttrSeqT<Device> EventAttrSeq;
+#endif
+
+    EventAttrSeq event_attrs;
+
 
     Device() = delete;
-    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev) {assert(dev);}
+    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev), event_attrs(dev) {assert(dev);}
     operator iio_device * () const {return p;}
 
     Context context();
@@ -596,6 +608,9 @@ public:
     unsigned int debug_attrs_count() const {return iio_device_get_debug_attrs_count(p);}
     optional<Attr> debug_attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_debug_attr>(p, idx);}
     optional<Attr> find_debug_attr(cstr name) {return impl::attr<iio_device, iio_device_find_debug_attr>(p, name);}
+    unsigned int event_attrs_count() const {return iio_device_get_event_attrs_count(p);}
+    optional<Attr> event_attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_event_attr>(p, idx);}
+    optional<Attr> find_event_attr(cstr name) {return impl::attr<iio_device, iio_device_find_event_attr>(p, name);}
     void reg_write(uint32_t address, uint32_t value) {impl::check(iio_device_reg_write(p, address, value), "iio_device_reg_write");}
     uint32_t reg_read(uint32_t address) {uint32_t value; impl::check(iio_device_reg_read(p, address, &value), "iio_device_reg_read"); return value;}
 };
