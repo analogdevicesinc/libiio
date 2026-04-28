@@ -13,8 +13,12 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
+#include <iio/iio-lock.h>
 #include "iio-private.h"
 #include <math.h>
 #include <libxml/parser.h>
@@ -23,6 +27,23 @@
 struct iio_context_pdata {
 	xmlDoc *doc;
 	char *xml_path;
+};
+
+struct iio_buffer_pdata {
+	const struct iio_device *dev;
+	unsigned int idx;
+	FILE *file;
+	struct iio_mutex *file_lock;
+	struct iio_cond *file_ready;
+	bool file_is_ready;
+};
+
+struct iio_block_pdata {
+	struct iio_buffer_pdata *buf;
+	void *data;
+	size_t size;
+	bool queued;
+	size_t bytes_to_process;
 };
 
 static xmlNode *getNode(xmlNode *parent, const char *node_name,
@@ -794,11 +815,243 @@ static void emu_shutdown(struct iio_context *ctx)
 	}
 }
 
+/* Returns a heap-allocated path string; caller must free().
+ * Returns NULL on allocation failure.
+ * Cross-platform: handles both '/' and '\\' directory separators. */
+static char *emu_make_data_path(const char *xml_path,
+				const char *dev_id,
+				unsigned int idx)
+{
+	const char *sep = strrchr(xml_path, '/');
+#ifdef _WIN32
+	const char *sep_win = strrchr(xml_path, '\\');
+	if (sep_win && (!sep || sep_win > sep))
+		sep = sep_win;
+#endif
+	size_t dir_len = sep ? (size_t)(sep - xml_path + 1) : 0;
+	size_t path_len = dir_len + MAX_DEV_ID + 32; /* _buf{idx}.bin + margin */
+	char *path = malloc(path_len);
+
+	if (!path)
+		return NULL;
+
+	if (dir_len)
+		iio_snprintf(path, path_len, "%.*s%s_buf%u.bin", (int)dir_len, xml_path, dev_id, idx);
+	else
+		iio_snprintf(path, path_len, "%s_buf%u.bin", dev_id, idx);
+
+	return path;
+}
+
+static struct iio_buffer_pdata *
+emu_open_buffer(const struct iio_device *dev, unsigned int idx,
+		struct iio_channels_mask *mask)
+{
+	struct iio_buffer_pdata *pdata = zalloc(sizeof(*pdata));
+
+	if (!pdata)
+		return iio_ptr(-ENOMEM);
+
+	pdata->dev = dev;
+	pdata->idx = idx;
+	pdata->file = NULL;
+	pdata->file_is_ready = false;
+
+	pdata->file_lock = iio_mutex_create();
+	if (iio_err(pdata->file_lock)) {
+		free(pdata);
+		return iio_ptr(-ENOMEM);
+	}
+
+	pdata->file_ready = iio_cond_create();
+	if (iio_err(pdata->file_ready)) {
+		iio_mutex_destroy(pdata->file_lock);
+		free(pdata);
+		return iio_ptr(-ENOMEM);
+	}
+
+	return pdata;
+}
+
+static void emu_close_buffer(struct iio_buffer_pdata *pdata)
+{
+	if (pdata->file)
+		fclose(pdata->file);
+
+	if (pdata->file_ready)
+		iio_cond_destroy(pdata->file_ready);
+	if (pdata->file_lock)
+		iio_mutex_destroy(pdata->file_lock);
+
+	free(pdata);
+}
+
+static int emu_enable_buffer(struct iio_buffer_pdata *pdata,
+			     size_t nb_samples, bool enable, bool cyclic)
+{
+	struct iio_context_pdata *ctx_pdata;
+	const struct iio_buffer *buf;
+	char *path;
+	bool is_output;
+
+	iio_mutex_lock(pdata->file_lock);
+
+	if (pdata->file) {
+		fclose(pdata->file);
+		pdata->file = NULL;
+		pdata->file_is_ready = false;
+	}
+
+	if (!enable) {
+		iio_mutex_unlock(pdata->file_lock);
+		return 0;
+	}
+
+	buf = iio_device_get_buffer(pdata->dev, pdata->idx);
+	is_output = iio_buffer_is_output(buf);
+
+	ctx_pdata = iio_context_get_pdata(pdata->dev->ctx);
+	path = emu_make_data_path(ctx_pdata->xml_path,
+				  iio_device_get_id(pdata->dev),
+				  pdata->idx);
+	if (!path) {
+		iio_mutex_unlock(pdata->file_lock);
+		return -ENOMEM;
+	}
+
+	pdata->file = fopen(path, is_output ? "wb" : "rb");
+	if (!pdata->file) {
+		if(!is_output)
+			dev_err(pdata->dev, "Rx data file not found, expected at %s\n", path);
+		free(path);
+		iio_mutex_unlock(pdata->file_lock);
+		return is_output ? -EBADF : -ENOENT;
+	}
+	free(path);
+
+	pdata->file_is_ready = true;
+	iio_cond_signal(pdata->file_ready);
+	iio_mutex_unlock(pdata->file_lock);
+
+	return 0;
+}
+
+static void emu_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+}
+
+static struct iio_block_pdata *
+emu_create_block(struct iio_buffer_pdata *pdata, size_t size, void **data)
+{
+	struct iio_block_pdata *block = zalloc(sizeof(*block));
+
+	if (!block)
+		return iio_ptr(-ENOMEM);
+
+	block->data = malloc(size);
+	if (!block->data) {
+		free(block);
+		return iio_ptr(-ENOMEM);
+	}
+
+	block->buf = pdata;
+	block->size = size;
+	*data = block->data;
+	return block;
+}
+
+static void emu_free_block(struct iio_block_pdata *pdata)
+{
+	free(pdata->data);
+	free(pdata);
+}
+
+static int emu_enqueue_block(struct iio_block_pdata *pdata,
+			     size_t bytes_used, bool cyclic)
+{
+	if (pdata->queued)
+		return -EBUSY;
+
+	pdata->queued = true;
+	pdata->bytes_to_process = bytes_used;
+	return 0;
+}
+
+static int emu_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
+{
+	FILE *file;
+	const struct iio_buffer *buf;
+	bool is_output;
+	size_t n, n2;
+	size_t bytes_used;
+
+	if (!pdata->queued)
+		return -EINVAL;
+
+	iio_mutex_lock(pdata->buf->file_lock);
+	while (!pdata->buf->file_is_ready) {
+		int ret = iio_cond_wait(pdata->buf->file_ready,
+					pdata->buf->file_lock, 5000);
+		if (ret) {
+			iio_mutex_unlock(pdata->buf->file_lock);
+			return -EBADF;
+		}
+	}
+	file = pdata->buf->file;
+	iio_mutex_unlock(pdata->buf->file_lock);
+
+	bytes_used = pdata->bytes_to_process ? pdata->bytes_to_process : pdata->size;
+
+	buf = iio_device_get_buffer(pdata->buf->dev, pdata->buf->idx);
+	is_output = iio_buffer_is_output(buf);
+
+	if (is_output) {
+		/* TX: always overwrite from the start */
+		fseek(file, 0, SEEK_SET);
+		n = fwrite(pdata->data, 1, bytes_used, file);
+		fflush(file);
+		if (n < bytes_used)
+			return -EIO;
+
+		/* Truncate to remove any stale bytes from a previous larger write */
+#ifdef _WIN32
+		if (_chsize(_fileno(file), (long)ftell(file)) != 0)
+			return -EIO;
+#else
+		if (ftruncate(fileno(file), ftell(file)) != 0)
+			return -EIO;
+#endif
+	} else {
+		/* RX: read from current file position, naturally advances */
+		n = fread(pdata->data, 1, bytes_used, file);
+
+		if (n < bytes_used) {
+			fseek(file, 0, SEEK_SET);
+			n2 = fread((char*)pdata->data + n, 1, bytes_used - n, file);
+			if (n2 == 0)
+				return -ENODATA;
+		}
+	}
+
+	pdata->queued = false;
+	return 0;
+}
+
 static const struct iio_backend_ops emu_ops = {
 	.create = emu_create_context,
 	.read_attr = emu_read_attr,
 	.write_attr = emu_write_attr,
 	.shutdown = emu_shutdown,
+
+	.open_buffer   = emu_open_buffer,
+	.close_buffer  = emu_close_buffer,
+	.enable_buffer = emu_enable_buffer,
+	.cancel_buffer = emu_cancel_buffer,
+
+	.create_block  = emu_create_block,
+	.free_block    = emu_free_block,
+	.enqueue_block = emu_enqueue_block,
+	.dequeue_block = emu_dequeue_block,
 };
 
 const struct iio_backend iio_emu_backend = {
