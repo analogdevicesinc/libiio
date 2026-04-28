@@ -665,7 +665,7 @@ emu_create_context(const struct iio_context_params *params, const char *args)
 
 	iio_context_set_pdata(ctx, pdata);
 
-	ctx_info(ctx, "Emulated context created from %s\n", args);
+	ctx_dbg(ctx, "Emulated context created from %s\n", args);
 
 	return ctx;
 }
