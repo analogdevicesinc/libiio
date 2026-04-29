@@ -119,15 +119,15 @@ int main(int argc, char **argv)
 	addr = sanitize_clamp("register address", argw[optind + 1], 0, UINT32_MAX);
 
 	if ((argc - optind) == 2) {
-		return read_reg(dev, addr);
+		ret = read_reg(dev, addr);
 	} else {
 		uint32_t val = sanitize_clamp("register value", argw[optind + 2], 0, UINT32_MAX);
-		return write_reg(dev, addr, val);
+		ret = write_reg(dev, addr, val);
 	}
 
 err_destroy_context:
 	free(name);
 	iio_context_destroy(ctx);
 	free_argw(argc, argw);
-	return EXIT_SUCCESS;
+	return ret;
 }
