@@ -9,6 +9,7 @@
   - [Install](#install)
   - [Python bindings](#python-bindings)
   - [Uninstall](#uninstall)
+  - [Building Documentation](#building-documentation)
   - [Building modes](#building-modes)
 - [Environment Variable Configuration](#environment-variable-configuration)
   - [DMA Heap Path Configuration](#dma-heap-path-configuration)
@@ -60,11 +61,11 @@ Install libraries for Backends
 analog@precision:~$ sudo apt-get install libaio-dev libusb-1.0-0-dev
 analog@precision:~$ sudo apt-get install libserialport-dev libavahi-client-dev
 ```
-Install to build doc
+Install to build documentation
 ```shell
-analog@precision:~$ sudo apt-get install doxygen graphviz
+analog@precision:~$ sudo apt-get install doxygen graphviz python3 python3-pip python3-venv
 ```
-Install to build python backends
+Install to build Python bindings
 ```shell
 analog@precision:~$ sudo apt-get install python3 python3-pip python3-setuptools
 ```
@@ -197,9 +198,38 @@ For building or installing the optional Python bindings, see [`bindings/python/R
 analog@precision:~/libiio/build$ sudo make uninstall
 ```
 
-Note: Some things (specifically building doc)  need to find libiio or the bindings on path.
-That means that you configure (with -DWITH_DOC=OFF), build, install, configure
-(with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
+### Building Documentation
+
+Libiio documentation is built using Doxygen (for C/C# API reference) and Sphinx with adi-doctools (for the main documentation website), which should be installed in a virtual environment:
+
+```shell
+analog@precision:~/libiio$ python3 -m venv .venv
+analog@precision:~/libiio$ source .venv/bin/activate
+analog@precision:~/libiio$ pip install -r doc/requirements.txt
+```
+
+Then configure and build:
+```shell
+analog@precision:~/libiio$ mkdir build
+analog@precision:~/libiio$ cd build
+analog@precision:~/libiio/build$ cmake .. -DWITH_DOC=ON
+analog@precision:~/libiio/build$ make
+```
+
+The generated documentation will be available at:
+- **Sphinx HTML docs**: `build/html/v1.0/index.html`
+- **Doxygen C API docs**: `build/html/v1.0/libiio/`
+- **Doxygen C# API docs**: `build/html/v1.0/csharp/`
+
+#### Rebuilding Documentation
+
+To rebuild the documentation after making changes:
+```shell
+analog@precision:~/libiio/build$ source ../.venv/bin/activate
+analog@precision:~/libiio/build$ make
+```
+
+**Note:** Some things (specifically building doc) need to find libiio or the bindings on path. That means that you configure (with -DWITH_DOC=OFF), build, install, configure (with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
 
 
 ### Building modes
