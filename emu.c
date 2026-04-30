@@ -46,6 +46,16 @@ struct iio_block_pdata {
 	size_t bytes_to_process;
 };
 
+struct iio_register_entry {
+	uint32_t addr;
+	uint32_t val;
+};
+
+struct iio_device_pdata {
+	struct iio_register_entry *registers;
+	size_t nb_registers;
+};
+
 static xmlNode *getNode(xmlNode *parent, const char *node_name,
 						const char *attr_name, const char *attr_value)
 {
@@ -539,6 +549,13 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 	if (!dev)
 		goto err_free_name_label_id;
 
+	struct iio_device_pdata *pdata = zalloc(sizeof(*pdata));
+	if (!pdata) {
+		err = -ENOMEM;
+		goto err_free_name_label_id;
+	}
+	iio_device_set_pdata(dev, pdata);
+
 	free(name);
 	free(label);
 	free(id);
@@ -797,9 +814,73 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 	return write_device_attr(pdata->doc, device_id, attr_name, src, len, attr->type);
 }
 
+static struct iio_register_entry *
+emu_find_registers(const struct iio_device_pdata *pdata, uint32_t addr)
+{
+	ssize_t i;
+	for (i = 0; i < (ssize_t)pdata->nb_registers; i++) {
+		if (pdata->registers[i].addr == addr)
+			return &pdata->registers[i];
+	}
+	return NULL;
+}
+
+static int emu_reg_read(const struct iio_device *dev, uint32_t addr, uint32_t *val)
+{
+	const struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iio_register_entry *regs;
+
+	if (!pdata)
+		return -ENOENT;
+
+	regs = emu_find_registers(pdata, addr);
+	if (!regs)
+		return -ENOENT;
+
+	*val = regs->val;
+
+	return 0;
+}
+
+static int emu_reg_write(const struct iio_device *dev, uint32_t addr, uint32_t val)
+{
+	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iio_register_entry *regs, *new_regs;
+
+	if (!pdata)
+		return -ENOENT;
+
+	regs = emu_find_registers(pdata, addr);
+	if (regs) {
+		regs->val = val;
+	} else {
+		new_regs = realloc(pdata->registers,
+			(pdata->nb_registers + 1) * sizeof(struct iio_register_entry));
+		if (!new_regs)
+			return -ENOMEM;
+		pdata->registers = new_regs;
+		pdata->registers[pdata->nb_registers].addr = addr;
+		pdata->registers[pdata->nb_registers].val = val;
+		pdata->nb_registers++;
+	}
+
+	return 0;
+}
+
 static void emu_shutdown(struct iio_context *ctx)
 {
+	unsigned int i, nb_devs;
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	nb_devs = iio_context_get_devices_count(ctx);
+	for (i = 0; i < nb_devs; i++) {
+		const struct iio_device *dev = iio_context_get_device(ctx, i);
+		struct iio_device_pdata *dev_pdata = iio_device_get_pdata(dev);
+		if (dev_pdata) {
+			free(dev_pdata->registers);
+			free (dev_pdata);
+		}
+	}
 
 	if (!pdata)
 		return;
@@ -813,6 +894,7 @@ static void emu_shutdown(struct iio_context *ctx)
 		free(pdata->xml_path);
 		pdata->xml_path = NULL;
 	}
+
 }
 
 /* Returns a heap-allocated path string; caller must free().
@@ -1052,6 +1134,9 @@ static const struct iio_backend_ops emu_ops = {
 	.free_block    = emu_free_block,
 	.enqueue_block = emu_enqueue_block,
 	.dequeue_block = emu_dequeue_block,
+
+	.reg_read = emu_reg_read,
+	.reg_write = emu_reg_write,
 };
 
 const struct iio_backend iio_emu_backend = {
