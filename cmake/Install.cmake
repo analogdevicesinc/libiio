@@ -63,7 +63,7 @@ if(NOT SKIP_INSTALL_ALL)
 	endif()
 endif()
 
-option(WITH_DOC "Generate documentation with Doxygen" OFF)
+option(WITH_DOC "Generate documentation with Doxygen and Sphinx" OFF)
 if(WITH_DOC)
 	find_package(Doxygen REQUIRED)
 	# It is not an error when 'dot' is not found,
@@ -88,26 +88,44 @@ if(WITH_DOC)
 	configure_file(
 		${CMAKE_CURRENT_SOURCE_DIR}/CI/azure/generateDocumentationAndDeploy.sh.in
 		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc
-		DESTINATION ${CMAKE_HTML_DEST_DIR}/${CMAKE_API_DEST_DIR}
-		FILES_MATCHING PATTERN "*.svg")
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc/html/ DESTINATION ${CMAKE_HTML_DEST_DIR})
-	set(IIO_TESTS_MAN_PAGES_HTML "")
-	foreach(_page ${IIO_UTILS_TARGETS})
-		set(IIO_TESTS_MAN_PAGES_HTML "${IIO_TESTS_MAN_PAGES_HTML}<li><a href=\"./man1/${_page}.1.html\">${_page}</a></li>")
-	endforeach()
-	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/doc/index.html.in
-		${CMAKE_HTML_DEST_DIR}/index.html @ONLY)
 
+	file(MAKE_DIRECTORY ${CMAKE_HTML_DEST_DIR})
+	
 	add_custom_command(TARGET iio POST_BUILD
 		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		COMMENT "Generating API documentation with Doxygen" VERBATIM)
+		COMMENT "Generating C API documentation with Doxygen" VERBATIM)
 	add_custom_command(TARGET iio POST_BUILD
 		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 		COMMENT "Generating C# documentation with Doxygen" VERBATIM)
+
+	if(NOT PYTHON_EXECUTABLE)
+		find_package(Python3 COMPONENTS Interpreter REQUIRED)
+		set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+	endif()
+	execute_process(
+		COMMAND ${PYTHON_EXECUTABLE} -m sphinx --version
+		RESULT_VARIABLE SPHINX_CHECK
+		OUTPUT_QUIET ERROR_QUIET
+	)
+	if(NOT SPHINX_CHECK EQUAL 0)
+		message(FATAL_ERROR "Sphinx not found. Install with: pip install adi-doctools")
+	endif()
+
+	set(SPHINX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/doc")
+
+	# Build Sphinx documentation (after iio target to avoid parallel conflicts)
+	add_custom_target(doc-sphinx ALL
+		COMMAND ${PYTHON_EXECUTABLE} -m sphinx -b html
+				${SPHINX_SOURCE_DIR}
+				${CMAKE_HTML_DEST_DIR}
+				-j auto
+		WORKING_DIRECTORY ${SPHINX_SOURCE_DIR}
+		DEPENDS iio
+		COMMENT "Building Sphinx documentation with adi-doctools"
+		VERBATIM
+	)
 
 	if(NOT SKIP_INSTALL_ALL)
 		install(DIRECTORY ${CMAKE_HTML_DEST_DIR}
