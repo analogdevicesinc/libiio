@@ -617,6 +617,10 @@ emu_create_context(const struct iio_context_params *params, const char *args)
 	struct iio_context_pdata *pdata;
 	xmlDoc *doc;
 	xmlNode *root, *node;
+	xmlAttr *attr;
+	const char *description = NULL, *git_tag = NULL, *content;
+	char *end;
+	long major = 0, minor = 0;
 	int ret;
 
 	if (!args || !*args) {
@@ -639,8 +643,36 @@ emu_create_context(const struct iio_context_params *params, const char *args)
 		return iio_ptr(-EINVAL);
 	}
 
+	for (attr = root->properties; attr; attr = attr->next) {
+		content = (const char *) attr->children->content;
+
+		if (!strcmp((char *) attr->name, "description")) {
+			description = content;
+		} else if (!strcmp((char *) attr->name, "version-major")) {
+			errno = 0;
+			major = strtol(content, &end, 10);
+			if (*end != '\0' ||  errno == ERANGE)
+				prm_warn(params, "invalid format for major version\n");
+		} else if (!strcmp((char *) attr->name, "version-minor")) {
+			errno = 0;
+			minor = strtol(content, &end, 10);
+			if (*end != '\0' || errno == ERANGE)
+				prm_warn(params, "invalid format for minor version\n");
+		} else if (!strcmp((char *) attr->name, "version-git")) {
+			git_tag = content;
+		} else if (strcmp((char *) attr->name, "name")) {
+			prm_dbg(params, "Unknown parameter \'%s\' in <context>\n",
+				content);
+		}
+	}
+
+	if (!description)
+		description = "Emulated IIO Context";
+	if (!git_tag)
+		git_tag = "emu-v1";
+
 	ctx = iio_context_create_from_backend(params, &iio_emu_backend,
-										"Emulated IIO Context", 0, 1, "emu-v1");
+										description, major, minor, git_tag);
 
 	ret = iio_err(ctx);
 	if (ret) {
