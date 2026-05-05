@@ -948,7 +948,7 @@ iiod_client_create_context_private_new(struct iiod_client *client,
 	bool is_zstd;
 	int ret;
 
-	xml = malloc(xml_len + uri_len);
+	xml = malloc(xml_len + uri_len + 1);
 	if (!xml)
 		return iio_ptr(-ENOMEM);
 
@@ -962,6 +962,9 @@ iiod_client_create_context_private_new(struct iiod_client *client,
 	}
 
 	xml_len = ret;
+
+	/* Null-terminate the XML data */
+	xml[uri_len + xml_len] = '\0';
 
 	is_zstd = strncmp(xml, "xml:<?xml", sizeof("xml:<?xml") - 1) != 0;
 	if (is_zstd)
