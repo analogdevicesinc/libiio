@@ -1117,7 +1117,7 @@ static int emu_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 			fseek(file, 0, SEEK_SET);
 			n2 = fread((char*)pdata->data + n, 1, bytes_used - n, file);
 			if (n2 == 0)
-				return -ENODATA;
+				return -EIO;
 		}
 	}
 
