@@ -13,7 +13,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
 #endif
 #include <iio/iio-backend.h>
@@ -1001,7 +1003,11 @@ static int emu_enable_buffer(struct iio_buffer_pdata *pdata,
 		return -ENOMEM;
 	}
 
+#ifdef _MSC_BUILD
+	fopen_s(&pdata->file, path, is_output ? "wb" : "rb");
+#else
 	pdata->file = fopen(path, is_output ? "wb" : "rb");
+#endif
 	if (!pdata->file) {
 		if(!is_output)
 			dev_err(pdata->dev, "Rx data file not found, expected at %s\n", path);
