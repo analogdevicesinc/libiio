@@ -58,6 +58,7 @@ struct iio_block_pdata;
 struct iio_buffer_pdata;
 struct iio_context_pdata;
 struct iio_device_pdata;
+struct iio_scan_element;
 struct iio_channel_pdata;
 struct iio_event_stream_pdata;
 
@@ -197,6 +198,10 @@ iio_buffer_add_attr(struct iio_buffer *buf, const char *name);
 
 __api void
 iio_buffer_set_direction(struct iio_buffer *buf, const char *direction);
+
+__api struct iio_scan_element *
+iio_buffer_add_scan_element(struct iio_buffer *buf, const struct iio_channel *chn,
+			    const char *en_path);
 
 __api int
 iio_channel_add_attr(struct iio_channel *chn,

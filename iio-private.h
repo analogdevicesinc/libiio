@@ -159,6 +159,11 @@ struct iio_buffer_stream {
 #define IIO_BUFFER_DIRECTION_INPUT	0
 #define IIO_BUFFER_DIRECTION_OUTPUT	1
 
+struct iio_scan_element {
+	const struct iio_channel *chn;
+	char *en_path;
+};
+
 struct iio_buffer {
 	const struct iio_device *dev;
 	void *userdata;
@@ -166,6 +171,9 @@ struct iio_buffer {
 	int direction;
 	struct iio_attr_list attrlist;
 	char **values;
+
+	struct iio_scan_element **scans;
+	unsigned int nb_scans;
 };
 
 struct iio_context_info {
