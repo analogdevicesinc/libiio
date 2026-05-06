@@ -29,4 +29,20 @@ config LIBIIO_IIO_DEVICE_IO_CHANNELS_INIT_PRIORITY
 	help
 	  Initialization priority of the Zephyr ADC/DAC io-channels iio device driver class.
 
+config LIBIIO_IIO_DEVICE_SENSOR
+	bool "Sensor driver"
+	default y
+	depends on DT_HAS_IIO_SENSOR_ENABLED && SENSOR
+	help
+	  Enable the Zephyr Sensor iio device driver class.
+
+config LIBIIO_IIO_DEVICE_SENSOR_INIT_PRIORITY
+	int "Sensor driver init priority"
+	default 90
+	depends on LIBIIO_IIO_DEVICE_SENSOR
+	help
+	  Initialization priority of the Zephyr Sensor iio device driver class.
+	  Has to be higher than the initialization priority of the sensor drivers.
+
+
 endif # LIBIIO_IIO_DEVICE
