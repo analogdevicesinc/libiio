@@ -127,8 +127,8 @@ struct iio_device {
 
 	char *name, *id, *label;
 
-	struct iio_attr_list attrlist[2];
-	char **values[2];
+	struct iio_attr_list attrlist[3];
+	char **values[3];
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
