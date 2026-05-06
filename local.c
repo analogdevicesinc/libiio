@@ -1421,7 +1421,7 @@ static int create_device(void *d, const char *path)
 
 	ret = add_events(dev, path);
 	if (ret < 0)
-		goto err_free_scan_elements;
+		goto err_free_device;
 
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
@@ -1457,7 +1457,6 @@ err_free_scan_elements:
 		free_protected_attrs(dev->channels[i]);
 err_free_device:
 	local_free_pdata(dev);
-	free_device(dev);
 	return ret;
 }
 
