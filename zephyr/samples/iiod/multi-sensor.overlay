@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * Multi-sensor example: ADXL345 (real HW) + ADLTC2990 (emulated)
+ * Demonstrates two IIO devices exposed simultaneously via libiio.
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+#include <dt-bindings/iio/sensor-channels.h>
+
+/* ------------------------------------------------------------------ */
+/* ADXL345: Real I2C accelerometer on I2C1                            */
+/* ------------------------------------------------------------------ */
+
+/* I2C1 Pin Configuration for ADXL345 */
+&i2c1a_scl_p2_18 {
+	drive-strength = <2>;
+	bias-pull-up;
+};
+
+&i2c1a_sda_p2_17 {
+	drive-strength = <2>;
+	bias-pull-up;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1a_scl_p2_18 &i2c1a_sda_p2_17>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	adxl345: adxl345@1d {
+		reg = <0x1d>;
+		compatible = "adi,adxl345";
+		int2-gpios = <&gpio2 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		range = <2>;
+		odr = <12>;
+		status = "okay";
+	};
+};
+
+/* ------------------------------------------------------------------ */
+/* ADLTC2990: Emulated sensor on virtual I2C bus                      */
+/* ------------------------------------------------------------------ */
+
+/ {
+	i2c_emul: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		adltc2990_emul: adltc2990@4c {
+			compatible = "adi,adltc2990";
+			reg = <0x4c>;
+			status = "okay";
+			measurement-mode = <3 0>;
+			pins-v1-v2-current-resistor = <0>;
+			pins-v3-v4-current-resistor = <0>;
+			pin-v1-voltage-divider-resistors = <500 1000>;
+			pin-v2-voltage-divider-resistors = <110000 100000>;
+			pin-v3-voltage-divider-resistors = <7000 1000>;
+			pin-v4-voltage-divider-resistors = <500 1000>;
+		};
+	};
+};
+
+/* ------------------------------------------------------------------ */
+/* IIO Context: two devices exposed to libiio                         */
+/* ------------------------------------------------------------------ */
+
+/ {
+	iio-context {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		iio-device@1 {
+			compatible = "iio,sensor";
+			reg = <1>;
+			sensor-device = <&adxl345>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_ACCEL_X
+				IIO_SENSOR_CHAN_ACCEL_Y
+				IIO_SENSOR_CHAN_ACCEL_Z
+			>;
+			buffer-name = "buffer0";
+		};
+
+		iio-device@2 {
+			compatible = "iio,sensor";
+			reg = <2>;
+			sensor-device = <&adltc2990_emul>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_CURRENT
+				IIO_SENSOR_CHAN_DIE_TEMP
+				IIO_SENSOR_CHAN_AMBIENT_TEMP
+			>;
+			buffer-name = "buffer1";
+		};
+	};
+};

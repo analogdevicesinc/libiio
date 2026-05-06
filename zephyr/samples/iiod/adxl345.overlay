@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+#include <dt-bindings/iio/sensor-channels.h>
+
+/* I2C1 Pin Configuration for ADXL345 */
+&i2c1a_scl_p2_18 {
+	drive-strength = <2>;
+	bias-pull-up;
+};
+
+&i2c1a_sda_p2_17 {
+	drive-strength = <2>;
+	bias-pull-up;
+};
+
+/* I2C1 Bus Configuration */
+&i2c1 {
+	pinctrl-0 = <&i2c1a_scl_p2_18 &i2c1a_sda_p2_17>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	/* ADXL345 3-axis Accelerometer */
+	adxl345: adxl345@1d {
+		reg = <0x1d>;
+		compatible = "adi,adxl345";
+		int2-gpios = <&gpio2 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		range = <2>;
+		odr = <12>;
+		status = "okay";
+	};
+};
+
+/ {
+	/* IIO Context for libiio */
+	iio-context {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* IIO Device wrapper for ADXL345 */
+		iio-device@1 {
+			compatible = "iio,sensor";
+			reg = <1>;
+			sensor-device = <&adxl345>;
+			/* Expose 3-axis accelerometer channels via IIO
+			 * ADXL345 provides X, Y, Z acceleration data
+			 */
+			sensor-channels = <
+				IIO_SENSOR_CHAN_ACCEL_X
+				IIO_SENSOR_CHAN_ACCEL_Y
+				IIO_SENSOR_CHAN_ACCEL_Z
+			>;
+			buffer-name = "buffer0";
+		};
+	};
+};

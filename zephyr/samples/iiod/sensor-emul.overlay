@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		iio-device@2 {
+			compatible = "iio,sensor";
+			reg = <2>;
+			sensor-device = <&adltc2990_emul>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_VOLTAGE
+				IIO_SENSOR_CHAN_CURRENT
+				IIO_SENSOR_CHAN_DIE_TEMP
+				IIO_SENSOR_CHAN_AMBIENT_TEMP
+			>;
+			buffer-name = "buffer0";
+		};
+	};
+
+	/* Emulated I2C bus */
+	i2c_emul: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		adltc2990_emul: adltc2990@4c {
+			compatible = "adi,adltc2990";
+			reg = <0x4c>;
+			status = "okay";
+			measurement-mode = <0 0>;
+			pins-v1-v2-current-resistor = <0>;
+			pins-v3-v4-current-resistor = <0>;
+			pin-v1-voltage-divider-resistors = <500 1000>;
+			pin-v2-voltage-divider-resistors = <110000 100000>;
+			pin-v3-voltage-divider-resistors = <7000 1000>;
+			pin-v4-voltage-divider-resistors = <500 1000>;
+		};
+	};
+};
