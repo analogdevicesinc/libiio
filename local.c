@@ -1414,15 +1414,15 @@ static int create_device(void *d, const char *path)
 
 	ret = foreach_in_dir(ctx, dev, path, false, add_attr_or_channel);
 	if (ret < 0)
-		goto err_free_device;
+		return ret;
 
 	ret = add_buffer_attributes(dev, path);
 	if (ret < 0)
-		goto err_free_device;
+		return ret;
 
 	ret = add_events(dev, path);
 	if (ret < 0)
-		goto err_free_scan_elements;
+		return ret;
 
 	ret = add_scan_elements(dev, path);
 	if (ret < 0)
@@ -1443,7 +1443,7 @@ static int create_device(void *d, const char *path)
 
 	ret = detect_and_move_global_attrs(dev);
 	if (ret < 0)
-		goto err_free_device;
+		return ret;
 
 	/* sorting is done after global attrs are added */
 	for (i = 0; i < dev->nb_channels; i++)
@@ -1456,9 +1456,7 @@ static int create_device(void *d, const char *path)
 err_free_scan_elements:
 	for (i = 0; i < dev->nb_channels; i++)
 		free_protected_attrs(dev->channels[i]);
-err_free_device:
-	local_free_pdata(dev);
-	free_device(dev);
+
 	return ret;
 }
 
