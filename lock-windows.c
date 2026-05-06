@@ -76,14 +76,17 @@ void iio_cond_destroy(struct iio_cond *cond)
 }
 
 int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-		  unsigned int timeout_ms)
+		  int timeout_ms)
 {
 	BOOL ret;
+	DWORD dwTimeout;
 
-	if (timeout_ms == 0)
-		timeout_ms = INFINITE;
+	if (timeout_ms < 0)
+		dwTimeout = INFINITE;
+	else
+		dwTimeout = (DWORD)timeout_ms;
 
-	ret = SleepConditionVariableCS(&cond->cond, &lock->lock, timeout_ms);
+	ret = SleepConditionVariableCS(&cond->cond, &lock->lock, dwTimeout);
 
 	return ret ? 0 : -ETIMEDOUT;
 }

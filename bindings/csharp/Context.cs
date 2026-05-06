@@ -82,7 +82,7 @@ namespace iio
         private static extern bool iio_device_is_trigger(IntPtr dev);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_context_set_timeout(IntPtr ctx, uint timeout_ms);
+        private static extern int iio_context_set_timeout(IntPtr ctx, int timeout_ms);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_attrs_count(IntPtr ctx);
@@ -226,9 +226,10 @@ namespace iio
         }
 
         /// <summary>Set a timeout for I/O operations.</summary>
-        /// <param name="timeout">The timeout value, in milliseconds</param>
+        /// <param name="timeout">The timeout value, in milliseconds.
+        /// 0 = use backend default, -1 = infinite, int.MinValue = nonblock</param>
         /// <exception cref="IioLib.IIOException">The timeout could not be applied.</exception>
-        public void set_timeout(uint timeout)
+        public void set_timeout(int timeout)
         {
             int ret = iio_context_set_timeout(hdl, timeout);
             if (ret < 0)

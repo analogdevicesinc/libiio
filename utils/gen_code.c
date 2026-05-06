@@ -259,14 +259,14 @@ void gen_ch(const struct iio_channel *ch)
 	}
 }
 
-void gen_context_timeout(unsigned int timeout_ms)
+void gen_context_timeout(int timeout_ms)
 {
 	if (!fd)
 		return;
 
 	if (lang == C_LANG) {
 		fprintf(fd, "\t/* Set the context timeout in ms */\n");
-		fprintf(fd, "\tiio_context_set_timeout(ctx, %ui);\n", timeout_ms);
+		fprintf(fd, "\tiio_context_set_timeout(ctx, %d);\n", timeout_ms);
 	}
 }
 

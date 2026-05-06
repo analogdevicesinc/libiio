@@ -93,7 +93,7 @@ void iio_block_destroy(struct iio_block *block)
 
 	if (block->token) {
 		iio_task_cancel(block->token);
-		iio_task_sync(block->token, 0);
+		iio_task_sync(block->token, -1);
 	}
 	if (ops->free_block && block->pdata)
 		ops->free_block(block->pdata);
@@ -192,7 +192,7 @@ int iio_block_dequeue(struct iio_block *block, bool nonblock)
 		return -EPERM;
 	}
 
-	return iio_task_sync(token, 0);
+	return iio_task_sync(token, -1);
 }
 
 void *iio_block_start(const struct iio_block *block)

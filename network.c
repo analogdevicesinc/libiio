@@ -8,6 +8,7 @@
 
 #include "dns_sd.h"
 #include "iio-config.h"
+#include "iio-private.h"
 #include "network.h"
 
 #include <iio/iio.h>
@@ -78,10 +79,10 @@ network_create_context(const struct iio_context_params *params,
 
 static ssize_t
 network_write_data(struct iiod_client_pdata *io_ctx, const char *src, size_t len,
-		   unsigned int timeout_ms);
+		   int timeout_ms);
 static ssize_t
 network_read_data(struct iiod_client_pdata *io_ctx, char *dst, size_t len,
-		  unsigned int timeout_ms);
+		  int timeout_ms);
 static void network_cancel(struct iiod_client_pdata *io_ctx);
 
 static const struct iiod_client_ops network_iiod_client_ops = {
@@ -91,7 +92,7 @@ static const struct iiod_client_ops network_iiod_client_ops = {
 };
 
 static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
-			    size_t len, int flags, unsigned int timeout_ms)
+			    size_t len, int flags, int timeout_ms)
 {
 	bool cancellable = true;
 	ssize_t ret;
@@ -128,7 +129,7 @@ static ssize_t network_recv(struct iiod_client_pdata *io_ctx, void *data,
 }
 
 static ssize_t network_send(struct iiod_client_pdata *io_ctx, const void *data,
-			    size_t len, int flags, unsigned int timeout_ms)
+			    size_t len, int flags, int timeout_ms)
 {
 	ssize_t ret;
 	int err;
@@ -180,7 +181,7 @@ network_writebuf(struct iio_buffer_pdata *pdata, const void *src, size_t len)
 /* The purpose of this function is to provide a version of connect()
  * that does not ignore timeouts... */
 static int do_connect(int fd, const struct addrinfo *addrinfo,
-	unsigned int timeout)
+	int timeout)
 {
 	int ret, error;
 	socklen_t len;
@@ -217,7 +218,7 @@ static int do_connect(int fd, const struct addrinfo *addrinfo,
 	return 0;
 }
 
-int create_socket(const struct addrinfo *addrinfo, unsigned int timeout)
+int create_socket(const struct addrinfo *addrinfo, int timeout)
 {
 	int ret, fd, yes = 1;
 
@@ -326,7 +327,7 @@ network_setup_iiod_client(const struct iio_device *dev,
 	 * Use the timeout that was set when creating the context.
 	 * See commit 9eff490 for more info.
 	 */
-	ret = create_socket(pdata->addrinfo, NETWORK_TIMEOUT_MS);
+	ret = create_socket(pdata->addrinfo, ctx->params.timeout_ms);
 	if (ret < 0) {
 		dev_perror(dev, ret, "Unable to create socket");
 		return iio_ptr(ret);
@@ -424,7 +425,7 @@ static void network_shutdown(struct iio_context *ctx)
 	freeaddrinfo(pdata->addrinfo);
 }
 
-static int network_set_timeout(struct iio_context *ctx, unsigned int timeout)
+static int network_set_timeout(struct iio_context *ctx, int timeout)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 	int ret;
@@ -584,13 +585,13 @@ const struct iio_backend iio_ip_backend = {
 
 static ssize_t network_write_data(struct iiod_client_pdata *io_ctx,
 				  const char *src, size_t len,
-				  unsigned int timeout_ms)
+				  int timeout_ms)
 {
 	return network_send(io_ctx, src, len, MSG_NOSIGNAL, timeout_ms);
 }
 
 static ssize_t network_read_data(struct iiod_client_pdata *io_ctx,
-				 char *dst, size_t len, unsigned int timeout_ms)
+				 char *dst, size_t len, int timeout_ms)
 {
 	return network_recv(io_ctx, dst, len, 0, timeout_ms);
 }

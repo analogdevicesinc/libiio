@@ -83,6 +83,32 @@ static int test_failed = 0;
 		} \
 	} while (0)
 
+#define TEST_ASSERT_INT_EQUAL(actual, expected, message) \
+	do { \
+		test_count++; \
+		if ((actual) == (expected)) { \
+			test_passed++; \
+			DEBUG_PRINT("  PASS: %s (got %d, expected %d)\n", message, (int)(actual), (int)(expected)); \
+		} else { \
+			test_failed++; \
+			DEBUG_PRINT("  FAIL: %s (got %d, expected %d)\n", message, (int)(actual), (int)(expected)); \
+		} \
+	} while (0)
+
+#define TEST_ASSERT_DURATION_RANGE(duration_ms, min_ms, max_ms, message) \
+	do { \
+		test_count++; \
+		if ((duration_ms) >= (min_ms) && (duration_ms) <= (max_ms)) { \
+			test_passed++; \
+			DEBUG_PRINT("  PASS: %s (duration %ld ms in range [%ld, %ld] ms)\n", \
+				message, (long)(duration_ms), (long)(min_ms), (long)(max_ms)); \
+		} else { \
+			test_failed++; \
+			DEBUG_PRINT("  FAIL: %s (duration %ld ms out of range [%ld, %ld] ms)\n", \
+				message, (long)(duration_ms), (long)(min_ms), (long)(max_ms)); \
+		} \
+	} while (0)
+
 #define TEST_FUNCTION(name) \
 	static void test_##name(void); \
 	static void test_##name(void)

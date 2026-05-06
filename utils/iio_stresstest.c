@@ -274,7 +274,7 @@ static void *client_thread(void *data)
 		/* started another context */
 		info->starts[id]++;
 
-		ret = iio_context_set_timeout(ctx, UINT_MAX);
+		ret = iio_context_set_timeout(ctx, IIO_TIMEOUT_INFINITE);
 		thread_err(id, ret, "iio_context_set_timeout failed");
 
 		dev = get_device(ctx, info->argv[info->arg_index + 1]);

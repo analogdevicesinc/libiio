@@ -146,6 +146,13 @@ enum iio_log_level {
 	LEVEL_DEBUG = 5,
 };
 
+/** @brief Use backend default timeout */
+#define IIO_TIMEOUT_BACKEND	0
+/** @brief Wait indefinitely (no timeout) */
+#define IIO_TIMEOUT_INFINITE	(-1)
+/** @brief Non-blocking operation */
+#define IIO_TIMEOUT_NONBLOCK	INT_MIN
+
 /**
  * @enum iio_context_flags
  * @brief Flags controlling context behavior;
@@ -189,9 +196,11 @@ struct iio_context_params {
 	enum iio_log_level timestamp_level;
 
 	/** @brief Timeout for I/O operations in milliseconds.
-	 * - Zero: use backend default timeout
-	 * - Negative values: no timeout (wait indefinitely)
-	 * - Positive values: timeout after specified milliseconds */
+	 * - IIO_TIMEOUT_BACKEND (0): use backend default timeout
+	 * - IIO_TIMEOUT_INFINITE (-1): no timeout (wait indefinitely)
+	 * - IIO_TIMEOUT_NONBLOCK (INT_MIN): non-blocking
+	 * - Positive values: timeout after specified milliseconds
+	 * - Other negative values: invalid (returns -EINVAL) */
 	int timeout_ms;
 
 	/** @brief Flags that control context behavior.
@@ -802,13 +811,16 @@ __api __check_ret __pure struct iio_device * iio_context_find_device(
 
 /** @brief Set a timeout for I/O operations
  * @param ctx A pointer to an iio_context structure
- * @param timeout_ms A positive integer representing the time in milliseconds
- * after which a timeout occurs. A value of 0 is used to specify that no
- * timeout should occur.
+ * @param timeout_ms Timeout value in milliseconds:
+ *   - IIO_TIMEOUT_BACKEND (0): use backend default timeout
+ *   - IIO_TIMEOUT_INFINITE (-1): no timeout (wait indefinitely)
+ *   - IIO_TIMEOUT_NONBLOCK (INT_MIN): non-blocking
+ *   - Positive: timeout after specified milliseconds
+ *   - Other negative values: returns -EINVAL
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 __api __check_ret int iio_context_set_timeout(
-		struct iio_context *ctx, unsigned int timeout_ms);
+		struct iio_context *ctx, int timeout_ms);
 
 
 /** @brief Get a pointer to the params structure

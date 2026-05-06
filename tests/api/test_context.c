@@ -10,8 +10,15 @@
 #include <iio/iio.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 
 static struct iio_context *test_ctx = NULL;
+
+static inline long get_elapsed_ms(struct timespec *start, struct timespec *end)
+{
+	return (end->tv_sec - start->tv_sec) * 1000 +
+	       (end->tv_nsec - start->tv_nsec) / 1000000;
+}
 
 static void setup_test_context(void)
 {
@@ -263,19 +270,101 @@ TEST_FUNCTION(context_timeout)
 		DEBUG_PRINT("  INFO: Setting timeout failed with error %d\n", ret);
 	}
 
-	ret = iio_context_set_timeout(test_ctx, 0);
+	ret = iio_context_set_timeout(test_ctx, IIO_TIMEOUT_BACKEND);
 	if (ret == 0) {
-		DEBUG_PRINT("  INFO: Successfully set timeout to 0 (no timeout)\n");
+		DEBUG_PRINT("  INFO: Successfully set timeout to IIO_TIMEOUT_BACKEND\n");
 	} else {
-		DEBUG_PRINT("  INFO: Setting timeout to 0 failed with error %d\n", ret);
+		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_BACKEND failed with error %d\n", ret);
 	}
 
-	ret = iio_context_set_timeout(test_ctx, UINT_MAX);
+	ret = iio_context_set_timeout(test_ctx, IIO_TIMEOUT_INFINITE);
 	if (ret == 0) {
-		DEBUG_PRINT("  INFO: Successfully set timeout to UINT_MAX\n");
+		DEBUG_PRINT("  INFO: Successfully set timeout to IIO_TIMEOUT_INFINITE\n");
 	} else {
-		DEBUG_PRINT("  INFO: Setting timeout to UINT_MAX failed with error %d\n", ret);
+		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_INFINITE failed with error %d\n", ret);
 	}
+
+	ret = iio_context_set_timeout(test_ctx, IIO_TIMEOUT_NONBLOCK);
+	if (ret == 0) {
+		DEBUG_PRINT("  INFO: Successfully set timeout to IIO_TIMEOUT_NONBLOCK\n");
+	} else {
+		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_NONBLOCK failed with error %d\n", ret);
+	}
+
+	ret = iio_context_set_timeout(test_ctx, -42);
+	TEST_ASSERT_INT_EQUAL(ret, -EINVAL, "Invalid negative timeout should return -EINVAL");
+}
+
+TEST_FUNCTION(context_timeout_measurement)
+{
+	struct iio_context_params params;
+	struct iio_context *ctx;
+	struct timespec start, end;
+	long elapsed_ms;
+	int err;
+
+	/*
+	 * Use an IP address from TEST-NET-1 (RFC 5737) - reserved for
+	 * documentation and should not route, causing connection timeout.
+	 * Port 30431 is the default iiod port.
+	 */
+	const char *unreachable_uri = "ip:192.0.2.1:30431";
+
+	/* Test 1: 1000ms timeout */
+	DEBUG_PRINT("  INFO: Testing 1000ms timeout...\n");
+	params = (struct iio_context_params){
+		.timeout_ms = 1000,
+	};
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	ctx = iio_create_context(&params, unreachable_uri);
+	clock_gettime(CLOCK_MONOTONIC, &end);
+
+	err = iio_err(ctx);
+	elapsed_ms = get_elapsed_ms(&start, &end);
+
+	DEBUG_PRINT("  INFO: 1000ms timeout: error=%d, elapsed=%ld ms\n", err, elapsed_ms);
+	TEST_ASSERT(iio_err(ctx), "Connection to unreachable host should fail");
+
+	/* Allow ±500ms tolerance (some overhead for DNS, connection setup, etc.) */
+	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 500, 2000,
+		"1000ms timeout should complete within expected range");
+
+	/* Test 2: 4000ms timeout */
+	DEBUG_PRINT("  INFO: Testing 4000ms timeout...\n");
+	params.timeout_ms = 4000;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	ctx = iio_create_context(&params, unreachable_uri);
+	clock_gettime(CLOCK_MONOTONIC, &end);
+
+	err = iio_err(ctx);
+	elapsed_ms = get_elapsed_ms(&start, &end);
+
+	DEBUG_PRINT("  INFO: 4000ms timeout: error=%d, elapsed=%ld ms\n", err, elapsed_ms);
+	TEST_ASSERT(iio_err(ctx), "Connection to unreachable host should fail");
+
+	/* Allow ±1000ms tolerance */
+	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 3000, 5500,
+		"4000ms timeout should complete within expected range");
+
+	/* Test 3: Non-blocking mode */
+	DEBUG_PRINT("  INFO: Testing non-blocking mode...\n");
+	params.timeout_ms = IIO_TIMEOUT_NONBLOCK;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	ctx = iio_create_context(&params, unreachable_uri);
+	clock_gettime(CLOCK_MONOTONIC, &end);
+
+	err = iio_err(ctx);
+	elapsed_ms = get_elapsed_ms(&start, &end);
+
+	DEBUG_PRINT("  INFO: Non-blocking: error=%d, elapsed=%ld ms\n", err, elapsed_ms);
+	TEST_ASSERT(iio_err(ctx), "Connection to unreachable host should fail");
+
+	/* Non-blocking should return almost immediately (within 500ms) */
+	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 0, 500,
+		"Non-blocking mode should return immediately");
 }
 
 TEST_FUNCTION(context_user_data)
@@ -321,6 +410,7 @@ int main(void)
 	RUN_TEST(context_attributes);
 	RUN_TEST(context_devices);
 	RUN_TEST(context_timeout);
+	RUN_TEST(context_timeout_measurement);
 	RUN_TEST(context_user_data);
 	RUN_TEST(context_destroy_behavior);
 

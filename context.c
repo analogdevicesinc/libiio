@@ -14,6 +14,7 @@
 #include <iio/iio-debug.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 
 static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
@@ -639,17 +640,35 @@ const char * iio_context_get_version_tag(const struct iio_context *ctx)
 	return LIBIIO_VERSION_GIT;
 }
 
-int iio_context_set_timeout(struct iio_context *ctx, unsigned int timeout)
+int iio_resolve_timeout(int timeout, unsigned int default_timeout_ms)
 {
-	int ret = 0;
+	if (timeout == IIO_TIMEOUT_BACKEND)
+		return (int)default_timeout_ms;
+	if (timeout == IIO_TIMEOUT_INFINITE)
+		return -1;
+	if (timeout == IIO_TIMEOUT_NONBLOCK)
+		return 0;
+	if (timeout > 0)
+		return timeout;
+
+	return -EINVAL;
+}
+
+int iio_context_set_timeout(struct iio_context *ctx, int timeout)
+{
+	int resolved, ret = 0;
+
+	resolved = iio_resolve_timeout(timeout, ctx->default_timeout_ms);
+	if (resolved == -EINVAL)
+		return -EINVAL;
 
 	if (ctx->ops->set_timeout) {
-		ret = ctx->ops->set_timeout(ctx, timeout);
+		ret = ctx->ops->set_timeout(ctx, resolved);
 		if (ret)
 			return ret;
 	}
 
-	ctx->params.timeout_ms = timeout;
+	ctx->params.timeout_ms = resolved;
 
 	return 0;
 }
@@ -750,16 +769,17 @@ struct iio_context * iio_create_context(const struct iio_context_params *params,
 	}
 
 	if (backend) {
-		if (!params2.timeout_ms) {
-			/* Zero means use backend default */
-			params2.timeout_ms = backend->default_timeout_ms;
-		} else if (params2.timeout_ms < 0) {
-			/* Negative means infinite - translate to 0 for backends */
-			params2.timeout_ms = 0;
-		} /* Positive values pass through unchanged */
+		params2.timeout_ms = iio_resolve_timeout(params2.timeout_ms,
+							 backend->default_timeout_ms);
+		if (params2.timeout_ms == -EINVAL) {
+			free(uri_dup);
+			return iio_ptr(-EINVAL);
+		}
 
 		ctx = backend->ops->create(&params2,
 					   uri + strlen(backend->uri_prefix));
+		if (!iio_err(ctx))
+			ctx->default_timeout_ms = backend->default_timeout_ms;
 	} else if (WITH_MODULES) {
 		ctx = iio_create_dynamic_context(&params2, uri);
 	} else {

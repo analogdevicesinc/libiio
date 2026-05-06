@@ -90,19 +90,21 @@ void iio_cond_destroy(struct iio_cond *cond)
 }
 
 int iio_cond_wait(struct iio_cond *cond, struct iio_mutex *lock,
-		  unsigned int timeout_ms)
+		  int timeout_ms)
 {
 	struct timespec ts;
 	uint64_t usec;
 	int ret = 0;
 
-	if (timeout_ms == 0) {
+	if (timeout_ms < 0) {
 		pthread_cond_wait(&cond->cond, &lock->lock);
+	} else if (timeout_ms == 0) {
+		ret = -ETIMEDOUT;
 	} else {
 		clock_gettime(CLOCK_REALTIME, &ts);
 
 		usec = ts.tv_sec * 1000000ull + ts.tv_nsec / 1000;
-		usec += timeout_ms * 1000ull;
+		usec += (uint64_t)timeout_ms * 1000ull;
 
 		ts.tv_sec = usec / 1000000;
 		ts.tv_nsec = (usec % 1000000) * 1000;

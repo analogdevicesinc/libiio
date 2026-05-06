@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 
 #include "iio_common.h"
 #include "gen_code.h"
@@ -246,7 +247,8 @@ static const char *common_options_descriptions[] = {
 		"\n\t\t\tavailable use it. <arg> filters backend(s)"
 		"\n\t\t\t    'ip', 'usb' or 'ip,usb'"),
 	("Context timeout in milliseconds."
-		"\n\t\t\t0 = no timeout (wait forever)"),
+		"\n\t\t\t0 = use backend default, -1 = wait forever"
+		"\n\t\t\t'nb' or 'nonblocking' = non-blocking mode"),
 };
 
 
@@ -332,10 +334,11 @@ struct iio_context * handle_common_opts(char * name, int argc,
 				fprintf(stderr, "Timeout requires an argument\n");
 				goto err_fail;
 			}
-			params.timeout_ms = sanitize_clamp("timeout", optarg, 0, INT_MAX);
-			/* Wait forever if timeout is explicitly set to 0 */
-			if (!params.timeout_ms)
-				params.timeout_ms = -1;
+			if (strcmp(optarg, "nb") == 0 || strcmp(optarg, "nonblocking") == 0) {
+				params.timeout_ms = IIO_TIMEOUT_NONBLOCK;
+			} else {
+				params.timeout_ms = (int) strtol(optarg, NULL, 10);
+			}
 			break;
 		case '?':
 			break;
