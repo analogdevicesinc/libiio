@@ -69,6 +69,7 @@ static bool colors;
 #define FMT_DEV "\e[1;32m%s\e[0m"
 #define FMT_CHN "\e[0;33m%s\e[0m"
 #define FMT_ATTR "\e[1;34m%s\e[0m"
+#define FMT_BUF "\e[0;36m%s\e[0m"
 #else
 /* MSVC doesn't like escape codes. But those will never be used anyway,
  * as color support is disabled when building with MSVC. */
@@ -151,6 +152,39 @@ static void print_attr(const struct iio_attr *attr,
 	}
 }
 
+static void print_buffer(const struct iio_buffer *buf, unsigned int buf_idx,
+			 bool read_sysfs_attr, bool read_debug_attr)
+{
+	unsigned int nb_scans, nb_attrs, i;
+	int ret;
+
+	if (colors) {
+		char buf[16];
+
+		sprintf(buf, "buffer%u", buf_idx);
+		print_fmt("\t\t\t" FMT_BUF ":\n", buf);
+	} else {
+		printf("\t\t\tbuffer%u:\n", buf_idx);
+	}
+
+	nb_scans = iio_buffer_get_scan_elements_count(buf);
+	printf("\t\t\t%u scan elements found:\n", nb_scans);
+	for (i = 0; i < nb_scans; i++) {
+		const struct iio_channel *se = iio_buffer_get_scan_element(buf, i);
+
+		printf("\t\t\t\tScan element %u: %s (%s)\n", i, iio_channel_get_id(se),
+		       iio_channel_is_output(se) ? "output" : "input");
+	}
+
+	nb_attrs = iio_buffer_get_attrs_count(buf);
+	printf("\t\t\t%u buffer attributes found:\n", nb_attrs);
+	for (i = 0; i < nb_attrs; i++) {
+		const struct iio_attr *attr = iio_buffer_get_attr(buf, i);
+
+		print_attr(attr, 4, i, read_sysfs_attr, read_debug_attr);
+	}
+}
+
 static void print_channel(const struct iio_channel *chn)
 {
 	const struct iio_data_format *format;
@@ -220,7 +254,7 @@ int main(int argc, char **argv)
 	const struct iio_device *dev, *trig;
 	const struct iio_channel *ch;
 	const char *name, *label;
-	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs;
+	unsigned int i, j, k, nb_devices, nb_channels, nb_ctx_attrs, nb_attrs, nb_buffers;
 	struct iio_channels_mask *mask;
 	const struct iio_attr *attr;
 	struct iio_buffer *buffer;
@@ -367,15 +401,12 @@ int main(int argc, char **argv)
 			}
 		}
 
-		buffer = iio_device_get_buffer(dev, 0);
-		if (buffer) {
-			nb_attrs = iio_buffer_get_attrs_count(buffer);
-			if (nb_attrs)
-				printf("\t\t%u buffer attributes found:\n", nb_attrs);
-			for (j = 0; j < nb_attrs; j++) {
-				attr = iio_buffer_get_attr(buffer, j);
-				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
-			}
+		nb_buffers = iio_device_get_buffers_count(dev);
+		printf("\t\t%u buffers found:\n", nb_buffers);
+		for (j = 0; j < nb_buffers; j++) {
+			buffer = iio_device_get_buffer(dev, j);
+
+			print_buffer(buffer, j, read_sysfs_attr, read_debug_attr);
 		}
 
 		nb_attrs = iio_device_get_debug_attrs_count(dev);
