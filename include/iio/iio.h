@@ -1177,6 +1177,19 @@ iio_buffer_get_attrs_count(const struct iio_buffer *buf);
 __api __check_ret __pure const struct iio_attr *
 iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index);
 
+/** @brief Enumerate the scan elements of the given buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return The number of scan elements associated with the buffer */
+__api __check_ret __pure unsigned int
+iio_buffer_get_scan_elements_count(const struct iio_buffer *buf);
+
+/** @brief Get the scan element present at the given index
+ * @param buf A pointer to an iio_buffer structure
+ * @param index The index corresponding to the scan element
+ * @return On success, a pointer to an iio_channel structure
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __pure const struct iio_channel *
+iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index);
 
 /** @brief Try to find a buffer-specific attribute by its name
  * @param buf A pointer to an iio_buffer structure

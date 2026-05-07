@@ -221,6 +221,21 @@ iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
 	return iio_attr_find(&buf->attrlist, name);
 }
 
+
+unsigned int iio_buffer_get_scan_elements_count(const struct iio_buffer *buf)
+{
+	return buf->nb_scans;
+}
+
+const struct iio_channel *
+iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index)
+{
+	if (index >= buf->nb_scans)
+		return NULL;
+
+	return buf->scans[index]->chn;
+}
+
 int iio_buffer_add_scan_element(struct iio_buffer *buf, const struct iio_channel *chn,
 			    const char *en_path)
 {
