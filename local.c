@@ -1617,10 +1617,15 @@ static struct iio_buffer_pdata *
 local_open_buffer(const struct iio_device *dev, unsigned int idx,
 		    struct iio_channels_mask *mask)
 {
+	struct iio_buffer *buffer = iio_device_get_buffer(dev, idx);
 	struct iio_buffer_pdata *pdata;
 	const struct iio_channel *chn;
 	int err, cancel_fd, fd;
 	unsigned int i;
+
+	/* In theory the below should never happen but better be safe at this point */
+	if (!buffer)
+		return iio_ptr(-ENOENT);
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata)
@@ -1656,20 +1661,18 @@ local_open_buffer(const struct iio_device *dev, unsigned int idx,
 	if (err < 0)
 		goto err_close;
 
-	/* Disable all channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0) {
-			err = channel_write_state(chn, idx, false);
-			if (err < 0)
-				goto err_close;
-		}
+	/* Disable all scan elements in this buffer */
+	for (i = 0; i < buffer->nb_scans; i++) {
+		chn = buffer->scans[i]->chn;
+		err = channel_write_state(chn, idx, false);
+		if (err < 0)
+			goto err_close;
 	}
 
 	/* Enable channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
+	for (i = 0; i < buffer->nb_scans; i++) {
+		chn = buffer->scans[i]->chn;
+		if (iio_channel_is_enabled(chn, mask)) {
 			err = channel_write_state(chn, idx, true);
 			if (err < 0)
 				goto err_close;
@@ -1678,9 +1681,9 @@ local_open_buffer(const struct iio_device *dev, unsigned int idx,
 
 	/* Finally, update the channels mask by reading the hardware again,
 	 * since some channels may be coupled together. */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0) {
+	for (i = 0; i < buffer->nb_scans; i++) {
+		chn = buffer->scans[i]->chn;
+		if (iio_channel_is_enabled(chn, mask)) {
 			err = channel_read_state(chn, idx);
 			if (err < 0)
 				goto err_close;
