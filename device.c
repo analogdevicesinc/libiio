@@ -246,10 +246,12 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 	unsigned int i;
 	for (i = 0; i < dev->nb_channels; i++) {
 		struct iio_channel *chn = dev->channels[i];
+
+		printf("Comparing channel id %s with name %s (out=%d vs %d)\n", chn->id, name,
+		       iio_channel_is_output(chn), output);
 		if (iio_channel_is_output(chn) != output)
 			continue;
 
-		printf("Comparing channel id %s with name %s\n", chn->id, name);
 		if (!strcmp(chn->id, name) ||
 				(chn->label && !strcmp(chn->label, name)) ||
 				(chn->name && !strcmp(chn->name, name)))
