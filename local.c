@@ -1162,9 +1162,10 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 static int add_scan_element(void *d, const char *path)
 {
 	const char *channel = strrchr(path, '/') + 1;
-	const char *name = strchr(channel, '_') + 1;
+	const char *name = strrchr(channel, '_') + 1;
 	struct iio_buffer *buffer = d;
 	const struct iio_device *dev = buffer->dev;
+	const char *en_path = strchr(strstr(path, dev->id), '/') + 1;
 	struct iio_channel *chn;
 	char *channel_id;
 	int ret;
@@ -1175,8 +1176,8 @@ static int add_scan_element(void *d, const char *path)
 	 * when we see the _en attribute.
 	 */
 
-	printf("Adding scan element %s (name=%s) (path=%s) to buffer%u\n", channel, name, path,
-	       buffer->idx);
+	printf("Adding scan element %s (name=%s) (path=%s) (en_path=%s) to buffer%u\n", channel, name,
+	       path, en_path, buffer->idx);
 
 	if (strcmp(name, "en"))
 		return 0;
