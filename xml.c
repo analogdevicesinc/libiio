@@ -7,6 +7,7 @@
  */
 
 #include <errno.h>
+#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <libxml/parser.h>
@@ -244,6 +245,40 @@ err_free_name_id:
 	return err;
 }
 
+static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer *buf,
+				      xmlNode *node)
+{
+	char *chan_id = NULL, *type = NULL;
+	struct iio_channel *chn;
+	bool output = false;
+	xmlAttr *attr;
+
+	for (attr = node->properties; attr; attr = attr->next) {
+		if (!strcmp((const char *) attr->name, "id"))
+			chan_id = (char *) attr->children->content;
+		else if (!strcmp((const char *) attr->name, "type"))
+			type = (char *) attr->children->content;
+		else
+			dev_dbg(dev, "Unhandled attribute \'%s\' in <channel>\n",
+				attr->name);
+       }
+
+	if (!chan_id || !type) {
+		dev_dbg(dev, "Missing name or type property in <channel>\n");
+		return -ENOENT;
+	}
+
+	if (!strcmp(type, "out"))
+		output = true;
+
+	chn = iio_device_find_channel(dev, chan_id, output);
+	if (!chn)
+               return -ENOENT;
+
+	/* The en_path only matters for the local context */
+	return iio_buffer_add_scan_element(buf, chn, NULL);
+}
+
 static int create_buffers(struct iio_device *dev, xmlNode *node)
 {
 	const char *direction = NULL;
@@ -280,6 +315,13 @@ static int create_buffers(struct iio_device *dev, xmlNode *node)
 					idx, err);
 				return err;
 			}
+		} else if (!strcmp((const char *)n->name, "channel")) {
+			err = add_scan_element_to_buffer(dev, buf, n);
+			if (err < 0) {
+				dev_err(dev, "Failed to add channel to buffer%u (%d)\n",
+					idx, err);
+				return err;
+			}
 		} else {
 			dev_dbg(dev, "Unknown children \'%s\' in <buffer>\n",
 				n->name);
@@ -295,6 +337,7 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 	struct iio_device *dev;
 	int err = -ENOMEM;
 	char *name = NULL, *label = NULL, *id = NULL;
+	struct iio_buffer *buf = NULL;
 	bool buf_legacy = true;
 
 	for (attr = n->properties; attr; attr = attr->next) {
@@ -351,7 +394,7 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG);
 			if (err < 0)
 				return err;
-		} else if (!strcmp((char *) n->name, "buffer-attribute") && buf_legacy) {
+		} else if (!strcmp((char *) n->name, "") && buf_legacy) {
 			/* We need to account for two possibilities:
 			 *
 			 * 1) IIOD already uses the new <buffer> tag in which
@@ -363,8 +406,6 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			 *    case the buffer needs to be created and attributes
 			 *    added to it.
 			 */
-			struct iio_buffer *buf = iio_device_get_buffer(dev, 0);
-
 			if (!buf) {
 				buf = iio_device_add_buffer(dev, 0);
 				if (!buf)
@@ -378,6 +419,27 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			dev_dbg(dev, "Unknown children \'%s\' in <device>\n",
 				n->name);
 			continue;
+		}
+	}
+
+	/* Handle IIOD version sthat only send <buffer-attribute>. At this point,
+	 * we need to go all over the channels and add the ones that are scan elements
+	 * to the buffer.
+	 */
+	if (buf_legacy && buf) {
+		unsigned int c;
+
+		for (c = 0; c < iio_device_get_channels_count(dev); c++) {
+			struct iio_channel *chn = iio_device_get_channel(dev, c);
+
+			if (!iio_channel_is_scan_element(chn))
+				continue;
+
+			err = iio_buffer_add_scan_element(buf, chn, NULL);
+			if (err < 0) {
+				dev_perror(dev, err, "Unable to add scan element to legacy buffer\n");
+				return err;
+			}
 		}
 	}
 
