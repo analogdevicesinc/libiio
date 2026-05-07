@@ -151,6 +151,17 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 			iio_update_xml_indexes(ret, &ptr, &len, &alen);
 		}
 
+		for (j = 0; j < buf->nb_scans; j++) {
+			const struct iio_channel *chn = buf->scans[j]->chn;
+
+			ret = iio_snprintf(ptr, len, "<channel id=\"%s\" type=\"%s\" />",
+					   chn->id, chn->is_output ? "out" : "in");
+			if (ret < 0)
+				return ret;
+
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+		}
+
 		ret = iio_snprintf(ptr, len, "</buffer>");
 		if (ret < 0)
 			return ret;
