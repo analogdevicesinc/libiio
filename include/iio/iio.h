@@ -1165,6 +1165,11 @@ iio_buffer_get_attrs_count(const struct iio_buffer *buf);
 __api __check_ret __pure const struct iio_attr *
 iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index);
 
+__api __check_ret __pure unsigned int
+iio_buffer_get_scan_elements_count(const struct iio_buffer *buf);
+
+__api __check_ret __pure const struct iio_channel *
+iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index);
 
 /** @brief Try to find a buffer-specific attribute by its name
  * @param buf A pointer to an iio_buffer structure
