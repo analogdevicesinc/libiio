@@ -417,9 +417,6 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 	char buf[1024];
 	ssize_t ret;
 
-	if (buf_id > 0)
-		return -ENOSYS;
-
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
 		case IIO_ATTR_TYPE_CHANNEL:
@@ -489,9 +486,6 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 	FILE *f;
 	char buf[1024];
 	ssize_t ret;
-
-	if (buf_id > 0)
-		return -ENOSYS;
 
 	switch (type) {
 		case IIO_ATTR_TYPE_DEVICE:
@@ -1153,6 +1147,74 @@ static int detect_and_move_global_attrs(struct iio_device *dev)
 	return 0;
 }
 
+static int add_scan_element(void *d, const char *path)
+{
+	const char *attr = strrchr(path, '/') + 1;
+	struct iio_buffer *buffer = d;
+	/* We might need to add new channels to the device so we really need to cast the const away */
+	struct iio_device *dev = (struct iio_device *)buffer->dev;
+	struct iio_channel *chn;
+	const char *attr_path;
+	char *channel_id;
+	int ret;
+
+	attr_path = strchr(strstr(path, dev->id), '/') + 1;
+
+	channel_id = get_channel_id(dev, attr);
+	if (!channel_id)
+		return -ENOMEM;
+
+	chn = iio_device_find_channel(dev, channel_id, attr[0] == 'o');
+	if (!chn) {
+		/* If we can't find it, it means the channel is meant only for buffering which means
+		 * it has no other attributes than the scans. We still need to add it to the
+		 * device though.
+		 */
+		chn = create_channel(dev, channel_id, attr, true);
+		ret = iio_err(chn);
+		if (ret)
+			return ret;
+
+		iio_channel_init_finalize(chn);
+		ret = add_channel_to_device(dev, chn);
+		if (ret) {
+			free_channel(chn);
+			return ret;
+		}
+	} else {
+		chn->is_scan_element = true;
+		free(channel_id);
+	}
+
+	/* A scan element fundamentlly has _en, _index and _type attributes but we just want to
+	 * add it once to the buffer (as the channel is only one) and we also need to save the
+	 * _en path for when enabling/disabling the scan element. Hence, let's only add it
+	 * when we see the _en attribute.
+	 */
+	if (string_ends_with(attr, "_en"))
+		return iio_buffer_add_scan_element(buffer, chn, attr_path);
+
+	/* _index and _type are very much constant for the channel (even if the channel is
+	 * present in multiple buffers). Hence, if the channel is already marked as a scan, don't
+	 * bother in getting those attributes again.
+	 *
+	 * !\FIXME: In fact, the above is not quite true for _type as we can have multiple scan
+	 * types for the same channel (that can change at runtime). But that is not currently
+	 * supported anyways.
+	 */
+	if (string_ends_with(attr, "_index"))
+		return handle_scan_element_attr(chn, "index", attr_path);
+
+	return handle_scan_element_attr(chn, "type", attr_path);
+}
+
+static bool is_scan_element_attr(const char *name)
+{
+	return string_ends_with(name, "_en") ||
+	       string_ends_with(name, "_index") ||
+	       string_ends_with(name, "_type");
+}
+
 static int add_buffer_attr(void *d, const char *path)
 {
 	struct iio_buffer *buf = (struct iio_buffer *) d;
@@ -1162,6 +1224,12 @@ static int add_buffer_attr(void *d, const char *path)
 	for (i = 0; i < IIO_ARRAY_SIZE(buffer_attrs_reserved); i++)
 		if (!strcmp(buffer_attrs_reserved[i], name))
 			return 0;
+
+	/* If it is a multibuffer path we also have scan elements, hence
+	 * check for it.
+	 */
+	if (buf->idx && is_scan_element_attr(name))
+		return add_scan_element(buf, path);
 
 	return iio_buffer_add_attr(buf, name);
 }
@@ -1240,67 +1308,6 @@ out_close_dir:
 	return ret;
 }
 
-static int add_scan_element(void *d, const char *path)
-{
-	const char *attr = strrchr(path, '/') + 1;
-	struct iio_buffer *buffer = d;
-	/* We might need to add new channels to the device so we really need to cast the const away */
-	struct iio_device *dev = (struct iio_device *)buffer->dev;
-	struct iio_channel *chn;
-	const char *attr_path;
-	char *channel_id;
-	int ret;
-
-	attr_path = strchr(strstr(path, dev->id), '/') + 1;
-
-	channel_id = get_channel_id(dev, attr);
-	if (!channel_id)
-		return -ENOMEM;
-
-	chn = iio_device_find_channel(dev, channel_id, attr[0] == 'o');
-	if (!chn) {
-		/* If we can't find it, it means the channel is meant only for buffering which means
-		 * it has no other attributes than the scans. We still need to add it to the
-		 * device though.
-		 */
-		chn = create_channel(dev, channel_id, attr, true);
-		ret = iio_err(chn);
-		if (ret)
-			return ret;
-
-		iio_channel_init_finalize(chn);
-		ret = add_channel_to_device(dev, chn);
-		if (ret) {
-			free_channel(chn);
-			return ret;
-		}
-	} else {
-		chn->is_scan_element = true;
-		free(channel_id);
-	}
-
-	/* A scan element fundamentlly has _en, _index and _type attributes but we just want to
-	 * add it once to the buffer (as the channel is only one) and we also need to save the
-	 * _en path for when enabling/disabling the scan element. Hence, let's only add it
-	 * when we see the _en attribute.
-	 */
-	if (string_ends_with(attr, "_en"))
-		return iio_buffer_add_scan_element(buffer, chn, attr_path);
-
-	/* _index and _type are very much constant for the channel (even if the channel is
-	 * present in multiple buffers). Hence, if the channel is already marked as a scan, don't
-	 * bother in getting those attributes again.
-	 *
-	 * !\FIXME: In fact, the above is not quite true for _type as we can have multiple scan
-	 * types for the same channel (that can change at runtime). But that is not currently
-	 * supported anyways.
-	 */
-	if (string_ends_with(attr, "_index"))
-		return handle_scan_element_attr(chn, "index", attr_path);
-
-	return handle_scan_element_attr(chn, "type", attr_path);
-}
-
 static int add_scan_elements(struct iio_buffer *buffer, const char *devpath)
 {
 	const struct iio_context *ctx = iio_device_get_context(buffer->dev);
@@ -1318,43 +1325,66 @@ static int add_scan_elements(struct iio_buffer *buffer, const char *devpath)
 	return 0;
 }
 
-static int add_buffer_attributes(struct iio_device *dev, const char *devpath)
+static int create_buffer(struct iio_device *dev, unsigned int buf_idx,
+			 const char *devpath, const char *bufpath)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
-	struct stat st;
-	char buf[1024];
+	struct iio_buffer *buffer;
+	char dir_buf[16];
 	int ret;
 
-	iio_snprintf(buf, sizeof(buf), "%s/buffer", devpath);
+	buffer = iio_device_add_buffer(dev, buf_idx);
+	if (!buffer)
+		return -ENOMEM;
 
-	if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
-		struct iio_buffer *buffer;
-		char dir_buf[16];
+	/* A buffer's direction cannot change at runtime, read it now */
+	ret = (int)local_do_read_dev_attr(iio_device_get_id(dev), buf_idx, "direction",
+					  dir_buf, sizeof(dir_buf), IIO_ATTR_TYPE_BUFFER);
+	if (ret > 0) {
+		if (!strcmp(dir_buf, "in"))
+			buffer->direction = IIO_BUFFER_DIRECTION_INPUT;
+		else
+			buffer->direction = IIO_BUFFER_DIRECTION_OUTPUT;
+	}
 
-		buffer = iio_device_add_buffer(dev, 0);
-		if (!buffer)
-			return -ENOMEM;
+	ret = foreach_in_dir(ctx, buffer, bufpath, false, add_buffer_attr);
+	if (ret < 0)
+		return ret;
 
-		/* A buffer's direction cannot change at runtime, read it now */
-		ret = (int)local_do_read_dev_attr(iio_device_get_id(dev),
-						  0, "direction",
-						  dir_buf, sizeof(dir_buf),
-						  IIO_ATTR_TYPE_BUFFER);
-		if (ret > 0) {
-			if (!strcmp(dir_buf, "in"))
-				buffer->direction = IIO_BUFFER_DIRECTION_INPUT;
-			else
-				buffer->direction = IIO_BUFFER_DIRECTION_OUTPUT;
-		}
+	iio_sort_attrs(&buffer->attrlist);
 
-		ret = foreach_in_dir(ctx, buffer, buf, false, add_buffer_attr);
+	/* For legacy devpath/scan_elements/ */
+	if (!buf_idx)
+		return add_scan_elements(buffer, devpath);
+
+	return 0;
+}
+
+static int add_buffers(struct iio_device *dev, const char *devpath)
+{
+	unsigned int idx = 0;
+	char bufpath[256];
+	struct stat st;
+	int ret;
+
+	/* Always use legacy interface for buffer 0 to make it simpler and compatible
+	 * with older kernels
+	 */
+	iio_snprintf(bufpath, sizeof(bufpath), "%s/buffer", devpath);
+	if (stat(bufpath, &st) < 0 || !S_ISDIR(st.st_mode))
+		return 0;
+
+	do {
+
+		ret = create_buffer(dev, idx, devpath, bufpath);
 		if (ret < 0)
 			return ret;
 
-		iio_sort_attrs(&buffer->attrlist);
-
-		return add_scan_elements(buffer, devpath);
-	}
+		idx++;
+		iio_snprintf(bufpath, sizeof(bufpath), "%s/buffer%u", devpath, idx);
+		if (stat(bufpath, &st) < 0 || !S_ISDIR(st.st_mode))
+			return 0;
+	} while (true);
 
 	return 0;
 }
@@ -1405,7 +1435,7 @@ static int create_device(void *d, const char *path)
 	if (ret < 0)
 		return ret;
 
-	ret = add_buffer_attributes(dev, path);
+	ret = add_buffers(dev, path);
 	if (ret < 0)
 		return ret;
 
@@ -1585,10 +1615,15 @@ static struct iio_buffer_pdata *
 local_open_buffer(const struct iio_device *dev, unsigned int idx,
 		    struct iio_channels_mask *mask)
 {
+	struct iio_buffer *buffer = iio_device_get_buffer(dev, idx);
 	struct iio_buffer_pdata *pdata;
 	const struct iio_channel *chn;
 	int err, cancel_fd, fd;
 	unsigned int i;
+
+	/* In theory the below should never happen but better be safe at this point */
+	if (!buffer)
+		return iio_ptr(-ENOENT);
 
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata)
@@ -1624,20 +1659,18 @@ local_open_buffer(const struct iio_device *dev, unsigned int idx,
 	if (err < 0)
 		goto err_close;
 
-	/* Disable all channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0) {
-			err = channel_write_state(chn, idx, false);
-			if (err < 0)
-				goto err_close;
-		}
+	/* Disable all scan elements in this buffer */
+	for (i = 0; i < buffer->nb_scans; i++) {
+		chn = buffer->scans[i]->chn;
+		err = channel_write_state(chn, idx, false);
+		if (err < 0)
+			goto err_close;
 	}
 
 	/* Enable channels */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0 && iio_channel_is_enabled(chn, mask)) {
+	for (i = 0; i < buffer->nb_scans; i++) {
+		chn = buffer->scans[i]->chn;
+		if (iio_channel_is_enabled(chn, mask)) {
 			err = channel_write_state(chn, idx, true);
 			if (err < 0)
 				goto err_close;
@@ -1646,16 +1679,14 @@ local_open_buffer(const struct iio_device *dev, unsigned int idx,
 
 	/* Finally, update the channels mask by reading the hardware again,
 	 * since some channels may be coupled together. */
-	for (i = 0; i < dev->nb_channels; i++) {
-		chn = dev->channels[i];
-		if (chn->index >= 0) {
-			err = channel_read_state(chn, idx);
-			if (err < 0)
-				goto err_close;
+	for (i = 0; i < buffer->nb_scans; i++) {
+		chn = buffer->scans[i]->chn;
+		err = channel_read_state(chn, idx);
+		if (err < 0)
+			goto err_close;
 
-			if (err > 0)
-				iio_channel_enable(chn, mask);
-		}
+		if (err > 0)
+			iio_channel_enable(chn, mask);
 	}
 
 	return pdata;
