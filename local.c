@@ -854,6 +854,7 @@ static int handle_scan_element_attr(struct iio_channel *chn, const char *name, c
 			if (end == buf || value < 0 || errno == ERANGE)
 				return -EINVAL;
 
+			printf("Channel %s: index = %lld\n", chn->id, value);
 			chn->index = (long) value;
 		}
 	} else if (!strcmp(name, "type")) {
@@ -889,6 +890,10 @@ static int handle_scan_element_attr(struct iio_channel *chn, const char *name, c
 					(sign == 'S' || sign == 'U'||
 					chn->format.bits == chn->format.length);
 			chn->format.is_be = endian == 'b';
+			printf("Channel %s: format = %ce:%c%u/%u>>%u\n", chn->id,
+			       chn->format.is_be ? 'b' : 'l',
+			       chn->format.is_signed ? 's' : 'u',
+			       chn->format.bits, chn->format.length, chn->format.shift);
 		}
 	} else {
 		return -EINVAL;
@@ -1169,6 +1174,10 @@ static int add_scan_element(void *d, const char *path)
 	 * _en path for when enabling/disabling the scan element. Hence, let's only go ahead
 	 * when we see the _en attribute.
 	 */
+
+	printf("Adding scan element %s (name=%s) (path=%s) to buffer%u\n", channel, name, path,
+	       buffer->idx);
+
 	if (strcmp(name, "en"))
 		return 0;
 
@@ -1331,6 +1340,7 @@ static int create_buffer(struct iio_device *dev, unsigned int buf_idx,
 	char dir_buf[16];
 	int ret;
 
+	printf("Creating buffer%u for device %s\n", buf_idx, dev->id);
 	buffer = iio_device_add_buffer(dev, buf_idx);
 	if (!buffer)
 		return -ENOMEM;
