@@ -249,6 +249,7 @@ struct iio_channel * iio_device_find_channel(const struct iio_device *dev,
 		if (iio_channel_is_output(chn) != output)
 			continue;
 
+		printf("Comparing channel id %s with name %s\n", chn->id, name);
 		if (!strcmp(chn->id, name) ||
 				(chn->label && !strcmp(chn->label, name)) ||
 				(chn->name && !strcmp(chn->name, name)))

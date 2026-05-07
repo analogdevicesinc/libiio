@@ -1186,10 +1186,12 @@ static int add_scan_element(void *d, const char *path)
 	if (!channel_id)
 		return -ENOMEM;
 
+	printf("Looking for channel with id %s\n", channel_id);
+
 	chn = iio_device_find_channel(dev, channel_id, channel[0] == 'o');
 	free(channel_id);
 	if (!chn) {
-		dev_err(dev, "Channel \"%s\" not found", channel);
+		dev_err(dev, "Channel \"%s\" not found\n", channel);
 		return -ENOENT;
 	}
 
