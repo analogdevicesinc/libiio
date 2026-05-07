@@ -221,39 +221,42 @@ iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
 	return iio_attr_find(&buf->attrlist, name);
 }
 
-struct iio_scan_element *
-iio_buffer_add_scan_element(struct iio_buffer *buf, const struct iio_channel *chn,
+int iio_buffer_add_scan_element(struct iio_buffer *buf, const struct iio_channel *chn,
 			    const char *en_path)
 {
 	struct iio_scan_element *scan, **scans;
+	int err;
 
 	scan = zalloc(sizeof(*scan));
 	if (!scan)
-		return NULL;
+		return -ENOMEM;
 
 	scan->chn = chn;
 
 	if (en_path) {
 		scan->en_path = iio_strdup(en_path);
-		if (!scan->en_path)
+		if (!scan->en_path) {
+			err = -ENOMEM;
 			goto out_free_scan;
+		}
 	}
 
 	scans = realloc(buf->scans, (buf->nb_scans + 1) * sizeof(*buf->scans));
 	if (!scans) {
+		err = -ENOMEM;
 		goto out_free_en_path;
 	}
 
 	scans[buf->nb_scans++] = scan;
 	buf->scans = scans;
 
-	return scan;
+	return 0;
 
 out_free_en_path:
 	free(scan->en_path);
 out_free_scan:
 	free(scan);
-	return NULL;
+	return err;
 }
 
 void iio_buffer_set_direction(struct iio_buffer *buf, const char *direction)
