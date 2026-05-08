@@ -403,7 +403,7 @@ static int iio_device_io_channels_write_channel_raw(const struct device *dev,
 
 static int iio_device_io_channels_parse_gain(const char *src, size_t len, enum adc_gain *gain_out)
 {
-	for (uint8_t i = 0; i < ARRAY_SIZE(gain_values); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(gain_values); i++) {
 		const char *compare_gain = gain_values[i];
 
 		if (compare_gain == NULL) {
@@ -545,7 +545,7 @@ static int iio_device_io_channels_read_channel_reference(const struct device *de
 
 static int iio_device_io_channels_parse_reference(const char *src, size_t len, enum adc_reference *reference_out)
 {
-	for (uint8_t i = 0; i < ARRAY_SIZE(reference_values); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(reference_values); i++) {
 		const char *compare_reference = reference_values[i];
 
 		if (compare_reference == NULL) {
