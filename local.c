@@ -997,8 +997,7 @@ static int add_channel_to_device(struct iio_device *dev,
 }
 
 static struct iio_channel *create_channel(struct iio_device *dev,
-		char *id, const char *attr, const char *path,
-		bool is_scan_element)
+		char *id, const char *attr, bool is_scan_element)
 {
 	struct iio_channel *chn;
 	int err = -ENOMEM;
@@ -1024,10 +1023,6 @@ static struct iio_channel *create_channel(struct iio_device *dev,
 	chn->id = id;
 	chn->is_scan_element = is_scan_element;
 	chn->index = -ENOENT;
-
-	err = add_attr_to_channel(chn, attr, path, is_scan_element);
-	if (err)
-		goto err_free_chn_pdata;
 
 	return chn;
 
@@ -1063,7 +1058,7 @@ static int add_channel(struct iio_device *dev, const char *name,
 		}
 	}
 
-	chn = create_channel(dev, channel_id, name, path, dir_is_scan_elements);
+	chn = create_channel(dev, channel_id, name, dir_is_scan_elements);
 	ret = iio_err(chn);
 	if (ret) {
 		free(channel_id);
@@ -1076,8 +1071,10 @@ static int add_channel(struct iio_device *dev, const char *name,
 	if (ret) {
 		local_free_channel_pdata(chn);
 		free_channel(chn);
+		return ret;
 	}
-	return ret;
+
+	return add_attr_to_channel(chn, name, path, dir_is_scan_elements);
 }
 
 /*
