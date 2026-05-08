@@ -935,7 +935,7 @@ static void emu_shutdown(struct iio_context *ctx)
  * Returns NULL on allocation failure.
  * Cross-platform: handles both '/' and '\\' directory separators. */
 static char *emu_make_data_path(const char *xml_path,
-				const char *dev_id,
+				const struct iio_device *dev,
 				unsigned int idx)
 {
 	const char *sep = strrchr(xml_path, '/');
@@ -945,16 +945,28 @@ static char *emu_make_data_path(const char *xml_path,
 		sep = sep_win;
 #endif
 	size_t dir_len = sep ? (size_t)(sep - xml_path + 1) : 0;
-	size_t path_len = dir_len + MAX_DEV_ID + 32; /* _buf{idx}.bin + margin */
+
+	/* Use device name if available, fallback to device ID */
+	const char *name = iio_device_get_name(dev);
+	const char *identifier = name ? name : iio_device_get_id(dev);
+
+	size_t identifier_len = strnlen(identifier, MAX_DEV_ID);
+	size_t path_len = dir_len + identifier_len + 32; /* _buf{idx}.bin + margin */
 	char *path = malloc(path_len);
 
 	if (!path)
 		return NULL;
 
 	if (dir_len)
-		iio_snprintf(path, path_len, "%.*s%s_buf%u.bin", (int)dir_len, xml_path, dev_id, idx);
+		iio_snprintf(path, path_len, "%.*s%s_buf%u.bin", (int)dir_len, xml_path, identifier, idx);
 	else
-		iio_snprintf(path, path_len, "%s_buf%u.bin", dev_id, idx);
+		iio_snprintf(path, path_len, "%s_buf%u.bin", identifier, idx);
+
+	/* Colons are invalid in filenames on Windows */
+	for (char *p = path + dir_len; *p; p++) {
+		if (*p == ':')
+			*p = '_';
+	}
 
 	return path;
 }
@@ -1028,7 +1040,7 @@ static int emu_enable_buffer(struct iio_buffer_pdata *pdata,
 
 	ctx_pdata = iio_context_get_pdata(pdata->dev->ctx);
 	path = emu_make_data_path(ctx_pdata->xml_path,
-				  iio_device_get_id(pdata->dev),
+				  pdata->dev,
 				  pdata->idx);
 	if (!path) {
 		iio_mutex_unlock(pdata->file_lock);
