@@ -12,24 +12,42 @@ tests:
   sample.iiod.network:
     extra_args:
       - SNIPPET=iiod-network
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
     platform_allow:
       - native_sim
 
-  sample.iiod.cdc-acm.adc-emul:
+  sample.iiod.cdc-acm.emul:
     extra_args:
       - SNIPPET=iiod-cdc-acm
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
     platform_allow:
       - apard32690/max32690/m4
       - adi_sdp_k1
       - frdm_k64f
 
-  sample.iiod.console.adc-emul:
+  sample.iiod.console.emul:
     extra_args:
       - SNIPPET=iiod-console
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
     platform_allow:
       - apard32690/max32690/m4
       - adi_sdp_k1
       - frdm_k64f
+
+  sample.iiod.console.multi-sensor:
+    extra_args:
+      - SNIPPET=iiod-console
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+    platform_allow:
+      - apard32690/max32690/m4
 
   sample.iiod.console.eval_ad4052_ardz:
     extra_args:

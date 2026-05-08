@@ -8,6 +8,16 @@ config LIBIIO_IIOD_ADC_EMUL
 	help
 	  Enable ADC emulator IIO device driver.
 
+config LIBIIO_IIOD_SENSOR_EMUL
+	bool "Enable sensor emulator"
+	help
+	  Enable sensor emulator IIO device driver.
+
+config LIBIIO_IIOD_SENSOR_ADXL345
+	bool "Enable adxl345 sensor"
+	help
+	  Enable adxl345 sensor IIO device driver.
+
 endmenu
 
 source "Kconfig.zephyr"
