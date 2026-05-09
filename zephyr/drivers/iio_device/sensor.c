@@ -322,17 +322,9 @@ static int iio_device_sensor_init(const struct device *dev)
 	return 0;
 }
 
-static const char *iio_device_sensor_get_buffer_name(const struct device *dev)
-{
-	const struct iio_device_sensor_config *config = dev->config;
-
-	return config->buffer_name;
-}
-
 static DEVICE_API(iio_device, iio_device_sensor_driver_api) = {
 	.add_channels   = iio_device_sensor_add_channels,
 	.read_attr      = iio_device_sensor_read_attr,
-	.get_buffer_name = iio_device_sensor_get_buffer_name,
 };
 
 #define DT_DRV_COMPAT iio_sensor
