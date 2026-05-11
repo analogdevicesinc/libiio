@@ -17,7 +17,7 @@ namespace LibiioTests
     /// </summary>
     class IntegrationTests
     {
-        private const string TEST_XML_FILENAME = "pluto.xml";
+        private const string TEST_XML_FILENAME = "fmcomms2.xml";
 
         static void Main(string[] args)
         {
