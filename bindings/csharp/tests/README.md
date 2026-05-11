@@ -78,7 +78,7 @@ To add new test devices, place XML files in `tests/resources/xmls/` and referenc
 4. **Device Attribute Access**: Read device attributes
 5. **Channel Attribute Access**: Read channel attributes
 
-These tests mimic the behavior of the `iio_info` utility tool but in C#, ensuring the bindings support complete workflows. The tests use XML files from `tests/resources/xmls/` (e.g., `pluto.xml`) to define the emulated IIO devices. The emulation backend allows testing the API without physical hardware.
+These tests mimic the behavior of the `iio_info` utility tool but in C#, ensuring the bindings support complete workflows. The tests use XML files from `tests/resources/xmls/` (e.g., `fmcomms2.xml`) to define the emulated IIO devices. The emulation backend allows testing the API without physical hardware.
 
 ## What These Tests Are For
 
