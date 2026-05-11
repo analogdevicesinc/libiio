@@ -40,10 +40,26 @@ foreach(test ${API_TEST_TARGETS})
 
     # Add as CTest
     add_test(NAME ${test} COMMAND ${test})
+    set_tests_properties(${test} PROPERTIES LABELS "api")
     if (WITH_GCOV)
         enable_coverage(${test})
     endif()
 endforeach()
+
+# emu tests
+if(WITH_EMU_BACKEND)
+    file(GLOB EMU_XML_FILES "${CMAKE_SOURCE_DIR}/tests/resources/xmls/*.xml")
+    foreach(xml_file ${EMU_XML_FILES})
+        get_filename_component(xml_name ${xml_file} NAME_WE)
+        foreach(test ${API_TEST_TARGETS})
+            add_test(NAME ${test}_emu_${xml_name} COMMAND ${test})
+            set_tests_properties(${test}_emu_${xml_name} PROPERTIES
+                ENVIRONMENT "TESTS_API_URI=emu:${xml_file}"
+                LABELS "emu;${xml_name}"
+            )
+        endforeach()
+    endforeach()
+endif()
 
 # Master test runner
 add_executable(run_all_api_tests run_all_api_tests.c)
