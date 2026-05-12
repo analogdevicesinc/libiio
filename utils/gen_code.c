@@ -23,27 +23,11 @@ static enum languages {
 	UNSUPPORTED_LANG,
 } lang = UNSUPPORTED_LANG;
 
-static int gen_fopen(FILE** pFile, const char *filename, const char *mode)
-{
-	int ret = 0;
-
-
-#ifdef _MSC_BUILD
-	ret = fopen_s(pFile, filename, mode);
-#else
-	*pFile = fopen(filename, mode);
-	if (!*pFile)
-		ret = -errno;
-#endif
-
-	return ret;
-}
 
 bool gen_test_path(const char *gen_file)
 {
 	FILE *test;
 	char *last;
-	int ret;
 
 	if (!gen_file)
 		return false;
@@ -65,8 +49,8 @@ bool gen_test_path(const char *gen_file)
 		return false;
 	}
 
-	ret = gen_fopen(&test, gen_file, "w");
-	if (ret)
+	test = iio_fopen(gen_file, "w");
+	if (!test)
 		return false;
 	fclose(test);
 
@@ -75,18 +59,16 @@ bool gen_test_path(const char *gen_file)
 
 void gen_start(const char *gen_file)
 {
-	int ret;
-
 	if (!gen_file)
 		return;
 
 	if (lang == UNSUPPORTED_LANG)
 		return;
 
-	ret = gen_fopen(&fd, gen_file, "w");
-	if (ret) {
+	fd = iio_fopen(gen_file, "w");
+	if (!fd) {
 		char buf[1024];
-		iio_strerror(-ret, buf, sizeof(buf));
+		iio_strerror(errno, buf, sizeof(buf));
 		fprintf(stderr, "Error '%s' opening file: %s\n", buf, gen_file);
 		return;
 	}

@@ -98,15 +98,9 @@ static unsigned char *read_input_file(const char *path, size_t *len)
 	unsigned char *buf;
 	int err = 0;
 
-#ifdef _MSC_BUILD
-	err = fopen_s(&f, path, "rb");
-	if (err)
-		f = NULL;
-#else
-	f = fopen(path, "rb"); /* Flawfinder: ignore */
+	f = iio_fopen(path, "rb"); /* Flawfinder: ignore */
 	if (!f)
 		err = errno;
-#endif
 	if (!f) {
 		char errbuf[256];
 		iio_strerror(err, errbuf, sizeof(errbuf));

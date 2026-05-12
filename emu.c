@@ -1035,11 +1035,7 @@ static int emu_enable_buffer(struct iio_buffer_pdata *pdata,
 		return -ENOMEM;
 	}
 
-#ifdef _MSC_BUILD
-	fopen_s(&pdata->file, path, is_output ? "wb" : "rb");
-#else
-	pdata->file = fopen(path, is_output ? "wb" : "rb");
-#endif
+	pdata->file = iio_fopen(path, is_output ? "wb" : "rb");
 	if (!pdata->file) {
 		if(!is_output)
 			dev_err(pdata->dev, "Rx data file not found, expected at %s\n", path);
