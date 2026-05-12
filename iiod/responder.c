@@ -377,7 +377,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	if (!dev)
 		goto err_send_response;
 
-	entry = get_iio_buffer_entry_unblocked(pdata, cmd);
+	entry = get_iio_buffer_entry(pdata, cmd);
 	if (!iio_err(entry)) {
 		/* No error? This buffer already exists, so return
 		 * -EEXIST. */
@@ -416,8 +416,6 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 		ret = -ENOMEM;
 		goto err_free_words;
 	}
-
-	iio_mutex_lock(buflist_lock);
 
 	entry->dev = dev;
 	entry->idx = (uint16_t) cmd->code;
@@ -479,6 +477,7 @@ static void handle_open_buffer(struct parser_pdata *pdata,
 	entry->buf_stream = buf_stream;
 	entry->pdata = pdata;
 
+	iio_mutex_lock(buflist_lock);
 	SLIST_INSERT_HEAD(&bufferlist, entry, entry);
 	iio_mutex_unlock(buflist_lock);
 
