@@ -110,8 +110,8 @@ static void handle_timeout(struct parser_pdata *pdata,
 	iiod_io_send_response_code(io, ret);
 }
 
-static struct buffer_entry * get_iio_buffer_entry_unblocked(struct parser_pdata *pdata,
-							    const struct iiod_command *cmd)
+static struct buffer_entry * get_iio_buffer_entry_unlocked(struct parser_pdata *pdata,
+							   const struct iiod_command *cmd)
 {
 	const struct iio_device *dev;
 	struct buffer_entry *entry;
@@ -515,7 +515,7 @@ static struct buffer_entry * get_iio_buffer_entry(struct parser_pdata *pdata,
 
 
 	iio_mutex_lock(buflist_lock);
-	entry = get_iio_buffer_entry_unblocked(pdata, cmd);
+	entry = get_iio_buffer_entry_unlocked(pdata, cmd);
 	iio_mutex_unlock(buflist_lock);
 
 	return entry;
@@ -560,29 +560,22 @@ static void handle_close_buffer(struct parser_pdata *pdata,
 			       struct iiod_command_data *cmd_data)
 {
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
-	struct buffer_entry *entry, *buf_entry;
+	struct buffer_entry *entry;
 	int ret = -ENODEV;
-
-	buf_entry = get_iio_buffer_entry(pdata, cmd);
-	ret = iio_err(buf_entry);
-	if (ret)
-		goto out_send_response;
-
-	ret = -EBADF;
 
 	iio_mutex_lock(buflist_lock);
 
-	SLIST_FOREACH(entry, &bufferlist, entry) {
-		if (entry != buf_entry)
-			continue;
-
-		SLIST_REMOVE(&bufferlist, entry, buffer_entry, entry);
-		free_buffer_entry(entry);
-		ret = 0;
-		break;
+	entry = get_iio_buffer_entry_unlocked(pdata, cmd);
+	ret = iio_err(entry);
+	if (ret) {
+		iio_mutex_unlock(buflist_lock);
+		goto out_send_response;
 	}
 
+	SLIST_REMOVE(&bufferlist, entry, buffer_entry, entry);
 	iio_mutex_unlock(buflist_lock);
+	free_buffer_entry(entry);
+	ret = 0;
 
 	IIO_DEBUG("Buffer %u freed.\n", cmd->code);
 
