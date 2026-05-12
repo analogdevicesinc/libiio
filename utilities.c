@@ -226,6 +226,20 @@ void iio_strerror(int err, char *buf, size_t len)
 	}
 }
 
+FILE *iio_fopen(const char *path, const char *mode)
+{
+#ifdef _MSC_BUILD
+	FILE *f;
+	int ret = fopen_s(&f, path, mode);
+	if (ret) {
+		return NULL;
+	}
+	return f;
+#else
+	return fopen(path, mode);
+#endif
+}
+
 char *iio_strtok_r(char *str, const char *delim, char **saveptr)
 {
 #if defined(_WIN32)

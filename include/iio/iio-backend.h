@@ -235,6 +235,7 @@ __api __iio_printf ssize_t
 iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 __api char *iio_strdup(const char *str);
 __api size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize);
+__api FILE *iio_fopen(const char *path, const char *mode);
 
 __api struct iio_context *
 iio_create_context_from_xml(const struct iio_context_params *params,
