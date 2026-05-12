@@ -824,6 +824,7 @@ configure_file(iio-config.h.cmakein ${CMAKE_CURRENT_BINARY_DIR}/iio-config.h @ON
 
 toggle_iio_feature("${LIBIIO_COMPAT}" compat)
 toggle_iio_feature("${WITH_XML_BACKEND}" xml)
+toggle_iio_feature("${WITH_EMU_BACKEND}" emu)
 toggle_iio_feature("${WITH_ZSTD}" zstd)
 toggle_iio_feature("${WITH_NETWORK_BACKEND}" network)
 toggle_iio_feature("${HAVE_DNS_SD}" dns-sd)
