@@ -73,16 +73,19 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
 		add_library(iio-compat compat.c)
 		if (WIN32)
 			target_sources(iio-compat PRIVATE dynamic-windows.c)
-			target_compile_definitions(iio-compat PRIVATE
-				LIBIIO1_NAME="iio${PROJECT_VERSION_MAJOR}.dll"
-			)
+			set(LIBIIO1_NAME "iio${PROJECT_VERSION_MAJOR}.dll")
 		else()
 			target_sources(iio-compat PRIVATE dynamic-unix.c)
 			target_link_libraries(iio-compat PRIVATE dl)
-			target_compile_definitions(iio-compat PRIVATE
-				LIBIIO1_NAME="libiio.so.${PROJECT_VERSION_MAJOR}"
-			)
+			if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+				set(LIBIIO1_NAME "iio.framework/Versions/${PROJECT_VERSION}/iio")
+			else()
+				set(LIBIIO1_NAME "libiio.so.${PROJECT_VERSION_MAJOR}")
+			endif()
 		endif()
+		target_compile_definitions(iio-compat PRIVATE
+			LIBIIO1_NAME="${LIBIIO1_NAME}"
+		)
 
 		target_include_directories(iio-compat PUBLIC ${CMAKE_BINARY_DIR} include)
 		target_compile_definitions(iio-compat PRIVATE LIBIIO_COMPAT_EXPORTS)
