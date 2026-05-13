@@ -110,11 +110,20 @@ static int sensor_fetch_all(const struct device *dev)
 		return 0;
 	}
 
-	/* Single hardware fetch — waits for data-ready once */
+	/* Try bulk fetch first (SENSOR_CHAN_ALL) */
 	ret = sensor_sample_fetch(config->sensor_dev);
-	if (ret < 0) {
-		LOG_DBG("Error fetching sensor: %d", ret);
-		data->fetched = false;
+	if (ret == -ENOTSUP) {
+		/* Driver has no SENSOR_CHAN_ALL — fetch each channel individually */
+		for (size_t i = 0; i < config->num_channels; i++) {
+			int ch_ret = sensor_sample_fetch_chan(config->sensor_dev,
+								config->channels[i]);
+			if (ch_ret < 0) {
+				LOG_ERR("Fetch channel %d: %d",
+					config->channels[i], ch_ret);
+			}
+		}
+	} else if (ret < 0) {
+		LOG_ERR("Error fetching sensor: %d", ret);
 		return ret;
 	}
 
@@ -123,7 +132,7 @@ static int sensor_fetch_all(const struct device *dev)
 		ret = sensor_channel_get(config->sensor_dev,
 				config->channels[i], &data->cache[i]);
 		if (ret < 0) {
-			LOG_DBG("Error getting channel %d: %d",
+			LOG_ERR("Get channel %d: %d",
 				config->channels[i], ret);
 			data->cache[i].val1 = 0;
 			data->cache[i].val2 = 0;
