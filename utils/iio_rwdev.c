@@ -36,6 +36,7 @@ static const struct option options[] = {
 	  {"trigger", required_argument, 0, 't'},
 	  {"trigger-rate", required_argument, 0, 'r'},
 	  {"buffer-size", required_argument, 0, 'b'},
+	  {"buffer-index", required_argument, 0, 'i'},
 	  {"samples", required_argument, 0, 's' },
 	  {"auto", no_argument, 0, 'a'},
 	  {"write", no_argument, 0, 'w'},
@@ -50,6 +51,7 @@ static const char *options_descriptions[] = {
 	"Use the specified trigger.",
 	"Set the trigger to the specified rate (Hz). Default is 100 Hz.",
 	"Size of the transfer buffer. Default is 256.",
+	"Buffer index to use. Default is 0.",
 	"Number of samples to transfer, 0 = infinite. Default is 0.",
 	"Scan for available contexts and if only one is available use it.",
 	"Transmit to IIO device (TX) instead of receiving (RX).",
@@ -205,18 +207,18 @@ static ssize_t transfer_sample(const struct iio_channel *chn,
 	return (ssize_t) nb;
 }
 
-#define MY_OPTS "t:b:s:T:r:wcB"
+#define MY_OPTS "t:b:i:s:T:r:wcB"
 
 int main(int argc, char **argv)
 {
 	char **argw;
-	unsigned int i, j, nb_channels;
-	unsigned int nb_active_channels = 0;
+	unsigned int i, j, nb_channels, nb_scan_elements;
 	unsigned int buffer_size = SAMPLES_PER_READ;
+	unsigned int buffer_index = 0;
 	unsigned int trigger_rate = DEFAULT_FREQ_HZ;
 	uint64_t refill_per_benchmark = REFILL_PER_BENCHMARK;
 	struct iio_device *dev, *trigger;
-	struct iio_channel *ch;
+	const struct iio_channel *ch;
 	ssize_t sample_size, hw_sample_size;
 	bool hit, mib, is_write = false, cyclic_buffer = false,
 	     benchmark = false, do_write = false;
@@ -276,6 +278,13 @@ int main(int argc, char **argv)
 				goto err_free_ctx;
 			}
 			buffer_size = sanitize_clamp("buffer size", optarg, 1, SIZE_MAX);
+			break;
+		case 'i':
+			if (!optarg) {
+				fprintf(stderr, "Buffer index requires an argument\n");
+				goto err_free_ctx;
+			}
+			buffer_index = sanitize_clamp("buffer index", optarg, 0, UINT_MAX);
 			break;
 		case 'B':
 			benchmark = true;
@@ -398,30 +407,61 @@ int main(int argc, char **argv)
 		goto err_free_ctx;
 	}
 
-	if (argc == optind + 1) {
-		/* Enable all channels */
-		for (i = 0; i < nb_channels; i++) {
-			ch = iio_device_get_channel(dev, i);
+	buffer = iio_device_get_buffer(dev, buffer_index);
+	if (!buffer) {
+		dev_err(dev, "No buffer at index %u for device", buffer_index);
+		ret = -ENODEV;
+		goto err_free_mask;
+	}
 
-			if (is_write == iio_channel_is_output(ch)) {
-				iio_channel_enable(ch, mask);
-				nb_active_channels++;
-			}
+	nb_scan_elements = iio_buffer_get_scan_elements_count(buffer);
+	if (!nb_scan_elements) {
+		dev_err(dev, "No scan elements for buffer %u", buffer_index);
+		goto err_free_mask;
+	}
+
+	if (is_write != iio_buffer_is_output(buffer)) {
+		fprintf(stderr, "Buffer %u is an %sput buffer, but %sput was requested\n",
+			buffer_index,
+			iio_buffer_is_output(buffer) ? "out" : "in",
+			is_write ? "out" : "in");
+		goto err_free_mask;
+	}
+
+	if (argc == optind + 1) {
+		/* Enable all scan elements of this buffer */
+		for (i = 0; i < nb_scan_elements; i++) {
+			ch = iio_buffer_get_scan_element(buffer, i);
+			iio_channel_enable(ch, mask);
 		}
 	} else {
 		for (j = optind + 1; j < (unsigned int) argc; j++) {
-			ret = iio_device_enable_channel(dev, argw[j], is_write, mask);
-			if (ret < 0) {
-				dev_perror(dev, ret, "Bad channel name \"%s\"", argw[j]);
+			const struct iio_channel *scan_chn;
+
+			ch = iio_device_find_channel(dev, argw[j], is_write);
+			if (!ch) {
+				dev_perror(dev, -ENXIO, "Channel \"%s\" not found", argw[j]);
 				goto err_free_mask;
 			}
-			nb_active_channels++;
-		}
-	}
 
-	if (!nb_active_channels) {
-		fprintf(stderr, "No %sput channels found\n", is_write ? "out" : "in");
-		goto err_free_mask;
+			hit = false;
+			for (i = 0; i < nb_scan_elements; i++) {
+				scan_chn = iio_buffer_get_scan_element(buffer, i);
+				if (scan_chn == ch) {
+					hit = true;
+					break;
+				}
+			}
+
+			if (!hit) {
+				dev_perror(dev, -EINVAL,
+					   "Channel \"%s\" is not a scan element of buffer %u",
+					   argw[j], buffer_index);
+				goto err_free_mask;
+			}
+
+			iio_channel_enable(ch, mask);
+		}
 	}
 
 	sample_size = iio_device_get_sample_size(dev, mask);
@@ -431,13 +471,6 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	} else if (sample_size < 0) {
 		dev_perror(dev, (int) sample_size, "Unable to get sample size");
-		goto err_free_mask;
-	}
-
-	buffer = iio_device_get_buffer(dev, 0);
-	if (!buffer) {
-		dev_err(dev, "No buffer for device");
-		ret = -ENODEV;
 		goto err_free_mask;
 	}
 
