@@ -68,8 +68,6 @@ struct iio_device_sensor_config {
 	const struct device *sensor_dev;
 	const enum sensor_channel *channels;
 	size_t num_channels;
-	uint8_t address;
-	const char *buffer_name;
 };
 
 /* bulk fetch — one sensor_sample_fetch(SENSOR_CHAN_ALL) per round,
@@ -78,7 +76,6 @@ struct iio_device_sensor_config {
  */
 struct iio_device_sensor_data {
 	struct sensor_value *cache;
-	size_t num_channels;
 	bool fetched;
 };
 
@@ -349,18 +346,15 @@ static struct sensor_value							\
 										\
 static struct iio_device_sensor_data iio_device_sensor_data_##inst = {		\
 	.cache        = iio_device_sensor_cache_##inst,				\
-	.num_channels = ARRAY_SIZE(iio_device_sensor_channels_##inst),		\
 	.fetched      = false,							\
 };										\
 										\
 static const struct iio_device_sensor_config				\
 		iio_device_sensor_config_##inst = {				\
 	.name        = DT_INST_PROP_OR(inst, io_name, NULL),			\
-	.address     = DT_INST_REG_ADDR(inst),					\
 	.sensor_dev  = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor_device)),	\
 	.channels    = iio_device_sensor_channels_##inst,			\
 	.num_channels = ARRAY_SIZE(iio_device_sensor_channels_##inst),		\
-	.buffer_name = DT_INST_PROP_OR(inst, buffer_name, "buffer"),		\
 };										\
 										\
 IIO_DEVICE_DT_INST_DEFINE(inst, DT_INST_PROP_OR(inst, io_name, NULL),		\
