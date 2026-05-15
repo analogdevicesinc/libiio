@@ -407,7 +407,7 @@ class Channel
 public:
 
     Channel() = delete;
-    Channel(iio_channel * chan) : p(chan), attrs(chan){assert(chan);}
+    Channel(iio_channel * chan) : p(chan), attrs(chan), event_attrs(chan){assert(chan);}
     operator iio_channel * () const {return p;}
 
 #ifndef DOXYGEN
@@ -422,6 +422,18 @@ public:
 
     AttrSeq attrs;
 
+#ifndef DOXYGEN
+    typedef impl::AttrSeqT<iio_channel,
+                           iio_channel_get_event_attrs_count,
+                           iio_channel_get_event_attr,
+                           iio_channel_find_event_attr
+                           > EventAttrSeq;
+#else
+    typedef impl::AttrSeqT<Channel> EventAttrSeq;
+#endif
+
+    EventAttrSeq event_attrs;
+
     Device device() const;
     cstr id() const {return iio_channel_get_id(p);}
     optstr name() const { return impl::opt(iio_channel_get_name(p));}
@@ -431,6 +443,9 @@ public:
     unsigned int attrs_count() const {return iio_channel_get_attrs_count(p);}
     optional<Attr> attr(unsigned int index) {return impl::maybe<Attr>(iio_channel_get_attr(p, index));}
     optional<Attr> find_attr(cstr name) {return impl::maybe<Attr>(iio_channel_find_attr(p, name));}
+    unsigned int event_attrs_count() const {return iio_channel_get_event_attrs_count(p);}
+    optional<Attr> event_attr(unsigned int index) {return impl::maybe<Attr>(iio_channel_get_event_attr(p, index));}
+    optional<Attr> find_event_attr(cstr name) {return impl::maybe<Attr>(iio_channel_find_event_attr(p, name));}
     void enable(iio_channels_mask * mask) {iio_channel_enable(p, mask);}
     void disable(iio_channels_mask * mask) {iio_channel_disable(p, mask);}
     bool is_enabled(iio_channels_mask * mask) const { return iio_channel_is_enabled(p, mask);}
@@ -568,9 +583,21 @@ public:
 
     DebugAttrSeq debug_attrs;
 
+#ifndef DOXYGEN
+    typedef impl::AttrSeqT<iio_device,
+        iio_device_get_event_attrs_count,
+        iio_device_get_event_attr,
+        iio_device_find_event_attr
+        > EventAttrSeq;
+#else
+    typedef impl::AttrSeqT<Device> EventAttrSeq;
+#endif
+
+    EventAttrSeq event_attrs;
+
 
     Device() = delete;
-    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev) {assert(dev);}
+    Device(iio_device * dev) : p(dev), attrs(dev), debug_attrs(dev), event_attrs(dev) {assert(dev);}
     operator iio_device * () const {return p;}
 
     Context context();
@@ -596,6 +623,9 @@ public:
     unsigned int debug_attrs_count() const {return iio_device_get_debug_attrs_count(p);}
     optional<Attr> debug_attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_debug_attr>(p, idx);}
     optional<Attr> find_debug_attr(cstr name) {return impl::attr<iio_device, iio_device_find_debug_attr>(p, name);}
+    unsigned int event_attrs_count() const {return iio_device_get_event_attrs_count(p);}
+    optional<Attr> event_attr(unsigned int idx) {return impl::attr<iio_device, iio_device_get_event_attr>(p, idx);}
+    optional<Attr> find_event_attr(cstr name) {return impl::attr<iio_device, iio_device_find_event_attr>(p, name);}
     void reg_write(uint32_t address, uint32_t value) {impl::check(iio_device_reg_write(p, address, value), "iio_device_reg_write");}
     uint32_t reg_read(uint32_t address) {uint32_t value; impl::check(iio_device_reg_read(p, address, &value), "iio_device_reg_read"); return value;}
 };
