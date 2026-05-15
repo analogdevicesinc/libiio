@@ -186,6 +186,75 @@ static void setup_sig_handler(void)
 
 #endif
 
+/*
+ * Cyclic mode: use the block API directly instead of the stream API.
+ * The stream API does not support cyclic buffers, so we open the buffer
+ * manually, fill a single block from stdin, and enqueue it with cyclic=true.
+ */
+static int do_cyclic_transfer(struct iio_device *dev, struct iio_buffer *buffer,
+			      struct iio_channels_mask *mask, size_t block_size)
+{
+	struct iio_buffer_stream *buf_stream;
+	size_t len, nb, bytes_used;
+	struct iio_block *block;
+	void *start;
+	int ret;
+
+#ifdef _WIN32
+	_setmode(_fileno(stdin), _O_BINARY);
+#endif
+	buf_stream = iio_buffer_open(buffer, mask);
+	ret = iio_err(buf_stream);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to open buffer");
+		return ret;
+	}
+
+	block = iio_buffer_stream_create_block(buf_stream, block_size);
+	ret = iio_err(block);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to create block");
+		goto err_close_buffer;
+	}
+
+	start = iio_block_start(block);
+	len = (uintptr_t)iio_block_end(block) - (uintptr_t)start;
+
+	for (bytes_used = len; len; ) {
+		nb = fread(start, 1, len, stdin);
+		if (!nb)
+			break;
+		len -= nb;
+		start = (void *)((uintptr_t)start + nb);
+	}
+
+	ret = iio_block_enqueue(block, bytes_used - len, true);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to enqueue cyclic block");
+		goto err_destroy_block;
+	}
+
+	ret = iio_buffer_stream_start(buf_stream);
+	if (ret) {
+		dev_perror(dev, ret, "Unable to start buffer stream");
+		goto err_destroy_block;
+	}
+
+	while (app_running) {
+#ifdef _WIN32
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
+
+err_destroy_block:
+	iio_block_destroy(block);
+err_close_buffer:
+	iio_buffer_close(buf_stream);
+	return ret;
+}
+
 static ssize_t transfer_sample(const struct iio_channel *chn,
 		void *buf, size_t len, void *d)
 {
@@ -474,6 +543,14 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	}
 
+	if (cyclic_buffer) {
+		ret = do_cyclic_transfer(dev, buffer, mask,
+					 buffer_size * sample_size);
+		if (!ret)
+			exit_code = EXIT_SUCCESS;
+		goto err_free_mask;
+	}
+
 	stream = iio_buffer_create_stream(buffer, 4, buffer_size, mask);
 	ret = iio_err(stream);
 	if (ret) {
@@ -524,18 +601,6 @@ int main(int argc, char **argv)
 				i = 0;
 				total = 0;
 			}
-		}
-
-		if (do_write && cyclic_buffer) {
-			while(app_running) {
-#ifdef _WIN32
-				Sleep(1000);
-#else
-				sleep(1);
-#endif
-			}
-
-			break;
 		}
 
 		do_write = is_write;
