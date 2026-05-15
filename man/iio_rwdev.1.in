@@ -31,7 +31,7 @@ iio_rwdev \- read/write buffers from/to an IIO device
 [
 .I options
 ]
-[-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>] [-s <samples>] [-w] <iio_device> [<channel> ...]
+[-n <hostname>] [-t <trigger>] [-T <timeout-ms>] [-b <buffer-size>] [-i <buffer-index>] [-s <samples>] [-w] [-c] <iio_device> [<channel> ...]
 .SH DESCRIPTION
 .B iio_rwdev
 is a utility for reading buffers from connected IIO devices, and sending results to standard out.
@@ -51,6 +51,10 @@ Set the trigger to the specified rate (Hz). Default is 100 Hz.
 .TP
 .B \-b \-\-buffer-size <arg>
 Size of the capture buffer. Default is 256.
+.TP
+.B \-i \-\-buffer-index <arg>
+Buffer index to use. Default is 0. On multi-buffer devices, different buffers
+may have different sets of scan elements and directions.
 .TP
 .B \-s \-\-samples <arg>
 Number of samples (not bytes) to capture, 0 = infinite. Default is 0.
