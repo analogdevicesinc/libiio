@@ -49,13 +49,25 @@ iio_attr \- list IIO devices, and read/write device attributes
 [
 .I options
 ]
+-E [device] [attr] [value]
+.br
+.B iio_attr
+[
+.I options
+]
+-e [device] [channel] [attr] [value]
+.br
+.B iio_attr
+[
+.I options
+]
 -C [attr]
 .br
 .B iio_attr
 [
 .I options
 ]
--f -d|-c|-B[-b buffer_index]|-D [device] [channel] [attr] [path]
+-f -d|-c|-B[-b buffer_index]|-D|-E|-e [device] [channel] [attr] [path]
 .br
 .B iio_attr
 -S <arg>
@@ -88,6 +100,12 @@ Read and Write IIO Context attributes
 .TP
 .B \-D \-\-debug-attr
 Read and Write IIO Debug attributes
+.TP
+.B \-E \-\-event-attr
+Read and Write IIO device event attributes
+.TP
+.B \-e \-\-channel-event-attr
+Read and Write IIO channel event attributes
 ##COMMON_COMMANDS_START##
 ##COMMON_COMMANDS_STOP##
 .SH OPTIONS

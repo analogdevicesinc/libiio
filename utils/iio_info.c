@@ -395,6 +395,14 @@ int main(int argc, char **argv)
 				attr = iio_channel_get_attr(ch, k);
 				print_attr(attr, 4, k, read_sysfs_attr, read_debug_attr);
 			}
+
+			nb_attrs = iio_channel_get_event_attrs_count(ch);
+			if (nb_attrs > 0)
+				printf("\t\t\t%u event-specific attributes found:\n", nb_attrs);
+			for (k = 0; k < nb_attrs; k++) {
+				attr = iio_channel_get_event_attr(ch, k);
+				print_attr(attr, 4, k, read_sysfs_attr, read_debug_attr);
+			}
 		}
 
 		nb_attrs = iio_device_get_attrs_count(dev);
@@ -413,6 +421,15 @@ int main(int argc, char **argv)
 			buffer = iio_device_get_buffer(dev, j);
 
 			print_buffer(buffer, j, read_sysfs_attr, read_debug_attr);
+		}
+
+		nb_attrs = iio_device_get_event_attrs_count(dev);
+		if (nb_attrs) {
+			printf("\t\t%u event attributes found:\n", nb_attrs);
+			for (j = 0; j < nb_attrs; j++) {
+				attr = iio_device_get_event_attr(dev, j);
+				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
+			}
 		}
 
 		nb_attrs = iio_device_get_debug_attrs_count(dev);

@@ -381,6 +381,8 @@ static const struct option options[] = {
 	{"buffer-attr", no_argument, 0, 'B'},
 	{"buffer-index", required_argument, 0, 'b'},
 	{"debug-attr", no_argument, 0, 'D'},
+	{"event-attr", no_argument, 0, 'E'},
+	{"channel-event-attr", no_argument, 0, 'e'},
 	{0, 0, 0, 0},
 };
 
@@ -389,6 +391,8 @@ static const char *options_descriptions[] = {
 		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
 		"\t\t\t\t-B [device] [attr] [value]\n"
 		"\t\t\t\t-D [device] [attr] [value]\n"
+		"\t\t\t\t-E [device] [attr] [value]\n"
+		"\t\t\t\t-e [device] [channel] [attr] [value]\n"
 		"\t\t\t\t-C [attr]\n"
 		"\t\t\t\t(add -f to interpret the trailing [value] as a path and write its raw bytes)"),
 	/* help */
@@ -409,9 +413,11 @@ static const char *options_descriptions[] = {
 	"Read/Write buffer attributes.",
 	"Buffer index to use.",
 	"Read/Write debug attributes.",
+	"Read/Write device event attributes.",
+	"Read/Write channel event attributes.",
 };
 
-#define MY_OPTS "CdcBDiosIwqvg:fb:"
+#define MY_OPTS "CdcBDEeiosIwqvg:fb:"
 int main(int argc, char **argv)
 {
 	char **argw;
@@ -422,8 +428,8 @@ int main(int argc, char **argv)
 	const char *gen_file = NULL;
 	bool search_device = false, ignore_case = false,
 		search_channel = false, search_buffer = false, search_debug = false,
-		search_context = false, input_only = false, output_only = false,
-		scan_only = false, gen_code = false;
+		search_event = false, search_channel_event = false, search_context = false,
+		input_only = false, output_only = false, scan_only = false, gen_code = false;
 	enum verbosity quiet = ATTR_NORMAL;
 	bool found_err = false, read_err = false, write_err = false, write_only = false,
 		dev_found = false, attr_found = false, ctx_found = false,
@@ -494,6 +500,12 @@ int main(int argc, char **argv)
 		case 'D':
 			search_debug = true;
 			break;
+		case 'E':
+			search_event = true;
+			break;
+		case 'e':
+			search_channel_event = true;
+			break;
 		case 'C':
 			search_context = true;
 			break;
@@ -549,18 +561,18 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if ((search_device + search_channel + search_context + search_debug + search_buffer) >= 2 ) {
-		fprintf(stderr, "The options -d, -c, -C, -B, and -D are exclusive"
+	if ((search_device + search_channel + search_context + search_debug + search_buffer + search_event + search_channel_event) >= 2 ) {
+		fprintf(stderr, "The options -d, -c, -C, -B, -D, -E, and -e are exclusive"
 				" (can use only one).\n");
 		return EXIT_FAILURE;
 	}
 
-	if (!(search_device + search_channel + search_context + search_debug + search_buffer)) {
+	if (!(search_device + search_channel + search_context + search_debug + search_buffer + search_event + search_channel_event)) {
 		if (argc == 1) {
 			usage(MY_NAME, options, options_descriptions);
 			return EXIT_SUCCESS;
 		}
-		fprintf(stderr, "must specify one of -d, -c, -C, -B or -D.\n");
+		fprintf(stderr, "must specify one of -d, -c, -C, -B, -D, -E or -e.\n");
 		return EXIT_FAILURE;
 	}
 
@@ -648,6 +660,42 @@ int main(int argc, char **argv)
 					"-D [IIO_device] [IIO_debug_attribute] [value]\n");
 			return EXIT_FAILURE;
 		}
+	} else if (search_event) {
+		/* -E [device] [attr] [value] - DEVICE EVENT ATTRS ONLY */
+		if (argc >= optind + 1)
+			device_index = optind;
+		if (argc >= optind + 2)
+			attr_index = optind + 1;
+		if (argc >= optind + 3)
+			wbuf = argw[optind + 2];
+		if (argc >= optind + 4) {
+			fprintf(stderr, "Too many options for searching for device event attributes\n");
+			return EXIT_FAILURE;
+		}
+		if (gen_code && !attr_index) {
+			printf("When generating code for Device Event Attributes, must include specific attribute\n"
+					"-E [IIO_device] [IIO_event_attribute] [value]\n");
+			return EXIT_FAILURE;
+		}
+	} else if (search_channel_event) {
+		/* -e [device] [channel] [attr] [value] - CHANNEL EVENT ATTRS ONLY */
+		if (argc >= optind + 1)
+			device_index = optind;
+		if (argc >= optind + 2)
+			channel_index = optind + 1;
+		if (argc >= optind + 3)
+			attr_index = optind + 2;
+		if (argc >= optind + 4)
+			wbuf = argw[optind + 3];
+		if (argc >= optind + 5) {
+			fprintf(stderr, "Too many options for searching for channel event attributes\n");
+			return EXIT_FAILURE;
+		}
+		if (gen_code && !attr_index) {
+			printf("When generating code for Channel Event Attributes, must include specific attribute\n"
+					"-e [IIO_device] [IIO_channel] [IIO_event_attribute] [value]\n");
+			return EXIT_FAILURE;
+		}
 	} else {
 		fprintf(stderr, "error in application\n");
 		return EXIT_FAILURE;
@@ -728,7 +776,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (search_device || search_channel || search_buffer || search_debug) {
+	if (search_device || search_channel || search_buffer || search_debug || search_event || search_channel_event) {
 		unsigned int nb_devices = iio_context_get_devices_count(ctx);
 
 		if (!device_index)
@@ -755,7 +803,8 @@ int main(int argc, char **argv)
 			dev_found = true;
 
 			if ((search_device && !device_index) || (search_channel && !device_index) ||
-					(search_buffer && !device_index) || (search_debug && !device_index)) {
+					(search_buffer && !device_index) || (search_debug && !device_index) ||
+					(search_event && !device_index) || (search_channel_event && !device_index)) {
 				printf("\t%s", dev_id);
 				if (label_or_name)
 					printf(", %s", label_or_name);
@@ -802,6 +851,23 @@ int main(int argc, char **argv)
 				found_err = true;
 			}
 
+			if (search_event && !device_index) {
+				unsigned int dev_event_attrs = iio_device_get_event_attrs_count(dev);
+				printf("found %u device event attribute%s\n",
+				       dev_event_attrs, dev_event_attrs != 1 ? "s" : "");
+			}
+
+			if (search_channel_event && !device_index) {
+				unsigned int ch_event_attrs = 0;
+				for (j = 0; j < nb_channels; j++) {
+					struct iio_channel *ch;
+					ch = iio_device_get_channel(dev, j);
+					ch_event_attrs += iio_channel_get_event_attrs_count(ch);
+				}
+				printf("found %u channel event attribute%s\n",
+				       ch_event_attrs, ch_event_attrs != 1 ? "s" : "");
+			}
+
 			mask = nb_channels ? iio_create_channels_mask(nb_channels) : NULL;
 
 			for (j = 0; j < nb_channels; j++) {
@@ -814,7 +880,7 @@ int main(int argc, char **argv)
 				if (mask)
 					iio_channel_enable(ch, mask);
 
-				if (!search_channel || !device_index)
+				if ((!search_channel && !search_channel_event) || !device_index)
 					continue;
 
 				if (input_only && iio_channel_is_output(ch))
@@ -839,8 +905,8 @@ int main(int argc, char **argv)
 					continue;
 
 				channel_found = true;
-				if ((!scan_only && !channel_index) ||
-				    ( scan_only && iio_channel_is_scan_element(ch))) {
+				if (search_channel && ((!scan_only && !channel_index) ||
+				    ( scan_only && iio_channel_is_scan_element(ch)))) {
 					printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 					printf("'%s', ", label_or_name_or_id);
 
@@ -882,39 +948,76 @@ int main(int argc, char **argv)
 
 				}
 
-				nb_attrs = iio_channel_get_attrs_count(ch);
-				if (!channel_index)
-					printf("found %u channel-specific attributes\n",
-							nb_attrs);
-				/* search_channel & device_index are checked in L630 */
-				if(channel_index && !attr_index && !nb_attrs) {
-					printf("%s: Found %s device, but it has %u channel attributes\n",
-							MY_NAME, argw[device_index], nb_attrs);
-					found_err = true;
+				if (search_channel) {
+					nb_attrs = iio_channel_get_attrs_count(ch);
+					if (!channel_index)
+						printf("found %u channel-specific attributes\n",
+								nb_attrs);
+					/* search_channel & device_index are checked in L630 */
+					if(channel_index && !attr_index && !nb_attrs) {
+						printf("%s: Found %s device, but it has %u channel attributes\n",
+								MY_NAME, argw[device_index], nb_attrs);
+						found_err = true;
+					}
+
+					if (!nb_attrs || !channel_index)
+						continue;
+
+					for (k = 0; k < nb_attrs; k++) {
+						attr = iio_channel_get_attr(ch, k);
+
+						if (attr_index &&
+							!str_match(iio_attr_get_name(attr),
+								   argw[attr_index],
+								   ignore_case))
+							continue;
+						gen_dev(dev);
+						found_err = false;
+						attr_found = true;
+						gen_ch(ch);
+						ret = dump_channel_attributes(dev, ch, attr, wbuf,
+									wraw, wraw_len, write_only,
+									attr_index ? quiet : ATTR_VERBOSE);
+						if ((wbuf || wraw) && ret < 0)
+							write_err = true;
+						else if (ret < 0 && attr_index)
+							read_err = true;
+					}
 				}
 
-				if (!nb_attrs || !channel_index)
-					continue;
+				if (search_channel_event) {
+					nb_attrs = iio_channel_get_event_attrs_count(ch);
+					if (!channel_index) {
+						printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
+						printf("'%s', ", label_or_name_or_id);
+						printf("channel '%s' (%s), ", iio_channel_get_id(ch), type_name);
+						printf("found %u channel event attribute%s\n",
+						       nb_attrs, nb_attrs != 1 ? "s" : "");
+					}
 
-				for (k = 0; k < nb_attrs; k++) {
-					attr = iio_channel_get_attr(ch, k);
-
-					if (attr_index &&
-						!str_match(iio_attr_get_name(attr),
-							   argw[attr_index],
-							   ignore_case))
+					if (!nb_attrs || !channel_index)
 						continue;
-					gen_dev(dev);
-					found_err = false;
-					attr_found = true;
-					gen_ch(ch);
-					ret = dump_channel_attributes(dev, ch, attr, wbuf,
-								wraw, wraw_len, write_only,
-								attr_index ? quiet : ATTR_VERBOSE);
-					if ((wbuf || wraw) && ret < 0)
-						write_err = true;
-					else if (ret < 0 && attr_index)
-						read_err = true;
+
+					for (k = 0; k < nb_attrs; k++) {
+						attr = iio_channel_get_event_attr(ch, k);
+
+						if (attr_index &&
+							!str_match(iio_attr_get_name(attr),
+								   argw[attr_index],
+								   ignore_case))
+							continue;
+						gen_dev(dev);
+						found_err = false;
+						attr_found = true;
+						gen_ch(ch);
+						ret = dump_channel_attributes(dev, ch, attr, wbuf,
+									wraw, wraw_len, write_only,
+									attr_index ? quiet : ATTR_VERBOSE);
+						if ((wbuf || wraw) && ret < 0)
+							write_err = true;
+						else if (ret < 0 && attr_index)
+							read_err = true;
+					}
 				}
 			}
 
@@ -941,6 +1044,29 @@ int main(int argc, char **argv)
 					found_err = false;
 					attr_found = true;
 					ret = dump_device_attributes(dev, attr, "device", "dev", wbuf,
+								     wraw, wraw_len, write_only,
+								     attr_index ? quiet : ATTR_VERBOSE);
+					if ((wbuf || wraw) && ret < 0)
+						write_err = true;
+					else if (ret < 0 && attr_index)
+						read_err = true;
+				}
+			}
+
+			if (search_event && device_index) {
+				nb_attrs = iio_device_get_event_attrs_count(dev);
+				for (j = 0; j < nb_attrs; j++) {
+					attr = iio_device_get_event_attr(dev, j);
+
+					if (attr_index &&
+					    !str_match(iio_attr_get_name(attr),
+						       argw[attr_index], ignore_case))
+						continue;
+
+					gen_dev(dev);
+					found_err = false;
+					attr_found = true;
+					ret = dump_device_attributes(dev, attr, "event", "event", wbuf,
 								     wraw, wraw_len, write_only,
 								     attr_index ? quiet : ATTR_VERBOSE);
 					if ((wbuf || wraw) && ret < 0)
