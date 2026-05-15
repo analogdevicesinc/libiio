@@ -227,11 +227,12 @@ void iio_channel_init_finalize(struct iio_channel *chn)
 
 static ssize_t iio_snprintf_chan_attr_xml(const struct iio_attr *attr,
 					  const char *value,
-					  char *str, ssize_t len)
+					  char *str, ssize_t len, bool is_event)
 {
 	ssize_t ret, alen = 0;
 
-	ret = iio_snprintf(str, len, "<attribute name=\"%s\"", attr->name);
+	ret = iio_snprintf(str, len, "<%s name=\"%s\"",
+			   is_event ? "event-attribute" : "attribute", attr->name);
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &str, &len, &alen);
@@ -329,7 +330,20 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 			val = chn->values[i];
 
 		ret = iio_snprintf_chan_attr_xml(&chn->attrlist.attrs[i],
-						val, ptr, len);
+						val, ptr, len, false);
+		if (ret < 0)
+			return ret;
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	}
+
+	for (i = 0; i < chn->event_attrlist.num; i++) {
+		const char *val = NULL;
+
+		if (include_values && chn->event_values)
+			val = chn->event_values[i];
+
+		ret = iio_snprintf_chan_attr_xml(&chn->event_attrlist.attrs[i],
+						val, ptr, len, true);
 		if (ret < 0)
 			return ret;
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);

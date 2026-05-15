@@ -6,6 +6,8 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include "attr.h"
+
 #include <errno.h>
 #include <iio/iio.h>
 #include <iio/iio-backend.h>
@@ -41,6 +43,29 @@ static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n)
 	}
 
 	return iio_channel_add_attr(chn, name, filename);
+}
+
+static int add_event_attr_to_channel(struct iio_channel *chn, xmlNode *n)
+{
+	xmlAttr *attr;
+	const char *name = NULL, *filename = NULL;
+
+	for (attr = n->properties; attr; attr = attr->next) {
+		if (!strcmp((const char *) attr->name, "name")) {
+			name = (const char *) attr->children->content;
+		} else if (!strcmp((const char *) attr->name, "filename")) {
+			filename = (const char *) attr->children->content;
+		} else {
+			chn_dbg(chn, "Unknown field \'%s\'\n", attr->name);
+		}
+	}
+
+	if (!name) {
+		chn_err(chn, "Incomplete event attribute\n");
+		return -EINVAL;
+	}
+
+	return iio_channel_add_event_attr(chn, name, filename);
 }
 
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
@@ -228,6 +253,10 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 			err = add_attr_to_channel(chn, n);
 			if (err < 0)
 				return err;
+		} else if (!strcmp((char *) n->name, "event-attribute")) {
+			err = add_event_attr_to_channel(chn, n);
+			if (err < 0)
+				return err;
 		} else if (strcmp((char *) n->name, "scan-element")
 			   && strcmp((char *) n->name, "text")) {
 			chn_dbg(chn, "Unknown children \'%s\' in <channel>\n",
@@ -392,6 +421,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 				return err;
 		} else if (!strcmp((char *) n->name, "debug-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG);
+			if (err < 0)
+				return err;
+		} else if (!strcmp((char *) n->name, "event-attribute")) {
+			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_EVENT);
 			if (err < 0)
 				return err;
 		} else if (!strcmp((char *) n->name, "buffer-attribute") && buf_legacy) {
