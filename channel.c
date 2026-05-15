@@ -414,6 +414,23 @@ iio_channel_find_attr(const struct iio_channel *chn, const char *name)
 	return NULL;
 }
 
+unsigned int iio_channel_get_event_attrs_count(const struct iio_channel *chn)
+{
+	return chn->event_attrlist.num;
+}
+
+const struct iio_attr *
+iio_channel_get_event_attr(const struct iio_channel *chn, unsigned int index)
+{
+	return iio_attr_get(&chn->event_attrlist, index);
+}
+
+const struct iio_attr *
+iio_channel_find_event_attr(const struct iio_channel *chn, const char *name)
+{
+	return iio_attr_find(&chn->event_attrlist, name);
+}
+
 void iio_channel_set_data(struct iio_channel *chn, void *data)
 {
 	chn->userdata = data;

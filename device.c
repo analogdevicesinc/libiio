@@ -289,6 +289,23 @@ iio_device_find_attr(const struct iio_device *dev, const char *name)
 	return iio_attr_find(&dev->attrlist[IIO_ATTR_TYPE_DEVICE], name);
 }
 
+unsigned int iio_device_get_event_attrs_count(const struct iio_device *dev)
+{
+	return dev->attrlist[IIO_ATTR_TYPE_EVENT].num;
+}
+
+const struct iio_attr *
+iio_device_get_event_attr(const struct iio_device *dev, unsigned int index)
+{
+	return iio_attr_get(&dev->attrlist[IIO_ATTR_TYPE_EVENT], index);
+}
+
+const struct iio_attr *
+iio_device_find_event_attr(const struct iio_device *dev, const char *name)
+{
+	return iio_attr_find(&dev->attrlist[IIO_ATTR_TYPE_EVENT], name);
+}
+
 unsigned int iio_device_get_debug_attrs_count(const struct iio_device *dev)
 {
 	return dev->attrlist[IIO_ATTR_TYPE_DEBUG].num;
