@@ -19,6 +19,7 @@
 static const char * const xml_attr_prefix[] = {
 	"",
 	"debug-",
+	"event-",
 	"buffer-",
 };
 
@@ -31,6 +32,7 @@ static ssize_t iio_snprintf_xml_attr(const struct iio_attr *attr,
 	switch (attr->type) {
 		case IIO_ATTR_TYPE_DEVICE:
 		case IIO_ATTR_TYPE_DEBUG:
+		case IIO_ATTR_TYPE_EVENT:
 		case IIO_ATTR_TYPE_BUFFER:
 			break;
 		default:
@@ -169,7 +171,7 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_EVENT; type++) {
 		for (i = 0; i < dev->attrlist[type].num; i++) {
 			const char *val = NULL;
 
@@ -351,7 +353,7 @@ void free_device(struct iio_device *dev)
 	enum iio_attr_type type;
 	unsigned int i;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++)
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_EVENT; type++)
 		iio_free_attrs(&dev->attrlist[type]);
 
 	for (i = 0; i < dev->nb_buffers; i++)

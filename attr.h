@@ -27,4 +27,7 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 		 const char *name, const char *filename,
 		 enum iio_attr_type type);
 
+int iio_channel_add_event_attr(struct iio_channel *chn,
+			       const char *name, const char *filename);
+
 #endif /* __IIO_ATTR_H__ */

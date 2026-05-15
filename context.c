@@ -195,7 +195,7 @@ static int read_device_attrs(struct iio_device *dev)
 	if (!buf)
 		return -ENOMEM;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_EVENT; type++) {
 		unsigned int num = dev->attrlist[type].num;
 
 		if (num == 0)
@@ -368,7 +368,7 @@ static void free_device_attrs(struct iio_device *dev)
 	enum iio_attr_type type;
 	unsigned int i;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_EVENT; type++) {
 		if (dev->values[type]) {
 			for (i = 0; i < dev->attrlist[type].num; i++) {
 				free(dev->values[type][i]);
