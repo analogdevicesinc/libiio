@@ -24,7 +24,7 @@ The basic bricks of the libiio API are the iio_context, iio_device, iio_channel,
   A iio_device object is associated with only one iio_context.
   This object represents an instance of the library.
 - A iio_device object may contain zero or more iio_channel objects. A iio_channel object is associated with only one iio_device.
-- A iio_device object may be associated with one iio_buffer object, and a iio_buffer object is associated with only one iio_device.
+- A iio_device object may be associated with one or more iio_buffer objects, and each iio_buffer object is associated with only one iio_device. Each buffer has its own set of scan elements, which can be queried with iio_buffer_get_scan_elements_count() and iio_buffer_get_scan_element().
 
 @if CPP_BINDINGS
 A C++ API is provided in @ref iio.hpp
@@ -139,9 +139,9 @@ The process of capturing samples from the hardware and uploading samples to the 
 The very first step is to enable the capture channels that we want to use, and disable those that we don't need.
 This is done by creating an iio_channels_mask with iio_create_channels_mask() and then calling iio_channel_enable() for the desired channels.
 
-Also, not all channels can be enabled. To know whether or not one channel can be enabled, use iio_channel_is_scan_element().
+Also, not all channels can be enabled. To know whether or not one channel can be enabled, use iio_channel_is_scan_element(). On multi-buffer devices, a channel may be a scan element of one or more buffers; use iio_buffer_get_scan_elements_count() and iio_buffer_get_scan_element() to query which channels belong to a specific buffer.
 
-Buffers are pre-created during device context creation. To obtain a buffer, use iio_device_get_buffer(). To open it for streaming, call iio_buffer_open() with the channels mask, which returns an iio_buffer_stream object.
+Buffers are pre-created during device context creation. A device may have multiple buffers (e.g. separate RX and TX buffers), enumerated with iio_device_get_buffers_count() and iio_device_get_buffer(). To open a buffer for streaming, call iio_buffer_open() with the channels mask, which returns an iio_buffer_stream object.
 This call will fail if no channels have been enabled in the mask, or for triggered buffers, if the trigger has not been assigned.
 
 When the stream is no longer needed, it can be closed with iio_buffer_close().
