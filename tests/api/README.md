@@ -38,7 +38,9 @@ make
 ```
 
 ## Running Tests
-Tests requiring an iio context will attempt to use the local: backend by default. This behavior can be overridden by setting the TESTS_API_URI environment variable to the desired URI.
+Tests requiring an iio context will attempt to use the local backend by default. This behavior can be overridden by setting the TESTS_API_URI environment variable to the desired URI.
+
+When the emu backend is enabled during build (`WITH_EMU_BACKEND=ON`), additional test variants are automatically created that run the same API tests against the emu backend using XML device descriptions from `tests/resources/xmls/`. These emu test variants are named with the pattern `test_<name>_emu_<device>` (e.g., `test_context_emu_fmcomms3`).
 
 ### Individual Test Suites
 
@@ -59,11 +61,24 @@ Run the comprehensive test suite:
 ./tests/api/run_all_api_tests
 ```
 
-Or using CTest:
+Or using CTest (includes both regular API tests and emu variants if enabled):
 
 ```bash
 ctest
 ```
+
+### CTest Labels
+
+Use CTest labels to run specific test subsets:
+
+| Command | Description |
+|---------|-------------|
+| `ctest` | Run all tests (api + emu variants if enabled) |
+| `ctest -L api` | Run only the standard API tests (local backend) |
+| `ctest -L emu` | Run only the emu backend test variants |
+| `ctest -L fmcomms2` | Run tests against the fmcomms2 emu device |
+
+Device-specific labels correspond to XML files in `tests/resources/xmls/`.
 
 ## Test Framework
 
