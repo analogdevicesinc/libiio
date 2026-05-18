@@ -26,6 +26,7 @@
 				IIO_SENSOR_CHAN_AMBIENT_TEMP
 			>;
 			buffer-name = "buffer0";
+			io-name = "ltc2990";
 		};
 	};
 
