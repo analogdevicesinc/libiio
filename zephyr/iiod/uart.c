@@ -26,11 +26,14 @@ static ssize_t iiod_uart_read(struct iiod_pdata *pdata, void *buf, size_t size)
 
 	LOG_DBG("start read %d bytes", size);
 
-	k_sem_take(&rx_sem, K_FOREVER);
 	rx_len = ring_buf_get(&rx_buf, buf, size);
 
-	LOG_DBG("rx buffer get %d bytes", rx_len);
-	LOG_DBG("done read %d bytes", size);
+	while (!rx_len) {
+		k_sem_take(&rx_sem, K_FOREVER);
+		rx_len = ring_buf_get(&rx_buf, buf, size);
+	}
+
+	LOG_DBG("tried to read %d bytes, got %d", size, rx_len);
 
 	return rx_len;
 }
