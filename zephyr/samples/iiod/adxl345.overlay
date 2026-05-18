@@ -57,6 +57,7 @@
 				IIO_SENSOR_CHAN_ACCEL_Z
 			>;
 			buffer-name = "buffer0";
+			io-name = "adxl345";
 		};
 	};
 };
