@@ -780,7 +780,7 @@ static const struct iio_device_io_channels_config iio_device_io_channel_config_#
 	.num_channels = ARRAY_SIZE(iio_device_io_channels_##inst),				\
 };												\
 												\
-IIO_DEVICE_DT_INST_DEFINE(inst, DT_INST_PROP_OR(inst, io_name, NULL),				\
+IIO_DEVICE_DT_INST_DEFINE(inst,									\
 	iio_device_io_channels_init, NULL,							\
 	&iio_device_io_channel_data_##inst, &iio_device_io_channel_config_##inst,		\
 	POST_KERNEL, CONFIG_LIBIIO_IIO_DEVICE_IO_CHANNELS_INIT_PRIORITY,			\

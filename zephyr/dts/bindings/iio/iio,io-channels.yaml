@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
-include: base.yaml
+include: iio,iio-device.yaml
 
 description: IIO ADC/DAC io-channels
 
@@ -12,10 +12,3 @@ properties:
     required: true
   io-channel-names:
     required: true
-  reg:
-    required: true
-  io-name:
-    type: string
-    description: |
-      The device name for use within IIOD. If not set, the device's node will be used
-      as a fallback.
