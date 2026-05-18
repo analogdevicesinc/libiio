@@ -64,7 +64,6 @@ static const struct sensor_channel_map channel_map[] = {
 };
 
 struct iio_device_sensor_config {
-	const char *name;
 	const struct device *sensor_dev;
 	const enum sensor_channel *channels;
 	size_t num_channels;
@@ -351,13 +350,12 @@ static struct iio_device_sensor_data iio_device_sensor_data_##inst = {		\
 										\
 static const struct iio_device_sensor_config				\
 		iio_device_sensor_config_##inst = {				\
-	.name        = DT_INST_PROP_OR(inst, io_name, NULL),			\
 	.sensor_dev  = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor_device)),	\
 	.channels    = iio_device_sensor_channels_##inst,			\
 	.num_channels = ARRAY_SIZE(iio_device_sensor_channels_##inst),		\
 };										\
 										\
-IIO_DEVICE_DT_INST_DEFINE(inst, DT_INST_PROP_OR(inst, io_name, NULL),		\
+IIO_DEVICE_DT_INST_DEFINE(inst,							\
 	iio_device_sensor_init, NULL,						\
 	&iio_device_sensor_data_##inst,						\
 	&iio_device_sensor_config_##inst,					\
