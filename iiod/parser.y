@@ -472,8 +472,10 @@ ssize_t yy_input(yyscan_t scanner, char *buf, size_t max_size)
 		return -EIO;
 	}
 
-	if ((size_t) ret == max_size)
+	if ((size_t) ret >= max_size) {
 		buf[max_size - 1] = '\0';
+		return (ssize_t) max_size;
+	}
 
 	return ret;
 }
