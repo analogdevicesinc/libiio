@@ -56,6 +56,14 @@ tests:
     platform_allow:
       - apard32690/max32690/m4
 
+  sample.iiod.console.eval_adxl362_ardz:
+    extra_args:
+      - SNIPPET=iiod-console
+      - SHIELD=eval_adxl362_ardz
+    platform_allow:
+      - apard32690/max32690/m4
+      - frdm_k64f
+
   sample.iiod.console.pmod_acl:
     extra_args:
       - SNIPPET=iiod-console

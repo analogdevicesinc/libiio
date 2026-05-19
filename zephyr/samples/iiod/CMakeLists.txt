@@ -7,6 +7,11 @@ if(eval_ad4052_ardz IN_LIST SHIELD)
   list(APPEND EXTRA_DTC_OVERLAY_FILE eval_ad4052_ardz.overlay)
 endif()
 
+if(eval_adxl362_ardz IN_LIST SHIELD)
+  list(APPEND EXTRA_DTC_OVERLAY_FILE eval_adxl362_ardz.overlay)
+  list(APPEND EXTRA_CONF_FILE eval_adxl362_ardz.conf)
+endif()
+
 if(pmod_acl IN_LIST SHIELD)
   list(APPEND EXTRA_DTC_OVERLAY_FILE pmod_acl.overlay)
   list(APPEND EXTRA_CONF_FILE pmod_acl.conf)
