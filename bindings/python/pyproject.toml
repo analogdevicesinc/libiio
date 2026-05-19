@@ -21,6 +21,13 @@ classifiers = [
 requires-python = ">=3.7"
 maintainers = [{ name = "Analog Devices, Inc" }]
 
+[project.optional-dependencies]
+dev = [
+    "pyshark",
+    "pytest",
+    "scapy",
+]
+
 [tool.setuptools.dynamic]
 version = { attr = "iio.bindings_version" }
 readme = { file = "README.md", content-type = "text/markdown" }
