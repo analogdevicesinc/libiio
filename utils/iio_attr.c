@@ -945,6 +945,33 @@ int main(int argc, char **argv)
 				}
 			}
 
+			nb_ev_attrs = iio_device_get_event_attrs_count(dev);
+			if (search_device && !device_index && nb_ev_attrs)
+				printf("found %u device event attributes\n",
+						nb_ev_attrs);
+
+			if (search_device && device_index && nb_ev_attrs) {
+				for (j = 0; j < nb_ev_attrs; j++) {
+					attr = iio_device_get_event_attr(dev, j);
+
+					if (attr_index &&
+					    !str_match(iio_attr_get_name(attr),
+						       argw[attr_index], ignore_case))
+						continue;
+
+					gen_dev(dev);
+					found_err = false;
+					attr_found = true;
+					ret = dump_device_attributes(dev, attr, "device", "dev", wbuf,
+								     wraw, wraw_len, write_only,
+								     attr_index ? quiet : ATTR_VERBOSE);
+					if ((wbuf || wraw) && ret < 0)
+						write_err = true;
+					else if (ret < 0 && attr_index)
+						read_err = true;
+				}
+			}
+
 			buffer = iio_device_get_buffer(dev, 0);
 			if (buffer) {
 				nb_attrs = iio_buffer_get_attrs_count(buffer);
