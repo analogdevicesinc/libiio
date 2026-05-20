@@ -60,6 +60,14 @@ if(WITH_VITA49_BACKEND)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../
     )
     add_test(NAME api_vrt_iiod COMMAND test_vrt_iiod)
+
+	add_executable(vrt_simulator vrt_simulator.c)
+	set_target_properties(vrt_simulator PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+		C_STANDARD 99
+		C_STANDARD_REQUIRED ON
+		C_EXTENSIONS OFF
+	)
 endif()
 
 # Master test runner
