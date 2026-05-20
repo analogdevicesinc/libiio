@@ -55,7 +55,7 @@ iio_attr \- list IIO devices, and read/write device attributes
 [
 .I options
 ]
--f -d|-c|-B|-D [device] [channel] [attr] [path]
+-f -d|-c|-B[-b buffer_index]|-D [device] [channel] [attr] [path]
 .br
 .B iio_attr
 -S <arg>
@@ -111,6 +111,10 @@ When pattern matching devices, channels or attributes, ignore case
 .TP
 .B \-g, \-\-generate-code <arg>
 Generate small C or python snippets that emulate what you are doing on the command line. Argument is a file name 'foo.c' or 'foo.py'
+.TP
+.B \-b, \-\-buffer-index <arg>
+When reading or writing buffer attributes (\-B), select the buffer at this index.
+When not specified, \-B shows attribute counts for all buffers on the device.
 .TP
 .B \-f, \-\-input-file
 Treat the trailing [value] argument as a path to a file. The file's raw bytes are written to the attribute via the _raw API variant, instead of writing [value] as a string. Cannot be combined with
