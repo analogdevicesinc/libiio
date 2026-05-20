@@ -206,14 +206,18 @@ void gen_dev(const struct iio_device *dev)
 	}
 }
 
-void gen_buf(const struct iio_buffer *buffer)
+void gen_buf(unsigned int buffer_index)
 {
 	if (!fd)
 		return;
 
 	if (lang == C_LANG) {
 		fprintf(fd, "\t/* Get pre-allocated buffer for device */\n");
-		fprintf(fd, "\tIIO_ASSERT(buffer = iio_device_get_buffer(dev, 0));\n\n");
+		fprintf(fd, "\tIIO_ASSERT(buffer = iio_device_get_buffer(dev, %u));\n\n",
+			buffer_index);
+	} else if (lang == PYTHON_LANG) {
+		fprintf(fd, "    # Get pre-allocated buffer for device\n");
+		fprintf(fd, "    buffer = dev.get_buffer(%u)\n\n", buffer_index);
 	}
 }
 
@@ -298,6 +302,9 @@ void gen_function(const char* prefix, const char* target,
 				fprintf(fd, "    %s.%s[\"%s\"].value = str(\"%s\")\n", target,
 					attr->type == IIO_ATTR_TYPE_DEBUG ? "debug_attrs" : "attrs",
 					iio_attr_get_name(attr), wbuf);
+			} else if (strncmp(prefix, "buffer", 6) == 0) {
+				fprintf(fd, "    %s.attrs[\"%s\"].value = str(\"%s\")\n", target,
+					iio_attr_get_name(attr), wbuf);
 			} else {
 				fprintf(fd, "    # Write for %s / %s not implemented yet\n", prefix, target);
 			}
@@ -310,6 +317,9 @@ void gen_function(const char* prefix, const char* target,
 						iio_attr_get_name(attr), target,
 						attr->type == IIO_ATTR_TYPE_DEBUG ? "debug_attrs" : "attrs",
 						iio_attr_get_name(attr));
+			} else if (strncmp(prefix, "buffer", 6) == 0) {
+				fprintf(fd, "    print(\"%s : \" + %s.attrs[\"%s\"].value)\n",
+						iio_attr_get_name(attr), target, iio_attr_get_name(attr));
 			} else {
 				fprintf(fd, "    # Read for %s / %s not implemented yet\n", prefix, target);
 			}
