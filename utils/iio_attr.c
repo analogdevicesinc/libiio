@@ -992,7 +992,7 @@ int main(int argc, char **argv)
 								found_err = true;
 						} else {
 							gen_dev(dev);
-							gen_buf(buffer);
+							gen_buf(buffer_index);
 							for (j = 0; j < nb_attrs; j++) {
 								attr = iio_buffer_get_attr(buffer, j);
 								if (!attr_index || str_match(iio_attr_get_name(attr),
