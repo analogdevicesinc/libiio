@@ -158,8 +158,7 @@ static inline const char *get_label_or_name_or_id(const struct iio_device *dev)
 	return iio_device_get_id(dev);
 }
 
-static void print_attribute_value(const struct iio_device *dev,
-                                  const struct iio_attr *attr,
+static void print_attribute_value(const struct iio_attr *attr,
                                   const char *prefix,
                                   enum verbosity quiet)
 {
@@ -233,7 +232,7 @@ static int dump_device_attributes(const struct iio_device *dev,
                               iio_attr_get_name(attr));
 		}
 		gen_function(type, var, attr, NULL);
-		print_attribute_value(dev, attr, "", quiet);
+		print_attribute_value(attr, "", quiet);
 	}
 	if (writing) {
 		if (wraw) {
@@ -295,7 +294,7 @@ static int dump_channel_attributes(const struct iio_device *dev,
 		if (quiet == ATTR_VERBOSE)
 			printf("attr '%s', ", iio_attr_get_name(attr));
 
-		print_attribute_value(dev, attr, "", quiet);
+		print_attribute_value(attr, "", quiet);
 	}
 	if (writing) {
 		if (wraw) {
@@ -342,7 +341,7 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 			printf("attr '%s', ", iio_attr_get_name(attr));
 		}
 
-		print_attribute_value(dev, attr, "", quiet);
+		print_attribute_value(attr, "", quiet);
 	}
 	if (writing) {
 		if (wraw) {
