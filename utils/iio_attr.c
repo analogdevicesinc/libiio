@@ -210,6 +210,7 @@ static void print_attribute_value(const struct iio_attr *attr,
 		printf("\n");
 		IIO_PERROR((int)ret, "Unable to read attribute");
 	}
+	free(buf);
 }
 
 static int dump_device_attributes(const struct iio_device *dev,
@@ -220,7 +221,6 @@ static int dump_device_attributes(const struct iio_device *dev,
 				  enum verbosity quiet)
 {
 	ssize_t ret = 0;
-	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	bool writing = wbuf || wraw;
 
 	if (!writing || quiet == ATTR_VERBOSE) {
@@ -255,8 +255,6 @@ static int dump_device_attributes(const struct iio_device *dev,
 			IIO_PERROR((int)ret, "Unable to write attribute");
 		}
 	}
-	free(buf);
-
 	return (int)ret;
 }
 
@@ -268,7 +266,6 @@ static int dump_channel_attributes(const struct iio_device *dev,
 				   enum verbosity quiet)
 {
 	ssize_t ret = 0;
-	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *type_name;
 	bool writing = wbuf || wraw;
 
@@ -317,7 +314,6 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			IIO_PERROR((int)ret, "Unable to write channel attribute");
 		}
 	}
-	free(buf);
 	return (int)ret;
 }
 
