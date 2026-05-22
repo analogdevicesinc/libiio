@@ -386,6 +386,7 @@ ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
 	return (ssize_t)ret;
 }
 
+#ifndef __ZEPHYR__
 void iio_prm_printf(const struct iio_context_params *params, enum iio_log_level msg_level,
 		const char *fmt, ...)
 {
@@ -417,6 +418,7 @@ void iio_prm_printf(const struct iio_context_params *params, enum iio_log_level 
 
 	va_end(ap);
 }
+#endif /* !__ZEPHYR__ */
 
 uint64_t iio_read_counter_us(void)
 {

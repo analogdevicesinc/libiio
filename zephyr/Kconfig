@@ -13,6 +13,15 @@ module = LIBIIO
 module-str = libiio
 source "subsys/logging/Kconfig.template.log_config"
 
+config LIBIIO_LOG_MSG_SIZE
+	int "Maximum length of a single libiio log message (bytes)"
+	default 128
+	help
+	  Each call to zephyr iio_prm_printf() formats the message into a stack-
+	  allocated buffer of this size before handing it to the Zephyr
+	  logging subsystem. Increase this value if libiio log messages are
+	  being truncated.
+
 rsource "drivers/Kconfig"
 rsource "iiod/Kconfig"
 

@@ -27,6 +27,7 @@ if(CONFIG_LIBIIO)
     ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod-responder.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/rw.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/backend.c
+    ${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/libiio_log.c
   )
 
   zephyr_include_directories(
