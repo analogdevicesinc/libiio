@@ -16,7 +16,7 @@
 #include <zephyr/net/conn_mgr_monitor.h>
 #endif
 
-LOG_MODULE_REGISTER(libiio, CONFIG_LIBIIO_LOG_LEVEL);
+LOG_MODULE_REGISTER(iiod_network, CONFIG_LIBIIO_LOG_LEVEL);
 
 #define MAX_CONNECTIONS	5
 
