@@ -30,6 +30,9 @@ struct vrt_header {
 #endif
 };
 
+// Commonly used convention for sending VITA 49.2 packets over UDP
+#define VITA49_UDP_PORT 4991
+
 int main() {
     int fd;
     struct sockaddr_in addr;
@@ -45,7 +48,7 @@ int main() {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1234);
+    addr.sin_port = htons(VITA49_UDP_PORT);
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     /* Create a Context Packet */
@@ -94,7 +97,7 @@ int main() {
     packet[7] = htonl(sr_int >> 32);
     packet[8] = htonl(sr_int & 0xFFFFFFFF);
 
-    printf("Sending VRT Context Packet to 127.0.0.1:1234\n");
+    printf("Sending VRT Context Packet to 127.0.0.1:%d\n", VITA49_UDP_PORT);
     while (1) {
         if (sendto(fd, packet, hdr->packet_size_words * 4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
             perror("sendto");
