@@ -55,7 +55,7 @@ int main() {
     /* VITA 49.2 Header: Type=4 (Context), Size=10 words */
     hdr->packet_type = 4;
     hdr->has_class_id = 1; /* Class ID present */
-    hdr->packet_size_words = 10;
+    hdr->packet_size_words = 9;
     packet[0] = htonl(*(uint32_t *)hdr);
 
     /* Stream ID */
@@ -73,16 +73,24 @@ int main() {
     /* Bandwidth (2 words - float64) evaluates first */
     /* Let's say 80 MHz */
     double bandwidth = 80e6;
-    uint64_t bw_int;
-    memcpy(&bw_int, &bandwidth, 8);
+    int64_t bw_int;
+
+    // VITA 49.2 specifies that the Bandwidth field be expressed in Hertz using
+    // 64-bit, 2's complement format with the radix point to the right of bit 20
+    // meaning we have 20 fractional bits
+    bw_int = (int64_t)(bandwidth * (1 << 20));
+
     packet[5] = htonl(bw_int >> 32);
     packet[6] = htonl(bw_int & 0xFFFFFFFF);
 
     /* Sample Rate (2 words - float64) evaluates next */
     /* Let's say 100 MSPS */
     double sample_rate = 100e6;
-    uint64_t sr_int;
-    memcpy(&sr_int, &sample_rate, 8);
+    int64_t sr_int;
+
+    // Same format as Bandwidth
+    sr_int = (int64_t)(sample_rate * (1 << 20));
+
     packet[7] = htonl(sr_int >> 32);
     packet[8] = htonl(sr_int & 0xFFFFFFFF);
 
