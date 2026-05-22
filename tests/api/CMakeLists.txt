@@ -59,6 +59,9 @@ if(WITH_VITA49_BACKEND)
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/../../
     )
+
+    target_compile_definitions(test_vrt_iiod PRIVATE _GNU_SOURCE)
+    
     add_test(NAME api_vrt_iiod COMMAND test_vrt_iiod)
 
 	add_executable(vrt_simulator vrt_simulator.c)
