@@ -125,7 +125,6 @@ static void iiod_uart_thread(void *p1, void *p2, void *p3)
 	uart_irq_callback_user_data_set(dev, iiod_uart_irq, NULL);
 	uart_irq_rx_enable(dev);
 
-	ctx = iio_create_context(&ctx_params, "zephyr:");
 
 	/* Initialize tinyiiod global resources */
 	LOG_DBG("Initializing tinyiiod resources...");
