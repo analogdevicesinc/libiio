@@ -26,6 +26,12 @@ namespace iio
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool iio_buffer_is_output(IntPtr buf);
 
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_buffer_get_scan_elements_count(IntPtr buf);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_buffer_get_scan_element(IntPtr buf, uint index);
+
         /// <summary>The associated <see cref="iio.Device"/> object.</summary>
         public readonly Device dev;
 
@@ -51,6 +57,23 @@ namespace iio
         public bool output
         {
             get { return iio_buffer_is_output(buf); }
+        }
+
+        /// <summary>Returns the list of scan elements associated with this buffer.</summary>
+        public List<Channel> scan_elements
+        {
+            get
+            {
+                var list = new List<Channel>();
+                uint count = iio_buffer_get_scan_elements_count(buf);
+                for (uint i = 0; i < count; i++)
+                {
+                    IntPtr chn = iio_buffer_get_scan_element(buf, i);
+                    if (chn != IntPtr.Zero)
+                        list.Add(new Channel(dev, chn));
+                }
+                return list;
+            }
         }
 
         /// <summary>Open this buffer for data streaming.</summary>
