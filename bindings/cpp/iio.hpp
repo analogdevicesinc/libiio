@@ -520,6 +520,8 @@ public:
     bool is_output() const {return iio_buffer_is_output(p);}
     void set_data(void * data){iio_buffer_set_data(p, data);}
     void * data() {return iio_buffer_get_data(p);}
+    unsigned int scan_elements_count() const {return iio_buffer_get_scan_elements_count(p);}
+    optional<Channel> get_scan_element(unsigned int index) const {return impl::maybe<Channel>(const_cast<iio_channel *>(iio_buffer_get_scan_element(p, index)));}
     BufferStreamPtr open(iio_channels_mask const * mask) { return BufferStreamPtr{impl::check(iio_buffer_open(p, mask), "iio_buffer_open")}; }
     StreamPtr create_stream(size_t nb_blocks, size_t sample_count, iio_channels_mask * mask) { return StreamPtr{impl::check(iio_buffer_create_stream(p, nb_blocks, sample_count, mask), "iio_buffer_create_stream")}; }
 };
