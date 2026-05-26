@@ -522,6 +522,14 @@ _b_get_attr.restype = _AttrPtr
 _b_get_attr.argtypes = (_BufferPtr, c_uint)
 _b_get_attr.errcheck = _check_null
 
+_b_scan_elements_count = _lib.iio_buffer_get_scan_elements_count
+_b_scan_elements_count.restype = c_uint
+_b_scan_elements_count.argtypes = (_BufferPtr,)
+
+_b_get_scan_element = _lib.iio_buffer_get_scan_element
+_b_get_scan_element.restype = _ChannelPtr
+_b_get_scan_element.argtypes = (_BufferPtr, c_uint)
+
 _d_get_context = _lib.iio_device_get_context
 _d_get_context.restype = _ContextPtr
 _d_get_context.argtypes = (_DevicePtr,)
@@ -1167,6 +1175,16 @@ class Buffer(_IIO_Object):
         None,
         None,
         "List of attributes for this buffer.\n\ttype=dict of iio.Attr",
+    )
+
+    scan_elements = property(
+        lambda self: [
+            Channel(self._parent, _b_get_scan_element(self._buffer, x))
+            for x in range(0, _b_scan_elements_count(self._buffer))
+        ],
+        None,
+        None,
+        "List of scan elements (channels) associated with this buffer.\n\ttype=list of iio.Channel",
     )
 
 
