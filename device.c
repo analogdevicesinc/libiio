@@ -417,7 +417,9 @@ int iio_device_reg_write(struct iio_device *dev,
 
 	/* Use atomic backend operation if available */
 	if (ops && ops->reg_write) {
-		return ops->reg_write(dev, address, value);
+		int ret = ops->reg_write(dev, address, value);
+		if (ret != -ENOSYS)
+			return ret;
 	}
 
 	/* Fallback to the original attribute-based implementation.
@@ -446,7 +448,9 @@ int iio_device_reg_read(struct iio_device *dev,
 
 	/* Use atomic backend operation if available */
 	if (ops && ops->reg_read) {
-		return ops->reg_read(dev, address, value);
+		int ret = ops->reg_read(dev, address, value);
+		if (ret != -ENOSYS)
+			return ret;
 	}
 
 	/* Fallback to the original attribute-based implementation. */
