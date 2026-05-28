@@ -16,45 +16,52 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get -qq update
           sudo apt-get install -y git cmake graphviz libavahi-common-dev libavahi-client-dev libaio-dev libusb-1.0-0-dev libxml2-dev rpm tar bzip2 gzip flex bison git libzstd-dev doxygen pandoc
+
+      - name: Set up Python virtual environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r doc/requirements_doc.txt
+
+      - name: Build and install libiio (for man pages)
+        run: |
+          source .venv/bin/activate
           mkdir build
           cd build
           cmake .. -DWITH_MAN=ON -DHAVE_DNS_SD=OFF
           make
           sudo make install
-          cd ..
-          cd doc
-          pip install -r requirements_doc.txt
-          cd ..
 
       - name: Build man pages
         run: |
+          source .venv/bin/activate
           cd doc
           python man_to_rst.py
-          cd ..
 
       - name: Check doc build
         run: |
+          source .venv/bin/activate
           cd doc
           make html SPHINXOPTS="-W"
-          cd ..
 
     #   - name: Check doc coverage
     #     run: |
+    #       source .venv/bin/activate
     #       cd doc
     #       make coverage
     #       cat build/coverage/python.txt
     #       cat build/coverage/python.txt | wc -l | xargs -I % test % -eq 2
-    #       cd ..
 
       - name: Check doc links
         run: |
+          source .venv/bin/activate
           cd doc
           make linkcheck
-          cd ..
 
       - name: Extract version from tag
         if: startsWith(github.ref, 'refs/tags/v')
