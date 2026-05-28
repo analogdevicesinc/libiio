@@ -81,12 +81,12 @@ You will also need to install the following dependencies:
 - (Optional) libusb
 - (Optional) libserialport
 
-These are available in the [following zip for convenience](http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip).
+These are available in the [following zip for convenience](https://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip).
 
 ```powershell
 mkdir C:\libiio-deps
 cd C:\libiio-deps
-Invoke-WebRequest -Uri http://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile libiio-deps-20220517.zip
+Invoke-WebRequest -Uri https://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip -OutFile libiio-deps-20220517.zip
 Expand-Archive -Path libiio-deps-20220517.zip -DestinationPath .
 ```
 
