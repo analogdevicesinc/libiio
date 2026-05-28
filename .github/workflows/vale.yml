@@ -1,6 +1,9 @@
 name: reviewdog
 on: [pull_request,push]
 
+permissions:
+  contents: read
+
 jobs:
   vale:
     name: runner / vale
