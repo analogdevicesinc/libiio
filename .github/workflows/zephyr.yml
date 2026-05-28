@@ -34,6 +34,25 @@ jobs:
           toolchains: arm-zephyr-eabi
           ccache-cache-key: ${{ matrix.os }}
 
+      - name: Install libiio build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y libxml2-dev socat
+
+      - name: Build and install libiio C library
+        if: runner.os == 'Linux'
+        working-directory: libiio
+        run: |
+          mkdir build && cd build
+          cmake -DWITH_TESTS=OFF -DWITH_USB_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF ..
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
+      - name: Install Python bindings
+        if: runner.os == 'Linux'
+        working-directory: libiio
+        run: pip install bindings/python
+
       - name: Run Twister
         working-directory: libiio/zephyr
         shell: bash
