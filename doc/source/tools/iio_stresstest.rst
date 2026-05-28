@@ -1,7 +1,7 @@
 iio_stresstest
 ==============
 
-iio_stresstest - Stress test program for libiio
+iio_stresstest - Stress test program for Libiio
 
 SYNOPSIS
 --------
@@ -12,7 +12,7 @@ DESCRIPTION
 -----------
 
 **iio_stresstest** is a stress-testing program that can be used to find
-bugs in libiio or in the libiio daemon (IIOD).
+bugs in Libiio or in the Libiio daemon (IIOD).
 
 OPTIONS
 -------
@@ -82,17 +82,15 @@ OPTIONS
    local:
       with no address part.
 
+**-T, --timeout <arg>**
+   Context timeout in milliseconds. 0 = use backend default, -1 = wait
+   forever, 'nb' or 'nonblocking' = non-blocking mode. Default is 0.
+
 **-a, --auto**
    Scan for available contexts and if only one is available use it.
 
-**-T, --timeout <arg>**
-   Context timeout in milliseconds. 0 = no timeout (wait forever)
-
 **-b, --buffer-size <arg>**
    Size of the capture buffer. Default is 256.
-
-**-s, --samples <arg>**
-   Number of samples to capture, 0 = infinite. Default is 0.
 
 **-d, --duration <arg>**
    Time to wait (in seconds) before stopping all threads
