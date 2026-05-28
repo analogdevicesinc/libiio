@@ -23,13 +23,13 @@ If you are using Linux, chances are your distribution already includes libiio, s
 
 For other platforms, you are encouraged to use one of our [release builds](https://github.com/analogdevicesinc/libiio/releases/latest). If you want to use the very latest, you have the option to use a nightly build or build from source. Please check the Downloads menu.
 
-If you prefer, you can also access the source directly from [github](https://github.com/analogdevicesinc/libiio).
+If you prefer, you can also access the source directly from [GitHub](https://github.com/analogdevicesinc/libiio).
 
 Once you have secured your access to the library and its header, please check the [libiio API](api.rst) or the [libiio examples](examples.md).
 
 ## Where is (insert my favourite language) support?
 
-The mainline library is written in C, and has built in bindings for C++, Python and C# (C-Sharp). [Node.js](https://github.com/drom/node-iio) and [Rust](https://github.com/fpagliughi/rust-industrial-io) are maintained outside the main repo. If you are interested in creating more language bindings, please [reach out](https://github.com/analogdevicesinc/libiio/issues) to the developers by posting an issue on github.
+The mainline library is written in C, and has built in bindings for C++, Python and C# (C-Sharp). [Node.js](https://github.com/drom/node-iio) and [Rust](https://github.com/fpagliughi/rust-industrial-io) are maintained outside the main repo. If you are interested in creating more language bindings, please [reach out](https://github.com/analogdevicesinc/libiio/issues) to the developers by posting an issue on GitHub.
 
 # Licensing
 

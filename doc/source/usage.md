@@ -260,7 +260,7 @@ This means applications compiled against an older version will work fine with a 
 \example ad9361-iiostream.c   This example libiio program is meant to exercise the features of IIO functionality on the AD9361 found on the AD-FMCOMMS2-EBZ, AD-FMCOMMS3-EBZ, and the ADRV9361-Z7035 RF SOM.
 \example ad9371-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the AD9371.
 \example adrv9009-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the ADRV9009.
-\example dummy-iiostream.c This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the linux kernel.
+\example dummy-iiostream.c This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the Linux kernel.
 \example iio-monitor.c A Curses based application which implements real time monitoring of IIO non-buffer samples.
 @if CPP_BINDINGS
 \example iiopp-enum.cpp This example demonstrates usage of the C++ API to enumerate devices, channels and attributes.
