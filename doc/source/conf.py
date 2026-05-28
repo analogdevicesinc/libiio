@@ -45,6 +45,12 @@ myst_enable_extensions = ["colon_fence", "attrs_inline"]
 breathe_default_project = "libiio"
 breathe_projects = {"libiio": os.path.join(doxyfolder, "generated", "xml")}
 
+# Suppress known warnings
+suppress_warnings = [
+    'duplicate_declaration.cpp',
+    'duplicate_c_declaration'
+]
+
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = ['.rst', '.md']
