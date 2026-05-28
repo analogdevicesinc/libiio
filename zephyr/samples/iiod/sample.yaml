@@ -18,6 +18,19 @@ tests:
     platform_allow:
       - native_sim
 
+  sample.iiod.network.pytest:
+    extra_args:
+      - SNIPPET=iiod-network
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+
   sample.iiod.cdc-acm.emul:
     extra_args:
       - SNIPPET=iiod-cdc-acm
