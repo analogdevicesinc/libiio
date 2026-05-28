@@ -60,6 +60,7 @@ iio_writedev
 iio_rwdev
 iio_stresstest
 iio_genxml
+iio_[a-z_]+
 arg
 pid
 hostname
@@ -78,3 +79,5 @@ zeroconf
 attr
 Doxygen
 Nechita
+iiod_[a-z_]+
+[a-z]+_ops
