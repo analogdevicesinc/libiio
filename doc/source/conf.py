@@ -61,7 +61,16 @@ matlab_short_links = True
 
 # -- External docs configuration ----------------------------------------------
 
-interref_repos = ['doctools']
+interref_repos = [
+    'doctools',
+    'documentation',
+    'hdl',
+    'pyadi-iio',
+    'scopy',
+    'linux',
+    'no-OS',
+    'precision-converters-firmware',
+]
 
 # -- Custom extensions configuration ------------------------------------------
 
