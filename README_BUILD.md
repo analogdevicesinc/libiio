@@ -60,9 +60,10 @@ Install libraries for Backends
 analog@precision:~$ sudo apt-get install libaio-dev libusb-1.0-0-dev
 analog@precision:~$ sudo apt-get install libserialport-dev libavahi-client-dev
 ```
-Install to build doc
+Install to build documentation
 ```shell
-analog@precision:~$ sudo apt-get install doxygen graphviz
+analog@precision:~$ sudo apt-get install doxygen graphviz pandoc
+analog@precision:~$ sudo apt-get install python3 python3-pip python3-venv
 ```
 Install to build python backends
 ```shell
@@ -194,6 +195,69 @@ For building or installing the optional Python bindings, see [`bindings/python/R
 ### Uninstall
 ```shell
 analog@precision:~/libiio/build$ sudo make uninstall
+```
+
+### Building Documentation
+
+Libiio documentation is built using Sphinx with the adi-doctools extension. The documentation includes:
+- User guides and tutorials
+- API reference (C API via Breathe/Doxygen integration)
+- Tool documentation
+- Python bindings documentation
+
+#### Requirements
+
+- Python 3.8 or higher
+- Doxygen (for C API documentation)
+- Graphviz (for diagrams)
+- Pandoc (for markdown processing)
+
+#### Building the Documentation
+
+**Step 1: Set up Python virtual environment (recommended)**
+```shell
+analog@precision:~/libiio$ python3 -m venv .venv
+analog@precision:~/libiio$ source .venv/bin/activate
+```
+
+**Step 2: Install documentation dependencies**
+```shell
+(.venv) analog@precision:~/libiio$ pip install -r doc/requirements_doc.txt
+```
+
+**Step 3: Build libiio and install (required for man pages)**
+```shell
+(.venv) analog@precision:~/libiio$ mkdir build && cd build
+(.venv) analog@precision:~/libiio/build$ cmake .. -DWITH_MAN=ON
+(.venv) analog@precision:~/libiio/build$ make
+(.venv) analog@precision:~/libiio/build$ sudo make install
+(.venv) analog@precision:~/libiio/build$ cd ..
+```
+
+**Step 4: Build the documentation**
+```shell
+(.venv) analog@precision:~/libiio$ cd doc
+(.venv) analog@precision:~/libiio/doc$ python man_to_rst.py
+(.venv) analog@precision:~/libiio/doc$ make html
+```
+
+**Step 5: View the documentation**
+```shell
+(.venv) analog@precision:~/libiio/doc$ xdg-open build/html/index.html
+```
+
+#### Output Locations
+
+After building, the documentation can be found at:
+- **HTML documentation**: `doc/build/html/index.html`
+- **Doxygen C API**: Generated within Sphinx output (via Breathe)
+
+#### Rebuilding
+
+To rebuild the documentation after making changes:
+```shell
+(.venv) analog@precision:~/libiio/doc$ rm -rf build
+(.venv) analog@precision:~/libiio/doc$ make html
 ```
 
 ### Building modes
