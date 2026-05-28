@@ -30,6 +30,23 @@ tests:
     harness: pytest
     harness_config:
       pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=network
+
+  sample.iiod.uart.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
 
   sample.iiod.cdc-acm.emul:
     extra_args:
