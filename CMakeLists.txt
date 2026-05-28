@@ -859,7 +859,6 @@ toggle_iio_feature("${TESTS_DEBUG}" tests-debug)
 toggle_iio_feature("${WITH_GCOV}" gcov)
 #add iiod settings
 toggle_iio_features_for_lists(IIOD_OPTIONS IIOD_FEATURES)
-toggle_iio_feature("${WITH_DOC}" doc)
 #add man page settings
 toggle_iio_features_for_lists(IIOM_OPTIONS IIOM_FEATURES)
 #add binding settings

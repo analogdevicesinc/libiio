@@ -93,7 +93,6 @@ Cmake Options          | Default | Target | Description                         
 `CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
 `CMAKE_INSTALL_PREFIX` | `/usr` |   Linux | default install path |
 `ENABLE_PACKAGING`     | OFF | Linux, MaC | Create .deb/.rpm or .tar.gz packages via 'make package' |
-`WITH_DOC`             | OFF |      Linux | Generate documentation with Doxygen and Sphinx     |
 `WITH_MAN`             | OFF |      Linux | Generate and install man pages                     |
 `INSTALL_UDEV_RULE`    |  ON |      Linux | Install a Linux udev rule for detection of USB devices |
 `UDEV_RULES_INSTALL_DIR` | /lib/udev/rules.d |    Linux | default install path for udev rules |
@@ -196,11 +195,6 @@ For building or installing the optional Python bindings, see [`bindings/python/R
 ```shell
 analog@precision:~/libiio/build$ sudo make uninstall
 ```
-
-Note: Some things (specifically building doc)  need to find libiio or the bindings on path.
-That means that you configure (with -DWITH_DOC=OFF), build, install, configure
-(with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.
-
 
 ### Building modes
 To build the library in a specific configuration, use the -DCMAKE_BUILD_TYPE flag available on all supported platforms. The supported options are `Debug`, `Release`, `RelWithDebInfo`, and `MinSizeRel`
