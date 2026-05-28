@@ -87,8 +87,7 @@ libusb
 tinyiiod
 Simulink
 compilable
-Zerocopy
-zerocopy
+[Zz]erocopy
 demultiplexing
 vmsplice
 deinterleaved
