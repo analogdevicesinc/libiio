@@ -10,10 +10,28 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/logging/log.h>
 #include <tinyiiod/tinyiiod.h>
+#if defined(CONFIG_NET_CONNECTION_MANAGER)
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/conn_mgr_monitor.h>
+#endif
 
 LOG_MODULE_REGISTER(libiio, CONFIG_LIBIIO_LOG_LEVEL);
 
 #define MAX_CONNECTIONS	5
+
+#if defined(CONFIG_NET_CONNECTION_MANAGER)
+static K_SEM_DEFINE(network_ready, 0, 1);
+static struct net_mgmt_event_callback net_mgmt_cb;
+
+static void network_event_handler(struct net_mgmt_event_callback *cb,
+				   uint64_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		k_sem_give(&network_ready);
+	}
+}
+#endif
 
 /* Structure to hold client data */
 struct client_data {
@@ -268,10 +286,13 @@ static void iiod_network_server_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("*** Simple TCP Test Server for %s ***", CONFIG_BOARD_TARGET);
 	LOG_DBG("Waiting for network to initialize...");
-
-	/* Wait for network to be ready */
-	k_sleep(K_SECONDS(5));
-
+#if defined(CONFIG_NET_CONNECTION_MANAGER)
+	net_mgmt_init_event_callback(&net_mgmt_cb, network_event_handler,
+				     NET_EVENT_L4_CONNECTED);
+	net_mgmt_add_event_callback(&net_mgmt_cb);
+	conn_mgr_mon_resend_status();
+	k_sem_take(&network_ready, K_FOREVER);
+#endif
 	LOG_DBG("Starting simplified TCP test server...");
 
 	server_fd = iiod_network_create_server();
