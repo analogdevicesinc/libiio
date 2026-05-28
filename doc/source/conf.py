@@ -83,6 +83,14 @@ validate_links = False
 linkcheck_timeout = 15  # Increase timeout to 15 seconds
 linkcheck_report_timeouts_as_broken = False  # Report timeouts as warnings, not errors
 
+# Ignore links that frequently timeout or redirect
+linkcheck_ignore = [
+    # Analog.com product pages frequently timeout in CI
+    r'https://www\.analog\.com/.*',
+    # GitHub releases/latest intentionally redirects to actual version
+    r'https://github\.com/.*/releases/latest',
+]
+
 # -- todo configuration -------------------------------------------------------
 
 todo_include_todos = True
