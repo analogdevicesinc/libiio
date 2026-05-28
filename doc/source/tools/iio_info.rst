@@ -81,8 +81,18 @@ OPTIONS
    local:
       with no address part.
 
+**-T, --timeout <arg>**
+   Context timeout in milliseconds. 0 = use backend default, -1 = wait
+   forever, 'nb' or 'nonblocking' = non-blocking mode. Default is 0.
+
 **-a, --auto**
    Scan for available contexts and if only one is available use it.
+
+**-d, --read-debug-attr**
+   Read and print the value of debug attributes.
+
+**-n, --no-read-attr**
+   Do not read or print the value of regular attributes.
 
 RETURN VALUE
 ------------

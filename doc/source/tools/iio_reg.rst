@@ -86,6 +86,10 @@ OPTIONS
    local:
       with no address part.
 
+**-T, --timeout <arg>**
+   Context timeout in milliseconds. 0 = use backend default, -1 = wait
+   forever, 'nb' or 'nonblocking' = non-blocking mode. Default is 0.
+
 RETURN VALUE
 ------------
 

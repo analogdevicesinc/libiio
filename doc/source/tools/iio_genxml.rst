@@ -1,7 +1,7 @@
 iio_genxml
 ==========
 
-iio_genxml - Generate XML representation of a libiio context
+iio_genxml - Generate XML representation of a Libiio context
 
 SYNOPSIS
 --------
@@ -12,7 +12,7 @@ DESCRIPTION
 -----------
 
 **iio_genxml** is a utility for generating a XML representation of a
-libiio context.
+Libiio context.
 
 OPTIONS
 -------
@@ -81,6 +81,13 @@ OPTIONS
 
    local:
       with no address part.
+
+**-T, --timeout <arg>**
+   Context timeout in milliseconds. 0 = use backend default, -1 = wait
+   forever, 'nb' or 'nonblocking' = non-blocking mode. Default is 0.
+
+**-e, --emulator**
+   Include current attribute values in the generated XML output.
 
 RETURN VALUE
 ------------

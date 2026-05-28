@@ -10,6 +10,8 @@ SYNOPSIS
 | **iio_attr** [ *options* ] -c [device] [channel] [attr] [value]
 | **iio_attr** [ *options* ] -D [device] [attr] [value]
 | **iio_attr** [ *options* ] -C [attr]
+| **iio_attr** [ *options* ] -f -d\|-c\|-B[-b buffer_index]\|-D [device]
+  [channel] [attr] [path]
 | **iio_attr** -S <arg>
 | **iio_attr** -h
 
@@ -107,6 +109,13 @@ OPTIONS
    local:
       with no address part.
 
+**-T, --timeout <arg>**
+   Context timeout in milliseconds. 0 = use backend default, -1 = wait
+   forever, 'nb' or 'nonblocking' = non-blocking mode. Default is 0.
+
+**-w, --write-only**
+   Do not readback on Writes
+
 **-i, --input-channel**
    Filters channels by input channels only
 
@@ -122,6 +131,19 @@ OPTIONS
 **-g, --generate-code <arg>**
    Generate small C or python snippets that emulate what you are doing
    on the command line. Argument is a file name 'foo.c' or 'foo.py'
+
+**-b, --buffer-index <arg>**
+   When reading or writing buffer attributes (-B), select the buffer at
+   this index. When not specified, -B shows attribute counts for all
+   buffers on the device.
+
+**-f, --input-file**
+   Treat the trailing [value] argument as a path to a file. The file's
+   raw bytes are written to the attribute via the \_raw API variant,
+   instead of writing [value] as a string. Cannot be combined with
+   **-C** or **--generate-code,** and is rejected when used with
+   wildcard matches. A short write (fewer bytes accepted than supplied)
+   is reported as a WARNING on stderr.
 
 RETURN VALUE
 ------------

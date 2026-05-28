@@ -7,14 +7,14 @@ SYNOPSIS
 --------
 
 **iio_rwdev** [ *options* ] [-n <hostname>] [-t <trigger>] [-T
-<timeout-ms>] [-b <buffer-size>] [-s <samples>] [-w] <iio_device>
-[<channel> ...]
+<timeout-ms>] [-b <buffer-size>] [-i <buffer-index>] [-s <samples>] [-w]
+[-c] <iio_device> [<channel> ...]
 
 DESCRIPTION
 -----------
 
-**iio_reg** is a utility for reading buffers from connected IIO devices,
-and sending results to standard out.
+**iio_rwdev** is a utility for reading buffers from connected IIO
+devices, and sending results to standard out.
 
 OPTIONS
 -------
@@ -41,17 +41,28 @@ OPTIONS
    Write sample data to the IIO device. The default is to read samples
    from it.
 
-**-t --trigger**
+**-t --trigger <arg>**
    Use the specified trigger, if needed on the specified channel
 
-**-b --buffer-size**
+**-r --trigger-rate <arg>**
+   Set the trigger to the specified rate (Hz). Default is 100 Hz.
+
+**-b --buffer-size <arg>**
    Size of the capture buffer. Default is 256.
 
-**-s --samples**
+**-i --buffer-index <arg>**
+   Buffer index to use. Default is 0. On multi-buffer devices, different
+   buffers may have different sets of scan elements and directions.
+
+**-s --samples <arg>**
    Number of samples (not bytes) to capture, 0 = infinite. Default is 0.
 
-**-T --timeout**
-   Buffer timeout in milliseconds. 0 = no timeout. Default is 0.
+**-c --cyclic**
+   Use cyclic buffer mode.
+
+**-B --benchmark**
+   Benchmark throughput. Statistics will be printed on the standard
+   input.
 
 **-u, --uri**
    The Uniform Resource Identifier *(uri)* for connecting to devices,
@@ -99,6 +110,10 @@ OPTIONS
 
    local:
       with no address part.
+
+**-T, --timeout <arg>**
+   Context timeout in milliseconds. 0 = use backend default, -1 = wait
+   forever, 'nb' or 'nonblocking' = non-blocking mode. Default is 0.
 
 RETURN VALUE
 ------------
