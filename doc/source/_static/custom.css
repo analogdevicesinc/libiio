@@ -1,0 +1,36 @@
+/* Custom CSS for libiio documentation */
+
+/* Responsive content width on larger screens */
+@media (min-width: 56em) {
+    .content {
+        width: 52em;
+    }
+}
+
+/* Ensure figures scale properly */
+figure > object {
+    max-width: 100%;
+}
+
+/* Image styling with subtle background and padding */
+img {
+    background: #fff;
+    border-radius: .25em;
+    padding: .5em 0;
+}
+
+/* WaveDrom diagram styling (if used) */
+.WaveDrom {
+    background: #fff;
+    border-radius: .25em;
+    padding: .5em 0;
+}
+
+/* Table improvements */
+th {
+    white-space: nowrap;
+}
+
+.table-wrapper {
+    overflow: visible;
+}
