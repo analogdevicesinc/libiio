@@ -63,58 +63,6 @@ if(NOT SKIP_INSTALL_ALL)
 	endif()
 endif()
 
-option(WITH_DOC "Generate documentation with Doxygen" OFF)
-if(WITH_DOC)
-	find_package(Doxygen REQUIRED)
-	# It is not an error when 'dot' is not found,
-	# just switching off the Doxygen's HAVE_DOT option
-	find_package_handle_standard_args(Dot REQUIRED_VARS DOXYGEN_DOT_EXECUTABLE)
-
-	include(cmake/CheckCaseSensitiveFileSystem.cmake)
-	if (HAVE_CASE_SENSITIVE_FILESYSTEM)
-		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "YES")
-	else()
-		set(CMAKE_CASE_SENSITIVE_FILESYSTEM "NO")
-	endif()
-
-	set(CMAKE_API_DEST_DIR "${PROJECT_NAME}")
-
-	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/bindings/csharp/Doxyfile.in
-		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp @ONLY)
-	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/CI/azure/generateDocumentationAndDeploy.sh.in
-		${CMAKE_CURRENT_BINARY_DIR}/generateDocumentationAndDeploy.sh @ONLY)
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc
-		DESTINATION ${CMAKE_HTML_DEST_DIR}/${CMAKE_API_DEST_DIR}
-		FILES_MATCHING PATTERN "*.svg")
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc/html/ DESTINATION ${CMAKE_HTML_DEST_DIR})
-	set(IIO_TESTS_MAN_PAGES_HTML "")
-	foreach(_page ${IIO_UTILS_TARGETS})
-		set(IIO_TESTS_MAN_PAGES_HTML "${IIO_TESTS_MAN_PAGES_HTML}<li><a href=\"./man1/${_page}.1.html\">${_page}</a></li>")
-	endforeach()
-	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/doc/index.html.in
-		${CMAKE_HTML_DEST_DIR}/index.html @ONLY)
-
-	add_custom_command(TARGET iio POST_BUILD
-		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		COMMENT "Generating API documentation with Doxygen" VERBATIM)
-	add_custom_command(TARGET iio POST_BUILD
-		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_csharp
-		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		COMMENT "Generating C# documentation with Doxygen" VERBATIM)
-
-	if(NOT SKIP_INSTALL_ALL)
-		install(DIRECTORY ${CMAKE_HTML_DEST_DIR}
-			DESTINATION ${CMAKE_INSTALL_DOCDIR})
-	endif()
-endif()
-
 # Create an installer if compiling for OSX
 if(OSX_PACKAGE)
 	set(LIBIIO_PKG ${CMAKE_CURRENT_BINARY_DIR}/libiio-${LIBIIO_VERSION}.pkg)
