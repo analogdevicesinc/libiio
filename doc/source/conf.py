@@ -77,6 +77,12 @@ interref_repos = [
 hide_collapsible_content = True
 validate_links = False
 
+# -- Linkcheck configuration --------------------------------------------------
+
+# Don't treat timeouts as errors - they're often transient network issues
+linkcheck_timeout = 15  # Increase timeout to 15 seconds
+linkcheck_report_timeouts_as_broken = False  # Report timeouts as warnings, not errors
+
 # -- todo configuration -------------------------------------------------------
 
 todo_include_todos = True
