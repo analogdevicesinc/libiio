@@ -52,7 +52,7 @@ open-source, commercial or non-commercial applications. This choice was motivate
 that Analog Devices is a company that principally sells hardware, and this library provides the
 clients with a better and easier way of using this hardware.
 
-The full terms of the license can be found here: <http://opensource.org/licenses/LGPL-2.1>
+The full terms of the license can be found here: <https://opensource.org/license/LGPL-2.1>
 
 ## Code conformance
 
@@ -698,13 +698,13 @@ server for a IIOD server to use.
 
 C is a good language, but not everybody is familiar with it; some people might prefer object-oriented languages, like Java or Python for instance. This is why we created bindings for the library, so that it can be used with different programming languages. The additional languages supported by libiio are now Python and C#.
 
-\<note important\>Since v0.19 all bindings require explicit flags to be enabled during builds. Please reference the [build instructions](https://github.com/analogdevicesinc/libiio/blob/master/README_BUILD.md) to make sure the desired bindings are built and installed.\</note\>
+\<note important\>Since v0.19 all bindings require explicit flags to be enabled during builds. Please reference the [build instructions](https://github.com/analogdevicesinc/libiio/blob/main/README_BUILD.md) to make sure the desired bindings are built and installed.\</note\>
 
 #### Python bindings
 
 The Python bindings were developed very early in the project to facilitate generating XML strings modeling IIO contexts in order to properly test the XML backend. They quickly became outdated as the project moved on, but were later greatly improved and should now be on par with the C# bindings.
 
-To better understand the available calls consult the [bindings source](https://github.com/analogdevicesinc/libiio/blob/master/bindings/python/iio.py) and some available [examples](https://github.com/analogdevicesinc/plutosdr_scripts).
+To better understand the available calls consult the [bindings source](https://github.com/analogdevicesinc/libiio/blob/main/bindings/python/iio/__init__.py) and some available [examples](https://github.com/analogdevicesinc/plutosdr_scripts).
 
 ##### Installation
 
