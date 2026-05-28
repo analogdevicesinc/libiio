@@ -37,7 +37,7 @@ extensions = [
 ]
 
 needs_extensions = {
-    'adi_doctools': '0.3.6'
+    'adi_doctools': '0.4.33'
 }
 
 myst_enable_extensions = ["colon_fence", "attrs_inline"]
