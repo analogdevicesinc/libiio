@@ -164,8 +164,6 @@ make
 sudo make install
 ```
 
----
-
 (configuration-options)=
 ## Configuration Options
 
