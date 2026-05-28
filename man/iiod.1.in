@@ -79,7 +79,7 @@ which are controlled, and need to match the iiod (or tinyiiod) on the other end 
 .IP [port]
 is something like '/dev/ttyUSB0' on Linux, and 'COM4' on Windows.
 .IP [baud]
-is is normally one of 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200 [default], 128000 or 256000, but can vary system to system.
+is normally one of 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200 [default], 128000 or 256000, but can vary system to system.
 .IP [settings]
 would normally be configured as '8n1' this is controlled by:
 .RS
