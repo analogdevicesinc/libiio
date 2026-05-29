@@ -3,5 +3,6 @@ https://github.com/analogdevicesinc/doctools/releases/download/latest/adi-doctoo
 sphinxcontrib.wavedrom
 myst-parser
 breathe
+git+https://github.com/rogerbarton/sphinx-csharp.git
 sphinx-inline-tabs
 sphinxcontrib-matlabdomain

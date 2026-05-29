@@ -10,6 +10,13 @@ os.chdir(doxyfolder)
 os.system("doxygen doxyfile.in")
 os.chdir(cwd)
 
+# Build C# doxygen XML documentation
+csharp_doxyfolder = os.path.join(os.path.dirname(__file__), "..", "doxygen", "csharp")
+if os.path.exists(csharp_doxyfolder):
+    os.chdir(csharp_doxyfolder)
+    os.system("doxygen Doxyfile")
+    os.chdir(cwd)
+
 # Add bindings and examples to path
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python")))
@@ -32,6 +39,7 @@ extensions = [
     "adi_doctools",
     "myst_parser",
     "breathe",
+    "sphinx_csharp",
     'sphinxcontrib.matlab', 'sphinx.ext.autodoc',
     "sphinx_inline_tabs",
 ]
@@ -43,12 +51,16 @@ needs_extensions = {
 myst_enable_extensions = ["colon_fence", "attrs_inline"]
 
 breathe_default_project = "libiio"
-breathe_projects = {"libiio": os.path.join(doxyfolder, "generated", "xml")}
+breathe_projects = {
+    "libiio": os.path.join(doxyfolder, "generated", "xml"),
+    "libiio-csharp": os.path.join(doxyfolder, "generated", "csharp", "xml")
+}
 
 # Suppress known warnings
 suppress_warnings = [
     'duplicate_declaration.cpp',
-    'duplicate_c_declaration'
+    'duplicate_c_declaration',
+    'myst.domains',  # C# domain doesn't implement resolve_any_xref
 ]
 
 templates_path = ['_templates']
