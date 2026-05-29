@@ -1,16 +1,16 @@
 libiio Documentation
 ====================
 
-.. image:: _static/iio_logo.png
-   :alt: IIO logo
+.. list-table::
+   :widths: auto
    :align: left
-   :width: 150px
 
-**A cross-platform user library to access Industrial Input Output (IIO) devices**
+   * - .. image:: _static/iio_logo.png
+          :alt: IIO logo
+          :width: 150px
+     - **A cross-platform user library to access Industrial Input Output (IIO) devices**
 
-Version |version|
-
-Welcome to libiio
+Welcome to libIIO
 =================
 
 Thanks for your interest in libiio, a C/C++ library that provides generic access to Industrial Input Output (IIO) devices. IIO started as a :external+kernel:doc:`Linux kernel subsystem <driver-api/iio/index>` to support devices that include analog-to-digital converters (ADCs) and/or digital-to-analog converters (DACs). While libiio continues to provide an easy interface to the Linux kernel IIO subsystem, it has also expanded beyond that, and is now just as common to see this used inside an embedded system or hypervisor as it is on a host PC.
@@ -95,11 +95,13 @@ Use libiio with your favourite open source or commercial signal processing frame
           :target: https://www.gnuradio.org/
      - Linux, macOS
      - GNU Radio is a Free and Open-Source Toolkit for Software Radio, primarily supported on Linux operating systems. It has both :adi:`generic IIO blocks`, and blocks for specific IIO devices like the :adi:`PlutoSDR`.
-   * - .. image:: _static/osc128.png
-          :alt: Oscilloscope logo
-          :target: https://github.com/analogdevicesinc/iio-oscilloscope/releases/latest
+   * - .. container:: app-logo-name
 
-       **IIO Oscilloscope**
+          .. image:: _static/osc128.png
+             :alt: Oscilloscope logo
+             :target: https://github.com/analogdevicesinc/iio-oscilloscope/releases/latest
+
+          **IIO Oscilloscope**
      - Windows, Linux
      - The IIO Oscilloscope is an application, which demonstrates how to interface various IIO devices to different visualization methods on Linux and Windows.
    * - .. image:: _static/sdrangel.png
@@ -108,11 +110,13 @@ Use libiio with your favourite open source or commercial signal processing frame
           :target: https://github.com/f4exb/sdrangel
      - Windows, Linux
      - `SDRangel <https://github.com/f4exb/sdrangel/releases/latest>`_ is an Open Source Qt5 / OpenGL 3.0+ SDR and signal analyzer frontend to various hardware. Check the `discussion group <https://groups.io/g/sdrangel>`_ and `wiki <https://github.com/f4exb/sdrangel/wiki>`_. While SDRangel seeks to be approachable, it is targeted towards the experienced SDR user with some digital signal processing understanding. It supports libIIO for the PlutoSDR, and can be extended to support many other IIO devices.
-   * - .. image:: _static/scopy.png
-          :alt: Scopy logo
-          :target: https://wiki.analog.com/university/tools/m2k/scopy
+   * - .. container:: app-logo-name
 
-       **Scopy**
+          .. image:: _static/scopy.png
+             :alt: Scopy logo
+             :target: https://wiki.analog.com/university/tools/m2k/scopy
+
+          **Scopy**
      - Windows, Linux, macOS
      - Scopy is a multi-functional software toolset that supports traditional instrument interfaces with Oscilloscope, Spectrum Analyzer, Network Analyzer, Signal Generator, Logic Analyzer, Pattern Generator, Digital IO, Voltmeter, Power Supply interfaces for the :adi:`ADALM2000`. It is built in Qt5 in C++, and is available under an open source license on :external+scopy:doc:`github <index>`.
    * - .. image:: _static/legato_logo.png
