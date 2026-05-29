@@ -72,6 +72,12 @@ interref_repos = [
     'precision-converters-firmware',
 ]
 
+# -- Intersphinx configuration ------------------------------------------------
+# Add upstream kernel.org documentation for linking to official kernel docs
+intersphinx_mapping = {
+    'kernel': ('https://www.kernel.org/doc/html/latest/', None),
+}
+
 # -- Custom extensions configuration ------------------------------------------
 
 hide_collapsible_content = True
