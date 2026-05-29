@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 
 # -- Pre-build tasks ----------------------------------------------------------
 # Build doxygen XML documentation
@@ -125,3 +126,28 @@ html_css_files = ["custom.css"]
 #     "light_logo": "HDL_logo_cropped.svg",
 #     "dark_logo": "HDL_logo_w_cropped.svg",
 # }
+# -- Custom warning filter for C# Breathe xref warnings ----------------------
+
+import logging as py_logging
+
+# Patterns for C# xref warnings to suppress (unavoidable .NET system types)
+csharp_xref_suppress_patterns = [
+    re.compile(r"Failed to find xref for: IntPtr"),  # .NET system type
+    re.compile(r"Failed to find xref for: >"),        # Generic type parsing artifact
+]
+
+class CSharpXrefWarningFilter(py_logging.Filter):
+    """Filter out unavoidable C# xref warnings for .NET system types"""
+
+    def filter(self, record):
+        msg = record.getMessage()
+        for pattern in csharp_xref_suppress_patterns:
+            if pattern.search(msg):
+                return False  # Suppress this warning
+        return True  # Allow other warnings
+
+def setup(app):
+    """Register custom warning filter for Sphinx logger"""
+    # Add filter to the Sphinx warning logger
+    sphinx_logger = py_logging.getLogger('sphinx')
+    sphinx_logger.addFilter(CSharpXrefWarningFilter())
