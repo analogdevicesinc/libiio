@@ -18,6 +18,13 @@ if os.path.exists(csharp_doxyfolder):
     os.system("doxygen Doxyfile")
     os.chdir(cwd)
 
+# Build C++ doxygen XML documentation
+cpp_doxyfolder = os.path.join(os.path.dirname(__file__), "..", "doxygen", "cpp")
+if os.path.exists(cpp_doxyfolder):
+    os.chdir(cpp_doxyfolder)
+    os.system("doxygen Doxyfile")
+    os.chdir(cwd)
+
 # Add bindings and examples to path
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python")))
@@ -54,7 +61,8 @@ myst_enable_extensions = ["colon_fence", "attrs_inline"]
 breathe_default_project = "libiio"
 breathe_projects = {
     "libiio": os.path.join(doxyfolder, "generated", "xml"),
-    "libiio-csharp": os.path.join(doxyfolder, "generated", "csharp", "xml")
+    "libiio-csharp": os.path.join(doxyfolder, "generated", "csharp", "xml"),
+    "libiio-cpp": os.path.join(doxyfolder, "generated", "cpp", "xml")
 }
 
 # Suppress known warnings
