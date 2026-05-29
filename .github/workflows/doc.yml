@@ -57,7 +57,12 @@ jobs:
     #       cat build/coverage/python.txt
     #       cat build/coverage/python.txt | wc -l | xargs -I % test % -eq 2
 
+      # Linkcheck is non-blocking because external links can timeout or be temporarily
+      # unavailable. Results are still reported in CI logs for manual review.
+      # Contributors should run 'make linkcheck' locally before submitting PRs.
+      # See doc/CONTRIBUTING.md for more information.
       - name: Check doc links
+        continue-on-error: true
         run: |
           source .venv/bin/activate
           cd doc
