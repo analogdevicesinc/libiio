@@ -40,6 +40,13 @@ API Classes
    eventstream
    event
    stream
+   iioobject
+   attr
+   channelsmask
+   bufferstream
+   version
+   iiocontextparams
+   iiologlevel
 
 Examples
 --------
