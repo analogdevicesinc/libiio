@@ -8,3 +8,4 @@ libiio provides bindings for multiple programming languages.
 
     api/python/index
     api/csharp/index
+    api/cpp/index
