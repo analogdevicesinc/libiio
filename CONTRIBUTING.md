@@ -13,6 +13,10 @@ and separate applications/programs/examples and doc which use that library:
 
 Any pull requests will be covered by one of these licenses.
 
+## Contributing to Specific Areas
+
+- **Documentation**: See [doc/CONTRIBUTING.md](doc/CONTRIBUTING.md) for documentation-specific guidelines, including building docs, checking links, and style checking with Vale.
+
 ## Pull Request Checklist
 
 1. Commit message includes a "Signed-off-by: [name] < email >" to the commit message. 
