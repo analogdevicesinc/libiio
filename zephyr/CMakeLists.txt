@@ -36,6 +36,9 @@ if(CONFIG_LIBIIO)
     ${ZEPHYR_LIBIIO_MODULE_DIR}
   )
 
+  # zephyr log levels (0-4) are offset by 1 from libiio levels (1-5)
+  math(EXPR default_log_level "${CONFIG_LIBIIO_LOG_LEVEL} + 1")
+
   zephyr_library_compile_definitions(
     LIBIIO_STATIC=1
     NO_THREADS=1
@@ -56,7 +59,7 @@ if(CONFIG_LIBIIO)
     WITH_EMU_BACKEND_DYNAMIC=0
     HAVE_DNS_SD=0
     WITH_MODULES=0
-    DEFAULT_LOG_LEVEL=4
+    DEFAULT_LOG_LEVEL=${default_log_level}
     LIBIIO_VERSION_MAJOR=1
     LIBIIO_VERSION_MINOR=0
     LIBIIO_VERSION_GIT=\"v1.0\"
