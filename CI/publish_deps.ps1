@@ -30,13 +30,7 @@ if ($COMPILER -eq "MinGW Makefiles") {
 	cp $src_dir\dependencies\libs\64\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 	cp $src_dir\dependencies\libs\64\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
-	if ($COMPILER -eq "Visual Studio 16 2019") {
-		cd 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
-		cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-		cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	} else {
-		cd 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
-		cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-		cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	}
+	cd 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT'
+	cp .\msvcp140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp .\vcruntime140.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 }
