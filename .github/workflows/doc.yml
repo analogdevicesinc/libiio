@@ -3,7 +3,7 @@ name: Documentation Tests
 on: [push, pull_request]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   CheckDocs:
