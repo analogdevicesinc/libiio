@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="iio.Device class: Contains the representation of an IIO device." name="description" />
+
+    <title>Device &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Channel" href="channel.html" />
+    <link rel="prev" title="Context" href="context.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Device</a><ul>
+<li><a class="reference internal" href="#class-iio.Device"><code class="docutils literal notranslate"><span class="pre">iio::Device</span></code></a><ul>
+<li><a class="reference internal" href="#function-iio.Device.get_channel"><code class="docutils literal notranslate"><span class="pre">get_channel()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Device.set_trigger"><code class="docutils literal notranslate"><span class="pre">set_trigger()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Device.get_trigger"><code class="docutils literal notranslate"><span class="pre">get_trigger()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Device.get_sample_size"><code class="docutils literal notranslate"><span class="pre">get_sample_size()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Device.reg_write"><code class="docutils literal notranslate"><span class="pre">reg_write()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Device.reg_read"><code class="docutils literal notranslate"><span class="pre">reg_read()</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.ctx"><code class="docutils literal notranslate"><span class="pre">ctx</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.id"><code class="docutils literal notranslate"><span class="pre">id</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.name"><code class="docutils literal notranslate"><span class="pre">name</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.attrs"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.debug_attrs"><code class="docutils literal notranslate"><span class="pre">debug_attrs</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.channels"><code class="docutils literal notranslate"><span class="pre">channels</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.buffers"><code class="docutils literal notranslate"><span class="pre">buffers</span></code></a></li>
+<li><a class="reference internal" href="#property-iio.Device.label"><code class="docutils literal notranslate"><span class="pre">label</span></code></a></li>
+<li><a class="reference internal" href="#property-iio.Device.hwmon"><code class="docutils literal notranslate"><span class="pre">hwmon</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="context.html">Context</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../bindings.html">Bindings</a></li><li><a href="index.html">C# Bindings</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="device">
+<h1>Device<a class="headerlink" href="#device" title="Link to this heading"></a></h1>
+<dl class="cs class">
+<dt class="sig sig-object cs" id="class-iio.Device">
+<span class="target" id="classiio_1_1Device"></span><span class="property"><span class="pre">class</span> </span><span class="sig-name descname"><span class="pre">iio.Device</span></span><a class="headerlink" href="#class-iio.Device" title="Link to this definition"></a></dt>
+<dd><p><a class="reference internal" href="#classiio_1_1Device"><span class="std std-ref">iio.Device</span></a> class: Contains the representation of an IIO device. </p>
+<p>Subclassed by <a class="reference internal" href="trigger.html#classiio_1_1Trigger"><span class="std std-ref">iio.Trigger</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Device.get_channel">
+<span class="target" id="classiio_1_1Device_1a731aeefb6a5579762d168fc3ee2ff66b"></span><a class="reference internal" href="channel.html#class-iio.Channel" title="class: iio.Channel"><span class="pre">Channel</span></a> <span class="sig-name descname"><span class="pre">get_channel</span></span> <span class="sig-paren">(</span><span class="pre">string</span> <em><span class="pre">name</span></em>, <span class="pre">bool</span> <em><span class="pre">output</span></em><em> <span class="pre">=</span> <span class="pre">false</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Device.get_channel" title="Link to this definition"></a></dt>
+<dd><p>Get the <a class="reference internal" href="channel.html#classiio_1_1Channel"><span class="std std-ref">iio.Channel</span></a> object of the specified name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Param name<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name or ID of the channel to look for</p>
+</dd>
+<dt class="field-even">Param output<span class="colon">:</span></dt>
+<dd class="field-even"><p>true if you are looking for an output channel, otherwise false.</p>
+</dd>
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The IIO device with the specified name or ID could not be found in the current context.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Device.set_trigger">
+<span class="target" id="classiio_1_1Device_1a5cf653e285c685648dfc66a5119595d4"></span><span class="pre">void</span> <span class="sig-name descname"><span class="pre">set_trigger</span></span> <span class="sig-paren">(</span><a class="reference internal" href="trigger.html#class-iio.Trigger" title="class: iio.Trigger"><span class="pre">Trigger</span></a> <em><span class="pre">trig</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Device.set_trigger" title="Link to this definition"></a></dt>
+<dd><p>Affect a trigger to this device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Param trig<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A valid instance of the <a class="reference internal" href="trigger.html#classiio_1_1Trigger"><span class="std std-ref">iio.Trigger</span></a> class.</p>
+</dd>
+<dt class="field-even">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-even"><p>The trigger could not be set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Device.get_trigger">
+<span class="target" id="classiio_1_1Device_1a0d6bcb4c98aa71895c5c9476bb2e7285"></span><a class="reference internal" href="trigger.html#class-iio.Trigger" title="class: iio.Trigger"><span class="pre">Trigger</span></a> <span class="sig-name descname"><span class="pre">get_trigger</span></span> <span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Device.get_trigger" title="Link to this definition"></a></dt>
+<dd><p>Get the current trigger affected to this device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The instance could not be retrieved.</p>
+</dd>
+<dt class="field-even">Return<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the <a class="reference internal" href="trigger.html#classiio_1_1Trigger"><span class="std std-ref">iio.Trigger</span></a> class.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Device.get_sample_size">
+<span class="target" id="classiio_1_1Device_1ac3f87846b5118e6cb4d91671d2bcf172"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">get_sample_size</span></span> <span class="sig-paren">(</span><a class="reference internal" href="channelsmask.html#class-iio.ChannelsMask" title="class: iio.ChannelsMask"><span class="pre">ChannelsMask</span></a> <em><span class="pre">mask</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Device.get_sample_size" title="Link to this definition"></a></dt>
+<dd><p>Get the current sample size of the device. </p>
+<p>The sample size varies each time channels get enabled or disabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Internal error. Please report any bug.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Device.reg_write">
+<span class="target" id="classiio_1_1Device_1aa02e1587a188ed02956a033b488576d1"></span><span class="pre">void</span> <span class="sig-name descname"><span class="pre">reg_write</span></span> <span class="sig-paren">(</span><span class="pre">uint</span> <em><span class="pre">addr</span></em>, <span class="pre">uint</span> <em><span class="pre">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Device.reg_write" title="Link to this definition"></a></dt>
+<dd><p>Set a value to one register of this device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Param addr<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The address of the register concerned.</p>
+</dd>
+<dt class="field-even">Param value<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value that will be used for this register.</p>
+</dd>
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The register could not be written.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Device.reg_read">
+<span class="target" id="classiio_1_1Device_1a2b67eb64e1094bca59468f177f6c039e"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">reg_read</span></span> <span class="sig-paren">(</span><span class="pre">uint</span> <em><span class="pre">addr</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Device.reg_read" title="Link to this definition"></a></dt>
+<dd><p>Read the content of a register of this device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Param addr<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The address of the register concerned.</p>
+</dd>
+<dt class="field-even">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-even"><p>The register could not be read.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.ctx">
+<span class="target" id="classiio_1_1Device_1ad15c40a8388e352e410f1109a107489d"></span><span class="property"><span class="pre">readonly</span></span> <a class="reference internal" href="context.html#class-iio.Context" title="class: iio.Context"><span class="pre">Context</span></a> <span class="sig-name descname"><span class="pre">ctx</span></span><a class="headerlink" href="#var-iio.Device.ctx" title="Link to this definition"></a></dt>
+<dd><p>Gets the context of the current device. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.id">
+<span class="target" id="classiio_1_1Device_1a5d206eae4628dc18fdfac1e515674cdc"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">string</span> <span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#var-iio.Device.id" title="Link to this definition"></a></dt>
+<dd><p>An identifier of this device. </p>
+<p>The identifier is only valid in this IIO context</p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.name">
+<span class="target" id="classiio_1_1Device_1ab1cd5f216aed88ebe52f17556a4488f0"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">string</span> <span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#var-iio.Device.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this device. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.attrs">
+<span class="target" id="classiio_1_1Device_1ae2176fa2b6259f9c120a825f518c4066"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#var-iio.Device.attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the attributes that this device has. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.debug_attrs">
+<span class="target" id="classiio_1_1Device_1aef585bea3015cda66fbce397d0323794"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">debug_attrs</span></span><a class="headerlink" href="#var-iio.Device.debug_attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the debug attributes that this device has. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.channels">
+<span class="target" id="classiio_1_1Device_1a060ce06a0516ccc7468196e44fb30b00"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="channel.html#class-iio.Channel" title="class: iio.Channel"><span class="pre">Channel</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">channels</span></span><a class="headerlink" href="#var-iio.Device.channels" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the <a class="reference internal" href="channel.html#classiio_1_1Channel"><span class="std std-ref">iio.Channel</span></a> objects that this device possesses. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.buffers">
+<span class="target" id="classiio_1_1Device_1af33b746d079c9bde1e1815cb7c2be160"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="buffer.html#class-iio.IOBuffer" title="class: iio.IOBuffer"><span class="pre">IOBuffer</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">buffers</span></span><a class="headerlink" href="#var-iio.Device.buffers" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the <a class="reference internal" href="buffer.html#classiio_1_1IOBuffer"><span class="std std-ref">iio.IOBuffer</span></a> objects that this device possesses. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-properties">Properties</p>
+<dl class="cs property">
+<dt class="sig sig-object cs" id="property-iio.Device.label">
+<span class="target" id="classiio_1_1Device_1a3342153fd26e43b710dd33b17cb126fc"></span><span class="pre">string</span> <span class="sig-name descname"><span class="pre">label</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Device.label" title="Link to this definition"></a></dt>
+<dd><p>The label of this device. </p>
+</dd></dl>
+
+<dl class="cs property">
+<dt class="sig sig-object cs" id="property-iio.Device.hwmon">
+<span class="target" id="classiio_1_1Device_1a0c8992763f1c21715d03775a0e37321e"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">hwmon</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Device.hwmon" title="Link to this definition"></a></dt>
+<dd><p>True if the device is a hardware monitoring device, False if it is a IIO device. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="context.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Context</a>
+    <a href="channel.html" title="Next document (Alt+Shift+RightArrow)" class="next">Channel</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

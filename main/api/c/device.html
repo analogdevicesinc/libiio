@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Retrieve a pointer to the iio_context structure." name="description" />
+
+    <title>Device Functions &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Channel Functions" href="channel.html" />
+    <link rel="prev" title="Context Functions" href="context.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Device Functions</a><ul>
+<li><a class="reference internal" href="#_CPPv422iio_device_get_contextPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_context()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv417iio_device_get_idPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_id()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_device_get_namePK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_name()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_device_get_labelPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_label()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv429iio_device_get_channels_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_channels_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_device_get_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv428iio_device_get_buffers_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_buffers_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv422iio_device_get_channelPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_channel()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_device_get_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_device_get_bufferPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_buffer()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv423iio_device_find_channelPK10iio_devicePKcb"><code class="docutils literal notranslate"><span class="pre">iio_device_find_channel()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_device_find_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_device_set_dataP10iio_devicePv"><code class="docutils literal notranslate"><span class="pre">iio_device_set_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_device_get_dataPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv422iio_device_get_triggerPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_trigger()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv422iio_device_set_triggerPK10iio_devicePK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_set_trigger()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_device_is_triggerPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_is_trigger()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv410iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html">Context Functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../api.html">Library API</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="device-functions">
+<h1>Device Functions<a class="headerlink" href="#device-functions" title="Link to this heading"></a></h1>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_device_get_contextPK10iio_device">
+<span id="_CPPv322iio_device_get_contextPK10iio_device"></span><span id="_CPPv222iio_device_get_contextPK10iio_device"></span><span id="iio_device_get_context__iio_deviceCP"></span><span class="target" id="group__Device_1ga580c65d9b67d7f1ee08185a5813d9e4b"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="context.html#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_context</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_device_get_contextPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve a pointer to the <a class="reference internal" href="context.html#structiio__context"><span class="std std-ref">iio_context</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to an <a class="reference internal" href="context.html#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv417iio_device_get_idPK10iio_device">
+<span id="_CPPv317iio_device_get_idPK10iio_device"></span><span id="_CPPv217iio_device_get_idPK10iio_device"></span><span id="iio_device_get_id__iio_deviceCP"></span><span class="target" id="group__Device_1gae65cd9dd0a2a618fb15170abedb5c3b3"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_id</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv417iio_device_get_idPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve the device ID (e.g. <strong></strong>) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to a static NULL-terminated string </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_device_get_namePK10iio_device">
+<span id="_CPPv319iio_device_get_namePK10iio_device"></span><span id="_CPPv219iio_device_get_namePK10iio_device"></span><span id="iio_device_get_name__iio_deviceCP"></span><span class="target" id="group__Device_1ga075c277d3fbf2cc7208d07414a45e3e7"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_name</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_device_get_namePK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve the device name (e.g. <strong></strong>) </p>
+<p><strong>NOTE:</strong> if the device has no name, NULL is returned. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to a static NULL-terminated string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_device_get_labelPK10iio_device">
+<span id="_CPPv320iio_device_get_labelPK10iio_device"></span><span id="_CPPv220iio_device_get_labelPK10iio_device"></span><span id="iio_device_get_label__iio_deviceCP"></span><span class="target" id="group__Device_1ga8c81ff759d18c0a8949c1e6f669058f5"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_label</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_device_get_labelPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve the device label (e.g. <strong></strong>) </p>
+<p><strong>NOTE:</strong> if the device has no label, NULL is returned. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to a static NULL-terminated string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429iio_device_get_channels_countPK10iio_device">
+<span id="_CPPv329iio_device_get_channels_countPK10iio_device"></span><span id="_CPPv229iio_device_get_channels_countPK10iio_device"></span><span id="iio_device_get_channels_count__iio_deviceCP"></span><span class="target" id="group__Device_1ga5d6c501cc31effd8c72e21d9c790b052"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_channels_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429iio_device_get_channels_countPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the channels of the given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of channels found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_device_get_attrs_countPK10iio_device">
+<span id="_CPPv326iio_device_get_attrs_countPK10iio_device"></span><span id="_CPPv226iio_device_get_attrs_countPK10iio_device"></span><span id="iio_device_get_attrs_count__iio_deviceCP"></span><span class="target" id="group__Device_1ga3eb014aa1f186b8c17e3654e3f60908b"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_attrs_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_device_get_attrs_countPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the device-specific attributes of the given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of device-specific attributes found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv428iio_device_get_buffers_countPK10iio_device">
+<span id="_CPPv328iio_device_get_buffers_countPK10iio_device"></span><span id="_CPPv228iio_device_get_buffers_countPK10iio_device"></span><span id="iio_device_get_buffers_count__iio_deviceCP"></span><span class="target" id="group__Device_1ga0b96174e563de690a1a1c858129eac87"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_buffers_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv428iio_device_get_buffers_countPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the buffers of the given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of buffers found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_device_get_channelPK10iio_devicej">
+<span id="_CPPv322iio_device_get_channelPK10iio_devicej"></span><span id="_CPPv222iio_device_get_channelPK10iio_devicej"></span><span id="iio_device_get_channel__iio_deviceCP.unsigned-i"></span><span class="target" id="group__Device_1ga94294ab2934d7d201340be022d48ed6a"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_channel</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_device_get_channelPK10iio_devicej" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the channel present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the channel </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_device_get_attrPK10iio_devicej">
+<span id="_CPPv319iio_device_get_attrPK10iio_devicej"></span><span id="_CPPv219iio_device_get_attrPK10iio_devicej"></span><span id="iio_device_get_attr__iio_deviceCP.unsigned-i"></span><span class="target" id="group__Device_1gaa271bf51d8808e86dd388616f29f8d38"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_device_get_attrPK10iio_devicej" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the device-specific attribute present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_device_get_bufferPK10iio_devicej">
+<span id="_CPPv321iio_device_get_bufferPK10iio_devicej"></span><span id="_CPPv221iio_device_get_bufferPK10iio_devicej"></span><span id="iio_device_get_buffer__iio_deviceCP.unsigned-i"></span><span class="target" id="group__Device_1gaae995cd4c5f758d6f02cdfb4580aff4c"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="buffer.html#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_buffer</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_device_get_bufferPK10iio_devicej" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the buffer present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the buffer </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="buffer.html#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423iio_device_find_channelPK10iio_devicePKcb">
+<span id="_CPPv323iio_device_find_channelPK10iio_devicePKcb"></span><span id="_CPPv223iio_device_find_channelPK10iio_devicePKcb"></span><span id="iio_device_find_channel__iio_deviceCP.cCP.b"></span><span class="target" id="group__Device_1ga6236cf4cf10a19b48d693c2a25ef74d3"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_find_channel</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">output</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423iio_device_find_channelPK10iio_devicePKcb" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a channel structure by its ID, label or name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to ID, label or name of the channel to search for </p></li>
+<li><p><strong>output</strong> – True if the searched channel is output, False otherwise </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the ID, label or name does not correspond to any known channel of the given device, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_device_find_attrPK10iio_devicePKc">
+<span id="_CPPv320iio_device_find_attrPK10iio_devicePKc"></span><span id="_CPPv220iio_device_find_attrPK10iio_devicePKc"></span><span id="iio_device_find_attr__iio_deviceCP.cCP"></span><span class="target" id="group__Device_1ga24f08e2fe4091f0c7ae8b7491d4fb95c"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_find_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_device_find_attrPK10iio_devicePKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a device-specific attribute by its name. </p>
+<p><strong>NOTE:</strong> This function is useful to detect the presence of an attribute. It can also be used to retrieve the name of an attribute as a pointer to a static string from a dynamically allocated string. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the name of the attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the name does not correspond to any known attribute of the given device, NULL is returned</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_device_set_dataP10iio_devicePv">
+<span id="_CPPv319iio_device_set_dataP10iio_devicePv"></span><span id="_CPPv219iio_device_set_dataP10iio_devicePv"></span><span id="iio_device_set_data__iio_deviceP.voidP"></span><span class="target" id="group__Device_1gac68f480c6a6769c7314a8424080d86c2"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_set_data</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_device_set_dataP10iio_devicePv" title="Link to this definition"></a><br /></dt>
+<dd><p>Associate a pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>data</strong> – The pointer to be associated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_device_get_dataPK10iio_device">
+<span id="_CPPv319iio_device_get_dataPK10iio_device"></span><span id="_CPPv219iio_device_get_dataPK10iio_device"></span><span id="iio_device_get_data__iio_deviceCP"></span><span class="target" id="group__Device_1ga54b14ee212773f2f6cff864829bf5657"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_data</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_device_get_dataPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve a previously associated pointer of an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The pointer previously associated if present, or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_device_get_triggerPK10iio_device">
+<span id="_CPPv322iio_device_get_triggerPK10iio_device"></span><span id="_CPPv222iio_device_get_triggerPK10iio_device"></span><span id="iio_device_get_trigger__iio_deviceCP"></span><span class="target" id="group__Device_1gab165f40bf8c075cf1f62197defd359a2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_trigger</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_device_get_triggerPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve the trigger of a given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to the trigger’s <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure is returned. </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned. If no trigger has been associated with the given device, the error code will be -ENODEV. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_device_set_triggerPK10iio_devicePK10iio_device">
+<span id="_CPPv322iio_device_set_triggerPK10iio_devicePK10iio_device"></span><span id="_CPPv222iio_device_set_triggerPK10iio_devicePK10iio_device"></span><span id="iio_device_set_trigger__iio_deviceCP.iio_deviceCP"></span><span class="target" id="group__Device_1gaec7020931f9c2aaee7b953eae1aa55a9"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_set_trigger</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">trigger</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_device_set_triggerPK10iio_devicePK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Associate a trigger to a given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>trigger</strong> – a pointer to the <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure corresponding to the trigger that should be associated. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_device_is_triggerPK10iio_device">
+<span id="_CPPv321iio_device_is_triggerPK10iio_device"></span><span id="_CPPv221iio_device_is_triggerPK10iio_device"></span><span id="iio_device_is_trigger__iio_deviceCP"></span><span class="target" id="group__Device_1ga51eae817cf66a612c7e643ca3ed9088d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_is_trigger</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_device_is_triggerPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Return True if the given device is a trigger. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the device is a trigger, False otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv410iio_device">
+<span id="_CPPv310iio_device"></span><span id="_CPPv210iio_device"></span><span id="iio_device"></span><span class="target" id="structiio__device"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device</span></span></span><a class="headerlink" href="#_CPPv410iio_device" title="Link to this definition"></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;iio.h&gt;</em></div>
+<p>Represents a device in the IIO context. </p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="context.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Context Functions</a>
+    <a href="channel.html" title="Next document (Alt+Shift+RightArrow)" class="next">Channel Functions</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

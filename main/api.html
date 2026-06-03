@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="libiio at its base is a C library. The API is designed to be as simple as possible, while still providing access to all the features of the IIO subsystem. Support for other languages is provided through bindings to the C API." name="description" />
+
+    <title>Library API &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=748bb8f3" />
+    <script src="_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Top-Level Functions" href="api/c/top.html" />
+    <link rel="prev" title="Examples" href="examples.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Library API</a></li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="current reference internal" href="#">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="api/python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="api/python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="api/csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="api/cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="library-api">
+<h1>Library API<a class="headerlink" href="#library-api" title="Link to this heading"></a></h1>
+<p>libiio at its base is a C library. The API is designed to be as simple as possible, while still providing access to all the features of the IIO subsystem. Support for other languages is provided through bindings to the C API.</p>
+<p>This section provides a detailed description of the C API. The API is divided into several categories, each of which is described in a separate page.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/c/top.html">Top-Level Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html#_CPPv412iio_strerroriPc6size_t"><code class="docutils literal notranslate"><span class="pre">iio_strerror()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html#_CPPv415iio_has_backendPK18iio_context_paramsPKc"><code class="docutils literal notranslate"><span class="pre">iio_has_backend()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html#_CPPv430iio_get_builtin_backends_countv"><code class="docutils literal notranslate"><span class="pre">iio_get_builtin_backends_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html#_CPPv423iio_get_builtin_backendj"><code class="docutils literal notranslate"><span class="pre">iio_get_builtin_backend()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/scan.html">Scanning Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html#_CPPv48iio_scanPK18iio_context_paramsPKc"><code class="docutils literal notranslate"><span class="pre">iio_scan()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html#_CPPv416iio_scan_destroyP8iio_scan"><code class="docutils literal notranslate"><span class="pre">iio_scan_destroy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html#_CPPv426iio_scan_get_results_countPK8iio_scan"><code class="docutils literal notranslate"><span class="pre">iio_scan_get_results_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html#_CPPv424iio_scan_get_descriptionPK8iio_scan6size_t"><code class="docutils literal notranslate"><span class="pre">iio_scan_get_description()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html#_CPPv416iio_scan_get_uriPK8iio_scan6size_t"><code class="docutils literal notranslate"><span class="pre">iio_scan_get_uri()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html#_CPPv48iio_scan"><code class="docutils literal notranslate"><span class="pre">iio_scan</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/attributes.html">Attribute Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv417iio_attr_read_rawPK8iio_attrPc6size_t"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_raw()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv418iio_attr_write_rawPK8iio_attrPKv6size_t"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_raw()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv417iio_attr_get_namePK8iio_attr"><code class="docutils literal notranslate"><span class="pre">iio_attr_get_name()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv421iio_attr_get_filenamePK8iio_attr"><code class="docutils literal notranslate"><span class="pre">iio_attr_get_filename()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv425iio_attr_get_static_valuePK8iio_attr"><code class="docutils literal notranslate"><span class="pre">iio_attr_get_static_value()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv418iio_attr_get_rangePK8iio_attrPdPdPd"><code class="docutils literal notranslate"><span class="pre">iio_attr_get_range()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv422iio_attr_get_availablePK8iio_attrPPPcP6size_t"><code class="docutils literal notranslate"><span class="pre">iio_attr_get_available()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv426iio_attr_get_available_bufPK8iio_attrPc6size_tPPcP6size_t"><code class="docutils literal notranslate"><span class="pre">iio_attr_get_available_buf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv423iio_available_list_freePPc6size_t"><code class="docutils literal notranslate"><span class="pre">iio_available_list_free()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#c.iio_attr_read"><code class="docutils literal notranslate"><span class="pre">iio_attr_read</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#c.iio_attr_write"><code class="docutils literal notranslate"><span class="pre">iio_attr_write</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html#_CPPv48iio_attr"><code class="docutils literal notranslate"><span class="pre">iio_attr</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/context.html">Context Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv418iio_create_contextPK18iio_context_paramsPKc"><code class="docutils literal notranslate"><span class="pre">iio_create_context()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv419iio_context_destroyP11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_destroy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv429iio_context_get_version_majorPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_major()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv429iio_context_get_version_minorPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_minor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv427iio_context_get_version_tagPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_tag()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv419iio_context_get_xmlPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_xml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv420iio_context_get_namePK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_name()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv427iio_context_get_descriptionPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_description()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv427iio_context_get_attrs_countPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_attrs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv420iio_context_get_attrPK11iio_contextj"><code class="docutils literal notranslate"><span class="pre">iio_context_get_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv421iio_context_find_attrPK11iio_contextPKc"><code class="docutils literal notranslate"><span class="pre">iio_context_find_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv429iio_context_get_devices_countPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_devices_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv422iio_context_get_devicePK11iio_contextj"><code class="docutils literal notranslate"><span class="pre">iio_context_get_device()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv423iio_context_find_devicePK11iio_contextPKc"><code class="docutils literal notranslate"><span class="pre">iio_context_find_device()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv423iio_context_set_timeoutP11iio_contexti"><code class="docutils literal notranslate"><span class="pre">iio_context_set_timeout()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv422iio_context_get_paramsPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_params()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv420iio_context_set_dataP11iio_contextPv"><code class="docutils literal notranslate"><span class="pre">iio_context_set_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv420iio_context_get_dataPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html#_CPPv411iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/device.html">Device Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv422iio_device_get_contextPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_context()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv417iio_device_get_idPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv419iio_device_get_namePK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_name()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv420iio_device_get_labelPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_label()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv429iio_device_get_channels_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_channels_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv426iio_device_get_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_attrs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv428iio_device_get_buffers_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_buffers_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv422iio_device_get_channelPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_channel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv419iio_device_get_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv421iio_device_get_bufferPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_buffer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv423iio_device_find_channelPK10iio_devicePKcb"><code class="docutils literal notranslate"><span class="pre">iio_device_find_channel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv420iio_device_find_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv419iio_device_set_dataP10iio_devicePv"><code class="docutils literal notranslate"><span class="pre">iio_device_set_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv419iio_device_get_dataPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv422iio_device_get_triggerPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_trigger()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv422iio_device_set_triggerPK10iio_devicePK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_set_trigger()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv421iio_device_is_triggerPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_is_trigger()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html#_CPPv410iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/channel.html">Channel Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv422iio_channel_get_devicePK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_device()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv418iio_channel_get_idPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv420iio_channel_get_namePK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_name()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv421iio_channel_get_labelPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_label()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv421iio_channel_is_outputPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_is_output()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv427iio_channel_is_scan_elementPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_is_scan_element()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv427iio_channel_get_attrs_countPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_attrs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv420iio_channel_get_attrPK11iio_channelj"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv421iio_channel_find_attrPK11iio_channelPKc"><code class="docutils literal notranslate"><span class="pre">iio_channel_find_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv418iio_channel_enablePK11iio_channelP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channel_enable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv419iio_channel_disablePK11iio_channelP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channel_disable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv422iio_channel_is_enabledPK11iio_channelPK17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channel_is_enabled()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv416iio_channel_readPK11iio_channelPK9iio_blockPv6size_tb"><code class="docutils literal notranslate"><span class="pre">iio_channel_read()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv417iio_channel_writePK11iio_channelP9iio_blockPKv6size_tb"><code class="docutils literal notranslate"><span class="pre">iio_channel_write()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv420iio_channel_set_dataP11iio_channelPv"><code class="docutils literal notranslate"><span class="pre">iio_channel_set_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv420iio_channel_get_dataPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv420iio_channel_get_typePK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv424iio_channel_get_modifierPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_modifier()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html#_CPPv411iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/buffer.html">Buffer Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv43out"><code class="docutils literal notranslate"><span class="pre">out</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv43err"><code class="docutils literal notranslate"><span class="pre">err</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv49log_level"><code class="docutils literal notranslate"><span class="pre">log_level</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv412stderr_level"><code class="docutils literal notranslate"><span class="pre">stderr_level</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv415timestamp_level"><code class="docutils literal notranslate"><span class="pre">timestamp_level</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv410timeout_ms"><code class="docutils literal notranslate"><span class="pre">timeout_ms</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv45flags"><code class="docutils literal notranslate"><span class="pre">flags</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv46__rsrv"><code class="docutils literal notranslate"><span class="pre">__rsrv</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv42id"><code class="docutils literal notranslate"><span class="pre">id</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv49timestamp"><code class="docutils literal notranslate"><span class="pre">timestamp</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv46length"><code class="docutils literal notranslate"><span class="pre">length</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv44bits"><code class="docutils literal notranslate"><span class="pre">bits</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv45shift"><code class="docutils literal notranslate"><span class="pre">shift</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv49is_signed"><code class="docutils literal notranslate"><span class="pre">is_signed</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv416is_fully_defined"><code class="docutils literal notranslate"><span class="pre">is_fully_defined</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv45is_be"><code class="docutils literal notranslate"><span class="pre">is_be</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv410with_scale"><code class="docutils literal notranslate"><span class="pre">with_scale</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv45scale"><code class="docutils literal notranslate"><span class="pre">scale</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv46repeat"><code class="docutils literal notranslate"><span class="pre">repeat</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv46offset"><code class="docutils literal notranslate"><span class="pre">offset</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv421iio_buffer_get_devicePK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_device()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv426iio_buffer_get_attrs_countPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_attrs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv419iio_buffer_get_attrPK10iio_bufferj"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv434iio_buffer_get_scan_elements_countPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_scan_elements_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv427iio_buffer_get_scan_elementPK10iio_bufferj"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_scan_element()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv420iio_buffer_find_attrPK10iio_bufferPKc"><code class="docutils literal notranslate"><span class="pre">iio_buffer_find_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv420iio_buffer_is_outputPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_is_output()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv419iio_buffer_set_dataP10iio_bufferPv"><code class="docutils literal notranslate"><span class="pre">iio_buffer_set_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv419iio_buffer_get_dataPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv418iio_attr_read_boolPK8iio_attrPb"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_bool()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv422iio_attr_read_longlongPK8iio_attrPx"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_longlong()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv420iio_attr_read_doublePK8iio_attrPd"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_double()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv421iio_attr_write_stringPK8iio_attrPKc"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_string()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv419iio_attr_write_boolPK8iio_attrb"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_bool()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv423iio_attr_write_longlongPK8iio_attrx"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_longlong()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv421iio_attr_write_doublePK8iio_attrd"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_double()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv410iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv430iio_buffer_stream_create_blockP17iio_buffer_stream6size_t"><code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_create_block()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv417iio_block_destroyP9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_destroy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv423iio_block_get_dmabuf_fdPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_get_dmabuf_fd()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv428iio_block_disable_cpu_accessP9iio_blockb"><code class="docutils literal notranslate"><span class="pre">iio_block_disable_cpu_access()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv415iio_block_startPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_start()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv415iio_block_firstPK9iio_blockPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_block_first()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv413iio_block_endPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_end()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv424iio_block_foreach_samplePK9iio_blockPK17iio_channels_maskPF7ssize_tPK11iio_channelPv6size_tPvEPv"><code class="docutils literal notranslate"><span class="pre">iio_block_foreach_sample()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv417iio_block_enqueueP9iio_block6size_tb"><code class="docutils literal notranslate"><span class="pre">iio_block_enqueue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv417iio_block_dequeueP9iio_blockb"><code class="docutils literal notranslate"><span class="pre">iio_block_dequeue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv427iio_block_get_buffer_streamPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_get_buffer_stream()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv49iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv424iio_buffer_create_streamP10iio_buffer6size_t6size_tP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_buffer_create_stream()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv417iio_stream_cancelP10iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream_cancel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv418iio_stream_destroyP10iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream_destroy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv425iio_stream_get_next_blockP10iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream_get_next_block()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html#_CPPv410iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/event.html">Event Handling Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv418iio_event_get_typePK9iio_event"><code class="docutils literal notranslate"><span class="pre">iio_event_get_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv423iio_event_get_directionPK9iio_event"><code class="docutils literal notranslate"><span class="pre">iio_event_get_direction()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv421iio_event_get_channelPK9iio_eventPK10iio_deviceb"><code class="docutils literal notranslate"><span class="pre">iio_event_get_channel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv430iio_device_create_event_streamPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_create_event_stream()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv424iio_event_stream_destroyP16iio_event_stream"><code class="docutils literal notranslate"><span class="pre">iio_event_stream_destroy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv421iio_event_stream_readP16iio_event_streamP9iio_eventb"><code class="docutils literal notranslate"><span class="pre">iio_event_stream_read()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html#_CPPv49iio_event"><code class="docutils literal notranslate"><span class="pre">iio_event</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/hwmon.html">Hardware Monitoring Devices</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/hwmon.html#_CPPv415hwmon_chan_type"><code class="docutils literal notranslate"><span class="pre">hwmon_chan_type</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/hwmon.html#_CPPv422hwmon_channel_get_typePK11iio_channel"><code class="docutils literal notranslate"><span class="pre">hwmon_channel_get_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/hwmon.html#_CPPv419iio_device_is_hwmonPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_is_hwmon()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c/debug.html">Debug and Low-Level Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv424iio_create_channels_maskj"><code class="docutils literal notranslate"><span class="pre">iio_create_channels_mask()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv425iio_channels_mask_destroyP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channels_mask_destroy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv426iio_device_get_sample_sizePK10iio_devicePK17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_device_get_sample_size()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv421iio_channel_get_indexPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_index()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv427iio_channel_get_data_formatPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_data_format()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv419iio_channel_convertPK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv427iio_channel_convert_inversePK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert_inverse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv432iio_device_get_debug_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_debug_attrs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv425iio_device_get_debug_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_debug_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv426iio_device_find_debug_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_debug_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv420iio_device_reg_writeP10iio_device8uint32_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">iio_device_reg_write()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv419iio_device_reg_readP10iio_device8uint32_tP8uint32_t"><code class="docutils literal notranslate"><span class="pre">iio_device_reg_read()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html#_CPPv415iio_data_format"><code class="docutils literal notranslate"><span class="pre">iio_data_format</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="examples.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Examples</a>
+    <a href="api/c/top.html" title="Next document (Alt+Shift+RightArrow)" class="next">Top-Level Functions</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

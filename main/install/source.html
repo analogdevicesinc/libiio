@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="libiio v1, available in the main branch, is under heavy active development. If you are looking for a stable version, please use the latest release by checking out a tag starting with v0.. For example, to check out the v0.25 release, use the following command:" name="description" />
+
+    <title>Building from Source &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=748bb8f3" />
+    <script src="../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory of Operation" href="../theory.html" />
+    <link rel="prev" title="Installation" href="../install.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Building from Source</a><ul>
+<li><a class="reference internal" href="#install-prerequisites-dependencies-and-build">Install Prerequisites/Dependencies and Build</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1" checked=""/><div class="collapse"><a class="reference internal" href="../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../api/python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../api/python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../api/csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../api/cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../install.html">Installation</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="building-from-source">
+<h1>Building from Source<a class="headerlink" href="#building-from-source" title="Link to this heading"></a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>libiio v1, available in the <code class="docutils literal notranslate"><span class="pre">main</span></code> branch, is under heavy active development. If you are looking for a stable version, please use the latest release by checking out a tag starting with v0.. For example, to check out the v0.25 release, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>v0.25
+</pre></div>
+</div>
+</div>
+<p>This section describes how to build libiio from source. This is useful if you want to use the latest features or if you are developing libiio itself.</p>
+<section id="install-prerequisites-dependencies-and-build">
+<h2>Install Prerequisites/Dependencies and Build<a class="headerlink" href="#install-prerequisites-dependencies-and-build" title="Link to this heading"></a></h2>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--0-input--1" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--1">Linux (Debian/Ubuntu)</label><div class="tab-content docutils">
+<p>Basic system setup</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>build-essential
+</pre></div>
+</div>
+<p>Install Prerequisites</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>libxml2-dev<span class="w"> </span>libzstd-dev<span class="w"> </span>bison<span class="w"> </span>flex<span class="w"> </span>libcdk5-dev<span class="w"> </span>cmake
+</pre></div>
+</div>
+<p>Install libraries for Backends</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>libaio-dev<span class="w"> </span>libusb-1.0-0-dev
+analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>libserialport-dev<span class="w"> </span>libavahi-client-dev
+</pre></div>
+</div>
+<p>Install to build doc</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>doxygen<span class="w"> </span>graphviz
+</pre></div>
+</div>
+<p>Install to build python backends</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-setuptools
+</pre></div>
+</div>
+<p class="rubric" id="clone">Clone</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/analogdevicesinc/libiio.git
+analog@precision:~$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>libiio
+</pre></div>
+</div>
+<p class="rubric" id="build">Build</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~/libiio$<span class="w"> </span>mkdir<span class="w"> </span>build
+analog@precision:~/libiio$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+analog@precision:~/libiio/build$<span class="w"> </span>cmake<span class="w"> </span>../
+analog@precision:~/libiio/build$<span class="w"> </span>make
+</pre></div>
+</div>
+<p>For detailed information about the different build options, see the <a class="reference internal" href="#configuration-options">Configuration Options</a> section.</p>
+<p class="rubric" id="install">Install</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>analog@precision:~/libiio/build$<span class="w"> </span>sudo<span class="w"> </span>make<span class="w"> </span>install
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Some things (specifically building doc)  need to find libiio or the bindings on path.
+That means that you configure (with -DWITH_DOC=OFF), build, install, configure
+(with -DWITH_DOC=ON), build again to get the doc. If you have issues, please ask.</p>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--2" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--2">Windows</label><div class="tab-content docutils">
+<p>On Windows you will need to install a supported compiler such as Mingw-w64 or Visual Studio. Typically, Visual Studio will include CMake, but if you are using Mingw-w64, you will need to install it separately within the Mingw-w64 environment.</p>
+<p>You will also need to install the following dependencies:</p>
+<ul class="simple">
+<li><p>libxml2</p></li>
+<li><p>libzstd</p></li>
+<li><p>(Optional) libusb</p></li>
+<li><p>(Optional) libserialport</p></li>
+</ul>
+<p>These are available in the <a class="icon link reference external" href="https://swdownloads.analog.com/cse/build/libiio-deps-20220517.zip" target="_blank">following zip for convenience</a>.</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="n">C</span><span class="p">:\</span><span class="n">libiio-deps</span>
+<span class="nb">cd </span><span class="n">C</span><span class="p">:\</span><span class="n">libiio-deps</span>
+<span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="n">https</span><span class="p">://</span><span class="n">swdownloads</span><span class="p">.</span><span class="n">analog</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">cse</span><span class="p">/</span><span class="n">build</span><span class="p">/</span><span class="n">libiio-deps</span><span class="p">-</span><span class="n">20220517</span><span class="p">.</span><span class="n">zip</span> <span class="n">-OutFile</span> <span class="n">libiio-deps</span><span class="p">-</span><span class="n">20220517</span><span class="p">.</span><span class="n">zip</span>
+<span class="nb">Expand-Archive</span> <span class="n">-Path</span> <span class="n">libiio-deps</span><span class="p">-</span><span class="n">20220517</span><span class="p">.</span><span class="n">zip</span> <span class="n">-DestinationPath</span> <span class="p">.</span>
+</pre></div>
+</div>
+<p class="rubric" id="id1">Clone</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">C</span><span class="p">:\&gt;</span> <span class="n">mkdir</span> <span class="n">dev</span>
+<span class="n">C</span><span class="p">:\&gt;</span> <span class="nb">cd </span><span class="n">dev</span>
+<span class="n">C</span><span class="p">:\</span><span class="n">dev</span><span class="p">&gt;</span> <span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">://</span><span class="n">github</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">analogdevicesinc</span><span class="p">/</span><span class="n">libiio</span><span class="p">.</span><span class="n">git</span>
+<span class="n">C</span><span class="p">:\</span><span class="n">dev</span><span class="p">&gt;</span> <span class="nb">cd </span><span class="n">libiio</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For Visual Studio, you will need to run the following command to set up the environment:</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">C</span><span class="p">:\&gt;</span> <span class="s2">&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat&quot;</span>
+</pre></div>
+</div>
+<p>This may be different depending on your version of Visual Studio. You can also use the Developer Command Prompt for Visual Studio.</p>
+</div>
+<p class="rubric" id="id2">Build</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">C</span><span class="p">:\</span><span class="n">dev</span><span class="p">\</span><span class="n">libiio</span><span class="p">&gt;</span> <span class="n">mkdir</span> <span class="n">build</span>
+<span class="n">C</span><span class="p">:\</span><span class="n">dev</span><span class="p">\</span><span class="n">libiio</span><span class="p">&gt;</span> <span class="nb">cd </span><span class="n">build</span>
+<span class="n">C</span><span class="p">:\</span><span class="n">dev</span><span class="p">\</span><span class="n">libiio</span><span class="p">\</span><span class="n">build</span><span class="p">&gt;</span> <span class="n">cmake</span> <span class="n">-DWITH_USB_BACKEND</span><span class="p">=</span><span class="n">ON</span> <span class="n">-DLIBXML2_LIBRARIES</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\libs\\64\\libxml2.lib&quot;</span> <span class="n">-DLIBUSB_LIBRARIES</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\libs\\64\\libusb-1.0.lib&quot;</span> <span class="n">-DLIBSERIALPORT_LIBRARIES</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\libs\\64\\libserialport.dll.a&quot;</span>  <span class="n">-DLIBZSTD_LIBRARIES</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\libs\\64\\libzstd.dll.a&quot;</span> <span class="n">-DLIBUSB_INCLUDE_DIR</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\include\\libusb-1.0&quot;</span> <span class="n">-DLIBXML2_INCLUDE_DIR</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\include\\libxml2&quot;</span> <span class="n">-DLIBZSTD_INCLUDE_DIR</span><span class="p">=</span><span class="s2">&quot;C:\\libiio-deps\\include&quot;</span> <span class="p">..</span>
+
+<span class="n">C</span><span class="p">:\</span><span class="n">dev</span><span class="p">\</span><span class="n">libiio</span><span class="p">\</span><span class="n">build</span><span class="p">&gt;</span> <span class="n">cmake</span> <span class="p">-</span><span class="n">-build</span> <span class="p">.</span> <span class="p">-</span><span class="n">-config</span> <span class="n">Release</span>
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--3" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--3">macOS</label><div class="tab-content docutils">
+<p>This process relies on <a class="icon link reference external" href="https://brew.sh/" target="_blank">Homebrew</a>, a package manager for macOS. If you don’t have Homebrew installed, you can install it by running the following command in your terminal:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh<span class="k">)</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p class="rubric" id="easy-using-a-homebrew-formula"><span id="homebrew"></span>Easy: Using a homebrew formula</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>tfcollins/libiio
+</pre></div>
+</div>
+<p class="rubric" id="manual-install-prerequisites">Manual: Install Prerequisites</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>cmake<span class="w"> </span>libxml2<span class="w"> </span>libzstd<span class="w"> </span>libusb<span class="w"> </span>libserialport<span class="w"> </span>zstd
+</pre></div>
+</div>
+<p>Optional dependencies for building documentation and python bindings:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>doxygen<span class="w"> </span>ncurses<span class="w"> </span>cdk<span class="w"> </span>sphinx-doc<span class="w"> </span>pkg-config
+pip3<span class="w"> </span>install<span class="w"> </span>sphinx<span class="w"> </span>setuptools
+</pre></div>
+</div>
+<p class="rubric" id="id3">Clone</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>/tmp/dev
+<span class="nb">cd</span><span class="w"> </span>/tmp/dev
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/analogdevicesinc/libiio.git
+</pre></div>
+</div>
+<p class="rubric" id="id4">Build</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>libiio
+mkdir<span class="w"> </span>build
+<span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..
+make
+</pre></div>
+</div>
+<p class="rubric" id="id5">Install</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>make<span class="w"> </span>install
+</pre></div>
+</div>
+<p class="rubric" id="id6"><span id="configuration-options"></span>Configuration Options</p>
+<p>when configuring libiio with cmake, there are a few optional settings that you can use to control the build.
+The recommendation is to leave things to the default.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Cmake Options</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Target</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>All</p></td>
+<td><p>Build shared libraries</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">libiio_COMPAT</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>All</p></td>
+<td><p>Build libiio v0.x compatibility layer</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_MODULES</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>All</p></td>
+<td><p>Build modular backends</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘COMPILE_WARNING_AS_ERROR’</p></td>
+<td><p>OFF</p></td>
+<td><p>All</p></td>
+<td><p>Make all C warnings into errors</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CPP_BINDINGS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>All</p></td>
+<td><p>Install C++ bindings (C++17 required for examples)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PYTHON_BINDINGS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>All</p></td>
+<td><p>Install PYTHON bindings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_UTILS</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>All</p></td>
+<td><p>Build the utility programs (iio-utils)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_EXAMPLES</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>All</p></td>
+<td><p>Build the example programs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NO_THREADS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>All</p></td>
+<td><p>Disable multi-threading support</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CSHARP_BINDINGS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Windows</p></td>
+<td><p>Install C## bindings</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/usr</span></code></p></td>
+<td><p>Linux</p></td>
+<td><p>default install path</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ENABLE_PACKAGING</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Linux, MaC</p></td>
+<td><p>Create .deb/.rpm or .tar.gz packages via ‘make package’</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_DOC</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Linux</p></td>
+<td><p>Generate documentation with Doxygen and Sphinx</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_MAN</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Linux</p></td>
+<td><p>Generate and install man pages</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">INSTALL_UDEV_RULE</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Linux</p></td>
+<td><p>Install a Linux udev rule for detection of USB devices</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">UDEV_RULES_INSTALL_DIR</span></code></p></td>
+<td><p>/lib/udev/rules.d</p></td>
+<td><p>Linux</p></td>
+<td><p>default install path for udev rules</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_LOCAL_CONFIG</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Linux</p></td>
+<td><p>Read local context attributes from /etc/libiio.ini</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_HWMON</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Linux</p></td>
+<td><p>Add compatibility with the hwmon subsystem</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_GCOV</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Linux</p></td>
+<td><p>Build with gcov profiling flags</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OSX_FRAMEWORK</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Mac</p></td>
+<td><p>OS X frameworks provide the interfaces you need to write software for Mac.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OSX_PACKAGE</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Mac</p></td>
+<td><p>Create a OSX package for installation on local and other machines</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Which backends the library supports is dependent on the build system, but can be overridden.
+(If cmake finds libusb, it will use it, unless turned off manually)</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Cmake Options</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Depends on</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_XML_BACKEND</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>libxml2</p></td>
+<td><p>Enable the XML backend, required when using network, serial, or USB backend</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_USB_BACKEND</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>libusb</p></td>
+<td><p>Enable the libusb backend</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_USB_BACKEND_DYNAMIC</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Modules + USB backend</p></td>
+<td><p>Compile the USB backend as a module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_SERIAL_BACKEND</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>libserialport</p></td>
+<td><p>Enable the Serial backend</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_SERIAL_BACKEND_DYNAMIC</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Modules + serial backend</p></td>
+<td><p>Compile the serial backend as a module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_NETWORK_BACKEND</span></code></p></td>
+<td><p>ON</p></td>
+<td><p></p></td>
+<td><p>Supports TCP/IP</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_NETWORK_BACKEND_DYNAMIC</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Modules + network backend</p></td>
+<td><p>Compile the network backend as a module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_EXTERNAL_BACKEND</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p></p></td>
+<td><p>Support external backend provided by the application</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HAVE_DNS_SD</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Networking</p></td>
+<td><p>Enable DNS-SD (ZeroConf) support</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ENABLE_IPV6</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Networking</p></td>
+<td><p>Define if you want to enable IPv6 support</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_LOCAL_BACKEND</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Linux</p></td>
+<td><p>Enables local support with iiod</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_LOCAL_CONFIG</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Local backend</p></td>
+<td><p>Read local context attributes from /etc/libiio.ini</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>There are a few options, which are experimental, which should be left to their default settings:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Cmake Options</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_LOCAL_MMAP_API</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Use the mmap API provided in Analog Devices’ kernel (not upstream)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_LOCAL_DMABUF_API</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Use the experimental DMABUF interface (not upstream)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_ZSTD</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Support for ZSTD compressed metadata</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Developer options, which either increases verbosity, or decreases size. It can
+be useful to keep track of things when you are developing with libiio to print
+out warnings, to better understand what is going on. Most users should leave it
+at ‘Error’ and Embedded Developers are free to set it to ‘NoLog’ to save space.
+this is invoked as “-DLOG_LEVEL=Debug”.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Cmake Options</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p></p></td>
+<td><p></p></td>
+<td><p>NoLog   : Remove all warning/error messages</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LOG_LEVEL</span></code></p></td>
+<td><p></p></td>
+<td><p>Error   : Print errors only</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p></p></td>
+<td><p>Warning : Print warnings and errors</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Info</p></td>
+<td><p>Info    : Print info, warnings and errors</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p></p></td>
+<td><p>Debug   : Print debug/info/warnings/errors (very verbose)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Options which effect iiod only. These are only available on Linux.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Cmake Options</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_IIOD</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Build the IIO Daemon</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_IIOD_NETWORK</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Add network (TCP/IP) support</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_IIOD_SERIAL</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Add serial (UART) support</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_IIOD_USBD</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Add support for USB through FunctionFS within IIOD</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_IIOD_V0_COMPAT</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Add support for libiio v0.x protocol and clients</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_LIBTINYIIOD</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Build libtinyiiod</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_AIO</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Build IIOD with async. I/O support</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_SYSTEMD</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Enable installation of systemd service file for iiod</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SYSTEMD_UNIT_INSTALL_DIR</span></code></p></td>
+<td><p>/lib/systemd/system</p></td>
+<td><p>default install path for systemd unit files</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_SYSVINIT</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Enable installation of SysVinit script for iiod</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SYSVINIT_INSTALL_DIR</span></code></p></td>
+<td><p>/etc/init.d</p></td>
+<td><p>default install path for SysVinit scripts</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WITH_UPSTART</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Enable installation of upstart config file for iiod</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">UPSTART_CONF_INSTALL_DIR</span></code>:</p></td>
+<td><p>/etc/init</p></td>
+<td><p>default install path for upstart conf files</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric" id="notes">Notes</p>
+<p>Special Note on Microsoft Visual Compiler (MSVC):</p>
+<p>MSVC in debug mode is just very stupid. If it sees this code:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="w">   </span><span class="n">call_function</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>It will try to link against the <code class="docutils literal notranslate"><span class="pre">call_function</span></code> symbol even though it’s clearly dead code.</p>
+<p>For this reason, when building with MSVC, please build in <code class="docutils literal notranslate"><span class="pre">RelWithDebInfo</span></code> mode. If you try to build in <code class="docutils literal notranslate"><span class="pre">Debug</span></code> mode, it will error.</p>
+</div>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="../install.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Installation</a>
+    <a href="../theory.html" title="Next document (Alt+Shift+RightArrow)" class="next">Theory of Operation</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Represents a channel of an IIO device." name="description" />
+
+    <title>Channels &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Trigger" href="trigger.html" />
+    <link rel="prev" title="Device" href="device.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Channels</a><ul>
+<li><a class="reference internal" href="#members">Members</a><ul>
+<li><a class="reference internal" href="#iio.Channel"><code class="docutils literal notranslate"><span class="pre">Channel</span></code></a><ul>
+<li><a class="reference internal" href="#iio.Channel.attrs"><code class="docutils literal notranslate"><span class="pre">Channel.attrs</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.data_format"><code class="docutils literal notranslate"><span class="pre">Channel.data_format</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.device"><code class="docutils literal notranslate"><span class="pre">Channel.device</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.id"><code class="docutils literal notranslate"><span class="pre">Channel.id</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.index"><code class="docutils literal notranslate"><span class="pre">Channel.index</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.label"><code class="docutils literal notranslate"><span class="pre">Channel.label</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.modifier"><code class="docutils literal notranslate"><span class="pre">Channel.modifier</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.name"><code class="docutils literal notranslate"><span class="pre">Channel.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.output"><code class="docutils literal notranslate"><span class="pre">Channel.output</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.read"><code class="docutils literal notranslate"><span class="pre">Channel.read()</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.scan_element"><code class="docutils literal notranslate"><span class="pre">Channel.scan_element</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.type"><code class="docutils literal notranslate"><span class="pre">Channel.type</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.write"><code class="docutils literal notranslate"><span class="pre">Channel.write()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#channel-attributes">Channel attributes</a><ul>
+<li><a class="reference internal" href="#iio.DataFormat"><code class="docutils literal notranslate"><span class="pre">DataFormat</span></code></a></li>
+<li><a class="reference internal" href="#iio.ChannelModifier"><code class="docutils literal notranslate"><span class="pre">ChannelModifier</span></code></a></li>
+<li><a class="reference internal" href="#iio.ChannelType"><code class="docutils literal notranslate"><span class="pre">ChannelType</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../bindings.html">Bindings</a></li><li><a href="index.html">Python Bindings</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="channels">
+<h1>Channels<a class="headerlink" href="#channels" title="Link to this heading"></a></h1>
+<section id="members">
+<h2>Members<a class="headerlink" href="#members" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.Channel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_channel</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Channel" title="Link to this definition"></a></dt>
+<dd><p>Represents a channel of an IIO device.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.attrs">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.Channel.attrs" title="Link to this definition"></a></dt>
+<dd><p>List of attributes for this channel.
+type=dict of iio.Attr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.data_format">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data_format</span></span><a class="headerlink" href="#iio.Channel.data_format" title="Link to this definition"></a></dt>
+<dd><p>Channel data format.
+type: iio.DataFormat</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.device">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#iio.Channel.device" title="Link to this definition"></a></dt>
+<dd><p>Corresponding device for the channel.
+type: iio.Device</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.id">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#iio.Channel.id" title="Link to this definition"></a></dt>
+<dd><p>An identifier of this channel.
+Note that it is possible that two channels have the same ID, if one is an input channel and the other is an output channel.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.index">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#iio.Channel.index" title="Link to this definition"></a></dt>
+<dd><p>Index for the channel.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.label">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#iio.Channel.label" title="Link to this definition"></a></dt>
+<dd><p>The label of this channel.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.modifier">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">modifier</span></span><a class="headerlink" href="#iio.Channel.modifier" title="Link to this definition"></a></dt>
+<dd><p>Channel modifier.
+type: iio.ChannelModifier(Enum)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.Channel.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this channel.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.output">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#iio.Channel.output" title="Link to this definition"></a></dt>
+<dd><p>Contains True if the channel is an output channel, False otherwise.
+type=bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Channel.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Channel.read" title="Link to this definition"></a></dt>
+<dd><p>Extract the samples corresponding to this channel from the given iio.Block object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – type=iio.Block
+A valid instance of the iio.Block class</p></li>
+<li><p><strong>raw</strong> – type=bool
+If set to True, the samples are not converted from their
+native format to their host format</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=bytearray</dt><dd><p>An array containing the samples for this channel</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.scan_element">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scan_element</span></span><a class="headerlink" href="#iio.Channel.scan_element" title="Link to this definition"></a></dt>
+<dd><p>Contains True if the channel is a scan element, False otherwise.
+If a channel is a scan element, then it is possible to enable it and use it for I/O operations.
+type=bool</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Channel.type">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#iio.Channel.type" title="Link to this definition"></a></dt>
+<dd><p>Type for the channel.
+type: iio.ChannelType(Enum)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Channel.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Channel.write" title="Link to this definition"></a></dt>
+<dd><p>Write the specified array of samples corresponding to this channel into the given iio.Block object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf</strong> – type=iio.Block
+A valid instance of the iio.Block class</p></li>
+<li><p><strong>array</strong> – type=bytearray
+The array containing the samples to copy</p></li>
+<li><p><strong>raw</strong> – type=bool
+If set to True, the samples are not converted from their
+host format to their native format</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=int</dt><dd><p>The number of bytes written</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="channel-attributes">
+<h2>Channel attributes<a class="headerlink" href="#channel-attributes" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.DataFormat">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">DataFormat</span></span><a class="headerlink" href="#iio.DataFormat" title="Link to this definition"></a></dt>
+<dd><p>Represents the data format of an IIO channel.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.ChannelModifier">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelModifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.ChannelModifier" title="Link to this definition"></a></dt>
+<dd><p>Contains the modifier type of an IIO channel.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.ChannelType">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">ChannelType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.ChannelType" title="Link to this definition"></a></dt>
+<dd><p>Contains the type of an IIO channel.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="device.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Device</a>
+    <a href="trigger.html" title="Next document (Alt+Shift+RightArrow)" class="next">Trigger</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

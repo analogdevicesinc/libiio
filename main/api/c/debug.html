@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Create a new empty channels mask." name="description" />
+
+    <title>Debug and Low-Level Functions &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Bindings" href="../../bindings.html" />
+    <link rel="prev" title="Hardware Monitoring Devices" href="hwmon.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Debug and Low-Level Functions</a><ul>
+<li><a class="reference internal" href="#_CPPv424iio_create_channels_maskj"><code class="docutils literal notranslate"><span class="pre">iio_create_channels_mask()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv425iio_channels_mask_destroyP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channels_mask_destroy()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_device_get_sample_sizePK10iio_devicePK17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_device_get_sample_size()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_channel_get_indexPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_index()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_channel_get_data_formatPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_data_format()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_channel_convertPK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_channel_convert_inversePK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert_inverse()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv432iio_device_get_debug_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_debug_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv425iio_device_get_debug_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_debug_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_device_find_debug_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_debug_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_device_reg_writeP10iio_device8uint32_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">iio_device_reg_write()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_device_reg_readP10iio_device8uint32_tP8uint32_t"><code class="docutils literal notranslate"><span class="pre">iio_device_reg_read()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv415iio_data_format"><code class="docutils literal notranslate"><span class="pre">iio_data_format</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../api.html">Library API</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="debug-and-low-level-functions">
+<h1>Debug and Low-Level Functions<a class="headerlink" href="#debug-and-low-level-functions" title="Link to this heading"></a></h1>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv424iio_create_channels_maskj">
+<span id="_CPPv324iio_create_channels_maskj"></span><span id="_CPPv224iio_create_channels_maskj"></span><span id="iio_create_channels_mask__unsigned-i"></span><span class="target" id="group__Debug_1gaa9638d700aee6fefc829e76fc040a92f"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_channels_mask</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_create_channels_mask</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nb_channels</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv424iio_create_channels_maskj" title="Link to this definition"></a><br /></dt>
+<dd><p>Create a new empty channels mask. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nb_channels</strong> – The number of channels in the mask </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an iio_channels_mask structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425iio_channels_mask_destroyP17iio_channels_mask">
+<span id="_CPPv325iio_channels_mask_destroyP17iio_channels_mask"></span><span id="_CPPv225iio_channels_mask_destroyP17iio_channels_mask"></span><span id="iio_channels_mask_destroy__iio_channels_maskP"></span><span class="target" id="group__Debug_1ga840aa4621fa1e7d18ebfaba9c53a5a11"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_channels_mask_destroy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_channels_mask</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mask</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425iio_channels_mask_destroyP17iio_channels_mask" title="Link to this definition"></a><br /></dt>
+<dd><p>Destroy a channels mask. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mask</strong> – A pointer to an iio_channels_mask structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_device_get_sample_sizePK10iio_devicePK17iio_channels_mask">
+<span id="_CPPv326iio_device_get_sample_sizePK10iio_devicePK17iio_channels_mask"></span><span id="_CPPv226iio_device_get_sample_sizePK10iio_devicePK17iio_channels_mask"></span><span id="iio_device_get_sample_size__iio_deviceCP.iio_channels_maskCP"></span><span class="target" id="group__Debug_1ga72eb6fab8338eaff858e2cc3501d6ba2"></span><span class="n"><span class="pre">ssize_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_sample_size</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_channels_mask</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mask</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_device_get_sample_sizePK10iio_devicePK17iio_channels_mask" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the current sample size. </p>
+<p><strong>NOTE:</strong> The sample size is not constant and will change when channels get enabled or disabled. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>mask</strong> – A pointer to an iio_channels_mask structure. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, the sample size in bytes </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_channel_get_indexPK11iio_channel">
+<span id="_CPPv321iio_channel_get_indexPK11iio_channel"></span><span id="_CPPv221iio_channel_get_indexPK11iio_channel"></span><span id="iio_channel_get_index__iio_channelCP"></span><span class="target" id="group__Debug_1ga1f0efd9eb276ac786ceb5272ea13896c"></span><span class="kt"><span class="pre">long</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_get_index</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_channel_get_indexPK11iio_channel" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the index of the given channel. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, the index of the specified channel </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_channel_get_data_formatPK11iio_channel">
+<span id="_CPPv327iio_channel_get_data_formatPK11iio_channel"></span><span id="_CPPv227iio_channel_get_data_formatPK11iio_channel"></span><span id="iio_channel_get_data_format__iio_channelCP"></span><span class="target" id="group__Debug_1ga8bb2ee5b86ef9b3de4a618461804af35"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv415iio_data_format" title="iio_data_format"><span class="n"><span class="pre">iio_data_format</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_get_data_format</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_channel_get_data_formatPK11iio_channel" title="Link to this definition"></a><br /></dt>
+<dd><p>Get a pointer to a channel’s data format structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to the channel’s <a class="reference internal" href="#structiio__data__format"><span class="std std-ref">iio_data_format</span></a> structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_channel_convertPK11iio_channelPvPKv">
+<span id="_CPPv319iio_channel_convertPK11iio_channelPvPKv"></span><span id="_CPPv219iio_channel_convertPK11iio_channelPvPKv"></span><span id="iio_channel_convert__iio_channelCP.voidP.voidCP"></span><span class="target" id="group__Debug_1gafe359f245afc096a9075ace37de55e26"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_convert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dst</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_channel_convertPK11iio_channelPvPKv" title="Link to this definition"></a><br /></dt>
+<dd><p>Convert the sample from hardware format to host format. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p></li>
+<li><p><strong>dst</strong> – A pointer to the destination buffer where the converted sample should be written </p></li>
+<li><p><strong>src</strong> – A pointer to the source buffer containing the sample </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_channel_convert_inversePK11iio_channelPvPKv">
+<span id="_CPPv327iio_channel_convert_inversePK11iio_channelPvPKv"></span><span id="_CPPv227iio_channel_convert_inversePK11iio_channelPvPKv"></span><span id="iio_channel_convert_inverse__iio_channelCP.voidP.voidCP"></span><span class="target" id="group__Debug_1ga0d306940fd838896d19c0bf1edc1e8e2"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_convert_inverse</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dst</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_channel_convert_inversePK11iio_channelPvPKv" title="Link to this definition"></a><br /></dt>
+<dd><p>Convert the sample from host format to hardware format. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p></li>
+<li><p><strong>dst</strong> – A pointer to the destination buffer where the converted sample should be written </p></li>
+<li><p><strong>src</strong> – A pointer to the source buffer containing the sample </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv432iio_device_get_debug_attrs_countPK10iio_device">
+<span id="_CPPv332iio_device_get_debug_attrs_countPK10iio_device"></span><span id="_CPPv232iio_device_get_debug_attrs_countPK10iio_device"></span><span id="iio_device_get_debug_attrs_count__iio_deviceCP"></span><span class="target" id="group__Debug_1ga0feb68907b4572d44a72eaf132ed3c9e"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_debug_attrs_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv432iio_device_get_debug_attrs_countPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the debug attributes of the given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of debug attributes found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425iio_device_get_debug_attrPK10iio_devicej">
+<span id="_CPPv325iio_device_get_debug_attrPK10iio_devicej"></span><span id="_CPPv225iio_device_get_debug_attrPK10iio_devicej"></span><span id="iio_device_get_debug_attr__iio_deviceCP.unsigned-i"></span><span class="target" id="group__Debug_1ga93818a7de2c1f7cf5ae52dcd19c19333"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_debug_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425iio_device_get_debug_attrPK10iio_devicej" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the debug attribute present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the debug attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to a static NULL-terminated string </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_device_find_debug_attrPK10iio_devicePKc">
+<span id="_CPPv326iio_device_find_debug_attrPK10iio_devicePKc"></span><span id="_CPPv226iio_device_find_debug_attrPK10iio_devicePKc"></span><span id="iio_device_find_debug_attr__iio_deviceCP.cCP"></span><span class="target" id="group__Debug_1gacd9c8af4e29ca397f126ca45b9a17505"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_find_debug_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_device_find_debug_attrPK10iio_devicePKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a debug attribute by its name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the name of the debug attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to a static NULL-terminated string </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the name does not correspond to any known debug attribute of the given device, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_device_reg_writeP10iio_device8uint32_t8uint32_t">
+<span id="_CPPv320iio_device_reg_writeP10iio_device8uint32_t8uint32_t"></span><span id="_CPPv220iio_device_reg_writeP10iio_device8uint32_t8uint32_t"></span><span id="iio_device_reg_write__iio_deviceP.uint32_t.uint32_t"></span><span class="target" id="group__Debug_1gadcc9009ffeeb92423e23282a1bc2b76e"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_reg_write</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">address</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_device_reg_writeP10iio_device8uint32_t8uint32_t" title="Link to this definition"></a><br /></dt>
+<dd><p>Set the value of a hardware register. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>address</strong> – The address of the register </p></li>
+<li><p><strong>value</strong> – The value to set the register to </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_device_reg_readP10iio_device8uint32_tP8uint32_t">
+<span id="_CPPv319iio_device_reg_readP10iio_device8uint32_tP8uint32_t"></span><span id="_CPPv219iio_device_reg_readP10iio_device8uint32_tP8uint32_t"></span><span id="iio_device_reg_read__iio_deviceP.uint32_t.uint32_tP"></span><span class="target" id="group__Debug_1ga24aec383e7ef9af46a9deb959ee17ab7"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_reg_read</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">address</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_device_reg_readP10iio_device8uint32_tP8uint32_t" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the value of a hardware register. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>address</strong> – The address of the register </p></li>
+<li><p><strong>value</strong> – A pointer to the variable where the value will be written </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415iio_data_format">
+<span id="_CPPv315iio_data_format"></span><span id="_CPPv215iio_data_format"></span><span id="iio_data_format"></span><span class="target" id="structiio__data__format"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_data_format</span></span></span><a class="headerlink" href="#_CPPv415iio_data_format" title="Link to this definition"></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;iio.h&gt;</em></div>
+<p>Contains the format of a data sample. </p>
+<p>The different fields inform about the correct way to convert one sample from its raw format (as read from / generated by the hardware) to its real-world value. </p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="hwmon.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Hardware Monitoring Devices</a>
+    <a href="../../bindings.html" title="Next document (Alt+Shift+RightArrow)" class="next">Bindings</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

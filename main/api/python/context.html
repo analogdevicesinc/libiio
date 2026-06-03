@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Contains the representation of an IIO context." name="description" />
+
+    <title>Contexts &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Buffer" href="buffer.html" />
+    <link rel="prev" title="Python Bindings" href="index.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Contexts</a><ul>
+<li><a class="reference internal" href="#members">Members</a><ul>
+<li><a class="reference internal" href="#iio.Context"><code class="docutils literal notranslate"><span class="pre">Context</span></code></a><ul>
+<li><a class="reference internal" href="#iio.Context.attrs"><code class="docutils literal notranslate"><span class="pre">Context.attrs</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.description"><code class="docutils literal notranslate"><span class="pre">Context.description</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.devices"><code class="docutils literal notranslate"><span class="pre">Context.devices</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.find_device"><code class="docutils literal notranslate"><span class="pre">Context.find_device()</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.name"><code class="docutils literal notranslate"><span class="pre">Context.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.set_timeout"><code class="docutils literal notranslate"><span class="pre">Context.set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.version"><code class="docutils literal notranslate"><span class="pre">Context.version</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.xml"><code class="docutils literal notranslate"><span class="pre">Context.xml</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iio.LocalContext"><code class="docutils literal notranslate"><span class="pre">LocalContext</span></code></a><ul>
+<li><a class="reference internal" href="#iio.LocalContext.attrs"><code class="docutils literal notranslate"><span class="pre">LocalContext.attrs</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.description"><code class="docutils literal notranslate"><span class="pre">LocalContext.description</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.devices"><code class="docutils literal notranslate"><span class="pre">LocalContext.devices</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.find_device"><code class="docutils literal notranslate"><span class="pre">LocalContext.find_device()</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.name"><code class="docutils literal notranslate"><span class="pre">LocalContext.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.set_timeout"><code class="docutils literal notranslate"><span class="pre">LocalContext.set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.version"><code class="docutils literal notranslate"><span class="pre">LocalContext.version</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.xml"><code class="docutils literal notranslate"><span class="pre">LocalContext.xml</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iio.XMLContext"><code class="docutils literal notranslate"><span class="pre">XMLContext</span></code></a><ul>
+<li><a class="reference internal" href="#iio.XMLContext.attrs"><code class="docutils literal notranslate"><span class="pre">XMLContext.attrs</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.description"><code class="docutils literal notranslate"><span class="pre">XMLContext.description</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.devices"><code class="docutils literal notranslate"><span class="pre">XMLContext.devices</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.find_device"><code class="docutils literal notranslate"><span class="pre">XMLContext.find_device()</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.name"><code class="docutils literal notranslate"><span class="pre">XMLContext.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.set_timeout"><code class="docutils literal notranslate"><span class="pre">XMLContext.set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.version"><code class="docutils literal notranslate"><span class="pre">XMLContext.version</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.xml"><code class="docutils literal notranslate"><span class="pre">XMLContext.xml</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iio.NetworkContext"><code class="docutils literal notranslate"><span class="pre">NetworkContext</span></code></a><ul>
+<li><a class="reference internal" href="#iio.NetworkContext.attrs"><code class="docutils literal notranslate"><span class="pre">NetworkContext.attrs</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.description"><code class="docutils literal notranslate"><span class="pre">NetworkContext.description</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.devices"><code class="docutils literal notranslate"><span class="pre">NetworkContext.devices</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.find_device"><code class="docutils literal notranslate"><span class="pre">NetworkContext.find_device()</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.name"><code class="docutils literal notranslate"><span class="pre">NetworkContext.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.set_timeout"><code class="docutils literal notranslate"><span class="pre">NetworkContext.set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.version"><code class="docutils literal notranslate"><span class="pre">NetworkContext.version</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.xml"><code class="docutils literal notranslate"><span class="pre">NetworkContext.xml</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../bindings.html">Bindings</a></li><li><a href="index.html">Python Bindings</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="contexts">
+<h1>Contexts<a class="headerlink" href="#contexts" title="Link to this heading"></a></h1>
+<section id="members">
+<h2>Members<a class="headerlink" href="#members" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.Context">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Context" title="Link to this definition"></a></dt>
+<dd><p>Contains the representation of an IIO context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.attrs">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.Context.attrs" title="Link to this definition"></a></dt>
+<dd><p>List of context-specific attributes
+type=dict of iio.Attr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.description">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.Context.description" title="Link to this definition"></a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.devices">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.Context.devices" title="Link to this definition"></a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Context.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Context.find_device" title="Link to this definition"></a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.Context.name" title="Link to this definition"></a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Context.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Context.set_timeout" title="Link to this definition"></a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.version">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.Context.version" title="Link to this definition"></a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Context.xml">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.Context.xml" title="Link to this definition"></a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.LocalContext">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">LocalContext</span></span><a class="headerlink" href="#iio.LocalContext" title="Link to this definition"></a></dt>
+<dd><p>Local IIO Context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.attrs">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.LocalContext.attrs" title="Link to this definition"></a></dt>
+<dd><p>List of context-specific attributes
+type=dict of iio.Attr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.description">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.LocalContext.description" title="Link to this definition"></a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.devices">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.LocalContext.devices" title="Link to this definition"></a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.LocalContext.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.LocalContext.find_device" title="Link to this definition"></a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.LocalContext.name" title="Link to this definition"></a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.LocalContext.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.LocalContext.set_timeout" title="Link to this definition"></a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.version">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.LocalContext.version" title="Link to this definition"></a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.LocalContext.xml">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.LocalContext.xml" title="Link to this definition"></a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.XMLContext">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">XMLContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xmlfile</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext" title="Link to this definition"></a></dt>
+<dd><p>XML IIO Context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.attrs">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.XMLContext.attrs" title="Link to this definition"></a></dt>
+<dd><p>List of context-specific attributes
+type=dict of iio.Attr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.description">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.XMLContext.description" title="Link to this definition"></a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.devices">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.XMLContext.devices" title="Link to this definition"></a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.XMLContext.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext.find_device" title="Link to this definition"></a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.XMLContext.name" title="Link to this definition"></a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.XMLContext.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext.set_timeout" title="Link to this definition"></a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.version">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.XMLContext.version" title="Link to this definition"></a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.XMLContext.xml">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.XMLContext.xml" title="Link to this definition"></a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iio.NetworkContext">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">iio.</span></span><span class="sig-name descname"><span class="pre">NetworkContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.NetworkContext" title="Link to this definition"></a></dt>
+<dd><p>Network IIO Context.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.attrs">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#iio.NetworkContext.attrs" title="Link to this definition"></a></dt>
+<dd><p>List of context-specific attributes
+type=dict of iio.Attr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.description">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#iio.NetworkContext.description" title="Link to this definition"></a></dt>
+<dd><p>Description of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.devices">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#iio.NetworkContext.devices" title="Link to this definition"></a></dt>
+<dd><p>List of devices contained in this context.
+type=list of iio.Device and iio.Trigger objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.NetworkContext.find_device">
+<span class="sig-name descname"><span class="pre">find_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_or_id_or_label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.NetworkContext.find_device" title="Link to this definition"></a></dt>
+<dd><p>Find a IIO device by its name, ID or label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name_or_id_or_label</strong> – type=str
+The name, ID or label of the device to find</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.NetworkContext.name" title="Link to this definition"></a></dt>
+<dd><p>Name of this IIO context.
+type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.NetworkContext.set_timeout">
+<span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.NetworkContext.set_timeout" title="Link to this definition"></a></dt>
+<dd><p>Set a timeout for I/O operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> – type=int
+The timeout value, in milliseconds</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.version">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#iio.NetworkContext.version" title="Link to this definition"></a></dt>
+<dd><p>Version of the backend.
+type=(int, int, str)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.NetworkContext.xml">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">xml</span></span><a class="headerlink" href="#iio.NetworkContext.xml" title="Link to this definition"></a></dt>
+<dd><p>XML representation of the current context.
+type=str</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="index.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Python Bindings</a>
+    <a href="buffer.html" title="Next document (Alt+Shift+RightArrow)" class="next">Buffer</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

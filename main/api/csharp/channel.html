@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="iio.Channel class: Contains the representation of an input or output channel." name="description" />
+
+    <title>Channel &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="IOBuffer" href="buffer.html" />
+    <link rel="prev" title="Device" href="device.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Channel</a><ul>
+<li><a class="reference internal" href="#class-iio.Channel"><code class="docutils literal notranslate"><span class="pre">iio::Channel</span></code></a><ul>
+<li><a class="reference internal" href="#enum-iio.Channel.ChannelModifier"><code class="docutils literal notranslate"><span class="pre">ChannelModifier</span></code></a><ul>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_NO_MOD"><code class="docutils literal notranslate"><span class="pre">IIO_NO_MOD</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_Y</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Y"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X_AND_Y</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X_AND_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y_AND_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_Y_AND_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Y_AND_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X_AND_Y_AND_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Y"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X_OR_Y</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X_OR_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y_OR_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_Y_OR_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Y_OR_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_X_OR_Y_OR_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_BOTH"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_BOTH</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_IR"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_IR</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROOT_SUM_SQUARED_X_Y"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_ROOT_SUM_SQUARED_X_Y</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_SUM_SQUARED_X_Y_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_SUM_SQUARED_X_Y_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_CLEAR"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_CLEAR</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_RED"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_RED</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_GREEN"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_GREEN</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_BLUE"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_BLUE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_QUATERNION"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_QUATERNION</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_TEMP_AMBIENT"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_TEMP_AMBIENT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_TEMP_OBJECT"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_TEMP_OBJECT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_MAGN"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_NORTH_MAGN</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_TRUE"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_NORTH_TRUE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_MAGN_TILT_COMP"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_NORTH_MAGN_TILT_COMP</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_TRUE_TILT_COMP"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_NORTH_TRUE_TILT_COMP</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_RUNNING"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_RUNNING</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_JOGGING"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_JOGGING</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_WALKING"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_WALKING</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_STILL"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_STILL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_I"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_I</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Q"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_Q</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_CO2"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_CO2</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_VOC"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_VOC</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UV"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_UV</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_DUV"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_DUV</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM1"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_PM1</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM2P5"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_PM2P5</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM4"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_PM4</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM10"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_PM10</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ETHANOL"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_ETHANOL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_H2"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_H2</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_O2"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_O2</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_X"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LINEAR_X</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_Y"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LINEAR_Y</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_Z"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LINEAR_Z</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PITCH"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_PITCH</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_YAW"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_YAW</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROLL"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_ROLL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UVA"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_UVA</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UVB"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_LIGHT_UVB</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_RMS"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_RMS</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ACTIVE"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_ACTIVE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_REACTIVE"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_REACTIVE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_APPARENT"><code class="docutils literal notranslate"><span class="pre">IIO_MOD_APPARENT</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#enum-iio.Channel.ChannelType"><code class="docutils literal notranslate"><span class="pre">ChannelType</span></code></a><ul>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_VOLTAGE"><code class="docutils literal notranslate"><span class="pre">IIO_VOLTAGE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_CURRENT"><code class="docutils literal notranslate"><span class="pre">IIO_CURRENT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_POWER"><code class="docutils literal notranslate"><span class="pre">IIO_POWER</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ACCEL"><code class="docutils literal notranslate"><span class="pre">IIO_ACCEL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ANGL_VEL"><code class="docutils literal notranslate"><span class="pre">IIO_ANGL_VEL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_MAGN"><code class="docutils literal notranslate"><span class="pre">IIO_MAGN</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_LIGHT"><code class="docutils literal notranslate"><span class="pre">IIO_LIGHT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_INTENSITY"><code class="docutils literal notranslate"><span class="pre">IIO_INTENSITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_PROXIMITY"><code class="docutils literal notranslate"><span class="pre">IIO_PROXIMITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_TEMP"><code class="docutils literal notranslate"><span class="pre">IIO_TEMP</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_INCLI"><code class="docutils literal notranslate"><span class="pre">IIO_INCLI</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ROT"><code class="docutils literal notranslate"><span class="pre">IIO_ROT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ANGL"><code class="docutils literal notranslate"><span class="pre">IIO_ANGL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_TIMESTAMP"><code class="docutils literal notranslate"><span class="pre">IIO_TIMESTAMP</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_CAPACITANCE"><code class="docutils literal notranslate"><span class="pre">IIO_CAPACITANCE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ALTVOLTAGE"><code class="docutils literal notranslate"><span class="pre">IIO_ALTVOLTAGE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_CCT"><code class="docutils literal notranslate"><span class="pre">IIO_CCT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_PRESSURE"><code class="docutils literal notranslate"><span class="pre">IIO_PRESSURE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_HUMIDITYRELATIVE"><code class="docutils literal notranslate"><span class="pre">IIO_HUMIDITYRELATIVE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ACTIVITY"><code class="docutils literal notranslate"><span class="pre">IIO_ACTIVITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_STEPS"><code class="docutils literal notranslate"><span class="pre">IIO_STEPS</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ENERGY"><code class="docutils literal notranslate"><span class="pre">IIO_ENERGY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_DISTANCE"><code class="docutils literal notranslate"><span class="pre">IIO_DISTANCE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_VELOCITY"><code class="docutils literal notranslate"><span class="pre">IIO_VELOCITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_CONCENTRATION"><code class="docutils literal notranslate"><span class="pre">IIO_CONCENTRATION</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_RESISTANCE"><code class="docutils literal notranslate"><span class="pre">IIO_RESISTANCE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_PH"><code class="docutils literal notranslate"><span class="pre">IIO_PH</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_UVINDEX"><code class="docutils literal notranslate"><span class="pre">IIO_UVINDEX</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ELECTRICALCONDUCTIVITY"><code class="docutils literal notranslate"><span class="pre">IIO_ELECTRICALCONDUCTIVITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_COUNT"><code class="docutils literal notranslate"><span class="pre">IIO_COUNT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_INDEX"><code class="docutils literal notranslate"><span class="pre">IIO_INDEX</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_GRAVITY"><code class="docutils literal notranslate"><span class="pre">IIO_GRAVITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_POSITIONRELATIVE"><code class="docutils literal notranslate"><span class="pre">IIO_POSITIONRELATIVE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_PHASE"><code class="docutils literal notranslate"><span class="pre">IIO_PHASE</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_MASSCONCENTRATION"><code class="docutils literal notranslate"><span class="pre">IIO_MASSCONCENTRATION</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_DELTA_ANGL"><code class="docutils literal notranslate"><span class="pre">IIO_DELTA_ANGL</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_DELTA_VELOCITY"><code class="docutils literal notranslate"><span class="pre">IIO_DELTA_VELOCITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_COLORTEMP"><code class="docutils literal notranslate"><span class="pre">IIO_COLORTEMP</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_CHROMATICITY"><code class="docutils literal notranslate"><span class="pre">IIO_CHROMATICITY</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ATTENTION"><code class="docutils literal notranslate"><span class="pre">IIO_ATTENTION</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_ALTCURRENT"><code class="docutils literal notranslate"><span class="pre">IIO_ALTCURRENT</span></code></a></li>
+<li><a class="reference internal" href="#enumerator-iio.Channel.ChannelType.IIO_CHAN_TYPE_UNKNOWN"><code class="docutils literal notranslate"><span class="pre">IIO_CHAN_TYPE_UNKNOWN</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#function-iio.Channel.enable"><code class="docutils literal notranslate"><span class="pre">enable()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Channel.disable"><code class="docutils literal notranslate"><span class="pre">disable()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Channel.is_enabled"><code class="docutils literal notranslate"><span class="pre">is_enabled()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Channel.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Channel.write"><code class="docutils literal notranslate"><span class="pre">write()</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.dev"><code class="docutils literal notranslate"><span class="pre">dev</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.name"><code class="docutils literal notranslate"><span class="pre">name</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.id"><code class="docutils literal notranslate"><span class="pre">id</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.index"><code class="docutils literal notranslate"><span class="pre">index</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.output"><code class="docutils literal notranslate"><span class="pre">output</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.scan_element"><code class="docutils literal notranslate"><span class="pre">scan_element</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.attrs"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
+<li><a class="reference internal" href="#property-iio.Channel.label"><code class="docutils literal notranslate"><span class="pre">label</span></code></a></li>
+<li><a class="reference internal" href="#property-iio.Channel.modifier"><code class="docutils literal notranslate"><span class="pre">modifier</span></code></a></li>
+<li><a class="reference internal" href="#property-iio.Channel.type"><code class="docutils literal notranslate"><span class="pre">type</span></code></a></li>
+<li><a class="reference internal" href="#property-iio.Channel.format"><code class="docutils literal notranslate"><span class="pre">format</span></code></a></li>
+<li><a class="reference internal" href="#struct-iio.Channel.DataFormat"><code class="docutils literal notranslate"><span class="pre">iio::Channel::DataFormat</span></code></a><ul>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.length"><code class="docutils literal notranslate"><span class="pre">length</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.bits"><code class="docutils literal notranslate"><span class="pre">bits</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.shift"><code class="docutils literal notranslate"><span class="pre">shift</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.is_signed"><code class="docutils literal notranslate"><span class="pre">is_signed</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.is_fully_defined"><code class="docutils literal notranslate"><span class="pre">is_fully_defined</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.is_be"><code class="docutils literal notranslate"><span class="pre">is_be</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.with_scale"><code class="docutils literal notranslate"><span class="pre">with_scale</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.scale"><code class="docutils literal notranslate"><span class="pre">scale</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.repeat"><code class="docutils literal notranslate"><span class="pre">repeat</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Channel.DataFormat.offset"><code class="docutils literal notranslate"><span class="pre">offset</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../bindings.html">Bindings</a></li><li><a href="index.html">C# Bindings</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="channel">
+<h1>Channel<a class="headerlink" href="#channel" title="Link to this heading"></a></h1>
+<dl class="cs class">
+<dt class="sig sig-object cs" id="class-iio.Channel">
+<span class="target" id="classiio_1_1Channel"></span><span class="property"><span class="pre">class</span> </span><span class="sig-name descname"><span class="pre">iio.Channel</span></span><a class="headerlink" href="#class-iio.Channel" title="Link to this definition"></a></dt>
+<dd><p><a class="reference internal" href="#classiio_1_1Channel"><span class="std std-ref">iio.Channel</span></a> class: Contains the representation of an input or output channel. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cs enum">
+<dt class="sig sig-object cs" id="enum-iio.Channel.ChannelModifier">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eee"></span><span class="property"><span class="pre">enum</span> </span><span class="sig-name descname"><span class="pre">ChannelModifier</span></span><a class="headerlink" href="#enum-iio.Channel.ChannelModifier" title="Link to this definition"></a></dt>
+<dd><p><a class="reference internal" href="#classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eee"><span class="std std-ref">iio.Channel.ChannelModifier</span></a> class: Contains the available channel modifiers. </p>
+<p><em>Values:</em></p>
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_NO_MOD">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea1da604126c59de2d993ce17d9ac0f1a5"></span><span class="sig-name descname"><span class="pre">IIO_NO_MOD</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_NO_MOD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeae2663a88fdb4ad259d4b79980d566f9c"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea2e5f441232f75547c1878fc7700d7cfd"></span><span class="sig-name descname"><span class="pre">IIO_MOD_Y</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea25cf9c1ab37da2a455d962dd2aee457c"></span><span class="sig-name descname"><span class="pre">IIO_MOD_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Y">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea2c0a2fdc2654d2458382b8888c4dbf6c"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X_AND_Y</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeac7961577ce2c041cfb6d218a8ea57e45"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X_AND_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y_AND_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaee8e7a80c72465efe6f8e7180fbbd874"></span><span class="sig-name descname"><span class="pre">IIO_MOD_Y_AND_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y_AND_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Y_AND_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaa306c7f7fbed2486938aaa90ccb803c2"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X_AND_Y_AND_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_AND_Y_AND_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Y">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea5a0cf59a4b89d37488c0f2ea81c3fa98"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X_OR_Y</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea331ef61883a1ab5f8d62475fc832d871"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X_OR_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y_OR_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea7a9b6629701e2e53d68f44e234be75f0"></span><span class="sig-name descname"><span class="pre">IIO_MOD_Y_OR_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Y_OR_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Y_OR_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea9f1c8530f4393cce1ac1d12c2e491974"></span><span class="sig-name descname"><span class="pre">IIO_MOD_X_OR_Y_OR_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_X_OR_Y_OR_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_BOTH">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea2e9c0081328ad065ea7831b967fb6ba5"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_BOTH</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_BOTH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_IR">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaa0e807c6234857cdd5e76f26720e7b76"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_IR</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_IR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROOT_SUM_SQUARED_X_Y">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeafecbc42cab5c4acd3697475909e5424b"></span><span class="sig-name descname"><span class="pre">IIO_MOD_ROOT_SUM_SQUARED_X_Y</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROOT_SUM_SQUARED_X_Y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_SUM_SQUARED_X_Y_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeacc8678ccced0131ff75ec22ac480b792"></span><span class="sig-name descname"><span class="pre">IIO_MOD_SUM_SQUARED_X_Y_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_SUM_SQUARED_X_Y_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_CLEAR">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea5f8c2bd2d6f5fdf9a7b79fc60ea14831"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_CLEAR</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_CLEAR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_RED">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea3a7312a8979543bfa623a59ae171cb0e"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_RED</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_RED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_GREEN">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea213b8d08065315ac21fe4cae2ec3679b"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_GREEN</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_GREEN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_BLUE">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea3b036fb3eaab7122d141cea75c1dd260"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_BLUE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_BLUE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_QUATERNION">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea4d53a9dc3634740ec116d2700e5a74c1"></span><span class="sig-name descname"><span class="pre">IIO_MOD_QUATERNION</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_QUATERNION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_TEMP_AMBIENT">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea75dbdec65465be5b3e8c2bafd5343be5"></span><span class="sig-name descname"><span class="pre">IIO_MOD_TEMP_AMBIENT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_TEMP_AMBIENT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_TEMP_OBJECT">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea8a0a5ff44cc84f22429bbd7f41b8689f"></span><span class="sig-name descname"><span class="pre">IIO_MOD_TEMP_OBJECT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_TEMP_OBJECT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_MAGN">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea3c0509a30c8e0dd02e858117dff386dc"></span><span class="sig-name descname"><span class="pre">IIO_MOD_NORTH_MAGN</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_MAGN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_TRUE">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeacc83ee044b110f84edfa30638c0f3c5f"></span><span class="sig-name descname"><span class="pre">IIO_MOD_NORTH_TRUE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_TRUE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_MAGN_TILT_COMP">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeacc7e1ddf5a71fbd96458588df5242525"></span><span class="sig-name descname"><span class="pre">IIO_MOD_NORTH_MAGN_TILT_COMP</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_MAGN_TILT_COMP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_TRUE_TILT_COMP">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea5cac78d87811c71cafd9822dc9f0c068"></span><span class="sig-name descname"><span class="pre">IIO_MOD_NORTH_TRUE_TILT_COMP</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_NORTH_TRUE_TILT_COMP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_RUNNING">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea19f0ab302984b872cb4ba4d7f6c34a5d"></span><span class="sig-name descname"><span class="pre">IIO_MOD_RUNNING</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_RUNNING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_JOGGING">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaaa381fba874680182abdacf19dd93397"></span><span class="sig-name descname"><span class="pre">IIO_MOD_JOGGING</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_JOGGING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_WALKING">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea573194e4aefae4d3e48c00858027fc6d"></span><span class="sig-name descname"><span class="pre">IIO_MOD_WALKING</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_WALKING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_STILL">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea130a22ac36f4b2f02161d3037a379a53"></span><span class="sig-name descname"><span class="pre">IIO_MOD_STILL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_STILL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea6044146090e58ea7182e428ee2a4a5bc"></span><span class="sig-name descname"><span class="pre">IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROOT_SUM_SQUARED_X_Y_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_I">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea29d6fd9552ed9c05d50fc971c4f1b7da"></span><span class="sig-name descname"><span class="pre">IIO_MOD_I</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_I" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_Q">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaf3ac6e7ad78311a4efa61f71878bfaa0"></span><span class="sig-name descname"><span class="pre">IIO_MOD_Q</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_Q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_CO2">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaac6e147a4671136dfab4560a508db148"></span><span class="sig-name descname"><span class="pre">IIO_MOD_CO2</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_CO2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_VOC">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea00494593a187beb7e2de651a645a1e4d"></span><span class="sig-name descname"><span class="pre">IIO_MOD_VOC</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_VOC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UV">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeac838a3da2c374e106e5b9d12d9aaf51d"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_UV</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UV" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_DUV">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeafa7608c098312a74add1171f01c0fe36"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_DUV</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_DUV" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM1">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea59633f4184d4aab6d5942fc79a37e25c"></span><span class="sig-name descname"><span class="pre">IIO_MOD_PM1</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM2P5">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea64e1840da02d5f4830d6dbdafd70bc37"></span><span class="sig-name descname"><span class="pre">IIO_MOD_PM2P5</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM2P5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM4">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea68fd6a8268f3bb2e4afdf14bc9af06b5"></span><span class="sig-name descname"><span class="pre">IIO_MOD_PM4</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM10">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea47a0a872f77044c457a7bdc3d6f0d3c7"></span><span class="sig-name descname"><span class="pre">IIO_MOD_PM10</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PM10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_ETHANOL">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea73738074c7f8764c89f5ceacab0b9969"></span><span class="sig-name descname"><span class="pre">IIO_MOD_ETHANOL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ETHANOL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_H2">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea57df2dca31d1855094feb55e2820575f"></span><span class="sig-name descname"><span class="pre">IIO_MOD_H2</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_H2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_O2">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeacd034c97db771e440bcf171b0fe35593"></span><span class="sig-name descname"><span class="pre">IIO_MOD_O2</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_O2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_X">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea0ba3d3fdc94c2aab905266c7fa710510"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LINEAR_X</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_X" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_Y">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea8064c218ee8cb3383cb45c32505a4264"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LINEAR_Y</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_Y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_Z">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea2cff75c59024204cb3861e524ba986d1"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LINEAR_Z</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LINEAR_Z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_PITCH">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeadd15ccda8f274f2e591a332280c5cd6b"></span><span class="sig-name descname"><span class="pre">IIO_MOD_PITCH</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_PITCH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_YAW">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea50517003b3e9e91b2bd82f7c2b6b6252"></span><span class="sig-name descname"><span class="pre">IIO_MOD_YAW</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_YAW" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROLL">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaa5de27ff96c2e54c94cc06251564a41d"></span><span class="sig-name descname"><span class="pre">IIO_MOD_ROLL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ROLL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UVA">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea62d14f76a565344095a9066acf369988"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_UVA</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UVA" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UVB">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeead2985ee42cc636016102e79b5b34aa00"></span><span class="sig-name descname"><span class="pre">IIO_MOD_LIGHT_UVB</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_LIGHT_UVB" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_RMS">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaa758c74bdb3b3441eb1fb59f2bf0c4a1"></span><span class="sig-name descname"><span class="pre">IIO_MOD_RMS</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_RMS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_ACTIVE">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeae641a33b274ba7c085ac81c414ba975d"></span><span class="sig-name descname"><span class="pre">IIO_MOD_ACTIVE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_ACTIVE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_REACTIVE">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeea972dc12c08ccd41482537f25f46294f9"></span><span class="sig-name descname"><span class="pre">IIO_MOD_REACTIVE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_REACTIVE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelModifier.IIO_MOD_APPARENT">
+<span class="target" id="classiio_1_1Channel_1a0fb67718975decc040a97c6cda065eeeaa660202f061ccb5560b21921a3ee623a"></span><span class="sig-name descname"><span class="pre">IIO_MOD_APPARENT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelModifier.IIO_MOD_APPARENT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="cs enum">
+<dt class="sig sig-object cs" id="enum-iio.Channel.ChannelType">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599da"></span><span class="property"><span class="pre">enum</span> </span><span class="sig-name descname"><span class="pre">ChannelType</span></span><a class="headerlink" href="#enum-iio.Channel.ChannelType" title="Link to this definition"></a></dt>
+<dd><p><a class="reference internal" href="#classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599da"><span class="std std-ref">iio.Channel.ChannelType</span></a> class: Contains the available channel types. </p>
+<p><em>Values:</em></p>
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_VOLTAGE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa0f5462bd997cf10499fbf188180075ff"></span><span class="sig-name descname"><span class="pre">IIO_VOLTAGE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_VOLTAGE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_CURRENT">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daaa4de626d2bda15812aa7e19dd613b549"></span><span class="sig-name descname"><span class="pre">IIO_CURRENT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_CURRENT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_POWER">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa0dbd481eacd808b5b1c749ce197cd3d5"></span><span class="sig-name descname"><span class="pre">IIO_POWER</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_POWER" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ACCEL">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa6718d13de6966680ab3ce2c1192959a2"></span><span class="sig-name descname"><span class="pre">IIO_ACCEL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ACCEL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ANGL_VEL">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa597e5041d54c5c218b94d34035fe0dce"></span><span class="sig-name descname"><span class="pre">IIO_ANGL_VEL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ANGL_VEL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_MAGN">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daaf4d4151943d8a7832c7acc8b0519ee69"></span><span class="sig-name descname"><span class="pre">IIO_MAGN</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_MAGN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_LIGHT">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa0285df242a1c367eef369a3c7325dc2b"></span><span class="sig-name descname"><span class="pre">IIO_LIGHT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_LIGHT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_INTENSITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa70b808c8cbd9ec5fd3b00f197a1e2d13"></span><span class="sig-name descname"><span class="pre">IIO_INTENSITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_INTENSITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_PROXIMITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa2bb3f2050501ec9acfab0671141127e0"></span><span class="sig-name descname"><span class="pre">IIO_PROXIMITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_PROXIMITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_TEMP">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa943b9700b6611a9a1041f657682eaef6"></span><span class="sig-name descname"><span class="pre">IIO_TEMP</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_TEMP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_INCLI">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daace3c6c4e9ae42650eeb05d1d714fb594"></span><span class="sig-name descname"><span class="pre">IIO_INCLI</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_INCLI" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ROT">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa7f4db9b77e0232a1fa3e8fd9105f365c"></span><span class="sig-name descname"><span class="pre">IIO_ROT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ROT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ANGL">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daae5aa8ae90d1e88efe5aaedd9d69a85a2"></span><span class="sig-name descname"><span class="pre">IIO_ANGL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ANGL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_TIMESTAMP">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daae70f9e6e6ac31ee10c9ad541d16389a1"></span><span class="sig-name descname"><span class="pre">IIO_TIMESTAMP</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_TIMESTAMP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_CAPACITANCE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa13610027ed533ad10379d7f7f70e44f6"></span><span class="sig-name descname"><span class="pre">IIO_CAPACITANCE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_CAPACITANCE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ALTVOLTAGE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa55dc4e4eadf582b788b06c53b545ef58"></span><span class="sig-name descname"><span class="pre">IIO_ALTVOLTAGE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ALTVOLTAGE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_CCT">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daaabd0a108f07a44f2b7036718e17963de"></span><span class="sig-name descname"><span class="pre">IIO_CCT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_CCT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_PRESSURE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daad515683ae6dd88b54afb75ed0ce61f86"></span><span class="sig-name descname"><span class="pre">IIO_PRESSURE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_PRESSURE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_HUMIDITYRELATIVE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa1958ee52ea9ae50cf1dd33b0ab9109d8"></span><span class="sig-name descname"><span class="pre">IIO_HUMIDITYRELATIVE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_HUMIDITYRELATIVE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ACTIVITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daae92227dfd15eb8c88ded6a874b3f3d65"></span><span class="sig-name descname"><span class="pre">IIO_ACTIVITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ACTIVITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_STEPS">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daabeb23c632fc9a78244f21f74338edbac"></span><span class="sig-name descname"><span class="pre">IIO_STEPS</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_STEPS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ENERGY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daaa940a97276bcff54ded2dac3662048d3"></span><span class="sig-name descname"><span class="pre">IIO_ENERGY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ENERGY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_DISTANCE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daabdc7215dafad971d9b287d01fb965385"></span><span class="sig-name descname"><span class="pre">IIO_DISTANCE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_DISTANCE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_VELOCITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa2baa49c162fb7d2ea5c810b10d27a47b"></span><span class="sig-name descname"><span class="pre">IIO_VELOCITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_VELOCITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_CONCENTRATION">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa2fa7942d9ed0cea272074dd3a5ccec61"></span><span class="sig-name descname"><span class="pre">IIO_CONCENTRATION</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_CONCENTRATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_RESISTANCE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa6d813e31c716df38ba45235734d8c159"></span><span class="sig-name descname"><span class="pre">IIO_RESISTANCE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_RESISTANCE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_PH">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa0ad23ddd11125befdcbbc344f5746b28"></span><span class="sig-name descname"><span class="pre">IIO_PH</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_PH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_UVINDEX">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daac317a583273e10bb6add32d6de26f398"></span><span class="sig-name descname"><span class="pre">IIO_UVINDEX</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_UVINDEX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ELECTRICALCONDUCTIVITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daaf1c2c0a58cd076663342a56edf417199"></span><span class="sig-name descname"><span class="pre">IIO_ELECTRICALCONDUCTIVITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ELECTRICALCONDUCTIVITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_COUNT">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daab6993836fdb9283b772c8731b68c65c7"></span><span class="sig-name descname"><span class="pre">IIO_COUNT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_COUNT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_INDEX">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daab494e1f654c9d6b673d5bfeb09152708"></span><span class="sig-name descname"><span class="pre">IIO_INDEX</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_INDEX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_GRAVITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa75d6f6b36173b70302d082fa0e1eee5f"></span><span class="sig-name descname"><span class="pre">IIO_GRAVITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_GRAVITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_POSITIONRELATIVE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa292ec5fc900996773678ea08f6b91353"></span><span class="sig-name descname"><span class="pre">IIO_POSITIONRELATIVE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_POSITIONRELATIVE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_PHASE">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daadd2b76d7a0cf2b69d5d0b3ffa5df2d9b"></span><span class="sig-name descname"><span class="pre">IIO_PHASE</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_PHASE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_MASSCONCENTRATION">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daab74a7e7c818f48d41480b9a6c72b5010"></span><span class="sig-name descname"><span class="pre">IIO_MASSCONCENTRATION</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_MASSCONCENTRATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_DELTA_ANGL">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa7788791a2d159da1909973def0e483c5"></span><span class="sig-name descname"><span class="pre">IIO_DELTA_ANGL</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_DELTA_ANGL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_DELTA_VELOCITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daabe386a7e3733cf590789a2864a1b0e54"></span><span class="sig-name descname"><span class="pre">IIO_DELTA_VELOCITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_DELTA_VELOCITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_COLORTEMP">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa6ede7ca04ed1e0cb00beaa4241089d56"></span><span class="sig-name descname"><span class="pre">IIO_COLORTEMP</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_COLORTEMP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_CHROMATICITY">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daaa2abfc5e3645eb0b407c0dcab6fe19f9"></span><span class="sig-name descname"><span class="pre">IIO_CHROMATICITY</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_CHROMATICITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ATTENTION">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daab6ee444d93269431ee7df98ea2f96628"></span><span class="sig-name descname"><span class="pre">IIO_ATTENTION</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ATTENTION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_ALTCURRENT">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa447562ba5892d38b8653d29393f248a0"></span><span class="sig-name descname"><span class="pre">IIO_ALTCURRENT</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_ALTCURRENT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs enumerator">
+<dt class="sig sig-object cs" id="enumerator-iio.Channel.ChannelType.IIO_CHAN_TYPE_UNKNOWN">
+<span class="target" id="classiio_1_1Channel_1a57f13debcf0ff524fb8ae8613c6599daa496619531348ad494c1a09005365b49d"></span><span class="sig-name descname"><span class="pre">IIO_CHAN_TYPE_UNKNOWN</span></span><a class="headerlink" href="#enumerator-iio.Channel.ChannelType.IIO_CHAN_TYPE_UNKNOWN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Channel.enable">
+<span class="target" id="classiio_1_1Channel_1aa2737739c112151f310b23e782eb8c00"></span><span class="pre">void</span> <span class="sig-name descname"><span class="pre">enable</span></span> <span class="sig-paren">(</span><a class="reference internal" href="channelsmask.html#class-iio.ChannelsMask" title="class: iio.ChannelsMask"><span class="pre">ChannelsMask</span></a> <em><span class="pre">mask</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Channel.enable" title="Link to this definition"></a></dt>
+<dd><p>Enable the current channel, so that it can be used for I/O operations. </p>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Channel.disable">
+<span class="target" id="classiio_1_1Channel_1afb7be88d783e6d03f52a67ebd02b30e4"></span><span class="pre">void</span> <span class="sig-name descname"><span class="pre">disable</span></span> <span class="sig-paren">(</span><a class="reference internal" href="channelsmask.html#class-iio.ChannelsMask" title="class: iio.ChannelsMask"><span class="pre">ChannelsMask</span></a> <em><span class="pre">mask</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Channel.disable" title="Link to this definition"></a></dt>
+<dd><p>Disable the current channel. </p>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Channel.is_enabled">
+<span class="target" id="classiio_1_1Channel_1ac19378d80d5048d36a387d366a9ba93e"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">is_enabled</span></span> <span class="sig-paren">(</span><a class="reference internal" href="channelsmask.html#class-iio.ChannelsMask" title="class: iio.ChannelsMask"><span class="pre">ChannelsMask</span></a> <em><span class="pre">mask</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Channel.is_enabled" title="Link to this definition"></a></dt>
+<dd><p>Returns whether or not the channel has been enabled. </p>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Channel.read">
+<span class="target" id="classiio_1_1Channel_1adfb439be150d9e6f241b537b6e43e071"></span><span class="pre">byte</span><span class="pre">[]</span> <span class="sig-name descname"><span class="pre">read</span></span> <span class="sig-paren">(</span><a class="reference internal" href="block.html#class-iio.Block" title="class: iio.Block"><span class="pre">Block</span></a> <em><span class="pre">block</span></em>, <span class="pre">bool</span> <em><span class="pre">raw</span></em><em> <span class="pre">=</span> <span class="pre">false</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Channel.read" title="Link to this definition"></a></dt>
+<dd><p>Extract the samples corresponding to this channel from the given <a class="reference internal" href="block.html#classiio_1_1Block"><span class="std std-ref">iio.Block</span></a> object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Param block<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A valid instance of the <a class="reference internal" href="block.html#classiio_1_1Block"><span class="std std-ref">iio.Block</span></a> class.</p>
+</dd>
+<dt class="field-even">Param raw<span class="colon">:</span></dt>
+<dd class="field-even"><p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the samples are not converted from their hardware format to their host format.</p>
+</dd>
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The samples could not be read.</p>
+</dd>
+<dt class="field-even">Return<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <code class="docutils literal notranslate"><span class="pre">byte</span></code> array containing the extracted samples.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Channel.write">
+<span class="target" id="classiio_1_1Channel_1a0a6cb10fefcbc20c7c0ce226b491ffe4"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">write</span></span> <span class="sig-paren">(</span><a class="reference internal" href="block.html#class-iio.Block" title="class: iio.Block"><span class="pre">Block</span></a> <em><span class="pre">block</span></em>, <span class="pre">byte</span><span class="pre">[]</span> <em><span class="pre">array</span></em>, <span class="pre">bool</span> <em><span class="pre">raw</span></em><em> <span class="pre">=</span> <span class="pre">false</span></em><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Channel.write" title="Link to this definition"></a></dt>
+<dd><p>Write the specified array of samples corresponding to this channel into the given <a class="reference internal" href="block.html#classiio_1_1Block"><span class="std std-ref">iio.Block</span></a> object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Param block<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A valid instance of the <a class="reference internal" href="block.html#classiio_1_1Block"><span class="std std-ref">iio.Block</span></a> class.</p>
+</dd>
+<dt class="field-even">Param array<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <code class="docutils literal notranslate"><span class="pre">byte</span></code> array containing the samples to write.</p>
+</dd>
+<dt class="field-odd">Param raw<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the samples are not converted from their host format to their native format.</p>
+</dd>
+<dt class="field-even">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-even"><p>The samples could not be written.</p>
+</dd>
+<dt class="field-odd">Return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of bytes written.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.dev">
+<span class="target" id="classiio_1_1Channel_1a29fb16102907b1144acc0d4f0d6d96b0"></span><span class="property"><span class="pre">readonly</span></span> <a class="reference internal" href="device.html#class-iio.Device" title="class: iio.Device"><span class="pre">Device</span></a> <span class="sig-name descname"><span class="pre">dev</span></span><a class="headerlink" href="#var-iio.Channel.dev" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.name">
+<span class="target" id="classiio_1_1Channel_1a57bb7c9c27737dfe72b4bccc08d5c128"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">string</span> <span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#var-iio.Channel.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this channel. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.id">
+<span class="target" id="classiio_1_1Channel_1af94fab980145dfe7b17b9d8a4e94e815"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">string</span> <span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#var-iio.Channel.id" title="Link to this definition"></a></dt>
+<dd><p>An identifier of this channel. </p>
+<p>It is possible that two channels have the same ID, if one is an input channel and the other is an output channel.</p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.index">
+<span class="target" id="classiio_1_1Channel_1a6f3a8217ae3bd979acc4eec9155484a3"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">uint</span> <span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#var-iio.Channel.index" title="Link to this definition"></a></dt>
+<dd><p>Get the index of this channel. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.output">
+<span class="target" id="classiio_1_1Channel_1ab69db8b456b298489ad5d094b99f6930"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">bool</span> <span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#var-iio.Channel.output" title="Link to this definition"></a></dt>
+<dd><p>Contains <code class="docutils literal notranslate"><span class="pre">true</span></code> if the channel is an output channel, <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.scan_element">
+<span class="target" id="classiio_1_1Channel_1a0a9079a13b55719bfa36b8d041883ecd"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">bool</span> <span class="sig-name descname"><span class="pre">scan_element</span></span><a class="headerlink" href="#var-iio.Channel.scan_element" title="Link to this definition"></a></dt>
+<dd><p>Contains <code class="docutils literal notranslate"><span class="pre">true</span></code> if the channel is a scan element, <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise. </p>
+<p>If a channel is a scan element, then it is possible to enable it and use it for I/O operations.</p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.attrs">
+<span class="target" id="classiio_1_1Channel_1a8c293243f2ca9ea86da1e633b5441bd9"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#var-iio.Channel.attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the attributes that this channel has. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-properties">Properties</p>
+<dl class="cs property">
+<dt class="sig sig-object cs" id="property-iio.Channel.label">
+<span class="target" id="classiio_1_1Channel_1a9368ab0609ce8761ad5eaa4c048c06f5"></span><span class="pre">string</span> <span class="sig-name descname"><span class="pre">label</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Channel.label" title="Link to this definition"></a></dt>
+<dd><p>The label of this channel. </p>
+</dd></dl>
+
+<dl class="cs property">
+<dt class="sig sig-object cs" id="property-iio.Channel.modifier">
+<span class="target" id="classiio_1_1Channel_1ade4aa6fcb830ef383db4695e8b65ade0"></span><a class="reference internal" href="#enum-iio.Channel.ChannelModifier" title="enum: iio.Channel.ChannelModifier"><span class="pre">ChannelModifier</span></a> <span class="sig-name descname"><span class="pre">modifier</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Channel.modifier" title="Link to this definition"></a></dt>
+<dd><p>The modifier of this channel. </p>
+</dd></dl>
+
+<dl class="cs property">
+<dt class="sig sig-object cs" id="property-iio.Channel.type">
+<span class="target" id="classiio_1_1Channel_1a0a8e7a2aef01d07302fdc71975d274d2"></span><a class="reference internal" href="#enum-iio.Channel.ChannelType" title="enum: iio.Channel.ChannelType"><span class="pre">ChannelType</span></a> <span class="sig-name descname"><span class="pre">type</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Channel.type" title="Link to this definition"></a></dt>
+<dd><p>The type of this channel. </p>
+</dd></dl>
+
+<dl class="cs property">
+<dt class="sig sig-object cs" id="property-iio.Channel.format">
+<span class="target" id="classiio_1_1Channel_1a1b9214d70d53b882c863908754c39887"></span><a class="reference internal" href="#struct-iio.Channel.DataFormat" title="struct: iio.Channel.DataFormat"><span class="pre">DataFormat</span></a> <span class="sig-name descname"><span class="pre">format</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Channel.format" title="Link to this definition"></a></dt>
+<dd><p>Represents the format of a data sample. </p>
+</dd></dl>
+
+</div>
+<dl class="cs struct">
+<dt class="sig sig-object cs" id="struct-iio.Channel.DataFormat">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat"></span><span class="property"><span class="pre">struct</span> </span><span class="sig-name descname"><span class="pre">DataFormat</span></span><a class="headerlink" href="#struct-iio.Channel.DataFormat" title="Link to this definition"></a></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.length">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1afa3a0d705a77a87747ac8e2e61f04159"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.length" title="Link to this definition"></a></dt>
+<dd><p>Total length of the sample, in bits. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.bits">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1ae5c5a812bd910beae5ce510cca5766f1"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">bits</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.bits" title="Link to this definition"></a></dt>
+<dd><p>Length of valuable data in the sample, in bits. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.shift">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1a12e168ec01b09340c7f34dd124385550"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">shift</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.shift" title="Link to this definition"></a></dt>
+<dd><p>Right-shift to apply when converting sample. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.is_signed">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1a403aaa930c42eaa60bf16a4b47027b0e"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">is_signed</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.is_signed" title="Link to this definition"></a></dt>
+<dd><p>True if the sample is signed. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.is_fully_defined">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1ae166886b6374ad1ee20bc8bb0659486a"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">is_fully_defined</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.is_fully_defined" title="Link to this definition"></a></dt>
+<dd><p>True if the sample if fully defined, sign-extended, etc. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.is_be">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1a1a41fdb46554ac359e7d48ccf7f0024b"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">is_be</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.is_be" title="Link to this definition"></a></dt>
+<dd><p>True if the sample is in big-endian format. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.with_scale">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1ac04a27f73a6a6bfa4eaf33fdb983787e"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">with_scale</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.with_scale" title="Link to this definition"></a></dt>
+<dd><p>True if the sample should be scaled when converted. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.scale">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1aba4ddc7f10486fa83d3d749fa27a3148"></span><span class="pre">double</span> <span class="sig-name descname"><span class="pre">scale</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.scale" title="Link to this definition"></a></dt>
+<dd><p>Scale to apply if with_scale is True. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.repeat">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1a11be5a90e765d0e9057050cccd585b09"></span><span class="pre">uint</span> <span class="sig-name descname"><span class="pre">repeat</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.repeat" title="Link to this definition"></a></dt>
+<dd><p>Number of times length repeats. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Channel.DataFormat.offset">
+<span class="target" id="structiio_1_1Channel_1_1DataFormat_1abec15de48a07e92cef32a2251d0b073e"></span><span class="pre">double</span> <span class="sig-name descname"><span class="pre">offset</span></span><a class="headerlink" href="#var-iio.Channel.DataFormat.offset" title="Link to this definition"></a></dt>
+<dd><p>Contains a value to be added to the raw sample before applying the scale. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="device.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Device</a>
+    <a href="buffer.html" title="Next document (Alt+Shift+RightArrow)" class="next">IOBuffer</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

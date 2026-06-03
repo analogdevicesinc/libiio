@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The basic bricks of the libiio API are the iio_context, iio_device, iio_channel and iio_buffer classes." name="description" />
+
+    <title>Usage Model &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=748bb8f3" />
+    <script src="_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Theory of Operation" href="theory.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Usage Model</a><ul>
+<li><a class="reference internal" href="#scanning-for-iio-contexts">Scanning for IIO contexts</a></li>
+<li><a class="reference internal" href="#creating-a-context">Creating a context</a><ul>
+<li><a class="reference internal" href="#navigation">Navigation</a><ul>
+<li><a class="reference internal" href="#device-objects">Device objects</a></li>
+<li><a class="reference internal" href="#channel-objects">Channel objects</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#parameters">Parameters</a></li>
+<li><a class="reference internal" href="#reading-and-modifying-parameters">Reading and modifying parameters</a><ul>
+<li><a class="reference internal" href="#reading-a-parameter">Reading a parameter</a></li>
+<li><a class="reference internal" href="#modifying-a-parameter">Modifying a parameter</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#triggers">Triggers</a></li>
+<li><a class="reference internal" href="#capturing-or-uploading-samples">Capturing or uploading samples</a><ul>
+<li><a class="reference internal" href="#enabling-channels-and-creating-the-buffer-object">Enabling channels and creating the Buffer object</a></li>
+<li><a class="reference internal" href="#refilling-the-buffer-input-devices-only">Refilling the Buffer (input devices only)</a></li>
+<li><a class="reference internal" href="#reading-or-writing-samples-to-the-buffer">Reading or writing samples to the Buffer</a><ul>
+<li><a class="reference internal" href="#direct-copy">Direct copy</a></li>
+<li><a class="reference internal" href="#iterating-over-the-buffer-with-a-callback">Iterating over the buffer with a callback</a></li>
+<li><a class="reference internal" href="#iterating-on-the-samples-with-a-for-loop">Iterating on the samples with a for loop</a></li>
+<li><a class="reference internal" href="#extracting-from-to-a-second-buffer">Extracting from/to a second buffer</a></li>
+<li><a class="reference internal" href="#convert-the-samples-from-to-hardware-format">Convert the samples from/to hardware format</a></li>
+<li><a class="reference internal" href="#submitting-the-buffer-output-devices-only">Submitting the Buffer (output devices only)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-options">Advanced options</a><ul>
+<li><a class="reference internal" href="#register-and-retrieve-a-pointer">Register and retrieve a pointer</a></li>
+<li><a class="reference internal" href="#debug-attributes">Debug attributes</a></li>
+<li><a class="reference internal" href="#reading-and-writing-registers">Reading and writing registers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#application-binary-interface">Application Binary Interface</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory of Operation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="api/python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="api/python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="api/csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="api/cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="usage-model">
+<h1>Usage Model<a class="headerlink" href="#usage-model" title="Link to this heading"></a></h1>
+<p>The basic bricks of the libiio API are the iio_context, iio_device, iio_channel and iio_buffer classes.</p>
+<p><img alt="Caption text" src="_images/codemodel.svg" /></p>
+<ul class="simple">
+<li><p>A iio_context object may contain zero or more iio_device objects.
+A iio_device object is associated with only one iio_context.
+This object represents an instance of the library.</p></li>
+<li><p>A iio_device object may contain zero or more iio_channel objects. A iio_channel object is associated with only one iio_device.</p></li>
+<li><p>A iio_device object may be associated with one iio_buffer object, and a iio_buffer object is associated with only one iio_device.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A C++ API is provided in the form of a wrapper around the C API. The C++ API is not a one-to-one mapping of the C API, but rather a object oriented approach to the C API with the use of classes and methods.</p>
+</div>
+<section id="scanning-for-iio-contexts">
+<h2>Scanning for IIO contexts<a class="headerlink" href="#scanning-for-iio-contexts" title="Link to this heading"></a></h2>
+<p>The first step when dealing with a collection of IIO devices (known as a context) is to find the context. This can be connected via usb, network, serial or local. Having these different connectivity options could prove to be problematic, but libiio abstracts the low level communications away, and allows you just to find contexts, and talk to devices without being interested in the low level aspects. Many find this convenient to develop applications and algorithms on a host, and quickly move to an embedded Linux system without having to change any code.</p>
+<p>To find what IIO contexts are available, use the following:</p>
+<ul class="simple">
+<li><p>iio_create_scan_context(): Create a iio_scan_context object. Depending on what backends were enabled with compiling the library, some of them may not be available. The first argument to this function is a string which is used as a filter (“usb:”, “ip:”, “local:”, “usb:ip”, where the default (NULL) means any backend that is compiled in).</p></li>
+<li><p>iio_scan_context_get_info_list(): get the iio_context_info object from the iio_scan_context object. The iio_context_info object can be examined with the iio_context_info_get_description() and iio_context_info_get_uri() to determine which uri you want to attach to.</p></li>
+</ul>
+</section>
+<section id="creating-a-context">
+<h2>Creating a context<a class="headerlink" href="#creating-a-context" title="Link to this heading"></a></h2>
+<p>Different functions are available to create the iio_context object. Depending on what backends were enabled when compiling the library, some of them may not be available.
+Each function will result in a different backend being used.</p>
+<p>Those functions are:</p>
+<ul class="simple">
+<li><p>iio_create_context_from_uri(): This should be the main function to create contexts, which takes a Uniform Resource Identifier (uri), and returns a iio_context.</p></li>
+<li><p>iio_create_default_context(): Create a “local” context if we can, otherwise use the ENV_VAR IIOD_REMOTE.</p></li>
+<li><p>iio_create_local_context(): Create a “local” context, to use the IIO devices connected to the system (typically for cross-compiled applications).</p></li>
+<li><p>iio_create_network_context(): Create a “network” context that will work with a remotely connected target.</p></li>
+</ul>
+<p>Note that every function that compose the API of libiio will work independently of the function that was used to create the iio_context object.</p>
+<p>The iio_context object can later be destroyed with iio_context_destroy().</p>
+<section id="navigation">
+<h3>Navigation<a class="headerlink" href="#navigation" title="Link to this heading"></a></h3>
+<section id="device-objects">
+<h4>Device objects<a class="headerlink" href="#device-objects" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>From the iio_context object, you can obtain the number of available devices with iio_context_get_devices_count().</p></li>
+<li><p>Then, each iio_device object can be accessed with iio_context_get_device().</p></li>
+<li><p>Alternatively, it is possible to lookup for a device name or ID with iio_context_find_device().</p></li>
+</ul>
+<p>Each iio_device object has an ID that can be used as identifier. This ID can be retrieved with iio_device_get_id().
+It optionally also has a name, that can be retrieved with iio_device_get_name().</p>
+</section>
+<section id="channel-objects">
+<h4>Channel objects<a class="headerlink" href="#channel-objects" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>From the iio_device object, you can obtain the number of available channels with iio_device_get_channels_count().</p></li>
+<li><p>Then, each iio_channel object can be accessed with iio_device_get_channel().</p></li>
+<li><p>Alternatively, it is possible to lookup for a channel name or ID with iio_device_find_channel().</p></li>
+</ul>
+<p>Each iio_channel can be either input, or output. This information can be retrieved with iio_channel_is_output().
+As for the Device objects, the iio_channel object features an ID and optionally a name.
+The ID can be obtained with iio_channel_get_id(), and the name can be obtained with iio_channel_get_name().
+Important note: two iio_channel can have the same ID, as long as one is input and the other is output.</p>
+</section>
+</section>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p>Different kinds of parameters are available: parameters that apply to a iio_device, and parameters that apply to one or more iio_channel.</p>
+<ul class="simple">
+<li><p>The number of device-specific parameters can be obtained with iio_device_get_attrs_count(). Each attribute name can be obtained with iio_device_get_attr().</p></li>
+<li><p>The number of channel-specific attributes can be obtained with iio_channel_get_attrs_count(). Each attribute name can be obtained with iio_channel_get_attr().</p></li>
+</ul>
+<p>Alternatively, it is possible to lookup for the name of an attribute with iio_device_find_attr() and iio_channel_find_attr().</p>
+</section>
+<section id="reading-and-modifying-parameters">
+<h2>Reading and modifying parameters<a class="headerlink" href="#reading-and-modifying-parameters" title="Link to this heading"></a></h2>
+<section id="reading-a-parameter">
+<h3>Reading a parameter<a class="headerlink" href="#reading-a-parameter" title="Link to this heading"></a></h3>
+<p>Read device-specific attributes with those functions:</p>
+<ul class="simple">
+<li><p>iio_device_attr_read()</p></li>
+<li><p>iio_device_attr_read_all()</p></li>
+<li><p>iio_device_attr_read_bool()</p></li>
+<li><p>iio_device_attr_read_longlong()</p></li>
+<li><p>iio_device_attr_read_double()</p></li>
+</ul>
+<p>Read channel-specific attributes with those functions:</p>
+<ul class="simple">
+<li><p>iio_channel_attr_read()</p></li>
+<li><p>iio_channel_attr_read_all()</p></li>
+<li><p>iio_channel_attr_read_bool()</p></li>
+<li><p>iio_channel_attr_read_longlong()</p></li>
+<li><p>iio_channel_attr_read_double()</p></li>
+</ul>
+<p>Read debug attributes with those functions:</p>
+<ul class="simple">
+<li><p>iio_device_debug_attr_read()</p></li>
+<li><p>iio_device_debug_attr_read_all()</p></li>
+<li><p>iio_device_debug_attr_read_bool()</p></li>
+<li><p>iio_device_debug_attr_read_longlong()</p></li>
+<li><p>iio_device_debug_attr_read_double()</p></li>
+</ul>
+</section>
+<section id="modifying-a-parameter">
+<h3>Modifying a parameter<a class="headerlink" href="#modifying-a-parameter" title="Link to this heading"></a></h3>
+<p>Write device-specific attributes with those functions:</p>
+<ul class="simple">
+<li><p>iio_device_attr_write()</p></li>
+<li><p>iio_device_attr_write_all()</p></li>
+<li><p>iio_device_attr_write_bool()</p></li>
+<li><p>iio_device_attr_write_longlong()</p></li>
+<li><p>iio_device_attr_write_double()</p></li>
+</ul>
+<p>Write channel-specific attributes with those functions:</p>
+<ul class="simple">
+<li><p>iio_channel_attr_write()</p></li>
+<li><p>iio_channel_attr_write_all()</p></li>
+<li><p>iio_channel_attr_write_bool()</p></li>
+<li><p>iio_channel_attr_write_longlong()</p></li>
+<li><p>iio_channel_attr_write_double()</p></li>
+</ul>
+<p>Write debug attributes with those functions:</p>
+<ul class="simple">
+<li><p>iio_device_debug_attr_write()</p></li>
+<li><p>iio_device_debug_attr_write_all()</p></li>
+<li><p>iio_device_debug_attr_write_bool()</p></li>
+<li><p>iio_device_debug_attr_write_longlong()</p></li>
+<li><p>iio_device_debug_attr_write_double()</p></li>
+</ul>
+</section>
+</section>
+<section id="triggers">
+<h2>Triggers<a class="headerlink" href="#triggers" title="Link to this heading"></a></h2>
+<p>Some devices, mostly low-speed ADCs and DACs, require a trigger to be set for the capture or upload process to work.</p>
+<p>In libiio, triggers are just regular iio_device objects. To check if an iio_device can be used as a trigger, you can use iio_device_is_trigger().</p>
+<p>To see if one device is associated with a trigger, use iio_device_get_trigger().</p>
+<p>To assign one trigger to a iio_device, you can use iio_device_set_trigger(). If you want to disassociate a iio_device from its trigger, pass NULL to the “trigger” parameter of this function.</p>
+</section>
+<section id="capturing-or-uploading-samples">
+<h2>Capturing or uploading samples<a class="headerlink" href="#capturing-or-uploading-samples" title="Link to this heading"></a></h2>
+<p>The process of capturing samples from the hardware and uploading samples to the hardware is done using the functions that apply to the iio_buffer object.</p>
+<section id="enabling-channels-and-creating-the-buffer-object">
+<h3>Enabling channels and creating the Buffer object<a class="headerlink" href="#enabling-channels-and-creating-the-buffer-object" title="Link to this heading"></a></h3>
+<p>The very first step is to enable the capture channels that we want to use, and disable those that we don’t need.
+This is done with the functions iio_channel_enable() and iio_channel_disable().
+Note that the channels will really be enabled or disabled when the iio_buffer object is created.</p>
+<p>Also, not all channels can be enabled. To know whether or not one channel can be enabled, use iio_channel_is_scan_element().</p>
+<p>Once the channels have been enabled, and triggers assigned (for triggered buffers) the iio_buffer object can be created from the iio_device object that will be used, with the function iio_device_create_buffer().
+This call will fail if no channels have been enabled, or for triggered buffers, if the trigger has not been assigned.</p>
+<p>When the object is no more needed, it can be destroyed with iio_buffer_destroy().</p>
+</section>
+<section id="refilling-the-buffer-input-devices-only">
+<h3>Refilling the Buffer (input devices only)<a class="headerlink" href="#refilling-the-buffer-input-devices-only" title="Link to this heading"></a></h3>
+<p>If the Buffer object has been created from a device with input channels, then it must be updated first. This is done with the iio_buffer_refill() function.</p>
+</section>
+<section id="reading-or-writing-samples-to-the-buffer">
+<h3>Reading or writing samples to the Buffer<a class="headerlink" href="#reading-or-writing-samples-to-the-buffer" title="Link to this heading"></a></h3>
+<p>libiio offers various ways to interact with the iio_buffer object.</p>
+<section id="direct-copy">
+<h4>Direct copy<a class="headerlink" href="#direct-copy" title="Link to this heading"></a></h4>
+<p>If you already have a buffer of samples, correctly interleaved and in the format that the hardware expects,
+it is possible to copy the samples directly into the iio_buffer object using <code class="docutils literal notranslate"><span class="pre">memcpy</span></code>:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">size_t</span><span class="w"> </span><span class="n">iio_buf_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_buffer_end</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">iio_buffer_start</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+<span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MAX</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">samples_buffer</span><span class="p">),</span><span class="w"> </span><span class="n">iio_buf_size</span><span class="p">);</span>
+<span class="n">memcpy</span><span class="p">(</span><span class="n">iio_buffer_start</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span><span class="w"> </span><span class="n">samples_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">count</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Using <code class="docutils literal notranslate"><span class="pre">memcpy</span></code> to copy samples from the iio_buffer is <b>not recommended</b>.
+When capturing samples from an input device, you cannot assume that the iio_buffer object contains only the samples you’re interested in.</p>
+</section>
+<section id="iterating-over-the-buffer-with-a-callback">
+<h4>Iterating over the buffer with a callback<a class="headerlink" href="#iterating-over-the-buffer-with-a-callback" title="Link to this heading"></a></h4>
+<p>libiio provides a way to iterate over the buffer by registering a callback function, with the iio_buffer_foreach_sample() function.</p>
+<p>The callback function will be called for each “sample slot” of the buffer,
+which will contain a valid sample if the buffer has been refilled,
+or correspond to an area where a sample should be stored if using an output device.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">ssize_t</span><span class="w"> </span><span class="nf">sample_cb</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iio_channel</span><span class="w"> </span><span class="o">*</span><span class="n">chn</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">bytes</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">d</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="cm">/* Use &quot;src&quot; to read or write a sample for this channel */</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="n">iio_buffer_foreach_sample</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">sample_cb</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Note that the callback will be called in the order that the samples appear in the buffer,
+and only for samples that correspond to channels that were enabled.</p>
+</section>
+<section id="iterating-on-the-samples-with-a-for-loop">
+<h4>Iterating on the samples with a for loop<a class="headerlink" href="#iterating-on-the-samples-with-a-for-loop" title="Link to this heading"></a></h4>
+<p>This method allows you to iterate over the samples slots that correspond to one channel.
+As such, it is interesting if you want to process the data channel by channel.</p>
+<p>It basically consists in a for loop that uses the functions iio_buffer_first(), iio_buffer_step() and iio_buffer_end():</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_buffer_first</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">channel</span><span class="p">);</span>
+<span class="w">           </span><span class="n">ptr</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">iio_buffer_end</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+<span class="w">           </span><span class="n">ptr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">iio_buffer_step</span><span class="p">(</span><span class="n">buffer</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* Use &quot;ptr&quot; to read or write a sample for this channel */</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="extracting-from-to-a-second-buffer">
+<h4>Extracting from/to a second buffer<a class="headerlink" href="#extracting-from-to-a-second-buffer" title="Link to this heading"></a></h4>
+<p>Finally, it is possible to use the iio_channel_read() and iio_channel_read_raw()
+functions to read samples from the iio_buffer to a second byte array.
+The samples will be deinterleaved if needed.
+The “raw” variant will only deinterleave the samples, while the other variant will deinterleave and convert the samples.</p>
+<p>For output devices, the iio_channel_write() and iio_channel_write_raw() functions are also available.
+The “raw” variant will only interleave the samples (if needed), while the other variant will interleave and convert the samples
+back to their hardware format.</p>
+</section>
+<section id="convert-the-samples-from-to-hardware-format">
+<h4>Convert the samples from/to hardware format<a class="headerlink" href="#convert-the-samples-from-to-hardware-format" title="Link to this heading"></a></h4>
+<p>The raw stream of samples generally isn’t in a format that can be directly used in algorithms.
+Some operations, like endianness conversion and bit-shifting of the samples, have to be performed first.</p>
+<p>libiio offers two functions that can be used to convert samples:</p>
+<ul class="simple">
+<li><p>iio_channel_convert(), to convert from the hardware format</p></li>
+<li><p>iio_channel_convert_inverse(), to convert to the hardware format.</p></li>
+</ul>
+<p>Those two functions should always be used when manipulating the samples of the iio_buffer.
+The exception is when iio_channel_read() or iio_channel_write() are used, as the conversion is then done internally.</p>
+</section>
+<section id="submitting-the-buffer-output-devices-only">
+<h4>Submitting the Buffer (output devices only)<a class="headerlink" href="#submitting-the-buffer-output-devices-only" title="Link to this heading"></a></h4>
+<p>When all the samples have been written to the iio_buffer object, you can submit the buffer to the hardware with a call to iio_buffer_push().
+As soon as the buffer has been submitted, it can be reused to store new samples.</p>
+<p>If the iio_buffer object has been created with the “cyclic” parameter set, and the kernel driver supports cyclic buffers,
+the submitted buffer will be repeated until the iio_buffer is destroyed, and no subsequent call to iio_buffer_push() will be allowed.</p>
+</section>
+</section>
+</section>
+<section id="advanced-options">
+<h2>Advanced options<a class="headerlink" href="#advanced-options" title="Link to this heading"></a></h2>
+<section id="register-and-retrieve-a-pointer">
+<h3>Register and retrieve a pointer<a class="headerlink" href="#register-and-retrieve-a-pointer" title="Link to this heading"></a></h3>
+<p>The iio_device and iio_channel allow you to register a pointer, that can then be retrieved at a later moment.</p>
+<ul class="simple">
+<li><p>A pointer can be registered with a iio_device object using iio_device_set_data(), and can be retrieved with iio_device_get_data().</p></li>
+<li><p>A pointer can be registered with a iio_channel object using iio_channel_set_data(), and can be retrieved with iio_channel_get_data().</p></li>
+</ul>
+</section>
+<section id="debug-attributes">
+<h3>Debug attributes<a class="headerlink" href="#debug-attributes" title="Link to this heading"></a></h3>
+<p>Some IIO devices provide debug parameters, but their presence is optional. In a similar way than with regular device parameters,
+the number of debug parameters can be obtained with iio_device_get_debug_attrs_count(). Each individual parameter can be retrieved with iio_device_get_debug_attr().
+Alternatively, it is possible to lookup for the name of a debug attribute with iio_device_find_debug_attr().</p>
+<p>Those debug parameters can be read using the following functions:</p>
+<ul class="simple">
+<li><p>iio_device_debug_attr_read(),</p></li>
+<li><p>iio_device_debug_attr_read_all(),</p></li>
+<li><p>iio_device_debug_attr_read_bool(),</p></li>
+<li><p>iio_device_debug_attr_read_longlong(),</p></li>
+<li><p>iio_device_debug_attr_read_double().</p></li>
+</ul>
+<p>Those debug parameters can be written using the following functions:</p>
+<ul class="simple">
+<li><p>iio_device_debug_attr_write(),</p></li>
+<li><p>iio_device_debug_attr_write_all(),</p></li>
+<li><p>iio_device_debug_attr_write_bool(),</p></li>
+<li><p>iio_device_debug_attr_write_longlong(),</p></li>
+<li><p>iio_device_debug_attr_write_double().</p></li>
+</ul>
+</section>
+<section id="reading-and-writing-registers">
+<h3>Reading and writing registers<a class="headerlink" href="#reading-and-writing-registers" title="Link to this heading"></a></h3>
+<p>As for debug attributes, some IIO devices also offer the possibility to read and write hardware registers directly.
+In libiio, this can be done with two functions, iio_device_reg_read() and iio_device_reg_write().</p>
+</section>
+</section>
+<section id="application-binary-interface">
+<h2>Application Binary Interface<a class="headerlink" href="#application-binary-interface" title="Link to this heading"></a></h2>
+<p>The libiio ABI tries to be both backwards and forwards compatible.
+This means applications compiled against an older version will work fine with a newer dynamically linked library. Applications compiled against a newer version will work fine with an older dynamically linked library so long as they don’t access any new features. Applications using new features should ensure the libiio version is compatible by using iio_library_get_version() to avoid undefined behavior.</p>
+<p>\example iio_attr.c Part of the libiio-utilites, iio_attr is a utility for displaying information about local or remote IIO devices. By providing an optional value, iio_attr will attempt to write the new value to the attribute.
+\example iio_info.c Part of the libiio-utilites, iio_info is a utility for displaying information about local or remote IIO devices.
+\example iio_readdev.c Part of the libiio-utilites, iio_readdev is a utility for reading buffers from connected IIO devices, and sending results to standard out.
+\example iio_writedev.c Part of the libiio-utilites, iio_writedev is a utility for writing buffers from connected IIO devices.
+\example iio_reg.c Part of the libiio-utilites, iio_reg is a utility for debugging local IIO devices. It should not be used by normal users, and is normally used by driver developers during development, or by end users debugging a driver, or sending in a feature request. It provides a mechanism to read or write SPI or I2C registers for IIO devices.
+\example ad9361-iiostream.c   This example libiio program is meant to exercise the features of IIO functionality on the AD9361 found on the AD-FMCOMMS2-EBZ, AD-FMCOMMS3-EBZ, and the ADRV9361-Z7035 RF SOM.
+\example ad9371-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the AD9371.
+\example adrv9009-iiostream.c This example libiio program is meant to exercise the features of IIO functionality on the ADRV9009.
+\example dummy-iiostream.c This example libiio program is meant to exercise the features of IIO present in the sample dummy IIO device in the Linux kernel.
+\example iio-monitor.c A Curses based application which implements real time monitoring of IIO non-buffer samples.
+&#64;if CPP_BINDINGS
+\example iiopp-enum.cpp This example demonstrates usage of the C++ API to enumerate devices, channels and attributes.
+&#64;endif
+*/</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="theory.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Theory of Operation</a>
+    <a href="examples.html" title="Next document (Alt+Shift+RightArrow)" class="next">Examples</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

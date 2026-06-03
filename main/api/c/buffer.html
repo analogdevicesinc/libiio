@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Handle to the standard output. If NULL, defaults to stdout." name="description" />
+
+    <title>Buffer Functions &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Event Handling Functions" href="event.html" />
+    <link rel="prev" title="Channel Functions" href="channel.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Buffer Functions</a><ul>
+<li><a class="reference internal" href="#_CPPv43out"><code class="docutils literal notranslate"><span class="pre">out</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv43err"><code class="docutils literal notranslate"><span class="pre">err</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv49log_level"><code class="docutils literal notranslate"><span class="pre">log_level</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv412stderr_level"><code class="docutils literal notranslate"><span class="pre">stderr_level</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv415timestamp_level"><code class="docutils literal notranslate"><span class="pre">timestamp_level</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv410timeout_ms"><code class="docutils literal notranslate"><span class="pre">timeout_ms</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv45flags"><code class="docutils literal notranslate"><span class="pre">flags</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv46__rsrv"><code class="docutils literal notranslate"><span class="pre">__rsrv</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv42id"><code class="docutils literal notranslate"><span class="pre">id</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv49timestamp"><code class="docutils literal notranslate"><span class="pre">timestamp</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv46length"><code class="docutils literal notranslate"><span class="pre">length</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv44bits"><code class="docutils literal notranslate"><span class="pre">bits</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv45shift"><code class="docutils literal notranslate"><span class="pre">shift</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv49is_signed"><code class="docutils literal notranslate"><span class="pre">is_signed</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv416is_fully_defined"><code class="docutils literal notranslate"><span class="pre">is_fully_defined</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv45is_be"><code class="docutils literal notranslate"><span class="pre">is_be</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv410with_scale"><code class="docutils literal notranslate"><span class="pre">with_scale</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv45scale"><code class="docutils literal notranslate"><span class="pre">scale</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv46repeat"><code class="docutils literal notranslate"><span class="pre">repeat</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv46offset"><code class="docutils literal notranslate"><span class="pre">offset</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_buffer_get_devicePK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_device()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_buffer_get_attrs_countPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_buffer_get_attrPK10iio_bufferj"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv434iio_buffer_get_scan_elements_countPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_scan_elements_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_buffer_get_scan_elementPK10iio_bufferj"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_scan_element()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_buffer_find_attrPK10iio_bufferPKc"><code class="docutils literal notranslate"><span class="pre">iio_buffer_find_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_buffer_is_outputPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_is_output()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_buffer_set_dataP10iio_bufferPv"><code class="docutils literal notranslate"><span class="pre">iio_buffer_set_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_buffer_get_dataPK10iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv418iio_attr_read_boolPK8iio_attrPb"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_bool()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv422iio_attr_read_longlongPK8iio_attrPx"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_longlong()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_attr_read_doublePK8iio_attrPd"><code class="docutils literal notranslate"><span class="pre">iio_attr_read_double()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_attr_write_stringPK8iio_attrPKc"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_string()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_attr_write_boolPK8iio_attrb"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_bool()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv423iio_attr_write_longlongPK8iio_attrx"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_longlong()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_attr_write_doublePK8iio_attrd"><code class="docutils literal notranslate"><span class="pre">iio_attr_write_double()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv410iio_buffer"><code class="docutils literal notranslate"><span class="pre">iio_buffer</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv430iio_buffer_stream_create_blockP17iio_buffer_stream6size_t"><code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_create_block()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv417iio_block_destroyP9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_destroy()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv423iio_block_get_dmabuf_fdPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_get_dmabuf_fd()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv428iio_block_disable_cpu_accessP9iio_blockb"><code class="docutils literal notranslate"><span class="pre">iio_block_disable_cpu_access()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv415iio_block_startPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_start()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv415iio_block_firstPK9iio_blockPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_block_first()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv413iio_block_endPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_end()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv424iio_block_foreach_samplePK9iio_blockPK17iio_channels_maskPF7ssize_tPK11iio_channelPv6size_tPvEPv"><code class="docutils literal notranslate"><span class="pre">iio_block_foreach_sample()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv417iio_block_enqueueP9iio_block6size_tb"><code class="docutils literal notranslate"><span class="pre">iio_block_enqueue()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv417iio_block_dequeueP9iio_blockb"><code class="docutils literal notranslate"><span class="pre">iio_block_dequeue()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_block_get_buffer_streamPK9iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block_get_buffer_stream()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv49iio_block"><code class="docutils literal notranslate"><span class="pre">iio_block</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv424iio_buffer_create_streamP10iio_buffer6size_t6size_tP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_buffer_create_stream()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv417iio_stream_cancelP10iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream_cancel()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv418iio_stream_destroyP10iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream_destroy()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv425iio_stream_get_next_blockP10iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream_get_next_block()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv410iio_stream"><code class="docutils literal notranslate"><span class="pre">iio_stream</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="channel.html">Channel Functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../api.html">Library API</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="buffer-functions">
+<h1>Buffer Functions<a class="headerlink" href="#buffer-functions" title="Link to this heading"></a></h1>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv43out">
+<span id="_CPPv33out"></span><span id="_CPPv23out"></span><span id="out__FILEP"></span><span class="target" id="group__Buffer_1ga909d1735c757c9af764d61d5b357a964"></span><span class="n"><span class="pre">FILE</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">out</span></span></span><a class="headerlink" href="#_CPPv43out" title="Link to this definition"></a><br /></dt>
+<dd><p>Handle to the standard output. If NULL, defaults to stdout. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv43err">
+<span id="_CPPv33err"></span><span id="_CPPv23err"></span><span id="err__FILEP"></span><span class="target" id="group__Buffer_1ga56dac237f0eff02a6172cad94eb0cc2b"></span><span class="n"><span class="pre">FILE</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">err</span></span></span><a class="headerlink" href="#_CPPv43err" title="Link to this definition"></a><br /></dt>
+<dd><p>Handle to the error output. If NULL, defaults to stderr. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv49log_level">
+<span id="_CPPv39log_level"></span><span id="_CPPv29log_level"></span><span id="log_level__iio_log_level"></span><span class="target" id="group__Buffer_1ga7b69b77b7ffe3f114de16245e6066da3"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="n"><span class="pre">iio_log_level</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">log_level</span></span></span><a class="headerlink" href="#_CPPv49log_level" title="Link to this definition"></a><br /></dt>
+<dd><p>Log level to use. Defaults to the log level that was specified at compilation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv412stderr_level">
+<span id="_CPPv312stderr_level"></span><span id="_CPPv212stderr_level"></span><span id="stderr_level__iio_log_level"></span><span class="target" id="group__Buffer_1ga880f3907295f46be603fdd49dfae2c0a"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="n"><span class="pre">iio_log_level</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stderr_level</span></span></span><a class="headerlink" href="#_CPPv412stderr_level" title="Link to this definition"></a><br /></dt>
+<dd><p>Under this log level (included), messages are sent to the error output ; above this log level (excluded), messages are sent to the standard output. If zero, defaults to LEVEL_WARNING. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv415timestamp_level">
+<span id="_CPPv315timestamp_level"></span><span id="_CPPv215timestamp_level"></span><span id="timestamp_level__iio_log_level"></span><span class="target" id="group__Buffer_1ga823c3a7c8206d854bc8ffc77aba69f52"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="n"><span class="pre">iio_log_level</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">timestamp_level</span></span></span><a class="headerlink" href="#_CPPv415timestamp_level" title="Link to this definition"></a><br /></dt>
+<dd><p>Under this log level (excluded), messages are sent without timestamp; above this log level (included), messages are sent with a timestamp. If set to LEVEL_NOLOG, messages at all log levels are sent without a timestamp. If zero, defaults to LEVEL_DEBUG. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv410timeout_ms">
+<span id="_CPPv310timeout_ms"></span><span id="_CPPv210timeout_ms"></span><span id="timeout_ms__i"></span><span class="target" id="group__Buffer_1gafff33e6f9fe5e7669c543f7cc62f1b05"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">timeout_ms</span></span></span><a class="headerlink" href="#_CPPv410timeout_ms" title="Link to this definition"></a><br /></dt>
+<dd><p>Timeout for I/O operations in milliseconds. </p>
+<p><ul class="simple">
+<li><p>IIO_TIMEOUT_BACKEND (0): use backend default timeout</p></li>
+<li><p>IIO_TIMEOUT_INFINITE (-1): no timeout (wait indefinitely)</p></li>
+<li><p>IIO_TIMEOUT_NONBLOCK (INT_MIN): non-blocking</p></li>
+<li><p>Positive values: timeout after specified milliseconds</p></li>
+<li><p>Other negative values: invalid (returns -EINVAL) </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv45flags">
+<span id="_CPPv35flags"></span><span id="_CPPv25flags"></span><span id="flags__unsigned-i"></span><span class="target" id="group__Buffer_1ga49dccd9d06cc6c8a1d33a1a487eb8bca"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv45flags" title="Link to this definition"></a><br /></dt>
+<dd><p>Flags that control context behavior. Bitmask of values from enum iio_context_flags. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv46__rsrv">
+<span id="_CPPv36__rsrv"></span><span id="_CPPv26__rsrv"></span><span id="__rsrv__cA"></span><span class="target" id="group__Buffer_1ga5f7c9cfb38529304f8e46bf88ca6ae95"></span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">__rsrv</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">32</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv46__rsrv" title="Link to this definition"></a><br /></dt>
+<dd><p>Reserved for future fields. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv42id">
+<span id="_CPPv32id"></span><span id="_CPPv22id"></span><span id="id__uint64_t"></span><span class="target" id="group__Buffer_1ga5aa99d9f176925be8ab86e91f1db5eae"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">id</span></span></span><a class="headerlink" href="#_CPPv42id" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv49timestamp">
+<span id="_CPPv39timestamp"></span><span id="_CPPv29timestamp"></span><span id="timestamp__int64_t"></span><span class="target" id="group__Buffer_1gad3152b26fdc7d9d0f61dff54531be48a"></span><span class="n"><span class="pre">int64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">timestamp</span></span></span><a class="headerlink" href="#_CPPv49timestamp" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv46length">
+<span id="_CPPv36length"></span><span id="_CPPv26length"></span><span id="length__unsigned-i"></span><span class="target" id="group__Buffer_1ga80a90d327d93ba59c4717f2fcf420930"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">length</span></span></span><a class="headerlink" href="#_CPPv46length" title="Link to this definition"></a><br /></dt>
+<dd><p>Total length of the sample, in bits. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv44bits">
+<span id="_CPPv34bits"></span><span id="_CPPv24bits"></span><span id="bits__unsigned-i"></span><span class="target" id="group__Buffer_1gac0749cd625e020fca8a77095261acdf2"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bits</span></span></span><a class="headerlink" href="#_CPPv44bits" title="Link to this definition"></a><br /></dt>
+<dd><p>Length of valuable data in the sample, in bits. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv45shift">
+<span id="_CPPv35shift"></span><span id="_CPPv25shift"></span><span id="shift__unsigned-i"></span><span class="target" id="group__Buffer_1gab56ee226f46a755a6745e08d9d934804"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">shift</span></span></span><a class="headerlink" href="#_CPPv45shift" title="Link to this definition"></a><br /></dt>
+<dd><p>Right-shift to apply when converting sample. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv49is_signed">
+<span id="_CPPv39is_signed"></span><span id="_CPPv29is_signed"></span><span id="is_signed__b"></span><span class="target" id="group__Buffer_1ga173f2fb6931c4215e53d934667f0dc3f"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_signed</span></span></span><a class="headerlink" href="#_CPPv49is_signed" title="Link to this definition"></a><br /></dt>
+<dd><p>Contains True if the sample is signed. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv416is_fully_defined">
+<span id="_CPPv316is_fully_defined"></span><span id="_CPPv216is_fully_defined"></span><span id="is_fully_defined__b"></span><span class="target" id="group__Buffer_1ga86c382f0ff1dcf40f68f261d2d81caf5"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_fully_defined</span></span></span><a class="headerlink" href="#_CPPv416is_fully_defined" title="Link to this definition"></a><br /></dt>
+<dd><p>Contains True if the sample is fully defined, sign extended, etc. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv45is_be">
+<span id="_CPPv35is_be"></span><span id="_CPPv25is_be"></span><span id="is_be__b"></span><span class="target" id="group__Buffer_1ga1c1775c482b9b4c3f1dfa0b67ad6fbaa"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_be</span></span></span><a class="headerlink" href="#_CPPv45is_be" title="Link to this definition"></a><br /></dt>
+<dd><p>Contains True if the sample is in big-endian format. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv410with_scale">
+<span id="_CPPv310with_scale"></span><span id="_CPPv210with_scale"></span><span id="with_scale__b"></span><span class="target" id="group__Buffer_1ga1def0aacbe62d0cf3c6b350d47b9c623"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">with_scale</span></span></span><a class="headerlink" href="#_CPPv410with_scale" title="Link to this definition"></a><br /></dt>
+<dd><p>Contains True if the sample should be scaled when converted. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv45scale">
+<span id="_CPPv35scale"></span><span id="_CPPv25scale"></span><span id="scale__double"></span><span class="target" id="group__Buffer_1ga55125a0f81f90be70428076b426f50e2"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv45scale" title="Link to this definition"></a><br /></dt>
+<dd><p>Contains the scale to apply if with_scale is set. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv46repeat">
+<span id="_CPPv36repeat"></span><span id="_CPPv26repeat"></span><span id="repeat__unsigned-i"></span><span class="target" id="group__Buffer_1ga6db4ae39ce3e564aac2b31d0948a1efe"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">repeat</span></span></span><a class="headerlink" href="#_CPPv46repeat" title="Link to this definition"></a><br /></dt>
+<dd><p>Number of times length repeats (added in v0.8) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv46offset">
+<span id="_CPPv36offset"></span><span id="_CPPv26offset"></span><span id="offset__double"></span><span class="target" id="group__Buffer_1gabd3ea8514f2c86b18f676b8228357cb0"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">offset</span></span></span><a class="headerlink" href="#_CPPv46offset" title="Link to this definition"></a><br /></dt>
+<dd><p>Contains a value to be added to the raw sample before applying the scale. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_buffer_get_devicePK10iio_buffer">
+<span id="_CPPv321iio_buffer_get_devicePK10iio_buffer"></span><span id="_CPPv221iio_buffer_get_devicePK10iio_buffer"></span><span id="iio_buffer_get_device__iio_bufferCP"></span><span class="target" id="group__Buffer_1ga7ccc074e4496952832162ae847adab54"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_get_device</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_buffer_get_devicePK10iio_buffer" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve a pointer to the <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_buffer_get_attrs_countPK10iio_buffer">
+<span id="_CPPv326iio_buffer_get_attrs_countPK10iio_buffer"></span><span id="_CPPv226iio_buffer_get_attrs_countPK10iio_buffer"></span><span id="iio_buffer_get_attrs_count__iio_bufferCP"></span><span class="target" id="group__Buffer_1ga48c041dce0fc2a8cbc6e08f4265b09be"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_get_attrs_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_buffer_get_attrs_countPK10iio_buffer" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the attributes of the given buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of buffer-specific attributes found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_buffer_get_attrPK10iio_bufferj">
+<span id="_CPPv319iio_buffer_get_attrPK10iio_bufferj"></span><span id="_CPPv219iio_buffer_get_attrPK10iio_bufferj"></span><span id="iio_buffer_get_attr__iio_bufferCP.unsigned-i"></span><span class="target" id="group__Buffer_1ga6d5401213e3b809957b61d1fe1e493b4"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_get_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_buffer_get_attrPK10iio_bufferj" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the buffer-specific attribute present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv434iio_buffer_get_scan_elements_countPK10iio_buffer">
+<span id="_CPPv334iio_buffer_get_scan_elements_countPK10iio_buffer"></span><span id="_CPPv234iio_buffer_get_scan_elements_countPK10iio_buffer"></span><span id="iio_buffer_get_scan_elements_count__iio_bufferCP"></span><span class="target" id="group__Buffer_1gaedb4b6ab080bccc1d78e32db57b5151f"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_get_scan_elements_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv434iio_buffer_get_scan_elements_countPK10iio_buffer" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the scan elements of the given buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of scan elements associated with the buffer </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_buffer_get_scan_elementPK10iio_bufferj">
+<span id="_CPPv327iio_buffer_get_scan_elementPK10iio_bufferj"></span><span id="_CPPv227iio_buffer_get_scan_elementPK10iio_bufferj"></span><span id="iio_buffer_get_scan_element__iio_bufferCP.unsigned-i"></span><span class="target" id="group__Buffer_1gaedf8534d45fc01ac585bd99e7c4f7cc3"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_get_scan_element</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_buffer_get_scan_elementPK10iio_bufferj" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the scan element present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the scan element </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_buffer_find_attrPK10iio_bufferPKc">
+<span id="_CPPv320iio_buffer_find_attrPK10iio_bufferPKc"></span><span id="_CPPv220iio_buffer_find_attrPK10iio_bufferPKc"></span><span id="iio_buffer_find_attr__iio_bufferCP.cCP"></span><span class="target" id="group__Buffer_1ga77b0cad55d14720e4b35c94219c31ed6"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_find_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_buffer_find_attrPK10iio_bufferPKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a buffer-specific attribute by its name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the name of the attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the name does not correspond to any known attribute of the given buffer, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_buffer_is_outputPK10iio_buffer">
+<span id="_CPPv320iio_buffer_is_outputPK10iio_buffer"></span><span id="_CPPv220iio_buffer_is_outputPK10iio_buffer"></span><span id="iio_buffer_is_output__iio_bufferCP"></span><span class="target" id="group__Buffer_1ga8bad8a7bfccfece81e6b5e61fd47deb5"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_is_output</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_buffer_is_outputPK10iio_buffer" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns true if the buffer is an output buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the buffer is an output (TX) buffer, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_buffer_set_dataP10iio_bufferPv">
+<span id="_CPPv319iio_buffer_set_dataP10iio_bufferPv"></span><span id="_CPPv219iio_buffer_set_dataP10iio_bufferPv"></span><span id="iio_buffer_set_data__iio_bufferP.voidP"></span><span class="target" id="group__Buffer_1ga01c521e4944b90f22ae5a15b6bd37030"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_set_data</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_buffer_set_dataP10iio_bufferPv" title="Link to this definition"></a><br /></dt>
+<dd><p>Associate a pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p></li>
+<li><p><strong>data</strong> – The pointer to be associated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_buffer_get_dataPK10iio_buffer">
+<span id="_CPPv319iio_buffer_get_dataPK10iio_buffer"></span><span id="_CPPv219iio_buffer_get_dataPK10iio_buffer"></span><span id="iio_buffer_get_data__iio_bufferCP"></span><span class="target" id="group__Buffer_1gadefcb5781fb3ae4516945d6509af7def"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_get_data</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_buffer_get_dataPK10iio_buffer" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve a previously associated pointer of an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>buf</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The pointer previously associated if present, or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418iio_attr_read_boolPK8iio_attrPb">
+<span id="_CPPv318iio_attr_read_boolPK8iio_attrPb"></span><span id="_CPPv218iio_attr_read_boolPK8iio_attrPb"></span><span id="iio_attr_read_bool__iio_attrCP.bP"></span><span class="target" id="group__Buffer_1ga92f1655ffdc1c108c4b284cf882e1911"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_read_bool</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418iio_attr_read_boolPK8iio_attrPb" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_attr_read_longlongPK8iio_attrPx">
+<span id="_CPPv322iio_attr_read_longlongPK8iio_attrPx"></span><span id="_CPPv222iio_attr_read_longlongPK8iio_attrPx"></span><span id="iio_attr_read_longlong__iio_attrCP.l-lP"></span><span class="target" id="group__Buffer_1gae4e0be1d760bd1908b9111c14271b2ec"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_read_longlong</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="kt"><span class="pre">long</span></span><span class="w"> </span><span class="kt"><span class="pre">long</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_attr_read_longlongPK8iio_attrPx" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_attr_read_doublePK8iio_attrPd">
+<span id="_CPPv320iio_attr_read_doublePK8iio_attrPd"></span><span id="_CPPv220iio_attr_read_doublePK8iio_attrPd"></span><span id="iio_attr_read_double__iio_attrCP.doubleP"></span><span class="target" id="group__Buffer_1gab448c5ad79833b9c4137644f9714e272"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_read_double</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_attr_read_doublePK8iio_attrPd" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_attr_write_stringPK8iio_attrPKc">
+<span id="_CPPv321iio_attr_write_stringPK8iio_attrPKc"></span><span id="_CPPv221iio_attr_write_stringPK8iio_attrPKc"></span><span id="iio_attr_write_string__iio_attrCP.cCP"></span><span class="target" id="group__Buffer_1ga589ffa37f1d76e1a84265beddaaacd06"></span><span class="n"><span class="pre">ssize_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_write_string</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_attr_write_stringPK8iio_attrPKc" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_attr_write_boolPK8iio_attrb">
+<span id="_CPPv319iio_attr_write_boolPK8iio_attrb"></span><span id="_CPPv219iio_attr_write_boolPK8iio_attrb"></span><span id="iio_attr_write_bool__iio_attrCP.b"></span><span class="target" id="group__Buffer_1ga75f19d5aab60d75f88628fb57ac98e79"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_write_bool</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_attr_write_boolPK8iio_attrb" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423iio_attr_write_longlongPK8iio_attrx">
+<span id="_CPPv323iio_attr_write_longlongPK8iio_attrx"></span><span id="_CPPv223iio_attr_write_longlongPK8iio_attrx"></span><span id="iio_attr_write_longlong__iio_attrCP.l-l"></span><span class="target" id="group__Buffer_1gae920da039cf9faf4e9217a32e7e099e1"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_write_longlong</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="kt"><span class="pre">long</span></span><span class="w"> </span><span class="kt"><span class="pre">long</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423iio_attr_write_longlongPK8iio_attrx" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_attr_write_doublePK8iio_attrd">
+<span id="_CPPv321iio_attr_write_doublePK8iio_attrd"></span><span id="_CPPv221iio_attr_write_doublePK8iio_attrd"></span><span id="iio_attr_write_double__iio_attrCP.double"></span><span class="target" id="group__Buffer_1ga923b524985d75b293486baea7ffd9df8"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_attr_write_double</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">attr</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_attr_write_doublePK8iio_attrd" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv410iio_buffer">
+<span id="_CPPv310iio_buffer"></span><span id="_CPPv210iio_buffer"></span><span id="iio_buffer"></span><span class="target" id="structiio__buffer"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer</span></span></span><a class="headerlink" href="#_CPPv410iio_buffer" title="Link to this definition"></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;iio.h&gt;</em></div>
+<p>An input or output buffer, used to read or write samples. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv430iio_buffer_stream_create_blockP17iio_buffer_stream6size_t">
+<span id="_CPPv330iio_buffer_stream_create_blockP17iio_buffer_stream6size_t"></span><span id="_CPPv230iio_buffer_stream_create_blockP17iio_buffer_stream6size_t"></span><span id="iio_buffer_stream_create_block__iio_buffer_streamP.s"></span><span class="target" id="group__Block_1ga5fe325e8266b2694ee8ba7b2f3df83fa"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_stream_create_block</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_buffer_stream</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buf_stream</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv430iio_buffer_stream_create_blockP17iio_buffer_stream6size_t" title="Link to this definition"></a><br /></dt>
+<dd><p>Create a data block for the given buffer stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buf_stream</strong> – A pointer to an iio_buffer_stream structure </p></li>
+<li><p><strong>size</strong> – The size of the block to create, in bytes </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv417iio_block_destroyP9iio_block">
+<span id="_CPPv317iio_block_destroyP9iio_block"></span><span id="_CPPv217iio_block_destroyP9iio_block"></span><span id="iio_block_destroy__iio_blockP"></span><span class="target" id="group__Block_1ga5cd4d9c5ea4d8c5db0912b2808334d56"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_destroy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv417iio_block_destroyP9iio_block" title="Link to this definition"></a><br /></dt>
+<dd><p>Destroy the given block. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423iio_block_get_dmabuf_fdPK9iio_block">
+<span id="_CPPv323iio_block_get_dmabuf_fdPK9iio_block"></span><span id="_CPPv223iio_block_get_dmabuf_fdPK9iio_block"></span><span id="iio_block_get_dmabuf_fd__iio_blockCP"></span><span class="target" id="group__Block_1ga609fabfbd55fcfc0de19b14eb2350d6e"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_get_dmabuf_fd</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423iio_block_get_dmabuf_fdPK9iio_block" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the file descriptor of the underlying DMABUF object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The file descriptor of the underlying DMABUF object. If the <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> is not backed by a DMABUF object, -EINVAL is returned. Otherwise, the file descriptor will be valid until the block is destroyed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv428iio_block_disable_cpu_accessP9iio_blockb">
+<span id="_CPPv328iio_block_disable_cpu_accessP9iio_blockb"></span><span id="_CPPv228iio_block_disable_cpu_accessP9iio_blockb"></span><span id="iio_block_disable_cpu_access__iio_blockP.b"></span><span class="target" id="group__Block_1gae5db6076fdb67b61deab0c0dd7d0acac"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_disable_cpu_access</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">disable</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv428iio_block_disable_cpu_accessP9iio_blockb" title="Link to this definition"></a><br /></dt>
+<dd><p>Disable CPU access of a given block. </p>
+<p><strong>NOTE:</strong>Disabling CPU access is useful when manipulating DMABUF objects. If CPU access is disabled, the block’s internal buffer of samples should not be accessed. Therefore, the following functions should not be called: iio_block_start, iio_block_first, iio_block_end, iio_block_foreach_sample. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p></li>
+<li><p><strong>disable</strong> – Whether or not to disable CPU access</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv415iio_block_startPK9iio_block">
+<span id="_CPPv315iio_block_startPK9iio_block"></span><span id="_CPPv215iio_block_startPK9iio_block"></span><span id="iio_block_start__iio_blockCP"></span><span class="target" id="group__Block_1ga6a6a05297de153192edcc4e141c5dfb8"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_start</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv415iio_block_startPK9iio_block" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the start address of the block. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer corresponding to the start address of the block </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv415iio_block_firstPK9iio_blockPK11iio_channel">
+<span id="_CPPv315iio_block_firstPK9iio_blockPK11iio_channel"></span><span id="_CPPv215iio_block_firstPK9iio_blockPK11iio_channel"></span><span id="iio_block_first__iio_blockCP.iio_channelCP"></span><span class="target" id="group__Block_1gaba8f78ff0fde8042fd6055313f45276e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_first</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv415iio_block_firstPK9iio_blockPK11iio_channel" title="Link to this definition"></a><br /></dt>
+<dd><p>Find the first sample of a channel in a block. </p>
+<p><strong>NOTE:</strong> This function, coupled with iio_block_end, can be used to iterate on all the samples of a given channel present in the block, doing the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="p">(</span><span class="n">void</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">iio_block_first</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">chn</span><span class="p">);</span>
+     <span class="n">ptr</span> <span class="o">&lt;</span> <span class="n">iio_block_end</span><span class="p">(</span><span class="n">block</span><span class="p">);</span>
+     <span class="n">ptr</span> <span class="o">+=</span> <span class="n">iio_device_get_sample_size</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">mask</span><span class="p">))</span> <span class="p">{</span>
+   <span class="o">....</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> passed as argument must be from the <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> that was used to create the <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> and then the <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a>, otherwise the result is undefined. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p></li>
+<li><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to the first sample found, or to the end of the block if no sample for the given channel is present in the block</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv413iio_block_endPK9iio_block">
+<span id="_CPPv313iio_block_endPK9iio_block"></span><span id="_CPPv213iio_block_endPK9iio_block"></span><span id="iio_block_end__iio_blockCP"></span><span class="target" id="group__Block_1ga3628b6b31bc73ab302b944363709a533"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_end</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv413iio_block_endPK9iio_block" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the address after the last sample in a block. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer corresponding to the address that follows the last sample present in the buffer </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv424iio_block_foreach_samplePK9iio_blockPK17iio_channels_maskPF7ssize_tPK11iio_channelPv6size_tPvEPv">
+<span id="_CPPv324iio_block_foreach_samplePK9iio_blockPK17iio_channels_maskPF7ssize_tPK11iio_channelPv6size_tPvEPv"></span><span id="_CPPv224iio_block_foreach_samplePK9iio_blockPK17iio_channels_maskPF7ssize_tPK11iio_channelPv6size_tPvEPv"></span><span class="target" id="group__Block_1ga3b56f82797d6b5567ab76739752cd83b"></span><span class="n"><span class="pre">ssize_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_foreach_sample</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_channels_mask</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mask</span></span>, <span class="n"><span class="pre">ssize_t</span></span><span class="w"> </span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">callback</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">chn</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">)</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv424iio_block_foreach_samplePK9iio_blockPK17iio_channels_maskPF7ssize_tPK11iio_channelPv6size_tPvEPv" title="Link to this definition"></a><br /></dt>
+<dd><p>Call the supplied callback for each sample found in a block. </p>
+<p><strong>NOTE:</strong> The callback receives four arguments:<ul class="simple">
+<li><p>A pointer to the <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure corresponding to the sample,</p></li>
+<li><p>A pointer to the sample itself,</p></li>
+<li><p>The length of the sample in bytes,</p></li>
+<li><p>The user-specified pointer passed to iio_block_foreach_sample. </p></li>
+</ul>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p></li>
+<li><p><strong>mask</strong> – A pointer to the iio_channels_mask structure that represents the list of channels for which we want samples </p></li>
+<li><p><strong>callback</strong> – A pointer to a function to call for each sample found </p></li>
+<li><p><strong>data</strong> – A user-specified pointer that will be passed to the callback </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of bytes processed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv417iio_block_enqueueP9iio_block6size_tb">
+<span id="_CPPv317iio_block_enqueueP9iio_block6size_tb"></span><span id="_CPPv217iio_block_enqueueP9iio_block6size_tb"></span><span id="iio_block_enqueue__iio_blockP.s.b"></span><span class="target" id="group__Block_1ga3e2e606d6cbadf263e42a78d05339b12"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_enqueue</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">bytes_used</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">cyclic</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv417iio_block_enqueueP9iio_block6size_tb" title="Link to this definition"></a><br /></dt>
+<dd><p>Enqueue the given <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> to the buffer’s queue. </p>
+<p><strong>NOTE:</strong> After iio_block_enqueue is called, the block’s data must not be accessed until iio_block_dequeue successfully returns. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p></li>
+<li><p><strong>bytes_used</strong> – The amount of data in bytes to be transferred (either transmitted or received). If zero, the size of the block is used. </p></li>
+<li><p><strong>cyclic</strong> – If True, enable cyclic mode. The block’s content will be repeated on the hardware’s output until the buffer is cancelled or destroyed. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative error code is returned</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv417iio_block_dequeueP9iio_blockb">
+<span id="_CPPv317iio_block_dequeueP9iio_blockb"></span><span id="_CPPv217iio_block_dequeueP9iio_blockb"></span><span id="iio_block_dequeue__iio_blockP.b"></span><span class="target" id="group__Block_1gad2434815eec8aa1e584230fb633afb7d"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_dequeue</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nonblock</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv417iio_block_dequeueP9iio_blockb" title="Link to this definition"></a><br /></dt>
+<dd><p>Dequeue the given <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> from the buffer’s queue. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p></li>
+<li><p><strong>nonblock</strong> – if True, the operation won’t block and return -EBUSY if the block is not ready for dequeue. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative error code is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_block_get_buffer_streamPK9iio_block">
+<span id="_CPPv327iio_block_get_buffer_streamPK9iio_block"></span><span id="_CPPv227iio_block_get_buffer_streamPK9iio_block"></span><span id="iio_block_get_buffer_stream__iio_blockCP"></span><span class="target" id="group__Block_1gac9f7e5c6e436a2e459f108a0dd66fb42"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_buffer_stream</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_get_buffer_stream</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_block_get_buffer_streamPK9iio_block" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve a pointer to the iio_buffer_stream structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to an iio_buffer_stream structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv49iio_block">
+<span id="_CPPv39iio_block"></span><span id="_CPPv29iio_block"></span><span id="iio_block"></span><span class="target" id="structiio__block"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block</span></span></span><a class="headerlink" href="#_CPPv49iio_block" title="Link to this definition"></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;iio.h&gt;</em></div>
+<p>A block of memory containing data samples. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv424iio_buffer_create_streamP10iio_buffer6size_t6size_tP17iio_channels_mask">
+<span id="_CPPv324iio_buffer_create_streamP10iio_buffer6size_t6size_tP17iio_channels_mask"></span><span id="_CPPv224iio_buffer_create_streamP10iio_buffer6size_t6size_tP17iio_channels_mask"></span><span id="iio_buffer_create_stream__iio_bufferP.s.s.iio_channels_maskP"></span><span class="target" id="group__Stream_1ga92f9179b76688dafda945866a8a25164"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_stream" title="iio_stream"><span class="n"><span class="pre">iio_stream</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_buffer_create_stream</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_buffer" title="iio_buffer"><span class="n"><span class="pre">iio_buffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">buffer</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nb_blocks</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">samples_count</span></span>, <span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_channels_mask</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mask</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv424iio_buffer_create_streamP10iio_buffer6size_t6size_tP17iio_channels_mask" title="Link to this definition"></a><br /></dt>
+<dd><p>Create a <a class="reference internal" href="#structiio__stream"><span class="std std-ref">iio_stream</span></a> object for the given <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – A pointer to an <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a> structure </p></li>
+<li><p><strong>nb_blocks</strong> – The number of <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> objects to create, internally. In doubt, a good value is 4. </p></li>
+<li><p><strong>samples_count</strong> – The size of the <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> objects, in samples </p></li>
+<li><p><strong>mask</strong> – A pointer to the iio_channels_mask structure </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="#structiio__stream"><span class="std std-ref">iio_stream</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv417iio_stream_cancelP10iio_stream">
+<span id="_CPPv317iio_stream_cancelP10iio_stream"></span><span id="_CPPv217iio_stream_cancelP10iio_stream"></span><span id="iio_stream_cancel__iio_streamP"></span><span class="target" id="group__Stream_1ga5886afa1e68911745ebe345c4c750ec5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_stream_cancel</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_stream" title="iio_stream"><span class="n"><span class="pre">iio_stream</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv417iio_stream_cancelP10iio_stream" title="Link to this definition"></a><br /></dt>
+<dd><p>Cancel all stream operations. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stream</strong> – A pointer to an <a class="reference internal" href="#structiio__stream"><span class="std std-ref">iio_stream</span></a> structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418iio_stream_destroyP10iio_stream">
+<span id="_CPPv318iio_stream_destroyP10iio_stream"></span><span id="_CPPv218iio_stream_destroyP10iio_stream"></span><span id="iio_stream_destroy__iio_streamP"></span><span class="target" id="group__Stream_1ga58ecbe72601205e5b50e01a4ae8b2b45"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_stream_destroy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_stream" title="iio_stream"><span class="n"><span class="pre">iio_stream</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418iio_stream_destroyP10iio_stream" title="Link to this definition"></a><br /></dt>
+<dd><p>Destroy the given stream object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stream</strong> – A pointer to an <a class="reference internal" href="#structiio__stream"><span class="std std-ref">iio_stream</span></a> structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425iio_stream_get_next_blockP10iio_stream">
+<span id="_CPPv325iio_stream_get_next_blockP10iio_stream"></span><span id="_CPPv225iio_stream_get_next_blockP10iio_stream"></span><span id="iio_stream_get_next_block__iio_streamP"></span><span class="target" id="group__Stream_1ga8e8c0aa57e24f16cdd5ccf9fc875b521"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_stream_get_next_block</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv410iio_stream" title="iio_stream"><span class="n"><span class="pre">iio_stream</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425iio_stream_get_next_blockP10iio_stream" title="Link to this definition"></a><br /></dt>
+<dd><p>Get a pointer to the next data block. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stream</strong> – A pointer to an <a class="reference internal" href="#structiio__stream"><span class="std std-ref">iio_stream</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv410iio_stream">
+<span id="_CPPv310iio_stream"></span><span id="_CPPv210iio_stream"></span><span id="iio_stream"></span><span class="target" id="structiio__stream"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_stream</span></span></span><a class="headerlink" href="#_CPPv410iio_stream" title="Link to this definition"></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;iio.h&gt;</em></div>
+<p>A helper object to simplify reading/writing to a <a class="reference internal" href="#structiio__buffer"><span class="std std-ref">iio_buffer</span></a>. </p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="channel.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Channel Functions</a>
+    <a href="event.html" title="Next document (Alt+Shift+RightArrow)" class="next">Event Handling Functions</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Create a context from a URI description." name="description" />
+
+    <title>Context Functions &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Device Functions" href="device.html" />
+    <link rel="prev" title="Attribute Functions" href="attributes.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Context Functions</a><ul>
+<li><a class="reference internal" href="#_CPPv418iio_create_contextPK18iio_context_paramsPKc"><code class="docutils literal notranslate"><span class="pre">iio_create_context()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_context_destroyP11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_destroy()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv429iio_context_get_version_majorPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_major()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv429iio_context_get_version_minorPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_minor()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_context_get_version_tagPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_tag()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv419iio_context_get_xmlPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_xml()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_context_get_namePK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_name()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_context_get_descriptionPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_description()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_context_get_attrs_countPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_context_get_attrPK11iio_contextj"><code class="docutils literal notranslate"><span class="pre">iio_context_get_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv421iio_context_find_attrPK11iio_contextPKc"><code class="docutils literal notranslate"><span class="pre">iio_context_find_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv429iio_context_get_devices_countPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_devices_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv422iio_context_get_devicePK11iio_contextj"><code class="docutils literal notranslate"><span class="pre">iio_context_get_device()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv423iio_context_find_devicePK11iio_contextPKc"><code class="docutils literal notranslate"><span class="pre">iio_context_find_device()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv423iio_context_set_timeoutP11iio_contexti"><code class="docutils literal notranslate"><span class="pre">iio_context_set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv422iio_context_get_paramsPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_params()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_context_set_dataP11iio_contextPv"><code class="docutils literal notranslate"><span class="pre">iio_context_set_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv420iio_context_get_dataPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv411iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../api.html">Library API</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="context-functions">
+<h1>Context Functions<a class="headerlink" href="#context-functions" title="Link to this heading"></a></h1>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418iio_create_contextPK18iio_context_paramsPKc">
+<span id="_CPPv318iio_create_contextPK18iio_context_paramsPKc"></span><span id="_CPPv218iio_create_contextPK18iio_context_paramsPKc"></span><span id="iio_create_context__iio_context_paramsCP.cCP"></span><span class="target" id="group__Context_1gadd8217d303a2331fcb547d1fd194a19c"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_create_context</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_context_params</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">params</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">uri</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418iio_create_contextPK18iio_context_paramsPKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Create a context from a URI description. </p>
+<p><strong>NOTE:</strong> The following URIs are supported based on compile time backend support:<ul>
+<li><p><p>Local backend, “local:”</p>
+<p>Does not have an address part. For example</p>
+<em>”local:”</em></p></li>
+<li><p><p>XML backend, “xml:”</p>
+<p>Requires a path to the XML file for the address part. For example</p>
+<em>”xml:/home/user/file.xml”</em></p></li>
+<li><p><p>Network backend, “ip:”</p>
+<p>Requires a hostname, IPv4, or IPv6 to connect to a specific running IIO Daemon or no address part for automatic discovery when library is compiled with ZeroConf support. For example</p>
+<em>”ip:192.168.2.1”</em>, <strong>or</strong> <em>“ip:localhost”</em>, <strong>or</strong> <em>“ip:”</em> <strong>or</strong> <em>“ip:plutosdr.local”</em>. To support alternative port numbers the standard <em>ip:host:port</em> format is used. A special format is required as defined in RFC2732 for IPv6 literal hostnames, (adding ‘[]’ around the host) to use a <em>ip:[x:x:x:x:x:x:x:x]:port</em> format. Valid examples would be:<ul class="simple">
+<li><p>ip: Any host on default port</p></li>
+<li><p>ip::40000 Any host on port 40000</p></li>
+<li><p>ip:analog.local Default port</p></li>
+<li><p>ip:brain.local:40000 Port 40000</p></li>
+<li><p>ip:192.168.1.119 Default Port</p></li>
+<li><p>ip:192.168.1.119:40000 Port 40000</p></li>
+<li><p>ip:2601:190:400:da:47b3:55ab:3914:bff1 Default Port</p></li>
+<li><p>ip:[2601:190:400:da:9a90:96ff:feb5:acaa]:40000 Port 40000</p></li>
+<li><p>ip:fe80::f14d:3728:501e:1f94eth0 Link-local through eth0, default port</p></li>
+<li><p>ip:[fe80::f14d:3728:501e:1f94eth0]:40000 Link-local through eth0, port 40000</p></li>
+</ul>
+</p></li>
+<li><p><p>USB backend, “usb:”</p>
+<p>When more than one usb device is attached, requires bus, address, and interface parts separated with a dot. For example</p>
+<em>”usb:3.32.5”</em>. Where there is only one USB device attached, the shorthand <em>“usb:”</em> can be used.</p></li>
+<li><p><p>Serial backend, “serial:”</p>
+<p>Requires:</p>
+<ul class="simple">
+<li><p>a port (/dev/ttyUSB0),</p></li>
+<li><p>baud_rate (default <strong>115200</strong>)</p></li>
+<li><p>serial port configuration<ul>
+<li><p>data bits (5 6 7 <strong>8</strong> 9)</p></li>
+<li><p>parity (’<strong>n</strong>’ none, ‘o’ odd, ‘e’ even, ‘m’ mark, ‘s’ space)</p></li>
+<li><p>stop bits (<strong>1</strong> 2)</p></li>
+<li><p>flow control (’<strong>\0</strong>’ none, ‘x’ Xon Xoff, ‘r’ RTSCTS, ‘d’ DTRDSR)</p></li>
+</ul>
+</p></li>
+</ul>
+</p>
+<p>For example <em>“serial:/dev/ttyUSB0,115200”</em> <strong>or</strong> <em>“serial:/dev/ttyUSB0,115200,8n1”</em></p>
+</li>
+</ul>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> – A pointer to a iio_context_params structure that contains context creation information; can be NULL </p></li>
+<li><p><strong>uri</strong> – a URI describing the context location. If NULL, the backend will be created using the URI string present in the IIOD_REMOTE environment variable, or if not set, a local backend is created. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to a <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_context_destroyP11iio_context">
+<span id="_CPPv319iio_context_destroyP11iio_context"></span><span id="_CPPv219iio_context_destroyP11iio_context"></span><span id="iio_context_destroy__iio_contextP"></span><span class="target" id="group__Context_1ga031a9f6d2e6c3180e6210df9a9466f8b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_destroy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_context_destroyP11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Destroy the given context. </p>
+<p><strong>NOTE:</strong> After that function, the <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> pointer shall be invalid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429iio_context_get_version_majorPK11iio_context">
+<span id="_CPPv329iio_context_get_version_majorPK11iio_context"></span><span id="_CPPv229iio_context_get_version_majorPK11iio_context"></span><span id="iio_context_get_version_major__iio_contextCP"></span><span class="target" id="group__Context_1ga7e5c7b5c18b10b54de337d5aba126498"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_version_major</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429iio_context_get_version_majorPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the major number of the library version. </p>
+<p>
+NOTE: If ctx is non-null, it will return the major version of the remote library, if running remotely. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – Optional pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The major number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429iio_context_get_version_minorPK11iio_context">
+<span id="_CPPv329iio_context_get_version_minorPK11iio_context"></span><span id="_CPPv229iio_context_get_version_minorPK11iio_context"></span><span id="iio_context_get_version_minor__iio_contextCP"></span><span class="target" id="group__Context_1ga1e407baf54ddac81cd19627b0a5503a6"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_version_minor</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429iio_context_get_version_minorPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the minor number of the library version. </p>
+<p>
+NOTE: If ctx is non-null, it will return the minor version of the remote library, if running remotely. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – Optional pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The minor number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_context_get_version_tagPK11iio_context">
+<span id="_CPPv327iio_context_get_version_tagPK11iio_context"></span><span id="_CPPv227iio_context_get_version_tagPK11iio_context"></span><span id="iio_context_get_version_tag__iio_contextCP"></span><span class="target" id="group__Context_1ga7e074a83af511f32b8a5b654cbee36f6"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_version_tag</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_context_get_version_tagPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the git hash string of the library version. </p>
+<p>
+NOTE: If ctx is non-null, it will return the git tag or hash of the remote library, if running remotely. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – Optional pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A NULL-terminated string that contains the git tag or hash</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419iio_context_get_xmlPK11iio_context">
+<span id="_CPPv319iio_context_get_xmlPK11iio_context"></span><span id="_CPPv219iio_context_get_xmlPK11iio_context"></span><span id="iio_context_get_xml__iio_contextCP"></span><span class="target" id="group__Context_1ga33a09de8aa6a4786a35e412530ad782e"></span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_xml</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419iio_context_get_xmlPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Obtain a XML representation of the given context. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, an allocated string. Must be deallocated with free(). </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_context_get_namePK11iio_context">
+<span id="_CPPv320iio_context_get_namePK11iio_context"></span><span id="_CPPv220iio_context_get_namePK11iio_context"></span><span id="iio_context_get_name__iio_contextCP"></span><span class="target" id="group__Context_1gac1aaee7f6075221bdb5b9181c539b90e"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_name</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_context_get_namePK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the name of the given context. </p>
+<p><strong>NOTE:</strong>The returned string will be <strong></strong>, <strong></strong> or <strong></strong> when the context has been created with the local, xml and network backends respectively. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to a static NULL-terminated string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_context_get_descriptionPK11iio_context">
+<span id="_CPPv327iio_context_get_descriptionPK11iio_context"></span><span id="_CPPv227iio_context_get_descriptionPK11iio_context"></span><span id="iio_context_get_description__iio_contextCP"></span><span class="target" id="group__Context_1ga637674845f0803f6db361b6f6b841a95"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_description</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_context_get_descriptionPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get a description of the given context. </p>
+<p><strong>NOTE:</strong>The returned string will contain human-readable information about the current context. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to a static NULL-terminated string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_context_get_attrs_countPK11iio_context">
+<span id="_CPPv327iio_context_get_attrs_countPK11iio_context"></span><span id="_CPPv227iio_context_get_attrs_countPK11iio_context"></span><span id="iio_context_get_attrs_count__iio_contextCP"></span><span class="target" id="group__Context_1ga2b19483311a0ae86a6806e3f0e765ebe"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_attrs_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_context_get_attrs_countPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the number of context-specific attributes. </p>
+<p>
+Introduced in version 0.9. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of context-specific attributes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_context_get_attrPK11iio_contextj">
+<span id="_CPPv320iio_context_get_attrPK11iio_contextj"></span><span id="_CPPv220iio_context_get_attrPK11iio_contextj"></span><span id="iio_context_get_attr__iio_contextCP.unsigned-i"></span><span class="target" id="group__Context_1ga42ea9a3128c20eb46ef9e51e8246d0da"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_context_get_attrPK11iio_contextj" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve the context-specific attribute at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is out-of-range, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421iio_context_find_attrPK11iio_contextPKc">
+<span id="_CPPv321iio_context_find_attrPK11iio_contextPKc"></span><span id="_CPPv221iio_context_find_attrPK11iio_contextPKc"></span><span id="iio_context_find_attr__iio_contextCP.cCP"></span><span class="target" id="group__Context_1ga2c42dd4deb07feae069e41e2759f2db2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_find_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421iio_context_find_attrPK11iio_contextPKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a context-specific attribute by its name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the name of the attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the name does not correspond to any known attribute of the given context, NULL is returned. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429iio_context_get_devices_countPK11iio_context">
+<span id="_CPPv329iio_context_get_devices_countPK11iio_context"></span><span id="_CPPv229iio_context_get_devices_countPK11iio_context"></span><span id="iio_context_get_devices_count__iio_contextCP"></span><span class="target" id="group__Context_1ga5482872e2f91c04b319e495250d837e3"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_devices_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429iio_context_get_devices_countPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the devices found in the given context. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of devices found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_context_get_devicePK11iio_contextj">
+<span id="_CPPv322iio_context_get_devicePK11iio_contextj"></span><span id="_CPPv222iio_context_get_devicePK11iio_contextj"></span><span id="iio_context_get_device__iio_contextCP.unsigned-i"></span><span class="target" id="group__Context_1gaca9d358af30b0dc5d1ab46f1da54ec58"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_device</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_context_get_devicePK11iio_contextj" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the device present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the device </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423iio_context_find_devicePK11iio_contextPKc">
+<span id="_CPPv323iio_context_find_devicePK11iio_contextPKc"></span><span id="_CPPv223iio_context_find_devicePK11iio_contextPKc"></span><span id="iio_context_find_device__iio_contextCP.cCP"></span><span class="target" id="group__Context_1ga071f3fb041afa7e4438f6064e4722643"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_find_device</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423iio_context_find_devicePK11iio_contextPKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a device structure by its ID, label or name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the ID, label or name of the device to search for </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the parameter does not correspond to the ID, label or name of any known device, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423iio_context_set_timeoutP11iio_contexti">
+<span id="_CPPv323iio_context_set_timeoutP11iio_contexti"></span><span id="_CPPv223iio_context_set_timeoutP11iio_contexti"></span><span id="iio_context_set_timeout__iio_contextP.i"></span><span class="target" id="group__Context_1gadede81659f08986e7d07794093be824a"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_set_timeout</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeout_ms</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423iio_context_set_timeoutP11iio_contexti" title="Link to this definition"></a><br /></dt>
+<dd><p>Set a timeout for I/O operations. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p></li>
+<li><p><strong>timeout_ms</strong> – Timeout value in milliseconds:<ul>
+<li><p>IIO_TIMEOUT_BACKEND (0): use backend default timeout</p></li>
+<li><p>IIO_TIMEOUT_INFINITE (-1): no timeout (wait indefinitely)</p></li>
+<li><p>IIO_TIMEOUT_NONBLOCK (INT_MIN): non-blocking</p></li>
+<li><p>Positive: timeout after specified milliseconds</p></li>
+<li><p>Other negative values: returns -EINVAL </p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422iio_context_get_paramsPK11iio_context">
+<span id="_CPPv322iio_context_get_paramsPK11iio_context"></span><span id="_CPPv222iio_context_get_paramsPK11iio_context"></span><span id="iio_context_get_params__iio_contextCP"></span><span class="target" id="group__Context_1ga549210da83cf2f6ff982d1556994ca99"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="n"><span class="pre">iio_context_params</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_params</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422iio_context_get_paramsPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get a pointer to the params structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to the context’s iio_context_params structure </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_context_set_dataP11iio_contextPv">
+<span id="_CPPv320iio_context_set_dataP11iio_contextPv"></span><span id="_CPPv220iio_context_set_dataP11iio_contextPv"></span><span id="iio_context_set_data__iio_contextP.voidP"></span><span class="target" id="group__Context_1gab8cbf9afc465ee6187f8df5122a872c1"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_set_data</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_context_set_dataP11iio_contextPv" title="Link to this definition"></a><br /></dt>
+<dd><p>Associate a pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p></li>
+<li><p><strong>data</strong> – The pointer to be associated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420iio_context_get_dataPK11iio_context">
+<span id="_CPPv320iio_context_get_dataPK11iio_context"></span><span id="_CPPv220iio_context_get_dataPK11iio_context"></span><span id="iio_context_get_data__iio_contextCP"></span><span class="target" id="group__Context_1ga1979066682dd540f773e8d3039bb7c8e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_data</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420iio_context_get_dataPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Retrieve a previously associated pointer of an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The pointer previously associated if present, or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv411iio_context">
+<span id="_CPPv311iio_context"></span><span id="_CPPv211iio_context"></span><span id="iio_context"></span><span class="target" id="structiio__context"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context</span></span></span><a class="headerlink" href="#_CPPv411iio_context" title="Link to this definition"></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;iio.h&gt;</em></div>
+<p>Contains the representation of an IIO context. </p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="attributes.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Attribute Functions</a>
+    <a href="device.html" title="Next document (Alt+Shift+RightArrow)" class="next">Device Functions</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

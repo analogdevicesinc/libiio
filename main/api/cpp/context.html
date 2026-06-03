@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="C++ wrapper for the Context C-API." name="description" />
+
+    <title>Context &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=ac863bf0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../../_static/app.umd.js?v=09b0c6bc"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Device" href="device.html" />
+    <link rel="prev" title="C++ Bindings" href="index.html" />
+   
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../../index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Context</a><ul>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7ContextE"><code class="docutils literal notranslate"><span class="pre">iiopp::Context</span></code></a><ul>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context7AttrSeqE"><code class="docutils literal notranslate"><span class="pre">AttrSeq</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context4sizeEv"><code class="docutils literal notranslate"><span class="pre">size()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7ContextixEj"><code class="docutils literal notranslate"><span class="pre">operator[]()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context7ContextEv"><code class="docutils literal notranslate"><span class="pre">Context()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context7ContextEP11iio_context"><code class="docutils literal notranslate"><span class="pre">Context()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7ContextcvP11iio_contextEv"><code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">iio_context</span> <span class="pre">*()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context13version_majorEv"><code class="docutils literal notranslate"><span class="pre">version_major()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context13version_minorEv"><code class="docutils literal notranslate"><span class="pre">version_minor()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context11version_tagEv"><code class="docutils literal notranslate"><span class="pre">version_tag()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context3xmlEv"><code class="docutils literal notranslate"><span class="pre">xml()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context4nameEv"><code class="docutils literal notranslate"><span class="pre">name()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context11descriptionEv"><code class="docutils literal notranslate"><span class="pre">description()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context11attrs_countEv"><code class="docutils literal notranslate"><span class="pre">attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context4attrEj"><code class="docutils literal notranslate"><span class="pre">attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context9find_attrE4cstr"><code class="docutils literal notranslate"><span class="pre">find_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context13devices_countEv"><code class="docutils literal notranslate"><span class="pre">devices_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context6deviceEj"><code class="docutils literal notranslate"><span class="pre">device()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context11find_deviceE4cstr"><code class="docutils literal notranslate"><span class="pre">find_device()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context11set_timeoutEi"><code class="docutils literal notranslate"><span class="pre">set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context6paramsEv"><code class="docutils literal notranslate"><span class="pre">params()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context8set_dataEPv"><code class="docutils literal notranslate"><span class="pre">set_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Context4dataEv"><code class="docutils literal notranslate"><span class="pre">data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Context5attrsE"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../../index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../../api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="../../bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3" checked=""/><div class="collapse"><a class="reference internal" href="index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../../tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../../bindings.html">Bindings</a></li><li><a href="index.html">C++ Bindings</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="context">
+<h1>Context<a class="headerlink" href="#context" title="Link to this heading"></a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7ContextE">
+<span id="_CPPv3N5iiopp7ContextE"></span><span id="_CPPv2N5iiopp7ContextE"></span><span id="iiopp::Context"></span><span class="target" id="classiiopp_1_1Context"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Context</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><span class="n"><span class="pre">iiopp</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">impl</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">IndexedSequence</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N5iiopp7ContextE" title="iiopp::Context"><span class="n"><span class="pre">Context</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv4N5iiopp6DeviceE" title="iiopp::Device"><span class="n"><span class="pre">Device</span></span></a><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4N5iiopp7ContextE" title="Link to this definition"></a><br /></dt>
+<dd><p>C++ wrapper for the <a class="reference internal" href="#classiiopp_1_1Context"><span class="std std-ref">Context</span></a> C-API. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context7AttrSeqE">
+<span id="_CPPv3N5iiopp7Context7AttrSeqE"></span><span id="_CPPv2N5iiopp7Context7AttrSeqE"></span><span id="iiopp::Context::AttrSeq"></span><span class="target" id="classiiopp_1_1Context_1a5ccce374023e01ec753643975627452d"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="n"><span class="pre">impl</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">AttrSeqT</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../c/context.html#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/context.html#_CPPv427iio_context_get_attrs_countPK11iio_context" title="iio_context_get_attrs_count"><span class="n"><span class="pre">iio_context_get_attrs_count</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/context.html#_CPPv420iio_context_get_attrPK11iio_contextj" title="iio_context_get_attr"><span class="n"><span class="pre">iio_context_get_attr</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/context.html#_CPPv421iio_context_find_attrPK11iio_contextPKc" title="iio_context_find_attr"><span class="n"><span class="pre">iio_context_find_attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">AttrSeq</span></span></span><a class="headerlink" href="#_CPPv4N5iiopp7Context7AttrSeqE" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context4sizeEv">
+<span id="_CPPv3NK5iiopp7Context4sizeEv"></span><span id="_CPPv2NK5iiopp7Context4sizeEv"></span><span id="iiopp::Context::sizeC"></span><span class="target" id="classiiopp_1_1Context_1a4d494922093b9b92d24346a87b37790c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context4sizeEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7ContextixEj">
+<span id="_CPPv3N5iiopp7ContextixEj"></span><span id="_CPPv2N5iiopp7ContextixEj"></span><span id="iiopp::Context::subscript-operator__unsigned-i"></span><span class="target" id="classiiopp_1_1Context_1a59c693c4fd153baed2e106ac54cf87a5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv4N5iiopp6DeviceE" title="iiopp::Device"><span class="n"><span class="pre">Device</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7ContextixEj" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context7ContextEv">
+<span id="_CPPv3N5iiopp7Context7ContextEv"></span><span id="_CPPv2N5iiopp7Context7ContextEv"></span><span id="iiopp::Context::Context"></span><span class="target" id="classiiopp_1_1Context_1a7f6fdf383acdf0fc5640df924ae97a51"></span><span class="sig-name descname"><span class="n"><span class="pre">Context</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><a class="headerlink" href="#_CPPv4N5iiopp7Context7ContextEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context7ContextEP11iio_context">
+<span id="_CPPv3N5iiopp7Context7ContextEP11iio_context"></span><span id="_CPPv2N5iiopp7Context7ContextEP11iio_context"></span><span id="iiopp::Context::Context__iio_contextP"></span><span class="target" id="classiiopp_1_1Context_1a1177856b507e958e5ddd4ff50ba577d1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Context</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../c/context.html#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Context7ContextEP11iio_context" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7ContextcvP11iio_contextEv">
+<span id="_CPPv3NK5iiopp7ContextcvP11iio_contextEv"></span><span id="_CPPv2NK5iiopp7ContextcvP11iio_contextEv"></span><span id="iiopp::Context::castto-iio_contextP-operatorC"></span><span class="target" id="classiiopp_1_1Context_1a203aa315f00bc84742fd9e13fca54d40"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><a class="reference internal" href="../c/context.html#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="p"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7ContextcvP11iio_contextEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context13version_majorEv">
+<span id="_CPPv3NK5iiopp7Context13version_majorEv"></span><span id="_CPPv2NK5iiopp7Context13version_majorEv"></span><span id="iiopp::Context::version_majorC"></span><span class="target" id="classiiopp_1_1Context_1aa10ae0c218f8c5c52ea14728e561f50f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">version_major</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context13version_majorEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context13version_minorEv">
+<span id="_CPPv3NK5iiopp7Context13version_minorEv"></span><span id="_CPPv2NK5iiopp7Context13version_minorEv"></span><span id="iiopp::Context::version_minorC"></span><span class="target" id="classiiopp_1_1Context_1ac74e6eb2a60c7a821c4fbb8c35c25183"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">version_minor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context13version_minorEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context11version_tagEv">
+<span id="_CPPv3NK5iiopp7Context11version_tagEv"></span><span id="_CPPv2NK5iiopp7Context11version_tagEv"></span><span id="iiopp::Context::version_tagC"></span><span class="target" id="classiiopp_1_1Context_1a58fe36fc0cf3d60d9ce24aae2debe7ba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">version_tag</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context11version_tagEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context3xmlEv">
+<span id="_CPPv3NK5iiopp7Context3xmlEv"></span><span id="_CPPv2NK5iiopp7Context3xmlEv"></span><span id="iiopp::Context::xmlC"></span><span class="target" id="classiiopp_1_1Context_1a17b34b05d63c70b2805f9a1559c27590"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">CstrPtr</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">xml</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context3xmlEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context4nameEv">
+<span id="_CPPv3NK5iiopp7Context4nameEv"></span><span id="_CPPv2NK5iiopp7Context4nameEv"></span><span id="iiopp::Context::nameC"></span><span class="target" id="classiiopp_1_1Context_1a22deeaaf19c81e9ba24b4c7f87196432"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">name</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context4nameEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context11descriptionEv">
+<span id="_CPPv3NK5iiopp7Context11descriptionEv"></span><span id="_CPPv2NK5iiopp7Context11descriptionEv"></span><span id="iiopp::Context::descriptionC"></span><span class="target" id="classiiopp_1_1Context_1a46ba7042c9d70ace794c590c53b6cf59"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">description</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context11descriptionEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context11attrs_countEv">
+<span id="_CPPv3NK5iiopp7Context11attrs_countEv"></span><span id="_CPPv2NK5iiopp7Context11attrs_countEv"></span><span id="iiopp::Context::attrs_countC"></span><span class="target" id="classiiopp_1_1Context_1a93461ad18d254a12c5699dd424e382b4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">attrs_count</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context11attrs_countEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context4attrEj">
+<span id="_CPPv3N5iiopp7Context4attrEj"></span><span id="_CPPv2N5iiopp7Context4attrEj"></span><span id="iiopp::Context::attr__unsigned-i"></span><span class="target" id="classiiopp_1_1Context_1a8160f2e7607df9bd1ab5774692bd4751"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="attr.html#_CPPv4N5iiopp4AttrE" title="iiopp::Attr"><span class="n"><span class="pre">Attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">attr</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">idx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Context4attrEj" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context9find_attrE4cstr">
+<span id="_CPPv3N5iiopp7Context9find_attrE4cstr"></span><span id="_CPPv2N5iiopp7Context9find_attrE4cstr"></span><span id="iiopp::Context::find_attr__cstr"></span><span class="target" id="classiiopp_1_1Context_1a97d8f1def17a0da459201c087c7a022b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="attr.html#_CPPv4N5iiopp4AttrE" title="iiopp::Attr"><span class="n"><span class="pre">Attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find_attr</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Context9find_attrE4cstr" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context13devices_countEv">
+<span id="_CPPv3NK5iiopp7Context13devices_countEv"></span><span id="_CPPv2NK5iiopp7Context13devices_countEv"></span><span id="iiopp::Context::devices_countC"></span><span class="target" id="classiiopp_1_1Context_1a373f887e626bb34a0431b6056f01daf8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">devices_count</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context13devices_countEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context6deviceEj">
+<span id="_CPPv3NK5iiopp7Context6deviceEj"></span><span id="_CPPv2NK5iiopp7Context6deviceEj"></span><span id="iiopp::Context::device__unsigned-iC"></span><span class="target" id="classiiopp_1_1Context_1a5888e91b1b8dbd02352a8ed863c8dff1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="device.html#_CPPv4N5iiopp6DeviceE" title="iiopp::Device"><span class="n"><span class="pre">Device</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">device</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">idx</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context6deviceEj" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context11find_deviceE4cstr">
+<span id="_CPPv3NK5iiopp7Context11find_deviceE4cstr"></span><span id="_CPPv2NK5iiopp7Context11find_deviceE4cstr"></span><span id="iiopp::Context::find_device__cstrC"></span><span class="target" id="classiiopp_1_1Context_1afdc17e4aad7c5cd1a902061c6e4d2543"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="device.html#_CPPv4N5iiopp6DeviceE" title="iiopp::Device"><span class="n"><span class="pre">Device</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find_device</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context11find_deviceE4cstr" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context11set_timeoutEi">
+<span id="_CPPv3N5iiopp7Context11set_timeoutEi"></span><span id="_CPPv2N5iiopp7Context11set_timeoutEi"></span><span id="iiopp::Context::set_timeout__i"></span><span class="target" id="classiiopp_1_1Context_1a69c663ecf90f0dbdb5ea85ac9a7d7e4c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_timeout</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeout_ms</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Context11set_timeoutEi" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context6paramsEv">
+<span id="_CPPv3NK5iiopp7Context6paramsEv"></span><span id="_CPPv2NK5iiopp7Context6paramsEv"></span><span id="iiopp::Context::paramsC"></span><span class="target" id="classiiopp_1_1Context_1a5332e9e7fcb9a46cc747bc3f8fe146b6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">iio_context_params</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">params</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context6paramsEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context8set_dataEPv">
+<span id="_CPPv3N5iiopp7Context8set_dataEPv"></span><span id="_CPPv2N5iiopp7Context8set_dataEPv"></span><span id="iiopp::Context::set_data__voidP"></span><span class="target" id="classiiopp_1_1Context_1aa765e3fbd888c5cbd8fa6fc7449146ad"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_data</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Context8set_dataEPv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Context4dataEv">
+<span id="_CPPv3NK5iiopp7Context4dataEv"></span><span id="_CPPv2NK5iiopp7Context4dataEv"></span><span id="iiopp::Context::dataC"></span><span class="target" id="classiiopp_1_1Context_1a59053328b1c058266dc37a725226ba34"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">data</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Context4dataEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Context5attrsE">
+<span id="_CPPv3N5iiopp7Context5attrsE"></span><span id="_CPPv2N5iiopp7Context5attrsE"></span><span id="iiopp::Context::attrs__AttrSeq"></span><span class="target" id="classiiopp_1_1Context_1adc0b6283fb4a296ad9d8e8935170da0c"></span><a class="reference internal" href="#_CPPv4N5iiopp7Context7AttrSeqE" title="iiopp::Context::AttrSeq"><span class="n"><span class="pre">AttrSeq</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">attrs</span></span></span><a class="headerlink" href="#_CPPv4N5iiopp7Context5attrsE" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="index.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">C++ Bindings</a>
+    <a href="device.html" title="Next document (Alt+Shift+RightArrow)" class="next">Device</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
