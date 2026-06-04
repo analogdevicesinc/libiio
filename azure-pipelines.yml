@@ -22,6 +22,14 @@ pr:
     - 20*
     - libiio-v0
 
+schedules:
+- cron: "0 6 * * 6"
+  displayName: Weekly libiio-v0 build
+  branches:
+    include:
+    - libiio-v0
+  always: true
+
 stages:
 - stage: Builds
   #############################################
