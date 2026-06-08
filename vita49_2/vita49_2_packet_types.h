@@ -73,7 +73,7 @@ struct vita49_2_context_packet {
  */
 struct vita49_2_control_packet {
 	
-	struct vita49_2_command_prologue prologue;	/* Common fields present in every VITA 49.2 Command Packet */
+	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
 	struct vita49_2_cif0_fields cif0;	/* Context Indicator Fields 0 */
 
@@ -149,7 +149,7 @@ struct vita49_2_ackV_X_packet {
  * This structure holds all decompressed fields and metadata of a 
  * VITA 49.2 AckS Packet, providing easy access to components.
  */
-struct vita49_2_context_packet {
+struct vita49_2_ackS_packet {
 	
 	struct vita49_2_command_prologue prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
@@ -182,7 +182,7 @@ struct vita49_2_context_packet {
  * The purpose of this Command Extension Packet is to issue commands/controls on ADI devices that can't
  * be well translated to CIF0-7 fields.
  */
-struct vita49_2_context_packet {
+struct vita49_2_extended_control_packet {
 	
 	struct vita49_2_command_prologue prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
@@ -211,11 +211,41 @@ struct vita49_2_context_packet {
  */
 __vrt_api int vrt_parse_packet(const uint32_t *buf, size_t words, struct vrt_packet *pkt);
 
-/* Generates a buffer of 32-bit words from a vrt_packet structure.
- * The buffer must be large enough to hold the generated packet.
+/**
+ * @brief Populates a 32-bit word buffer with data for a Signal Data Packet. 
+ * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
+ * 
+ * @param pkt 
+ * @param buf 
+ * @param max_words 
+ * @return __vrt_api 
  */
-__vrt_api ssize_t vrt_generate_packet(const struct vrt_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Populates a 32-bit word buffer with data for a Context Packet. 
+ * The buffer MUST be large enough to hold the generated packet.
+ * Returns the number of words written, or a negative error code on failure.
+ * 
+ * @param pkt 
+ * @param buf 
+ * @param max_words 
+ * @return __vrt_api 
+ */
+__vrt_api ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Populates a 32-bit word buffer with data for a Control Packet. 
+ * The buffer MUST be large enough to hold the generated packet.
+ * Returns the number of words written, or a negative error code on failure.
+ * 
+ * @param pkt 
+ * @param buf 
+ * @param max_words 
+ * @return __vrt_api 
+ */
+__vrt_api ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words);
 
 /* Extracts a 32-bit word from the packet payload, handling network byte-order translation. */
 __vrt_api uint32_t vrt_get_payload_word(const struct vrt_packet *pkt, size_t offset);
@@ -229,9 +259,5 @@ __vrt_api double vrt_get_payload_double(const struct vrt_packet *pkt, size_t off
 /* Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order. */
 __vrt_api void vrt_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val);
 
-/* Parses the CIF0 payload section if the packet is of type IF_CONTEXT.
- * Evaluates the flags present in CIF0 to sequentially decode the context payload.
- */
-__vrt_api int vrt_parse_cif_payload(const struct vrt_packet *pkt, struct vrt_cif_fields *cif);
 
-#endif /* __VITA49_PACKET_H__ */
+#endif /* __VITA49_PACKET_TYPES_H__ */

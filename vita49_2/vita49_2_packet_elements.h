@@ -13,6 +13,7 @@
 #define __VITA49_PACKET_ELEMENTS_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* VITA 49.2 has some unique value encodings, so for readability it's better to declare them as "separate" types */
 typedef double double_44_20;		/* Radix point is to the left of the first 20 bits */
@@ -286,19 +287,19 @@ struct vita49_2_command_prologue {
 	uint32_t message_id;						/* Message ID field - used to correlate Control Packets with their corresponding Acknowledge Packets */
 
 	// ADI doesn't use controllee ID, however we retain the right to support it at a later time.
-	bool has_controllee_id;						/* True if Controllee Identifier field is present */
-	bool has_controller_id;						/* True if Controller Identifier field is present */
+	bool has_controllee_id_field;				/* True if Controllee Identifier field is present */
+	bool has_controller_id_field;				/* True if Controller Identifier field is present */
 
 	// ADI doesn't use 128-bit UUIDs, however we retain the right to support it at a later time.
 	union controllee_id {
 		uint32_t id32;
 		uint32_t uuid128[4];
-	};
+	} controllee_id;
 
 	union controller_id {
 		uint32_t id32;
 		uint32_t uuid128[4];
-	};
+	} controller_id;
 
 };
 
@@ -471,6 +472,43 @@ struct vita49_2_cif3_fields {};
 // TODO: Define a struct to represent CIF7 similarly to how we've defined CIF0 below.
 struct vita49_2_cif7_fields {};
 
+struct vita49_2_device_identifier {
+
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	
+	struct {
+		
+		uint32_t oui:24;				/* OUI code, either IEEE-defined or provided by VITA */
+		uint32_t reserved_24_31:8; 		/* Reserved bits should be zeroed out. */
+	
+	} lower_word;
+
+	struct {
+		
+		uint32_t device_code:16;		/* Unique device identifier such as a serial number */
+		uint32_t reserved_16_31:16		/* Reserved bits should be zeroed out. */
+	
+	} upper_word;
+
+	#else
+
+	struct {
+		
+		uint32_t reserved_24_31:8; 		/* Reserved bits should be zeroed out. */
+		uint32_t oui:24;				/* OUI code, either IEEE-defined or provided by VITA */
+	
+	} lower_word;
+
+	struct {
+		
+		uint32_t reserved_16_31:16		/* Reserved bits should be zeroed out. */
+		uint32_t device_code:16;		/* Unique device identifier such as a serial number */
+	
+	} upper_word;
+
+	#endif
+};
+
 /**
  * @struct vita49_2_cif0_fields
  * @brief Parsed representation of Context Indicator Field 0 (CIF0) payload.
@@ -581,12 +619,10 @@ struct vita49_2_cif0_fields {
 	uint64_t timestamp_adjustment;  									/**< Timestamp Adjustment in picoseconds */
 
 	uint32_t timestamp_calibration_time_int;  							/**< Integer part of Calibration Time */
-	uint64_t timestamp_calibration_time_frac; 							/**< Fractional part of Calibration Time */
 
 	float temperature;            										/**< Temperature in degrees Celsius */
 
-	uint32_t device_identifier_oui;  									/**< Device Identifier OUI (24-bit) */
-	uint16_t device_identifier_code; 									/**< Device Identifier Code (16-bit) */
+	struct vita49_2_device_identifier device_identifier;				/**< Device Identifier = OUI and Device Code */
 
 	uint32_t state_and_event_indicators;  								/**< State and Event indicators bitmap */
 
@@ -667,5 +703,13 @@ __vrt_api int16_t convert_to_9_7(float value);
  */
 __vrt_api float convert_from_9_7(int16_t value);
 
+/* Parses the CIF0 payload section if the packet is of type IF_CONTEXT.
+ * Evaluates the flags present in CIF0 to sequentially decode the context payload.
+ */
 
-#endif /* __VITA49_H__ */
+/**
+ * 
+ */
+__vrt_api int vita49_2_parse_cif0_payload(const struct vrt_packet *pkt, struct vrt_cif_fields *cif);
+
+#endif /* __VITA49_PACKET_ELEMENTS_H__ */
