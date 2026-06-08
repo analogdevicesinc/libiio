@@ -58,8 +58,8 @@ struct vita49_2_header {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
 	uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
-	uint32_t ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
-	uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
+	vita49_2_tsi ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
+	vita49_2_tsf ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
 	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
 	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
 	uint32_t packet_type:4;         /* VRT Packet Type */
@@ -82,15 +82,19 @@ struct vita49_2_header {
  */
 struct vita49_2_trailer {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+
 	uint32_t associated_context_packet_count:7;      /* Count of linked Context packets */
 	uint32_t context_packet_count_enable:1;          /* E bit: Associated Context Packet Count is valid */
 	uint32_t state_and_event_indicators:12;          /* State and Event indicators (e.g., AGC, Cal Error) */
 	uint32_t indicator_enables:12;                   /* Enables: Validates corresponding indicators */
+
 #else
+
 	uint32_t indicator_enables:12;                   /* Enables: Validates corresponding indicators */
 	uint32_t state_and_event_indicators:12;          /* State and Event indicators (e.g., AGC, Cal Error) */
 	uint32_t context_packet_count_enable:1;          /* E bit: Associated Context Packet Count is valid */
 	uint32_t associated_context_packet_count:7;      /* Count of linked Context packets */
+
 #endif
 };
 
@@ -154,6 +158,11 @@ struct vita49_2_prologue {
 	uint32_t timestamp_int;   					/* Integer Timestamp, required for ADI's implementation */
 	uint64_t timestamp_frac; 					/* Optional Fractional Timestamp */
 
+	// I've added these bools just in case we decide to make some of the required fields I mentioned above optional again
+	bool has_stream_id;       /**< True if stream_id is populated */
+	bool has_class_id;        /**< True if class_id is populated */
+	bool has_timestamp_int;   /**< True if timestamp_int is populated */
+	bool has_timestamp_frac;  /**< True if timestamp_frac is populated */
 };
 
 /**
@@ -474,7 +483,7 @@ struct vita49_2_cif0_fields {
 	// See Table 9.1-1 in the full VITA 49.2 Specification
 
 	/* The raw Context Indicator Field 0 word */
-	struct {
+	struct cif0_word {
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		
 		// These are fields that are unlikely to be used, however ADI retains the right to implement them in the future
@@ -546,7 +555,7 @@ struct vita49_2_cif0_fields {
 		uint32_t reserved_0:1;							/* Reserved bit should be zeroed out */
 
 		#endif
-	} cif0;
+	} cif0_word;
 
 	// NOTE: "Context Field Change Indicator" doesn't have an actual payload field. 
 	// It's simply an indicator and can exist in the CIF0 word
@@ -593,11 +602,6 @@ struct vita49_2_cif0_fields {
 	struct vita49_2_gps_ascii gps_ascii;								/**< Some devices output information in formatted ASCII strings ("GPS sentences") */
 
 	struct vita49_2_context_association_lists context_association_lists;	/**< CALs allow a data packet to be associated with multiple context packets from relevant reference points or systems */
-
-	struct vita49_2_cif7_fields* cif7;									/**< CIF7 Word and Fields */
-	struct vita49_2_cif3_fields* cif3;									/**< CIF3 Word and Fields */
-	struct vita49_2_cif2_fields* cif2;									/**< CIF2 Word and Fields */
-	struct vita49_2_cif1_fields* cif1;									/**< CIF1 Word and Fields */
 };
 
 #endif /* __VITA49_H__ */
