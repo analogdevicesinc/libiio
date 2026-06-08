@@ -247,17 +247,5 @@ __vrt_api ssize_t vita49_2_generate_context_packet(const struct vita49_2_context
  */
 __vrt_api ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words);
 
-/* Extracts a 32-bit word from the packet payload, handling network byte-order translation. */
-__vrt_api uint32_t vrt_get_payload_word(const struct vrt_packet *pkt, size_t offset);
-
-/* Inserts a 32-bit word into a raw payload buffer in network byte-order. */
-__vrt_api void vrt_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val);
-
-/* Extracts an IEEE 754 64-bit float from the packet payload, handling network byte-order translation. */
-__vrt_api double vrt_get_payload_double(const struct vrt_packet *pkt, size_t offset);
-
-/* Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order. */
-__vrt_api void vrt_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val);
-
 
 #endif /* __VITA49_PACKET_TYPES_H__ */

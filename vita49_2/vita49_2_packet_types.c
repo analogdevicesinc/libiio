@@ -772,39 +772,3 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 	return buffer_index;
 }
 
-uint32_t vita49_2_get_payload_word(const struct VITA49_2_packet *pkt, size_t offset)
-{
-	if (!pkt || !pkt->payload || offset >= pkt->payload_num_words)
-		return 0;
-	return ntohl(pkt->payload[offset]);
-}
-
-void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val)
-{
-	if (!payload || offset >= max_words)
-		return;
-	payload[offset] = htonl(val);
-}
-
-double VITA49_2_get_payload_double(const struct VITA49_2_packet *pkt, size_t offset)
-{
-	if (!pkt || !pkt->payload || offset + 1 >= pkt->payload_num_words)
-		return 0.0;
-	uint32_t w1 = ntohl(pkt->payload[offset]);
-	uint32_t w2 = ntohl(pkt->payload[offset + 1]);
-	uint64_t v_int = ((uint64_t)w1 << 32) | w2;
-	double val;
-	memcpy(&val, &v_int, sizeof(double));
-	return val;
-}
-
-void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val)
-{
-	if (!payload || offset + 1 >= max_words)
-		return;
-	uint64_t v_int;
-	memcpy(&v_int, &val, sizeof(double));
-	payload[offset] = htonl((uint32_t)(v_int >> 32));
-	payload[offset + 1] = htonl((uint32_t)(v_int & 0xFFFFFFFF));
-}
-

@@ -710,6 +710,44 @@ __vrt_api float convert_from_9_7(int16_t value);
 /**
  * 
  */
-__vrt_api int vita49_2_parse_cif0_payload(const struct vrt_packet *pkt, struct vrt_cif_fields *cif);
+__vrt_api int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0);
+
+/**
+ * @brief Extracts a 32-bit word from the packet payload, handling network byte-order translation.
+ * 
+ * @param payload 
+ * @param payload_size 
+ * @param offset 
+ * @return __vrt_api 
+ */
+__vrt_api uint32_t vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset);
+
+
+/* Inserts a 32-bit word into a raw payload buffer in network byte-order. */
+__vrt_api void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val);
+
+/**
+ * @brief Extracts an IEEE 754 64-bit float from the packet payload, handling network byte-order translation.
+ * 
+ * @param payload 
+ * @param payload_size 
+ * @param offset 
+ * @return __vrt_api 
+ */
+__vrt_api double vita49_2_get_payload_double(const uint32_t* const payload, uint16_t payload_size, size_t offset);
+
+/**
+ * @brief Extracts a 64-bit signed integer from the packet payload, handling network byte-order translation.
+ * 
+ * @param payload 
+ * @param payload_size 
+ * @param offset 
+ * @return int64_t 
+ */
+__vrt_api int64_t vita49_2_get_payload_int64(const uint32_t* const payload, uint16_t payload_size, size_t offset);
+
+
+/* Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order. */
+__vrt_api void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val);
 
 #endif /* __VITA49_PACKET_ELEMENTS_H__ */
