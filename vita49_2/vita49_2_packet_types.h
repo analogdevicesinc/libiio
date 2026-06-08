@@ -4,10 +4,13 @@
  *
  * Copyright (C) 2026 Analog Devices, Inc.
  * Author: Travis Collins <travis.collins@analog.com>
+ * 
+ * Contributors:
+ * 		- Praveen Perera <praveen.perera@analog.com>
  */
 
-#ifndef __VITA49_PACKET_H__
-#define __VITA49_PACKET_H__
+#ifndef __VITA49_PACKET_TYPES_H__
+#define __VITA49_PACKET_TYPES_H__
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -40,70 +43,6 @@ struct vrt_packet {
 	bool has_timestamp_int;   /**< True if timestamp_int is populated */
 	bool has_timestamp_frac;  /**< True if timestamp_frac is populated */
 	bool has_trailer;         /**< True if trailer is populated */
-};
-
-/**
- * @struct vrt_cif_fields
- * @brief Parsed representation of Context Indicator Field 0 (CIF0) payload.
- *
- * This structure holds the decoded information from an IF Context packet's
- * payload, representing varying system and signal state attributes.
- */
-struct vrt_cif_fields {
-	uint32_t cif0; /**< The raw Context Indicator Field 0 word */
-
-	bool  context_field_change; /**< True if any context field has changed (Bit 31) */
-	
-	bool  has_reference_point_id; /**< True if Reference Point Identifier is present (Bit 30) */
-	uint32_t reference_point_id;  /**< Reference Point Identifier */
-	
-	bool  has_bandwidth;          /**< True if Bandwidth is present (Bit 29) */
-	double bandwidth;             /**< Bandwidth in Hz */
-	
-	bool  has_if_reference_frequency; /**< True if IF Reference Frequency is present (Bit 28) */
-	double if_reference_frequency;    /**< IF Reference Frequency in Hz */
-	
-	bool  has_rf_reference_frequency; /**< True if RF Reference Frequency is present (Bit 27) */
-	double rf_reference_frequency;    /**< RF Reference Frequency in Hz */
-	
-	bool  has_rf_reference_frequency_offset; /**< True if RF Reference Frequency Offset is present (Bit 26) */
-	double rf_reference_frequency_offset;    /**< RF Reference Frequency Offset in Hz */
-	
-	bool  has_if_band_offset;     /**< True if IF Band Offset is present (Bit 25) */
-	double if_band_offset;        /**< IF Band Offset in Hz */
-	
-	bool  has_reference_level;    /**< True if Reference Level is present (Bit 24) */
-	float reference_level;        /**< Reference Level in dBm */
-	
-	bool  has_gain;               /**< True if Gain is present (Bit 23) */
-	float gain_stage_1;           /**< Gain Stage 1 in dB */
-	float gain_stage_2;           /**< Gain Stage 2 in dB */
-	
-	bool  has_over_range_count;   /**< True if Over-Range Count is present (Bit 22) */
-	uint32_t over_range_count;    /**< Over-Range Count */
-	
-	bool  has_sample_rate;        /**< True if Sample Rate is present (Bit 21) */
-	double sample_rate;           /**< Sample Rate in Hz */
-	
-	bool  has_timestamp_adjustment; /**< True if Timestamp Adjustment is present (Bit 20) */
-	uint64_t timestamp_adjustment;  /**< Timestamp Adjustment in picoseconds */
-	
-	bool  has_timestamp_calibration_time;     /**< True if Timestamp Calibration Time is present (Bit 19) */
-	uint32_t timestamp_calibration_time_int;  /**< Integer part of Calibration Time */
-	uint64_t timestamp_calibration_time_frac; /**< Fractional part of Calibration Time */
-	
-	bool  has_temperature;        /**< True if Temperature is present (Bit 18) */
-	float temperature;            /**< Temperature in degrees Celsius */
-	
-	bool  has_device_identifier;     /**< True if Device Identifier is present (Bit 17) */
-	uint32_t device_identifier_oui;  /**< Device Identifier OUI (24-bit) */
-	uint16_t device_identifier_code; /**< Device Identifier Code (16-bit) */
-	
-	bool  has_state_and_event_indicators; /**< True if State/Event Indicators are present (Bit 16) */
-	uint32_t state_and_event_indicators;  /**< State and Event indicators bitmap */
-	
-	bool  has_data_packet_payload_format; /**< True if Data Packet Payload Format is present (Bit 15) */
-	uint64_t data_packet_payload_format;  /**< Payload Format specific bits */
 };
 
 #if defined(_WIN32)
