@@ -8,7 +8,7 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
-#include "vita49_packet.h"
+#include "vita49_2_packet_elements.h"
 
 #include <iio/iio.h>
 #include <iio/iio-backend.h>

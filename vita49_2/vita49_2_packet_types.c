@@ -317,33 +317,3 @@ int vrt_parse_cif_payload(const struct vrt_packet *pkt, struct vrt_cif_fields *c
 
 	return 0;
 }
-
-int64_t convert_to_44_20(double value)
-{
-	return (int64_t)(value * (1 << 20));
-}
-
-double convert_from_44_20(int64_t value)
-{
-	return (double)(value / (1 << 20));
-}
-
-int16_t convert_to_10_6(float value)
-{
-	return (int16_t)(value * (1 << 6));
-}
-
-float convert_from_10_6(int16_t value)
-{
-	return (float)(value / (1 << 6));
-}
-
-int16_t convert_to_9_7(float value)
-{
-	return (int16_t)(value * (1 << 7));
-}
-
-float convert_from_9_7(int16_t value)
-{
-	return (float)(value / (1 << 7));
-}

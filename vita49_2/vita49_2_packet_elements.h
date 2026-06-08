@@ -604,4 +604,68 @@ struct vita49_2_cif0_fields {
 	struct vita49_2_context_association_lists context_association_lists;	/**< CALs allow a data packet to be associated with multiple context packets from relevant reference points or systems */
 };
 
+
+#if defined(_WIN32)
+#  if defined(LIBIIO_EXPORTS)
+#    define __vrt_api __declspec(dllexport)
+#  else
+#    define __vrt_api __declspec(dllimport)
+#  endif
+#elif __GNUC__ >= 4 || defined(__clang__)
+#  define __vrt_api __attribute__((visibility ("default")))
+#else
+#  define __vrt_api
+#endif
+
+
+/**
+ * @brief Converts a double to a 64-bit integer in 44.20 format (meaning the radix point is to the left of the first 20 bits).
+ * 
+ * @param value 
+ * @return __vrt_api 
+ */
+__vrt_api int64_t convert_to_44_20(double value);
+
+/**
+ * @brief Converts a 64-bit integer in 44.20 format (meaning the radix point is to the left of the first 20 bits) back to a double.
+ * 
+ * @param value 
+ * @return __vrt_api 
+ */
+__vrt_api double convert_from_44_20(int64_t value);
+
+/**
+ * @brief Converts a 16-bit FP-value to a 16-bit integer in 10.6 format (meaning the radix point is to the left of the first 6 bits).
+ * 
+ * @param value 
+ * @return __vrt_api 
+ */
+__vrt_api int16_t convert_to_10_6(float value);
+
+/**
+ * @brief Converts a 16-bit integer in 10.6 format (meaning the radix point is to the left of the first 6 bits) back to a float.
+ * 
+ * @param value 
+ * @return __vrt_api 
+ */
+__vrt_api float convert_from_10_6(int16_t value);
+
+
+/**
+ * @brief Converts a 16-bit FP-value to a 16-bit integer in 9.7 format (meaning the radix point is to the left of the first 7 bits).
+ * 
+ * @param value 
+ * @return __vrt_api 
+ */
+__vrt_api int16_t convert_to_9_7(float value);
+
+/**
+ * @brief Converts a 16-bit integer in 9.7 format (meaning the radix point is to the left of the first 7 bits) back to a float.
+ * 
+ * @param value 
+ * @return __vrt_api 
+ */
+__vrt_api float convert_from_9_7(int16_t value);
+
+
 #endif /* __VITA49_H__ */
