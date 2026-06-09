@@ -302,6 +302,17 @@ TEST_FUNCTION(context_timeout_measurement)
 	struct timespec start, end;
 	long elapsed_ms;
 	int err;
+	const char *test_uri;
+
+	/*
+	 * Skip timeout tests for EMU backend - timeout behavior isn't
+	 * applicable and this avoids unnecessary.
+	 */
+	test_uri = getenv("TESTS_API_URI");
+	if (test_uri && strncmp(test_uri, "emu:", 4) == 0) {
+		DEBUG_PRINT("  SKIP: Timeout tests not applicable for EMU backend\n");
+		return;
+	}
 
 	/*
 	 * Use an IP address from TEST-NET-1 (RFC 5737) - reserved for
