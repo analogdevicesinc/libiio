@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE context [
+	<!ELEMENT context (device)*>
+	<!ELEMENT device (channel | attribute | event-attribute)*>
+	<!ELEMENT channel (scan-element?, attribute*, event-attribute*)>
+	<!ELEMENT attribute EMPTY>
+	<!ELEMENT scan-element EMPTY>
+	<!ELEMENT event-attribute EMPTY>
+	<!ATTLIST context name CDATA #REQUIRED>
+	<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED value CDATA #IMPLIED>
+	<!ATTLIST event-attribute name CDATA #REQUIRED filename CDATA #IMPLIED value CDATA #IMPLIED>
+]>
+<context name="local" version-major="1" version-minor="0" version-git="test-v1">
+	<device id="iio:device0" name="test_event_device" >
+		<attribute name="sampling_frequency" value="100" />
+		<event-attribute name="events_enabled" value="1" />
+		<channel id="accel_x" type="input" >
+			<attribute name="raw" value="500" />
+			<attribute name="scale" value="0.001" />
+			<event-attribute name="thresh_rising_en" filename="in_accel_x_thresh_rising_en" value="0" />
+			<event-attribute name="thresh_rising_value" filename="in_accel_x_thresh_rising_value" value="1000" />
+			<event-attribute name="thresh_falling_en" filename="in_accel_x_thresh_falling_en" value="0" />
+			<event-attribute name="thresh_falling_value" filename="in_accel_x_thresh_falling_value" value="-1000" />
+		</channel>
+		<channel id="accel_y" type="input" >
+			<attribute name="raw" value="250" />
+			<attribute name="scale" value="0.001" />
+			<event-attribute name="thresh_rising_en" filename="in_accel_y_thresh_rising_en" value="1" />
+			<event-attribute name="thresh_rising_value" filename="in_accel_y_thresh_rising_value" value="2000" />
+			<event-attribute name="thresh_falling_en" filename="in_accel_y_thresh_falling_en" value="0" />
+			<event-attribute name="thresh_falling_value" filename="in_accel_y_thresh_falling_value" value="-2000" />
+		</channel>
+		<channel id="accel_z" type="input" >
+			<attribute name="raw" value="-100" />
+			<attribute name="scale" value="0.001" />
+			<event-attribute name="thresh_rising_en" filename="in_accel_z_thresh_rising_en" value="0" />
+			<event-attribute name="thresh_rising_value" filename="in_accel_z_thresh_rising_value" value="1500" />
+		</channel>
+	</device>
+</context>
