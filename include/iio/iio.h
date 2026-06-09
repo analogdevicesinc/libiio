@@ -1067,6 +1067,33 @@ __api __check_ret __pure const struct iio_attr *
 iio_channel_find_attr(const struct iio_channel *chn, const char *name);
 
 
+/** @brief Enumerate the event attributes of the given channel
+ * @param chn A pointer to an iio_channel structure
+ * @return The number of event attributes found */
+__api __check_ret __pure unsigned int
+iio_channel_get_event_attrs_count(const struct iio_channel *chn);
+
+
+/** @brief Get the event attribute present at the given index
+ * @param chn A pointer to an iio_channel structure
+ * @param index The index corresponding to the event attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_channel_get_event_attr(const struct iio_channel *chn, unsigned int index);
+
+
+/** @brief Try to find a channel event attribute by its name
+ * @param chn A pointer to an iio_channel structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * event attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the name does not correspond to any known event attribute of the
+ * given channel, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_channel_find_event_attr(const struct iio_channel *chn, const char *name);
+
+
 /** @brief Enable the given channel
  * @param chn A pointer to an iio_channel structure
  * @param mask The channels mask to manipulate */
@@ -1670,6 +1697,33 @@ __api void iio_channel_convert(const struct iio_channel *chn,
  * @param src A pointer to the source buffer containing the sample */
 __api void iio_channel_convert_inverse(const struct iio_channel *chn,
 		void *dst, const void *src);
+
+
+/** @brief Enumerate the event attributes of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of event attributes found */
+__api __check_ret __pure unsigned int
+iio_device_get_event_attrs_count(const struct iio_device *dev);
+
+
+/** @brief Get the event attribute present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the event attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_device_get_event_attr(const struct iio_device *dev, unsigned int index);
+
+
+/** @brief Try to find an event attribute by its name
+ * @param dev A pointer to an iio_device structure
+ * @param name A NULL-terminated string corresponding to the name of the
+ * event attribute
+ * @return On success, a pointer to an iio_attr structure
+ * @return If the name does not correspond to any known event attribute of the
+ * given device, NULL is returned */
+__api __check_ret __pure const struct iio_attr *
+iio_device_find_event_attr(const struct iio_device *dev, const char *name);
 
 
 /** @brief Enumerate the debug attributes of the given device

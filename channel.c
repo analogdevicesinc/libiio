@@ -230,8 +230,10 @@ static ssize_t iio_snprintf_chan_attr_xml(const struct iio_attr *attr,
 					  char *str, ssize_t len)
 {
 	ssize_t ret, alen = 0;
+	bool is_event = (attr->type == IIO_ATTR_TYPE_CHANNEL_EVENT);
 
-	ret = iio_snprintf(str, len, "<attribute name=\"%s\"", attr->name);
+	ret = iio_snprintf(str, len, "<%s name=\"%s\"",
+			   is_event ? "event-attribute" : "attribute", attr->name);
 	if (ret < 0)
 		return ret;
 	iio_update_xml_indexes(ret, &str, &len, &alen);
@@ -287,6 +289,7 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 	bool include_values = chn->dev->ctx->params.flags
 				& IIO_CTX_XML_INCLUDE_VALUES;
 	ssize_t ret, alen = 0;
+	enum iio_attr_type type;
 	unsigned int i;
 
 	ret = iio_xml_print_and_sanitized_param(ptr, len, "<channel id=\"",
@@ -322,17 +325,20 @@ ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len,
 		iio_update_xml_indexes(ret, &ptr, &len, &alen);
 	}
 
-	for (i = 0; i < chn->attrlist.num; i++) {
-		const char *val = NULL;
+	for (type = IIO_ATTR_TYPE_CHANNEL; type <= IIO_ATTR_TYPE_CHANNEL_EVENT; type++) {
+		const struct iio_attr_list *list = &chn->attrlist[CHN_ATTRLIST_IDX(type)];
 
-		if (include_values && chn->values)
-			val = chn->values[i];
+		for (i = 0; i < list->num; i++) {
+			const char *val = NULL;
 
-		ret = iio_snprintf_chan_attr_xml(&chn->attrlist.attrs[i],
-						val, ptr, len);
-		if (ret < 0)
-			return ret;
-		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+			if (include_values && chn->values[CHN_ATTRLIST_IDX(type)])
+				val = chn->values[CHN_ATTRLIST_IDX(type)][i];
+
+			ret = iio_snprintf_chan_attr_xml(&list->attrs[i], val, ptr, len);
+			if (ret < 0)
+				return ret;
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+		}
 	}
 
 	ret = iio_snprintf(ptr, len, "</channel>");
@@ -379,13 +385,13 @@ enum iio_chan_type iio_channel_get_type(const struct iio_channel *chn)
 
 unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn)
 {
-	return chn->attrlist.num;
+	return chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL)].num;
 }
 
 const struct iio_attr *
 iio_channel_get_attr(const struct iio_channel *chn, unsigned int index)
 {
-	return iio_attr_get(&chn->attrlist, index);
+	return iio_attr_get(&chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL)], index);
 }
 
 const struct iio_attr *
@@ -394,7 +400,7 @@ iio_channel_find_attr(const struct iio_channel *chn, const char *name)
 	const struct iio_attr *attr;
 	size_t len;
 
-	attr = iio_attr_find(&chn->attrlist, name);
+	attr = iio_attr_find(&chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL)], name);
 	if (attr)
 		return attr;
 
@@ -407,11 +413,28 @@ iio_channel_find_attr(const struct iio_channel *chn, const char *name)
 
 		if (!strncmp(chn->name, name, len) && name[len] == '_') {
 			name += len + 1;
-			return iio_attr_find(&chn->attrlist, name);
+			return iio_attr_find(&chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL)], name);
 		}
 	}
 
 	return NULL;
+}
+
+unsigned int iio_channel_get_event_attrs_count(const struct iio_channel *chn)
+{
+	return chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL_EVENT)].num;
+}
+
+const struct iio_attr *
+iio_channel_get_event_attr(const struct iio_channel *chn, unsigned int index)
+{
+	return iio_attr_get(&chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL_EVENT)], index);
+}
+
+const struct iio_attr *
+iio_channel_find_event_attr(const struct iio_channel *chn, const char *name)
+{
+	return iio_attr_find(&chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL_EVENT)], name);
 }
 
 void iio_channel_set_data(struct iio_channel *chn, void *data)
@@ -457,7 +480,10 @@ void iio_channel_disable(const struct iio_channel *chn,
 
 void free_channel(struct iio_channel *chn)
 {
-	iio_free_attrs(&chn->attrlist);
+	enum iio_attr_type type;
+
+	for (type = IIO_ATTR_TYPE_CHANNEL; type <= IIO_ATTR_TYPE_CHANNEL_EVENT; type++)
+		iio_free_attrs(&chn->attrlist[CHN_ATTRLIST_IDX(type)]);
 	free(chn->name);
 	free(chn->label);
 	free(chn->id);
