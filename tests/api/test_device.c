@@ -194,6 +194,46 @@ TEST_FUNCTION(device_debug_attributes)
 	TEST_ASSERT_PTR_NULL(nonexistent_debug, "Nonexistent debug attribute should return NULL");
 }
 
+TEST_FUNCTION(device_event_attributes)
+{
+	setup_test_device();
+
+	if (!test_dev) {
+		DEBUG_PRINT("  SKIP: No test device available\n");
+		return;
+	}
+
+	unsigned int nb_event_attrs = iio_device_get_event_attrs_count(test_dev);
+	DEBUG_PRINT("  INFO: Device has %u event attributes\n", nb_event_attrs);
+
+	for (unsigned int i = 0; i < nb_event_attrs; i++) {
+		const struct iio_attr *attr = iio_device_get_event_attr(test_dev, i);
+		TEST_ASSERT_PTR_NOT_NULL(attr, "Event attribute should exist");
+
+		if (attr) {
+			const char *name = iio_attr_get_name(attr);
+			DEBUG_PRINT("  INFO: Event attribute %u: '%s'\n", i, name ? name : "NULL");
+		}
+	}
+
+	const struct iio_attr *invalid_event = iio_device_get_event_attr(test_dev, nb_event_attrs + 10);
+	TEST_ASSERT_PTR_NULL(invalid_event, "Invalid event attribute index should return NULL");
+
+	if (nb_event_attrs > 0) {
+		const struct iio_attr *first_event = iio_device_get_event_attr(test_dev, 0);
+		if (first_event) {
+			const char *name = iio_attr_get_name(first_event);
+			if (name) {
+				const struct iio_attr *found_event = iio_device_find_event_attr(test_dev, name);
+				TEST_ASSERT(found_event == first_event, "Found event attribute should match original");
+			}
+		}
+	}
+
+	const struct iio_attr *nonexistent_event = iio_device_find_event_attr(test_dev, "nonexistent_event");
+	TEST_ASSERT_PTR_NULL(nonexistent_event, "Nonexistent event attribute should return NULL");
+}
+
 TEST_FUNCTION(device_trigger_operations)
 {
 	setup_test_device();
@@ -351,6 +391,7 @@ int main(void)
 	RUN_TEST(device_channels);
 	RUN_TEST(device_attributes);
 	RUN_TEST(device_debug_attributes);
+	RUN_TEST(device_event_attributes);
 	RUN_TEST(device_trigger_operations);
 	RUN_TEST(device_register_operations);
 	RUN_TEST(device_user_data);

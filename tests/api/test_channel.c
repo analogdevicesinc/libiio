@@ -133,6 +133,51 @@ TEST_FUNCTION(channel_attributes)
 	}
 }
 
+TEST_FUNCTION(channel_event_attributes)
+{
+	setup_test_channel();
+
+	if (!test_chn) {
+		DEBUG_PRINT("  SKIP: No test channel available\n");
+		return;
+	}
+
+	unsigned int nb_event_attrs = iio_channel_get_event_attrs_count(test_chn);
+	DEBUG_PRINT("  INFO: Channel has %u event attributes\n", nb_event_attrs);
+
+	for (unsigned int i = 0; i < nb_event_attrs && i < 10; i++) {
+		const struct iio_attr *attr = iio_channel_get_event_attr(test_chn, i);
+		TEST_ASSERT_PTR_NOT_NULL(attr, "Channel event attribute should exist");
+
+		if (attr) {
+			const char *name = iio_attr_get_name(attr);
+			const char *filename = iio_attr_get_filename(attr);
+			DEBUG_PRINT("  INFO: Event attribute %u: '%s'", i, name ? name : "NULL");
+			if (filename && strcmp(name, filename) != 0) {
+				DEBUG_PRINT(" (filename: '%s')", filename);
+			}
+			DEBUG_PRINT("\n");
+		}
+	}
+
+	const struct iio_attr *invalid_attr = iio_channel_get_event_attr(test_chn, nb_event_attrs + 10);
+	TEST_ASSERT_PTR_NULL(invalid_attr, "Invalid event attribute index should return NULL");
+
+	if (nb_event_attrs > 0) {
+		const struct iio_attr *first_attr = iio_channel_get_event_attr(test_chn, 0);
+		if (first_attr) {
+			const char *name = iio_attr_get_name(first_attr);
+			if (name) {
+				const struct iio_attr *found_attr = iio_channel_find_event_attr(test_chn, name);
+				TEST_ASSERT(found_attr == first_attr, "Found event attribute should match original");
+			}
+		}
+	}
+
+	const struct iio_attr *nonexistent = iio_channel_find_event_attr(test_chn, "nonexistent_event_attr");
+	TEST_ASSERT_PTR_NULL(nonexistent, "Nonexistent event attribute should return NULL");
+}
+
 TEST_FUNCTION(channel_mask_operations)
 {
 	setup_test_channel();
@@ -257,6 +302,7 @@ int main(void)
 	RUN_TEST(channel_properties);
 	RUN_TEST(channel_type_and_modifier);
 	RUN_TEST(channel_attributes);
+	RUN_TEST(channel_event_attributes);
 	RUN_TEST(channel_mask_operations);
 	RUN_TEST(channel_index_and_format);
 	RUN_TEST(channel_conversion);
