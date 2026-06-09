@@ -128,10 +128,12 @@ static int set_channel_name(struct iio_channel *chn)
 	const char *ptr;
 	unsigned int i;
 
-	if (chn->attrlist.num < 2)
+	const struct iio_attr_list *alist = &chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL)];
+
+	if (alist->num < 2)
 		return 0;
 
-	attr0 = ptr = chn->attrlist.attrs[0].name;
+	attr0 = ptr = alist->attrs[0].name;
 
 	while (true) {
 		bool can_fix = true;
@@ -142,8 +144,8 @@ static int set_channel_name(struct iio_channel *chn)
 			break;
 
 		len = ptr - attr0 + 1;
-		for (i = 1; can_fix && i < chn->attrlist.num; i++)
-			can_fix = !strncmp(attr0, chn->attrlist.attrs[i].name, len);
+		for (i = 1; can_fix && i < alist->num; i++)
+			can_fix = !strncmp(attr0, alist->attrs[i].name, len);
 
 		if (!can_fix)
 			break;
@@ -163,8 +165,8 @@ static int set_channel_name(struct iio_channel *chn)
 		chn_dbg(chn, "Setting name of channel %s to %s\n", chn->id, name);
 
 		/* Shrink the attribute name */
-		for (i = 0; i < chn->attrlist.num; i++)
-			strcut((char *) chn->attrlist.attrs[i].name, prefix_len);
+		for (i = 0; i < alist->num; i++)
+			strcut((char *) alist->attrs[i].name, prefix_len);
 	}
 
 	return 0;
@@ -432,6 +434,12 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id,
 			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
 					id, attr);
 			break;
+		case IIO_ATTR_TYPE_DEVICE_EVENT:
+		case IIO_ATTR_TYPE_CHANNEL_EVENT:
+			iio_snprintf(buf, sizeof(buf),
+				     "/sys/bus/iio/devices/%s/events/%s",
+				     id, attr);
+			break;
 		case IIO_ATTR_TYPE_BUFFER:
 			if (buf_id > 0) {
 				iio_snprintf(buf, sizeof(buf),
@@ -501,6 +509,12 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev,
 		case IIO_ATTR_TYPE_DEBUG:
 			iio_snprintf(buf, sizeof(buf), "/sys/kernel/debug/iio/%s/%s",
 					dev->id, attr);
+			break;
+		case IIO_ATTR_TYPE_DEVICE_EVENT:
+		case IIO_ATTR_TYPE_CHANNEL_EVENT:
+			iio_snprintf(buf, sizeof(buf),
+				     "/sys/bus/iio/devices/%s/events/%s",
+				     dev->id, attr);
 			break;
 		case IIO_ATTR_TYPE_BUFFER:
 			if (buf_id > 0) {
@@ -916,7 +930,7 @@ static int add_attr_to_channel(struct iio_channel *chn,
 
 	name = get_short_attr_name(chn, name);
 
-	ret = iio_add_attr(p, &chn->attrlist, name, path, IIO_ATTR_TYPE_CHANNEL);
+	ret = iio_add_attr(p, &chn->attrlist[CHN_ATTRLIST_IDX(IIO_ATTR_TYPE_CHANNEL)], name, path, IIO_ATTR_TYPE_CHANNEL);
 	if (ret)
 		return ret;
 
@@ -1253,9 +1267,59 @@ static int add_attr_or_channel(void *d, const char *path)
 	return add_attr_or_channel_helper((struct iio_device *) d, path, "");
 }
 
+/* Return true if attribute name is a device-level event attribute,
+   false if it's a channel event attribute.
+ */
+static bool is_device_event_attr(struct iio_device *dev, const char *name)
+{
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		const char *id = dev->channels[i]->id;
+
+		if (strncmp(name, "in_", 3) == 0 || strncmp(name, "out_", 4) == 0) {
+			if (strstr(name, id) == name + 3 || strstr(name, id) == name + 4)
+				return false;
+		}
+	}
+
+	return true;
+}
+
 static int add_event(void *d, const char *path)
 {
-	return add_attr_or_channel_helper((struct iio_device *) d, path, "events/");
+	struct iio_device *dev = (struct iio_device *) d;
+	const char *name = strrchr(path, '/') + 1;
+	const char *short_name;
+	struct iio_channel *chn;
+	char *channel_id;
+	unsigned int i;
+	int ret;
+
+	if (is_device_event_attr(dev, name))
+		return iio_device_add_attr(dev, name, IIO_ATTR_TYPE_DEVICE_EVENT);
+
+	/* Channel event attribute - find the matching channel */
+	channel_id = get_channel_id(dev, name);
+	if (!channel_id)
+		return -ENOMEM;
+
+	for (i = 0; i < dev->nb_channels; i++) {
+		chn = dev->channels[i];
+		if (!strcmp(chn->id, channel_id)
+				&& chn->is_output == (name[0] == 'o')) {
+			free(channel_id);
+			short_name = get_short_attr_name(chn, name);
+			ret = iio_channel_add_attr(chn, short_name, IIO_ATTR_TYPE_CHANNEL_EVENT, name);
+			return ret;
+		}
+	}
+
+	/* No matching channel found */
+	dev_err(dev, "Channel event attribute \'%s\' has no matching channel \'%s\'\n",
+		name, channel_id);
+	free(channel_id);
+	return -ENODEV;
 }
 
 static int foreach_in_dir(const struct iio_context *ctx,
@@ -1456,8 +1520,12 @@ static int create_device(void *d, const char *path)
 		return ret;
 
 	/* sorting is done after global attrs are added */
-	for (i = 0; i < dev->nb_channels; i++)
-		iio_sort_attrs(&dev->channels[i]->attrlist);
+	for (i = 0; i < dev->nb_channels; i++) {
+		enum iio_attr_type type;
+
+		for (type = IIO_ATTR_TYPE_CHANNEL; type <= IIO_ATTR_TYPE_CHANNEL_EVENT; type++)
+			iio_sort_attrs(&dev->channels[i]->attrlist[CHN_ATTRLIST_IDX(type)]);
+	}
 
 	iio_sort_attrs(&dev->attrlist[IIO_ATTR_TYPE_DEVICE]);
 

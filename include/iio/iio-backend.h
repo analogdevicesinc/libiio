@@ -210,7 +210,7 @@ iio_buffer_add_scan_element(struct iio_buffer *buf, const struct iio_channel *ch
 
 __api int
 iio_channel_add_attr(struct iio_channel *chn,
-		     const char *name, const char *filename);
+		     const char *name, enum iio_attr_type type, const char *filename);
 
 __api struct iio_context_pdata *
 iio_context_get_pdata(const struct iio_context *ctx);
@@ -274,6 +274,7 @@ iio_attr_get_device(const struct iio_attr *attr)
 	case IIO_ATTR_TYPE_CONTEXT:
 		return NULL;
 	case IIO_ATTR_TYPE_CHANNEL:
+	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		return iio_channel_get_device(attr->iio.chn);
 	case IIO_ATTR_TYPE_BUFFER:
 		return iio_buffer_get_device(attr->iio.buf);

@@ -220,38 +220,70 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 	return 0;
 }
 
-static const char * const attr_type_string[] = {
-	"",
-	" debug",
-	" buffer",
-};
 
+/* Accepted attribute types are: IIO_ATTR_TYPE_DEVICE, IIO_ATTR_TYPE_DEBUG and
+   IIO_ATTR_TYPE_DEVICE_EVENT. Buffer attributes are owned by buffers,
+   not devices. Use iio_buffer_add_attr() instead. */
 int iio_device_add_attr(struct iio_device *dev,
 			const char *name, enum iio_attr_type type)
 {
 	union iio_pointer p = { .dev = dev, };
 	int ret;
+	const char *attr_type_str = "";
+	size_t attr_index = 0;
 
-	ret = iio_add_attr(p, &dev->attrlist[type], name, NULL, type);
+	switch (type) {
+	case IIO_ATTR_TYPE_DEVICE:
+		attr_type_str = "";
+		attr_index = 0;
+		break;
+	case IIO_ATTR_TYPE_DEBUG:
+		attr_type_str = " debug";
+		attr_index = 1;
+		break;
+	case IIO_ATTR_TYPE_DEVICE_EVENT:
+		attr_type_str = " event";
+		attr_index = 2;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = iio_add_attr(p, &dev->attrlist[attr_index], name, NULL, type);
 	if (ret < 0)
 		return ret;
 
-	dev_dbg(dev, "Added%s attr \'%s\'\n", attr_type_string[type], name);
+	dev_dbg(dev, "Added%s attr \'%s\'\n", attr_type_str, name);
 	return 0;
 }
 
 int iio_channel_add_attr(struct iio_channel *chn,
-			 const char *name, const char *filename)
+			 const char *name, enum iio_attr_type type, const char *filename)
 {
 	union iio_pointer p = { .chn = chn, };
 	int ret;
+	const char *attr_type_str = "";
+	size_t attr_index = 0;
 
-	ret = iio_add_attr(p, &chn->attrlist, name, filename,
-			   IIO_ATTR_TYPE_CHANNEL);
+	switch (type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		attr_type_str = "";
+		attr_index = 0;
+		break;
+	case IIO_ATTR_TYPE_CHANNEL_EVENT:
+		attr_type_str = " event";
+		attr_index = 1;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = iio_add_attr(p, &chn->attrlist[attr_index], name, filename,
+			   type);
 	if (ret < 0)
 		return ret;
 
-	chn_dbg(chn, "Added attr \'%s\' (\'%s\')\n", name, filename);
+	chn_dbg(chn, "Added%s attr \'%s\' (\'%s\')\n", attr_type_str, name, filename);
 	return 0;
 }
 
