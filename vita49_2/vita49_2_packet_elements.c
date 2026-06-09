@@ -244,5 +244,87 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		// TODO: Parse this field and populate the vita49_2_data_payload_format struct in the cif0 struct
 	}
 
+	// Formatted GPS
+	if (cif0_word & (1 << 14))
+	{
+		// TODO: Parse the formatted GPS data and populate the vita49_2_formatted_gps_ins struct in the cif0 struct
+	}
+
+	// Formatted INS
+	if (cif0_word & (1 << 13))
+	{
+		// TODO: Parse the formatted INS data and populate the vita49_2_formatted_gps_ins struct in the cif0 struct
+	}
+
+	// ECEF Ephemeris
+	if (cif0_word & (1 << 12))
+	{
+		// TODO: Parse the ECEF Ephemeris data and populate the vita49_2_ecef_relative_ephemeris struct in the cif0 struct
+	}
+
+	// Relative Ephemeris
+	if (cif0_word & (1 << 11))
+	{
+		// TODO: Parse the Relative Ephemeris data and populate the vita49_2_ecef_relative_ephemeris struct in the cif0 struct
+	}
+
+	// Ephemeris Reference ID
+	if (cif0_word & (1 << 10))
+	{
+		cif0->ephemeris_ref_id = vita49_2_get_payload_word(payload, payload_size, offset);
+		offset++;
+	}
+
+	// GPS ASCII
+	if (cif0_word & (1 << 9))
+	{
+		// TODO: Parse the GPS ASCII data and populate the vita49_2_gps_ascii struct in the cif0 struct
+	}
+
+	// Context Association Lists
+	if (cif0_word & (1 << 8))
+	{
+		// TODO: Parse the Context Association Lists data and populate the vita49_2_context_association_lists struct in the cif0 struct
+	}
+
+	// IMPORTANT: Because of the way I've organized the CIF-related data in the Context and Command Packet structs, I've placed pointers
+	// to CIF1-7 in the packet struct itself, however the CIF0 struct has no direct pointers to CIF1-7.
+
+		// Therefore in order to handle the parsing for CIF1-7 in the logic below, a change needs to made:
+
+			// 1. You can add pointers to CIF1-7 to the CIF0 struct so that CIF0 has direct access to them. This is potentially dangerous in terms
+			// of guaranteeing that you have no memory leaks or dangling pointers.
+			
+			// 2. (Safer) You modify the function arguments to explicitly pass pointers for CIF1-7.
+
+			// TODO: Personally I would choose option 2, the reason I haven't implemented it is because I'm early in the development of V49.2 and
+			// I'm unsure if ADI wants to support the additional context fields.
+
+	// CIF 7 Enable
+	if (cif0_word & (1 << 7))
+	{
+		// TODO: Parse the CIF 7 fields and populate the CIF 7 struct
+	}
+
+	// Bits 6 through 4 are reserved
+
+	// CIF 3 Enable
+	if (cif0_word & (1 << 3))
+	{
+		// TODO: Parse the CIF 3 fields and populate the CIF 3 struct
+	}
+	// CIF 2 Enable
+	if (cif0_word & (1 << 2))
+	{
+		// TODO: Parse the CIF 2 fields and populate the CIF 2 struct
+	}
+	// CIF 1 Enable
+	if (cif0_word & (1 << 1))
+	{
+		// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
+	}
+
+	// Bit 0 is reserved
+
 	return 0;
 }
