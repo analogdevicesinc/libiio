@@ -15,12 +15,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* VITA 49.2 has some unique value encodings, so for readability it's better to declare them as "separate" types */
-typedef double double_44_20;		/* Radix point is to the left of the first 20 bits */
-typedef uint16_t uint16_10_6;		/* Radix point is to the left of the first 6 bits */
-typedef uint16_t uint16_9_7;		/* Radix point is to the left of the first 7 bits */
-
-
 /* VITA 49.2 Packet Types */
 enum vita49_2_packet_type {
 	VITA49_2_PKT_TYPE_IF_DATA_NO_SID = 0x0,
