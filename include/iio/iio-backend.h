@@ -69,10 +69,15 @@ enum iio_backend_api_ver {
 enum iio_attr_type {
 	IIO_ATTR_TYPE_DEVICE = 0,
 	IIO_ATTR_TYPE_DEBUG,
+	IIO_ATTR_TYPE_DEVICE_EVENT,
 	IIO_ATTR_TYPE_BUFFER,
 	IIO_ATTR_TYPE_CHANNEL,
+	IIO_ATTR_TYPE_CHANNEL_EVENT,
 	IIO_ATTR_TYPE_CONTEXT,
 };
+
+#define CHN_ATTRLIST_IDX(type) (type - IIO_ATTR_TYPE_CHANNEL)
+
 
 union iio_pointer {
 	const struct iio_context *ctx;
