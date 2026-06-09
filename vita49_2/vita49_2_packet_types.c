@@ -19,76 +19,6 @@
 #include <arpa/inet.h>
 #endif
 
-int vita49_2_parse_packet(const uint32_t *buf, size_t words, struct VITA49_2_packet *pkt)
-{
-	if (!buf || !pkt || words == 0)
-		return -EINVAL;
-
-	memset(pkt, 0, sizeof(*pkt));
-
-	uint32_t header_word = ntohl(buf[0]);
-	memcpy(&pkt->prologue.header, &header_word, sizeof(uint32_t));
-
-	if (pkt->prologue.header.packet_size_words > words)
-		return -EINVAL; /* Buffer too small for packet size */
-
-	size_t idx = 1;
-
-	/* Determine if Stream ID is present */
-	bool has_stream_id = (pkt->prologue.header.packet_type == VITA49_2_PKT_TYPE_IF_DATA_WITH_SID ||
-			pkt->prologue.header.packet_type == VITA49_2_PKT_TYPE_EXT_DATA_WITH_SID ||
-			pkt->prologue.header.packet_type == VITA49_2_PKT_TYPE_IF_CONTEXT ||
-			pkt->prologue.header.packet_type == VITA49_2_PKT_TYPE_EXT_CONTEXT ||
-			pkt->prologue.header.packet_type == VITA49_2_PKT_TYPE_COMMAND ||
-			pkt->prologue.header.packet_type == VITA49_2_PKT_TYPE_EXT_COMMAND);
-
-	if (has_stream_id) {
-		if (idx >= pkt->prologue.header.packet_size_words) return -EINVAL;
-		pkt->stream_id = ntohl(buf[idx++]);
-		pkt->has_stream_id = true;
-	}
-
-	/* Class ID */
-	if (pkt->prologue.header.has_class_id) {
-		if (idx + 1 >= pkt->prologue.header.packet_size_words) return -EINVAL;
-		uint32_t w1 = ntohl(buf[idx++]);
-		uint32_t w2 = ntohl(buf[idx++]);
-		pkt->class_id = ((uint64_t)w1 << 32) | w2;
-		pkt->has_class_id = true;
-	}
-
-	/* Timestamp Integer */
-	if (pkt->prologue.header.ts_integer_format != VITA49_2_TSI_NONE) {
-		if (idx >= pkt->prologue.header.packet_size_words) return -EINVAL;
-		pkt->timestamp_int = ntohl(buf[idx++]);
-		pkt->has_timestamp_int = true;
-	}
-
-	/* Timestamp Fractional */
-	if (pkt->prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) {
-		if (idx + 1 >= pkt->prologue.header.packet_size_words) return -EINVAL;
-		uint32_t w1 = ntohl(buf[idx++]);
-		uint32_t w2 = ntohl(buf[idx++]);
-		pkt->timestamp_frac = ((uint64_t)w1 << 32) | w2;
-		pkt->has_timestamp_frac = true;
-	}
-
-	/* Trailer */
-	if (pkt->prologue.header.has_trailer) {
-		if (pkt->prologue.header.packet_size_words < idx + 1) return -EINVAL;
-		uint32_t trailer_word = ntohl(buf[pkt->prologue.header.packet_size_words - 1]);
-		memcpy(&pkt->trailer, &trailer_word, sizeof(uint32_t));
-		pkt->has_trailer = true;
-		
-		pkt->payload = &buf[idx];
-		pkt->payload_num_words = pkt->prologue.header.packet_size_words - idx - 1;
-	} else {
-		pkt->payload = &buf[idx];
-		pkt->payload_num_words = pkt->prologue.header.packet_size_words - idx;
-	}
-
-	return 0;
-}
 
 ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words)
 {
@@ -181,6 +111,99 @@ ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, ui
 	buf[0] = htonl(header_word);
 
 	return buffer_index;
+}
+
+int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_2_data_packet *pkt)
+{
+	if (!buf || !pkt || words == 0)
+		return -EINVAL;
+
+	memset(pkt, 0, sizeof(*pkt));
+
+	/* Header */
+	uint32_t header_word = ntohl(buf[0]);
+	memcpy(&pkt->prologue.header, &header_word, sizeof(pkt->prologue.header));
+
+	if (pkt->prologue.header.packet_size_words > words)
+		return -EINVAL; /* Buffer too small for packet size */
+
+	uint16_t buffer_index = 1;
+
+	/* Determine if Stream ID is present */
+	bool has_stream_id = (pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_IF_DATA_NO_SID &&
+						pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_EXT_DATA_NO_SID);
+
+	if (has_stream_id) 
+	{
+		if (buffer_index >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->prologue.stream_id = ntohl(buf[buffer_index++]);
+		pkt->prologue.has_stream_id = true;
+	}
+
+	/* Class ID */
+	if (pkt->prologue.header.has_class_id) 
+	{
+		// + 1 since Class ID is 2 words
+		if (buffer_index + 1 >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		memcpy(&pkt->prologue.class_id.lower_word, &w1, sizeof(pkt->prologue.class_id.lower_word));
+		memcpy(&pkt->prologue.class_id.upper_word, &w2, sizeof(pkt->prologue.class_id.upper_word));
+
+		pkt->prologue.has_class_id = true;
+	}
+
+	/* Timestamp Integer */
+	if (pkt->prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
+	{
+		if (buffer_index >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->prologue.timestamp_int = ntohl(buf[buffer_index++]);
+		pkt->prologue.has_timestamp_int = true;
+	}
+
+	/* Timestamp Fractional */
+	if (pkt->prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) 
+	{
+		// + 1 since Fractional Timestamp is 2 words
+		if (buffer_index + 1 >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		pkt->prologue.timestamp_frac = ((uint64_t)w1 << 32) | w2;
+		pkt->prologue.has_timestamp_frac = true;
+	}
+
+	/* Trailer */
+	if (pkt->has_trailer) 
+	{
+		if (pkt->prologue.header.packet_size_words < buffer_index + 1) 
+			return -EINVAL;
+		
+		uint32_t trailer_word = ntohl(buf[pkt->prologue.header.packet_size_words - 1]);
+		memcpy(&pkt->trailer, &trailer_word, sizeof(pkt->trailer));
+		pkt->has_trailer = true;
+		
+		// Assuming payload is in big endian, so we're skipping the network to host byte order translation
+		pkt->payload = &buf[buffer_index];
+		pkt->payload_num_words = pkt->prologue.header.packet_size_words - buffer_index - 1;
+	} 
+	else 
+	{
+		// Assuming payload is in big endian, so we're skipping the network to host byte order translation
+		pkt->payload = &buf[buffer_index];
+		pkt->payload_num_words = pkt->prologue.header.packet_size_words - buffer_index;
+	}
+
+	return 0;
 }
 
 ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words)
@@ -492,6 +515,112 @@ ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *p
 	return buffer_index;
 }
 
+int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, struct vita49_2_context_packet *pkt)
+{
+	if (!buf || !pkt || words == 0)
+		return -EINVAL;
+
+	memset(pkt, 0, sizeof(*pkt));
+
+	/* Header */
+	uint32_t header_word = ntohl(buf[0]);
+	memcpy(&pkt->prologue.header, &header_word, sizeof(pkt->prologue.header));
+
+	if (pkt->prologue.header.packet_size_words > words)
+		return -EINVAL; /* Buffer too small for packet size */
+
+	uint16_t buffer_index = 1;
+
+	/* Determine if Stream ID is present */
+	bool has_stream_id = (pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_IF_DATA_NO_SID &&
+						pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_EXT_DATA_NO_SID);
+
+	if (has_stream_id) 
+	{
+		if (buffer_index >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->prologue.stream_id = ntohl(buf[buffer_index++]);
+		pkt->prologue.has_stream_id = true;
+	}
+	/* Stream ID is required for Context Packets */
+	else
+	{
+		return -1;
+	}
+
+	/* Class ID */
+	if (pkt->prologue.header.has_class_id) 
+	{
+		// + 1 since Class ID is 2 words
+		if (buffer_index + 1 >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		memcpy(&pkt->prologue.class_id.lower_word, &w1, sizeof(pkt->prologue.class_id.lower_word));
+		memcpy(&pkt->prologue.class_id.upper_word, &w2, sizeof(pkt->prologue.class_id.upper_word));
+
+		pkt->prologue.has_class_id = true;
+	}
+
+	/* Timestamp Integer */
+	if (pkt->prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
+	{
+		if (buffer_index >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->prologue.timestamp_int = ntohl(buf[buffer_index++]);
+		pkt->prologue.has_timestamp_int = true;
+	}
+
+	/* Timestamp Fractional */
+	if (pkt->prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) 
+	{
+		// + 1 since Fractional Timestamp is 2 words
+		if (buffer_index + 1 >= pkt->prologue.header.packet_size_words) 
+			return -EINVAL;
+
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		pkt->prologue.timestamp_frac = ((uint64_t)w1 << 32) | w2;
+		pkt->prologue.has_timestamp_frac = true;
+	}
+
+	/* CIF0 */
+	int ret_value;
+	if ((ret_value = vita49_2_parse_cif0_payload(pkt->prologue.header.packet_size_words - buffer_index, buf + buffer_index, &pkt->cif0)) < 0)
+		return ret_value;
+
+	/* CIF7 */
+	if (pkt->cif0.cif0_word.cif7_enable)
+	{
+		// TODO: Parse the CIF 7 fields and populate the CIF 7 struct
+	}
+
+	/* CIF3 */
+	if (pkt->cif0.cif0_word.cif3_enable)
+	{
+		// TODO: Parse the CIF 3 fields and populate the CIF 3 struct
+	}
+
+	/* CIF2 */
+	if (pkt->cif0.cif0_word.cif2_enable)
+	{
+		// TODO: Parse the CIF 2 fields and populate the CIF 2 struct
+	}
+
+	/* CIF1 */
+	if (pkt->cif0.cif0_word.cif1_enable)
+	{
+		// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
+	}
+
+	return 0;
+}
+
 ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
@@ -570,7 +699,7 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 	buf[buffer_index++] = htonl(pkt->command_prologue.message_id);
 
 	/* Controllee ID/UUID, ADI does not use this field currently however we retain the right to use it in the future */
-	if (pkt->command_prologue.has_controllee_id_field)
+	if (pkt->command_prologue.cam.has_controllee_id)
 	{
 		// Using a 128-bit UUID
 		if (pkt->command_prologue.cam.controllee_id_format)
@@ -592,7 +721,7 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 	}
 
 	/* Controller ID/UUID */
-	if (pkt->command_prologue.has_controller_id_field)
+	if (pkt->command_prologue.cam.has_controller_id)
 	{
 		// Using a 128-bit UUID
 		if (pkt->command_prologue.cam.controller_id_format)
@@ -772,3 +901,172 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 	return buffer_index;
 }
 
+int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita49_2_control_packet *pkt)
+{
+	if (!buf || !pkt || words == 0)
+		return -EINVAL;
+
+	memset(pkt, 0, sizeof(*pkt));
+
+	/* Header */
+	uint32_t header_word = ntohl(buf[0]);
+	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
+
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+		return -EINVAL; /* Buffer too small for packet size */
+
+	uint16_t buffer_index = 1;
+
+	/* Determine if Stream ID is present */
+	bool has_stream_id = (pkt->command_prologue.common_prologue.header.packet_type != VITA49_2_PKT_TYPE_IF_DATA_NO_SID &&
+						pkt->command_prologue.common_prologue.header.packet_type != VITA49_2_PKT_TYPE_EXT_DATA_NO_SID);
+
+	if (has_stream_id) 
+	{
+		if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->command_prologue.common_prologue.stream_id = ntohl(buf[buffer_index++]);
+		pkt->command_prologue.common_prologue.has_stream_id = true;
+	}
+	/* Stream ID is required for Command Packets */
+	else
+	{
+		return -1;
+	}
+
+	/* Class ID */
+	if (pkt->command_prologue.common_prologue.header.has_class_id) 
+	{
+		// + 1 since Class ID is 2 words
+		if (buffer_index + 1 >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		memcpy(&pkt->command_prologue.common_prologue.class_id.lower_word, &w1, sizeof(pkt->command_prologue.common_prologue.class_id.lower_word));
+		memcpy(&pkt->command_prologue.common_prologue.class_id.upper_word, &w2, sizeof(pkt->command_prologue.common_prologue.class_id.upper_word));
+
+		pkt->command_prologue.common_prologue.has_class_id = true;
+	}
+
+	/* Timestamp Integer */
+	if (pkt->command_prologue.common_prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
+	{
+		if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->command_prologue.common_prologue.timestamp_int = ntohl(buf[buffer_index++]);
+		pkt->command_prologue.common_prologue.has_timestamp_int = true;
+	}
+
+	/* Timestamp Fractional */
+	if (pkt->command_prologue.common_prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) 
+	{
+		// + 1 since Fractional Timestamp is 2 words
+		if (buffer_index + 1 >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		pkt->command_prologue.common_prologue.timestamp_frac = ((uint64_t)w1 << 32) | w2;
+		pkt->command_prologue.common_prologue.has_timestamp_frac = true;
+	}
+
+	/* CAM */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+
+	uint32_t cam_word = ntohl(buf[buffer_index++]);
+	memcpy(&pkt->command_prologue.cam, &cam_word, sizeof(cam_word));
+
+	/* Message ID */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+
+	pkt->command_prologue.message_id = ntohl(buf[buffer_index++]);
+
+	/* Controllee ID */
+	// ADI does not use Controllee ID/UUID in the current VITA 49.2 implementation, however we retain the right to use
+	// them in the future.
+
+	if (pkt->command_prologue.cam.has_controllee_id)
+	{
+		// If Controllee ID Format is asserted, that means a 128-bit UUID is used
+		if (pkt->command_prologue.cam.controllee_id_format)
+		{
+			if (buffer_index + 3 >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				pkt->command_prologue.controllee_id.uuid128[i] = ntohl(buf[buffer_index++]);
+			}
+		}
+		// Otherwise a 32-bit ID is used
+		else
+		{
+			if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			pkt->command_prologue.controllee_id.id32 = ntohl(buf[buffer_index++]);
+		}
+	}
+
+	/* Controller ID */
+	if (pkt->command_prologue.cam.has_controller_id)
+	{
+		// If Controller ID Format is asserted, that means a 128-bit UUID is used
+		if (pkt->command_prologue.cam.controller_id_format)
+		{
+			if (buffer_index + 3 >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				pkt->command_prologue.controller_id.uuid128[i] = ntohl(buf[buffer_index++]);
+			}
+		}
+		// Otherwise a 32-bit ID is used
+		else
+		{
+			if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			pkt->command_prologue.controller_id.id32 = ntohl(buf[buffer_index++]);
+		}
+	}
+
+	/* CIF0 */
+	int ret_value;
+	if ((ret_value = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index, &pkt->cif0)) < 0)
+		return ret_value;
+
+	/* CIF7 */
+	if (pkt->cif0.cif0_word.cif7_enable)
+	{
+		// TODO: Parse the CIF 7 fields and populate the CIF 7 struct
+	}
+
+	/* CIF3 */
+	if (pkt->cif0.cif0_word.cif3_enable)
+	{
+		// TODO: Parse the CIF 3 fields and populate the CIF 3 struct
+	}
+
+	/* CIF2 */
+	if (pkt->cif0.cif0_word.cif2_enable)
+	{
+		// TODO: Parse the CIF 2 fields and populate the CIF 2 struct
+	}
+
+	/* CIF1 */
+	if (pkt->cif0.cif0_word.cif1_enable)
+	{
+		// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
+	}
+
+	return 0;
+}

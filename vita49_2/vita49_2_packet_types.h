@@ -30,7 +30,7 @@ struct vita49_2_data_packet {
 	
 	struct vita49_2_prologue prologue;	/* Common fields present in every VITA 49.2 packet */
 	
-	const uint32_t *payload;  			/* Pointer to the start of the payload words */
+	const struct vita49_2_iq_item *payload;  /* Pointer to the start of the payload words */
 	uint16_t payload_num_words;     	/* Number of 32-bit words in the payload */
 	
 	struct vita49_2_trailer trailer; 	/* Optional 32-bit trailer */
@@ -206,11 +206,6 @@ struct vita49_2_extended_control_packet {
 #endif
 
 
-/* Parses a buffer of 32-bit words into a vrt_packet structure. 
- * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
- */
-__vrt_api int vrt_parse_packet(const uint32_t *buf, size_t words, struct vrt_packet *pkt);
-
 /**
  * @brief Populates a 32-bit word buffer with data for a Signal Data Packet. 
  * The buffer MUST be large enough to hold the generated packet.
@@ -219,9 +214,20 @@ __vrt_api int vrt_parse_packet(const uint32_t *buf, size_t words, struct vrt_pac
  * @param pkt 
  * @param buf 
  * @param max_words 
- * @return __vrt_api 
+ * @return ssize_t 
  */
 __vrt_api ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_data_packet structure. 
+ * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
+ * 
+ * @param buf 
+ * @param words 
+ * @param pkt 
+ * @return int 
+ */
+__vrt_api int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_2_data_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Context Packet. 
@@ -231,9 +237,20 @@ __vrt_api ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packe
  * @param pkt 
  * @param buf 
  * @param max_words 
- * @return __vrt_api 
+ * @return ssize_t 
  */
 __vrt_api ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_context_packet structure. 
+ * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
+ * 
+ * @param buf 
+ * @param words 
+ * @param pkt 
+ * @return int 
+ */
+__vrt_api int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, struct vita49_2_context_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Control Packet. 
@@ -243,9 +260,20 @@ __vrt_api ssize_t vita49_2_generate_context_packet(const struct vita49_2_context
  * @param pkt 
  * @param buf 
  * @param max_words 
- * @return __vrt_api 
+ * @return ssize_t 
  */
 __vrt_api ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words);
 
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_control_packet structure. 
+ * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
+ * 
+ * @param buf 
+ * @param words 
+ * @param pkt 
+ * @return int 
+ */
+__vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita49_2_control_packet *pkt);
 
 #endif /* __VITA49_PACKET_TYPES_H__ */

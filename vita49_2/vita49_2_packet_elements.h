@@ -287,8 +287,7 @@ struct vita49_2_command_prologue {
 	uint32_t message_id;						/* Message ID field - used to correlate Control Packets with their corresponding Acknowledge Packets */
 
 	// ADI doesn't use controllee ID, however we retain the right to support it at a later time.
-	bool has_controllee_id_field;				/* True if Controllee Identifier field is present */
-	bool has_controller_id_field;				/* True if Controller Identifier field is present */
+	// IMPORTANT: The CAM contains indicator bits to indicate if Controllee ID/UUID and Controller ID/UUID are present
 
 	// ADI doesn't use 128-bit UUIDs, however we retain the right to support it at a later time.
 	union controllee_id {
@@ -703,12 +702,14 @@ __vrt_api int16_t convert_to_9_7(float value);
  */
 __vrt_api float convert_from_9_7(int16_t value);
 
-/* Parses the CIF0 payload section if the packet is of type IF_CONTEXT.
- * Evaluates the flags present in CIF0 to sequentially decode the context payload.
- */
-
 /**
+ * @brief Parses the CIF0 payload section.
+ * Evaluates the flags present in CIF0 to sequentially decode the context payload.
  * 
+ * @param payload_size 
+ * @param payload 
+ * @param cif0 
+ * @return int 
  */
 __vrt_api int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0);
 

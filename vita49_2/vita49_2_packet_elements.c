@@ -7,6 +7,7 @@
  */
 
 #include <stddef.h>
+#include <errno.h>
 #include "vita49_2_packet_elements.h"
 
 int64_t convert_to_44_20(double value)
@@ -111,6 +112,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Reference Point Identifier
 	if (cif0_word & (1 << 30)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		cif0->reference_point_id = vita49_2_get_payload_word(payload, payload_size, offset);
 		offset++;
 	}
@@ -118,6 +122,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Bandwidth
 	if (cif0_word & (1 << 29)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// Bandwidth is encoded as a 44.20 fixed-point value
 		cif0->bandwidth = convert_from_44_20(vita49_2_get_payload_int64(payload, payload_size, offset));
 		offset += 2;
@@ -126,6 +133,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// IF Reference Frequency
 	if (cif0_word & (1 << 28)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// IF Reference Frequency is encoded as a 44.20 fixed-point value
 		cif0->if_reference_frequency = convert_from_44_20(vita49_2_get_payload_int64(payload, payload_size, offset));
 		offset += 2;
@@ -134,6 +144,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// RF Reference Frequency
 	if (cif0_word & (1 << 27)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// RF Reference Frequency is encoded as a 44.20 fixed-point value
 		cif0->rf_reference_frequency = convert_from_44_20(vita49_2_get_payload_int64(payload, payload_size, offset));
 		offset += 2;
@@ -142,6 +155,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// RF Reference Frequency Offset
 	if (cif0_word & (1 << 26)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// RF Reference Frequency Offset is encoded as a 44.20 fixed-point value
 		cif0->rf_reference_frequency_offset = convert_from_44_20(vita49_2_get_payload_int64(payload, payload_size, offset));
 		offset += 2;
@@ -150,6 +166,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// IF Band Offset
 	if (cif0_word & (1 << 25)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// IF Band Offset is encoded as a 44.20 fixed-point value
 		cif0->if_band_offset = convert_from_44_20(vita49_2_get_payload_int64(payload, payload_size, offset));
 		offset += 2;
@@ -158,6 +177,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Reference Level
 	if (cif0_word & (1 << 24)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		// Reference Level is encoded as a 9.7 fixed-point value
 		float fval = convert_from_9_7((int16_t)(vita49_2_get_payload_word(payload, payload_size, offset)));
 		
@@ -168,6 +190,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Gain (Stage 1 & 2)
 	if (cif0_word & (1 << 23)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		// The Gain field encodes Stage 2 gain as a 9.7 fixed-point value in the upper 16 bits
 		// and Stage 1 gain as a 9.7 fixed-point value in the lower 16 bits
 		uint32_t both_gains = vita49_2_get_payload_word(payload, payload_size, offset);
@@ -183,6 +208,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Over-Range Count
 	if (cif0_word & (1 << 22)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		cif0->over_range_count = vita49_2_get_payload_word(payload, payload_size, offset);
 		offset++;
 	}
@@ -190,6 +218,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Sample Rate
 	if (cif0_word & (1 << 21)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// Sample Rate is encoded as a 44.20 fixed-point value
 		cif0->sample_rate = convert_from_44_20(vita49_2_get_payload_int64(payload, payload_size, offset));
 		offset += 2;
@@ -198,6 +229,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Timestamp Adjustment
 	if (cif0_word & (1 << 20)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		uint32_t w1 = vita49_2_get_payload_word(payload, payload_size, offset);
 		uint32_t w2 = vita49_2_get_payload_word(payload, payload_size, offset + 1);
 		cif0->timestamp_adjustment = ((uint64_t)w1 << 32) | w2;
@@ -207,6 +241,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Timestamp Calibration Time
 	if (cif0_word & (1 << 19)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		cif0->timestamp_calibration_time_int  = vita49_2_get_payload_word(payload, payload_size, offset);
 		offset++;
 	}
@@ -214,6 +251,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Temperature
 	if (cif0_word & (1 << 18)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		// Device Temperature is encoded as a 10.6 fixed-point value
 		cif0->temperature = convert_from_10_6((int16_t)(vita49_2_get_payload_word(payload, payload_size, offset)));
 		offset++;
@@ -222,6 +262,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Device Identifier
 	if (cif0_word & (1 << 17)) 
 	{
+		if (offset + 1 >= payload_size)
+			return -EINVAL;
+
 		// Ensuring the reserved fields are zeroed out
 		memset(&cif0->device_identifier.lower_word, 0, sizeof(cif0->device_identifier.lower_word));
 		memset(&cif0->device_identifier.upper_word, 0, sizeof(cif0->device_identifier.upper_word));
@@ -234,6 +277,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// State/Event Indicators
 	if (cif0_word & (1 << 16)) 
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		cif0->state_and_event_indicators = vita49_2_get_payload_word(payload, payload_size, offset);
 		offset++;
 	}
@@ -271,6 +317,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	// Ephemeris Reference ID
 	if (cif0_word & (1 << 10))
 	{
+		if (offset >= payload_size)
+			return -EINVAL;
+
 		cif0->ephemeris_ref_id = vita49_2_get_payload_word(payload, payload_size, offset);
 		offset++;
 	}
@@ -287,42 +336,11 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		// TODO: Parse the Context Association Lists data and populate the vita49_2_context_association_lists struct in the cif0 struct
 	}
 
-	// IMPORTANT: Because of the way I've organized the CIF-related data in the Context and Command Packet structs, I've placed pointers
-	// to CIF1-7 in the packet struct itself, however the CIF0 struct has no direct pointers to CIF1-7.
-
-		// Therefore in order to handle the parsing for CIF1-7 in the logic below, a change needs to made:
-
-			// 1. You can add pointers to CIF1-7 to the CIF0 struct so that CIF0 has direct access to them. This is potentially dangerous in terms
-			// of guaranteeing that you have no memory leaks or dangling pointers.
-			
-			// 2. (Safer) You modify the function arguments to explicitly pass pointers for CIF1-7.
-
-			// TODO: Personally I would choose option 2, the reason I haven't implemented it is because I'm early in the development of V49.2 and
-			// I'm unsure if ADI wants to support the additional context fields.
-
-	// CIF 7 Enable
-	if (cif0_word & (1 << 7))
-	{
-		// TODO: Parse the CIF 7 fields and populate the CIF 7 struct
-	}
+	// Bit 7 is CIF7 Enable which is handled outside this function
 
 	// Bits 6 through 4 are reserved
 
-	// CIF 3 Enable
-	if (cif0_word & (1 << 3))
-	{
-		// TODO: Parse the CIF 3 fields and populate the CIF 3 struct
-	}
-	// CIF 2 Enable
-	if (cif0_word & (1 << 2))
-	{
-		// TODO: Parse the CIF 2 fields and populate the CIF 2 struct
-	}
-	// CIF 1 Enable
-	if (cif0_word & (1 << 1))
-	{
-		// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
-	}
+	// Bits 3 through 1 are for CIF3-1 which are handled outside this function
 
 	// Bit 0 is reserved
 
