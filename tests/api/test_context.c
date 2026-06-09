@@ -97,7 +97,7 @@ TEST_FUNCTION(context_creation_invalid_uris)
 		"invalid:",
 		"nonexistent:device",
 		"usb:99.99.99",
-		"ip:999.999.999.999",
+		"ip:192.168.0.1:9999",
 		"serial:/dev/nonexistent",
 		"xml:/nonexistent/file.xml",
 		"",
