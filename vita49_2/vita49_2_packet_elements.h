@@ -59,8 +59,8 @@ struct vita49_2_header {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
 	uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
-	vita49_2_tsi ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
-	vita49_2_tsf ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
+	enum vita49_2_tsi ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
+	enum vita49_2_tsf ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
 	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
 	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
 	uint32_t packet_type:4;         /* VRT Packet Type */
