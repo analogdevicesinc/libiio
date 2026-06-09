@@ -180,7 +180,13 @@ namespace iio
         private static extern uint iio_channel_get_attrs_count(IntPtr chn);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_channel_get_event_attrs_count(IntPtr chn);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_channel_get_attr(IntPtr chn, uint index);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_channel_get_event_attr(IntPtr chn, uint index);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
@@ -249,6 +255,9 @@ namespace iio
         /// <summary>A <c>list</c> of all the attributes that this channel has.</summary>
         public readonly List<Attr> attrs;
 
+        /// <summary>A <c>list</c> of all the event attributes that this channel has.</summary>
+        public readonly List<Attr> event_attrs;
+
         /// <summary>The modifier of this channel.</summary>
         public ChannelModifier modifier { get; private set; }
 
@@ -262,10 +271,12 @@ namespace iio
         {
             IntPtr fmt_struct = iio_channel_get_data_format(chn);
             uint nb_attrs = iio_channel_get_attrs_count(chn);
+            uint nb_event_attrs = iio_channel_get_event_attrs_count(chn);
 
             this.dev = dev;
             this.chn = chn;
             attrs = new List<Attr>();
+            event_attrs = new List<Attr>();
             modifier = (ChannelModifier) iio_channel_get_modifier(chn);
             type = (ChannelType) iio_channel_get_type(chn);
             format = (DataFormat)Marshal.PtrToStructure(fmt_struct, typeof(DataFormat));
@@ -273,6 +284,11 @@ namespace iio
             for (uint i = 0; i < nb_attrs; i++)
             {
                 attrs.Add(new Attr(iio_channel_get_attr(chn, i)));
+            }
+
+            for (uint i = 0; i < nb_event_attrs; i++)
+            {
+                event_attrs.Add(new Attr(iio_channel_get_event_attr(chn, i)));
             }
 
             IntPtr name_ptr = iio_channel_get_name(this.chn);
