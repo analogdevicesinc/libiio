@@ -21,12 +21,13 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!DOCTYPE context ["
 "<!ELEMENT context (device | context-attribute)*>"
 "<!ELEMENT context-attribute EMPTY>"
-"<!ELEMENT device (channel | buffer | attribute | debug-attribute | buffer-attribute)*>"
-"<!ELEMENT channel (scan-element?, attribute*)>"
+"<!ELEMENT device (channel | buffer | attribute | debug-attribute | event-attribute | buffer-attribute)*>"
+"<!ELEMENT channel (scan-element?, attribute*, event-attribute*)>"
 "<!ELEMENT buffer (attribute*, channel+)>"
 "<!ELEMENT attribute EMPTY>"
 "<!ELEMENT scan-element EMPTY>"
 "<!ELEMENT debug-attribute EMPTY>"
+"<!ELEMENT event-attribute EMPTY>"
 "<!ELEMENT buffer-attribute EMPTY>"
 "<!ATTLIST context name CDATA #REQUIRED version-major CDATA #REQUIRED "
 "version-minor CDATA #REQUIRED version-git CDATA #REQUIRED description CDATA #IMPLIED>"
@@ -37,6 +38,7 @@ static const char xml_header[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
 "<!ATTLIST scan-element index CDATA #REQUIRED format CDATA #REQUIRED scale CDATA #IMPLIED>"
 "<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED value CDATA #IMPLIED>"
 "<!ATTLIST debug-attribute name CDATA #REQUIRED value CDATA #IMPLIED>"
+"<!ATTLIST event-attribute name CDATA #REQUIRED filename CDATA #IMPLIED value CDATA #IMPLIED>"
 "<!ATTLIST buffer-attribute name CDATA #REQUIRED value CDATA #IMPLIED>"
 "]>";
 
@@ -195,7 +197,7 @@ static int read_device_attrs(struct iio_device *dev)
 	if (!buf)
 		return -ENOMEM;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEVICE_EVENT; type++) {
 		unsigned int num = dev->attrlist[type].num;
 
 		if (num == 0)
@@ -241,42 +243,47 @@ static int read_channel_attrs(struct iio_channel *chn)
 {
 	unsigned int i;
 	ssize_t ret;
+	enum iio_attr_type type;
 	int err = 0;
 	char *buf;
-
-	if (chn->attrlist.num == 0)
-		return 0;
 
 	buf = malloc(MAX_ATTR_VALUE);
 	if (!buf)
 		return -ENOMEM;
 
-	if (!chn->values) {
-		chn->values = calloc(chn->attrlist.num, sizeof(char *));
-		if (!chn->values) {
-			err = -ENOMEM;
-			goto out_free_buf;
-		}
-	}
+	for (type = IIO_ATTR_TYPE_CHANNEL; type <= IIO_ATTR_TYPE_CHANNEL_EVENT; type++) {
+		unsigned int num = chn->attrlist[CHN_ATTRLIST_IDX(type)].num;
 
-	for (i = 0; i < chn->attrlist.num; i++) {
-		free(chn->values[i]);
-		chn->values[i] = NULL;
+		if (num == 0)
+			continue;
 
-		ret = iio_attr_read_raw(&chn->attrlist.attrs[i],
-					buf, MAX_ATTR_VALUE);
-		if (ret >= 0) {
-			chn->values[i] = iio_strdup(buf);
-			if (!chn->values[i]) {
+		if (!chn->values[CHN_ATTRLIST_IDX(type)]) {
+			chn->values[CHN_ATTRLIST_IDX(type)] = calloc(num, sizeof(char *));
+			if (!chn->values[CHN_ATTRLIST_IDX(type)]) {
 				err = -ENOMEM;
 				goto out_free_buf;
 			}
-		} else {
-			snprintf(buf, MAX_ATTR_VALUE, "ERROR:%d", (int) ret);
-			chn->values[i] = iio_strdup(buf);
-			if (!chn->values[i]) {
-				err = -ENOMEM;
-				goto out_free_buf;
+		}
+
+		for (i = 0; i < num; i++) {
+			free(chn->values[CHN_ATTRLIST_IDX(type)][i]);
+			chn->values[CHN_ATTRLIST_IDX(type)][i] = NULL;
+
+			ret = iio_attr_read_raw(&chn->attrlist[CHN_ATTRLIST_IDX(type)].attrs[i],
+						buf, MAX_ATTR_VALUE);
+			if (ret >= 0) {
+				chn->values[CHN_ATTRLIST_IDX(type)][i] = iio_strdup(buf);
+				if (!chn->values[CHN_ATTRLIST_IDX(type)][i]) {
+					err = -ENOMEM;
+					goto out_free_buf;
+				}
+			} else {
+				snprintf(buf, MAX_ATTR_VALUE, "ERROR:%d", (int) ret);
+				chn->values[CHN_ATTRLIST_IDX(type)][i] = iio_strdup(buf);
+				if (!chn->values[CHN_ATTRLIST_IDX(type)][i]) {
+					err = -ENOMEM;
+					goto out_free_buf;
+				}
 			}
 		}
 	}
@@ -368,7 +375,7 @@ static void free_device_attrs(struct iio_device *dev)
 	enum iio_attr_type type;
 	unsigned int i;
 
-	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEBUG; type++) {
+	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEVICE_EVENT; type++) {
 		if (dev->values[type]) {
 			for (i = 0; i < dev->attrlist[type].num; i++) {
 				free(dev->values[type][i]);
@@ -382,15 +389,18 @@ static void free_device_attrs(struct iio_device *dev)
 
 static void free_channel_attrs(struct iio_channel *chn)
 {
+	enum iio_attr_type type;
 	unsigned int i;
 
-	if (chn->values) {
-		for (i = 0; i < chn->attrlist.num; i++) {
-			free(chn->values[i]);
-			chn->values[i] = NULL;
+	for (type = IIO_ATTR_TYPE_CHANNEL; type <= IIO_ATTR_TYPE_CHANNEL_EVENT; type++) {
+		if (chn->values[CHN_ATTRLIST_IDX(type)]) {
+			for (i = 0; i < chn->attrlist[CHN_ATTRLIST_IDX(type)].num; i++) {
+				free(chn->values[CHN_ATTRLIST_IDX(type)][i]);
+				chn->values[CHN_ATTRLIST_IDX(type)][i] = NULL;
+			}
+			free(chn->values[CHN_ATTRLIST_IDX(type)]);
+			chn->values[CHN_ATTRLIST_IDX(type)] = NULL;
 		}
-		free(chn->values);
-		chn->values = NULL;
 	}
 }
 

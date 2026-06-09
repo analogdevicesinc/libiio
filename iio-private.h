@@ -116,8 +116,8 @@ struct iio_channel {
 	enum iio_modifier modifier;
 	enum iio_chan_type type;
 
-	struct iio_attr_list attrlist;
-	char **values;
+	struct iio_attr_list attrlist[2];
+	char **values[2];
 
 	unsigned int number;
 };
@@ -129,8 +129,8 @@ struct iio_device {
 
 	char *name, *id, *label;
 
-	struct iio_attr_list attrlist[2];
-	char **values[2];
+	struct iio_attr_list attrlist[3];
+	char **values[3];
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
