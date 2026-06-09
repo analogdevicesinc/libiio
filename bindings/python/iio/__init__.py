@@ -505,6 +505,15 @@ _d_get_debug_attr.restype = _AttrPtr
 _d_get_debug_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_debug_attr.errcheck = _check_null
 
+_d_event_attr_count = _lib.iio_device_get_event_attrs_count
+_d_event_attr_count.restype = c_uint
+_d_event_attr_count.argtypes = (_DevicePtr,)
+
+_d_get_event_attr = _lib.iio_device_get_event_attr
+_d_get_event_attr.restype = _AttrPtr
+_d_get_event_attr.argtypes = (_DevicePtr, c_uint)
+_d_get_event_attr.errcheck = _check_null
+
 _d_buffers_count = _lib.iio_device_get_buffers_count
 _d_buffers_count.restype = c_uint
 _d_buffers_count.argtypes = (_DevicePtr,)
@@ -612,6 +621,15 @@ _c_get_attr = _lib.iio_channel_get_attr
 _c_get_attr.restype = _AttrPtr
 _c_get_attr.argtypes = (_ChannelPtr, c_uint)
 _c_get_attr.errcheck = _check_null
+
+_c_event_attr_count = _lib.iio_channel_get_event_attrs_count
+_c_event_attr_count.restype = c_uint
+_c_event_attr_count.argtypes = (_ChannelPtr,)
+
+_c_get_event_attr = _lib.iio_channel_get_event_attr
+_c_get_event_attr.restype = _AttrPtr
+_c_get_event_attr.argtypes = (_ChannelPtr, c_uint)
+_c_get_event_attr.errcheck = _check_null
 
 _create_channels_mask = _lib.iio_create_channels_mask
 _create_channels_mask.argtypes = (c_uint,)
@@ -969,6 +987,15 @@ class Channel(_IIO_Object):
         None,
         None,
         "List of attributes for this channel.\n\ttype=dict of iio.Attr",
+    )
+    event_attrs = property(
+        lambda self: {attr.name: attr for attr in [
+            Attr(self, _c_get_event_attr(self._channel, x))
+            for x in range(0, _c_event_attr_count(self._channel))
+        ]},
+        None,
+        None,
+        "List of event attributes for this channel.\n\ttype=dict of iio.Attr",
     )
     output = property(
         lambda self: self._output,
@@ -1438,6 +1465,15 @@ class _DeviceOrTrigger(_IIO_Object):
         None,
         None,
         "List of debug attributes for this IIO device.\n\ttype=dict of iio.Attr",
+    )
+    event_attrs = property(
+        lambda self: {attr.name: attr for attr in [
+            Attr(self, _d_get_event_attr(self._device, x))
+            for x in range(0, _d_event_attr_count(self._device))
+        ]},
+        None,
+        None,
+        "List of event attributes for this IIO device.\n\ttype=dict of iio.Attr",
     )
     channels = property(
         lambda self: sorted([
