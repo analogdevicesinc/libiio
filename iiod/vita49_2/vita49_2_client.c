@@ -15,6 +15,7 @@
 #include "vita49_2_client.h"
 #include "vita49_2_packet_types.h"
 
+#include <string.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -34,8 +35,8 @@
 /**
  * @brief Add a CIF-to-hardware mapping node to the FRONT of the mappings linked list.
  * 
- * @param stream_id 
- * @param cif0_bit 
+ * @param cif_type 
+ * @param cif_bit 
  * @param device_name 
  * @param attr_type 
  * @param channel_name 
@@ -43,7 +44,7 @@
  * @param attr_name 
  * @return int 
  */
-int command_add_mapping(uint32_t stream_id, uint32_t cif0_bit, 
+int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, 
 			    const char *device_name, enum vita49_2_attr_type attr_type, const char *channel_name,
 			    bool is_output, const char *attr_name);
 
@@ -62,7 +63,7 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 
 // Linked list containing CIF mapping structs which describe how a field in one of the CIFs 
 // translates to a specific attribute on this device. This variable will be our head node.
-static struct vita49_2_cif_mappings *vita49_2_cif_mappings_list = NULL;
+static struct vita49_2_cif_mapping *vita49_2_cif_mappings_list = NULL;
 
 // ==============================================================
 // ENTRY POINT
@@ -74,7 +75,7 @@ int start_vita49_2_daemon(struct iio_context *ctx, struct thread_pool *pool)
 
 	// This struct will contain all of the arguments that we want to pass to the main VITA 49.2 thread
 	struct vita49_2_pdata *thread_arguments;
-	thread_arguments = zalloc(sizeof(*thread_arguments));
+	thread_arguments = calloc(1, sizeof(*thread_arguments));
 
 	if (!thread_arguments)
 		return -ENOMEM;
@@ -114,7 +115,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	if (socket_fd < 0) 
 	{
 		fprintf(stderr, "vita49_2_client: socket creation failed\n");
-		return -1;
+		return;
 	}
 
 	// Address info
@@ -128,7 +129,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	{
 		fprintf(stderr, "vita49_2_client: UDP socket bind failed\n");
 		close(socket_fd);
-		return -1;
+		return;
 	}
 
 	fprintf(stderr, "vita49_2_client terminating.\n");
@@ -183,8 +184,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			// If I instead didn't use the poll-logic below, it could get interrupted by any signal
 			// rather than just the ones other developers have decided to accept in iiod.c
-
-		int ret;
 
 		do {
 			ret = poll(wake_up_events, sizeof(wake_up_events)/sizeof(wake_up_events[0]), -1);
@@ -309,13 +308,13 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			// Unknown packet
 			default:
-				fprintf("vita49_2_client: Found a packet of unknown type: '%d'.\n", header.packet_type);
+				fprintf(stderr, "vita49_2_client: Found a packet of unknown type: '%u'.\n", (uint32_t)(header.packet_type));
 				continue;
 			
 		}
 	}
 
-	return NULL;
+	return;
 }
 
 int vita49_2_command_init(struct iio_context *ctx)
@@ -323,7 +322,7 @@ int vita49_2_command_init(struct iio_context *ctx)
 	if (!ctx)
 		return -1;
 	
-	fprintf(stderr, "vrt_command_init: Initialized VRT translation layer.\n");
+	fprintf(stderr, "vita49_2_command_init: Initialized VITA 49.2 translation layer.\n");
 	return 0;
 }
 
@@ -386,7 +385,7 @@ int vita49_2_command_load_mappings(const char *file_path)
 			else if (strcmp(toks[3], "debug") == 0) atype = VITA49_2_ATTR_TYPE_DEBUG;
 
 			bool is_out = (strcmp(toks[5], "true") == 0 || strcmp(toks[5], "1") == 0);
-			vrt_command_add_mapping(stream_id, cif0_bit, toks[2], atype, toks[4], is_out, toks[6]);
+			command_add_mapping(stream_id, cif0_bit, toks[2], atype, toks[4], is_out, toks[6]);
 			count++;
 		} else {
 			fprintf(stderr, "vrt_command: Ignoring malformed line (need 7 fields): %s\n", line);
@@ -403,8 +402,6 @@ void vita49_2_command_cleanup(void)
 	struct vita49_2_cif_mapping *m = vita49_2_cif_mappings_list;
 	struct vita49_2_cif_mapping *next;
 	
-	vrt_command_stop_listener();
-
 	// Freeing the linked list memory
 	while (m) 
 	{
@@ -414,7 +411,7 @@ void vita49_2_command_cleanup(void)
 	}
 	vita49_2_cif_mappings_list = NULL;
 
-	fprintf(stderr, "vrt_command_cleanup: Cleaned up VRT translation layer.\n");
+	fprintf(stderr, "vrt_command_cleanup: Cleaned up VITA 49.2 translation layer.\n");
 }
 
 int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt)

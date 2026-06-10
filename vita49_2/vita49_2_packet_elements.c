@@ -8,6 +8,13 @@
 
 #include <stddef.h>
 #include <errno.h>
+#include <string.h>
+#if defined(_WIN32) || defined(_WIN64)
+    #include "winsock2.h"
+#else
+	#include <arpa/inet.h>
+#endif
+
 #include "vita49_2_packet_elements.h"
 
 int64_t convert_to_44_20(double value)

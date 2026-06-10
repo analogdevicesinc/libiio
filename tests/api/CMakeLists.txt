@@ -16,7 +16,7 @@ set(API_TEST_TARGETS
     test_lowlevel
 )
 
-if(WITH_VITA49_BACKEND)
+if(WITH_VITA49_2_BACKEND)
     list(APPEND API_TEST_TARGETS test_vita49)
 endif()
 
@@ -49,8 +49,8 @@ foreach(test ${API_TEST_TARGETS})
     endif()
 endforeach()
 
-if(WITH_VITA49_BACKEND)
-	add_executable(test_vrt_iiod test_vrt_iiod.c ../../iiod/vrt_command.c ../../vita49_packet.c)
+if(WITH_VITA49_2_BACKEND)
+	add_executable(test_vrt_iiod test_vrt_iiod.c ../../iiod/vita49_2/vita49_2_client.c ../../vita49_2/vita49_2_packet_elements.c ../../vita49_2/vita49_2_packet_types.c)
 	target_link_libraries(test_vrt_iiod PRIVATE test_common iio)
 	target_include_directories(test_vrt_iiod PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

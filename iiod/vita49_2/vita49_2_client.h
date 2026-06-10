@@ -15,6 +15,8 @@
 #ifndef __VITA49_2_CLIENT_H__
 #define __VITA49_2_CLIENT_H__
 
+#include <stdint.h>
+
 #include "thread-pool.h"
 
 #ifdef __cplusplus

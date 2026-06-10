@@ -11,8 +11,8 @@
 #include "ops.h"
 #include "thread-pool.h"
 
-#if WITH_VITA49_BACKEND
-#include "vita49_2_client.h"
+#if WITH_VITA49_2_BACKEND
+#include "vita49_2/vita49_2_client.h"
 #endif
 
 #include <iio/iio-lock.h>
@@ -52,7 +52,7 @@ static const struct option options[] = {
 	  {"serial", required_argument, 0, 's'},
 	  {"port", required_argument, 0, 'p'},
 	  {"uri", required_argument, 0, 'u'},
-#if WITH_VITA49_BACKEND
+#if WITH_VITA49_2_BACKEND
 	  {"vrt-mapping", required_argument, 0, 'm'},
 #endif
 	  {0, 0, 0, 0},
@@ -72,7 +72,7 @@ static const char *options_descriptions[] = {
 		"\n\t\t\t    'usb:1.2.3', or 'usb:'"
 		"\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
 		"\n\t\t\t    'local:' (default)"),
-#if WITH_VITA49_BACKEND
+#if WITH_VITA49_2_BACKEND
 	"Load VITA 49.2 command translation mappings from the specified CSV file.",
 #endif
 };
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
 
-#if WITH_VITA49_BACKEND
+#if WITH_VITA49_2_BACKEND
 	const char *optstring = "+hVdDF:n:s:p:u:m:";
 #else
 	const char *optstring = "+hVdDF:n:s:p:u:";
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
 		case 'u':
 			uri = optarg;
 			break;
-#if WITH_VITA49_BACKEND
+#if WITH_VITA49_2_BACKEND
 		case 'm':
 			vita49_2_mapping_file_path = optarg;
 			break;
@@ -395,7 +395,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-	#if WITH_VITA49_BACKEND
+	#if WITH_VITA49_2_BACKEND
 
 		// Validating that the context
 		ret = vita49_2_command_init(ctx);
@@ -423,9 +423,8 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 
 	thread_pool_wait(main_thread_pool);
 
-	#if WITH_VITA49_BACKEND
-		vrt_command_stop_listener();
-		vrt_command_cleanup();
+	#if WITH_VITA49_2_BACKEND
+		vita49_2_command_cleanup();
 	#endif
 
 out_thread_pool_stop:

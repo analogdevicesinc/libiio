@@ -89,9 +89,13 @@ if (WITH_IIOD_NETWORK)
 	endif()
 endif()
 
-iio_option(WITH_VITA49_BACKEND "Add support for VITA49 backend" OFF "POSIX")
-if (WITH_VITA49_BACKEND)
-	target_sources(iiod PRIVATE vrt_command.c ../vita49_packet.c)
+iio_option(WITH_VITA49_2_BACKEND "Add support for VITA49_2 backend" OFF "POSIX")
+if (WITH_VITA49_2_BACKEND)
+	target_sources(iiod PRIVATE vita49_2/vita49_2_client.c ../vita49_2/vita49_2_packet_elements.c ../vita49_2/vita49_2_packet_types.c)
+	 target_include_directories(iiod PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/vita49_2
+        ${CMAKE_SOURCE_DIR}/vita49_2
+    )
 endif()
 
 if (WITH_ZSTD)

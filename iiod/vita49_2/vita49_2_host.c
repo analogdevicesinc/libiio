@@ -134,7 +134,7 @@ vita49_2_create_context(const struct iio_context_params *params, const char *hos
 	tv.tv_usec = 0;
 	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-	ctx = iio_context_create_from_backend(params, &iio_vrt_backend, "VITA 49.2 VRT Backend", 0, 1, "");
+	ctx = iio_context_create_from_backend(params, &iio_vrt_backend, "VITA 49.2 Backend", 0, 1, "");
 	if (!ctx) 
 	{
 		fprintf(stderr, "vita_49_2_create_context: iio_context_create_from_backend failed\n");
@@ -173,7 +173,7 @@ vita49_2_create_context(const struct iio_context_params *params, const char *hos
 		struct vrt_packet pkt;
 		if (vrt_parse_packet(buf, received / 4, &pkt) < 0) 
 		{
-			fprintf(stderr, "vita49_2_create_context: Failed to parse VRT packet\n");
+			fprintf(stderr, "vita49_2_create_context: Failed to parse VITA 49.2 packet\n");
 			continue;
 		}
 

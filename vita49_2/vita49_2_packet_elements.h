@@ -57,9 +57,9 @@ struct vita49_2_header {
 	enum vita49_2_tsf ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
 	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
 	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
-	uint32_t packet_type:4;         /* VRT Packet Type */
+	uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
 #else
-	uint32_t packet_type:4;         /* VRT Packet Type */
+	uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
 	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
 	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
 	uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
