@@ -9,8 +9,8 @@
  * 		- Praveen Perera <praveen.perera@analog.com>
  */
 
-#ifndef __VITA49_PACKET_ELEMENTS_H__
-#define __VITA49_PACKET_ELEMENTS_H__
+#ifndef __VITA49_2_PACKET_ELEMENTS_H__
+#define __VITA49_2_PACKET_ELEMENTS_H__
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -745,4 +745,4 @@ __vrt_api int64_t vita49_2_get_payload_int64(const uint32_t* const payload, uint
 /* Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order. */
 __vrt_api void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val);
 
-#endif /* __VITA49_PACKET_ELEMENTS_H__ */
+#endif /* __VITA49_2_PACKET_ELEMENTS_H__ */

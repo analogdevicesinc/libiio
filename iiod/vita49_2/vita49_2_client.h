@@ -3,17 +3,19 @@
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
  * Copyright (C) 2026 Analog Devices, Inc.
- * Author: Travis Collins <travis.collins@analog.com>
+ * Author: Praveen Perera <praveen.perera@analog.com>
  * 
  * Contributors:
- * 		- Praveen Perera <praveen.perera@analog.com>
- */
+ * 		- Travis Collins <travis.collins@analog.com>
+*/
 
-#ifndef __VITA49_2_BACKEND_H__
-#define __VITA49_2_BACKEND_H__
+// Runs on the System-on-Module (SoM) and handles processing incoming VITA 49.2 packets,
+// executing any necessary commands, querying data, generating VITA 49.2 packets, and sending those packets.
 
-#include <iio/iio.h>
-#include "vita49_packet.h"
+#ifndef __VITA49_2_CLIENT_H__
+#define __VITA49_2_CLIENT_H__
+
+#include "thread-pool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,38 +54,18 @@ struct vita49_2_cif_mapping {
 	struct vita49_2_mapping *next;			/* Next item in the linked list */
 };
 
-/* Initialize the VITA-49.2 command translation layer mapping context. */
-int vrt_command_init(struct iio_context *ctx);
-
-/* Clean up the VITA-49.2 command translation layer. */
-void vrt_command_cleanup(void);
-
-/* Load mappings from a simple CSV configuration file.
- * Format: stream_id,cif0_bit,device_name,channel_name,is_output,attr_name
+/**
+ * @brief Worker thread for the VITA 49.2 backend.
+ * 
+ * @param pool 
+ * @param arguments 
  */
-int vrt_command_load_mappings(const char *file_path);
+static void vita49_2_backend_thread(struct thread_pool *pool, void *arguments);
 
-/* Add a mapping programmatically (useful for tests or default config). */
-int vrt_command_add_mapping(uint32_t stream_id, uint32_t cif0_bit, 
-			    const char *device_name, enum vrt_attr_type attr_type, const char *channel_name,
-			    bool is_output, const char *attr_name);
-
-/* Start the UDP listening thread for VITA-49.2 command packets */
-int vrt_command_start_listener(struct iio_context *ctx, uint16_t port);
-
-/* Stop the VITA-49.2 command listener */
-void vrt_command_stop_listener(void);
-
-/* Process an incoming VRT packet and translate its commands
- * (e.g. IF Context flags) to IIO library attribute writes.
- *
- * It checks the packet TYPE (Command/Context), parses the CIF0 elements,
- * and finds the corresponding IIO device/channel and applies the attributes.
- */
-int vrt_process_command_packet(struct iio_context *ctx, const struct vrt_packet *pkt);
+// None of the other functions have be declared here as they're all internal to this thread and shouldn't be exposed.
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __VITA49_2_BACKEND_H__ */
+#endif /* __VITA49_2_CLIENT_H__ */

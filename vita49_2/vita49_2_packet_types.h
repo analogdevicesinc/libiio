@@ -9,8 +9,8 @@
  * 		- Praveen Perera <praveen.perera@analog.com>
  */
 
-#ifndef __VITA49_PACKET_TYPES_H__
-#define __VITA49_PACKET_TYPES_H__
+#ifndef __VITA49_2_PACKET_TYPES_H__
+#define __VITA49_2_PACKET_TYPES_H__
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -276,4 +276,4 @@ __vrt_api ssize_t vita49_2_generate_control_packet(const struct vita49_2_control
  */
 __vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita49_2_control_packet *pkt);
 
-#endif /* __VITA49_PACKET_TYPES_H__ */
+#endif /* __VITA49_2_PACKET_TYPES_H__ */
