@@ -227,7 +227,7 @@ bool string_ends_with(const char *string, const char *suffix);
 __cnst const struct iio_context_params *get_default_params(void);
 
 extern const struct iio_backend iio_ip_backend;
-extern const struct iio_backend iio_vrt_backend;
+extern const struct iio_backend iio_vita49_2_backend;
 extern const struct iio_backend iio_local_backend;
 extern const struct iio_backend iio_serial_backend;
 extern const struct iio_backend iio_usb_backend;

@@ -394,7 +394,7 @@ const struct iio_backend * const iio_backends[] = {
 	IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC,
 		   &iio_ip_backend),
-	IF_ENABLED(WITH_VITA49_2_BACKEND, &iio_vrt_backend),
+	IF_ENABLED(WITH_VITA49_2_BACKEND, &iio_vita49_2_backend),
 	IF_ENABLED(WITH_SERIAL_BACKEND && !WITH_SERIAL_BACKEND_DYNAMIC,
 		   &iio_serial_backend),
 	IF_ENABLED(WITH_USB_BACKEND && !WITH_USB_BACKEND_DYNAMIC,

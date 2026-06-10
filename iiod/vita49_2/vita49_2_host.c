@@ -134,7 +134,7 @@ vita49_2_create_context(const struct iio_context_params *params, const char *hos
 	tv.tv_usec = 0;
 	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-	ctx = iio_context_create_from_backend(params, &iio_vrt_backend, "VITA 49.2 Backend", 0, 1, "");
+	ctx = iio_context_create_from_backend(params, &iio_vita49_2_backend, "VITA 49.2 Backend", 0, 1, "");
 	if (!ctx) 
 	{
 		fprintf(stderr, "vita_49_2_create_context: iio_context_create_from_backend failed\n");
@@ -170,17 +170,17 @@ vita49_2_create_context(const struct iio_context_params *params, const char *hos
 			break;
 		}
 
-		struct vrt_packet pkt;
-		if (vrt_parse_packet(buf, received / 4, &pkt) < 0) 
+		struct vita49_2_context_packet pkt;
+		if (vita49_2_parse_context_packet(buf, received / 4, &pkt) < 0) 
 		{
 			fprintf(stderr, "vita49_2_create_context: Failed to parse VITA 49.2 packet\n");
 			continue;
 		}
 
-		fprintf(stderr, "vita49_2_create_context: received packet type %u\n", pkt.header.packet_type);
+		fprintf(stderr, "vita49_2_create_context: received packet type %u\n", pkt.prologue.header.packet_type);
 
-		if (pkt.header.packet_type == VRT_PKT_TYPE_IF_CONTEXT && pkt.has_stream_id) {
-			uint32_t sid = pkt.stream_id;
+		if (pkt.prologue.header.packet_type == VITA49_2_PKT_TYPE_IF_CONTEXT && pkt.prologue.has_stream_id) {
+			uint32_t sid = pkt.prologue.stream_id;
 			char sid_str[32];
 			snprintf(sid_str, sizeof(sid_str), "vrt_device_%08x", sid);
 			
@@ -235,9 +235,9 @@ static int vita49_2_get_version(const struct iio_context *ctx, unsigned int *maj
 }
 
 static const struct iio_backend_ops vita49_2_ops = {
-	.create = vrt_create_context,
-	.shutdown = vrt_shutdown,
-	.get_version = vrt_get_version,
+	.create = vita49_2_create_context,
+	.shutdown = vita49_2_shutdown,
+	.get_version = vita49_2_get_version,
 	/* TODO: Implement other ops */
 };
 
@@ -245,8 +245,8 @@ const struct iio_backend iio_vita49_2_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "vrt",
 	.uri_prefix = "vrt:",
-	.ops = &vrt_ops,
-	.default_timeout_ms = VITA49_TIMEOUT_MS,
+	.ops = &vita49_2_ops,
+	.default_timeout_ms = VITA49_2_TIMEOUT_MS,
 };
 
 

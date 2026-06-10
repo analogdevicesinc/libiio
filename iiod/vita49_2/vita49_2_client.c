@@ -132,10 +132,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		return;
 	}
 
-	fprintf(stderr, "vita49_2_client terminating.\n");
-	return;
-
-
 	fprintf(stderr, "vita49_2_client: VITA 49.2 Packet Listener started.\n");
 
 
