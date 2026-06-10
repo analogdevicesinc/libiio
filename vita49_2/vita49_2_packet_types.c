@@ -753,7 +753,7 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 
 	// Iterating through each of the 32 options in CIF0 from 31 to 0.
 	// "Context Field Indicator" doesn't apply to Command Packets, so we'll actually start from 30.
-	for (uint8_t field_index = 30; field_index >= 0; field_index--)
+	for (int field_index = 30; field_index >= 0; field_index--)
 	{
 		field_bit = (1 << field_index);
 

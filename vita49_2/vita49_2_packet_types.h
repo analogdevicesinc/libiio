@@ -16,7 +16,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include "include/iio/iio.h"
 #include "vita49_2_packet_elements.h"
 
 /**

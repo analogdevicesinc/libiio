@@ -270,6 +270,14 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				// Indicator bit 26 can be used to determine if we have a Control Packet or an Acknowledge Packet.
 				if (header.indicators & (1 << 2))
 				{
+					// The device/client shouldn't be receiving Ack Packets from host. It works the other way around,
+					// as in the device/client should be generating and sending Ack Packets to the host.
+					fprintf(stderr, "vita49_2_client: Received an Ack Packet. Skipping processing.\n");
+					continue;
+				} 
+				// Otherwise we have an Control Packet. 
+				else
+				{
 					struct vita49_2_control_packet control_packet;
 					if (vita49_2_parse_control_packet(buf, received, &control_packet) < 0)
 					{
@@ -284,14 +292,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					}
 
 					break;
-				} 
-				// Otherwise we have an Acknowledge Packet. 
-				else
-				{
-					// The device/client shouldn't be receiving Ack Packets from host. It works the other way around,
-					// as in the device/client should be generating and sending Ack Packets to the host.
-					fprintf(stderr, "vita49_2_client: Received an Ack Packet. Skipping processing.\n");
-					continue;
 				}
 
 				break;
