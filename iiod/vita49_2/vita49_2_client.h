@@ -44,7 +44,7 @@ enum vita49_2_cif_types {
  * 
  */
 struct vita49_2_cif_mapping {
-	enum vita49_2_cif_types cif_marker;		/* Which CIF (0, 1, 2, 3, or 7) is associated with this attribute */
+	enum vita49_2_cif_types cif_type;		/* Which CIF (0, 1, 2, 3, or 7) is associated with this attribute */
 	uint32_t cif_bit;          				/* Which bit in the CIF triggers this (e.g. 21) */
 	char device_name[64];       			/* ID of the target iio_device (e.g. "ad9361-phy") */
 	enum vita49_2_attr_type attr_type; 		/* Type of the target attribute */
@@ -55,12 +55,54 @@ struct vita49_2_cif_mapping {
 };
 
 /**
+ * @struct vita49_2_pdata
+ * @brief Data we want to pass from iiod.c to the VITA 49.2 pthread when it gets created.
+ * 
+ */
+struct vita49_2_pdata {
+	struct thread_pool *pool;
+	struct iio_context *ctx;
+};
+
+/**
+ * @brief Daemon for VITA 49.2 backend. Manages the VITA 49.2 processing thread.
+ * 
+ * @param ctx 
+ * @param pool 
+ * @return int 
+ */
+int start_vita49_2_daemon(struct iio_context *ctx, struct thread_pool *pool);
+
+/**
  * @brief Worker thread for the VITA 49.2 backend.
  * 
  * @param pool 
  * @param arguments 
  */
-static void vita49_2_backend_thread(struct thread_pool *pool, void *arguments);
+static void vita49_2_main(struct thread_pool *pool, void *arguments);
+
+/**
+ * @brief Validate IIO context.
+ * 
+ * @param ctx 
+ * @return int 
+ */
+int vita49_2_command_init(struct iio_context *ctx);
+
+/**
+ * @brief Load the CIF-to-hardware mappings from a simple CSV configuration file.
+ * Format: stream_id,cif0_bit,device_name,channel_name,is_output,attr_name
+ * 
+ * @param file_path 
+ * @return int 
+ */
+int vita49_2_command_load_mappings(const char *file_path);
+
+/**
+ * @brief Deallocates the linked list of hardware mappings.
+ * 
+ */
+void vita49_2_command_cleanup(void);
 
 // None of the other functions have be declared here as they're all internal to this thread and shouldn't be exposed.
 

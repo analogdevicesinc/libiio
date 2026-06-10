@@ -24,20 +24,12 @@
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
-// I don't want to expose the function declarations below to other files, hence why I'm
+// I don't want to expose the function declarations listed below to other files, hence why I'm
 // not putting them in the header file.
 
 // ==============================================================
 // FUNCTION DECLARATIONS
 // ==============================================================
-
-/**
- * @brief Validate IIO context.
- * 
- * @param ctx 
- * @return int 
- */
-int vita49_2_command_init(struct iio_context *ctx);
 
 /**
  * @brief Add a CIF-to-hardware mapping node to the FRONT of the mappings linked list.
@@ -51,18 +43,9 @@ int vita49_2_command_init(struct iio_context *ctx);
  * @param attr_name 
  * @return int 
  */
-int vita49_2_command_add_mapping(uint32_t stream_id, uint32_t cif0_bit, 
+int command_add_mapping(uint32_t stream_id, uint32_t cif0_bit, 
 			    const char *device_name, enum vita49_2_attr_type attr_type, const char *channel_name,
 			    bool is_output, const char *attr_name);
-
-/**
- * @brief Load the CIF-to-hardware mappings from a simple CSV configuration file.
- * Format: stream_id,cif0_bit,device_name,channel_name,is_output,attr_name
- * 
- * @param file_path 
- * @return int 
- */
-int vita49_2_command_load_mappings(const char *file_path);
 
 /**
  * @brief Accepts a parsed Control Packet and executes the commands listed in it.
@@ -71,33 +54,54 @@ int vita49_2_command_load_mappings(const char *file_path);
  * @param pkt 
  * @return int 
  */
-int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet *pkt);
-
-/**
- * @brief Deallocates the linked list of hardware mappings.
- * 
- */
-void vita49_2_command_cleanup(void);
+int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt);
 
 // ==============================================================
 // GLOBAL VARIABLES
 // ==============================================================
 
-static struct iio_context *listener_ctx = NULL;
-
 // Linked list containing CIF mapping structs which describe how a field in one of the CIFs 
 // translates to a specific attribute on this device. This variable will be our head node.
 static struct vita49_2_cif_mappings *vita49_2_cif_mappings_list = NULL;
 
+// ==============================================================
+// ENTRY POINT
+// ==============================================================
 
-// ==============================================================
-// MAIN THREAD
-// ==============================================================
-static void vita49_2_backend_thread(struct thread_pool *pool, void *arguments)
+int start_vita49_2_daemon(struct iio_context *ctx, struct thread_pool *pool)
 {
-	uint32_t buf[2048];
-	ssize_t received;
+	int ret;
+
+	// This struct will contain all of the arguments that we want to pass to the main VITA 49.2 thread
+	struct vita49_2_pdata *thread_arguments;
+	thread_arguments = zalloc(sizeof(*thread_arguments));
+
+	if (!thread_arguments)
+		return -ENOMEM;
+
+	thread_arguments->ctx = ctx;
+	thread_arguments->pool = thread_pool_new();
+	if (!thread_arguments->pool)
+	{
+		ret = -errno;
+		free(thread_arguments);
+		return ret;
+	}
+
+	ret = thread_pool_add_thread(pool, vita49_2_main, thread_arguments, "vita49_2_main_thd");
+
+	if (ret == 0)
+		return 0;
 	
+	// Free data on failure only
+	free(thread_arguments);
+	return ret;
+}
+
+static void vita49_2_main(struct thread_pool *pool, void *args)
+{
+	struct vita49_2_pdata *arguments = args;
+
 	// ==============================================================
 	// SOCKET CREATION
 	// ==============================================================
@@ -161,6 +165,9 @@ static void vita49_2_backend_thread(struct thread_pool *pool, void *arguments)
 	int ret;
 	struct vita49_2_header header;
 	uint32_t word;
+
+	uint32_t buf[2048];
+	ssize_t received;
 
 	while (socket_fd >= 0) 
 	{
@@ -275,7 +282,7 @@ static void vita49_2_backend_thread(struct thread_pool *pool, void *arguments)
 					}
 
 					// Executing the commands in the packet
-					if (vita49_2_execute_commands(listener_ctx, &control_packet) < 0)
+					if (execute_commands(arguments->ctx, &control_packet) < 0)
 					{
 						fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
 						continue;
@@ -320,14 +327,15 @@ int vita49_2_command_init(struct iio_context *ctx)
 	return 0;
 }
 
-int vita49_2_command_add_mapping(uint32_t stream_id, uint32_t cif0_bit, 
+int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, 
 			    const char *device_name, enum vita49_2_attr_type attr_type, const char *channel_name,
 			    bool is_output, const char *attr_name)
 {
 	struct vita49_2_cif_mapping *m = calloc(1, sizeof(*m));
 	if (!m) return -1;
 
-	m->cif0_bit = cif0_bit;
+	m->cif_type = cif_type;
+	m->cif_bit = cif_bit;
 	snprintf(m->device_name, sizeof(m->device_name), "%s", device_name);
 	m->attr_type = attr_type;
 	snprintf(m->channel_name, sizeof(m->channel_name), "%s", channel_name ? channel_name : "");
@@ -340,8 +348,8 @@ int vita49_2_command_add_mapping(uint32_t stream_id, uint32_t cif0_bit,
 	const char *type_str = (attr_type == VITA49_2_ATTR_TYPE_DEVICE) ? "device" :
 			       (attr_type == VITA49_2_ATTR_TYPE_DEBUG) ? "debug" : "channel";
 
-	fprintf(stderr, "vrt_command: Added mapping Stream 0x%X Bit %u -> %s/[%s]%s/%s\n",
-		stream_id, cif0_bit, device_name, type_str, channel_name ? channel_name : "", attr_name);
+	fprintf(stderr, "vrt_command: Added mapping CIF%d Bit %d -> %s/[%s]%s/%s\n",
+		cif_type, cif_bit, device_name, type_str, channel_name ? channel_name : "", attr_name);
 	return 0;
 }
 
@@ -392,22 +400,24 @@ int vita49_2_command_load_mappings(const char *file_path)
 
 void vita49_2_command_cleanup(void)
 {
-	struct vita49_2_cif_mapping *m = vita49_2_cif_mappings;
+	struct vita49_2_cif_mapping *m = vita49_2_cif_mappings_list;
 	struct vita49_2_cif_mapping *next;
 	
 	vrt_command_stop_listener();
 
-	while (m) {
+	// Freeing the linked list memory
+	while (m) 
+	{
 		next = m->next;
 		free(m);
 		m = next;
 	}
-	vita49_2_cif_mappings = NULL;
+	vita49_2_cif_mappings_list = NULL;
 
 	fprintf(stderr, "vrt_command_cleanup: Cleaned up VRT translation layer.\n");
 }
 
-int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet *pkt)
+int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt)
 {
 	struct iio_device *dev;
 	struct iio_channel *chn;
@@ -431,11 +441,14 @@ int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_con
 		// Check if any of the commands in the Control Packet belong to the same CIF "family" and have the same CIF bit
 		// as the current mapping. If none of the Control match with the current mapping, that means this Control Packet
 		// is not targeting the attribute associated with this mapping, so we can move onto the next mapping.
-		switch (m->cif_marker)
+		switch (m->cif_type)
 		{
 			case CIF0:
+				uint32_t cif0_word;
+				memcpy(&cif0_word, &pkt->cif0.cif0_word, sizeof(cif0_word));
+			
 				// If true, this means one of the bits in the CIF0 word is the same as the CIF0 bit for this mapping, thus we have a match
-				if (pkt->cif0.cif0_word & (1 << m->cif_bit))
+				if (cif0_word & (1 << m->cif_bit))
 					break;
 
 				continue;
@@ -532,7 +545,7 @@ int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_con
 		double val = 0.0;
 
 		// Checking CIF0
-		if (m->cif_marker == CIF0)
+		if (m->cif_type == CIF0)
 		{
 			// switch-statements are faster for large conditions :D
 			switch (m->cif_bit)
@@ -602,7 +615,7 @@ int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_con
 		}
 
 		// Checking CIF1
-		else if (m->cif_marker == CIF1)
+		else if (m->cif_type == CIF1)
 		{
 			// TODO: Logic to extract the value from CIF1
 			switch (m->cif_bit)
@@ -617,7 +630,7 @@ int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_con
 		}
 
 		// Checking CIF2
-		else if (m->cif_marker == CIF2)
+		else if (m->cif_type == CIF2)
 		{
 			// TODO: Logic to extract the value from CIF2
 			switch (m->cif_bit)
@@ -632,7 +645,7 @@ int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_con
 		}
 
 		// Checking CIF3
-		else if (m->cif_marker == CIF3)
+		else if (m->cif_type == CIF3)
 		{
 			// TODO: Logic to extract the value from CIF3
 			switch (m->cif_bit)
@@ -647,7 +660,7 @@ int vita49_2_execute_commands(struct iio_context *ctx, const struct vita49_2_con
 		}
 
 		// Checking CIF7
-		else if (m->cif_marker == CIF7)
+		else if (m->cif_type == CIF7)
 		{
 			// TODO: Logic to extract the value from CIF7
 			switch (m->cif_bit)

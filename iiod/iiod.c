@@ -12,7 +12,7 @@
 #include "thread-pool.h"
 
 #if WITH_VITA49_BACKEND
-#include "vrt_command.h"
+#include "vita49_2_client.h"
 #endif
 
 #include <iio/iio-lock.h>
@@ -31,7 +31,7 @@
 #define STRINGIFY(x) _STRINGIFY(x)
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, const char *vrt_mapping_file,
+		      const char *uart_params, const char *vita49_2_mapping_file_path,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd);
 
 bool server_demux;
@@ -197,7 +197,7 @@ int main(int argc, char **argv)
 	const char *uri = "local:";
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
-	char *vrt_mapping_file = NULL;
+	char *vita49_2_mapping_file_path = NULL;
 	const char *uart_params = NULL;
 	uint16_t port = IIOD_PORT;
 	int ret, ep0_fd = 0;
@@ -260,7 +260,7 @@ int main(int argc, char **argv)
 			break;
 #if WITH_VITA49_BACKEND
 		case 'm':
-			vrt_mapping_file = optarg;
+			vita49_2_mapping_file_path = optarg;
 			break;
 #endif
 		case 'h':
@@ -304,7 +304,7 @@ int main(int argc, char **argv)
 		restart_usr1 = false;
 
 		ret = start_iiod(uri, ffs_mountpoint, uart_params,
-				 vrt_mapping_file, port, nb_pipes, ep0_fd);
+				 vita49_2_mapping_file_path, port, nb_pipes, ep0_fd);
 	} while (!ret && restart_usr1);
 
 	thread_pool_destroy(main_thread_pool);
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 }
 
 static int start_iiod(const char *uri, const char *ffs_mountpoint,
-		      const char *uart_params, const char *vrt_mapping_file,
+		      const char *uart_params, const char *vita49_2_mapping_file_path,
 		      uint16_t port, unsigned int nb_pipes, int ep0_fd)
 {
 	struct iio_context *ctx;
@@ -372,7 +372,8 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-	if (WITH_IIOD_SERIAL && uart_params) {
+	if (WITH_IIOD_SERIAL && uart_params) 
+	{
 		ret = start_serial_daemon(ctx, uart_params,
 					  main_thread_pool,
 					  xml_zstd, xml_zstd_len);
@@ -383,7 +384,8 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-	if (WITH_IIOD_NETWORK) {
+	if (WITH_IIOD_NETWORK) 
+	{
 		ret = start_network_daemon(ctx, main_thread_pool,
 					   xml_zstd, xml_zstd_len, port);
 		if (ret) {
@@ -393,29 +395,38 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 		}
 	}
 
-#if WITH_VITA49_BACKEND
-	ret = vrt_command_init(ctx);
-	if (ret < 0) {
-		IIO_ERROR("Failed to initialize VRT command layer\n");
-	} else {
-		if (vrt_mapping_file) {
-			vrt_command_load_mappings(vrt_mapping_file);
-		}
+	#if WITH_VITA49_BACKEND
 
-		/* Start the VRT listener on a custom UDP port (e.g., 1235) */
-		ret = vrt_command_start_listener(ctx, 1235);
-		if (ret < 0) {
-			IIO_ERROR("Failed to start VRT command listener\n");
+		// Validating that the context
+		ret = vita49_2_command_init(ctx);
+		if (ret < 0) 
+		{
+			IIO_ERROR("Failed to initialize VITA 49.2 layer\n");
+		} 
+		else 
+		{
+			// The command mappings translate bits in CIF 0/1/2/3/7 to attributes that can be modified
+			// via libiio.
+			if (vita49_2_mapping_file_path) 
+			{
+				vita49_2_command_load_mappings(vita49_2_mapping_file_path);
+			}
+
+			/* Start the VITA 49.2 listener on UDP Port 4991 on all interfaces */
+			ret = start_vita49_2_daemon(ctx, main_thread_pool);
+			if (ret < 0) 
+			{
+				IIO_ERROR("Failed to start VITA 49.2 listener\n");
+			}
 		}
-	}
-#endif
+	#endif
 
 	thread_pool_wait(main_thread_pool);
 
-#if WITH_VITA49_BACKEND
-	vrt_command_stop_listener();
-	vrt_command_cleanup();
-#endif
+	#if WITH_VITA49_BACKEND
+		vrt_command_stop_listener();
+		vrt_command_cleanup();
+	#endif
 
 out_thread_pool_stop:
 	/*
