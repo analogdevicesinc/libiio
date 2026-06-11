@@ -18,6 +18,10 @@
 #include <sys/types.h>
 #include "vita49_2_packet_elements.h"
 
+// =============================================================================
+// FUNCTION DECLARATIONS
+// =============================================================================
+
 /**
  * @struct vita49_2_data_packet
  * @brief Represents a parsed VITA 49.2 Signal Data Packet.

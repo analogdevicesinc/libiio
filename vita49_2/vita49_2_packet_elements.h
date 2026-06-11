@@ -15,33 +15,136 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* VITA 49.2 Packet Types */
+// "Organizationally Unique Identifier". ADI has several OUIs, I just chose the first one: https://regauth.standards.ieee.org/standards-ra-web/pub/view.html#registries
+// OUI is one of the component fields of the Class ID field.
+#define OUI 0x64F9C0 
+
+// =============================================================================
+// VITA 49.2 PACKET TYPES
+// =============================================================================
 enum vita49_2_packet_type {
-	VITA49_2_PKT_TYPE_IF_DATA_NO_SID = 0x0,
-	VITA49_2_PKT_TYPE_IF_DATA_WITH_SID = 0x1,
-	VITA49_2_PKT_TYPE_EXT_DATA_NO_SID = 0x2,
-	VITA49_2_PKT_TYPE_EXT_DATA_WITH_SID = 0x3,
-	VITA49_2_PKT_TYPE_IF_CONTEXT = 0x4,
-	VITA49_2_PKT_TYPE_EXT_CONTEXT = 0x5,
-	VITA49_2_PKT_TYPE_COMMAND = 0x6,
-	VITA49_2_PKT_TYPE_EXT_COMMAND = 0x7,
+	VITA49_2_PKT_TYPE_IF_DATA_NO_SID 		= 0x0,
+	VITA49_2_PKT_TYPE_IF_DATA_WITH_SID 		= 0x1,
+	VITA49_2_PKT_TYPE_EXT_DATA_NO_SID 		= 0x2,
+	VITA49_2_PKT_TYPE_EXT_DATA_WITH_SID 	= 0x3,
+	VITA49_2_PKT_TYPE_IF_CONTEXT 			= 0x4,
+	VITA49_2_PKT_TYPE_EXT_CONTEXT 			= 0x5,
+	VITA49_2_PKT_TYPE_COMMAND 				= 0x6,
+	VITA49_2_PKT_TYPE_EXT_COMMAND 			= 0x7,
 };
 
-/* TSI - Timestamp Integer */
+// =============================================================================
+// TSI - TIMESTAMP INTEGER
+// =============================================================================
 enum vita49_2_tsi {
-	VITA49_2_TSI_NONE = 0,
-	VITA49_2_TSI_UTC = 1,
-	VITA49_2_TSI_GPS = 2,
-	VITA49_2_TSI_OTHER = 3,
+	VITA49_2_TSI_NONE 		= 0,
+	VITA49_2_TSI_UTC 		= 1,
+	VITA49_2_TSI_GPS 		= 2,
+	VITA49_2_TSI_OTHER 		= 3,
 };
 
-/* TSF - Timestamp Fractional */
+// =============================================================================
+// TSF - TIMESTAMP FRACTIONAL
+// =============================================================================
 enum vita49_2_tsf {
-	VITA49_2_TSF_NONE = 0,
-	VITA49_2_TSF_SAMPLE_COUNT = 1,
-	VITA49_2_TSF_REAL_TIME = 2,
-	VITA49_2_TSF_FREE_RUNNING = 3,
+	VITA49_2_TSF_NONE 			= 0,
+	VITA49_2_TSF_SAMPLE_COUNT 	= 1,
+	VITA49_2_TSF_REAL_TIME 		= 2,
+	VITA49_2_TSF_FREE_RUNNING 	= 3,
 };
+
+// =============================================================================
+// PACKET CLASS CODES
+// =============================================================================
+
+// VITA 49.2 specifies that an organization must come up with Packet Classes which define
+// what information is present in VITA 49.2 packets and how they're structured/formatted.
+
+// Each of these Packet Classes are assigned codes. I've already generated some
+// Packet Classes and Packet Class Codes as specified in my "VITA 49.2 Information Structures" document.
+
+// Packet Class Code is a 16-bit field.
+enum vita49_2_packet_class_codes {
+
+	// IMPORTANT: As more classes are defined in the future, please make to use explicit enum values
+	// rather than relying on implicit values. I've organized the attributes below by Packet Class type
+	// rather than by the order in which they were added to the enum.
+	// If you add a Data Packet Class in the future and don't explicity specify its Packet Class code, 
+	// that can make its value unclear.
+
+	// IMPORTANT: Packet Class Code 0x0000 is reserved. I'm doing this on purpose in case the host forgets to populate
+	// that field because they may have forgotten other information as well, that way the device throws that packet out.
+
+	// Signal Data Packet Classes
+	VITA49_2_PKT_CLASS_TIME_DATA 				= 0x0001,		// Transmit 16-bit I/Q data
+	VITA49_2_PKT_CLASS_SPECTRAL_DATA 			= 0X0002,		// Transmit spectral data
+	
+	// Context Packet Classes
+	VITA49_2_PKT_CLASS_GENERIC_CONTEXT 			= 0x0003,		// Generic Context Packets. The fields that are present in the payload are provided by the CIF word.
+
+	// Control Packet Classes
+	VITA49_2_PKT_CLASS_GENERIC_CONTROL 			= 0x0004,		// Generic Control Packet, not all the CIF fields are applicable to Command Packets so not all of them are used.
+	VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST		= 0x0005,		// Control Packet specifically for requesting more time data packets
+	VITA49_2_PKT_CLASS_REFILL_SPECTRAL_REQUEST 	= 0x0006,		// Control Packet specifically for requesting more spectral data packets
+
+	// Acknowledge Packet Classes
+	VITA49_2_PKT_CLASS_ACKV_ACKX				= 0x0007,		// Acknowledgement indicating validity of commands (AckV) or which commands were executed properly (AckX)
+	VITA49_2_PKT_CLASS_ACKS						= 0x0008		// Acknowledgement indicating the new values after the controls from a Control Packet were issued (simmilar to a Context Packet)
+};
+
+// =============================================================================
+// INFORMATION CLASS CODES
+// =============================================================================
+
+// A VITA 49.2 Information Class is a specification of a structure consisting of one or more Packet Classes.
+// It basically a logical organization that groups packets together. It says "I want to accomplish this task 
+// and I'm using these Packet Classes to do that."
+
+// For example, if I want to convey 70-MHz signal data from a component in my signal processing chain,
+// I'd create an Information Class that uses Signal Data Packets, Context Packets, and Control Packets.
+
+// Information Class Code is a 16-bit field.
+enum vita49_2_information_class_codes {
+
+	// IMPORTANT: Same warning that I gave for the Packet Class Code. Read that message.
+	// IMPORTANT: Information Class Code 0x0000 is reserved. Same reason as for the Packet Classes (read that message).
+
+	// For more information about these Information Classes, see my "VITA 49.2 Information Structures" document
+
+	// Purpose: Query signal time data from the module.
+	// Packets: 
+		// 1. 16-Bit Time Data (Signal Data Packet)
+		// 2. Generic Context Packet (Context Packet)
+		// 3. Generic Control Packet (Command Packet)
+		// 4. Time Data Refill Request (Command Packet) 
+		// 5. AckV/AckX Packet (Command Packet)
+		// 6. AckS Packet (Command Packet)
+	VITA49_2_INFO_CLASS_MODULE_TIME_DATA		= 0x0001,		
+
+	// Purpose: Query signal spectral data from the module.
+	// Packets:
+		// 1. Spectral Data (Signal Data Packet)
+		// 2. Generic Context Packet (Context Packet)
+		// 3. Generic Control Packet (Command Packet)
+		// 4. Spectral Data Refill Request (Command Packet) 
+		// 5. AckV/AckX Packet (Command Packet)
+		// 6. AckS Packet (Command Packet)
+	VITA49_2_INFO_CLASS_MODULE_SPECTRAL_DATA	= 0x0002,
+
+	// Purpose: Send signal time data from the host to the module.
+	// Packets:
+		// 1. 16-Bit Time Data (Signal Data Packet)
+		// 2. Generic Context Packet (Context Packet)
+		// 3. Generic Control Packet (Command Packet)
+		// 4. AckV/AckX Packet (Command Packet)
+		// 5. AckS Packet (Command Packet)
+	VITA49_2_INFO_CLASS_HOST_TIME_DATA			= 0x0003
+
+};
+
+// =============================================================================
+// FUNCTION DECLARATIONS
+// =============================================================================
 
 /**
  * @struct vita49_2_header
@@ -53,8 +156,8 @@ struct vita49_2_header {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
 	uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
-	enum vita49_2_tsi ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
-	enum vita49_2_tsf ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
+	uint32_t ts_fractional_format:2; /* Timestamp Fractional (TSF) Format, MUST use values from the vita49_2_tsi enum */
+	uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format, MUST use values from the vita49_2_tsf enum */
 	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
 	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
 	uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
@@ -110,8 +213,8 @@ struct vita49_2_class_id {
 	} lower_word;
 
 	struct {
-		uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class */
-		uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class */
+		uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class, MUST use values from the vita49_2_packet_class_codes enum*/
+		uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class, MUST use valuse from the vita49_2_information_class_codes enum */
 	} upper_word;
 
 #else
@@ -123,9 +226,8 @@ struct vita49_2_class_id {
 	} lower_word;
 
 	struct {
-		uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class */
-		uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class */
-	} upper_word;
+		uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class, MUST use valuse from the vita49_2_information_class_codes enum */	} upper_word;
+		uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class, MUST use values from the vita49_2_packet_class_codes enum*/
 	
 #endif
 };
@@ -170,19 +272,22 @@ struct vita49_2_prologue {
 struct vita49_2_iq_item {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	
-	uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
-	uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
+	// Currently we're not implementing channel and event tags as that would cause Item Packing Fields to extend beyond 32 bits,
+	// however ADI retains the right to implement them in the future.
+
+	// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
+	// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
 	
-	uint32_t quadrature:8; 		/* 16-bit signed Q component */
-	uint32_t in_phase:8; 		/* 16-bit signed I component */
+	uint32_t quadrature:16; 		/* 16-bit signed Q component */
+	uint32_t in_phase:16; 		/* 16-bit signed I component */
 
 #else
 
-	uint32_t in_phase:8; 		/* 16-bit signed I component */
-	uint32_t quadrature:8; 		/* 16-bit signed Q component */
+	uint32_t in_phase:16; 		/* 16-bit signed I component */
+	uint32_t quadrature:16; 		/* 16-bit signed Q component */
 	
-	uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
-	uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
+	// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
+	// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
 
 #endif
 };

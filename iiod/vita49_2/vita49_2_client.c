@@ -24,11 +24,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <poll.h>
+#include <time.h>
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
 // Streaming related parameters for the RX and TX I/Q buffers
-#define NUM_RX_SAMPLES 512
+#define NUM_RX_SAMPLES 65500 // A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
 #define NUM_RX_BLOCKS 4
 
 #define NUM_TX_SAMPLES 128
@@ -174,7 +175,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	char rx_device_name[] = "cf-ad9361-lpc";
 	char tx_device_name[] = "cf-ad9361-dds-core-lpc";
 
-	struct iio_channel *channel;
+	struct iio_channel *channel, *i_channel;
 
 	// ==============================================================
 	// CONFIGURING RX DEVICE
@@ -216,8 +217,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 	iio_channel_enable(channel, rx_channel_mask);
 
-	channel = iio_device_find_channel(rx_device, "voltage1", false);
-	if (channel == NULL)
+	i_channel = iio_device_find_channel(rx_device, "voltage1", false);
+	if (i_channel == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
 		rx_device = NULL;
@@ -226,7 +227,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		goto tx_configuration;
 	}
 
-	iio_channel_enable(channel, rx_channel_mask);
+	iio_channel_enable(i_channel, rx_channel_mask);
 
 	// Creating a buffer
 	struct iio_buffer *rx_buffer = iio_device_create_buffer(rx_device, 0, rx_channel_mask);
@@ -247,11 +248,12 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		rx_device = NULL;
 		rx_channel_mask = NULL;
 		iio_buffer_destroy(rx_buffer);
+
+		goto tx_configuration;
 	}
 	// Since RX setup was successful, we can enable the flag
-	else
-		rx_ready = true;
-
+	rx_ready = true;
+	const struct iio_block *rx_block; // Will be used when we want to grab data from the RX stream
 
 	// ==============================================================
 	// CONFIGURING TX DEVICE
@@ -359,15 +361,56 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 
 	// ==============================================================
+	// PACKET SETUP
+	// ==============================================================
+
+	// Setting up the majority of a time data packet now to streamline future processing
+	struct vita49_2_data_packet time_data_packet;
+	memset(&time_data_packet, 0, sizeof(time_data_packet));
+
+	time_data_packet.prologue.header.indicators = (1 << 1); // Indicate that we're NOT generating a VITA 49.0 packet. See Table 5.1.1.1-1 for more info on indicator bits.
+	time_data_packet.prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	time_data_packet.prologue.header.ts_fractional_format = VITA49_2_TSF_NONE; // We have no way of getting picosecond time precision in Linux
+	time_data_packet.prologue.header.has_class_id = 1;
+	time_data_packet.prologue.header.packet_type = VITA49_2_PKT_TYPE_IF_DATA_WITH_SID;
+
+	time_data_packet.prologue.class_id.lower_word.oui = OUI;
+	time_data_packet.prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_TIME_DATA;
+	time_data_packet.prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+
+	time_data_packet.prologue.has_stream_id = 1;
+	time_data_packet.prologue.has_class_id = 1;
+	time_data_packet.prologue.has_timestamp_int = 1;
+	// time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	// Here are the remaining fields that have to be set whenever one of these messages have to be generated and sent:
+	// Data Packet:
+		// Prologue:
+			// Header:
+				// packet_size_words *
+				// packet_count *
+			// stream_id *
+			// timestamp_int *
+			// TODO: timestamp_frac, Linux doesn't provide a way to get picosecond accuracy natively
+		// Payload:
+			// payload *
+			// payload_num_words *
+
+		// TODO: Trailer support
+
+	// ==============================================================
 	// RECEIVE LOOP
 	// ==============================================================
 
 	int ret;
-	struct vita49_2_header header;
+	struct vita49_2_header received_header;
 	uint32_t word;
 
 	uint32_t buf[2048];
 	ssize_t received;
+
+	struct sockaddr_in sender_address;
+	socklen_t sender_length = sizeof(sender_address);
 
 	while (socket_fd >= 0) 
 	{
@@ -417,9 +460,9 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Need to figure out what packet was received so that we can call the correct parser function.
 		// We can determine that by looking at the header.
 		word = ntohl(buf[0]);
-		memcpy(&header, &word, sizeof(word));
+		memcpy(&received_header, &word, sizeof(word));
 
-		switch (header.packet_type)
+		switch (received_header.packet_type)
 		{
 			// Signal Data Packet with no Stream ID
 			case VITA49_2_PKT_TYPE_IF_DATA_NO_SID:
@@ -471,7 +514,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					// AckS
 
 				// Indicator bit 26 can be used to determine if we have a Control Packet or an Acknowledge Packet.
-				if (header.indicators & (1 << 2))
+				if (received_header.indicators & (1 << 2))
 				{
 					// The device/client shouldn't be receiving Ack Packets from host. It works the other way around,
 					// as in the device/client should be generating and sending Ack Packets to the host.
@@ -487,10 +530,70 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						fprintf(stderr, "vita49_2_client: Unable to parse Control Packet.\n");
 					}
 
+					// I defined a custom Control Packet Class specifically for requesting I/Q data refills.
+					// Instead of incorporating this logic into the execute_commands() function and returning some specific value
+					// or passing IIO streaming/block arguments to that function, it's easier to do it here.
+					if ((uint16_t)(control_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code) == VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST)
+					{
+						// First we have to check if setup of the RX stream was successful.
+						if (!rx_ready)
+						{
+							fprintf(stderr, "vita49_2_client: Unable to respond to Time Data refill request because RX configuration failed previously.\n");
+							
+							// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
+							continue;
+						}
+
+						// Timestamp for a packet that has multiple samples should be when the first sample was recorded.
+						// I have no good way of determining latency of a call to libiio to grab data, so I'll just record
+						// the timestamp now.
+						time_data_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
+
+						// Fetching a block from the stream
+						rx_block = iio_stream_get_next_block(rx_stream);
+						if (iio_err(rx_block) != 0)
+						{
+							fprintf(stderr, "vita49_2_client: Encountered an error while trying to query I/Q data.\n");
+
+							// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
+							continue;
+						}
+
+						// Now we have to write the data in this block to the Signal Data Packet's payload buffer.
+						// Instead of copying memory (wasteful), I'll just map the packet's buffer pointer to the
+						// block that we're reading from.
+
+						// I don't need to check that this payload pushes over the 65535 word limit because I specified
+						// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
+						time_data_packet.payload = (uint32_t *)(iio_block_first(rx_block, i_channel));
+
+						// We also have to write the size of the payload
+						time_data_packet.payload_num_words = iio_device_get_sample_size(rx_device, rx_channel_mask);
+						// If there's an error, then we have to use an alternative method of calculating the size
+						if (time_data_packet.payload_num_words < 0)
+						{
+							time_data_packet.payload_num_words = (uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel));
+							
+							// If this failed as well, then we shouldn't send the packet at all
+							if (time_data_packet.payload_num_words < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Encountered an error while reading data from the RX block.\n");
+								continue;
+							}
+						}
+
+						// Now to write that data to a buffer and send it
+						
+						continue;
+					}
+
 					// Executing the commands in the packet
-					if (execute_commands(arguments->ctx, &control_packet) < 0)
+					else if (execute_commands(arguments->ctx, &control_packet) < 0)
 					{
 						fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
+						
+						// TODO: Need logic to keep track of any warnings/errors and include them in Ack Packets (if requested)
+
 						continue;
 					}
 
@@ -509,7 +612,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			// Unknown packet
 			default:
-				fprintf(stderr, "vita49_2_client: Found a packet of unknown type: '%u'.\n", (uint32_t)(header.packet_type));
+				fprintf(stderr, "vita49_2_client: Found a packet of unknown type: '%u'.\n", (uint32_t)(received_header.packet_type));
 				continue;
 			
 		}
