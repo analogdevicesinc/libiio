@@ -209,14 +209,15 @@ namespace iio
         }
 
         /// <summary>Get the <see cref="iio.Device"/> object of the specified name.</summary>
-        /// <param name="name">Name or ID of the device to look for</param>
+        /// <param name="name">Name, ID, or label of the device to look for</param>
         /// <exception cref="IioLib.IIOException">The IIO device with the specified
-        /// name or ID could not be found in the current context.</exception>
+        /// name, ID, or label could not be found in the current context.</exception>
         public Device get_device(string name)
         {
             foreach (Device each in devices) {
                 if (each.name.CompareTo(name) == 0 ||
-                            each.id.CompareTo(name) == 0)
+                            each.id.CompareTo(name) == 0 ||
+                            each.label.CompareTo(name) == 0)
                 {
                     return each;
                 }
