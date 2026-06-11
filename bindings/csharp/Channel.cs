@@ -252,11 +252,11 @@ namespace iio
         /// and use it for I/O operations.</remarks>
         public readonly bool scan_element;
 
-        /// <summary>A <c>list</c> of all the attributes that this channel has.</summary>
-        public readonly List<Attr> attrs;
+        /// <summary>A <c>Dictionary</c> of all the attributes that this channel has. Key is the attribute name.</summary>
+        public readonly IReadOnlyDictionary<string, Attr> attrs;
 
-        /// <summary>A <c>list</c> of all the event attributes that this channel has.</summary>
-        public readonly List<Attr> event_attrs;
+        /// <summary>A <c>Dictionary</c> of all the event attributes that this channel has. Key is the attribute name.</summary>
+        public readonly IReadOnlyDictionary<string, Attr> event_attrs;
 
         /// <summary>The modifier of this channel.</summary>
         public ChannelModifier modifier { get; private set; }
@@ -275,21 +275,25 @@ namespace iio
 
             this.dev = dev;
             this.chn = chn;
-            attrs = new List<Attr>();
-            event_attrs = new List<Attr>();
             modifier = (ChannelModifier) iio_channel_get_modifier(chn);
             type = (ChannelType) iio_channel_get_type(chn);
             format = (DataFormat)Marshal.PtrToStructure(fmt_struct, typeof(DataFormat));
 
+            var attrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_attrs; i++)
             {
-                attrs.Add(new Attr(iio_channel_get_attr(chn, i)));
+                Attr a = new Attr(iio_channel_get_attr(chn, i));
+                attrsDict[a.name] = a;
             }
+            attrs = attrsDict;
 
+            var eventAttrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_event_attrs; i++)
             {
-                event_attrs.Add(new Attr(iio_channel_get_event_attr(chn, i)));
+                Attr a = new Attr(iio_channel_get_event_attr(chn, i));
+                eventAttrsDict[a.name] = a;
             }
+            event_attrs = eventAttrsDict;
 
             IntPtr name_ptr = iio_channel_get_name(this.chn);
             if (name_ptr == IntPtr.Zero)
