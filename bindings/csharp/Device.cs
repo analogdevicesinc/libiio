@@ -91,30 +91,25 @@ namespace iio
         /// <summary>True if the device is a hardware monitoring device, False if it is a IIO device.</summary>
         public bool hwmon { get; private set; }
 
-        /// <summary>A <c>list</c> of all the attributes that this device has.</summary>
-        public readonly List<Attr> attrs;
+        /// <summary>A <c>Dictionary</c> of all the attributes that this device has. Key is the attribute name.</summary>
+        public readonly IReadOnlyDictionary<string, Attr> attrs;
 
-        /// <summary>A <c>list</c> of all the debug attributes that this device has.</summary>
-        public readonly List<Attr> debug_attrs;
+        /// <summary>A <c>Dictionary</c> of all the debug attributes that this device has. Key is the attribute name.</summary>
+        public readonly IReadOnlyDictionary<string, Attr> debug_attrs;
 
-        /// <summary>A <c>list</c> of all the event attributes that this device has.</summary>
-        public readonly List<Attr> event_attrs;
+        /// <summary>A <c>Dictionary</c> of all the event attributes that this device has. Key is the attribute name.</summary>
+        public readonly IReadOnlyDictionary<string, Attr> event_attrs;
 
         /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
-        public readonly List<Channel> channels;
+        public readonly IReadOnlyList<Channel> channels;
 
         /// <summary>A <c>list</c> of all the <see cref="iio.IOBuffer"/> objects that this device possesses.</summary>
-        public readonly List<IOBuffer> buffers;
+        public readonly IReadOnlyList<IOBuffer> buffers;
 
         internal Device(Context ctx, IntPtr dev)
         {
             this.ctx = ctx;
             this.dev = dev;
-            channels = new List<Channel>();
-            attrs = new List<Attr>();
-            debug_attrs = new List<Attr>();
-            event_attrs = new List<Attr>();
-            buffers = new List<IOBuffer>();
 
             uint nb_channels = iio_device_get_channels_count(dev);
             uint nb_attrs = iio_device_get_attrs_count(dev);
@@ -122,32 +117,46 @@ namespace iio
             uint nb_event_attrs = iio_device_get_event_attrs_count(dev);
             uint nb_buffers = iio_device_get_buffers_count(dev);
 
+            var channelsList = new List<Channel>();
             for (uint i = 0; i < nb_channels; i++)
             {
-                channels.Add(new Channel(this, iio_device_get_channel(dev, i)));
+                channelsList.Add(new Channel(this, iio_device_get_channel(dev, i)));
             }
 
+            var attrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_attrs; i++)
             {
-                attrs.Add(new Attr(iio_device_get_attr(dev, i)));
+                Attr a = new Attr(iio_device_get_attr(dev, i));
+                attrsDict[a.name] = a;
             }
 
+            var debugAttrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_debug_attrs; i++)
             {
-                debug_attrs.Add(new Attr(iio_device_get_debug_attr(dev, i)));
+                Attr a = new Attr(iio_device_get_debug_attr(dev, i));
+                debugAttrsDict[a.name] = a;
             }
 
+            var eventAttrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_event_attrs; i++)
             {
-                event_attrs.Add(new Attr(iio_device_get_event_attr(dev, i)));
+                Attr a = new Attr(iio_device_get_event_attr(dev, i));
+                eventAttrsDict[a.name] = a;
             }
 
             id = Marshal.PtrToStringAnsi(iio_device_get_id(dev)); // Device IDs are ASCII (kernel-defined)
 
+            var buffersList = new List<IOBuffer>();
             for (uint i = 0; i < nb_buffers; i++)
             {
-                buffers.Add(new IOBuffer(this, iio_device_get_buffer(dev, i)));
+                buffersList.Add(new IOBuffer(this, iio_device_get_buffer(dev, i)));
             }
+
+            channels = channelsList;
+            attrs = attrsDict;
+            debug_attrs = debugAttrsDict;
+            event_attrs = eventAttrsDict;
+            buffers = buffersList;
 
             IntPtr name_ptr = iio_device_get_name(dev);
             if (name_ptr == IntPtr.Zero)
