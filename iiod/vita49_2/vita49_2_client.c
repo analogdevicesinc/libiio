@@ -14,7 +14,9 @@
 
 #include "vita49_2_client.h"
 #include "vita49_2_packet_types.h"
+#include "iio/iio.h"
 
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -24,6 +26,16 @@
 #include <poll.h>
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
+
+// Streaming related parameters for the RX and TX I/Q buffers
+#define NUM_RX_SAMPLES 512
+#define NUM_RX_BLOCKS 4
+
+#define NUM_TX_SAMPLES 128
+#define NUM_RX_BLOCKS 4
+
+#define NUM_CHANNELS 2 // One for the I-component and one for the Q-component
+#define BYTES_PER_SAMPLE 2 // I and Q-components are both 8-bit signed integers
 
 // I don't want to expose the function declarations listed below to other files, hence why I'm
 // not putting them in the header file.
@@ -135,10 +147,201 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	fprintf(stderr, "vita49_2_client: VITA 49.2 Packet Listener started.\n");
 
 
+	// ==================================================================================
+	// CREATING BUFFER + STREAM FOR I/Q DATA (High level iio_stream API from Libiio v1.x)
+	// ==================================================================================
+
+	// See https://events.gnuradio.org/event/18/contributions/242/attachments/101/207/grcon2022.pdf
+	// for more information, specifically Slide 10.
+
+	// To retrieve I/Q data from the device via libiio, we need to create a buffer as well as a streaming object
+	// to leverage DMA to continuously provide us with new data.
+
+	// My logic below is based on Travis' example code (test_ad9364.c) as I saw it captured pretty much
+	// exactly what I wanted to achieve, however I'm attempting to make this code generic to support
+	// different RF transceivers rather than just hte AD9364 or anything in just that family.
+
+
+	// Question from leaving off point from last night, how do I dynamically determine the RX device? Do I use a config
+	// file and have the user specify it or is there a way for me to discover it or a common pattern (like iio:device4 is always RX)?
+	
+	// Until I figure this (^^) out, I'll work under the assumption that the RX and TX device names are known.
+
+	// I need some booleans to keep track of whether initialization of the buffer+stream for RX and TX were successful
+	// which will let me know if I can handle I/Q RX or TX requests from VITA
+	bool rx_ready = false, tx_ready = false;
+
+	char rx_device_name[] = "cf-ad9361-lpc";
+	char tx_device_name[] = "cf-ad9361-dds-core-lpc";
+
+	struct iio_channel *channel;
+
+	// ==============================================================
+	// CONFIGURING RX DEVICE
+	// ==============================================================
+
+	// First we need handles to the devices
+	struct iio_device *rx_device = iio_context_find_device(arguments->ctx, rx_device_name);
+
+	if (rx_device == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Could not find RX device. Unable to retrieve signal data.\n");
+
+		// Skip the rest of the setup for RX and proceed with TX
+		goto tx_configuration;
+	}
+	
+	// Now to enable the channels. We only care about I/Q data, so we don't need to capture data from all of the channels on a device.
+	// To accomplish that, I'll use a channel mask.
+	struct iio_channels_mask *rx_channel_mask = iio_create_channels_mask(iio_device_get_channels_count(rx_device));
+	
+	if (rx_channel_mask == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to create RX channel mask.");
+		rx_device = NULL;
+	
+		goto tx_configuration;
+	}
+
+	// Adding I (voltage0) and Q (voltage1) to the mask
+	channel = iio_device_find_channel(rx_device, "voltage0", false);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for RX device.\n");
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+
+		goto tx_configuration;
+	}
+
+	iio_channel_enable(channel, rx_channel_mask);
+
+	channel = iio_device_find_channel(rx_device, "voltage1", false);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+
+		goto tx_configuration;
+	}
+
+	iio_channel_enable(channel, rx_channel_mask);
+
+	// Creating a buffer
+	struct iio_buffer *rx_buffer = iio_device_create_buffer(rx_device, 0, rx_channel_mask);
+	if (iio_err(rx_buffer) != 0)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to create RX buffer.\n");
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+		
+		goto tx_configuration;
+	}
+
+	// Creating a stream
+	struct iio_stream *rx_stream = iio_buffer_create_stream(rx_buffer, NUM_RX_BLOCKS, NUM_RX_SAMPLES);
+	if (iio_err(rx_stream) != 0)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to create RX stream.\n");
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+		iio_buffer_destroy(rx_buffer);
+	}
+	// Since RX setup was successful, we can enable the flag
+	else
+		rx_ready = true;
+
+
+	// ==============================================================
+	// CONFIGURING TX DEVICE
+	// ==============================================================
+	tx_configuration:
+
+	// Handle to the TX device
+	struct iio_device *tx_device;
+	tx_device = iio_context_find_device(arguments->ctx, tx_device_name);
+	if (tx_device == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Could not find TX device. Unable to retrieve signal data.\n");
+
+		// Skip the rest of the setup for TX
+		goto wake_up_event_configuration;
+	}
+
+	// Channel Mask
+	struct iio_channels_mask *tx_channel_mask = iio_create_channels_mask(iio_device_get_channels_count(tx_device));
+	
+	if (tx_channel_mask == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to create TX channel mask.");
+		tx_device = NULL;
+	
+		goto wake_up_event_configuration;
+	}
+
+	// Adding I (voltage0) and Q (voltage1) to the mask
+	channel = iio_device_find_channel(tx_device, "voltage0", false);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for RX device.\n");
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+
+		goto wake_up_event_configuration;
+	}
+
+	iio_channel_enable(channel, tx_channel_mask);
+
+	channel = iio_device_find_channel(tx_device, "voltage1", false);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+
+		goto wake_up_event_configuration;
+	}
+
+	iio_channel_enable(channel, tx_channel_mask);
+
+	// Creating a buffer
+	struct iio_buffer *tx_buffer = iio_device_create_buffer(tx_device, 0, tx_channel_mask);
+	if (iio_err(tx_buffer) != 0)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to create TX buffer.\n");
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+		
+		goto wake_up_event_configuration;
+	}
+
+	// Up until this point the TX config has been pretty identical to the RX config.
+	// The stream component is where we'll diverge. TX doesn't need a stream because the device
+	// doesn't need to constantly transmit data. The most likely usecase that we'd target is the host
+	// sends us several Signal Data Packets and we combine all of that data into a single block and transmit that.
+
+	// In the future we might want to consider a stream if ADI decides to support functionality
+	// where a host can constantly sent Signal Data Packets with I/Q data to transmit.
+
+	// Creating a block
+	struct iio_block *tx_block = iio_buffer_create_block(tx_buffer, NUM_TX_SAMPLES * BYTES_PER_SAMPLE * NUM_CHANNELS);
+	if (iio_err(tx_block) != 0)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to create TX block.\n");
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+		iio_buffer_destroy(tx_buffer);
+	}
+	else
+		tx_ready = true;
+
+
 	// ==============================================================
 	// EVENTS
 	// ==============================================================
-	
+	wake_up_event_configuration:
+
 	// We'll wake up the thread whenever a packet is received or a STOP event is issued to the thread.
 	// To accomplish that, we can use poll().
 
@@ -290,6 +493,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
 						continue;
 					}
+
+					// TODO: Need logic to look at the CAM field and generate Ack messages if requested
 
 					break;
 				}
