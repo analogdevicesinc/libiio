@@ -109,7 +109,7 @@ namespace iio
         /// <summary>A <c>List</c> of all the IIO devices present on the current context.</summary>
         public readonly List<Device> devices;
 
-        /// <summary>A <c>Dictionary</c> of all the attributes of the current channel. (key, value) = (name, value)</summary>
+        /// <summary>A <c>Dictionary</c> of all the attributes of the current context. (key, value) = (name, value)</summary>
         public Dictionary<string, string> attrs { get; private set; }
 
         /// <summary>
