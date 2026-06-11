@@ -118,7 +118,7 @@ namespace IIOCSharp
                     Console.WriteLine("* Sample size is " + sampleSize + "\n");
 
                     Console.WriteLine("\t\t\t" + buf.attrs.Count + " buffer-specific attributes found:");
-                    foreach (Attr attr in buf.attrs)
+                    foreach (Attr attr in buf.attrs.Values)
                     {
                         Console.WriteLine("\t\t\t\t" + attr.name + " " + attr.read());
                     }

@@ -35,8 +35,8 @@ namespace iio
         /// <summary>The associated <see cref="iio.Device"/> object.</summary>
         public readonly Device dev;
 
-        /// <summary>A <c>list</c> of all the attributes that this buffer has.</summary>
-        public readonly List<Attr> attrs;
+        /// <summary>A <c>Dictionary</c> of all the attributes that this buffer has. Key is the attribute name.</summary>
+        public readonly IReadOnlyDictionary<string, Attr> attrs;
 
         internal IntPtr buf;
 
@@ -45,12 +45,14 @@ namespace iio
             this.dev = dev;
             this.buf = buffer;
 
-            attrs = new List<Attr>();
+            var attrsDict = new Dictionary<string, Attr>();
             uint nb_buffer_attrs = iio_buffer_get_attrs_count(buf);
             for (uint i = 0; i < nb_buffer_attrs; i++)
             {
-                attrs.Add(new Attr(iio_buffer_get_attr(buf, i)));
+                Attr a = new Attr(iio_buffer_get_attr(buf, i));
+                attrsDict[a.name] = a;
             }
+            attrs = attrsDict;
         }
 
         /// <summary>Returns true if the buffer is an output (TX) buffer.</summary>
