@@ -176,7 +176,7 @@ namespace LibiioTests
                 int attrCount = dev.attrs.Count;
                 Console.WriteLine("  INFO: Device has " + attrCount + " attributes");
 
-                foreach (Attr attr in dev.attrs)
+                foreach (Attr attr in dev.attrs.Values)
                 {
                     string name = attr.name;
 

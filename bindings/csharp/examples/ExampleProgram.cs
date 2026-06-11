@@ -141,7 +141,7 @@ namespace IIOCSharp
                 }
 
                 Console.WriteLine("\n\t\t" + dev.attrs.Count + " device-specific attributes found:");
-                foreach (Attr attr in dev.attrs)
+                foreach (Attr attr in dev.attrs.Values)
                 {
                     Console.WriteLine("\t\t\t" + attr.name);
                 }

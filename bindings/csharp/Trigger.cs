@@ -25,7 +25,7 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The new frequency could not be set.</exception>
         public void set_rate(ulong rate)
         {
-            foreach (Attr each in attrs)
+            foreach (Attr each in attrs.Values)
             {
                 if (each.name.Equals("frequency"))
                 {
@@ -40,7 +40,7 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The configured frequency could not be obtained.</exception>
         public ulong get_rate()
         {
-            foreach (Attr each in attrs)
+            foreach (Attr each in attrs.Values)
             {
                 if (each.name.Equals("frequency"))
                 {
