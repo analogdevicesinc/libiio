@@ -175,16 +175,17 @@ namespace iio
         }
 
         /// <summary>Get the <see cref="iio.Channel"/> object of the specified name.</summary>
-        /// <param name="name">Name or ID of the channel to look for</param>
+        /// <param name="name">Name, ID, or label of the channel to look for</param>
         /// <param name="output">true if you are looking for an output channel, otherwise false.</param>
-        /// <exception cref="IioLib.IIOException">The IIO device with the specified
-        /// name or ID could not be found in the current context.</exception>
+        /// <exception cref="IioLib.IIOException">The IIO channel with the specified
+        /// name, ID, or label could not be found in the current device.</exception>
         public Channel get_channel(string name, bool output = false)
         {
             foreach (Channel each in channels)
             {
                 if ((each.name.CompareTo(name) == 0 ||
-                            each.id.CompareTo(name) == 0) && each.output == output)
+                            each.id.CompareTo(name) == 0 ||
+                            each.label.CompareTo(name) == 0) && each.output == output)
                 {
                     return each;
                 }
