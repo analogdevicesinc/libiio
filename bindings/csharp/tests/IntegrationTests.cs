@@ -222,7 +222,7 @@ namespace LibiioTests
                     int attrCount = chn.attrs.Count;
                     Console.WriteLine("  INFO: Channel '" + chn.id + "' has " + attrCount + " attributes");
 
-                    foreach (Attr attr in chn.attrs)
+                    foreach (Attr attr in chn.attrs.Values)
                     {
                         string name = attr.name;
 

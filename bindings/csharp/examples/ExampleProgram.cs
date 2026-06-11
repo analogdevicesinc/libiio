@@ -80,7 +80,7 @@ namespace IIOCSharp
                     }
 
                     Console.WriteLine("\t\t\t" + chn.attrs.Count + " channel-specific attributes found:");
-                    foreach (Attr attr in chn.attrs)
+                    foreach (Attr attr in chn.attrs.Values)
                     {
                         string attr_name = "\t\t\t\t" + attr.name;
                         string attr_val = "";
