@@ -107,7 +107,7 @@ namespace iio
         public readonly Version backend_version;
 
         /// <summary>A <c>List</c> of all the IIO devices present on the current context.</summary>
-        public readonly List<Device> devices;
+        public readonly IReadOnlyList<Device> devices;
 
         /// <summary>A <c>Dictionary</c> of all the attributes of the current context. (key, value) = (name, value)</summary>
         public Dictionary<string, string> attrs { get; private set; }
@@ -167,19 +167,20 @@ namespace iio
 
             uint nb_devices = iio_context_get_devices_count(hdl);
 
-            devices = new List<Device>();
+            var devicesList = new List<Device>();
             for (uint i = 0; i < nb_devices; i++)
             {
                 IntPtr dev = iio_context_get_device(hdl, i);
                 if (iio_device_is_trigger(dev))
                 {
-                    devices.Add(new Trigger(this, dev));
+                    devicesList.Add(new Trigger(this, dev));
                 }
                 else
                 {
-                    devices.Add(new Device(this, dev));
+                    devicesList.Add(new Device(this, dev));
                 }
             }
+            devices = devicesList;
 
             IIOPtr xml_hdl = iio_context_get_xml(hdl);
             if (!xml_hdl)

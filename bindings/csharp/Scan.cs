@@ -48,7 +48,7 @@ namespace iio
         public readonly uint nb_results;
 
         /// <summary>A <see cref="Dictionary{String, String}"/> containing each context's uri as key and its description as value.</summary>
-        public readonly Dictionary<string, string> results;
+        public readonly IReadOnlyDictionary<string, string> results;
 
         public Scan(string backends = null)
         {
@@ -61,14 +61,15 @@ namespace iio
             hdl = ptr.ptr;
             nb_results = iio_scan_get_results_count(hdl);
 
-            results = new Dictionary<string, string>();
+            var resultsDict = new Dictionary<string, string>();
 
             for (uint i = 0; i < nb_results; i++) {
                 string uri = Marshal.PtrToStringAnsi(iio_scan_get_uri(hdl, i)); // URIs are ASCII (RFC-compliant)
                 string dsc = UTF8Marshaler.PtrToStringUTF8(iio_scan_get_description(hdl, i));
 
-                results[uri] = dsc;
+                resultsDict[uri] = dsc;
             }
+            results = resultsDict;
         }
 
         protected override void Destroy()
