@@ -19,35 +19,26 @@ namespace iio
     /// Contains the representation of an IIO device that can act as a trigger.</summary>
     public class Trigger : Device
     {
+        private const string FrequencyAttr = "frequency";
+
         internal Trigger(Context ctx, IntPtr ptr) : base(ctx, ptr) { }
 
         /// <summary>Configure a new frequency for this trigger.</summary>
         /// <exception cref="IioLib.IIOException">The new frequency could not be set.</exception>
         public void set_rate(ulong rate)
         {
-            foreach (Attr each in attrs.Values)
-            {
-                if (each.name.Equals("frequency"))
-                {
-                    each.write((long) rate);
-                    return;
-                }
-            }
-            throw new IIOException("Trigger has no frequency?");
+            if (!attrs.ContainsKey(FrequencyAttr))
+                throw new IIOException("Trigger has no frequency?");
+            attrs[FrequencyAttr].write((long) rate);
         }
 
         /// <summary>Get the currently configured frequency of this trigger.</summary>
         /// <exception cref="IioLib.IIOException">The configured frequency could not be obtained.</exception>
         public ulong get_rate()
         {
-            foreach (Attr each in attrs.Values)
-            {
-                if (each.name.Equals("frequency"))
-                {
-                    return (ulong) each.read_long();
-                }
-            }
-            throw new IIOException("Trigger has no frequency?");
+            if (!attrs.ContainsKey(FrequencyAttr))
+                throw new IIOException("Trigger has no frequency?");
+            return (ulong) attrs[FrequencyAttr].read_long();
         }
 
         /// <summary>Set Trigger.</summary>
