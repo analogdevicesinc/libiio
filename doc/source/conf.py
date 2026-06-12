@@ -140,8 +140,10 @@ import logging as py_logging
 
 # Patterns for C# xref warnings to suppress (unavoidable .NET system types)
 csharp_xref_suppress_patterns = [
-    re.compile(r"Failed to find xref for: IntPtr"),  # .NET system type
-    re.compile(r"Failed to find xref for: >"),        # Generic type parsing artifact
+    re.compile(r"Failed to find xref for: IntPtr"),              # .NET system type
+    re.compile(r"Failed to find xref for: IReadOnlyDictionary"), # .NET system type
+    re.compile(r"Failed to find xref for: IReadOnlyList"),       # .NET system type
+    re.compile(r"Failed to find xref for: >"),                   # Generic type parsing artifact
 ]
 
 class CSharpXrefWarningFilter(py_logging.Filter):
