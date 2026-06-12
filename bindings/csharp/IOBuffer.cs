@@ -38,6 +38,9 @@ namespace iio
         /// <summary>A <c>Dictionary</c> of all the attributes that this buffer has. Key is the attribute name.</summary>
         public readonly IReadOnlyDictionary<string, Attr> attrs;
 
+        /// <summary>A <c>list</c> of all scan elements associated with this buffer.</summary>
+        public readonly IReadOnlyList<Channel> scan_elements;
+
         internal IntPtr buf;
 
         internal IOBuffer(Device dev, IntPtr buffer)
@@ -53,29 +56,22 @@ namespace iio
                 attrsDict[a.name] = a;
             }
             attrs = attrsDict;
+
+            var scanElements = new List<Channel>();
+            uint nb_scan_elements = iio_buffer_get_scan_elements_count(buf);
+            for (uint i = 0; i < nb_scan_elements; i++)
+            {
+                IntPtr chn = iio_buffer_get_scan_element(buf, i);
+                if (chn != IntPtr.Zero)
+                    scanElements.Add(new Channel(dev, chn));
+            }
+            scan_elements = scanElements;
         }
 
         /// <summary>Returns true if the buffer is an output (TX) buffer.</summary>
         public bool output
         {
             get { return iio_buffer_is_output(buf); }
-        }
-
-        /// <summary>Returns the list of scan elements associated with this buffer.</summary>
-        public List<Channel> scan_elements
-        {
-            get
-            {
-                var list = new List<Channel>();
-                uint count = iio_buffer_get_scan_elements_count(buf);
-                for (uint i = 0; i < count; i++)
-                {
-                    IntPtr chn = iio_buffer_get_scan_element(buf, i);
-                    if (chn != IntPtr.Zero)
-                        list.Add(new Channel(dev, chn));
-                }
-                return list;
-            }
         }
 
         /// <summary>Open this buffer for data streaming.</summary>
