@@ -16,8 +16,10 @@
 #define __VITA49_2_CLIENT_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "thread-pool.h"
+#include "vita49_2_packet_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +40,24 @@ enum vita49_2_cif_types {
 	CIF2 = 2,
 	CIF3 = 3,
 	CIF7 = 7
+};
+
+/**
+ * @struct vita49_2_stream_entry
+ * @brief We need a way of keep track of Stream IDs and be able to look up existing Stream IDs, hence we'll have an array of this struct.
+ * 
+ */
+struct vita49_2_stream_entry {
+	uint32_t host_ip_addr;
+	uint16_t host_port;
+	enum vita49_2_packet_class_codes packet_class_code;
+
+	uint32_t stream_id;
+	uint16_t packet_count;
+
+	// // Direction. This matters only for Signal Time Data Packets where we have to differentiate
+	// // between whether the host is sending the packet or is the device is sending.
+	// bool host_sending;
 };
 
 /**
@@ -65,6 +85,10 @@ struct vita49_2_pdata {
 	struct thread_pool *pool;
 	struct iio_context *ctx;
 };
+
+// ==============================================================
+// FUNCTION DECLARATIONS
+// ==============================================================
 
 /**
  * @brief Daemon for VITA 49.2 backend. Manages the VITA 49.2 processing thread.

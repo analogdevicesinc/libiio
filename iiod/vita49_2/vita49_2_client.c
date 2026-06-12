@@ -39,14 +39,29 @@
 #define NUM_RX_BLOCKS 4
 
 #define NUM_CHANNELS 2 // One for the I-component and one for the Q-component
-#define BYTES_PER_SAMPLE 2 // I and Q-components are both 8-bit signed integers
+#define BYTES_PER_SAMPLE 4 // I and Q-components are both 16-bit signed integers
+
+#define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent VITA 49.2 connections/packet streams.
 
 // I don't want to expose the function declarations listed below to other files, hence why I'm
 // not putting them in the header file.
 
 // ==============================================================
-// FUNCTION DECLARATIONS
+// FUNCTION DECLARATIONS (INTERNAL ONLY, NOT OUTWARDLY EXPOSED)
 // ==============================================================
+
+/**
+ * @brief Linear search of an array of vita49_2_stream_entry structs to see if the insertion_item already exists.
+ * If not, the element is copied onto the next available element in the array and the index is returned.
+ * If the insertion_item already exists in the array, the index to that element is returned.
+ * Otherwise a negative error code is returned.
+ * 
+ * @param array_start Pointer to the start of the array
+ * @param array_size Size of the array
+ * @param insertion_item Pointer to a struct containing the parameter values of the associated struct that we want to insert into the array.
+ * @return ssize_t 
+ */
+ssize_t insert_stream_id(struct vita49_2_stream_entry* array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item);
 
 /**
  * @brief Add a CIF-to-hardware mapping node to the FRONT of the mappings linked list.
@@ -364,7 +379,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 
 	// ==============================================================
-	// PACKET SETUP
+	// TIME DATA PACKET SETUP
 	// ==============================================================
 
 	// Setting up the majority of a time data packet now to streamline future processing
@@ -390,7 +405,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// Data Packet:
 		// Prologue:
 			// Header:
-				// packet_size_words *
+				// packet_size_words (this gets handled automatically when the vita49_2_generate_<packet_name>() function gets called) *
 				// packet_count *
 			// stream_id *
 			// timestamp_int *
@@ -420,6 +435,19 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	socklen_t address_length = sizeof(sender_address);
 	char sender_ip[INET_ADDRSTRLEN];
 	uint16_t sender_port;
+
+	// For keeping track of the Stream IDs created by the device
+	struct vita49_2_stream_entry device_stream_id_table[STREAM_ID_TABLE_SIZE] = {0};
+	struct vita49_2_stream_entry stream_entry = {0};
+	size_t last_insertion_index = 0;
+
+	// Dumb way of keep track of what Stream ID we're currently on for the packet types
+	// that the device can send.
+	uint32_t next_time_data_stream_id = VITA49_2_PKT_TIME_DATA_DEVICE_START;
+	uint32_t next_spectral_data_stream_id = VITA49_2_PKT_SPECTRAL_DATA_DEVICE_START;
+	uint32_t next_context_stream_id = 0;
+	uint32_t next_ackx_ackv_stream_id = 0;
+	uint32_t next_acks_stream_id = 0;
 
 	while (socket_fd >= 0) 
 	{
@@ -595,6 +623,40 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							}
 						}
 
+						// Next we have to set the Stream ID. We can check if it exists in the existing Stream ID table
+						// and insert it if it doesn't.
+						stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+						stream_entry.host_port = sender_address.sin_port;
+						stream_entry.packet_class_code = VITA49_2_PKT_CLASS_TIME_DATA;
+						stream_entry.stream_id = next_time_data_stream_id;
+
+						ssize_t ret_value;
+
+						// Error occurred
+						if ((ret_value = insert_stream_id(&device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
+						{
+							fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Signal Time Data Packet that was to be sent.\n");
+							continue;
+						}
+
+						// If the return value is less than or equal to the last_insertion_index, then that means the element already existed in the array.
+						// Otherwise that means we just inserted a new element.
+						if (ret_value > last_insertion_index)
+						{
+							last_insertion_index++;
+							next_time_data_stream_id++;
+
+							time_data_packet.prologue.stream_id = stream_entry.stream_id;
+							time_data_packet.prologue.header.packet_count = 1;
+						
+							device_stream_id_table[ret_value].packet_count = 1;
+						}
+						else
+						{
+							time_data_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+							time_data_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+						}
+
 						// Now to write that data to a buffer and send it
 						if ((time_data_packet_size = vita49_2_generate_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4)) < 0)
 						{
@@ -638,6 +700,42 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	}
 
 	return;
+}
+
+ssize_t insert_stream_id(struct vita49_2_stream_entry* array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item)
+{
+	if (array_start == NULL || array_size == 0 || insertion_item == NULL)
+		return -EINVAL;
+	
+	size_t i;
+	for (i = 0; i < array_size; i++)
+	{
+		// If host_ip_addr is uninitialized, that means this element and downstream elements haven't been populated,
+		// so we can terminate the search.
+			// NOTE: Can be unsafe if the array wasn't initialized to 0 before creation. Thankfully I've already done that.
+
+		if (array_start[i].host_ip_addr == 0)
+			break;
+
+		// Can't do a simple memcmp between the 2 structs because of the risk of padding bytes, hence why I'm
+		// doing direct attribute comparisons
+		if (array_start[i].host_ip_addr 		== insertion_item->host_ip_addr && 
+			array_start[i].host_port 			== insertion_item->host_port && 
+			array_start[i].packet_class_code 	== insertion_item->packet_class_code)
+			return i;
+	}
+
+	// If we get here, that means the element isn't in the array.
+	// We need to check if we have the capacity to add it by checking if the iterator got to the last index.
+	if (i++ == (array_size-1))
+		return -ENOMEM;
+
+	// Space is available
+	array_start[i].host_ip_addr = insertion_item->host_ip_addr;
+	array_start[i].host_port = insertion_item->host_port;
+	array_start[i].packet_class_code = insertion_item->packet_class_code;
+
+	return i;
 }
 
 int vita49_2_command_init(struct iio_context *ctx)

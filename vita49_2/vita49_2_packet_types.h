@@ -18,6 +18,19 @@
 #include <sys/types.h>
 #include "vita49_2_packet_elements.h"
 
+// To avoid conflicting Stream IDs (32 bit values) for Signal Data Packets based on data direction (sent from host/sent from device), 
+// I’ve allocated non-overlapping intervals (each of size 2^32 / 2 numbers) for the host and module.
+// Furthermore, I’ve halved the first region to split it between time and spectral data. 
+// Time packets gets the first half of the available Stream IDs while spectral packets get the second half.
+
+// Acceptable range of values for Stream ID for Signal Time Data Packets.
+#define VITA49_2_PKT_TIME_DATA_DEVICE_START 0
+#define VITA49_2_PKT_TIME_DATA_DEVICE_END 1073741823
+
+// Acceptable range of values for Stream ID for Signal Spectral Data Packets.
+#define VITA49_2_PKT_SPECTRAL_DATA_DEVICE_START 1073741824
+#define VITA49_2_PKT_SPECTRAL_DATA_DEVICE_END 2147483647
+
 // =============================================================================
 // FUNCTION DECLARATIONS
 // =============================================================================
