@@ -18,7 +18,9 @@ int main(void)
     const uint32_t message[2048];
     struct vita49_2_control_packet pkt;
     pkt.command_prologue.common_prologue.has_stream_id = 1;
+    pkt.command_prologue.common_prologue.header.has_class_id = 1;
     pkt.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+    pkt.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST;
     int value;
     if ((value = vita49_2_generate_control_packet(&pkt, message, sizeof(message)/sizeof(message[0]))) < 0)
     {

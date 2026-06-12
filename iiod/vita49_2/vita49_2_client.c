@@ -29,7 +29,10 @@
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
 // Streaming related parameters for the RX and TX I/Q buffers
-#define NUM_RX_SAMPLES 65500 // A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
+
+// A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
+// However UDP has a max packet size of 65535 bytes (not words!), so we actually have to divide by 4.
+#define NUM_RX_SAMPLES 65440/4 
 #define NUM_RX_BLOCKS 4
 
 #define NUM_TX_SAMPLES 128
@@ -186,7 +189,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 	if (rx_device == NULL)
 	{
-		fprintf(stderr, "vita49_2_client: Could not find RX device. Unable to retrieve signal data.\n");
+		fprintf(stderr, "vita49_2_client: Could not find RX device. Device will be unable to retrieve I/Q data.\n");
 
 		// Skip the rest of the setup for RX and proceed with TX
 		goto tx_configuration;
@@ -265,7 +268,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	tx_device = iio_context_find_device(arguments->ctx, tx_device_name);
 	if (tx_device == NULL)
 	{
-		fprintf(stderr, "vita49_2_client: Could not find TX device. Unable to retrieve signal data.\n");
+		fprintf(stderr, "vita49_2_client: Could not find TX device. Device will be unable to handle requests to transmit data.\n");
 
 		// Skip the rest of the setup for TX
 		goto wake_up_event_configuration;
@@ -398,6 +401,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		// TODO: Trailer support
 
+	uint16_t time_data_packet_size = 0;
+
 	// ==============================================================
 	// RECEIVE LOOP
 	// ==============================================================
@@ -406,11 +411,15 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	struct vita49_2_header received_header;
 	uint32_t word;
 
-	uint32_t buf[2048];
+	uint32_t receive_buffer[2048];
+	uint8_t send_buffer[65500];
 	ssize_t received;
 
+	// For extracting the sender information
 	struct sockaddr_in sender_address;
-	socklen_t sender_length = sizeof(sender_address);
+	socklen_t address_length = sizeof(sender_address);
+	char sender_ip[INET_ADDRSTRLEN];
+	uint16_t sender_port;
 
 	while (socket_fd >= 0) 
 	{
@@ -441,7 +450,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// ==============================================================
 
 		// Otherwise data is available on the socket.
-		received = recv(socket_fd, buf, sizeof(buf), 0);
+		received = recvfrom(socket_fd, receive_buffer, sizeof(receive_buffer), 0, (struct sockaddr*)&sender_address, &address_length);
 
 		// Assume that a 0-length datagram implies a shutdown was called on the socket
 		if (received <= 0)
@@ -457,9 +466,13 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 			continue;
 		}
 
+		// Extracting the sender information (optional for debugging)
+		// inet_ntop(AF_INET, &(sender_address.sin_addr), sender_ip, INET_ADDRSTRLEN);
+		// sender_port = ntohs(sender_address.sin_port);
+
 		// Need to figure out what packet was received so that we can call the correct parser function.
 		// We can determine that by looking at the header.
-		word = ntohl(buf[0]);
+		word = ntohl(receive_buffer[0]);
 		memcpy(&received_header, &word, sizeof(word));
 
 		switch (received_header.packet_type)
@@ -475,7 +488,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				// Since the device is receiving this packet, that implies the host wants to the device to transmit this data.
 				
 				struct vita49_2_data_packet tx_data_packet;
-				if (vita49_2_parse_data_packet(buf, received, &tx_data_packet) < 0)
+				if (vita49_2_parse_data_packet(receive_buffer, received, &tx_data_packet) < 0)
 				{
 					fprintf(stderr, "vita49_2_client: Unable to parse Signal Data Packet with Stream ID.\n");
 				}
@@ -525,7 +538,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				else
 				{
 					struct vita49_2_control_packet control_packet;
-					if (vita49_2_parse_control_packet(buf, received, &control_packet) < 0)
+					if (vita49_2_parse_control_packet(receive_buffer, received, &control_packet) < 0)
 					{
 						fprintf(stderr, "vita49_2_client: Unable to parse Control Packet.\n");
 					}
@@ -538,7 +551,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						// First we have to check if setup of the RX stream was successful.
 						if (!rx_ready)
 						{
-							fprintf(stderr, "vita49_2_client: Unable to respond to Time Data refill request because RX configuration failed previously.\n");
+							fprintf(stderr, "vita49_2_client: Unable to respond to Time Data Refill Request because RX configuration failed previously.\n");
 							
 							// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
 							continue;
@@ -583,8 +596,14 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						}
 
 						// Now to write that data to a buffer and send it
-						
-						continue;
+						if ((time_data_packet_size = vita49_2_generate_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4)) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet.\n");
+							continue;							
+						}
+
+						if (sendto(socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
+							fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP.\n");
 					}
 
 					// Executing the commands in the packet
