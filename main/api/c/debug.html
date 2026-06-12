@@ -104,6 +104,9 @@
 <li><a class="reference internal" href="#_CPPv427iio_channel_get_data_formatPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_data_format()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv419iio_channel_convertPK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv427iio_channel_convert_inversePK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert_inverse()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv432iio_device_get_event_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_event_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv425iio_device_get_event_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_event_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_device_find_event_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_event_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv432iio_device_get_debug_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_debug_attrs_count()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv425iio_device_get_debug_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_debug_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv426iio_device_find_debug_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_debug_attr()</span></code></a></li>
@@ -351,6 +354,60 @@ Content on this topic
 <li><p><strong>dst</strong> – A pointer to the destination buffer where the converted sample should be written </p></li>
 <li><p><strong>src</strong> – A pointer to the source buffer containing the sample </p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv432iio_device_get_event_attrs_countPK10iio_device">
+<span id="_CPPv332iio_device_get_event_attrs_countPK10iio_device"></span><span id="_CPPv232iio_device_get_event_attrs_countPK10iio_device"></span><span id="iio_device_get_event_attrs_count__iio_deviceCP"></span><span class="target" id="group__Debug_1ga523d2a5cdb62e98e81df89ecc94c8814"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_event_attrs_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv432iio_device_get_event_attrs_countPK10iio_device" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the event attributes of the given device. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of event attributes found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425iio_device_get_event_attrPK10iio_devicej">
+<span id="_CPPv325iio_device_get_event_attrPK10iio_devicej"></span><span id="_CPPv225iio_device_get_event_attrPK10iio_devicej"></span><span id="iio_device_get_event_attr__iio_deviceCP.unsigned-i"></span><span class="target" id="group__Debug_1ga997c694b64d5a8347ccff8ef0c598555"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_get_event_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425iio_device_get_event_attrPK10iio_devicej" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the event attribute present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the event attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_device_find_event_attrPK10iio_devicePKc">
+<span id="_CPPv326iio_device_find_event_attrPK10iio_devicePKc"></span><span id="_CPPv226iio_device_find_event_attrPK10iio_devicePKc"></span><span id="iio_device_find_event_attr__iio_deviceCP.cCP"></span><span class="target" id="group__Debug_1gade69aaabb4028c3c04d157e8cde00a12"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_device_find_event_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="device.html#_CPPv410iio_device" title="iio_device"><span class="n"><span class="pre">iio_device</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dev</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_device_find_event_attrPK10iio_devicePKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find an event attribute by its name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dev</strong> – A pointer to an <a class="reference internal" href="device.html#structiio__device"><span class="std std-ref">iio_device</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the name of the event attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the name does not correspond to any known event attribute of the given device, NULL is returned </p>
 </dd>
 </dl>
 </dd></dl>

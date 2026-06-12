@@ -366,6 +366,14 @@ Content on this topic
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/c/buffer.html#_CPPv43err">err (C++ member)</a>
 </li>
+      <li><a href="api/python/channel.html#iio.Channel.event_attrs">event_attrs (iio.Channel property)</a>
+
+      <ul>
+        <li><a href="api/python/device.html#iio.Device.event_attrs">(iio.Device property)</a>
+</li>
+        <li><a href="api/python/trigger.html#iio.Trigger.event_attrs">(iio.Trigger property)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/python/device.html#iio.Device.event_stream">event_stream() (iio.Device method)</a>
@@ -552,6 +560,8 @@ Content on this topic
 </li>
       <li><a href="api/c/channel.html#_CPPv421iio_channel_find_attrPK11iio_channelPKc">iio_channel_find_attr (C++ function)</a>
 </li>
+      <li><a href="api/c/channel.html#_CPPv427iio_channel_find_event_attrPK11iio_channelPKc">iio_channel_find_event_attr (C++ function)</a>
+</li>
       <li><a href="api/c/channel.html#_CPPv420iio_channel_get_attrPK11iio_channelj">iio_channel_get_attr (C++ function)</a>
 </li>
       <li><a href="api/c/channel.html#_CPPv427iio_channel_get_attrs_countPK11iio_channel">iio_channel_get_attrs_count (C++ function)</a>
@@ -561,6 +571,10 @@ Content on this topic
       <li><a href="api/c/debug.html#_CPPv427iio_channel_get_data_formatPK11iio_channel">iio_channel_get_data_format (C++ function)</a>
 </li>
       <li><a href="api/c/channel.html#_CPPv422iio_channel_get_devicePK11iio_channel">iio_channel_get_device (C++ function)</a>
+</li>
+      <li><a href="api/c/channel.html#_CPPv426iio_channel_get_event_attrPK11iio_channelj">iio_channel_get_event_attr (C++ function)</a>
+</li>
+      <li><a href="api/c/channel.html#_CPPv433iio_channel_get_event_attrs_countPK11iio_channel">iio_channel_get_event_attrs_count (C++ function)</a>
 </li>
       <li><a href="api/c/channel.html#_CPPv418iio_channel_get_idPK11iio_channel">iio_channel_get_id (C++ function)</a>
 </li>
@@ -640,6 +654,8 @@ Content on this topic
 </li>
       <li><a href="api/c/debug.html#_CPPv426iio_device_find_debug_attrPK10iio_devicePKc">iio_device_find_debug_attr (C++ function)</a>
 </li>
+      <li><a href="api/c/debug.html#_CPPv426iio_device_find_event_attrPK10iio_devicePKc">iio_device_find_event_attr (C++ function)</a>
+</li>
       <li><a href="api/c/device.html#_CPPv419iio_device_get_attrPK10iio_devicej">iio_device_get_attr (C++ function)</a>
 </li>
       <li><a href="api/c/device.html#_CPPv426iio_device_get_attrs_countPK10iio_device">iio_device_get_attrs_count (C++ function)</a>
@@ -659,6 +675,10 @@ Content on this topic
       <li><a href="api/c/debug.html#_CPPv425iio_device_get_debug_attrPK10iio_devicej">iio_device_get_debug_attr (C++ function)</a>
 </li>
       <li><a href="api/c/debug.html#_CPPv432iio_device_get_debug_attrs_countPK10iio_device">iio_device_get_debug_attrs_count (C++ function)</a>
+</li>
+      <li><a href="api/c/debug.html#_CPPv425iio_device_get_event_attrPK10iio_devicej">iio_device_get_event_attr (C++ function)</a>
+</li>
+      <li><a href="api/c/debug.html#_CPPv432iio_device_get_event_attrs_countPK10iio_device">iio_device_get_event_attrs_count (C++ function)</a>
 </li>
       <li><a href="api/c/device.html#_CPPv417iio_device_get_idPK10iio_device">iio_device_get_id (C++ function)</a>
 </li>
@@ -762,12 +782,12 @@ Content on this topic
 </li>
       <li><a href="api/cpp/attr.html#_CPPv4N5iiopp4Attr12write_stringE4cstr">iiopp::Attr::write_string (C++ function)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/cpp/block.html#_CPPv4N5iiopp5BlockE">iiopp::Block (C++ class)</a>
 </li>
       <li><a href="api/cpp/block.html#_CPPv4N5iiopp5Block5BlockEP9iio_block">iiopp::Block::Block (C++ function)</a>, <a href="api/cpp/block.html#_CPPv4N5iiopp5Block5BlockEv">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/cpp/block.html#_CPPv4N5iiopp5Block13buffer_streamEv">iiopp::Block::buffer_stream (C++ function)</a>
 </li>
       <li><a href="api/cpp/block.html#_CPPv4N5iiopp5Block7dequeueEb">iiopp::Block::dequeue (C++ function)</a>
@@ -858,7 +878,17 @@ Content on this topic
 </li>
       <li><a href="api/cpp/channel.html#_CPPv4N5iiopp7Channel6enableEP17iio_channels_mask">iiopp::Channel::enable (C++ function)</a>
 </li>
+      <li><a href="api/cpp/channel.html#_CPPv4N5iiopp7Channel10event_attrEj">iiopp::Channel::event_attr (C++ function)</a>
+</li>
+      <li><a href="api/cpp/channel.html#_CPPv4N5iiopp7Channel11event_attrsE">iiopp::Channel::event_attrs (C++ member)</a>
+</li>
+      <li><a href="api/cpp/channel.html#_CPPv4NK5iiopp7Channel17event_attrs_countEv">iiopp::Channel::event_attrs_count (C++ function)</a>
+</li>
+      <li><a href="api/cpp/channel.html#_CPPv4N5iiopp7Channel12EventAttrSeqE">iiopp::Channel::EventAttrSeq (C++ type)</a>
+</li>
       <li><a href="api/cpp/channel.html#_CPPv4N5iiopp7Channel9find_attrE4cstr">iiopp::Channel::find_attr (C++ function)</a>
+</li>
+      <li><a href="api/cpp/channel.html#_CPPv4N5iiopp7Channel15find_event_attrE4cstr">iiopp::Channel::find_event_attr (C++ function)</a>
 </li>
       <li><a href="api/cpp/channel.html#_CPPv4NK5iiopp7Channel10hwmon_typeEv">iiopp::Channel::hwmon_type (C++ function)</a>
 </li>
@@ -982,11 +1012,21 @@ Content on this topic
 </li>
       <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device6DeviceEP10iio_device">iiopp::Device::Device (C++ function)</a>, <a href="api/cpp/device.html#_CPPv4N5iiopp6Device6DeviceEv">[1]</a>
 </li>
+      <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device10event_attrEj">iiopp::Device::event_attr (C++ function)</a>
+</li>
+      <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device11event_attrsE">iiopp::Device::event_attrs (C++ member)</a>
+</li>
+      <li><a href="api/cpp/device.html#_CPPv4NK5iiopp6Device17event_attrs_countEv">iiopp::Device::event_attrs_count (C++ function)</a>
+</li>
+      <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device12EventAttrSeqE">iiopp::Device::EventAttrSeq (C++ type)</a>
+</li>
       <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device9find_attrE4cstr">iiopp::Device::find_attr (C++ function)</a>
 </li>
       <li><a href="api/cpp/device.html#_CPPv4NK5iiopp6Device12find_channelE4cstrb">iiopp::Device::find_channel (C++ function)</a>
 </li>
       <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device15find_debug_attrE4cstr">iiopp::Device::find_debug_attr (C++ function)</a>
+</li>
+      <li><a href="api/cpp/device.html#_CPPv4N5iiopp6Device15find_event_attrE4cstr">iiopp::Device::find_event_attr (C++ function)</a>
 </li>
       <li><a href="api/cpp/device.html#_CPPv4NK5iiopp6Device2idEv">iiopp::Device::id (C++ function)</a>
 </li>

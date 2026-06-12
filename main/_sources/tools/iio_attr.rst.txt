@@ -9,9 +9,11 @@ SYNOPSIS
 | **iio_attr** [ *options* ] -d [device] [attr] [value]
 | **iio_attr** [ *options* ] -c [device] [channel] [attr] [value]
 | **iio_attr** [ *options* ] -D [device] [attr] [value]
+| **iio_attr** [ *options* ] -E [device] [attr] [value]
+| **iio_attr** [ *options* ] -e [device] [channel] [attr] [value]
 | **iio_attr** [ *options* ] -C [attr]
-| **iio_attr** [ *options* ] -f -d\|-c\|-B[-b buffer_index]\|-D [device]
-  [channel] [attr] [path]
+| **iio_attr** [ *options* ] -f -d\|-c\|-B[-b buffer_index]\|-D\|-E\|-e
+  [device] [channel] [attr] [path]
 | **iio_attr** -S <arg>
 | **iio_attr** -h
 
@@ -41,6 +43,12 @@ The iio_attr utility has a few main options, which control what the main utility
 
 **-D --debug-attr**
    Read and Write IIO Debug attributes
+
+**-E --event-attr**
+   Read and Write IIO device event attributes
+
+**-e --channel-event-attr**
+   Read and Write IIO channel event attributes
 
 **-h, --help**
    Tells *iio_attr* to display some help, and then quit.

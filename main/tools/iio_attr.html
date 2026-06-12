@@ -246,9 +246,11 @@ Content on this topic
 <div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -d [device] [attr] [value]</div>
 <div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -c [device] [channel] [attr] [value]</div>
 <div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -D [device] [attr] [value]</div>
+<div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -E [device] [attr] [value]</div>
+<div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -e [device] [channel] [attr] [value]</div>
 <div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -C [attr]</div>
-<div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -f -d|-c|-B[-b buffer_index]|-D [device]
-[channel] [attr] [path]</div>
+<div class="line"><strong>iio_attr</strong> [ <em>options</em> ] -f -d|-c|-B[-b buffer_index]|-D|-E|-e
+[device] [channel] [attr] [path]</div>
 <div class="line"><strong>iio_attr</strong> -S &lt;arg&gt;</div>
 <div class="line"><strong>iio_attr</strong> -h</div>
 </div>
@@ -272,6 +274,10 @@ attempt to write the new value to the attribute.</p>
 <dt><strong>-C –context-attr</strong></dt><dd><p>Read and Write IIO Context attributes</p>
 </dd>
 <dt><strong>-D –debug-attr</strong></dt><dd><p>Read and Write IIO Debug attributes</p>
+</dd>
+<dt><strong>-E –event-attr</strong></dt><dd><p>Read and Write IIO device event attributes</p>
+</dd>
+<dt><strong>-e –channel-event-attr</strong></dt><dd><p>Read and Write IIO channel event attributes</p>
 </dd>
 <dt><strong>-h, –help</strong></dt><dd><p>Tells <em>iio_attr</em> to display some help, and then quit.</p>
 </dd>

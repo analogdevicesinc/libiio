@@ -99,6 +99,7 @@
 <li><a class="reference internal" href="#">Channel</a><ul>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7ChannelE"><code class="docutils literal notranslate"><span class="pre">iiopp::Channel</span></code></a><ul>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel7AttrSeqE"><code class="docutils literal notranslate"><span class="pre">AttrSeq</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Channel12EventAttrSeqE"><code class="docutils literal notranslate"><span class="pre">EventAttrSeq</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel7ChannelEv"><code class="docutils literal notranslate"><span class="pre">Channel()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel7ChannelEP11iio_channel"><code class="docutils literal notranslate"><span class="pre">Channel()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4NK5iiopp7ChannelcvP11iio_channelEv"><code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">iio_channel</span> <span class="pre">*()</span></code></a></li>
@@ -111,6 +112,9 @@
 <li><a class="reference internal" href="#_CPPv4NK5iiopp7Channel11attrs_countEv"><code class="docutils literal notranslate"><span class="pre">attrs_count()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel4attrEj"><code class="docutils literal notranslate"><span class="pre">attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel9find_attrE4cstr"><code class="docutils literal notranslate"><span class="pre">find_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp7Channel17event_attrs_countEv"><code class="docutils literal notranslate"><span class="pre">event_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Channel10event_attrEj"><code class="docutils literal notranslate"><span class="pre">event_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Channel15find_event_attrE4cstr"><code class="docutils literal notranslate"><span class="pre">find_event_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel6enableEP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">enable()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel7disableEP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">disable()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4NK5iiopp7Channel10is_enabledEP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">is_enabled()</span></code></a></li>
@@ -126,6 +130,7 @@
 <li><a class="reference internal" href="#_CPPv4NK5iiopp7Channel7convertEPvPKv"><code class="docutils literal notranslate"><span class="pre">convert()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4NK5iiopp7Channel15convert_inverseEPvPKv"><code class="docutils literal notranslate"><span class="pre">convert_inverse()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp7Channel5attrsE"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp7Channel11event_attrsE"><code class="docutils literal notranslate"><span class="pre">event_attrs</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -274,6 +279,11 @@ Content on this topic
 <span id="_CPPv3N5iiopp7Channel7AttrSeqE"></span><span id="_CPPv2N5iiopp7Channel7AttrSeqE"></span><span id="iiopp::Channel::AttrSeq"></span><span class="target" id="classiiopp_1_1Channel_1a421381b9464612f8e9ef2c64bdb8021e"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="n"><span class="pre">impl</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">AttrSeqT</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../c/channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/channel.html#_CPPv427iio_channel_get_attrs_countPK11iio_channel" title="iio_channel_get_attrs_count"><span class="n"><span class="pre">iio_channel_get_attrs_count</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/channel.html#_CPPv420iio_channel_get_attrPK11iio_channelj" title="iio_channel_get_attr"><span class="n"><span class="pre">iio_channel_get_attr</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/channel.html#_CPPv421iio_channel_find_attrPK11iio_channelPKc" title="iio_channel_find_attr"><span class="n"><span class="pre">iio_channel_find_attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">AttrSeq</span></span></span><a class="headerlink" href="#_CPPv4N5iiopp7Channel7AttrSeqE" title="Link to this definition"></a><br /></dt>
 <dd></dd></dl>
 
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Channel12EventAttrSeqE">
+<span id="_CPPv3N5iiopp7Channel12EventAttrSeqE"></span><span id="_CPPv2N5iiopp7Channel12EventAttrSeqE"></span><span id="iiopp::Channel::EventAttrSeq"></span><span class="target" id="classiiopp_1_1Channel_1a3a294b46972720aa903572ef6d95c4e8"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="n"><span class="pre">impl</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">AttrSeqT</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../c/channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/channel.html#_CPPv433iio_channel_get_event_attrs_countPK11iio_channel" title="iio_channel_get_event_attrs_count"><span class="n"><span class="pre">iio_channel_get_event_attrs_count</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/channel.html#_CPPv426iio_channel_get_event_attrPK11iio_channelj" title="iio_channel_get_event_attr"><span class="n"><span class="pre">iio_channel_get_event_attr</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../c/channel.html#_CPPv427iio_channel_find_event_attrPK11iio_channelPKc" title="iio_channel_find_event_attr"><span class="n"><span class="pre">iio_channel_find_event_attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EventAttrSeq</span></span></span><a class="headerlink" href="#_CPPv4N5iiopp7Channel12EventAttrSeqE" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
 </div>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
@@ -335,6 +345,21 @@ Content on this topic
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Channel9find_attrE4cstr">
 <span id="_CPPv3N5iiopp7Channel9find_attrE4cstr"></span><span id="_CPPv2N5iiopp7Channel9find_attrE4cstr"></span><span id="iiopp::Channel::find_attr__cstr"></span><span class="target" id="classiiopp_1_1Channel_1afd7670fd5848b7bb7144e1ec2f8296f8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="attr.html#_CPPv4N5iiopp4AttrE" title="iiopp::Attr"><span class="n"><span class="pre">Attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find_attr</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Channel9find_attrE4cstr" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp7Channel17event_attrs_countEv">
+<span id="_CPPv3NK5iiopp7Channel17event_attrs_countEv"></span><span id="_CPPv2NK5iiopp7Channel17event_attrs_countEv"></span><span id="iiopp::Channel::event_attrs_countC"></span><span class="target" id="classiiopp_1_1Channel_1a93c09d8ccf13fb953069129da5a8adb7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">event_attrs_count</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp7Channel17event_attrs_countEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Channel10event_attrEj">
+<span id="_CPPv3N5iiopp7Channel10event_attrEj"></span><span id="_CPPv2N5iiopp7Channel10event_attrEj"></span><span id="iiopp::Channel::event_attr__unsigned-i"></span><span class="target" id="classiiopp_1_1Channel_1a5a04c7ebf1264282d569cc7df886a304"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="attr.html#_CPPv4N5iiopp4AttrE" title="iiopp::Attr"><span class="n"><span class="pre">Attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">event_attr</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Channel10event_attrEj" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Channel15find_event_attrE4cstr">
+<span id="_CPPv3N5iiopp7Channel15find_event_attrE4cstr"></span><span id="_CPPv2N5iiopp7Channel15find_event_attrE4cstr"></span><span id="iiopp::Channel::find_event_attr__cstr"></span><span class="target" id="classiiopp_1_1Channel_1a56e39a2799578c69be66e23bfc0d555a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="attr.html#_CPPv4N5iiopp4AttrE" title="iiopp::Attr"><span class="n"><span class="pre">Attr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find_event_attr</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="cstr.html#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp7Channel15find_event_attrE4cstr" title="Link to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp function">
@@ -413,6 +438,11 @@ Content on this topic
 <dl class="cpp var">
 <dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Channel5attrsE">
 <span id="_CPPv3N5iiopp7Channel5attrsE"></span><span id="_CPPv2N5iiopp7Channel5attrsE"></span><span id="iiopp::Channel::attrs__AttrSeq"></span><span class="target" id="classiiopp_1_1Channel_1a915b50d07b20514bdeff99f635678b7f"></span><a class="reference internal" href="#_CPPv4N5iiopp7Channel7AttrSeqE" title="iiopp::Channel::AttrSeq"><span class="n"><span class="pre">AttrSeq</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">attrs</span></span></span><a class="headerlink" href="#_CPPv4N5iiopp7Channel5attrsE" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp7Channel11event_attrsE">
+<span id="_CPPv3N5iiopp7Channel11event_attrsE"></span><span id="_CPPv2N5iiopp7Channel11event_attrsE"></span><span id="iiopp::Channel::event_attrs__EventAttrSeq"></span><span class="target" id="classiiopp_1_1Channel_1a14acc9a80515da4396e4bc3d20975794"></span><a class="reference internal" href="#_CPPv4N5iiopp7Channel12EventAttrSeqE" title="iiopp::Channel::EventAttrSeq"><span class="n"><span class="pre">EventAttrSeq</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">event_attrs</span></span></span><a class="headerlink" href="#_CPPv4N5iiopp7Channel11event_attrsE" title="Link to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </div>

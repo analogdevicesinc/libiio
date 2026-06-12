@@ -106,6 +106,9 @@
 <li><a class="reference internal" href="#_CPPv427iio_channel_get_attrs_countPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_attrs_count()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv420iio_channel_get_attrPK11iio_channelj"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv421iio_channel_find_attrPK11iio_channelPKc"><code class="docutils literal notranslate"><span class="pre">iio_channel_find_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv433iio_channel_get_event_attrs_countPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_event_attrs_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_channel_get_event_attrPK11iio_channelj"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_event_attr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv427iio_channel_find_event_attrPK11iio_channelPKc"><code class="docutils literal notranslate"><span class="pre">iio_channel_find_event_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv418iio_channel_enablePK11iio_channelP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channel_enable()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv419iio_channel_disablePK11iio_channelP17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channel_disable()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv422iio_channel_is_enabledPK11iio_channelPK17iio_channels_mask"><code class="docutils literal notranslate"><span class="pre">iio_channel_is_enabled()</span></code></a></li>
@@ -388,6 +391,60 @@ Content on this topic
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>If the name does not correspond to any known attribute of the given channel, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv433iio_channel_get_event_attrs_countPK11iio_channel">
+<span id="_CPPv333iio_channel_get_event_attrs_countPK11iio_channel"></span><span id="_CPPv233iio_channel_get_event_attrs_countPK11iio_channel"></span><span id="iio_channel_get_event_attrs_count__iio_channelCP"></span><span class="target" id="group__Channel_1gad6a6f7f9e31a5f32887d24216a3a2f20"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_get_event_attrs_count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433iio_channel_get_event_attrs_countPK11iio_channel" title="Link to this definition"></a><br /></dt>
+<dd><p>Enumerate the event attributes of the given channel. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of event attributes found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_channel_get_event_attrPK11iio_channelj">
+<span id="_CPPv326iio_channel_get_event_attrPK11iio_channelj"></span><span id="_CPPv226iio_channel_get_event_attrPK11iio_channelj"></span><span id="iio_channel_get_event_attr__iio_channelCP.unsigned-i"></span><span class="target" id="group__Channel_1gae6005db4909b9aeca29363727bc93e31"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_get_event_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_channel_get_event_attrPK11iio_channelj" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the event attribute present at the given index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p></li>
+<li><p><strong>index</strong> – The index corresponding to the event attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427iio_channel_find_event_attrPK11iio_channelPKc">
+<span id="_CPPv327iio_channel_find_event_attrPK11iio_channelPKc"></span><span id="_CPPv227iio_channel_find_event_attrPK11iio_channelPKc"></span><span id="iio_channel_find_event_attr__iio_channelCP.cCP"></span><span class="target" id="group__Channel_1gaa3d08f841de31cf940a4135cb139d3bb"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="attributes.html#_CPPv48iio_attr" title="iio_attr"><span class="n"><span class="pre">iio_attr</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_find_event_attr</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427iio_channel_find_event_attrPK11iio_channelPKc" title="Link to this definition"></a><br /></dt>
+<dd><p>Try to find a channel event attribute by its name. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p></li>
+<li><p><strong>name</strong> – A NULL-terminated string corresponding to the name of the event attribute </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, a pointer to an <a class="reference internal" href="attributes.html#structiio__attr"><span class="std std-ref">iio_attr</span></a> structure </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the name does not correspond to any known event attribute of the given channel, NULL is returned </p>
 </dd>
 </dl>
 </dd></dl>
