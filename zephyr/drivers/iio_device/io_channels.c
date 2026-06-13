@@ -125,6 +125,7 @@ static int iio_device_io_channels_add_channels(const struct device *dev,
 	bool scan_element = false;
 	const char *name = NULL;
 	const char *label = NULL;
+	enum iio_attr_type type = IIO_ATTR_TYPE_CHANNEL;
 	const char *filename = NULL;
 	const struct iio_data_format fmt = {
 		.length = 16,
@@ -149,7 +150,7 @@ static int iio_device_io_channels_add_channels(const struct device *dev,
 
 		iio_channel_set_pdata(iio_channel, (struct iio_channel_pdata *) index);
 
-		if (iio_channel_add_attr(iio_channel, raw_name, filename)) {
+		if (iio_channel_add_attr(iio_channel, raw_name, type, filename)) {
 			LOG_ERR("Could not add channel %d attribute %s", index, raw_name);
 			return -EINVAL;
 		}
@@ -159,30 +160,30 @@ static int iio_device_io_channels_add_channels(const struct device *dev,
 				const struct adc_dt_spec *channel = &config->channels[index].adc;
 
 				if (channel->resolution != 0) {
-					if (iio_channel_add_attr(iio_channel, scale_name, filename)) {
+					if (iio_channel_add_attr(iio_channel, scale_name, type, filename)) {
 						LOG_ERR("Could not add channel %d attribute %s", index, scale_name);
 						return -EINVAL;
 					}
 				}
 
-				if (iio_channel_add_attr(iio_channel, gain_name, filename)) {
+				if (iio_channel_add_attr(iio_channel, gain_name, type, filename)) {
 					LOG_ERR("Could not add channel %d attribute %s", index, gain_name);
 					return -EINVAL;
 				}
 
 				if (channel->vref_mv != 0) {
-					if (iio_channel_add_attr(iio_channel, process_name, filename)) {
+					if (iio_channel_add_attr(iio_channel, process_name, type, filename)) {
 						LOG_ERR("Could not add channel %d attribute %s", index, process_name);
 						return -EINVAL;
 					}
 				}
 
-				if (iio_channel_add_attr(iio_channel, reference_name, filename)) {
+				if (iio_channel_add_attr(iio_channel, reference_name, type, filename)) {
 					LOG_ERR("Could not add channel %d attribute %s", index, reference_name);
 					return -EINVAL;
 				}
 
-				if (iio_channel_add_attr(iio_channel, differential_name, filename)) {
+				if (iio_channel_add_attr(iio_channel, differential_name, type, filename)) {
 					LOG_ERR("Could not add channel %d attribute %s", index, differential_name);
 					return -EINVAL;
 				}
@@ -192,7 +193,7 @@ static int iio_device_io_channels_add_channels(const struct device *dev,
 			case IO_CHANNEL_TYPE_DAC: {
 				const struct dac_dt_spec *channel = &config->channels[index].dac;
 				if (channel->channel_cfg.resolution != 0) {
-					if (iio_channel_add_attr(iio_channel, scale_name, filename)) {
+					if (iio_channel_add_attr(iio_channel, scale_name, type, filename)) {
 						LOG_ERR("Could not add channel %d attribute %s", index, scale_name);
 						return -EINVAL;
 					}
