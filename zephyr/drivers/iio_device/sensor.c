@@ -161,6 +161,7 @@ static int iio_device_sensor_add_channels(const struct device *dev,
 	const bool scan_element = true;
 	const char *name = NULL;
 	const char *label = NULL;
+	enum iio_attr_type type = IIO_ATTR_TYPE_CHANNEL;
 	const char *filename = NULL;
 	char id[32];
 	uint8_t type_counters[SENSOR_CHAN_COMMON_COUNT] = {0};
@@ -203,13 +204,13 @@ static int iio_device_sensor_add_channels(const struct device *dev,
 		iio_channel_set_pdata(iio_channel,
 			(struct iio_channel_pdata *)(intptr_t)sensor_chan);
 
-		if (iio_channel_add_attr(iio_channel, raw_name, filename)) {
+		if (iio_channel_add_attr(iio_channel, raw_name, type, filename)) {
 			LOG_ERR("Could not add channel %d attr %s",
 				index, raw_name);
 			return -EINVAL;
 		}
 
-		if (iio_channel_add_attr(iio_channel, scale_name, filename)) {
+		if (iio_channel_add_attr(iio_channel, scale_name, type, filename)) {
 			LOG_ERR("Could not add channel %d attr %s",
 				index, scale_name);
 			return -EINVAL;

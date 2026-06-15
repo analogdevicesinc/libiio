@@ -14,3 +14,6 @@ boards:
   adi_sdp_k1/stm32f469xx:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/adi_sdp_k1_stm32f469xx.overlay
+  /native_sim.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/native_sim.overlay
