@@ -264,13 +264,13 @@ Content on this topic
 <dd><p>Get the <a class="reference internal" href="channel.html#classiio_1_1Channel"><span class="std std-ref">iio.Channel</span></a> object of the specified name. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Param name<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Name or ID of the channel to look for</p>
+<dd class="field-odd"><p>Name, ID, or label of the channel to look for</p>
 </dd>
 <dt class="field-even">Param output<span class="colon">:</span></dt>
 <dd class="field-even"><p>true if you are looking for an output channel, otherwise false.</p>
 </dd>
 <dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The IIO device with the specified name or ID could not be found in the current context.</p>
+<dd class="field-odd"><p>The IIO channel with the specified name, ID, or label could not be found in the current device.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -370,31 +370,31 @@ Content on this topic
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Device.attrs">
-<span class="target" id="classiio_1_1Device_1ae2176fa2b6259f9c120a825f518c4066"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#var-iio.Device.attrs" title="Link to this definition"></a></dt>
-<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the attributes that this device has. </p>
+<span class="target" id="classiio_1_1Device_1ae3414a8c84c57a57436d504c870399dc"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyDictionary</span><span class="pre">&lt;</span><span class="pre">string</span><span class="pre">,</span> <a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#var-iio.Device.attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the attributes that this device has. Key is the attribute name. </p>
 </dd></dl>
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Device.debug_attrs">
-<span class="target" id="classiio_1_1Device_1aef585bea3015cda66fbce397d0323794"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">debug_attrs</span></span><a class="headerlink" href="#var-iio.Device.debug_attrs" title="Link to this definition"></a></dt>
-<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the debug attributes that this device has. </p>
+<span class="target" id="classiio_1_1Device_1a8861dde9a5e388dbf1768d5b414dade2"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyDictionary</span><span class="pre">&lt;</span><span class="pre">string</span><span class="pre">,</span> <a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">debug_attrs</span></span><a class="headerlink" href="#var-iio.Device.debug_attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the debug attributes that this device has. Key is the attribute name. </p>
 </dd></dl>
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Device.event_attrs">
-<span class="target" id="classiio_1_1Device_1a3f6fece91067916b5c9b8f23ec2e8d58"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">event_attrs</span></span><a class="headerlink" href="#var-iio.Device.event_attrs" title="Link to this definition"></a></dt>
-<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the event attributes that this device has. </p>
+<span class="target" id="classiio_1_1Device_1a3c3c5c46b8330c604a12876cd1f30913"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyDictionary</span><span class="pre">&lt;</span><span class="pre">string</span><span class="pre">,</span> <a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">event_attrs</span></span><a class="headerlink" href="#var-iio.Device.event_attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the event attributes that this device has. Key is the attribute name. </p>
 </dd></dl>
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Device.channels">
-<span class="target" id="classiio_1_1Device_1a060ce06a0516ccc7468196e44fb30b00"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="channel.html#class-iio.Channel" title="class: iio.Channel"><span class="pre">Channel</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">channels</span></span><a class="headerlink" href="#var-iio.Device.channels" title="Link to this definition"></a></dt>
+<span class="target" id="classiio_1_1Device_1a55510004861ebd05057750f9ccbfa902"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyList</span><span class="pre">&lt;</span><a class="reference internal" href="channel.html#class-iio.Channel" title="class: iio.Channel"><span class="pre">Channel</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">channels</span></span><a class="headerlink" href="#var-iio.Device.channels" title="Link to this definition"></a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the <a class="reference internal" href="channel.html#classiio_1_1Channel"><span class="std std-ref">iio.Channel</span></a> objects that this device possesses. </p>
 </dd></dl>
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Device.buffers">
-<span class="target" id="classiio_1_1Device_1af33b746d079c9bde1e1815cb7c2be160"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="buffer.html#class-iio.IOBuffer" title="class: iio.IOBuffer"><span class="pre">IOBuffer</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">buffers</span></span><a class="headerlink" href="#var-iio.Device.buffers" title="Link to this definition"></a></dt>
+<span class="target" id="classiio_1_1Device_1af96fcfb11b0475eb0fb5ff63bf7c24e7"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyList</span><span class="pre">&lt;</span><a class="reference internal" href="buffer.html#class-iio.IOBuffer" title="class: iio.IOBuffer"><span class="pre">IOBuffer</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">buffers</span></span><a class="headerlink" href="#var-iio.Device.buffers" title="Link to this definition"></a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the <a class="reference internal" href="buffer.html#classiio_1_1IOBuffer"><span class="std std-ref">iio.IOBuffer</span></a> objects that this device possesses. </p>
 </dd></dl>
 

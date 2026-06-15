@@ -294,10 +294,10 @@ Content on this topic
 <dd><p>Get the <a class="reference internal" href="device.html#classiio_1_1Device"><span class="std std-ref">iio.Device</span></a> object of the specified name. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Param name<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Name or ID of the device to look for</p>
+<dd class="field-odd"><p>Name, ID, or label of the device to look for</p>
 </dd>
 <dt class="field-even">Throws IioLib.IIOException<span class="colon">:</span></dt>
-<dd class="field-even"><p>The IIO device with the specified name or ID could not be found in the current context.</p>
+<dd class="field-even"><p>The IIO device with the specified name, ID, or label could not be found in the current context.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -359,7 +359,7 @@ Content on this topic
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Context.devices">
-<span class="target" id="classiio_1_1Context_1ad5fc9205417a8a2daacdb3cc9832995c"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="device.html#class-iio.Device" title="class: iio.Device"><span class="pre">Device</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#var-iio.Context.devices" title="Link to this definition"></a></dt>
+<span class="target" id="classiio_1_1Context_1a712a632c1828cfe8b02245631c2d7dbe"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyList</span><span class="pre">&lt;</span><a class="reference internal" href="device.html#class-iio.Device" title="class: iio.Device"><span class="pre">Device</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#var-iio.Context.devices" title="Link to this definition"></a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">List</span></code> of all the IIO devices present on the current context. </p>
 </dd></dl>
 
@@ -369,7 +369,7 @@ Content on this topic
 <dl class="cs property">
 <dt class="sig sig-object cs" id="property-iio.Context.attrs">
 <span class="target" id="classiio_1_1Context_1a3eef82f7c710339551dc6dd3475002e3"></span><span class="property"><span class="pre">string</span></span> <span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.Context.attrs" title="Link to this definition"></a></dt>
-<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the attributes of the current channel. (key, value) = (name, value) </p>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the attributes of the current context. (key, value) = (name, value) </p>
 </dd></dl>
 
 </div>

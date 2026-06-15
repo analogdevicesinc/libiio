@@ -101,8 +101,8 @@
 <li><a class="reference internal" href="#function-iio.IOBuffer.open"><code class="docutils literal notranslate"><span class="pre">open()</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.IOBuffer.dev"><code class="docutils literal notranslate"><span class="pre">dev</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.IOBuffer.attrs"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.IOBuffer.scan_elements"><code class="docutils literal notranslate"><span class="pre">scan_elements</span></code></a></li>
 <li><a class="reference internal" href="#property-iio.IOBuffer.output"><code class="docutils literal notranslate"><span class="pre">output</span></code></a></li>
-<li><a class="reference internal" href="#property-iio.IOBuffer.scan_elements"><code class="docutils literal notranslate"><span class="pre">scan_elements</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -271,8 +271,14 @@ Content on this topic
 
 <dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.IOBuffer.attrs">
-<span class="target" id="classiio_1_1IOBuffer_1a7bb543472e7701ffcdf7343c505c8fc0"></span><span class="property"><span class="pre">readonly</span></span> <a class="icon link reference external" href="https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1" target="_blank" title="type: msdn ~&gt; System.Collections.Generic.List"><span class="pre">List</span></a><span class="pre">&lt;</span><a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#var-iio.IOBuffer.attrs" title="Link to this definition"></a></dt>
-<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the attributes that this buffer has. </p>
+<span class="target" id="classiio_1_1IOBuffer_1a0df2a7545230488082a7b3408ac50235"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyDictionary</span><span class="pre">&lt;</span><span class="pre">string</span><span class="pre">,</span> <a class="reference internal" href="attr.html#class-iio.Attr" title="class: iio.Attr"><span class="pre">Attr</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">attrs</span></span><a class="headerlink" href="#var-iio.IOBuffer.attrs" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the attributes that this buffer has. Key is the attribute name. </p>
+</dd></dl>
+
+<dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.IOBuffer.scan_elements">
+<span class="target" id="classiio_1_1IOBuffer_1a546c550001c751639e5dad59b572ce3c"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyList</span><span class="pre">&lt;</span><a class="reference internal" href="channel.html#class-iio.Channel" title="class: iio.Channel"><span class="pre">Channel</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">scan_elements</span></span><a class="headerlink" href="#var-iio.IOBuffer.scan_elements" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all scan elements associated with this buffer. </p>
 </dd></dl>
 
 </div>
@@ -282,12 +288,6 @@ Content on this topic
 <dt class="sig sig-object cs" id="property-iio.IOBuffer.output">
 <span class="target" id="classiio_1_1IOBuffer_1a24a69b1184f8fbff54bca3447dd073c6"></span><span class="pre">bool</span> <span class="sig-name descname"><span class="pre">output</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.IOBuffer.output" title="Link to this definition"></a></dt>
 <dd><p>Returns true if the buffer is an output (TX) buffer. </p>
-</dd></dl>
-
-<dl class="cs property">
-<dt class="sig sig-object cs" id="property-iio.IOBuffer.scan_elements">
-<span class="target" id="classiio_1_1IOBuffer_1aa04d068e8237bc980cf55e80eea9bb77"></span><span class="property"><span class="pre">Channel</span></span> <span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">scan_elements</span></span> <span class="pre">{</span> <span class="property"><span class="pre">get;</span> <span class="pre">set;</span></span> <span class="pre">}</span><a class="headerlink" href="#property-iio.IOBuffer.scan_elements" title="Link to this definition"></a></dt>
-<dd><p>Returns the list of scan elements associated with this buffer. </p>
 </dd></dl>
 
 </div>
