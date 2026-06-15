@@ -17,6 +17,7 @@
 #include <vita49_2/vita49_2_packet_types.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include <arpa/inet.h>
 
 #define TIME_PACKET_LENGTH sizeof(TIME_PACKET)/sizeof(TIME_PACKET[0])
@@ -34,7 +35,7 @@ uint32_t TIME_PACKET[] =
 	),
 
 	// Stream ID
-	0x0001,
+	0x00000001,
 
 	// Class ID
 	// First Word
@@ -64,6 +65,8 @@ uint32_t TIME_PACKET[] =
 };
 
 
+
+// Testing Data Packet parsing
 TEST_FUNCTION (test_vita49_2_parse_data_packet)
 {
 	// Translating to network order
@@ -71,10 +74,9 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 	for (uint8_t i = 0; i < TIME_PACKET_LENGTH; i++)
 		time_packet_data[i] = htonl(TIME_PACKET[i]);
 
-	struct vita49_2_data_packet data_packet;
-	
 	
 	// Checking that the parser returns properly
+	struct vita49_2_data_packet data_packet;
 	TEST_ASSERT_EQ(vita49_2_parse_data_packet(time_packet_data, TIME_PACKET_LENGTH, &data_packet), 0, "Valid packet should result in the parser returning 0");
 
 	
@@ -88,7 +90,7 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 	TEST_ASSERT_EQ(parsed_header_word, TIME_PACKET[field_offset], "Header should match");
 
 	// Testing a header subfield to ensure byte order and fields were handled properly
-	TEST_ASSERT_EQ(data_packet.prologue.header.packet_count, ((TIME_PACKET[0] >> 16) & 0x000F), "Packet Type subfield should match");
+	TEST_ASSERT_EQ(data_packet.prologue.header.packet_count, ((TIME_PACKET[field_offset] >> 16) & 0x000F), "Packet Type subfield should match");
 	field_offset++;
 
 	// Stream ID
@@ -128,7 +130,7 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 
 	// Data Payload
 	TEST_ASSERT_EQ(data_packet.payload_num_words, 2, "2 samples should be present");
-	
+
 	uint32_t sample_1, sample_2;
 	memcpy(&sample_1, &data_packet.payload[0], sizeof(sample_1));
 	memcpy(&sample_2, &data_packet.payload[1], sizeof(sample_2));
@@ -136,6 +138,41 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 	TEST_ASSERT_EQ(sample_1, TIME_PACKET[field_offset], "Sample 1 should match");
 	field_offset++;
 	TEST_ASSERT_EQ(sample_2, TIME_PACKET[field_offset], "Sample 2 should match");
+
+
+	// Now for some additional tests to make sure the parser doesn't attempt to process
+	// the data if it's of another packet type
+	time_packet_data[0] = 	(	(0x2 << 28) 	| 	/* Packet Type -> 2 = Extension Signal Data without Stream ID */
+								(0xA << 24) 	| 	/* Unchanged */
+								(0x6 << 20) 	| 	/* Unchanged */
+								(0xD << 16) 	| 	/* Unchanged */
+								(0x0009) 			/* Unchanged */
+							);
+
+	TEST_ASSERT_EQ(vita49_2_parse_data_packet(time_packet_data, TIME_PACKET_LENGTH, &data_packet) < 0, 1, "Parsing should fail for other Packet Types");
+}
+
+// Testing Data Packet generation
+TEST_FUNCTION (test_vita49_2_generate_data_packet)
+{
+	// Translating to network order
+	uint32_t time_packet_data[TIME_PACKET_LENGTH];
+	for (uint8_t i = 0; i < TIME_PACKET_LENGTH; i++)
+		time_packet_data[i] = htonl(TIME_PACKET[i]);
+		
+	struct vita49_2_data_packet data_packet;
+	vita49_2_parse_data_packet(time_packet_data, TIME_PACKET_LENGTH, &data_packet);
+
+	uint32_t gen_data_packet[TIME_PACKET_LENGTH+5];
+	TEST_ASSERT_EQ(vita49_2_generate_data_packet(&data_packet, gen_data_packet, sizeof(gen_data_packet)/sizeof(gen_data_packet[0])), TIME_PACKET_LENGTH, "9 word packet should be generated.");
+
+	// Now to compare each byte with the reference buffer
+	char message[50];
+	for (int i = 0; i < TIME_PACKET_LENGTH; i++)
+	{
+		snprintf(message, sizeof(message), "Word %d should match", i);
+		TEST_ASSERT_EQ(gen_data_packet[i], htonl(TIME_PACKET[i]), message);
+	}
 }
 
 // static void fill_context_packet(uint32_t *buf)
@@ -220,7 +257,11 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 
 int main(void)
 {
+	printf("Testing Data Packet Parsing...\n");
 	RUN_TEST(test_vita49_2_parse_data_packet);
+	
+	printf("Testing Data Packet Generation...\n");
+	RUN_TEST(test_vita49_2_generate_data_packet);
 	// RUN_TEST(test_vrt_generate_packet_basic);
 	TEST_SUMMARY();
 	return 0;

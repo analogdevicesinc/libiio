@@ -594,7 +594,7 @@ struct vita49_2_device_identifier {
 	struct {
 		
 		uint32_t device_code:16;		/* Unique device identifier such as a serial number */
-		uint32_t reserved_16_31:16		/* Reserved bits should be zeroed out. */
+		uint32_t reserved_16_31:16;		/* Reserved bits should be zeroed out. */
 	
 	} upper_word;
 

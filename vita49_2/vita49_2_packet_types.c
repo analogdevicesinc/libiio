@@ -32,11 +32,10 @@ ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, ui
 	uint32_t header_word;
 
 	// Starting the index at 1 since we'll be writing the header (index = 0) last
-	size_t buffer_index = 1;
+	ssize_t buffer_index = 1;
 
 	/* Stream ID */
-	bool has_stream_id = (pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_IF_DATA_NO_SID &&
-					pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_EXT_DATA_NO_SID);
+	bool has_stream_id = (pkt->prologue.header.packet_type != VITA49_2_PKT_TYPE_IF_DATA_NO_SID);
 
 	if (has_stream_id) 
 	{
@@ -89,8 +88,12 @@ ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, ui
 		if (buffer_index + pkt->payload_num_words > (max_words - (pkt->has_trailer ? 1 : 0))) 
 			return -ENOBUFS;
 
-		/* Assume big-endian payload words */
-		memcpy(&buf[buffer_index], pkt->payload, pkt->payload_num_words * sizeof(uint32_t));
+		uint32_t payload_word;
+		for (uint16_t payload_index = 0; payload_index < pkt->payload_num_words; payload_index++)
+		{
+			memcpy(&payload_word, &pkt->payload[payload_index], sizeof(payload_word));
+			buf[buffer_index + payload_index] = htonl(payload_word);
+		}
 		buffer_index += pkt->payload_num_words;
 	}
 
