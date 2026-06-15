@@ -16,9 +16,9 @@ set(API_TEST_TARGETS
     test_lowlevel
 )
 
-# if(WITH_VITA49_2_BACKEND)
-#     list(APPEND API_TEST_TARGETS test_vita49)
-# endif()
+if(WITH_VITA49_2_BACKEND)
+    list(APPEND API_TEST_TARGETS test_vita49_2_packets)
+endif()
 
 # Create a helper library for common test utilities
 add_library(test_common STATIC test_framework.h)
