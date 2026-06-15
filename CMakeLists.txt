@@ -581,6 +581,7 @@ if(WITH_NETWORK_BACKEND)
 		if (WIN32)
 			target_link_libraries(iio PRIVATE wsock32 iphlpapi ws2_32)
 		endif()
+		add_subdirectory(vita49_2)
 		target_sources(iio PRIVATE iiod/vita49_2/vita49_2_host.c vita49_2/vita49_2_packet_elements.c vita49_2/vita49_2_packet_types.c)
 		target_include_directories(iio PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/vita49_2

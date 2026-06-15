@@ -18,8 +18,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <vita49_2/vita49_2_packet_types.h>
 #include "thread-pool.h"
-#include "vita49_2_packet_types.h"
 
 #ifdef __cplusplus
 extern "C" {

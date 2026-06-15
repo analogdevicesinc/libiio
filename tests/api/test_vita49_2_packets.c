@@ -4,6 +4,9 @@
  *
  * Copyright (C) 2026 Analog Devices, Inc.
  * Author: Travis Collins <travis.collins@analog.com>
+ * 
+ * Contributors:
+ * 		- Praveen Perera <praveen.perera@analog.com>
  */
 
 #define TESTS_DEBUG

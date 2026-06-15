@@ -13,8 +13,8 @@
 // executing any necessary commands, querying data, generating VITA 49.2 packets, and sending those packets.
 
 #include "vita49_2_client.h"
-#include "vita49_2_packet_types.h"
-#include "iio/iio.h"
+#include <vita49_2/vita49_2_packet_types.h>
+#include <iio/iio.h>
 
 #include <stdbool.h>
 #include <string.h>
