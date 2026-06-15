@@ -180,6 +180,7 @@ int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_
 		uint32_t w1 = ntohl(buf[buffer_index++]);
 		uint32_t w2 = ntohl(buf[buffer_index++]);
 		
+		// According to Figure 5.1.4-1, the most significant word is the first word 
 		pkt->prologue.timestamp_frac = ((uint64_t)w1 << 32) | w2;
 		pkt->prologue.has_timestamp_frac = true;
 	}
@@ -194,16 +195,23 @@ int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_
 		memcpy(&pkt->trailer, &trailer_word, sizeof(pkt->trailer));
 		pkt->has_trailer = true;
 		
-		// Assuming payload is in big endian, so we're skipping the network to host byte order translation
-		pkt->payload = &buf[buffer_index];
 		pkt->payload_num_words = pkt->prologue.header.packet_size_words - buffer_index - 1;
 	} 
 	else 
-	{
-		// Assuming payload is in big endian, so we're skipping the network to host byte order translation
-		pkt->payload = &buf[buffer_index];
 		pkt->payload_num_words = pkt->prologue.header.packet_size_words - buffer_index;
-	}
+
+	/* Payload */
+	pkt->payload = realloc(NULL, pkt->payload_num_words * sizeof(uint32_t));
+
+	if (pkt->payload == NULL)
+		return -ENOMEM;
+
+	uint32_t payload_word;
+	for (uint16_t payload_index = 0; payload_index < pkt->payload_num_words; payload_index++)
+	{
+		payload_word = ntohl(buf[buffer_index + payload_index]);
+		memcpy(&pkt->payload[payload_index], &payload_word, sizeof(payload_word));
+	}		
 
 	return 0;
 }

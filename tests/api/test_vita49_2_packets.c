@@ -116,16 +116,19 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 	// Fractional Timestamp
 	TEST_ASSERT_EQ(data_packet.prologue.has_timestamp_frac, 1, "Fractional Timestamp should be present");
 	
+	// According to Figure 5.1.4-1 from the VITA 49.2 full spec document, the first word is the most significant 32 bits
 	uint32_t timestamp_frac_lower, timestamp_frac_upper;
-	memcpy(&timestamp_frac_lower, &TIME_PACKET[field_offset], sizeof(timestamp_frac_lower));
-	field_offset++;
 	memcpy(&timestamp_frac_upper, &TIME_PACKET[field_offset], sizeof(timestamp_frac_upper));
+	field_offset++;
+	memcpy(&timestamp_frac_lower, &TIME_PACKET[field_offset], sizeof(timestamp_frac_lower));
 	field_offset++;
 	
 	uint64_t timestamp_frac = ((uint64_t)(timestamp_frac_upper) << 32) | timestamp_frac_lower;
 	TEST_ASSERT_EQ(data_packet.prologue.timestamp_frac, timestamp_frac, "Fractional Timestamp should match");
 
 	// Data Payload
+	TEST_ASSERT_EQ(data_packet.payload_num_words, 2, "2 samples should be present");
+	
 	uint32_t sample_1, sample_2;
 	memcpy(&sample_1, &data_packet.payload[0], sizeof(sample_1));
 	memcpy(&sample_2, &data_packet.payload[1], sizeof(sample_2));
