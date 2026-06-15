@@ -54,6 +54,16 @@ enum vita49_2_tsf {
 };
 
 // =============================================================================
+// ACTION MODE BITS (CONTROL PACKET SPECIFIC)
+// =============================================================================
+enum vita49_2_control_action_modes {
+	VITA49_2_CTRL_NO_ACT 	= 0,
+	VITA49_2_CTRL_DRY_RUN	= 1,
+	VITA49_2_CTRL_EXECUTE	= 2,
+	VITA49_2_CTRL_RESERVED	= 3
+};
+
+// =============================================================================
 // PACKET CLASS CODES
 // =============================================================================
 
@@ -714,7 +724,7 @@ struct vita49_2_cif0_fields {
 
 	double sample_rate;          	 									/**< Sample Rate in Hz */
 
-	uint64_t timestamp_adjustment;  									/**< Timestamp Adjustment in picoseconds */
+	int64_t timestamp_adjustment;  										/**< Timestamp Adjustment in picoseconds */
 
 	uint32_t timestamp_calibration_time_int;  							/**< Integer part of Calibration Time */
 
@@ -805,22 +815,29 @@ __vrt_api float convert_from_9_7(int16_t value);
  * @brief Parses the CIF0 payload section.
  * Evaluates the flags present in CIF0 to sequentially decode the context payload.
  * 
- * @param payload_size 
- * @param payload 
- * @param cif0 
- * @return int 
+ * IMPORTANT: The struct pointed to by the cif0 pointer MUST have it's CIF0 word populated beforehand.
+ * 
+ * Returns a negative value on error. Otherwise a value indicating the number of 32-bit words that were read from the buffer is returned.
+ * 
+ * @param payload_size Size of the payload minus any of the 32-bit CIF-words (CIF0/1/2/3/7).
+ * @param payload Pointer to the payload section containing the CIF0 attribute values. Do NOT provide a pointer to the start of the CIF0 word.
+ * @param cif0 Pointer to memory that's already been allocated for a vita49_2_cif0_fields struct.
+ * @return ssize_t 
  */
-__vrt_api int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0);
+__vrt_api ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0);
 
 /**
  * @brief Extracts a 32-bit word from the packet payload, handling network byte-order translation.
  * 
- * @param payload 
- * @param payload_size 
- * @param offset 
- * @return __vrt_api 
+ * Returns a negative value on failure.
+ * 
+ * @param payload Pointer to the start of the payload. 
+ * @param payload_size Size of the payload in 32-bit words.
+ * @param offset Location of the field in 32-bit words relative to the payload pointer.
+ * @param payload_word Pointer to a uint32_t that can be used to store the payload value.
+ * @return int 
  */
-__vrt_api uint32_t vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset);
+__vrt_api int vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset, uint32_t* const payload_word);
 
 
 /* Inserts a 32-bit word into a raw payload buffer in network byte-order. */
@@ -832,7 +849,7 @@ __vrt_api void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, si
  * @param payload 
  * @param payload_size 
  * @param offset 
- * @return __vrt_api 
+ * @return double 
  */
 __vrt_api double vita49_2_get_payload_double(const uint32_t* const payload, uint16_t payload_size, size_t offset);
 

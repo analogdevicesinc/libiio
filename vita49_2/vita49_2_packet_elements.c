@@ -47,18 +47,19 @@ float convert_from_9_7(int16_t value)
 	return (float)(value / (1 << 7));
 }
 
-uint32_t vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset)
+int vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset, uint32_t* const payload_word)
 {
-	if (!payload || offset >= payload_size)
-		return 0;
+	if (payload == NULL || offset >= payload_size || payload_word == NULL)
+		return -EINVAL;
 
-	return ntohl(payload[offset]);
+	*payload_word = ntohl(payload[offset]);
 }
 
 void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val)
 {
 	if (!payload || offset >= max_words)
 		return;
+
 	payload[offset] = htonl(val);
 }
 
@@ -99,7 +100,7 @@ void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t off
 	payload[offset + 1] = htonl((uint32_t)(v_int & 0xFFFFFFFF));
 }
 
-int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0)
+ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0)
 {
 	if (!cif0)
 		return -1;
@@ -109,20 +110,20 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 	if (payload_size < 1)
 		return -1;
 
-	size_t offset = 0;
+	ssize_t offset = 0;
 
-	// Extract the CIF0 word first
-	uint32_t cif0_word = vita49_2_get_payload_word(payload, payload_size, offset);
-	memcpy(&cif0->cif0_word, &cif0_word, sizeof(cif0_word));
-	offset++;
-
+	uint32_t cif0_word;
+	memcpy(&cif0_word, &cif0->cif0_word, sizeof(cif0_word));
+	
 	// Reference Point Identifier
 	if (cif0_word & (1 << 30)) 
 	{
 		if (offset >= payload_size)
 			return -EINVAL;
 
-		cif0->reference_point_id = vita49_2_get_payload_word(payload, payload_size, offset);
+		if(vita49_2_get_payload_word(payload, payload_size, offset, cif0->reference_point_id) < 0)
+			return -1;
+
 		offset++;
 	}
 	
@@ -188,9 +189,11 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 			return -EINVAL;
 
 		// Reference Level is encoded as a 9.7 fixed-point value
-		float fval = convert_from_9_7((int16_t)(vita49_2_get_payload_word(payload, payload_size, offset)));
-		
-		cif0->reference_level = fval;
+		uint32_t reference_level_u;
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &reference_level_u) < 0)
+			return -1;
+
+		cif0->reference_level = convert_from_9_7((int16_t)(reference_level_u));
 		offset++;
 	}
 	
@@ -202,7 +205,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 
 		// The Gain field encodes Stage 2 gain as a 9.7 fixed-point value in the upper 16 bits
 		// and Stage 1 gain as a 9.7 fixed-point value in the lower 16 bits
-		uint32_t both_gains = vita49_2_get_payload_word(payload, payload_size, offset);
+		uint32_t both_gains;
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &both_gains) < 0)
+			return -1;
 
 		int16_t stage1_gain = both_gains >> 16;
 		int16_t stage2_gain = (int16_t)(both_gains);
@@ -218,7 +223,10 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		if (offset >= payload_size)
 			return -EINVAL;
 
-		cif0->over_range_count = vita49_2_get_payload_word(payload, payload_size, offset);
+		uint32_t over_range_count_u;
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &cif0->over_range_count) < 0)
+			return -1;
+
 		offset++;
 	}
 
@@ -239,8 +247,10 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		if (offset + 1 >= payload_size)
 			return -EINVAL;
 
-		uint32_t w1 = vita49_2_get_payload_word(payload, payload_size, offset);
-		uint32_t w2 = vita49_2_get_payload_word(payload, payload_size, offset + 1);
+		uint32_t w1, w2; 
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &w1) < 0 || vita49_2_get_payload_word(payload, payload_size, offset + 1, &w2))
+			return -1;
+
 		cif0->timestamp_adjustment = ((uint64_t)w1 << 32) | w2;
 		offset += 2;
 	}
@@ -251,7 +261,10 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		if (offset >= payload_size)
 			return -EINVAL;
 
-		cif0->timestamp_calibration_time_int  = vita49_2_get_payload_word(payload, payload_size, offset);
+		uint32_t timestamp_calibration_time_u;
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &cif0->timestamp_calibration_time_int) < 0)
+			return -1;
+
 		offset++;
 	}
 
@@ -262,7 +275,14 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 			return -EINVAL;
 
 		// Device Temperature is encoded as a 10.6 fixed-point value
-		cif0->temperature = convert_from_10_6((int16_t)(vita49_2_get_payload_word(payload, payload_size, offset)));
+		uint32_t temperature_u;
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &temperature_u) < 0)
+			return -1;
+
+		int16_t temperature_i16;
+		memcpy(&temperature_i16, &temperature_u, sizeof(temperature_i16));
+
+		cif0->temperature = convert_from_10_6(temperature_i16);
 		offset++;
 	}
 
@@ -276,8 +296,18 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		memset(&cif0->device_identifier.lower_word, 0, sizeof(cif0->device_identifier.lower_word));
 		memset(&cif0->device_identifier.upper_word, 0, sizeof(cif0->device_identifier.upper_word));
 		
-		cif0->device_identifier.lower_word.oui = vita49_2_get_payload_word(payload, payload_size, offset);
-		cif0->device_identifier.upper_word.device_code = vita49_2_get_payload_word(payload, payload_size, offset + 1);
+		uint32_t oui;
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &oui) < 0)
+			return -1;
+
+		cif0->device_identifier.lower_word.oui = oui;
+
+		uint32_t device_code;
+		if (vita49_2_get_payload_word(payload, payload_size, offset + 1, &device_code) < 0)
+			return -1;
+		
+		cif0->device_identifier.upper_word.device_code = device_code;
+
 		offset += 2;
 	}
 
@@ -287,7 +317,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		if (offset >= payload_size)
 			return -EINVAL;
 
-		cif0->state_and_event_indicators = vita49_2_get_payload_word(payload, payload_size, offset);
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &cif0->state_and_event_indicators) < 0)
+			return -1;
+	
 		offset++;
 	}
 
@@ -327,7 +359,9 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 		if (offset >= payload_size)
 			return -EINVAL;
 
-		cif0->ephemeris_ref_id = vita49_2_get_payload_word(payload, payload_size, offset);
+		if (vita49_2_get_payload_word(payload, payload_size, offset, &cif0->ephemeris_ref_id) < 0)
+			return -1;
+
 		offset++;
 	}
 
@@ -351,5 +385,5 @@ int vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const pay
 
 	// Bit 0 is reserved
 
-	return 0;
+	return offset;
 }

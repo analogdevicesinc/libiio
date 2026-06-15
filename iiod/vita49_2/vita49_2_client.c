@@ -668,7 +668,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP.\n");
 					}
 
-					// Executing the commands in the packet
+					// Executing the commands in the packet. Currently ADI only supports Execute Mode and No-Action Mode for Control Packets,
+					// however we retain the right to implement Dry Run Mode in the future.
 					else if (execute_commands(arguments->ctx, &control_packet) < 0)
 					{
 						fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
@@ -844,7 +845,11 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 	int ret = 0;
 
 	if (!ctx || !pkt)
-		return -1;
+		return -EINVAL;
+
+	// Check the Action Mode bits in the Packet to see if the Controls should be executed
+	if (pkt->command_prologue.cam.action_bits != VITA49_2_CTRL_EXECUTE)
+		return -EINVAL;
 
 	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
 	// in this packet should be executed.
