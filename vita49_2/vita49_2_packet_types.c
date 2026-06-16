@@ -1228,7 +1228,7 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	return 0;
 }
 
-__vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_X_packet *pkt, uint32_t *buf, size_t max_words)
+__vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -1365,17 +1365,17 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 			// CIF3	(32-bit word)
 			// CIF7 (32-bit word)
 		// Warning Fields:
-			// Attribute values associated with CIF0
-			// Attribute values associated with CIF1 (if CIF1 enabled)
-			// Attribute values associated with CIF2 (if CIF2 enabled)
-			// Attribute values associated with CIF3 (if CIF3 enabled)
-			// Attribute values associated with CIF7 (if CIF7 enabled)
+			// Warning Indicators associated with CIF0 attributes
+			// Warning Indicators associated with CIF1 attributes
+			// Warning Indicators associated with CIF2 attributes
+			// Warning Indicators associated with CIF3 attributes
+			// Warning Indicators associated with CIF7 attributes
 		// Error Fields:
-			// Attribute values associated with CIF0
-			// Attribute values associated with CIF1 (if CIF1 enabled)
-			// Attribute values associated with CIF2 (if CIF2 enabled)
-			// Attribute values associated with CIF3 (if CIF3 enabled)
-			// Attribute values associated with CIF7 (if CIF7 enabled)
+			// Error Indicators associated with CIF0 attributes
+			// Error Indicators associated with CIF1 attributes
+			// Error Indicators associated with CIF2 attributes
+			// Error Indicators associated with CIF3 attributes
+			// Error Indicators associated with CIF7 attributes
 		
 	// =========================================================
 	// WARNING INDICATOR FIELDS
@@ -1384,7 +1384,7 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 	uint32_t cif_word, field_bit;
 	
 	// CIF0 Word
-	memcpy(&cif_word, &pkt->cif0_warnings.cif0_word, sizeof(cif_word));
+	memcpy(&cif_word, &pkt->cif0_warnings, sizeof(cif_word));
 
 	if (buffer_index >= max_words)
 		return -ENOBUFS;
@@ -1392,28 +1392,28 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 	buf[buffer_index++] = htonl(cif_word);
 
 	// CIF1 Word
-	if (pkt->cif0_warnings.cif0_word.cif1_enable && pkt->cif1_warnings != NULL)
+	if (pkt->cif0_warnings.cif1_enable && pkt->cif1_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
 		// then the logic for copying the CIF1 word can be implemented
 	}
 
 	// CIF2 Word
-	if (pkt->cif0_warnings.cif0_word.cif2_enable && pkt->cif2_warnings != NULL)
+	if (pkt->cif0_warnings.cif2_enable && pkt->cif2_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
 		// then the logic for copying the CIF2 word can be implemented
 	}
 
 	// CIF3 Word
-	if (pkt->cif0_warnings.cif0_word.cif3_enable && pkt->cif3_warnings != NULL)
+	if (pkt->cif0_warnings.cif3_enable && pkt->cif3_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
 		// then the logic for copying the CIF3 word can be implemented
 	}
 
 	// CIF7 Word
-	if (pkt->cif0_warnings.cif0_word.cif7_enable && pkt->cif7_warnings != NULL)
+	if (pkt->cif0_warnings.cif7_enable && pkt->cif7_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
 		// then the logic for copying the CIF7 word can be implemented
@@ -1425,7 +1425,7 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 	// =========================================================
 	
 	// CIF0 Word
-	memcpy(&cif_word, &pkt->cif0_errors.cif0_word, sizeof(cif_word));
+	memcpy(&cif_word, &pkt->cif0_errors, sizeof(cif_word));
 
 	if (buffer_index >= max_words)
 		return -ENOBUFS;
@@ -1433,28 +1433,28 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 	buf[buffer_index++] = htonl(cif_word);
 
 	// CIF1 Word
-	if (pkt->cif0_errors.cif0_word.cif1_enable && pkt->cif1_errors != NULL)
+	if (pkt->cif0_errors.cif1_enable && pkt->cif1_errors != NULL)
 	{
 		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
 		// then the logic for copying the CIF1 word can be implemented
 	}
 
 	// CIF2 Word
-	if (pkt->cif0_errors.cif0_word.cif2_enable && pkt->cif2_errors != NULL)
+	if (pkt->cif0_errors.cif2_enable && pkt->cif2_errors != NULL)
 	{
 		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
 		// then the logic for copying the CIF2 word can be implemented
 	}
 
 	// CIF3 Word
-	if (pkt->cif0_errors.cif0_word.cif3_enable && pkt->cif3_errors != NULL)
+	if (pkt->cif0_errors.cif3_enable && pkt->cif3_errors != NULL)
 	{
 		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
 		// then the logic for copying the CIF3 word can be implemented
 	}
 
 	// CIF7 Word
-	if (pkt->cif0_errors.cif0_word.cif7_enable && pkt->cif7_errors != NULL)
+	if (pkt->cif0_errors.cif7_enable && pkt->cif7_errors != NULL)
 	{
 		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
 		// then the logic for copying the CIF7 word can be implemented
@@ -1465,147 +1465,37 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 	// =========================================================
 
 	// CIF0
+	uint32_t indicator_word;
 
-	memcpy(&cif_word, &pkt->cif0_errors.cif0_word, sizeof(cif_word));
-
-	// Iterating through each of the 32 options in CIF0 from 31 to 0.
-	// "Context Field Indicator" doesn't apply to Command Packets, so we'll actually start from 30.
-	for (int field_index = 30; field_index >= 0; field_index--)
+	// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
+	for (uint16_t i = 0; i < pkt->warnings_payload_num_words; i++)
 	{
-		field_bit = (1 << field_index);
-
-		// Field is not present
-		if (!(cif_word & field_bit))
-			continue;
-
-		// Checking if there's at least 1 byte left. For fields using more than 1 byte, they will require
-		// an additional check in their case-block.
-		if (buffer_index >= max_words)
-			return -ENOBUFS;
-
-		// See Table 9.1-1 in the VITA 49.2 full spec document. Not all of those fields are applicable to Control Packets.
-		switch (field_bit)
-		{
-			// Sample Rate
-			case (1 << 21):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-		
-				// Sample Rate uses a 44.20 fixed-point encoding
-				int64_t sample_rate = convert_to_44_20(pkt->cif0_warnings.sample_rate);
-
-				buf[buffer_index++] = htonl((uint32_t)(sample_rate >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(sample_rate));
-
-				break;
-
-			// Gain
-			case (1 << 23):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-		
-				// Gain packs 2 9.7 fixed-point integers into the same 32-bit field.
-				// The upper 16 bits represent Stage 2 gain while the lower 16 bits represent Stage 1 gain.
-
-				buf[buffer_index++] = htonl((uint32_t)((convert_to_9_7(pkt->cif0_warnings.gain_stage_2) << 16) | (convert_to_9_7(pkt->cif0_warnings.gain_stage_1))));
-				break;
-
-			// IF Band Offset
-			case (1 << 25):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// IF Band Offset uses 44.20 fixed-point encoding
-				int64_t if_band_offset = convert_to_44_20(pkt->cif0_warnings.if_band_offset);
-
-				buf[buffer_index++] = htonl((uint32_t)(if_band_offset >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(if_band_offset));
-
-				break;
-
-			// RF Reference Frequency Offset
-			case (1 << 26):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// RF Reference Frequency Offset uses 44.20 fixed-point encoding
-				int64_t rf_reference_frequency_offset = convert_to_44_20(pkt->cif0_warnings.rf_reference_frequency_offset);
-
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency_offset >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency_offset));
-
-				break;
-
-			// RF Reference Frequency
-			case (1 << 27):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// RF Reference Frequency uses 44.20 fixed-point encoding
-				int64_t rf_reference_frequency = convert_to_44_20(pkt->cif0_warnings.rf_reference_frequency);
-
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency));
-
-				break;
-			
-			// IF Reference Frequency
-			case (1 << 28):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// IF Reference Frequency uses 44.20 fixed-point encoding
-				int64_t if_reference_frequency = convert_to_44_20(pkt->cif0_warnings.if_reference_frequency);
-
-				buf[buffer_index++] = htonl((uint32_t)(if_reference_frequency >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(if_reference_frequency));
-
-				break;
-
-			// Bandwidth
-			case (1 << 29):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// Bandwidth uses 44.20 fixed-point encoding
-				int64_t bandwidth = convert_to_44_20(pkt->cif0_warnings.bandwidth);
-
-				buf[buffer_index++] = htonl((uint32_t)(bandwidth >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(bandwidth));
-
-				break;
-
-			// Reference Point Identifier
-			case (1 << 30):
-				buf[buffer_index++] = htonl(pkt->cif0_warnings.reference_point_id);
-
-			default:
-				break;
-		}
+		memcpy(&indicator_word, &pkt->warnings_payload[i], sizeof(indicator_word));
+		buf[buffer_index++] = htonl(indicator_word);
 	}
 
-	if (pkt->cif0_warnings.cif0_word.cif1_enable && pkt->cif1_warnings != NULL)
+	if (pkt->cif0_warnings.cif1_enable && pkt->cif1_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
 		// then the logic for copying the CIF1 attributes can be implemented
 	}
 
 	// CIF2 Word
-	if (pkt->cif0_warnings.cif0_word.cif2_enable && pkt->cif2_warnings != NULL)
+	if (pkt->cif0_warnings.cif2_enable && pkt->cif2_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
 		// then the logic for copying the CIF2 attributes can be implemented
 	}
 
 	// CIF3 Word
-	if (pkt->cif0_warnings.cif0_word.cif3_enable && pkt->cif3_warnings != NULL)
+	if (pkt->cif0_warnings.cif3_enable && pkt->cif3_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
 		// then the logic for copying the CIF3 attributes can be implemented
 	}
 
 	// CIF7 Word
-	if (pkt->cif0_warnings.cif0_word.cif7_enable && pkt->cif7_warnings != NULL)
+	if (pkt->cif0_warnings.cif7_enable && pkt->cif7_warnings != NULL)
 	{
 		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
 		// then the logic for copying the CIF7 attributes can be implemented
@@ -1618,146 +1508,35 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 
 	// CIF0
 
-	memcpy(&cif_word, &pkt->cif0_errors.cif0_word, sizeof(cif_word));
-
-	// Iterating through each of the 32 options in CIF0 from 31 to 0.
-	// "Context Field Indicator" doesn't apply to Command Packets, so we'll actually start from 30.
-	for (int field_index = 30; field_index >= 0; field_index--)
+	// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
+	for (uint16_t i = 0; i < pkt->errors_payload_num_words; i++)
 	{
-		field_bit = (1 << field_index);
-
-		// Field is not present
-		if (!(cif_word & field_bit))
-			continue;
-
-		// Checking if there's at least 1 byte left. For fields using more than 1 byte, they will require
-		// an additional check in their case-block.
-		if (buffer_index >= max_words)
-			return -ENOBUFS;
-
-		// See Table 9.1-1 in the VITA 49.2 full spec document. Not all of those fields are applicable to Control Packets.
-		switch (field_bit)
-		{
-			// Sample Rate
-			case (1 << 21):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-		
-				// Sample Rate uses a 44.20 fixed-point encoding
-				int64_t sample_rate = convert_to_44_20(pkt->cif0_errors.sample_rate);
-
-				buf[buffer_index++] = htonl((uint32_t)(sample_rate >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(sample_rate));
-
-				break;
-
-			// Gain
-			case (1 << 23):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-		
-				// Gain packs 2 9.7 fixed-point integers into the same 32-bit field.
-				// The upper 16 bits represent Stage 2 gain while the lower 16 bits represent Stage 1 gain.
-
-				buf[buffer_index++] = htonl((uint32_t)((convert_to_9_7(pkt->cif0_errors.gain_stage_2) << 16) | (convert_to_9_7(pkt->cif0_errors.gain_stage_1))));
-				break;
-
-			// IF Band Offset
-			case (1 << 25):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// IF Band Offset uses 44.20 fixed-point encoding
-				int64_t if_band_offset = convert_to_44_20(pkt->cif0_errors.if_band_offset);
-
-				buf[buffer_index++] = htonl((uint32_t)(if_band_offset >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(if_band_offset));
-
-				break;
-
-			// RF Reference Frequency Offset
-			case (1 << 26):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// RF Reference Frequency Offset uses 44.20 fixed-point encoding
-				int64_t rf_reference_frequency_offset = convert_to_44_20(pkt->cif0_errors.rf_reference_frequency_offset);
-
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency_offset >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency_offset));
-
-				break;
-
-			// RF Reference Frequency
-			case (1 << 27):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// RF Reference Frequency uses 44.20 fixed-point encoding
-				int64_t rf_reference_frequency = convert_to_44_20(pkt->cif0_errors.rf_reference_frequency);
-
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(rf_reference_frequency));
-
-				break;
-			
-			// IF Reference Frequency
-			case (1 << 28):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// IF Reference Frequency uses 44.20 fixed-point encoding
-				int64_t if_reference_frequency = convert_to_44_20(pkt->cif0_errors.if_reference_frequency);
-
-				buf[buffer_index++] = htonl((uint32_t)(if_reference_frequency >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(if_reference_frequency));
-
-				break;
-
-			// Bandwidth
-			case (1 << 29):
-				if (buffer_index + 1 >= max_words)
-					return -ENOBUFS;
-
-				// Bandwidth uses 44.20 fixed-point encoding
-				int64_t bandwidth = convert_to_44_20(pkt->cif0_errors.bandwidth);
-
-				buf[buffer_index++] = htonl((uint32_t)(bandwidth >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(bandwidth));
-
-				break;
-
-			// Reference Point Identifier
-			case (1 << 30):
-				buf[buffer_index++] = htonl(pkt->cif0_errors.reference_point_id);
-
-			default:
-				break;
-		}
+		memcpy(&indicator_word, &pkt->errors_payload[i], sizeof(indicator_word));
+		buf[buffer_index++] = htonl(indicator_word);
 	}
 
-	if (pkt->cif0_errors.cif0_word.cif1_enable && pkt->cif1_errors != NULL)
+	if (pkt->cif0_errors.cif1_enable && pkt->cif1_errors != NULL)
 	{
 		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
 		// then the logic for copying the CIF1 attributes can be implemented
 	}
 
 	// CIF2 Word
-	if (pkt->cif0_errors.cif0_word.cif2_enable && pkt->cif2_errors != NULL)
+	if (pkt->cif0_errors.cif2_enable && pkt->cif2_errors != NULL)
 	{
 		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
 		// then the logic for copying the CIF2 attributes can be implemented
 	}
 
 	// CIF3 Word
-	if (pkt->cif0_errors.cif0_word.cif3_enable && pkt->cif3_errors != NULL)
+	if (pkt->cif0_errors.cif3_enable && pkt->cif3_errors != NULL)
 	{
 		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
 		// then the logic for copying the CIF3 attributes can be implemented
 	}
 
 	// CIF7 Word
-	if (pkt->cif0_errors.cif0_word.cif7_enable && pkt->cif7_errors != NULL)
+	if (pkt->cif0_errors.cif7_enable && pkt->cif7_errors != NULL)
 	{
 		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
 		// then the logic for copying the CIF7 attributes can be implemented
@@ -1772,7 +1551,7 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
 	return buffer_index;
 }
 
-__vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_X_packet *pkt)
+__vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt)
 {
 	if (!buf || !pkt || words == 0)
 		return -EINVAL;
@@ -1910,11 +1689,11 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
 		return -1;
 
-	memcpy(&pkt->cif0_warnings.cif0_word, &cif_word, sizeof(cif_word));
+	memcpy(&pkt->cif0_warnings, &cif_word, sizeof(cif_word));
 	cif_word_offset++;
 
 	/* CIF1 Word */
-	if (pkt->cif0_warnings.cif0_word.cif1_enable)
+	if (pkt->cif0_warnings.cif1_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF1 struct
 		if (pkt->cif1_warnings == NULL)
@@ -1934,7 +1713,7 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	}
 
 	/* CIF2 Word */
-	if (pkt->cif0_warnings.cif0_word.cif2_enable)
+	if (pkt->cif0_warnings.cif2_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF2 struct
 		if (pkt->cif2_warnings == NULL)
@@ -1954,7 +1733,7 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	}
 	
 	/* CIF3 Word */
-	if (pkt->cif0_warnings.cif0_word.cif3_enable)
+	if (pkt->cif0_warnings.cif3_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF3 struct
 		if (pkt->cif3_warnings == NULL)
@@ -1974,7 +1753,7 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	}
 	
 	/* CIF7 Word */
-	if (pkt->cif0_warnings.cif0_word.cif7_enable)
+	if (pkt->cif0_warnings.cif7_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF7 struct
 		if (pkt->cif7_warnings == NULL)
@@ -2001,11 +1780,11 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
 		return -1;
 
-	memcpy(&pkt->cif0_errors.cif0_word, &cif_word, sizeof(cif_word));
+	memcpy(&pkt->cif0_errors, &cif_word, sizeof(cif_word));
 	cif_word_offset++;
 
 	/* CIF1 Word */
-	if (pkt->cif0_warnings.cif0_word.cif1_enable)
+	if (pkt->cif0_warnings.cif1_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF1 struct
 		if (pkt->cif1_errors == NULL)
@@ -2025,7 +1804,7 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	}
 
 	/* CIF2 Word */
-	if (pkt->cif0_errors.cif0_word.cif2_enable)
+	if (pkt->cif0_errors.cif2_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF2 struct
 		if (pkt->cif2_errors == NULL)
@@ -2045,7 +1824,7 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	}
 	
 	/* CIF3 Word */
-	if (pkt->cif0_errors.cif0_word.cif3_enable)
+	if (pkt->cif0_errors.cif3_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF3 struct
 		if (pkt->cif3_errors == NULL)
@@ -2065,7 +1844,7 @@ __vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words,
 	}
 	
 	/* CIF7 Word */
-	if (pkt->cif0_errors.cif0_word.cif7_enable)
+	if (pkt->cif0_errors.cif7_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF7 struct
 		if (pkt->cif7_errors == NULL)

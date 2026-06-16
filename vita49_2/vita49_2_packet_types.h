@@ -113,26 +113,25 @@ struct vita49_2_control_packet {
 
 /**
  * @struct vita49_2_ackV_X_packet
- * @brief Represents a parsed VITA 49.2 AckV/X Packet.
+ * @brief Represents a parsed VITA 49.2 AckX Packet.
  * 
  * This structure holds all decompressed fields and metadata of a 
- * VITA 49.2 AckV/X Packet, providing easy access to components.
+ * VITA 49.2 AckX Packet, providing easy access to components.
  */
-struct vita49_2_ackV_X_packet {
+struct vita49_2_ackX_packet {
 	
 	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
 
 	/* WARNINGS */
-	struct vita49_2_warning_error_indicators warning_indicators;	/* Warnings resulting from executing commands */
-	struct vita49_2_cif0_fields cif0_warnings;	/* Indicates which of the CIF0 had warnings */
+	struct cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
 
-	// Unlikely to be used, but ADI retains the right to implement these fields in the future.
-	// Using pointers as embedding each of these structs would result in a lot of bloat.
-	struct vita49_2_cif1_fields* cif1_warnings;	/* CIF1 Word and Fields */
-	struct vita49_2_cif2_fields* cif2_warnings;	/* CIF2 Word and Fields */
-	struct vita49_2_cif3_fields* cif3_warnings;	/* CIF3 Word and Fields */
-	struct vita49_2_cif7_fields* cif7_warnings;	/* CIF7 Word and Fields */
+	// Not currently in use, but ADI retains the right to implement these fields in the future.
+	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
+	struct cif1_word* cif1_warnings;	
+	struct cif2_word* cif2_warnings;
+	struct cif3_word* cif3_warnings;
+	struct cif7_word* cif7_warnings;
 
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0_warnings struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
@@ -140,23 +139,57 @@ struct vita49_2_ackV_X_packet {
 
 
 	/* ERRORS */
-	struct vita49_2_warning_error_indicators error_indicators;		/* Errors resulting from executing commands*/
-	struct vita49_2_cif0_fields cif0_errors;	/* Indicates which of the CIF0 had warnings */
-
-	struct vita49_2_cif1_fields* cif1_errors;	/* CIF1 Word and Fields */
-	struct vita49_2_cif2_fields* cif2_errors;	/* CIF2 Word and Fields */
-	struct vita49_2_cif3_fields* cif3_errors;	/* CIF3 Word and Fields */
-	struct vita49_2_cif7_fields* cif7_errors;	/* CIF7 Word and Fields */
+	struct cif0_word cif0_errors;	/* Indicates which of the CIF0 had errors */
+	struct cif1_word* cif1_errors;	
+	struct cif2_word* cif2_errors;
+	struct cif3_word* cif3_errors;
+	struct cif7_word* cif7_errors;
 
 
-	// Attribute values that resulted in errors
-	const uint32_t *warnings_payload;  			/* Pointer to the start of the payload words */
-	uint16_t warnings_payload_num_words;     	/* Number of 32-bit words in the payload */
+	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
+	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 full spec document
+	// for the list of predefined warnings/errors)
+	struct vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
+	uint16_t warnings_payload_num_words;     					/* Number of 32-bit words in the payload */
 
-	// Attribute values that resulted in errors
-	const uint32_t *errors_payload;  			/* Pointer to the start of the payload words */
-	uint16_t errors_payload_num_words;     	/* Number of 32-bit words in the payload */
+	// Same as the warning fields, but for errors
+	struct vita49_2_warning_error_indicators* errors_payload;  	/* Pointer to the start of the payload words */
+	uint16_t errors_payload_num_words;     						/* Number of 32-bit words in the payload */
 
+};
+
+/**
+ * @struct vita49_2_ackV_packet
+ * @brief Represents a parsed VITA 49.2 AckV Packet.
+ * 
+ * This structure holds all decompressed fields and metadata of a 
+ * VITA 49.2 AckV Packet, providing easy access to components.
+ */
+struct vita49_2_ackV_packet {
+	
+	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
+	
+	/* WARNINGS */
+	struct cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
+
+	// Not currently in use, but ADI retains the right to implement these fields in the future.
+	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
+	struct cif1_word* cif1_warnings;	
+	struct cif2_word* cif2_warnings;
+	struct cif3_word* cif3_warnings;
+	struct cif7_word* cif7_warnings;
+
+	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0_warnings struct.
+	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
+	// Always access those enables through the cif0_warnings struct.
+
+	// AckV messages aren't allowed to have error fields unlike AckX
+
+	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
+	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 full spec document
+	// for the list of predefined warnings/errors)
+	struct vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
+	uint16_t warnings_payload_num_words;     					/* Number of 32-bit words in the payload */
 };
 
 /**
@@ -293,7 +326,7 @@ __vrt_api ssize_t vita49_2_generate_control_packet(const struct vita49_2_control
 __vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita49_2_control_packet *pkt);
 
 /**
- * @brief Populates a 32-bit word buffer with data for an AckV/AckX Packet. 
+ * @brief Populates a 32-bit word buffer with data for an AckX Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
@@ -302,7 +335,7 @@ __vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, s
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_X_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_ackv_ackx_packet structure. 
@@ -313,7 +346,7 @@ __vrt_api ssize_t vita49_2_generate_ackv_ackx_packet(const struct vita49_2_ackV_
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackv_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_X_packet *pkt);
+__vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a AckS Packet. 

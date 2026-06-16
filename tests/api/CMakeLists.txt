@@ -14,6 +14,7 @@ set(API_TEST_TARGETS
     test_typed_attr
     test_buffer
     test_lowlevel
+    test_v
 )
 
 if(WITH_VITA49_2_BACKEND)
@@ -24,7 +25,7 @@ endif()
 add_library(test_common STATIC test_framework.h)
 set_target_properties(test_common PROPERTIES LINKER_LANGUAGE C)
 target_include_directories(test_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_common PUBLIC iio)
+target_link_libraries(test_common PUBLIC iio iio-compat)
 
 # Build each API test
 foreach(test ${API_TEST_TARGETS})

@@ -63,6 +63,34 @@ enum vita49_2_control_action_modes {
 	VITA49_2_CTRL_RESERVED	= 3
 };
 
+// ================================================================================================
+// FIELD-SPECIFIC PREDEFINED WARNINGS AND ERRORS (see Table 8.4.1.2.1-1 in the VITA 49.2 full spec)
+// ================================================================================================
+enum vita49_2_warnings_error_codes {
+	ENOEXECUTE 	= 31,		// The field was NOT executed because of a Warning or Error (ENOEXEC is a conflicting name)
+	EDEVFAIL 	= 30,		// The field was NOT executed properly because of a device (such as hardware) failure
+	ENOFIELD	= 29,		// The device does NOT accept this particular Control field
+	EOUTRANGE	= 28,		// The supplied field value is beyond the capability or operational range of this device
+	EPRECISION	= 27,		// The supplied field value specifies a level of precision beyond the capability of this device
+	EINVALID	= 26,		// This field had an invalid setting beyond those specified above
+	ETIMESTAMP	= 25,		// The Controllee was unable to meet the timestamp requirement specified by the [T2,T1,T0] bits for the specified field.
+	EHAZPOWER	= 24,		// The supplied field will cause transmission of hazardous power levels.
+	EDISTORTION = 23,		// The supplied field will cause components to be over driven leading to distortion. This applies to both receive and transmit.
+	EINBPOWER	= 22,		// The supplied field will place the in-band power levels out of compliance
+	EOUTBPOWER 	= 21,		// The supplied field will place the out-of-band power levels out of compliance
+	ECOSINTRF	= 20,		// The supplied field will cause co-site interference between transmitter and receiver at same location
+	EREGINTRF	= 19,		// The supplied field will cause interference between devices in the same operational region
+
+	// 18-13 are reserved
+
+	// 12-1 are user-defined
+	EBADARGS	= 2,		// Bad arguments to the function call (null pointer, etc.)
+	EGENERIC	= 1,		// Generic failure
+	
+	// 0 is reserved, I'll use this as the no error indicator
+	ENONE		= 0			// No warnings/errors were produced
+};
+
 // =============================================================================
 // PACKET CLASS CODES
 // =============================================================================
@@ -568,18 +596,6 @@ struct vita49_2_ecef_relative_ephemeris{};
 // See Section 9.13.2 in the VITA 49.2 full spec document for more information.
 struct vita49_2_context_association_lists{};
 
-// TODO: Define a struct to represent CIF1 similarly to how we've defined CIF0 below.
-struct vita49_2_cif1_fields {};
-
-// TODO: Define a struct to represent CIF2 similarly to how we've defined CIF0 below.
-struct vita49_2_cif2_fields {};
-
-// TODO: Define a struct to represent CIF3 similarly to how we've defined CIF0 below.
-struct vita49_2_cif3_fields {};
-
-// TODO: Define a struct to represent CIF7 similarly to how we've defined CIF0 below.
-struct vita49_2_cif7_fields {};
-
 struct vita49_2_device_identifier {
 
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -746,6 +762,26 @@ struct vita49_2_cif0_fields {
 	struct vita49_2_gps_ascii gps_ascii;								/**< Some devices output information in formatted ASCII strings ("GPS sentences") */
 
 	struct vita49_2_context_association_lists context_association_lists;	/**< CALs allow a data packet to be associated with multiple context packets from relevant reference points or systems */
+};
+
+// TODO: Define a struct to represent CIF1 similarly to how we've defined CIF0 below.
+struct vita49_2_cif1_fields {
+	struct cif1_word {} cif1_word;
+};
+
+// TODO: Define a struct to represent CIF2 similarly to how we've defined CIF0 below.
+struct vita49_2_cif2_fields {
+	struct cif2_word {} cif2_word;
+};
+
+// TODO: Define a struct to represent CIF3 similarly to how we've defined CIF0 below.
+struct vita49_2_cif3_fields {
+	struct cif3_word {} cif3_word;
+};
+
+// TODO: Define a struct to represent CIF7 similarly to how we've defined CIF0 below.
+struct vita49_2_cif7_fields {
+	struct cif7_word {} cif7_word;
 };
 
 

@@ -16,6 +16,7 @@
 #include <vita49_2/vita49_2_packet_types.h>
 #include <iio/iio.h>
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -25,6 +26,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <time.h>
+#include <math.h>
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
@@ -87,6 +89,18 @@ int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit,
  * @return int 
  */
 int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt);
+
+/**
+ * @brief Validates the commands in a Control Packet by verifying that provided new value for an attribute is within the acceptable range.
+ * 
+ * @param ctx
+ * @param control_packet 
+ * @param ackV_packet 
+ * @return int 
+ */
+int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* ackV_packet);
+
+int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif0_bit, uint32_t new_value);
 
 // ==============================================================
 // GLOBAL VARIABLES
@@ -606,22 +620,24 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 						// I don't need to check that this payload pushes over the 65535 word limit because I specified
 						// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
-						time_data_packet.payload = (uint32_t *)(iio_block_first(rx_block, i_channel));
+						time_data_packet.payload = (struct vita49_2_iq_item *)(iio_block_first(rx_block, i_channel));
 
-						// We also have to write the size of the payload
-						time_data_packet.payload_num_words = iio_device_get_sample_size(rx_device, rx_channel_mask);
+						ssize_t payload_size = iio_device_get_sample_size(rx_device, rx_channel_mask);
+
 						// If there's an error, then we have to use an alternative method of calculating the size
-						if (time_data_packet.payload_num_words < 0)
+						if (payload_size < 0)
 						{
-							time_data_packet.payload_num_words = (uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel));
+							payload_size = (uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel));
 							
 							// If this failed as well, then we shouldn't send the packet at all
-							if (time_data_packet.payload_num_words < 0)
+							if (payload_size < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Encountered an error while reading data from the RX block.\n");
 								continue;
 							}
 						}
+
+						time_data_packet.payload_num_words = payload_size;
 
 						// Next we have to set the Stream ID. We can check if it exists in the existing Stream ID table
 						// and insert it if it doesn't.
@@ -633,7 +649,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						ssize_t ret_value;
 
 						// Error occurred
-						if ((ret_value = insert_stream_id(&device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
+						if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
 						{
 							fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Signal Time Data Packet that was to be sent.\n");
 							continue;
@@ -668,8 +684,29 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP.\n");
 					}
 
+					// If an AckV packet was requested, we need to validate the commands in the Control Packet and send
+					// back the AckV packet
+					if (control_packet.command_prologue.cam.request_ack_v)
+					{
+						struct vita49_2_ackV_packet ackV_packet;
+
+						if (validate_commands(arguments->ctx, &control_packet, &ackV_packet) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet.\n");
+						}
+						else
+						{
+							// Populating the rest of the AckV Packet
+
+						}
+					}
+
 					// Executing the commands in the packet. Currently ADI only supports Execute Mode and No-Action Mode for Control Packets,
-					// however we retain the right to implement Dry Run Mode in the future.
+				// however we retain the right to implement Dry Run Mode in the future.
+
+					// TODO: Add logic that looks at the timestamp and schedules execution of the controls in the future.
+					// An idea might be to spawn a detached pthread that checks a timer_fd and executes the controls once the timer
+					// has been met. Additional complexity has to be considered if we support cancellation packets which should kill that pthread.
 					else if (execute_commands(arguments->ctx, &control_packet) < 0)
 					{
 						fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
@@ -1101,6 +1138,539 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 		ret = iio_attr_write_double(attr, val);
 		if (ret < 0)
 			fprintf(stderr, "Failed to write %s\n", m->attr_name);
+	}
+
+	return 0;
+}
+
+enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, char* available_range)
+{
+	// We need to iterate through the CIF mappings linked list until we find a hardware attribute
+	// associated with this CIF bit
+	struct vita49_2_cif_mapping * cif_mappings;
+
+	for (cif_mappings = vita49_2_cif_mappings_list; cif_mappings != NULL; cif_mappings = cif_mappings->next) 
+	{
+		// Checking that the current mapping and the attribute we're looking for belong to the same
+		// CIF group (0/1/2/3/7)
+		if (cif_mappings->cif_type != cif_type)
+			continue;
+
+		// Checking that the specific CIF bit we're targeting exists in this mapping
+		if ((1 << cif_mappings->cif_bit) != cif_bit)
+			continue;
+
+		// Since neither of the 2 conditions above were true, we have a match!
+		goto match;
+	}
+
+	// If the loop exited naturally after going through all of the mappings without hitting the goto statement,
+	// then there was no viable mapping
+	return -ENOFIELD;
+
+	match:
+	// Find device and channel
+	struct iio_device *device;
+	struct iio_channel *channel;
+
+	device = iio_context_find_device(ctx, cif_mappings->device_name);
+	if (!device) 
+	{
+		fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", cif_mappings->device_name);
+		return -ENOFIELD;
+	}
+
+	int ret_value;
+
+	// Appending "_available" to access the fd containing the valid range of values for this attribute
+	char available_options_fd_name[74];
+	snprintf(available_options_fd_name, sizeof(available_options_fd_name), "%s_available", cif_mappings->attr_name);
+
+	// Attribute we're modifying is associated with a specific channel so we must find that channel first.
+	if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
+	{
+		channel = iio_device_find_channel(device, available_options_fd_name, cif_mappings->is_output);
+		if (!channel)
+		{
+			/* Fallback to opposite direction just in case */
+			channel = iio_device_find_channel(device, available_options_fd_name, !cif_mappings->is_output);
+			if (!channel)
+			{
+				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", available_options_fd_name);
+				return -ENOFIELD;
+			}
+		}
+
+		ret_value = iio_channel_attr_read(channel, available_options_fd_name, available_range, sizeof(available_range));
+	
+	} 
+	// Attribute we're modifying is associated with the device as a whole
+	else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
+	{
+		ret_value = iio_device_attr_read(device, available_options_fd_name, available_range, sizeof(available_range));
+			return ret_value;		
+	} 
+	// Attribute we're modifying is a debug attribute (advanced configuration)
+	else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
+	{
+		ret_value = iio_device_debug_attr_read(device, available_options_fd_name, available_range, sizeof(available_range));
+	}
+	// Otherwise the attribute doesn't have a proper mapping
+	else
+	{
+		return -ENOFIELD;
+	}
+
+	if (ret_value == -ENOSYS || ret_value == -ENOENT)	
+		return -ENOFIELD;
+	else
+		return ret_value;
+}
+
+int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint32_t new_value)
+{
+	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
+		return -EBADARGS;
+
+	// For storing the output of the attribute/fd
+	char available_range[256];
+	
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	if (ret_value < 0)
+		return -ENOFIELD;
+
+	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+		// "[min step max]"
+	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+	// in the brackets:
+		// "[500 600 700 750 900]"
+	uint32_t values[10];
+	int successes = sscanf(available_range, "[%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "]",
+	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
+	// Means we're dealing with the first case
+	if (successes == 3)
+	{
+		// Checking bounds
+		if (values[0] > new_value || new_value > values[2])
+			return -EOUTRANGE;
+
+		// Checking if new value lands on a proper increment/step.
+		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
+		if (((new_value - values[0]) % values[1]) != 0)
+			return -EPRECISION;
+
+		// Otherwise our new value is valid
+		return 0;
+	}
+	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
+	// see if the provided new value is one of those values
+	else if (successes > 0)
+	{
+		for (uint8_t i = 0; i < sizeof(values)/sizeof(values[0]); i++)
+		{
+			if (new_value == values[i])
+				return 0;
+		}
+
+		return -EOUTRANGE;
+	}
+
+	// Otherwise there was some kind of error
+	return -EGENERIC;
+}
+
+int validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint64_t new_value)
+{
+	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
+		return -EBADARGS;
+
+	// For storing the output of the attribute/fd
+	char available_range[1024];
+	
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	if (ret_value < 0)
+		return ENOFIELD;
+
+	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+		// "[min step max]"
+	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+	// in the brackets:
+		// "[500 600 700 750 900]"
+	uint64_t values[10];
+	int successes = sscanf(available_range, "[%" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 "]",
+	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
+	// Means we're dealing with the first case
+	if (successes == 3)
+	{
+		// Checking bounds
+		if (values[0] > new_value || new_value > values[2])
+			return -EOUTRANGE;
+
+		// Checking if new value lands on a proper increment/step.
+		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
+		if (((new_value - values[0]) % values[1]) != 0)
+			return -EPRECISION;
+
+		// Otherwise our new value is valid
+		return 0;
+	}
+	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
+	// see if the provided new value is one of those values
+	else if (successes > 0)
+	{
+		for (uint8_t i = 0; i < successes; i++)
+		{
+			if (new_value == values[i])
+				return 0;
+		}
+
+		return -EOUTRANGE;
+	}
+
+	// Otherwise there was some error
+	return -EGENERIC;
+}
+
+int validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, int64_t new_value)
+{
+	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
+		return -EBADARGS;
+
+	// For storing the output of the attribute/fd
+	char available_range[1024];
+	
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	if (ret_value < 0)
+		return ENOFIELD;
+
+	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+		// "[min step max]"
+	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+	// in the brackets:
+		// "[500 600 700 750 900]"
+	int64_t values[10];
+	int successes = sscanf(available_range, "[%" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 "]",
+	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
+	// Means we're dealing with the first case
+	if (successes == 3)
+	{
+		// Checking bounds
+		if (values[0] > new_value || new_value > values[2])
+			return -EOUTRANGE;
+
+		// Checking if new value lands on a proper increment/step.
+		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
+		if (((new_value - values[0]) % values[1]) != 0)
+			return -EPRECISION;
+
+		// Otherwise our new value is valid
+		return 0;
+	}
+	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
+	// see if the provided new value is one of those values
+	else if (successes > 0)
+	{
+		for (uint8_t i = 0; i < successes; i++)
+		{
+			if (new_value == values[i])
+				return 0;
+		}
+
+		return -EOUTRANGE;
+	}
+
+	// Otherwise there was some error
+	return -EGENERIC;
+}
+
+enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, double new_value)
+{
+	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
+		return -EBADARGS;
+
+	// For storing the output of the attribute/fd
+	char available_range[1024];
+	
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	if (ret_value < 0)
+		return -ENOFIELD;
+
+	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+		// "[min step max]"
+	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+	// in the brackets:
+		// "[500 600 700 750 900]"
+	double values[10];
+	int successes = sscanf(available_range, "[%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf]",
+	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
+	// Means we're dealing with the first case
+	if (successes == 3)
+	{
+		// Checking bounds
+		if (values[0] > new_value || new_value > values[2])
+			return -EOUTRANGE;
+
+		// Checking if new value lands on a proper increment/step.
+		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
+		// With double/fps, one extra step is to check if it's below some threshold to qualify as 0.
+		double remainder = fmod((new_value - values[0]), values[1]);
+		if (fabs(remainder) > 1e-9)
+			return -EPRECISION;
+
+		// Otherwise our new value is valid
+		return 0;
+	}
+	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
+	// see if the provided new value is one of those values
+	else if (successes > 0)
+	{
+		for (uint8_t i = 0; i < successes; i++)
+		{
+			if (new_value == values[i])
+				return 0;
+		}
+
+		return -EOUTRANGE;
+	}
+
+	// Otherwise there was some error
+	return -EGENERIC;
+}
+
+enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, float new_value)
+{
+	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
+		return -EBADARGS;
+
+	// For storing the output of the attribute/fd
+	char available_range[1024];
+	
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	if (ret_value < 0)
+		return -ENOFIELD;
+
+	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+		// "[min step max]"
+	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+	// in the brackets:
+		// "[500 600 700 750 900]"
+	float values[10];
+	int successes = sscanf(available_range, "[%f %f %f %f %f %f %f %f %f %f]",
+	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
+	// Means we're dealing with the first case
+	if (successes == 3)
+	{
+		// Checking bounds
+		if (values[0] > new_value || new_value > values[2])
+			return -EOUTRANGE;
+
+		// Checking if new value lands on a proper increment/step.
+		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
+		// With double/fps, one extra step is to check if it's below some threshold to qualify as 0.
+		double remainder = fmodf((new_value - values[0]), values[1]);
+		if (fabs(remainder) > 1e-9)
+			return -EPRECISION;
+
+		// Otherwise our new value is valid
+		return 0;
+	}
+	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
+	// see if the provided new value is one of those values
+	else if (successes > 0)
+	{
+		for (uint8_t i = 0; i < successes; i++)
+		{
+			if (new_value == values[i])
+				return 0;
+		}
+
+		return -EOUTRANGE;
+	}
+
+	// Otherwise there was some error
+	return -EGENERIC;
+}
+
+int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* ackV_packet)
+{	
+	if (!ctx || !control_packet || !ackV_packet)
+		return -EINVAL;
+
+	struct vita49_2_cif_mapping *m;
+	uint32_t cif0_word;
+
+	// For keeping track of which CIF0 fields have generated warnings
+	struct vita49_2_warning_error_indicators cif0_warnings[32] = {0};
+	uint8_t cif0_warnings_index = 0;
+
+	// We're assuming the Control Packet has already been parsed and that the cif0 (and cif1-7) struct has already
+	// been populated with the parsed data.
+	memset(&ackV_packet->cif0_warnings, 0, sizeof(ackV_packet->cif0_warnings));
+
+	// Iterate over each bit of CIF 0 (that corresponds to an actual command, not the reserved or CIF enable bits)
+	// TODO: Logic to support CIF1/2/3/7 as well
+	for (int cif_bit = 30; cif_bit >= 0; cif_bit--)
+	{
+		// Bits that don't correspond to an actual command:
+			// 31, 22, 20-0
+		if (cif_bit == 22 || cif_bit <= 20)
+			continue;
+
+		// Checking that the bit is asserted/field is enabled
+		memcpy(&cif0_word, &control_packet->cif0.cif0_word, sizeof(cif0_word));
+		if ((1 << cif_bit) & (cif0_word == 0))
+			continue;
+
+		// Iterating over each mapping
+		for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next) 
+		{
+			if (!(m->cif_type == 0 && m->cif_bit == cif_bit))
+				continue;
+
+			// If we get here, that means we have a match. Now we have to extract the new attribute value
+			// from the packet and feed it to the appropriate command validation function based on the type.
+			int ret_value;
+
+			// Checking CIF0
+			if (m->cif_type == CIF0)
+			{
+				// switch-statements are faster for large conditions :D
+				switch (m->cif_bit)
+				{
+					// Context Field Change Indicator is N/A for Command Packets
+
+					// Reference Point Identifier
+					case (1 << 30):
+						// TODO: Need logic to handle this. Travis and I discussed this, and conceivably we might use RPI to say that we're issuing
+						// commands to a separate board/card like a daughter/personality card.
+
+						// For now we'll return a warning. Errors aren't allowed for AckV.
+						ackV_packet->cif0_warnings.has_reference_point_id = 1;
+						cif0_warnings[cif0_warnings_index].erroneous_field = 1;
+						cif0_warnings_index++;
+
+						break;
+
+					// Bandwidth (double)
+					case (1 << 29):
+						
+						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.bandwidth)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_bandwidth = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));		
+							cif0_warnings_index++;	
+						}
+
+						break;
+
+					// IF Reference Frequency (double)
+					case (1 << 28):
+						
+						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.if_reference_frequency)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_if_reference_frequency = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));
+							cif0_warnings_index++;			
+						}
+						
+						break;
+
+					// RF Reference Frequency (double)
+					case (1 << 27):
+
+						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.rf_reference_frequency)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_rf_reference_frequency = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));
+							cif0_warnings_index++;			
+						}						
+						
+						break;
+
+					// RF Reference Frequency Offset (double)
+					case (1 << 26):
+
+						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.rf_reference_frequency_offset)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_rf_reference_frequency_offset = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));
+							cif0_warnings_index++;			
+						}	
+
+						break;
+
+					// IF Band Offset (double)
+					case (1 << 25):
+						
+						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.if_band_offset)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_if_band_offset = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));
+							cif0_warnings_index++;			
+						}	
+					
+						break;
+
+					// Reference Level (16-bit float)
+					case (1 << 24):
+						
+						if ((ret_value = validate_command_float(ctx, 0, cif_bit, control_packet->cif0.reference_level)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_reference_level = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));
+							cif0_warnings_index++;			
+						}	
+					
+						break;
+
+					// Gain
+					case (1 << 23):
+						// TODO: Since Gain consists of Stage 1 and Stage 2 gains, we need logic to figure out which one to use
+						// or if both should be used
+
+						// For now we'll return a warning.
+						ackV_packet->cif0_warnings.has_reference_point_id = 1;
+						cif0_warnings[cif0_warnings_index].erroneous_field = 1;
+						cif0_warnings_index++;
+
+						break;
+
+					// Sample Rate (double)
+					case (1 << 21):
+
+						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.sample_rate)) != ENONE)
+						{
+							ackV_packet->cif0_warnings.has_sample_rate = 1;
+							uint32_t warning_encoding = (1 << (-1 * ret_value));
+							memcpy(&cif0_warnings[cif0_warnings_index], &warning_encoding, sizeof(warning_encoding));
+							cif0_warnings_index++;			
+						}	
+
+						break;
+
+					// Timestamp Adjustment, Timestamp Calibration Time, Temperature, Device ID, State/Event Indicators, Signal Data Packet Payload Format,
+					// Formatted GPS, Formatted INS, ECEF Ephemeris, Relative Ephemeris, Ephemeris Reference ID, GPS ASCII, Context Association Lists
+					// are N/A for Command Packets
+
+					default:
+						fprintf(stderr, "vita49_2_client: Unsupported CIF0 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
+						continue;
+				}
+			}
+
+			// TODO: Logic to support CIF1/2/3/7 as well
+		}
 	}
 
 	return 0;

@@ -73,7 +73,7 @@ struct vita49_2_cif_mapping {
 	char channel_name[64];      			/* ID of the target iio_channel (e.g. "voltage0"). Ignored for device/debug attrs */
 	bool is_output;             			/* True if channel is an output (TX). Ignored for device/debug attrs */
 	char attr_name[64];         			/* Attribute to write to (e.g. "sampling_frequency") */
-	struct vita49_2_mapping *next;			/* Next item in the linked list */
+	struct vita49_2_cif_mapping *next;			/* Next item in the linked list */
 };
 
 /**
