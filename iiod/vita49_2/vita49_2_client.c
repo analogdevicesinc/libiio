@@ -456,7 +456,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	if (ackV_packet.command_prologue.ack_cam == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Failed to allocate memory for AckV CAM field.\n");
-		return 1;
+		return;
 	}
 
 	ackV_packet.command_prologue.ack_cam->ackV_request = 1;
@@ -1291,6 +1291,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 	// Find device and channel
 	struct iio_device *device;
 	struct iio_channel *channel;
+	struct iio_attr *attribute;
 
 	device = iio_context_find_device(ctx, cif_mappings->device_name);
 	if (!device) 
@@ -1320,19 +1321,48 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 			}
 		}
 
-		ret_value = iio_channel_attr_read(channel, available_options_fd_name, available_range, sizeof(available_range));
-	
+		// Now to find the channel attribute
+		attribute = iio_channel_find_attr(channel, available_options_fd_name);
+		if (attribute == NULL)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find channel attribute: %s\n", available_options_fd_name);
+			return -ENOFIELD;
+		}
+
+		if ((ret_value = iio_attr_read_raw(attribute, available_range, sizeof(available_range))) < 0)
+		{
+			fprintf(stderr, "vita49_2_process: Reading from channel attribute '%s' failed.\n", available_options_fd_name);
+		}
 	} 
 	// Attribute we're modifying is associated with the device as a whole
 	else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
 	{
-		ret_value = iio_device_attr_read(device, available_options_fd_name, available_range, sizeof(available_range));
-			return ret_value;		
+		attribute = iio_device_find_attr(device, available_options_fd_name);
+		if (attribute == NULL)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find device attribute: %s\n", available_options_fd_name);
+			return -ENOFIELD;
+		}
+
+		if ((ret_value = iio_attr_read_raw(attribute, available_range, sizeof(available_range))) < 0)
+		{
+			fprintf(stderr, "vita49_2_process: Reading from device attribute '%s' failed.\n", available_options_fd_name);
+		}
 	} 
 	// Attribute we're modifying is a debug attribute (advanced configuration)
 	else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
 	{
-		ret_value = iio_device_debug_attr_read(device, available_options_fd_name, available_range, sizeof(available_range));
+		attribute = iio_device_find_debug_attr(device, available_options_fd_name);
+		if (attribute == NULL)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find debug attribute: %s\n", available_options_fd_name);
+			return -ENOFIELD;
+		}
+
+		if ((ret_value = iio_attr_read_raw(attribute, available_range, sizeof(available_range))) < 0)
+		{
+			fprintf(stderr, "vita49_2_process: Reading from debug attribute '%s' failed.\n", available_options_fd_name);
+		}
 	}
 	// Otherwise the attribute doesn't have a proper mapping
 	else

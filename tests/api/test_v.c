@@ -40,15 +40,32 @@ int main(int argc, char **argv)
     }
     printf("Found channel: %s\n", iio_channel_get_name(channel));
 
-    // Read a device attribute (sampling_frequency is common)
-    // ret = iio_device_attr_read(phy, "calib_mode_available", buf, sizeof(buf));
-    ret = iio_channel_attr_read(channel, argv[1], buf, sizeof(buf));
-    if (ret < 0) {
-        printf("Failed to read attribute (error %zd)\n", ret);
-    } else {
-        buf[ret] = '\0';  // null terminate
-        printf("sampling_frequency = %s\n", buf);
+    struct iio_attr *attribute;
+    attribute = iio_channel_find_attr(channel, argv[1]);
+    if (attribute == NULL)
+    {
+        fprintf(stderr, "vita49_2_client: Could not find attribute.\n");
+        return -1;
     }
+
+    double val = 0;
+    if (iio_attr_read_raw(attribute, buf, sizeof(buf)) < 0)
+    {
+        fprintf(stderr, "vita49_2_client: Reading attribute failed.\n");
+        return -1;
+    }
+
+    printf("Val: %s", buf);
+
+    // // Read a device attribute (sampling_frequency is common)
+    // // ret = iio_device_attr_read(phy, "calib_mode_available", buf, sizeof(buf));
+    // ret = iio_channel_attr_read(channel, argv[1], buf, sizeof(buf));
+    // if (ret < 0) {
+    //     printf("Failed to read attribute (error %zd)\n", ret);
+    // } else {
+    //     buf[ret] = '\0';  // null terminate
+    //     printf("sampling_frequency = %s\n", buf);
+    // }
 
     // Cleanup
     iio_context_destroy(ctx);

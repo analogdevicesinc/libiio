@@ -92,7 +92,7 @@ endif()
 iio_option(WITH_VITA49_2_BACKEND "Add support for VITA49_2 backend" OFF "POSIX")
 if (WITH_VITA49_2_BACKEND)
 	target_sources(iiod PRIVATE vita49_2/vita49_2_client.c)
-	target_link_libraries(iiod LINK_PRIVATE vita49_2 iio-compat m)
+	target_link_libraries(iiod LINK_PRIVATE vita49_2 m)
 	# target_include_directories(iiod PRIVATE 
 	# ${CMAKE_CURRENT_SOURCE_DIR}/vita49_2
 	# ${CMAKE_SOURCE_DIR}/vita49_2
