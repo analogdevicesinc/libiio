@@ -20,8 +20,8 @@
 #endif
 
 static const struct option options[] = {
-	{"emulator", no_argument, 0, 'e'},
-	{0, 0, 0, 0},
+	{ "emulator", no_argument, 0, 'e' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	char **argw, *uri, *xml;
 	struct iio_context *ctx;
 	struct option *opts;
-	struct iio_context_params params = {0};
+	struct iio_context_params params = { 0 };
 	size_t buf_len;
 	int c, ret = EXIT_FAILURE;
 	int err;
@@ -45,8 +45,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
-	while ((c = getopt_long(argc, argv, "+e" COMMON_OPTIONS,  /* Flawfinder: ignore */
-					opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "+e" COMMON_OPTIONS, /* Flawfinder: ignore */
+				opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -56,8 +56,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argv[optind] != NULL
-					&& argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL &&
+					argv[optind][0] != '-')
 				optind++;
 			break;
 		case 'e':
@@ -75,8 +75,8 @@ int main(int argc, char **argv)
 		usage(MY_NAME, options, options_descriptions);
 		return EXIT_FAILURE;
 	}
-	ctx = handle_common_opts(MY_NAME, argc, argw, "",
-				 options, options_descriptions, &params, &ret);
+	ctx = handle_common_opts(
+			MY_NAME, argc, argw, "", options, options_descriptions, &params, &ret);
 
 	if (!ctx)
 		return ret;

@@ -5,11 +5,12 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+#include <string.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
-#include <string.h>
 
 static struct iio_context *test_ctx = NULL;
 static struct iio_channel *test_chn = NULL;
@@ -114,7 +115,8 @@ TEST_FUNCTION(channel_attributes)
 
 		if (attr) {
 			const char *name = iio_attr_get_name(attr);
-			DEBUG_PRINT("  INFO: Channel attribute %u: '%s'\n", i, name ? name : "NULL");
+			DEBUG_PRINT("  INFO: Channel attribute %u: '%s'\n", i,
+					name ? name : "NULL");
 		}
 	}
 
@@ -126,8 +128,10 @@ TEST_FUNCTION(channel_attributes)
 		if (first_attr) {
 			const char *name = iio_attr_get_name(first_attr);
 			if (name) {
-				const struct iio_attr *found_attr = iio_channel_find_attr(test_chn, name);
-				TEST_ASSERT(found_attr == first_attr, "Found attribute should match original");
+				const struct iio_attr *found_attr =
+						iio_channel_find_attr(test_chn, name);
+				TEST_ASSERT(found_attr == first_attr,
+						"Found attribute should match original");
 			}
 		}
 	}
@@ -160,7 +164,8 @@ TEST_FUNCTION(channel_event_attributes)
 		}
 	}
 
-	const struct iio_attr *invalid_attr = iio_channel_get_event_attr(test_chn, nb_event_attrs + 10);
+	const struct iio_attr *invalid_attr =
+			iio_channel_get_event_attr(test_chn, nb_event_attrs + 10);
 	TEST_ASSERT_PTR_NULL(invalid_attr, "Invalid event attribute index should return NULL");
 
 	if (nb_event_attrs > 0) {
@@ -168,13 +173,16 @@ TEST_FUNCTION(channel_event_attributes)
 		if (first_attr) {
 			const char *name = iio_attr_get_name(first_attr);
 			if (name) {
-				const struct iio_attr *found_attr = iio_channel_find_event_attr(test_chn, name);
-				TEST_ASSERT(found_attr == first_attr, "Found event attribute should match original");
+				const struct iio_attr *found_attr =
+						iio_channel_find_event_attr(test_chn, name);
+				TEST_ASSERT(found_attr == first_attr,
+						"Found event attribute should match original");
 			}
 		}
 	}
 
-	const struct iio_attr *nonexistent = iio_channel_find_event_attr(test_chn, "nonexistent_event_attr");
+	const struct iio_attr *nonexistent =
+			iio_channel_find_event_attr(test_chn, "nonexistent_event_attr");
 	TEST_ASSERT_PTR_NULL(nonexistent, "Nonexistent event attribute should return NULL");
 }
 
@@ -237,11 +245,10 @@ TEST_FUNCTION(channel_index_and_format)
 	const struct iio_data_format *format = iio_channel_get_data_format(test_chn);
 	if (format) {
 		DEBUG_PRINT("  INFO: Data format - length:%u, bits:%u, shift:%u, signed:%s, be:%s\n",
-			   format->length, format->bits, format->shift,
-			   format->is_signed ? "YES" : "NO",
-			   format->is_be ? "YES" : "NO");
-		DEBUG_PRINT("  INFO: Data format - scale:%f, offset:%f, repeat:%u\n",
-			   format->scale, format->offset, format->repeat);
+				format->length, format->bits, format->shift,
+				format->is_signed ? "YES" : "NO", format->is_be ? "YES" : "NO");
+		DEBUG_PRINT("  INFO: Data format - scale:%f, offset:%f, repeat:%u\n", format->scale,
+				format->offset, format->repeat);
 	} else {
 		DEBUG_PRINT("  INFO: No data format available\n");
 	}
@@ -262,7 +269,7 @@ TEST_FUNCTION(channel_conversion)
 		return;
 	}
 
-	uint8_t raw_data[16] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0};
+	uint8_t raw_data[16] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0 };
 	uint8_t converted_data[16];
 	uint8_t restored_data[16];
 

@@ -6,21 +6,21 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "attr.h"
-#include "iio-config.h"
-#include "iio-private.h"
-
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
 #include <string.h>
+
+#include "attr.h"
+#include "iio-config.h"
+#include "iio-private.h"
 
 void iio_buffer_set_data(struct iio_buffer *buf, void *data)
 {
 	buf->userdata = data;
 }
 
-void * iio_buffer_get_data(const struct iio_buffer *buf)
+void *iio_buffer_get_data(const struct iio_buffer *buf)
 {
 	return buf->userdata;
 }
@@ -47,7 +47,7 @@ bool iio_buffer_is_output(const struct iio_buffer *buf)
 	return false;
 }
 
-const struct iio_device * iio_buffer_get_device(const struct iio_buffer *buf)
+const struct iio_device *iio_buffer_get_device(const struct iio_buffer *buf)
 {
 	return buf->dev;
 }
@@ -88,8 +88,7 @@ int iio_buffer_stream_start(struct iio_buffer_stream *buf_stream)
 	int err;
 
 	if (buf_stream->nb_blocks == 0) {
-		dev_err(buf_stream->buf->dev,
-			"Cannot start buffer before creating blocks.\n");
+		dev_err(buf_stream->buf->dev, "Cannot start buffer before creating blocks.\n");
 		return -EINVAL;
 	}
 
@@ -120,8 +119,8 @@ static int iio_buffer_stream_enqueue_worker(void *_, void *d)
 	return iio_block_io(d);
 }
 
-struct iio_buffer_stream *
-iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask)
+struct iio_buffer_stream *iio_buffer_open(
+		struct iio_buffer *buf, const struct iio_channels_mask *mask)
 {
 	const struct iio_device *dev = buf->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
@@ -134,9 +133,9 @@ iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask)
 
 	sample_size = iio_device_get_sample_size(dev, mask);
 	if (sample_size < 0)
-		return iio_ptr((int) sample_size);
+		return iio_ptr((int)sample_size);
 	if (!sample_size)
-               return iio_ptr(-EINVAL);
+		return iio_ptr(-EINVAL);
 
 	buf_stream = zalloc(sizeof(*buf_stream));
 	if (!buf_stream)
@@ -159,8 +158,8 @@ iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask)
 	if (err)
 		goto err_free_mask;
 
-	buf_stream->worker = iio_task_create(iio_buffer_stream_enqueue_worker, NULL,
-                                    "enqueue-worker");
+	buf_stream->worker =
+			iio_task_create(iio_buffer_stream_enqueue_worker, NULL, "enqueue-worker");
 	err = iio_err(buf_stream->worker);
 	if (err < 0)
 		goto err_free_mutex;
@@ -185,21 +184,21 @@ err_free_bs:
 
 void iio_buffer_close(struct iio_buffer_stream *buf_stream)
 {
-       const struct iio_backend_ops *ops = buf_stream->buf->dev->ctx->ops;
+	const struct iio_backend_ops *ops = buf_stream->buf->dev->ctx->ops;
 
-       iio_buffer_stream_cancel(buf_stream);
+	iio_buffer_stream_cancel(buf_stream);
 
-       if (ops->close_buffer)
-               ops->close_buffer(buf_stream->pdata);
+	if (ops->close_buffer)
+		ops->close_buffer(buf_stream->pdata);
 
-       iio_task_destroy(buf_stream->worker);
-       iio_mutex_destroy(buf_stream->lock);
-       iio_channels_mask_destroy(buf_stream->mask);
-       free(buf_stream);
+	iio_task_destroy(buf_stream->worker);
+	iio_mutex_destroy(buf_stream->lock);
+	iio_channels_mask_destroy(buf_stream->mask);
+	free(buf_stream);
 }
 
-const struct iio_channels_mask *
-iio_buffer_stream_get_channels_mask(const struct iio_buffer_stream *buf_stream)
+const struct iio_channels_mask *iio_buffer_stream_get_channels_mask(
+		const struct iio_buffer_stream *buf_stream)
 {
 	return buf_stream->mask;
 }
@@ -209,26 +208,23 @@ unsigned int iio_buffer_get_attrs_count(const struct iio_buffer *buf)
 	return buf->attrlist.num;
 }
 
-const struct iio_attr *
-iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index)
+const struct iio_attr *iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index)
 {
 	return iio_attr_get(&buf->attrlist, index);
 }
 
-const struct iio_attr *
-iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
+const struct iio_attr *iio_buffer_find_attr(const struct iio_buffer *buf, const char *name)
 {
 	return iio_attr_find(&buf->attrlist, name);
 }
-
 
 unsigned int iio_buffer_get_scan_elements_count(const struct iio_buffer *buf)
 {
 	return buf->nb_scans;
 }
 
-const struct iio_channel *
-iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index)
+const struct iio_channel *iio_buffer_get_scan_element(
+		const struct iio_buffer *buf, unsigned int index)
 {
 	if (index >= buf->nb_scans)
 		return NULL;
@@ -236,8 +232,8 @@ iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index)
 	return buf->scans[index]->chn;
 }
 
-int iio_buffer_add_scan_element(struct iio_buffer *buf, const struct iio_channel *chn,
-			    const char *en_path)
+int iio_buffer_add_scan_element(
+		struct iio_buffer *buf, const struct iio_channel *chn, const char *en_path)
 {
 	struct iio_scan_element *scan, **scans;
 	int err;

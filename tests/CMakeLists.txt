@@ -1,6 +1,6 @@
 add_definitions(-UNDEBUG)
-if(TESTS_DEBUG)
+if (TESTS_DEBUG)
     add_definitions(-DTESTS_DEBUG)
-endif()
+endif ()
 add_subdirectory(hardware)
 add_subdirectory(api)

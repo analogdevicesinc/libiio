@@ -47,10 +47,10 @@ extern "C" {
 #endif
 
 #include <limits.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #if (defined(_WIN32) || defined(__MBED__))
 #ifndef _SSIZE_T_DEFINED
@@ -92,22 +92,21 @@ typedef ptrdiff_t ssize_t;
 #define __check_ret
 #endif
 
-#if !defined(_WIN32) && __GNUC__ >= 4 && \
-	!defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
-#  define __iio_api_export __attribute__((visibility ("default")))
-#  define __iio_api_import
+#if !defined(_WIN32) && __GNUC__ >= 4 && !defined(MATLAB_MEX_FILE) && !defined(MATLAB_LOADLIBRARY)
+#define __iio_api_export __attribute__((visibility("default")))
+#define __iio_api_import
 #elif defined(_WIN32) && !defined(LIBIIO_STATIC)
-#  define __iio_api_export __declspec(dllexport)
-#  define __iio_api_import __declspec(dllimport)
+#define __iio_api_export __declspec(dllexport)
+#define __iio_api_import __declspec(dllimport)
 #else
-#  define __iio_api_export
-#  define __iio_api_import
+#define __iio_api_export
+#define __iio_api_import
 #endif
 
 #ifdef LIBIIO_EXPORTS
-#  define __iio_api __iio_api_export
+#define __iio_api __iio_api_export
 #else
-#  define __iio_api __iio_api_import
+#define __iio_api __iio_api_import
 #endif
 
 #define __api __iio_api
@@ -147,11 +146,11 @@ enum iio_log_level {
 };
 
 /** @brief Use backend default timeout */
-#define IIO_TIMEOUT_BACKEND	0
+#define IIO_TIMEOUT_BACKEND 0
 /** @brief Wait indefinitely (no timeout) */
-#define IIO_TIMEOUT_INFINITE	(-1)
+#define IIO_TIMEOUT_INFINITE (-1)
 /** @brief Non-blocking operation */
-#define IIO_TIMEOUT_NONBLOCK	INT_MIN
+#define IIO_TIMEOUT_NONBLOCK INT_MIN
 
 /**
  * @enum iio_context_flags
@@ -384,7 +383,7 @@ enum iio_event_direction {
  * @return The error-encoding pointer. */
 static inline __check_ret void *iio_ptr(int err)
 {
-	return (void *)(intptr_t) err;
+	return (void *)(intptr_t)err;
 }
 
 /** @brief Returns the encoded error code if present, otherwise zero.
@@ -392,7 +391,7 @@ static inline __check_ret void *iio_ptr(int err)
  * @return The error code if present, otherwise zero. */
 static inline __check_ret int iio_err(const void *ptr)
 {
-	return (uintptr_t) ptr >= (uintptr_t) -4095 ? (int)(intptr_t) ptr : 0;
+	return (uintptr_t)ptr >= (uintptr_t)-4095 ? (int)(intptr_t)ptr : 0;
 }
 
 /** @brief Type-cast an error-encoding pointer.
@@ -400,10 +399,10 @@ static inline __check_ret int iio_err(const void *ptr)
  * @return An error-encoding pointer that can be used as a different type. */
 static inline __check_ret void *iio_err_cast(const void *ptr)
 {
-	return (void *) ptr;
+	return (void *)ptr;
 }
 
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Attributes functions ----------------------------*/
 /** @defgroup Attributes functions
  * @{
@@ -417,8 +416,7 @@ static inline __check_ret void *iio_err_cast(const void *ptr)
  * @param len The available length of the memory area, in bytes
  * @return On success, the number of bytes written to the buffer
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
+__api __check_ret ssize_t iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
 
 /** @brief Read the content of the given attribute
  * @param attr A pointer to an iio_attr structure
@@ -426,11 +424,11 @@ iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
 #ifndef __cplusplus
-#define iio_attr_read(attr, ptr)				\
-	_Generic((ptr),						\
-		 bool *: iio_attr_read_bool,			\
-		 long long *: iio_attr_read_longlong,		\
-		 double *: iio_attr_read_double)(attr, ptr)
+#define iio_attr_read(attr, ptr) \
+	_Generic((ptr), \
+			bool *: iio_attr_read_bool, \
+			long long *: iio_attr_read_longlong, \
+			double *: iio_attr_read_double)(attr, ptr)
 #endif /* __cplusplus */
 
 /** @brief Set the value of the given attribute
@@ -439,8 +437,8 @@ iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len);
  * @param len The number of bytes that should be written
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned */
-__api __check_ret ssize_t
-iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len);
+__api __check_ret ssize_t iio_attr_write_raw(
+		const struct iio_attr *attr, const void *src, size_t len);
 
 /** @brief Set the value of the given attribute
  * @param attr A pointer to an iio_attr structure
@@ -448,33 +446,30 @@ iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len);
  * @return On success, the number of bytes written
  * @return On error, a negative errno code is returned. */
 #ifndef __cplusplus
-#define iio_attr_write(attr, val)			\
-	_Generic((val),						\
-		 const char *: iio_attr_write_string,		\
-		 char *: iio_attr_write_string,			\
-		 bool: iio_attr_write_bool,			\
-		 long long: iio_attr_write_longlong,		\
-		 double: iio_attr_write_double)(attr, val)
+#define iio_attr_write(attr, val) \
+	_Generic((val), \
+			const char *: iio_attr_write_string, \
+			char *: iio_attr_write_string, \
+			bool: iio_attr_write_bool, \
+			long long: iio_attr_write_longlong, \
+			double: iio_attr_write_double)(attr, val)
 #endif /* __cplusplus */
 
 /** @brief Retrieve the name of an attribute
  * @param attr A pointer to an iio_attr structure
  * @return A pointer to a static NULL-terminated string */
-__api __pure const char *
-iio_attr_get_name(const struct iio_attr *attr);
+__api __pure const char *iio_attr_get_name(const struct iio_attr *attr);
 
 /** @brief Retrieve the filename of an attribute
  * @param attr A pointer to an iio_attr structure
  * @return A pointer to a static NULL-terminated string */
-__api __check_ret __pure const char *
-iio_attr_get_filename(const struct iio_attr *attr);
+__api __check_ret __pure const char *iio_attr_get_filename(const struct iio_attr *attr);
 
 /** @brief Retrieve the static value of an attribute
  * @param attr A pointer to an iio_attr structure
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the attribute does not have a static value, NULL is returned. */
-__api __pure const char *
-iio_attr_get_static_value(const struct iio_attr *attr);
+__api __pure const char *iio_attr_get_static_value(const struct iio_attr *attr);
 
 /** @brief Extract the range from an attribute with suffix '_available'
  * @param attr A pointer to an iio_attr structure
@@ -485,8 +480,7 @@ iio_attr_get_static_value(const struct iio_attr *attr);
  * @return On error, a negative errno code is returned. For attributes without the
  * '_available' suffix, -ENXIO is returned. For attributes whose values do not follow
  * the [min step max] format, -EOPNOTSUPP is returned. */
-__api int
-iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, double *max);
+__api int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, double *max);
 
 /** @brief Extract the list of elements from an attribute with suffix '_available'
  * @param attr A pointer to an iio_attr structure
@@ -499,10 +493,9 @@ iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, doubl
  * @return On error, a negative errno code is returned. For attributes without the
  * '_available' suffix, -ENXIO is returned. For attributes whose values are in a range
  * format, -EOPNOTSUPP is returned. */
-__api int
-iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count);
+__api int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count);
 
- /** @brief A variant of iio_attr_get_available() that uses a caller-supplied,
+/** @brief A variant of iio_attr_get_available() that uses a caller-supplied,
  * preallocated buffer. If the optional 'list' and 'count' parameters are
  * provided, the buffer will be tokenized in place by replacing each delimiter
  * with a null terminator ('\0'). As a result, each element in 'list' will
@@ -524,18 +517,16 @@ iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *count)
  * the '_available' suffix, -ENXIO is returned. For attributes whose values are
  * in a range format, -EOPNOTSUPP is returned. If not enough space is available in
  * list[], the function returns -ENOSPC*/
-__api int
-iio_attr_get_available_buf(const struct iio_attr *attr, char *buf,
-		size_t buflen, char **list, size_t *count);
+__api int iio_attr_get_available_buf(
+		const struct iio_attr *attr, char *buf, size_t buflen, char **list, size_t *count);
 
 /** @brief Free the resources allocated only by iio_attr_get_available()
  * @param list A pointer to a dynamically allocated array to be freed
  * @param count The number of elements counted by iio_attr_get_available()
 */
-__api
-void iio_available_list_free(char **list, size_t count);
+__api void iio_available_list_free(char **list, size_t count);
 
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Scan functions ----------------------------------*/
 /** @defgroup Scan Functions for scanning available contexts
  * @{
@@ -558,9 +549,8 @@ void iio_available_list_free(char **list, size_t count);
  * The "usb=0456:b673" string would limit the scan to the device with
  * this particular VID/PID. Both IDs are expected in hexadecimal, no 0x
  * prefix needed. */
-__api __check_ret struct iio_scan *
-iio_scan(const struct iio_context_params *params, const char *backends);
-
+__api __check_ret struct iio_scan *iio_scan(
+		const struct iio_context_params *params, const char *backends);
 
 /** @brief Destroy the given scan context
  * @param ctx A pointer to an iio_scan structure
@@ -568,38 +558,31 @@ iio_scan(const struct iio_context_params *params, const char *backends);
  * <b>NOTE:</b> After that function, the iio_scan pointer shall be invalid. */
 __api void iio_scan_destroy(struct iio_scan *ctx);
 
-
 /** @brief Get number of results of a scan operation
  * @param ctx A pointer to an iio_scan structure
  * @return The number of results of the scan operation
  */
-__api __check_ret __pure size_t
-iio_scan_get_results_count(const struct iio_scan *ctx);
-
+__api __check_ret __pure size_t iio_scan_get_results_count(const struct iio_scan *ctx);
 
 /** @brief Get description of scanned context
  * @param ctx A pointer to an iio_scan structure
  * @param idx The index of the scanned context
  * @return On success, a pointer to a NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char *
-iio_scan_get_description(const struct iio_scan *ctx, size_t idx);
-
+__api __check_ret __pure const char *iio_scan_get_description(
+		const struct iio_scan *ctx, size_t idx);
 
 /** @brief Get URI of scanned context
  * @param ctx A pointer to an iio_scan structure
  * @param idx The index of the scanned context
  * @return On success, a pointer to a NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const char *
-iio_scan_get_uri(const struct iio_scan *ctx, size_t idx);
+__api __check_ret __pure const char *iio_scan_get_uri(const struct iio_scan *ctx, size_t idx);
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Top-level functions -----------------------------*/
 /** @defgroup TopLevel Top-level functions
  * @{ */
-
 
 /** @brief Get a string description of an error code
  * @param err The error code. Can be positive or negative.
@@ -608,37 +591,30 @@ iio_scan_get_uri(const struct iio_scan *ctx, size_t idx);
  * @param len The available length of the memory area, in bytes */
 __api void iio_strerror(int err, char *dst, size_t len);
 
-
 /** @brief Check if the specified backend is available
  * @param params A pointer to a iio_context_params structure that contains
  *   context creation information; can be NULL
  * @param backend The name of the backend to query
  * @return True if the backend is available, false otherwise */
-__api __check_ret bool
-iio_has_backend(const struct iio_context_params *params, const char *backend);
-
+__api __check_ret bool iio_has_backend(
+		const struct iio_context_params *params, const char *backend);
 
 /** @brief Get the number of available built-in backends
  * @return The number of available built-in backends */
-__api __check_ret __cnst unsigned int
-iio_get_builtin_backends_count(void);
-
+__api __check_ret __cnst unsigned int iio_get_builtin_backends_count(void);
 
 /** @brief Retrieve the name of a given built-in backend
  * @param index The index corresponding to the backend
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __cnst const char *
-iio_get_builtin_backend(unsigned int index);
+__api __check_ret __cnst const char *iio_get_builtin_backend(unsigned int index);
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Context functions -------------------------------*/
 /** @defgroup Context Context
  * @{
  * @struct iio_context
  * @brief Contains the representation of an IIO context */
-
 
 /** @brief Create a context from a URI description
  * @param params A pointer to a iio_context_params structure that contains
@@ -688,16 +664,14 @@ iio_get_builtin_backend(unsigned int index);
  *        - flow control ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR)
  *
  *  For example <i>"serial:/dev/ttyUSB0,115200"</i> <b>or</b> <i>"serial:/dev/ttyUSB0,115200,8n1"</i>*/
-__api __check_ret struct iio_context *
-iio_create_context(const struct iio_context_params *params, const char *uri);
-
+__api __check_ret struct iio_context *iio_create_context(
+		const struct iio_context_params *params, const char *uri);
 
 /** @brief Destroy the given context
  * @param ctx A pointer to an iio_context structure
  *
  * <b>NOTE:</b> After that function, the iio_context pointer shall be invalid. */
 __api void iio_context_destroy(struct iio_context *ctx);
-
 
 /** @brief Get the major number of the library version
  * @param ctx Optional pointer to an iio_context structure
@@ -707,7 +681,6 @@ __api void iio_context_destroy(struct iio_context *ctx);
  * library, if running remotely. */
 __api __pure unsigned int iio_context_get_version_major(const struct iio_context *ctx);
 
-
 /** @brief Get the minor number of the library version
  * @param ctx Optional pointer to an iio_context structure
  * @return The minor number
@@ -716,22 +689,19 @@ __api __pure unsigned int iio_context_get_version_major(const struct iio_context
  * library, if running remotely. */
 __api __pure unsigned int iio_context_get_version_minor(const struct iio_context *ctx);
 
-
 /** @brief Get the git hash string of the library version
  * @param ctx Optional pointer to an iio_context structure
  * @return A NULL-terminated string that contains the git tag or hash
  *
  * NOTE: If ctx is non-null, it will return the git tag or hash of the remote
  * library, if running remotely. */
-__api __pure const char * iio_context_get_version_tag(const struct iio_context *ctx);
-
+__api __pure const char *iio_context_get_version_tag(const struct iio_context *ctx);
 
 /** @brief Obtain a XML representation of the given context
  * @param ctx A pointer to an iio_context structure
  * @return On success, an allocated string. Must be deallocated with free().
  * @return On failure, a pointer-encoded error is returned */
-__api __check_ret char * iio_context_get_xml(const struct iio_context *ctx);
-
+__api __check_ret char *iio_context_get_xml(const struct iio_context *ctx);
 
 /** @brief Get the name of the given context
  * @param ctx A pointer to an iio_context structure
@@ -740,8 +710,7 @@ __api __check_ret char * iio_context_get_xml(const struct iio_context *ctx);
  * <b>NOTE:</b>The returned string will be <b><i>local</i></b>,
  * <b><i>xml</i></b> or <b><i>network</i></b> when the context has been
  * created with the local, xml and network backends respectively.*/
-__api __check_ret __pure const char * iio_context_get_name(const struct iio_context *ctx);
-
+__api __check_ret __pure const char *iio_context_get_name(const struct iio_context *ctx);
 
 /** @brief Get a description of the given context
  * @param ctx A pointer to an iio_context structure
@@ -749,27 +718,22 @@ __api __check_ret __pure const char * iio_context_get_name(const struct iio_cont
  *
  * <b>NOTE:</b>The returned string will contain human-readable information about
  * the current context. */
-__api __check_ret __pure const char * iio_context_get_description(
-		const struct iio_context *ctx);
-
+__api __check_ret __pure const char *iio_context_get_description(const struct iio_context *ctx);
 
 /** @brief Get the number of context-specific attributes
  * @param ctx A pointer to an iio_context structure
  * @return The number of context-specific attributes
  *
  * Introduced in version 0.9. */
-__api __check_ret __pure unsigned int iio_context_get_attrs_count(
-		const struct iio_context *ctx);
-
+__api __check_ret __pure unsigned int iio_context_get_attrs_count(const struct iio_context *ctx);
 
 /** @brief Retrieve the context-specific attribute at the given index
  * @param ctx A pointer to an iio_context structure
  * @param index The index corresponding to the attribute
  * @return On success, a pointer to an iio_attr structure
  * @return If the index is out-of-range, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_context_get_attr(const struct iio_context *ctx, unsigned int index);
-
+__api __check_ret __pure const struct iio_attr *iio_context_get_attr(
+		const struct iio_context *ctx, unsigned int index);
 
 /** @brief Try to find a context-specific attribute by its name
  * @param ctx A pointer to an iio_context structure
@@ -778,25 +742,21 @@ iio_context_get_attr(const struct iio_context *ctx, unsigned int index);
  * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known attribute of the given
  * context, NULL is returned. */
-__api __check_ret __pure const struct iio_attr *
-iio_context_find_attr(const struct iio_context *ctx, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_context_find_attr(
+		const struct iio_context *ctx, const char *name);
 
 /** @brief Enumerate the devices found in the given context
  * @param ctx A pointer to an iio_context structure
  * @return The number of devices found */
-__api __check_ret __pure unsigned int iio_context_get_devices_count(
-		const struct iio_context *ctx);
-
+__api __check_ret __pure unsigned int iio_context_get_devices_count(const struct iio_context *ctx);
 
 /** @brief Get the device present at the given index
  * @param ctx A pointer to an iio_context structure
  * @param index The index corresponding to the device
  * @return On success, a pointer to an iio_device structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure struct iio_device * iio_context_get_device(
+__api __check_ret __pure struct iio_device *iio_context_get_device(
 		const struct iio_context *ctx, unsigned int index);
-
 
 /** @brief Try to find a device structure by its ID, label or name
  * @param ctx A pointer to an iio_context structure
@@ -805,9 +765,8 @@ __api __check_ret __pure struct iio_device * iio_context_get_device(
  * @return On success, a pointer to an iio_device structure
  * @return If the parameter does not correspond to the ID, label or name of
  * any known device, NULL is returned */
-__api __check_ret __pure struct iio_device * iio_context_find_device(
+__api __check_ret __pure struct iio_device *iio_context_find_device(
 		const struct iio_context *ctx, const char *name);
-
 
 /** @brief Set a timeout for I/O operations
  * @param ctx A pointer to an iio_context structure
@@ -819,108 +778,92 @@ __api __check_ret __pure struct iio_device * iio_context_find_device(
  *   - Other negative values: returns -EINVAL
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-__api __check_ret int iio_context_set_timeout(
-		struct iio_context *ctx, int timeout_ms);
-
+__api __check_ret int iio_context_set_timeout(struct iio_context *ctx, int timeout_ms);
 
 /** @brief Get a pointer to the params structure
  * @param ctx A pointer to an iio_context structure
  * @return A pointer to the context's iio_context_params structure */
-__api __cnst const struct iio_context_params *
-iio_context_get_params(const struct iio_context *ctx);
-
+__api __cnst const struct iio_context_params *iio_context_get_params(const struct iio_context *ctx);
 
 /** @brief Associate a pointer to an iio_context structure
  * @param ctx A pointer to an iio_context structure
  * @param data The pointer to be associated */
 __api void iio_context_set_data(struct iio_context *ctx, void *data);
 
-
 /** @brief Retrieve a previously associated pointer of an iio_context structure
  * @param ctx A pointer to an iio_context structure
  * @return The pointer previously associated if present, or NULL */
-__api void * iio_context_get_data(const struct iio_context *ctx);
+__api void *iio_context_get_data(const struct iio_context *ctx);
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Device functions --------------------------------*/
 /** @defgroup Device Device
  * @{
  * @struct iio_device
  * @brief Represents a device in the IIO context */
 
-
 /** @brief Retrieve a pointer to the iio_context structure
  * @param dev A pointer to an iio_device structure
  * @return A pointer to an iio_context structure */
-__api __check_ret __pure const struct iio_context * iio_device_get_context(
+__api __check_ret __pure const struct iio_context *iio_device_get_context(
 		const struct iio_device *dev);
-
 
 /** @brief Retrieve the device ID (e.g. <b><i>iio:device0</i></b>)
  * @param dev A pointer to an iio_device structure
  * @return A pointer to a static NULL-terminated string */
-__api __check_ret __pure const char * iio_device_get_id(const struct iio_device *dev);
-
+__api __check_ret __pure const char *iio_device_get_id(const struct iio_device *dev);
 
 /** @brief Retrieve the device name (e.g. <b><i>xadc</i></b>)
  * @param dev A pointer to an iio_device structure
  * @return A pointer to a static NULL-terminated string
  *
  * <b>NOTE:</b> if the device has no name, NULL is returned. */
-__api __check_ret __pure const char * iio_device_get_name(const struct iio_device *dev);
-
+__api __check_ret __pure const char *iio_device_get_name(const struct iio_device *dev);
 
 /** @brief Retrieve the device label (e.g. <b><i>lo_pll0_rx_adf4351</i></b>)
  * @param dev A pointer to an iio_device structure
  * @return A pointer to a static NULL-terminated string
  *
  * <b>NOTE:</b> if the device has no label, NULL is returned. */
-__api __check_ret __pure const char * iio_device_get_label(const struct iio_device *dev);
-
+__api __check_ret __pure const char *iio_device_get_label(const struct iio_device *dev);
 
 /** @brief Enumerate the channels of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of channels found */
-__api __check_ret __pure unsigned int iio_device_get_channels_count(
-		const struct iio_device *dev);
-
+__api __check_ret __pure unsigned int iio_device_get_channels_count(const struct iio_device *dev);
 
 /** @brief Enumerate the device-specific attributes of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of device-specific attributes found */
-__api __check_ret __pure unsigned int
-iio_device_get_attrs_count(const struct iio_device *dev);
+__api __check_ret __pure unsigned int iio_device_get_attrs_count(const struct iio_device *dev);
 
 /** @brief Enumerate the buffers of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of buffers found */
-__api __check_ret __pure unsigned int
-iio_device_get_buffers_count(const struct iio_device *dev);
+__api __check_ret __pure unsigned int iio_device_get_buffers_count(const struct iio_device *dev);
 
 /** @brief Get the channel present at the given index
  * @param dev A pointer to an iio_device structure
  * @param index The index corresponding to the channel
  * @return On success, a pointer to an iio_channel structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure struct iio_channel * iio_device_get_channel(
+__api __check_ret __pure struct iio_channel *iio_device_get_channel(
 		const struct iio_device *dev, unsigned int index);
-
 
 /** @brief Get the device-specific attribute present at the given index
  * @param dev A pointer to an iio_device structure
  * @param index The index corresponding to the attribute
  * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_device_get_attr(const struct iio_device *dev, unsigned int index);
+__api __check_ret __pure const struct iio_attr *iio_device_get_attr(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Get the buffer present at the given index
  * @param dev A pointer to an iio_device structure
  * @param index The index corresponding to the buffer
  * @return On success, a pointer to an iio_buffer structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure struct iio_buffer * iio_device_get_buffer(
+__api __check_ret __pure struct iio_buffer *iio_device_get_buffer(
 		const struct iio_device *dev, unsigned int index);
 
 /** @brief Try to find a channel structure by its ID, label or name
@@ -931,9 +874,8 @@ __api __check_ret __pure struct iio_buffer * iio_device_get_buffer(
  * @return On success, a pointer to an iio_channel structure
  * @return If the ID, label or name does not correspond to any known channel of
  * the given device, NULL is returned */
-__api __check_ret __pure struct iio_channel * iio_device_find_channel(
+__api __check_ret __pure struct iio_channel *iio_device_find_channel(
 		const struct iio_device *dev, const char *name, bool output);
-
 
 /** @brief Try to find a device-specific attribute by its name
  * @param dev A pointer to an iio_device structure
@@ -946,21 +888,18 @@ __api __check_ret __pure struct iio_channel * iio_device_find_channel(
  * <b>NOTE:</b> This function is useful to detect the presence of an attribute.
  * It can also be used to retrieve the name of an attribute as a pointer to a
  * static string from a dynamically allocated string. */
-__api __check_ret __pure const struct iio_attr *
-iio_device_find_attr(const struct iio_device *dev, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_device_find_attr(
+		const struct iio_device *dev, const char *name);
 
 /** @brief Associate a pointer to an iio_device structure
  * @param dev A pointer to an iio_device structure
  * @param data The pointer to be associated */
 __api void iio_device_set_data(struct iio_device *dev, void *data);
 
-
 /** @brief Retrieve a previously associated pointer of an iio_device structure
  * @param dev A pointer to an iio_device structure
  * @return The pointer previously associated if present, or NULL */
-__api void * iio_device_get_data(const struct iio_device *dev);
-
+__api void *iio_device_get_data(const struct iio_device *dev);
 
 /** @brief Retrieve the trigger of a given device
  * @param dev A pointer to an iio_device structure
@@ -969,9 +908,7 @@ __api void * iio_device_get_data(const struct iio_device *dev);
  * @return On failure, a pointer-encoded error is returned. If no trigger
  * has been associated with the given device, the error code will be
  * -ENODEV. */
-__api __check_ret const struct iio_device *
-iio_device_get_trigger(const struct iio_device *dev);
-
+__api __check_ret const struct iio_device *iio_device_get_trigger(const struct iio_device *dev);
 
 /** @brief Associate a trigger to a given device
  * @param dev A pointer to an iio_device structure
@@ -979,56 +916,50 @@ iio_device_get_trigger(const struct iio_device *dev);
  * trigger that should be associated.
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-__api __check_ret int iio_device_set_trigger(const struct iio_device *dev,
-		const struct iio_device *trigger);
-
+__api __check_ret int iio_device_set_trigger(
+		const struct iio_device *dev, const struct iio_device *trigger);
 
 /** @brief Return True if the given device is a trigger
  * @param dev A pointer to an iio_device structure
  * @return True if the device is a trigger, False otherwise */
 __api __check_ret __pure bool iio_device_is_trigger(const struct iio_device *dev);
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Channel functions -------------------------------*/
 /** @defgroup Channel Channel
  * @{
  * @struct iio_channel
  * @brief Represents an input or output channel of a device */
 
-
 /** @brief Retrieve a pointer to the iio_device structure
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to an iio_device structure */
-__api __check_ret __pure const struct iio_device * iio_channel_get_device(
+__api __check_ret __pure const struct iio_device *iio_channel_get_device(
 		const struct iio_channel *chn);
-
 
 /** @brief Retrieve the channel ID (e.g. <b><i>voltage0</i></b>)
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to a static NULL-terminated string */
-__api __check_ret __pure const char * iio_channel_get_id(const struct iio_channel *chn);
-
+__api __check_ret __pure const char *iio_channel_get_id(const struct iio_channel *chn);
 
 /** @brief Retrieve the channel name (e.g. <b><i>vccint</i></b>)
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to a static NULL-terminated string
  *
  * <b>NOTE:</b> if the channel has no name, NULL is returned. */
-__api __check_ret __pure const char * iio_channel_get_name(const struct iio_channel *chn);
+__api __check_ret __pure const char *iio_channel_get_name(const struct iio_channel *chn);
 
 /** @brief Retrieve the channel label (e.g. <b><i>anglY</i></b>)
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to a static NULL-terminated string
  *
  * <b>NOTE:</b> if the channel has no label, NULL is returned. */
-__api __check_ret __pure const char * iio_channel_get_label(const struct iio_channel *chn);
+__api __check_ret __pure const char *iio_channel_get_label(const struct iio_channel *chn);
 
 /** @brief Return True if the given channel is an output channel
  * @param chn A pointer to an iio_channel structure
  * @return True if the channel is an output channel, False otherwise */
 __api __check_ret __pure bool iio_channel_is_output(const struct iio_channel *chn);
-
 
 /** @brief Return True if the given channel is a scan element
  * @param chn A pointer to an iio_channel structure
@@ -1039,22 +970,18 @@ __api __check_ret __pure bool iio_channel_is_output(const struct iio_channel *ch
  * channel) after being enabled. */
 __api __check_ret __pure bool iio_channel_is_scan_element(const struct iio_channel *chn);
 
-
 /** @brief Enumerate the channel-specific attributes of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The number of channel-specific attributes found */
-__api __check_ret __pure unsigned int
-iio_channel_get_attrs_count(const struct iio_channel *chn);
-
+__api __check_ret __pure unsigned int iio_channel_get_attrs_count(const struct iio_channel *chn);
 
 /** @brief Get the channel-specific attribute present at the given index
  * @param chn A pointer to an iio_channel structure
  * @param index The index corresponding to the attribute
  * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_channel_get_attr(const struct iio_channel *chn, unsigned int index);
-
+__api __check_ret __pure const struct iio_attr *iio_channel_get_attr(
+		const struct iio_channel *chn, unsigned int index);
 
 /** @brief Try to find a channel-specific attribute by its name
  * @param chn A pointer to an iio_channel structure
@@ -1063,25 +990,22 @@ iio_channel_get_attr(const struct iio_channel *chn, unsigned int index);
  * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known attribute of the given
  * channel, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_channel_find_attr(const struct iio_channel *chn, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_channel_find_attr(
+		const struct iio_channel *chn, const char *name);
 
 /** @brief Enumerate the event attributes of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The number of event attributes found */
-__api __check_ret __pure unsigned int
-iio_channel_get_event_attrs_count(const struct iio_channel *chn);
-
+__api __check_ret __pure unsigned int iio_channel_get_event_attrs_count(
+		const struct iio_channel *chn);
 
 /** @brief Get the event attribute present at the given index
  * @param chn A pointer to an iio_channel structure
  * @param index The index corresponding to the event attribute
  * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_channel_get_event_attr(const struct iio_channel *chn, unsigned int index);
-
+__api __check_ret __pure const struct iio_attr *iio_channel_get_event_attr(
+		const struct iio_channel *chn, unsigned int index);
 
 /** @brief Try to find a channel event attribute by its name
  * @param chn A pointer to an iio_channel structure
@@ -1090,32 +1014,25 @@ iio_channel_get_event_attr(const struct iio_channel *chn, unsigned int index);
  * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known event attribute of the
  * given channel, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_channel_find_event_attr(const struct iio_channel *chn, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_channel_find_event_attr(
+		const struct iio_channel *chn, const char *name);
 
 /** @brief Enable the given channel
  * @param chn A pointer to an iio_channel structure
  * @param mask The channels mask to manipulate */
-__api void iio_channel_enable(const struct iio_channel *chn,
-			      struct iio_channels_mask *mask);
-
+__api void iio_channel_enable(const struct iio_channel *chn, struct iio_channels_mask *mask);
 
 /** @brief Disable the given channel
  * @param chn A pointer to an iio_channel structure
  * @param mask The channels mask to manipulate */
-__api void iio_channel_disable(const struct iio_channel *chn,
-			       struct iio_channels_mask *mask);
-
+__api void iio_channel_disable(const struct iio_channel *chn, struct iio_channels_mask *mask);
 
 /** @brief Returns True if the channel is enabled
  * @param chn A pointer to an iio_channel structure
  * @param mask A pointer to an iio_channels_mask structure
  * @return True if the channel is enabled, False otherwise */
-__api __check_ret bool
-iio_channel_is_enabled(const struct iio_channel *chn,
-		       const struct iio_channels_mask *mask);
-
+__api __check_ret bool iio_channel_is_enabled(
+		const struct iio_channel *chn, const struct iio_channels_mask *mask);
 
 /** @brief Demultiplex and convert the samples of a given channel
  * @param chn A pointer to an iio_channel structure
@@ -1127,9 +1044,7 @@ iio_channel_is_enabled(const struct iio_channel *chn,
  *     converted samples.
  * @return The size of the converted data, in bytes */
 __api __check_ret size_t iio_channel_read(const struct iio_channel *chn,
-					  const struct iio_block *block,
-					  void *dst, size_t len, bool raw);
-
+		const struct iio_block *block, void *dst, size_t len, bool raw);
 
 /** @brief Convert and multiplex the samples of a given channel
  * @param chn A pointer to an iio_channel structure
@@ -1140,83 +1055,70 @@ __api __check_ret size_t iio_channel_read(const struct iio_channel *chn,
  * @param raw True if the samples are already in hardware format, false if they
  *     need to be converted.
  * @return The number of bytes actually converted and multiplexed */
-__api __check_ret size_t iio_channel_write(const struct iio_channel *chn,
-					   struct iio_block *block,
-					   const void *src, size_t len,
-					   bool raw);
-
+__api __check_ret size_t iio_channel_write(const struct iio_channel *chn, struct iio_block *block,
+		const void *src, size_t len, bool raw);
 
 /** @brief Associate a pointer to an iio_channel structure
  * @param chn A pointer to an iio_channel structure
  * @param data The pointer to be associated */
 __api void iio_channel_set_data(struct iio_channel *chn, void *data);
 
-
 /** @brief Retrieve a previously associated pointer of an iio_channel structure
  * @param chn A pointer to an iio_channel structure
  * @return The pointer previously associated if present, or NULL */
-__api void * iio_channel_get_data(const struct iio_channel *chn);
-
+__api void *iio_channel_get_data(const struct iio_channel *chn);
 
 /** @brief Get the type of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The type of the channel
  * <b>NOTE:</b> Before calling this function, iio_device_is_hwmon() should be called
  * to verify that the passed channel object does not belong to a HWMON device. */
-__api __check_ret __pure enum iio_chan_type iio_channel_get_type(
-		const struct iio_channel *chn);
-
+__api __check_ret __pure enum iio_chan_type iio_channel_get_type(const struct iio_channel *chn);
 
 /** @brief Get the modifier type of the given channel
  * @param chn A pointer to an iio_channel structure
  * @return The modifier type of the channel */
-__api __check_ret __pure enum iio_modifier iio_channel_get_modifier(
-		const struct iio_channel *chn);
+__api __check_ret __pure enum iio_modifier iio_channel_get_modifier(const struct iio_channel *chn);
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Buffer functions --------------------------------*/
 /** @defgroup Buffer Buffer
  * @{
  * @struct iio_buffer
  * @brief An input or output buffer, used to read or write samples */
 
-
 /** @brief Retrieve a pointer to the iio_device structure
  * @param buf A pointer to an iio_buffer structure
  * @return A pointer to an iio_device structure */
-__api __check_ret __pure const struct iio_device * iio_buffer_get_device(
+__api __check_ret __pure const struct iio_device *iio_buffer_get_device(
 		const struct iio_buffer *buf);
-
 
 /** @brief Enumerate the attributes of the given buffer
  * @param buf A pointer to an iio_buffer structure
  * @return The number of buffer-specific attributes found */
-__api __check_ret __pure unsigned int
-iio_buffer_get_attrs_count(const struct iio_buffer *buf);
-
+__api __check_ret __pure unsigned int iio_buffer_get_attrs_count(const struct iio_buffer *buf);
 
 /** @brief Get the buffer-specific attribute present at the given index
  * @param buf A pointer to an iio_buffer structure
  * @param index The index corresponding to the attribute
  * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_buffer_get_attr(const struct iio_buffer *buf, unsigned int index);
+__api __check_ret __pure const struct iio_attr *iio_buffer_get_attr(
+		const struct iio_buffer *buf, unsigned int index);
 
 /** @brief Enumerate the scan elements of the given buffer
  * @param buf A pointer to an iio_buffer structure
  * @return The number of scan elements associated with the buffer */
-__api __check_ret __pure unsigned int
-iio_buffer_get_scan_elements_count(const struct iio_buffer *buf);
+__api __check_ret __pure unsigned int iio_buffer_get_scan_elements_count(
+		const struct iio_buffer *buf);
 
 /** @brief Get the scan element present at the given index
  * @param buf A pointer to an iio_buffer structure
  * @param index The index corresponding to the scan element
  * @return On success, a pointer to an iio_channel structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_channel *
-iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index);
+__api __check_ret __pure const struct iio_channel *iio_buffer_get_scan_element(
+		const struct iio_buffer *buf, unsigned int index);
 
 /** @brief Try to find a buffer-specific attribute by its name
  * @param buf A pointer to an iio_buffer structure
@@ -1225,27 +1127,23 @@ iio_buffer_get_scan_element(const struct iio_buffer *buf, unsigned int index);
  * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known attribute of the given
  * buffer, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_buffer_find_attr(const struct iio_buffer *buf, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_buffer_find_attr(
+		const struct iio_buffer *buf, const char *name);
 
 /** @brief Returns true if the buffer is an output buffer
  * @param buf A pointer to an iio_buffer structure
  * @return True if the buffer is an output (TX) buffer, false otherwise */
 __api __check_ret __pure bool iio_buffer_is_output(const struct iio_buffer *buf);
 
-
 /** @brief Associate a pointer to an iio_buffer structure
  * @param buf A pointer to an iio_buffer structure
  * @param data The pointer to be associated */
 __api void iio_buffer_set_data(struct iio_buffer *buf, void *data);
 
-
 /** @brief Retrieve a previously associated pointer of an iio_buffer structure
  * @param buf A pointer to an iio_buffer structure
  * @return The pointer previously associated if present, or NULL */
-__api void * iio_buffer_get_data(const struct iio_buffer *buf);
-
+__api void *iio_buffer_get_data(const struct iio_buffer *buf);
 
 /* ------------------------- Buffer Stream functions -------------------------*/
 /** @defgroup BufferStream Buffer Stream
@@ -1253,26 +1151,22 @@ __api void * iio_buffer_get_data(const struct iio_buffer *buf);
  * @struct iio_buffer_stream
  * @brief An opened buffer ready for data streaming */
 
-
 /** @brief Open a buffer for data streaming
  * @param buf A pointer to an iio_buffer structure
  * @param mask A pointer to an iio_channels_mask structure specifying which
  *             channels to enable
  * @return On success, a pointer to an iio_buffer_stream structure
  * @return On failure, a pointer-encoded error is returned */
-__api __check_ret struct iio_buffer_stream *
-iio_buffer_open(struct iio_buffer *buf, const struct iio_channels_mask *mask);
-
+__api __check_ret struct iio_buffer_stream *iio_buffer_open(
+		struct iio_buffer *buf, const struct iio_channels_mask *mask);
 
 /** @brief Close a buffer stream
  * @param buf_stream A pointer to an iio_buffer_stream structure */
 __api void iio_buffer_close(struct iio_buffer_stream *buf_stream);
 
-
 /** @brief Cancel all buffer stream operations
  * @param buf_stream The buffer stream for which operations should be canceled */
 __api void iio_buffer_stream_cancel(struct iio_buffer_stream *buf_stream);
-
 
 /** @brief Start the buffer stream
  * @param buf_stream A pointer to an iio_buffer_stream structure
@@ -1280,41 +1174,36 @@ __api void iio_buffer_stream_cancel(struct iio_buffer_stream *buf_stream);
  * @return On error, a negative error code is returned */
 __api __check_ret int iio_buffer_stream_start(struct iio_buffer_stream *buf_stream);
 
-
 /** @brief Stop the buffer stream
  * @param buf_stream A pointer to an iio_buffer_stream structure
  * @return On success, 0
  * @return On error, a negative error code is returned */
 __api int iio_buffer_stream_stop(struct iio_buffer_stream *buf_stream);
 
-
 /** @brief Retrieve the channels mask of a buffer stream
  * @param buf_stream A pointer to an iio_buffer_stream structure
  * @return A pointer to an iio_channels_mask structure */
-__api const struct iio_channels_mask *
-iio_buffer_stream_get_channels_mask(const struct iio_buffer_stream *buf_stream);
+__api const struct iio_channels_mask *iio_buffer_stream_get_channels_mask(
+		const struct iio_buffer_stream *buf_stream);
 
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* -------------------------- Block functions --------------------------------*/
 /** @defgroup Block Block
  * @{
  * @struct iio_block
  * @brief A block of memory containing data samples */
 
-
 /** @brief Create a data block for the given buffer stream
  * @param buf_stream A pointer to an iio_buffer_stream structure
  * @param size The size of the block to create, in bytes
  * @return On success, a pointer to an iio_block structure
  * @return On failure, a pointer-encoded error is returned */
-__api __check_ret struct iio_block *
-iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size);
-
+__api __check_ret struct iio_block *iio_buffer_stream_create_block(
+		struct iio_buffer_stream *buf_stream, size_t size);
 
 /** @brief Destroy the given block
  * @param block A pointer to an iio_block structure */
 __api void iio_block_destroy(struct iio_block *block);
-
 
 /** @brief Get the file descriptor of the underlying DMABUF object
  * @param block A pointer to an iio_block structure
@@ -1322,7 +1211,6 @@ __api void iio_block_destroy(struct iio_block *block);
  * If the iio_block is not backed by a DMABUF object, -EINVAL is returned.
  * Otherwise, the file descriptor will be valid until the block is destroyed. */
 __api __check_ret int iio_block_get_dmabuf_fd(const struct iio_block *block);
-
 
 /** @brief Disable CPU access of a given block
  * @param block A pointer to an iio_block structure
@@ -1334,12 +1222,10 @@ __api __check_ret int iio_block_get_dmabuf_fd(const struct iio_block *block);
  * iio_block_start, iio_block_first, iio_block_end, iio_block_foreach_sample. */
 __api int iio_block_disable_cpu_access(struct iio_block *block, bool disable);
 
-
 /** @brief Get the start address of the block
  * @param block A pointer to an iio_block structure
  * @return A pointer corresponding to the start address of the block */
 __api void *iio_block_start(const struct iio_block *block);
-
 
 /** @brief Find the first sample of a channel in a block
  * @param block A pointer to an iio_block structure
@@ -1362,16 +1248,13 @@ __api void *iio_block_start(const struct iio_block *block);
  The iio_channel passed as argument must be from the iio_device that was used to
  create the iio_buffer and then the iio_block, otherwise the result is
  undefined. */
-__api void *iio_block_first(const struct iio_block *block,
-			    const struct iio_channel *chn);
-
+__api void *iio_block_first(const struct iio_block *block, const struct iio_channel *chn);
 
 /** @brief Get the address after the last sample in a block
  * @param block A pointer to an iio_block structure
  * @return A pointer corresponding to the address that follows the last sample
  * present in the buffer */
 __api void *iio_block_end(const struct iio_block *block);
-
 
 /** @brief Call the supplied callback for each sample found in a block
  * @param block A pointer to an iio_block structure
@@ -1386,13 +1269,11 @@ __api void *iio_block_end(const struct iio_block *block);
  * * A pointer to the sample itself,
  * * The length of the sample in bytes,
  * * The user-specified pointer passed to iio_block_foreach_sample. */
-__api __check_ret ssize_t
-iio_block_foreach_sample(const struct iio_block *block,
-			 const struct iio_channels_mask *mask,
-			 ssize_t (*callback)(const struct iio_channel *chn,
-					     void *src, size_t bytes, void *d),
-			 void *data);
-
+__api __check_ret ssize_t iio_block_foreach_sample(const struct iio_block *block,
+		const struct iio_channels_mask *mask,
+		ssize_t (*callback)(
+				const struct iio_channel *chn, void *src, size_t bytes, void *d),
+		void *data);
 
 /** @brief Enqueue the given iio_block to the buffer's queue
  * @param block A pointer to an iio_block structure
@@ -1407,7 +1288,6 @@ iio_block_foreach_sample(const struct iio_block *block,
  * accessed until iio_block_dequeue successfully returns. */
 __api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic);
 
-
 /** @brief Dequeue the given iio_block from the buffer's queue
  * @param block A pointer to an iio_block structure
  * @param nonblock if True, the operation won't block and return -EBUSY if
@@ -1416,19 +1296,17 @@ __api int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyc
  * @return On error, a negative error code is returned */
 __api int iio_block_dequeue(struct iio_block *block, bool nonblock);
 
-
 /** @brief Retrieve a pointer to the iio_buffer_stream structure
  * @param block A pointer to an iio_block structure
  * @return A pointer to an iio_buffer_stream structure */
-__api struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_block *block);
+__api struct iio_buffer_stream *iio_block_get_buffer_stream(const struct iio_block *block);
 
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Stream functions --------------------------------*/
 /** @defgroup Stream Stream
  * @{
  * @struct iio_stream
  * @brief A helper object to simplify reading/writing to a iio_buffer */
-
 
 /** @brief Create a iio_stream object for the given iio_buffer
  * @param buffer A pointer to an iio_buffer structure
@@ -1438,31 +1316,24 @@ __api struct iio_buffer_stream * iio_block_get_buffer_stream(const struct iio_bl
  * @param mask A pointer to the iio_channels_mask structure
  * @return On success, a pointer to an iio_stream structure
  * @return On failure, a pointer-encoded error is returned */
-__api __check_ret struct iio_stream *
-iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb_blocks,
-			 size_t samples_count, struct iio_channels_mask *mask);
+__api __check_ret struct iio_stream *iio_buffer_create_stream(struct iio_buffer *buffer,
+		size_t nb_blocks, size_t samples_count, struct iio_channels_mask *mask);
 
 /** @brief Cancel all stream operations
  * @param stream A pointer to an iio_stream structure */
-__api void
-iio_stream_cancel(struct iio_stream *stream);
+__api void iio_stream_cancel(struct iio_stream *stream);
 
 /** @brief Destroy the given stream object
  * @param stream A pointer to an iio_stream structure */
-__api void
-iio_stream_destroy(struct iio_stream *stream);
-
-
+__api void iio_stream_destroy(struct iio_stream *stream);
 
 /** @brief Get a pointer to the next data block
  * @param stream A pointer to an iio_stream structure
  * @return On success, a pointer to an iio_block structure
  * @return On failure, a pointer-encoded error is returned */
-__api __check_ret const struct iio_block *
-iio_stream_get_next_block(struct iio_stream *stream);
+__api __check_ret const struct iio_block *iio_stream_get_next_block(struct iio_stream *stream);
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ---------------------------- HWMON support --------------------------------*/
 /** @defgroup Hwmon Compatibility with hardware monitoring (hwmon) devices
  * @{
@@ -1495,10 +1366,9 @@ enum hwmon_chan_type {
  * @return The type of the hwmon channel
  * <b>NOTE:</b>  Before calling this function, iio_device_is_hwmon() should be called
  * to verify that the passed channel object belongs to a HWMON device. */
-static inline enum hwmon_chan_type
-hwmon_channel_get_type(const struct iio_channel *chn)
+static inline enum hwmon_chan_type hwmon_channel_get_type(const struct iio_channel *chn)
 {
-	return (enum hwmon_chan_type) iio_channel_get_type(chn);
+	return (enum hwmon_chan_type)iio_channel_get_type(chn);
 }
 
 /**
@@ -1513,8 +1383,7 @@ static inline bool iio_device_is_hwmon(const struct iio_device *dev)
 	return id[0] == 'h';
 }
 
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ---------------------------- IIO events support ---------------------------*/
 /** @defgroup Events Functions to read IIO events
  * @{
@@ -1535,8 +1404,7 @@ struct iio_event {
  *
  * <b>NOTE:</b>Corresponds to the IIO_EVENT_CODE_EXTRACT_TYPE macro of
  * <linux/iio/events.h>. */
-static inline enum iio_event_type
-iio_event_get_type(const struct iio_event *event)
+static inline enum iio_event_type iio_event_get_type(const struct iio_event *event)
 {
 	return (enum iio_event_type)((event->id >> 56) & 0xff);
 }
@@ -1548,8 +1416,7 @@ iio_event_get_type(const struct iio_event *event)
  *
  * <b>NOTE:</b>Corresponds to the IIO_EVENT_CODE_EXTRACT_DIR macro of
  * <linux/iio/events.h>. */
-static inline enum iio_event_direction
-iio_event_get_direction(const struct iio_event *event)
+static inline enum iio_event_direction iio_event_get_direction(const struct iio_event *event)
 {
 	return (enum iio_event_direction)((event->id >> 48) & 0x7f);
 }
@@ -1561,17 +1428,16 @@ iio_event_get_direction(const struct iio_event *event)
  * @param diff If set, retrieve the differential channel
  * @return On success, a pointer to an iio_channel structure
  * @return On error, NULL is returned */
-__api __check_ret const struct iio_channel *
-iio_event_get_channel(const struct iio_event *event,
-		      const struct iio_device *dev, bool diff);
+__api __check_ret const struct iio_channel *iio_event_get_channel(
+		const struct iio_event *event, const struct iio_device *dev, bool diff);
 
 /**
  * @brief Create an events stream for the given IIO device.
  * @param dev A pointer to an iio_device structure
  * @return On success, a pointer to an iio_event_stream structure
  * @return On failure, a pointer-encoded error is returned */
-__api __check_ret struct iio_event_stream *
-iio_device_create_event_stream(const struct iio_device *dev);
+__api __check_ret struct iio_event_stream *iio_device_create_event_stream(
+		const struct iio_device *dev);
 
 /**
  * @brief Destroy the given event stream.
@@ -1591,11 +1457,10 @@ __api void iio_event_stream_destroy(struct iio_event_stream *stream);
  * <b>NOTE</b>: it is possible to stop a blocking call of iio_event_stream_read
  * by calling iio_event_stream_destroy in a different thread or signal handler.
  * In that case, iio_event_stream_read will return -EINTR. */
-__api int iio_event_stream_read(struct iio_event_stream *stream,
-				struct iio_event *out_event,
-				bool nonblock);
+__api int iio_event_stream_read(
+		struct iio_event_stream *stream, struct iio_event *out_event, bool nonblock);
 
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Low-level functions -----------------------------*/
 /** @defgroup Debug Debug and low-level functions
  * @{
@@ -1639,20 +1504,15 @@ struct iio_data_format {
 	double offset;
 };
 
-
 /** @brief Create a new empty channels mask
  * @param nb_channels The number of channels in the mask
  * @return On success, a pointer to an iio_channels_mask structure
  * @return On error, NULL is returned */
-__api struct iio_channels_mask *
-iio_create_channels_mask(unsigned int nb_channels);
-
+__api struct iio_channels_mask *iio_create_channels_mask(unsigned int nb_channels);
 
 /** @brief Destroy a channels mask
  * @param mask A pointer to an iio_channels_mask structure */
-__api void
-iio_channels_mask_destroy(struct iio_channels_mask *mask);
-
+__api void iio_channels_mask_destroy(struct iio_channels_mask *mask);
 
 /** @brief Get the current sample size
  * @param dev A pointer to an iio_device structure
@@ -1662,10 +1522,8 @@ iio_channels_mask_destroy(struct iio_channels_mask *mask);
  *
  * <b>NOTE:</b> The sample size is not constant and will change when channels
  * get enabled or disabled. */
-__api __check_ret ssize_t
-iio_device_get_sample_size(const struct iio_device *dev,
-			   const struct iio_channels_mask *mask);
-
+__api __check_ret ssize_t iio_device_get_sample_size(
+		const struct iio_device *dev, const struct iio_channels_mask *mask);
 
 /** @brief Get the index of the given channel
  * @param chn A pointer to an iio_channel structure
@@ -1673,47 +1531,39 @@ iio_device_get_sample_size(const struct iio_device *dev,
  * @return On error, a negative errno code is returned */
 __api __check_ret __pure long iio_channel_get_index(const struct iio_channel *chn);
 
-
 /** @brief Get a pointer to a channel's data format structure
  * @param chn A pointer to an iio_channel structure
  * @return A pointer to the channel's iio_data_format structure */
-__api __check_ret __cnst const struct iio_data_format * iio_channel_get_data_format(
+__api __check_ret __cnst const struct iio_data_format *iio_channel_get_data_format(
 		const struct iio_channel *chn);
-
 
 /** @brief Convert the sample from hardware format to host format
  * @param chn A pointer to an iio_channel structure
  * @param dst A pointer to the destination buffer where the converted sample
  * should be written
  * @param src A pointer to the source buffer containing the sample */
-__api void iio_channel_convert(const struct iio_channel *chn,
-		void *dst, const void *src);
-
+__api void iio_channel_convert(const struct iio_channel *chn, void *dst, const void *src);
 
 /** @brief Convert the sample from host format to hardware format
  * @param chn A pointer to an iio_channel structure
  * @param dst A pointer to the destination buffer where the converted sample
  * should be written
  * @param src A pointer to the source buffer containing the sample */
-__api void iio_channel_convert_inverse(const struct iio_channel *chn,
-		void *dst, const void *src);
-
+__api void iio_channel_convert_inverse(const struct iio_channel *chn, void *dst, const void *src);
 
 /** @brief Enumerate the event attributes of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of event attributes found */
-__api __check_ret __pure unsigned int
-iio_device_get_event_attrs_count(const struct iio_device *dev);
-
+__api __check_ret __pure unsigned int iio_device_get_event_attrs_count(
+		const struct iio_device *dev);
 
 /** @brief Get the event attribute present at the given index
  * @param dev A pointer to an iio_device structure
  * @param index The index corresponding to the event attribute
  * @return On success, a pointer to an iio_attr structure
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_device_get_event_attr(const struct iio_device *dev, unsigned int index);
-
+__api __check_ret __pure const struct iio_attr *iio_device_get_event_attr(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Try to find an event attribute by its name
  * @param dev A pointer to an iio_device structure
@@ -1722,25 +1572,22 @@ iio_device_get_event_attr(const struct iio_device *dev, unsigned int index);
  * @return On success, a pointer to an iio_attr structure
  * @return If the name does not correspond to any known event attribute of the
  * given device, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_device_find_event_attr(const struct iio_device *dev, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_device_find_event_attr(
+		const struct iio_device *dev, const char *name);
 
 /** @brief Enumerate the debug attributes of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of debug attributes found */
-__api __check_ret __pure unsigned int
-iio_device_get_debug_attrs_count(const struct iio_device *dev);
-
+__api __check_ret __pure unsigned int iio_device_get_debug_attrs_count(
+		const struct iio_device *dev);
 
 /** @brief Get the debug attribute present at the given index
  * @param dev A pointer to an iio_device structure
  * @param index The index corresponding to the debug attribute
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the index is invalid, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_device_get_debug_attr(const struct iio_device *dev, unsigned int index);
-
+__api __check_ret __pure const struct iio_attr *iio_device_get_debug_attr(
+		const struct iio_device *dev, unsigned int index);
 
 /** @brief Try to find a debug attribute by its name
  * @param dev A pointer to an iio_device structure
@@ -1749,9 +1596,8 @@ iio_device_get_debug_attr(const struct iio_device *dev, unsigned int index);
  * @return On success, a pointer to a static NULL-terminated string
  * @return If the name does not correspond to any known debug attribute of the
  * given device, NULL is returned */
-__api __check_ret __pure const struct iio_attr *
-iio_device_find_debug_attr(const struct iio_device *dev, const char *name);
-
+__api __check_ret __pure const struct iio_attr *iio_device_find_debug_attr(
+		const struct iio_device *dev, const char *name);
 
 /** @brief Set the value of a hardware register
  * @param dev A pointer to an iio_device structure
@@ -1759,9 +1605,8 @@ iio_device_find_debug_attr(const struct iio_device *dev, const char *name);
  * @param value The value to set the register to
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-__api __check_ret int iio_device_reg_write(struct iio_device *dev,
-		uint32_t address, uint32_t value);
-
+__api __check_ret int iio_device_reg_write(
+		struct iio_device *dev, uint32_t address, uint32_t value);
 
 /** @brief Get the value of a hardware register
  * @param dev A pointer to an iio_device structure
@@ -1769,9 +1614,8 @@ __api __check_ret int iio_device_reg_write(struct iio_device *dev,
  * @param value A pointer to the variable where the value will be written
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-__api __check_ret int iio_device_reg_read(struct iio_device *dev,
-		uint32_t address, uint32_t *value);
-
+__api __check_ret int iio_device_reg_read(
+		struct iio_device *dev, uint32_t address, uint32_t *value);
 
 /** @} */
 
@@ -1779,26 +1623,19 @@ __api __check_ret int iio_device_reg_read(struct iio_device *dev,
 /* These functions can be used directly, but should be used through the generic
  * macros iio_attr_{read,write}() */
 
-__api __check_ret int
-iio_attr_read_bool(const struct iio_attr *attr, bool *val);
+__api __check_ret int iio_attr_read_bool(const struct iio_attr *attr, bool *val);
 
-__api __check_ret int
-iio_attr_read_longlong(const struct iio_attr *attr, long long *val);
+__api __check_ret int iio_attr_read_longlong(const struct iio_attr *attr, long long *val);
 
-__api __check_ret int
-iio_attr_read_double(const struct iio_attr *attr, double *val);
+__api __check_ret int iio_attr_read_double(const struct iio_attr *attr, double *val);
 
-__api __check_ret ssize_t
-iio_attr_write_string(const struct iio_attr *attr, const char *src);
+__api __check_ret ssize_t iio_attr_write_string(const struct iio_attr *attr, const char *src);
 
-__api __check_ret int
-iio_attr_write_bool(const struct iio_attr *attr, bool val);
+__api __check_ret int iio_attr_write_bool(const struct iio_attr *attr, bool val);
 
-__api __check_ret int
-iio_attr_write_longlong(const struct iio_attr *attr, long long val);
+__api __check_ret int iio_attr_write_longlong(const struct iio_attr *attr, long long val);
 
-__api __check_ret int
-iio_attr_write_double(const struct iio_attr *attr, double val);
+__api __check_ret int iio_attr_write_double(const struct iio_attr *attr, double val);
 
 #endif /* DOXYGEN */
 

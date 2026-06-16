@@ -5,11 +5,12 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+#include <string.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
-#include <string.h>
 
 TEST_FUNCTION(typed_attribute_functions)
 {
@@ -33,9 +34,8 @@ TEST_FUNCTION(typed_attribute_functions)
 			int ret_double = iio_attr_read_double(attr, &double_val);
 
 			DEBUG_PRINT("  INFO: Typed reads - bool:%s, longlong:%s, double:%s\n",
-				   ret_bool == 0 ? "OK" : "FAIL",
-				   ret_ll == 0 ? "OK" : "FAIL",
-				   ret_double == 0 ? "OK" : "FAIL");
+					ret_bool == 0 ? "OK" : "FAIL", ret_ll == 0 ? "OK" : "FAIL",
+					ret_double == 0 ? "OK" : "FAIL");
 
 			ssize_t ret_str = iio_attr_write_string(attr, "test");
 			int ret_bool_w = iio_attr_write_bool(attr, true);
@@ -43,10 +43,10 @@ TEST_FUNCTION(typed_attribute_functions)
 			int ret_double_w = iio_attr_write_double(attr, 3.14);
 
 			DEBUG_PRINT("  INFO: Typed writes - string:%s, bool:%s, longlong:%s, double:%s\n",
-				   ret_str >= 0 ? "OK" : "FAIL",
-				   ret_bool_w == 0 ? "OK" : "FAIL",
-				   ret_ll_w == 0 ? "OK" : "FAIL",
-				   ret_double_w == 0 ? "OK" : "FAIL");
+					ret_str >= 0 ? "OK" : "FAIL",
+					ret_bool_w == 0 ? "OK" : "FAIL",
+					ret_ll_w == 0 ? "OK" : "FAIL",
+					ret_double_w == 0 ? "OK" : "FAIL");
 
 			TEST_ASSERT(true, "Typed attribute functions tested");
 		}

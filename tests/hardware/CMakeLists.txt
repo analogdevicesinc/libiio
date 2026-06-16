@@ -1,8 +1,6 @@
-set(TEST_SOURCES
-  test_ad9364.c
-)
+set(TEST_SOURCES test_ad9364.c)
 
-foreach(TEST_SRC ${TEST_SOURCES})
+foreach (TEST_SRC ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
 
     add_executable(${TEST_NAME} ${TEST_SRC})
@@ -12,10 +10,9 @@ foreach(TEST_SRC ${TEST_SOURCES})
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${TEST_NAME}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "hardware")
     if (WITH_GCOV)
-      enable_coverage(${TEST_NAME})
-    endif()
-endforeach()
+        enable_coverage(${TEST_NAME})
+    endif ()
+endforeach ()

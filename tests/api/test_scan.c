@@ -5,10 +5,11 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
-#include "test_framework.h"
-#include <iio/iio.h>
 #include <errno.h>
+#include <iio/iio.h>
 #include <string.h>
+
+#include "test_framework.h"
 
 TEST_FUNCTION(scan_basic_operations)
 {
@@ -16,7 +17,8 @@ TEST_FUNCTION(scan_basic_operations)
 
 	scan = iio_scan(NULL, NULL);
 	if (iio_err(scan)) {
-		DEBUG_PRINT("  INFO: Basic scan failed with error %d (may be expected on some systems)\n", iio_err(scan));
+		DEBUG_PRINT("  INFO: Basic scan failed with error %d (may be expected on some systems)\n",
+				iio_err(scan));
 		return;
 	}
 
@@ -29,8 +31,8 @@ TEST_FUNCTION(scan_basic_operations)
 		const char *description = iio_scan_get_description(scan, i);
 		const char *uri = iio_scan_get_uri(scan, i);
 
-		DEBUG_PRINT("  INFO: Result %zu: URI='%s', Description='%s'\n",
-				i, uri ? uri : "NULL", description ? description : "NULL");
+		DEBUG_PRINT("  INFO: Result %zu: URI='%s', Description='%s'\n", i,
+				uri ? uri : "NULL", description ? description : "NULL");
 
 		TEST_ASSERT_PTR_NOT_NULL(uri, "URI should not be NULL for valid index");
 	}
@@ -57,7 +59,8 @@ TEST_FUNCTION(scan_with_params)
 
 	struct iio_scan *scan = iio_scan(&params, NULL);
 	if (iio_err(scan)) {
-		DEBUG_PRINT("  INFO: Scan with params failed with error %d (may be expected)\n", iio_err(scan));
+		DEBUG_PRINT("  INFO: Scan with params failed with error %d (may be expected)\n",
+				iio_err(scan));
 		return;
 	}
 
@@ -71,16 +74,8 @@ TEST_FUNCTION(scan_with_params)
 
 TEST_FUNCTION(scan_specific_backends)
 {
-	const char *backends[] = {
-		"local",
-		"usb",
-		"ip",
-		"serial",
-		"xml",
-		"local,usb",
-		"",
-		"nonexistent_backend"
-	};
+	const char *backends[] = { "local", "usb", "ip", "serial", "xml", "local,usb", "",
+		"nonexistent_backend" };
 
 	size_t num_backends = sizeof(backends) / sizeof(backends[0]);
 
@@ -105,15 +100,15 @@ TEST_FUNCTION(scan_empty_items)
 {
 	const char *backends = ";;";
 	struct iio_scan *scan;
-    int err;
-    size_t backends_count;
+	int err;
+	size_t backends_count;
 
 	DEBUG_PRINT("  INFO: Testing backend: '%s'\n", backends);
 	scan = iio_scan(NULL, backends);
 	err = iio_err(scan);
 	if (scan) {
-        backends_count = iio_scan_get_results_count(scan);
-    }
+		backends_count = iio_scan_get_results_count(scan);
+	}
 
 	TEST_ASSERT_PTR_NOT_NULL(scan, "Scan with params should succeed");
 	TEST_ASSERT_EQ(err, 0, "iio_scan should return 0 if succeeded");
@@ -124,12 +119,8 @@ TEST_FUNCTION(scan_empty_items)
 
 TEST_FUNCTION(scan_usb_filtering)
 {
-	const char *usb_filters[] = {
-		"usb=0456:*",
-		"usb=0456:b673",
-		"usb=ffff:ffff",
-		"usb=invalid"
-	};
+	const char *usb_filters[] = { "usb=0456:*", "usb=0456:b673", "usb=ffff:ffff",
+		"usb=invalid" };
 
 	size_t num_filters = sizeof(usb_filters) / sizeof(usb_filters[0]);
 
@@ -138,13 +129,14 @@ TEST_FUNCTION(scan_usb_filtering)
 
 		struct iio_scan *scan = iio_scan(NULL, usb_filters[i]);
 		if (iio_err(scan)) {
-			DEBUG_PRINT("    USB filter '%s' failed with error %d (may be expected)\n", 
-				usb_filters[i], iio_err(scan));
+			DEBUG_PRINT("    USB filter '%s' failed with error %d (may be expected)\n",
+					usb_filters[i], iio_err(scan));
 			continue;
 		}
 
 		size_t results_count = iio_scan_get_results_count(scan);
-		DEBUG_PRINT("    USB filter '%s' found %zu results\n", usb_filters[i], results_count);
+		DEBUG_PRINT("    USB filter '%s' found %zu results\n", usb_filters[i],
+				results_count);
 
 		iio_scan_destroy(scan);
 	}
@@ -169,7 +161,8 @@ TEST_FUNCTION(scan_edge_cases)
 		DEBUG_PRINT("  INFO: Comma-only backend string found %zu results\n", count);
 		iio_scan_destroy(scan);
 	} else {
-		DEBUG_PRINT("  INFO: Comma-only backend string failed with error %d\n", iio_err(scan));
+		DEBUG_PRINT("  INFO: Comma-only backend string failed with error %d\n",
+				iio_err(scan));
 	}
 
 	scan = iio_scan(NULL, "local,");
@@ -178,7 +171,8 @@ TEST_FUNCTION(scan_edge_cases)
 		DEBUG_PRINT("  INFO: Trailing comma backend string found %zu results\n", count);
 		iio_scan_destroy(scan);
 	} else {
-		DEBUG_PRINT("  INFO: Trailing comma backend string failed with error %d\n", iio_err(scan));
+		DEBUG_PRINT("  INFO: Trailing comma backend string failed with error %d\n",
+				iio_err(scan));
 	}
 }
 

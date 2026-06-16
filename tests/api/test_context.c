@@ -5,19 +5,19 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
-#include "test_framework.h"
-#include "test_helpers.h"
-#include <iio/iio.h>
 #include <errno.h>
+#include <iio/iio.h>
 #include <string.h>
 #include <time.h>
+
+#include "test_framework.h"
+#include "test_helpers.h"
 
 static struct iio_context *test_ctx = NULL;
 
 static inline long get_elapsed_ms(struct timespec *start, struct timespec *end)
 {
-	return (end->tv_sec - start->tv_sec) * 1000 +
-	       (end->tv_nsec - start->tv_nsec) / 1000000;
+	return (end->tv_sec - start->tv_sec) * 1000 + (end->tv_nsec - start->tv_nsec) / 1000000;
 }
 
 static void setup_test_context(void)
@@ -44,7 +44,8 @@ TEST_FUNCTION(context_creation_basic)
 
 	ctx = iio_create_context(NULL, NULL);
 	if (iio_err(ctx)) {
-		DEBUG_PRINT("  INFO: Default context creation failed with error %d (may be expected)\n", iio_err(ctx));
+		DEBUG_PRINT("  INFO: Default context creation failed with error %d (may be expected)\n",
+				iio_err(ctx));
 	} else {
 		TEST_ASSERT_PTR_NOT_NULL(ctx, "Default context should be created");
 		iio_context_destroy(ctx);
@@ -52,7 +53,8 @@ TEST_FUNCTION(context_creation_basic)
 
 	ctx = iio_create_context(NULL, "local:");
 	if (iio_err(ctx)) {
-		DEBUG_PRINT("  INFO: Local context creation failed with error %d (may be expected)\n", iio_err(ctx));
+		DEBUG_PRINT("  INFO: Local context creation failed with error %d (may be expected)\n",
+				iio_err(ctx));
 	} else {
 		TEST_ASSERT_PTR_NOT_NULL(ctx, "Local context should be created");
 		iio_context_destroy(ctx);
@@ -72,7 +74,8 @@ TEST_FUNCTION(context_creation_with_params)
 
 	struct iio_context *ctx = create_test_context("TESTS_API_URI", "local:", &params);
 	if (iio_err(ctx)) {
-		DEBUG_PRINT("  INFO: Context creation with params failed with error %d\n", iio_err(ctx));
+		DEBUG_PRINT("  INFO: Context creation with params failed with error %d\n",
+				iio_err(ctx));
 		return;
 	}
 
@@ -83,7 +86,8 @@ TEST_FUNCTION(context_creation_with_params)
 		TEST_ASSERT_PTR_NOT_NULL(retrieved_params, "Retrieved params should not be NULL");
 
 		if (retrieved_params) {
-			TEST_ASSERT_EQ(retrieved_params->log_level, LEVEL_ERROR, "Log level should match");
+			TEST_ASSERT_EQ(retrieved_params->log_level, LEVEL_ERROR,
+					"Log level should match");
 			TEST_ASSERT_EQ(retrieved_params->timeout_ms, 5000, "Timeout should match");
 		}
 
@@ -93,18 +97,9 @@ TEST_FUNCTION(context_creation_with_params)
 
 TEST_FUNCTION(context_creation_invalid_uris)
 {
-	const char *invalid_uris[] = {
-		"invalid:",
-		"nonexistent:device",
-		"usb:99.99.99",
-		"ip:192.168.0.1:9999",
-		"serial:/dev/nonexistent",
-		"xml:/nonexistent/file.xml",
-		"",
-		":",
-		"backend_without_colon",
-		"multiple:colons:here"
-	};
+	const char *invalid_uris[] = { "invalid:", "nonexistent:device", "usb:99.99.99",
+		"ip:192.168.0.1:9999", "serial:/dev/nonexistent", "xml:/nonexistent/file.xml", "",
+		":", "backend_without_colon", "multiple:colons:here" };
 
 	size_t num_uris = sizeof(invalid_uris) / sizeof(invalid_uris[0]);
 
@@ -112,9 +107,10 @@ TEST_FUNCTION(context_creation_invalid_uris)
 		struct iio_context *ctx = iio_create_context(NULL, invalid_uris[i]);
 		if (iio_err(ctx)) {
 			DEBUG_PRINT("  INFO: Invalid URI '%s' correctly failed with error %d\n",
-				   invalid_uris[i], iio_err(ctx));
+					invalid_uris[i], iio_err(ctx));
 		} else {
-			DEBUG_PRINT("  WARN: Invalid URI '%s' unexpectedly succeeded\n", invalid_uris[i]);
+			DEBUG_PRINT("  WARN: Invalid URI '%s' unexpectedly succeeded\n",
+					invalid_uris[i]);
 			iio_context_destroy(ctx);
 		}
 	}
@@ -134,14 +130,16 @@ TEST_FUNCTION(context_version_info)
 	const char *tag = iio_context_get_version_tag(test_ctx);
 
 	TEST_ASSERT(major > 0, "Major version should be greater than 0");
-	DEBUG_PRINT("  INFO: Context version: %u.%u, tag: '%s'\n", major, minor, tag ? tag : "NULL");
+	DEBUG_PRINT("  INFO: Context version: %u.%u, tag: '%s'\n", major, minor,
+			tag ? tag : "NULL");
 
 	unsigned int local_major = iio_context_get_version_major(NULL);
 	unsigned int local_minor = iio_context_get_version_minor(NULL);
 	const char *local_tag = iio_context_get_version_tag(NULL);
 
 	TEST_ASSERT(local_major > 0, "Local major version should be greater than 0");
-	DEBUG_PRINT("  INFO: Local version: %u.%u, tag: '%s'\n", local_major, local_minor, local_tag ? local_tag : "NULL");
+	DEBUG_PRINT("  INFO: Local version: %u.%u, tag: '%s'\n", local_major, local_minor,
+			local_tag ? local_tag : "NULL");
 }
 
 TEST_FUNCTION(context_properties)
@@ -190,7 +188,8 @@ TEST_FUNCTION(context_attributes)
 
 		if (attr) {
 			const char *name = iio_attr_get_name(attr);
-			DEBUG_PRINT("  INFO: Context attribute %u: '%s'\n", i, name ? name : "NULL");
+			DEBUG_PRINT("  INFO: Context attribute %u: '%s'\n", i,
+					name ? name : "NULL");
 		}
 	}
 
@@ -202,8 +201,10 @@ TEST_FUNCTION(context_attributes)
 		if (first_attr) {
 			const char *name = iio_attr_get_name(first_attr);
 			if (name) {
-				const struct iio_attr *found_attr = iio_context_find_attr(test_ctx, name);
-				TEST_ASSERT(found_attr == first_attr, "Found attribute should match original");
+				const struct iio_attr *found_attr =
+						iio_context_find_attr(test_ctx, name);
+				TEST_ASSERT(found_attr == first_attr,
+						"Found attribute should match original");
 			}
 		}
 	}
@@ -231,8 +232,8 @@ TEST_FUNCTION(context_devices)
 		if (dev) {
 			const char *id = iio_device_get_id(dev);
 			const char *name = iio_device_get_name(dev);
-			DEBUG_PRINT("  INFO: Device %u: id='%s', name='%s'\n",
-				   i, id ? id : "NULL", name ? name : "NULL");
+			DEBUG_PRINT("  INFO: Device %u: id='%s', name='%s'\n", i, id ? id : "NULL",
+					name ? name : "NULL");
 		}
 	}
 
@@ -244,8 +245,10 @@ TEST_FUNCTION(context_devices)
 		if (first_dev) {
 			const char *id = iio_device_get_id(first_dev);
 			if (id) {
-				struct iio_device *found_dev = iio_context_find_device(test_ctx, id);
-				TEST_ASSERT(found_dev == first_dev, "Found device should match original");
+				struct iio_device *found_dev =
+						iio_context_find_device(test_ctx, id);
+				TEST_ASSERT(found_dev == first_dev,
+						"Found device should match original");
 			}
 		}
 	}
@@ -274,21 +277,24 @@ TEST_FUNCTION(context_timeout)
 	if (ret == 0) {
 		DEBUG_PRINT("  INFO: Successfully set timeout to IIO_TIMEOUT_BACKEND\n");
 	} else {
-		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_BACKEND failed with error %d\n", ret);
+		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_BACKEND failed with error %d\n",
+				ret);
 	}
 
 	ret = iio_context_set_timeout(test_ctx, IIO_TIMEOUT_INFINITE);
 	if (ret == 0) {
 		DEBUG_PRINT("  INFO: Successfully set timeout to IIO_TIMEOUT_INFINITE\n");
 	} else {
-		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_INFINITE failed with error %d\n", ret);
+		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_INFINITE failed with error %d\n",
+				ret);
 	}
 
 	ret = iio_context_set_timeout(test_ctx, IIO_TIMEOUT_NONBLOCK);
 	if (ret == 0) {
 		DEBUG_PRINT("  INFO: Successfully set timeout to IIO_TIMEOUT_NONBLOCK\n");
 	} else {
-		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_NONBLOCK failed with error %d\n", ret);
+		DEBUG_PRINT("  INFO: Setting timeout to IIO_TIMEOUT_NONBLOCK failed with error %d\n",
+				ret);
 	}
 
 	ret = iio_context_set_timeout(test_ctx, -42);
@@ -339,7 +345,7 @@ TEST_FUNCTION(context_timeout_measurement)
 
 	/* Allow ±500ms tolerance (some overhead for DNS, connection setup, etc.) */
 	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 500, 2000,
-		"1000ms timeout should complete within expected range");
+			"1000ms timeout should complete within expected range");
 
 	/* Test 2: 4000ms timeout */
 	DEBUG_PRINT("  INFO: Testing 4000ms timeout...\n");
@@ -357,7 +363,7 @@ TEST_FUNCTION(context_timeout_measurement)
 
 	/* Allow ±1000ms tolerance */
 	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 3000, 5500,
-		"4000ms timeout should complete within expected range");
+			"4000ms timeout should complete within expected range");
 
 	/* Test 3: Non-blocking mode */
 	DEBUG_PRINT("  INFO: Testing non-blocking mode...\n");
@@ -374,8 +380,8 @@ TEST_FUNCTION(context_timeout_measurement)
 	TEST_ASSERT(iio_err(ctx), "Connection to unreachable host should fail");
 
 	/* Non-blocking should return almost immediately (within 500ms) */
-	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 0, 500,
-		"Non-blocking mode should return immediately");
+	TEST_ASSERT_DURATION_RANGE(
+			elapsed_ms, 0, 500, "Non-blocking mode should return immediately");
 }
 
 TEST_FUNCTION(context_user_data)

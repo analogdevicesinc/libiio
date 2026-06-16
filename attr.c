@@ -6,16 +6,15 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-private.h"
-#include "sort.h"
-
-#include <inttypes.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
-static inline unsigned int attr_index(const struct iio_attr_list *list,
-				      const struct iio_attr *attr)
+#include "iio-private.h"
+#include "sort.h"
+
+static inline unsigned int attr_index(const struct iio_attr_list *list, const struct iio_attr *attr)
 {
 	uintptr_t diff = (uintptr_t)attr - (uintptr_t)list->attrs;
 	return (unsigned int)diff / sizeof(*attr);
@@ -28,7 +27,7 @@ ssize_t iio_attr_read_raw(const struct iio_attr *attr, char *dst, size_t len)
 
 	if (attr->type == IIO_ATTR_TYPE_CONTEXT) {
 		idx = attr_index(&attr->iio.ctx->attrlist, attr);
-		return (ssize_t) iio_strlcpy(dst, attr->iio.ctx->values[idx], len);
+		return (ssize_t)iio_strlcpy(dst, attr->iio.ctx->values[idx], len);
 	}
 
 	if (dev->ctx->ops->read_attr)
@@ -45,7 +44,7 @@ int iio_attr_read_longlong(const struct iio_attr *attr, long long *val)
 
 	ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 
 	errno = 0;
 	value = strtoll(buf, &end, 0);
@@ -75,13 +74,12 @@ int iio_attr_read_double(const struct iio_attr *attr, double *val)
 
 	ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 	if (ret < 0)
-		return (int) ret;
+		return (int)ret;
 
 	return read_double(buf, val);
 }
 
-ssize_t iio_attr_write_raw(const struct iio_attr *attr,
-			   const void *src, size_t len)
+ssize_t iio_attr_write_raw(const struct iio_attr *attr, const void *src, size_t len)
 {
 	const struct iio_device *dev = iio_attr_get_device(attr);
 
@@ -108,7 +106,7 @@ int iio_attr_write_longlong(const struct iio_attr *attr, long long val)
 	len = iio_snprintf(buf, sizeof(buf), "%lld", val);
 	ret = iio_attr_write_raw(attr, buf, len + 1);
 
-	return (int) (ret < 0 ? ret : 0);
+	return (int)(ret < 0 ? ret : 0);
 }
 
 int iio_attr_write_double(const struct iio_attr *attr, double val)
@@ -116,10 +114,10 @@ int iio_attr_write_double(const struct iio_attr *attr, double val)
 	ssize_t ret;
 	char buf[1024];
 
-	ret = (ssize_t) write_double(buf, sizeof(buf), val);
+	ret = (ssize_t)write_double(buf, sizeof(buf), val);
 	if (!ret)
 		ret = iio_attr_write_string(attr, buf);
-	return (int) (ret < 0 ? ret : 0);
+	return (int)(ret < 0 ? ret : 0);
 }
 
 int iio_attr_write_bool(const struct iio_attr *attr, bool val)
@@ -131,11 +129,10 @@ int iio_attr_write_bool(const struct iio_attr *attr, bool val)
 	else
 		ret = iio_attr_write_raw(attr, "0", 2);
 
-	return (int) (ret < 0 ? ret : 0);
+	return (int)(ret < 0 ? ret : 0);
 }
 
-const struct iio_attr *
-iio_attr_get(const struct iio_attr_list *attrs, unsigned int idx)
+const struct iio_attr *iio_attr_get(const struct iio_attr_list *attrs, unsigned int idx)
 {
 	if (idx >= attrs->num)
 		return NULL;
@@ -143,8 +140,7 @@ iio_attr_get(const struct iio_attr_list *attrs, unsigned int idx)
 	return &attrs->attrs[idx];
 }
 
-const struct iio_attr *
-iio_attr_find(const struct iio_attr_list *attrs, const char *name)
+const struct iio_attr *iio_attr_find(const struct iio_attr_list *attrs, const char *name)
 {
 	unsigned int i;
 
@@ -155,20 +151,17 @@ iio_attr_find(const struct iio_attr_list *attrs, const char *name)
 	return NULL;
 }
 
-const char *
-iio_attr_get_name(const struct iio_attr *attr)
+const char *iio_attr_get_name(const struct iio_attr *attr)
 {
 	return attr->name;
 }
 
-const char *
-iio_attr_get_filename(const struct iio_attr *attr)
+const char *iio_attr_get_filename(const struct iio_attr *attr)
 {
 	return attr->filename;
 }
 
-const char *
-iio_attr_get_static_value(const struct iio_attr *attr)
+const char *iio_attr_get_static_value(const struct iio_attr *attr)
 {
 	unsigned int idx;
 
@@ -181,9 +174,8 @@ iio_attr_get_static_value(const struct iio_attr *attr)
 	}
 }
 
-int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
-		 const char *name, const char *filename,
-		 enum iio_attr_type type)
+int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs, const char *name,
+		const char *filename, enum iio_attr_type type)
 {
 	struct iio_attr *attr;
 
@@ -206,7 +198,7 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 		attr[attrs->num].filename = iio_strdup(filename);
 
 		if (!attr[attrs->num].filename) {
-			free((char *) attr[attrs->num].name);
+			free((char *)attr[attrs->num].name);
 			return -ENOMEM;
 		}
 	} else {
@@ -220,14 +212,14 @@ int iio_add_attr(union iio_pointer p, struct iio_attr_list *attrs,
 	return 0;
 }
 
-
 /* Accepted attribute types are: IIO_ATTR_TYPE_DEVICE, IIO_ATTR_TYPE_DEBUG and
    IIO_ATTR_TYPE_DEVICE_EVENT. Buffer attributes are owned by buffers,
    not devices. Use iio_buffer_add_attr() instead. */
-int iio_device_add_attr(struct iio_device *dev,
-			const char *name, enum iio_attr_type type)
+int iio_device_add_attr(struct iio_device *dev, const char *name, enum iio_attr_type type)
 {
-	union iio_pointer p = { .dev = dev, };
+	union iio_pointer p = {
+		.dev = dev,
+	};
 	int ret;
 	const char *attr_type_str = "";
 	size_t attr_index = 0;
@@ -257,10 +249,12 @@ int iio_device_add_attr(struct iio_device *dev,
 	return 0;
 }
 
-int iio_channel_add_attr(struct iio_channel *chn,
-			 const char *name, enum iio_attr_type type, const char *filename)
+int iio_channel_add_attr(struct iio_channel *chn, const char *name, enum iio_attr_type type,
+		const char *filename)
 {
-	union iio_pointer p = { .chn = chn, };
+	union iio_pointer p = {
+		.chn = chn,
+	};
 	int ret;
 	const char *attr_type_str = "";
 	size_t attr_index = 0;
@@ -278,8 +272,7 @@ int iio_channel_add_attr(struct iio_channel *chn,
 		return -EINVAL;
 	}
 
-	ret = iio_add_attr(p, &chn->attrlist[attr_index], name, filename,
-			   type);
+	ret = iio_add_attr(p, &chn->attrlist[attr_index], name, filename, type);
 	if (ret < 0)
 		return ret;
 
@@ -289,7 +282,9 @@ int iio_channel_add_attr(struct iio_channel *chn,
 
 int iio_buffer_add_attr(struct iio_buffer *buf, const char *name)
 {
-	union iio_pointer p = { .buf = buf, };
+	union iio_pointer p = {
+		.buf = buf,
+	};
 	int ret;
 
 	ret = iio_add_attr(p, &buf->attrlist, name, NULL, IIO_ATTR_TYPE_BUFFER);
@@ -300,11 +295,12 @@ int iio_buffer_add_attr(struct iio_buffer *buf, const char *name)
 	return 0;
 }
 
-int iio_context_add_attr(struct iio_context *ctx,
-			 const char *key, const char *value)
+int iio_context_add_attr(struct iio_context *ctx, const char *key, const char *value)
 {
 	char **values, *new_val;
-	union iio_pointer p = { .ctx = ctx, };
+	union iio_pointer p = {
+		.ctx = ctx,
+	};
 	unsigned int i;
 	int ret;
 
@@ -313,15 +309,14 @@ int iio_context_add_attr(struct iio_context *ctx,
 		return -ENOMEM;
 
 	for (i = 0; i < ctx->attrlist.num; i++) {
-		if(!strcmp(ctx->attrlist.attrs[i].name, key)) {
+		if (!strcmp(ctx->attrlist.attrs[i].name, key)) {
 			free(ctx->values[i]);
 			ctx->values[i] = new_val;
 			return 0;
 		}
 	}
 
-	values = realloc(ctx->values,
-			(ctx->attrlist.num + 1) * sizeof(*ctx->values));
+	values = realloc(ctx->values, (ctx->attrlist.num + 1) * sizeof(*ctx->values));
 	if (!values) {
 		free(new_val);
 		return -ENOMEM;
@@ -351,7 +346,7 @@ int iio_context_add_attr(struct iio_context *ctx,
 	causing subsequent attributes to shift forward as they were already sorted */
 	if (new_idx != ctx->attrlist.num - 1) {
 		memmove(&ctx->values[new_idx + 1], &ctx->values[new_idx],
-			(ctx->attrlist.num - new_idx - 1) * sizeof(*ctx->values));
+				(ctx->attrlist.num - new_idx - 1) * sizeof(*ctx->values));
 		ctx->values[new_idx] = new_val;
 	}
 
@@ -361,9 +356,9 @@ int iio_context_add_attr(struct iio_context *ctx,
 void iio_free_attr_data(struct iio_attr *attr)
 {
 	if (attr->filename != attr->name)
-		free((char *) attr->filename);
+		free((char *)attr->filename);
 
-	free((char *) attr->name);
+	free((char *)attr->name);
 
 	attr->filename = NULL;
 	attr->name = NULL;
@@ -408,12 +403,13 @@ int iio_attr_get_range(const struct iio_attr *attr, double *min, double *step, d
 	ret = iio_attr_read_raw(attr, buf, MAX_ATTR_VALUE);
 	if (ret < 0) {
 		free(buf);
-		return (int) ret;
+		return (int)ret;
 	}
 
 	// Expect format: [min step max]
 #if defined(_MSC_VER)
-	n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra, (unsigned int)sizeof(extra));
+	n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra,
+			(unsigned int)sizeof(extra));
 #else
 	n = iio_sscanf(buf, " [ %lf %lf %lf %c", &lmin, &lstep, &lmax, &extra);
 #endif
@@ -500,7 +496,7 @@ int iio_attr_get_available(const struct iio_attr *attr, char ***list, size_t *co
 	*list = local_list;
 	*count = n;
 
-    return 0;
+	return 0;
 }
 
 void iio_available_list_free(char **list, size_t count)
@@ -515,8 +511,8 @@ void iio_available_list_free(char **list, size_t count)
 	}
 }
 
-int iio_attr_get_available_buf(const struct iio_attr *attr, char *buf,
-	size_t buflen, char **list, size_t *count)
+int iio_attr_get_available_buf(
+		const struct iio_attr *attr, char *buf, size_t buflen, char **list, size_t *count)
 {
 	ssize_t ret;
 	size_t n = 0, max = (size_t)-1;

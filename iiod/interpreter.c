@@ -6,12 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include <poll.h>
+
 #include "../iio-config.h"
 #include "debug.h"
 #include "ops.h"
 #include "thread-pool.h"
-
-#include <poll.h>
 #if WITH_AIO
 #include <pthread.h>
 #include <sys/eventfd.h>
@@ -19,8 +19,7 @@
 #include <sys/socket.h>
 
 #if WITH_AIO
-static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
-	bool do_read)
+static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len, bool do_read)
 {
 	ssize_t ret;
 	struct pollfd pfd[2];
@@ -60,8 +59,7 @@ static ssize_t async_io(struct parser_pdata *pdata, void *buf, size_t len,
 
 		if (pfd[0].revents & POLLIN) {
 			uint64_t event;
-			ret = read(pdata->aio_eventfd[do_read],
-						&event, sizeof(event));
+			ret = read(pdata->aio_eventfd[do_read], &event, sizeof(event));
 			if (ret != sizeof(event)) {
 				IIO_ERROR("Failed to read from eventfd: %d\n", -errno);
 				ret = -EIO;
@@ -107,8 +105,7 @@ static ssize_t readfd_aio(struct parser_pdata *pdata, void *dest, size_t len)
 	return async_io(pdata, dest, len, true);
 }
 
-static ssize_t writefd_aio(struct parser_pdata *pdata, const void *dest,
-		size_t len)
+static ssize_t writefd_aio(struct parser_pdata *pdata, const void *dest, size_t len)
 {
 	if (len > MAX_AIO_REQ_SIZE)
 		len = MAX_AIO_REQ_SIZE;
@@ -199,10 +196,8 @@ static ssize_t writefd_io(struct parser_pdata *pdata, const void *src, size_t le
 
 #endif /* WITH_AIO */
 
-void interpreter(struct iio_context *ctx, int fd_in, int fd_out,
-		 bool is_socket, bool is_usb,
-		 struct thread_pool *pool, const void *xml_zstd,
-		 size_t xml_zstd_len)
+void interpreter(struct iio_context *ctx, int fd_in, int fd_out, bool is_socket, bool is_usb,
+		struct thread_pool *pool, const void *xml_zstd, size_t xml_zstd_len)
 {
 	struct parser_pdata pdata = { 0 };
 
