@@ -338,7 +338,19 @@ __vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, s
 __vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
- * @brief Parses a buffer of 32-bit words into a vita49_2_ackv_ackx_packet structure. 
+ * @brief Populates a 32-bit word buffer with data for an AckV Packet. 
+ * The buffer MUST be large enough to hold the generated packet.
+ * Returns the number of words written, or a negative error code on failure.
+ * 
+ * @param pkt 
+ * @param buf 
+ * @param max_words 
+ * @return ssize_t 
+ */
+__vrt_api ssize_t vita49_2_generate_ackv_packet(const struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_ackx_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
@@ -347,6 +359,17 @@ __vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packe
  * @return int 
  */
 __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt);
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_ackv_packet structure. 
+ * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
+ * 
+ * @param buf 
+ * @param words 
+ * @param pkt 
+ * @return int 
+ */
+__vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a AckS Packet. 

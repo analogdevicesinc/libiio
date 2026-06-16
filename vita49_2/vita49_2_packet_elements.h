@@ -334,10 +334,10 @@ struct vita49_2_iq_item {
  * @struct vita49_2_cam_field
  * @brief VITA 49.2 Control/Acknowledge Mode (CAM) Field (32 bits)
  * 
- * This structure contains bits representing the Control/Acknowledge Mode (CAM) field which is present
- * in all Command-type packets to specify additional properties of the Control and Acknowledge sub-type packets.
+ * This structure contains bits representing the Control/Acknowledge Mode (CAM) field specifically for Control Packets.
+ * Another variation exists for Acknowledge Packets.
  */
-struct vita49_2_cam_field {
+struct vita49_2_control_cam_field {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
 
 	// See Table 8.3.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
@@ -412,6 +412,92 @@ struct vita49_2_cam_field {
 };
 
 /**
+ * @struct vita49_2_cam_field
+ * @brief VITA 49.2 Control/Acknowledge Mode (CAM) Field (32 bits)
+ * 
+ * This structure contains bits representing the Control/Acknowledge Mode (CAM) field specifically for Control Packets.
+ * Another variation exists for Acknowledge Packets.
+ */
+struct vita49_2_ack_cam_field {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
+
+	// See Table 8.4.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
+	uint32_t reserved_9_0:10; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+
+	uint32_t action_scheduled:1;			/* Action Scheduled or Executed, indicates whether actions can be scheduled or were scheduled*/
+	uint32_t partial_action:1;				/* Indicate whether an action was partially executed */
+
+	uint32_t timing_ack:3;					/* See Table 8.4.1.5-1 in the full VITA 49.2 specification document */
+
+	uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+
+	uint32_t errors_present:1;				/* Applicable to AckX Packets only. Indicates errors were generated. */
+	uint32_t warnings_present:1;			/* Applicable to AckV/AckX Packets. Indicates warnings were generated. */
+
+	uint32_t ackS_request:1;				/* Set to 1 if this packet is an AckS Packet */
+	uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
+	uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
+
+	/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM */
+	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+
+	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+
+	uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+
+	uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+	uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+	
+	uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+	uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+	uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+
+	uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+	uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+	/* ======================================================================================= */
+
+#else
+
+	/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM */
+	uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+	uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+
+	uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+	uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+
+	uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+
+	uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+	uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+
+	uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+
+	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+
+	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+	/* ======================================================================================= */
+
+
+	uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
+	uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
+	uint32_t ackS_request:1;				/* Set to 1 if this packet is an AckS Packet */
+
+	uint32_t warnings_present:1;			/* Applicable to AckV/AckX Packets. Indicates warnings were generated. */
+	uint32_t errors_present:1;				/* Applicable to AckX Packets only. Indicates errors were generated. */
+
+	uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+
+	uint32_t timing_ack:3;					/* See Table 8.4.1.5-1 in the full VITA 49.2 specification document */
+
+	uint32_t partial_action:1;				/* Indicate whether an action was partially executed */
+	uint32_t action_scheduled:1;			/* Action Scheduled or Executed, indicates whether actions can be scheduled or were scheduled*/
+
+	uint32_t reserved_9_0:10; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+
+#endif
+};
+
+/**
  * @struct vita49_2_command_prologue
  * @brief VITA 49.2 Command Packet Prologue (exists in all Command-type packets)
  * 
@@ -420,7 +506,12 @@ struct vita49_2_cam_field {
 struct vita49_2_command_prologue {
 
 	struct vita49_2_prologue common_prologue; 	/* Common Prologue fields (Header, Stream ID, Class ID, Timestamp) */
-	struct vita49_2_cam_field cam;				/* Control/Acknowledge Mode (CAM) field */
+
+	// There's a difference in the CAM fields for Control Packets vs. Acknowledge Packets. So instead of embedding the structs,
+	// I'm deciding to use 2 pointers. I could technically just use a single void pointer, but that doesn't work well with intellisense.
+	struct vita49_2_control_cam_field* control_cam;		/* Control/Acknowledge Mode (CAM) field for Control Packets specifically */
+	struct vita49_2_ack_cam_field* ack_cam;				/* Control/Acknowledge Mode (CAM) field for Acknowledge Packets specifically */
+	
 	uint32_t message_id;						/* Message ID field - used to correlate Control Packets with their corresponding Acknowledge Packets */
 
 	// ADI doesn't use controllee ID, however we retain the right to support it at a later time.

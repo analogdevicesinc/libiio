@@ -397,8 +397,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// ==============================================================
 
 	// Setting up the majority of a time data packet now to streamline future processing
-	struct vita49_2_data_packet time_data_packet;
-	memset(&time_data_packet, 0, sizeof(time_data_packet));
+	struct vita49_2_data_packet time_data_packet = {0};
 
 	time_data_packet.prologue.header.indicators = (1 << 1); // Indicate that we're NOT generating a VITA 49.0 packet. See Table 5.1.1.1-1 for more info on indicator bits.
 	time_data_packet.prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
@@ -431,6 +430,53 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// TODO: Trailer support
 
 	uint16_t time_data_packet_size = 0;
+
+	// ==============================================================
+	// ACKV PACKET SETUP
+	// ==============================================================
+
+	struct vita49_2_ackV_packet ackV_packet = {0};
+
+	ackV_packet.command_prologue.common_prologue.header.indicators = (1 << 2);		// Indicate that this specific Command Packet is an Acknowledge type
+	ackV_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	ackV_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+	ackV_packet.command_prologue.common_prologue.header.has_class_id = 1;
+	ackV_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+
+	ackV_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI;
+	ackV_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+	ackV_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+	
+	ackV_packet.command_prologue.common_prologue.has_stream_id = 1;
+	ackV_packet.command_prologue.common_prologue.has_class_id = 1;
+	ackV_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+	// time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	ackV_packet.command_prologue.ack_cam = calloc(1, sizeof(*ackV_packet.command_prologue.ack_cam));
+	if (ackV_packet.command_prologue.ack_cam == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to allocate memory for AckV CAM field.\n");
+		return 1;
+	}
+
+	ackV_packet.command_prologue.ack_cam->ackV_request = 1;
+
+	// Remaining Fields that need to be set:
+	// AckV Packet:
+		// Command Prologue:
+			// CAM
+				// Warnings Present *
+				// Control Fields *
+			// Message ID *
+			// Controllee ID/UUID *
+			// Controller ID/UUID *
+		// CIF0 Warnings *
+		// CIF1 Warnings (if applicable) *
+		// CIF2 Warnings (if applicable) *
+		// CIF3 Warnings (if applicable) *
+		// CIF7 Warnings (if applicable) *
+		// Warnings Payload *
+		// Warnings Payload Size *
 
 	// ==============================================================
 	// RECEIVE LOOP
@@ -686,10 +732,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 					// If an AckV packet was requested, we need to validate the commands in the Control Packet and send
 					// back the AckV packet
-					if (control_packet.command_prologue.cam.request_ack_v)
+					if (control_packet.command_prologue.control_cam->request_ack_v)
 					{
-						struct vita49_2_ackV_packet ackV_packet;
-
 						if (validate_commands(arguments->ctx, &control_packet, &ackV_packet) < 0)
 						{
 							fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet.\n");
@@ -697,6 +741,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						else
 						{
 							// Populating the rest of the AckV Packet
+
 
 						}
 					}
@@ -884,8 +929,11 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 	if (!ctx || !pkt)
 		return -EINVAL;
 
+	if (pkt->command_prologue.control_cam == NULL)
+		return -EINVAL;
+
 	// Check the Action Mode bits in the Packet to see if the Controls should be executed
-	if (pkt->command_prologue.cam.action_bits != VITA49_2_CTRL_EXECUTE)
+	if (pkt->command_prologue.control_cam->action_bits != VITA49_2_CTRL_EXECUTE)
 		return -EINVAL;
 
 	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
