@@ -12,19 +12,19 @@
 #include <string.h>
 
 static inline struct iio_context *create_test_context(const char *env_var_name,
-	const char *default_uri, const struct iio_context_params *params)
+		const char *default_uri, const struct iio_context_params *params)
 {
-    const char *uri = getenv(env_var_name);
-    if (!uri) {
-        uri = default_uri;
-    }
+	const char *uri = getenv(env_var_name);
+	if (!uri) {
+		uri = default_uri;
+	}
 
-    struct iio_context *ctx = iio_create_context(params, uri);
-    if (iio_err(ctx)) {
-        return NULL;
-    }
+	struct iio_context *ctx = iio_create_context(params, uri);
+	if (iio_err(ctx)) {
+		return NULL;
+	}
 
-    return ctx;
+	return ctx;
 }
 
 #endif /* TEST_HELPERS_H */

@@ -8,18 +8,17 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <iio/iio.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 #ifdef _WIN32
-#include <windows.h>
 #include <fcntl.h>
 #include <io.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -29,25 +28,25 @@
 #define MY_NAME "iio_rwdev"
 
 #define SAMPLES_PER_READ 256
-#define DEFAULT_FREQ_HZ  100
+#define DEFAULT_FREQ_HZ 100
 #define REFILL_PER_BENCHMARK 10
 
 static const struct option options[] = {
-	  {"trigger", required_argument, 0, 't'},
-	  {"trigger-rate", required_argument, 0, 'r'},
-	  {"buffer-size", required_argument, 0, 'b'},
-	  {"buffer-index", required_argument, 0, 'i'},
-	  {"samples", required_argument, 0, 's' },
-	  {"auto", no_argument, 0, 'a'},
-	  {"write", no_argument, 0, 'w'},
-	  {"cyclic", no_argument, 0, 'c'},
-	  {"benchmark", no_argument, 0, 'B'},
-	  {0, 0, 0, 0},
+	{ "trigger", required_argument, 0, 't' },
+	{ "trigger-rate", required_argument, 0, 'r' },
+	{ "buffer-size", required_argument, 0, 'b' },
+	{ "buffer-index", required_argument, 0, 'i' },
+	{ "samples", required_argument, 0, 's' },
+	{ "auto", no_argument, 0, 'a' },
+	{ "write", no_argument, 0, 'w' },
+	{ "cyclic", no_argument, 0, 'c' },
+	{ "benchmark", no_argument, 0, 'B' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
 	"[-t <trigger>] [-b <buffer-size>]"
-		"[-s <samples>] <iio_device> [<channel> ...]",
+	"[-s <samples>] <iio_device> [<channel> ...]",
 	"Use the specified trigger.",
 	"Set the trigger to the specified rate (Hz). Default is 100 Hz.",
 	"Size of the transfer buffer. Default is 256.",
@@ -57,7 +56,7 @@ static const char *options_descriptions[] = {
 	"Transmit to IIO device (TX) instead of receiving (RX).",
 	"Use cyclic buffer mode.",
 	"Benchmark throughput."
-		"\n\t\t\tStatistics will be printed on the standard input.",
+	"\n\t\t\tStatistics will be printed on the standard input.",
 };
 
 static struct iio_context *ctx;
@@ -140,7 +139,7 @@ static void setup_sig_handler(void)
 
 #include <pthread.h>
 
-static void * sig_handler_thd(void *data)
+static void *sig_handler_thd(void *data)
 {
 	sigset_t *mask = data;
 	int ret, sig;
@@ -192,7 +191,7 @@ static void setup_sig_handler(void)
  * manually, fill a single block from stdin, and enqueue it with cyclic=true.
  */
 static int do_cyclic_transfer(struct iio_device *dev, struct iio_buffer *buffer,
-			      struct iio_channels_mask *mask, size_t block_size)
+		struct iio_channels_mask *mask, size_t block_size)
 {
 	struct iio_buffer_stream *buf_stream;
 	size_t len, nb, bytes_used;
@@ -220,7 +219,7 @@ static int do_cyclic_transfer(struct iio_device *dev, struct iio_buffer *buffer,
 	start = iio_block_start(block);
 	len = (uintptr_t)iio_block_end(block) - (uintptr_t)start;
 
-	for (bytes_used = len; len; ) {
+	for (bytes_used = len; len;) {
 		nb = fread(start, 1, len, stdin);
 		if (!nb)
 			break;
@@ -255,8 +254,7 @@ err_close_buffer:
 	return ret;
 }
 
-static ssize_t transfer_sample(const struct iio_channel *chn,
-		void *buf, size_t len, void *d)
+static ssize_t transfer_sample(const struct iio_channel *chn, void *buf, size_t len, void *d)
 {
 	bool *is_write = d;
 	size_t nb;
@@ -273,7 +271,7 @@ static ssize_t transfer_sample(const struct iio_channel *chn,
 			return -1;
 		}
 	}
-	return (ssize_t) nb;
+	return (ssize_t)nb;
 }
 
 #define MY_OPTS "t:b:i:s:T:r:wcB"
@@ -289,8 +287,7 @@ int main(int argc, char **argv)
 	struct iio_device *dev, *trigger;
 	const struct iio_channel *ch;
 	ssize_t sample_size, hw_sample_size;
-	bool hit, mib, is_write = false, cyclic_buffer = false,
-	     benchmark = false, do_write = false;
+	bool hit, mib, is_write = false, cyclic_buffer = false, benchmark = false, do_write = false;
 	struct iio_buffer *buffer;
 	const struct iio_block *block;
 	struct iio_channels_mask *mask;
@@ -305,16 +302,16 @@ int main(int argc, char **argv)
 
 	setup_sig_handler();
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
-				 options, options_descriptions, NULL, &ret);
+	ctx = handle_common_opts(
+			MY_NAME, argc, argw, MY_OPTS, options, options_descriptions, NULL, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		goto err_free_ctx;
 	}
 
-	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS,	/* Flawfinder: ignore */
-					opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
+				opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -324,8 +321,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argv[optind] != NULL
-					&& argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL &&
+					argv[optind][0] != '-')
 				optind++;
 			break;
 		case 't':
@@ -420,13 +417,12 @@ int main(int argc, char **argv)
 				hit = true;
 
 				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s %s\n",
-						iio_attr_get_static_value(uri),
-						dev_name(dev), iio_channel_get_id(ch));
+						iio_attr_get_static_value(uri), dev_name(dev),
+						iio_channel_get_id(ch));
 			}
 			if (hit)
 				printf("Example : " MY_NAME " -u %s -b 256 -s 1024 %s\n",
-						iio_attr_get_static_value(uri),
-						dev_name(dev));
+						iio_attr_get_static_value(uri), dev_name(dev));
 		}
 		usage(MY_NAME, options, options_descriptions);
 		goto err_free_ctx;
@@ -491,9 +487,8 @@ int main(int argc, char **argv)
 
 	if (is_write != iio_buffer_is_output(buffer)) {
 		fprintf(stderr, "Buffer %u is an %sput buffer, but %sput was requested\n",
-			buffer_index,
-			iio_buffer_is_output(buffer) ? "out" : "in",
-			is_write ? "out" : "in");
+				buffer_index, iio_buffer_is_output(buffer) ? "out" : "in",
+				is_write ? "out" : "in");
 		goto err_free_mask;
 	}
 
@@ -504,7 +499,7 @@ int main(int argc, char **argv)
 			iio_channel_enable(ch, mask);
 		}
 	} else {
-		for (j = optind + 1; j < (unsigned int) argc; j++) {
+		for (j = optind + 1; j < (unsigned int)argc; j++) {
 			const struct iio_channel *scan_chn;
 
 			ch = iio_device_find_channel(dev, argw[j], is_write);
@@ -524,8 +519,8 @@ int main(int argc, char **argv)
 
 			if (!hit) {
 				dev_perror(dev, -EINVAL,
-					   "Channel \"%s\" is not a scan element of buffer %u",
-					   argw[j], buffer_index);
+						"Channel \"%s\" is not a scan element of buffer %u",
+						argw[j], buffer_index);
 				goto err_free_mask;
 			}
 
@@ -539,13 +534,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to get sample size, returned 0\n");
 		goto err_free_mask;
 	} else if (sample_size < 0) {
-		dev_perror(dev, (int) sample_size, "Unable to get sample size");
+		dev_perror(dev, (int)sample_size, "Unable to get sample size");
 		goto err_free_mask;
 	}
 
 	if (cyclic_buffer) {
-		ret = do_cyclic_transfer(dev, buffer, mask,
-					 buffer_size * sample_size);
+		ret = do_cyclic_transfer(dev, buffer, mask, buffer_size * sample_size);
 		if (!ret)
 			exit_code = EXIT_SUCCESS;
 		goto err_free_mask;
@@ -568,7 +562,7 @@ int main(int argc, char **argv)
 	_setmode(_fileno(is_write ? stdin : stdout), _O_BINARY);
 #endif
 
-	for (i = 0, total = 0; app_running; ) {
+	for (i = 0, total = 0; app_running;) {
 		if (benchmark)
 			before = get_time_us();
 
@@ -585,13 +579,12 @@ int main(int argc, char **argv)
 			total += after - before;
 
 			if (++i == refill_per_benchmark) {
-				rate = buffer_size * sample_size *
-					refill_per_benchmark * 1000000ull / total;
+				rate = buffer_size * sample_size * refill_per_benchmark *
+				       1000000ull / total;
 				mib = rate > 1048576;
 
 				fprintf(stderr, "\33[2K\rThroughput: %" PRIu64 " %ciB/s",
-					rate / (1024 * (mib ? 1024 : 1)),
-					mib ? 'M' : 'K');
+						rate / (1024 * (mib ? 1024 : 1)), mib ? 'M' : 'K');
 
 				/* Print every 100ms more or less */
 				refill_per_benchmark = refill_per_benchmark * 100000 / total;
@@ -612,12 +605,12 @@ int main(int argc, char **argv)
 		 * demux */
 		if (hw_sample_size == sample_size) {
 			start = iio_block_start(block);
-			len = (intptr_t) iio_block_end(block) - (intptr_t) start;
+			len = (intptr_t)iio_block_end(block) - (intptr_t)start;
 
 			if (num_samples && len > num_samples * sample_size)
 				len = num_samples * sample_size;
 
-			for (rw_len = len; len; ) {
+			for (rw_len = len; len;) {
 				if (is_write)
 					nb = fread(start, 1, len, stdin);
 				else
@@ -626,7 +619,7 @@ int main(int argc, char **argv)
 					goto err_destroy_stream;
 
 				len -= nb;
-				start = (void *)((intptr_t) start + nb);
+				start = (void *)((intptr_t)start + nb);
 			}
 
 			if (num_samples) {
@@ -635,9 +628,8 @@ int main(int argc, char **argv)
 					quit_all(EXIT_SUCCESS);
 			}
 		} else {
-			ret = (int) iio_block_foreach_sample(block, mask,
-							     transfer_sample,
-							     &is_write);
+			ret = (int)iio_block_foreach_sample(
+					block, mask, transfer_sample, &is_write);
 			if (ret < 0)
 				dev_perror(dev, ret, "Buffer processing failed");
 		}

@@ -6,10 +6,10 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iiostream-common.h"
-
-#include <iio/iio.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
+
+#include "iiostream-common.h"
 
 static bool stop = false;
 
@@ -18,9 +18,9 @@ void stop_stream(void)
 	stop = true;
 }
 
-void stream(size_t rx_sample, size_t tx_sample, size_t block_size,
-	    struct iio_stream *rxstream, struct iio_stream *txstream,
-	    const struct iio_channel *rxchn, const struct iio_channel *txchn)
+void stream(size_t rx_sample, size_t tx_sample, size_t block_size, struct iio_stream *rxstream,
+		struct iio_stream *txstream, const struct iio_channel *rxchn,
+		const struct iio_channel *txchn)
 {
 	const struct iio_device *dev;
 	const struct iio_context *ctx;
@@ -54,7 +54,7 @@ void stream(size_t rx_sample, size_t tx_sample, size_t block_size,
 		p_inc = rx_sample;
 		p_end = iio_block_end(rxblock);
 		for (p_dat = iio_block_first(rxblock, rxchn); p_dat < p_end;
-		     p_dat += p_inc / sizeof(*p_dat)) {
+				p_dat += p_inc / sizeof(*p_dat)) {
 			/* Example: swap I and Q */
 			int16_t i = p_dat[0];
 			int16_t q = p_dat[1];
@@ -67,7 +67,7 @@ void stream(size_t rx_sample, size_t tx_sample, size_t block_size,
 		p_inc = tx_sample;
 		p_end = iio_block_end(txblock);
 		for (p_dat = iio_block_first(txblock, txchn); p_dat < p_end;
-		     p_dat += p_inc / sizeof(*p_dat)) {
+				p_dat += p_inc / sizeof(*p_dat)) {
 			p_dat[0] = 0; /* Real (I) */
 			p_dat[1] = 0; /* Imag (Q) */
 		}

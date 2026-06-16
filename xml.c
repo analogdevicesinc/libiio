@@ -6,21 +6,20 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "attr.h"
-
 #include <errno.h>
-#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <string.h>
 
+#include "attr.h"
+
 #define XML_HEADER "<?xml version=\"1.0\""
 
-static struct iio_context *
-xml_create_context(const struct iio_context_params *params,
-		   const char *xml_file);
+static struct iio_context *xml_create_context(
+		const struct iio_context_params *params, const char *xml_file);
 
 static int add_attr_to_channel(struct iio_channel *chn, xmlNode *n, enum iio_attr_type type)
 {
@@ -51,8 +50,8 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 	char *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "name")) {
-			name = (char *) attr->children->content;
+		if (!strcmp((char *)attr->name, "name")) {
+			name = (char *)attr->children->content;
 		} else {
 			dev_dbg(dev, "Unknown field \'%s\'\n", attr->name);
 		}
@@ -72,8 +71,8 @@ static int add_attr_to_buffer(struct iio_buffer *buf, xmlNode *n)
 	char *name = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "name")) {
-			name = (char *) attr->children->content;
+		if (!strcmp((char *)attr->name, "name")) {
+			name = (char *)attr->children->content;
 		}
 	}
 
@@ -83,16 +82,15 @@ static int add_attr_to_buffer(struct iio_buffer *buf, xmlNode *n)
 	return iio_buffer_add_attr(buf, name);
 }
 
-static int setup_scan_element(const struct iio_device *dev,
-			      xmlNode *n, long *index,
-			      struct iio_data_format *fmt)
+static int setup_scan_element(
+		const struct iio_device *dev, xmlNode *n, long *index, struct iio_data_format *fmt)
 {
 	xmlAttr *attr;
 	int err;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		const char *name = (const char *) attr->name,
-		      *content = (const char *) attr->children->content;
+		const char *name = (const char *)attr->name,
+			   *content = (const char *)attr->children->content;
 		if (!strcmp(name, "index")) {
 			char *end;
 			long long value;
@@ -107,36 +105,31 @@ static int setup_scan_element(const struct iio_device *dev,
 			if (strchr(content, 'X')) {
 				err = iio_sscanf(content, "%ce:%c%u/%uX%u>>%u",
 #ifdef _MSC_BUILD
-					&e, (unsigned int)sizeof(e),
-					&s, (unsigned int)sizeof(s),
+						&e, (unsigned int)sizeof(e), &s,
+						(unsigned int)sizeof(s),
 #else
-					&e, &s,
+						&e, &s,
 #endif
-					&fmt->bits,
-					&fmt->length,
-					&fmt->repeat,
-					&fmt->shift);
+						&fmt->bits, &fmt->length, &fmt->repeat,
+						&fmt->shift);
 				if (err != 6)
 					return -EINVAL;
 			} else {
 				fmt->repeat = 1;
 				err = iio_sscanf(content, "%ce:%c%u/%u>>%u",
 #ifdef _MSC_BUILD
-					&e, (unsigned int)sizeof(e),
-					&s, (unsigned int)sizeof(s),
+						&e, (unsigned int)sizeof(e), &s,
+						(unsigned int)sizeof(s),
 #else
-					&e, &s,
+						&e, &s,
 #endif
-					&fmt->bits,
-					&fmt->length,
-					&fmt->shift);
+						&fmt->bits, &fmt->length, &fmt->shift);
 				if (err != 5)
 					return -EINVAL;
 			}
 			fmt->is_be = e == 'b';
 			fmt->is_signed = (s == 's' || s == 'S');
-			fmt->is_fully_defined = (s == 'S' || s == 'U' ||
-				fmt->bits == fmt->length);
+			fmt->is_fully_defined = (s == 'S' || s == 'U' || fmt->bits == fmt->length);
 		} else if (!strcmp(name, "scale")) {
 			char *end;
 			float value;
@@ -151,8 +144,7 @@ static int setup_scan_element(const struct iio_device *dev,
 			fmt->with_scale = true;
 			fmt->scale = value;
 		} else {
-			dev_dbg(dev, "Unknown attribute \'%s\' in <scan-element>\n",
-				name);
+			dev_dbg(dev, "Unknown attribute \'%s\' in <scan-element>\n", name);
 		}
 	}
 
@@ -172,8 +164,8 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 	xmlNode *n;
 
 	for (attr = node->properties; attr; attr = attr->next) {
-		const char *name = (const char *) attr->name,
-		      *content = (const char *) attr->children->content;
+		const char *name = (const char *)attr->name,
+			   *content = (const char *)attr->children->content;
 		if (!strcmp(name, "name")) {
 			name_ptr = iio_strdup(content);
 			if (!name_ptr)
@@ -192,8 +184,7 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 			else if (strcmp(content, "input"))
 				dev_dbg(dev, "Unknown channel type %s\n", content);
 		} else {
-			dev_dbg(dev, "Unknown attribute \'%s\' in <channel>\n",
-				name);
+			dev_dbg(dev, "Unknown attribute \'%s\' in <channel>\n", name);
 		}
 	}
 
@@ -204,7 +195,7 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 	}
 
 	for (n = node->children; n; n = n->next) {
-		if (!strcmp((char *) n->name, "scan-element")) {
+		if (!strcmp((char *)n->name, "scan-element")) {
 			scan_element = true;
 			err = setup_scan_element(dev, n, &index, &format);
 			if (err < 0)
@@ -214,8 +205,8 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 		}
 	}
 
-	chn = iio_device_add_channel(dev, index, id_ptr, name_ptr, label_ptr,
-				     output, scan_element, &format);
+	chn = iio_device_add_channel(
+			dev, index, id_ptr, name_ptr, label_ptr, output, scan_element, &format);
 	if (!chn) {
 		err = -ENOMEM;
 		goto err_free_name_id;
@@ -226,18 +217,17 @@ static int create_channel(struct iio_device *dev, xmlNode *node)
 	free(id_ptr);
 
 	for (n = node->children; n; n = n->next) {
-		if (!strcmp((char *) n->name, "attribute")) {
+		if (!strcmp((char *)n->name, "attribute")) {
 			err = add_attr_to_channel(chn, n, IIO_ATTR_TYPE_CHANNEL);
 			if (err < 0)
 				return err;
-		} else if (!strcmp((char *) n->name, "event-attribute")) {
+		} else if (!strcmp((char *)n->name, "event-attribute")) {
 			err = add_attr_to_channel(chn, n, IIO_ATTR_TYPE_CHANNEL_EVENT);
 			if (err < 0)
 				return err;
-		} else if (strcmp((char *) n->name, "scan-element")
-			   && strcmp((char *) n->name, "text")) {
-			chn_dbg(chn, "Unknown children \'%s\' in <channel>\n",
-				n->name);
+		} else if (strcmp((char *)n->name, "scan-element") &&
+				strcmp((char *)n->name, "text")) {
+			chn_dbg(chn, "Unknown children \'%s\' in <channel>\n", n->name);
 			continue;
 		}
 	}
@@ -251,8 +241,7 @@ err_free_name_id:
 	return err;
 }
 
-static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer *buf,
-				      xmlNode *node)
+static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer *buf, xmlNode *node)
 {
 	char *chan_id = NULL, *type = NULL;
 	struct iio_channel *chn;
@@ -260,14 +249,13 @@ static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer 
 	xmlAttr *attr;
 
 	for (attr = node->properties; attr; attr = attr->next) {
-		if (!strcmp((const char *) attr->name, "id"))
-			chan_id = (char *) attr->children->content;
-		else if (!strcmp((const char *) attr->name, "type"))
-			type = (char *) attr->children->content;
+		if (!strcmp((const char *)attr->name, "id"))
+			chan_id = (char *)attr->children->content;
+		else if (!strcmp((const char *)attr->name, "type"))
+			type = (char *)attr->children->content;
 		else
-			dev_dbg(dev, "Unhandled attribute \'%s\' in <channel>\n",
-				attr->name);
-       }
+			dev_dbg(dev, "Unhandled attribute \'%s\' in <channel>\n", attr->name);
+	}
 
 	if (!chan_id || !type) {
 		dev_dbg(dev, "Missing name or type property in <channel>\n");
@@ -279,7 +267,7 @@ static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer 
 
 	chn = iio_device_find_channel(dev, chan_id, output);
 	if (!chn)
-               return -ENOENT;
+		return -ENOENT;
 
 	/* The en_path only matters for the local context */
 	return iio_buffer_add_scan_element(buf, chn, NULL);
@@ -296,14 +284,13 @@ static int create_buffers(struct iio_device *dev, xmlNode *node)
 
 	/* Parse buffer attributes */
 	for (attr = node->properties; attr; attr = attr->next) {
-		if (!strcmp((const char *) attr->name, "index"))
-			idx = (unsigned int) strtoul((const char *)attr->children->content,
-							 NULL, 10);
-		else if (!strcmp((const char *) attr->name, "direction"))
-			direction = (const char *) attr->children->content;
+		if (!strcmp((const char *)attr->name, "index"))
+			idx = (unsigned int)strtoul(
+					(const char *)attr->children->content, NULL, 10);
+		else if (!strcmp((const char *)attr->name, "direction"))
+			direction = (const char *)attr->children->content;
 		else
-			dev_dbg(dev, "Unknown attribute \'%s\' in <buffer>\n",
-				attr->name);
+			dev_dbg(dev, "Unknown attribute \'%s\' in <buffer>\n", attr->name);
 	}
 
 	buf = iio_device_add_buffer(dev, idx);
@@ -317,20 +304,18 @@ static int create_buffers(struct iio_device *dev, xmlNode *node)
 		if (!strcmp((const char *)n->name, "attribute")) {
 			err = add_attr_to_buffer(buf, n);
 			if (err < 0) {
-				dev_err(dev, "Failed to add attribute to buffer%u (%d)\n",
-					idx, err);
+				dev_err(dev, "Failed to add attribute to buffer%u (%d)\n", idx,
+						err);
 				return err;
 			}
 		} else if (!strcmp((const char *)n->name, "channel")) {
 			err = add_scan_element_to_buffer(dev, buf, n);
 			if (err < 0) {
-				dev_err(dev, "Failed to add channel to buffer%u (%d)\n",
-					idx, err);
+				dev_err(dev, "Failed to add channel to buffer%u (%d)\n", idx, err);
 				return err;
 			}
 		} else {
-			dev_dbg(dev, "Unknown children \'%s\' in <buffer>\n",
-				n->name);
+			dev_dbg(dev, "Unknown children \'%s\' in <buffer>\n", n->name);
 		}
 	}
 
@@ -347,21 +332,20 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 	bool buf_legacy = true;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		if (!strcmp((char *) attr->name, "name")) {
-			name = iio_strdup((char *) attr->children->content);
+		if (!strcmp((char *)attr->name, "name")) {
+			name = iio_strdup((char *)attr->children->content);
 			if (!name)
 				goto err_free_name_label_id;
-		} else if (!strcmp((char *) attr->name, "label")) {
-			label = iio_strdup((char *) attr->children->content);
+		} else if (!strcmp((char *)attr->name, "label")) {
+			label = iio_strdup((char *)attr->children->content);
 			if (!label)
 				goto err_free_name_label_id;
-		} else if (!strcmp((char *) attr->name, "id")) {
-			id = iio_strdup((char *) attr->children->content);
+		} else if (!strcmp((char *)attr->name, "id")) {
+			id = iio_strdup((char *)attr->children->content);
 			if (!id)
 				goto err_free_name_label_id;
 		} else {
-			ctx_dbg(ctx, "Unknown attribute \'%s\' in <device>\n",
-				attr->name);
+			ctx_dbg(ctx, "Unknown attribute \'%s\' in <device>\n", attr->name);
 		}
 	}
 
@@ -381,30 +365,30 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 	free(id);
 
 	for (n = n->children; n; n = n->next) {
-		if (!strcmp((char *) n->name, "channel")) {
+		if (!strcmp((char *)n->name, "channel")) {
 			err = create_channel(dev, n);
 			if (err) {
 				dev_perror(dev, err, "Unable to create channel");
 				return err;
 			}
-		} else if (!strcmp((char *) n->name, "buffer")) {
+		} else if (!strcmp((char *)n->name, "buffer")) {
 			buf_legacy = false;
 			err = create_buffers(dev, n);
 			if (err < 0)
 				return err;
-		} else if (!strcmp((char *) n->name, "attribute")) {
+		} else if (!strcmp((char *)n->name, "attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE);
 			if (err < 0)
 				return err;
-		} else if (!strcmp((char *) n->name, "debug-attribute")) {
+		} else if (!strcmp((char *)n->name, "debug-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEBUG);
 			if (err < 0)
 				return err;
-		} else if (!strcmp((char *) n->name, "event-attribute")) {
+		} else if (!strcmp((char *)n->name, "event-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE_EVENT);
 			if (err < 0)
 				return err;
-		} else if (!strcmp((char *) n->name, "buffer-attribute") && buf_legacy) {
+		} else if (!strcmp((char *)n->name, "buffer-attribute") && buf_legacy) {
 			/* We need to account for two possibilities:
 			 *
 			 * 1) IIOD already uses the new <buffer> tag in which
@@ -425,9 +409,8 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			err = add_attr_to_buffer(buf, n);
 			if (err < 0)
 				return err;
-		} else if (strcmp((char *) n->name, "text")) {
-			dev_dbg(dev, "Unknown children \'%s\' in <device>\n",
-				n->name);
+		} else if (strcmp((char *)n->name, "text")) {
+			dev_dbg(dev, "Unknown children \'%s\' in <device>\n", n->name);
 			continue;
 		}
 	}
@@ -447,7 +430,8 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 
 			err = iio_buffer_add_scan_element(buf, chn, NULL);
 			if (err < 0) {
-				dev_perror(dev, err, "Unable to add scan element to legacy buffer\n");
+				dev_perror(dev, err,
+						"Unable to add scan element to legacy buffer\n");
 				return err;
 			}
 		}
@@ -479,10 +463,10 @@ static int parse_context_attr(struct iio_context *ctx, xmlNode *n)
 	const char *name = NULL, *value = NULL;
 
 	for (attr = n->properties; attr; attr = attr->next) {
-		if (!strcmp((const char *) attr->name, "name")) {
-			name = (const char *) attr->children->content;
-		} else if (!strcmp((const char *) attr->name, "value")) {
-			value = (const char *) attr->children->content;
+		if (!strcmp((const char *)attr->name, "name")) {
+			name = (const char *)attr->children->content;
+		} else if (!strcmp((const char *)attr->name, "value")) {
+			value = (const char *)attr->children->content;
 		}
 	}
 
@@ -498,16 +482,18 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 	int err;
 
 	for (n = root->children; n; n = n->next) {
-		if (!strcmp((char *) n->name, "context-attribute")) {
+		if (!strcmp((char *)n->name, "context-attribute")) {
 			err = parse_context_attr(ctx, n);
 			if (err)
 				return err;
 
 			continue;
-		} else if (strcmp((char *) n->name, "device")) {
-			if (strcmp((char *) n->name, "text"))
-				ctx_dbg(ctx, "Unknown children \'%s\' in "
-					"<context>\n", n->name);
+		} else if (strcmp((char *)n->name, "device")) {
+			if (strcmp((char *)n->name, "text"))
+				ctx_dbg(ctx,
+						"Unknown children \'%s\' in "
+						"<context>\n",
+						n->name);
 			continue;
 		}
 
@@ -521,9 +507,8 @@ static int iio_populate_xml_context_helper(struct iio_context *ctx, xmlNode *roo
 	return 0;
 }
 
-static struct iio_context *
-iio_create_xml_context_helper(const struct iio_context_params *params,
-			      xmlDoc *doc)
+static struct iio_context *iio_create_xml_context_helper(
+		const struct iio_context_params *params, xmlDoc *doc)
 {
 	const char *description = NULL, *git_tag = NULL, *content;
 	struct iio_context *ctx;
@@ -534,37 +519,35 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	int err;
 
 	root = xmlDocGetRootElement(doc);
-	if (strcmp((char *) root->name, "context")) {
+	if (strcmp((char *)root->name, "context")) {
 		prm_err(params, "Unrecognized XML file\n");
 		return iio_ptr(-EINVAL);
 	}
 
 	for (attr = root->properties; attr; attr = attr->next) {
-		content = (const char *) attr->children->content;
+		content = (const char *)attr->children->content;
 
-		if (!strcmp((char *) attr->name, "description")) {
+		if (!strcmp((char *)attr->name, "description")) {
 			description = content;
-		} else if (!strcmp((char *) attr->name, "version-major")) {
+		} else if (!strcmp((char *)attr->name, "version-major")) {
 			errno = 0;
 			major = strtol(content, &end, 10);
-			if (*end != '\0' ||  errno == ERANGE)
+			if (*end != '\0' || errno == ERANGE)
 				prm_warn(params, "invalid format for major version\n");
-		} else if (!strcmp((char *) attr->name, "version-minor")) {
+		} else if (!strcmp((char *)attr->name, "version-minor")) {
 			errno = 0;
 			minor = strtol(content, &end, 10);
 			if (*end != '\0' || errno == ERANGE)
 				prm_warn(params, "invalid format for minor version\n");
-		} else if (!strcmp((char *) attr->name, "version-git")) {
+		} else if (!strcmp((char *)attr->name, "version-git")) {
 			git_tag = content;
-		} else if (strcmp((char *) attr->name, "name")) {
-			prm_dbg(params, "Unknown parameter \'%s\' in <context>\n",
-				content);
+		} else if (strcmp((char *)attr->name, "name")) {
+			prm_dbg(params, "Unknown parameter \'%s\' in <context>\n", content);
 		}
 	}
 
-	ctx = iio_context_create_from_backend(params, &iio_xml_backend,
-					      description,
-					      major, minor, git_tag);
+	ctx = iio_context_create_from_backend(
+			params, &iio_xml_backend, description, major, minor, git_tag);
 	err = iio_err(ctx);
 	if (err) {
 		prm_err(params, "Unable to allocate memory for context\n");
@@ -580,8 +563,8 @@ iio_create_xml_context_helper(const struct iio_context_params *params,
 	return ctx;
 }
 
-static struct iio_context *
-xml_create_context(const struct iio_context_params *params, const char *arg)
+static struct iio_context *xml_create_context(
+		const struct iio_context_params *params, const char *arg)
 {
 	struct iio_context *ctx;
 	xmlDoc *doc;
@@ -589,8 +572,7 @@ xml_create_context(const struct iio_context_params *params, const char *arg)
 	LIBXML_TEST_VERSION;
 
 	if (!strncmp(arg, XML_HEADER, sizeof(XML_HEADER) - 1)) {
-		doc = xmlReadMemory(arg, (int) strlen(arg),
-				    NULL, NULL, XML_PARSE_DTDVALID);
+		doc = xmlReadMemory(arg, (int)strlen(arg), NULL, NULL, XML_PARSE_DTDVALID);
 	} else {
 		doc = xmlReadFile(arg, NULL, XML_PARSE_DTDVALID);
 	}
@@ -615,7 +597,7 @@ void libiio_cleanup_xml_backend(void)
 	 * detect a memory leak.
 	 */
 	xmlCleanupParser();
-#if LIBXML_VERSION < 21200  /* Version 2.12.0 */
+#if LIBXML_VERSION < 21200 /* Version 2.12.0 */
 	xmlMemoryDump();
 #endif
 }

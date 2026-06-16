@@ -5,11 +5,12 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+#include <string.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
-#include <string.h>
 
 static struct iio_context *test_ctx = NULL;
 
@@ -35,7 +36,7 @@ TEST_FUNCTION(attr_basic_operations)
 {
 	setup_test_context();
 
-	if ( !test_ctx) {
+	if (!test_ctx) {
 		DEBUG_PRINT("  SKIP: No test context available\n");
 		return;
 	}
@@ -55,7 +56,7 @@ TEST_FUNCTION(attr_basic_operations)
 			TEST_ASSERT_PTR_NOT_NULL(filename, "Attribute filename should not be NULL");
 
 			DEBUG_PRINT("  INFO: First attribute: name='%s', filename='%s'\n",
-				   name ? name : "NULL", filename ? filename : "NULL");
+					name ? name : "NULL", filename ? filename : "NULL");
 		}
 	}
 
@@ -67,7 +68,7 @@ TEST_FUNCTION(attr_find_operations)
 {
 	setup_test_context();
 
-	if ( !test_ctx) {
+	if (!test_ctx) {
 		DEBUG_PRINT("  SKIP: No test context available\n");
 		return;
 	}
@@ -81,9 +82,12 @@ TEST_FUNCTION(attr_find_operations)
 		if (first_attr) {
 			const char *name = iio_attr_get_name(first_attr);
 			if (name) {
-				const struct iio_attr *found_attr = iio_context_find_attr(test_ctx, name);
-				TEST_ASSERT_PTR_NOT_NULL(found_attr, "Finding existing attribute should succeed");
-				TEST_ASSERT(found_attr == first_attr, "Found attribute should be same as original");
+				const struct iio_attr *found_attr =
+						iio_context_find_attr(test_ctx, name);
+				TEST_ASSERT_PTR_NOT_NULL(found_attr,
+						"Finding existing attribute should succeed");
+				TEST_ASSERT(found_attr == first_attr,
+						"Found attribute should be same as original");
 			}
 		}
 	}
@@ -93,7 +97,7 @@ TEST_FUNCTION(attr_raw_read_write)
 {
 	setup_test_context();
 
-	if ( !test_ctx) {
+	if (!test_ctx) {
 		DEBUG_PRINT("  SKIP: No test context available\n");
 		return;
 	}
@@ -106,18 +110,22 @@ TEST_FUNCTION(attr_raw_read_write)
 			ssize_t ret = iio_attr_read_raw(attr, buffer, sizeof(buffer));
 
 			if (ret >= 0) {
-				TEST_ASSERT(ret < (ssize_t)sizeof(buffer), "Read should not exceed buffer size");
+				TEST_ASSERT(ret < (ssize_t)sizeof(buffer),
+						"Read should not exceed buffer size");
 				DEBUG_PRINT("  INFO: Read %zd bytes from attribute\n", ret);
 			} else {
-				DEBUG_PRINT("  INFO: Attribute read failed with error %zd (may be expected)\n", ret);
+				DEBUG_PRINT("  INFO: Attribute read failed with error %zd (may be expected)\n",
+						ret);
 			}
 
 			const char *test_data = "test_value";
 			ret = iio_attr_write_raw(attr, test_data, strlen(test_data));
 			if (ret < 0) {
-				DEBUG_PRINT("  INFO: Attribute write failed with error %zd (may be read-only)\n", ret);
+				DEBUG_PRINT("  INFO: Attribute write failed with error %zd (may be read-only)\n",
+						ret);
 			} else {
-				DEBUG_PRINT("  INFO: Successfully wrote %zd bytes to attribute\n", ret);
+				DEBUG_PRINT("  INFO: Successfully wrote %zd bytes to attribute\n",
+						ret);
 			}
 		}
 	}
@@ -127,7 +135,7 @@ TEST_FUNCTION(attr_typed_read_write)
 {
 	setup_test_context();
 
-	if ( !test_ctx) {
+	if (!test_ctx) {
 		DEBUG_PRINT("  SKIP: No test context available\n");
 		return;
 	}
@@ -144,43 +152,53 @@ TEST_FUNCTION(attr_typed_read_write)
 
 			ret = iio_attr_read_bool(attr, &bool_val);
 			if (ret == 0) {
-				DEBUG_PRINT("  INFO: Successfully read bool value: %s\n", bool_val ? "true" : "false");
+				DEBUG_PRINT("  INFO: Successfully read bool value: %s\n",
+						bool_val ? "true" : "false");
 			} else {
-				DEBUG_PRINT("  INFO: Bool read failed with error %d (may not be boolean)\n", ret);
+				DEBUG_PRINT("  INFO: Bool read failed with error %d (may not be boolean)\n",
+						ret);
 			}
 
 			ret = iio_attr_read_longlong(attr, &ll_val);
 			if (ret == 0) {
-				DEBUG_PRINT("  INFO: Successfully read long long value: %lld\n", ll_val);
+				DEBUG_PRINT("  INFO: Successfully read long long value: %lld\n",
+						ll_val);
 			} else {
-				DEBUG_PRINT("  INFO: Long long read failed with error %d (may not be numeric)\n", ret);
+				DEBUG_PRINT("  INFO: Long long read failed with error %d (may not be numeric)\n",
+						ret);
 			}
 
 			ret = iio_attr_read_double(attr, &double_val);
 			if (ret == 0) {
-				DEBUG_PRINT("  INFO: Successfully read double value: %f\n", double_val);
+				DEBUG_PRINT("  INFO: Successfully read double value: %f\n",
+						double_val);
 			} else {
-				DEBUG_PRINT("  INFO: Double read failed with error %d (may not be numeric)\n", ret);
+				DEBUG_PRINT("  INFO: Double read failed with error %d (may not be numeric)\n",
+						ret);
 			}
 
 			ret = iio_attr_write_bool(attr, true);
 			if (ret < 0) {
-				DEBUG_PRINT("  INFO: Bool write failed with error %d (may be read-only)\n", ret);
+				DEBUG_PRINT("  INFO: Bool write failed with error %d (may be read-only)\n",
+						ret);
 			}
 
 			ret = iio_attr_write_longlong(attr, 12345);
 			if (ret < 0) {
-				DEBUG_PRINT("  INFO: Long long write failed with error %d (may be read-only)\n", ret);
+				DEBUG_PRINT("  INFO: Long long write failed with error %d (may be read-only)\n",
+						ret);
 			}
 
 			ret = iio_attr_write_double(attr, 3.14159);
 			if (ret < 0) {
-				DEBUG_PRINT("  INFO: Double write failed with error %d (may be read-only)\n", ret);
+				DEBUG_PRINT("  INFO: Double write failed with error %d (may be read-only)\n",
+						ret);
 			}
 
 			ret = iio_attr_write_string(attr, "test_string");
 			if (ret < 0) {
-				DEBUG_PRINT("  INFO: String write failed with error %d (may be read-only)\n", ret);
+				DEBUG_PRINT("  INFO: String write failed with error %d (may be read-only)\n",
+						ret);
 			}
 		}
 	}
@@ -190,7 +208,7 @@ TEST_FUNCTION(attr_static_value)
 {
 	setup_test_context();
 
-	if ( !test_ctx) {
+	if (!test_ctx) {
 		DEBUG_PRINT("  SKIP: No test context available\n");
 		return;
 	}
@@ -201,8 +219,10 @@ TEST_FUNCTION(attr_static_value)
 		if (attr) {
 			const char *static_val = iio_attr_get_static_value(attr);
 			if (static_val) {
-				DEBUG_PRINT("  INFO: Attribute %u has static value: '%s'\n", i, static_val);
-				TEST_ASSERT_PTR_NOT_NULL(static_val, "Static value should not be NULL when present");
+				DEBUG_PRINT("  INFO: Attribute %u has static value: '%s'\n", i,
+						static_val);
+				TEST_ASSERT_PTR_NOT_NULL(static_val,
+						"Static value should not be NULL when present");
 			}
 		}
 	}
@@ -212,7 +232,7 @@ TEST_FUNCTION(attr_device_operations)
 {
 	setup_test_context();
 
-	if ( !test_ctx) {
+	if (!test_ctx) {
 		DEBUG_PRINT("  SKIP: No test context available\n");
 		return;
 	}
@@ -232,8 +252,10 @@ TEST_FUNCTION(attr_device_operations)
 
 				if (attr) {
 					const char *name = iio_attr_get_name(attr);
-					const struct iio_attr *found = iio_device_find_attr(dev, name);
-					TEST_ASSERT(found == attr, "Found device attribute should match original");
+					const struct iio_attr *found =
+							iio_device_find_attr(dev, name);
+					TEST_ASSERT(found == attr,
+							"Found device attribute should match original");
 				}
 			}
 		}

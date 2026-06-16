@@ -6,13 +6,13 @@
  * Author: Paul Cercueil
  */
 
-#include "network.h"
-#include "utils-windows.h"
-
 #include <errno.h>
-#include <ws2tcpip.h>
 #include <iio/iio-debug.h>
 #include <iio/iio-lock.h>
+#include <ws2tcpip.h>
+
+#include "network.h"
+#include "utils-windows.h"
 
 #define close(s) closesocket(s)
 
@@ -49,27 +49,27 @@ int setup_cancel(struct iiod_client_pdata *io_ctx)
 		return -ENOMEM;
 	}
 
-    struct iiod_client_pdata_os *os_priv = malloc(sizeof(*os_priv));
-    if (!os_priv)
-        goto err_close_events;
+	struct iiod_client_pdata_os *os_priv = malloc(sizeof(*os_priv));
+	if (!os_priv)
+		goto err_close_events;
 
-    os_priv->event_lock = iio_mutex_create();
-    if (!os_priv->event_lock)
-        goto err_free_os_priv;
+	os_priv->event_lock = iio_mutex_create();
+	if (!os_priv->event_lock)
+		goto err_free_os_priv;
 
-    os_priv->read_waiters = 0;
-    os_priv->write_waiters = 0;
-    io_ctx->os_priv = os_priv;
+	os_priv->read_waiters = 0;
+	os_priv->write_waiters = 0;
+	io_ctx->os_priv = os_priv;
 
-    return 0;
+	return 0;
 err_free_os_priv:
 	free(os_priv);
 err_close_events:
-    WSACloseEvent(io_ctx->events[0]);
-    WSACloseEvent(io_ctx->events[1]);
-    io_ctx->events[0] = NULL;
-    io_ctx->events[1] = NULL;
-    return -ENOMEM;
+	WSACloseEvent(io_ctx->events[0]);
+	WSACloseEvent(io_ctx->events[1]);
+	io_ctx->events[0] = NULL;
+	io_ctx->events[1] = NULL;
+	return -ENOMEM;
 }
 
 void cleanup_cancel(struct iiod_client_pdata *io_ctx)
@@ -85,8 +85,7 @@ void do_cancel(struct iiod_client_pdata *io_ctx)
 	WSASetEvent(io_ctx->events[1]);
 }
 
-int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, int timeout_ms)
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read, int timeout_ms)
 {
 	struct iio_mutex *lock = io_ctx->os_priv->event_lock;
 	long wsa_events = FD_CLOSE;
@@ -95,7 +94,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 	if (timeout_ms < 0)
 		timeout = WSA_INFINITE;
 	else
-		timeout = (DWORD) timeout_ms;
+		timeout = (DWORD)timeout_ms;
 
 	iio_mutex_lock(lock);
 	if (read)
@@ -103,9 +102,9 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 	else
 		io_ctx->os_priv->write_waiters++;
 
-	if (io_ctx->os_priv->read_waiters > 0) 
+	if (io_ctx->os_priv->read_waiters > 0)
 		wsa_events |= FD_READ;
-	if (io_ctx->os_priv->write_waiters > 0) 
+	if (io_ctx->os_priv->write_waiters > 0)
 		wsa_events |= FD_WRITE;
 
 	WSAEventSelect(io_ctx->fd, NULL, 0);
@@ -114,8 +113,7 @@ int wait_cancellable(struct iiod_client_pdata *io_ctx,
 
 	iio_mutex_unlock(lock);
 
-	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE,
-				       timeout, FALSE);
+	ret = WSAWaitForMultipleEvents(2, io_ctx->events, FALSE, timeout, FALSE);
 
 	iio_mutex_lock(lock);
 	if (read)
@@ -177,11 +175,11 @@ int do_create_socket(const struct addrinfo *addrinfo)
 	SOCKET s;
 
 	s = WSASocketW(addrinfo->ai_family, addrinfo->ai_socktype, 0, NULL, 0,
-		WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
+			WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED);
 	if (s == INVALID_SOCKET)
 		return network_get_error();
 
-	return (int) s;
+	return (int)s;
 }
 
 int do_select(int fd, int timeout)
@@ -201,7 +199,7 @@ int do_select(int fd, int timeout)
 	FD_ZERO(&set);
 	FD_SET(fd, &set);
 #ifdef _MSC_BUILD
-#pragma warning(default: 4389)
+#pragma warning(default : 4389)
 #endif
 
 	if (timeout >= 0) {

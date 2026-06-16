@@ -8,10 +8,10 @@
 #ifndef TEST_FRAMEWORK_H
 #define TEST_FRAMEWORK_H
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 static int test_count = 0;
 static int test_passed = 0;
@@ -20,7 +20,9 @@ static int test_failed = 0;
 #ifdef TESTS_DEBUG
 #define DEBUG_PRINT(fmt, ...) printf(fmt, ##__VA_ARGS__)
 #else
-#define DEBUG_PRINT(fmt, ...) do {} while (0)
+#define DEBUG_PRINT(fmt, ...) \
+	do { \
+	} while (0)
 #endif
 
 #define TEST_ASSERT(condition, message) \
@@ -40,10 +42,12 @@ static int test_failed = 0;
 		test_count++; \
 		if ((actual) == (expected)) { \
 			test_passed++; \
-			DEBUG_PRINT("  PASS: %s (got %ld, expected %ld)\n", message, (long)(actual), (long)(expected)); \
+			DEBUG_PRINT("  PASS: %s (got %ld, expected %ld)\n", message, \
+					(long)(actual), (long)(expected)); \
 		} else { \
 			test_failed++; \
-			DEBUG_PRINT("  FAIL: %s (got %ld, expected %ld)\n", message, (long)(actual), (long)(expected)); \
+			DEBUG_PRINT("  FAIL: %s (got %ld, expected %ld)\n", message, \
+					(long)(actual), (long)(expected)); \
 		} \
 	} while (0)
 
@@ -76,10 +80,12 @@ static int test_failed = 0;
 		test_count++; \
 		if (strcmp((actual), (expected)) == 0) { \
 			test_passed++; \
-			DEBUG_PRINT("  PASS: %s (got '%s', expected '%s')\n", message, (actual), (expected)); \
+			DEBUG_PRINT("  PASS: %s (got '%s', expected '%s')\n", message, (actual), \
+					(expected)); \
 		} else { \
 			test_failed++; \
-			DEBUG_PRINT("  FAIL: %s (got '%s', expected '%s')\n", message, (actual), (expected)); \
+			DEBUG_PRINT("  FAIL: %s (got '%s', expected '%s')\n", message, (actual), \
+					(expected)); \
 		} \
 	} while (0)
 
@@ -88,10 +94,12 @@ static int test_failed = 0;
 		test_count++; \
 		if ((actual) == (expected)) { \
 			test_passed++; \
-			DEBUG_PRINT("  PASS: %s (got %d, expected %d)\n", message, (int)(actual), (int)(expected)); \
+			DEBUG_PRINT("  PASS: %s (got %d, expected %d)\n", message, (int)(actual), \
+					(int)(expected)); \
 		} else { \
 			test_failed++; \
-			DEBUG_PRINT("  FAIL: %s (got %d, expected %d)\n", message, (int)(actual), (int)(expected)); \
+			DEBUG_PRINT("  FAIL: %s (got %d, expected %d)\n", message, (int)(actual), \
+					(int)(expected)); \
 		} \
 	} while (0)
 
@@ -101,11 +109,13 @@ static int test_failed = 0;
 		if ((duration_ms) >= (min_ms) && (duration_ms) <= (max_ms)) { \
 			test_passed++; \
 			DEBUG_PRINT("  PASS: %s (duration %ld ms in range [%ld, %ld] ms)\n", \
-				message, (long)(duration_ms), (long)(min_ms), (long)(max_ms)); \
+					message, (long)(duration_ms), (long)(min_ms), \
+					(long)(max_ms)); \
 		} else { \
 			test_failed++; \
 			DEBUG_PRINT("  FAIL: %s (duration %ld ms out of range [%ld, %ld] ms)\n", \
-				message, (long)(duration_ms), (long)(min_ms), (long)(max_ms)); \
+					message, (long)(duration_ms), (long)(min_ms), \
+					(long)(max_ms)); \
 		} \
 	} while (0)
 
@@ -126,7 +136,8 @@ static int test_failed = 0;
 		DEBUG_PRINT("Total tests: %d\n", test_count); \
 		DEBUG_PRINT("Passed: %d\n", test_passed); \
 		DEBUG_PRINT("Failed: %d\n", test_failed); \
-		DEBUG_PRINT("Success rate: %.1f%%\n", test_count > 0 ? (100.0 * test_passed / test_count) : 0.0); \
+		DEBUG_PRINT("Success rate: %.1f%%\n", \
+				test_count > 0 ? (100.0 * test_passed / test_count) : 0.0); \
 		if (test_failed > 0) { \
 			exit(EXIT_FAILURE); \
 		} else { \

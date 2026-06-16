@@ -6,13 +6,13 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "dynamic.h"
-
 #include <dlfcn.h>
 #include <errno.h>
 #include <iio/iio.h>
 
-void * iio_dlopen(const char *path)
+#include "dynamic.h"
+
+void *iio_dlopen(const char *path)
 {
 	return dlopen(path, RTLD_LAZY | RTLD_LOCAL);
 }
@@ -22,7 +22,7 @@ void iio_dlclose(void *lib)
 	dlclose(lib);
 }
 
-void * iio_dlsym(void *lib, const char *symbol)
+void *iio_dlsym(void *lib, const char *symbol)
 {
 	void *ptr;
 

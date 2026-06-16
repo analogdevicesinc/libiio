@@ -27,12 +27,10 @@ struct iio_context_info;
 struct iio_scan_block;
 struct iio_scan_context;
 
-
 /* ---------------------------------------------------------------------------*/
 /* ------------------------- Libiio 0.x to 1.x compat API --------------------*/
 /** @defgroup TopLevel Top-level functions
  * @{ */
-
 
 /** @brief Create a context from local or remote IIO devices
  * @return On success, A pointer to an iio_context structure
@@ -41,21 +39,18 @@ struct iio_scan_context;
  * <b>NOTE:</b> This function will create a context with the URI
  * provided in the IIOD_REMOTE environment variable. If not set, a local
  * context will be created instead. */
-__api __check_ret struct iio_context * iio_create_default_context(void);
-
+__api __check_ret struct iio_context *iio_create_default_context(void);
 
 /** @brief Create a context from local IIO devices (Linux only)
  * @return On success, A pointer to an iio_context structure
  * @return On failure, NULL is returned and errno is set appropriately */
-__api __check_ret struct iio_context * iio_create_local_context(void);
-
+__api __check_ret struct iio_context *iio_create_local_context(void);
 
 /** @brief Create a context from the network
  * @param host Hostname, IPv4 or IPv6 address where the IIO Daemon is running
  * @return On success, a pointer to an iio_context structure
  * @return On failure, NULL is returned and errno is set appropriately */
-__api __check_ret struct iio_context * iio_create_network_context(const char *host);
-
+__api __check_ret struct iio_context *iio_create_network_context(const char *host);
 
 /** @brief Create a context from a XML file
  * @param xml_file Path to the XML file to open
@@ -64,8 +59,7 @@ __api __check_ret struct iio_context * iio_create_network_context(const char *ho
  *
  * <b>NOTE:</b> The format of the XML must comply to the one returned by
  * iio_context_get_xml. */
-__api __check_ret struct iio_context * iio_create_xml_context(const char *xml_file);
-
+__api __check_ret struct iio_context *iio_create_xml_context(const char *xml_file);
 
 /** @brief Create a context from a URI description
  * @param uri A URI describing the context location
@@ -97,8 +91,7 @@ __api __check_ret struct iio_context * iio_create_xml_context(const char *xml_fi
  *        - flow control ('<b>\0</b>' none, 'x' Xon Xoff, 'r' RTSCTS, 'd' DTRDSR)
  *
  *  For example <i>"serial:/dev/ttyUSB0,115200"</i> <b>or</b> <i>"serial:/dev/ttyUSB0,115200,8n1"</i>*/
-__api __check_ret struct iio_context * iio_create_context_from_uri(const char *uri);
-
+__api __check_ret struct iio_context *iio_create_context_from_uri(const char *uri);
 
 /** @brief Create a scan context
  * @param backend A NULL-terminated string containing the backend(s) to use for
@@ -108,16 +101,14 @@ __api __check_ret struct iio_context * iio_create_context_from_uri(const char *u
  * @param flags Unused for now. Set to 0.
  * @return on success, a pointer to a iio_scan_context structure
  * @return On failure, NULL is returned and errno is set appropriately */
-__api __check_ret struct iio_scan_context *
-iio_create_scan_context(const char *backend, unsigned int flags);
-
+__api __check_ret struct iio_scan_context *iio_create_scan_context(
+		const char *backend, unsigned int flags);
 
 /** @brief Destroy the given scan context
  * @param ctx A pointer to an iio_scan_context structure
  *
  * <b>NOTE:</b> After that function, the iio_scan_context pointer shall be invalid. */
 __api void iio_scan_context_destroy(struct iio_scan_context *ctx);
-
 
 /** @brief Enumerate available contexts
  * @param ctx A pointer to an iio_scan_context structure
@@ -126,32 +117,26 @@ __api void iio_scan_context_destroy(struct iio_scan_context *ctx);
  * @returns On success, the number of contexts found.
  * @returns On failure, a negative error number.
  */
-__api __check_ret ssize_t
-iio_scan_context_get_info_list(struct iio_scan_context *ctx,
-			       struct iio_context_info ***info);
-
+__api __check_ret ssize_t iio_scan_context_get_info_list(
+		struct iio_scan_context *ctx, struct iio_context_info ***info);
 
 /** @brief Free a context info list
  * @param info A pointer to a 'const struct iio_context_info *' typed variable
  */
 __api void iio_context_info_list_free(struct iio_context_info **info);
 
-
 /** @brief Get a description of a discovered context
  * @param info A pointer to an iio_context_info structure
  * @return A pointer to a static NULL-terminated string
  */
-__api __check_ret __pure const char *
-iio_context_info_get_description(const struct iio_context_info *info);
-
+__api __check_ret __pure const char *iio_context_info_get_description(
+		const struct iio_context_info *info);
 
 /** @brief Get the URI of a discovered context
  * @param info A pointer to an iio_context_info structure
  * @return A pointer to a static NULL-terminated string
  */
-__api __check_ret __pure const char *
-iio_context_info_get_uri(const struct iio_context_info *info);
-
+__api __check_ret __pure const char *iio_context_info_get_uri(const struct iio_context_info *info);
 
 /** @brief Create a scan block
  * @param backend A NULL-terminated string containing the backend to use for
@@ -161,9 +146,7 @@ iio_context_info_get_uri(const struct iio_context_info *info);
  * @return On failure, NULL is returned and errno is set appropriately
  *
  * Introduced in version 0.20. */
-__api struct iio_scan_block *
-iio_create_scan_block(const char *backend, unsigned int flags);
-
+__api struct iio_scan_block *iio_create_scan_block(const char *backend, unsigned int flags);
 
 /** @brief Destroy the given scan block
  * @param blk A pointer to an iio_scan_block structure
@@ -173,7 +156,6 @@ iio_create_scan_block(const char *backend, unsigned int flags);
  * Introduced in version 0.20. */
 __api void iio_scan_block_destroy(struct iio_scan_block *blk);
 
-
 /** @brief Enumerate available contexts via scan block
  * @param blk A pointer to a iio_scan_block structure.
  * @returns On success, the number of contexts found.
@@ -181,7 +163,6 @@ __api void iio_scan_block_destroy(struct iio_scan_block *blk);
  *
  * Introduced in version 0.20. */
 __api ssize_t iio_scan_block_scan(struct iio_scan_block *blk);
-
 
 /** @brief Get the iio_context_info for a particular context
  * @param blk A pointer to an iio_scan_block structure
@@ -191,17 +172,14 @@ __api ssize_t iio_scan_block_scan(struct iio_scan_block *blk);
  * @returns On failure, NULL is returned and errno is set appropriately
  *
  * Introduced in version 0.20. */
-__api struct iio_context_info *
-iio_scan_block_get_info(struct iio_scan_block *blk, unsigned int index);
-
+__api struct iio_context_info *iio_scan_block_get_info(
+		struct iio_scan_block *blk, unsigned int index);
 
 /** @brief Get the version of the libiio library
  * @param major A pointer to an unsigned integer (NULL accepted)
  * @param minor A pointer to an unsigned integer (NULL accepted)
  * @param git_tag A pointer to a 8-characters buffer (NULL accepted) */
-__api void iio_library_get_version(unsigned int *major,
-		unsigned int *minor, char git_tag[8]);
-
+__api void iio_library_get_version(unsigned int *major, unsigned int *minor, char git_tag[8]);
 
 /** @brief Get the version of the backend in use
  * @param ctx A pointer to an iio_context structure
@@ -210,11 +188,8 @@ __api void iio_library_get_version(unsigned int *major,
  * @param git_tag A pointer to a 8-characters buffer (NULL accepted)
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-__api __check_ret int iio_context_get_version(const struct iio_context *ctx,
-					      unsigned int *major,
-					      unsigned int *minor,
-					      char git_tag[8]);
-
+__api __check_ret int iio_context_get_version(const struct iio_context *ctx, unsigned int *major,
+		unsigned int *minor, char git_tag[8]);
 
 /** @brief Configure the number of kernel buffers for a device
  *
@@ -223,12 +198,10 @@ __api __check_ret int iio_context_get_version(const struct iio_context *ctx,
  * @param nb_buffers The number of buffers
  * @return On success, 0 is returned
  * @return On error, a negative errno code is returned */
-__api __check_ret int iio_device_set_kernel_buffers_count(const struct iio_device *dev,
-		unsigned int nb_buffers);
+__api __check_ret int iio_device_set_kernel_buffers_count(
+		const struct iio_device *dev, unsigned int nb_buffers);
 
-
-
-/** @} *//* ------------------------------------------------------------------*/
+/** @} */ /* ------------------------------------------------------------------*/
 
 #undef __api
 

@@ -6,12 +6,12 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "iio-private.h"
-
 #include <errno.h>
 #include <string.h>
 
-struct iio_channels_mask * iio_create_channels_mask(unsigned int nb_channels)
+#include "iio-private.h"
+
+struct iio_channels_mask *iio_create_channels_mask(unsigned int nb_channels)
 {
 	struct iio_channels_mask *mask;
 	size_t nb_words = (nb_channels + 31) / 32;
@@ -26,8 +26,7 @@ struct iio_channels_mask * iio_create_channels_mask(unsigned int nb_channels)
 	return mask;
 }
 
-int iio_channels_mask_copy(struct iio_channels_mask *dst,
-			   const struct iio_channels_mask *src)
+int iio_channels_mask_copy(struct iio_channels_mask *dst, const struct iio_channels_mask *src)
 {
 	if (dst->words != src->words)
 		return -EINVAL;

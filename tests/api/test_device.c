@@ -5,11 +5,12 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+#include <string.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
-#include <string.h>
 
 static struct iio_context *test_ctx = NULL;
 static struct iio_device *test_dev = NULL;
@@ -87,8 +88,8 @@ TEST_FUNCTION(device_channels)
 			bool is_scan = iio_channel_is_scan_element(chn);
 
 			DEBUG_PRINT("  INFO: Channel %u: id='%s', name='%s', output=%s, scan=%s\n",
-				   i, id ? id : "NULL", name ? name : "NULL",
-				   is_output ? "YES" : "NO", is_scan ? "YES" : "NO");
+					i, id ? id : "NULL", name ? name : "NULL",
+					is_output ? "YES" : "NO", is_scan ? "YES" : "NO");
 		}
 	}
 
@@ -100,14 +101,18 @@ TEST_FUNCTION(device_channels)
 		if (first_chn) {
 			const char *id = iio_channel_get_id(first_chn);
 			if (id) {
-				struct iio_channel *found_input = iio_device_find_channel(test_dev, id, false);
-				struct iio_channel *found_output = iio_device_find_channel(test_dev, id, true);
+				struct iio_channel *found_input =
+						iio_device_find_channel(test_dev, id, false);
+				struct iio_channel *found_output =
+						iio_device_find_channel(test_dev, id, true);
 
 				bool is_output = iio_channel_is_output(first_chn);
 				if (is_output) {
-					TEST_ASSERT(found_output == first_chn, "Found output channel should match");
+					TEST_ASSERT(found_output == first_chn,
+							"Found output channel should match");
 				} else {
-					TEST_ASSERT(found_input == first_chn, "Found input channel should match");
+					TEST_ASSERT(found_input == first_chn,
+							"Found input channel should match");
 				}
 			}
 		}
@@ -144,8 +149,10 @@ TEST_FUNCTION(device_attributes)
 		if (first_attr) {
 			const char *name = iio_attr_get_name(first_attr);
 			if (name) {
-				const struct iio_attr *found_attr = iio_device_find_attr(test_dev, name);
-				TEST_ASSERT(found_attr == first_attr, "Found attribute should match original");
+				const struct iio_attr *found_attr =
+						iio_device_find_attr(test_dev, name);
+				TEST_ASSERT(found_attr == first_attr,
+						"Found attribute should match original");
 			}
 		}
 	}
@@ -176,7 +183,8 @@ TEST_FUNCTION(device_debug_attributes)
 		}
 	}
 
-	const struct iio_attr *invalid_debug = iio_device_get_debug_attr(test_dev, nb_debug_attrs + 10);
+	const struct iio_attr *invalid_debug =
+			iio_device_get_debug_attr(test_dev, nb_debug_attrs + 10);
 	TEST_ASSERT_PTR_NULL(invalid_debug, "Invalid debug attribute index should return NULL");
 
 	if (nb_debug_attrs > 0) {
@@ -184,13 +192,16 @@ TEST_FUNCTION(device_debug_attributes)
 		if (first_debug) {
 			const char *name = iio_attr_get_name(first_debug);
 			if (name) {
-				const struct iio_attr *found_debug = iio_device_find_debug_attr(test_dev, name);
-				TEST_ASSERT(found_debug == first_debug, "Found debug attribute should match original");
+				const struct iio_attr *found_debug =
+						iio_device_find_debug_attr(test_dev, name);
+				TEST_ASSERT(found_debug == first_debug,
+						"Found debug attribute should match original");
 			}
 		}
 	}
 
-	const struct iio_attr *nonexistent_debug = iio_device_find_debug_attr(test_dev, "nonexistent_debug");
+	const struct iio_attr *nonexistent_debug =
+			iio_device_find_debug_attr(test_dev, "nonexistent_debug");
 	TEST_ASSERT_PTR_NULL(nonexistent_debug, "Nonexistent debug attribute should return NULL");
 }
 
@@ -216,7 +227,8 @@ TEST_FUNCTION(device_event_attributes)
 		}
 	}
 
-	const struct iio_attr *invalid_event = iio_device_get_event_attr(test_dev, nb_event_attrs + 10);
+	const struct iio_attr *invalid_event =
+			iio_device_get_event_attr(test_dev, nb_event_attrs + 10);
 	TEST_ASSERT_PTR_NULL(invalid_event, "Invalid event attribute index should return NULL");
 
 	if (nb_event_attrs > 0) {
@@ -224,13 +236,16 @@ TEST_FUNCTION(device_event_attributes)
 		if (first_event) {
 			const char *name = iio_attr_get_name(first_event);
 			if (name) {
-				const struct iio_attr *found_event = iio_device_find_event_attr(test_dev, name);
-				TEST_ASSERT(found_event == first_event, "Found event attribute should match original");
+				const struct iio_attr *found_event =
+						iio_device_find_event_attr(test_dev, name);
+				TEST_ASSERT(found_event == first_event,
+						"Found event attribute should match original");
 			}
 		}
 	}
 
-	const struct iio_attr *nonexistent_event = iio_device_find_event_attr(test_dev, "nonexistent_event");
+	const struct iio_attr *nonexistent_event =
+			iio_device_find_event_attr(test_dev, "nonexistent_event");
 	TEST_ASSERT_PTR_NULL(nonexistent_event, "Nonexistent event attribute should return NULL");
 }
 
@@ -276,9 +291,11 @@ TEST_FUNCTION(device_trigger_operations)
 			if (ret == 0) {
 				DEBUG_PRINT("  INFO: Successfully set trigger\n");
 
-				const struct iio_device *new_trigger = iio_device_get_trigger(test_dev);
+				const struct iio_device *new_trigger =
+						iio_device_get_trigger(test_dev);
 				if (!iio_err(new_trigger)) {
-					TEST_ASSERT(new_trigger == trigger_device, "Set trigger should match");
+					TEST_ASSERT(new_trigger == trigger_device,
+							"Set trigger should match");
 				}
 			} else {
 				DEBUG_PRINT("  INFO: Setting trigger failed with error %d\n", ret);
@@ -314,19 +331,22 @@ TEST_FUNCTION(device_register_operations)
 
 		ret = iio_device_reg_write(test_dev, test_addr, value);
 		if (ret == 0) {
-			DEBUG_PRINT("  INFO: Successfully wrote register 0x%x: 0x%x\n", test_addr, value);
+			DEBUG_PRINT("  INFO: Successfully wrote register 0x%x: 0x%x\n", test_addr,
+					value);
 		} else {
 			DEBUG_PRINT("  INFO: Register write failed with error %d\n", ret);
 		}
 	} else {
-		DEBUG_PRINT("  INFO: Register read failed with error %d (may not support register access)\n", ret);
+		DEBUG_PRINT("  INFO: Register read failed with error %d (may not support register access)\n",
+				ret);
 	}
 
-	uint32_t invalid_addrs[] = {0xFFFFFFFF, 0x12345678, 0xDEADBEEF};
+	uint32_t invalid_addrs[] = { 0xFFFFFFFF, 0x12345678, 0xDEADBEEF };
 	for (size_t i = 0; i < sizeof(invalid_addrs) / sizeof(invalid_addrs[0]); i++) {
 		ret = iio_device_reg_read(test_dev, invalid_addrs[i], &value);
 		if (ret != 0) {
-			DEBUG_PRINT("  INFO: Register read at invalid address 0x%x correctly failed\n", invalid_addrs[i]);
+			DEBUG_PRINT("  INFO: Register read at invalid address 0x%x correctly failed\n",
+					invalid_addrs[i]);
 		}
 	}
 }

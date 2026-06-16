@@ -5,17 +5,15 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
 
 TEST_FUNCTION(event_inline_functions)
 {
-	struct iio_event test_event = {
-		.id = 0x1234567890ABCDEF,
-		.timestamp = 1234567890
-	};
+	struct iio_event test_event = { .id = 0x1234567890ABCDEF, .timestamp = 1234567890 };
 
 	enum iio_event_type type = iio_event_get_type(&test_event);
 	DEBUG_PRINT("  INFO: Event type: %d\n", type);

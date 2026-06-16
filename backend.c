@@ -6,11 +6,11 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
+#include <string.h>
+
 #include "dynamic.h"
 #include "iio-config.h"
 #include "iio-private.h"
-
-#include <string.h>
 
 unsigned int iio_get_builtin_backends_count(void)
 {
@@ -22,7 +22,7 @@ unsigned int iio_get_builtin_backends_count(void)
 	return count;
 }
 
-const char * iio_get_builtin_backend(unsigned int index)
+const char *iio_get_builtin_backend(unsigned int index)
 {
 	unsigned int i;
 
@@ -36,8 +36,7 @@ const char * iio_get_builtin_backend(unsigned int index)
 	return NULL;
 }
 
-bool
-iio_has_backend(const struct iio_context_params *params, const char *backend)
+bool iio_has_backend(const struct iio_context_params *params, const char *backend)
 {
 	unsigned int i;
 

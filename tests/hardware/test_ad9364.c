@@ -18,11 +18,11 @@
 // Use (void) to silence unused warnings.
 #define assertm(exp, msg) assert(((void)msg, exp))
 
-#define dprintf(fmt, ...)                                                      \
-  do {                                                                         \
-    if (TESTS_DEBUG>0)                        \
-      fprintf(stderr, fmt, ##__VA_ARGS__);                                     \
-  } while (0)
+#define dprintf(fmt, ...) \
+	do { \
+		if (TESTS_DEBUG > 0) \
+			fprintf(stderr, fmt, ##__VA_ARGS__); \
+	} while (0)
 
 // User Set
 #define N_TX_SAMPLES 128
@@ -46,180 +46,175 @@ struct iio_block *txblock;
 const struct iio_block *rxblock;
 struct iio_stream *rxstream;
 
-int main() {
+int main()
+{
+	int err;
 
-  int err;
+	const char *uri = getenv("URI_AD9361");
+	if (uri == NULL)
+		exit(0); // Can't find anything don't run tests
+	ctx = iio_create_context(NULL, uri);
 
-  const char *uri = getenv("URI_AD9361");
-  if (uri == NULL)
-    exit(0); // Can't find anything don't run tests
-  ctx = iio_create_context(NULL, uri);
+	phy = iio_context_find_device(ctx, "ad9361-phy");
+	assertm(phy, "Unable to find AD9361-phy device");
+	rx = iio_context_find_device(ctx, "cf-ad9361-lpc");
+	assertm(rx, "Unable to find RX device");
+	tx = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
+	assertm(tx, "Unable to find TX device");
 
-  phy = iio_context_find_device(ctx, "ad9361-phy");
-  assertm(phy, "Unable to find AD9361-phy device");
-  rx = iio_context_find_device(ctx, "cf-ad9361-lpc");
-  assertm(rx, "Unable to find RX device");
-  tx = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
-  assertm(tx, "Unable to find TX device");
+	// Configure device into loopback mode
+	attr = iio_device_find_debug_attr(phy, "loopback");
+	assertm(attr, "Unable to find loopback attribute");
+	iio_attr_write_string(attr, "1");
 
-  // Configure device into loopback mode
-  attr = iio_device_find_debug_attr(phy, "loopback");
-  assertm(attr, "Unable to find loopback attribute");
-  iio_attr_write_string(attr, "1");
+	// TX Side
+	txmask = iio_create_channels_mask(iio_device_get_channels_count(tx));
+	assertm(txmask, "Unable to create TX mask");
 
-  // TX Side
-  txmask = iio_create_channels_mask(iio_device_get_channels_count(tx));
-  assertm(txmask, "Unable to create TX mask");
+	chn = iio_device_find_channel(tx, "voltage0", true);
+	assertm(chn, "Unable to find TX channel");
+	iio_channel_enable(chn, txmask);
+	chn = iio_device_find_channel(tx, "voltage1", true);
+	assertm(chn, "Unable to find TX channel");
+	iio_channel_enable(chn, txmask);
 
-  chn = iio_device_find_channel(tx, "voltage0", true);
-  assertm(chn, "Unable to find TX channel");
-  iio_channel_enable(chn, txmask);
-  chn = iio_device_find_channel(tx, "voltage1", true);
-  assertm(chn, "Unable to find TX channel");
-  iio_channel_enable(chn, txmask);
+	txbuf = iio_device_get_buffer(tx, 0);
+	assertm(txbuf, "Unable to get TX buffer");
 
-  txbuf = iio_device_get_buffer(tx, 0);
-  assertm(txbuf, "Unable to get TX buffer");
+	txbuf_stream = iio_buffer_open(txbuf, txmask);
+	assertm(!iio_err(txbuf_stream), "Unable to open TX buffer stream");
 
-  txbuf_stream = iio_buffer_open(txbuf, txmask);
-  assertm(!iio_err(txbuf_stream), "Unable to open TX buffer stream");
+	txblock = iio_buffer_stream_create_block(
+			txbuf_stream, N_TX_SAMPLES * BYTES_PER_SAMPLE * N_CHANNELS);
+	assertm(!iio_err(txblock), "Unable to create TX block");
 
-  txblock = iio_buffer_stream_create_block(txbuf_stream,
-                                           N_TX_SAMPLES * BYTES_PER_SAMPLE *
-                                           N_CHANNELS);
-  assertm(!iio_err(txblock), "Unable to create TX block");
+	// Generate ramp signal on both I and Q channels
+	int16_t *p_dat, *p_end;
+	ptrdiff_t p_inc;
+	int16_t idx = 0;
 
-  // Generate ramp signal on both I and Q channels
-  int16_t *p_dat, *p_end;
-  ptrdiff_t p_inc;
-  int16_t idx = 0;
+	p_end = iio_block_end(txblock);
+	p_inc = iio_device_get_sample_size(tx, txmask);
+	chn = iio_device_find_channel(tx, "voltage0", true);
 
-  p_end = iio_block_end(txblock);
-  p_inc = iio_device_get_sample_size(tx, txmask);
-  chn = iio_device_find_channel(tx, "voltage0", true);
+	for (p_dat = iio_block_first(txblock, chn); p_dat < p_end;
+			p_dat += p_inc / sizeof(*p_dat)) {
+		// Bitshift 4 bits up. During loopback hardware will shift back 4 bits
+		p_dat[0] = idx << 4;
+		p_dat[1] = idx << 4;
+		idx++;
+	}
+	iio_block_enqueue(txblock, 0, true);
+	iio_buffer_stream_start(txbuf_stream);
+	sleep(2);
 
-  for (p_dat = iio_block_first(txblock, chn); p_dat < p_end;
-       p_dat += p_inc / sizeof(*p_dat)) {
-    // Bitshift 4 bits up. During loopback hardware will shift back 4 bits
-    p_dat[0] = idx << 4;
-    p_dat[1] = idx << 4;
-    idx++;
-  }
-  iio_block_enqueue(txblock, 0, true);
-  iio_buffer_stream_start(txbuf_stream);
-  sleep(2);
+	// RX Side
+	rxmask = iio_create_channels_mask(iio_device_get_channels_count(rx));
+	assertm(rxmask, "Unable to create RX mask");
 
-  // RX Side
-  rxmask = iio_create_channels_mask(iio_device_get_channels_count(rx));
-  assertm(rxmask, "Unable to create RX mask");
+	chn = iio_device_find_channel(rx, "voltage0", false);
+	assertm(chn, "Unable to find RX channel voltage0");
+	iio_channel_enable(chn, rxmask);
+	chn = iio_device_find_channel(rx, "voltage1", false);
+	assertm(chn, "Unable to find RX channel voltage1");
+	iio_channel_enable(chn, rxmask);
 
-  chn = iio_device_find_channel(rx, "voltage0", false);
-  assertm(chn, "Unable to find RX channel voltage0");
-  iio_channel_enable(chn, rxmask);
-  chn = iio_device_find_channel(rx, "voltage1", false);
-  assertm(chn, "Unable to find RX channel voltage1");
-  iio_channel_enable(chn, rxmask);
+	rxbuf = iio_device_get_buffer(rx, 0);
+	assertm(rxbuf, "Unable to get RX buffer");
 
-  rxbuf = iio_device_get_buffer(rx, 0);
-  assertm(rxbuf, "Unable to get RX buffer");
+	rxstream = iio_buffer_create_stream(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES, rxmask);
+	assertm(!iio_err(rxstream), "Unable to create RX stream");
 
-  rxstream = iio_buffer_create_stream(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES,
-                                          rxmask);
-  assertm(!iio_err(rxstream), "Unable to create RX stream");
+	p_inc = iio_device_get_sample_size(rx, rxmask);
+	chn = iio_device_find_channel(rx, "voltage0", false);
 
-  p_inc = iio_device_get_sample_size(rx, rxmask);
-  chn = iio_device_find_channel(rx, "voltage0", false);
+	bool found_start = false;
+	int16_t ramp_indx = 0;
 
-  bool found_start = false;
-  int16_t ramp_indx = 0;
+	// Create check vector
+	bool ramp_found_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
+	bool continuous_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
 
-  // Create check vector
-  bool ramp_found_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
-  bool continuous_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
+	// Remove first few blocks as they might be old
+	for (int i = 0; i < 30; i++) {
+		rxblock = iio_stream_get_next_block(rxstream);
+		dprintf("Removing block %d\n", i);
+	}
 
-  // Remove first few blocks as they might be old
-  for (int i = 0; i < 30; i++) {
-    rxblock = iio_stream_get_next_block(rxstream);
-    dprintf("Removing block %d\n", i);
-  }
+	// Check several buffers to make sure no glitches occurred
+	for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
+		dprintf("Checking buffer %d of %d\n", i + 1, SUCCESSIVE_BUFFER_TO_CHECK);
 
-  // Check several buffers to make sure no glitches occurred
-  for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
+		rxblock = iio_stream_get_next_block(rxstream);
+		p_end = iio_block_end(rxblock);
 
-    dprintf("Checking buffer %d of %d\n", i + 1, SUCCESSIVE_BUFFER_TO_CHECK);
+		// Within a block data should be continuous but not necessarily across
+		// blocks
+		found_start = false;
+		continuous_check_vector[i] = true; // assume good
+		ramp_indx = 0;
 
-    rxblock = iio_stream_get_next_block(rxstream);
-    p_end = iio_block_end(rxblock);
+		for (p_dat = iio_block_first(rxblock, chn); p_dat < p_end;
+				p_dat += p_inc / sizeof(*p_dat)) {
+			// Locate top of ramp
+			if (p_dat[0] == (N_TX_SAMPLES - 1) && p_dat[1] == (N_TX_SAMPLES - 1) &&
+					!found_start) {
+				found_start = true;
+				continue; // Wrap to ramp restarts on next sample
+			}
 
-    // Within a block data should be continuous but not necessarily across
-    // blocks
-    found_start = false;
-    continuous_check_vector[i] = true; // assume good
-    ramp_indx = 0;
+			// Make sure ramp is continuous
+			if (found_start) {
+				dprintf("Expected: %d\n", ramp_indx);
+				dprintf("Actual: %d, %d (I, Q)\n\n", p_dat[0], p_dat[1]);
+				if (p_dat[0] != ramp_indx && p_dat[1] != ramp_indx) {
+					dprintf("--->Expected: %d (Buffer %d)\n", ramp_indx, i);
+					dprintf("--->Actual: %d, %d (I, Q) [Buffer %d]\n\n",
+							p_dat[0], p_dat[1], i);
+					dprintf("\n\n");
+					continuous_check_vector[i] = false;
+				}
+				if (ramp_indx == (N_TX_SAMPLES - 1)) {
+					ramp_indx = 0;
+				} else
+					ramp_indx++;
+			}
+		}
 
-    for (p_dat = iio_block_first(rxblock, chn); p_dat < p_end;
-         p_dat += p_inc / sizeof(*p_dat)) {
+		ramp_found_check_vector[i] = found_start;
+		if (!found_start)
+			continuous_check_vector[i] = false;
+	}
 
-      // Locate top of ramp
-      if (p_dat[0] == (N_TX_SAMPLES - 1) && p_dat[1] == (N_TX_SAMPLES - 1) &&
-          !found_start) {
-        found_start = true;
-        continue; // Wrap to ramp restarts on next sample
-      }
+	// Examine check vector
+	bool failed_c1 = false;
+	bool failed_c2 = false;
+	dprintf("1 == Check Passed, 0 == Failed\n");
+	dprintf("Ramp Check, Contiguous Check (Buffer #)\n");
 
-      // Make sure ramp is continuous
-      if (found_start) {
-        dprintf("Expected: %d\n", ramp_indx);
-        dprintf("Actual: %d, %d (I, Q)\n\n", p_dat[0], p_dat[1]);
-        if (p_dat[0] != ramp_indx && p_dat[1] != ramp_indx) {
-          dprintf("--->Expected: %d (Buffer %d)\n", ramp_indx, i);
-          dprintf("--->Actual: %d, %d (I, Q) [Buffer %d]\n\n", p_dat[0],
-                  p_dat[1], i);
-          dprintf("\n\n");
-          continuous_check_vector[i] = false;
-        }
-        if (ramp_indx == (N_TX_SAMPLES - 1)) {
-          ramp_indx = 0;
-        } else
-          ramp_indx++;
-      }
-    }
+	for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
+		dprintf("%d, %d (%d)\n", ramp_found_check_vector[i], continuous_check_vector[i], i);
+		if (!ramp_found_check_vector[i])
+			failed_c1 = true;
+		if (!continuous_check_vector[i])
+			failed_c2 = true;
+	}
+	dprintf("\n");
 
-    ramp_found_check_vector[i] = found_start;
-    if (!found_start)
-      continuous_check_vector[i] = false;
-  }
+	assertm(!failed_c1, "Ramp was not found in all buffers");
+	assertm(!failed_c2, "Ramp was not contiguous in all buffers");
 
-  // Examine check vector
-  bool failed_c1 = false;
-  bool failed_c2 = false;
-  dprintf("1 == Check Passed, 0 == Failed\n");
-  dprintf("Ramp Check, Contiguous Check (Buffer #)\n");
+	iio_stream_destroy(rxstream);
 
-  for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
-    dprintf("%d, %d (%d)\n", ramp_found_check_vector[i],
-            continuous_check_vector[i], i);
-    if (!ramp_found_check_vector[i])
-      failed_c1 = true;
-    if (!continuous_check_vector[i])
-      failed_c2 = true;
-  }
-  dprintf("\n");
+	//   // Manual check RX (disable asserts above first)
+	//   printf("Open up the time scope to see data. Should be a ramp from
+	//   0->%d\n",
+	//          idx - 1);
+	//   sleep(40);
 
-  assertm(!failed_c1, "Ramp was not found in all buffers");
-  assertm(!failed_c2, "Ramp was not contiguous in all buffers");
+	// Cleanup
+	iio_block_destroy(txblock);
+	iio_buffer_close(txbuf_stream);
 
-  iio_stream_destroy(rxstream);
-
-  //   // Manual check RX (disable asserts above first)
-  //   printf("Open up the time scope to see data. Should be a ramp from
-  //   0->%d\n",
-  //          idx - 1);
-  //   sleep(40);
-
-  // Cleanup
-  iio_block_destroy(txblock);
-  iio_buffer_close(txbuf_stream);
-
-  return 0;
+	return 0;
 }

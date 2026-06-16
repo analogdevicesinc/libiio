@@ -5,10 +5,11 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
 
 TEST_FUNCTION(channels_mask_operations)
 {
@@ -49,7 +50,8 @@ TEST_FUNCTION(sample_size_calculation)
 				ssize_t size = iio_device_get_sample_size(dev, mask);
 				DEBUG_PRINT("  INFO: Device %u sample size: %zd bytes\n", i, size);
 				if (size >= 0) {
-					TEST_ASSERT(size >= 0, "Sample size should be non-negative");
+					TEST_ASSERT(size >= 0,
+							"Sample size should be non-negative");
 				}
 				iio_channels_mask_destroy(mask);
 			}

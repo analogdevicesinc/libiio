@@ -7,13 +7,11 @@
  */
 
 #define _GNU_SOURCE
-#include "local.h"
-
 #include <errno.h>
 #include <fcntl.h>
-#include <iio/iio.h>
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +20,8 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
+
+#include "local.h"
 
 #define LIBIIO_DMA_HEAP_ENV_VAR "LIBIIO_DMA_HEAP_PATH"
 #define MAX_DMA_HEAP_PATH 64
@@ -33,20 +33,20 @@ struct iio_dmabuf_heap_data {
 	uint64_t heap_flags;
 };
 
-#define IIO_DMA_HEAP_ALLOC		_IOWR('H', 0x0, struct iio_dmabuf_heap_data)
+#define IIO_DMA_HEAP_ALLOC _IOWR('H', 0x0, struct iio_dmabuf_heap_data)
 
-#define IIO_DMABUF_ATTACH_IOCTL		_IOW('i', 0x92, int)
-#define IIO_DMABUF_DETACH_IOCTL		_IOW('i', 0x93, int)
-#define IIO_DMABUF_ENQUEUE_IOCTL	_IOW('i', 0x94, struct iio_dmabuf)
-#define IIO_DMABUF_SYNC_IOCTL		_IOW('b', 0, struct dma_buf_sync)
+#define IIO_DMABUF_ATTACH_IOCTL _IOW('i', 0x92, int)
+#define IIO_DMABUF_DETACH_IOCTL _IOW('i', 0x93, int)
+#define IIO_DMABUF_ENQUEUE_IOCTL _IOW('i', 0x94, struct iio_dmabuf)
+#define IIO_DMABUF_SYNC_IOCTL _IOW('b', 0, struct dma_buf_sync)
 
-#define IIO_DMABUF_FLAG_CYCLIC		(1 << 0)
+#define IIO_DMABUF_FLAG_CYCLIC (1 << 0)
 
-#define DMA_BUF_SYNC_READ      (1 << 0)
-#define DMA_BUF_SYNC_WRITE     (2 << 0)
-#define DMA_BUF_SYNC_RW        (DMA_BUF_SYNC_READ | DMA_BUF_SYNC_WRITE)
-#define DMA_BUF_SYNC_START     (0 << 2)
-#define DMA_BUF_SYNC_END       (1 << 2)
+#define DMA_BUF_SYNC_READ (1 << 0)
+#define DMA_BUF_SYNC_WRITE (2 << 0)
+#define DMA_BUF_SYNC_RW (DMA_BUF_SYNC_READ | DMA_BUF_SYNC_WRITE)
+#define DMA_BUF_SYNC_START (0 << 2)
+#define DMA_BUF_SYNC_END (1 << 2)
 
 struct iio_dmabuf {
 	int32_t fd;
@@ -67,13 +67,8 @@ struct dma_buf_sync {
 static const char *get_dma_heap_name(void)
 {
 	const char *env_value = getenv(LIBIIO_DMA_HEAP_ENV_VAR);
-	static const char *accepted_heaps[] = {
-		"system",
-		"default_cma_region",
-		"reserved",
-		"linux,cma",
-		"default-pool"
-	};
+	static const char *accepted_heaps[] = { "system", "default_cma_region", "reserved",
+		"linux,cma", "default-pool" };
 	size_t num_accepted_heaps = IIO_ARRAY_SIZE(accepted_heaps);
 	size_t i;
 
@@ -86,9 +81,11 @@ static const char *get_dma_heap_name(void)
 	}
 
 	/* Environment variable value is not in the accepted pool */
-	prm_err(NULL, "LIBIIO_DMA_HEAP_PATH value '%s' is not recognized. "
-		"Accepted values are: \"system\", \"default_cma_region\", "
-		"\"reserved\", \"linux,cma\", \"default-pool\"\n", env_value);
+	prm_err(NULL,
+			"LIBIIO_DMA_HEAP_PATH value '%s' is not recognized. "
+			"Accepted values are: \"system\", \"default_cma_region\", "
+			"\"reserved\", \"linux,cma\", \"default-pool\"\n",
+			env_value);
 
 	return NULL;
 }
@@ -96,7 +93,7 @@ static const char *get_dma_heap_name(void)
 static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 {
 	struct dma_buf_sync dbuf_sync = { 0 };
-	int fd = (int)(intptr_t) pdata->pdata;
+	int fd = (int)(intptr_t)pdata->pdata;
 
 	dbuf_sync.flags = DMA_BUF_SYNC_RW;
 
@@ -108,8 +105,8 @@ static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 	return ioctl_nointr(fd, IIO_DMABUF_SYNC_IOCTL, &dbuf_sync);
 }
 
-struct iio_block_pdata *
-local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
+struct iio_block_pdata *local_create_dmabuf(
+		struct iio_buffer_pdata *pdata, size_t size, void **data)
 {
 	struct iio_dmabuf_heap_data req = {
 		.len = size,
@@ -163,7 +160,7 @@ local_create_dmabuf(struct iio_buffer_pdata *pdata, size_t size, void **data)
 		goto err_close_fd;
 	}
 
-	priv->pdata = (void *)(intptr_t) fd;
+	priv->pdata = (void *)(intptr_t)fd;
 	priv->data = *data;
 	priv->size = size;
 	priv->buf = pdata;
@@ -215,7 +212,7 @@ err_free_priv:
 
 void local_free_dmabuf(struct iio_block_pdata *pdata)
 {
-	int ret, fd = (int)(intptr_t) pdata->pdata;
+	int ret, fd = (int)(intptr_t)pdata->pdata;
 
 	ret = ioctl(pdata->buf->fd, IIO_DMABUF_DETACH_IOCTL, &fd);
 	if (ret)
@@ -228,14 +225,13 @@ void local_free_dmabuf(struct iio_block_pdata *pdata)
 
 int local_dmabuf_get_fd(struct iio_block_pdata *pdata)
 {
-	return (int)(intptr_t) pdata->pdata;
+	return (int)(intptr_t)pdata->pdata;
 }
 
-int local_enqueue_dmabuf(struct iio_block_pdata *pdata,
-			 size_t bytes_used, bool cyclic)
+int local_enqueue_dmabuf(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic)
 {
 	struct iio_dmabuf dmabuf;
-	int ret, fd = (int)(intptr_t) pdata->pdata;
+	int ret, fd = (int)(intptr_t)pdata->pdata;
 
 	if (!pdata->dequeued)
 		return -EPERM;
@@ -272,7 +268,7 @@ int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
 {
 	struct iio_buffer_pdata *buf_pdata = pdata->buf;
 	struct timespec start, *time_ptr = NULL;
-	int ret, fd = (int)(intptr_t) pdata->pdata;
+	int ret, fd = (int)(intptr_t)pdata->pdata;
 
 	if (pdata->dequeued)
 		return -EPERM;

@@ -12,7 +12,7 @@
 
 #include <stdbool.h>
 
-#define FQDN_LEN (255)              /* RFC 1035 */
+#define FQDN_LEN (255) /* RFC 1035 */
 
 struct iio_context_params;
 struct iio_context_pdata;
@@ -24,7 +24,7 @@ struct iiod_client_pdata {
 	/* Platform-specific private data */
 	struct iiod_client_pdata_os *os_priv;
 	bool cancelled;
-	void * events[2];
+	void *events[2];
 	int cancel_fd[2];
 
 	const struct iio_context_params *params;
@@ -34,8 +34,7 @@ struct iiod_client_pdata {
 int setup_cancel(struct iiod_client_pdata *io_ctx);
 void cleanup_cancel(struct iiod_client_pdata *io_ctx);
 void do_cancel(struct iiod_client_pdata *io_ctx);
-int wait_cancellable(struct iiod_client_pdata *io_ctx,
-		     bool read, int timeout_ms);
+int wait_cancellable(struct iiod_client_pdata *io_ctx, bool read, int timeout_ms);
 
 int create_socket(const struct addrinfo *addrinfo, int timeout);
 int do_create_socket(const struct addrinfo *addrinfo);

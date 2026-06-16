@@ -13,11 +13,10 @@
 
 struct iio_context_params;
 
-void * iio_dlopen(const char *path);
+void *iio_dlopen(const char *path);
 void iio_dlclose(void *lib);
-void * iio_dlsym(void *lib, const char *symbol);
+void *iio_dlsym(void *lib, const char *symbol);
 
-bool iio_has_backend_dynamic(const struct iio_context_params *params,
-			     const char *name);
+bool iio_has_backend_dynamic(const struct iio_context_params *params, const char *name);
 
 #endif /* __IIO_DYNAMIC_H */

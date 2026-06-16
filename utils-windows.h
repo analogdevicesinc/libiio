@@ -9,8 +9,8 @@
 #ifndef __IIO_UTILS_WINDOWS_H
 #define __IIO_UTILS_WINDOWS_H
 
-#include <winsock2.h>
 #include <errno.h>
+#include <winsock2.h>
 
 /**
  * @brief Translate WSA error codes to POSIX error codes
@@ -203,7 +203,7 @@ static inline int translate_wsa_error_to_posix(int wsa_err)
 		if (wsa_err > -4096 && wsa_err < 0) // pass through for POSIX errors
 			return wsa_err;
 
-		return -EIO;   // generic fallback
+		return -EIO; // generic fallback
 	}
 }
 

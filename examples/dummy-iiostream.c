@@ -60,32 +60,31 @@
  *
  **/
 
+#include <errno.h>
+#include <getopt.h>
+#include <iio/iio-debug.h>
+#include <iio/iio.h>
+#include <inttypes.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
-#include <stdio.h>
-#include <errno.h>
-#include <getopt.h>
-#include <inttypes.h>
-#include <iio/iio.h>
-#include <iio/iio-debug.h>
 
 #define IIO_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-#define IIO_ENSURE(expr) { \
-	if (!(expr)) { \
-		(void) fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
-		(void) abort(); \
-	} \
-}
+#define IIO_ENSURE(expr) \
+	{ \
+		if (!(expr)) { \
+			(void)fprintf(stderr, "assertion failed (%s:%d)\n", __FILE__, __LINE__); \
+			(void)abort(); \
+		} \
+	}
 
-
-static char *name        = "iio_dummy_part_no";
+static char *name = "iio_dummy_part_no";
 static char *trigger_str = "instance1";
 static int buffer_length = 1;
-static int count         = -1;
+static int count = -1;
 
 // libiio supports multiple methods for reading data from a buffer
 enum {
@@ -102,7 +101,7 @@ static struct iio_device *dev;
 
 /* IIO structs required for streaming */
 static struct iio_context *ctx;
-static struct iio_buffer  *rxbuf;
+static struct iio_buffer *rxbuf;
 static struct iio_channel **channels;
 static unsigned int channel_count;
 static struct iio_channels_mask *rxmask;
@@ -116,10 +115,14 @@ static void cleanup(void)
 {
 	int ret;
 
-	if (channels) { free(channels); }
+	if (channels) {
+		free(channels);
+	}
 
 	printf("* Destroying stream\n");
-	if (rxstream) { iio_stream_destroy(rxstream); }
+	if (rxstream) {
+		iio_stream_destroy(rxstream);
+	}
 
 	printf("* Disassociate trigger\n");
 	if (dev) {
@@ -136,7 +139,9 @@ static void cleanup(void)
 		iio_channels_mask_destroy(rxmask);
 
 	printf("* Destroying context\n");
-	if (ctx) { iio_context_destroy(ctx); }
+	if (ctx) {
+		iio_context_destroy(ctx);
+	}
 }
 
 /* cleanup and exit with error */
@@ -183,8 +188,7 @@ static void parse_options(int argc, char *argv[])
 	int c;
 
 	while ((c = getopt(argc, argv, "d:t:b:r:c:h")) != -1) {
-		switch (c)
-		{
+		switch (c) {
 		case 'd':
 			name = optarg;
 			break;
@@ -219,11 +223,10 @@ static void parse_options(int argc, char *argv[])
 }
 
 /* simple configuration and streaming */
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
-	unsigned int i, j,
-		     major = iio_context_get_version_major(NULL),
-		     minor = iio_context_get_version_minor(NULL);
+	unsigned int i, j, major = iio_context_get_version_major(NULL),
+			   minor = iio_context_get_version_minor(NULL);
 	int err;
 
 	// Hardware trigger
@@ -235,7 +238,7 @@ int main (int argc, char **argv)
 	signal(SIGINT, handle_sig);
 
 	printf("Library version: %u.%u (git tag: %s)\n", major, minor,
-	       iio_context_get_version_tag(NULL));
+			iio_context_get_version_tag(NULL));
 
 	/* check for struct iio_data_format.repeat support
 	 * 0.8 has repeat support, so anything greater than that */
@@ -316,10 +319,9 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
-	bool has_ts = strcmp(iio_channel_get_id(channels[channel_count-1]), "timestamp") == 0;
+	bool has_ts = strcmp(iio_channel_get_id(channels[channel_count - 1]), "timestamp") == 0;
 	int64_t last_ts = 0;
-	while (!stop)
-	{
+	while (!stop) {
 		const struct iio_block *rxblock;
 		/* we use a char pointer, rather than a void pointer, for p_dat & p_end
 		 * to ensure the compiler understands the size is a byte, and then we
@@ -341,27 +343,32 @@ int main (int argc, char **argv)
 
 		// Print timestamp delta in ms
 		if (has_ts)
-			for (p_dat = iio_block_first(rxblock, channels[channel_count-1]); p_dat < p_end; p_dat += p_inc) {
+			for (p_dat = iio_block_first(rxblock, channels[channel_count - 1]);
+					p_dat < p_end; p_dat += p_inc) {
 				now_ts = (((int64_t *)p_dat)[0]);
-				printf("[%04" PRId64 "] ", last_ts > 0 ? (now_ts - last_ts)/1000/1000 : 0);
+				printf("[%04" PRId64 "] ",
+						last_ts > 0 ? (now_ts - last_ts) / 1000 / 1000 : 0);
 				last_ts = now_ts;
 			}
 
 		// Print each captured sample
-		switch (buffer_read_method)
-		{
+		switch (buffer_read_method) {
 		case BUFFER_POINTER:
 			for (i = 0; i < channel_count; ++i) {
-				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
+				const struct iio_data_format *fmt =
+						iio_channel_get_data_format(channels[i]);
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 
 				printf("%s ", iio_channel_get_id(channels[i]));
-				for (p_dat = iio_block_first(rxblock, channels[i]); p_dat < p_end; p_dat += p_inc) {
+				for (p_dat = iio_block_first(rxblock, channels[i]); p_dat < p_end;
+						p_dat += p_inc) {
 					for (j = 0; j < repeat; ++j) {
-						if (fmt->length/8 == sizeof(int16_t))
-							printf("%" PRIi16 " ", ((int16_t *)p_dat)[j]);
-						else if (fmt->length/8 == sizeof(int64_t))
-							printf("%" PRId64 " ", ((int64_t *)p_dat)[j]);
+						if (fmt->length / 8 == sizeof(int16_t))
+							printf("%" PRIi16 " ",
+									((int16_t *)p_dat)[j]);
+						else if (fmt->length / 8 == sizeof(int64_t))
+							printf("%" PRId64 " ",
+									((int64_t *)p_dat)[j]);
 					}
 				}
 			}
@@ -381,7 +388,8 @@ int main (int argc, char **argv)
 			for (i = 0; i < channel_count; ++i) {
 				uint8_t *buf;
 				size_t sample, bytes;
-				const struct iio_data_format *fmt = iio_channel_get_data_format(channels[i]);
+				const struct iio_data_format *fmt =
+						iio_channel_get_data_format(channels[i]);
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 				size_t sample_size = fmt->length / 8 * repeat;
 
@@ -392,16 +400,20 @@ int main (int argc, char **argv)
 				}
 
 				bytes = iio_channel_read(channels[i], rxblock, buf,
-							 sample_size * buffer_length,
-							 buffer_read_method == CHANNEL_READ_RAW);
+						sample_size * buffer_length,
+						buffer_read_method == CHANNEL_READ_RAW);
 
 				printf("%s ", iio_channel_get_id(channels[i]));
 				for (sample = 0; sample < bytes / sample_size; ++sample) {
 					for (j = 0; j < repeat; ++j) {
 						if (fmt->length / 8 == sizeof(int16_t))
-							printf("%" PRIi16 " ", ((int16_t *)buf)[sample+j]);
+							printf("%" PRIi16 " ",
+									((int16_t *)buf)[sample +
+											 j]);
 						else if (fmt->length / 8 == sizeof(int64_t))
-							printf("%" PRId64 " ", ((int64_t *)buf)[sample+j]);
+							printf("%" PRId64 " ",
+									((int64_t *)buf)[sample +
+											 j]);
 					}
 				}
 
@@ -419,4 +431,3 @@ int main (int argc, char **argv)
 
 	return 0;
 }
-

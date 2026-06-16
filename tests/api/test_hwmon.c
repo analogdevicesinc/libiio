@@ -5,10 +5,11 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
 
 TEST_FUNCTION(hwmon_channel_type)
 {
@@ -23,8 +24,10 @@ TEST_FUNCTION(hwmon_channel_type)
 				if (nb_channels > 0) {
 					struct iio_channel *chn = iio_device_get_channel(dev, 0);
 					if (chn) {
-						enum hwmon_chan_type type = hwmon_channel_get_type(chn);
-						DEBUG_PRINT("  INFO: HWMON channel type: %d\n", type);
+						enum hwmon_chan_type type =
+								hwmon_channel_get_type(chn);
+						DEBUG_PRINT("  INFO: HWMON channel type: %d\n",
+								type);
 						TEST_ASSERT(true, "HWMON channel type retrieved");
 						iio_context_destroy(ctx);
 						return;

@@ -9,10 +9,6 @@
 /* Force the XSI version of strerror_r */
 #undef _GNU_SOURCE
 
-#include "iio-config.h"
-#include "iio-private.h"
-#include "network.h" // for FQDN_LEN
-
 #include <errno.h>
 #include <iio/iio-debug.h>
 #include <locale.h>
@@ -21,16 +17,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "iio-config.h"
+#include "iio-private.h"
+#include "network.h" // for FQDN_LEN
+
 /* For getaddrinfo() EAI_* codes */
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #elif defined(__has_include)
-#  if __has_include(<netdb.h>)
-#      if defined(__ZEPHYR__)
-#        include <sys/socket.h> /* zephyr's netdb.h requires socklen_t */
-#      endif
-#    include <netdb.h>
-#  endif
+#if __has_include(<netdb.h>)
+#if defined(__ZEPHYR__)
+#include <sys/socket.h> /* zephyr's netdb.h requires socklen_t */
+#endif
+#include <netdb.h>
+#endif
 #elif defined(HAVE_NETDB_H)
 #include <netdb.h>
 #endif
@@ -41,10 +41,9 @@
 #include <time.h>
 #endif
 
-#if defined(_WIN32) || \
-		(defined(__APPLE__) && defined(__MACH__)) || \
+#if defined(_WIN32) || (defined(__APPLE__) && defined(__MACH__)) || \
 		(defined(__USE_XOPEN2K8) && \
-		(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
+				(!defined(__UCLIBC__) || defined(__UCLIBC_HAS_LOCALE__)))
 #define LOCALE_SUPPORT
 #endif
 
@@ -136,7 +135,7 @@ static int read_double_locale(const char *str, double *val)
 	bool problem = false;
 	locale_t old_locale, new_locale;
 
-	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
+	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t)0);
 	if (!new_locale)
 		return -errno;
 
@@ -161,7 +160,7 @@ static int write_double_locale(char *buf, size_t len, double val)
 {
 	locale_t old_locale, new_locale;
 
-	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
+	new_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t)0);
 	if (!new_locale)
 		return -errno;
 
@@ -303,7 +302,7 @@ char *iio_strndup(const char *str, size_t n)
  * src is assumed to be null terminated, if it is not, this function will
  * dereference unknown memory beyond src.
  */
-size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t dsize)
+size_t iio_strlcpy(char *__restrict dst, const char *__restrict src, size_t dsize)
 {
 	const char *osrc = src;
 	size_t nleft = dsize;
@@ -319,18 +318,18 @@ size_t iio_strlcpy(char * __restrict dst, const char * __restrict src, size_t ds
 	/* Not enough room in dst, add NUL and traverse rest of src. */
 	if (nleft == 0) {
 		if (dsize != 0)
-			*dst = '\0';            /* NUL-terminate dst */
+			*dst = '\0'; /* NUL-terminate dst */
 
 		while (*src++)
 			;
 	}
 
-	return(src - osrc - 1); /* count does not include NUL */
+	return (src - osrc - 1); /* count does not include NUL */
 }
 
 /* Cross platform version of getenv */
 
-char * iio_getenv (char * envvar)
+char *iio_getenv(char *envvar)
 {
 	char *hostname;
 	size_t len, tmp;
@@ -363,7 +362,7 @@ char * iio_getenv (char * envvar)
 #ifdef _MSC_BUILD
 	return hostname;
 #else
-	return strdup (hostname);
+	return strdup(hostname);
 #endif
 
 wrong_str:
@@ -387,9 +386,8 @@ ssize_t __iio_printf iio_snprintf(char *buf, size_t len, const char *fmt, ...)
 	return (ssize_t)ret;
 }
 
-void iio_prm_printf(const struct iio_context_params *params,
-		    enum iio_log_level msg_level,
-		    const char *fmt, ...)
+void iio_prm_printf(const struct iio_context_params *params, enum iio_log_level msg_level,
+		const char *fmt, ...)
 {
 	FILE *out = NULL;
 	uint64_t now;
@@ -407,12 +405,11 @@ void iio_prm_printf(const struct iio_context_params *params,
 	}
 
 	if (out) {
-		if (params
-		    && params->timestamp_level > LEVEL_NOLOG
-		    && params->timestamp_level <= msg_level) {
+		if (params && params->timestamp_level > LEVEL_NOLOG &&
+				params->timestamp_level <= msg_level) {
 			now = iio_read_counter_us() - library_startup_time_us;
 			fprintf(out, "(%u.%06us) ", (unsigned int)(now / 1000000),
-				(unsigned int)now % 1000000);
+					(unsigned int)now % 1000000);
 		}
 
 		vfprintf(out, fmt, ap);
@@ -430,20 +427,20 @@ uint64_t iio_read_counter_us(void)
 		return value;
 	} else {
 #ifdef _WIN32
-	LARGE_INTEGER freq, cnt;
+		LARGE_INTEGER freq, cnt;
 
-	QueryPerformanceFrequency(&freq);
-	QueryPerformanceCounter(&cnt);
+		QueryPerformanceFrequency(&freq);
+		QueryPerformanceCounter(&cnt);
 
-	value = (1000000 * cnt.QuadPart) / freq.QuadPart;
+		value = (1000000 * cnt.QuadPart) / freq.QuadPart;
 #elif CLOCK_GETTIME_AVAILABLE
-	struct timespec ts;
+		struct timespec ts;
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+		clock_gettime(CLOCK_MONOTONIC, &ts);
 
-	value = ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
+		value = ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
 #else
-	value = 0;
+		value = 0;
 #endif
 	}
 
@@ -467,31 +464,40 @@ int network_map_eai_code(int ret)
 {
 	switch (ret) {
 #ifdef EAI_AGAIN
-	case EAI_AGAIN: return -EAGAIN;
+	case EAI_AGAIN:
+		return -EAGAIN;
 #endif
 #ifdef EAI_MEMORY
-	case EAI_MEMORY: return -ENOMEM;
+	case EAI_MEMORY:
+		return -ENOMEM;
 #endif
 #ifdef EAI_FAIL
-	case EAI_FAIL: return -EIO;
+	case EAI_FAIL:
+		return -EIO;
 #endif
 #ifdef EAI_NONAME
-	case EAI_NONAME: return -ENOENT;
+	case EAI_NONAME:
+		return -ENOENT;
 #endif
 #ifdef EAI_SERVICE
-	case EAI_SERVICE: return -EOPNOTSUPP;
+	case EAI_SERVICE:
+		return -EOPNOTSUPP;
 #endif
 #ifdef EAI_FAMILY
-	case EAI_FAMILY: return -EAFNOSUPPORT;
+	case EAI_FAMILY:
+		return -EAFNOSUPPORT;
 #endif
 #ifdef EAI_SOCKTYPE
-	case EAI_SOCKTYPE: return -EPROTOTYPE;
+	case EAI_SOCKTYPE:
+		return -EPROTOTYPE;
 #endif
 #ifdef EAI_BADFLAGS
-	case EAI_BADFLAGS: return -EINVAL;
+	case EAI_BADFLAGS:
+		return -EINVAL;
 #endif
 #ifdef EAI_OVERFLOW
-	case EAI_OVERFLOW: return -EOVERFLOW;
+	case EAI_OVERFLOW:
+		return -EOVERFLOW;
 #endif
 	default:
 		return -EIO;

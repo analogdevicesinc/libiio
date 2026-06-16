@@ -6,15 +6,15 @@
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
-#include "debug.h"
-#include "ops.h"
-#include "thread-pool.h"
-
 #include <fcntl.h>
 #include <linux/usb/functionfs.h>
 #include <poll.h>
 #include <stdint.h>
 #include <string.h>
+
+#include "debug.h"
+#include "ops.h"
+#include "thread-pool.h"
 
 /* u8"IIO" for non-c11 compilers */
 #define NAME "\x0049\x0049\x004F"
@@ -25,7 +25,6 @@
 #define IIO_USD_CMD_RESET_PIPES 0
 #define IIO_USD_CMD_OPEN_PIPE 1
 #define IIO_USD_CMD_CLOSE_PIPE 2
-
 
 struct usb_ffs_header {
 	struct usb_functionfs_descs_head_v2 header;
@@ -70,8 +69,7 @@ static void usbd_client_thread(struct thread_pool *pool, void *d)
 {
 	struct usbd_client_pdata *pdata = d;
 
-	interpreter(pdata->pdata->ctx, pdata->ep_in, pdata->ep_out,
-			false, true, pool,
+	interpreter(pdata->pdata->ctx, pdata->ep_in, pdata->ep_out, false, true, pool,
 			pdata->pdata->xml_zstd, pdata->pdata->xml_zstd_len);
 
 	close(pdata->ep_in);
@@ -115,8 +113,8 @@ static int usb_open_pipe(struct usbd_pdata *pdata, unsigned int pipe_id)
 
 	cpdata->pdata = pdata;
 
-	err = thread_pool_add_thread(pdata->pool[pipe_id],
-			usbd_client_thread, cpdata, "usbd_client_thd");
+	err = thread_pool_add_thread(
+			pdata->pool[pipe_id], usbd_client_thread, cpdata, "usbd_client_thd");
 	if (!err)
 		return 0;
 
@@ -145,8 +143,7 @@ static void usb_close_pipes(struct usbd_pdata *pdata)
 		usb_close_pipe(pdata, i);
 }
 
-static int handle_event(struct usbd_pdata *pdata,
-		const struct usb_functionfs_event *event)
+static int handle_event(struct usbd_pdata *pdata, const struct usb_functionfs_event *event)
 {
 	int ret = 0;
 
@@ -221,11 +218,14 @@ static void usbd_main(struct thread_pool *pool, void *d)
 	free(pdata);
 }
 
-static struct usb_ffs_header * create_header(
-		unsigned int nb_pipes, uint32_t size)
+static struct usb_ffs_header *create_header(unsigned int nb_pipes, uint32_t size)
 {
 	/* Packet sizes for USB high-speed, full-speed, super-speed */
-	const unsigned int packet_sizes[3] = { 64, 512, 1024, };
+	const unsigned int packet_sizes[3] = {
+		64,
+		512,
+		1024,
+	};
 	struct usb_ffs_header *hdr;
 	unsigned int i, pipe_id;
 	uintptr_t ptr;
@@ -238,19 +238,17 @@ static struct usb_ffs_header * create_header(
 
 	hdr->header.magic = LE32(FUNCTIONFS_DESCRIPTORS_MAGIC_V2);
 	hdr->header.length = htole32(size);
-	hdr->header.flags = LE32(FUNCTIONFS_HAS_FS_DESC |
-			FUNCTIONFS_HAS_HS_DESC |
-			FUNCTIONFS_HAS_SS_DESC);
+	hdr->header.flags = LE32(
+			FUNCTIONFS_HAS_FS_DESC | FUNCTIONFS_HAS_HS_DESC | FUNCTIONFS_HAS_SS_DESC);
 
 	hdr->nb_fs = htole32(nb_pipes * 2 + 1);
 	hdr->nb_hs = htole32(nb_pipes * 2 + 1);
 	hdr->nb_ss = htole32(nb_pipes * 4 + 1);
 
-	ptr = ((uintptr_t) hdr) + sizeof(*hdr);
+	ptr = ((uintptr_t)hdr) + sizeof(*hdr);
 
 	for (i = 0; i < 3; i++) {
-		struct usb_interface_descriptor *desc =
-			(struct usb_interface_descriptor *) ptr;
+		struct usb_interface_descriptor *desc = (struct usb_interface_descriptor *)ptr;
 		struct usb_endpoint_descriptor_no_audio *ep;
 		struct usb_ss_ep_comp_descriptor *comp;
 
@@ -260,8 +258,7 @@ static struct usb_ffs_header * create_header(
 		desc->bInterfaceClass = USB_CLASS_COMM;
 		desc->iInterface = 1;
 
-		ep = (struct usb_endpoint_descriptor_no_audio *)
-			(ptr + sizeof(*desc));
+		ep = (struct usb_endpoint_descriptor_no_audio *)(ptr + sizeof(*desc));
 
 		for (pipe_id = 0; pipe_id < nb_pipes; pipe_id++) {
 			ep->bLength = sizeof(*ep);
@@ -272,11 +269,11 @@ static struct usb_ffs_header * create_header(
 			ep++;
 
 			if (i == 2) {
-				comp = (struct usb_ss_ep_comp_descriptor *) ep;
+				comp = (struct usb_ss_ep_comp_descriptor *)ep;
 				comp->bLength = USB_DT_SS_EP_COMP_SIZE;
 				comp->bDescriptorType = USB_DT_SS_ENDPOINT_COMP;
 				comp++;
-				ep = (struct usb_endpoint_descriptor_no_audio *) comp;
+				ep = (struct usb_endpoint_descriptor_no_audio *)comp;
 			}
 
 			ep->bLength = sizeof(*ep);
@@ -287,11 +284,11 @@ static struct usb_ffs_header * create_header(
 			ep++;
 
 			if (i == 2) {
-				comp = (struct usb_ss_ep_comp_descriptor *) ep;
+				comp = (struct usb_ss_ep_comp_descriptor *)ep;
 				comp->bLength = USB_DT_SS_EP_COMP_SIZE;
 				comp->bDescriptorType = USB_DT_SS_ENDPOINT_COMP;
 				comp++;
-				ep = (struct usb_endpoint_descriptor_no_audio *) comp;
+				ep = (struct usb_endpoint_descriptor_no_audio *)comp;
 			}
 		}
 
@@ -304,9 +301,9 @@ static struct usb_ffs_header * create_header(
 static int write_header(int fd, unsigned int nb_pipes)
 {
 	uint32_t size = sizeof(struct usb_ffs_header) +
-		3 * sizeof(struct usb_interface_descriptor) +
-		6 * nb_pipes * sizeof(struct usb_endpoint_descriptor_no_audio) +
-		2 * nb_pipes * sizeof(struct usb_ss_ep_comp_descriptor);
+			3 * sizeof(struct usb_interface_descriptor) +
+			6 * nb_pipes * sizeof(struct usb_endpoint_descriptor_no_audio) +
+			2 * nb_pipes * sizeof(struct usb_ss_ep_comp_descriptor);
 	struct usb_ffs_header *hdr;
 	int ret;
 
@@ -347,9 +344,8 @@ int init_usb_daemon(const char *ffs, unsigned int nb_pipes)
 	return ep0_fd;
 }
 
-int start_usb_daemon(struct iio_context *ctx, const char *ffs,
-		unsigned int nb_pipes, int ep0_fd, struct thread_pool *pool,
-		const void *xml_zstd, size_t xml_zstd_len)
+int start_usb_daemon(struct iio_context *ctx, const char *ffs, unsigned int nb_pipes, int ep0_fd,
+		struct thread_pool *pool, const void *xml_zstd, size_t xml_zstd_len)
 {
 	struct usbd_pdata *pdata;
 	unsigned int i;

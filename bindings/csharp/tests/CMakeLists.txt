@@ -19,65 +19,72 @@ file(TO_NATIVE_PATH ${LIBIIO_SHARP_REF} LIBIIO_SHARP_REF_NATIVE)
 #     COMMENT       <string>        # build comment shown by make
 #     [EXTRA_COMMANDS <cmd> ...]    # optional extra COMMAND lines inserted before mcs
 # )
-function(add_csharp_test_target)
-    cmake_parse_arguments(ARG "" "TARGET_NAME;EXE_NAME;COMMENT" "SOURCES;EXTRA_COMMANDS" ${ARGN})
+function (add_csharp_test_target)
+    cmake_parse_arguments(ARG "" "TARGET_NAME;EXE_NAME;COMMENT"
+                          "SOURCES;EXTRA_COMMANDS" ${ARGN})
 
     set(EXE_PATH "${CSHARP_TEST_DIR}/${ARG_EXE_NAME}")
 
     set(SOURCES_NATIVE "")
-    foreach(SRC ${ARG_SOURCES})
+    foreach (SRC ${ARG_SOURCES})
         file(TO_NATIVE_PATH ${SRC} TMP)
         list(APPEND SOURCES_NATIVE ${TMP})
-    endforeach()
+    endforeach ()
 
     file(TO_NATIVE_PATH ${EXE_PATH} EXE_PATH_NATIVE)
 
-    add_custom_command(OUTPUT ${EXE_PATH}
+    add_custom_command(
+        OUTPUT ${EXE_PATH}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CSHARP_TEST_DIR}
-        ${ARG_EXTRA_COMMANDS}
-        COMMAND ${MCS_EXECUTABLE}
-            /target:exe
-            /langversion:5
-            /out:${EXE_PATH_NATIVE}
-            /reference:${LIBIIO_SHARP_REF_NATIVE}
-            ${SOURCES_NATIVE}
+                ${ARG_EXTRA_COMMANDS}
+        COMMAND
+            ${MCS_EXECUTABLE} /target:exe /langversion:5 /out:${EXE_PATH_NATIVE}
+            /reference:${LIBIIO_SHARP_REF_NATIVE} ${SOURCES_NATIVE}
         DEPENDS ${ARG_SOURCES} libiio-sharp
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "${ARG_COMMENT}"
-    )
+        COMMENT "${ARG_COMMENT}")
 
     add_custom_target(${ARG_TARGET_NAME} ALL DEPENDS ${EXE_PATH})
-endfunction()
+endfunction ()
 
 # --- Smoke Tests ---
 
 add_csharp_test_target(
-    TARGET_NAME libiio-csharp-smoke-tests
-    EXE_NAME    LibiioSmokeTests.exe
+    TARGET_NAME
+    libiio-csharp-smoke-tests
+    EXE_NAME
+    LibiioSmokeTests.exe
     SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/TestFramework.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/SmokeTests.cs
-    COMMENT "Building C# smoke tests"
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/TestFramework.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/SmokeTests.cs
+    COMMENT
+    "Building C# smoke tests")
 
 # --- Integration Tests ---
 
 set(XML_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/tests/resources/xmls")
 
 add_csharp_test_target(
-    TARGET_NAME libiio-csharp-integration-tests
-    EXE_NAME    LibiioIntegrationTests.exe
+    TARGET_NAME
+    libiio-csharp-integration-tests
+    EXE_NAME
+    LibiioIntegrationTests.exe
     SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/TestFramework.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/IntegrationTests.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/TestFramework.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/IntegrationTests.cs
     EXTRA_COMMANDS
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${XML_RESOURCES_DIR} ${CSHARP_TEST_DIR}
-    COMMENT "Building C# integration tests"
-)
+    COMMAND
+    ${CMAKE_COMMAND}
+    -E
+    copy_directory
+    ${XML_RESOURCES_DIR}
+    ${CSHARP_TEST_DIR}
+    COMMENT
+    "Building C# integration tests")
 
 # --- Combined target (builds both) ---
-add_custom_target(libiio-csharp-tests ALL
-    DEPENDS libiio-csharp-smoke-tests libiio-csharp-integration-tests
-)
+add_custom_target(
+    libiio-csharp-tests ALL DEPENDS libiio-csharp-smoke-tests
+                                    libiio-csharp-integration-tests)
 
 message(STATUS "C# tests configured in: ${CSHARP_TEST_DIR}")

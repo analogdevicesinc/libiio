@@ -5,11 +5,12 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
+#include <iio/iio.h>
+#include <string.h>
+
 #include "test_framework.h"
 #include "test_helpers.h"
-#include <iio/iio.h>
-#include <errno.h>
-#include <string.h>
 
 static struct iio_context *test_ctx = NULL;
 static struct iio_device *test_dev = NULL;
@@ -36,7 +37,8 @@ static void setup_test_buffer(void)
 
 				for (unsigned int c = 0; c < test_dev_chn_count; c++) {
 					struct iio_channel *chn = iio_device_get_channel(dev, c);
-					if (iio_channel_is_scan_element(chn) && !iio_channel_is_output(chn))
+					if (iio_channel_is_scan_element(chn) &&
+							!iio_channel_is_output(chn))
 						test_dev_buf_chn_count++;
 				}
 				if (test_dev_buf_chn_count > 0) {
@@ -88,7 +90,7 @@ TEST_FUNCTION(buffer_open_basic)
 	struct iio_buffer_stream *buf_stream = iio_buffer_open(buffer, mask);
 	if (iio_err(buf_stream)) {
 		DEBUG_PRINT("  INFO: Buffer open failed with error %d (may be expected)\n",
-			    iio_err(buf_stream));
+				iio_err(buf_stream));
 		iio_channels_mask_destroy(mask);
 		return;
 	}
@@ -141,8 +143,10 @@ TEST_FUNCTION(buffer_attributes)
 		if (first_attr) {
 			const char *name = iio_attr_get_name(first_attr);
 			if (name) {
-				const struct iio_attr *found_attr = iio_buffer_find_attr(buffer, name);
-				TEST_ASSERT(found_attr == first_attr, "Found buffer attribute should match");
+				const struct iio_attr *found_attr =
+						iio_buffer_find_attr(buffer, name);
+				TEST_ASSERT(found_attr == first_attr,
+						"Found buffer attribute should match");
 			}
 		}
 	}

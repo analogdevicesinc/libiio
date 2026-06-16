@@ -5,10 +5,11 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
-#include "test_framework.h"
-#include <iio/iio.h>
 #include <errno.h>
+#include <iio/iio.h>
 #include <string.h>
+
+#include "test_framework.h"
 
 TEST_FUNCTION(strerror_functionality)
 {
@@ -41,36 +42,34 @@ TEST_FUNCTION(strerror_buffer_sizes)
 	char large_buffer[1000];
 
 	iio_strerror(-EINVAL, small_buffer, sizeof(small_buffer));
-	TEST_ASSERT(strlen(small_buffer) < sizeof(small_buffer), "Small buffer should not overflow");
-	TEST_ASSERT(small_buffer[sizeof(small_buffer) - 1] == '\0', "Small buffer should be null-terminated");
+	TEST_ASSERT(strlen(small_buffer) < sizeof(small_buffer),
+			"Small buffer should not overflow");
+	TEST_ASSERT(small_buffer[sizeof(small_buffer) - 1] == '\0',
+			"Small buffer should be null-terminated");
 
 	iio_strerror(-EINVAL, large_buffer, sizeof(large_buffer));
-	TEST_ASSERT(strlen(large_buffer) < sizeof(large_buffer), "Large buffer should not overflow");
-	TEST_ASSERT(large_buffer[sizeof(large_buffer) - 1] == '\0', "Large buffer should be null-terminated");
+	TEST_ASSERT(strlen(large_buffer) < sizeof(large_buffer),
+			"Large buffer should not overflow");
+	TEST_ASSERT(large_buffer[sizeof(large_buffer) - 1] == '\0',
+			"Large buffer should be null-terminated");
 
 	iio_strerror(-EINVAL, small_buffer, 1);
-	TEST_ASSERT(small_buffer[0] == '\0', "Buffer of size 1 should contain only null terminator");
+	TEST_ASSERT(small_buffer[0] == '\0',
+			"Buffer of size 1 should contain only null terminator");
 
 	iio_strerror(-EINVAL, small_buffer, 0);
 }
 
 TEST_FUNCTION(has_backend_functionality)
 {
-	const char *common_backends[] = {
-		"local",
-		"usb",
-		"ip",
-		"network",
-		"serial",
-		"xml"
-	};
+	const char *common_backends[] = { "local", "usb", "ip", "network", "serial", "xml" };
 
 	size_t num_backends = sizeof(common_backends) / sizeof(common_backends[0]);
 
 	for (size_t i = 0; i < num_backends; i++) {
 		bool has_backend = iio_has_backend(NULL, common_backends[i]);
-		DEBUG_PRINT("  INFO: Backend '%s' availability: %s\n",
-			   common_backends[i], has_backend ? "YES" : "NO");
+		DEBUG_PRINT("  INFO: Backend '%s' availability: %s\n", common_backends[i],
+				has_backend ? "YES" : "NO");
 	}
 
 	bool has_nonexistent = iio_has_backend(NULL, "nonexistent_backend");
@@ -98,10 +97,10 @@ TEST_FUNCTION(has_backend_with_params)
 	bool has_local_with_params = iio_has_backend(&params, "local");
 
 	TEST_ASSERT(has_local_no_params == has_local_with_params,
-		   "Backend availability should be consistent with/without params");
+			"Backend availability should be consistent with/without params");
 
 	DEBUG_PRINT("  INFO: Local backend with params: %s\n",
-		   has_local_with_params ? "YES" : "NO");
+			has_local_with_params ? "YES" : "NO");
 }
 
 TEST_FUNCTION(builtin_backends_count)
@@ -146,7 +145,8 @@ TEST_FUNCTION(builtin_backends_consistency)
 		if (backend_name) {
 			bool has_backend = iio_has_backend(NULL, backend_name);
 			if (!has_backend) {
-				DEBUG_PRINT("  WARN: Built-in backend '%s' reports as not available\n", backend_name);
+				DEBUG_PRINT("  WARN: Built-in backend '%s' reports as not available\n",
+						backend_name);
 			}
 		}
 	}
@@ -154,32 +154,18 @@ TEST_FUNCTION(builtin_backends_consistency)
 
 TEST_FUNCTION(backend_name_validation)
 {
-	const char *test_names[] = {
-		"",
-		" ",
-		"local ",
-		" local",
-		"LOCAL",
-		"Local",
-		"usb:device",
-		"ip:192.168.1.1",
-		"serial:/dev/ttyUSB0",
+	const char *test_names[] = { "", " ", "local ", " local", "LOCAL", "Local", "usb:device",
+		"ip:192.168.1.1", "serial:/dev/ttyUSB0",
 		"very_long_backend_name_that_probably_does_not_exist_but_we_test_anyway",
-		"backend-with-dashes",
-		"backend_with_underscores",
-		"backend123",
-		"123backend",
-		"backend with spaces",
-		"\t\n\r",
-		"backend\x00hidden"
-	};
+		"backend-with-dashes", "backend_with_underscores", "backend123", "123backend",
+		"backend with spaces", "\t\n\r", "backend\x00hidden" };
 
 	size_t num_names = sizeof(test_names) / sizeof(test_names[0]);
 
 	for (size_t i = 0; i < num_names; i++) {
 		bool has_backend = iio_has_backend(NULL, test_names[i]);
-		DEBUG_PRINT("  INFO: Backend name test '%s': %s\n",
-			   test_names[i], has_backend ? "YES" : "NO");
+		DEBUG_PRINT("  INFO: Backend name test '%s': %s\n", test_names[i],
+				has_backend ? "YES" : "NO");
 	}
 }
 

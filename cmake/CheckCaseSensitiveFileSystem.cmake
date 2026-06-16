@@ -10,7 +10,10 @@
 # I dislike that we have to emit a file from CMake, but I can't think of a better way.
 
 message(STATUS "Check for case-sensitive file systems")
-string(RANDOM LENGTH 6 ALPHABET abcdefghijklmnopqrstuvwxyz TMP_FILE_L)
+string(
+    RANDOM
+    LENGTH 6
+    ALPHABET abcdefghijklmnopqrstuvwxyz TMP_FILE_L)
 set(TMP_FILE_L "${TMP_FILE_L}.tmp")
 string(TOUPPER ${TMP_FILE_L} TMP_FILE_U)
 string(TIMESTAMP TMP_TIME)
@@ -21,8 +24,8 @@ file(WRITE "${CMAKE_BINARY_DIR}/${TMP_FILE_U}" "${TMP_FILE_CONTENTS}")
 # test if lowercase file can be opened
 set(FileContents "")
 if (EXISTS "${CMAKE_BINARY_DIR}/${TMP_FILE_L}")
-	file(READ "${CMAKE_BINARY_DIR}/${TMP_FILE_L}" FileContents)
-endif()
+    file(READ "${CMAKE_BINARY_DIR}/${TMP_FILE_L}" FileContents)
+endif ()
 
 # remove the file
 file(REMOVE "${CMAKE_BINARY_DIR}/${TMP_FILE_U}")
@@ -30,9 +33,9 @@ file(REMOVE "${CMAKE_BINARY_DIR}/${TMP_FILE_U}")
 # check the contents
 # If it is empty, the file system is case sensitive.
 if ("${FileContents}" STREQUAL "${TMP_FILE_CONTENTS}")
-	message(STATUS "File system is not case-sensitive")
-	set(HAVE_CASE_SENSITIVE_FILESYSTEM 0)
-else()
-	message(STATUS "File system is case-sensitive")
-	set(HAVE_CASE_SENSITIVE_FILESYSTEM 1)
-endif()
+    message(STATUS "File system is not case-sensitive")
+    set(HAVE_CASE_SENSITIVE_FILESYSTEM 0)
+else ()
+    message(STATUS "File system is case-sensitive")
+    set(HAVE_CASE_SENSITIVE_FILESYSTEM 1)
+endif ()

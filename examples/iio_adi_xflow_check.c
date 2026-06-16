@@ -7,8 +7,8 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <iio/iio.h>
 #include <iio/iio-debug.h>
+#include <iio/iio.h>
 #include <math.h>
 #include <pthread.h>
 #include <signal.h>
@@ -17,7 +17,6 @@
 #include <unistd.h>
 
 #include "../utils/iio_common.h"
-
 
 #define MY_NAME "iio_adi_xflow_check"
 
@@ -29,9 +28,9 @@ struct xflow_pthread_data {
 };
 
 static const struct option options[] = {
-	  {"buffer-size", required_argument, 0, 's'},
-	  {"auto", no_argument, 0, 'a'},
-	  {0, 0, 0, 0},
+	{ "buffer-size", required_argument, 0, 's' },
+	{ "auto", no_argument, 0, 'a' },
+	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
@@ -135,15 +134,15 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
-				 options, options_descriptions, NULL, &ret);
+	ctx = handle_common_opts(
+			MY_NAME, argc, argw, MY_OPTS, options, options_descriptions, NULL, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
 		return EXIT_FAILURE;
 	}
 	while ((c = getopt_long(argc, argw, "+" COMMON_OPTIONS MY_OPTS, /* Flawfinder: ignore */
-					opts, NULL)) != -1) {
+				opts, NULL)) != -1) {
 		switch (c) {
 		/* All these are handled in the common */
 		case 'h':
@@ -155,8 +154,8 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 		case 'a':
-			if (!optarg && argc > optind && argv[optind] != NULL
-					&& argv[optind][0] != '-')
+			if (!optarg && argc > optind && argv[optind] != NULL &&
+					argv[optind][0] != '-')
 				optind++;
 			break;
 
@@ -229,8 +228,7 @@ int main(int argc, char **argv)
 	else
 		device_is_tx = false;
 
-	printf("Monitoring %s for underflows/overflows\n",
-		iio_device_get_name(dev));
+	printf("Monitoring %s for underflows/overflows\n", iio_device_get_name(dev));
 
 	buffer = iio_device_get_buffer(dev, 0);
 	if (!buffer) {
@@ -250,8 +248,7 @@ int main(int argc, char **argv)
 	xflow_pthread_data.ctx = ctx;
 	xflow_pthread_data.device_name = device_name;
 
-	ret = pthread_create(&monitor_thread, NULL, monitor_thread_fn,
-			     (void *)&xflow_pthread_data);
+	ret = pthread_create(&monitor_thread, NULL, monitor_thread_fn, (void *)&xflow_pthread_data);
 	if (ret)
 		IIO_PERROR(ret, "Failed to create monitor thread");
 
