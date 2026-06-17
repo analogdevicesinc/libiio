@@ -1,0 +1,5 @@
+# Bulk formatting changes to ignore in git blame
+# See: https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt
+
+# Treewide formatting with clang-format and cmake-format
+f3576186632b09076d6f74ad22f4913eb21a0a03
