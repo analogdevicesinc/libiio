@@ -290,7 +290,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// ==============================================================
 	// CONFIGURING TX DEVICE
 	// ==============================================================
-	tx_configuration:
+	tx_configuration: ;
 
 	// Handle to the TX device
 	struct iio_device *tx_device;
@@ -315,10 +315,10 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	}
 
 	// Adding I (voltage0) and Q (voltage1) to the mask
-	channel = iio_device_find_channel(tx_device, "voltage0", false);
+	channel = iio_device_find_channel(tx_device, "voltage0", true);
 	if (channel == NULL)
 	{
-		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for RX device.\n");
+		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for TX device.\n");
 		tx_device = NULL;
 		tx_channel_mask = NULL;
 
@@ -327,7 +327,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 	iio_channel_enable(channel, tx_channel_mask);
 
-	channel = iio_device_find_channel(tx_device, "voltage1", false);
+	channel = iio_device_find_channel(tx_device, "voltage1", true);
 	if (channel == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
@@ -374,7 +374,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// ==============================================================
 	// EVENTS
 	// ==============================================================
-	wake_up_event_configuration:
+	wake_up_event_configuration: ;
 
 	// We'll wake up the thread whenever a packet is received or a STOP event is issued to the thread.
 	// To accomplish that, we can use poll().
@@ -582,6 +582,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			// Signal Data Packet with Stream ID
 			case VITA49_2_PKT_TYPE_IF_DATA_WITH_SID:
+			{
 				// Since the device is receiving this packet, that implies the host wants to the device to transmit this data.
 				
 				struct vita49_2_data_packet tx_data_packet;
@@ -591,6 +592,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				}
 
 				// TODO: Logic to parse the data in this packet and have the device transmit it
+			}
 
 			// Extension Data Packet without Stream ID
 			case VITA49_2_PKT_TYPE_EXT_DATA_NO_SID:
@@ -1022,7 +1024,8 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 		// is not targeting the attribute associated with this mapping, so we can move onto the next mapping.
 		switch (m->cif_type)
 		{
-			case CIF0:
+			case CIF0: 
+			{
 				uint32_t cif0_word;
 				memcpy(&cif0_word, &pkt->cif0.cif0_word, sizeof(cif0_word));
 			
@@ -1031,7 +1034,7 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 					break;
 
 				continue;
-
+			}
 			case CIF1:
 				// CIF1 is not mandatory, so we need to check if this Control Packet uses it
 				if (pkt->cif0.cif0_word.cif1_enable && pkt->cif1 != NULL)
@@ -1287,7 +1290,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 	// then there was no viable mapping
 	return -ENOFIELD;
 
-	match:
+	match: ;
 	// Find device and channel
 	struct iio_device *device;
 	struct iio_channel *channel;
