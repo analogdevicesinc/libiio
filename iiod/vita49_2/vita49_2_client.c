@@ -105,6 +105,17 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 
 int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif0_bit, uint32_t new_value);
 
+/**
+ * @brief Looks at the CIF mappings and queries libiio for the current value of the attributes in the CIF mappings and writes them to a Context Packet struct.
+ * 
+ * Returns 0 for success and a negative value for errors.
+ * 
+ * @param ctx 
+ * @param context_packet 
+ * @return int 
+ */
+int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet* context_packet);
+
 // ==============================================================
 // GLOBAL VARIABLES
 // ==============================================================
@@ -565,6 +576,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// CIF3 Fields (if applicable) *
 		// CIF7 Fields (if applicable) *
 
+	uint16_t context_packet_size;
 
 	// ==============================================================
 	// RECEIVE LOOP
@@ -837,7 +849,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 								stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
 								stream_entry.host_port = sender_address.sin_port;
-								stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
 								stream_entry.stream_id = next_ackx_ackv_stream_id;
 
 								ssize_t ret_value;
@@ -854,7 +865,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								if (ret_value > last_insertion_index)
 								{
 									last_insertion_index++;
-									next_time_data_stream_id++;
+									next_ackx_ackv_stream_id++;
 
 									control_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
 									control_packet.command_prologue.common_prologue.header.packet_count = 1;
@@ -945,7 +956,55 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				continue;
 			}
 
+			// Acquiring the attribute data to populate the Context Packet
+			if (acquire_context_data(arguments->ctx, &context_packet) < 0)
+			{
+				fprintf(stderr, "vita49_2_client: Error while acquiring data for Context Packet.\n");
+				continue;
+			}
+
+			// Writing the remaining information before sending the packet
+			context_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
+
+			stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+			stream_entry.host_port = sender_address.sin_port;
+			stream_entry.stream_id = next_context_stream_id;
+
+			ssize_t ret_value;
+
+			// Error occurred
+			if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
+			{
+				fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Context Packet that was to be sent.\n");
+				continue;
+			}
+
+			// If the return value is less than or equal to the last_insertion_index, then that means the element already existed in the array.
+			// Otherwise that means we just inserted a new element.
+			if (ret_value > last_insertion_index)
+			{
+				last_insertion_index++;
+				next_context_stream_id++;
+
+				context_packet.prologue.stream_id = stream_entry.stream_id;
+				context_packet.prologue.header.packet_count = 1;
 			
+				device_stream_id_table[ret_value].packet_count = 1;
+			}
+			else
+			{
+				context_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+				context_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+			}
+			
+			if ((context_packet_size = vita49_2_generate_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) < 0)
+			{
+				fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet.\n");
+				continue;
+			}
+
+			if (sendto(socket_fd, send_buffer, context_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
+				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP.\n");
 		}
 	}
 
@@ -1189,13 +1248,8 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 			chn = iio_device_find_channel(dev, m->channel_name, m->is_output);
 			if (!chn) 
 			{
-				/* Fallback to opposite direction just in case */
-				chn = iio_device_find_channel(dev, m->channel_name, !m->is_output);
-				if (!chn) 
-				{
-					fprintf(stderr, "vita49_2_process: Channel %s not found.\n", m->channel_name);
-					continue;
-				}
+				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", m->channel_name);
+				continue;
 			}
 
 			attr = iio_channel_find_attr(chn, m->attr_name);
@@ -1409,13 +1463,8 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 		channel = iio_device_find_channel(device, available_options_fd_name, cif_mappings->is_output);
 		if (!channel)
 		{
-			/* Fallback to opposite direction just in case */
-			channel = iio_device_find_channel(device, available_options_fd_name, !cif_mappings->is_output);
-			if (!channel)
-			{
-				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", available_options_fd_name);
-				return -ENOFIELD;
-			}
+			fprintf(stderr, "vita49_2_process: Channel %s not found.\n", available_options_fd_name);
+			return -ENOFIELD;
 		}
 
 		// Now to find the channel attribute
@@ -1929,6 +1978,302 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 		memcpy(&ackV_packet->warnings_payload, &cif0_warnings, sizeof(cif0_warnings));
 
 		ackV_packet->warnings_payload_num_words = cif0_warnings_index;
+	}
+
+	return 0;
+}
+
+int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet* context_packet)
+{
+	if (ctx == NULL || context_packet == NULL)
+		return -EINVAL;
+
+	memset(&context_packet->cif0, 0, sizeof(context_packet->cif0));
+
+	// For each attribute in the CIF mappings linked list, we'll acquire the current value of that
+	// attribute and write it into the Context Packet
+
+	struct iio_device *device;
+	struct iio_channel *channel;
+	struct iio_attr *attribute;
+	struct vita49_2_cif_mapping *cif_mappings;
+
+	int ret_value;
+
+	char attr_value_s[256];
+	double attr_value_d;
+	long long attr_value_ll;
+
+	// Denotes which CIF0 bits correspond to what data types. This table is necessary because the correct attribute function call needs
+	// to be made based on the data type:
+		// iio_attr_read_double()
+		// iio_attr_read_longlong()
+		// iio_attr_read_bool()
+		// iio_attr_read_raw()
+
+	// 0 = Unsupported (fields with this value may change in the future as ADI's implementation of the VITA 49.2 protocol expands)
+	// 1 = Unnecessary, means that these fields aren't associated with any libiio attributes and thus we don't need to know their data type
+	// 2 = Double/Float
+	// 3 = uint64
+	// 4 = int64
+	// 5 = uint32
+
+	static const uint32_t cif0_type_table[] = {
+		1,		// CIF31 - Context Field Change Indicator. This doesn't correspond to an attribute, it just indicates whether the Context Packet has changed since the last one.
+		0,	 	// CIF30 - Reference Point Identifier
+		2,	 	// CIF29 - Bandwidth
+		2,	 	// 28 - IF Reference Frequency
+		2, 		// 27 - RF Reference Frequency
+		2,		// 26 - RF Reference Frequency Offset
+		2,		// 25 - IF Band Offset
+		2,		// 24 - Reference Level
+		0,		// 23 - Gain TODO: Needs to be looked at more since Stage 1 and Stage 2 gain are encoded into the same 32-bit word
+		5,		// 22 - Over-Range Count
+		2,		// 21 - Sample Rate
+		4,		// 20 - Timestamp Adjustment
+		5,		// 19 - Timestamp Calibration Time
+		0,		// 18 - Temperature: TODO: Would require reading the raw, scale, and offset file descriptors
+		1,		// 17 - Device Identifier (4 uint32_t, see the vita49_2_device_identifier struct)
+		0,		// 16 - State/Event Indicators
+		1,		// 15 - Signal Data Packet Payload Format (see the )
+		1,		// 14 - Formatted GPS
+		1,		// 13 - Formatted INS
+		1,		// 12 - ECEF Ephemeris
+		1,		// 11 - Relative Ephemeris
+		5,		// 10 - Ephemeris Ref ID
+		1,		// 9 - GPS ASCII
+		1,		// 8 - Context Association Lists
+		1,		// 7 - CIF 7 Enable
+		1,		// 6 - Reserved
+		1,		// 5 - Reserved
+		1,		// 4 - Reserved
+		1,		// 3 - CIF 3 Enable
+		1,		// 2 - CIF 2 Enable
+		1,		// 1 - CIF 1 Enable
+		1,		// 0 - Reserved
+	};
+	
+	for (cif_mappings = vita49_2_cif_mappings_list; cif_mappings != NULL; cif_mappings = cif_mappings->next)
+	{
+		// Checking that the mapping has a proper CIF type and bit value
+		if (cif_mappings->cif_bit > 32)
+		{
+			fprintf(stderr, "vita49_2_proces: Encountered an invalid CIF bit (%d)\n", cif_mappings->cif_bit);
+			continue;
+		}
+
+		switch (cif_mappings->cif_type)
+		{
+			case CIF0:
+			case CIF1:
+			case CIF2:
+			case CIF3:
+			case CIF7:
+			default:
+				fprintf(stderr, "vita49_2_process: Encountered an unknown CIF type (%d)\n", cif_mappings->cif_type);
+				continue;
+		}
+
+		device = iio_context_find_device(ctx, cif_mappings->device_name);
+		if (!device) 
+		{
+			fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", cif_mappings->device_name);
+			continue;
+		}
+
+		// Attribute we're modifying is associated with a specific channel so we must find that channel first.
+		if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
+		{
+			channel = iio_device_find_channel(device, cif_mappings->channel_name, cif_mappings->is_output);
+			if (!channel)
+			{
+				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", cif_mappings->channel_name);
+				continue;
+			}
+
+			// Now to find the channel attribute
+			attribute = iio_channel_find_attr(channel, cif_mappings->attr_name);
+			if (attribute == NULL)
+			{
+				fprintf(stderr, "vita49_2_process: Could not find channel attribute: %s\n", cif_mappings->attr_name);
+				continue;
+			}
+		} 
+		// Attribute we're modifying is associated with the device as a whole
+		else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
+		{
+			attribute = iio_device_find_attr(device, cif_mappings->attr_name);
+			if (attribute == NULL)
+			{
+				fprintf(stderr, "vita49_2_process: Could not find device attribute: %s\n", cif_mappings->attr_name);
+				continue;
+			}
+		} 
+		// Attribute we're modifying is a debug attribute (advanced configuration)
+		else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
+		{
+			attribute = iio_device_find_debug_attr(device, cif_mappings->attr_name);
+			if (attribute == NULL)
+			{
+				fprintf(stderr, "vita49_2_process: Could not find debug attribute: %s\n", cif_mappings->attr_name);
+				continue;
+			}
+		}
+		// Otherwise the attribute doesn't have a proper mapping
+		else
+		{
+			fprintf(stderr, "vita49_2_process: CIF mapping has an unrecognized attribute type (%d)", cif_mappings->attr_type);
+			continue;
+		}
+
+		switch (cif_mappings->cif_type)
+		{
+			case CIF0:
+
+				// We need to parse the data based on the data type, and we can determine that by looking at the CIF bit.
+				switch (cif0_type_table[cif_mappings->cif_bit])
+				{
+					// Unsupported
+					case 0:
+						break;
+
+					// Unnecessary
+					case 1:
+						break;
+
+					// Double/Float
+					case 2:
+
+						if (iio_attr_read_double(attribute, &attr_value_d) < 0)
+						{
+							fprintf(stderr, "vita49_2_process: ERror while reading attribute value (%s)\n", cif_mappings->attr_name);
+							break;
+						}
+
+						switch (cif_mappings->cif_bit)
+						{
+							// Bandwidth
+							case 29:
+								context_packet->cif0.bandwidth = attr_value_d;
+								context_packet->cif0.cif0_word.has_bandwidth = 1;
+								break;
+
+							// IF Reference Frequency
+							case 28:
+								context_packet->cif0.if_reference_frequency = attr_value_d;
+								context_packet->cif0.cif0_word.has_if_reference_frequency = 1;
+								break;
+
+							// RF Reference Frequency
+							case 27:
+								context_packet->cif0.rf_reference_frequency = attr_value_d;
+								context_packet->cif0.cif0_word.has_rf_reference_frequency = 1;
+								break;
+
+							// RF Reference Frequency Offset
+							case 26:
+								context_packet->cif0.rf_reference_frequency_offset = attr_value_d;
+								context_packet->cif0.cif0_word.has_rf_reference_frequency_offset = 1;
+								break;
+
+							// IF Band Offset
+							case 25:
+								context_packet->cif0.if_band_offset = attr_value_d;
+								context_packet->cif0.cif0_word.has_if_band_offset = 1;
+								break;
+
+							// Reference Level
+							case 24:
+								context_packet->cif0.reference_level = attr_value_d;
+								context_packet->cif0.cif0_word.has_reference_level = 1;
+								break;
+
+							// Sample Rate
+							case 21:
+								context_packet->cif0.sample_rate = attr_value_d;
+								context_packet->cif0.cif0_word.has_sample_rate = 1;
+								break;
+
+							// Temperature
+							case 20:
+								// TODO: Requires additional logic since you'd need to read raw, scale, and offset attributes to compute the actual temperature from the XADC
+								break;
+						}
+
+						break;
+
+
+					// uint64_t
+					case 3:
+					// int64_t
+					case 4:
+					// uint32_t
+					case 5:
+
+						if (iio_attr_read_longlong(attribute, &attr_value_ll) < 0)
+						{
+							fprintf(stderr, "vita49_2_process: Error while reading attribute value (%s)\n", cif_mappings->attr_name);
+							break;
+						}
+
+						switch (cif_mappings->cif_bit)
+						{
+							// Over-Range Count
+							case 22:
+								context_packet->cif0.over_range_count = (uint32_t)(attr_value_ll);
+								context_packet->cif0.cif0_word.has_over_range_count = 1;
+								break;
+
+							// Timestamp Adjustment
+							case 20:
+								context_packet->cif0.timestamp_adjustment = (int64_t)(attr_value_ll);
+								context_packet->cif0.cif0_word.has_timestamp_adjustment = 1;
+								break;
+
+							// Timestamp Calibration Time
+							case 19:
+								context_packet->cif0.timestamp_calibration_time_int = (uint32_t)(attr_value_ll);
+								context_packet->cif0.cif0_word.has_timestamp_calibration_time = 1;
+								break;
+
+							// Ephemeris Ref ID
+							case 10:
+								context_packet->cif0.ephemeris_ref_id = (uint32_t)(attr_value_ll);
+								context_packet->cif0.cif0_word.has_ephemeris_ref_id = 1;
+								break;
+						}
+
+						break;
+
+					// Shouldn't be anything besides the options above. If it is, that indicates an issue
+					// with the table definition.
+					default:
+						fprintf(stderr, "vita49_2_process: Undefined attribute data type (%d)\n", cif0_type_table[cif_mappings->cif_bit]);
+						break;
+				}
+
+				break;
+
+			// TODO: Logic for CIF1 field encoding
+			case CIF1:
+				break;
+
+			// TODO: Logic for CIF2 field encoding
+			case CIF2:
+				break;
+
+			// TODO: Logic for CIF3 field encoding
+			case CIF3:
+				break;
+
+			// TODO: Logic for CIF7 field encoding
+			case CIF7:
+				break;
+
+			default:
+				fprintf(stderr, "vita49_2_process: Encountered a CIF mapping with an unknown CIF type (%d)", cif_mappings->cif_type);
+				break;
+		}
 	}
 
 	return 0;
