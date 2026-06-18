@@ -39,7 +39,7 @@ int main()
     control_packet.command_prologue.common_prologue.header.has_class_id = 1;
 
     control_packet.command_prologue.common_prologue.has_timestamp_int = 1;
-    control_packet.command_prologue.common_prologue.has_timestamp_frac = 1;
+    control_packet.command_prologue.common_prologue.has_timestamp_frac = 0;
 
     control_packet.command_prologue.common_prologue.stream_id = 1;
     control_packet.command_prologue.common_prologue.has_stream_id = 1;
@@ -56,9 +56,46 @@ int main()
         return 1;
     }
 
-    ssize_t control_packet_size;
+    ssize_t request_iq_packet_size;
 
-    if ((control_packet_size = vita49_2_generate_control_packet(&control_packet, packet, sizeof(packet)/4)) < 0)
+
+    // Create a Control Packet to Change the Sampling Frequency
+    struct vita49_2_control_packet sampling_freq_packet = {0};
+    sampling_freq_packet.command_prologue.common_prologue.header.packet_count = 1;
+    sampling_freq_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+    sampling_freq_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+    sampling_freq_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+    sampling_freq_packet.command_prologue.common_prologue.header.has_class_id = 1;
+
+    sampling_freq_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+    sampling_freq_packet.command_prologue.common_prologue.has_timestamp_frac = 0;
+
+    sampling_freq_packet.command_prologue.common_prologue.stream_id = 1;
+    sampling_freq_packet.command_prologue.common_prologue.has_stream_id = 1;
+
+    sampling_freq_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI; 
+    sampling_freq_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTROL;
+    sampling_freq_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+    sampling_freq_packet.command_prologue.common_prologue.has_class_id = 1;
+
+    sampling_freq_packet.command_prologue.control_cam = calloc(1, sizeof(*sampling_freq_packet.command_prologue.control_cam));
+    if (sampling_freq_packet.command_prologue.control_cam == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory for CAM field.\n");
+        return 1;
+    }
+
+    sampling_freq_packet.command_prologue.control_cam->request_ack_v = 1;
+    sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
+
+    sampling_freq_packet.cif0.cif0_word.has_sample_rate = 1;
+    sampling_freq_packet.cif0.sample_rate = 70.5e6;
+
+    ssize_t sampling_freq_packet_size;
+
+
+
+    if ((request_iq_packet_size = vita49_2_generate_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
     {
         fprintf(stderr, "Failed to serialize Control Packet!\n");
         return 1;
@@ -67,7 +104,7 @@ int main()
     while (1) 
     {
         printf("Sending VITA 49.2 Control Packet to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
-        if (sendto(fd, packet, control_packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        if (sendto(fd, packet, request_iq_packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
         {
             perror("sendto");
         }

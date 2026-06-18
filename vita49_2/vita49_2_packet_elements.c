@@ -105,18 +105,16 @@ void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t off
 
 ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0)
 {
-	if (!cif0)
+	if (!cif0 || payload_size < 1)
 		return -1;
 
-	memset(cif0, 0, sizeof(*cif0));
-
-	if (payload_size < 1)
-		return -1;
-
-	ssize_t offset = 0;
-
+	// Preserving the CIF0 word
 	uint32_t cif0_word;
 	memcpy(&cif0_word, &cif0->cif0_word, sizeof(cif0_word));
+	memset(cif0, 0, sizeof(*cif0));
+	memcpy(&cif0->cif0_word, &cif0_word, sizeof(cif0_word));
+
+	ssize_t offset = 0;
 	
 	// Reference Point Identifier
 	if (cif0_word & (1 << 30)) 

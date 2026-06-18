@@ -343,7 +343,7 @@ struct vita49_2_control_cam_field {
 	// See Table 8.3.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
 	uint32_t reserved_7_0:8; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
 	
-	uint32_t ack_bits:4;					/* Ack Bits - used in AckV and AckX packets to indicate which fields are being acknowledged */
+	uint32_t ack_bits:4;					/* Set to 0 for Control Packets */
 	
 	uint32_t timing_control:3;				/* See Table 8.3.1.7-1 in the full VITA 49.2 specification document */
 
@@ -404,7 +404,7 @@ struct vita49_2_control_cam_field {
 
 	uint32_t timing_control:3;				/* See Table 8.3.1.7-1 in the full VITA 49.2 specification document */
 
-	uint32_t ack_bits:4;					/* Ack Bits - used in AckV and AckX packets to indicate which fields are being acknowledged */
+	uint32_t ack_bits:4;					/* Set to 0 for Control Packets */
 	
 	uint32_t reserved_7_0:8; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
 

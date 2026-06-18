@@ -911,12 +911,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							
 								// Now to write that data to a buffer and send it
 								if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
-								{
 									fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
-									continue;							
-								}
-
-								if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
+								else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 									fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP.\n");
 							}
 						}
@@ -927,7 +923,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						// TODO: Add logic that looks at the timestamp and schedules execution of the controls in the future.
 						// An idea might be to spawn a detached pthread that checks a timer_fd and executes the controls once the timer
 						// has been met. Additional complexity has to be considered if we support cancellation packets which should kill that pthread.
-						else if (execute_commands(arguments->ctx, &control_packet) < 0)
+						if (execute_commands(arguments->ctx, &control_packet) < 0)
 						{
 							fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
 							
@@ -1311,43 +1307,43 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 				// Context Field Change Indicator is N/A for Command Packets
 
 				// Reference Point Identifier
-				case (1 << 30):
+				case (30):
 					// TODO: Need logic to handle this. Travis and I discussed this, and conceivably we might use RPI to say that we're issuing
 					// commands to a separate board/card like a daughter/personality card.
 					break;
 
 				// Bandwidth
-				case (1 << 29):
+				case (29):
 					val = pkt->cif0.bandwidth;
 					break;
 
 				// IF Reference Frequency
-				case (1 << 28):
+				case (28):
 					val = pkt->cif0.if_reference_frequency;
 					break;
 
 				// RF Reference Frequency
-				case (1 << 27):
+				case (27):
 					val = pkt->cif0.rf_reference_frequency;
 					break;
 
 				// RF Reference Frequency Offset
-				case (1 << 26):
+				case (26):
 					val = pkt->cif0.rf_reference_frequency_offset;
 					break;
 
 				// IF Band Offset
-				case (1 << 25):
+				case (25):
 					val = pkt->cif0.if_band_offset;
 					break;
 
 				// Reference Level
-				case (1 << 24):
+				case (24):
 					val = pkt->cif0.reference_level;
 					break;
 
 				// Gain
-				case (1 << 23):
+				case (23):
 					// TODO: Since Gain consists of Stage 1 and Stage 2 gains, we need logic to figure out which one to use
 					// or if both should be used
 					break;
@@ -1355,7 +1351,7 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 				// Over-Range Count is N/A for Command Packets
 
 				// Sample Rate
-				case (1 << 21):
+				case (21):
 					val = pkt->cif0.sample_rate;
 					break;
 
@@ -1432,10 +1428,10 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 			}
 		}
 
-		fprintf(stderr, "vita49_2_process: Translating mapped command %s -> %.0f\n", m->attr_name, val);
+		printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.0f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", val);
 		ret = iio_attr_write_double(attr, val);
 		if (ret < 0)
-			fprintf(stderr, "Failed to write %s\n", m->attr_name);
+			fprintf(stderr, "vita49_2_process: Failed to write %.0f to %s\n", val, m->attr_name);
 	}
 
 	return 0;
@@ -1566,14 +1562,14 @@ int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 		// "[min step max]"
 	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
 	// in the brackets:
-		// "[500 600 700 750 900]"
-	uint32_t values[10];
-	int successes = sscanf(available_range, "[%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "]",
-	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+		// "500 600 700 750 900"
 
 	// Means we're dealing with the first case
-	if (successes == 3)
+	if (available_range[0] == '[')
 	{
+		uint32_t values[3];
+		int successes = sscanf(available_range, "[%" PRIu32 "%" PRIu32 "%" PRIu32 "]", &values[0], &values[1], &values[2]);
+
 		// Checking bounds
 		if (values[0] > new_value || new_value > values[2])
 			return -EOUTRANGE;
@@ -1588,8 +1584,12 @@ int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	}
 	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
 	// see if the provided new value is one of those values
-	else if (successes > 0)
+	else
 	{
+		uint32_t values[10];
+		int successes = sscanf(available_range, "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32,
+		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
 		for (uint8_t i = 0; i < sizeof(values)/sizeof(values[0]); i++)
 		{
 			if (new_value == values[i])
@@ -1619,14 +1619,14 @@ int validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 		// "[min step max]"
 	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
 	// in the brackets:
-		// "[500 600 700 750 900]"
-	uint64_t values[10];
-	int successes = sscanf(available_range, "[%" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 "]",
-	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+		// "500 600 700 750 900"
 
 	// Means we're dealing with the first case
-	if (successes == 3)
+	if (available_range[0] == '[')
 	{
+		uint64_t values[3];
+		int successes = sscanf(available_range, "[%" SCNu64 " %" SCNu64 " %" SCNu64 "]", &values[0], &values[1], &values[2]);
+
 		// Checking bounds
 		if (values[0] > new_value || new_value > values[2])
 			return -EOUTRANGE;
@@ -1641,8 +1641,12 @@ int validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	}
 	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
 	// see if the provided new value is one of those values
-	else if (successes > 0)
+	else
 	{
+		uint64_t values[10];
+		int successes = sscanf(available_range, "%" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64,
+		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
 		for (uint8_t i = 0; i < successes; i++)
 		{
 			if (new_value == values[i])
@@ -1672,14 +1676,14 @@ int validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 		// "[min step max]"
 	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
 	// in the brackets:
-		// "[500 600 700 750 900]"
-	int64_t values[10];
-	int successes = sscanf(available_range, "[%" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 "]",
-	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+		// "500 600 700 750 900"
 
 	// Means we're dealing with the first case
-	if (successes == 3)
+	if (available_range[0] == '[')
 	{
+		int64_t values[3];
+		int successes = sscanf(available_range, "[%" SCNd64 " %" SCNd64 " %" SCNd64 "]", &values[0], &values[1], &values[2]);
+
 		// Checking bounds
 		if (values[0] > new_value || new_value > values[2])
 			return -EOUTRANGE;
@@ -1694,8 +1698,12 @@ int validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	}
 	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
 	// see if the provided new value is one of those values
-	else if (successes > 0)
+	else
 	{
+		int64_t values[10];
+		int successes = sscanf(available_range, "%" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64,
+		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
 		for (uint8_t i = 0; i < successes; i++)
 		{
 			if (new_value == values[i])
@@ -1725,14 +1733,14 @@ enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *c
 		// "[min step max]"
 	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
 	// in the brackets:
-		// "[500 600 700 750 900]"
-	double values[10];
-	int successes = sscanf(available_range, "[%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf]",
-	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+		// "500 600 700 750 900"
 
 	// Means we're dealing with the first case
-	if (successes == 3)
+	if (available_range[0] == '[')
 	{
+		double values[3];
+		int successes = sscanf(available_range, "[%lf %lf %lf]", &values[0], &values[1], &values[2]);
+		
 		// Checking bounds
 		if (values[0] > new_value || new_value > values[2])
 			return -EOUTRANGE;
@@ -1749,8 +1757,12 @@ enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *c
 	}
 	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
 	// see if the provided new value is one of those values
-	else if (successes > 0)
+	else
 	{
+		double values[10];
+		int successes = sscanf(available_range, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
 		for (uint8_t i = 0; i < successes; i++)
 		{
 			if (new_value == values[i])
@@ -1781,13 +1793,13 @@ enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ct
 	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
 	// in the brackets:
 		// "[500 600 700 750 900]"
-	float values[10];
-	int successes = sscanf(available_range, "[%f %f %f %f %f %f %f %f %f %f]",
-	&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
 
 	// Means we're dealing with the first case
-	if (successes == 3)
+	if (available_range[0] == '[')
 	{
+		float values[3];
+		int successes = sscanf(available_range, "[%f %f %f]", &values[0], &values[1], &values[2]);
+
 		// Checking bounds
 		if (values[0] > new_value || new_value > values[2])
 			return -EOUTRANGE;
@@ -1804,8 +1816,12 @@ enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ct
 	}
 	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
 	// see if the provided new value is one of those values
-	else if (successes > 0)
+	else
 	{
+		float values[10];
+		int successes = sscanf(available_range, "%f %f %f %f %f %f %f %f %f %f",
+		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
+
 		for (uint8_t i = 0; i < successes; i++)
 		{
 			if (new_value == values[i])
@@ -1846,7 +1862,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 
 		// Checking that the bit is asserted/field is enabled
 		memcpy(&cif0_word, &control_packet->cif0.cif0_word, sizeof(cif0_word));
-		if ((1 << cif_bit) & (cif0_word == 0))
+		if (((1 << cif_bit) & cif0_word) == 0)
 			continue;
 
 		// Iterating over each mapping
@@ -1868,7 +1884,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 					// Context Field Change Indicator is N/A for Command Packets
 
 					// Reference Point Identifier
-					case (1 << 30):
+					case (30):
 						// TODO: Need logic to handle this. Travis and I discussed this, and conceivably we might use RPI to say that we're issuing
 						// commands to a separate board/card like a daughter/personality card.
 
@@ -1880,7 +1896,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// Bandwidth (double)
-					case (1 << 29):
+					case (29):
 						
 						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.bandwidth)) != ENONE)
 						{
@@ -1893,7 +1909,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// IF Reference Frequency (double)
-					case (1 << 28):
+					case (28):
 						
 						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.if_reference_frequency)) != ENONE)
 						{
@@ -1906,7 +1922,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// RF Reference Frequency (double)
-					case (1 << 27):
+					case (27):
 
 						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.rf_reference_frequency)) != ENONE)
 						{
@@ -1919,7 +1935,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// RF Reference Frequency Offset (double)
-					case (1 << 26):
+					case (26):
 
 						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.rf_reference_frequency_offset)) != ENONE)
 						{
@@ -1932,7 +1948,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// IF Band Offset (double)
-					case (1 << 25):
+					case (25):
 						
 						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.if_band_offset)) != ENONE)
 						{
@@ -1945,7 +1961,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// Reference Level (16-bit float)
-					case (1 << 24):
+					case (24):
 						
 						if ((ret_value = validate_command_float(ctx, 0, cif_bit, control_packet->cif0.reference_level)) != ENONE)
 						{
@@ -1958,7 +1974,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// Gain
-					case (1 << 23):
+					case (23):
 						// TODO: Since Gain consists of Stage 1 and Stage 2 gains, we need logic to figure out which one to use
 						// or if both should be used
 
@@ -1970,7 +1986,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 						break;
 
 					// Sample Rate (double)
-					case (1 << 21):
+					case (21):
 
 						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.sample_rate)) != ENONE)
 						{
@@ -2003,7 +2019,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 		if (ackV_packet->warnings_payload == NULL)
 			return -ENOMEM;
 
-		memcpy(&ackV_packet->warnings_payload, &cif0_warnings, sizeof(cif0_warnings));
+		memcpy(ackV_packet->warnings_payload, &cif0_warnings, cif0_warnings_index * sizeof(struct vita49_2_warning_error_indicators));
 
 		ackV_packet->warnings_payload_num_words = cif0_warnings_index;
 	}

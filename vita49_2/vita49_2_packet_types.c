@@ -1144,7 +1144,7 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	/* CIF0 Word */
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
 	{
-		printf("CIF word failure\n");
+		fprintf(stderr, "vita49_2_process: CIF0 word extraction failure while parsing Control Packet.\n");
 		return -1;
 	}
 
