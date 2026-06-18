@@ -266,7 +266,7 @@ struct vita49_2_extended_control_packet {
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_data_packet(struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_data_packet structure. 
@@ -289,7 +289,7 @@ __vrt_api int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, stru
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_context_packet(struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_context_packet structure. 
@@ -312,7 +312,7 @@ __vrt_api int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, s
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_control_packet(struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_control_packet structure. 
@@ -335,7 +335,7 @@ __vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, s
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Populates a 32-bit word buffer with data for an AckV Packet. 
@@ -347,7 +347,7 @@ __vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packe
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackv_packet(const struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_ackv_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_ackx_packet structure. 
@@ -381,7 +381,7 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_acks_packet(const struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_acks_packet structure. 

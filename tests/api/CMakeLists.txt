@@ -50,29 +50,30 @@ foreach(test ${API_TEST_TARGETS})
     endif()
 endforeach()
 
-# if(WITH_VITA49_2_BACKEND)
-# 	add_executable(test_vrt_iiod test_vrt_iiod.c ../../iiod/vita49_2/vita49_2_client.c ../../vita49_2/vita49_2_packet_elements.c ../../vita49_2/vita49_2_packet_types.c)
-# 	target_link_libraries(test_vrt_iiod PRIVATE test_common iio)
-# 	target_include_directories(test_vrt_iiod PRIVATE
-#         ${CMAKE_CURRENT_SOURCE_DIR}
-#         ${CMAKE_CURRENT_SOURCE_DIR}/../
-#         ${CMAKE_SOURCE_DIR}/include
-#         ${CMAKE_BINARY_DIR}
-#         ${CMAKE_CURRENT_SOURCE_DIR}/../../
-#     )
+if(WITH_VITA49_2_BACKEND)
+	# add_executable(test_vrt_iiod test_vrt_iiod.c ../../iiod/vita49_2/vita49_2_client.c ../../vita49_2/vita49_2_packet_elements.c ../../vita49_2/vita49_2_packet_types.c)
+	# target_link_libraries(test_vrt_iiod PRIVATE test_common iio)
+	# target_include_directories(test_vrt_iiod PRIVATE
+    #     ${CMAKE_CURRENT_SOURCE_DIR}
+    #     ${CMAKE_CURRENT_SOURCE_DIR}/../
+    #     ${CMAKE_SOURCE_DIR}/include
+    #     ${CMAKE_BINARY_DIR}
+    #     ${CMAKE_CURRENT_SOURCE_DIR}/../../
+    # )
 
-#     target_compile_definitions(test_vrt_iiod PRIVATE _GNU_SOURCE)
+    # target_compile_definitions(test_vrt_iiod PRIVATE _GNU_SOURCE)
     
-#     add_test(NAME api_vrt_iiod COMMAND test_vrt_iiod)
+    # add_test(NAME api_vrt_iiod COMMAND test_vrt_iiod)
 
-# 	add_executable(vrt_simulator vrt_simulator.c)
-# 	set_target_properties(vrt_simulator PROPERTIES
-# 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-# 		C_STANDARD 99
-# 		C_STANDARD_REQUIRED ON
-# 		C_EXTENSIONS OFF
-# 	)
-# endif()
+	add_executable(vita49_2_simulator vita49_2_simulator.c)
+	set_target_properties(vita49_2_simulator PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+		C_STANDARD 99
+		C_STANDARD_REQUIRED ON
+		C_EXTENSIONS OFF
+	)
+    target_link_libraries(vita49_2_simulator PRIVATE vita49_2 iio)
+endif()
 
 # Master test runner
 add_executable(run_all_api_tests run_all_api_tests.c)

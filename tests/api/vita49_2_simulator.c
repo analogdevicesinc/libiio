@@ -1,0 +1,79 @@
+#define _DEFAULT_SOURCE
+#include "../../vita49_2/vita49_2_packet_types.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#define destination_ip "192.168.2.1"
+
+// Commonly used convention for sending VITA 49.2 packets over UDP
+#define VITA49_2_UDP_PORT 4991
+
+int main() 
+{
+    int fd;
+    struct sockaddr_in addr;
+    uint32_t packet[1024];
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(VITA49_2_UDP_PORT);
+    addr.sin_addr.s_addr = inet_addr(destination_ip);
+
+    // Create a Control Packet to Request IQ Data
+    struct vita49_2_control_packet control_packet = {0};
+    control_packet.command_prologue.common_prologue.header.packet_count = 1;
+    control_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+    control_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+    control_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+    control_packet.command_prologue.common_prologue.header.has_class_id = 1;
+
+    control_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+    control_packet.command_prologue.common_prologue.has_timestamp_frac = 1;
+
+    control_packet.command_prologue.common_prologue.stream_id = 1;
+    control_packet.command_prologue.common_prologue.has_stream_id = 1;
+
+    control_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI; 
+    control_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST;
+    control_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+    control_packet.command_prologue.common_prologue.has_class_id = 1;
+
+    control_packet.command_prologue.control_cam = calloc(1, sizeof(*control_packet.command_prologue.control_cam));
+    if (control_packet.command_prologue.control_cam == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory for CAM field.\n");
+        return 1;
+    }
+
+    ssize_t control_packet_size;
+
+    if ((control_packet_size = vita49_2_generate_control_packet(&control_packet, packet, sizeof(packet)/4)) < 0)
+    {
+        fprintf(stderr, "Failed to serialize Control Packet!\n");
+        return 1;
+    }
+
+    while (1) 
+    {
+        printf("Sending VITA 49.2 Control Packet to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
+        if (sendto(fd, packet, control_packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        {
+            perror("sendto");
+        }
+        usleep(4e6);
+    }
+
+    close(fd);
+    return 0;
+}

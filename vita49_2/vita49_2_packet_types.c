@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -21,7 +22,7 @@
 #endif
 
 
-ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words)
+ssize_t vita49_2_generate_data_packet(struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -109,9 +110,8 @@ ssize_t vita49_2_generate_data_packet(const struct vita49_2_data_packet *pkt, ui
 	}
 
 	/* Update size in header */
-	struct vita49_2_header final_hdr = pkt->prologue.header;
-	final_hdr.packet_size_words = buffer_index;
-	memcpy(&header_word, &final_hdr, sizeof(uint32_t));
+	pkt->prologue.header.packet_size_words = buffer_index;
+	memcpy(&header_word, &pkt->prologue.header, sizeof(uint32_t));
 	buf[0] = htonl(header_word);
 
 	return buffer_index;
@@ -219,7 +219,7 @@ int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_
 	return 0;
 }
 
-ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words)
+ssize_t vita49_2_generate_context_packet(struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -294,7 +294,7 @@ ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *p
 	// Iterating through each of the 32 options in CIF0 from 31 to 0.
 	// Butttt, remember that "Context Field Change Indicator" (bit 31) is just an indicator
 	// and lacks an actual payload. Hence we'll be going from 30 to 0.
-	for (uint8_t field_index = 30; field_index >= 0; field_index--)
+	for (int field_index = 30; field_index >= 0; field_index--)
 	{
 		field_bit = (1 << field_index);
 
@@ -520,9 +520,8 @@ ssize_t vita49_2_generate_context_packet(const struct vita49_2_context_packet *p
 	}
 
 	/* Update size in header */
-	struct vita49_2_header final_hdr = pkt->prologue.header;
-	final_hdr.packet_size_words = buffer_index;
-	memcpy(&header_word, &final_hdr, sizeof(uint32_t));
+	pkt->prologue.header.packet_size_words = buffer_index;
+	memcpy(&header_word, &pkt->prologue.header, sizeof(uint32_t));
 	buf[0] = htonl(header_word);
 
 	return buffer_index;
@@ -706,7 +705,7 @@ int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, struct vita
 	return 0;
 }
 
-ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words)
+ssize_t vita49_2_generate_control_packet(struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -774,7 +773,7 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 		return -ENOBUFS;
 
 	uint32_t cam_word;
-	memcpy(&cam_word, &pkt->command_prologue.control_cam, sizeof(cam_word));
+	memcpy(&cam_word, pkt->command_prologue.control_cam, sizeof(cam_word));
 	buf[buffer_index++] = htonl(cam_word);	
 
 	/* Message ID */
@@ -978,9 +977,8 @@ ssize_t vita49_2_generate_control_packet(const struct vita49_2_control_packet *p
 	}
 
 	/* Update size in header */
-	struct vita49_2_header final_hdr = pkt->command_prologue.common_prologue.header;
-	final_hdr.packet_size_words = buffer_index;
-	memcpy(&header_word, &final_hdr, sizeof(uint32_t));
+	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;
+	memcpy(&header_word, &pkt->command_prologue.common_prologue.header, sizeof(uint32_t));
 	buf[0] = htonl(header_word);
 
 	return buffer_index;
@@ -1057,6 +1055,29 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
 		return -EINVAL;
 
+	// Allocating memory for the CAM if it hasn't already been initialized
+	if (pkt->command_prologue.control_cam == NULL)
+	{
+		pkt->command_prologue.control_cam = malloc(sizeof(*pkt->command_prologue.control_cam));
+
+		if (pkt->command_prologue.control_cam == NULL)
+		{
+			return -ENOMEM;
+		}
+	}
+	// Ensuring we've allocated enough memory for the word
+	else
+	{
+		void* tmp = realloc(pkt->command_prologue.control_cam, sizeof(*pkt->command_prologue.control_cam));
+
+		if (tmp == NULL)
+		{
+			return -ENOMEM;
+		}
+
+		pkt->command_prologue.control_cam = (struct vita49_2_control_cam_field*)(tmp);
+	}
+
 	uint32_t cam_word = ntohl(buf[buffer_index++]);
 	memcpy(pkt->command_prologue.control_cam, &cam_word, sizeof(cam_word));
 
@@ -1119,10 +1140,13 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 
 	uint32_t cif_word;
 	uint8_t cif_word_offset = 0;
-
+	
 	/* CIF0 Word */
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
+	{
+		printf("CIF word failure\n");
 		return -1;
+	}
 
 	memcpy(&pkt->cif0.cif0_word, &cif_word, sizeof(cif_word));
 	cif_word_offset++;
@@ -1211,8 +1235,8 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	int ret_value;
 	/* CIF0 Attributes */
 	if ((ret_value = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset, &pkt->cif0)) < 0)
-		return (int)(ret_value);
-
+		return ret_value;
+	
 	/* CIF1 Attributes */
 	// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
 
@@ -1228,7 +1252,7 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	return 0;
 }
 
-__vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words)
+__vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -1546,15 +1570,14 @@ __vrt_api ssize_t vita49_2_generate_ackx_packet(const struct vita49_2_ackX_packe
 	}
 
 	/* Update size in header */
-	struct vita49_2_header final_hdr = pkt->command_prologue.common_prologue.header;
-	final_hdr.packet_size_words = buffer_index;
-	memcpy(&header_word, &final_hdr, sizeof(uint32_t));
+	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;
+	memcpy(&header_word, &pkt->command_prologue.common_prologue.header, sizeof(uint32_t));
 	buf[0] = htonl(header_word);
 
 	return buffer_index;
 }
 
-__vrt_api ssize_t vita49_2_generate_ackv_packet(const struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words)
+__vrt_api ssize_t vita49_2_generate_ackv_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -1790,9 +1813,8 @@ __vrt_api ssize_t vita49_2_generate_ackv_packet(const struct vita49_2_ackV_packe
 	}
 
 	/* Update size in header */
-	struct vita49_2_header final_hdr = pkt->command_prologue.common_prologue.header;
-	final_hdr.packet_size_words = buffer_index;
-	memcpy(&header_word, &final_hdr, sizeof(uint32_t));
+	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;
+	memcpy(&header_word, &pkt->command_prologue.common_prologue.header, sizeof(uint32_t));
 	buf[0] = htonl(header_word);
 
 	return buffer_index;
@@ -2459,7 +2481,7 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 }
 
 
-__vrt_api ssize_t vita49_2_generate_acks_packet(const struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
 
 
 __vrt_api int vita49_2_parse_acks_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt);

@@ -314,7 +314,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		fprintf(stderr, "vita49_2_client: Could not find TX device. Device will be unable to handle requests to transmit data.\n");
 
 		// Skip the rest of the setup for TX
-		goto wake_up_event_configuration;
+		goto context_packet_timerfd_configuration;
 	}
 
 	// Channel Mask
@@ -325,7 +325,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		fprintf(stderr, "vita49_2_client: Failed to create TX channel mask.");
 		tx_device = NULL;
 	
-		goto wake_up_event_configuration;
+		goto context_packet_timerfd_configuration;
 	}
 
 	// Adding I (voltage0) and Q (voltage1) to the mask
@@ -336,7 +336,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		tx_device = NULL;
 		tx_channel_mask = NULL;
 
-		goto wake_up_event_configuration;
+		goto context_packet_timerfd_configuration;
 	}
 
 	iio_channel_enable(channel, tx_channel_mask);
@@ -348,7 +348,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		tx_device = NULL;
 		tx_channel_mask = NULL;
 
-		goto wake_up_event_configuration;
+		goto context_packet_timerfd_configuration;
 	}
 
 	iio_channel_enable(channel, tx_channel_mask);
@@ -361,7 +361,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		tx_device = NULL;
 		tx_channel_mask = NULL;
 		
-		goto wake_up_event_configuration;
+		goto context_packet_timerfd_configuration;
 	}
 
 	// Up until this point the TX config has been pretty identical to the RX config.
@@ -388,6 +388,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// ==============================================================
 	// CONTEXT PACKET INTERVAL TIMER
 	// ==============================================================
+
+	context_packet_timerfd_configuration: ;
 
 	// VITA 49.2 recommends sending Context Packets on a regular interval as well as when certain
 	// metadata changes (like temperature).
@@ -423,7 +425,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// ==============================================================
 	// EVENTS
 	// ==============================================================
-	wake_up_event_configuration: ;
 
 	// We'll wake up the thread whenever a packet is received, STOP event is issued to the thread,
 	// or the Context Packet interval timer fires.
@@ -484,7 +485,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		// TODO: Trailer support
 
-	uint16_t time_data_packet_size = 0;
+	ssize_t time_data_packet_size = 0;
 
 	// ==============================================================
 	// ACKV PACKET SETUP
@@ -540,7 +541,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Warnings Payload *
 		// Warnings Payload Size *
 
-	uint16_t ackV_packet_size = 0;
+	ssize_t ackV_packet_size = 0;
 
 	// ==============================================================
 	// CONTEXT PACKET SETUP
@@ -576,7 +577,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// CIF3 Fields (if applicable) *
 		// CIF7 Fields (if applicable) *
 
-	uint16_t context_packet_size;
+	ssize_t context_packet_size;
 
 	// ==============================================================
 	// RECEIVE LOOP
@@ -730,9 +731,11 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					else
 					{
 						struct vita49_2_control_packet control_packet;
-						if (vita49_2_parse_control_packet(receive_buffer, received, &control_packet) < 0)
+						int ret_value;
+						if ((ret_value = vita49_2_parse_control_packet(receive_buffer, received, &control_packet)) < 0)
 						{
-							fprintf(stderr, "vita49_2_client: Unable to parse Control Packet.\n");
+							fprintf(stderr, "vita49_2_client: Unable to parse Control Packet. Error: %d\n", ret_value);
+							continue;
 						}
 
 						// I defined a custom Control Packet Class specifically for requesting I/Q data refills.
@@ -824,7 +827,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							}
 
 							// Now to write that data to a buffer and send it
-							if ((time_data_packet_size = vita49_2_generate_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4)) < 0)
+							if ((time_data_packet_size = vita49_2_generate_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 							{
 								fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet.\n");
 								continue;							
@@ -832,6 +835,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 							if (sendto(socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP.\n");
+
+							break;
 						}
 
 						// If an AckV packet was requested, we need to validate the commands in the Control Packet and send
@@ -900,7 +905,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								memcpy(&ackV_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackV_packet.command_prologue.controller_id));
 							
 								// Now to write that data to a buffer and send it
-								if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) < 0)
+								if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 								{
 									fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
 									continue;							
@@ -956,6 +961,14 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				continue;
 			}
 
+			// First let's check that the sender address has been populated with information. This happens after we've received at least VITA 49.2
+			// packet from a host. Otherwise if we haven't received any packets, then we don't know who to send this Context Packet to.
+			if (sender_address.sin_addr.s_addr == 0)
+			{
+				fprintf(stderr, "vita49_2_client: Cannot send Context Packet because host address hasn't been resolved.\n");
+				continue;
+			}
+
 			// Acquiring the attribute data to populate the Context Packet
 			if (acquire_context_data(arguments->ctx, &context_packet) < 0)
 			{
@@ -997,14 +1010,14 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				context_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
 			}
 			
-			if ((context_packet_size = vita49_2_generate_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) < 0)
+			if ((context_packet_size = vita49_2_generate_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet.\n");
 				continue;
 			}
 
-			if (sendto(socket_fd, send_buffer, context_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
-				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP.\n");
+			if (sendto(socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&sender_address, address_length) <= 0)
+				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP. Error %d: %s\n", errno, strerror(errno));
 		}
 	}
 

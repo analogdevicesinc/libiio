@@ -49,10 +49,13 @@ float convert_from_9_7(int16_t value)
 
 int vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset, uint32_t* const payload_word)
 {
+
 	if (payload == NULL || offset >= payload_size || payload_word == NULL)
 		return -EINVAL;
 
 	*payload_word = ntohl(payload[offset]);
+
+	return 0;
 }
 
 void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val)
@@ -122,7 +125,9 @@ ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const
 			return -EINVAL;
 
 		if(vita49_2_get_payload_word(payload, payload_size, offset, cif0->reference_point_id) < 0)
+		{
 			return -1;
+		}
 
 		offset++;
 	}
@@ -191,7 +196,9 @@ ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const
 		// Reference Level is encoded as a 9.7 fixed-point value
 		uint32_t reference_level_u;
 		if (vita49_2_get_payload_word(payload, payload_size, offset, &reference_level_u) < 0)
+		{
 			return -1;
+		}
 
 		cif0->reference_level = convert_from_9_7((int16_t)(reference_level_u));
 		offset++;
@@ -207,8 +214,9 @@ ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const
 		// and Stage 1 gain as a 9.7 fixed-point value in the lower 16 bits
 		uint32_t both_gains;
 		if (vita49_2_get_payload_word(payload, payload_size, offset, &both_gains) < 0)
+		{
 			return -1;
-
+		}
 		int16_t stage1_gain = both_gains >> 16;
 		int16_t stage2_gain = (int16_t)(both_gains);
 
@@ -225,8 +233,9 @@ ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const
 
 		uint32_t over_range_count_u;
 		if (vita49_2_get_payload_word(payload, payload_size, offset, &cif0->over_range_count) < 0)
+		{
 			return -1;
-
+		}
 		offset++;
 	}
 
@@ -249,8 +258,9 @@ ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const
 
 		uint32_t w1, w2; 
 		if (vita49_2_get_payload_word(payload, payload_size, offset, &w1) < 0 || vita49_2_get_payload_word(payload, payload_size, offset + 1, &w2))
+		{
 			return -1;
-
+		}
 		cif0->timestamp_adjustment = ((uint64_t)w1 << 32) | w2;
 		offset += 2;
 	}
