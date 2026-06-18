@@ -598,10 +598,14 @@ static void reorder_channels(struct iio_device *dev)
 
 int iio_context_init(struct iio_context *ctx)
 {
-	unsigned int i;
+	unsigned int i, j;
 
-	for (i = 0; i < ctx->nb_devices; i++)
+	for (i = 0; i < ctx->nb_devices; i++) {
 		reorder_channels(ctx->devices[i]);
+
+		for (j = 0; j < ctx->devices[i]->nb_buffers; j++)
+			iio_sort_scan_elements(ctx->devices[i]->buffers[j]);
+	}
 
 	return 0;
 }

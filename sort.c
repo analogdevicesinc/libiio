@@ -61,6 +61,24 @@ static int iio_attr_compare(const void *p1, const void *p2)
 	return strcmp(attr1->name, attr2->name);
 }
 
+static int iio_scan_elements_compare(const void *p1, const void *p2)
+{
+	const struct iio_scan_element *se1 = *(struct iio_scan_element **)p1;
+	const struct iio_scan_element *se2 = *(struct iio_scan_element **)p2;
+	long idx1 = iio_channel_get_index(se1->chn);
+	long idx2 = iio_channel_get_index(se2->chn);
+
+	if (idx1 == idx2 && idx1 >= 0) {
+		idx1 = iio_channel_get_data_format(se1->chn)->shift;
+		idx2 = iio_channel_get_data_format(se2->chn)->shift;
+	}
+
+	if (idx2 >= 0 && (idx1 > idx2 || idx1 < 0))
+		return 1;
+
+	return -1;
+}
+
 void iio_sort_attrs(struct iio_attr_list *attrs)
 {
 	if (attrs && attrs->num > 1) {
@@ -80,4 +98,10 @@ void iio_sort_channels(struct iio_device *dev)
 	if (dev->channels && dev->nb_channels > 1) {
 		qsort(dev->channels, dev->nb_channels, sizeof(*dev->channels), iio_channel_compare);
 	}
+}
+
+void iio_sort_scan_elements(struct iio_buffer *buf)
+{
+	if (buf->scans && buf->nb_scans > 1)
+		qsort(buf->scans, buf->nb_scans, sizeof(*buf->scans), iio_scan_elements_compare);
 }
