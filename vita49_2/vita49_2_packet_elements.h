@@ -753,24 +753,23 @@ struct vita49_2_cif0_fields {
 		uint32_t has_ecef_ephemeris:1;					/**< True if ECEF Ephemeris is present (Bit 12) */
 		uint32_t has_formatted_ins:1;					/**< True if the Formatted INS payload is present (Bit 13) */
 		uint32_t has_formatted_gps:1;					/**< True if the Formatted GPS payload is present (Bit 14) */
-		
 		uint32_t has_data_packet_payload_format:1; 		/**< True if Data Packet Payload Format is present (Bit 15) */
-		uint32_t context_field_change:1; 				/**< True if any context field has changed since the previous Context Packet was sent(Bit 31) */
-		uint32_t has_reference_point_id:1; 				/**< True if Reference Point Identifier is present (Bit 30) */
-		uint32_t has_bandwidth:1;          				/**< True if Bandwidth is present (Bit 29) */
-		uint32_t has_if_reference_frequency:1; 			/**< True if IF Reference Frequency is present (Bit 28) */
-		uint32_t has_rf_reference_frequency:1; 			/**< True if RF Reference Frequency is present (Bit 27) */
-		uint32_t has_rf_reference_frequency_offset:1; 	/**< True if RF Reference Frequency Offset is present (Bit 26) */
-		uint32_t has_if_band_offset:1;     				/**< True if IF Band Offset is present (Bit 25) */
-		uint32_t has_reference_level:1;    				/**< True if Reference Level is present (Bit 24) */
-		uint32_t has_gain:1;               				/**< True if Gain is present (Bit 23) */
-		uint32_t has_over_range_count:1;   				/**< True if Over-Range Count is present (Bit 22) */
-		uint32_t has_sample_rate:1;        				/**< True if Sample Rate is present (Bit 21) */
-		uint32_t has_timestamp_adjustment:1; 			/**< True if Timestamp Adjustment is present (Bit 20) */
-		uint32_t has_timestamp_calibration_time:1;     	/**< True if Timestamp Calibration Time is present (Bit 19) */
-		uint32_t has_temperature:1;        				/**< True if Temperature is present (Bit 18) */
-		uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
 		uint32_t has_state_and_event_indicators:1; 		/**< True if State/Event Indicators are present (Bit 16) */
+		uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
+		uint32_t has_temperature:1;        				/**< True if Temperature is present (Bit 18) */
+		uint32_t has_timestamp_calibration_time:1;     	/**< True if Timestamp Calibration Time is present (Bit 19) */
+		uint32_t has_timestamp_adjustment:1; 			/**< True if Timestamp Adjustment is present (Bit 20) */
+		uint32_t has_sample_rate:1;        				/**< True if Sample Rate is present (Bit 21) */
+		uint32_t has_over_range_count:1;   				/**< True if Over-Range Count is present (Bit 22) */
+		uint32_t has_gain:1;               				/**< True if Gain is present (Bit 23) */
+		uint32_t has_reference_level:1;    				/**< True if Reference Level is present (Bit 24) */
+		uint32_t has_if_band_offset:1;     				/**< True if IF Band Offset is present (Bit 25) */
+		uint32_t has_rf_reference_frequency_offset:1; 	/**< True if RF Reference Frequency Offset is present (Bit 26) */
+		uint32_t has_rf_reference_frequency:1; 			/**< True if RF Reference Frequency is present (Bit 27) */
+		uint32_t has_if_reference_frequency:1; 			/**< True if IF Reference Frequency is present (Bit 28) */
+		uint32_t has_bandwidth:1;          				/**< True if Bandwidth is present (Bit 29) */
+		uint32_t has_reference_point_id:1; 				/**< True if Reference Point Identifier is present (Bit 30) */
+		uint32_t context_field_change:1; 				/**< True if any context field has changed since the previous Context Packet was sent(Bit 31) */
 		
 		#else
 
@@ -791,8 +790,6 @@ struct vita49_2_cif0_fields {
 		uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
 		uint32_t has_state_and_event_indicators:1; 		/**< True if State/Event Indicators are present (Bit 16) */
 		uint32_t has_data_packet_payload_format:1; 		/**< True if Data Packet Payload Format is present (Bit 15) */
-		
-		// These are fields that are unlikely to be used, however ADI retains the right to implement them in the future
 		uint32_t has_formatted_gps:1;					/**< True if the Formatted GPS payload is present (Bit 14) */
 		uint32_t has_formatted_ins:1;					/**< True if the Formatted INS payload is present (Bit 13) */
 		uint32_t has_ecef_ephemeris:1;					/**< True if ECEF Ephemeris is present (Bit 12) */

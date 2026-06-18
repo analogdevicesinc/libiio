@@ -1095,7 +1095,7 @@ int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit,
 	const char *type_str = (attr_type == VITA49_2_ATTR_TYPE_DEVICE) ? "device" :
 			       (attr_type == VITA49_2_ATTR_TYPE_DEBUG) ? "debug" : "channel";
 
-	fprintf(stderr, "vrt_command: Added mapping CIF%d Bit %d -> %s/[%s]%s/%s\n",
+	fprintf(stderr, "vita49_2_process: Added mapping CIF%d Bit %d -> %s/[%s]%s/%s\n",
 		cif_type, cif_bit, device_name, type_str, channel_name ? channel_name : "", attr_name);
 	return 0;
 }
@@ -1108,40 +1108,50 @@ int vita49_2_command_load_mappings(const char *file_path)
 
 	f = fopen(file_path, "r");
 	if (!f) {
-		fprintf(stderr, "vrt_command: Failed to open mapping file %s\n", file_path);
+		fprintf(stderr, "vita49_2_client: Failed to open mapping file %s\n", file_path);
 		return -1;
 	}
 
-	while (fgets(line, sizeof(line), f)) {
+	while (fgets(line, sizeof(line), f)) 
+	{
+	
 		/* Ignore comments or empty lines */
 		if (line[0] == '#' || line[0] == '\n' || line[0] == '\r')
 			continue;
 
 		char *p = line;
-		char *toks[7];
+		char *toks[6];
 		int i;
-		for (i = 0; i < 7; i++) {
+		for (i = 0; i < 6; i++) 
+		{
 			toks[i] = strsep(&p, ",\r\n");
 			if (!toks[i]) break;
 		}
 		
-		if (i == 7) {
-			uint32_t stream_id = strtoul(toks[0], NULL, 16);
-			uint32_t cif0_bit = strtoul(toks[1], NULL, 10);
-			enum vita49_2_attr_type atype = VITA49_2_ATTR_TYPE_CHANNEL;
-			if (strcmp(toks[3], "device") == 0) atype = VITA49_2_ATTR_TYPE_DEVICE;
-			else if (strcmp(toks[3], "debug") == 0) atype = VITA49_2_ATTR_TYPE_DEBUG;
+		// Each line should have 6 fields/attributes
+		if (i == 6) 
+		{
+			uint32_t cif_type = strtoul(toks[0], NULL, 16);
+			uint32_t cif_bit = strtoul(toks[1], NULL, 10);
 
-			bool is_out = (strcmp(toks[5], "true") == 0 || strcmp(toks[5], "1") == 0);
-			command_add_mapping(stream_id, cif0_bit, toks[2], atype, toks[4], is_out, toks[6]);
+			enum vita49_2_attr_type atype = VITA49_2_ATTR_TYPE_CHANNEL;
+			if (strcmp(toks[3], "device") == 0) 
+				atype = VITA49_2_ATTR_TYPE_DEVICE;
+			else if (strcmp(toks[3], "debug") == 0) 
+				atype = VITA49_2_ATTR_TYPE_DEBUG;
+
+			bool is_out = (strcmp(toks[4], "true") == 0 || strcmp(toks[4], "1") == 0);
+			command_add_mapping(cif_type, cif_bit, toks[2], atype, toks[3], is_out, toks[5]);
 			count++;
-		} else {
-			fprintf(stderr, "vrt_command: Ignoring malformed line (need 7 fields): %s\n", line);
+		} 
+		else 
+		{
+			fprintf(stderr, "vita49_2: Ignoring malformed line (need 6 fields): %s\n", line);
 		}
 	}
 
 	fclose(f);
-	fprintf(stderr, "vrt_command: Loaded %d mappings from %s\n", count, file_path);
+	fprintf(stderr, "vita49_2: Loaded %d mappings from %s\n", count, file_path);
 	return count;
 }
 
@@ -1159,7 +1169,7 @@ void vita49_2_command_cleanup(void)
 	}
 	vita49_2_cif_mappings_list = NULL;
 
-	fprintf(stderr, "vrt_command_cleanup: Cleaned up VITA 49.2 translation layer.\n");
+	fprintf(stderr, "vita49_2_process: Cleaned up VITA 49.2 translation layer.\n");
 }
 
 int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt)
@@ -2037,38 +2047,38 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 	// 5 = uint32
 
 	static const uint32_t cif0_type_table[] = {
-		1,		// CIF31 - Context Field Change Indicator. This doesn't correspond to an attribute, it just indicates whether the Context Packet has changed since the last one.
-		0,	 	// CIF30 - Reference Point Identifier
-		2,	 	// CIF29 - Bandwidth
-		2,	 	// 28 - IF Reference Frequency
-		2, 		// 27 - RF Reference Frequency
-		2,		// 26 - RF Reference Frequency Offset
-		2,		// 25 - IF Band Offset
-		2,		// 24 - Reference Level
-		0,		// 23 - Gain TODO: Needs to be looked at more since Stage 1 and Stage 2 gain are encoded into the same 32-bit word
-		5,		// 22 - Over-Range Count
-		2,		// 21 - Sample Rate
-		4,		// 20 - Timestamp Adjustment
-		5,		// 19 - Timestamp Calibration Time
-		0,		// 18 - Temperature: TODO: Would require reading the raw, scale, and offset file descriptors
-		1,		// 17 - Device Identifier (4 uint32_t, see the vita49_2_device_identifier struct)
-		0,		// 16 - State/Event Indicators
-		1,		// 15 - Signal Data Packet Payload Format (see the )
-		1,		// 14 - Formatted GPS
-		1,		// 13 - Formatted INS
-		1,		// 12 - ECEF Ephemeris
-		1,		// 11 - Relative Ephemeris
-		5,		// 10 - Ephemeris Ref ID
-		1,		// 9 - GPS ASCII
-		1,		// 8 - Context Association Lists
-		1,		// 7 - CIF 7 Enable
-		1,		// 6 - Reserved
-		1,		// 5 - Reserved
-		1,		// 4 - Reserved
+		1,		// CIF0 0 - Reserved
+		1,		// CIF0 1 - CIF 1 Enable
+		1,		// CIF0 2 - CIF 2 Enable
 		1,		// 3 - CIF 3 Enable
-		1,		// 2 - CIF 2 Enable
-		1,		// 1 - CIF 1 Enable
-		1,		// 0 - Reserved
+		1,		// 4 - Reserved
+		1,		// 5 - Reserved
+		1,		// 6 - Reserved
+		1,		// 7 - CIF 7 Enable
+		1,		// 8 - Context Association Lists
+		1,		// 9 - GPS ASCII
+		5,		// 10 - Ephemeris Ref ID
+		1,		// 11 - Relative Ephemeris
+		1,		// 12 - ECEF Ephemeris
+		1,		// 13 - Formatted INS
+		1,		// 14 - Formatted GPS
+		1,		// 15 - Signal Data Packet Payload Format (see the )
+		0,		// 16 - State/Event Indicators
+		1,		// 17 - Device Identifier (4 uint32_t, see the vita49_2_device_identifier struct)
+		0,		// 18 - Temperature: TODO: Would require reading the raw, scale, and offset file descriptors
+		5,		// 19 - Timestamp Calibration Time
+		4,		// 20 - Timestamp Adjustment
+		2,		// 21 - Sample Rate
+		5,		// 22 - Over-Range Count
+		0,		// 23 - Gain TODO: Needs to be looked at more since Stage 1 and Stage 2 gain are encoded into the same 32-bit word
+		2,		// 24 - Reference Level
+		2,		// 25 - IF Band Offset
+		2,		// 26 - RF Reference Frequency Offset
+		2, 		// 27 - RF Reference Frequency
+		2,	 	// 28 - IF Reference Frequency
+		2,	 	// 29 - Bandwidth
+		0,	 	// 30 - Reference Point Identifier
+		1,		// 31 - Context Field Change Indicator. This doesn't correspond to an attribute, it just indicates whether the Context Packet has changed since the last one.
 	};
 	
 	for (cif_mappings = vita49_2_cif_mappings_list; cif_mappings != NULL; cif_mappings = cif_mappings->next)
@@ -2087,6 +2097,7 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 			case CIF2:
 			case CIF3:
 			case CIF7:
+				break;
 			default:
 				fprintf(stderr, "vita49_2_process: Encountered an unknown CIF type (%d)\n", cif_mappings->cif_type);
 				continue;
