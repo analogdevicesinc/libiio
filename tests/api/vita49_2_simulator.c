@@ -89,7 +89,7 @@ int main()
     sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
 
     sampling_freq_packet.cif0.cif0_word.has_sample_rate = 1;
-    sampling_freq_packet.cif0.sample_rate = 70.5e6;
+    sampling_freq_packet.cif0.sample_rate = 2083333.2345;
 
     ssize_t sampling_freq_packet_size;
 

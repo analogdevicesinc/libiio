@@ -1428,16 +1428,16 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 			}
 		}
 
-		printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.0f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", val);
+		printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", val);
 		ret = iio_attr_write_double(attr, val);
 		if (ret < 0)
-			fprintf(stderr, "vita49_2_process: Failed to write %.0f to %s\n", val, m->attr_name);
+			fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", val, m->attr_name);
 	}
 
 	return 0;
 }
 
-enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, char* available_range)
+enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, char* available_range, size_t buffer_size)
 {
 	// We need to iterate through the CIF mappings linked list until we find a hardware attribute
 	// associated with this CIF bit
@@ -1451,7 +1451,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 			continue;
 
 		// Checking that the specific CIF bit we're targeting exists in this mapping
-		if ((1 << cif_mappings->cif_bit) != cif_bit)
+		if (cif_mappings->cif_bit != cif_bit)
 			continue;
 
 		// Since neither of the 2 conditions above were true, we have a match!
@@ -1484,7 +1484,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 	// Attribute we're modifying is associated with a specific channel so we must find that channel first.
 	if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
 	{
-		channel = iio_device_find_channel(device, available_options_fd_name, cif_mappings->is_output);
+		channel = iio_device_find_channel(device, cif_mappings->channel_name, cif_mappings->is_output);
 		if (!channel)
 		{
 			fprintf(stderr, "vita49_2_process: Channel %s not found.\n", available_options_fd_name);
@@ -1499,7 +1499,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 			return -ENOFIELD;
 		}
 
-		if ((ret_value = iio_attr_read_raw(attribute, available_range, sizeof(available_range))) < 0)
+		if (ret_value = iio_attr_read_raw(attribute, available_range, buffer_size) < 0)
 		{
 			fprintf(stderr, "vita49_2_process: Reading from channel attribute '%s' failed.\n", available_options_fd_name);
 		}
@@ -1514,7 +1514,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 			return -ENOFIELD;
 		}
 
-		if ((ret_value = iio_attr_read_raw(attribute, available_range, sizeof(available_range))) < 0)
+		if (ret_value = iio_attr_read_raw(attribute, available_range, buffer_size) < 0)
 		{
 			fprintf(stderr, "vita49_2_process: Reading from device attribute '%s' failed.\n", available_options_fd_name);
 		}
@@ -1529,7 +1529,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 			return -ENOFIELD;
 		}
 
-		if ((ret_value = iio_attr_read_raw(attribute, available_range, sizeof(available_range))) < 0)
+		if (ret_value = iio_attr_read_raw(attribute, available_range, buffer_size) < 0)
 		{
 			fprintf(stderr, "vita49_2_process: Reading from debug attribute '%s' failed.\n", available_options_fd_name);
 		}
@@ -1554,7 +1554,7 @@ int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	// For storing the output of the attribute/fd
 	char available_range[256];
 	
-	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
 	if (ret_value < 0)
 		return -ENOFIELD;
 
@@ -1611,7 +1611,7 @@ int validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	// For storing the output of the attribute/fd
 	char available_range[1024];
 	
-	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
 	if (ret_value < 0)
 		return ENOFIELD;
 
@@ -1668,7 +1668,7 @@ int validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	// For storing the output of the attribute/fd
 	char available_range[1024];
 	
-	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
 	if (ret_value < 0)
 		return ENOFIELD;
 
@@ -1725,7 +1725,7 @@ enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *c
 	// For storing the output of the attribute/fd
 	char available_range[1024];
 	
-	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
 	if (ret_value < 0)
 		return -ENOFIELD;
 
@@ -1784,7 +1784,7 @@ enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ct
 	// For storing the output of the attribute/fd
 	char available_range[1024];
 	
-	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range);
+	int ret_value = find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
 	if (ret_value < 0)
 		return -ENOFIELD;
 

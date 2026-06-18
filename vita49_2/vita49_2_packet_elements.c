@@ -24,7 +24,7 @@ int64_t convert_to_44_20(double value)
 
 double convert_from_44_20(int64_t value)
 {
-	return (double)(value / (1 << 20));
+	return (double)(value) / (1 << 20);
 }
 
 int16_t convert_to_10_6(float value)
@@ -34,7 +34,7 @@ int16_t convert_to_10_6(float value)
 
 float convert_from_10_6(int16_t value)
 {
-	return (float)(value / (1 << 6));
+	return (float)(value) / (1 << 6);
 }
 
 int16_t convert_to_9_7(float value)
@@ -44,7 +44,7 @@ int16_t convert_to_9_7(float value)
 
 float convert_from_9_7(int16_t value)
 {
-	return (float)(value / (1 << 7));
+	return (float)(value) / (1 << 7);
 }
 
 int vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset, uint32_t* const payload_word)
