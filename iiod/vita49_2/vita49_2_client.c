@@ -775,22 +775,27 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
 							time_data_packet.payload = (struct vita49_2_iq_item *)(iio_block_first(rx_block, i_channel));
 
-							ssize_t payload_size = iio_device_get_sample_size(rx_device, rx_channel_mask);
+							ssize_t sample_size_bytes = iio_device_get_sample_size(rx_device, rx_channel_mask);
 
-							// If there's an error, then we have to use an alternative method of calculating the size
-							if (payload_size < 0)
+							// Means there was an error with capturing the data if the sample size is less than 0 bytes or more than 4 bytes.
+							// It should either be 4 bytes (meaning the I and Q components are both 16 bits) or 2 bytes (meaning the I and Q components
+							// are both 8 bits)
+							if (sample_size_bytes <= 0 || sample_size_bytes > 4)
 							{
-								payload_size = (uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel));
-								
-								// If this failed as well, then we shouldn't send the packet at all
-								if (payload_size < 0)
-								{
-									fprintf(stderr, "vita49_2_client: Encountered an error while reading data from the RX block.\n");
-									continue;
-								}
+								fprintf(stderr, "vita49_2_client: I/Q sample size is invalid. Sample Size (bytes) = %zd\n", sample_size_bytes);
+								continue;
 							}
 
-							time_data_packet.payload_num_words = payload_size;
+							ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block) + sample_size_bytes) - (uint32_t *)(iio_block_first(rx_block, i_channel))) * sample_size_bytes)/4;
+
+							// If this failed as well, then we shouldn't send the packet at all
+							if (payload_size_words <= 0)
+							{
+								fprintf(stderr, "vita49_2_client: Encountered an error while reading data from the RX block. Number of words read is invalid (%zd)\n", payload_size_words);
+								continue;
+							}
+
+							time_data_packet.payload_num_words = payload_size_words;
 
 							// Next we have to set the Stream ID. We can check if it exists in the existing Stream ID table
 							// and insert it if it doesn't.
