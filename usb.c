@@ -288,6 +288,13 @@ static int usb_reg_write(const struct iio_device *dev, uint32_t address, uint32_
 	return iiod_client_reg_write(client, dev, address, value);
 }
 
+static int usb_ping(struct iio_context *ctx)
+{
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return iiod_client_nop(pdata->io_ctx.iiod_client);
+}
+
 static const struct iio_device *usb_get_trigger(const struct iio_device *dev)
 {
 	const struct iio_context *ctx = iio_device_get_context(dev);
@@ -541,6 +548,8 @@ static const struct iio_backend_ops usb_ops = {
 
 	.reg_read = usb_reg_read,
 	.reg_write = usb_reg_write,
+
+	.ping = usb_ping,
 };
 
 __api_export_if(WITH_USB_BACKEND_DYNAMIC) const struct iio_backend iio_usb_backend = {
