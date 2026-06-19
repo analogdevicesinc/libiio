@@ -13,7 +13,7 @@
 			compatible = "iio,io-channels";
 			reg = <1>;
 			io-channels = <&adc_emul 0>, <&adc_emul 1>;
-			io-channel-names = "adc_emul_in_ch0", "adc_emul_in_ch1";
+			io-channel-names = "voltage0", "voltage1";
 			io-name = "adc-emul";
 		};
 	};

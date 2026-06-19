@@ -19,7 +19,7 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def iiod_context(dut: DeviceAdapter, request):
     transport = request.config.getoption('--iiod-transport')
     if transport == 'uart':
