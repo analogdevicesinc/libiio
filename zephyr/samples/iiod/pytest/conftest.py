@@ -29,11 +29,20 @@ def iiod_context(dut: DeviceAdapter, request):
 
 
 def _network_context(dut: DeviceAdapter):
-    # Wait until the server has built the IIO context XML and is about to enter
-    # the accept() loop.  This fires before any client has connected, so it is
-    # a reliable "server is ready" signal that works for both the first and any
-    # subsequent test session restarts.
-    dut.readlines_until(regex=r'.*XML ready.*')
+    # Poll port 30431 directly until the IIOD server is accepting connections.
+    # Waiting for a specific DUT log line is unreliable: the startup messages
+    # are emitted in ~20 ms and the server then blocks in accept(), so if pytest
+    # starts scanning after that point it will never see them.
+    deadline = time.monotonic() + 30.0
+    while time.monotonic() < deadline:
+        try:
+            s = socket.create_connection(('127.0.0.1', 30431), timeout=1.0)
+            s.close()
+            break
+        except OSError:
+            time.sleep(0.1)
+    else:
+        raise TimeoutError('IIOD network server did not start within 30 seconds')
     ctx = iio.Context('ip:127.0.0.1')
     yield ctx
     del ctx  # close TCP connection before DUT teardown
