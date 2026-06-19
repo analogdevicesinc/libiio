@@ -306,6 +306,13 @@ static int serial_reg_write(const struct iio_device *dev, uint32_t address, uint
 	return iiod_client_reg_write(client, dev, address, value);
 }
 
+static int serial_ping(struct iio_context *ctx)
+{
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return iiod_client_nop(pdata->iiod_client);
+}
+
 static const struct iio_backend_ops serial_ops = {
 	.create = serial_create_context_from_args,
 	.read_attr = serial_read_attr,
@@ -332,6 +339,8 @@ static const struct iio_backend_ops serial_ops = {
 
 	.reg_read = serial_reg_read,
 	.reg_write = serial_reg_write,
+
+	.ping = serial_ping,
 };
 
 __api_export_if(WITH_SERIAL_BACKEND_DYNAMIC) const struct iio_backend iio_serial_backend = {
