@@ -674,6 +674,11 @@ unlock:
 	return ret;
 }
 
+static int local_ping(struct iio_context *ctx)
+{
+	return 0;
+}
+
 static int local_reg_write(const struct iio_device *dev, uint32_t address, uint32_t value)
 {
 	char buf[1024];
@@ -1915,6 +1920,7 @@ static const struct iio_backend_ops local_ops = {
 	.disable_cpu_access = local_disable_cpu_access,
 	.reg_read = local_reg_read,
 	.reg_write = local_reg_write,
+	.ping = local_ping,
 };
 
 const struct iio_backend iio_local_backend = {
