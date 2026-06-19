@@ -61,3 +61,67 @@ jobs:
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
           west twister -T samples -v --force-color --inline-logs --integration $EXTRA_TWISTER_FLAGS
+
+  regression-tests:
+    name: Regression tests against Zephyr IIOD backend
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: libiio
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
+        with:
+          app-path: libiio
+          toolchains: arm-zephyr-eabi
+          ccache-cache-key: regression-ubuntu-22.04
+
+      - name: Install libiio build dependencies
+        run: sudo apt-get install -y libxml2-dev
+
+      - name: Build libiio C library and test suite
+        working-directory: libiio
+        run: |
+          mkdir build && cd build
+          cmake -DWITH_NETWORK_BACKEND=ON -DWITH_ZSTD=ON ../
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
+      - name: Build native_sim IIOD sample
+        working-directory: libiio/zephyr
+        run: |
+          west build -p -b native_sim samples/iiod/ -S iiod-network \
+            -d build-iiod-regression \
+            -- -DCONFIG_LIBIIO_IIOD_ADC_EMUL=y -DCONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+
+      - name: Start IIOD server (native_sim)
+        working-directory: libiio/zephyr
+        run: |
+          ./build-iiod-regression/zephyr/zephyr.exe &
+          echo $! > /tmp/zephyr_pid
+          # Wait until the server is accepting connections
+          for i in $(seq 1 30); do
+            if nc -z 127.0.0.1 30431 2>/dev/null; then
+              echo "IIOD server is up"
+              break
+            fi
+            sleep 0.5
+          done
+
+      - name: Run regression tests against Zephyr IIOD backend
+        working-directory: libiio/build
+        run: |
+          TESTS_API_URI=ip:127.0.0.1 ctest -L api --output-on-failure -j1
+
+      - name: Stop IIOD server
+        if: always()
+        run: kill $(cat /tmp/zephyr_pid) 2>/dev/null || true
