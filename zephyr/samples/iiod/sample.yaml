@@ -28,6 +28,7 @@ tests:
     integration_platforms:
       - native_sim
     harness: pytest
+    timeout: 120
     harness_config:
       pytest_dut_scope: session
       pytest_args:
