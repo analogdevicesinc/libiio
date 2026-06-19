@@ -106,6 +106,15 @@ static void handle_timeout(struct parser_pdata *pdata, const struct iiod_command
 	iiod_io_send_response_code(io, ret);
 }
 
+static void handle_nop(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
+{
+	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
+
+	/* Simply return success - this is a no-op */
+	iiod_io_send_response_code(io, 0);
+}
+
 static struct buffer_entry *get_iio_buffer_entry_unlocked(
 		struct parser_pdata *pdata, const struct iiod_command *cmd)
 {
@@ -1182,6 +1191,8 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 
 	[IIOD_OP_REG_READ] = handle_reg_read,
 	[IIOD_OP_REG_WRITE] = handle_reg_write,
+
+	[IIOD_OP_NOP] = handle_nop,
 };
 
 static int iiod_cmd(const struct iiod_command *cmd, struct iiod_command_data *data, void *d)

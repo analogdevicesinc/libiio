@@ -667,6 +667,14 @@ int iio_context_set_timeout(struct iio_context *ctx, int timeout)
 	return 0;
 }
 
+int iio_context_ping(struct iio_context *ctx)
+{
+	if (!ctx->ops->ping)
+		return -ENOTSUP;
+
+	return ctx->ops->ping(ctx);
+}
+
 const struct iio_backend *const iio_backends[] = {
 	IIO_IF_ENABLED(WITH_LOCAL_BACKEND, &iio_local_backend),
 	IIO_IF_ENABLED(WITH_NETWORK_BACKEND && !WITH_NETWORK_BACKEND_DYNAMIC, &iio_ip_backend),

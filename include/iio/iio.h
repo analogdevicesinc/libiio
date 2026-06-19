@@ -795,6 +795,17 @@ __api void iio_context_set_data(struct iio_context *ctx, void *data);
  * @return The pointer previously associated if present, or NULL */
 __api void *iio_context_get_data(const struct iio_context *ctx);
 
+/** @brief Ping the IIO context to check if it is still responsive
+ * @param ctx A pointer to an iio_context structure
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * <b>NOTE:</b> This performs a lightweight round-trip operation to verify
+ * the connection is still alive. It does not access hardware or change any
+ * device state. This operation is only meaningful for remote contexts
+ * (network, USB, serial). For local contexts, it always succeeds. */
+__api __check_ret int iio_context_ping(struct iio_context *ctx);
+
 /** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Device functions --------------------------------*/
 /** @defgroup Device Device
