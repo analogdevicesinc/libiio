@@ -343,9 +343,19 @@ TEST_FUNCTION(context_timeout_measurement)
 	DEBUG_PRINT("  INFO: 1000ms timeout: error=%d, elapsed=%ld ms\n", err, elapsed_ms);
 	TEST_ASSERT(iio_err(ctx), "Connection to unreachable host should fail");
 
-	/* Allow ±500ms tolerance (some overhead for DNS, connection setup, etc.) */
-	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 500, 2000,
-			"1000ms timeout should complete within expected range");
+	/*
+	 * Only check duration when the error is ETIMEDOUT. If the host returns
+	 * EHOSTUNREACH (e.g. due to routing), the timeout parameter isn't the
+	 * limiting factor and the duration check is not meaningful.
+	 */
+	if (err == -ETIMEDOUT) {
+		/* Allow ±500ms tolerance (some overhead for DNS, connection setup, etc.) */
+		TEST_ASSERT_DURATION_RANGE(elapsed_ms, 500, 2000,
+				"1000ms timeout should complete within expected range");
+	} else {
+		DEBUG_PRINT("  SKIP: Duration check skipped for 1000ms test (error %d, not a timeout)\n",
+				err);
+	}
 
 	/* Test 2: 4000ms timeout */
 	DEBUG_PRINT("  INFO: Testing 4000ms timeout...\n");
@@ -361,9 +371,18 @@ TEST_FUNCTION(context_timeout_measurement)
 	DEBUG_PRINT("  INFO: 4000ms timeout: error=%d, elapsed=%ld ms\n", err, elapsed_ms);
 	TEST_ASSERT(iio_err(ctx), "Connection to unreachable host should fail");
 
-	/* Allow ±1000ms tolerance */
-	TEST_ASSERT_DURATION_RANGE(elapsed_ms, 3000, 5500,
-			"4000ms timeout should complete within expected range");
+	/*
+	 * Only check duration when the error is ETIMEDOUT. EHOSTUNREACH or other
+	 * routing errors can occur before the timeout and are still valid failures.
+	 */
+	if (err == -ETIMEDOUT) {
+		/* Allow ±1000ms tolerance */
+		TEST_ASSERT_DURATION_RANGE(elapsed_ms, 3000, 5500,
+				"4000ms timeout should complete within expected range");
+	} else {
+		DEBUG_PRINT("  SKIP: Duration check skipped for 4000ms test (error %d, not a timeout)\n",
+				err);
+	}
 
 	/* Test 3: Non-blocking mode */
 	DEBUG_PRINT("  INFO: Testing non-blocking mode...\n");
