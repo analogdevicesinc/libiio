@@ -118,11 +118,26 @@ jobs:
             echo "$remote_v0_tags" | grep -qxF "$dir" && echo "$dir"
           done | sort -Vr)
 
-          { echo "$sphinx_paths" | grep -v '^main$'; echo "$v0_entries" | grep .; echo "main"; } | \
-            jq -R . | jq -s . > tags-update/tags.json
+          { [ -n "$sphinx_paths" ] && echo "$sphinx_paths"; \
+            [ -n "$v0_entries" ] && echo "$v0_entries"; } | \
+            jq -R . | jq -s '. - ["main"] + ["main"]' > tags-update/tags.json
+
+          # Check if tags.json actually changed
+          if [ -f gh-pages-content/tags.json ]; then
+            if diff -q gh-pages-content/tags.json tags-update/tags.json >/dev/null 2>&1; then
+              echo "tags.json unchanged, skipping deployment"
+              echo "TAGS_CHANGED=false" >> $GITHUB_ENV
+            else
+              echo "tags.json changed, will deploy"
+              echo "TAGS_CHANGED=true" >> $GITHUB_ENV
+            fi
+          else
+            echo "tags.json doesn't exist, will deploy"
+            echo "TAGS_CHANGED=true" >> $GITHUB_ENV
+          fi
 
       - name: Deploy tags.json to gh-pages
-        if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push' && env.TAGS_CHANGED == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
