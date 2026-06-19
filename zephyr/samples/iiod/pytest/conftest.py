@@ -19,7 +19,7 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def iiod_context(dut: DeviceAdapter, request):
     transport = request.config.getoption('--iiod-transport')
     if transport == 'uart':
@@ -29,7 +29,11 @@ def iiod_context(dut: DeviceAdapter, request):
 
 
 def _network_context(dut: DeviceAdapter):
-    dut.readlines_until(regex=r'.*Calling accept.*')
+    # Wait until the server has built the IIO context XML and is about to enter
+    # the accept() loop.  This fires before any client has connected, so it is
+    # a reliable "server is ready" signal that works for both the first and any
+    # subsequent test session restarts.
+    dut.readlines_until(regex=r'.*XML ready.*')
     ctx = iio.Context('ip:127.0.0.1')
     yield ctx
     del ctx  # close TCP connection before DUT teardown
