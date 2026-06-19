@@ -137,6 +137,9 @@ struct iio_backend_ops {
 	/* Atomic register operations */
 	int (*reg_read)(const struct iio_device *dev, uint32_t address, uint32_t *value);
 	int (*reg_write)(const struct iio_device *dev, uint32_t address, uint32_t value);
+
+	/* Connection liveness test */
+	int (*ping)(struct iio_context *ctx);
 };
 
 /**

@@ -520,6 +520,13 @@ static int network_reg_write(const struct iio_device *dev, uint32_t address, uin
 	return iiod_client_reg_write(client, dev, address, value);
 }
 
+static int network_ping(struct iio_context *ctx)
+{
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+
+	return iiod_client_nop(pdata->iiod_client);
+}
+
 static const struct iio_backend_ops network_ops = {
 	.scan = IIO_IF_ENABLED(HAVE_DNS_SD, dnssd_context_scan),
 	.create = network_create_context,
@@ -549,6 +556,8 @@ static const struct iio_backend_ops network_ops = {
 
 	.reg_read = network_reg_read,
 	.reg_write = network_reg_write,
+
+	.ping = network_ping,
 };
 
 __api_export_if(WITH_NETWORK_BACKEND_DYNAMIC) const struct iio_backend iio_ip_backend = {

@@ -1947,3 +1947,19 @@ int iiod_client_reg_write(struct iiod_client *client, const struct iio_device *d
 
 	return iiod_io_wait_for_command_done(io);
 }
+
+int iiod_client_nop(struct iiod_client *client)
+{
+	struct iiod_command cmd;
+	struct iiod_io *io;
+
+	if (!iiod_client_uses_binary_interface(client))
+		return -ENOTSUP;
+
+	cmd.op = IIOD_OP_NOP;
+	cmd.dev = 0;
+	cmd.code = 0;
+
+	io = iiod_responder_get_default_io(client->responder);
+	return iiod_io_exec_simple_command(io, &cmd);
+}
