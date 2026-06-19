@@ -1403,6 +1403,11 @@ static int emu_dequeue_block(struct iio_block_pdata *pdata, bool nonblock)
 	return 0;
 }
 
+static int emu_ping(struct iio_context *ctx)
+{
+	return 0;
+}
+
 static const struct iio_backend_ops emu_ops = {
 	.create = emu_create_context,
 	.read_attr = emu_read_attr,
@@ -1421,6 +1426,7 @@ static const struct iio_backend_ops emu_ops = {
 
 	.reg_read = emu_reg_read,
 	.reg_write = emu_reg_write,
+	.ping = emu_ping,
 };
 
 const struct iio_backend iio_emu_backend = {
