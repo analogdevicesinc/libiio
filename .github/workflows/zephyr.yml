@@ -91,7 +91,7 @@ jobs:
         working-directory: libiio
         run: |
           mkdir build && cd build
-          cmake -DWITH_TESTS=OFF -DWITH_USB_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF ..
+          cmake -DWITH_TESTS=ON -DWITH_USB_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF ..
           make -j$(nproc)
           sudo make install
           sudo ldconfig
