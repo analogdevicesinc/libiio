@@ -1,0 +1,69 @@
+.\" Copyright (c) 2026 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iio_ping 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iio_ping
+.SH NAME
+iio_ping \- Test the responsiveness of a remote IIO context
+.SH SYNOPSIS
+.B iio_ping
+[
+.I options
+]
+
+.SH DESCRIPTION
+.B iio_ping
+sends a no-operation command to a remote IIO context and measures
+the round-trip time. It can be used to verify that a connection to
+a remote IIO daemon (iiod) is alive and responsive, without accessing
+any hardware or changing any device state.
+.PP
+This is only meaningful for remote contexts (network, USB, serial).
+For local contexts, the command always succeeds immediately.
+
+.SH OPTIONS
+##COMMON_COMMANDS_START##
+##COMMON_COMMANDS_STOP##
+##COMMON_OPTION_START##
+##COMMON_OPTION_STOP##
+.TP
+.B \-c, \-\-count <count>
+Number of ping requests to send (default: 4).
+.TP
+.B \-i, \-\-interval <interval_ms>
+Interval between ping requests in milliseconds (default: 1000).
+
+.SH RETURN VALUE
+Returns 0 if all pings succeeded, or a non-zero exit code if any
+ping failed.
+
+.SH ERRORS
+.TP
+.B EPIPE
+The connection was broken (e.g. USB unplugged, network down).
+.TP
+.B ETIMEDOUT
+The server did not respond within the configured timeout.
+.TP
+.B ENOTSUP
+The backend or protocol does not support the ping operation (e.g. ASCII IIOD).
