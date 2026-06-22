@@ -436,28 +436,112 @@ Connect Scopy to the Zephyr iiod server
 Using with pyadi-iio
 ====================
 
-`pyadi-iio`_ is an ADI Python library that wraps libiio and provides
-device-specific abstractions for ADI parts.
+`pyadi-iio`_ is an ADI Python library that wraps libiio. The device-specific
+classes (e.g. ``adi.adxl345``) locate devices by their Linux IIO driver name
+(``"adxl345"``), but the Zephyr IIOD server assigns generic names like
+``"iio-device@1"``. Use the underlying ``iio`` module directly instead, which
+is the same library pyadi-iio wraps.
 
-Install pyadi-iio (which pulls in the libiio Python bindings as a dependency):
+.. note::
 
-.. code-block:: console
+   ``pip install pyadi-iio`` installs a pre-built libiio that is typically
+   v0.x. Build the Python bindings from the libiio source tree instead (see
+   `Build IIO Client Utilities`_) so that the v1.0 binary protocol is used.
+   .. code-block:: console
 
-   pip install pyadi-iio
+   sudo apt-get install -y libxml2-dev socat
 
-For the ADXL345, use the ``adi.adxl345`` device class:
+   # From the libiio module root (e.g. ~/zephyrproject/modules/lib/libiio)
+   mkdir build && cd build
+   cmake -DWITH_USB_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF ..
+   make -j$(nproc)
+   sudo make install
+   sudo ldconfig
+   cd ..
+
+   pip install bindings/python
+
+The following example reads all channels from the first ADC device:
 
 .. code-block:: python
 
-   import adi
+   import iio
 
-   # On Windows replace COM3 with your actual port; on Linux use
-   # uri="serial:/dev/ttyACM0,115200,8n1n"; for network use uri="ip:192.0.2.1"
-   acc = adi.adxl345(uri="serial:COM3,115200,8n1n")
+   # Connect over the network (native_sim) or replace with the serial URI for
+   # real hardware: "serial:/dev/ttyACM0,115200,8n1n"
+   ctx = iio.Context("ip:192.0.2.1")
 
-   print(f"accel_x = {acc.accel_x}")
-   print(f"accel_y = {acc.accel_y}")
-   print(f"accel_z = {acc.accel_z}")
+   # pyadi-iio device classes find devices by their Linux IIO driver name
+   # (e.g. "adxl345"). The Zephyr IIOD server uses devicetree node names
+   # ("iio-device@1"), so we search by the io-name property set in the overlay
+   # instead of using adi.adxl345 directly.
+   adc = next(d for d in ctx.devices if d.name == "adc-emul")
+
+   for ch in adc.channels:
+       if not ch.output:
+           raw = ch.attrs["raw"].value
+           scale = ch.attrs["scale"].value
+           print(f"{ch.id}: raw={raw}  scale={scale}")
+
+Using with Pytest Integration Tests Locally
+=========================================
+
+The sample ships with a pytest suite (``pytest/``) that exercises the IIOD
+server end-to-end via the libiio Python bindings. The tests run on Linux using
+the ``native_sim`` board — no real hardware required.
+
+Prerequisites
+-------------
+
+Install system packages and build the libiio C library with the network
+backend, then install the Python bindings:
+
+.. code-block:: console
+
+   sudo apt-get install -y libxml2-dev socat
+
+   # From the libiio module root (e.g. ~/zephyrproject/modules/lib/libiio)
+   mkdir build && cd build
+   cmake -DWITH_USB_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF ..
+   make -j$(nproc)
+   sudo make install
+   sudo ldconfig
+   cd ..
+
+   pip install bindings/python
+
+Network Transport
+-----------------
+
+Use ``west twister`` to build the ``native_sim`` binary, start the IIOD server,
+run the pytest suite, and tear everything down automatically:
+
+.. code-block:: console
+
+   # From the libiio zephyr/ directory
+   west twister -p native_sim --integration -T samples/iiod/ \
+       --inline-logs --test sample.iiod.network.pytest
+
+On success you will see five passing tests:
+
+.. code-block:: console
+
+   PASSED  test_iiod.py::test_context_has_devices
+   PASSED  test_iiod.py::test_adc_emul_device_present
+   PASSED  test_iiod.py::test_adc_emul_channels
+   PASSED  test_iiod.py::test_sensor_emul_device_present
+   PASSED  test_iiod.py::test_adc_channel_raw_readable
+
+UART Transport
+--------------
+
+The UART variant relays the native_sim PTY through ``socat`` so that libiio
+can connect over TCP:
+
+.. code-block:: console
+
+   west twister -p native_sim --integration -T samples/iiod/ \
+       --inline-logs --test sample.iiod.uart.pytest
 
 .. _iio_info: https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_info
 .. _iio_attr: https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_attr
