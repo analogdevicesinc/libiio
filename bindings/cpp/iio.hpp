@@ -683,6 +683,7 @@ public:
     optional<Device> device(unsigned int idx) const { return impl::maybe<Device>(iio_context_get_device(p, idx)); }
     optional<Device> find_device(cstr name) const {return impl::maybe<Device>(iio_context_find_device(p, name));}
     void set_timeout(int timeout_ms){impl::check(iio_context_set_timeout(p, timeout_ms), "iio_context_set_timeout");}
+    void ping(){impl::check(iio_context_ping(p), "iio_context_ping");}
     iio_context_params const * params() const {return iio_context_get_params(p);}
     void set_data(void * data){iio_context_set_data(p, data);}
     void * data() const {return iio_context_get_data(p);}
