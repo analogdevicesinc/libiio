@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/alex85k/wingetopt.git
 	branch = master
-	commit = aaaf910fec3f1fbe9da74eb96241d1f9a99baa93
-	parent = 44127bc1eb7c5bfe8ac9c4854c6273750c3ceaa8
+	commit = 98ea94f3d77890678da28230aa156b225cc14974
+	parent = 4a1a22edd1225e2039703acdf0a6e977aa6f7b58
 	method = merge
-	cmdver = 0.4.3
+	cmdver = 0.4.9
