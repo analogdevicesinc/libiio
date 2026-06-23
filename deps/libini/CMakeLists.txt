@@ -1,7 +1,15 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.10)
 project(libini LANGUAGES C VERSION 0.1)
 
 include(GNUInstallDirs)
+
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
+		"Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel."
+		FORCE
+	)
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWithDebInfo MinSizeRel)
+endif()
 
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 	CACHE PATH "Installation directory for pkgconfig (.pc) files")
@@ -33,6 +41,15 @@ set_target_properties(ini PROPERTIES
 )
 
 target_compile_definitions(ini PUBLIC ${INI_STATIC_CFLAGS})
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/example/test.c")
+    add_executable(libini_test example/test.c)
+    target_link_libraries(libini_test PRIVATE ini)
+    target_include_directories(libini_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    set_target_properties(libini_test PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+endif()
 
 install(TARGETS ini
 	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
