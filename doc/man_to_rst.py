@@ -1,5 +1,6 @@
 # Convert man pages to reStructuredText
 import os
+import subprocess
 
 manfolder = os.path.join(os.path.dirname(__file__), "..","build", "share","man")
 page = ['iio_attr','iio_info','iio_genxml','iio_rwdev','iio_reg','iio_stresstest']
@@ -11,7 +12,7 @@ for po in page:
     p = po + ".1"
     fullpath = os.path.join(manfolder, p)
     target = os.path.join("source", "tools", po + ".rst")
-    os.system(f"pandoc --from man --to rst {fullpath} -o {target}")
+    subprocess.run(["pandoc", "--from", "man", "--to", "rst", fullpath, "-o", target], check=True)
 
     # Add title to rst file
     with open(target, 'r') as file:
