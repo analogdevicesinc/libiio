@@ -411,6 +411,10 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint,
 			{
 				vita49_2_command_load_mappings(vita49_2_mapping_file_path);
 			}
+			else
+			{
+				fprintf(stderr, "vita49_2_client: WARNING, no CIF mappings file has been provided. Commands will not be executed!\n");
+			}
 
 			/* Start the VITA 49.2 listener on UDP Port 4991 on all interfaces */
 			ret = start_vita49_2_daemon(ctx, main_thread_pool);

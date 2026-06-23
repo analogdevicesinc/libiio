@@ -730,6 +730,13 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					// Otherwise we have an Control Packet. 
 					else
 					{
+						// If no CIF mappings were loaded, then we're unable to process any of the commands in the Control Packet, nor can we generate any Ack Packets.
+						if (vita49_2_cif_mappings_list == NULL)
+						{
+							fprintf(stderr, "vita49_2_client: No CIF mappings file has been provided. Received Command Packet is ignored.\n");
+							continue;
+						}
+
 						struct vita49_2_control_packet control_packet;
 						int ret_value;
 						if ((ret_value = vita49_2_parse_control_packet(receive_buffer, received, &control_packet)) < 0)
