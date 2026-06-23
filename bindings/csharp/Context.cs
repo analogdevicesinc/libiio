@@ -85,6 +85,9 @@ namespace iio
         private static extern int iio_context_set_timeout(IntPtr ctx, int timeout_ms);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_context_ping(IntPtr ctx);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_attrs_count(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -236,6 +239,15 @@ namespace iio
             int ret = iio_context_set_timeout(hdl, timeout);
             if (ret < 0)
                 throw new IIOException("Unable to set timeout", ret);
+        }
+
+        /// <summary>Ping the IIO context to check if it is still responsive.</summary>
+        /// <exception cref="IioLib.IIOException">The context did not respond.</exception>
+        public void ping()
+        {
+            int ret = iio_context_ping(hdl);
+            if (ret < 0)
+                throw new IIOException("Ping failed", ret);
         }
 
         /// <summary>
