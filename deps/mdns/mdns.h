@@ -254,7 +254,7 @@ static inline int
 mdns_multiquery_send(int sock, const mdns_query_t* query, size_t count, void* buffer,
                      size_t capacity, uint16_t query_id);
 
-//! Receive unicast responses to a mDNS query sent with mdns_discovery_recv, optionally filtering
+//! Receive unicast responses to a mDNS query sent with mdns_[multi]query_send, optionally filtering
 //! out any responses not matching the given query ID. Set the query ID to 0 to parse all responses,
 //! even if it is not matching the query ID set in a specific query. Any data will be piped to the
 //! given callback for parsing. Buffer must be 32 bit aligned. Parsing is stopped when callback
@@ -1109,6 +1109,9 @@ mdns_multiquery_send(int sock, const mdns_query_t* query, size_t count, void* bu
 		data = mdns_string_make(buffer, capacity, data, query[iq].name, query[iq].length, 0);
 		if (!data)
 			return -1;
+		size_t remain = capacity - MDNS_POINTER_DIFF(data, buffer);
+		if (remain < 4)
+			return -1;
 		// Record type
 		data = mdns_htons(data, query[iq].type);
 		//! Optional unicast response based on local port, class IN
@@ -1148,9 +1151,6 @@ mdns_query_recv(int sock, void* buffer, size_t capacity, mdns_record_callback_fn
 
 	if ((only_query_id > 0) && (query_id != only_query_id))
 		return 0;  // Not a reply to the wanted one-shot query
-
-	if (questions > 1)
-		return 0;
 
 	// Skip questions part
 	int i;
@@ -1572,14 +1572,19 @@ mdns_record_parse_txt(const void* buffer, size_t size, size_t offset, size_t len
 		strdata = (const char*)MDNS_POINTER_OFFSET(buffer, offset);
 		size_t sublength = *(const unsigned char*)strdata;
 
+		if (sublength >= (end - offset))
+			break;
+
 		++strdata;
 		offset += sublength + 1;
 
-		size_t separator = 0;
+		size_t separator = sublength;
 		for (size_t c = 0; c < sublength; ++c) {
 			// DNS-SD TXT record keys MUST be printable US-ASCII, [0x20, 0x7E]
-			if ((strdata[c] < 0x20) || (strdata[c] > 0x7E))
+			if ((strdata[c] < 0x20) || (strdata[c] > 0x7E)) {
+				separator = 0;
 				break;
+			}
 			if (strdata[c] == '=') {
 				separator = c;
 				break;
@@ -1597,6 +1602,8 @@ mdns_record_parse_txt(const void* buffer, size_t size, size_t offset, size_t len
 		} else {
 			records[parsed].key.str = strdata;
 			records[parsed].key.length = sublength;
+			records[parsed].value.str = 0;
+			records[parsed].value.length = 0;
 		}
 
 		++parsed;
