@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/mjansson/mdns
 	branch = main
-	commit = c36996e067202691c562e2ea1ee59f9494c87231
-	parent = e175f25bbf6b131f3cdb52a4b6662412dbdd286a
+	commit = a569c4759bd47e0f2a7bfc4d4c19620445782806
+	parent = 2b41fadb0ae6aaab098847b64dd23ee38628f100
 	method = merge
-	cmdver = 0.4.3
+	cmdver = 0.4.9
