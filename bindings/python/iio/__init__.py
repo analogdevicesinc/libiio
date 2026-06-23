@@ -446,6 +446,11 @@ _set_timeout.argtypes = (
 )
 _set_timeout.errcheck = _check_negative
 
+_ping = _lib.iio_context_ping
+_ping.restype = c_int
+_ping.argtypes = (_ContextPtr,)
+_ping.errcheck = _check_negative
+
 _a_get_name = _lib.iio_attr_get_name
 _a_get_name.restype = c_char_p
 _a_get_name.argtypes = (_AttrPtr,)
@@ -1654,6 +1659,10 @@ class Context(_IIO_Object):
             The timeout value, in milliseconds
         """
         _set_timeout(self._context, timeout)
+
+    def ping(self):
+        """Ping the IIO context to check if it is still responsive."""
+        _ping(self._context)
 
     def find_device(self, name_or_id_or_label):
         """
