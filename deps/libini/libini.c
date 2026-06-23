@@ -17,8 +17,10 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ini.h"
 
@@ -27,7 +29,7 @@ struct INI {
 	bool free_buf_on_exit;
 };
 
-static struct INI *_ini_open_mem(const char *buf,
+static struct INI * internal_ini_open_mem(const char *buf,
 			size_t len, bool free_buf_on_exit)
 {
 	struct INI *ini = malloc(sizeof(*ini));
@@ -44,7 +46,7 @@ static struct INI *_ini_open_mem(const char *buf,
 
 struct INI *ini_open_mem(const char *buf, size_t len)
 {
-	return _ini_open_mem(buf, len, false);
+	return internal_ini_open_mem(buf, len, false);
 }
 
 struct INI *ini_open(const char *file)
@@ -54,6 +56,7 @@ struct INI *ini_open(const char *file)
 	size_t len, left;
 	struct INI *ini = NULL;
 	int ret = 0;
+	long pos;
 
 	f = fopen(file, "r");
 	if (!f) {
@@ -61,44 +64,88 @@ struct INI *ini_open(const char *file)
 		goto err_set_errno;
 	}
 
-	fseek(f, 0, SEEK_END);
-	ret = ftell(f);
-
-	if (ret <= 0) {
-		ret = -EINVAL;
+	/* Determine file size */
+	if (fseek(f, 0, SEEK_END)) {
+		ret = -errno;
 		goto error_fclose;
 	}
 
-	len = (size_t) ret;
+	pos = ftell(f);
+	if (pos < 0) {
+		ret = -errno;
+		goto error_fclose;
+	}
+
+	if (pos == 0) {
+		/* empty INI file */
+		ret = -EINVAL;
+		goto error_fclose;
+	}
+	if ((unsigned long)pos > SIZE_MAX) {
+		/* file too large to fit in size_t */
+		ret = -EOVERFLOW;
+		goto error_fclose;
+	}
+
+	/* rewind, without using rewind, as it can fail without returning errs */
+	if (fseek(f, 0, SEEK_SET)) {
+		ret = -errno;
+		goto error_fclose;
+	}
+
+	len = (size_t) pos;
 	buf = malloc(len);
 	if (!buf) {
 		ret = -ENOMEM;
 		goto error_fclose;
 	}
 
-	rewind(f);
-
 	for (left = len, ptr = buf; left; ) {
-		size_t tmp = fread(ptr, 1, left, f);
+		size_t tmp;
+		/* Defensive: do not read on an errored/EOF stream */
+		if (ferror(f)) {
+			ret = -EIO;
+			goto error_free;
+		}
+		if (feof(f))
+			break;
+
+		errno = 0;
+		tmp = fread(ptr, 1, left, f);
 		if (tmp == 0) {
 			if (feof(f))
 				break;
 
-			ret = -ferror(f);
-			free(buf);
-			goto error_fclose;
+			/* fread failed */
+			if(ferror(f)) {
+				ret = -EIO;
+				goto error_free;
+			}
+			/* Should not happen, but be defensive */
+			ret = -EIO;
+			goto error_free;
 		}
 
 		left -= tmp;
 		ptr += tmp;
 	}
 
-	ini = _ini_open_mem(buf, len - left, true);
-	if (!ini)
+	ini = internal_ini_open_mem(buf, len - left, true);
+	if (!ini) {
 		ret = -errno;
+		goto error_free;
+	}
 
+	/* Intentionally ignore fclose() return value.
+	 * Stream opened read-only; no meaningful recovery possible on close failure
+	 */
+	(void) fclose(f);
+	return ini;
+
+error_free:
+	free(buf);
 error_fclose:
-	fclose(f);
+	(void) fclose(f);
 err_set_errno:
 	errno = -ret;
 	return ini;
@@ -106,6 +153,8 @@ err_set_errno:
 
 void ini_close(struct INI *ini)
 {
+	if (!ini)
+		return;
 	if (ini->free_buf_on_exit)
 		free((char *) ini->buf);
 	free(ini);
@@ -147,31 +196,78 @@ static bool skip_line(struct INI *ini)
 int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 {
 	const char *_name;
+	if (!ini)
+		return -EIO;
+
 	if (ini->curr == ini->end)
 		return 0; /* EOF: no more sections */
 
+	/* skip comments at start of file or current position */
 	if (ini->curr == ini->buf) {
-		if (skip_comments(ini) || *ini->curr != '[')
+		if (skip_comments(ini))
 			return -EIO;
-	} else while (*ini->curr != '[' && !skip_line(ini));
+
+		// skip leading whitespace before the '[' char
+		while (ini->curr < ini->end && (*ini->curr == ' ' || *ini->curr == '\t'))
+			ini->curr++;
+
+		if (ini->curr == ini->end || *ini->curr != '[')
+			return -EIO;
+	} else while (ini->curr < ini->end && *ini->curr != '[' && !skip_line(ini));
 
 	if (ini->curr == ini->end)
 		return 0; /* EOF: no more sections */
 
-	_name = ++ini->curr;
-	do {
+	/* move past the '[' */
+	ini->curr++;
+
+	// skip leading whitespace after the '[' char
+	while (ini->curr < ini->end && (*ini->curr == ' ' || *ini->curr == '\t'))
 		ini->curr++;
-		if (ini->curr == ini->end || *ini->curr == '\n')
+
+	_name = ini->curr;
+	/* scan until closing ']' or end-of-line/end-of-buffer */
+	while (ini->curr < ini->end && *ini->curr != ']') {
+		if (*ini->curr == '\n' || *ini->curr == '[') {
+			/* newline or '[' inside section name is invalid */
 			return -EIO;
-	} while (*ini->curr != ']');
-
-
-	if (name && name_len) {
-		*name = _name;
-		*name_len = ini->curr - _name;
+		}
+		ini->curr++;
 	}
 
+	/* did we hit the end without finding ']'? */
+	if (ini->curr == ini->end)
+		return -EIO;
+
+	if (name && name_len) {
+		ptrdiff_t tmp_len = ini->curr - _name;
+		/* defensive, should never happen */
+		if (tmp_len < 0)
+			return -EIO;
+		/* trim trailing whitespace */
+		while (tmp_len > 0 && (_name[tmp_len-1] == ' ' || _name[tmp_len-1] == '\t'))
+			tmp_len--;
+		/* empty name is bad */
+		if (!tmp_len)
+			return -EIO;
+		*name = _name;
+		*name_len = (size_t)tmp_len;
+	}
+
+	/* skip over the ']' char */
 	ini->curr++;
+	/* look at the rest of the line */
+	while (ini->curr < ini->end && *ini->curr != '\n') {
+		/* let skip_comments() handle it */
+		if (*ini->curr == '#')
+			break;
+		/* eat white space */
+		if (*ini->curr == ' ' || *ini->curr == '\t' || *ini->curr == '\r')
+			ini->curr++;
+		else
+			return -EIO;
+	}
+
 	return 1;
 }
 
@@ -180,12 +276,23 @@ int ini_read_pair(struct INI *ini,
 			const char **value, size_t *value_len)
 {
 	size_t _key_len = 0;
-	const char *_key, *_value, *curr, *end = ini->end;
+	const char *_key, *_value, *curr, *end;
+	ptrdiff_t tmp_len;
+
+	if (!ini)
+		return -EIO;
+	end = ini->end;
 
 	if (skip_comments(ini))
 		return 0;
+
+	/* skip whitespace at the start of the line */
+	while (ini->curr < ini->end && (*ini->curr == ' ' || *ini->curr == '\t'))
+		ini->curr++;
+
 	curr = _key = ini->curr;
 
+	/* section header, not a key/value pair */
 	if (*curr == '[')
 		return 0;
 
@@ -196,8 +303,13 @@ int ini_read_pair(struct INI *ini,
 			return -EIO;
 
 		} else if (*curr == '=') {
-			const char *tmp = curr;
-			_key_len = curr - _key;
+			const char *tmp;
+			tmp_len = curr - _key;
+
+			/* defensive, should never happen */
+			if (tmp_len < 0)
+				return -EIO;
+			_key_len = (size_t)tmp_len;
 			for (tmp = curr - 1; tmp > ini->curr &&
 					(*tmp == ' ' || *tmp == '\t'); tmp--)
 				_key_len--;
@@ -206,19 +318,29 @@ int ini_read_pair(struct INI *ini,
 		}
 	}
 
-	/* Skip whitespaces. */
+	/* Skip whitespaces after the '=' */
 	while (curr != end && (*curr == ' ' || *curr == '\t')) curr++;
 	if (curr == end)
 		return -EIO;
 
 	_value = curr;
 
+	/* find the end of the value */
 	while (curr != end && *curr != '\n') curr++;
 	if (curr == end)
 		return -EIO;
 
 	*value = _value;
-	*value_len = curr - _value - (*(curr - 1) == '\r');
+	tmp_len = curr - _value - (*(curr - 1) == '\r');
+	/* defensive, should never happen */
+	if (tmp_len < 0)
+		return -EIO;
+	/* trim trailing whitespace */
+	while (tmp_len > 0 &&
+			(_value[tmp_len - 1] == ' ' || _value[tmp_len - 1] == '\t'))
+		tmp_len--;
+
+	*value_len = (size_t)tmp_len;
 	*key = _key;
 	*key_len = _key_len;
 
@@ -228,6 +350,9 @@ int ini_read_pair(struct INI *ini,
 
 void ini_set_read_pointer(struct INI *ini, const char *pointer)
 {
+	if (!ini)
+		return;
+
 	if ((uintptr_t) pointer < (uintptr_t) ini->buf)
 		ini->curr = ini->buf;
 	else if ((uintptr_t) pointer > (uintptr_t) ini->end)
@@ -241,6 +366,8 @@ int ini_get_line_number(struct INI *ini, const char *pointer)
 	int line = 1;
 	const char *it;
 
+	if (!ini)
+		return -EIO;
 	if ((uintptr_t) pointer < (uintptr_t) ini->buf)
 		return -EINVAL;
 	if ((uintptr_t) pointer > (uintptr_t) ini->end)

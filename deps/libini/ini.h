@@ -15,8 +15,8 @@
  * Lesser General Public License for more details.
  */
 
-#ifndef __INI_H
-#define __INI_H
+#ifndef LIBINI_H
+#define LIBINI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,26 +24,26 @@ extern "C" {
 
 #ifdef _WIN32
 #   ifdef ini_EXPORTS
-#	define __api __declspec(dllexport)
+#	define libini_api __declspec(dllexport)
 #   elif !defined(libini_STATIC)
-#	define __api __declspec(dllimport)
+#	define libini_api __declspec(dllimport)
 #	else
-#	define __api
+#	define libini_api
 #   endif
 #elif __GNUC__ >= 4
-#   define __api __attribute__((visibility ("default")))
+#   define libini_api __attribute__((visibility ("default")))
 #else
-#   define __api
+#   define libini_api
 #endif
 
 #include <stdlib.h>
 
 struct INI;
 
-__api struct INI *ini_open(const char *file);
-__api struct INI *ini_open_mem(const char *buf, size_t len);
+libini_api struct INI *ini_open(const char *file);
+libini_api struct INI *ini_open_mem(const char *buf, size_t len);
 
-__api void ini_close(struct INI *ini);
+libini_api void ini_close(struct INI *ini);
 
 /* Jump to the next section.
  * if 'name' is set, the pointer passed as argument
@@ -56,7 +56,7 @@ __api void ini_close(struct INI *ini);
  * 	0 if no more section can be found,
  * 	1 otherwise.
  */
-__api int ini_next_section(struct INI *ini,
+libini_api int ini_next_section(struct INI *ini,
 		const char **name, size_t *name_len);
 
 /* Read a key/value pair.
@@ -70,12 +70,21 @@ __api int ini_next_section(struct INI *ini,
  *  0 if no more key/value pairs can be found,
  *  1 otherwise.
  */
-__api int ini_read_pair(struct INI *ini,
+libini_api int ini_read_pair(struct INI *ini,
 			const char **key, size_t *key_len,
 			const char **value, size_t *value_len);
 
-/* Set the read head to a specified offset. */
-__api void ini_set_read_pointer(struct INI *ini, const char *pointer);
+/* Set the read head to a specified offset within the INI buffer.
+ *
+ * The pointer must point somewhere inside the buffer managed by this INI object.
+ * After calling this, ini_read_pair() or ini_next_section() will continue
+ * reading from the new position.
+ *
+ * WARNING: The library does not enforce any bounds or detect backward loops.
+ * It is the caller's responsibility to avoid moving the read pointer in a way
+ * that could cause infinite loops or repeated reads.
+ */
+libini_api void ini_set_read_pointer(struct INI *ini, const char *pointer);
 
 /* Get the number of the line that contains the specified address.
  *
@@ -83,12 +92,12 @@ __api void ini_set_read_pointer(struct INI *ini, const char *pointer);
  * -EINVAL if the pointer points outside the INI string,
  *  The line number otherwise.
  */
-__api int ini_get_line_number(struct INI *ini, const char *pointer);
+libini_api int ini_get_line_number(struct INI *ini, const char *pointer);
 
 #ifdef __cplusplus
 }
 #endif
 
-#undef __api
+#undef libini_api
 
-#endif /* __INI_H */
+#endif /* LIBINI_H */
