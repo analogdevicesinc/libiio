@@ -1,7 +1,7 @@
 project(
   'wingetopt',
   'c',
-  version: '0.95',
+  version: '1.00',
   license : ['ISC', 'BSD-3-Clause'],
   meson_version: '>= 0.55',
   default_options: [
@@ -33,7 +33,10 @@ wingetopt_lib = library(
     'src',
   ),
   c_args: c_args,
+  install: true,
 )
+
+install_headers('src/getopt.h')
 
 wingetopt_dep = declare_dependency(
   link_with: wingetopt_lib,

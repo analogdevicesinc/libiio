@@ -519,7 +519,7 @@ start:
  *
  * [eventually this will replace the BSD getopt]
  */
-int
+WINGETOPT_API int
 getopt(int nargc, char * const *nargv, const char *options)
 {
 
@@ -539,7 +539,7 @@ getopt(int nargc, char * const *nargv, const char *options)
  * getopt_long --
  *	Parse argc/argv argument vector.
  */
-int
+WINGETOPT_API int
 getopt_long(int nargc, char * const *nargv, const char *options,
     const struct option *long_options, int *idx)
 {
@@ -552,7 +552,7 @@ getopt_long(int nargc, char * const *nargv, const char *options,
  * getopt_long_only --
  *	Parse argc/argv argument vector.
  */
-int
+WINGETOPT_API int
 getopt_long_only(int nargc, char * const *nargv, const char *options,
     const struct option *long_options, int *idx)
 {
