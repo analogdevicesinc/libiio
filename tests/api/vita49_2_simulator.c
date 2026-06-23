@@ -31,32 +31,30 @@ int main()
     addr.sin_addr.s_addr = inet_addr(destination_ip);
 
     // Create a Control Packet to Request IQ Data
-    struct vita49_2_control_packet control_packet = {0};
-    control_packet.command_prologue.common_prologue.header.packet_count = 1;
-    control_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
-    control_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
-    control_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
-    control_packet.command_prologue.common_prologue.header.has_class_id = 1;
+    struct vita49_2_control_packet request_iq_packet = {0};
+    request_iq_packet.command_prologue.common_prologue.header.packet_count = 1;
+    request_iq_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+    request_iq_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+    request_iq_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+    request_iq_packet.command_prologue.common_prologue.header.has_class_id = 1;
 
-    control_packet.command_prologue.common_prologue.has_timestamp_int = 1;
-    control_packet.command_prologue.common_prologue.has_timestamp_frac = 0;
+    request_iq_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+    request_iq_packet.command_prologue.common_prologue.has_timestamp_frac = 0;
 
-    control_packet.command_prologue.common_prologue.stream_id = 1;
-    control_packet.command_prologue.common_prologue.has_stream_id = 1;
+    request_iq_packet.command_prologue.common_prologue.stream_id = 1;
+    request_iq_packet.command_prologue.common_prologue.has_stream_id = 1;
 
-    control_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI; 
-    control_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST;
-    control_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
-    control_packet.command_prologue.common_prologue.has_class_id = 1;
+    request_iq_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI; 
+    request_iq_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST;
+    request_iq_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+    request_iq_packet.command_prologue.common_prologue.has_class_id = 1;
 
-    control_packet.command_prologue.control_cam = calloc(1, sizeof(*control_packet.command_prologue.control_cam));
-    if (control_packet.command_prologue.control_cam == NULL)
+    request_iq_packet.command_prologue.control_cam = calloc(1, sizeof(*request_iq_packet.command_prologue.control_cam));
+    if (request_iq_packet.command_prologue.control_cam == NULL)
     {
         fprintf(stderr, "Failed to allocate memory for CAM field.\n");
         return 1;
     }
-
-    ssize_t request_iq_packet_size;
 
 
     // Create a Control Packet to Change the Sampling Frequency
@@ -91,11 +89,20 @@ int main()
     sampling_freq_packet.cif0.cif0_word.has_sample_rate = 1;
     sampling_freq_packet.cif0.sample_rate = 2083333.2345;
 
-    ssize_t sampling_freq_packet_size;
 
 
+    ssize_t packet_size;
 
-    if ((request_iq_packet_size = vita49_2_generate_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
+
+    // Uncomment to send a packet to change the sample rate
+    // if ((packet_size = vita49_2_generate_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
+    // {
+    //     fprintf(stderr, "Failed to serialize Control Packet!\n");
+    //     return 1;
+    // }
+
+    // Uncomment to instead send a packet to request IQ data
+    if ((packet_size = vita49_2_generate_control_packet(&request_iq_packet, packet, sizeof(packet)/4)) < 0)
     {
         fprintf(stderr, "Failed to serialize Control Packet!\n");
         return 1;
@@ -104,7 +111,7 @@ int main()
     while (1) 
     {
         printf("Sending VITA 49.2 Control Packet to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
-        if (sendto(fd, packet, request_iq_packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
         {
             perror("sendto");
         }
