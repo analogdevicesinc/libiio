@@ -28,6 +28,7 @@
 #include <time.h>
 #include <math.h>
 #include <sys/timerfd.h>
+#include <float.h>
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
@@ -47,6 +48,8 @@
 #define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent VITA 49.2 connections/packet streams.
 
 #define CONTEXT_PACKET_INTERVAL_S 3 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
+
+#define EPSILON
 
 // I don't want to expose the function declarations listed below to other files, hence why I'm
 // not putting them in the header file.
@@ -103,7 +106,70 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
  */
 int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* ackV_packet);
 
-int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif0_bit, uint32_t new_value);
+/**
+ * @brief Validates a specific command that takes a uint32_t attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint32_t new_value);
+
+/**
+ * @brief Validates a specific command that takes a uint64_t attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint64_t new_value);
+
+/**
+ * @brief Validates a specific command that takes a int64_t attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, int64_t new_value);
+
+/**
+ * @brief Validates a specific command that takes a float attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, float new_value);
+
+/**
+ * @brief Validates a specific command that takes a double attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, double new_value);
 
 /**
  * @brief Looks at the CIF mappings and queries libiio for the current value of the attributes in the CIF mappings and writes them to a Context Packet struct.
@@ -115,6 +181,36 @@ int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif0
  * @return int 
  */
 int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet* context_packet);
+
+/**
+ * @brief More precise way of comparing doubles. Takes into account scaling.
+ * 
+ * Returns true if the 2 doubles are equal.
+ * 
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+static inline bool double_compare(double a, double b)
+{
+	return fabs(a - b) <= DBL_EPSILON * fmax(fabs(a), fabs(b));
+}
+
+/**
+ * @brief More precise way of comparing floats. Takes into account scaling.
+ * 
+ * Returns true if the 2 floats are equal.
+ * 
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+static inline bool float_compare(float a, float b)
+{
+	return fabs(a - b) <= FLT_EPSILON * fmax(fabs(a), fabs(b));
+}
 
 // ==============================================================
 // GLOBAL VARIABLES
@@ -547,7 +643,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// CONTEXT PACKET SETUP
 	// ==============================================================
 
-	struct vita49_2_context_packet context_packet;
+	struct vita49_2_context_packet context_packet = {0}, previous_context_packet = {0};
 	
 	context_packet.prologue.header.indicators = (1 << 0);					// See Rule 7.1.1-4 in the VITA 49.2 Full Spec document. Setting bit 24 to 1 indicates Context Data is reflecting general timing of events.
 	context_packet.prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
@@ -1017,7 +1113,150 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				context_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
 				context_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
 			}
-			
+
+
+			// Checking if this Context Packet has changed. There's a CIF0 field called "Context Field Change Indicator" which when asserted
+			// indicates that the attribute data in this packet has changed since the previous Context Packet.
+
+			// Pointers to make addressing easier (less typing)
+			struct vita49_2_cif0_fields *current_cif0_ptr = &context_packet.cif0;
+			struct vita49_2_cif0_fields *previous_cif0_ptr = &previous_context_packet.cif0;
+			struct cif0_word *current_cif0_word_ptr = &context_packet.cif0.cif0_word;
+
+			current_cif0_word_ptr->context_field_change = 0;
+			previous_cif0_ptr->cif0_word.context_field_change = 0;
+
+			// First let's check if the previous packet was ever initialized to anything besides 0. If it was only initialized to 0,
+			// then this represents the first time a Context Packet is being sent, thus "Context Field Change Indicator" should be asserted.
+			if (previous_context_packet.prologue.header.packet_type != 0)
+			{
+				// Now to do an attribute-by-attribute comparison of the present CIF0 fields. I can't just use memcmp
+				// because structs have padding bytes which can differ between 2 structs with the same attribute values.
+
+				uint32_t current_cif0_word, previous_cif0_word;
+				memcpy(&current_cif0_word, &context_packet.cif0.cif0_word, sizeof(current_cif0_word));
+				memcpy(&previous_cif0_word, &previous_context_packet.cif0.cif0_word, sizeof(previous_cif0_word));
+				
+				// Checking for a difference in what fields are present/enabled
+				if (current_cif0_word != previous_cif0_word)
+					current_cif0_word_ptr->context_field_change = 1;
+
+				// If the same fields are present, we have to compare each field individually to check for differing values
+				else
+				{
+					if (current_cif0_ptr->reference_point_id != previous_cif0_ptr->reference_point_id)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!double_compare(current_cif0_ptr->bandwidth, previous_cif0_ptr->bandwidth))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!double_compare(current_cif0_ptr->if_reference_frequency, previous_cif0_ptr->if_reference_frequency))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!double_compare(current_cif0_ptr->rf_reference_frequency, previous_cif0_ptr->rf_reference_frequency))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!double_compare(current_cif0_ptr->rf_reference_frequency_offset, previous_cif0_ptr->rf_reference_frequency_offset))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!double_compare(current_cif0_ptr->if_band_offset, previous_cif0_ptr->if_band_offset))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!float_compare(current_cif0_ptr->reference_level, previous_cif0_ptr->reference_level))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!float_compare(current_cif0_ptr->gain_stage_1, previous_cif0_ptr->gain_stage_1) || !float_compare(current_cif0_ptr->gain_stage_2, previous_cif0_ptr->gain_stage_2))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_ptr->over_range_count != previous_cif0_ptr->over_range_count)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!double_compare(current_cif0_ptr->sample_rate, previous_cif0_ptr->sample_rate))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_ptr->timestamp_adjustment != previous_cif0_ptr->timestamp_adjustment)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_ptr->timestamp_calibration_time_int != previous_cif0_ptr->timestamp_calibration_time_int)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!float_compare(current_cif0_ptr->temperature, previous_cif0_ptr->if_band_offset))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					// Skipping the device identifier struct (that shouldn't change between Context Packets)
+
+					else if (current_cif0_ptr->state_and_event_indicators != previous_cif0_ptr->state_and_event_indicators)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					// Only checking the Data Packet Payload Format struct if it's enabled
+					else if (current_cif0_word_ptr->has_data_packet_payload_format)
+					{
+						uint32_t current_packet_word, previous_packet_word;
+
+						memcpy(&current_packet_word, &current_cif0_ptr->data_packet_payload_format.lower_word, sizeof(current_packet_word));
+						memcpy(&previous_packet_word, &previous_cif0_ptr->data_packet_payload_format.lower_word, sizeof(previous_packet_word));
+
+						if (current_packet_word != previous_packet_word)
+							current_cif0_word_ptr->context_field_change = 1;
+						else
+						{
+							memcpy(&current_packet_word, &current_cif0_ptr->data_packet_payload_format.upper_word, sizeof(current_packet_word));
+							memcpy(&previous_packet_word, &previous_cif0_ptr->data_packet_payload_format.upper_word, sizeof(previous_packet_word));
+
+							if (current_packet_word != previous_packet_word)
+								current_cif0_word_ptr->context_field_change = 1;
+						}
+					}
+
+					// TODO: Currently the vita49_2_formatted_gps_ins, vita49_2_gps_ascii, vita49_2_ecef_relative_ephemeris, and vita49_2_context_association_lists
+					// structs haven't been fully defined, so I'm unable to implement the comparison logic for that.
+					// Once they've been defined, that logic needs to be added here.
+					else if (current_cif0_word_ptr->has_formatted_gps)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_formatted_ins)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_ecef_ephemeris)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_relative_ephemeris)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_ptr->ephemeris_ref_id != previous_cif0_ptr->ephemeris_ref_id)
+							current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_word_ptr->has_gps_ascii)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_context_association_lists)
+					{
+						// TODO: See the above TODO
+					}
+				}
+
+				// I haven't fully defined the CIF1/2/3/7 structs yet, so the logic for that needs to be implemented
+
+				// TODO: Logic for checking CIF1 fields
+				
+				// TODO: Logic for checking CIF2 fields
+				
+				// TODO: Logic for checking CIF3 fields
+				
+				// TODO: Logic for checking CIF7 fields
+
+			}
+
 			if ((context_packet_size = vita49_2_generate_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet.\n");
@@ -1026,6 +1265,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			if (sendto(socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&sender_address, address_length) <= 0)
 				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP. Error %d: %s\n", errno, strerror(errno));
+			else
+				previous_context_packet = context_packet;
 		}
 	}
 
@@ -1553,7 +1794,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 		return ret_value;
 }
 
-int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint32_t new_value)
+enum vita49_2_warnings_error_codes validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint32_t new_value)
 {
 	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
 		return -EBADARGS;
@@ -1610,7 +1851,7 @@ int validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	return -EGENERIC;
 }
 
-int validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint64_t new_value)
+enum vita49_2_warnings_error_codes validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint64_t new_value)
 {
 	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
 		return -EBADARGS;
@@ -1667,7 +1908,7 @@ int validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_
 	return -EGENERIC;
 }
 
-int validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, int64_t new_value)
+enum vita49_2_warnings_error_codes validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, int64_t new_value)
 {
 	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
 		return -EBADARGS;
@@ -2069,7 +2310,7 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 	// 4 = int64
 	// 5 = uint32
 
-	static const uint32_t cif0_type_table[] = {
+	const uint32_t cif0_type_table[] = {
 		1,		// CIF0 0 - Reserved
 		1,		// CIF0 1 - CIF 1 Enable
 		1,		// CIF0 2 - CIF 2 Enable

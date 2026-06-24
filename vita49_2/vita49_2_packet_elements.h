@@ -872,7 +872,6 @@ struct vita49_2_cif7_fields {
 	struct cif7_word {} cif7_word;
 };
 
-
 #if defined(_WIN32)
 #  if defined(LIBIIO_EXPORTS)
 #    define __vrt_api __declspec(dllexport)

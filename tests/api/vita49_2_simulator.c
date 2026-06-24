@@ -87,7 +87,7 @@ int main()
     sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
 
     sampling_freq_packet.cif0.cif0_word.has_sample_rate = 1;
-    sampling_freq_packet.cif0.sample_rate = 2083333.2345;
+    sampling_freq_packet.cif0.sample_rate = 2083334;
 
 
 
@@ -95,18 +95,18 @@ int main()
 
 
     // Uncomment to send a packet to change the sample rate
-    // if ((packet_size = vita49_2_generate_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
-    // {
-    //     fprintf(stderr, "Failed to serialize Control Packet!\n");
-    //     return 1;
-    // }
-
-    // Uncomment to instead send a packet to request IQ data
-    if ((packet_size = vita49_2_generate_control_packet(&request_iq_packet, packet, sizeof(packet)/4)) < 0)
+    if ((packet_size = vita49_2_generate_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
     {
         fprintf(stderr, "Failed to serialize Control Packet!\n");
         return 1;
     }
+
+    // Uncomment to instead send a packet to request IQ data
+    // if ((packet_size = vita49_2_generate_control_packet(&request_iq_packet, packet, sizeof(packet)/4)) < 0)
+    // {
+    //     fprintf(stderr, "Failed to serialize Control Packet!\n");
+    //     return 1;
+    // }
 
     while (1) 
     {
