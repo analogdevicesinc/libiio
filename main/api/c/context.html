@@ -116,6 +116,7 @@
 <li><a class="reference internal" href="#_CPPv422iio_context_get_paramsPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_params()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv420iio_context_set_dataP11iio_contextPv"><code class="docutils literal notranslate"><span class="pre">iio_context_set_data()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv420iio_context_get_dataPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_data()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv416iio_context_pingP11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_ping()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv411iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context</span></code></a></li>
 </ul>
 </li>
@@ -597,6 +598,24 @@ Introduced in version 0.9. </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The pointer previously associated if present, or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv416iio_context_pingP11iio_context">
+<span id="_CPPv316iio_context_pingP11iio_context"></span><span id="_CPPv216iio_context_pingP11iio_context"></span><span id="iio_context_ping__iio_contextP"></span><span class="target" id="group__Context_1ga8d2c5128c34b91a6cfe970ad9319982c"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_ping</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv416iio_context_pingP11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Ping the IIO context to check if it is still responsive. </p>
+<p><strong>NOTE:</strong> This performs a lightweight round-trip operation to verify the connection is still alive. It does not access hardware or change any device state. This operation is only meaningful for remote contexts (network, USB, serial). For local contexts, it always succeeds. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned</p>
 </dd>
 </dl>
 </dd></dl>

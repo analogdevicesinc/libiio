@@ -105,6 +105,7 @@
 <li><a class="reference internal" href="#iio.Context.devices"><code class="docutils literal notranslate"><span class="pre">Context.devices</span></code></a></li>
 <li><a class="reference internal" href="#iio.Context.find_device"><code class="docutils literal notranslate"><span class="pre">Context.find_device()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Context.name"><code class="docutils literal notranslate"><span class="pre">Context.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.Context.ping"><code class="docutils literal notranslate"><span class="pre">Context.ping()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Context.set_timeout"><code class="docutils literal notranslate"><span class="pre">Context.set_timeout()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Context.version"><code class="docutils literal notranslate"><span class="pre">Context.version</span></code></a></li>
 <li><a class="reference internal" href="#iio.Context.xml"><code class="docutils literal notranslate"><span class="pre">Context.xml</span></code></a></li>
@@ -116,6 +117,7 @@
 <li><a class="reference internal" href="#iio.LocalContext.devices"><code class="docutils literal notranslate"><span class="pre">LocalContext.devices</span></code></a></li>
 <li><a class="reference internal" href="#iio.LocalContext.find_device"><code class="docutils literal notranslate"><span class="pre">LocalContext.find_device()</span></code></a></li>
 <li><a class="reference internal" href="#iio.LocalContext.name"><code class="docutils literal notranslate"><span class="pre">LocalContext.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.LocalContext.ping"><code class="docutils literal notranslate"><span class="pre">LocalContext.ping()</span></code></a></li>
 <li><a class="reference internal" href="#iio.LocalContext.set_timeout"><code class="docutils literal notranslate"><span class="pre">LocalContext.set_timeout()</span></code></a></li>
 <li><a class="reference internal" href="#iio.LocalContext.version"><code class="docutils literal notranslate"><span class="pre">LocalContext.version</span></code></a></li>
 <li><a class="reference internal" href="#iio.LocalContext.xml"><code class="docutils literal notranslate"><span class="pre">LocalContext.xml</span></code></a></li>
@@ -127,6 +129,7 @@
 <li><a class="reference internal" href="#iio.XMLContext.devices"><code class="docutils literal notranslate"><span class="pre">XMLContext.devices</span></code></a></li>
 <li><a class="reference internal" href="#iio.XMLContext.find_device"><code class="docutils literal notranslate"><span class="pre">XMLContext.find_device()</span></code></a></li>
 <li><a class="reference internal" href="#iio.XMLContext.name"><code class="docutils literal notranslate"><span class="pre">XMLContext.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.XMLContext.ping"><code class="docutils literal notranslate"><span class="pre">XMLContext.ping()</span></code></a></li>
 <li><a class="reference internal" href="#iio.XMLContext.set_timeout"><code class="docutils literal notranslate"><span class="pre">XMLContext.set_timeout()</span></code></a></li>
 <li><a class="reference internal" href="#iio.XMLContext.version"><code class="docutils literal notranslate"><span class="pre">XMLContext.version</span></code></a></li>
 <li><a class="reference internal" href="#iio.XMLContext.xml"><code class="docutils literal notranslate"><span class="pre">XMLContext.xml</span></code></a></li>
@@ -138,6 +141,7 @@
 <li><a class="reference internal" href="#iio.NetworkContext.devices"><code class="docutils literal notranslate"><span class="pre">NetworkContext.devices</span></code></a></li>
 <li><a class="reference internal" href="#iio.NetworkContext.find_device"><code class="docutils literal notranslate"><span class="pre">NetworkContext.find_device()</span></code></a></li>
 <li><a class="reference internal" href="#iio.NetworkContext.name"><code class="docutils literal notranslate"><span class="pre">NetworkContext.name</span></code></a></li>
+<li><a class="reference internal" href="#iio.NetworkContext.ping"><code class="docutils literal notranslate"><span class="pre">NetworkContext.ping()</span></code></a></li>
 <li><a class="reference internal" href="#iio.NetworkContext.set_timeout"><code class="docutils literal notranslate"><span class="pre">NetworkContext.set_timeout()</span></code></a></li>
 <li><a class="reference internal" href="#iio.NetworkContext.version"><code class="docutils literal notranslate"><span class="pre">NetworkContext.version</span></code></a></li>
 <li><a class="reference internal" href="#iio.NetworkContext.xml"><code class="docutils literal notranslate"><span class="pre">NetworkContext.xml</span></code></a></li>
@@ -331,6 +335,12 @@ type=str</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="iio.Context.ping">
+<span class="sig-name descname"><span class="pre">ping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iio.Context.ping" title="Link to this definition"></a></dt>
+<dd><p>Ping the IIO context to check if it is still responsive.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="iio.Context.set_timeout">
 <span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Context.set_timeout" title="Link to this definition"></a></dt>
 <dd><p>Set a timeout for I/O operations.</p>
@@ -404,6 +414,12 @@ The name, ID or label of the device to find</p>
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.LocalContext.name" title="Link to this definition"></a></dt>
 <dd><p>Name of this IIO context.
 type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.LocalContext.ping">
+<span class="sig-name descname"><span class="pre">ping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iio.LocalContext.ping" title="Link to this definition"></a></dt>
+<dd><p>Ping the IIO context to check if it is still responsive.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -483,6 +499,12 @@ type=str</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="iio.XMLContext.ping">
+<span class="sig-name descname"><span class="pre">ping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext.ping" title="Link to this definition"></a></dt>
+<dd><p>Ping the IIO context to check if it is still responsive.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="iio.XMLContext.set_timeout">
 <span class="sig-name descname"><span class="pre">set_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.XMLContext.set_timeout" title="Link to this definition"></a></dt>
 <dd><p>Set a timeout for I/O operations.</p>
@@ -556,6 +578,12 @@ The name, ID or label of the device to find</p>
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#iio.NetworkContext.name" title="Link to this definition"></a></dt>
 <dd><p>Name of this IIO context.
 type=str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.NetworkContext.ping">
+<span class="sig-name descname"><span class="pre">ping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iio.NetworkContext.ping" title="Link to this definition"></a></dt>
+<dd><p>Ping the IIO context to check if it is still responsive.</p>
 </dd></dl>
 
 <dl class="py method">

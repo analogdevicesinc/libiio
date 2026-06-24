@@ -102,6 +102,7 @@
 <li><a class="reference internal" href="#function-iio.Context.Context"><code class="docutils literal notranslate"><span class="pre">Context()</span></code></a></li>
 <li><a class="reference internal" href="#function-iio.Context.get_device"><code class="docutils literal notranslate"><span class="pre">get_device()</span></code></a></li>
 <li><a class="reference internal" href="#function-iio.Context.set_timeout"><code class="docutils literal notranslate"><span class="pre">set_timeout()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Context.ping"><code class="docutils literal notranslate"><span class="pre">ping()</span></code></a></li>
 <li><a class="reference internal" href="#function-iio.Context.GetContextParams"><code class="docutils literal notranslate"><span class="pre">GetContextParams()</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Context.xml"><code class="docutils literal notranslate"><span class="pre">xml</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Context.name"><code class="docutils literal notranslate"><span class="pre">name</span></code></a></li>
@@ -313,6 +314,17 @@ Content on this topic
 </dd>
 <dt class="field-even">Throws IioLib.IIOException<span class="colon">:</span></dt>
 <dd class="field-even"><p>The timeout could not be applied.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Context.ping">
+<span class="target" id="classiio_1_1Context_1a9c81cd47720f76781eb20edcbef79433"></span><span class="pre">void</span> <span class="sig-name descname"><span class="pre">ping</span></span> <span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Context.ping" title="Link to this definition"></a></dt>
+<dd><p>Ping the IIO context to check if it is still responsive. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The context did not respond.</p>
 </dd>
 </dl>
 </dd></dl>
