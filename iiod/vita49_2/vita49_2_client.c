@@ -781,7 +781,16 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						fprintf(stderr, "vita49_2_client: Unable to parse Signal Data Packet with Stream ID.\n");
 					}
 
-					// TODO: Logic to parse the data in this packet and have the device transmit it
+					// Checking that this is a Signal Time Data Packet and not a Signal Spectrum Data Packet.
+					if (tx_data_packet.prologue.header.indicators & 1)
+					{
+						fprintf(stderr, "vita49_2_client: Received a Signal Spectrum Data Packet. Skipping processing.\n");
+						continue;
+					}
+
+
+					// TODO: Logic to parse the data in this packet and have the device transmit it. Make sure to check if a trailer
+					// was included and what bits in the trailer were asserted. See Table 5.1.6-1 in the VITA 49.2 full spec document.
 				}
 
 				// Extension Data Packet without Stream ID
@@ -803,8 +812,9 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 				// Extension Context Packet
 				case VITA49_2_PKT_TYPE_EXT_CONTEXT:
-					// TODO: ADI doesn't support this packet as of yet, though we retain the right to implement it in the future.
-					break;
+					// Same issue as with the regular Context Packet.
+					fprintf(stderr, "vita49_2_client: Received an Extension Context Packet. Skipping processing.\n");
+					continue;
 
 				// Command Packet
 				case VITA49_2_PKT_TYPE_COMMAND:
@@ -814,6 +824,13 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						// AckV
 						// AckX
 						// AckS
+
+					// If bit 24 is asserted (implies Cancellation Packet), then we need to skip processing as we currently don't support it.
+					if (received_header.indicators & 1)
+					{
+						fprintf(stderr, "vita49_2_client: Cancellation Packets are unsupported at this time. Skipping processing.\n");
+						continue;
+					}
 
 					// Indicator bit 26 can be used to determine if we have a Control Packet or an Acknowledge Packet.
 					if (received_header.indicators & (1 << 2))
