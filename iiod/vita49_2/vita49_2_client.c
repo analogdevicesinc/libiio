@@ -1029,72 +1029,88 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							if (validate_commands(arguments->ctx, &control_packet, &ackV_packet) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet.\n");
+								goto cleanup_ackv;
 							}
+							
+							// Populating the rest of the AckV Packet
+							ackV_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
+
+							stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+							stream_entry.host_port = sender_address.sin_port;
+							stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+							stream_entry.stream_id = next_ackx_ackv_stream_id;
+
+							ssize_t ret_value;
+
+							// Error occurred
+							if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckV Packet that was to be sent.\n");
+								goto cleanup_ackv;
+							}
+
+							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+							if (ret_value > last_insertion_index)
+							{
+								ackV_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+								ackV_packet.command_prologue.common_prologue.header.packet_count = 0;
+							
+								device_stream_id_table[ret_value].packet_count = 0;
+
+								last_insertion_index++;
+								next_ackx_ackv_stream_id++;
+							}
+							// Otherwise that means the element already existed in the array.
 							else
 							{
-								// Populating the rest of the AckV Packet
-								ackV_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
-
-								stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
-								stream_entry.host_port = sender_address.sin_port;
-								stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
-								stream_entry.stream_id = next_ackx_ackv_stream_id;
-
-								ssize_t ret_value;
-
-								// Error occurred
-								if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
-								{
-									fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckV Packet that was to be sent.\n");
-									continue;
-								}
-
-								// If the return value is greater than the last_insertion_index, that means a new element was inserted.
-								if (ret_value > last_insertion_index)
-								{
-									ackV_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
-									ackV_packet.command_prologue.common_prologue.header.packet_count = 0;
-								
-									device_stream_id_table[ret_value].packet_count = 0;
-
-									last_insertion_index++;
-									next_ackx_ackv_stream_id++;
-								}
-								// Otherwise that means the element already existed in the array.
-								else
-								{
-									ackV_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
-									ackV_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
-								}
-
-								ackV_packet.command_prologue.message_id = control_packet.command_prologue.message_id;
-
-								// Determining if we should assert the Warnings Present bit in the CAM
-								if (ackV_packet.warnings_payload_num_words > 0)
-									ackV_packet.command_prologue.ack_cam->warnings_present = 1;
-
-								// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
-								ackV_packet.command_prologue.ack_cam->reserved_21 = 0;
-								ackV_packet.command_prologue.ack_cam->nack 					= control_packet.command_prologue.control_cam->nack;
-								ackV_packet.command_prologue.ack_cam->action_bits 			= control_packet.command_prologue.control_cam->action_bits;
-								ackV_packet.command_prologue.ack_cam->errors				= control_packet.command_prologue.control_cam->errors;
-								ackV_packet.command_prologue.ack_cam->warnings				= control_packet.command_prologue.control_cam->warnings;
-								ackV_packet.command_prologue.ack_cam->partial_execution		= control_packet.command_prologue.control_cam->partial_execution;
-								ackV_packet.command_prologue.ack_cam->controller_id_format	= control_packet.command_prologue.control_cam->controller_id_format;
-								ackV_packet.command_prologue.ack_cam->has_controller_id		= control_packet.command_prologue.control_cam->has_controller_id;
-								ackV_packet.command_prologue.ack_cam->controllee_id_format	= control_packet.command_prologue.control_cam->controllee_id_format;
-								ackV_packet.command_prologue.ack_cam->has_controllee_id		= control_packet.command_prologue.control_cam->has_controllee_id;
-
-								// Copying the Controller and Controllee ID information from the Control Packet
-								memcpy(&ackV_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackV_packet.command_prologue.controller_id));
-								memcpy(&ackV_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackV_packet.command_prologue.controllee_id));
-
-								// Now to write that data to a buffer and send it
-								if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
-									fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
-								else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
-									fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP.\n");
+								ackV_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+								ackV_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
 							}
+
+							ackV_packet.command_prologue.message_id = control_packet.command_prologue.message_id;
+
+							// Determining if we should assert the Warnings Present bit in the CAM
+							if (ackV_packet.warnings_payload_num_words > 0)
+								ackV_packet.command_prologue.ack_cam->warnings_present = 1;
+
+							// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
+							ackV_packet.command_prologue.ack_cam->reserved_21 = 0;
+							ackV_packet.command_prologue.ack_cam->nack 					= control_packet.command_prologue.control_cam->nack;
+							ackV_packet.command_prologue.ack_cam->action_bits 			= control_packet.command_prologue.control_cam->action_bits;
+							ackV_packet.command_prologue.ack_cam->errors				= control_packet.command_prologue.control_cam->errors;
+							ackV_packet.command_prologue.ack_cam->warnings				= control_packet.command_prologue.control_cam->warnings;
+							ackV_packet.command_prologue.ack_cam->partial_execution		= control_packet.command_prologue.control_cam->partial_execution;
+							ackV_packet.command_prologue.ack_cam->controller_id_format	= control_packet.command_prologue.control_cam->controller_id_format;
+							ackV_packet.command_prologue.ack_cam->has_controller_id		= control_packet.command_prologue.control_cam->has_controller_id;
+							ackV_packet.command_prologue.ack_cam->controllee_id_format	= control_packet.command_prologue.control_cam->controllee_id_format;
+							ackV_packet.command_prologue.ack_cam->has_controllee_id		= control_packet.command_prologue.control_cam->has_controllee_id;
+
+							// Copying the Controller and Controllee ID information from the Control Packet
+							memcpy(&ackV_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackV_packet.command_prologue.controller_id));
+							memcpy(&ackV_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackV_packet.command_prologue.controllee_id));
+
+							// Now to write that data to a buffer and send it
+							if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
+							else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP.\n");
+
+							cleanup_ackv:
+							free(ackV_packet.cif1_warnings);
+							free(ackV_packet.cif2_warnings);
+							free(ackV_packet.cif3_warnings);
+							free(ackV_packet.cif7_warnings);
+
+							ackV_packet.cif1_warnings = NULL;
+							ackV_packet.cif2_warnings = NULL;
+							ackV_packet.cif3_warnings = NULL;
+							ackV_packet.cif7_warnings = NULL;
+
+							free(ackV_packet.warnings_payload);
+							ackV_packet.warnings_payload = NULL;
+							ackV_packet.warnings_payload_num_words = 0;
+
+							memset(&ackV_packet.cif0_warnings, 0, sizeof(ackV_packet.cif0_warnings));
 						}
 
 						// Now to execute the commands in the packet. Currently ADI only supports Execute Mode and No-Action Mode for Control Packets,
@@ -1122,7 +1138,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							if (acquire_context_data(arguments->ctx, &ackS_packet.cif0, ackS_packet.cif1, ackS_packet.cif2, ackS_packet.cif3, ackS_packet.cif7, &control_packet) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Error while acquiring data for AckS Packet.\n");
-								continue;
+								goto cleanup_ackS;
 							}
 
 							// Writing the remaining information before sending the packet
@@ -1139,7 +1155,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckS Packet that was to be sent.\n");
-								continue;
+								goto cleanup_ackS;
 							}
 
 							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
@@ -1181,6 +1197,23 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								fprintf(stderr, "vita49_2_client: Failed to serialize AckS Packet.\n");
 							else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP.\n");
+
+							cleanup_ackS:
+							free(ackS_packet.cif1);
+							free(ackS_packet.cif2);
+							free(ackS_packet.cif3);
+							free(ackS_packet.cif7);
+							
+							ackS_packet.cif1 = NULL;
+							ackS_packet.cif2 = NULL;
+							ackS_packet.cif3 = NULL;
+							ackS_packet.cif7 = NULL;
+							
+							free(ackS_packet.payload);
+							ackS_packet.payload = NULL;
+							ackS_packet.payload_num_words = 0;
+
+							memset(&ackS_packet.cif0, 0, sizeof(ackS_packet.cif0));
 						}
 
 						break;
@@ -1223,7 +1256,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 			if (acquire_context_data(arguments->ctx, &context_packet.cif0, context_packet.cif1, context_packet.cif2, context_packet.cif3, context_packet.cif7, NULL) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Error while acquiring data for Context Packet.\n");
-				continue;
+				goto cleanup_context;
 			}
 
 			// Writing the remaining information before sending the packet
@@ -1240,7 +1273,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 			if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Context Packet that was to be sent.\n");
-				continue;
+				goto cleanup_context;
 			}
 
 			// If the return value is greater than the last_insertion_index, that means a new element was inserted.
@@ -1406,13 +1439,26 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 			if ((context_packet_size = vita49_2_generate_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet.\n");
-				continue;
+				goto cleanup_context;
 			}
 
 			if (sendto(socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&sender_address, address_length) <= 0)
 				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP. Error %d: %s\n", errno, strerror(errno));
 			else
 				previous_context_packet = context_packet;
+
+			cleanup_context:
+			free(context_packet.cif1);
+			free(context_packet.cif2);
+			free(context_packet.cif3);
+			free(context_packet.cif7);
+
+			context_packet.cif1 = NULL;
+			context_packet.cif2 = NULL;
+			context_packet.cif3 = NULL;
+			context_packet.cif7 = NULL;
+
+			memset(&context_packet.cif0, 0, sizeof(context_packet.cif0));
 		}
 	}
 
