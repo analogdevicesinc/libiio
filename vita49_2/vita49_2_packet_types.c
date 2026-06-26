@@ -2928,4 +2928,261 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
 }
 
 
-__vrt_api int vita49_2_parse_acks_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt);
+__vrt_api int vita49_2_parse_acks_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt)
+{
+	if (!buf || !pkt || words == 0)
+		return -EINVAL;
+
+	memset(pkt, 0, sizeof(*pkt));
+
+	/* Header */
+	uint32_t header_word = ntohl(buf[0]);
+	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
+
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+		return -EINVAL; /* Buffer too small for packet size */
+
+	uint16_t buffer_index = 1;
+
+	/* Stream ID (required for Command Packets) */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+		
+	pkt->command_prologue.common_prologue.stream_id = ntohl(buf[buffer_index++]);
+	pkt->command_prologue.common_prologue.has_stream_id = true;
+
+	/* Class ID */
+	if (pkt->command_prologue.common_prologue.header.has_class_id) 
+	{
+		// + 1 since Class ID is 2 words
+		if (buffer_index + 1 >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		memcpy(&pkt->command_prologue.common_prologue.class_id.lower_word, &w1, sizeof(pkt->command_prologue.common_prologue.class_id.lower_word));
+		memcpy(&pkt->command_prologue.common_prologue.class_id.upper_word, &w2, sizeof(pkt->command_prologue.common_prologue.class_id.upper_word));
+
+		pkt->command_prologue.common_prologue.has_class_id = true;
+	}
+
+	/* Timestamp Integer */
+	if (pkt->command_prologue.common_prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
+	{
+		if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->command_prologue.common_prologue.timestamp_int = ntohl(buf[buffer_index++]);
+		pkt->command_prologue.common_prologue.has_timestamp_int = true;
+	}
+
+	/* Timestamp Fractional */
+	if (pkt->command_prologue.common_prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) 
+	{
+		// + 1 since Fractional Timestamp is 2 words
+		if (buffer_index + 1 >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		pkt->command_prologue.common_prologue.timestamp_frac = ((uint64_t)w1 << 32) | w2;
+		pkt->command_prologue.common_prologue.has_timestamp_frac = true;
+	}
+
+	/* CAM */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+
+	// Allocate memory for the CAM
+	if (pkt->command_prologue.ack_cam == NULL)
+	{
+		pkt->command_prologue.ack_cam = malloc(sizeof(*pkt->command_prologue.ack_cam));
+
+		if (pkt->command_prologue.ack_cam == NULL)
+			return -ENOMEM;
+	}
+	// Means memory was already allocated. Just in case it's not enough/more than enough, let's use realloc()
+	else
+	{
+		void *tmp = realloc(pkt->command_prologue.ack_cam, sizeof(struct vita49_2_ack_cam_field));
+
+		if (tmp == NULL)
+		{
+			free(pkt->command_prologue.ack_cam);
+			return -ENOMEM;
+		}
+	}
+
+	uint32_t cam_word = ntohl(buf[buffer_index++]);
+	memcpy(pkt->command_prologue.ack_cam, &cam_word, sizeof(cam_word));
+
+	/* Message ID */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+
+	pkt->command_prologue.message_id = ntohl(buf[buffer_index++]);
+
+	/* Controllee ID */
+	// ADI does not use Controllee ID/UUID in the current VITA 49.2 implementation, however we retain the right to use
+	// them in the future.
+
+	if (pkt->command_prologue.ack_cam->has_controllee_id)
+	{
+		// If Controllee ID Format is asserted, that means a 128-bit UUID is used
+		if (pkt->command_prologue.ack_cam->controllee_id_format)
+		{
+			if (buffer_index + 3 >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				pkt->command_prologue.controllee_id.uuid128[i] = ntohl(buf[buffer_index++]);
+			}
+		}
+		// Otherwise a 32-bit ID is used
+		else
+		{
+			if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			pkt->command_prologue.controllee_id.id32 = ntohl(buf[buffer_index++]);
+		}
+	}
+
+	/* Controller ID */
+	if (pkt->command_prologue.ack_cam->has_controller_id)
+	{
+		// If Controller ID Format is asserted, that means a 128-bit UUID is used
+		if (pkt->command_prologue.ack_cam->controller_id_format)
+		{
+			if (buffer_index + 3 >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				pkt->command_prologue.controller_id.uuid128[i] = ntohl(buf[buffer_index++]);
+			}
+		}
+		// Otherwise a 32-bit ID is used
+		else
+		{
+			if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			pkt->command_prologue.controller_id.id32 = ntohl(buf[buffer_index++]);
+		}
+	}
+
+	uint32_t cif_word;
+	uint8_t cif_word_offset = 0;
+
+	/* CIF0 Word */
+	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
+		return -1;
+
+	memcpy(&pkt->cif0.cif0_word, &cif_word, sizeof(cif_word));
+	cif_word_offset++;
+
+	/* CIF1 Word */
+	if (pkt->cif0.cif0_word.cif1_enable)
+	{
+		// Checking if memory needs to be allocated for the CIF1 struct
+		if (pkt->cif1 == NULL)
+		{
+			pkt->cif1 = malloc(sizeof(struct vita49_2_cif1_fields));
+			if (pkt->cif1 == NULL)
+				return -ENOMEM;
+		}
+		
+		if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
+			return -1;
+		
+		// TODO: Need to implement the vita49_2_cif1_fields before I can copy the word into that struct
+		// memcpy(&pkt->cif1->cif1_word, &cif_word, sizeof(cif_word));
+
+		cif_word_offset++;
+	}
+
+	/* CIF2 Word */
+	if (pkt->cif0.cif0_word.cif2_enable)
+	{
+		// Checking if memory needs to be allocated for the CIF2 struct
+		if (pkt->cif2 == NULL)
+		{
+			pkt->cif2 = malloc(sizeof(struct vita49_2_cif2_fields));
+			if (pkt->cif2 == NULL)
+				return -ENOMEM;
+		}
+		
+		if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, cif_word) < 0)
+			return -1;
+
+		// TODO: Need to implement the vita49_2_cif2_fields before I can copy the word into that struct
+		// memcpy(&pkt->cif2->cif2_word, &cif_word, sizeof(cif_word));
+		
+		cif_word_offset++;
+	}
+	
+	/* CIF3 Word */
+	if (pkt->cif0.cif0_word.cif3_enable)
+	{
+		// Checking if memory needs to be allocated for the CIF3 struct
+		if (pkt->cif3 == NULL)
+		{
+			pkt->cif3 = malloc(sizeof(struct vita49_2_cif3_fields));
+			if (pkt->cif3 == NULL)
+				return -ENOMEM;
+		}
+		
+		if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, cif_word) < 0)
+			return -1;
+
+		// TODO: Need to implement the vita49_2_cif3_fields before I can copy the word into that struct
+		// memcpy(&pkt->cif3->cif3_word, &cif_word, sizeof(cif_word));
+
+		cif_word_offset++;
+	}
+	
+	/* CIF7 Word */
+	if (pkt->cif0.cif0_word.cif7_enable)
+	{
+		// Checking if memory needs to be allocated for the CIF7 struct
+		if (pkt->cif7 == NULL)
+		{
+			pkt->cif7 = malloc(sizeof(struct vita49_2_cif7_fields));
+			if (pkt->cif7 == NULL)
+				return -ENOMEM;
+		}
+		
+		if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, cif_word) < 0)
+			return -1;
+
+		// TODO: Need to implement the vita49_2_cif7_fields before I can copy the word into that struct
+		// memcpy(&pkt->cif7->cif7_word, &cif_word, sizeof(cif_word));
+
+		cif_word_offset++;
+	}
+
+
+	ssize_t ret_value;
+	
+	/* CIF0 Attributes */
+	if ((ret_value = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset, &pkt->cif0)) < 0)
+		return (int)(ret_value);
+
+	/* CIF1 Attributes */
+	// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
+
+	/* CIF2 Attributes */
+	// TODO: Parse the CIF 2 fields and populate the CIF 2 struct
+
+	/* CIF3 Attributes */
+	// TODO: Parse the CIF 3 fields and populate the CIF 3 struct
+
+	/* CIF7 Attributes */
+	// TODO: Parse the CIF 7 fields and populate the CIF 7 struct
+
+	return 0;
+}
