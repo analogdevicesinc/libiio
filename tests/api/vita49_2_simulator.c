@@ -84,6 +84,7 @@ int main()
     }
 
     sampling_freq_packet.command_prologue.control_cam->request_ack_v = 1;
+    sampling_freq_packet.command_prologue.control_cam->request_ack_x = 1;
     sampling_freq_packet.command_prologue.control_cam->request_ack_s = 1;
     sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
 

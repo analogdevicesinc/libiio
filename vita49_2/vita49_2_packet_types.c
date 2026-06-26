@@ -307,7 +307,7 @@ ssize_t vita49_2_generate_context_packet(struct vita49_2_context_packet *pkt, ui
 		if (buffer_index >= max_words)
 			return -ENOBUFS;
 
-		// See Table 9.1-1 in the VITA 49.2 full spec document
+		// See Table 9.1-1 in the VITA 49.2 2017 document
 		switch (field_bit)
 		{
 			// CIF 1 Enable
@@ -850,7 +850,7 @@ ssize_t vita49_2_generate_control_packet(struct vita49_2_control_packet *pkt, ui
 		if (buffer_index >= max_words)
 			return -ENOBUFS;
 
-		// See Table 9.1-1 in the VITA 49.2 full spec document. Not all of those fields are applicable to Control Packets.
+		// See Table 9.1-1 in the VITA 49.2 2017 document. Not all of those fields are applicable to Control Packets.
 		switch (field_bit)
 		{
 			// CIF 1 Enable
@@ -1410,163 +1410,180 @@ __vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt
 
 	uint32_t cif_word, field_bit;
 	
-	// CIF0 Word
-	memcpy(&cif_word, &pkt->cif0_warnings, sizeof(cif_word));
-
-	if (buffer_index >= max_words)
-		return -ENOBUFS;
-
-	buf[buffer_index++] = htonl(cif_word);
-
-	// CIF1 Word
-	if (pkt->cif0_warnings.cif1_enable && pkt->cif1_warnings != NULL)
+	if (pkt->command_prologue.ack_cam->warnings_present)
 	{
-		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
-		// then the logic for copying the CIF1 word can be implemented
-	}
+		// CIF0 Word
+		memcpy(&cif_word, &pkt->warnings.cif0_warnings, sizeof(cif_word));
 
-	// CIF2 Word
-	if (pkt->cif0_warnings.cif2_enable && pkt->cif2_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
-		// then the logic for copying the CIF2 word can be implemented
-	}
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
 
-	// CIF3 Word
-	if (pkt->cif0_warnings.cif3_enable && pkt->cif3_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
-		// then the logic for copying the CIF3 word can be implemented
-	}
+		buf[buffer_index++] = htonl(cif_word);
 
-	// CIF7 Word
-	if (pkt->cif0_warnings.cif7_enable && pkt->cif7_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
-		// then the logic for copying the CIF7 word can be implemented
-	}
+		// CIF1 Word
+		if (pkt->warnings.cif0_warnings.cif1_enable && pkt->warnings.cif1_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
+			// then the logic for copying the CIF1 word can be implemented
+		}
 
+		// CIF2 Word
+		if (pkt->warnings.cif0_warnings.cif2_enable && pkt->warnings.cif2_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
+			// then the logic for copying the CIF2 word can be implemented
+		}
+
+		// CIF3 Word
+		if (pkt->warnings.cif0_warnings.cif3_enable && pkt->warnings.cif3_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
+			// then the logic for copying the CIF3 word can be implemented
+		}
+
+		// CIF7 Word
+		if (pkt->warnings.cif0_warnings.cif7_enable && pkt->warnings.cif7_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
+			// then the logic for copying the CIF7 word can be implemented
+		}
+	}
 
 	// =========================================================
 	// ERROR INDICATOR FIELDS
 	// =========================================================
 	
-	// CIF0 Word
-	memcpy(&cif_word, &pkt->cif0_errors, sizeof(cif_word));
-
-	if (buffer_index >= max_words)
-		return -ENOBUFS;
-
-	buf[buffer_index++] = htonl(cif_word);
-
-	// CIF1 Word
-	if (pkt->cif0_errors.cif1_enable && pkt->cif1_errors != NULL)
+	if (pkt->command_prologue.ack_cam->errors_present)
 	{
-		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
-		// then the logic for copying the CIF1 word can be implemented
-	}
+		// CIF0 Word
+		memcpy(&cif_word, &pkt->errors.cif0_errors, sizeof(cif_word));
 
-	// CIF2 Word
-	if (pkt->cif0_errors.cif2_enable && pkt->cif2_errors != NULL)
-	{
-		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
-		// then the logic for copying the CIF2 word can be implemented
-	}
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
 
-	// CIF3 Word
-	if (pkt->cif0_errors.cif3_enable && pkt->cif3_errors != NULL)
-	{
-		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
-		// then the logic for copying the CIF3 word can be implemented
-	}
+		buf[buffer_index++] = htonl(cif_word);
 
-	// CIF7 Word
-	if (pkt->cif0_errors.cif7_enable && pkt->cif7_errors != NULL)
-	{
-		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
-		// then the logic for copying the CIF7 word can be implemented
+		// CIF1 Word
+		if (pkt->errors.cif0_errors.cif1_enable && pkt->errors.cif1_errors != NULL)
+		{
+			// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
+			// then the logic for copying the CIF1 word can be implemented
+		}
+
+		// CIF2 Word
+		if (pkt->errors.cif0_errors.cif2_enable && pkt->errors.cif2_errors != NULL)
+		{
+			// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
+			// then the logic for copying the CIF2 word can be implemented
+		}
+
+		// CIF3 Word
+		if (pkt->errors.cif0_errors.cif3_enable && pkt->errors.cif3_errors != NULL)
+		{
+			// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
+			// then the logic for copying the CIF3 word can be implemented
+		}
+
+		// CIF7 Word
+		if (pkt->errors.cif0_errors.cif7_enable && pkt->errors.cif7_errors != NULL)
+		{
+			// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
+			// then the logic for copying the CIF7 word can be implemented
+		}
 	}
 
 	// =========================================================
 	// WARNING FIELDS
 	// =========================================================
 
-	// CIF0
 	uint32_t indicator_word;
 
-	// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
-	for (uint16_t i = 0; i < pkt->warnings_payload_num_words; i++)
+	if (pkt->command_prologue.ack_cam->warnings_present)
 	{
-		memcpy(&indicator_word, &pkt->warnings_payload[i], sizeof(indicator_word));
-		buf[buffer_index++] = htonl(indicator_word);
-	}
+		// CIF0
 
-	if (pkt->cif0_warnings.cif1_enable && pkt->cif1_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
-		// then the logic for copying the CIF1 attributes can be implemented
-	}
+		// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
+		for (uint16_t i = 0; i < pkt->warnings.warnings_payload_num_words; i++)
+		{
+			memcpy(&indicator_word, &pkt->warnings.warnings_payload[i], sizeof(indicator_word));
+		
+			// If the warning indicator is set to 0, that means we cleared it while writing the error indicators at some point,
+			// thus this indicator shouldn't be written
+			if (indicator_word != 0)
+				buf[buffer_index++] = htonl(indicator_word);
+		}
 
-	// CIF2 Word
-	if (pkt->cif0_warnings.cif2_enable && pkt->cif2_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
-		// then the logic for copying the CIF2 attributes can be implemented
-	}
+		// CIF1 Word
+		if (pkt->warnings.cif0_warnings.cif1_enable && pkt->warnings.cif1_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
+			// then the logic for copying the CIF1 attributes can be implemented
+		}
 
-	// CIF3 Word
-	if (pkt->cif0_warnings.cif3_enable && pkt->cif3_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
-		// then the logic for copying the CIF3 attributes can be implemented
-	}
+		// CIF2 Word
+		if (pkt->warnings.cif0_warnings.cif2_enable && pkt->warnings.cif2_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
+			// then the logic for copying the CIF2 attributes can be implemented
+		}
 
-	// CIF7 Word
-	if (pkt->cif0_warnings.cif7_enable && pkt->cif7_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
-		// then the logic for copying the CIF7 attributes can be implemented
-	}
+		// CIF3 Word
+		if (pkt->warnings.cif0_warnings.cif3_enable && pkt->warnings.cif3_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
+			// then the logic for copying the CIF3 attributes can be implemented
+		}
 
+		// CIF7 Word
+		if (pkt->warnings.cif0_warnings.cif7_enable && pkt->warnings.cif7_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
+			// then the logic for copying the CIF7 attributes can be implemented
+		}
+	}
 
 	// =========================================================
 	// ERROR FIELDS
 	// =========================================================
 
-	// CIF0
-
-	// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
-	for (uint16_t i = 0; i < pkt->errors_payload_num_words; i++)
+	if (pkt->command_prologue.ack_cam->errors_present)
 	{
-		memcpy(&indicator_word, &pkt->errors_payload[i], sizeof(indicator_word));
-		buf[buffer_index++] = htonl(indicator_word);
-	}
+		// CIF0
 
-	if (pkt->cif0_errors.cif1_enable && pkt->cif1_errors != NULL)
-	{
-		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
-		// then the logic for copying the CIF1 attributes can be implemented
-	}
+		// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
+		for (uint16_t i = 0; i < pkt->errors.errors_payload_num_words; i++)
+		{
+			memcpy(&indicator_word, &pkt->errors.errors_payload[i], sizeof(indicator_word));
+			buf[buffer_index++] = htonl(indicator_word);
+		}
 
-	// CIF2 Word
-	if (pkt->cif0_errors.cif2_enable && pkt->cif2_errors != NULL)
-	{
-		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
-		// then the logic for copying the CIF2 attributes can be implemented
-	}
+		// CIF1 Word
+		if (pkt->errors.cif0_errors.cif1_enable && pkt->errors.cif1_errors != NULL)
+		{
+			// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
+			// then the logic for copying the CIF1 attributes can be implemented
+		}
 
-	// CIF3 Word
-	if (pkt->cif0_errors.cif3_enable && pkt->cif3_errors != NULL)
-	{
-		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
-		// then the logic for copying the CIF3 attributes can be implemented
-	}
+		// CIF2 Word
+		if (pkt->errors.cif0_errors.cif2_enable && pkt->errors.cif2_errors != NULL)
+		{
+			// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
+			// then the logic for copying the CIF2 attributes can be implemented
+		}
 
-	// CIF7 Word
-	if (pkt->cif0_errors.cif7_enable && pkt->cif7_errors != NULL)
-	{
-		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
-		// then the logic for copying the CIF7 attributes can be implemented
+		// CIF3 Word
+		if (pkt->errors.cif0_errors.cif3_enable && pkt->errors.cif3_errors != NULL)
+		{
+			// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
+			// then the logic for copying the CIF3 attributes can be implemented
+		}
+
+		// CIF7 Word
+		if (pkt->errors.cif0_errors.cif7_enable && pkt->errors.cif7_errors != NULL)
+		{
+			// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
+			// then the logic for copying the CIF7 attributes can be implemented
+		}
 	}
 
 	/* Update size in header */
@@ -1736,80 +1753,83 @@ __vrt_api ssize_t vita49_2_generate_ackv_packet(struct vita49_2_ackV_packet *pkt
 	uint32_t cif_word, field_bit;
 	
 	// CIF0 Word
-	memcpy(&cif_word, &pkt->cif0_warnings, sizeof(cif_word));
-
-	if (buffer_index >= max_words)
-		return -ENOBUFS;
-
-	buf[buffer_index++] = htonl(cif_word);
-
-	// CIF1 Word
-	if (pkt->cif0_warnings.cif1_enable && pkt->cif1_warnings != NULL)
+	if (pkt->command_prologue.ack_cam->warnings_present)
 	{
-		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
-		// then the logic for copying the CIF1 word can be implemented
-	}
+		memcpy(&cif_word, &pkt->warnings.cif0_warnings, sizeof(cif_word));
 
-	// CIF2 Word
-	if (pkt->cif0_warnings.cif2_enable && pkt->cif2_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
-		// then the logic for copying the CIF2 word can be implemented
-	}
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
 
-	// CIF3 Word
-	if (pkt->cif0_warnings.cif3_enable && pkt->cif3_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
-		// then the logic for copying the CIF3 word can be implemented
-	}
+		buf[buffer_index++] = htonl(cif_word);
 
-	// CIF7 Word
-	if (pkt->cif0_warnings.cif7_enable && pkt->cif7_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
-		// then the logic for copying the CIF7 word can be implemented
-	}
+		// CIF1 Word
+		if (pkt->warnings.cif0_warnings.cif1_enable && pkt->warnings.cif1_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
+			// then the logic for copying the CIF1 word can be implemented
+		}
 
-	// =========================================================
-	// WARNING FIELDS
-	// =========================================================
+		// CIF2 Word
+		if (pkt->warnings.cif0_warnings.cif2_enable && pkt->warnings.cif2_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
+			// then the logic for copying the CIF2 word can be implemented
+		}
 
-	// CIF0
-	uint32_t indicator_word;
+		// CIF3 Word
+		if (pkt->warnings.cif0_warnings.cif3_enable && pkt->warnings.cif3_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
+			// then the logic for copying the CIF3 word can be implemented
+		}
 
-	// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
-	for (uint16_t i = 0; i < pkt->warnings_payload_num_words; i++)
-	{
-		memcpy(&indicator_word, &pkt->warnings_payload[i], sizeof(indicator_word));
-		buf[buffer_index++] = htonl(indicator_word);
-	}
+		// CIF7 Word
+		if (pkt->warnings.cif0_warnings.cif7_enable && pkt->warnings.cif7_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
+			// then the logic for copying the CIF7 word can be implemented
+		}
 
-	if (pkt->cif0_warnings.cif1_enable && pkt->cif1_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
-		// then the logic for copying the CIF1 attributes can be implemented
-	}
+		// =========================================================
+		// WARNING FIELDS
+		// =========================================================
 
-	// CIF2 Word
-	if (pkt->cif0_warnings.cif2_enable && pkt->cif2_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
-		// then the logic for copying the CIF2 attributes can be implemented
-	}
+		// CIF0
+		uint32_t indicator_word;
 
-	// CIF3 Word
-	if (pkt->cif0_warnings.cif3_enable && pkt->cif3_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
-		// then the logic for copying the CIF3 attributes can be implemented
-	}
+		// Iterating through the buffer of indicator words and copying them over (also handling byte order translation)
+		for (uint16_t i = 0; i < pkt->warnings.warnings_payload_num_words; i++)
+		{
+			memcpy(&indicator_word, &pkt->warnings.warnings_payload[i], sizeof(indicator_word));
+			buf[buffer_index++] = htonl(indicator_word);
+		}
 
-	// CIF7 Word
-	if (pkt->cif0_warnings.cif7_enable && pkt->cif7_warnings != NULL)
-	{
-		// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
-		// then the logic for copying the CIF7 attributes can be implemented
+		if (pkt->warnings.cif0_warnings.cif1_enable && pkt->warnings.cif1_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif1_fields struct needs to be implemented first,
+			// then the logic for copying the CIF1 attributes can be implemented
+		}
+
+		// CIF2 Word
+		if (pkt->warnings.cif0_warnings.cif2_enable && pkt->warnings.cif2_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif2_fields struct needs to be implemented first,
+			// then the logic for copying the CIF2 attributes can be implemented
+		}
+
+		// CIF3 Word
+		if (pkt->warnings.cif0_warnings.cif3_enable && pkt->warnings.cif3_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif3_fields struct needs to be implemented first,
+			// then the logic for copying the CIF3 attributes can be implemented
+		}
+
+		// CIF7 Word
+		if (pkt->warnings.cif0_warnings.cif7_enable && pkt->warnings.cif7_warnings != NULL)
+		{
+			// TODO: The vita49_2_cif7_fields struct needs to be implemented first,
+			// then the logic for copying the CIF7 attributes can be implemented
+		}
 	}
 
 	/* Update size in header */
@@ -1978,17 +1998,17 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
 		return -1;
 
-	memcpy(&pkt->cif0_warnings, &cif_word, sizeof(cif_word));
+	memcpy(&pkt->warnings.cif0_warnings, &cif_word, sizeof(cif_word));
 	cif_word_offset++;
 
 	/* CIF1 Word */
-	if (pkt->cif0_warnings.cif1_enable)
+	if (pkt->warnings.cif0_warnings.cif1_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF1 struct
-		if (pkt->cif1_warnings == NULL)
+		if (pkt->warnings.cif1_warnings == NULL)
 		{
-			pkt->cif1_warnings = malloc(sizeof(struct vita49_2_cif1_fields));
-			if (pkt->cif1_warnings == NULL)
+			pkt->warnings.cif1_warnings = malloc(sizeof(struct vita49_2_cif1_fields));
+			if (pkt->warnings.cif1_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -1996,19 +2016,19 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 		
 		// TODO: Need to implement the vita49_2_cif1_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif1_warnings->cif1_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif1_warnings->cif1_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 
 	/* CIF2 Word */
-	if (pkt->cif0_warnings.cif2_enable)
+	if (pkt->warnings.cif0_warnings.cif2_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF2 struct
-		if (pkt->cif2_warnings == NULL)
+		if (pkt->warnings.cif2_warnings == NULL)
 		{
-			pkt->cif2_warnings = malloc(sizeof(struct vita49_2_cif2_fields));
-			if (pkt->cif2_warnings == NULL)
+			pkt->warnings.cif2_warnings = malloc(sizeof(struct vita49_2_cif2_fields));
+			if (pkt->warnings.cif2_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2016,19 +2036,19 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 
 		// TODO: Need to implement the vita49_2_cif2_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif2_warnings->cif2_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif2_warnings->cif2_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 	
 	/* CIF3 Word */
-	if (pkt->cif0_warnings.cif3_enable)
+	if (pkt->warnings.cif0_warnings.cif3_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF3 struct
-		if (pkt->cif3_warnings == NULL)
+		if (pkt->warnings.cif3_warnings == NULL)
 		{
-			pkt->cif3_warnings = malloc(sizeof(struct vita49_2_cif3_fields));
-			if (pkt->cif3_warnings == NULL)
+			pkt->warnings.cif3_warnings = malloc(sizeof(struct vita49_2_cif3_fields));
+			if (pkt->warnings.cif3_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2036,19 +2056,19 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 
 		// TODO: Need to implement the vita49_2_cif3_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif3_warnings->cif3_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif3_warnings->cif3_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 	
 	/* CIF7 Word */
-	if (pkt->cif0_warnings.cif7_enable)
+	if (pkt->warnings.cif0_warnings.cif7_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF7 struct
-		if (pkt->cif7_warnings == NULL)
+		if (pkt->warnings.cif7_warnings == NULL)
 		{
-			pkt->cif7_warnings = malloc(sizeof(struct vita49_2_cif7_fields));
-			if (pkt->cif7_warnings == NULL)
+			pkt->warnings.cif7_warnings = malloc(sizeof(struct vita49_2_cif7_fields));
+			if (pkt->warnings.cif7_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2056,7 +2076,7 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 			
 		// TODO: Need to implement the vita49_2_cif7_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif7_warnings->cif7_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif7_warnings->cif7_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
@@ -2069,17 +2089,17 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
 		return -1;
 
-	memcpy(&pkt->cif0_errors, &cif_word, sizeof(cif_word));
+	memcpy(&pkt->errors.cif0_errors, &cif_word, sizeof(cif_word));
 	cif_word_offset++;
 
 	/* CIF1 Word */
-	if (pkt->cif0_warnings.cif1_enable)
+	if (pkt->warnings.cif0_warnings.cif1_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF1 struct
-		if (pkt->cif1_errors == NULL)
+		if (pkt->errors.cif1_errors == NULL)
 		{
-			pkt->cif1_errors = malloc(sizeof(struct vita49_2_cif1_fields));
-			if (pkt->cif1_errors == NULL)
+			pkt->errors.cif1_errors = malloc(sizeof(struct vita49_2_cif1_fields));
+			if (pkt->errors.cif1_errors == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2087,19 +2107,19 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 		
 		// TODO: Need to implement the vita49_2_cif1_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif1_errors->cif1_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->errors.cif1_errors->cif1_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 
 	/* CIF2 Word */
-	if (pkt->cif0_errors.cif2_enable)
+	if (pkt->errors.cif0_errors.cif2_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF2 struct
-		if (pkt->cif2_errors == NULL)
+		if (pkt->errors.cif2_errors == NULL)
 		{
-			pkt->cif2_errors = malloc(sizeof(struct vita49_2_cif2_fields));
-			if (pkt->cif2_errors == NULL)
+			pkt->errors.cif2_errors = malloc(sizeof(struct vita49_2_cif2_fields));
+			if (pkt->errors.cif2_errors == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2107,19 +2127,19 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 
 		// TODO: Need to implement the vita49_2_cif2_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif2_errors->cif2_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->errors.cif2_errors->cif2_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 	
 	/* CIF3 Word */
-	if (pkt->cif0_errors.cif3_enable)
+	if (pkt->errors.cif0_errors.cif3_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF3 struct
-		if (pkt->cif3_errors == NULL)
+		if (pkt->errors.cif3_errors == NULL)
 		{
-			pkt->cif3_errors = malloc(sizeof(struct vita49_2_cif3_fields));
-			if (pkt->cif3_errors == NULL)
+			pkt->errors.cif3_errors = malloc(sizeof(struct vita49_2_cif3_fields));
+			if (pkt->errors.cif3_errors == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2127,19 +2147,19 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 
 		// TODO: Need to implement the vita49_2_cif3_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif3_errors->cif3_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->errors.cif3_errors->cif3_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 	
 	/* CIF7 Word */
-	if (pkt->cif0_errors.cif7_enable)
+	if (pkt->errors.cif0_errors.cif7_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF7 struct
-		if (pkt->cif7_errors == NULL)
+		if (pkt->errors.cif7_errors == NULL)
 		{
-			pkt->cif7_errors = malloc(sizeof(struct vita49_2_cif7_fields));
-			if (pkt->cif7_errors == NULL)
+			pkt->errors.cif7_errors = malloc(sizeof(struct vita49_2_cif7_fields));
+			if (pkt->errors.cif7_errors == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2147,7 +2167,7 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 			
 		// TODO: Need to implement the vita49_2_cif7_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif7_errors->cif7_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->errors.cif7_errors->cif7_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
@@ -2160,7 +2180,7 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 
 	/* CIF0 Attributes */
 	ssize_t cif0_payload_offset;
-	if ((cif0_payload_offset = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset, &pkt->cif0_warnings)) < 0)
+	if ((cif0_payload_offset = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset, &pkt->warnings.cif0_warnings)) < 0)
 		return cif0_payload_offset;
 
 	cif_payload_offset += cif0_payload_offset;
@@ -2187,7 +2207,7 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 
 
 	/* CIF0 Attributes */
-	if ((cif0_payload_offset = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset + cif_payload_offset, &pkt->cif0_errors)) < 0)
+	if ((cif0_payload_offset = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset + cif_payload_offset, &pkt->errors.cif0_errors)) < 0)
 		return cif0_payload_offset;
 
 	cif_payload_offset += cif0_payload_offset;
@@ -2365,17 +2385,17 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 	if (vita49_2_get_payload_word(buf + buffer_index, pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, cif_word_offset, &cif_word) < 0)
 		return -1;
 
-	memcpy(&pkt->cif0_warnings, &cif_word, sizeof(cif_word));
+	memcpy(&pkt->warnings.cif0_warnings, &cif_word, sizeof(cif_word));
 	cif_word_offset++;
 
 	/* CIF1 Word */
-	if (pkt->cif0_warnings.cif1_enable)
+	if (pkt->warnings.cif0_warnings.cif1_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF1 struct
-		if (pkt->cif1_warnings == NULL)
+		if (pkt->warnings.cif1_warnings == NULL)
 		{
-			pkt->cif1_warnings = malloc(sizeof(struct vita49_2_cif1_fields));
-			if (pkt->cif1_warnings == NULL)
+			pkt->warnings.cif1_warnings = malloc(sizeof(struct vita49_2_cif1_fields));
+			if (pkt->warnings.cif1_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2383,19 +2403,19 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 		
 		// TODO: Need to implement the vita49_2_cif1_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif1_warnings->cif1_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif1_warnings->cif1_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 
 	/* CIF2 Word */
-	if (pkt->cif0_warnings.cif2_enable)
+	if (pkt->warnings.cif0_warnings.cif2_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF2 struct
-		if (pkt->cif2_warnings == NULL)
+		if (pkt->warnings.cif2_warnings == NULL)
 		{
-			pkt->cif2_warnings = malloc(sizeof(struct vita49_2_cif2_fields));
-			if (pkt->cif2_warnings == NULL)
+			pkt->warnings.cif2_warnings = malloc(sizeof(struct vita49_2_cif2_fields));
+			if (pkt->warnings.cif2_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2403,19 +2423,19 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 
 		// TODO: Need to implement the vita49_2_cif2_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif2_warnings->cif2_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif2_warnings->cif2_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 	
 	/* CIF3 Word */
-	if (pkt->cif0_warnings.cif3_enable)
+	if (pkt->warnings.cif0_warnings.cif3_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF3 struct
-		if (pkt->cif3_warnings == NULL)
+		if (pkt->warnings.cif3_warnings == NULL)
 		{
-			pkt->cif3_warnings = malloc(sizeof(struct vita49_2_cif3_fields));
-			if (pkt->cif3_warnings == NULL)
+			pkt->warnings.cif3_warnings = malloc(sizeof(struct vita49_2_cif3_fields));
+			if (pkt->warnings.cif3_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2423,19 +2443,19 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 
 		// TODO: Need to implement the vita49_2_cif3_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif3_warnings->cif3_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif3_warnings->cif3_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
 	
 	/* CIF7 Word */
-	if (pkt->cif0_warnings.cif7_enable)
+	if (pkt->warnings.cif0_warnings.cif7_enable)
 	{
 		// Checking if memory needs to be allocated for the CIF7 struct
-		if (pkt->cif7_warnings == NULL)
+		if (pkt->warnings.cif7_warnings == NULL)
 		{
-			pkt->cif7_warnings = malloc(sizeof(struct vita49_2_cif7_fields));
-			if (pkt->cif7_warnings == NULL)
+			pkt->warnings.cif7_warnings = malloc(sizeof(struct vita49_2_cif7_fields));
+			if (pkt->warnings.cif7_warnings == NULL)
 				return -ENOMEM;
 		}
 		
@@ -2443,7 +2463,7 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 			return -1;
 			
 		// TODO: Need to implement the vita49_2_cif7_fields before I can copy the word into that struct
-		// memcpy(&pkt->cif7_warnings->cif7_word, &cif_word, sizeof(cif_word));
+		// memcpy(&pkt->warnings.cif7_warnings->cif7_word, &cif_word, sizeof(cif_word));
 
 		cif_word_offset++;
 	}
@@ -2456,7 +2476,7 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 
 	/* CIF0 Attributes */
 	ssize_t cif0_payload_offset;
-	if ((cif0_payload_offset = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset, &pkt->cif0_warnings)) < 0)
+	if ((cif0_payload_offset = vita49_2_parse_cif0_payload(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf + buffer_index + cif_word_offset, &pkt->warnings.cif0_warnings)) < 0)
 		return cif0_payload_offset;
 
 	cif_payload_offset += cif0_payload_offset;
@@ -2606,13 +2626,58 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
 	}
 
 	/* Payload (CIF0/1/2/3/7 and attribute values) */
-	uint32_t cif0_word, field_bit;
-	memcpy(&cif0_word, &pkt->cif0.cif0_word, sizeof(cif0_word));
+	/* CIF0 Word */
+	uint32_t cif_word, field_bit;
+	memcpy(&cif_word, &pkt->cif0.cif0_word, sizeof(cif_word));
 
 	if (buffer_index >= max_words)
 		return -ENOBUFS;
 
-	buf[buffer_index++] = htonl(cif0_word);
+	buf[buffer_index++] = htonl(cif_word);
+
+	/* CIF1 Word */
+	if (pkt->cif0.cif0_word.cif1_enable)
+	{
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
+
+		memcpy(&cif_word, &pkt->cif1->cif1_word, sizeof(cif_word));
+		buf[buffer_index++] = htonl(cif_word);
+	}
+
+	/* CIF2 Word */
+	if (pkt->cif0.cif0_word.cif2_enable)
+	{
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
+
+		memcpy(&cif_word, &pkt->cif2->cif2_word, sizeof(cif_word));
+		buf[buffer_index++] = htonl(cif_word);
+	}
+
+	/* CIF3 Word */
+	if (pkt->cif0.cif0_word.cif3_enable)
+	{
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
+
+		memcpy(&cif_word, &pkt->cif3->cif3_word, sizeof(cif_word));
+		buf[buffer_index++] = htonl(cif_word);
+	}
+
+	/* CIF7 Word */
+	if (pkt->cif0.cif0_word.cif7_enable)
+	{
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
+
+		memcpy(&cif_word, &pkt->cif7->cif7_word, sizeof(cif_word));
+		buf[buffer_index++] = htonl(cif_word);
+	}
+
+	/* CIF0 Attribute Values */
+
+	memcpy(&cif_word, &pkt->cif0.cif0_word, sizeof(cif_word));
 
 	// Iterating through each of the 32 options in CIF0 from 31 to 0.
 	// Butttt, remember that "Context Field Change Indicator" (bit 31) is just an indicator
@@ -2622,7 +2687,7 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
 		field_bit = (1 << field_index);
 
 		// Field is not present
-		if (!(cif0_word & field_bit))
+		if (!(cif_word & field_bit))
 			continue;
 
 		// Checking if there's at least 1 byte left. For fields using more than 1 byte, they will require
@@ -2630,7 +2695,7 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
 		if (buffer_index >= max_words)
 			return -ENOBUFS;
 
-		// See Table 9.1-1 in the VITA 49.2 full spec document
+		// See Table 9.1-1 in the VITA 49.2 2017 document
 		switch (field_bit)
 		{
 			// CIF 1 Enable
@@ -2841,6 +2906,18 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
 				break;
 		}
 	}
+
+	/* CIF1 Attribute Values */
+	// TODO: Logic for copying the CIF1 values
+
+	/* CIF2 Attribute Values */
+	// TODO: Logic for copying the CIF2 values
+
+	/* CIF3 Attribute Values */
+	// TODO: Logic for copying the CIF3 values
+
+	/* CIF7 Attribute Values */
+	// TODO: Logic for copying the CIF7 values
 
 	/* Update size in header */
 	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;

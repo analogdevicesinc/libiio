@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include <vita49_2/vita49_2_packet_types.h>
 #include "thread-pool.h"
@@ -84,6 +85,181 @@ struct vita49_2_cif_mapping {
 struct vita49_2_pdata {
 	struct thread_pool *pool;
 	struct iio_context *ctx;
+};
+
+/**
+ * @brief Maps Linux errnos to VITA 49.2 warning/error indicators. See Table 8.4.1.2.1-1 in the VITA 49.2 2017 document.
+ * 
+ * VITA 49.2 Warnings/Errors:
+ * 
+ * 31 = Field NOT Executed
+ * 
+ * 30 = Device Failure
+ * 
+ * 29 = Erroneous Field
+ * 
+ * 28 = Parameter Out-of-Range
+ * 
+ * 27 = Parameter Unsupported Precision
+ * 
+ * 26 = Field Value Invalid
+ * 
+ * 25 = Timestamp Problem
+ * 
+ * 24 = Hazardous Power Levels
+ * 
+ * 23 = Distortion
+ * 
+ * 22 = In-Band Power Compliance
+ * 
+ * 21 = Out-of-Band Power Compliance
+ * 
+ * 20 = Co-Site Interference
+ * 
+ * 19 = Regional Interference
+ * 
+ * 18-13 = Reserved
+ * 
+ * 12-1 = User Defined
+ * 
+ * 0 = Reserved
+ * 
+ * See the vita49_2_warnings_error_codes enum.
+ */
+static const uint8_t VITA49_2_ERRNO_MAP[] = {
+    [0]                 = ENONE,
+    [EPERM]             = ENOEXECUTE,   /* Operation not permitted */
+    [ENOENT]            = ENOFIELD,     /* No such file/directory -> erroneous field */
+    [ESRCH]             = ENOFIELD,
+    [EINTR]             = ENOEXECUTE,   /* Interrupted -> not executed */
+    [EIO]               = EDEVFAIL,     /* I/O error -> device failure */
+    [ENXIO]             = EDEVFAIL,     /* No such device or address */
+    [E2BIG]             = EOUTRANGE,    /* Argument list too long -> out-of-range */
+    [ENOEXEC]           = ENOFIELD,     /* Exec format error */
+    [EBADF]             = ENOEXECUTE,
+    [ECHILD]            = ENOEXECUTE,
+    [EAGAIN]            = ENOEXECUTE,   /* Try again */
+    [ENOMEM]            = EDEVFAIL,     /* Out of memory */
+    [EACCES]            = ENOEXECUTE,   /* Permission denied */
+    [EFAULT]            = EBADARGS,     /* Bad address -> bad arguments */
+    [ENOTBLK]           = ENOFIELD,
+    [EBUSY]             = ENOEXECUTE,   /* Device busy */
+    [EEXIST]            = ENOFIELD,
+    [EXDEV]             = ENOFIELD,
+    [ENODEV]            = EDEVFAIL,     /* No such device */
+    [ENOTDIR]           = ENOFIELD,
+    [EISDIR]            = ENOFIELD,
+    [EINVAL]            = EINVALID,     /* Invalid argument */
+    [ENFILE]            = EDEVFAIL,
+    [EMFILE]            = EDEVFAIL,
+    [ENOTTY]            = ENOFIELD,
+    [ETXTBSY]           = ENOEXECUTE,
+    [EFBIG]             = EOUTRANGE,    /* File too large -> out-of-range */
+    [ENOSPC]            = EDEVFAIL,     /* No space left */
+    [ESPIPE]            = ENOFIELD,
+    [EROFS]             = ENOEXECUTE,   /* Read-only */
+    [EMLINK]            = ENOFIELD,
+    [EPIPE]             = EDEVFAIL,     /* Broken pipe */
+    [EDOM]              = EOUTRANGE,    /* Math domain error */
+    [ERANGE]            = EOUTRANGE,    /* Result not representable */
+    [EDEADLK]           = ENOEXECUTE,
+    [ENAMETOOLONG]      = ENOFIELD,
+    [ENOLCK]            = EDEVFAIL,
+    [ENOSYS]            = ENOFIELD,     /* Function not implemented */
+    [ENOTEMPTY]         = ENOFIELD,
+    [ELOOP]             = ENOFIELD,
+    [41]                = ENOEXECUTE,   /* unused gap */
+    [ENOMSG]            = ENOEXECUTE,
+    [EIDRM]             = ENOEXECUTE,
+    [ECHRNG]            = EOUTRANGE,    /* Channel number out of range */
+    [EL2NSYNC]          = EDEVFAIL,
+    [EL3HLT]            = EDEVFAIL,
+    [EL3RST]            = EDEVFAIL,
+    [ELNRNG]            = EOUTRANGE,
+    [EUNATCH]           = EDEVFAIL,
+    [ENOCSI]            = EDEVFAIL,
+    [EL2HLT]            = EDEVFAIL,
+    [EBADE]             = EINVALID,     /* Invalid exchange */
+    [EBADR]             = ENOFIELD,     /* Invalid request descriptor */
+    [EXFULL]            = EOUTRANGE,
+    [ENOANO]            = EDEVFAIL,
+    [EBADRQC]           = ENOFIELD,     /* Invalid request code */
+    [EBADSLT]           = ENOFIELD,     /* Invalid slot */
+    [58]                = ENOEXECUTE,   /* unused gap */
+    [EBFONT]            = ENOFIELD,
+    [ENOSTR]            = ENOFIELD,
+    [ENODATA]           = ENOEXECUTE,
+    [ETIME]             = ETIMESTAMP,   /* Timer expired -> timestamp problem */
+    [ENOSR]             = EDEVFAIL,
+    [ENONET]            = ENOEXECUTE,
+    [ENOPKG]            = ENOFIELD,
+    [EREMOTE]           = EDEVFAIL,
+    [ENOLINK]           = EDEVFAIL,
+    [EADV]              = ENOEXECUTE,
+    [ESRMNT]            = ENOEXECUTE,
+    [ECOMM]             = EDEVFAIL,
+    [EPROTO]            = EDEVFAIL,
+    [EMULTIHOP]         = EDEVFAIL,
+    [EDOTDOT]           = EDEVFAIL,
+    [EBADMSG]           = ENOFIELD,
+    [EOVERFLOW]         = EOUTRANGE,    /* Value too large */
+    [ENOTUNIQ]          = ENOFIELD,
+    [EBADFD]            = ENOEXECUTE,
+    [EREMCHG]           = EDEVFAIL,
+    [ELIBACC]           = EDEVFAIL,
+    [ELIBBAD]           = EDEVFAIL,
+    [ELIBSCN]           = EDEVFAIL,
+    [ELIBMAX]           = EDEVFAIL,
+    [ELIBEXEC]          = EDEVFAIL,
+    [EILSEQ]            = EINVALID,     /* Illegal byte sequence */
+    [ERESTART]          = ENOEXECUTE,
+    [ESTRPIPE]          = EDEVFAIL,
+    [EUSERS]            = ENOEXECUTE,
+    [ENOTSOCK]          = ENOFIELD,
+    [EDESTADDRREQ]      = ENOFIELD,
+    [EMSGSIZE]          = EOUTRANGE,    /* Message too long */
+    [EPROTOTYPE]        = ENOFIELD,
+    [ENOPROTOOPT]       = ENOFIELD,
+    [EPROTONOSUPPORT]   = ENOFIELD,
+    [ESOCKTNOSUPPORT]   = ENOFIELD,
+    [EOPNOTSUPP]        = ENOFIELD,     /* Operation not supported */
+    [EPFNOSUPPORT]      = ENOFIELD,
+    [EAFNOSUPPORT]      = ENOFIELD,
+    [EADDRINUSE]        = ENOEXECUTE,
+    [EADDRNOTAVAIL]     = ENOFIELD,
+    [ENETDOWN]          = EDEVFAIL,
+    [ENETUNREACH]       = EDEVFAIL,
+    [ENETRESET]         = EDEVFAIL,
+    [ECONNABORTED]      = EDEVFAIL,
+    [ECONNRESET]        = EDEVFAIL,
+    [ENOBUFS]           = EDEVFAIL,
+    [EISCONN]           = ENOEXECUTE,
+    [ENOTCONN]          = EDEVFAIL,
+    [ESHUTDOWN]         = ENOEXECUTE,
+    [ETOOMANYREFS]      = EDEVFAIL,
+    [ETIMEDOUT]         = ENOEXECUTE,   /* Connection timed out */
+    [ECONNREFUSED]      = EDEVFAIL,
+    [EHOSTDOWN]         = EDEVFAIL,
+    [EHOSTUNREACH]      = EDEVFAIL,
+    [EALREADY]          = ENOEXECUTE,
+    [EINPROGRESS]       = ENOEXECUTE,
+    [ESTALE]            = EDEVFAIL,
+    [EUCLEAN]           = EDEVFAIL,
+    [ENOTNAM]           = ENOFIELD,
+    [ENAVAIL]           = EDEVFAIL,
+    [EISNAM]            = ENOFIELD,
+    [EREMOTEIO]         = EDEVFAIL,     /* Remote I/O error */
+    [EDQUOT]            = EOUTRANGE,    /* Quota exceeded */
+    [ENOMEDIUM]         = EDEVFAIL,
+    [EMEDIUMTYPE]       = ENOFIELD,
+    [ECANCELED]         = ENOEXECUTE,   /* Cancelled */
+    [ENOKEY]            = ENOEXECUTE,
+    [EKEYEXPIRED]       = ENOEXECUTE,
+    [EKEYREVOKED]       = ENOEXECUTE,
+    [EKEYREJECTED]      = ENOEXECUTE,
+    [EOWNERDEAD]        = EDEVFAIL,
+    [ENOTRECOVERABLE]   = EDEVFAIL,
+    [ERFKILL]           = EHAZPOWER,    /* RF-kill -> hazardous power */
 };
 
 // ==============================================================

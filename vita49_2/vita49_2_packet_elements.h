@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <sys/types.h>
 
 // "Organizationally Unique Identifier". ADI has several OUIs, I just chose the first one: https://regauth.standards.ieee.org/standards-ra-web/pub/view.html#registries
 // OUI is one of the component fields of the Class ID field.
@@ -64,7 +66,7 @@ enum vita49_2_control_action_modes {
 };
 
 // ================================================================================================
-// FIELD-SPECIFIC PREDEFINED WARNINGS AND ERRORS (see Table 8.4.1.2.1-1 in the VITA 49.2 full spec)
+// FIELD-SPECIFIC PREDEFINED WARNINGS AND ERRORS (see Table 8.4.1.2.1-1 in the VITA 49.2 2017)
 // ================================================================================================
 enum vita49_2_warnings_error_codes {
 	ENOEXECUTE 	= 31,		// The field was NOT executed because of a Warning or Error (ENOEXEC is a conflicting name)
@@ -605,7 +607,7 @@ struct vita49_2_warning_error_indicators {
 struct vita49_2_extended_control_item{};
 
 // TODO: Currently we don't support changing the Signal Data Packet Payload format dynamically while IIOD is in operation.
-// This is however a feature that VITA 49.2 supports (read section 9.13.3 from the VITA 49.2 full spec document).
+// This is however a feature that VITA 49.2 supports (read section 9.13.3 from the VITA 49.2 2017 document).
 // Assuming we do support that in the future, the necessary logic needs to be implemented to use the struct I've defined below.
 /**
  * @struct vita49_2_data_payload_format
@@ -618,7 +620,7 @@ struct vita49_2_data_payload_format {
 
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
-	// See Table 9.13.3-1 in the VITA 49.2 full spec document
+	// See Table 9.13.3-1 in the VITA 49.2 2017 document
 	struct {
 
 		uint32_t data_item_size:6;
@@ -633,7 +635,7 @@ struct vita49_2_data_payload_format {
 
 	} lower_word;
 
-	// See Table 9.13.3-2 in the VITA 49.2 full spec doucment
+	// See Table 9.13.3-2 in the VITA 49.2 2017 doucment
 	struct {
 
 		uint32_t vector_size:16;
@@ -643,7 +645,7 @@ struct vita49_2_data_payload_format {
 
 	#else
 
-	// See Table 9.13.3-1 in the VITA 49.2 full spec document
+	// See Table 9.13.3-1 in the VITA 49.2 2017 document
 	struct {
 
 		uint32_t packing_method:1;
@@ -658,7 +660,7 @@ struct vita49_2_data_payload_format {
 
 	} lower_word;
 
-	// See Table 9.13.3-2 in the VITA 49.2 full spec doucment
+	// See Table 9.13.3-2 in the VITA 49.2 2017 doucment
 	struct {
 
 		uint32_t repeat_count:16;
@@ -672,19 +674,19 @@ struct vita49_2_data_payload_format {
 
 // TODO: Define the subfields for the Formatted GPS/INS struct (if necessary, ADI may not even be able to 
 // support this based on the capabilities of our SoMs).
-// See Section 9.4.5 in the VITA 49.2 full spec document for more information about this field and its subfields.
+// See Section 9.4.5 in the VITA 49.2 2017 document for more information about this field and its subfields.
 struct vita49_2_formatted_gps_ins{};
 
 // TODO: Define the subfields for the ASCII GPS struct (only if necessary like with the Formatted GPS/INS struct).
-// See Section 9.4.7 in the VITA 49.2 full spec document for more information.
+// See Section 9.4.7 in the VITA 49.2 2017 document for more information.
 struct vita49_2_gps_ascii{};
 
 // TODO: Define the subfields for the ECEF/Relative Ephemeris struct (if necessary).
-// See Section 9.4.3 in the VITA 49.2 full spec document for more information.
+// See Section 9.4.3 in the VITA 49.2 2017 document for more information.
 struct vita49_2_ecef_relative_ephemeris{};
 
 // TODO: Define the subfields for the Context Association Lists struct (if necessary).
-// See Section 9.13.2 in the VITA 49.2 full spec document for more information.
+// See Section 9.13.2 in the VITA 49.2 2017 document for more information.
 struct vita49_2_context_association_lists{};
 
 struct vita49_2_device_identifier {
@@ -870,6 +872,50 @@ struct vita49_2_cif3_fields {
 // TODO: Define a struct to represent CIF7 similarly to how we've defined CIF0 below.
 struct vita49_2_cif7_fields {
 	struct cif7_word {} cif7_word;
+};
+
+/**
+ * @struct vita49_2_warnings
+ * @brief Contains CIF0-7 words as well as the payload where the warning indicator values will live.
+ * 
+ */
+struct vita49_2_warnings {
+	struct cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
+
+	// Not currently in use, but ADI retains the right to implement these fields in the future.
+	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
+	struct cif1_word* cif1_warnings;	
+	struct cif2_word* cif2_warnings;
+	struct cif3_word* cif3_warnings;
+	struct cif7_word* cif7_warnings;
+
+	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
+	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 2017 document
+	// for the list of predefined warnings/errors)
+	struct vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
+	uint16_t warnings_payload_num_words;     					/* Number of 32-bit words in the payload */
+};
+
+/**
+ * @struct vita49_2_errors
+ * @brief Contains CIF0-7 words as well as the payload where the error indicator values will live.
+ * 
+ */
+struct vita49_2_errors {
+	struct cif0_word cif0_errors;	/* Indicates which of the CIF0 had errors */
+
+	// Not currently in use, but ADI retains the right to implement these fields in the future.
+	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
+	struct cif1_word* cif1_errors;	
+	struct cif2_word* cif2_errors;
+	struct cif3_word* cif3_errors;
+	struct cif7_word* cif7_errors;
+
+	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
+	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 2017 document
+	// for the list of predefined warnings/errors)
+	struct vita49_2_warning_error_indicators* errors_payload;  	/* Pointer to the start of the payload words */
+	uint16_t errors_payload_num_words;     						/* Number of 32-bit words in the payload */
 };
 
 #if defined(_WIN32)

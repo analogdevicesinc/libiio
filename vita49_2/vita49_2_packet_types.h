@@ -112,7 +112,7 @@ struct vita49_2_control_packet {
 };
 
 /**
- * @struct vita49_2_ackV_X_packet
+ * @struct vita49_2_ackX_packet
  * @brief Represents a parsed VITA 49.2 AckX Packet.
  * 
  * This structure holds all decompressed fields and metadata of a 
@@ -122,40 +122,12 @@ struct vita49_2_ackX_packet {
 	
 	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
-
-	/* WARNINGS */
-	struct cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
-
-	// Not currently in use, but ADI retains the right to implement these fields in the future.
-	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
-	struct cif1_word* cif1_warnings;	
-	struct cif2_word* cif2_warnings;
-	struct cif3_word* cif3_warnings;
-	struct cif7_word* cif7_warnings;
-
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0_warnings struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
 	// Always access those enables through the cif0_warnings struct.
 
-
-	/* ERRORS */
-	struct cif0_word cif0_errors;	/* Indicates which of the CIF0 had errors */
-	struct cif1_word* cif1_errors;	
-	struct cif2_word* cif2_errors;
-	struct cif3_word* cif3_errors;
-	struct cif7_word* cif7_errors;
-
-
-	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
-	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 full spec document
-	// for the list of predefined warnings/errors)
-	struct vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
-	uint16_t warnings_payload_num_words;     					/* Number of 32-bit words in the payload */
-
-	// Same as the warning fields, but for errors
-	struct vita49_2_warning_error_indicators* errors_payload;  	/* Pointer to the start of the payload words */
-	uint16_t errors_payload_num_words;     						/* Number of 32-bit words in the payload */
-
+	struct vita49_2_warnings warnings;
+	struct vita49_2_errors errors;
 };
 
 /**
@@ -170,26 +142,13 @@ struct vita49_2_ackV_packet {
 	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
 	/* WARNINGS */
-	struct cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
-
-	// Not currently in use, but ADI retains the right to implement these fields in the future.
-	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
-	struct cif1_word* cif1_warnings;	
-	struct cif2_word* cif2_warnings;
-	struct cif3_word* cif3_warnings;
-	struct cif7_word* cif7_warnings;
+	struct vita49_2_warnings warnings;
 
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0_warnings struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
 	// Always access those enables through the cif0_warnings struct.
 
 	// AckV messages aren't allowed to have error fields unlike AckX
-
-	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
-	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 full spec document
-	// for the list of predefined warnings/errors)
-	struct vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
-	uint16_t warnings_payload_num_words;     					/* Number of 32-bit words in the payload */
 };
 
 /**
@@ -211,15 +170,6 @@ struct vita49_2_ackS_packet {
 	struct vita49_2_cif2_fields* cif2;	/* CIF2 Word and Fields */
 	struct vita49_2_cif3_fields* cif3;	/* CIF3 Word and Fields */
 	struct vita49_2_cif7_fields* cif7;	/* CIF7 Word and Fields */
-
-	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0 struct.
-	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
-	// Always access those enables through the cif0 struct.
-
-	// The payload will contain the attribute values of the fields defined in CIF0 (as well as CIF1-7 if they're enabled)
-	// after the Control Packet was executed.
-	const uint32_t *payload;  			/* Pointer to the start of the payload words */
-	uint16_t payload_num_words;     	/* Number of 32-bit words in the payload */
 };
 
 /**

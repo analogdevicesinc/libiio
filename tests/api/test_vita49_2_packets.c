@@ -118,7 +118,7 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 	// Fractional Timestamp
 	TEST_ASSERT_EQ(data_packet.prologue.has_timestamp_frac, 1, "Fractional Timestamp should be present");
 	
-	// According to Figure 5.1.4-1 from the VITA 49.2 full spec document, the first word is the most significant 32 bits
+	// According to Figure 5.1.4-1 from the VITA 49.2 2017 document, the first word is the most significant 32 bits
 	uint32_t timestamp_frac_lower, timestamp_frac_upper;
 	memcpy(&timestamp_frac_upper, &TIME_PACKET[field_offset], sizeof(timestamp_frac_upper));
 	field_offset++;
