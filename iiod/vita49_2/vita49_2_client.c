@@ -177,11 +177,16 @@ enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *c
  * Returns 0 for success and a negative value for errors.
  * 
  * @param ctx 
- * @param context_packet 
+ * @param cif0 
+ * @param cif1 Can be NULL
+ * @param cif2 Can be NULL
+ * @param cif3 Can be NULL
+ * @param cif7 Can be NULL
+ * @param associated_control_packet Can be NULL. Used for populating CIF data for AckS Packets since AckS Packets can only contain the CIF fields that were present in the associated Control Packet.
  * @return int 
  */
-int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet* context_packet);
-
+int acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* cif0, struct vita49_2_cif1_fields* cif1, struct vita49_2_cif2_fields* cif2,
+						struct vita49_2_cif3_fields* cif3, struct vita49_2_cif7_fields* cif7, struct vita49_2_control_packet* associated_control_packet);
 /**
  * @brief More precise way of comparing doubles. Takes into account scaling.
  * 
@@ -640,6 +645,59 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	ssize_t ackV_packet_size = 0;
 
 	// ==============================================================
+	// ACKS PACKET SETUP
+	// ==============================================================
+
+	struct vita49_2_ackS_packet ackS_packet = {0};
+
+	ackS_packet.command_prologue.common_prologue.header.indicators = (1 << 2);		// Indicate that this specific Command Packet is an Acknowledge type
+	ackS_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	ackS_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+	ackS_packet.command_prologue.common_prologue.header.has_class_id = 1;
+	ackS_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+
+	ackS_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI;
+	ackS_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_ACKS;
+	ackS_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+	
+	ackS_packet.command_prologue.common_prologue.has_stream_id = 1;
+	ackS_packet.command_prologue.common_prologue.has_class_id = 1;
+	ackS_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+	// time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	ackS_packet.command_prologue.ack_cam = calloc(1, sizeof(*ackS_packet.command_prologue.ack_cam));
+	if (ackS_packet.command_prologue.ack_cam == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to allocate memory for AckV CAM field.\n");
+		return;
+	}
+
+	ackS_packet.command_prologue.ack_cam->ackS_request = 1;
+	ackS_packet.command_prologue.ack_cam->action_scheduled = 1; // ADI doesn't currently support scheduling Commands, so this will be asserted to indicate that the Query was executed
+
+	// Remaining Fields that need to be set:
+	// AckV Packet:
+		// Command Prologue:
+			// Common Prologue
+				// Header:
+					// packet_size_words (this gets handled automatically when the vita49_2_generate_<packet_name>() function gets called) *
+					// packet_count *
+				// stream_id *
+				// timestamp_int *
+				// TODO: timestamp_frac, Linux doesn't provide a way to get picosecond accuracy natively
+			// Message ID *
+			// Controllee ID/UUID *
+			// Controller ID/UUID *
+		// CIF0 *
+		// CIF1 (if applicable) *
+		// CIF2 (if applicable) *
+		// CIF3 (if applicable) *
+		// CIF7 (if applicable) *
+		// CIF Payload
+
+	ssize_t ackS_packet_size = 0;
+
+	// ==============================================================
 	// CONTEXT PACKET SETUP
 	// ==============================================================
 
@@ -696,7 +754,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// For keeping track of the Stream IDs created by the device
 	struct vita49_2_stream_entry device_stream_id_table[STREAM_ID_TABLE_SIZE] = {0};
 	struct vita49_2_stream_entry stream_entry = {0};
-	size_t last_insertion_index = 0;
+	ssize_t last_insertion_index = -1;
 
 	// Dumb way of keep track of what Stream ID we're currently on for the packet types
 	// that the device can send.
@@ -927,24 +985,24 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							ssize_t ret_value;
 
 							// Error occurred
-							if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
+							if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Signal Time Data Packet that was to be sent.\n");
 								continue;
 							}
 
-							// If the return value is less than or equal to the last_insertion_index, then that means the element already existed in the array.
-							// Otherwise that means we just inserted a new element.
+							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
 							if (ret_value > last_insertion_index)
 							{
+								time_data_packet.prologue.stream_id = stream_entry.stream_id;
+								time_data_packet.prologue.header.packet_count = 0;
+							
+								device_stream_id_table[ret_value].packet_count = 0;
+
 								last_insertion_index++;
 								next_time_data_stream_id++;
-
-								time_data_packet.prologue.stream_id = stream_entry.stream_id;
-								time_data_packet.prologue.header.packet_count = 1;
-							
-								device_stream_id_table[ret_value].packet_count = 1;
 							}
+							// Otherwise that means the element already existed in the array.
 							else
 							{
 								time_data_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
@@ -979,33 +1037,34 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 								stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
 								stream_entry.host_port = sender_address.sin_port;
+								stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
 								stream_entry.stream_id = next_ackx_ackv_stream_id;
 
 								ssize_t ret_value;
 
 								// Error occurred
-								if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
+								if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
 								{
 									fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckV Packet that was to be sent.\n");
 									continue;
 								}
 
-								// If the return value is less than or equal to the last_insertion_index, then that means the element already existed in the array.
-								// Otherwise that means we just inserted a new element.
+								// If the return value is greater than the last_insertion_index, that means a new element was inserted.
 								if (ret_value > last_insertion_index)
 								{
+									ackV_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+									ackV_packet.command_prologue.common_prologue.header.packet_count = 0;
+								
+									device_stream_id_table[ret_value].packet_count = 0;
+
 									last_insertion_index++;
 									next_ackx_ackv_stream_id++;
-
-									control_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
-									control_packet.command_prologue.common_prologue.header.packet_count = 1;
-								
-									device_stream_id_table[ret_value].packet_count = 1;
 								}
+								// Otherwise that means the element already existed in the array.
 								else
 								{
-									control_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
-									control_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+									ackV_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+									ackV_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
 								}
 
 								ackV_packet.command_prologue.message_id = control_packet.command_prologue.message_id;
@@ -1026,9 +1085,10 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								ackV_packet.command_prologue.ack_cam->controllee_id_format	= control_packet.command_prologue.control_cam->controllee_id_format;
 								ackV_packet.command_prologue.ack_cam->has_controllee_id		= control_packet.command_prologue.control_cam->has_controllee_id;
 
-								// Copying the Controller ID information from the Control Packet
+								// Copying the Controller and Controllee ID information from the Control Packet
 								memcpy(&ackV_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackV_packet.command_prologue.controller_id));
-							
+								memcpy(&ackV_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackV_packet.command_prologue.controllee_id));
+
 								// Now to write that data to a buffer and send it
 								if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 									fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
@@ -1052,7 +1112,76 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							continue;
 						}
 
-						// TODO: Need logic to look at the CAM field and generate Ack messages if requested
+						// TODO: Need logic to look at the CAM field and generate AckX messages if requested
+
+
+						// Checking if AckS was requested
+						if (control_packet.command_prologue.control_cam->request_ack_s)
+						{
+							// Acquiring the attribute data to populate the Context Packet
+							if (acquire_context_data(arguments->ctx, &ackS_packet.cif0, ackS_packet.cif1, ackS_packet.cif2, ackS_packet.cif3, ackS_packet.cif7, &control_packet) < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Error while acquiring data for AckS Packet.\n");
+								continue;
+							}
+
+							// Writing the remaining information before sending the packet
+							ackS_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
+
+							stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+							stream_entry.host_port = sender_address.sin_port;
+							stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKS;
+							stream_entry.stream_id = next_acks_stream_id;
+
+							ssize_t ret_value;
+
+							// Error occurred
+							if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckS Packet that was to be sent.\n");
+								continue;
+							}
+
+							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+							if (ret_value > last_insertion_index)
+							{
+								ackS_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+								ackS_packet.command_prologue.common_prologue.header.packet_count = 0;
+							
+								device_stream_id_table[ret_value].packet_count = 0;
+
+								last_insertion_index++;
+								next_acks_stream_id++;
+							}
+							// Otherwise that means the element already existed in the array.
+							else
+							{
+								ackS_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+								ackS_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+							}
+
+							// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
+							ackS_packet.command_prologue.ack_cam->reserved_21 			= 0;
+							ackS_packet.command_prologue.ack_cam->nack 					= control_packet.command_prologue.control_cam->nack;
+							ackS_packet.command_prologue.ack_cam->action_bits 			= control_packet.command_prologue.control_cam->action_bits;
+							ackS_packet.command_prologue.ack_cam->errors				= control_packet.command_prologue.control_cam->errors;
+							ackS_packet.command_prologue.ack_cam->warnings				= control_packet.command_prologue.control_cam->warnings;
+							ackS_packet.command_prologue.ack_cam->partial_execution		= control_packet.command_prologue.control_cam->partial_execution;
+							ackS_packet.command_prologue.ack_cam->controller_id_format	= control_packet.command_prologue.control_cam->controller_id_format;
+							ackS_packet.command_prologue.ack_cam->has_controller_id		= control_packet.command_prologue.control_cam->has_controller_id;
+							ackS_packet.command_prologue.ack_cam->controllee_id_format	= control_packet.command_prologue.control_cam->controllee_id_format;
+							ackS_packet.command_prologue.ack_cam->has_controllee_id		= control_packet.command_prologue.control_cam->has_controllee_id;
+
+							// Copying the Controller and Controllee ID information from the Control Packet
+							memcpy(&ackS_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackS_packet.command_prologue.controller_id));
+							memcpy(&ackS_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackS_packet.command_prologue.controllee_id));
+						
+							// Now to write that data to a buffer and send it
+							if ((ackS_packet_size = vita49_2_generate_acks_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to serialize AckS Packet.\n");
+							else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP.\n");
+						}
 
 						break;
 					}
@@ -1091,7 +1220,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 			}
 
 			// Acquiring the attribute data to populate the Context Packet
-			if (acquire_context_data(arguments->ctx, &context_packet) < 0)
+			if (acquire_context_data(arguments->ctx, &context_packet.cif0, context_packet.cif1, context_packet.cif2, context_packet.cif3, context_packet.cif7, NULL) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Error while acquiring data for Context Packet.\n");
 				continue;
@@ -1102,35 +1231,35 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
 			stream_entry.host_port = sender_address.sin_port;
+			stream_entry.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTEXT;
 			stream_entry.stream_id = next_context_stream_id;
 
 			ssize_t ret_value;
 
 			// Error occurred
-			if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry) < 0))
+			if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Context Packet that was to be sent.\n");
 				continue;
 			}
 
-			// If the return value is less than or equal to the last_insertion_index, then that means the element already existed in the array.
-			// Otherwise that means we just inserted a new element.
+			// If the return value is greater than the last_insertion_index, that means a new element was inserted.
 			if (ret_value > last_insertion_index)
 			{
+				context_packet.prologue.stream_id = stream_entry.stream_id;
+				context_packet.prologue.header.packet_count = 0;
+			
+				device_stream_id_table[ret_value].packet_count = 0;
+
 				last_insertion_index++;
 				next_context_stream_id++;
-
-				context_packet.prologue.stream_id = stream_entry.stream_id;
-				context_packet.prologue.header.packet_count = 1;
-			
-				device_stream_id_table[ret_value].packet_count = 1;
 			}
+			// Otherwise that means the element already existed in the array.
 			else
 			{
 				context_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
 				context_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
 			}
-
 
 			// Checking if this Context Packet has changed. There's a CIF0 field called "Context Field Change Indicator" which when asserted
 			// indicates that the attribute data in this packet has changed since the previous Context Packet.
@@ -1295,7 +1424,7 @@ ssize_t insert_stream_id(struct vita49_2_stream_entry* array_start, size_t array
 	if (array_start == NULL || array_size == 0 || insertion_item == NULL)
 		return -EINVAL;
 	
-	size_t i;
+	ssize_t i;
 	for (i = 0; i < array_size; i++)
 	{
 		// If host_ip_addr is uninitialized, that means this element and downstream elements haven't been populated,
@@ -1315,13 +1444,15 @@ ssize_t insert_stream_id(struct vita49_2_stream_entry* array_start, size_t array
 
 	// If we get here, that means the element isn't in the array.
 	// We need to check if we have the capacity to add it by checking if the iterator got to the last index.
-	if (i++ == (array_size-1))
+	if (i == array_size)
 		return -ENOMEM;
 
 	// Space is available
-	array_start[i].host_ip_addr = insertion_item->host_ip_addr;
-	array_start[i].host_port = insertion_item->host_port;
-	array_start[i].packet_class_code = insertion_item->packet_class_code;
+	array_start[i] = *insertion_item;
+	// array_start[i].host_ip_addr 		= insertion_item->host_ip_addr;
+	// array_start[i].host_port 			= insertion_item->host_port;
+	// array_start[i].packet_class_code 	= insertion_item->packet_class_code;
+	// array_start[i].stream_id 			= insertion_item->stream_id;
 
 	return i;
 }
@@ -2292,12 +2423,16 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 	return 0;
 }
 
-int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet* context_packet)
+int acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* cif0, struct vita49_2_cif1_fields* cif1, struct vita49_2_cif2_fields* cif2,
+						struct vita49_2_cif3_fields* cif3, struct vita49_2_cif7_fields* cif7, struct vita49_2_control_packet* associated_control_packet)
 {
-	if (ctx == NULL || context_packet == NULL)
+	// The CIF1-7 pointers don't need to be checked since those fields are optional.
+	// Later in this function there's some checks to see if memory needs to be allocated.
+	// The same is true for the Control Packet pointer.
+	if (ctx == NULL || cif0 == NULL)
 		return -EINVAL;
 
-	memset(&context_packet->cif0, 0, sizeof(context_packet->cif0));
+	memset(cif0, 0, sizeof(*cif0));
 
 	// For each attribute in the CIF mappings linked list, we'll acquire the current value of that
 	// attribute and write it into the Context Packet
@@ -2440,6 +2575,19 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 		{
 			case CIF0:
 
+				// If a valid Control Packet pointer was passed as an argument, that means we're trying to populate data for a AckS Packet.
+				// AckS Packets only populate CIF fields that were also present in the associated Control Packet, thus we must check the CIF0
+				// word in the Control Packet.
+				if (associated_control_packet != NULL)
+				{
+					// Checking if the current CIF mapping exists amongst the fields that were modified by the Control Packet.
+					uint32_t cif0_word;
+					memcpy(&cif0_word, &associated_control_packet->cif0.cif0_word, sizeof(cif0_word));
+
+					if (!(cif0_word & (1 << cif_mappings->cif_bit)))
+						continue;
+				}
+
 				// We need to parse the data based on the data type, and we can determine that by looking at the CIF bit.
 				switch (cif0_type_table[cif_mappings->cif_bit])
 				{
@@ -2464,44 +2612,44 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 						{
 							// Bandwidth
 							case 29:
-								context_packet->cif0.bandwidth = attr_value_d;
-								context_packet->cif0.cif0_word.has_bandwidth = 1;
+								cif0->bandwidth = attr_value_d;
+								cif0->cif0_word.has_bandwidth = 1;
 								break;
 
 							// IF Reference Frequency
 							case 28:
-								context_packet->cif0.if_reference_frequency = attr_value_d;
-								context_packet->cif0.cif0_word.has_if_reference_frequency = 1;
+								cif0->if_reference_frequency = attr_value_d;
+								cif0->cif0_word.has_if_reference_frequency = 1;
 								break;
 
 							// RF Reference Frequency
 							case 27:
-								context_packet->cif0.rf_reference_frequency = attr_value_d;
-								context_packet->cif0.cif0_word.has_rf_reference_frequency = 1;
+								cif0->rf_reference_frequency = attr_value_d;
+								cif0->cif0_word.has_rf_reference_frequency = 1;
 								break;
 
 							// RF Reference Frequency Offset
 							case 26:
-								context_packet->cif0.rf_reference_frequency_offset = attr_value_d;
-								context_packet->cif0.cif0_word.has_rf_reference_frequency_offset = 1;
+								cif0->rf_reference_frequency_offset = attr_value_d;
+								cif0->cif0_word.has_rf_reference_frequency_offset = 1;
 								break;
 
 							// IF Band Offset
 							case 25:
-								context_packet->cif0.if_band_offset = attr_value_d;
-								context_packet->cif0.cif0_word.has_if_band_offset = 1;
+								cif0->if_band_offset = attr_value_d;
+								cif0->cif0_word.has_if_band_offset = 1;
 								break;
 
 							// Reference Level
 							case 24:
-								context_packet->cif0.reference_level = attr_value_d;
-								context_packet->cif0.cif0_word.has_reference_level = 1;
+								cif0->reference_level = attr_value_d;
+								cif0->cif0_word.has_reference_level = 1;
 								break;
 
 							// Sample Rate
 							case 21:
-								context_packet->cif0.sample_rate = attr_value_d;
-								context_packet->cif0.cif0_word.has_sample_rate = 1;
+								cif0->sample_rate = attr_value_d;
+								cif0->cif0_word.has_sample_rate = 1;
 								break;
 
 							// Temperature
@@ -2530,26 +2678,26 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 						{
 							// Over-Range Count
 							case 22:
-								context_packet->cif0.over_range_count = (uint32_t)(attr_value_ll);
-								context_packet->cif0.cif0_word.has_over_range_count = 1;
+								cif0->over_range_count = (uint32_t)(attr_value_ll);
+								cif0->cif0_word.has_over_range_count = 1;
 								break;
 
 							// Timestamp Adjustment
 							case 20:
-								context_packet->cif0.timestamp_adjustment = (int64_t)(attr_value_ll);
-								context_packet->cif0.cif0_word.has_timestamp_adjustment = 1;
+								cif0->timestamp_adjustment = (int64_t)(attr_value_ll);
+								cif0->cif0_word.has_timestamp_adjustment = 1;
 								break;
 
 							// Timestamp Calibration Time
 							case 19:
-								context_packet->cif0.timestamp_calibration_time_int = (uint32_t)(attr_value_ll);
-								context_packet->cif0.cif0_word.has_timestamp_calibration_time = 1;
+								cif0->timestamp_calibration_time_int = (uint32_t)(attr_value_ll);
+								cif0->cif0_word.has_timestamp_calibration_time = 1;
 								break;
 
 							// Ephemeris Ref ID
 							case 10:
-								context_packet->cif0.ephemeris_ref_id = (uint32_t)(attr_value_ll);
-								context_packet->cif0.cif0_word.has_ephemeris_ref_id = 1;
+								cif0->ephemeris_ref_id = (uint32_t)(attr_value_ll);
+								cif0->cif0_word.has_ephemeris_ref_id = 1;
 								break;
 						}
 
@@ -2564,20 +2712,122 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_context_packet
 
 				break;
 
+			// IMPORTANT: When handling CIF1/2/3/7, make sure to check if memory has been allocated for them!
+
 			// TODO: Logic for CIF1 field encoding
 			case CIF1:
+
+				if (associated_control_packet != NULL)
+				{
+					if (associated_control_packet->cif1 == NULL)
+						continue;
+
+					// Checking if the current CIF mapping exists amongst the fields that were modified by the Control Packet.
+					uint32_t cif1_word;
+					memcpy(&cif1_word, &associated_control_packet->cif1->cif1_word, sizeof(cif1_word));
+
+					if (!(cif1_word & (1 << cif_mappings->cif_bit)))
+						continue;
+				}
+
+				if (cif1 == NULL)
+				{
+					cif1 = calloc(1, sizeof(*cif1));
+
+					if (cif1 == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to allocate memory for CIF1.\n");
+						continue;
+					}
+				}
+
 				break;
 
 			// TODO: Logic for CIF2 field encoding
 			case CIF2:
+
+				if (associated_control_packet != NULL)
+				{
+					if (associated_control_packet->cif2 == NULL)
+						continue;
+
+					// Checking if the current CIF mapping exists amongst the fields that were modified by the Control Packet.
+					uint32_t cif2_word;
+					memcpy(&cif2_word, &associated_control_packet->cif2->cif2_word, sizeof(cif2_word));
+
+					if (!(cif2_word & (1 << cif_mappings->cif_bit)))
+						continue;
+				}
+
+				if (cif2 == NULL)
+				{
+					cif2 = calloc(1, sizeof(*cif2));
+
+					if (cif2 == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to allocate memory for CIF2.\n");
+						continue;
+					}
+				}
+				
 				break;
 
 			// TODO: Logic for CIF3 field encoding
 			case CIF3:
+
+				if (associated_control_packet != NULL)
+				{
+					if (associated_control_packet->cif3 == NULL)
+						continue;
+
+					// Checking if the current CIF mapping exists amongst the fields that were modified by the Control Packet.
+					uint32_t cif3_word;
+					memcpy(&cif3_word, &associated_control_packet->cif3->cif3_word, sizeof(cif3_word));
+
+					if (!(cif3_word & (1 << cif_mappings->cif_bit)))
+						continue;
+				}
+
+				if (cif3 == NULL)
+				{
+					cif3 = calloc(1, sizeof(*cif3));
+
+					if (cif3 == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to allocate memory for CIF3.\n");
+						continue;
+					}
+				}
+
 				break;
 
 			// TODO: Logic for CIF7 field encoding
 			case CIF7:
+
+				if (associated_control_packet != NULL)
+				{
+					if (associated_control_packet->cif7 == NULL)
+						continue;
+
+					// Checking if the current CIF mapping exists amongst the fields that were modified by the Control Packet.
+					uint32_t cif7_word;
+					memcpy(&cif7_word, &associated_control_packet->cif7->cif7_word, sizeof(cif7_word));
+
+					if (!(cif7_word & (1 << cif_mappings->cif_bit)))
+						continue;
+				}
+
+				if (cif7 == NULL)
+				{
+					cif7 = calloc(1, sizeof(*cif7));
+
+					if (cif7 == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to allocate memory for CIF7.\n");
+						continue;
+					}
+				}
+
 				break;
 
 			default:

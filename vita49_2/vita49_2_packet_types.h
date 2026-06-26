@@ -207,10 +207,10 @@ struct vita49_2_ackS_packet {
 
 	// Unlikely to be used, but ADI retains the right to implement these fields in the future.
 	// Using pointers as embedding each of these structs would result in a lot of bloat.
-	struct vita49_2_cif7_fields* cif7;	/* CIF7 Word and Fields */
-	struct vita49_2_cif3_fields* cif3;	/* CIF3 Word and Fields */
-	struct vita49_2_cif2_fields* cif2;	/* CIF2 Word and Fields */
 	struct vita49_2_cif1_fields* cif1;	/* CIF1 Word and Fields */
+	struct vita49_2_cif2_fields* cif2;	/* CIF2 Word and Fields */
+	struct vita49_2_cif3_fields* cif3;	/* CIF3 Word and Fields */
+	struct vita49_2_cif7_fields* cif7;	/* CIF7 Word and Fields */
 
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0 struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 

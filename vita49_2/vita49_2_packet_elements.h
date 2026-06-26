@@ -438,7 +438,7 @@ struct vita49_2_ack_cam_field {
 	uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
 	uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
 
-	/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM */
+	/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM (specified in Table 8.4.1-1) */
 	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
 	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
