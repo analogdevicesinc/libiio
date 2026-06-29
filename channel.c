@@ -55,6 +55,7 @@ static const char * const iio_chan_type_name_spec[] = {
 	[IIO_CHROMATICITY] = "chromaticity",
 	[IIO_ATTENTION] = "attention",
 	[IIO_ALTCURRENT] = "altcurrent",
+	[IIO_COVERAGE] = "coverage",
 };
 
 static const char * const hwmon_chan_type_name_spec[] = {
@@ -126,6 +127,7 @@ static const char * const modifier_names[] = {
 	[IIO_MOD_ACTIVE] = "active",
 	[IIO_MOD_REACTIVE] = "reactive",
 	[IIO_MOD_APPARENT] = "apparent",
+	[IIO_MOD_QUATERNION_AXIS] = "quaternionaxis",
 };
 
 /*

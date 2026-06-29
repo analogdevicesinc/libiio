@@ -178,6 +178,7 @@ class ChannelModifier(Enum):
     IIO_MOD_ACTIVE = 54
     IIO_MOD_REACTIVE = 55
     IIO_MOD_APPARENT = 56
+    IIO_MOD_QUATERNION_AXIS = 57
 
 
 class ChannelType(Enum):
@@ -224,6 +225,7 @@ class ChannelType(Enum):
     IIO_CHROMATICITY = 38
     IIO_ATTENTION = 39
     IIO_ALTCURRENT = 40
+    IIO_COVERAGE = 41
     IIO_CHAN_TYPE_UNKNOWN = 0x7FFFFFFF
 
 
