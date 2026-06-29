@@ -119,7 +119,8 @@ namespace iio
             IIO_MOD_RMS,
             IIO_MOD_ACTIVE,
             IIO_MOD_REACTIVE,
-            IIO_MOD_APPARENT
+            IIO_MOD_APPARENT,
+            IIO_MOD_QUATERNION_AXIS
         }
 
         /// <summary><see cref="iio.Channel.ChannelType"/> class:
@@ -167,6 +168,7 @@ namespace iio
             IIO_CHROMATICITY,
             IIO_ATTENTION,
             IIO_ALTCURRENT,
+            IIO_COVERAGE,
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
