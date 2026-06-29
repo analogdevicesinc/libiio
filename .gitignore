@@ -24,3 +24,5 @@ doxygen_sqlite3.db
 .vscode
 
 *venv*
+
+*.pcapng

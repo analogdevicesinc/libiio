@@ -27,7 +27,7 @@ PROTO = "v49d2" # The VITA 49.2 Wireshark dissector plugin by Geontech
 ALL_PACKETS = "all_packets.pcapng"
 OUTPUT_FILE = "problematic_packet.pcapng" # For storing the packet that failed the testcase
 
-SNIFF_TIMEOUT = 10
+SNIFF_TIMEOUT = 5
 
 # List of situations that we want to exercise:
 # Host sends a Control Packet:
@@ -193,31 +193,34 @@ def dump_packet(frame_number):
     
 def process_packet(capture, tests):
 
-    test_num = 1
-    for test in tests:
-        print(f"\nRunning Test {test_num}: {test}")
+    packet_count = len(tests) + 1
+    print(f"Acquiring {packet_count} packets...", end="", flush=True)
 
-        # While loop in case we run into Context Packets
-        while (True):
-        
-            # Grabbing 1 packet at a time
-            capture.sniff(packet_count=1, timeout=SNIFF_TIMEOUT)
-            print(len(capture))
-            if len(capture) == 0:
-                print(f"No packet captured in {SNIFF_TIMEOUT} seconds")
-                sys.exit(-1)
+    # +1 in case a Context Packet is sent
+    capture.sniff(packet_count=packet_count)
+    print("Success")
 
-            packet = capture[0]
+    test_num = 0
 
-            # Extracting layers and VITA header information
-            layers = packet[PROTO]
-            header_name, header_val = get_header_field(layers)
+    for packet in capture:
 
-            # Ignoring Context Packets since they're sent on an interval and not part of
-            # our scenarios.
+        if (test_num >= len(tests)):
+            return
 
-            if ("context" not in header_name):
-                break
+        test = tests[test_num]
+        print(f"\nRunning Test {test_num + 1}: {test}")
+
+        # print(f"{packet}\n\n")
+
+        # Extracting layers and VITA header information
+        layers = packet[PROTO]
+        header_name, header_val = get_header_field(layers)
+
+        # Ignoring Context Packets since they're sent on an interval and not part of
+        # our scenarios.
+        if ("context" in header_name):
+            print("Encountered Context Packet. Skipping Packet and repeating test.")
+            continue
 
         # Validating if the received packet matches the expected
         if (header_val is not None):
@@ -227,7 +230,7 @@ def process_packet(capture, tests):
                 print("ERROR: Could not extract Packet Type from incoming message.")
                 sys.exit(-1)
 
-            print("Checking if received packet type is expected...")
+            print("Checking if received packet type is expected...", end="")
 
             match test[0]:
                 case "data":
@@ -305,6 +308,8 @@ def process_packet(capture, tests):
                     print(f"ERROR: Invalid testing setup. Unrecognized packet type: '{test[0]}'")
                     sys.exit(-1)
 
+            print("Success")
+
         # Checking any special options
         for option in test[1]:
 
@@ -343,6 +348,11 @@ def process_packet(capture, tests):
 
         test_num += 1
 
+    if (test_num < len(tests)):
+        print(f"ERROR: Only {test_num} of {len(tests)} were conducted")
+        sys.exit(-1)
+
+    return
 
 
 
@@ -378,7 +388,7 @@ capture = pyshark.LiveCapture(
     decode_as={
         f'udp.port=={SRC_PORT}': PROTO
     },
-    output_file=ALL_PACKETS,
+    # output_file=ALL_PACKETS,
 )
 
 tests = [
@@ -402,7 +412,7 @@ print(f"Capture thread starting. Listing for packets from {SRC_IP}:{SRC_PORT}")
 capture_thread.start()
 
 
-sleep(2)
+sleep(5)
 
 # Sending the Control Packet
 udp_send.sendto(control_pkt.to_bytes(), (SRC_IP, SRC_PORT))

@@ -48,7 +48,7 @@
 
 #define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent VITA 49.2 connections/packet streams.
 
-#define CONTEXT_PACKET_INTERVAL_S 20 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
+#define CONTEXT_PACKET_INTERVAL_S 5 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
 
 #define EPSILON
 
