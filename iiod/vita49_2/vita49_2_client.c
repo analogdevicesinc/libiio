@@ -1155,7 +1155,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							memcpy(&ackV_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackV_packet.command_prologue.controllee_id));
 
 							// Now to write that data to a buffer and send it
-							if ((ackV_packet_size = vita49_2_generate_ackv_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							if ((ackV_packet_size = vita49_2_generate_ackV_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
 							else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP.\n");
@@ -1274,7 +1274,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 
 							// Now to write that data to a buffer and send it
-							if ((ackX_packet_size = vita49_2_generate_ackx_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							if ((ackX_packet_size = vita49_2_generate_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to serialize AckX Packet.\n");
 							else if (sendto(socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP.\n");
@@ -1369,7 +1369,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							memcpy(&ackS_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackS_packet.command_prologue.controllee_id));
 						
 							// Now to write that data to a buffer and send it
-							if ((ackS_packet_size = vita49_2_generate_acks_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							if ((ackS_packet_size = vita49_2_generate_ackS_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to serialize AckS Packet.\n");
 							else if (sendto(socket_fd, send_buffer, ackS_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP.\n");

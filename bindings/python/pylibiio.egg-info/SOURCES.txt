@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+iio/__init__.py
+pylibiio.egg-info/PKG-INFO
+pylibiio.egg-info/SOURCES.txt
+pylibiio.egg-info/dependency_links.txt
+pylibiio.egg-info/requires.txt
+pylibiio.egg-info/top_level.txt
+tests/test_vrt.py
+tests/test_vrt_mapping_validate.py
+tests/test_vrt_packet.py
+tests/test_vrt_wireshark.py

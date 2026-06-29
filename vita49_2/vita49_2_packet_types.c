@@ -1252,7 +1252,7 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	return 0;
 }
 
-__vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words)
+__vrt_api ssize_t vita49_2_generate_ackX_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -1594,7 +1594,7 @@ __vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt
 	return buffer_index;
 }
 
-__vrt_api ssize_t vita49_2_generate_ackv_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words)
+__vrt_api ssize_t vita49_2_generate_ackV_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -1840,7 +1840,7 @@ __vrt_api ssize_t vita49_2_generate_ackv_packet(struct vita49_2_ackV_packet *pkt
 	return buffer_index;
 }
 
-__vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt)
+__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt)
 {
 	if (!buf || !pkt || words == 0)
 		return -EINVAL;
@@ -2227,7 +2227,7 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
 	return 0;
 }
 
-__vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt)
+__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt)
 {
 	if (!buf || !pkt || words == 0)
 		return -EINVAL;
@@ -2501,7 +2501,7 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
 }
 
 
-__vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words)
+__vrt_api ssize_t vita49_2_generate_ackS_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words)
 {
 	if (!pkt || !buf)
 		return -EINVAL;
@@ -2928,7 +2928,7 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
 }
 
 
-__vrt_api int vita49_2_parse_acks_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt)
+__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt)
 {
 	if (!buf || !pkt || words == 0)
 		return -EINVAL;

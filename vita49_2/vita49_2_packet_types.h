@@ -96,10 +96,10 @@ struct vita49_2_control_packet {
 
 	// Unlikely to be used, but ADI retains the right to implement these fields in the future.
 	// Using pointers as embedding each of these structs would result in a lot of bloat.
-	struct vita49_2_cif7_fields* cif7;	/* CIF7 Word and Fields */
-	struct vita49_2_cif3_fields* cif3;	/* CIF3 Word and Fields */
-	struct vita49_2_cif2_fields* cif2;	/* CIF2 Word and Fields */
 	struct vita49_2_cif1_fields* cif1;	/* CIF1 Word and Fields */
+	struct vita49_2_cif2_fields* cif2;	/* CIF2 Word and Fields */
+	struct vita49_2_cif3_fields* cif3;	/* CIF3 Word and Fields */
+	struct vita49_2_cif7_fields* cif7;	/* CIF7 Word and Fields */
 
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0 struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
@@ -173,7 +173,7 @@ struct vita49_2_ackS_packet {
 };
 
 /**
- * @struct vita49_2_extended_control_packet
+ * @struct vita49_2_control_extension_packet
  * @brief Represents a parsed VITA 49.2 Command Extension Packet.
  * 
  * This structure holds all decompressed fields and metadata of a 
@@ -182,7 +182,7 @@ struct vita49_2_ackS_packet {
  * The purpose of this Command Extension Packet is to issue commands/controls on ADI devices that can't
  * be well translated to CIF0-7 fields.
  */
-struct vita49_2_extended_control_packet {
+struct vita49_2_control_extension_packet {
 	
 	struct vita49_2_command_prologue prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
@@ -285,7 +285,18 @@ __vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, s
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_ackX_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_ackx_packet structure. 
+ * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
+ * 
+ * @param buf 
+ * @param words 
+ * @param pkt 
+ * @return int 
+ */
+__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for an AckV Packet. 
@@ -297,18 +308,7 @@ __vrt_api ssize_t vita49_2_generate_ackx_packet(struct vita49_2_ackX_packet *pkt
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackv_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words);
-
-/**
- * @brief Parses a buffer of 32-bit words into a vita49_2_ackx_packet structure. 
- * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
- * 
- * @param buf 
- * @param words 
- * @param pkt 
- * @return int 
- */
-__vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt);
+__vrt_api ssize_t vita49_2_generate_ackV_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_ackv_packet structure. 
@@ -319,7 +319,7 @@ __vrt_api int vita49_2_parse_ackx_packet(const uint32_t *buf, size_t words, stru
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt);
+__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a AckS Packet. 
@@ -331,7 +331,7 @@ __vrt_api int vita49_2_parse_ackv_packet(const uint32_t *buf, size_t words, stru
  * @param max_words 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_generate_ackS_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_acks_packet structure. 
@@ -342,6 +342,6 @@ __vrt_api ssize_t vita49_2_generate_acks_packet(struct vita49_2_ackS_packet *pkt
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_acks_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt);
+__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt);
 
 #endif /* __VITA49_2_PACKET_TYPES_H__ */

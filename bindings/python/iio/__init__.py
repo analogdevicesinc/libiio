@@ -15,6 +15,7 @@ Author: Paul Cercueil <paul.cercueil@analog.com>
 # pylint: disable=protected-access
 from ctypes import (
     Structure,
+    Union,
     c_char_p,
     c_uint,
     c_uint64,
@@ -152,7 +153,7 @@ class DataFormat(Structure):
     ]
 import sys
 
-class _VRTHeader(Structure):
+class _VITA49_2_Header(Structure):
     if sys.byteorder == "little":
         _fields_ = [
             ("packet_size_words", c_uint, 16),
@@ -176,7 +177,7 @@ class _VRTHeader(Structure):
             ("packet_size_words", c_uint, 16),
         ]
 
-class _VRTTrailer(Structure):
+class _VITA49_2_Trailer(Structure):
     if sys.byteorder == "little":
         _fields_ = [
             ("associated_context_packet_count", c_uint, 7),
@@ -192,63 +193,527 @@ class _VRTTrailer(Structure):
             ("associated_context_packet_count", c_uint, 7),
         ]
 
-class _VRTPacket(Structure):
+class _VITA49_2_Class_ID_Lower_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("oui", c_uint, 24),
+            ("reserved", c_uint, 3),
+            ("pad_bit_count", c_uint, 5)
+        ]
+    else:
+        _fields_ = [
+            ("pad_bit_count", c_uint, 5),
+            ("reserved", c_uint, 3),
+            ("oui", c_uint, 24)
+        ]
+
+class _VITA49_2_Class_ID_Upper_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("packet_class_code", c_uint, 16),
+            ("information_class_code", c_uint, 16)  
+        ]
+    else:
+        _fields_ = [
+            ("information_class_code", c_uint, 16),
+            ("packet_class_code", c_uint, 16)
+        ]
+
+class _VITA49_2_Class_ID(Structure):
     _fields_ = [
-        ("header", _VRTHeader),
+        ("lower_word", _VITA49_2_Class_ID_Lower_Word),
+        ("upper_word", _VITA49_2_Class_ID_Upper_Word)
+    ]
+    
+class _VITA49_2_Prologue(Structure):
+    _fields = [
+        ("header", _VITA49_2_Header),
         ("stream_id", c_uint),
-        ("class_id", c_uint64),
+        ("class_id", _VITA49_2_Class_ID),
         ("timestamp_int", c_uint),
-        ("timestamp_frac", c_uint64),
-        ("payload", _POINTER(c_uint)),
-        ("payload_words", c_size_t),
-        ("trailer", _VRTTrailer),
+        ("timestamp_frac", c_uint),
+
         ("has_stream_id", c_bool),
         ("has_class_id", c_bool),
         ("has_timestamp_int", c_bool),
-        ("has_timestamp_frac", c_bool),
+        ("has_timestamp_frac", c_bool)
+    ]
+
+class _VITA49_2_IQ_Item(Structure):
+    if sys.byteorder == "little":
+        _fields = [
+            ("quadrature", c_uint, 16),
+            ("in_phase", c_uint, 16)
+        ]
+    else:
+        _fields = [
+            ("in_phase", c_uint, 16),
+            ("quadrature", c_uint, 16)
+        ]
+
+class _VITA49_2_Control_Cam_Field(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("reserved_7_0", c_uint, 8),
+            ("ack_bits", c_uint, 4),
+            ("timing_control", c_uint, 3),
+            ("reserved_15", c_uint, 1),
+            ("request_error_x", c_uint, 1),
+            ("request_warning_x", c_uint, 1),
+            ("request_ack_s", c_uint, 1),
+            ("request_ack_x", c_uint, 1),
+            ("request_ack_v", c_uint, 1),
+            ("reserved_21", c_uint, 1),
+            ("nack", c_uint, 1),
+            ("action_bits", c_uint, 2),
+            ("errors", c_uint, 1),
+            ("warnings", c_uint, 1),
+            ("partial_execution", c_uint, 1),
+            ("controller_id_format", c_uint, 1),
+            ("has_controller_id", c_uint, 1),
+            ("controllee_id_format", c_uint, 1),
+            ("has_controllee_id", c_uint, 1),
+        ]
+    else:
+        _fields_ = [
+            ("has_controllee_id", c_uint, 1),
+            ("controllee_id_format", c_uint, 1),
+            ("has_controller_id", c_uint, 1),
+            ("controller_id_format", c_uint, 1),
+            ("partial_execution", c_uint, 1),
+            ("warnings", c_uint, 1),
+            ("errors", c_uint, 1),
+            ("action_bits", c_uint, 2),
+            ("nack", c_uint, 1),
+            ("reserved_21", c_uint, 1),
+            ("request_ack_v", c_uint, 1),
+            ("request_ack_x", c_uint, 1),
+            ("request_ack_s", c_uint, 1),
+            ("request_warning_x", c_uint, 1),
+            ("request_error_x", c_uint, 1),
+            ("reserved_15", c_uint, 1),
+            ("timing_control", c_uint, 3),
+            ("ack_bits", c_uint, 4),
+            ("reserved_7_0", c_uint, 8),
+        ]
+
+class _VITA49_2_Ack_Cam_Field(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("reserved_9_0", c_uint, 10),
+            ("action_scheduled", c_uint, 1),
+            ("partial_action", c_uint, 1),
+            ("timing_ack", c_uint, 3),
+            ("reserved_15", c_uint, 1),
+            ("errors_present", c_uint, 1),
+            ("warnings_present", c_uint, 1),
+            ("ackS_request", c_uint, 1),
+            ("ackX_request", c_uint, 1),
+            ("ackV_request", c_uint, 1),
+            ("reserved_21", c_uint, 1),
+            ("nack", c_uint, 1),
+            ("action_bits", c_uint, 2),
+            ("errors", c_uint, 1),
+            ("warnings", c_uint, 1),
+            ("partial_execution", c_uint, 1),
+            ("controller_id_format", c_uint, 1),
+            ("has_controller_id", c_uint, 1),
+            ("controllee_id_format", c_uint, 1),
+            ("has_controllee_id", c_uint, 1),
+        ]
+    else:
+        _fields_ = [
+            ("has_controllee_id", c_uint, 1),
+            ("controllee_id_format", c_uint, 1),
+            ("has_controller_id", c_uint, 1),
+            ("controller_id_format", c_uint, 1),
+            ("partial_execution", c_uint, 1),
+            ("warnings", c_uint, 1),
+            ("errors", c_uint, 1),
+            ("action_bits", c_uint, 2),
+            ("nack", c_uint, 1),
+            ("reserved_21", c_uint, 1),
+            ("ackV_request", c_uint, 1),
+            ("ackX_request", c_uint, 1),
+            ("ackS_request", c_uint, 1),
+            ("warnings_present", c_uint, 1),
+            ("errors_present", c_uint, 1),
+            ("reserved_15", c_uint, 1),
+            ("timing_ack", c_uint, 3),
+            ("partial_action", c_uint, 1),
+            ("action_scheduled", c_uint, 1),
+            ("reserved_9_0", c_uint, 10),
+        ]
+
+class _VITA49_2_Controllee_ID(Union):
+    _fields_ = [
+        ("id32", c_uint),
+        ("uuid128", c_uint * 4),
+    ]
+
+class _VITA49_2_Controller_ID(Union):
+    _fields_ = [
+        ("id32", c_uint),
+        ("uuid128", c_uint * 4),
+    ]
+
+class _VITA49_2_Command_Prologue(Structure):
+    _fields_ = [
+        ("common_prologue", _VITA49_2_Prologue),
+        ("control_cam", _POINTER(_VITA49_2_Control_Cam_Field)),
+        ("ack_cam", _POINTER(_VITA49_2_Ack_Cam_Field)),
+        ("message_id", c_uint),
+        ("controllee_id", _VITA49_2_Controllee_ID),
+        ("controller_id", _VITA49_2_Controller_ID),
+    ]
+
+class _VITA49_2_Warning_Error_Indicators(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("reserved_0", c_uint, 1),
+            ("user_defined", c_uint, 12),
+            ("reserved_18_13", c_uint, 6),
+            ("regional_interference", c_uint, 1),
+            ("cosite_interference", c_uint, 1),
+            ("out_of_band_power_compliance", c_uint, 1),
+            ("in_band_power_compliance", c_uint, 1),
+            ("distortion", c_uint, 1),
+            ("hazardous_power_levels", c_uint, 1),
+            ("timestamp_problem", c_uint, 1),
+            ("field_value_invalid", c_uint, 1),
+            ("parameter_precision", c_uint, 1),
+            ("parameter_range", c_uint, 1),
+            ("erroneous_field", c_uint, 1),
+            ("device_failure", c_uint, 1),
+            ("field_not_executed", c_uint, 1),
+        ]
+    else:
+        _fields_ = [
+            ("field_not_executed", c_uint, 1),
+            ("device_failure", c_uint, 1),
+            ("erroneous_field", c_uint, 1),
+            ("parameter_range", c_uint, 1),
+            ("parameter_precision", c_uint, 1),
+            ("field_value_invalid", c_uint, 1),
+            ("timestamp_problem", c_uint, 1),
+            ("hazardous_power_levels", c_uint, 1),
+            ("distortion", c_uint, 1),
+            ("in_band_power_compliance", c_uint, 1),
+            ("out_of_band_power_compliance", c_uint, 1),
+            ("cosite_interference", c_uint, 1),
+            ("regional_interference", c_uint, 1),
+            ("reserved_18_13", c_uint, 6),
+            ("user_defined", c_uint, 12),
+            ("reserved_0", c_uint, 1),
+        ]
+
+
+class _VITA49_2_Data_Payload_Format_Lower_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("data_item_size", c_uint, 6),
+            ("item_packing_field_size", c_uint, 6),
+            ("data_item_fraction_size", c_uint, 4),
+            ("channel_tag_size", c_uint, 4),
+            ("event_tag_size", c_uint, 3),
+            ("sample_component_repeat_indicator", c_uint, 1),
+            ("data_item_format", c_uint, 5),
+            ("real_complex_type", c_uint, 2),
+            ("packing_method", c_uint, 1),
+        ]
+    else:
+        _fields_ = [
+            ("packing_method", c_uint, 1),
+            ("real_complex_type", c_uint, 2),
+            ("data_item_format", c_uint, 5),
+            ("sample_component_repeat_indicator", c_uint, 1),
+            ("event_tag_size", c_uint, 3),
+            ("channel_tag_size", c_uint, 4),
+            ("data_item_fraction_size", c_uint, 4),
+            ("item_packing_field_size", c_uint, 6),
+            ("data_item_size", c_uint, 6),
+        ]
+
+
+class _VITA49_2_Data_Payload_Format_Upper_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("vector_size", c_uint, 16),
+            ("repeat_count", c_uint, 16),
+        ]
+    else:
+        _fields_ = [
+            ("repeat_count", c_uint, 16),
+            ("vector_size", c_uint, 16),
+        ]
+
+
+class _VITA49_2_Data_Payload_Format(Structure):
+    _fields_ = [
+        ("lower_word", _VITA49_2_Data_Payload_Format_Lower_Word),
+        ("upper_word", _VITA49_2_Data_Payload_Format_Upper_Word),
+    ]
+
+
+class _VITA49_2_Device_Identifier_Lower_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("oui", c_uint, 24),
+            ("reserved_24_31", c_uint, 8),
+        ]
+    else:
+        _fields_ = [
+            ("reserved_24_31", c_uint, 8),
+            ("oui", c_uint, 24),
+        ]
+
+
+class _VITA49_2_Device_Identifier_Upper_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("device_code", c_uint, 16),
+            ("reserved_16_31", c_uint, 16),
+        ]
+    else:
+        _fields_ = [
+            ("reserved_16_31", c_uint, 16),
+            ("device_code", c_uint, 16),
+        ]
+
+
+class _VITA49_2_Device_Identifier(Structure):
+    _fields_ = [
+        ("lower_word", _VITA49_2_Device_Identifier_Lower_Word),
+        ("upper_word", _VITA49_2_Device_Identifier_Upper_Word),
+    ]
+
+
+class _VITA49_2_CIF0_Word(Structure):
+    if sys.byteorder == "little":
+        _fields_ = [
+            ("reserved_0", c_uint, 1),
+            ("cif1_enable", c_uint, 1),
+            ("cif2_enable", c_uint, 1),
+            ("cif3_enable", c_uint, 1),
+            ("reserved_6_4", c_uint, 3),
+            ("cif7_enable", c_uint, 1),
+            ("has_context_association_lists", c_uint, 1),
+            ("has_gps_ascii", c_uint, 1),
+            ("has_ephemeris_ref_id", c_uint, 1),
+            ("has_relative_ephemeris", c_uint, 1),
+            ("has_ecef_ephemeris", c_uint, 1),
+            ("has_formatted_ins", c_uint, 1),
+            ("has_formatted_gps", c_uint, 1),
+            ("has_data_packet_payload_format", c_uint, 1),
+            ("has_state_and_event_indicators", c_uint, 1),
+            ("has_device_identifier", c_uint, 1),
+            ("has_temperature", c_uint, 1),
+            ("has_timestamp_calibration_time", c_uint, 1),
+            ("has_timestamp_adjustment", c_uint, 1),
+            ("has_sample_rate", c_uint, 1),
+            ("has_over_range_count", c_uint, 1),
+            ("has_gain", c_uint, 1),
+            ("has_reference_level", c_uint, 1),
+            ("has_if_band_offset", c_uint, 1),
+            ("has_rf_reference_frequency_offset", c_uint, 1),
+            ("has_rf_reference_frequency", c_uint, 1),
+            ("has_if_reference_frequency", c_uint, 1),
+            ("has_bandwidth", c_uint, 1),
+            ("has_reference_point_id", c_uint, 1),
+            ("context_field_change", c_uint, 1),
+        ]
+    else:
+        _fields_ = [
+            ("context_field_change", c_uint, 1),
+            ("has_reference_point_id", c_uint, 1),
+            ("has_bandwidth", c_uint, 1),
+            ("has_if_reference_frequency", c_uint, 1),
+            ("has_rf_reference_frequency", c_uint, 1),
+            ("has_rf_reference_frequency_offset", c_uint, 1),
+            ("has_if_band_offset", c_uint, 1),
+            ("has_reference_level", c_uint, 1),
+            ("has_gain", c_uint, 1),
+            ("has_over_range_count", c_uint, 1),
+            ("has_sample_rate", c_uint, 1),
+            ("has_timestamp_adjustment", c_uint, 1),
+            ("has_timestamp_calibration_time", c_uint, 1),
+            ("has_temperature", c_uint, 1),
+            ("has_device_identifier", c_uint, 1),
+            ("has_state_and_event_indicators", c_uint, 1),
+            ("has_data_packet_payload_format", c_uint, 1),
+            ("has_formatted_gps", c_uint, 1),
+            ("has_formatted_ins", c_uint, 1),
+            ("has_ecef_ephemeris", c_uint, 1),
+            ("has_relative_ephemeris", c_uint, 1),
+            ("has_ephemeris_ref_id", c_uint, 1),
+            ("has_gps_ascii", c_uint, 1),
+            ("has_context_association_lists", c_uint, 1),
+            ("cif7_enable", c_uint, 1),
+            ("reserved_6_4", c_uint, 3),
+            ("cif3_enable", c_uint, 1),
+            ("cif2_enable", c_uint, 1),
+            ("cif1_enable", c_uint, 1),
+            ("reserved_0", c_uint, 1),
+        ]
+
+
+class _VITA49_2_Formatted_GPS_INS(Structure):
+    _fields_ = []
+
+
+class _VITA49_2_GPS_ASCII(Structure):
+    _fields_ = []
+
+
+class _VITA49_2_ECEF_Relative_Ephemeris(Structure):
+    _fields_ = []
+
+
+class _VITA49_2_Context_Association_Lists(Structure):
+    _fields_ = []
+
+
+class _VITA49_2_CIF0_Fields(Structure):
+    _fields_ = [
+        ("cif0_word", _VITA49_2_CIF0_Word),
+        ("reference_point_id", c_uint),
+        ("bandwidth", c_double),
+        ("if_reference_frequency", c_double),
+        ("rf_reference_frequency", c_double),
+        ("rf_reference_frequency_offset", c_double),
+        ("if_band_offset", c_double),
+        ("reference_level", c_float),
+        ("gain_stage_1", c_float),
+        ("gain_stage_2", c_float),
+        ("over_range_count", c_uint),
+        ("sample_rate", c_double),
+        ("timestamp_adjustment", c_int64),
+        ("timestamp_calibration_time_int", c_uint),
+        ("temperature", c_float),
+        ("device_identifier", _VITA49_2_Device_Identifier),
+        ("state_and_event_indicators", c_uint),
+        ("data_packet_payload_format", _VITA49_2_Data_Payload_Format),
+        ("formatted_gps", _VITA49_2_Formatted_GPS_INS),
+        ("formatted_ins", _VITA49_2_Formatted_GPS_INS),
+        ("ecef_ephemeris", _VITA49_2_ECEF_Relative_Ephemeris),
+        ("relative_ephemeris", _VITA49_2_ECEF_Relative_Ephemeris),
+        ("ephemeris_ref_id", c_uint),
+        ("gps_ascii", _VITA49_2_GPS_ASCII),
+        ("context_association_lists", _VITA49_2_Context_Association_Lists),
+    ]
+
+class _VITA49_2_CIF1_Word(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF1_Fields(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF2_Word(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF2_Fields(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF3_Word(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF3_Fields(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF7_Word(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_CIF7_Fields(Structure):
+    # TODO: Need to implement these fields once we've defined them in vita49_2_packet_elements.h
+    pass
+
+class _VITA49_2_Warnings(Structure):
+    _fields_ = [
+        ("cif0_warnings", _VITA49_2_CIF0_Word),
+        ("cif1_warnings", _POINTER(_VITA49_2_CIF1_Word)),
+        ("cif2_warnings", _POINTER(_VITA49_2_CIF2_Word)),
+        ("cif3_warnings", _POINTER(_VITA49_2_CIF3_Word)),
+        ("cif7_warnings", _POINTER(_VITA49_2_CIF7_Word)),
+        ("warnings_payload", _POINTER(_VITA49_2_Warning_Error_Indicators)),
+        ("warnings_payload_num_words", c_uint16),
+    ]
+
+class _VITA49_2_Errors(Structure):
+    _fields_ = [
+        ("cif0_errors", _VITA49_2_CIF0_Word),
+        ("cif1_errors", _POINTER(_VITA49_2_CIF1_Word)),
+        ("cif2_errors", _POINTER(_VITA49_2_CIF2_Word)),
+        ("cif3_errors", _POINTER(_VITA49_2_CIF3_Word)),
+        ("cif7_errors", _POINTER(_VITA49_2_CIF7_Word)),
+        ("errors_payload", _POINTER(_VITA49_2_Warning_Error_Indicators)),
+        ("errors_payload_num_words", c_uint16),
+    ]
+
+class _VITA49_2_Data_Packet(Structure):
+    _fields_ = [
+        ("prologue", _VITA49_2_Prologue),
+        ("payload", _POINTER(_VITA49_2_IQ_Item)),
+        ("payload", _POINTER(c_uint)),
+        ("payload_num_words", c_size_t),
+        ("trailer", _VITA49_2_Trailer),
         ("has_trailer", c_bool),
     ]
 
-class _VRTCifFields(Structure):
+class _VITA49_2_Context_Packet(Structure):
     _fields_ = [
-        ("cif0", c_uint),
-        ("context_field_change", c_bool),
-        ("has_reference_point_id", c_bool),
-        ("reference_point_id", c_uint),
-        ("has_bandwidth", c_bool),
-        ("bandwidth", c_double),
-        ("has_if_reference_frequency", c_bool),
-        ("if_reference_frequency", c_double),
-        ("has_rf_reference_frequency", c_bool),
-        ("rf_reference_frequency", c_double),
-        ("has_rf_reference_frequency_offset", c_bool),
-        ("rf_reference_frequency_offset", c_double),
-        ("has_if_band_offset", c_bool),
-        ("if_band_offset", c_double),
-        ("has_reference_level", c_bool),
-        ("reference_level", c_float),
-        ("has_gain", c_bool),
-        ("gain_stage_1", c_float),
-        ("gain_stage_2", c_float),
-        ("has_over_range_count", c_bool),
-        ("over_range_count", c_uint),
-        ("has_sample_rate", c_bool),
-        ("sample_rate", c_double),
-        ("has_timestamp_adjustment", c_bool),
-        ("timestamp_adjustment", c_uint64),
-        ("has_timestamp_calibration_time", c_bool),
-        ("timestamp_calibration_time_int", c_uint),
-        ("timestamp_calibration_time_frac", c_uint64),
-        ("has_temperature", c_bool),
-        ("temperature", c_float),
-        ("has_device_identifier", c_bool),
-        ("device_identifier_oui", c_uint),
-        ("device_identifier_code", c_uint16),
-        ("has_state_and_event_indicators", c_bool),
-        ("state_and_event_indicators", c_uint),
-        ("has_data_packet_payload_format", c_bool),
-        ("data_packet_payload_format", c_uint64),
+        ("prologue", _VITA49_2_Prologue),
+        ("cif0", _VITA49_2_CIF0_Fields),
+        ("cif1", _POINTER(_VITA49_2_CIF1_Fields)),
+        ("cif2", _POINTER(_VITA49_2_CIF2_Fields)),
+        ("cif3", _POINTER(_VITA49_2_CIF3_Fields)),
+        ("cif7", _POINTER(_VITA49_2_CIF7_Fields)),
     ]
+
+class _VITA49_2_Control_Packet(Structure):
+    _fields_ = [
+        ("command_prologue", _VITA49_2_Command_Prologue),
+        ("cif0", _VITA49_2_CIF0_Fields),
+        ("cif1", _POINTER(_VITA49_2_CIF1_Fields)),
+        ("cif2", _POINTER(_VITA49_2_CIF2_Fields)),
+        ("cif3", _POINTER(_VITA49_2_CIF3_Fields)),
+        ("cif7", _POINTER(_VITA49_2_CIF7_Fields)),
+        ("payload", _POINTER(c_uint)),
+        ("payload_num_words", c_uint)
+    ]
+
+class _VITA49_2_AckX_Packet(Structure):
+    _fields_ = [
+        ("command_prologue", _VITA49_2_Command_Prologue),
+        ("warnings", _VITA49_2_Warnings),
+        ("errors", _VITA49_2_Errors)
+    ]
+
+class _VITA49_2_AckV_Packet(Structure):
+    _fields_ = [
+        ("command_prologue", _VITA49_2_Command_Prologue),
+        ("warnings", _VITA49_2_Warnings)
+    ]
+
+class _VITA49_2_AckS_Packet(Structure):
+    _fields_ = [
+        ("command_prologue", _VITA49_2_Command_Prologue),
+        ("cif0", _VITA49_2_CIF0_Fields),
+        ("cif1", _POINTER(_VITA49_2_CIF1_Fields)),
+        ("cif2", _POINTER(_VITA49_2_CIF2_Fields)),
+        ("cif3", _POINTER(_VITA49_2_CIF3_Fields)),
+        ("cif7", _POINTER(_VITA49_2_CIF7_Fields)),
+    ]
+
+class _VITA49_2_Control_Extension_Packet(Structure):
+    # TODO: Need to implement once it's been defined in vita49_2_packet_types.h
+    pass
 
 class EventType(Enum):
     """Represents the type of an IIO event."""
@@ -730,26 +1195,74 @@ _c_write.argtypes = (
     c_bool,
 )
 
-# VITA 49.2 Exports
-_vrt_parse_packet = getattr(_lib, "vrt_parse_packet", None)
-if _vrt_parse_packet:
-    _vrt_parse_packet.restype = c_int
-    _vrt_parse_packet.argtypes = [c_void_p, c_size_t, c_void_p]
+# VITA 49.2 Generators/Parsers
+# Data Packets
+_vita49_2_generate_data_packet = getattr(_lib, "vita49_2_generate_data_packet")
+if _vita49_2_generate_data_packet:
+    _vita49_2_generate_data_packet.restype = c_ssize_t
+    _vita49_2_generate_data_packet.argtypes = [_POINTER(_VITA49_2_Data_Packet), _POINTER(c_uint), c_size_t]
 
-_vrt_get_payload_word = getattr(_lib, "vrt_get_payload_word", None)
-if _vrt_get_payload_word:
-    _vrt_get_payload_word.restype = c_uint
-    _vrt_get_payload_word.argtypes = [c_void_p, c_size_t]
+_vita49_2_parse_data_packet = getattr(_lib, "vita49_2_parse_data_packet")
+if _vita49_2_parse_data_packet:
+    _vita49_2_parse_data_packet.restype = c_int
+    _vita49_2_parse_data_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_Data_Packet)]
 
-_vrt_get_payload_double = getattr(_lib, "vrt_get_payload_double", None)
-if _vrt_get_payload_double:
-    _vrt_get_payload_double.restype = c_double
-    _vrt_get_payload_double.argtypes = [c_void_p, c_size_t]
+# Context Packets
+_vita49_2_generate_context_packet = getattr(_lib, "vita49_2_generate_context_packet")
+if _vita49_2_generate_context_packet:
+    _vita49_2_generate_context_packet.restype = c_ssize_t
+    _vita49_2_generate_context_packet.argtypes = [_POINTER(_VITA49_2_Context_Packet), _POINTER(c_uint), c_size_t]
 
-_vrt_parse_cif_payload = getattr(_lib, "vrt_parse_cif_payload", None)
-if _vrt_parse_cif_payload:
-    _vrt_parse_cif_payload.restype = c_int
-    _vrt_parse_cif_payload.argtypes = [_POINTER(_VRTPacket), _POINTER(_VRTCifFields)]
+_vita49_2_parse_context_packet = getattr(_lib, "vita49_2_parse_context_packet")
+if _vita49_2_parse_context_packet:
+    _vita49_2_parse_context_packet.restype = c_int
+    _vita49_2_parse_context_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_Context_Packet)]
+
+# Control Packets
+_vita49_2_generate_control_packet = getattr(_lib, "vita49_2_generate_control_packet")
+if _vita49_2_generate_control_packet:
+    _vita49_2_generate_control_packet.restype = c_ssize_t
+    _vita49_2_generate_control_packet.argtypes = [_POINTER(_VITA49_2_Control_Packet), _POINTER(c_uint), c_size_t]
+
+_vita49_2_parse_control_packet = getattr(_lib, "vita49_2_parse_control_packet")
+if _vita49_2_parse_control_packet:
+    _vita49_2_parse_control_packet.restype = c_int
+    _vita49_2_parse_control_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_Control_Packet)]
+
+# AckX Packets
+_vita49_2_generate_ackX_packet = getattr(_lib, "vita49_2_generate_ackX_packet")
+if _vita49_2_generate_ackX_packet:
+    _vita49_2_generate_ackX_packet.restype = c_ssize_t
+    _vita49_2_generate_ackX_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
+
+_vita49_2_parse_ackX_packet = getattr(_lib, "vita49_2_parse_ackX_packet")
+if _vita49_2_parse_ackX_packet:
+    _vita49_2_parse_ackX_packet.restype = c_int
+    _vita49_2_parse_ackX_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_AckX_Packet)]
+
+# AckV Packets
+_vita49_2_generate_ackV_packet = getattr(_lib, "vita49_2_generate_ackV_packet")
+if _vita49_2_generate_ackV_packet:
+    _vita49_2_generate_ackV_packet.restype = c_ssize_t
+    _vita49_2_generate_ackV_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
+
+_vita49_2_parse_ackV_packet = getattr(_lib, "vita49_2_parse_ackV_packet")
+if _vita49_2_parse_ackV_packet:
+    _vita49_2_parse_ackV_packet.restype = c_int
+    _vita49_2_parse_ackV_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_AckX_Packet)]
+
+# AckS Packets
+_vita49_2_generate_ackS_packet = getattr(_lib, "vita49_2_generate_ackS_packet")
+if _vita49_2_generate_ackS_packet:
+    _vita49_2_generate_ackS_packet.restype = c_ssize_t
+    _vita49_2_generate_ackS_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
+
+_vita49_2_parse_ackS_packet = getattr(_lib, "vita49_2_parse_ackS_packet")
+if _vita49_2_parse_ackS_packet:
+    _vita49_2_parse_ackS_packet.restype = c_int
+    _vita49_2_parse_ackS_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_AckX_Packet)]
+
+
 
 _channel_get_device = _lib.iio_channel_get_device
 _channel_get_device.restype = _DevicePtr
@@ -1667,112 +2180,122 @@ class Context(_IIO_Object):
         "List of devices contained in this context.\n\ttype=list of iio.Device and iio.Trigger objects",
     )
 
+class _VITA49_2_Packet_Base(object):
+    _private_type = None    # The corresponding ctypes struct that defines this what message this is (EX: )
+    _parse_fn = None
+    _generate_fn = None
 
-class VRTPacket(object):
-    """A wrapper identifying parsed VITA 49.2 parameters from a network byte-order buffer."""
+    def __init__(self, buffer=None, packet_struct=None):
+        if self._private_type is None:
+            raise NotImplementedError("Bad class definition. This class is missing a struct type defining what VITA 49.2 Packet this is.")
 
-    def __init__(self, buffer):
-        """
-        Parses a bytes-like object or raw pointer into an unpacked internal struct vrt_packet.
-        
-        :param buffer: type=bytes
-            The raw UDP payload bytes comprising the VITA 49.2 packet
-        """
-        if not _vrt_parse_packet:
-            raise NotImplementedError("VITA 49.2 backend is not compiled in this libiio build.")
-            
-        self._buf = create_string_buffer(buffer, len(buffer))
-        self._pkt_size_words = len(buffer) // 4
-        
-        # We need an internal struct vrt_packet instance that ctypes can populate
-        self._pkt_struct = _VRTPacket()
-        
-        ret = _vrt_parse_packet(self._buf, self._pkt_size_words, _byref(self._pkt_struct))
+        if packet_struct != None:
+            self._packet = packet_struct
+        else:
+            self._private_type()
+
+        if buffer is not None:
+            self._parse_from_bytes(buffer)
+
+    def _parse_from_bytes(self, buffer):
+        if self._parse_fn is None:
+            raise NotImplementedError("Parser function is not available in this libiio build.")
+
+        if not isinstance(buffer, (bytes, bytearray)):
+            raise TypeError("buffer must be bytes or bytearray")
+        if len(buffer) % 4 != 0:
+            raise ValueError("Packet buffer length must be a whole number multiple of 32-bit words")
+
+        raw = create_string_buffer(bytes(buffer), len(buffer))
+        words = len(buffer) // 4
+        ret = self._parse_fn(cast(raw, _POINTER(c_uint)), c_size_t(words), _byref(self._pkt_struct))
         if ret < 0:
-            raise ValueError(f"Failed to parse VRT packet. Error code: {ret}")
+            raise ValueError(f"Failed to parse packet. Error code: {ret}")
+
+    @classmethod
+    def from_bytes(cls, buffer):
+        return cls(buffer=buffer)
+
+    @classmethod
+    def from_struct(cls, packet_struct):
+        return cls(packet_struct=packet_struct)
+
+    def to_bytes(self, max_words=1024):
+        if self._generate_fn is None:
+            raise NotImplementedError("Generator function is not available in this libiio build.")
+
+        if max_words <= 0:
+            raise ValueError("max_words must be > 0")
+
+        out_words = (c_uint * max_words)()
+        written_words = self._generate_fn(_byref(self._pkt_struct), out_words, c_size_t(max_words))
+        if written_words < 0:
+            raise ValueError(f"Failed to generate packet. Error code: {written_words}")
+
+        return bytes(string_at(cast(out_words, c_void_p), int(written_words) * 4))
 
     @property
-    def packet_type(self):
-        """The VITA 49.2 Packet Type."""
-        return self._pkt_struct.header.packet_type
+    def struct(self):
+        return self._pkt_struct
 
-    @property
-    def packet_size_words(self):
-        """The size of the parsed packet in 32-bit words."""
-        return self._pkt_struct.header.packet_size_words
 
-    @property
-    def has_stream_id(self):
-        """Returns True if the packet has a Stream Identifier."""
-        return self._pkt_struct.has_stream_id
+class VITA49_2_Data_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_data_packet."""
 
-    @property
-    def stream_id(self):
-        """Gets the VITA 49.2 Stream ID. Raises ValueError if not present."""
-        if not self.has_stream_id:
-            raise ValueError("Stream ID is not present in this packet.")
-        return self._pkt_struct.stream_id
+    _private_type = _VITA49_2_Data_Packet
+    _parse_fn = _vita49_2_parse_data_packet
+    _generate_fn = _vita49_2_generate_data_packet
 
-    @property
-    def has_class_id(self):
-        """Returns True if the packet has a Class Identifier."""
-        return self._pkt_struct.has_class_id
 
-    @property
-    def class_id(self):
-        """Gets the VITA 49.2 64-bit Class ID. Raises ValueError if not present."""
-        if not self.has_class_id:
-            raise ValueError("Class ID is not present in this packet.")
-        return self._pkt_struct.class_id
-        
-    @property
-    def payload_size_words(self):
-        """Gets the bounds of the packet payload length in 32-bit words."""
-        return self._pkt_struct.payload_words
+class VITA49_2_Context_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_context_packet."""
 
-    def get_payload_word(self, offset):
-        """
-        Fetch a 32-bit word from the packet payload area, handling network byte-order translation.
-        
-        :param offset: type=int
-            The 0-indexed word boundary in the VRT payload section
-        returns: type=int
-        """
-        if not _vrt_get_payload_word:
-            raise NotImplementedError("VITA 49 backend missing.")
-        if offset >= self.payload_size_words:
-            raise IndexError("Offset out of bounds for VRT Payload.")
-        return _vrt_get_payload_word(_byref(self._pkt_struct), c_size_t(offset))
+    _private_type = _VITA49_2_Context_Packet
+    _parse_fn = _vita49_2_parse_context_packet
+    _generate_fn = _vita49_2_generate_context_packet
 
-    def get_payload_double(self, offset):
-        """
-        Fetch a 64-bit IEEE 754 float from the packet payload area.
-        
-        :param offset: type=int
-            The 0-indexed word boundary in the VRT payload section (consumes two words)
-        returns: type=float
-        """
-        if not _vrt_get_payload_double:
-            raise NotImplementedError("VITA 49 backend missing.")
-        if offset + 1 >= self.payload_size_words:
-            raise IndexError("Offset out of bounds for 64-bit VRT Payload extraction.")
-        return _vrt_get_payload_double(_byref(self._pkt_struct), c_size_t(offset))
 
-    def cif_fields(self):
-        """
-        Parses the Context Indicator Field 0 (CIF0) payload sequentially.
-        Only valid for Context packets.
-        
-        returns: type=iio.VRTCifFields
-            The parsed CIF fields, or None if the packet is not a valid Context packet.
-        """
-        if not _vrt_parse_cif_payload:
-            raise NotImplementedError("VITA 49 backend functionality for CIF missing.")
-        cif_struct = _VRTCifFields()
-        ret = _vrt_parse_cif_payload(_byref(self._pkt_struct), _byref(cif_struct))
-        if ret < 0:
-            return None
-        return VRTCifFields(cif_struct)
+class VITA49_2_Control_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_control_packet."""
+
+    _private_type = _VITA49_2_Control_Packet
+    _parse_fn = _vita49_2_parse_control_packet
+    _generate_fn = _vita49_2_generate_control_packet
+
+
+class VITA49_2_AckX_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_ackX_packet."""
+
+    _private_type = _VITA49_2_AckX_Packet
+    _parse_fn = _vita49_2_parse_ackX_packet
+    _generate_fn = _vita49_2_generate_ackX_packet
+
+
+class VITA49_2_AckV_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_ackV_packet."""
+
+    _private_type = _VITA49_2_AckV_Packet
+    _parse_fn = _vita49_2_parse_ackV_packet
+    _generate_fn = _vita49_2_generate_ackV_packet
+
+
+class VITA49_2_AckS_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_ackS_packet."""
+
+    _private_type = _VITA49_2_AckS_Packet
+    _parse_fn = _vita49_2_parse_ackS_packet
+    _generate_fn = _vita49_2_generate_ackS_packet
+
+
+class VITA49_2_Extended_Control_Packet(_VITA49_2_Packet_Base):
+    """High-level wrapper for struct vita49_2_extended_control_packet.
+
+    Note: this packet type currently has no parse/generate C exports in packet_types.h.
+    """
+
+    _private_type = _VITA49_2_Control_Extension_Packet
+    _parse_fn = None
+    _generate_fn = None
 
 
 class VRTCifFields(object):

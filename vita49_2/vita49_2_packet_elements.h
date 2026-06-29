@@ -319,11 +319,11 @@ struct vita49_2_iq_item {
 	// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
 	
 	uint32_t quadrature:16; 		/* 16-bit signed Q component */
-	uint32_t in_phase:16; 		/* 16-bit signed I component */
+	uint32_t in_phase:16; 			/* 16-bit signed I component */
 
 #else
 
-	uint32_t in_phase:16; 		/* 16-bit signed I component */
+	uint32_t in_phase:16; 			/* 16-bit signed I component */
 	uint32_t quadrature:16; 		/* 16-bit signed Q component */
 	
 	// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
