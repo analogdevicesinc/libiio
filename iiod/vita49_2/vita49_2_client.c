@@ -1179,7 +1179,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						}
 
 						// If AckX was requested, I need to do some initial setup to see what fields might generate warnings.
-						if (control_packet.command_prologue.control_cam->request_ack_x)
+						if (control_packet.command_prologue.control_cam->request_ack_x && control_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
 						{
 							if (validate_commands(arguments->ctx, &control_packet, &ackX_packet.warnings) < 0)
 							{
@@ -1195,96 +1195,99 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 						// Now to execute the commands in the packet. Currently ADI only supports Execute Mode and No-Action Mode for Control Packets,
 						// however we retain the right to implement Dry Run Mode in the future.
-						if (control_packet.command_prologue.control_cam->request_ack_x && !ackX_warning_init_error)
+						if (control_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
 						{
-							if (execute_commands(arguments->ctx, &control_packet, &ackX_packet) < 0)
+							if (control_packet.command_prologue.control_cam->request_ack_x && !ackX_warning_init_error)
 							{
-								fprintf(stderr, "vita49_2_client: Error while executing commands.\n");	
-								goto cleanup_ackX;
-							}
-
-							if (ackX_packet.errors.errors_payload_num_words > 0)
-								ackX_packet.command_prologue.ack_cam->errors_present = 1;
-
-							// Setting the "warnings_present" field isn't as easy as errors since warnings were removed if an error was generated for the corresponding CIF field in execute_commands().
-							// Warnings were "removed" by setting the corresponding struct in the payload to 0, however the payload size wasn't touched (to avoid issues with copying that payload buffer).
-							// Hence we must iterate over that payload manually and scan for non-zero elements.
-							uint32_t warning_word;
-							ackX_packet.command_prologue.ack_cam->warnings_present = 0;
-							for (uint8_t current_warning = 0; current_warning < ackX_packet.warnings.warnings_payload_num_words; current_warning++)
-							{
-								memcpy(&warning_word, &ackX_packet.warnings.warnings_payload[current_warning], sizeof(warning_word));
-								if (warning_word != 0)
+								if (execute_commands(arguments->ctx, &control_packet, &ackX_packet) < 0)
 								{
-									ackX_packet.command_prologue.ack_cam->warnings_present = 1;
-									break;
+									fprintf(stderr, "vita49_2_client: Error while executing commands.\n");	
+									goto cleanup_ackX;
 								}
+
+								if (ackX_packet.errors.errors_payload_num_words > 0)
+									ackX_packet.command_prologue.ack_cam->errors_present = 1;
+
+								// Setting the "warnings_present" field isn't as easy as errors since warnings were removed if an error was generated for the corresponding CIF field in execute_commands().
+								// Warnings were "removed" by setting the corresponding struct in the payload to 0, however the payload size wasn't touched (to avoid issues with copying that payload buffer).
+								// Hence we must iterate over that payload manually and scan for non-zero elements.
+								uint32_t warning_word;
+								ackX_packet.command_prologue.ack_cam->warnings_present = 0;
+								for (uint8_t current_warning = 0; current_warning < ackX_packet.warnings.warnings_payload_num_words; current_warning++)
+								{
+									memcpy(&warning_word, &ackX_packet.warnings.warnings_payload[current_warning], sizeof(warning_word));
+									if (warning_word != 0)
+									{
+										ackX_packet.command_prologue.ack_cam->warnings_present = 1;
+										break;
+									}
+								}
+
+								// Writing the remaining information before sending the packet
+								ackX_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
+
+								stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+								stream_entry.host_port = sender_address.sin_port;
+								stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+								stream_entry.stream_id = next_ackx_ackv_stream_id;
+
+								ssize_t ret_value;
+
+								// Error occurred
+								if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+								{
+									fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckX Packet that was to be sent.\n");
+									goto cleanup_ackX;
+								}
+
+								// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+								if (ret_value > last_insertion_index)
+								{
+									ackX_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+									ackX_packet.command_prologue.common_prologue.header.packet_count = 0;
+								
+									device_stream_id_table[ret_value].packet_count = 0;
+
+									last_insertion_index++;
+									next_acks_stream_id++;
+								}
+								// Otherwise that means the element already existed in the array.
+								else
+								{
+									ackX_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+									ackX_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+								}
+
+								// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
+								ackX_packet.command_prologue.ack_cam->reserved_21 			= 0;
+								ackX_packet.command_prologue.ack_cam->nack 					= control_packet.command_prologue.control_cam->nack;
+								ackX_packet.command_prologue.ack_cam->action_bits 			= control_packet.command_prologue.control_cam->action_bits;
+								ackX_packet.command_prologue.ack_cam->errors				= control_packet.command_prologue.control_cam->errors;
+								ackX_packet.command_prologue.ack_cam->warnings				= control_packet.command_prologue.control_cam->warnings;
+								ackX_packet.command_prologue.ack_cam->partial_execution		= control_packet.command_prologue.control_cam->partial_execution;
+								ackX_packet.command_prologue.ack_cam->controller_id_format	= control_packet.command_prologue.control_cam->controller_id_format;
+								ackX_packet.command_prologue.ack_cam->has_controller_id		= control_packet.command_prologue.control_cam->has_controller_id;
+								ackX_packet.command_prologue.ack_cam->controllee_id_format	= control_packet.command_prologue.control_cam->controllee_id_format;
+								ackX_packet.command_prologue.ack_cam->has_controllee_id		= control_packet.command_prologue.control_cam->has_controllee_id;
+
+								// Copying the Controller and Controllee ID information from the Control Packet
+								memcpy(&ackX_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackX_packet.command_prologue.controller_id));
+								memcpy(&ackX_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackX_packet.command_prologue.controllee_id));
+
+
+								// Now to write that data to a buffer and send it
+								if ((ackX_packet_size = vita49_2_generate_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to serialize AckX Packet.\n");
+								else if (sendto(socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP.\n");
 							}
-
-							// Writing the remaining information before sending the packet
-							ackX_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
-
-							stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
-							stream_entry.host_port = sender_address.sin_port;
-							stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
-							stream_entry.stream_id = next_ackx_ackv_stream_id;
-
-							ssize_t ret_value;
-
-							// Error occurred
-							if ((ret_value = insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
-							{
-								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckX Packet that was to be sent.\n");
-								goto cleanup_ackX;
-							}
-
-							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
-							if (ret_value > last_insertion_index)
-							{
-								ackX_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
-								ackX_packet.command_prologue.common_prologue.header.packet_count = 0;
-							
-								device_stream_id_table[ret_value].packet_count = 0;
-
-								last_insertion_index++;
-								next_acks_stream_id++;
-							}
-							// Otherwise that means the element already existed in the array.
 							else
 							{
-								ackX_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
-								ackX_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
-							}
-
-							// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
-							ackX_packet.command_prologue.ack_cam->reserved_21 			= 0;
-							ackX_packet.command_prologue.ack_cam->nack 					= control_packet.command_prologue.control_cam->nack;
-							ackX_packet.command_prologue.ack_cam->action_bits 			= control_packet.command_prologue.control_cam->action_bits;
-							ackX_packet.command_prologue.ack_cam->errors				= control_packet.command_prologue.control_cam->errors;
-							ackX_packet.command_prologue.ack_cam->warnings				= control_packet.command_prologue.control_cam->warnings;
-							ackX_packet.command_prologue.ack_cam->partial_execution		= control_packet.command_prologue.control_cam->partial_execution;
-							ackX_packet.command_prologue.ack_cam->controller_id_format	= control_packet.command_prologue.control_cam->controller_id_format;
-							ackX_packet.command_prologue.ack_cam->has_controller_id		= control_packet.command_prologue.control_cam->has_controller_id;
-							ackX_packet.command_prologue.ack_cam->controllee_id_format	= control_packet.command_prologue.control_cam->controllee_id_format;
-							ackX_packet.command_prologue.ack_cam->has_controllee_id		= control_packet.command_prologue.control_cam->has_controllee_id;
-
-							// Copying the Controller and Controllee ID information from the Control Packet
-							memcpy(&ackX_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackX_packet.command_prologue.controller_id));
-							memcpy(&ackX_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackX_packet.command_prologue.controllee_id));
-
-
-							// Now to write that data to a buffer and send it
-							if ((ackX_packet_size = vita49_2_generate_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
-								fprintf(stderr, "vita49_2_client: Failed to serialize AckX Packet.\n");
-							else if (sendto(socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
-								fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP.\n");
-						}
-						else
-						{
-							if (execute_commands(arguments->ctx, &control_packet, NULL) < 0)
-							{
-								fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
-								continue;
+								if (execute_commands(arguments->ctx, &control_packet, NULL) < 0)
+								{
+									fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
+									continue;
+								}
 							}
 						}
 

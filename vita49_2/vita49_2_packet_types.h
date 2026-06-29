@@ -104,11 +104,6 @@ struct vita49_2_control_packet {
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0 struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
 	// Always access those enables through the cif0 struct.
-
-	// The payload will contain the new attribute values that we want to apply to the device/module
-	const uint32_t *payload;  			/* Pointer to the start of the payload words */
-	uint16_t payload_num_words;     	/* Number of 32-bit words in the payload */
-
 };
 
 /**

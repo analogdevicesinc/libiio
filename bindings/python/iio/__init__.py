@@ -42,7 +42,7 @@ from ctypes import (
 )
 from contextlib import contextmanager
 from ctypes.util import find_library
-from enum import Enum
+from enum import Enum, IntEnum
 from os import strerror as _strerror
 from os import path as _path
 from platform import system as _system
@@ -226,12 +226,12 @@ class _VITA49_2_Class_ID(Structure):
     ]
     
 class _VITA49_2_Prologue(Structure):
-    _fields = [
+    _fields_ = [
         ("header", _VITA49_2_Header),
         ("stream_id", c_uint),
         ("class_id", _VITA49_2_Class_ID),
         ("timestamp_int", c_uint),
-        ("timestamp_frac", c_uint),
+        ("timestamp_frac", c_uint64),
 
         ("has_stream_id", c_bool),
         ("has_class_id", c_bool),
@@ -241,12 +241,12 @@ class _VITA49_2_Prologue(Structure):
 
 class _VITA49_2_IQ_Item(Structure):
     if sys.byteorder == "little":
-        _fields = [
+        _fields_ = [
             ("quadrature", c_uint, 16),
             ("in_phase", c_uint, 16)
         ]
     else:
-        _fields = [
+        _fields_ = [
             ("in_phase", c_uint, 16),
             ("quadrature", c_uint, 16)
         ]
@@ -684,8 +684,6 @@ class _VITA49_2_Control_Packet(Structure):
         ("cif2", _POINTER(_VITA49_2_CIF2_Fields)),
         ("cif3", _POINTER(_VITA49_2_CIF3_Fields)),
         ("cif7", _POINTER(_VITA49_2_CIF7_Fields)),
-        ("payload", _POINTER(c_uint)),
-        ("payload_num_words", c_uint)
     ]
 
 class _VITA49_2_AckX_Packet(Structure):
@@ -714,6 +712,80 @@ class _VITA49_2_AckS_Packet(Structure):
 class _VITA49_2_Control_Extension_Packet(Structure):
     # TODO: Need to implement once it's been defined in vita49_2_packet_types.h
     pass
+
+
+class VITA49_2_Packet_Types(IntEnum):
+    IF_DATA_NO_SID = 0
+    IF_DATA_WITH_SID = 1
+    EXT_DATA_NO_SID = 2
+    EXT_DATA_WITH_SID = 3
+    IF_CONTEXT = 4
+    EXT_CONTEXT = 5
+    COMMAND = 6
+    EXT_COMMAND = 7
+
+class VITA49_2_Packet_Class_Codes(IntEnum):
+
+	# IMPORTANT: As more classes are defined in the future, please make to use explicit enum values
+	# rather than relying on implicit values. I've organized the attributes below by Packet Class type
+	# rather than by the order in which they were added to the enum.
+	# If you add a Data Packet Class in the future and don't explicity specify its Packet Class code, 
+	# that can make its value unclear.
+
+	# IMPORTANT: Packet Class Code 0 is reserved. I'm doing this on purpose in case the host forgets to populate
+	# that field because they may have forgotten other information as well, that way the device throws that packet out.
+
+	# Signal Data Packet Classes
+	TIME_DATA 				    = 1		# Transmit 16-bit I/Q data
+	SPECTRAL_DATA 			    = 2		# Transmit spectral data
+	
+	# Context Packet Classes
+	GENERIC_CONTEXT 		    = 3		# Generic Context Packets. The fields that are present in the payload are provided by the CIF word.
+
+	# Control Packet Classes
+	GENERIC_CONTROL 		    = 4		# Generic Control Packet, not all the CIF fields are applicable to Command Packets so not all of them are used.
+	REFILL_TIME_REQUEST		    = 5		# Control Packet specifically for requesting more time data packets
+	REFILL_SPECTRAL_REQUEST 	= 6		# Control Packet specifically for requesting more spectral data packets
+
+	# Acknowledge Packet Classes
+	ACKV_ACKX				    = 7 	# Acknowledgement indicating validity of commands (AckV) or which commands were executed properly (AckX)
+	ACKS						= 8		# Acknowledgement indicating the new values after the controls from a Control Packet were issued (simmilar to a Context Packet)
+
+class VITA49_2_Information_Class_Codes(IntEnum):
+
+	# IMPORTANT: Same warning that I gave for the Packet Class Code. Read that message.
+	# IMPORTANT: Information Class Code 0 is reserved. Same reason as for the Packet Classes (read that message).
+
+	# For more information about these Information Classes, see my "VITA 49.2 Information Structures" document
+
+	# Purpose: Query signal time data from the module.
+	# Packets: 
+		# 1. 16-Bit Time Data (Signal Data Packet)
+		# 2. Generic Context Packet (Context Packet)
+		# 3. Generic Control Packet (Command Packet)
+		# 4. Time Data Refill Request (Command Packet) 
+		# 5. AckV/AckX Packet (Command Packet)
+		# 6. AckS Packet (Command Packet)
+	MODULE_TIME_DATA		= 1,		
+
+	# Purpose: Query signal spectral data from the module.
+	# Packets:
+		# 1. Spectral Data (Signal Data Packet)
+		# 2. Generic Context Packet (Context Packet)
+		# 3. Generic Control Packet (Command Packet)
+		# 4. Spectral Data Refill Request (Command Packet) 
+		# 5. AckV/AckX Packet (Command Packet)
+		# 6. AckS Packet (Command Packet)
+	MODULE_SPECTRAL_DATA	= 2,
+
+	# Purpose: Send signal time data from the host to the module.
+	# Packets:
+		# 1. 16-Bit Time Data (Signal Data Packet)
+		# 2. Generic Context Packet (Context Packet)
+		# 3. Generic Control Packet (Command Packet)
+		# 4. AckV/AckX Packet (Command Packet)
+		# 5. AckS Packet (Command Packet)
+	HOST_TIME_DATA			= 3
 
 class EventType(Enum):
     """Represents the type of an IIO event."""
@@ -2190,9 +2262,9 @@ class _VITA49_2_Packet_Base(object):
             raise NotImplementedError("Bad class definition. This class is missing a struct type defining what VITA 49.2 Packet this is.")
 
         if packet_struct != None:
-            self._packet = packet_struct
+            self._pkt_struct = packet_struct
         else:
-            self._private_type()
+            self._pkt_struct = self._private_type()
 
         if buffer is not None:
             self._parse_from_bytes(buffer)
