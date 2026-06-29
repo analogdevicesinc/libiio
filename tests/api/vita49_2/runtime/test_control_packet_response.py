@@ -11,8 +11,11 @@
 import pyshark
 from ctypes import pointer
 from time import sleep
+from enum import IntEnum
+import subprocess 
 import threading
 import socket
+import sys
 import iio
 from iio import *
 
@@ -21,11 +24,10 @@ SRC_PORT = 4991 # VITA 49.2 convention
 
 PROTO = "v49d2" # The VITA 49.2 Wireshark dissector plugin by Geontech
 
-def consume_packets(capture):
-    for packet in capture.sniff_continuously():
-        layer = packet[PROTO]
-        print(layer.field_names)
-        # packet.pretty_print()
+ALL_PACKETS = "all_packets.pcapng"
+OUTPUT_FILE = "problematic_packet.pcapng" # For storing the packet that failed the testcase
+
+SNIFF_TIMEOUT = 10
 
 # List of situations that we want to exercise:
 # Host sends a Control Packet:
@@ -106,6 +108,244 @@ def consume_packets(capture):
 
             # ...
 
+
+
+# IMPORTANT: This is NOT the same as the vita49_2_packet_type enum in vita49_2_packet_elements.h, nor the packet types table
+# in the VITA 49.2 2017 documentation. This is a custom enum to help with creating scaleable testing by adding definitions
+# for the Acknowledge Packets since VITA 49.2 lists Acknowledge as Command Type packets, and the only way to determine what kind
+# Command Packet you have is to look at indicator bits and CAM Field
+class CustomPacketTypes (IntEnum):
+	Data 		        = 0
+	Context	            = 1
+	Control 	        = 2
+	AckV 	            = 3
+	AckX 			    = 4
+	AckS 		        = 5
+	Command_Extension 	= 6
+
+class V49_2_PacketTypes (IntEnum):
+	IF_DATA_NO_SID 		= 0
+	IF_DATA_WITH_SID 	= 1
+	EXT_DATA_NO_SID 	= 2
+	EXT_DATA_WITH_SID 	= 3
+	IF_CONTEXT 			= 4
+	EXT_CONTEXT 		= 5
+	COMMAND 			= 6
+	EXT_COMMAND 		= 7
+
+
+
+def get_header_field(layer):
+    # exact 'header' first, then anything ending in '_header'
+    candidates = ["header"] + [n for n in layer.field_names if n.endswith("_header")]
+    for name in candidates:
+        if name in layer.field_names:
+            val = getattr(layer, name, None)
+            if val not in (None, ""):
+                return name, val
+    return None, None
+
+def consume_packets(capture):
+    for packet in capture.sniff_continuously():
+        layer = packet[PROTO]
+
+        header_name, header_val = get_header_field(layer)
+
+        # if header_name:
+        #     print("header label:", header_name)
+        #     print("header value:", header_val)
+        # else:
+        #     print("No header-like field found")
+
+        # if header_val is not None:
+        #     print("packet_type =", getattr(layer, f"{header_name}_packet_type", None))        # print(layer.field_names)
+
+        # print(layer.field_names)
+        # print(f"CIF0 present: {'cif0' in layer.field_names}")
+        # ackv = getattr(layer?, "cam_request_validation", None)
+        print(layer.field_names)
+        # if (ackv != None):
+        #     print(ackv)
+        #     print(packet)
+        #     print("\n\n\n")
+        # print([f for f in layer.field_names if "header" in f])
+        # if ()
+        # packet.pretty_print()
+
+# Testing Framework
+    # Expected Packets (in the order that they should come)
+    # Special Options for what should be in each packet
+
+    # Array of tuples
+        # Tuple: Packet Type, special options list
+
+        # EX: <AckX, [payload=empty]>
+
+def dump_packet(frame_number):
+    subprocess.run([
+            "tshark",
+            "-r", ALL_PACKETS,
+            "-Y", f"frame.number == {frame_number}",
+            "-w", OUTPUT_FILE
+        ], check=True)
+    
+    print(f"\nDumped packet to {OUTPUT_FILE}\n")
+    
+def process_packet(capture, tests):
+
+    test_num = 1
+    for test in tests:
+        print(f"\nRunning Test {test_num}: {test}")
+
+        # While loop in case we run into Context Packets
+        while (True):
+        
+            # Grabbing 1 packet at a time
+            capture.sniff(packet_count=1, timeout=SNIFF_TIMEOUT)
+            print(len(capture))
+            if len(capture) == 0:
+                print(f"No packet captured in {SNIFF_TIMEOUT} seconds")
+                sys.exit(-1)
+
+            packet = capture[0]
+
+            # Extracting layers and VITA header information
+            layers = packet[PROTO]
+            header_name, header_val = get_header_field(layers)
+
+            # Ignoring Context Packets since they're sent on an interval and not part of
+            # our scenarios.
+
+            if ("context" not in header_name):
+                break
+
+        # Validating if the received packet matches the expected
+        if (header_val is not None):
+            packet_type = getattr(layers, f"{header_name}_packet_type", None)
+
+            if (packet_type is None):
+                print("ERROR: Could not extract Packet Type from incoming message.")
+                sys.exit(-1)
+
+            print("Checking if received packet type is expected...")
+
+            match test[0]:
+                case "data":
+                    if (packet_type == V49_2_PacketTypes.IF_DATA_WITH_SID or packet_type == V49_2_PacketTypes.IF_DATA_NO_SID):
+                        print("Success")
+                    else:
+                        print(f"Failure, expected a Data Packet but received Message Type (int) = {packet_type}")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                case "context":
+                    print("ERROR: Invalid testing setup. Context Packets are ignored.")
+                    sys.exit(-1)
+
+                case "control":
+                    print("ERROR: Invalid testing setup. The VITA 49.2 subsystem with iiod cannot send Control Packets to the host.")
+                    sys.exit(-1)
+
+                case "ackV":
+                    if (int(packet_type) != V49_2_PacketTypes.COMMAND):
+                        print(f"Failure, received packet is not a Command Type, rather (int) = {packet_type}")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                    ackV_request = getattr(layers, "cam_request_validation", None)
+                    if (ackV_request == None):
+                        print(f"ERROR: Unable to find the 'cam_request_validation' field.")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                    if (ackV_request == False):
+                        print(f"Failure, 'cam_request_validation' was not asserted. This is not an AckV Packet.")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                case "ackX":
+                    if (int(packet_type) != V49_2_PacketTypes.COMMAND):
+                        print(f"Failure, received packet is not a Command Type, rather (int) = {packet_type}")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                    ackV_request = getattr(layers, "cam_request_execution", None)
+                    if (ackV_request == None):
+                        print(f"ERROR: Unable to find the 'cam_request_execution' field.")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                    if (ackV_request == False):
+                        print(f"Failure, 'cam_request_execution' was not asserted. This is not an AckX Packet.")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                case "ackS":
+                    if (int(packet_type) != V49_2_PacketTypes.COMMAND):
+                        print(f"Failure, received packet is not a Command Type, rather (int) = {packet_type}")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                    ackV_request = getattr(layers, "cam_request_query", None)
+                    if (ackV_request == None):
+                        print(f"ERROR: Unable to find the 'cam_request_query' field.")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                    if (ackV_request == False):
+                        print(f"Failure, 'cam_request_query' was not asserted. This is not an AckS Packet.")
+                        dump_packet(packet.number)
+                        sys.exit(-1)
+
+                case "control_extension":
+                    print("ERROR: Invalid testing setup. Control Extension is unsupported.")
+                    sys.exit(-1)
+
+                case _:
+                    print(f"ERROR: Invalid testing setup. Unrecognized packet type: '{test[0]}'")
+                    sys.exit(-1)
+
+        # Checking any special options
+        for option in test[1]:
+
+            if (option == "cif0=0"):
+                print("Checking for CIF0==0...", end = "")
+
+                if ("cif0" not in layers.field_names):
+                    print("Failure, couldn't find CIF0")
+                    dump_packet(packet.number)
+                    sys.exit(-1)
+
+                cif0 = getattr(layers, "cif0", None)
+
+                if (cif0 == None):
+                    print("\nERROR: Couldn't extract CIF0")
+                    dump_packet(packet.number)
+                    sys.exit(-1)
+
+                if (cif0 == 0):
+                    print("Success")
+                else:
+                    print(f"Failure, CIF0 = {cif0}")
+                    dump_packet(packet.number)
+                    sys.exit(-1)
+
+            elif (option == "payload=empty"):
+                print("Checking for empty payload...", end = "")
+
+                if ("payload" in layers.field_names):
+                    print("Failure, payload is present")
+                    dump_packet(packet.number)
+                    sys.exit(-1)
+
+                else:
+                    print("Success")
+
+        test_num += 1
+
+
+
+
 # I'm doing the most minimal setup for this Control Packet since I have firsthand knowledge of how the VITA 49.2 IIOD backend logic works.
 # I'm skipping the initialization of many fields, therefore I would NOT recommend you repeat what I'm doing.
 control_pkt = VITA49_2_Control_Packet()
@@ -134,24 +374,37 @@ udp_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # Live Capture mode with BPF Filter (Berkeley Packet Filter)
 capture = pyshark.LiveCapture(
     interface='enp0s9', 
-    bpf_filter=f'host {SRC_IP} and udp port {SRC_PORT}',
+    bpf_filter=f"src host {SRC_IP} and udp src port {SRC_PORT}",
     decode_as={
         f'udp.port=={SRC_PORT}': PROTO
-    }
+    },
+    output_file=ALL_PACKETS,
 )
 
+tests = [
+    ("ackV", ["payload=empty"]),
+    ("ackX", ["payload=empty"]),
+    ("ackS", [])
+]
+
+# Spawning a separate thread so that the listener is able to pick up any packets
+# sent immediately in response to the first Control Packet that we send.
 capture_thread = threading.Thread(
-    target = consume_packets,
-    args=(capture,)
+    target = process_packet,
+    args=(capture, tests)
     )
+# capture_thread = threading.Thread(
+#     target = consume_packets,
+#     args=(capture,)
+#     )
+
+print(f"Capture thread starting. Listing for packets from {SRC_IP}:{SRC_PORT}")
 capture_thread.start()
 
-print(f"Capture thread started. Listing for packets from {SRC_IP}:{SRC_PORT}")
 
 sleep(2)
 
 # Sending the Control Packet
 udp_send.sendto(control_pkt.to_bytes(), (SRC_IP, SRC_PORT))
 
-while(True):
-    pass
+capture_thread.join()
