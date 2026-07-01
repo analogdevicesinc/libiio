@@ -101,6 +101,8 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 /**
  * @brief Validates the commands in a Control Packet by verifying that provided new value for an attribute is within the acceptable range.
  * 
+ * Returns an error code on failure, otherwise 0 on success.
+ * 
  * @param ctx
  * @param control_packet 
  * @param warnings 
@@ -764,7 +766,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 	struct vita49_2_context_packet context_packet = {0}, previous_context_packet = {0};
 	
-	context_packet.prologue.header.indicators = (1 << 0);					// See Rule 7.1.1-4 in the VITA 49.2 2017 document. Setting bit 24 to 1 indicates Context Data is reflecting general timing of events.
+	context_packet.prologue.header.indicators = ((1 << 1) || (1 << 0));		// Indicating that this is not a V49.0 Packet. Also see Rule 7.1.1-4 in the VITA 49.2 2017 document. Setting bit 24 to 1 indicates Context Data is reflecting general timing of events.
 	context_packet.prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
 	context_packet.prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
 	context_packet.prologue.header.has_class_id = 1;
@@ -1097,6 +1099,11 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet.\n");
 								goto cleanup_ackv;
 							}
+
+							// In the CAM, there's a field call NACK (see Table 8.3.1-1 in the VITA 49.2 2017 docs).
+							// If asserted and there's no warnings, then we shouldn't send the AckV packet.
+							if (control_packet.command_prologue.control_cam->nack && ackV_packet.warnings.warnings_payload_num_words == 0)
+								goto cleanup_ackv; 
 							
 							// Populating the rest of the AckV Packet
 							ackV_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
@@ -1205,6 +1212,11 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 									goto cleanup_ackX;
 								}
 
+								// In the CAM, there's a field call NACK (see Table 8.3.1-1 in the VITA 49.2 2017 docs).
+								// If asserted and there's no warnings nor any errors, then we shouldn't send the AckX packet.
+								if (control_packet.command_prologue.control_cam->nack && ackX_packet.warnings.warnings_payload_num_words == 0 && ackX_packet.errors.errors_payload_num_words == 0)
+									goto cleanup_ackX; 
+
 								if (ackX_packet.errors.errors_payload_num_words > 0)
 									ackX_packet.command_prologue.ack_cam->errors_present = 1;
 
@@ -1298,14 +1310,28 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						free(ackX_packet.warnings.cif3_warnings);
 						free(ackX_packet.warnings.cif7_warnings);
 
+						free(ackX_packet.errors.cif1_errors);
+						free(ackX_packet.errors.cif2_errors);
+						free(ackX_packet.errors.cif3_errors);
+						free(ackX_packet.errors.cif7_errors);
+
 						ackX_packet.warnings.cif1_warnings = NULL;
 						ackX_packet.warnings.cif2_warnings = NULL;
 						ackX_packet.warnings.cif3_warnings = NULL;
 						ackX_packet.warnings.cif7_warnings = NULL;
 
+						ackX_packet.errors.cif1_errors = NULL;
+						ackX_packet.errors.cif2_errors = NULL;
+						ackX_packet.errors.cif3_errors = NULL;
+						ackX_packet.errors.cif7_errors = NULL;
+
 						free(ackX_packet.warnings.warnings_payload);
 						ackX_packet.warnings.warnings_payload = NULL;
 						ackX_packet.warnings.warnings_payload_num_words = 0;
+						
+						free(ackX_packet.errors.errors_payload);
+						ackX_packet.errors.errors_payload = NULL;
+						ackX_packet.errors.errors_payload_num_words = 0;
 
 						memset(&ackX_packet.warnings.cif0_warnings, 0, sizeof(ackX_packet.warnings.cif0_warnings));
 
