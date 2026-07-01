@@ -451,6 +451,14 @@ static void handle_open_buffer(struct parser_pdata *pdata, const struct iiod_com
 	if (ret)
 		goto err_destroy_dequeue_task;
 
+	iio_mutex_lock(buflist_lock);
+	if (!iio_err(get_iio_buffer_entry_unlocked(pdata, cmd))) {
+		iio_mutex_unlock(buflist_lock);
+		ret = -EEXIST;
+		goto err_destroy_lock;
+	}
+	iio_mutex_unlock(buflist_lock);
+
 	buf = iio_device_get_buffer(dev, entry->idx);
 	if (!buf) {
 		ret = -ENODEV;

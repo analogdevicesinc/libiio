@@ -273,8 +273,6 @@ static void *client_thread(void *data)
 		/* started another context */
 		info->starts[id]++;
 
-		ret = iio_context_set_timeout(ctx, IIO_TIMEOUT_INFINITE);
-		thread_err(id, ret, "iio_context_set_timeout failed");
 
 		dev = get_device(ctx, info->argv[info->arg_index + 1]);
 		if (!dev) {
@@ -312,7 +310,7 @@ static void *client_thread(void *data)
 			printf("%2d: Running\n", id);
 
 		i = 0;
-		while (threads_running || i == 0) {
+		while (app_running && (threads_running || i == 0)) {
 			info->buffers[id]++;
 
 			stream = iio_buffer_create_stream(buffer, 4, info->buffer_size, mask);
@@ -327,7 +325,7 @@ static void *client_thread(void *data)
 				continue;
 			}
 
-			while (threads_running || i == 0) {
+			while (app_running && (threads_running || i == 0)) {
 				block = iio_stream_get_next_block(stream);
 				ret = iio_err(block);
 				if (ret) {
