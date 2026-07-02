@@ -3186,3 +3186,501 @@ __vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, stru
 
 	return 0;
 }
+
+__vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_control_extension_packet *pkt, uint32_t *buf, size_t max_words)
+{
+	if (!pkt || !buf)
+		return -EINVAL;
+
+	// The packet size field of the header must be determined before we can write it to the buffer,
+	// hence we'll store the header in a local variable and update the appropriate bits once the packet
+	// size has been determined at the end.
+	uint32_t header_word;
+
+	// Starting the index at 1 since we'll be writing the header (index = 0) last
+	size_t buffer_index = 1;
+
+	/* Stream ID */
+	if (pkt->command_prologue.common_prologue.has_stream_id) 
+	{
+		if (buffer_index >= max_words) 
+			return -ENOBUFS;
+		
+		buf[buffer_index++] = htonl(pkt->command_prologue.common_prologue.stream_id);
+	}
+	// Stream ID is mandatory for any Command-type Packet
+	else
+	{
+		return -1;
+	}
+
+	/* Class ID */
+	if (pkt->command_prologue.common_prologue.header.has_class_id) 
+	{
+		// +1 since the Class ID is 2 words
+		if (buffer_index + 1 >= max_words) 
+			return -ENOBUFS;
+		
+		uint32_t class_id_word;
+
+		memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.lower_word, sizeof(class_id_word));
+		buf[buffer_index++] = htonl(class_id_word);
+		
+		memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.upper_word, sizeof(class_id_word));
+		buf[buffer_index++] = htonl(class_id_word);
+	}
+
+	/* Timestamp Int */
+	if (pkt->command_prologue.common_prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
+	{
+		if (buffer_index >= max_words) 
+			return -ENOBUFS;
+		
+		buf[buffer_index++] = htonl(pkt->command_prologue.common_prologue.timestamp_int);
+	}
+
+	/* Timestamp Frac */
+	if (pkt->command_prologue.common_prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) 
+	{
+		// +1 since the fractional timestamp is 2 words
+		if (buffer_index + 1 >= max_words) 
+			return -ENOBUFS;
+		
+		buf[buffer_index++] = htonl((uint32_t)(pkt->command_prologue.common_prologue.timestamp_frac >> 32));
+		buf[buffer_index++] = htonl((uint32_t)(pkt->command_prologue.common_prologue.timestamp_frac & 0xFFFFFFFF));
+	}
+
+	/* CAM */
+	if (buffer_index >= max_words)
+		return -ENOBUFS;
+
+	uint32_t cam_word;
+	memcpy(&cam_word, pkt->command_prologue.control_cam, sizeof(cam_word));
+	buf[buffer_index++] = htonl(cam_word);	
+
+	/* Message ID */
+	if (buffer_index >= max_words)
+		return -ENOBUFS;
+
+	buf[buffer_index++] = htonl(pkt->command_prologue.message_id);
+
+	/* Controllee ID/UUID, ADI does not use this field currently however we retain the right to use it in the future */
+	if (pkt->command_prologue.control_cam->has_controllee_id)
+	{
+		// Using a 128-bit UUID
+		if (pkt->command_prologue.control_cam->controllee_id_format)
+		{
+			if (buffer_index + 3 >= max_words)
+				return -ENOBUFS;
+
+			for (uint8_t i = 0; i < 4; i++)
+				buf[buffer_index++] = htonl(pkt->command_prologue.controllee_id.uuid128[i]);
+		}
+		// Using a 32-bit ID
+		else
+		{
+			if (buffer_index >= max_words)
+				return -ENOBUFS;
+
+			buf[buffer_index++] = htonl(pkt->command_prologue.controllee_id.id32);
+		}
+	}
+
+	/* Controller ID/UUID */
+	if (pkt->command_prologue.control_cam->has_controller_id)
+	{
+		// Using a 128-bit UUID
+		if (pkt->command_prologue.control_cam->controller_id_format)
+		{
+			if (buffer_index + 3 >= max_words)
+				return -ENOBUFS;
+
+			for (uint8_t i = 0; i < 4; i++)
+				buf[buffer_index++] = htonl(pkt->command_prologue.controller_id.uuid128[i]);
+		}
+		// Using a 32-bit ID
+		else
+		{
+			if (buffer_index >= max_words)
+				return -ENOBUFS;
+
+			buf[buffer_index++] = htonl(pkt->command_prologue.controller_id.id32);
+		}
+	}
+
+	/* Payload of Control Extension Words */
+	for (struct vita49_2_control_extension_word_node* node = pkt->payload; node != NULL; node = node->next)
+	{
+		if (buffer_index >= max_words)
+			return -ENOBUFS;
+
+		buf[buffer_index++] = htonl(node->control_extension.word);
+
+		// We also need to copy the new attribute value to the buffer
+		switch (node->control_extension.data_type)
+		{
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+				
+				if ((buffer_index + 1) >= max_words)
+					return -ENOBUFS;
+
+				uint64_t u64;
+				memcpy(&u64, &node->data, sizeof(u64));
+				buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
+				buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
+
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+
+				if (buffer_index >= max_words)
+					return -EINVAL;
+
+				if (node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+				{
+					buf[buffer_index++] = htonl(node->data.u32);
+				}
+				else if (node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_9_7)
+				{
+					buf[buffer_index++] = htonl((uint32_t)(convert_to_9_7(node->data.f)));
+				}
+				else if (node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_10_6)
+				{
+					buf[buffer_index++] = htonl((uint32_t)(convert_to_10_6(node->data.f)));
+				}
+				else
+				{
+					fprintf(stderr, "vita49_2_process: Invalid encoding type for float while trying to generate a Control Extension Packet: %d\n", node->control_extension.encoding);
+					return -EINVAL;
+				}
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+
+				if ((buffer_index + 1)>= max_words)
+					return -EINVAL;
+				
+				if (node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+				{
+					uint64_t u64;
+					memcpy(&u64, &node->data, sizeof(u64));
+					buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
+					buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
+				}
+				else if (node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_44_20)
+				{
+					int64_t converted = convert_to_44_20(node->data.d);
+					buf[buffer_index++] = htonl((uint32_t)(converted >> 32));
+					buf[buffer_index++] = htonl((uint32_t)(converted));
+				}
+				else
+				{
+					fprintf(stderr, "vita49_2_process: Invalid encoding type for double in Control Extension Packet: %d\n", node->control_extension.encoding);
+					return -EINVAL;
+				}
+
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+				
+				if (buffer_index >= max_words)
+					return -EINVAL;
+
+				buf[buffer_index++] = htonl(node->data.u32);
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+
+				// Do nothing since this will be handled by the "options" field
+				break;
+
+			default:
+				fprintf(stderr, "vita49_2_process: Unrecognized data type encoding while attempting to serialize a Control Extension Packet: %d\n", node->control_extension.data_type);
+				return -EINVAL;
+		}
+	}	
+
+	/* Update size in header */
+	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;
+	memcpy(&header_word, &pkt->command_prologue.common_prologue.header, sizeof(uint32_t));
+	buf[0] = htonl(header_word);
+
+	return buffer_index;
+}
+
+
+__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t words, struct vita49_2_control_extension_packet *pkt)
+{
+	if (!buf || !pkt || words == 0)
+		return -EINVAL;
+
+	memset(pkt, 0, sizeof(*pkt));
+
+	/* Header */
+	uint32_t header_word = ntohl(buf[0]);
+	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
+
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+		return -EINVAL; /* Buffer too small for packet size */
+
+	// Making sure this is a Command Extension Packet
+	if (pkt->command_prologue.common_prologue.header.packet_type != VITA49_2_PKT_TYPE_EXT_COMMAND)
+		return -EINVAL;
+
+	uint16_t buffer_index = 1;
+
+	/* Stream ID (Required for Command Extension Packets)*/	
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+		
+	pkt->command_prologue.common_prologue.stream_id = ntohl(buf[buffer_index++]);
+	pkt->command_prologue.common_prologue.has_stream_id = true;
+
+	/* Class ID */
+	if (pkt->command_prologue.common_prologue.header.has_class_id) 
+	{
+		// + 1 since Class ID is 2 words
+		if (buffer_index + 1 >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		memcpy(&pkt->command_prologue.common_prologue.class_id.lower_word, &w1, sizeof(pkt->command_prologue.common_prologue.class_id.lower_word));
+		memcpy(&pkt->command_prologue.common_prologue.class_id.upper_word, &w2, sizeof(pkt->command_prologue.common_prologue.class_id.upper_word));
+
+		pkt->command_prologue.common_prologue.has_class_id = true;
+	}
+
+	/* Timestamp Integer */
+	if (pkt->command_prologue.common_prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
+	{
+		if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+		
+		pkt->command_prologue.common_prologue.timestamp_int = ntohl(buf[buffer_index++]);
+		pkt->command_prologue.common_prologue.has_timestamp_int = true;
+	}
+
+	/* Timestamp Fractional */
+	if (pkt->command_prologue.common_prologue.header.ts_fractional_format != VITA49_2_TSF_NONE) 
+	{
+		// + 1 since Fractional Timestamp is 2 words
+		if (buffer_index + 1 >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+			return -EINVAL;
+
+		uint32_t w1 = ntohl(buf[buffer_index++]);
+		uint32_t w2 = ntohl(buf[buffer_index++]);
+		
+		pkt->command_prologue.common_prologue.timestamp_frac = ((uint64_t)w1 << 32) | w2;
+		pkt->command_prologue.common_prologue.has_timestamp_frac = true;
+	}
+
+	/* CAM */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+
+	// Allocating memory for the CAM if it hasn't already been initialized
+	if (pkt->command_prologue.control_cam == NULL)
+	{
+		pkt->command_prologue.control_cam = malloc(sizeof(*pkt->command_prologue.control_cam));
+
+		if (pkt->command_prologue.control_cam == NULL)
+		{
+			return -ENOMEM;
+		}
+	}
+	// Ensuring we've allocated enough memory for the word
+	else
+	{
+		void* tmp = realloc(pkt->command_prologue.control_cam, sizeof(*pkt->command_prologue.control_cam));
+
+		if (tmp == NULL)
+		{
+			return -ENOMEM;
+		}
+
+		pkt->command_prologue.control_cam = (struct vita49_2_control_cam_field*)(tmp);
+	}
+
+	uint32_t cam_word = ntohl(buf[buffer_index++]);
+	memcpy(pkt->command_prologue.control_cam, &cam_word, sizeof(cam_word));
+
+	/* Message ID */
+	if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words) 
+		return -EINVAL;
+
+	pkt->command_prologue.message_id = ntohl(buf[buffer_index++]);
+
+	/* Controllee ID */
+	// ADI does not use Controllee ID/UUID in the current VITA 49.2 implementation, however we retain the right to use
+	// them in the future.
+
+	if (pkt->command_prologue.control_cam->has_controllee_id)
+	{
+		// If Controllee ID Format is asserted, that means a 128-bit UUID is used
+		if (pkt->command_prologue.control_cam->controllee_id_format)
+		{
+			if (buffer_index + 3 >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				pkt->command_prologue.controllee_id.uuid128[i] = ntohl(buf[buffer_index++]);
+			}
+		}
+		// Otherwise a 32-bit ID is used
+		else
+		{
+			if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			pkt->command_prologue.controllee_id.id32 = ntohl(buf[buffer_index++]);
+		}
+	}
+
+	/* Controller ID */
+	if (pkt->command_prologue.control_cam->has_controller_id)
+	{
+		// If Controller ID Format is asserted, that means a 128-bit UUID is used
+		if (pkt->command_prologue.control_cam->controller_id_format)
+		{
+			if (buffer_index + 3 >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				pkt->command_prologue.controller_id.uuid128[i] = ntohl(buf[buffer_index++]);
+			}
+		}
+		// Otherwise a 32-bit ID is used
+		else
+		{
+			if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+				return -EINVAL;
+
+			pkt->command_prologue.controller_id.id32 = ntohl(buf[buffer_index++]);
+		}
+	}
+
+	/* Payload of Control Extension Words */
+	struct vita49_2_control_extension_word_node* current_node = pkt->payload;
+	while (buffer_index < pkt->command_prologue.common_prologue.header.packet_size_words)
+	{
+		if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+			return 0;
+
+		if (current_node == NULL)
+		{
+			current_node = calloc(1, sizeof(struct vita49_2_control_extension_word_node));
+
+			if (current_node == NULL)
+				return -ENOMEM;
+		}
+		// Still need to ensure only the correct amount of memory was allocated
+		else
+		{
+			void* tmp = realloc(current_node, sizeof(struct vita49_2_control_extension_word_node));
+
+			if (tmp == NULL)
+				return -ENOMEM;
+
+			current_node = tmp;
+		}
+
+		current_node->control_extension.word = ntohl(buf[buffer_index++]);
+
+		// Now we have to extract the data associated with this field as well
+		switch (current_node->control_extension.data_type)
+		{
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+
+				if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					return -EINVAL;
+
+				uint32_t upper = ntohl(buf[buffer_index++]);
+				uint32_t lower = ntohl(buf[buffer_index++]);
+				uint64_t comb = (((uint64_t)(upper) << 32) | (lower));
+				memcpy(&current_node->data, &comb, sizeof(long long));
+				
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+
+				if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					return -EINVAL;
+
+				if (current_node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+				{
+					current_node->data.u32 = ntohl(buf[buffer_index++]);
+				}
+				else if (current_node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_9_7)
+				{
+					uint32_t word = ntohl(buf[buffer_index++]);
+					current_node->data.f = convert_from_9_7(word);
+				}
+				else if (current_node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_10_6)
+				{
+					uint32_t word = ntohl(buf[buffer_index++]);
+					current_node->data.f = convert_from_10_6(word);
+				}
+				else
+				{
+					fprintf(stderr, "vita49_2_process: Invalid encoding type for float in Control Extension Packet: %d\n", current_node->control_extension.encoding);
+					return -EINVAL;
+				}
+				
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+			
+				if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					return -EINVAL;
+				
+				if (current_node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+				{
+					uint32_t upper = ntohl(buf[buffer_index++]);
+					uint32_t lower = ntohl(buf[buffer_index++]);
+					uint64_t comb = (((uint64_t)(upper) << 32) | (lower));
+					memcpy(&current_node->data, &comb, sizeof(comb));
+				}
+				else if (current_node->control_extension.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_44_20)
+				{
+					uint32_t upper = ntohl(buf[buffer_index++]);
+					uint32_t lower = ntohl(buf[buffer_index++]);
+					uint64_t comb = (((uint64_t)(upper) << 32) | (lower));
+					int64_t comb_s;
+					memcpy(&comb_s, &comb, sizeof(comb));
+
+					current_node->data.d = convert_from_44_20(comb_s);
+				}
+				else
+				{
+					fprintf(stderr, "vita49_2_process: Invalid encoding type for double in Control Extension Packet: %d\n", current_node->control_extension.encoding);
+					return -EINVAL;
+				}
+
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+			
+				if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					return -EINVAL;
+
+				current_node->data.u32 = ntohl(buf[buffer_index++]);
+				break;
+
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+
+				// Nothing has to be done since we'll use the "<attribute name>_available" fd for setting the value of this attribute
+				break;
+
+			default:
+				fprintf(stderr, "vita49_2_process: Unrecognized data type encoding while parsing Control Extension Packet: %d\n", current_node->control_extension.data_type);
+				return -EINVAL;
+		}
+
+		current_node = current_node->next;
+	}
+
+	return 0;
+}

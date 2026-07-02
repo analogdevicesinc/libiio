@@ -14,12 +14,7 @@ set(API_TEST_TARGETS
     test_typed_attr
     test_buffer
     test_lowlevel
-    test_v
 )
-
-if(WITH_VITA49_2_BACKEND)
-    list(APPEND API_TEST_TARGETS test_vita49_2_packets)
-endif()
 
 # Create a helper library for common test utilities
 add_library(test_common STATIC test_framework.h)
@@ -51,28 +46,29 @@ foreach(test ${API_TEST_TARGETS})
 endforeach()
 
 if(WITH_VITA49_2_BACKEND)
-	# add_executable(test_vrt_iiod test_vrt_iiod.c ../../iiod/vita49_2/vita49_2_client.c ../../vita49_2/vita49_2_packet_elements.c ../../vita49_2/vita49_2_packet_types.c)
-	# target_link_libraries(test_vrt_iiod PRIVATE test_common iio)
-	# target_include_directories(test_vrt_iiod PRIVATE
-    #     ${CMAKE_CURRENT_SOURCE_DIR}
-    #     ${CMAKE_CURRENT_SOURCE_DIR}/../
-    #     ${CMAKE_SOURCE_DIR}/include
-    #     ${CMAKE_BINARY_DIR}
-    #     ${CMAKE_CURRENT_SOURCE_DIR}/../../
-    # )
+    add_executable(test_vita49_2_packets vita49_2/static/test_vita49_2_packets.c)
+    target_link_libraries(test_vita49_2_packets PRIVATE test_common iio vita49_2)
+    target_include_directories(test_vita49_2_packets PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_BINARY_DIR}
+    )
+    set_target_properties(test_vita49_2_packets PROPERTIES
+        C_STANDARD 99
+        C_STANDARD_REQUIRED ON
+        C_EXTENSIONS OFF
+    )
+    add_test(NAME test_vita49_2_packets COMMAND test_vita49_2_packets)
 
-    # target_compile_definitions(test_vrt_iiod PRIVATE _GNU_SOURCE)
-    
-    # add_test(NAME api_vrt_iiod COMMAND test_vrt_iiod)
-
-	add_executable(vita49_2_simulator vita49_2_simulator.c)
-	set_target_properties(vita49_2_simulator PROPERTIES
-		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-		C_STANDARD 99
-		C_STANDARD_REQUIRED ON
-		C_EXTENSIONS OFF
-	)
-    target_link_libraries(vita49_2_simulator PRIVATE vita49_2 iio)
+    add_executable(simulator vita49_2/simulator.c)
+    set_target_properties(simulator PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+        C_STANDARD 99
+        C_STANDARD_REQUIRED ON
+        C_EXTENSIONS OFF
+    )
+    target_link_libraries(simulator PRIVATE vita49_2 iio)
 endif()
 
 # Master test runner

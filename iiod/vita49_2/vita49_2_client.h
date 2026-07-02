@@ -40,7 +40,8 @@ enum vita49_2_cif_types {
 	CIF1 = 1,
 	CIF2 = 2,
 	CIF3 = 3,
-	CIF7 = 7
+	CIF7 = 7,
+    CIF_EXT = 8     // Custom type defined by ADI for Control Extension Packets to aid with mapping controls to IIO attributes
 };
 
 /**

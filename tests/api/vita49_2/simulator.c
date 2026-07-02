@@ -1,5 +1,16 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * libiio - Library for interfacing industrial I/O (IIO) devices
+ *
+ * Copyright (C) 2026 Analog Devices, Inc.
+ * Author: Praveen Perera <praveen.perera@analog.com>
+ * 
+ * Contributors:
+ * 		- Travis Collins <travis.collins@analog.com>
+ */
+
 #define _DEFAULT_SOURCE
-#include "../../vita49_2/vita49_2_packet_types.h"
+#include <vita49_2/vita49_2_packet_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

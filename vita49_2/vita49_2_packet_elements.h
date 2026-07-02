@@ -117,19 +117,17 @@ enum vita49_2_packet_class_codes {
 
 	// Signal Data Packet Classes
 	VITA49_2_PKT_CLASS_TIME_DATA 				= 0x0001,		// Transmit 16-bit I/Q data
-	VITA49_2_PKT_CLASS_SPECTRAL_DATA 			= 0X0002,		// Transmit spectral data
 	
 	// Context Packet Classes
-	VITA49_2_PKT_CLASS_GENERIC_CONTEXT 			= 0x0003,		// Generic Context Packets. The fields that are present in the payload are provided by the CIF word.
+	VITA49_2_PKT_CLASS_GENERIC_CONTEXT 			= 0x0002,		// Generic Context Packets. The fields that are present in the payload are provided by the CIF word.
 
 	// Control Packet Classes
-	VITA49_2_PKT_CLASS_GENERIC_CONTROL 			= 0x0004,		// Generic Control Packet, not all the CIF fields are applicable to Command Packets so not all of them are used.
-	VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST		= 0x0005,		// Control Packet specifically for requesting more time data packets
-	VITA49_2_PKT_CLASS_REFILL_SPECTRAL_REQUEST 	= 0x0006,		// Control Packet specifically for requesting more spectral data packets
+	VITA49_2_PKT_CLASS_GENERIC_CONTROL 			= 0x0003,		// Generic Control Packet, not all the CIF fields are applicable to Command Packets so not all of them are used.
+	VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST		= 0x0004,		// Control Packet specifically for requesting more time data packets
 
 	// Acknowledge Packet Classes
-	VITA49_2_PKT_CLASS_ACKV_ACKX				= 0x0007,		// Acknowledgement indicating validity of commands (AckV) or which commands were executed properly (AckX)
-	VITA49_2_PKT_CLASS_ACKS						= 0x0008		// Acknowledgement indicating the new values after the controls from a Control Packet were issued (simmilar to a Context Packet)
+	VITA49_2_PKT_CLASS_ACKV_ACKX				= 0x0005,		// Acknowledgement indicating validity of commands (AckV) or which commands were executed properly (AckX)
+	VITA49_2_PKT_CLASS_ACKS						= 0x0006		// Acknowledgement indicating the new values after the controls from a Control Packet were issued (simmilar to a Context Packet)
 };
 
 // =============================================================================
@@ -161,16 +159,6 @@ enum vita49_2_information_class_codes {
 		// 6. AckS Packet (Command Packet)
 	VITA49_2_INFO_CLASS_MODULE_TIME_DATA		= 0x0001,		
 
-	// Purpose: Query signal spectral data from the module.
-	// Packets:
-		// 1. Spectral Data (Signal Data Packet)
-		// 2. Generic Context Packet (Context Packet)
-		// 3. Generic Control Packet (Command Packet)
-		// 4. Spectral Data Refill Request (Command Packet) 
-		// 5. AckV/AckX Packet (Command Packet)
-		// 6. AckS Packet (Command Packet)
-	VITA49_2_INFO_CLASS_MODULE_SPECTRAL_DATA	= 0x0002,
-
 	// Purpose: Send signal time data from the host to the module.
 	// Packets:
 		// 1. 16-Bit Time Data (Signal Data Packet)
@@ -178,13 +166,36 @@ enum vita49_2_information_class_codes {
 		// 3. Generic Control Packet (Command Packet)
 		// 4. AckV/AckX Packet (Command Packet)
 		// 5. AckS Packet (Command Packet)
-	VITA49_2_INFO_CLASS_HOST_TIME_DATA			= 0x0003
+	VITA49_2_INFO_CLASS_HOST_TIME_DATA			= 0x0002
 
 };
 
 // =============================================================================
-// FUNCTION DECLARATIONS
+// CONTROL EXTENSION PACKET DATA TYPES
 // =============================================================================
+
+// The Control Extension Packet is for issuing controls that don't map well to CIF fields, such as the "frequency-division-duplex-mode-enable"
+// debug attribute for the AD9361. Because there's so many different attributes across ADI devices, there's no conceivable way to
+// create CIF-like structures, thus we have to rely on indicator bits to tell us how to interpret the payload in a Control Extension Packet
+// such as the datatype for one of the attributes we're trying to modify.
+enum vita49_2_control_extension_data_types {
+	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL 	= 0,	// long long
+	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F		= 1,	// float
+	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D		= 2,	// double
+	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B		= 3,	// bool
+	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S		= 4		// Means the attribute we're modifying has a "string" type value.
+};
+
+// =============================================================================
+// CONTROL EXTENSION PACKET ENCODING TYPES
+// =============================================================================
+
+enum vita49_2_control_extension_encoding_types {
+	VITA49_2_CONTROL_EXTENSION_ENCODING_NONE 	= 0,	// No special encoding
+	VITA49_2_CONTROL_EXTENSION_ENCODING_9_7		= 1,	// 9.7 for floats
+	VITA49_2_CONTROL_EXTENSION_ENCODING_10_6	= 2,	// 10.6 for floats
+	VITA49_2_CONTROL_EXTENSION_ENCODING_44_20	= 3,	// 44.20 for doubles
+};
 
 /**
  * @struct vita49_2_header
@@ -594,17 +605,45 @@ struct vita49_2_warning_error_indicators {
 #endif
 };
 
-// TODO: Define a struct to contain fields specifying commands/controls that aren't well translated from CIF0 to ADI devices
 /**
- * @struct vita49_2_extended_control_item
- * @brief VITA 49.2 Extended Command Field for Extension Control Packets 
- * 
- * Not all of the CIF0 fields translate well to attributes that can be modified on ADI devices.
- * To resolve that, Command Extension Packets are used, but we must also define a custom struct to
- * represent those unique commands in the payload of the Command Extension Packet. 
- * That is what this struct is for.
+ * @struct vita49_2_control_extension_word_node
+ * @brief Node struct to be used as part of a linked list of Control Extension words.
  */
-struct vita49_2_extended_control_item{};
+struct vita49_2_control_extension_word_node {
+
+	// Not all of the CIF0 fields translate well to attributes that can be modified on ADI devices.
+	// To resolve that, Command/Control Extension Packets are used, but we must also define a custom word format to
+	// represent those unique commands in the payload of the Control Extension Packet. 
+	union {
+		uint32_t word;
+		struct {
+			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String
+
+				// Explanation of "4 = String":
+					// Some attributes have a fixed set of string values/options. Rather than packing a string into a VITA packet,
+					// if data_type is set to "String" (4), then the VITA backend will look at the "option" field to determine what string
+					// attribute value from the list of values in the "<attribute name>_available" fd to use.
+
+					// See a further explanation in the comments for the "option" bitfield.
+
+			uint32_t encoding:2;	// 0 = None, 1 = 9.7, 2 = 44.20
+			uint32_t mapping:8;		// The CIF mapping bit this corresponds to in the <device_name>_mapping.conf, EX: 0, 1, 2, 3...
+			uint32_t option:3;		// Some attributes have a fixed set of string values/options, such as "gain_control_mode" which can be "manual", "fast_attack", "slow_attack", or "hybrid". The "option" field specifies which option is being used. For example, "manual" would correspond to 0, "fast_attack" would be 1, etc... This numbering is based on the order of the options when printing the "<attribute name>_available" file descriptor (EX: gain_control_mode_available)
+			uint32_t reserved:18;
+		};
+	} control_extension;
+
+	// For containing the new attribute value that we want to write
+	union {
+		long long ll;
+		double d;
+		uint32_t u32;
+		float f;
+		bool b;
+	} data;
+
+	struct vita49_2_control_extension_word_node* next;
+};
 
 // TODO: Currently we don't support changing the Signal Data Packet Payload format dynamically while IIOD is in operation.
 // This is however a feature that VITA 49.2 supports (read section 9.13.3 from the VITA 49.2 2017 document).
@@ -918,6 +957,9 @@ struct vita49_2_errors {
 	uint16_t errors_payload_num_words;     						/* Number of 32-bit words in the payload */
 };
 
+
+
+
 #if defined(_WIN32)
 #  if defined(LIBIIO_EXPORTS)
 #    define __vrt_api __declspec(dllexport)
@@ -930,6 +972,10 @@ struct vita49_2_errors {
 #  define __vrt_api
 #endif
 
+
+// =============================================================================
+// FUNCTION DECLARATIONS
+// =============================================================================
 
 /**
  * @brief Converts a double to a 64-bit integer in 44.20 format (meaning the radix point is to the left of the first 20 bits).

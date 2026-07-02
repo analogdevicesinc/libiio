@@ -179,12 +179,11 @@ struct vita49_2_ackS_packet {
  */
 struct vita49_2_control_extension_packet {
 	
-	struct vita49_2_command_prologue prologue;	/* Common fields present in every VITA 49.2 Command Packet */
+	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
 	
-	// The payload will contain "vita49_2_extended_control_item" structs which contain the attribute address
-	// and new attribute value that we want to configure on the device
-	const uint32_t *payload;  			/* Pointer to the start of the payload words */
-	uint16_t payload_num_words;     	/* Number of 32-bit words in the payload */
+	// ADI SDRs differ in what kind of IIO attributes they have, especially if personality cards are used.
+	// Therefore we can't rely on a fixed size array of extension word unions, rather we'll need a linked list.
+	struct vita49_2_control_extension_word_node *payload;  	/* Head node */
 };
 
 
@@ -338,5 +337,29 @@ __vrt_api ssize_t vita49_2_generate_ackS_packet(struct vita49_2_ackS_packet *pkt
  * @return int 
  */
 __vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt);
+
+/**
+ * @brief Populates a 32-bit word buffer with data for a Control Extension Packet. 
+ * The buffer MUST be large enough to hold the generated packet.
+ * Returns the number of words written, or a negative error code on failure.
+ * 
+ * @param pkt 
+ * @param buf 
+ * @param max_words 
+ * @return ssize_t 
+ */
+__vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_control_extension_packet *pkt, uint32_t *buf, size_t max_words);
+
+/**
+ * @brief Parses a buffer of 32-bit words into a vita49_2_control_extension_packet structure. 
+ * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
+ * 
+ * @param buf 
+ * @param words 
+ * @param pkt 
+ * @return int 
+ */
+__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t words, struct vita49_2_control_extension_packet *pkt);
+
 
 #endif /* __VITA49_2_PACKET_TYPES_H__ */

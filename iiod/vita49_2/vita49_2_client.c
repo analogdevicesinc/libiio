@@ -99,6 +99,27 @@ int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit,
 int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet);
 
 /**
+ * @brief Accepts a parsed Control Extension Packet and executes the commands in it.
+ * 
+ * @param ctx 
+ * @param pkt 
+ * @return int 
+ */
+int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt);
+
+/**
+ * @brief Finds the "_available" attribute associated with a modifiable IIO attribute.
+ * 
+ * @param ctx 
+ * @param cif_type 
+ * @param cif_bit 
+ * @param available_range 
+ * @param buffer_size 
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, char* available_range, size_t buffer_size);
+
+/**
  * @brief Validates the commands in a Control Packet by verifying that provided new value for an attribute is within the acceptable range.
  * 
  * Returns an error code on failure, otherwise 0 on success.
@@ -1208,7 +1229,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							{
 								if (execute_commands(arguments->ctx, &control_packet, &ackX_packet) < 0)
 								{
-									fprintf(stderr, "vita49_2_client: Error while executing commands.\n");	
+									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet.\n");	
 									goto cleanup_ackX;
 								}
 
@@ -1297,7 +1318,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							{
 								if (execute_commands(arguments->ctx, &control_packet, NULL) < 0)
 								{
-									fprintf(stderr, "vita49_2_client: Error while executing commands.\n");
+									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet.\n");
 									continue;
 								}
 							}
@@ -1424,8 +1445,38 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 				// Extension Command Packet
 				case VITA49_2_PKT_TYPE_EXT_COMMAND:
-					// TODO: ADI doesn't support this packet as of yet, though we retain the right to implement it in the future.
-					// It's likely that we'll use this packet for executing commands that aren't well translated to CIF fields.
+
+					// TODO: Add support for Command Extension Packets for the Acknowledge subtype (if necessary, it may be unneeded)
+
+					// First we have to determine what kind of Command Extension Packet we're dealing with (Control Extension, Acknowledge Extension, etc.).
+					// If the 3rd indicator bit is asserted, that means this is an Acknowledge Packet. -> See Table 5.1.1.1-1 in the VITA 49.2 2017 docs.
+					if (received_header.indicators & (1 << 2))
+					{
+						fprintf(stderr, "vita49_2_client: Received a Acknowledge Extension Packet which is unsupported.\n");
+						continue;
+					}
+
+					struct vita49_2_control_extension_packet control_ext_packet;
+					int ret_value;
+					if ((ret_value = vita49_2_parse_control_extension_packet(receive_buffer, received, &control_ext_packet)) < 0)
+					{
+						fprintf(stderr, "vita49_2_client: Unable to parse Control Extension Packet. Error: %d\n", ret_value);
+						continue;
+					}
+
+					// TODO: Handle AckV Request by creating a Command Extension Packet for AckV
+					// TODO: Handle AckX Request by creating a Command Extension Packet for AckX
+					// TODO: Handle AckS Request by creating a Command Extension Packet for AckS
+
+					if (control_ext_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
+					{
+						if (execute_commands(arguments->ctx, &control_ext_packet, NULL) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Error while executing commands in Control Extension Packet.\n");
+							continue;
+						}
+					}
+
 					break;
 
 				// Unknown packet
@@ -2193,6 +2244,232 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 		memcpy(ackX_packet->errors.errors_payload, &cif0_errors_buffer, cif0_errors_index * sizeof(struct vita49_2_warning_error_indicators));
 
 		ackX_packet->errors.errors_payload_num_words = cif0_errors_index;
+	}
+
+	return 0;
+}
+
+int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt)
+{
+	struct iio_device *dev;
+	struct iio_channel *chn;
+	const struct iio_attr *attr;
+	struct vita49_2_cif_mapping *m;
+	int ret = 0;
+
+	// Don't need to check the AckX Packet pointer since it's optional
+	if (!ctx || !pkt)
+		return -EINVAL;
+
+	if (pkt->command_prologue.control_cam == NULL)
+		return -EINVAL;
+
+	// Check the Action Mode bits in the Packet to see if the Controls should be executed
+	if (pkt->command_prologue.control_cam->action_bits != VITA49_2_CTRL_EXECUTE)
+		return -EINVAL;
+
+
+	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
+	// in this packet should be executed.
+
+	bool control_extension_match;
+	struct vita49_2_control_extension_word_node* control_extension_node;
+
+	// Iterate through the mappings list to find the associated attribute for this command. We're choosing to nest the loops this way (even though it's not the most efficient)
+	// because there might be 2 related attributes that are for TX and RX that correspond to the same CIF bit that should be updated simultaneously. If our outer loop iterated
+	// over the commands in the Control Extension Packet, we would miss that second attribute unless we had duplicate commands.
+	for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next)
+	{
+		control_extension_match = false;
+
+		// Iterate through all of the commands
+		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
+		{
+			// Check if mapping is part of the extended controls group
+			if (m->cif_type != CIF_EXT)
+				continue;
+
+			// Check if mapping has the same CIF bit
+			if (m->cif_bit != control_extension_node->control_extension.mapping)
+				continue;
+
+			// We have a match
+			control_extension_match = true;
+			break;
+		}
+
+		if (!control_extension_match)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find an attribute mapping for Control Extension with CIF Bit = %d\n", control_extension_node->control_extension.mapping);
+			continue;
+		}
+
+		// Find device and channel
+		dev = iio_context_find_device(ctx, m->device_name);
+		if (!dev) 
+		{
+			fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", m->device_name);
+			continue;
+		}
+
+		attr = NULL;
+
+		// Attribute we're modifying is associated with a specific channel so we must find that channel first.
+		if (m->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
+		{
+			chn = iio_device_find_channel(dev, m->channel_name, m->is_output);
+			if (!chn) 
+			{
+				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", m->channel_name);
+				continue;
+			}
+
+			attr = iio_channel_find_attr(chn, m->attr_name);
+		} 
+		// Attribute we're modifying is associated with the device as a whole
+		else if (m->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
+		{
+			attr = iio_device_find_attr(dev, m->attr_name);
+		} 
+		// Attribute we're modifying is a debug attribute (advanced configuration)
+		else if (m->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
+		{
+			attr = iio_device_find_debug_attr(dev, m->attr_name);
+		}
+
+		if (!attr) 
+		{
+			fprintf(stderr, "vita49_2_process: Attribute %s not found on %s.\n", m->attr_name, m->device_name);
+			continue;
+		}
+
+
+		// Extracting the new attribute value and issuing the new value
+		switch (control_extension_node->control_extension.data_type)
+		{
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+			{
+				long long value;
+				memcpy(&value, &control_extension_node->data, sizeof(value));
+
+				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+				ret = iio_attr_write_longlong(attr, value);
+				if (ret < 0)
+					fprintf(stderr, "vita49_2_process: Failed to write %lld to %s\n", value, m->attr_name);
+
+				break;
+			}
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+			{
+				float value;
+				memcpy(&value, &control_extension_node->data.f, sizeof(value));
+
+				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+				ret = iio_attr_write_double(attr, (double)(value));
+				if (ret < 0)
+					fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", value, m->attr_name);
+
+				break;
+			}
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+			{
+				double value;
+				memcpy(&value, &control_extension_node->data, sizeof(value));
+
+				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+				ret = iio_attr_write_double(attr, value);
+				if (ret < 0)
+					fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s\n", value, m->attr_name);
+
+				break;
+			}
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+			{
+				bool value;
+				memcpy(&value, &control_extension_node->data.b, sizeof(value));
+
+				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %b\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+				ret = iio_attr_write_bool(attr, value);
+				if (ret < 0)
+					fprintf(stderr, "vita49_2_process: Failed to write %b to %s\n", value, m->attr_name);
+
+				break;
+			}
+			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+			{
+
+				// This will require some extra work. We need to find the "_available" fd associated with this attribute and get a list of the possible values.
+				char available_range[256];
+
+				ret = find_available_attribute(ctx, CIF_EXT, m->cif_bit, available_range, sizeof(available_range));
+				if (ret < 0)
+				{	
+					fprintf(stderr, "vita49_2_process: Unable to find an '_available' attribute for %s. Skipping execution of Control Extension.\n", m->attr_name);
+					continue;
+				}
+
+				// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+					// "[min step max]"
+				// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+				// in the brackets:
+					// "500 600 700 750 900"
+
+				// Since we're treating the list of available options as an array and using the control_extension_node->control_extension.option field as an index,
+				// we're unable to suppor the first option.
+
+				// Means we're dealing with the first case
+				if (available_range[0] == '[')
+				{
+					fprintf(stderr, "vita49_2_process: The '%s_available' attribute provides a start-step-stop format rather than a list of distinct values.\n", m->attr_name);
+					continue;
+				}
+				
+				int num_options = 1 << control_extension_node->control_extension.option;
+
+				// VLA
+				char *values[num_options];
+				for (int i = 0; i < num_options; i++) 
+					values[i] = NULL;
+
+				int count = 0;
+
+				char *tmp = strdup(available_range);
+				if (tmp == NULL) 
+				{
+					fprintf(stderr, "vita49_2_process: Failed to duplicate string while executing an attribute update for %s\n", m->attr_name);
+					continue;
+				}
+
+				char *saveptr = NULL;
+				char *tok = strtok_r(tmp, " \t\r\n", &saveptr);
+				while (tok && count < num_options && count < num_options) 
+				{
+					values[count] = strdup(tok);  // store each token
+					if (!values[count]) 
+					{
+						break;
+					}
+					count++;
+					tok = strtok_r(NULL, " \t\r\n", &saveptr);
+				}
+
+				free(tmp);
+
+				if (values[num_options-1] == NULL)
+				{
+					fprintf(stderr, "vita49_2_process: Unable to extract option %d from %s while execution Control Extension\n", control_extension_node->control_extension.option, available_range);
+					continue;
+				}
+
+				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %s\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", values[num_options-1]);
+				ret = iio_attr_write_string(attr, values[num_options-1]);
+
+				if (ret < 0)
+				fprintf(stderr, "vita49_2_process: Failed to write %s to %s\n", values[num_options-1], m->attr_name);
+					
+				break;
+			}
+		}
 	}
 
 	return 0;
