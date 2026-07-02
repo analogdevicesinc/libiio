@@ -57,6 +57,7 @@ add_library(
     context.c
     device.c
     events.c
+    format.c
     library.c
     mask.c
     scan.c

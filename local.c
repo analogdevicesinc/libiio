@@ -833,32 +833,9 @@ static int handle_scan_element_attr(struct iio_channel *chn, const char *name, c
 	} else if (!strcmp(name, "type")) {
 		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
-			char endian, sign;
-
-			if (strchr(buf, 'X')) {
-				iio_sscanf(buf, "%ce:%c%u/%uX%u>>%u",
-#ifdef _MSC_BUILD
-						&endian, sizeof(endian), &sign, sizeof(sign),
-#else
-						&endian, &sign,
-#endif
-						&chn->format.bits, &chn->format.length,
-						&chn->format.repeat, &chn->format.shift);
-			} else {
-				chn->format.repeat = 1;
-				iio_sscanf(buf, "%ce:%c%u/%u>>%u",
-#ifdef _MSC_BUILD
-						&endian, sizeof(endian), &sign, sizeof(sign),
-#else
-						&endian, &sign,
-#endif
-						&chn->format.bits, &chn->format.length,
-						&chn->format.shift);
-			}
-			chn->format.is_signed = (sign == 's' || sign == 'S');
-			chn->format.is_fully_defined = (sign == 'S' || sign == 'U' ||
-							chn->format.bits == chn->format.length);
-			chn->format.is_be = endian == 'b';
+			ret = iio_parse_format_string(buf, &chn->format);
+			if (ret < 0)
+				return ret;
 		}
 	} else {
 		return -EINVAL;
