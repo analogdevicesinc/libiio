@@ -53,7 +53,9 @@ static int create_cancel_fd(struct iiod_client_pdata *io_ctx)
 
 #ifdef HAS_PIPE2
 	ret = pipe2(io_ctx->cancel_fd, O_CLOEXEC | O_NONBLOCK);
-	if (ret < 0 && errno != ENOSYS) /* If ENOSYS try pipe() */
+	if (!ret)
+		return 0;
+	if (errno != ENOSYS) /* If ENOSYS try pipe() */
 		return -errno;
 #endif
 	ret = pipe(io_ctx->cancel_fd);
