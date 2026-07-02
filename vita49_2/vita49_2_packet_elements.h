@@ -606,17 +606,19 @@ struct vita49_2_warning_error_indicators {
 };
 
 /**
- * @struct vita49_2_control_extension_word_node
- * @brief Node struct to be used as part of a linked list of Control Extension words.
+ * @union
+ * @brief Not all of the CIF0 fields translate well to attributes that can be modified on ADI devices.
+ * To resolve that, Command/Control Extension Packets are used, but we must also define a custom word format to
+ * represent those unique commands in the payload of the Control Extension Packet. 
  */
-struct vita49_2_control_extension_word_node {
-
-	// Not all of the CIF0 fields translate well to attributes that can be modified on ADI devices.
-	// To resolve that, Command/Control Extension Packets are used, but we must also define a custom word format to
-	// represent those unique commands in the payload of the Control Extension Packet. 
-	union {
-		uint32_t word;
-		struct {
+union vita49_2_control_extension_description {
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			uint32_t reserved:16;
+			uint32_t option:3;		// Some attributes have a fixed set of string values/options, such as "gain_control_mode" which can be "manual", "fast_attack", "slow_attack", or "hybrid". The "option" field specifies which option is being used. For example, "manual" would correspond to 0, "fast_attack" would be 1, etc... This numbering is based on the order of the options when printing the "<attribute name>_available" file descriptor (EX: gain_control_mode_available)
+			uint32_t mapping:8;		// The CIF mapping bit this corresponds to in the <device_name>_mapping.conf, EX: 0, 1, 2, 3...
+			uint32_t encoding:2;	// 0 = None, 1 = 9.7, 2 = 44.20
 			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String
 
 				// Explanation of "4 = String":
@@ -624,14 +626,24 @@ struct vita49_2_control_extension_word_node {
 					// if data_type is set to "String" (4), then the VITA backend will look at the "option" field to determine what string
 					// attribute value from the list of values in the "<attribute name>_available" fd to use.
 
-					// See a further explanation in the comments for the "option" bitfield.
-
+					// See a further explanation in the comments for the "option" bitfield above.
+		#else
+			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String
 			uint32_t encoding:2;	// 0 = None, 1 = 9.7, 2 = 44.20
 			uint32_t mapping:8;		// The CIF mapping bit this corresponds to in the <device_name>_mapping.conf, EX: 0, 1, 2, 3...
 			uint32_t option:3;		// Some attributes have a fixed set of string values/options, such as "gain_control_mode" which can be "manual", "fast_attack", "slow_attack", or "hybrid". The "option" field specifies which option is being used. For example, "manual" would correspond to 0, "fast_attack" would be 1, etc... This numbering is based on the order of the options when printing the "<attribute name>_available" file descriptor (EX: gain_control_mode_available)
-			uint32_t reserved:18;
-		};
-	} control_extension;
+			uint32_t reserved:16;
+		#endif
+	};
+};
+
+/**
+ * @struct vita49_2_control_extension_word_node
+ * @brief Node struct to be used as part of a linked list of Control Extension words.
+ */
+struct vita49_2_control_extension_word_node {
+
+	union vita49_2_control_extension_description control_extension;
 
 	// For containing the new attribute value that we want to write
 	union {
@@ -643,6 +655,32 @@ struct vita49_2_control_extension_word_node {
 	} data;
 
 	struct vita49_2_control_extension_word_node* next;
+
+};
+
+/**
+ * @struct vita49_2_ackV_extension_word_node
+ * @brief Node struct to be used as part of a linked list of AckV Extension words.
+ */
+struct vita49_2_ackV_extension_word_node {
+
+	union vita49_2_control_extension_description control_extension;
+	struct vita49_2_warning_error_indicators warning_indicators;
+	struct vita49_2_ackV_extension_word_node* next;
+
+};
+
+/**
+ * @struct vita49_2_ackX_extension_word_node
+ * @brief Node struct to be used as part of a linked list of AckX Extension words.
+ */
+struct vita49_2_ackX_extension_word_node {
+
+	union vita49_2_control_extension_description control_extension;
+	struct vita49_2_warning_error_indicators warning_indicators;
+	struct vita49_2_warning_error_indicators error_indicators;
+	struct vita49_2_ackV_extension_word_node* next;
+	
 };
 
 // TODO: Currently we don't support changing the Signal Data Packet Payload format dynamically while IIOD is in operation.

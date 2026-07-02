@@ -32,10 +32,6 @@
 #define VITA49_2_PKT_SPECTRAL_DATA_DEVICE_START 1073741824
 #define VITA49_2_PKT_SPECTRAL_DATA_DEVICE_END 2147483647
 
-// =============================================================================
-// FUNCTION DECLARATIONS
-// =============================================================================
-
 /**
  * @struct vita49_2_data_packet
  * @brief Represents a parsed VITA 49.2 Signal Data Packet.
@@ -184,6 +180,41 @@ struct vita49_2_control_extension_packet {
 	// ADI SDRs differ in what kind of IIO attributes they have, especially if personality cards are used.
 	// Therefore we can't rely on a fixed size array of extension word unions, rather we'll need a linked list.
 	struct vita49_2_control_extension_word_node *payload;  	/* Head node */
+
+};
+
+/**
+ * @struct vita49_2_ackV_extension_packet
+ * @brief Represents a parsed VITA 49.2 AckV Extension Packet.
+ * 
+ * This structure holds all decompressed fields and metadata of a 
+ * VITA 49.2 AckV Extension Packet, providing easy access to components.
+ */
+struct vita49_2_ackV_extension_packet {
+	
+	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
+	
+	// ADI SDRs differ in what kind of IIO attributes they have, especially if personality cards are used.
+	// Therefore we can't rely on a fixed size array of extension word unions, rather we'll need a linked list.
+	struct vita49_2_ackV_extension_word_node *payload;  	/* Head node */
+
+};
+
+/**
+ * @struct vita49_2_ackX_extension_packet
+ * @brief Represents a parsed VITA 49.2 AckX Extension Packet.
+ * 
+ * This structure holds all decompressed fields and metadata of a 
+ * VITA 49.2 AckX Extension Packet, providing easy access to components.
+ */
+struct vita49_2_ackX_extension_packet {
+	
+	struct vita49_2_command_prologue command_prologue;	/* Common fields present in every VITA 49.2 Command Packet */
+	
+	// ADI SDRs differ in what kind of IIO attributes they have, especially if personality cards are used.
+	// Therefore we can't rely on a fixed size array of extension word unions, rather we'll need a linked list.
+	struct vita49_2_ackX_extension_word_node *payload;  	/* Head node */
+	
 };
 
 
@@ -217,11 +248,11 @@ __vrt_api ssize_t vita49_2_generate_data_packet(struct vita49_2_data_packet *pkt
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf.
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_2_data_packet *pkt);
+__vrt_api int vita49_2_parse_data_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_data_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Context Packet. 
@@ -240,11 +271,11 @@ __vrt_api ssize_t vita49_2_generate_context_packet(struct vita49_2_context_packe
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf.
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, struct vita49_2_context_packet *pkt);
+__vrt_api int vita49_2_parse_context_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_context_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Control Packet. 
@@ -263,11 +294,11 @@ __vrt_api ssize_t vita49_2_generate_control_packet(struct vita49_2_control_packe
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf.
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita49_2_control_packet *pkt);
+__vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_control_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for an AckX Packet. 
@@ -286,11 +317,11 @@ __vrt_api ssize_t vita49_2_generate_ackX_packet(struct vita49_2_ackX_packet *pkt
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf.
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt);
+__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackX_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for an AckV Packet. 
@@ -309,11 +340,11 @@ __vrt_api ssize_t vita49_2_generate_ackV_packet(struct vita49_2_ackV_packet *pkt
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf.
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt);
+__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackV_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a AckS Packet. 
@@ -332,11 +363,11 @@ __vrt_api ssize_t vita49_2_generate_ackS_packet(struct vita49_2_ackS_packet *pkt
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf.
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt);
+__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackS_packet *pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Control Extension Packet. 
@@ -355,11 +386,11 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf 
- * @param words 
+ * @param buf_words Number of 32-bit words in buf. 
  * @param pkt 
  * @return int 
  */
-__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t words, struct vita49_2_control_extension_packet *pkt);
+__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_control_extension_packet *pkt);
 
 
 #endif /* __VITA49_2_PACKET_TYPES_H__ */

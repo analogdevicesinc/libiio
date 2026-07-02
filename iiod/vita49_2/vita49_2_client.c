@@ -997,7 +997,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 						struct vita49_2_control_packet control_packet;
 						int ret_value;
-						if ((ret_value = vita49_2_parse_control_packet(receive_buffer, received, &control_packet)) < 0)
+						if ((ret_value = vita49_2_parse_control_packet(receive_buffer, received/4, &control_packet)) < 0)
 						{
 							fprintf(stderr, "vita49_2_client: Unable to parse Control Packet. Error: %d\n", ret_value);
 							continue;
@@ -1458,7 +1458,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 					struct vita49_2_control_extension_packet control_ext_packet;
 					int ret_value;
-					if ((ret_value = vita49_2_parse_control_extension_packet(receive_buffer, received, &control_ext_packet)) < 0)
+					if ((ret_value = vita49_2_parse_control_extension_packet(receive_buffer, received/4, &control_ext_packet)) < 0)
 					{
 						fprintf(stderr, "vita49_2_client: Unable to parse Control Extension Packet. Error: %d\n", ret_value);
 						continue;
@@ -1470,7 +1470,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 					if (control_ext_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
 					{
-						if (execute_commands(arguments->ctx, &control_ext_packet, NULL) < 0)
+						if (execute_command_extensions(arguments->ctx, &control_ext_packet) < 0)
 						{
 							fprintf(stderr, "vita49_2_client: Error while executing commands in Control Extension Packet.\n");
 							continue;
@@ -1814,7 +1814,7 @@ int vita49_2_command_load_mappings(const char *file_path)
 		int i;
 		for (i = 0; i < 6; i++) 
 		{
-			toks[i] = strsep(&p, ",\r\n");
+			toks[i] = strsep(&p, "|\r\n");
 			if (!toks[i]) break;
 		}
 		
@@ -2272,7 +2272,6 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
 	// in this packet should be executed.
 
-	bool control_extension_match;
 	struct vita49_2_control_extension_word_node* control_extension_node;
 
 	// Iterate through the mappings list to find the associated attribute for this command. We're choosing to nest the loops this way (even though it's not the most efficient)
@@ -2280,8 +2279,6 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 	// over the commands in the Control Extension Packet, we would miss that second attribute unless we had duplicate commands.
 	for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next)
 	{
-		control_extension_match = false;
-
 		// Iterate through all of the commands
 		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
 		{
@@ -2294,15 +2291,11 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 				continue;
 
 			// We have a match
-			control_extension_match = true;
 			break;
 		}
 
-		if (!control_extension_match)
-		{
-			fprintf(stderr, "vita49_2_process: Could not find an attribute mapping for Control Extension with CIF Bit = %d\n", control_extension_node->control_extension.mapping);
+		if (control_extension_node == NULL)
 			continue;
-		}
 
 		// Find device and channel
 		dev = iio_context_find_device(ctx, m->device_name);
@@ -2388,10 +2381,10 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 				bool value;
 				memcpy(&value, &control_extension_node->data.b, sizeof(value));
 
-				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %b\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
 				ret = iio_attr_write_bool(attr, value);
 				if (ret < 0)
-					fprintf(stderr, "vita49_2_process: Failed to write %b to %s\n", value, m->attr_name);
+					fprintf(stderr, "vita49_2_process: Failed to write %d to %s\n", value, m->attr_name);
 
 				break;
 			}
@@ -2424,7 +2417,7 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 					continue;
 				}
 				
-				int num_options = 1 << control_extension_node->control_extension.option;
+				int num_options = control_extension_node->control_extension.option;
 
 				// VLA
 				char *values[num_options];
@@ -2457,7 +2450,7 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 
 				if (values[num_options-1] == NULL)
 				{
-					fprintf(stderr, "vita49_2_process: Unable to extract option %d from %s while execution Control Extension\n", control_extension_node->control_extension.option, available_range);
+					fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.option, m->attr_name);
 					continue;
 				}
 
@@ -3175,6 +3168,8 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* c
 			case CIF3:
 			case CIF7:
 				break;
+			case CIF_EXT:
+				continue;
 			default:
 				fprintf(stderr, "vita49_2_process: Encountered an unknown CIF type (%d)\n", cif_mappings->cif_type);
 				continue;

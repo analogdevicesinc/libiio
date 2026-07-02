@@ -117,9 +117,9 @@ ssize_t vita49_2_generate_data_packet(struct vita49_2_data_packet *pkt, uint32_t
 	return buffer_index;
 }
 
-int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_2_data_packet *pkt)
+int vita49_2_parse_data_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_data_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -128,7 +128,7 @@ int vita49_2_parse_data_packet(const uint32_t *buf, size_t words, struct vita49_
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->prologue.header, &header_word, sizeof(pkt->prologue.header));
 
-	if (pkt->prologue.header.packet_size_words > words)
+	if (pkt->prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	// Validating that this is a Data Packet
@@ -527,9 +527,9 @@ ssize_t vita49_2_generate_context_packet(struct vita49_2_context_packet *pkt, ui
 	return buffer_index;
 }
 
-int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, struct vita49_2_context_packet *pkt)
+int vita49_2_parse_context_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_context_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -538,7 +538,7 @@ int vita49_2_parse_context_packet(const uint32_t *buf, size_t words, struct vita
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->prologue.header, &header_word, sizeof(pkt->prologue.header));
 
-	if (pkt->prologue.header.packet_size_words > words)
+	if (pkt->prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	// Validating that this is a Context Packet
@@ -984,9 +984,9 @@ ssize_t vita49_2_generate_control_packet(struct vita49_2_control_packet *pkt, ui
 	return buffer_index;
 }
 
-int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita49_2_control_packet *pkt)
+int vita49_2_parse_control_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_control_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -995,7 +995,7 @@ int vita49_2_parse_control_packet(const uint32_t *buf, size_t words, struct vita
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
 
-	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	// Making sure this is a Command Packet
@@ -1840,9 +1840,9 @@ __vrt_api ssize_t vita49_2_generate_ackV_packet(struct vita49_2_ackV_packet *pkt
 	return buffer_index;
 }
 
-__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t words, struct vita49_2_ackX_packet *pkt)
+__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackX_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -1851,7 +1851,7 @@ __vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t words, stru
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
 
-	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	uint16_t buffer_index = 1;
@@ -2227,9 +2227,9 @@ __vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t words, stru
 	return 0;
 }
 
-__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t words, struct vita49_2_ackV_packet *pkt)
+__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackV_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -2238,7 +2238,7 @@ __vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t words, stru
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
 
-	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	uint16_t buffer_index = 1;
@@ -2928,9 +2928,9 @@ __vrt_api ssize_t vita49_2_generate_ackS_packet(struct vita49_2_ackS_packet *pkt
 }
 
 
-__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, struct vita49_2_ackS_packet *pkt)
+__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackS_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -2939,7 +2939,7 @@ __vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t words, stru
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
 
-	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	uint16_t buffer_index = 1;
@@ -3408,9 +3408,9 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 }
 
 
-__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t words, struct vita49_2_control_extension_packet *pkt)
+__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_control_extension_packet *pkt)
 {
-	if (!buf || !pkt || words == 0)
+	if (!buf || !pkt || buf_words == 0)
 		return -EINVAL;
 
 	memset(pkt, 0, sizeof(*pkt));
@@ -3419,7 +3419,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 	uint32_t header_word = ntohl(buf[0]);
 	memcpy(&pkt->command_prologue.common_prologue.header, &header_word, sizeof(pkt->command_prologue.common_prologue.header));
 
-	if (pkt->command_prologue.common_prologue.header.packet_size_words > words)
+	if (pkt->command_prologue.common_prologue.header.packet_size_words > buf_words)
 		return -EINVAL; /* Buffer too small for packet size */
 
 	// Making sure this is a Command Extension Packet
@@ -3563,28 +3563,34 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 	}
 
 	/* Payload of Control Extension Words */
-	struct vita49_2_control_extension_word_node* current_node = pkt->payload;
+
+	// Setting up the head node
+	struct vita49_2_control_extension_word_node* current_node;
+	current_node = calloc(1, sizeof(struct vita49_2_control_extension_word_node));
+	
+	if (current_node == NULL)
+	{
+		fprintf(stderr, "vita49_2_process: Failed to allocate memory while parsing Control Extension Packet.\n");
+		return -ENOMEM;
+	}
+
+	pkt->payload = current_node;
+
 	while (buffer_index < pkt->command_prologue.common_prologue.header.packet_size_words)
 	{
 		if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
 			return 0;
 
+		// Avoid reallocating memory for the head node
 		if (current_node == NULL)
 		{
 			current_node = calloc(1, sizeof(struct vita49_2_control_extension_word_node));
 
 			if (current_node == NULL)
+			{
+				fprintf(stderr, "vita49_2_process: Failed to allocate memory while parsing Control Extension Packet.\n");
 				return -ENOMEM;
-		}
-		// Still need to ensure only the correct amount of memory was allocated
-		else
-		{
-			void* tmp = realloc(current_node, sizeof(struct vita49_2_control_extension_word_node));
-
-			if (tmp == NULL)
-				return -ENOMEM;
-
-			current_node = tmp;
+			}
 		}
 
 		current_node->control_extension.word = ntohl(buf[buffer_index++]);
@@ -3679,7 +3685,8 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 				return -EINVAL;
 		}
 
-		current_node = current_node->next;
+		// Still need to ensure only the correct amount of memory was allocated
+		current_node = &current_node->next;
 	}
 
 	return 0;
