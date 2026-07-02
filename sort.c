@@ -31,12 +31,12 @@ static int iio_channel_compare(const void *p1, const void *p2)
 {
 	const struct iio_channel *tmp1 = *(struct iio_channel **)p1;
 	const struct iio_channel *tmp2 = *(struct iio_channel **)p2;
-	long idx1 = iio_channel_get_index(tmp1);
-	long idx2 = iio_channel_get_index(tmp2);
+	long idx1 = iio_channel_get_index(tmp1, NULL);
+	long idx2 = iio_channel_get_index(tmp2, NULL);
 
 	if (idx1 == idx2 && idx1 >= 0) {
-		idx1 = iio_channel_get_data_format(tmp1)->shift;
-		idx2 = iio_channel_get_data_format(tmp2)->shift;
+		idx1 = iio_channel_get_data_format(tmp1, NULL)->shift;
+		idx2 = iio_channel_get_data_format(tmp2, NULL)->shift;
 	}
 
 	if (idx2 >= 0 && (idx1 > idx2 || idx1 < 0))
@@ -65,12 +65,12 @@ static int iio_scan_elements_compare(const void *p1, const void *p2)
 {
 	const struct iio_scan_element *se1 = *(struct iio_scan_element **)p1;
 	const struct iio_scan_element *se2 = *(struct iio_scan_element **)p2;
-	long idx1 = iio_channel_get_index(se1->chn);
-	long idx2 = iio_channel_get_index(se2->chn);
+	long idx1 = se1->index;
+	long idx2 = se2->index;
 
 	if (idx1 == idx2 && idx1 >= 0) {
-		idx1 = iio_channel_get_data_format(se1->chn)->shift;
-		idx2 = iio_channel_get_data_format(se2->chn)->shift;
+		idx1 = se1->format.shift;
+		idx2 = se2->format.shift;
 	}
 
 	if (idx2 >= 0 && (idx1 > idx2 || idx1 < 0))

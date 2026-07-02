@@ -479,7 +479,7 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 		for (c = 0; c < iio_device_get_channels_count(dev); c++) {
 			struct iio_channel *chn = iio_device_get_channel(dev, c);
 
-			if (!iio_channel_is_scan_element(chn))
+			if (!iio_channel_is_scan_element(chn, buf))
 				continue;
 
 			err = iio_buffer_add_scan_element(buf, chn, NULL);

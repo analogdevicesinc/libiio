@@ -974,14 +974,20 @@ __api __check_ret __pure const char *iio_channel_get_label(const struct iio_chan
  * @return True if the channel is an output channel, False otherwise */
 __api __check_ret __pure bool iio_channel_is_output(const struct iio_channel *chn);
 
-/** @brief Return True if the given channel is a scan element
+/** @brief Check if the given channel is a scan element in a specific buffer
  * @param chn A pointer to an iio_channel structure
- * @return True if the channel is a scan element, False otherwise
+ * @param buf A pointer to an iio_buffer structure, or NULL for the first buffer
+ * @return True if the channel is a scan element in the specified buffer
+ * @return False otherwise
  *
  * <b>NOTE:</b> a channel that is a scan element is a channel that can
  * generate samples (for an input channel) or receive samples (for an output
- * channel) after being enabled. */
-__api __check_ret __pure bool iio_channel_is_scan_element(const struct iio_channel *chn);
+ * channel) after being enabled.
+ *
+ * In multi-buffer scenarios, a channel may be a scan element in some buffers
+ * but not others. Pass NULL for buf to check the first buffer. */
+__api __check_ret __pure bool iio_channel_is_scan_element(
+		const struct iio_channel *chn, const struct iio_buffer *buf);
 
 /** @brief Enumerate the channel-specific attributes of the given channel
  * @param chn A pointer to an iio_channel structure
@@ -1132,6 +1138,32 @@ __api __check_ret __pure unsigned int iio_buffer_get_scan_elements_count(
  * @return If the index is invalid, NULL is returned */
 __api __check_ret __pure const struct iio_channel *iio_buffer_get_scan_element(
 		const struct iio_buffer *buf, unsigned int index);
+
+/** @brief Get the sample size for a specific buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @param mask A pointer to an iio_channels_mask structure
+ * @return On success, the sample size in bytes for this buffer
+ * @return On error, a negative errno code
+ *
+ * Calculates the size of one sample based on the formats of the enabled
+ * channels in this specific buffer. In multi-buffer scenarios, the same
+ * set of channels may have different sample sizes in different buffers. */
+__api __check_ret ssize_t iio_buffer_get_sample_size(
+		const struct iio_buffer *buf, const struct iio_channels_mask *mask);
+
+/** @brief Refresh data formats for all channels in a buffer
+ * @param buf A pointer to an iio_buffer structure
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * This function re-reads the format information from hardware for all
+ * scan elements in the buffer. Useful when format-affecting attributes
+ * (such as 'oversampling') have been changed at runtime.
+ *
+ * The function reads the 'type' attribute from sysfs for each scan element
+ * and updates the internal format structure. Format refresh failures for
+ * individual channels are logged but do not fail the entire operation. */
+__api __check_ret int iio_buffer_refresh_formats(struct iio_buffer *buf);
 
 /** @brief Try to find a buffer-specific attribute by its name
  * @param buf A pointer to an iio_buffer structure
@@ -1527,42 +1559,53 @@ __api struct iio_channels_mask *iio_create_channels_mask(unsigned int nb_channel
  * @param mask A pointer to an iio_channels_mask structure */
 __api void iio_channels_mask_destroy(struct iio_channels_mask *mask);
 
-/** @brief Get the current sample size
- * @param dev A pointer to an iio_device structure
- * @param mask A pointer to an iio_channels_mask structure.
- * @return On success, the sample size in bytes
- * @return On error, a negative errno code is returned
+/** @brief Get the index of the given channel in a specific buffer
+ * @param chn A pointer to an iio_channel structure
+ * @param buf A pointer to an iio_buffer structure, or NULL for the first buffer
+ * @return On success, the scan index of the channel (>= 0)
+ * @return On error, a negative error code is returned
  *
- * <b>NOTE:</b> The sample size is not constant and will change when channels
- * get enabled or disabled. */
-__api __check_ret ssize_t iio_device_get_sample_size(
-		const struct iio_device *dev, const struct iio_channels_mask *mask);
+ * In multi-buffer scenarios, the same channel can have different scan indices
+ * in different buffers. Pass NULL for buf to use the first buffer. */
+__api __check_ret __pure long iio_channel_get_index(
+		const struct iio_channel *chn, const struct iio_buffer *buf);
 
-/** @brief Get the index of the given channel
+/** @brief Get a pointer to a channel's data format structure in a specific buffer
  * @param chn A pointer to an iio_channel structure
- * @return On success, the index of the specified channel
- * @return On error, a negative errno code is returned */
-__api __check_ret __pure long iio_channel_get_index(const struct iio_channel *chn);
-
-/** @brief Get a pointer to a channel's data format structure
- * @param chn A pointer to an iio_channel structure
- * @return A pointer to the channel's iio_data_format structure */
-__api __check_ret __cnst const struct iio_data_format *iio_channel_get_data_format(
-		const struct iio_channel *chn);
+ * @param buf A pointer to an iio_buffer structure, or NULL for the first buffer
+ * @return A pointer to the channel's iio_data_format structure
+ *
+ * In multi-buffer scenarios, the same channel can have different data formats
+ * in different buffers. Pass NULL for buf to use the first buffer.
+ *
+ * If the channel is not a scan element in the specified buffer, returns a
+ * pointer to a zeroed format structure. */
+__api __check_ret __pure const struct iio_data_format *iio_channel_get_data_format(
+		const struct iio_channel *chn, const struct iio_buffer *buf);
 
 /** @brief Convert the sample from hardware format to host format
  * @param chn A pointer to an iio_channel structure
+ * @param buf A pointer to an iio_buffer structure, or NULL for the first buffer
  * @param dst A pointer to the destination buffer where the converted sample
  * should be written
- * @param src A pointer to the source buffer containing the sample */
-__api void iio_channel_convert(const struct iio_channel *chn, void *dst, const void *src);
+ * @param src A pointer to the source buffer containing the sample
+ *
+ * In multi-buffer scenarios, the same channel can have different formats
+ * in different buffers. Pass NULL for buf to use the first buffer. */
+__api void iio_channel_convert(const struct iio_channel *chn, const struct iio_buffer *buf,
+		void *dst, const void *src);
 
 /** @brief Convert the sample from host format to hardware format
  * @param chn A pointer to an iio_channel structure
+ * @param buf A pointer to an iio_buffer structure, or NULL for the first buffer
  * @param dst A pointer to the destination buffer where the converted sample
  * should be written
- * @param src A pointer to the source buffer containing the sample */
-__api void iio_channel_convert_inverse(const struct iio_channel *chn, void *dst, const void *src);
+ * @param src A pointer to the source buffer containing the sample
+ *
+ * In multi-buffer scenarios, the same channel can have different formats
+ * in different buffers. Pass NULL for buf to use the first buffer. */
+__api void iio_channel_convert_inverse(const struct iio_channel *chn, const struct iio_buffer *buf,
+		void *dst, const void *src);
 
 /** @brief Enumerate the event attributes of the given device
  * @param dev A pointer to an iio_device structure

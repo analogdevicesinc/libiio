@@ -358,9 +358,34 @@ bool iio_channel_is_output(const struct iio_channel *chn)
 	return chn->is_output;
 }
 
-bool iio_channel_is_scan_element(const struct iio_channel *chn)
+/* Internal helper: Find scan element for channel in buffer.
+ * Returns scan element pointer, or NULL if not found. */
+static const struct iio_scan_element *find_scan_element(
+		const struct iio_channel *chn, const struct iio_buffer *buf)
 {
-	return chn->is_scan_element;
+	const struct iio_device *dev = iio_channel_get_device(chn);
+	unsigned int i;
+
+	/* NULL buffer means use first buffer */
+	if (!buf) {
+		if (dev->nb_buffers == 0)
+			return NULL;
+		buf = dev->buffers[0];
+	}
+
+	/* Search for channel in buffer's scan elements */
+	for (i = 0; i < buf->nb_scans; i++) {
+		if (buf->scans[i]->chn == chn)
+			return buf->scans[i];
+	}
+
+	return NULL;
+}
+
+bool iio_channel_is_scan_element(const struct iio_channel *chn, const struct iio_buffer *buf)
+{
+	const struct iio_scan_element *se = find_scan_element(chn, buf);
+	return se != NULL;
 }
 
 enum iio_modifier iio_channel_get_modifier(const struct iio_channel *chn)
@@ -435,14 +460,25 @@ void *iio_channel_get_data(const struct iio_channel *chn)
 	return chn->userdata;
 }
 
-long iio_channel_get_index(const struct iio_channel *chn)
+long iio_channel_get_index(const struct iio_channel *chn, const struct iio_buffer *buf)
 {
-	return chn->index;
+	const struct iio_scan_element *se = find_scan_element(chn, buf);
+
+	if (!se)
+		return -ENOENT;
+
+	return se->index;
 }
 
-const struct iio_data_format *iio_channel_get_data_format(const struct iio_channel *chn)
+const struct iio_data_format *iio_channel_get_data_format(
+		const struct iio_channel *chn, const struct iio_buffer *buf)
 {
-	return &chn->format;
+	const struct iio_scan_element *se = find_scan_element(chn, buf);
+
+	if (!se)
+		return &chn->format; /* Fallback to channel's format (zeroed if not scan element) */
+
+	return &se->format;
 }
 
 bool iio_channel_is_enabled(const struct iio_channel *chn, const struct iio_channels_mask *mask)
@@ -561,13 +597,27 @@ static void mask_upper_bits(uint8_t *dst, size_t bits, size_t len)
 		dst[i] = 0;
 }
 
-void iio_channel_convert(const struct iio_channel *chn, void *dst, const void *src)
+void iio_channel_convert(const struct iio_channel *chn, const struct iio_buffer *buf, void *dst,
+		const void *src)
 {
-	uintptr_t src_ptr = (uintptr_t)src, dst_ptr = (uintptr_t)dst;
-	unsigned int len = chn->format.length / 8;
-	ptrdiff_t end = len * chn->format.repeat;
-	uintptr_t end_ptr = src_ptr + end;
-	bool swap = is_little_endian() ^ !chn->format.is_be;
+	const struct iio_scan_element *se = find_scan_element(chn, buf);
+	const struct iio_data_format *format;
+	uintptr_t src_ptr, dst_ptr;
+	unsigned int len;
+	ptrdiff_t end;
+	uintptr_t end_ptr;
+	bool swap;
+
+	if (!se)
+		return; /* Channel not in buffer */
+
+	format = &se->format;
+	src_ptr = (uintptr_t)src;
+	dst_ptr = (uintptr_t)dst;
+	len = format->length / 8;
+	end = len * format->repeat;
+	end_ptr = src_ptr + end;
+	swap = is_little_endian() ^ !format->is_be;
 
 	for (src_ptr = (uintptr_t)src; src_ptr < end_ptr; src_ptr += len, dst_ptr += len) {
 		if (len == 1 || !swap)
@@ -575,47 +625,61 @@ void iio_channel_convert(const struct iio_channel *chn, void *dst, const void *s
 		else
 			byte_swap((void *)dst_ptr, (const void *)src_ptr, len);
 
-		if (chn->format.shift)
-			shift_bits((void *)dst_ptr, chn->format.shift, len, false);
+		if (format->shift)
+			shift_bits((void *)dst_ptr, format->shift, len, false);
 
-		if (!chn->format.is_fully_defined) {
-			if (chn->format.is_signed)
-				sign_extend((void *)dst_ptr, chn->format.bits, len);
+		if (!format->is_fully_defined) {
+			if (format->is_signed)
+				sign_extend((void *)dst_ptr, format->bits, len);
 			else
-				mask_upper_bits((void *)dst_ptr, chn->format.bits, len);
+				mask_upper_bits((void *)dst_ptr, format->bits, len);
 		}
 	}
 }
 
-void iio_channel_convert_inverse(const struct iio_channel *chn, void *dst, const void *src)
+void iio_channel_convert_inverse(const struct iio_channel *chn, const struct iio_buffer *buf,
+		void *dst, const void *src)
 {
-	uintptr_t src_ptr = (uintptr_t)src, dst_ptr = (uintptr_t)dst;
-	unsigned int len = chn->format.length / 8;
-	ptrdiff_t end = len * chn->format.repeat;
-	uintptr_t end_ptr = dst_ptr + end;
-	bool swap = is_little_endian() ^ !chn->format.is_be;
-	uint8_t buf[1024];
+	const struct iio_scan_element *se = find_scan_element(chn, buf);
+	const struct iio_data_format *format;
+	uintptr_t src_ptr, dst_ptr;
+	unsigned int len;
+	ptrdiff_t end;
+	uintptr_t end_ptr;
+	bool swap;
+	uint8_t local_buf[1024];
+
+	if (!se)
+		return; /* Channel not in buffer */
+
+	format = &se->format;
+	src_ptr = (uintptr_t)src;
+	dst_ptr = (uintptr_t)dst;
+	len = format->length / 8;
+	end = len * format->repeat;
+	end_ptr = dst_ptr + end;
+	swap = is_little_endian() ^ !format->is_be;
 
 	/* Somehow I doubt we will have samples of 8192 bits each. */
-	if (len > sizeof(buf)) {
+	if (len > sizeof(local_buf)) {
 		chn_err(chn,
 				"Sample size %u bytes exceeds maximum supported size %zu"
 				"bytes\n",
-				len, sizeof(buf));
+				len, sizeof(local_buf));
 		return;
 	}
 
 	for (dst_ptr = (uintptr_t)dst; dst_ptr < end_ptr; src_ptr += len, dst_ptr += len) {
-		memcpy(buf, (const void *)src_ptr, len);
-		mask_upper_bits(buf, chn->format.bits, len);
+		memcpy(local_buf, (const void *)src_ptr, len);
+		mask_upper_bits(local_buf, format->bits, len);
 
-		if (chn->format.shift)
-			shift_bits(buf, chn->format.shift, len, true);
+		if (format->shift)
+			shift_bits(local_buf, format->shift, len, true);
 
 		if (len == 1 || !swap)
-			memcpy((void *)dst_ptr, buf, len);
+			memcpy((void *)dst_ptr, local_buf, len);
 		else
-			byte_swap((void *)dst_ptr, buf, len);
+			byte_swap((void *)dst_ptr, local_buf, len);
 	}
 }
 
@@ -630,12 +694,11 @@ size_t iio_channel_read(const struct iio_channel *chn, const struct iio_block *b
 		size_t len, bool raw)
 {
 	const struct iio_buffer_stream *buf_stream = iio_block_get_buffer_stream(block);
-	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_buffer *buf = buf_stream->buf;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t src_ptr, dst_ptr = (uintptr_t)dst, end = dst_ptr + len;
 	uintptr_t block_end = (uintptr_t)iio_block_end(block);
-	size_t step = iio_device_get_sample_size(dev, buf_stream->mask);
-	void (*cb)(const struct iio_channel *, void *, const void *);
+	size_t step = iio_buffer_get_sample_size(buf, buf_stream->mask);
 	size_t block_len;
 	const void *src;
 
@@ -651,15 +714,13 @@ size_t iio_channel_read(const struct iio_channel *chn, const struct iio_block *b
 		return len;
 	}
 
-	if (raw)
-		cb = chn_memcpy;
-	else
-		cb = iio_channel_convert;
-
 	for (src_ptr = (uintptr_t)iio_block_first(block, chn);
 			src_ptr < block_end && dst_ptr + length <= end;
 			src_ptr += step, dst_ptr += length) {
-		(*cb)(chn, (void *)dst_ptr, (const void *)src_ptr);
+		if (raw)
+			chn_memcpy(chn, (void *)dst_ptr, (const void *)src_ptr);
+		else
+			iio_channel_convert(chn, buf, (void *)dst_ptr, (const void *)src_ptr);
 	}
 
 	return dst_ptr - (uintptr_t)dst;
@@ -669,12 +730,11 @@ size_t iio_channel_write(const struct iio_channel *chn, struct iio_block *block,
 		size_t len, bool raw)
 {
 	const struct iio_buffer_stream *buf_stream = iio_block_get_buffer_stream(block);
-	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_buffer *buf = buf_stream->buf;
 	uintptr_t dst_ptr, src_ptr = (uintptr_t)src, end = src_ptr + len;
 	unsigned int length = chn->format.length / 8 * chn->format.repeat;
 	uintptr_t block_end = (uintptr_t)iio_block_end(block);
-	size_t step = iio_device_get_sample_size(dev, buf_stream->mask);
-	void (*cb)(const struct iio_channel *, void *, const void *);
+	size_t step = iio_buffer_get_sample_size(buf, buf_stream->mask);
 	size_t block_len;
 	void *dst;
 
@@ -690,15 +750,14 @@ size_t iio_channel_write(const struct iio_channel *chn, struct iio_block *block,
 		return len;
 	}
 
-	if (raw)
-		cb = chn_memcpy;
-	else
-		cb = iio_channel_convert_inverse;
-
 	for (dst_ptr = (uintptr_t)iio_block_first(block, chn);
 			dst_ptr < block_end && src_ptr + length <= end;
 			dst_ptr += step, src_ptr += length) {
-		(*cb)(chn, (void *)dst_ptr, (const void *)src_ptr);
+		if (raw)
+			chn_memcpy(chn, (void *)dst_ptr, (const void *)src_ptr);
+		else
+			iio_channel_convert_inverse(
+					chn, buf, (void *)dst_ptr, (const void *)src_ptr);
 	}
 
 	return src_ptr - (uintptr_t)src;

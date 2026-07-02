@@ -116,8 +116,8 @@ struct compat {
 	int (*iio_device_set_trigger)(const struct iio_device *, const struct iio_device *);
 	bool (*iio_device_is_trigger)(const struct iio_device *);
 
-	ssize_t (*iio_device_get_sample_size)(
-			const struct iio_device *, const struct iio_channels_mask *);
+	ssize_t (*iio_buffer_get_sample_size)(
+			const struct iio_buffer *, const struct iio_channels_mask *);
 
 	/* Channels */
 	const struct iio_device *(*iio_channel_get_device)(const struct iio_channel *);
@@ -1568,7 +1568,8 @@ ssize_t iio_device_get_sample_size(const struct iio_device *dev)
 	if (!compat->mask)
 		return -EINVAL;
 
-	return IIO_CALL(iio_device_get_sample_size)(dev, compat->mask);
+	return IIO_CALL(iio_buffer_get_sample_size)(
+			IIO_CALL(iio_device_get_buffer)(dev, 0), compat->mask);
 }
 
 const struct iio_device *iio_channel_get_device(const struct iio_channel *chn)
@@ -1941,7 +1942,8 @@ struct iio_buffer *iio_device_create_buffer(
 	compat->cyclic = cyclic;
 	compat->nb_blocks = nb_blocks;
 
-	compat->sample_size = iio_device_get_sample_size(dev);
+	compat->sample_size = IIO_CALL(iio_buffer_get_sample_size)(
+			IIO_CALL(iio_device_get_buffer)(dev, 0), dev_compat->mask);
 	compat->samples_count = samples_count;
 	len = samples_count * compat->sample_size;
 	compat->size = len;
@@ -2142,7 +2144,7 @@ ptrdiff_t iio_buffer_step(const struct iio_buffer *buf)
 
 	mask = IIO_CALL(iio_buffer_stream_get_channels_mask)(compat->bs);
 
-	return IIO_CALL(iio_device_get_sample_size)(dev, mask);
+	return IIO_CALL(iio_buffer_get_sample_size)(IIO_CALL(iio_device_get_buffer)(dev, 0), mask);
 }
 
 void *iio_buffer_end(const struct iio_buffer *buf)
@@ -2244,7 +2246,7 @@ static void compat_lib_init(void)
 	FIND_SYMBOL(ctx->lib, iio_device_get_trigger);
 	FIND_SYMBOL(ctx->lib, iio_device_set_trigger);
 	FIND_SYMBOL(ctx->lib, iio_device_is_trigger);
-	FIND_SYMBOL(ctx->lib, iio_device_get_sample_size);
+	FIND_SYMBOL(ctx->lib, iio_buffer_get_sample_size);
 
 	FIND_SYMBOL(ctx->lib, iio_channel_get_device);
 	FIND_SYMBOL(ctx->lib, iio_channel_get_id);

@@ -40,7 +40,7 @@ bool iio_buffer_is_output(const struct iio_buffer *buf)
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		ch = dev->channels[i];
-		if (iio_channel_is_output(ch) && iio_channel_is_scan_element(ch))
+		if (iio_channel_is_output(ch) && iio_channel_is_scan_element(ch, buf))
 			return true;
 	}
 
@@ -72,7 +72,7 @@ static int iio_buffer_stream_set_enabled(const struct iio_buffer_stream *buf_str
 	bool cyclic = false;
 
 	if (buf_stream->block_size) {
-		sample_size = iio_device_get_sample_size(buf->dev, buf_stream->mask);
+		sample_size = iio_buffer_get_sample_size(buf, buf_stream->mask);
 		nb_samples = buf_stream->block_size / sample_size;
 		cyclic = buf_stream->cyclic;
 	}
@@ -131,7 +131,7 @@ struct iio_buffer_stream *iio_buffer_open(
 	if (!ops->open_buffer)
 		return iio_ptr(-ENOSYS);
 
-	sample_size = iio_device_get_sample_size(buf->dev, mask);
+	sample_size = iio_buffer_get_sample_size(buf, mask);
 	if (sample_size < 0)
 		return iio_ptr((int)sample_size);
 	if (!sample_size)
@@ -425,4 +425,48 @@ const struct iio_attr *iio_scan_element_find_attr(
 		const struct iio_scan_element *se, const char *name)
 {
 	return iio_attr_find(&se->attrlist, name);
+}
+
+ssize_t iio_buffer_get_sample_size(
+		const struct iio_buffer *buf, const struct iio_channels_mask *mask)
+{
+	const struct iio_device *dev = buf->dev;
+	ssize_t size = 0;
+	unsigned int i, largest = 1;
+	const struct iio_scan_element *prev = NULL;
+
+	if (mask->words != (dev->nb_channels + 31) / 32)
+		return -EINVAL;
+
+	/* Iterate through scan elements in this buffer, using their formats */
+	for (i = 0; i < buf->nb_scans; i++) {
+		const struct iio_scan_element *se = buf->scans[i];
+		const struct iio_channel *chn = se->chn;
+		unsigned int length = se->format.length / 8 * se->format.repeat;
+
+		if (se->index < 0)
+			continue;
+		if (!iio_channels_mask_test_bit(mask, chn->number))
+			continue;
+
+		if (prev && se->index == prev->index) {
+			prev = se;
+			continue;
+		}
+
+		if (length > largest)
+			largest = length;
+
+		if (size % length)
+			size += 2 * length - (size % length);
+		else
+			size += length;
+
+		prev = se;
+	}
+
+	if (size % largest)
+		size += largest - (size % largest);
+
+	return size;
 }

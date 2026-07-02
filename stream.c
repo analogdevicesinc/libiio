@@ -37,7 +37,7 @@ struct iio_stream *iio_buffer_create_stream(struct iio_buffer *buffer, size_t nb
 	if (!stream)
 		return iio_ptr(-ENOMEM);
 
-	sample_size = iio_device_get_sample_size(buffer->dev, mask);
+	sample_size = iio_buffer_get_sample_size(buffer, mask);
 	buf_size = samples_count * sample_size;
 
 	buf_stream = iio_buffer_open(buffer, mask);

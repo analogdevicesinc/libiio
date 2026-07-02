@@ -27,14 +27,15 @@ struct iio_block {
 
 struct iio_block *iio_buffer_stream_create_block(struct iio_buffer_stream *buf_stream, size_t size)
 {
-	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_buffer *buf = buf_stream->buf;
+	const struct iio_device *dev = buf->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
 	struct iio_block_pdata *pdata;
 	struct iio_block *block;
 	size_t sample_size;
 	int ret;
 
-	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
+	sample_size = iio_buffer_get_sample_size(buf, buf_stream->mask);
 	if (sample_size == 0 || size < sample_size)
 		return iio_ptr(-EINVAL);
 
@@ -249,11 +250,12 @@ ssize_t iio_block_foreach_sample(const struct iio_block *block,
 {
 	uintptr_t ptr = (uintptr_t)block->data, start = ptr, end = ptr + block->size;
 	const struct iio_buffer_stream *buf_stream = block->buf_stream;
-	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_buffer *buf = buf_stream->buf;
+	const struct iio_device *dev = buf->dev;
 	size_t sample_size;
 	ssize_t processed = 0;
 
-	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
+	sample_size = iio_buffer_get_sample_size(buf, buf_stream->mask);
 	if (sample_size == 0)
 		return -EINVAL;
 

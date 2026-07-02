@@ -359,7 +359,7 @@ static int create_buf_and_blocks(
 	if (err)
 		goto err_free_blocks_array;
 
-	buf_size = samples_count * iio_device_get_sample_size(entry->dev, mask);
+	buf_size = samples_count * iio_buffer_get_sample_size(buf, mask);
 
 	for (i = 0; i < nb_blocks; i++) {
 		entry->blocks[i] = iio_buffer_stream_create_block(entry->buf_stream, buf_size);
@@ -490,7 +490,8 @@ static void rw_thd(struct thread_pool *pool, void *d)
 					dev_label_or_name_or_id(dev));
 			entry->update_mask = false;
 
-			entry->sample_size = iio_device_get_sample_size(dev, entry->mask);
+			entry->sample_size = iio_buffer_get_sample_size(
+					iio_device_get_buffer(dev, 0), entry->mask);
 			entry->samples_count = samples_count;
 			mask_updated = true;
 		}
@@ -805,7 +806,7 @@ static int open_dev_helper(struct parser_pdata *pdata, struct iio_device *dev, s
 	thd->wait_for_open = true;
 	thd->nb = 0;
 	thd->samples_count = samples_count;
-	thd->sample_size = iio_device_get_sample_size(dev, mask);
+	thd->sample_size = iio_buffer_get_sample_size(iio_device_get_buffer(dev, 0), mask);
 	thd->pdata = pdata;
 	thd->dev = dev;
 	thd->eventfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
